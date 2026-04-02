@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const basicInfoSchema = z.object({
-  organizationId: z.string().min(1, "Organization is required"),
+  organizationId: z.string().uuid("Organization is required"),
   name: z.string().min(1, "Engagement name is required").max(200),
   targetRole: z.string().optional(),
   startDate: z.string().optional(),

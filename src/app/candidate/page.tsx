@@ -1,23 +1,23 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { ProcessMap, type ProcessStep } from "@/components/shared/process-map";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 export default async function CandidateDashboardPage() {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
 
-  const [candR, consentR, assignR, reportR] = await Promise.all([
+  const [candR, consentR, exR, reportR] = await Promise.all([
     supabase.from("candidates").select("id, full_name, status, engagement_id, engagements(name, organizations(name))").order("full_name"),
     supabase.from("consent_records").select("id"),
-    supabase.from("assessor_assignments").select("id"),
+    supabase.from("engagement_exercises").select("id"),
     supabase.from("candidate_reports").select("id, status"),
   ]);
 
   const candidates = candR.data ?? [];
   const consents = consentR.data?.length ?? 0;
-  const assigns = assignR.data?.length ?? 0;
+  const exercises = exR.data?.length ?? 0;
   const released = reportR.data?.filter((r) => r.status === "released").length ?? 0;
 
   // If there are candidates, show the process map with first candidate's links
@@ -27,8 +27,8 @@ export default async function CandidateDashboardPage() {
   const steps: ProcessStep[] = [
     { id: "welcome", number: 1, title: "Welcome & Profile", href: firstId ? `/candidate/welcome/${firstId}` : "/candidate", iconName: "HandHeart", metric: candidates.length, metricLabel: "candidates", isComplete: candidates.length > 0, isActive: candidates.length === 0 },
     { id: "consent", number: 2, title: "Consent & Privacy", href: firstId ? `/candidate/consent/${firstId}` : "/candidate", iconName: "ShieldCheck", metric: consents, metricLabel: "consents", isComplete: consents > 0, isActive: candidates.length > 0 && consents === 0 },
-    { id: "assessments", number: 3, title: "Complete Assessments", href: firstId ? `/candidate/assessments/${firstId}` : "/candidate", iconName: "ClipboardList", metric: assigns, metricLabel: "exercises", isComplete: assigns > 0, isActive: consents > 0 && assigns === 0 },
-    { id: "report", number: 4, title: "View Report", href: firstId ? `/candidate/report/${firstId}` : "/candidate", iconName: "FileText", metric: released, metricLabel: "reports", isComplete: released > 0, isActive: assigns > 0 && released === 0 },
+    { id: "assessments", number: 3, title: "Complete Assessments", href: firstId ? `/candidate/assessments/${firstId}` : "/candidate", iconName: "ClipboardList", metric: exercises, metricLabel: "exercises", isComplete: exercises > 0, isActive: consents > 0 && exercises === 0 },
+    { id: "report", number: 4, title: "View Report", href: firstId ? `/candidate/report/${firstId}` : "/candidate", iconName: "FileText", metric: released, metricLabel: "reports", isComplete: released > 0, isActive: exercises > 0 && released === 0 },
   ];
 
   return (

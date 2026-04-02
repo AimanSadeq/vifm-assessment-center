@@ -11,11 +11,11 @@ export default function CandidateLayout({
 }) {
   return (
     <div className="min-h-screen bg-muted/30 flex flex-col">
-      <header className="border-b bg-card shadow-sm px-6 py-4">
+      <header className="border-b bg-card shadow-sm px-4 sm:px-6 py-4">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <Link href="/candidate" className="flex items-center gap-3">
+          <Link href="/candidate" className="flex items-center gap-2 sm:gap-3">
             <VifmLogo variant="color" size="sm" />
-            <p className="text-xs text-muted-foreground">Candidate Portal</p>
+            <p className="text-xs text-muted-foreground hidden sm:block">Candidate Portal</p>
           </Link>
           <div className="flex items-center gap-2">
             <LanguageSwitcher />

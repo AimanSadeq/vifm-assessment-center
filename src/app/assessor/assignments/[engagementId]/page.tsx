@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { BackLink } from "@/components/shared/back-link";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,12 +20,12 @@ type Props = {
 };
 
 export default async function AssessorAssignmentGridPage({ params }: Props) {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
   const { engagementId } = params;
 
   const [engResult, assignResult] = await Promise.all([
     supabase.from("engagements").select("id, name, organizations(name)").eq("id", engagementId).single(),
-    // TODO: Add .eq("assessor_id", session.user.id) when auth is enabled
+    // RLS automatically filters to the logged-in assessor's assignments
     supabase
       .from("assessor_assignments")
       .select("id, candidate_id, exercise_id, candidates(id, full_name), exercises(id, name, exercise_type), profiles(id, full_name)")

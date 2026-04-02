@@ -7,6 +7,7 @@ import { StepCompetencies } from "./step-competencies";
 import { StepExercises } from "./step-exercises";
 import { StepMatrix } from "./step-matrix";
 import { StepReview } from "./step-review";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Check, ChevronLeft, ChevronRight } from "lucide-react";
@@ -34,11 +35,19 @@ function WizardInner({ organizations, competencyTree, exercises }: Props) {
       case 1:
         return state.organizationId !== "" && state.engagementName !== "";
       case 2:
-        return state.selectedCompetencies.length >= 4;
+        return state.selectedCompetencies.length >= 4 && state.selectedCompetencies.length <= 15;
       case 3:
         return state.selectedExerciseIds.length >= 1;
-      case 4:
-        return true; // Matrix validation is advisory
+      case 4: {
+        // Each selected competency must be mapped to at least 2 exercises
+        const compExerciseCount = new Map<string, number>();
+        for (const m of state.matrix) {
+          compExerciseCount.set(m.competencyId, (compExerciseCount.get(m.competencyId) ?? 0) + 1);
+        }
+        return state.selectedCompetencies.every(
+          (c) => (compExerciseCount.get(c.competencyId) ?? 0) >= 2
+        );
+      }
       default:
         return false;
     }
@@ -107,16 +116,23 @@ function WizardInner({ organizations, competencyTree, exercises }: Props) {
 
       {/* Navigation footer */}
       <div className="flex justify-between border-t pt-4">
-        <Button
-          variant="outline"
-          onClick={() =>
-            dispatch({ type: "SET_STEP", step: state.currentStep - 1 })
-          }
-          disabled={state.currentStep === 1}
-        >
-          <ChevronLeft className="h-4 w-4 me-1" />
-          Back
-        </Button>
+        <div className="flex gap-2">
+          {state.currentStep === 1 ? (
+            <Link href="/admin/engagements">
+              <Button variant="ghost">Cancel</Button>
+            </Link>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={() =>
+                dispatch({ type: "SET_STEP", step: state.currentStep - 1 })
+              }
+            >
+              <ChevronLeft className="h-4 w-4 me-1" />
+              Back
+            </Button>
+          )}
+        </div>
 
         {state.currentStep < 5 ? (
           <Button

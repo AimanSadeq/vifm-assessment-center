@@ -58,8 +58,8 @@ export function StepCompetencies({ competencyTree }: Props) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Step 2: Select Competencies</CardTitle>
-          <Badge variant={selectedIds.size >= 4 ? "default" : "destructive"}>
-            {selectedIds.size} selected (min 4)
+          <Badge variant={selectedIds.size >= 4 && selectedIds.size <= 15 ? "default" : "destructive"}>
+            {selectedIds.size}/15 selected {selectedIds.size < 4 ? "(min 4)" : selectedIds.size > 15 ? "(max 15)" : ""}
           </Badge>
         </div>
       </CardHeader>
@@ -117,7 +117,7 @@ export function StepCompetencies({ competencyTree }: Props) {
                               </Label>
                               <Input
                                 type="number"
-                                min={0}
+                                min={0.5}
                                 max={10}
                                 step={0.5}
                                 className="h-7 w-16 text-xs"

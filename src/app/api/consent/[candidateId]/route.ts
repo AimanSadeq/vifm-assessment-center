@@ -1,4 +1,5 @@
-import { createServiceClient } from "@/lib/supabase/server";
+"use server";
+
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
@@ -7,11 +8,12 @@ export async function POST(
   { params }: { params: { candidateId: string } }
 ) {
   try {
-    // Auth guard — verify user is the candidate
-    // TODO: When auth is enabled, verify auth.uid() matches candidate's profile_id
-    // const supabase = await createClient();
-    // const { data: { user } } = await supabase.auth.getUser();
-    // if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // Auth guard — verify user is authenticated
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const body = await request.json();
     const consents = body.consents as {
@@ -35,7 +37,19 @@ export async function POST(
       );
     }
 
-    const supabase = createServiceClient();
+    // Validate candidate exists
+    const { data: candidate } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("id", params.candidateId)
+      .maybeSingle();
+
+    if (!candidate) {
+      return NextResponse.json(
+        { error: "Candidate not found" },
+        { status: 404 }
+      );
+    }
 
     // Idempotency: check if consent already exists for this candidate
     const { data: existing } = await supabase
@@ -45,13 +59,17 @@ export async function POST(
       .limit(1);
 
     if (existing && existing.length > 0) {
-      // Already consented — just return success
       return NextResponse.json({ success: true });
     }
 
     const now = new Date();
     const expiresAt = new Date(now);
-    expiresAt.setFullYear(expiresAt.getFullYear() + 2); // Proper 2-year calculation
+    expiresAt.setFullYear(expiresAt.getFullYear() + 2);
+
+    // Capture IP address for compliance audit trail
+    const ipAddress = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+      ?? request.headers.get("x-real-ip")
+      ?? null;
 
     const rows = consents.map((c) => ({
       candidate_id: params.candidateId,
@@ -59,6 +77,7 @@ export async function POST(
       consented: c.consented,
       consented_at: now.toISOString(),
       expires_at: expiresAt.toISOString(),
+      ip_address: ipAddress,
     }));
 
     const { error } = await supabase.from("consent_records").insert(rows);

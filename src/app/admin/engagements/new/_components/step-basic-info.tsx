@@ -205,6 +205,7 @@ export function StepBasicInfo({ organizations: initialOrgs }: Props) {
             <Input
               type="date"
               value={state.endDate}
+              min={state.startDate || undefined}
               onChange={(e) =>
                 dispatch({
                   type: "SET_BASIC_INFO",
@@ -213,6 +214,9 @@ export function StepBasicInfo({ organizations: initialOrgs }: Props) {
                 })
               }
             />
+            {state.startDate && state.endDate && state.endDate < state.startDate && (
+              <p className="text-xs text-destructive">End date must be after start date</p>
+            )}
           </div>
         </div>
       </CardContent>

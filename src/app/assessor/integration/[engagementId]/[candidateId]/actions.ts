@@ -1,6 +1,6 @@
 "use server";
 
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import {
   saveIntegrationSchema,
   type SaveIntegrationValues,
@@ -10,7 +10,7 @@ export async function saveIntegrationAction(values: SaveIntegrationValues) {
   const parsed = saveIntegrationSchema.safeParse(values);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const supabase = createServiceClient();
+  const supabase = await createClient();
 
   // Delete existing entry if present, then insert fresh (avoids TOCTOU race)
   await supabase

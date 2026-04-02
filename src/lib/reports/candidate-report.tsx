@@ -24,7 +24,7 @@ const s = StyleSheet.create({
   page: { paddingTop: 50, paddingBottom: 50, paddingHorizontal: 50, fontFamily: "Helvetica", fontSize: 10, color: C.text },
   coverPage: { paddingTop: 0, paddingBottom: 0, paddingHorizontal: 0, fontFamily: "Helvetica" },
   coverBanner: { backgroundColor: C.primary, paddingTop: 100, paddingBottom: 70, paddingHorizontal: 60 },
-  coverConfidential: { fontSize: 8, color: C.accent, letterSpacing: 3, marginBottom: 30 },
+  coverConfidential: { fontSize: 8, color: C.negative, letterSpacing: 3, marginBottom: 30 },
   coverTitle: { fontSize: 28, color: "#ffffff", fontFamily: "Helvetica-Bold", marginBottom: 6 },
   coverSubtitle: { fontSize: 14, color: C.accent, marginBottom: 4 },
   coverMeta: { fontSize: 10, color: C.metaLight, marginTop: 16 },
@@ -308,17 +308,30 @@ function CompetencyPages({ d }: { d: ReportData }) {
 }
 
 function DevRecsPage({ d }: { d: ReportData }) {
-  if (d.developmentRecommendations.length === 0) return null;
   return (
     <Page size="A4" style={s.page}>
       <Text style={s.section}>Development Recommendations</Text>
-      {d.developmentRecommendations.map((rec, i) => (
-        <View key={i} style={{ flexDirection: "row", paddingVertical: 5, borderBottomWidth: 0.5, borderBottomColor: C.border }}>
-          <Text style={{ width: 130, fontSize: 9, fontFamily: "Helvetica-Bold" }}>{rec.competencyName}</Text>
-          <Text style={{ flex: 1, fontSize: 9, lineHeight: 1.4 }}>{rec.recommendation}</Text>
-          <Text style={{ width: 50, fontSize: 8, textAlign: "right", color: C.textLight }}>{rec.priority}</Text>
-        </View>
-      ))}
+      {d.developmentRecommendations.length === 0 ? (
+        <Text style={s.bodyText}>
+          No formal development recommendations have been recorded for this candidate. Please refer to the development actions suggested within each competency section above.
+        </Text>
+      ) : (
+        <>
+          {/* Header row */}
+          <View style={{ flexDirection: "row", paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: C.primary, marginBottom: 4 }}>
+            <Text style={{ width: 130, fontSize: 8, fontFamily: "Helvetica-Bold", color: C.textLight }}>Competency</Text>
+            <Text style={{ flex: 1, fontSize: 8, fontFamily: "Helvetica-Bold", color: C.textLight }}>Recommendation</Text>
+            <Text style={{ width: 50, fontSize: 8, fontFamily: "Helvetica-Bold", color: C.textLight, textAlign: "right" }}>Priority</Text>
+          </View>
+          {d.developmentRecommendations.map((rec, i) => (
+            <View key={i} style={{ flexDirection: "row", paddingVertical: 5, borderBottomWidth: 0.5, borderBottomColor: C.border }}>
+              <Text style={{ width: 130, fontSize: 9, fontFamily: "Helvetica-Bold" }}>{rec.competencyName}</Text>
+              <Text style={{ flex: 1, fontSize: 9, lineHeight: 1.4 }}>{rec.recommendation}</Text>
+              <Text style={{ width: 50, fontSize: 8, textAlign: "right", color: C.textLight }}>{rec.priority}</Text>
+            </View>
+          ))}
+        </>
+      )}
       <Footer name={d.candidateName} />
     </Page>
   );

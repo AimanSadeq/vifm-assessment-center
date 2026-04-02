@@ -9,25 +9,36 @@ export async function GET(
   { params }: { params: { engagementId: string; candidateId: string } }
 ) {
   try {
-    // Auth guard — verify user has access
-    // TODO: When auth is enabled, verify the user is:
-    // - An admin, OR
-    // - A client user whose org owns this engagement, OR
-    // - The candidate themselves (and report status is "released")
+    // Auth guard — verify user is authenticated
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    // In dev mode (no auth), allow all access
-    // In production, uncomment and implement role checks:
-    // if (!user) {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // }
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check if OAR exists (report should only be generated after wash-up is complete)
+    const { data: oar } = await supabase
+      .from("overall_assessment_ratings")
+      .select("id")
+      .eq("engagement_id", params.engagementId)
+      .eq("candidate_id", params.candidateId)
+      .maybeSingle();
+
+    if (!oar) {
+      return NextResponse.json(
+        { error: "Report cannot be generated until the Overall Assessment Rating (OAR) is finalized." },
+        { status: 400 }
+      );
+    }
 
     const data = await fetchReportData(params.engagementId, params.candidateId);
     const buffer = await renderToBuffer(
       <CandidateReport data={data} />
     );
 
-    const filename = `VIFM_Report_${data.candidateName.replace(/\s+/g, "_")}.pdf`;
+    // Sanitize filename: strip non-alphanumeric characters except underscores
+    const safeName = data.candidateName.replace(/[^a-zA-Z0-9\s]/g, "").replace(/\s+/g, "_");
+    const filename = `VIFM_Report_${safeName}.pdf`;
 
     return new NextResponse(new Uint8Array(buffer), {
       headers: {

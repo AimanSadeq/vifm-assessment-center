@@ -1,26 +1,31 @@
 export const dynamic = "force-dynamic";
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { getClientOrgId } from "@/lib/auth/get-org-id";
 import { ProcessMap, type ProcessStep } from "@/components/shared/process-map";
 
 export default async function ClientDashboardPage() {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
   const orgId = await getClientOrgId();
 
   // Scope all queries to the client's organization
   let engQuery = supabase.from("engagements").select("id");
   if (orgId) engQuery = engQuery.eq("organization_id", orgId);
 
-  const [engR, candR, oarR, repR] = await Promise.all([
-    engQuery,
-    supabase.from("candidates").select("id"),
-    supabase.from("overall_assessment_ratings").select("id"),
-    supabase.from("candidate_reports").select("id, status"),
-  ]);
+  const engR = await engQuery;
+  const engIds = (engR.data ?? []).map((e) => e.id);
 
-  const e = engR.data?.length ?? 0, c = candR.data?.length ?? 0;
-  const oar = oarR.data?.length ?? 0;
-  const rel = repR.data?.filter((x) => x.status === "released").length ?? 0;
+  // All downstream queries scoped to org's engagement IDs
+  const [candR, oarR, repR] = engIds.length > 0
+    ? await Promise.all([
+        supabase.from("candidates").select("id").in("engagement_id", engIds),
+        supabase.from("overall_assessment_ratings").select("id").in("engagement_id", engIds),
+        supabase.from("candidate_reports").select("id, status").in("engagement_id", engIds),
+      ])
+    : [{ data: [] }, { data: [] }, { data: [] }];
+
+  const e = engIds.length, c = (candR.data ?? []).length;
+  const oar = (oarR.data ?? []).length;
+  const rel = (repR.data ?? []).filter((x: Record<string, unknown>) => x.status === "released").length;
 
   const steps: ProcessStep[] = [
     { id: "engagements", number: 1, title: "View Engagements", href: "/client/engagements", iconName: "ClipboardList", metric: e, metricLabel: "engagements", isComplete: e > 0, isActive: e === 0 },

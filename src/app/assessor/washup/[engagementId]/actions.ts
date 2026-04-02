@@ -1,6 +1,6 @@
 "use server";
 
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import {
   saveConsensusRatingSchema,
   type SaveConsensusRatingValues,
@@ -12,7 +12,7 @@ export async function saveConsensusRatingAction(values: SaveConsensusRatingValue
   const parsed = saveConsensusRatingSchema.safeParse(values);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const supabase = createServiceClient();
+  const supabase = await createClient();
 
   // Upsert: one consensus rating per (engagement, candidate, competency)
   const { data, error } = await supabase
@@ -39,7 +39,7 @@ export async function saveOarAction(values: SaveOarValues) {
   const parsed = saveOarSchema.safeParse(values);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const supabase = createServiceClient();
+  const supabase = await createClient();
 
   // Upsert: one OAR per (engagement, candidate)
   const { data, error } = await supabase

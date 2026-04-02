@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
+import { getClientOrgId } from "@/lib/auth/get-org-id";
 import { BackLink } from "@/components/shared/back-link";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,15 +25,21 @@ const OAR_LABELS: Record<string, string> = {
 
 type Props = { params: { id: string } };
 
+export const dynamic = "force-dynamic";
+
 export default async function ClientEngagementDetailPage({ params }: Props) {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
+  const orgId = await getClientOrgId();
+
+  // Build engagement query with org-scoping
+  let engQuery = supabase
+    .from("engagements")
+    .select("id, name, status, target_role, start_date, end_date, organizations(name)")
+    .eq("id", params.id);
+  if (orgId) engQuery = engQuery.eq("organization_id", orgId);
 
   const [engResult, candsResult, oarResult, reportsResult] = await Promise.all([
-    supabase
-      .from("engagements")
-      .select("id, name, status, target_role, start_date, end_date, organizations(name)")
-      .eq("id", params.id)
-      .single(),
+    engQuery.single(),
     supabase
       .from("candidates")
       .select("id, full_name, email, status")

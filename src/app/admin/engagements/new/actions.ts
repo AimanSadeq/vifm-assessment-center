@@ -1,6 +1,6 @@
 "use server";
 
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import {
   createEngagementSchema,
   type CreateEngagementPayload,
@@ -14,7 +14,7 @@ export async function createOrganizationAction(values: NewOrganizationValues) {
   const parsed = newOrganizationSchema.safeParse(values);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const supabase = createServiceClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("organizations")
     .insert({
@@ -35,7 +35,7 @@ export async function createExerciseAction(values: NewExerciseValues) {
   const parsed = newExerciseSchema.safeParse(values);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const supabase = createServiceClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("exercises")
     .insert({
@@ -52,7 +52,7 @@ export async function createExerciseAction(values: NewExerciseValues) {
   return { data };
 }
 
-async function rollbackEngagement(supabase: ReturnType<typeof createServiceClient>, engagementId: string) {
+async function rollbackEngagement(supabase: Awaited<ReturnType<typeof createClient>>, engagementId: string) {
   // Delete in reverse dependency order — cascade should handle most of this
   // but be explicit to ensure clean rollback
   await supabase.from("exercise_competency_matrix").delete().eq("engagement_id", engagementId);
@@ -67,7 +67,7 @@ export async function createEngagementAction(payload: CreateEngagementPayload) {
     return { error: parsed.error.flatten().fieldErrors };
   }
 
-  const supabase = createServiceClient();
+  const supabase = await createClient();
   const data = parsed.data;
 
   // 1. Insert engagement
@@ -80,7 +80,7 @@ export async function createEngagementAction(payload: CreateEngagementPayload) {
       status: "draft",
       start_date: data.startDate || null,
       end_date: data.endDate || null,
-      created_by: null, // TODO: set from auth.uid() when auth is enabled
+      created_by: await supabase.auth.getUser().then(r => r.data.user?.id ?? null),
     })
     .select("id")
     .single();

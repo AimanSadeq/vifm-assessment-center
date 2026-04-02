@@ -14,17 +14,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+import { LogIn, Mail, Shield, ClipboardCheck, Users, Building2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import {
-  Shield,
-  ClipboardCheck,
-  Users,
-  Building2,
-  LogIn,
-  Mail,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,7 +24,18 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showAuthForm, setShowAuthForm] = useState(false);
+  const quickLogin = async (targetEmail: string, targetPassword: string, redirect: string) => {
+    setLoading(true);
+    setError(null);
+    const supabase = createClient();
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email: targetEmail,
+      password: targetPassword,
+    });
+    setLoading(false);
+    if (authError) { setError(authError.message); return; }
+    router.push(redirect);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,52 +99,58 @@ export default function LoginPage() {
         <CardHeader>
           <CardTitle className="text-xl">Sign In</CardTitle>
           <CardDescription>
-            Welcome to the VIFM Assessment Center Portal. Select your role to continue.
+            Welcome to the VIFM Assessment Center Portal. Enter your credentials to continue.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {/* Role selection — primary entry point */}
-          <Link href="/admin">
-            <Button variant="default" className="w-full justify-start gap-3" size="lg">
-              <Shield className="h-5 w-5" />
-              Sign in as Admin
+        <CardContent className="space-y-4">
+          {/* Quick role login buttons */}
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="default"
+              className="gap-2"
+              size="lg"
+              disabled={loading}
+              onClick={() => quickLogin("admin@viftraining.com", "admin123", "/admin")}
+            >
+              <Shield className="h-4 w-4" />
+              Admin
             </Button>
-          </Link>
-
-          <Link href="/assessor">
-            <Button variant="outline" className="w-full justify-start gap-3" size="lg">
-              <ClipboardCheck className="h-5 w-5" />
-              Sign in as Assessor
+            <Button
+              variant="outline"
+              className="gap-2"
+              size="lg"
+              disabled={loading}
+              onClick={() => quickLogin("assessor@viftraining.com", "admin123", "/assessor")}
+            >
+              <ClipboardCheck className="h-4 w-4" />
+              Assessor
             </Button>
-          </Link>
-
-          <Link href="/candidate">
-            <Button variant="outline" className="w-full justify-start gap-3" size="lg">
-              <Users className="h-5 w-5" />
-              Sign in as Candidate
+            <Button
+              variant="outline"
+              className="gap-2"
+              size="lg"
+              disabled={loading}
+              onClick={() => quickLogin("candidate@viftraining.com", "admin123", "/candidate")}
+            >
+              <Users className="h-4 w-4" />
+              Candidate
             </Button>
-          </Link>
-
-          <Link href="/client">
-            <Button variant="outline" className="w-full justify-start gap-3" size="lg">
-              <Building2 className="h-5 w-5" />
-              Sign in as Client
+            <Button
+              variant="outline"
+              className="gap-2"
+              size="lg"
+              disabled={loading}
+              onClick={() => quickLogin("client@viftraining.com", "admin123", "/client")}
+            >
+              <Building2 className="h-4 w-4" />
+              Client
             </Button>
-          </Link>
+          </div>
 
           <Separator />
 
-          {/* Email/password form — expandable for when auth is enabled */}
-          <button
-            type="button"
-            onClick={() => setShowAuthForm(!showAuthForm)}
-            className="flex items-center justify-center gap-1.5 w-full text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
-          >
-            {showAuthForm ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-            Sign in with email & password
-          </button>
-
-          {showAuthForm && (
+          {/* Email/password form */}
+          {(
             <form onSubmit={handleLogin} className="space-y-3 pt-2">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>

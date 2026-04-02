@@ -1,5 +1,6 @@
+export const dynamic = "force-dynamic";
 import Link from "next/link";
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { BackLink } from "@/components/shared/back-link";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +18,7 @@ const OAR_LABELS: Record<string, string> = {
 type Props = { params: { candidateId: string } };
 
 export default async function CandidateReportPage({ params }: Props) {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
   const { candidateId } = params;
 
   const [candResult, reportResult, oarResult, consensusResult] =

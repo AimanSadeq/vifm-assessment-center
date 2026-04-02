@@ -1,13 +1,18 @@
 /**
- * Email Integration Module
+ * Email Integration Module — Microsoft Graph API (Outlook/M365)
  *
- * Transactional email service for VIFM Assessment Center.
- * Supports SendGrid or Resend as providers.
- * To enable:
- * 1. npm install @sendgrid/mail (or resend)
- * 2. Set EMAIL_PROVIDER and EMAIL_API_KEY in .env.local
- * 3. Set EMAIL_FROM_ADDRESS in .env.local
+ * Sends transactional emails via Microsoft Graph API using Azure AD app credentials.
+ *
+ * Required environment variables:
+ *   AZURE_TENANT_ID     — Azure AD tenant ID
+ *   AZURE_CLIENT_ID     — App registration client ID
+ *   AZURE_CLIENT_SECRET — App registration client secret
+ *   EMAIL_FROM_ADDRESS  — Sender email (must be a valid M365 mailbox)
  */
+
+import { ClientSecretCredential } from "@azure/identity";
+import { Client } from "@microsoft/microsoft-graph-client";
+import { TokenCredentialAuthenticationProvider } from "@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials/index.js";
 
 export type EmailTemplate =
   | "candidate_invitation"
@@ -23,26 +28,19 @@ export type EmailPayload = {
   data: Record<string, string>;
 };
 
-type EmailConfig = {
-  provider: "sendgrid" | "resend";
-  apiKey: string;
-  fromAddress: string;
-  fromName: string;
-};
+function getGraphClient(): Client | null {
+  const tenantId = process.env.AZURE_TENANT_ID;
+  const clientId = process.env.AZURE_CLIENT_ID;
+  const clientSecret = process.env.AZURE_CLIENT_SECRET;
 
-function getConfig(): EmailConfig | null {
-  const provider = process.env.EMAIL_PROVIDER as "sendgrid" | "resend" | undefined;
-  const apiKey = process.env.EMAIL_API_KEY;
-  const fromAddress = process.env.EMAIL_FROM_ADDRESS;
+  if (!tenantId || !clientId || !clientSecret) return null;
 
-  if (!provider || !apiKey || !fromAddress) return null;
+  const credential = new ClientSecretCredential(tenantId, clientId, clientSecret);
+  const authProvider = new TokenCredentialAuthenticationProvider(credential, {
+    scopes: ["https://graph.microsoft.com/.default"],
+  });
 
-  return {
-    provider,
-    apiKey,
-    fromAddress,
-    fromName: "VIFM Assessment Center",
-  };
+  return Client.initWithMiddleware({ authProvider });
 }
 
 const TEMPLATES: Record<EmailTemplate, { subject: string; body: string }> = {
@@ -139,29 +137,51 @@ function renderTemplate(template: EmailTemplate, data: Record<string, string>) {
 }
 
 export async function sendEmail(payload: EmailPayload): Promise<boolean> {
-  const config = getConfig();
-  if (!config) {
-    console.warn(
-      "Email integration not configured. Set EMAIL_PROVIDER, EMAIL_API_KEY, EMAIL_FROM_ADDRESS."
-    );
-    // Log the email that would have been sent
-    const { subject, body } = renderTemplate(payload.template, payload.data);
+  const { subject, body } = renderTemplate(payload.template, payload.data);
+  const fromAddress = process.env.EMAIL_FROM_ADDRESS;
+
+  const graphClient = getGraphClient();
+
+  if (!graphClient || !fromAddress) {
+    console.warn("Email integration not configured. Set AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, EMAIL_FROM_ADDRESS.");
     console.log(`[EMAIL MOCK] To: ${payload.to}`);
     console.log(`[EMAIL MOCK] Subject: ${subject}`);
     console.log(`[EMAIL MOCK] Body:\n${body}\n`);
-    return true; // Return success in dev mode
+    return true;
   }
 
-  const { subject, body } = renderTemplate(payload.template, payload.data);
+  try {
+    await graphClient.api(`/users/${fromAddress}/sendMail`).post({
+      message: {
+        subject,
+        body: {
+          contentType: "Text",
+          content: body,
+        },
+        toRecipients: [
+          {
+            emailAddress: {
+              address: payload.to,
+            },
+          },
+        ],
+      },
+      saveToSentItems: true,
+    });
 
-  // TODO: Implement actual provider API calls
-  // if (config.provider === "sendgrid") { ... }
-  // if (config.provider === "resend") { ... }
-
-  console.log(`[EMAIL] Sent to ${payload.to}: ${subject}`);
-  return true;
+    console.log(`[EMAIL] Sent to ${payload.to}: ${subject}`);
+    return true;
+  } catch (error) {
+    console.error(`[EMAIL] Failed to send to ${payload.to}:`, error);
+    return false;
+  }
 }
 
 export function isEmailConfigured(): boolean {
-  return !!process.env.EMAIL_PROVIDER && !!process.env.EMAIL_API_KEY;
+  return !!(
+    process.env.AZURE_TENANT_ID &&
+    process.env.AZURE_CLIENT_ID &&
+    process.env.AZURE_CLIENT_SECRET &&
+    process.env.EMAIL_FROM_ADDRESS
+  );
 }

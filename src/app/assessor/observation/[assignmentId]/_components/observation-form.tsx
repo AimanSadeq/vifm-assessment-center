@@ -3,9 +3,8 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { X, Plus, ArrowLeft, Eye, Star, HelpCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { X, Plus, HelpCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
@@ -23,7 +22,6 @@ import { BARS_LABELS } from "@/lib/validations/assessor";
 import { saveObservationAction, deleteObservationAction, saveRatingAction, deleteRatingAction } from "../actions";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import Link from "next/link";
 
 type Competency = { id: string; name: string; description: string | null; tags: string[] | null; qa_questions: string[] | null };
 type ObservationRow = {
@@ -118,6 +116,8 @@ export function ObservationForm({
       setObservations((prev) => [result.data, ...prev]);
       setNewObsText("");
       toast.success("Observation saved");
+    } else if ("error" in result) {
+      toast.error(typeof result.error === "string" ? result.error : "Failed to save observation");
     }
   };
 

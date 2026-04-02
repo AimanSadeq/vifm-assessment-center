@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,7 +9,7 @@ import { EXERCISE_TYPE_LABELS } from "@/lib/constants/exercise-types";
 import { Clock, FileText } from "lucide-react";
 
 export default async function ExercisesPage() {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
 
   const { data: exercises } = await supabase
     .from("exercises")

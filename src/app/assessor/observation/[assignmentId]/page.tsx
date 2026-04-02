@@ -1,4 +1,4 @@
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { ObservationForm } from "./_components/observation-form";
 
@@ -7,7 +7,7 @@ type Props = {
 };
 
 export default async function ObservationPage({ params }: Props) {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
   const { assignmentId } = params;
 
   // Fetch the assignment with related data

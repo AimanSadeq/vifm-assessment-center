@@ -4,11 +4,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
+import { BackLink } from "@/components/shared/back-link";
 
 type Props = { params: { candidateId: string } };
 
@@ -45,15 +47,18 @@ export default function ConsentPage({ params }: Props) {
         return;
       }
 
+      toast.success("Consent submitted successfully");
       router.push(`/candidate/assessments/${candidateId}`);
     } catch {
       setError("Network error. Please try again.");
+    } finally {
       setSubmitting(false);
     }
   };
 
   return (
     <div className="space-y-6">
+      <BackLink href={`/candidate/welcome/${candidateId}`} label="Back to Welcome" />
       <Card>
         <CardHeader>
           <CardTitle>Consent & Data Protection</CardTitle>

@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
+import { EngagementStatusFilter } from "./_components/engagement-status-filter";
 
 const STATUS_COLORS: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
   draft: "secondary",
@@ -13,19 +14,35 @@ const STATUS_COLORS: Record<string, "default" | "secondary" | "outline" | "destr
   archived: "destructive",
 };
 
-export default async function EngagementsPage() {
-  const supabase = createServiceClient();
+export default async function EngagementsPage({
+  searchParams,
+}: {
+  searchParams: { status?: string };
+}) {
+  const supabase = await createClient();
+  const filterStatus = searchParams.status || "all";
 
-  const { data: engagements } = await supabase
+  let query = supabase
     .from("engagements")
     .select("id, name, status, target_role, start_date, end_date, organizations(name)")
     .order("created_at", { ascending: false });
 
+  if (filterStatus !== "all") {
+    query = query.eq("status", filterStatus);
+  }
+
+  const { data: engagements } = await query;
+
+  // Get counts from all engagements (unfiltered)
+  const { data: allEngagements } = await supabase
+    .from("engagements")
+    .select("status");
+
   const counts = {
-    all: engagements?.length ?? 0,
-    draft: engagements?.filter((e) => e.status === "draft").length ?? 0,
-    active: engagements?.filter((e) => e.status === "active").length ?? 0,
-    completed: engagements?.filter((e) => e.status === "completed").length ?? 0,
+    all: allEngagements?.length ?? 0,
+    draft: allEngagements?.filter((e) => e.status === "draft").length ?? 0,
+    active: allEngagements?.filter((e) => e.status === "active").length ?? 0,
+    completed: allEngagements?.filter((e) => e.status === "completed").length ?? 0,
   };
 
   return (
@@ -43,12 +60,7 @@ export default async function EngagementsPage() {
       </div>
 
       {/* Status filter badges */}
-      <div className="mt-4 flex gap-2">
-        <Badge variant="outline" className="text-xs">All ({counts.all})</Badge>
-        <Badge variant="secondary" className="text-xs">Draft ({counts.draft})</Badge>
-        <Badge variant="default" className="text-xs">Active ({counts.active})</Badge>
-        <Badge variant="outline" className="text-xs">Completed ({counts.completed})</Badge>
-      </div>
+      <EngagementStatusFilter counts={counts} activeFilter={filterStatus} />
 
       <div className="mt-4">
         {!engagements || engagements.length === 0 ? (

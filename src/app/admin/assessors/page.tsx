@@ -1,11 +1,11 @@
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 
 export default async function AssessorsPage() {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
 
   const { data: assessors } = await supabase
     .from("profiles")

@@ -92,24 +92,28 @@ export default function AdminLayout({
       <Separator className="bg-sidebar-border" />
 
       {/* Footer */}
-      <div className={cn("p-2 space-y-2", collapsed && "px-1")}>
+      <div className={cn("p-3 space-y-3", collapsed && "p-2")}>
         {!collapsed && <LanguageSwitcher />}
+
+        {/* User info */}
         <div className={cn(
-          "flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-sidebar-foreground/50",
-          collapsed && "justify-center px-1"
+          "flex items-center gap-2.5 px-2",
+          collapsed && "justify-center px-0"
         )}>
-          <div className="h-7 w-7 rounded-full bg-sidebar-accent flex items-center justify-center shrink-0">
-            <User className="h-3.5 w-3.5 text-sidebar-accent-foreground" />
+          <div className="h-8 w-8 rounded-full bg-sidebar-accent flex items-center justify-center shrink-0">
+            <User className="h-4 w-4 text-sidebar-accent-foreground" />
           </div>
           {!collapsed && (
-            <div>
+            <div className="flex-1 min-w-0">
               {/* TODO: Replace with authenticated user name */}
-              <p className="font-medium text-sidebar-foreground/80">Administrator</p>
-              <p className="text-[10px]">admin@vifm.ae</p>
+              <p className="text-xs font-medium text-sidebar-foreground/80 truncate">Administrator</p>
+              <p className="text-[10px] text-sidebar-foreground/40 truncate">admin@vifm.ae</p>
             </div>
           )}
-          <LogoutButton variant="sidebar" />
         </div>
+
+        {/* Sign out */}
+        <LogoutButton variant="sidebar" />
       </div>
     </>
   );
@@ -130,7 +134,7 @@ export default function AdminLayout({
           "bg-sidebar text-sidebar-foreground flex flex-col border-e transition-all duration-300 ease-in-out",
           // Desktop
           "hidden lg:flex",
-          collapsed ? "w-16" : "w-64"
+          collapsed ? "w-16" : "w-52"
         )}
       >
         {sidebarContent}
@@ -146,7 +150,7 @@ export default function AdminLayout({
       {/* Mobile sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 start-0 z-50 w-64 bg-sidebar text-sidebar-foreground flex flex-col border-e transition-transform duration-300 ease-in-out lg:hidden",
+          "fixed inset-y-0 start-0 z-50 w-52 bg-sidebar text-sidebar-foreground flex flex-col border-e transition-transform duration-300 ease-in-out lg:hidden",
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >

@@ -194,7 +194,7 @@ export function WashupForm({
   const handleSaveOar = async () => {
     if (!oarScore || !oarRec) return;
     setSavingOar(true);
-    await saveOarAction({
+    const result = await saveOarAction({
       engagementId,
       candidateId,
       overallScore: oarScore,
@@ -202,8 +202,12 @@ export function WashupForm({
       summary: oarSummary || undefined,
     });
     setSavingOar(false);
-    toast.success("Overall Assessment Rating saved");
-    router.refresh();
+    if ("error" in result && result.error) {
+      toast.error(typeof result.error === "string" ? result.error : "Failed to save OAR");
+    } else {
+      toast.success("Overall Assessment Rating saved");
+      router.refresh();
+    }
   };
 
   const completedCount = Object.values(consensus).filter((c) => c.score > 0).length;

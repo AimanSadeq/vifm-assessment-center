@@ -1,5 +1,5 @@
 export const dynamic = "force-dynamic";
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { WashupForm } from "./_components/washup-form";
 
@@ -8,7 +8,7 @@ type Props = {
 };
 
 export default async function WashupCandidatePage({ params }: Props) {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
   const { engagementId, candidateId } = params;
 
   const [engResult, candResult, compResult, worksheetsResult, consensusResult, oarResult] =

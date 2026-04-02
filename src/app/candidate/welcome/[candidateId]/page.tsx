@@ -1,5 +1,6 @@
+export const dynamic = "force-dynamic";
 import Link from "next/link";
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 type Props = { params: { candidateId: string } };
 
 export default async function CandidateWelcomePage({ params }: Props) {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
   const { candidateId } = params;
 
   const { data: candidate, error } = await supabase

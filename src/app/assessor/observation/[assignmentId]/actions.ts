@@ -1,6 +1,6 @@
 "use server";
 
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import {
   saveObservationSchema,
   type SaveObservationValues,
@@ -12,7 +12,7 @@ export async function saveObservationAction(values: SaveObservationValues) {
   const parsed = saveObservationSchema.safeParse(values);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const supabase = createServiceClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("observations")
     .insert({
@@ -29,7 +29,7 @@ export async function saveObservationAction(values: SaveObservationValues) {
 }
 
 export async function deleteObservationAction(observationId: string) {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
   const { error } = await supabase
     .from("observations")
     .delete()
@@ -43,7 +43,7 @@ export async function saveRatingAction(values: SaveRatingValues) {
   const parsed = saveRatingSchema.safeParse(values);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const supabase = createServiceClient();
+  const supabase = await createClient();
 
   // Upsert: insert or update if already exists
   const { data, error } = await supabase
@@ -65,7 +65,7 @@ export async function saveRatingAction(values: SaveRatingValues) {
 }
 
 export async function deleteRatingAction(assignmentId: string, competencyId: string) {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
   const { error } = await supabase
     .from("ratings")
     .delete()

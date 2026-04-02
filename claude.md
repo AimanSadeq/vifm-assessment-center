@@ -79,7 +79,7 @@ src/
 supabase/
   migrations/
     00001_initial_schema.sql    # 25 tables + RLS policies + enums + triggers
-    00002_seed_competencies.sql # 4 domains, 8 clusters, 33 competencies
+    00002_seed_competencies.sql # 4 domains, 8 clusters, 38 competencies
     00003_seed_behavioral_indicators.sql  # 249 behavioral indicators
     00004_seed_development_tips.sql       # 114 development tips (3 per competency)
     00005_create_engagement_rpc.sql       # Atomic engagement creation function
@@ -96,7 +96,7 @@ scripts/
 
 ## Key Domain Concepts
 - **Engagement:** A single assessment center project for a client
-- **Competency:** A measurable behavioral dimension. VIFM framework: 4 domains, 8 clusters, 33 competencies with 249 behavioral indicators (positive/negative), 114 development tips, 5 tags, and 3 Q&A questions per competency
+- **Competency:** A measurable behavioral dimension. VIFM framework: 4 domains, 8 clusters, 38 competencies with 249 behavioral indicators (positive/negative), 114 development tips, 5 tags, and 3 Q&A questions per competency
 - **Exercise:** A simulation activity (In-Basket, Role Play, Group Exercise, Case Study, Oral Presentation, CBI) with structured timing (instructions/prep/meeting), participant briefing, and role player guides
 - **Exercise-to-Competency Matrix:** Maps which competencies are observed in which exercises. Each competency must appear in at least 2 exercises (enforced by Zod validation)
 - **Observation:** Assessor behavioral notes for a candidate in an exercise, classified by competency with +/- indicators

@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
+import { BackLink } from "@/components/shared/back-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 export default async function WashupListPage() {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
 
   const { data: engagements } = await supabase
     .from("engagements")
@@ -14,7 +15,8 @@ export default async function WashupListPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">Wash-Up Sessions</h1>
+      <BackLink href="/assessor" label="Back to Mission Board" />
+      <h1 className="mt-2 text-2xl font-bold">Wash-Up Sessions</h1>
       <p className="mt-2 text-muted-foreground">
         Select an engagement to begin the structured data integration discussion.
       </p>

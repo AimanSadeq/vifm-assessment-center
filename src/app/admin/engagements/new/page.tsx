@@ -1,13 +1,14 @@
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import type {
   CompetencyTree,
   Organization,
   Exercise,
 } from "@/types/database";
+import { BackLink } from "@/components/shared/back-link";
 import { EngagementWizard } from "./_components/engagement-wizard";
 
 async function fetchWizardData() {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
 
   const [orgsResult, domainsResult, clustersResult, compsResult, exercisesResult] =
     await Promise.all([
@@ -44,7 +45,8 @@ export default async function NewEngagementPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">New Engagement</h1>
+      <BackLink href="/admin/engagements" label="Back to Engagements" />
+      <h1 className="mt-2 text-2xl font-bold">New Engagement</h1>
       <p className="mt-1 text-muted-foreground">
         Create a new assessment center engagement in 5 steps.
       </p>

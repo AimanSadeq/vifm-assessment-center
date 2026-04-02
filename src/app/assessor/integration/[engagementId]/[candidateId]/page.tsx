@@ -1,5 +1,5 @@
 export const dynamic = "force-dynamic";
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { IntegrationForm } from "./_components/integration-form";
 
@@ -8,7 +8,7 @@ type Props = {
 };
 
 export default async function IntegrationWorksheetPage({ params }: Props) {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
   const { engagementId, candidateId } = params;
 
   const [engResult, candResult, compResult, obsResult, ratingsResult, worksheetResult, assessorsResult] =
@@ -50,11 +50,11 @@ export default async function IntegrationWorksheetPage({ params }: Props) {
     .map((c) => c.competencies)
     .filter(Boolean) as unknown as { id: string; name: string; description: string | null }[];
 
-  // Default assessor_id for dev mode — use first assigned assessor
-  // TODO: Replace with auth.uid() when authentication is enabled
-  const devAssessorId = assessorsResult.data?.[0]?.assessor_id;
-  if (!devAssessorId) {
-    return notFound(); // No assessor assigned to this engagement
+  // Get the logged-in assessor's ID from the session
+  const { data: { user } } = await supabase.auth.getUser();
+  const assessorId = user?.id;
+  if (!assessorId) {
+    return notFound(); // Not authenticated
   }
 
   return (
@@ -64,7 +64,7 @@ export default async function IntegrationWorksheetPage({ params }: Props) {
         engagementName={engResult.data.name}
         candidateId={candidateId}
         candidateName={candResult.data.full_name}
-        assessorId={devAssessorId}
+        assessorId={assessorId}
         competencies={competencies}
         observations={obsResult.data ?? []}
         ratings={ratingsResult.data ?? []}

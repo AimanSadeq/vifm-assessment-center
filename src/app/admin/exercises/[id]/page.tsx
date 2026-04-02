@@ -1,11 +1,11 @@
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { ExerciseDetail } from "./_components/exercise-detail";
 
 type Props = { params: { id: string } };
 
 export default async function ExerciseDetailPage({ params }: Props) {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
 
   const [exResult, promptsResult] = await Promise.all([
     supabase.from("exercises").select("*").eq("id", params.id).single(),

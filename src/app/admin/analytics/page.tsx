@@ -1,10 +1,10 @@
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { calculateICC, getICCInterpretation } from "@/lib/scoring/icc";
 import { calculateBiasMetrics } from "@/lib/scoring/bias-detection";
 import { AnalyticsDashboard } from "./_components/analytics-dashboard";
 
 export default async function AnalyticsPage() {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
 
   // Fetch all ratings with assessor and competency info
   const { data: ratings } = await supabase

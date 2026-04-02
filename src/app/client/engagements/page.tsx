@@ -1,5 +1,6 @@
+export const dynamic = "force-dynamic";
 import Link from "next/link";
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { getClientOrgId } from "@/lib/auth/get-org-id";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -12,7 +13,7 @@ import {
 } from "@/components/ui/table";
 
 export default async function ClientEngagementsPage() {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
 
   const orgId = await getClientOrgId();
   let query = supabase

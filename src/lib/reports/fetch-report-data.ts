@@ -1,11 +1,11 @@
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import type { ReportData, ReportCompetencyData } from "./report-types";
 
 export async function fetchReportData(
   engagementId: string,
   candidateId: string
 ): Promise<ReportData> {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
 
   const [engResult, candResult, compResult, consensusResult, oarResult, obsResult, ratingsResult, devRecResult, assessorResult, exercisesResult, indicatorsResult] =
     await Promise.all([
@@ -49,11 +49,11 @@ export async function fetchReportData(
       devTipsMap.get(ind.competency_id)!.push(desc.replace("[DEV TIP] ", ""));
     }
   }
-  // For competencies without tips, reframe negative indicators as constructive development areas
+  // For competencies without [DEV TIP] entries, reframe negative indicators as constructive development areas
+  const compsWithTips = new Set(devTipsMap.keys());
   for (const ind of indicatorsResult.data ?? []) {
-    if (ind.indicator_type === "negative" && !devTipsMap.has(ind.competency_id)) {
+    if (ind.indicator_type === "negative" && !compsWithTips.has(ind.competency_id)) {
       if (!devTipsMap.has(ind.competency_id)) devTipsMap.set(ind.competency_id, []);
-      // Reframe: "Fails to X" becomes "Focus on developing the ability to X"
       const desc = ind.description as string;
       const reframed = desc.startsWith("Fails to") || desc.startsWith("Does not") || desc.startsWith("Ignores")
         ? `Focus on: ${desc.charAt(0).toLowerCase()}${desc.slice(1)}`
@@ -107,6 +107,13 @@ export async function fetchReportData(
     };
   });
 
+  // Sort competencies by domain → cluster name for professional grouping
+  competencies.sort((a, b) => {
+    if (a.domainName !== b.domainName) return a.domainName.localeCompare(b.domainName);
+    if (a.clusterName !== b.clusterName) return a.clusterName.localeCompare(b.clusterName);
+    return a.competencyName.localeCompare(b.competencyName);
+  });
+
   // Top strengths and development areas (by score)
   const sorted = [...competencies].sort((a, b) => (b.consensusScore ?? 0) - (a.consensusScore ?? 0));
   const topStrengths = sorted.filter((c) => (c.consensusScore ?? 0) >= 4).slice(0, 3).map((c) => c.competencyName);
@@ -130,14 +137,19 @@ export async function fetchReportData(
     return { competencyName: comp?.name ?? "Unknown", recommendation: dr.recommendation, priority: dr.priority };
   });
 
-  const startDate = eng.start_date ?? "";
-  const endDate = eng.end_date ?? "";
+  const formatDate = (d: string | null) => {
+    if (!d) return "";
+    try { return new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }); }
+    catch { return d; }
+  };
+  const startDate = formatDate(eng.start_date);
+  const endDate = formatDate(eng.end_date);
 
   return {
     engagementName: eng.name,
     organizationName: orgName,
     targetRole: eng.target_role,
-    assessmentDates: startDate && endDate ? `${startDate} to ${endDate}` : startDate || endDate || "TBD",
+    assessmentDates: startDate && endDate ? `${startDate} to ${endDate}` : startDate || endDate || "",
     exercisesUsed,
     candidateName: cand.full_name,
     candidateEmail: cand.email,

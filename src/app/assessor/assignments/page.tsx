@@ -1,8 +1,8 @@
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { EngagementPicker } from "@/components/shared/engagement-picker";
 
 export default async function AssessorAssignmentsListPage() {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
 
   const { data: engagements } = await supabase
     .from("engagements")

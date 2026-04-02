@@ -1,9 +1,9 @@
 "use server";
 
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 
 export async function updateExerciseAction(exerciseId: string, data: Record<string, unknown>) {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
   const { error } = await supabase
     .from("exercises")
     .update(data)
@@ -22,7 +22,7 @@ export async function saveRolePlayerPromptAction(data: {
   character_attitude?: string;
   meeting_objectives?: string;
 }) {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
 
   if (data.id) {
     const { error } = await supabase

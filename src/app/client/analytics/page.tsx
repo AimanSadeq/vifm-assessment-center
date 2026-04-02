@@ -1,4 +1,4 @@
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { getClientOrgId } from "@/lib/auth/get-org-id";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,25 +10,36 @@ const OAR_LABELS: Record<string, string> = {
   not_ready: "Not Ready",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function ClientAnalyticsPage() {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
 
   const orgId = await getClientOrgId();
-  // TODO: Join through engagements to filter by org when auth is enabled
-  const { data: oarData } = await supabase
-    .from("overall_assessment_ratings")
-    .select("overall_score, recommendation");
 
-  const { data: consensusData } = await supabase
-    .from("consensus_ratings")
-    .select("final_score, competency_id, competencies(name)");
+  // Get org-scoped engagement IDs first
+  let engQuery = supabase.from("engagements").select("id");
+  if (orgId) engQuery = engQuery.eq("organization_id", orgId);
+  const { data: engRows } = await engQuery;
+  const engIds = (engRows ?? []).map((e) => e.id);
 
-  const totalAssessed = oarData?.length ?? 0;
-  const readyNow = oarData?.filter((o) => o.recommendation === "ready_now").length ?? 0;
-  const readyDev = oarData?.filter((o) => o.recommendation === "ready_with_development").length ?? 0;
-  const notReady = oarData?.filter((o) => o.recommendation === "not_ready").length ?? 0;
+  // Scope OAR and consensus queries to org's engagements
+  const [oarResult, consensusResult] = engIds.length > 0
+    ? await Promise.all([
+        supabase.from("overall_assessment_ratings").select("overall_score, recommendation").in("engagement_id", engIds),
+        supabase.from("consensus_ratings").select("final_score, competency_id, competencies(name)").in("engagement_id", engIds),
+      ])
+    : [{ data: [] }, { data: [] }];
+
+  const oarData = oarResult.data ?? [];
+  const consensusData = consensusResult.data ?? [];
+
+  const totalAssessed = oarData.length;
+  const readyNow = oarData.filter((o) => o.recommendation === "ready_now").length;
+  const readyDev = oarData.filter((o) => o.recommendation === "ready_with_development").length;
+  const notReady = oarData.filter((o) => o.recommendation === "not_ready").length;
   const avgOar = totalAssessed > 0
-    ? (oarData!.reduce((sum, o) => sum + o.overall_score, 0) / totalAssessed).toFixed(1)
+    ? (oarData.reduce((sum, o) => sum + o.overall_score, 0) / totalAssessed).toFixed(1)
     : "—";
 
   // Competency strength/weakness analysis
@@ -94,7 +105,7 @@ export default async function ClientAnalyticsPage() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Strengths */}
         <Card>
           <CardHeader>

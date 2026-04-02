@@ -1,4 +1,4 @@
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { getClientOrgId } from "@/lib/auth/get-org-id";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,15 +19,26 @@ const OAR_LABELS: Record<string, string> = {
   not_ready: "Not Ready",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function ClientReportsPage() {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
 
   const orgId = await getClientOrgId();
 
-  const { data: oarData } = await supabase
+  // Get org-scoped engagement IDs first
+  let engIdQuery = supabase.from("engagements").select("id");
+  if (orgId) engIdQuery = engIdQuery.eq("organization_id", orgId);
+  const { data: engRows } = await engIdQuery;
+  const engIds = (engRows ?? []).map((e) => e.id);
+
+  // Scope OAR query to org's engagements
+  let oarQuery = supabase
     .from("overall_assessment_ratings")
     .select("*, candidates(full_name, email), engagements(name)")
     .order("created_at", { ascending: false });
+  if (engIds.length > 0) oarQuery = oarQuery.in("engagement_id", engIds);
+  const { data: oarData } = await oarQuery;
 
   // Get candidates scoped to this client's organization
   let candQuery = supabase

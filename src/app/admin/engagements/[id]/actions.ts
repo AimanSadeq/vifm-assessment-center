@@ -1,6 +1,6 @@
 "use server";
 
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import {
   addCandidateSchema,
   type AddCandidateValues,
@@ -12,7 +12,7 @@ export async function addCandidateAction(values: AddCandidateValues) {
   const parsed = addCandidateSchema.safeParse(values);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const supabase = createServiceClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("candidates")
     .insert({
@@ -33,7 +33,7 @@ export async function createAssignmentAction(values: CreateAssignmentValues) {
   const parsed = createAssignmentSchema.safeParse(values);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const supabase = createServiceClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("assessor_assignments")
     .insert({
@@ -75,12 +75,31 @@ export async function addDemoAssessorAction(values: {
     .select()
     .single();
 
-  if (error) return { error: error.message };
+  if (error) {
+    // Clean up orphaned auth user if profile insert fails
+    await supabase.auth.admin.deleteUser(authUser.user.id);
+    return { error: error.message };
+  }
+
   return { data };
 }
 
+export async function removeCandidateAction(candidateId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("candidates").delete().eq("id", candidateId);
+  if (error) return { error: error.message };
+  return { success: true };
+}
+
+export async function deleteAssignmentAction(assignmentId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("assessor_assignments").delete().eq("id", assignmentId);
+  if (error) return { error: error.message };
+  return { success: true };
+}
+
 export async function updateEngagementStatusAction(engagementId: string, status: string) {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
   const validStatuses = ["draft", "active", "completed", "archived"];
   if (!validStatuses.includes(status)) return { error: "Invalid status" };
 

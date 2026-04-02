@@ -33,7 +33,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { EXERCISE_TYPE_LABELS } from "@/lib/constants/exercise-types";
-import { addCandidateAction, createAssignmentAction, addDemoAssessorAction, updateEngagementStatusAction } from "../actions";
+import { addCandidateAction, createAssignmentAction, addDemoAssessorAction, updateEngagementStatusAction, removeCandidateAction, deleteAssignmentAction } from "../actions";
+import { Trash2 } from "lucide-react";
 
 type Props = {
   engagement: Record<string, unknown>;
@@ -76,6 +77,46 @@ export function EngagementDetail({
   const [assignExerciseId, setAssignExerciseId] = useState("");
   const [assigning, setAssigning] = useState(false);
 
+  // Status confirmation dialog
+  const [statusConfirm, setStatusConfirm] = useState<{ open: boolean; status: string; label: string }>({ open: false, status: "", label: "" });
+  const [statusUpdating, setStatusUpdating] = useState(false);
+
+  const handleStatusChange = async () => {
+    setStatusUpdating(true);
+    const result = await updateEngagementStatusAction(engagement.id as string, statusConfirm.status);
+    setStatusUpdating(false);
+    setStatusConfirm({ open: false, status: "", label: "" });
+    if ("error" in result && result.error) {
+      toast.error(typeof result.error === "string" ? result.error : "Failed to update status");
+    } else {
+      toast.success(`Engagement ${statusConfirm.label.toLowerCase()}d`);
+      router.refresh();
+    }
+  };
+
+  const handleRemoveCandidate = async (candidateId: string, name: string) => {
+    if (!confirm(`Remove candidate "${name}"? This will also delete their assignments.`)) return;
+    const result = await removeCandidateAction(candidateId);
+    if ("error" in result && result.error) {
+      toast.error(typeof result.error === "string" ? result.error : "Failed to remove candidate");
+    } else {
+      setCandidates((prev) => prev.filter((c) => (c.id as string) !== candidateId));
+      toast.success("Candidate removed");
+      router.refresh();
+    }
+  };
+
+  const handleDeleteAssignment = async (assignmentId: string) => {
+    if (!confirm("Delete this assignment?")) return;
+    const result = await deleteAssignmentAction(assignmentId);
+    if ("error" in result && result.error) {
+      toast.error(typeof result.error === "string" ? result.error : "Failed to delete assignment");
+    } else {
+      setAssignments((prev) => prev.filter((a) => (a.id as string) !== assignmentId));
+      toast.success("Assignment deleted");
+    }
+  };
+
   const orgName =
     engagement.organizations &&
     typeof engagement.organizations === "object" &&
@@ -116,6 +157,9 @@ export function EngagementDetail({
       setAssessorDialogOpen(false);
       setAssessorName("");
       setAssessorEmail("");
+      toast.success("Assessor created");
+    } else if ("error" in result) {
+      toast.error(typeof result.error === "string" ? result.error : "Failed to create assessor");
     }
   };
 
@@ -134,7 +178,16 @@ export function EngagementDetail({
       setAssignAssessorId("");
       setAssignCandidateId("");
       setAssignExerciseId("");
+      toast.success("Assignment created");
       router.refresh();
+    } else if ("error" in result) {
+      const msg = typeof result.error === "string" ? result.error : "Failed to create assignment";
+      // Friendlier message for duplicate constraint
+      if (msg.includes("duplicate") || msg.includes("unique")) {
+        toast.error("This assignment already exists");
+      } else {
+        toast.error(msg);
+      }
     }
   };
 
@@ -150,17 +203,17 @@ export function EngagementDetail({
           {/* Status transitions */}
           <div className="flex gap-1 ms-auto">
             {engagement.status === "draft" && (
-              <Button size="sm" variant="default" onClick={async () => { await updateEngagementStatusAction(engagement.id as string, "active"); router.refresh(); }}>
+              <Button size="sm" variant="default" onClick={() => setStatusConfirm({ open: true, status: "active", label: "Activate" })}>
                 Activate
               </Button>
             )}
             {engagement.status === "active" && (
-              <Button size="sm" variant="outline" onClick={async () => { await updateEngagementStatusAction(engagement.id as string, "completed"); router.refresh(); }}>
+              <Button size="sm" variant="outline" onClick={() => setStatusConfirm({ open: true, status: "completed", label: "Complete" })}>
                 Mark Complete
               </Button>
             )}
             {engagement.status === "completed" && (
-              <Button size="sm" variant="ghost" onClick={async () => { await updateEngagementStatusAction(engagement.id as string, "archived"); router.refresh(); }}>
+              <Button size="sm" variant="ghost" onClick={() => setStatusConfirm({ open: true, status: "archived", label: "Archive" })}>
                 Archive
               </Button>
             )}
@@ -240,6 +293,7 @@ export function EngagementDetail({
                       <TableHead>Name</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead className="w-12"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -251,6 +305,16 @@ export function EngagementDetail({
                         <TableCell>{c.email as string}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{c.status as string}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                            onClick={() => handleRemoveCandidate(c.id as string, c.full_name as string)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -384,6 +448,7 @@ export function EngagementDetail({
                       <TableHead>Assessor</TableHead>
                       <TableHead>Candidate</TableHead>
                       <TableHead>Exercise</TableHead>
+                      <TableHead className="w-12"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -397,6 +462,16 @@ export function EngagementDetail({
                           <TableCell>{cand?.full_name as string ?? "—"}</TableCell>
                           <TableCell>
                             <Badge variant="outline">{ex?.name as string ?? "—"}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                              onClick={() => handleDeleteAssignment(a.id as string)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
                           </TableCell>
                         </TableRow>
                       );
@@ -498,6 +573,26 @@ export function EngagementDetail({
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Status confirmation dialog */}
+      <Dialog open={statusConfirm.open} onOpenChange={(open) => !open && setStatusConfirm({ open: false, status: "", label: "" })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Status Change</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Are you sure you want to {statusConfirm.label.toLowerCase()} this engagement? This action changes the engagement status to <strong>{statusConfirm.status}</strong>.
+          </p>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setStatusConfirm({ open: false, status: "", label: "" })}>
+              Cancel
+            </Button>
+            <Button onClick={handleStatusChange} disabled={statusUpdating}>
+              {statusUpdating ? "Updating..." : statusConfirm.label}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { BackLink } from "@/components/shared/back-link";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,7 +20,7 @@ type Props = {
 };
 
 export default async function WashupEngagementPage({ params }: Props) {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
   const { engagementId } = params;
 
   const [engResult, candsResult, compsResult, consensusResult, oarResult] =

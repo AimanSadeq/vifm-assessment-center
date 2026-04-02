@@ -1,5 +1,6 @@
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
+import { BackLink } from "@/components/shared/back-link";
 import { EngagementDetail } from "./_components/engagement-detail";
 
 type Props = {
@@ -7,7 +8,7 @@ type Props = {
 };
 
 export default async function EngagementDetailPage({ params }: Props) {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
   const { id } = params;
 
   const [engResult, candsResult, exercisesResult, assignmentsResult, assessorsResult, matrixResult] =
@@ -56,6 +57,7 @@ export default async function EngagementDetailPage({ params }: Props) {
 
   return (
     <div>
+      <BackLink href="/admin/engagements" label="Back to Engagements" />
       <EngagementDetail
         engagement={engagement}
         candidates={candidates}

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 import type { Organization, Exercise, CompetencyTree } from "@/types/database";
 import { useWizard, useWizardDispatch } from "./wizard-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -75,6 +76,7 @@ export function StepReview({
     }
 
     // Redirect to the newly created engagement detail page
+    toast.success("Engagement created successfully");
     const engId = "data" in result && result.data ? (result.data as { id: string }).id : null;
     router.push(engId ? `/admin/engagements/${engId}` : "/admin/engagements");
   };

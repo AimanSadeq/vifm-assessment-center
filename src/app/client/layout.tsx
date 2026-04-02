@@ -14,6 +14,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
+import { LogoutButton } from "@/components/shared/logout-button";
 
 const navLinks: { href: string; label: string; icon: LucideIcon; exact: boolean }[] = [
   { href: "/client", label: "Dashboard", icon: LayoutDashboard, exact: true },
@@ -70,9 +71,9 @@ export default function ClientLayout({
               <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center">
                 <Building2 className="h-4 w-4 text-accent-foreground" />
               </div>
-              {/* TODO: Replace with authenticated client organization name */}
               <span className="text-sm text-muted-foreground">Client</span>
             </div>
+            <LogoutButton />
           </div>
         </div>
       </header>

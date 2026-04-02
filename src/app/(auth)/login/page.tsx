@@ -22,6 +22,8 @@ import {
   Building2,
   LogIn,
   Mail,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 export default function LoginPage() {
@@ -30,7 +32,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showDevBypass, setShowDevBypass] = useState(false);
+  const [showAuthForm, setShowAuthForm] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +53,6 @@ export default function LoginPage() {
       return;
     }
 
-    // Redirect based on user role
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       const { data: profile } = await supabase
@@ -61,21 +62,12 @@ export default function LoginPage() {
         .single();
 
       switch (profile?.role) {
-        case "admin":
-          router.push("/admin");
-          break;
+        case "admin": router.push("/admin"); break;
         case "lead_assessor":
-        case "associate_assessor":
-          router.push("/assessor");
-          break;
-        case "candidate":
-          router.push("/candidate");
-          break;
-        case "client":
-          router.push("/client");
-          break;
-        default:
-          router.push("/admin");
+        case "associate_assessor": router.push("/assessor"); break;
+        case "candidate": router.push("/candidate"); break;
+        case "client": router.push("/client"); break;
+        default: router.push("/admin");
       }
     } else {
       router.push("/admin");
@@ -83,10 +75,7 @@ export default function LoginPage() {
   };
 
   const handleMagicLink = async () => {
-    if (!email) {
-      setError("Enter your email address first");
-      return;
-    }
+    if (!email) { setError("Enter your email address first"); return; }
     setLoading(true);
     setError(null);
 
@@ -97,13 +86,8 @@ export default function LoginPage() {
     });
 
     setLoading(false);
-
-    if (authError) {
-      setError(authError.message);
-    } else {
-      setError(null);
-      alert("Check your email for a login link.");
-    }
+    if (authError) { setError(authError.message); }
+    else { alert("Check your email for a login link."); }
   };
 
   return (
@@ -112,102 +96,104 @@ export default function LoginPage() {
         <CardHeader>
           <CardTitle className="text-xl">Sign In</CardTitle>
           <CardDescription>
-            Welcome to the VIFM Assessment Center Portal.
+            Welcome to the VIFM Assessment Center Portal. Select your role to continue.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@vifm.ae"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-
-            {error && (
-              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-                {error}
-              </div>
-            )}
-
-            <Button type="submit" disabled={loading} className="w-full gap-2" size="lg">
-              <LogIn className="h-4 w-4" />
-              {loading ? "Signing in..." : "Sign In"}
+        <CardContent className="space-y-3">
+          {/* Role selection — primary entry point */}
+          <Link href="/admin">
+            <Button variant="default" className="w-full justify-start gap-3" size="lg">
+              <Shield className="h-5 w-5" />
+              Sign in as Admin
             </Button>
+          </Link>
 
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleMagicLink}
-              disabled={loading}
-              className="w-full gap-2"
-            >
-              <Mail className="h-4 w-4" />
-              Sign in with Magic Link
+          <Link href="/assessor">
+            <Button variant="outline" className="w-full justify-start gap-3" size="lg">
+              <ClipboardCheck className="h-5 w-5" />
+              Sign in as Assessor
             </Button>
+          </Link>
 
-            <div className="text-center">
-              <Link href="/password-reset" className="text-xs text-muted-foreground hover:underline">
-                Forgot password?
-              </Link>
-            </div>
-          </form>
+          <Link href="/candidate">
+            <Button variant="outline" className="w-full justify-start gap-3" size="lg">
+              <Users className="h-5 w-5" />
+              Sign in as Candidate
+            </Button>
+          </Link>
 
-          <Separator className="my-4" />
+          <Link href="/client">
+            <Button variant="outline" className="w-full justify-start gap-3" size="lg">
+              <Building2 className="h-5 w-5" />
+              Sign in as Client
+            </Button>
+          </Link>
 
-          {/* Dev bypass — hidden by default */}
+          <Separator />
+
+          {/* Email/password form — expandable for when auth is enabled */}
           <button
             type="button"
-            onClick={() => setShowDevBypass(!showDevBypass)}
-            className="text-[10px] text-muted-foreground/50 hover:text-muted-foreground w-full text-center"
+            onClick={() => setShowAuthForm(!showAuthForm)}
+            className="flex items-center justify-center gap-1.5 w-full text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
           >
-            {showDevBypass ? "Hide dev options" : "Dev options"}
+            {showAuthForm ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            Sign in with email & password
           </button>
 
-          {showDevBypass && (
-            <div className="mt-3 space-y-2">
-              <p className="text-[10px] text-muted-foreground text-center">
-                Development bypass — no authentication
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                <Link href="/admin">
-                  <Button variant="ghost" size="sm" className="w-full gap-1.5 text-xs">
-                    <Shield className="h-3 w-3" /> Admin
-                  </Button>
-                </Link>
-                <Link href="/assessor">
-                  <Button variant="ghost" size="sm" className="w-full gap-1.5 text-xs">
-                    <ClipboardCheck className="h-3 w-3" /> Assessor
-                  </Button>
-                </Link>
-                <Link href="/candidate">
-                  <Button variant="ghost" size="sm" className="w-full gap-1.5 text-xs">
-                    <Users className="h-3 w-3" /> Candidate
-                  </Button>
-                </Link>
-                <Link href="/client">
-                  <Button variant="ghost" size="sm" className="w-full gap-1.5 text-xs">
-                    <Building2 className="h-3 w-3" /> Client
-                  </Button>
+          {showAuthForm && (
+            <form onSubmit={handleLogin} className="space-y-3 pt-2">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@vifm.ae"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+
+              {error && (
+                <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                  {error}
+                </div>
+              )}
+
+              <Button type="submit" disabled={loading} className="w-full gap-2">
+                <LogIn className="h-4 w-4" />
+                {loading ? "Signing in..." : "Sign In"}
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleMagicLink}
+                disabled={loading}
+                className="w-full gap-2"
+              >
+                <Mail className="h-4 w-4" />
+                Sign in with Magic Link
+              </Button>
+
+              <div className="text-center">
+                <Link href="/password-reset" className="text-xs text-muted-foreground hover:underline">
+                  Forgot password?
                 </Link>
               </div>
-            </div>
+            </form>
           )}
         </CardContent>
       </Card>

@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
 import { VifmLogo } from "@/components/shared/vifm-logo";
+import { LogoutButton } from "@/components/shared/logout-button";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -107,6 +108,7 @@ export default function AdminLayout({
               <p className="text-[10px]">admin@vifm.ae</p>
             </div>
           )}
+          <LogoutButton variant="sidebar" />
         </div>
       </div>
     </>

@@ -12,6 +12,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
+import { LogoutButton } from "@/components/shared/logout-button";
 
 const navLinks: { href: string; label: string; icon: LucideIcon; exact: boolean }[] = [
   { href: "/assessor", label: "Assignments", icon: ClipboardCheck, exact: true },
@@ -66,9 +67,9 @@ export default function AssessorLayout({
               <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
                 <UserCircle className="h-5 w-5 text-primary" />
               </div>
-              {/* TODO: Replace with authenticated user name */}
               <span className="text-sm text-muted-foreground">Assessor</span>
             </div>
+            <LogoutButton />
           </div>
         </div>
       </header>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Shield } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
+import { LogoutButton } from "@/components/shared/logout-button";
 
 export default function CandidateLayout({
   children,
@@ -10,11 +11,12 @@ export default function CandidateLayout({
   return (
     <div className="min-h-screen bg-muted/30 flex flex-col">
       <header className="border-b bg-card shadow-sm px-6 py-4">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-3xl mx-auto flex items-center justify-between">
           <Link href="/candidate" className="flex items-center gap-3">
             <VifmLogo variant="color" size="sm" />
             <p className="text-xs text-muted-foreground">Candidate Portal</p>
           </Link>
+          <LogoutButton />
         </div>
       </header>
       <main className="mx-auto max-w-3xl p-6 flex-1">{children}</main>

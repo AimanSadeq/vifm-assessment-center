@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Shield } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { LogoutButton } from "@/components/shared/logout-button";
+import { LanguageSwitcher } from "@/components/shared/language-switcher";
 
 export default function CandidateLayout({
   children,
@@ -16,7 +17,10 @@ export default function CandidateLayout({
             <VifmLogo variant="color" size="sm" />
             <p className="text-xs text-muted-foreground">Candidate Portal</p>
           </Link>
-          <LogoutButton />
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <LogoutButton />
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-3xl p-6 flex-1">{children}</main>

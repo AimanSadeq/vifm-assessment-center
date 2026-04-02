@@ -110,7 +110,7 @@ export default async function ClientReportsPage() {
                           )}
                         </TableCell>
                         <TableCell>
-                          {eng ? (
+                          {eng && oar ? (
                             <a
                               href={`/api/reports/${eng.id}/${c.id}`}
                               target="_blank"
@@ -120,7 +120,9 @@ export default async function ClientReportsPage() {
                                 Download PDF
                               </Button>
                             </a>
-                          ) : null}
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Not released</span>
+                          )}
                         </TableCell>
                       </TableRow>
                     );

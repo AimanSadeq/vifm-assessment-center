@@ -8,7 +8,10 @@ export default function AuthLayout({
   return (
     <div className="flex min-h-screen">
       {/* Brand panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-primary items-center justify-center p-12">
+      <div
+        className="hidden lg:flex lg:w-1/2 items-center justify-center p-12"
+        style={{ background: "radial-gradient(ellipse at 60% 40%, #121140 0%, #010131 70%)" }}
+      >
         <div className="max-w-md text-center">
           <div className="mx-auto mb-8">
             <VifmLogo variant="white" size="lg" />

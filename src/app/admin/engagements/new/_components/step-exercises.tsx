@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import type { Exercise } from "@/types/database";
 import { useWizard, useWizardDispatch } from "./wizard-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -71,6 +72,9 @@ export function StepExercises({ exercises: initialExercises }: Props) {
       setNewType("");
       setNewDuration("");
       setNewDescription("");
+      toast.success("Exercise created");
+    } else if ("error" in result) {
+      toast.error(typeof result.error === "string" ? result.error : "Failed to create exercise");
     }
   };
 

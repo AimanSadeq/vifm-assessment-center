@@ -14,8 +14,8 @@ const EXERCISE_LABELS: Record<string, string> = {
 };
 
 const C = {
-  primary: "#010131", accent: "#5391D5", gold: "#c4a35a",
-  text: "#333333", textLight: "#666666", bg: "#ffffff", bgLight: "#f4f6f8",
+  primary: "#010131", accent: "#5391D5", navy: "#121140",
+  text: "#333333", textLight: "#666666", metaLight: "#8899bb", bg: "#ffffff", bgLight: "#f4f6f8",
   border: "#dde1e6", positive: "#16a34a", negative: "#dc2626",
   bar1: "#dc2626", bar2: "#f97316", bar3: "#5391D5", bar4: "#22c55e", bar5: "#15803d",
 };
@@ -27,7 +27,7 @@ const s = StyleSheet.create({
   coverConfidential: { fontSize: 8, color: C.accent, letterSpacing: 3, marginBottom: 30 },
   coverTitle: { fontSize: 28, color: "#ffffff", fontFamily: "Helvetica-Bold", marginBottom: 6 },
   coverSubtitle: { fontSize: 14, color: C.accent, marginBottom: 4 },
-  coverMeta: { fontSize: 10, color: "#aaaaaa", marginTop: 16 },
+  coverMeta: { fontSize: 10, color: C.metaLight, marginTop: 16 },
   coverDetails: { paddingHorizontal: 60, paddingTop: 36 },
   coverRow: { flexDirection: "row", marginBottom: 6 },
   coverLabel: { width: 130, fontSize: 10, color: C.textLight },
@@ -46,7 +46,7 @@ const s = StyleSheet.create({
   // Score bar
   barRow: { flexDirection: "row", alignItems: "center", marginBottom: 6 },
   barName: { fontSize: 9, width: 140 },
-  barTrack: { flex: 1, height: 7, backgroundColor: "#e5e7eb", borderRadius: 3, marginRight: 6 },
+  barTrack: { flex: 1, height: 7, backgroundColor: C.bgLight, borderRadius: 3, marginRight: 6 },
   barFill: { height: 7, borderRadius: 3 },
   barLabel: { fontSize: 8, color: C.textLight, width: 50 },
   // Competency card
@@ -64,7 +64,7 @@ const s = StyleSheet.create({
   evExercise: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.accent, marginRight: 4 },
   evText: { flex: 1, fontSize: 8.5, lineHeight: 1.4, color: C.text },
   // Exercise rating row
-  exRatRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 2, borderBottomWidth: 0.5, borderBottomColor: "#f0f0f0" },
+  exRatRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 2, borderBottomWidth: 0.5, borderBottomColor: C.border },
   exRatName: { fontSize: 8.5, color: C.text },
   exRatScore: { fontSize: 8.5, fontFamily: "Helvetica-Bold" },
   // Dev tips

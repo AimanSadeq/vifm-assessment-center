@@ -67,7 +67,7 @@ export default async function AssessorAssignmentGridPage({ params }: Props) {
   return (
     <div>
       <div className="mb-6">
-        <BackLink href="/assessor" label="Back to Engagements" />
+        <BackLink href="/assessor/assignments" label="Back to Engagements" />
         <h1 className="mt-2 text-2xl font-bold">{engagement.name}</h1>
         <p className="text-sm text-muted-foreground">{orgName}</p>
       </div>

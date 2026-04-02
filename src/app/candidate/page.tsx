@@ -41,8 +41,8 @@ export default async function CandidateDashboardPage() {
         totalSteps={steps.length}
       />
 
-      {/* Candidate selector for dev mode */}
-      {candidates.length > 1 && (
+      {/* Candidate selector — dev mode only, hidden in production */}
+      {process.env.NODE_ENV === "development" && candidates.length > 1 && (
         <div>
           <h2 className="text-lg font-semibold mb-3">Select Your Profile</h2>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">

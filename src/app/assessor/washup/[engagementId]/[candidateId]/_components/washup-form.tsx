@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -103,6 +103,7 @@ export function WashupForm({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [realtimeActive, setRealtimeActive] = useState(false);
   const [lastExternalUpdate, setLastExternalUpdate] = useState<string | null>(null);
+  const lastSavedByMe = React.useRef<string | null>(null);
 
   // Supabase Realtime — subscribe to consensus_ratings changes for this candidate
   useEffect(() => {
@@ -132,7 +133,11 @@ export function WashupForm({
             [compId]: { score, notes },
           }));
           setLastExternalUpdate(new Date().toLocaleTimeString());
-          toast.info("A colleague updated a consensus rating");
+          // Only show notification if this wasn't our own save
+          if (lastSavedByMe.current !== compId) {
+            toast.info("A colleague updated a consensus rating");
+          }
+          lastSavedByMe.current = null;
         }
       )
       .on(
@@ -168,6 +173,7 @@ export function WashupForm({
     if (!c || !c.score) return;
     setSavingId(competencyId);
     setSaveError(null);
+    lastSavedByMe.current = competencyId;
     const result = await saveConsensusRatingAction({
       engagementId,
       candidateId,

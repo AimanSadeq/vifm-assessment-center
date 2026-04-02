@@ -61,7 +61,9 @@
       "Bash(python scripts/office/unpack.py \"C:\\\\Users\\\\AimanSadeq\\\\Downloads\\\\Assessment Centers Solution \\(ACs\\)\\\\Interview-Assessor Guide.docx\" /tmp/interview-guide-unpacked/)",
       "Bash(python scripts/office/unpack.py \"C:\\\\Users\\\\AimanSadeq\\\\Downloads\\\\Assessment Centers Solution \\(ACs\\)\\\\Business Simulation-Assessor Guide.docx\" /tmp/biz-sim-guide-unpacked/)",
       "Skill(commit-commands:commit-push-pr)",
-      "Skill(commit-commands:commit-push-pr:*)"
+      "Skill(commit-commands:commit-push-pr:*)",
+      "Bash(gh repo:*)",
+      "Bash(start \"\" \"C:\\\\Users\\\\AimanSadeq\\\\OneDrive - Virginia Institute of Finance\\\\VIFM ASSESSMENT CENTER\\\\VIFM_AC_Portal_Production_Checklist.pdf\")"
     ]
   }
 }

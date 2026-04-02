@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { BackLink } from "@/components/shared/back-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -60,7 +61,7 @@ export function IntegrationForm({
     const w = worksheets[competencyId];
     if (!w || !w.rating) return;
     setSavingId(competencyId);
-    await saveIntegrationAction({
+    const result = await saveIntegrationAction({
       engagementId,
       assessorId,
       candidateId,
@@ -69,6 +70,11 @@ export function IntegrationForm({
       notes: w.notes || undefined,
     });
     setSavingId(null);
+    if ("error" in result) {
+      toast.error("Failed to save worksheet");
+    } else {
+      toast.success("Worksheet saved");
+    }
   };
 
   const completedCount = Object.values(worksheets).filter((w) => w.rating > 0).length;

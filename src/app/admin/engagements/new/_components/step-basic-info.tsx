@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import type { Organization } from "@/types/database";
 import { useWizard, useWizardDispatch } from "./wizard-context";
 import { Input } from "@/components/ui/input";
@@ -67,6 +68,9 @@ export function StepBasicInfo({ organizations: initialOrgs }: Props) {
       setNewOrgName("");
       setNewOrgIndustry("");
       setNewOrgCountry("");
+      toast.success("Organization created");
+    } else if ("error" in result) {
+      toast.error(typeof result.error === "string" ? result.error : "Failed to create organization");
     }
   };
 

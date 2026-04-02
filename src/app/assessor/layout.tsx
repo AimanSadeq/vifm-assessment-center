@@ -33,7 +33,7 @@ export default function AssessorLayout({
 
   return (
     <div className="min-h-screen">
-      <header className="border-b bg-card shadow-sm">
+      <header className="border-b-2 border-b-accent bg-card shadow-sm">
         <div className="flex h-16 items-center px-6">
           <Link href="/assessor" className="flex items-center gap-3">
             <VifmLogo variant="color" size="sm" />

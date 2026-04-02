@@ -74,7 +74,9 @@ export function StepReview({
       return;
     }
 
-    router.push("/admin/engagements");
+    // Redirect to the newly created engagement detail page
+    const engId = "data" in result && result.data ? (result.data as { id: string }).id : null;
+    router.push(engId ? `/admin/engagements/${engId}` : "/admin/engagements");
   };
 
   return (

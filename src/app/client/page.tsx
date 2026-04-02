@@ -1,12 +1,18 @@
 export const dynamic = "force-dynamic";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getClientOrgId } from "@/lib/auth/get-org-id";
 import { ProcessMap, type ProcessStep } from "@/components/shared/process-map";
 
 export default async function ClientDashboardPage() {
   const supabase = createServiceClient();
+  const orgId = await getClientOrgId();
+
+  // Scope all queries to the client's organization
+  let engQuery = supabase.from("engagements").select("id");
+  if (orgId) engQuery = engQuery.eq("organization_id", orgId);
 
   const [engR, candR, oarR, repR] = await Promise.all([
-    supabase.from("engagements").select("id"),
+    engQuery,
     supabase.from("candidates").select("id"),
     supabase.from("overall_assessment_ratings").select("id"),
     supabase.from("candidate_reports").select("id, status"),

@@ -26,16 +26,39 @@ export async function POST(
       );
     }
 
+    // Validate all consents are true
+    const allConsented = consents.every((c) => c.consented === true);
+    if (!allConsented) {
+      return NextResponse.json(
+        { error: "All consent items must be accepted to proceed" },
+        { status: 400 }
+      );
+    }
+
     const supabase = createServiceClient();
+
+    // Idempotency: check if consent already exists for this candidate
+    const { data: existing } = await supabase
+      .from("consent_records")
+      .select("id")
+      .eq("candidate_id", params.candidateId)
+      .limit(1);
+
+    if (existing && existing.length > 0) {
+      // Already consented — just return success
+      return NextResponse.json({ success: true });
+    }
+
+    const now = new Date();
+    const expiresAt = new Date(now);
+    expiresAt.setFullYear(expiresAt.getFullYear() + 2); // Proper 2-year calculation
 
     const rows = consents.map((c) => ({
       candidate_id: params.candidateId,
       consent_type: c.consent_type,
       consented: c.consented,
-      consented_at: new Date().toISOString(),
-      expires_at: new Date(
-        Date.now() + 2 * 365 * 24 * 60 * 60 * 1000
-      ).toISOString(), // 2-year retention
+      consented_at: now.toISOString(),
+      expires_at: expiresAt.toISOString(),
     }));
 
     const { error } = await supabase.from("consent_records").insert(rows);

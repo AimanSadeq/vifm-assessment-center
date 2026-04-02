@@ -122,7 +122,11 @@ export function ObservationForm({
   };
 
   const handleDeleteObservation = async (obsId: string) => {
-    await deleteObservationAction(obsId);
+    const result = await deleteObservationAction(obsId);
+    if ("error" in result) {
+      toast.error("Failed to delete observation");
+      return;
+    }
     setObservations((prev) => prev.filter((o) => o.id !== obsId));
   };
 
@@ -226,7 +230,7 @@ export function ObservationForm({
               <div className="grid grid-cols-5 gap-1 text-[10px] text-center">
                 <div className="rounded bg-red-50 p-1.5"><span className="font-bold text-red-600">1</span><br/>Significant Development Needed</div>
                 <div className="rounded bg-orange-50 p-1.5"><span className="font-bold text-orange-600">2</span><br/>Development Needed</div>
-                <div className="rounded bg-blue-50 p-1.5"><span className="font-bold text-accent">3</span><br/>Competent</div>
+                <div className="rounded bg-accent/10 p-1.5"><span className="font-bold text-accent">3</span><br/>Competent</div>
                 <div className="rounded bg-green-50 p-1.5"><span className="font-bold text-green-600">4</span><br/>Strength</div>
                 <div className="rounded bg-green-100 p-1.5"><span className="font-bold text-green-700">5</span><br/>Significant Strength</div>
               </div>

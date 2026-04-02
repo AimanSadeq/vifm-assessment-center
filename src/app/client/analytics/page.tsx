@@ -61,7 +61,7 @@ export default async function ClientAnalyticsPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="pt-6">
             <p className="text-2xl font-bold">{totalAssessed}</p>
@@ -76,14 +76,20 @@ export default async function ClientAnalyticsPage() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <p className="text-2xl font-bold text-green-600">{readyNow}</p>
+            <p className="text-2xl font-bold text-accent">{readyNow}</p>
             <p className="text-sm text-muted-foreground">Ready Now</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <p className="text-2xl font-bold text-yellow-600">{readyDev}</p>
-            <p className="text-sm text-muted-foreground">Ready with Development</p>
+            <p className="text-2xl font-bold text-amber-600">{readyDev}</p>
+            <p className="text-sm text-muted-foreground">Ready with Dev.</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-2xl font-bold text-destructive">{notReady}</p>
+            <p className="text-sm text-muted-foreground">Not Ready</p>
           </CardContent>
         </Card>
       </div>
@@ -109,7 +115,7 @@ export default async function ClientAnalyticsPage() {
                     <span className="text-sm flex-1">{c.name}</span>
                     <div className="w-24 h-2 rounded-full bg-muted overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-green-500"
+                        className="h-full rounded-full bg-accent"
                         style={{ width: `${(c.avg / 5) * 100}%` }}
                       />
                     </div>
@@ -141,7 +147,7 @@ export default async function ClientAnalyticsPage() {
                     <span className="text-sm flex-1">{c.name}</span>
                     <div className="w-24 h-2 rounded-full bg-muted overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-orange-500"
+                        className="h-full rounded-full bg-destructive/70"
                         style={{ width: `${(c.avg / 5) * 100}%` }}
                       />
                     </div>

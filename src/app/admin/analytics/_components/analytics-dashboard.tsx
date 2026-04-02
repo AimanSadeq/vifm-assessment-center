@@ -125,7 +125,7 @@ export function AnalyticsDashboard({
                 <XAxis dataKey="score" fontSize={10} />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="count" fill="#1a1a2e" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="count" fill="#010131" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -152,8 +152,8 @@ export function AnalyticsDashboard({
                   <Radar
                     name="Average"
                     dataKey="average"
-                    stroke="#c4a35a"
-                    fill="#c4a35a"
+                    stroke="#5391D5"
+                    fill="#5391D5"
                     fillOpacity={0.3}
                   />
                 </RadarChart>
@@ -216,7 +216,7 @@ export function AnalyticsDashboard({
                         variant="outline"
                         className={
                           Math.abs(m.leniencyBias) > 0.5
-                            ? "text-red-600 border-red-200"
+                            ? "text-red-600 border-red-300 bg-red-50"
                             : ""
                         }
                       >
@@ -229,7 +229,7 @@ export function AnalyticsDashboard({
                         variant="outline"
                         className={
                           m.centralTendencyBias > 0.6
-                            ? "text-yellow-600 border-yellow-200"
+                            ? "text-amber-700 border-amber-300 bg-amber-50"
                             : ""
                         }
                       >
@@ -241,7 +241,7 @@ export function AnalyticsDashboard({
                         variant="outline"
                         className={
                           m.haloEffect > 0.6
-                            ? "text-orange-600 border-orange-200"
+                            ? "text-orange-600 border-orange-300 bg-orange-50"
                             : ""
                         }
                       >

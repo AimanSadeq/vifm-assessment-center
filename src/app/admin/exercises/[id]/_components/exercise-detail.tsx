@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -46,7 +47,7 @@ export function ExerciseDetail({ exercise, rolePlayerPrompts }: Props) {
 
   const handleSaveExercise = async () => {
     setSaving(true);
-    await updateExerciseAction(exercise.id as string, {
+    const result = await updateExerciseAction(exercise.id as string, {
       description,
       instructions,
       prep_minutes: prepMinutes ? Number(prepMinutes) : null,
@@ -57,6 +58,11 @@ export function ExerciseDetail({ exercise, rolePlayerPrompts }: Props) {
       assessor_notes: assessorNotes || null,
     });
     setSaving(false);
+    if ("error" in result) {
+      toast.error(typeof result.error === "string" ? result.error : "Failed to save");
+    } else {
+      toast.success("Exercise saved");
+    }
     router.refresh();
   };
 

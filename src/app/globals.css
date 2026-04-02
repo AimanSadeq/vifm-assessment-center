@@ -1,94 +1,92 @@
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+@layer base {
+  :root {
+    /* VIFM Brand Kit Colors:
+       Off-White: #FEFFF9
+       Dark Blue: #111232
+       Primary Blue: #010131
+       Accent Blue: #5391D5
+       Navy Blue: #121140
+    */
+    --background: 60 100% 99%;      /* #FEFFF9 Off-White */
+    --foreground: 237 51% 13%;       /* #111232 Dark Blue */
+    --card: 0 0% 100%;
+    --card-foreground: 237 51% 13%;  /* #111232 */
+    --popover: 0 0% 100%;
+    --popover-foreground: 237 51% 13%;
+    --primary: 240 97% 10%;          /* #010131 Primary Blue */
+    --primary-foreground: 60 100% 99%; /* #FEFFF9 Off-White */
+    --secondary: 220 14% 94%;
+    --secondary-foreground: 240 97% 10%;
+    --muted: 220 14% 95%;
+    --muted-foreground: 220 9% 46%;
+    --accent: 212 62% 58%;           /* #5391D5 Accent Blue */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 13% 88%;
+    --input: 220 13% 88%;
+    --ring: 240 97% 10%;             /* #010131 */
+    --radius: 0.5rem;
+    --chart-1: 240 97% 20%;
+    --chart-2: 212 62% 58%;          /* #5391D5 Accent Blue */
+    --chart-3: 173 58% 39%;
+    --chart-4: 12 76% 61%;
+    --chart-5: 262 52% 47%;
+    --sidebar-background: 240 97% 10%;  /* #010131 Primary Blue */
+    --sidebar-foreground: 60 100% 95%;
+    --sidebar-primary: 212 62% 58%;     /* #5391D5 Accent Blue */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 237 60% 16%;      /* #121140 Navy Blue */
+    --sidebar-accent-foreground: 60 100% 95%;
+    --sidebar-border: 237 50% 20%;
+    --sidebar-ring: 212 62% 58%;
+  }
+
+  .dark {
+    --background: 240 97% 5%;
+    --foreground: 60 100% 95%;
+    --card: 240 97% 8%;
+    --card-foreground: 60 100% 95%;
+    --popover: 240 97% 8%;
+    --popover-foreground: 60 100% 95%;
+    --primary: 212 62% 58%;          /* #5391D5 Accent Blue as primary in dark mode */
+    --primary-foreground: 240 97% 10%;
+    --secondary: 237 30% 14%;
+    --secondary-foreground: 60 100% 95%;
+    --muted: 237 30% 14%;
+    --muted-foreground: 220 9% 55%;
+    --accent: 212 62% 58%;
+    --accent-foreground: 240 97% 10%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 237 30% 18%;
+    --input: 237 30% 18%;
+    --ring: 212 62% 58%;
+    --chart-1: 212 62% 58%;
+    --chart-2: 240 97% 30%;
+    --chart-3: 173 58% 39%;
+    --chart-4: 12 76% 61%;
+    --chart-5: 262 52% 47%;
+    --sidebar-background: 240 97% 5%;
+    --sidebar-foreground: 60 100% 90%;
+    --sidebar-primary: 212 62% 58%;
+    --sidebar-primary-foreground: 240 97% 5%;
+    --sidebar-accent: 237 40% 12%;
+    --sidebar-accent-foreground: 60 100% 90%;
+    --sidebar-border: 237 30% 14%;
+    --sidebar-ring: 212 62% 58%;
   }
 }
 
 @layer base {
-  .theme {
-    --font-heading: var(--font-sans);
-    --font-sans: var(--font-sans);
-  }
-  :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
-  }
-  .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
-  }
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
-  }
-  html {
-    @apply font-sans;
   }
 }

@@ -1,0 +1,169 @@
+{
+  "common": {
+    "appName": "مركز تقييم VIFM",
+    "vifm": "معهد فرجينيا للتمويل والإدارة",
+    "loading": "جاري التحميل...",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "back": "رجوع",
+    "next": "التالي",
+    "create": "إنشاء",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "search": "بحث",
+    "noData": "لا توجد بيانات متاحة.",
+    "confirm": "تأكيد",
+    "status": "الحالة",
+    "actions": "الإجراءات",
+    "confidential": "سري"
+  },
+  "nav": {
+    "dashboard": "لوحة التحكم",
+    "clients": "العملاء",
+    "engagements": "المشاريع",
+    "exercises": "التمارين",
+    "assessors": "المقيّمون",
+    "analytics": "التحليلات",
+    "settings": "الإعدادات",
+    "assignments": "التكليفات",
+    "observation": "الملاحظة",
+    "integration": "التكامل",
+    "washup": "جلسة المراجعة",
+    "reports": "التقارير"
+  },
+  "roles": {
+    "admin": "مدير النظام",
+    "lead_assessor": "المقيّم الرئيسي",
+    "associate_assessor": "المقيّم المساعد",
+    "candidate": "المرشح",
+    "client": "العميل"
+  },
+  "portals": {
+    "admin": "بوابة الإدارة",
+    "assessor": "بوابة المقيّم",
+    "candidate": "بوابة المرشح",
+    "client": "بوابة العميل"
+  },
+  "engagement": {
+    "title": "المشاريع",
+    "new": "مشروع جديد",
+    "createFirst": "أنشئ مشروعك الأول",
+    "noEngagements": "لا توجد مشاريع بعد.",
+    "name": "اسم المشروع",
+    "targetRole": "الدور المستهدف",
+    "startDate": "تاريخ البدء",
+    "endDate": "تاريخ الانتهاء",
+    "organization": "المنظمة العميلة",
+    "status": {
+      "draft": "مسودة",
+      "active": "نشط",
+      "completed": "مكتمل",
+      "archived": "مؤرشف"
+    }
+  },
+  "candidate": {
+    "title": "المرشحون",
+    "addCandidate": "إضافة مرشح",
+    "fullName": "الاسم الكامل",
+    "email": "البريد الإلكتروني",
+    "status": {
+      "invited": "مدعو",
+      "registered": "مسجل",
+      "in_progress": "قيد التنفيذ",
+      "completed": "مكتمل",
+      "withdrawn": "منسحب"
+    }
+  },
+  "competency": {
+    "title": "الكفاءات",
+    "domains": {
+      "THINKING": "التفكير",
+      "RESULTS": "النتائج",
+      "PEOPLE": "الأفراد",
+      "SELF": "الذات"
+    },
+    "selectMin": "اختر {{count}} كفاءات على الأقل",
+    "weight": "الوزن"
+  },
+  "exercise": {
+    "title": "التمارين",
+    "addExercise": "إضافة تمرين",
+    "types": {
+      "in_basket": "سلة المهام الإلكترونية",
+      "role_play": "تمثيل الأدوار",
+      "group_exercise": "تمرين جماعي",
+      "case_study": "تحليل دراسة حالة",
+      "oral_presentation": "عرض تقديمي شفهي",
+      "competency_based_interview": "مقابلة قائمة على الكفاءات"
+    },
+    "duration": "المدة",
+    "minutes": "دقيقة"
+  },
+  "observation": {
+    "title": "الملاحظة",
+    "recordObservation": "تسجيل ملاحظة",
+    "behavioralObservation": "الملاحظة السلوكية",
+    "indicator": "المؤشر",
+    "positive": "إيجابي",
+    "negative": "سلبي",
+    "neutral": "محايد",
+    "addObservation": "إضافة ملاحظة",
+    "noObservations": "لم يتم تسجيل ملاحظات بعد."
+  },
+  "rating": {
+    "title": "التقييم",
+    "bars": {
+      "1": "يحتاج تطوير جوهري",
+      "2": "يحتاج تطوير",
+      "3": "كفء",
+      "4": "نقطة قوة",
+      "5": "نقطة قوة بارزة"
+    },
+    "justification": "المبرر",
+    "saveRating": "حفظ التقييم"
+  },
+  "washup": {
+    "title": "جلسة المراجعة",
+    "sessions": "جلسات المراجعة",
+    "selectEngagement": "اختر مشروعاً لبدء مناقشة تكامل البيانات المنظمة.",
+    "consensusRating": "تقييم الإجماع",
+    "discussionNotes": "ملاحظات المناقشة",
+    "saveConsensus": "حفظ تقييم الإجماع",
+    "preliminaryRatings": "التقييمات الأولية للمقيّمين",
+    "agreed": "تقييمات إجماع متفق عليها"
+  },
+  "oar": {
+    "title": "التقييم العام الشامل",
+    "overallScore": "الدرجة الإجمالية",
+    "recommendation": "التوصية",
+    "executiveSummary": "الملخص التنفيذي",
+    "readyNow": "جاهز الآن",
+    "readyWithDevelopment": "جاهز مع التطوير",
+    "notReady": "غير جاهز"
+  },
+  "consent": {
+    "title": "الموافقة وحماية البيانات",
+    "dataProcessing": "إشعار معالجة البيانات",
+    "iAgree": "أوافق — المتابعة إلى التقييم",
+    "dataConsentLabel": "أوافق على جمع ومعالجة بياناتي الشخصية كما هو موضح أعلاه لغرض تقييم مركز التقييم.",
+    "assessmentConsentLabel": "أوافق طوعاً على المشاركة في مركز التقييم وأفهم أن النتائج ستتم مشاركتها مع المنظمة الراعية."
+  },
+  "report": {
+    "title": "تقرير التقييم",
+    "generatePdf": "إنشاء PDF",
+    "downloadPdf": "تحميل PDF",
+    "notAvailable": "تقريرك غير متاح بعد.",
+    "competencyScores": "درجات الكفاءات",
+    "developmentRecommendations": "توصيات التطوير"
+  },
+  "analytics": {
+    "title": "التحليلات",
+    "icc": "معامل الارتباط داخل الفئة",
+    "biasDetection": "كشف تحيز المقيّم",
+    "scoreDistribution": "توزيع درجات BARS",
+    "competencyAverages": "متوسطات درجات الكفاءات",
+    "totalRatings": "إجمالي التقييمات",
+    "engagements": "المشاريع",
+    "candidates": "المرشحون"
+  }
+}

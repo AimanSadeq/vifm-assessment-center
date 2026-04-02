@@ -1,0 +1,1688 @@
+[
+  {
+    "dimension": "Decision Making",
+    "component": "Makes quick decisions",
+    "label": "(A)",
+    "text": "Decides on a course of action without unnecessary delay"
+  },
+  {
+    "dimension": "Decision Making",
+    "component": "Makes quick decisions",
+    "label": "(B)",
+    "text": "Takes confident, decisive action in pressured situations"
+  },
+  {
+    "dimension": "Decision Making",
+    "component": "Makes quick decisions",
+    "label": "(C)",
+    "text": "Is not inhibited by risk when making decisions"
+  },
+  {
+    "dimension": "Decision Making",
+    "component": "Makes difficult decisions",
+    "label": "(A)",
+    "text": "Makes difficult or unpopular decisions when necessary"
+  },
+  {
+    "dimension": "Decision Making",
+    "component": "Makes difficult decisions",
+    "label": "(B)",
+    "text": "Remains appropriately committed to a decision, even when faced with opposition"
+  },
+  {
+    "dimension": "Decision Making",
+    "component": "Makes considered decisions",
+    "label": "(A)",
+    "text": "Makes well-informed decisions after considering the relevant information"
+  },
+  {
+    "dimension": "Decision Making",
+    "component": "Makes considered decisions",
+    "label": "(B)",
+    "text": "Minimizes risk by considering the uncertainties that are involved in a decision"
+  },
+  {
+    "dimension": "Decision Making",
+    "component": "Makes considered decisions",
+    "label": "(C)",
+    "text": "Carefully considers all options before making a decision"
+  },
+  {
+    "dimension": "Decision Making",
+    "component": "Takes responsibility",
+    "label": "(A)",
+    "text": "Takes accountability for decisions"
+  },
+  {
+    "dimension": "Decision Making",
+    "component": "Takes responsibility",
+    "label": "(B)",
+    "text": "Accepts appropriate responsibility when things go wrong"
+  },
+  {
+    "dimension": "Leadership",
+    "component": "Defines roles and responsibilities",
+    "label": "(A)",
+    "text": "Clearly defines the roles, responsibilities, and objectives of others"
+  },
+  {
+    "dimension": "Leadership",
+    "component": "Defines roles and responsibilities",
+    "label": "(B)",
+    "text": "Specifies task priorities for others"
+  },
+  {
+    "dimension": "Leadership",
+    "component": "Monitors performance",
+    "label": "(A)",
+    "text": "Monitors the performance of others"
+  },
+  {
+    "dimension": "Leadership",
+    "component": "Monitors performance",
+    "label": "(B)",
+    "text": "Takes appropriate action when individuals fail to meet expected standards"
+  },
+  {
+    "dimension": "Leadership",
+    "component": "Provides informal feedback",
+    "label": "(A)",
+    "text": "Provides objective feedback to others"
+  },
+  {
+    "dimension": "Leadership",
+    "component": "Provides informal feedback",
+    "label": "(B)",
+    "text": "Gives feedback tactfully and constructively"
+  },
+  {
+    "dimension": "Leadership",
+    "component": "Provides informal feedback",
+    "label": "(C)",
+    "text": "Offers timely feedback to others"
+  },
+  {
+    "dimension": "Leadership",
+    "component": "Coordinates others’ work ",
+    "label": "(A)",
+    "text": "Takes the lead in organizing work tasks"
+  },
+  {
+    "dimension": "Leadership",
+    "component": "Coordinates others’ work ",
+    "label": "(B)",
+    "text": "Coordinates others’ activities"
+  },
+  {
+    "dimension": "Leadership",
+    "component": "Coordinates others’ work ",
+    "label": "(C)",
+    "text": "Distributes workload appropriately"
+  },
+  {
+    "dimension": "Leadership",
+    "component": "Motivates and empowers others",
+    "label": "(A)",
+    "text": "Inspires enthusiasm and a positive attitude from others about their work"
+  },
+  {
+    "dimension": "Leadership",
+    "component": "Motivates and empowers others",
+    "label": "(B)",
+    "text": "Takes steps to keep people focused and motivated to achieve goals"
+  },
+  {
+    "dimension": "Leadership",
+    "component": "Motivates and empowers others",
+    "label": "(C)",
+    "text": "Provides others with the authority, resources, and freedom to independently accomplish tasks"
+  },
+  {
+    "dimension": "Leadership",
+    "component": "Supports and coaches others",
+    "label": "(A)",
+    "text": "Encourages others to consider and pursue development opportunities"
+  },
+  {
+    "dimension": "Leadership",
+    "component": "Supports and coaches others",
+    "label": "(B)",
+    "text": "Shares suggestions on how to improve and develop"
+  },
+  {
+    "dimension": "Leadership",
+    "component": "Supports and coaches others",
+    "label": "(C)",
+    "text": "Identifies and recommends resources that support the development of others"
+  },
+  {
+    "dimension": "Leadership",
+    "component": "Identifies potential ",
+    "label": "(A)",
+    "text": "Identifies the strengths and limitations of others"
+  },
+  {
+    "dimension": "Leadership",
+    "component": "Identifies potential ",
+    "label": "(B)",
+    "text": "Accurately judges the future potential of others"
+  },
+  {
+    "dimension": "Leadership",
+    "component": "Rewards performance ",
+    "label": "(A)",
+    "text": "Uses formal and informal structures for rewarding others' performance"
+  },
+  {
+    "dimension": "Leadership",
+    "component": "Rewards performance ",
+    "label": "(B)",
+    "text": "Creates formal reward systems at work to recognize good performance"
+  },
+  {
+    "dimension": "Collaboration",
+    "component": "Understands others",
+    "label": "(A)",
+    "text": "Observes and analyses people’s behavior"
+  },
+  {
+    "dimension": "Collaboration",
+    "component": "Understands others",
+    "label": "(B)",
+    "text": "Understands others' perspectives"
+  },
+  {
+    "dimension": "Collaboration",
+    "component": "Understands others",
+    "label": "(C)",
+    "text": "Understands the relationships between people"
+  },
+  {
+    "dimension": "Collaboration",
+    "component": "Understands others",
+    "label": "(D)",
+    "text": "Anticipates others' behavior and reactions"
+  },
+  {
+    "dimension": "Collaboration",
+    "component": "Puts the team first",
+    "label": "(A)",
+    "text": "Puts the team's goals above personal goals"
+  },
+  {
+    "dimension": "Collaboration",
+    "component": "Puts the team first",
+    "label": "(B)",
+    "text": "Makes personal sacrifices for the benefit of the team"
+  },
+  {
+    "dimension": "Collaboration",
+    "component": "Puts the team first",
+    "label": "(C)",
+    "text": "Shares updates with the team proactively and openly to avoid surprises, delays, or inefficiencies"
+  },
+  {
+    "dimension": "Collaboration",
+    "component": "Fosters team cohesion",
+    "label": "(A)",
+    "text": "Capitalizes on opportunities to build and maintain team spirit"
+  },
+  {
+    "dimension": "Collaboration",
+    "component": "Fosters team cohesion",
+    "label": "(B)",
+    "text": "Finds and implements strategies to improve team cohesion"
+  },
+  {
+    "dimension": "Collaboration",
+    "component": "Fosters team cohesion",
+    "label": "(C)",
+    "text": "Encourages collaboration by emphasizing a common purpose"
+  },
+  {
+    "dimension": "Collaboration",
+    "component": "Recognizes others ",
+    "label": "(A)",
+    "text": "Notices the effort made by others"
+  },
+  {
+    "dimension": "Collaboration",
+    "component": "Recognizes others ",
+    "label": "(B)",
+    "text": "Makes sure that team members get credit for their contributions"
+  },
+  {
+    "dimension": "Collaboration",
+    "component": "Recognizes others ",
+    "label": "(C)",
+    "text": "Thanks others for their contributions"
+  },
+  {
+    "dimension": "Collaboration",
+    "component": "Listens attentively",
+    "label": "(A)",
+    "text": "Listens patiently to others to hear their points of view"
+  },
+  {
+    "dimension": "Collaboration",
+    "component": "Listens attentively",
+    "label": "(B)",
+    "text": "Allows others the opportunity to speak without interrupting"
+  },
+  {
+    "dimension": "Collaboration",
+    "component": "Listens attentively",
+    "label": "(C)",
+    "text": "Waits until others have finished speaking before forming an opinion on what they have said"
+  },
+  {
+    "dimension": "Collaboration",
+    "component": "Consults others",
+    "label": "(A)",
+    "text": "Seeks input from others before making a decision"
+  },
+  {
+    "dimension": "Collaboration",
+    "component": "Consults others",
+    "label": "(B)",
+    "text": "Encourages others to express their views"
+  },
+  {
+    "dimension": "Collaboration",
+    "component": "Encourages diversity",
+    "label": "(A)",
+    "text": "Draws on the diverse backgrounds, skills, and knowledge of people"
+  },
+  {
+    "dimension": "Collaboration",
+    "component": "Encourages diversity",
+    "label": "(B)",
+    "text": "Strives to work with a diverse range of people"
+  },
+  {
+    "dimension": "Collaboration",
+    "component": "Encourages diversity",
+    "label": "(C)",
+    "text": "Contributes to an inclusive work environment where all individuals are accepted and appreciated"
+  },
+  {
+    "dimension": "Collaboration",
+    "component": "Accepts others ",
+    "label": "(A)",
+    "text": "Respects and values different viewpoints"
+  },
+  {
+    "dimension": "Collaboration",
+    "component": "Accepts others ",
+    "label": "(B)",
+    "text": "Approaches others in a non-judgmental way"
+  },
+  {
+    "dimension": "Collaboration",
+    "component": "Demonstrates empathy",
+    "label": "(A)",
+    "text": "Demonstrates an awareness of the emotional needs of others"
+  },
+  {
+    "dimension": "Collaboration",
+    "component": "Demonstrates empathy",
+    "label": "(B)",
+    "text": "Shows concern and compassion for others"
+  },
+  {
+    "dimension": "Collaboration",
+    "component": "Demonstrates empathy",
+    "label": "(C)",
+    "text": "Takes steps to provide emotional support to others"
+  },
+  {
+    "dimension": "Collaboration",
+    "component": "Shows courtesy",
+    "label": "(A)",
+    "text": "Treats others with courtesy, politeness, and respect"
+  },
+  {
+    "dimension": "Collaboration",
+    "component": "Shows courtesy",
+    "label": "(B)",
+    "text": "Demonstrates patience when interacting with others"
+  },
+  {
+    "dimension": "Ethics and Values",
+    "component": "Acts ethically",
+    "label": "(A)",
+    "text": "Acts consistently in accordance with ethical standards"
+  },
+  {
+    "dimension": "Ethics and Values",
+    "component": "Acts ethically",
+    "label": "(B)",
+    "text": "Upholds ethical standards despite external pressure or inconvenience"
+  },
+  {
+    "dimension": "Ethics and Values",
+    "component": "Acts ethically",
+    "label": "(C)",
+    "text": "Refuses to compromise ethical standards to advance either personal or organizational objectives"
+  },
+  {
+    "dimension": "Ethics and Values",
+    "component": "Earns trust",
+    "label": "(A)",
+    "text": "Follows through on promises and commitments"
+  },
+  {
+    "dimension": "Ethics and Values",
+    "component": "Earns trust",
+    "label": "(B)",
+    "text": "Maintains confidentiality when appropriate"
+  },
+  {
+    "dimension": "Ethics and Values",
+    "component": "Earns trust",
+    "label": "(C)",
+    "text": "Avoids intentionally misleading people"
+  },
+  {
+    "dimension": "Ethics and Values",
+    "component": "Promotes social responsibility",
+    "label": "(A)",
+    "text": "Demonstrates an awareness of the impact of organizational operations on the wider community"
+  },
+  {
+    "dimension": "Ethics and Values",
+    "component": "Promotes social responsibility",
+    "label": "(B)",
+    "text": "Considers community values when making business decisions"
+  },
+  {
+    "dimension": "Ethics and Values",
+    "component": "Promotes social responsibility",
+    "label": "(C)",
+    "text": "Works towards making the organization more socially responsible"
+  },
+  {
+    "dimension": "Ethics and Values",
+    "component": "Promotes environmental responsibility",
+    "label": "(A)",
+    "text": "Demonstrates an awareness of the impact of organizational operations on the environment"
+  },
+  {
+    "dimension": "Ethics and Values",
+    "component": "Promotes environmental responsibility",
+    "label": "(B)",
+    "text": "Evaluates environmental considerations when making business decisions"
+  },
+  {
+    "dimension": "Ethics and Values",
+    "component": "Promotes environmental responsibility",
+    "label": "(C)",
+    "text": "Works toward making the organization more environmentally responsible"
+  },
+  {
+    "dimension": "Building Relationships",
+    "component": "Builds rapport",
+    "label": "(A)",
+    "text": "Makes personal connections with others quickly"
+  },
+  {
+    "dimension": "Building Relationships",
+    "component": "Builds rapport",
+    "label": "(B)",
+    "text": "Appears confident and comfortable speaking to strangers"
+  },
+  {
+    "dimension": "Building Relationships",
+    "component": "Creates a positive impression",
+    "label": "(A)",
+    "text": "Creates a positive impression on others"
+  },
+  {
+    "dimension": "Building Relationships",
+    "component": "Creates a positive impression",
+    "label": "(B)",
+    "text": "Maintains a professional demeanor"
+  },
+  {
+    "dimension": "Building Relationships",
+    "component": "Creates a positive impression",
+    "label": "(C)",
+    "text": "Behaves appropriately according to the occasion"
+  },
+  {
+    "dimension": "Building Relationships",
+    "component": "Adapts interpersonal style",
+    "label": "(A)",
+    "text": "Relates well to people of different levels of seniority"
+  },
+  {
+    "dimension": "Building Relationships",
+    "component": "Adapts interpersonal style",
+    "label": "(B)",
+    "text": "Adapts own style to fit in with different people or situations"
+  },
+  {
+    "dimension": "Building Relationships",
+    "component": "Maintains good working relationships",
+    "label": "(A)",
+    "text": "Makes people feel at ease"
+  },
+  {
+    "dimension": "Building Relationships",
+    "component": "Maintains good working relationships",
+    "label": "(B)",
+    "text": "Gets along well with others"
+  },
+  {
+    "dimension": "Building Relationships",
+    "component": "Maintains good working relationships",
+    "label": "(C)",
+    "text": "Builds and maintains relationships effectively"
+  },
+  {
+    "dimension": "Building Relationships",
+    "component": "Offers help",
+    "label": "(A)",
+    "text": "Recognizes when others need help and offers appropriate support"
+  },
+  {
+    "dimension": "Building Relationships",
+    "component": "Offers help",
+    "label": "(B)",
+    "text": "Shares tips with others on how to best perform the job"
+  },
+  {
+    "dimension": "Building Relationships",
+    "component": "Offers help",
+    "label": "(C)",
+    "text": "Takes time to explain things thoroughly"
+  },
+  {
+    "dimension": "Building Relationships",
+    "component": "Builds and maintains networks",
+    "label": "(A)",
+    "text": "Establishes and nurtures a wide network of relationships"
+  },
+  {
+    "dimension": "Building Relationships",
+    "component": "Builds and maintains networks",
+    "label": "(B)",
+    "text": "Quickly recognizes how to make use of new contacts to achieve goals"
+  },
+  {
+    "dimension": "Building Relationships",
+    "component": "Builds and maintains networks",
+    "label": "(C)",
+    "text": "Creates opportunities for self and others to network"
+  },
+  {
+    "dimension": "Building Relationships",
+    "component": "Develops cross-functional awareness",
+    "label": "(A)",
+    "text": "Seeks to understand the roles played by different parts of the organization"
+  },
+  {
+    "dimension": "Building Relationships",
+    "component": "Develops cross-functional awareness",
+    "label": "(B)",
+    "text": "Understands how own work links to work in other departments"
+  },
+  {
+    "dimension": "Building Relationships",
+    "component": "Manages conflict",
+    "label": "(A)",
+    "text": "Mediates disputes to facilitate agreements"
+  },
+  {
+    "dimension": "Building Relationships",
+    "component": "Manages conflict",
+    "label": "(B)",
+    "text": "Manages disagreements with tact and diplomacy"
+  },
+  {
+    "dimension": "Building Relationships",
+    "component": "Manages conflict",
+    "label": "(C)",
+    "text": "Negotiates solutions to conflicts"
+  },
+  {
+    "dimension": "Influence",
+    "component": "Establishes credibility ",
+    "label": "(A)",
+    "text": "Speaks with authority and conviction"
+  },
+  {
+    "dimension": "Influence",
+    "component": "Establishes credibility ",
+    "label": "(B)",
+    "text": "Demonstrates personal credibility and expertise"
+  },
+  {
+    "dimension": "Influence",
+    "component": "Develops compelling positions ",
+    "label": "(A)",
+    "text": "Uses relevant insights to support own position"
+  },
+  {
+    "dimension": "Influence",
+    "component": "Develops compelling positions ",
+    "label": "(B)",
+    "text": "Develops logical arguments from facts and/or data to position an idea or point of view"
+  },
+  {
+    "dimension": "Influence",
+    "component": "Develops compelling positions ",
+    "label": "(C)",
+    "text": "Provides credible responses to objections"
+  },
+  {
+    "dimension": "Influence",
+    "component": "Appeals to emotions ",
+    "label": "(A)",
+    "text": "Positions argument or message with the emotional viewpoints of others in mind"
+  },
+  {
+    "dimension": "Influence",
+    "component": "Appeals to emotions ",
+    "label": "(B)",
+    "text": "Shares insights that create tension and lead others to question their thinking and current assumptions"
+  },
+  {
+    "dimension": "Influence",
+    "component": "Appeals to emotions ",
+    "label": "(C)",
+    "text": "Changes others’ feelings and behavior by appealing to both rational and emotional concerns"
+  },
+  {
+    "dimension": "Influence",
+    "component": "Appeals to emotions ",
+    "label": "(D)",
+    "text": "Connects with others by providing data, stories, and examples related to their own situation"
+  },
+  {
+    "dimension": "Influence",
+    "component": "Persuades others",
+    "label": "(A)",
+    "text": "Promotes ideas by persuading others"
+  },
+  {
+    "dimension": "Influence",
+    "component": "Persuades others",
+    "label": "(B)",
+    "text": "Wins support from others for own point of view"
+  },
+  {
+    "dimension": "Influence",
+    "component": "Persuades others",
+    "label": "(C)",
+    "text": "Adapts influencing strategies where necessary"
+  },
+  {
+    "dimension": "Influence",
+    "component": "Gains agreement",
+    "label": "(A)",
+    "text": "Identifies and engages with key stakeholders who have the ability to make decisions"
+  },
+  {
+    "dimension": "Influence",
+    "component": "Gains agreement",
+    "label": "(B)",
+    "text": "Builds consensus to bring others along to agree on an issue"
+  },
+  {
+    "dimension": "Influence",
+    "component": "Gains agreement",
+    "label": "(C)",
+    "text": "Assesses readiness for action and addresses opposition or concerns that are delaying agreement"
+  },
+  {
+    "dimension": "Influence",
+    "component": "Gains agreement",
+    "label": "(D)",
+    "text": "Closes deals, sales, or discussions with firm agreement from all parties"
+  },
+  {
+    "dimension": "Influence",
+    "component": "Manages political situations",
+    "label": "(A)",
+    "text": "Works effectively in political situations"
+  },
+  {
+    "dimension": "Influence",
+    "component": "Manages political situations",
+    "label": "(B)",
+    "text": "Builds support throughout the organization for own initiatives"
+  },
+  {
+    "dimension": "Influence",
+    "component": "Manages political situations",
+    "label": "(C)",
+    "text": "Champions own area, team, or responsibilities against conflicting organizational priorities"
+  },
+  {
+    "dimension": "Influence",
+    "component": "Manages political situations",
+    "label": "(D)",
+    "text": "Navigates the internal politics of the organization to maximize success"
+  },
+  {
+    "dimension": "Communication",
+    "component": "Understands spoken information",
+    "label": "(A)",
+    "text": "Quickly understands and retains the essential points when given spoken instructions"
+  },
+  {
+    "dimension": "Communication",
+    "component": "Understands spoken information",
+    "label": "(B)",
+    "text": "Identifies the important information in others’ spoken communication"
+  },
+  {
+    "dimension": "Communication",
+    "component": "Understands spoken information",
+    "label": "(C)",
+    "text": "Understands the unspoken intention or message in others’ spoken communications"
+  },
+  {
+    "dimension": "Communication",
+    "component": "Speaks clearly ",
+    "label": "(A)",
+    "text": "Communicates information and ideas by speaking in a way that others will understand"
+  },
+  {
+    "dimension": "Communication",
+    "component": "Speaks clearly ",
+    "label": "(B)",
+    "text": "Speaks clearly and fluently, at an appropriate pace"
+  },
+  {
+    "dimension": "Communication",
+    "component": "Speaks clearly ",
+    "label": "(C)",
+    "text": "Uses words and grammar correctly when speaking"
+  },
+  {
+    "dimension": "Communication",
+    "component": "Speaks clearly ",
+    "label": "(D)",
+    "text": "Avoids unnecessarily complicated language or jargon"
+  },
+  {
+    "dimension": "Communication",
+    "component": "Engages others when speaking",
+    "label": "(A)",
+    "text": "Projects confidence when speaking"
+  },
+  {
+    "dimension": "Communication",
+    "component": "Engages others when speaking",
+    "label": "(B)",
+    "text": "Engages the audience when presenting"
+  },
+  {
+    "dimension": "Communication",
+    "component": "Engages others when speaking",
+    "label": "(C)",
+    "text": "Captures the audience's attention effectively with both verbal and non-verbal communication"
+  },
+  {
+    "dimension": "Communication",
+    "component": "Adapts to the audience",
+    "label": "(A)",
+    "text": "Learns the characteristics of the intended audience prior to speaking"
+  },
+  {
+    "dimension": "Communication",
+    "component": "Adapts to the audience",
+    "label": "(B)",
+    "text": "Tailors style and level of complexity to the audience"
+  },
+  {
+    "dimension": "Communication",
+    "component": "Adapts to the audience",
+    "label": "(C)",
+    "text": "Quickly responds to audience feedback, changing style or complexity as necessary"
+  },
+  {
+    "dimension": "Writing",
+    "component": "Understands written information",
+    "label": "(A)",
+    "text": "Reads fluently"
+  },
+  {
+    "dimension": "Writing",
+    "component": "Understands written information",
+    "label": "(B)",
+    "text": "Understands ideas and concepts presented in written passages"
+  },
+  {
+    "dimension": "Writing",
+    "component": "Understands written information",
+    "label": "(C)",
+    "text": "Identifies the important information when reading"
+  },
+  {
+    "dimension": "Writing",
+    "component": "Understands written information",
+    "label": "(D)",
+    "text": "Understands the unwritten message or intention in written information"
+  },
+  {
+    "dimension": "Writing",
+    "component": "Writes with clarity",
+    "label": "(A)",
+    "text": "Produces written communication that is concise, logically structured, and easy to follow"
+  },
+  {
+    "dimension": "Writing",
+    "component": "Writes with clarity",
+    "label": "(B)",
+    "text": "Writes fluently"
+  },
+  {
+    "dimension": "Writing",
+    "component": "Writes with clarity",
+    "label": "(C)",
+    "text": "Uses correct spelling, punctuation, and grammar in writing"
+  },
+  {
+    "dimension": "Writing",
+    "component": "Writes with clarity",
+    "label": "(D)",
+    "text": "Avoids unnecessarily complicated language or jargon when writing"
+  },
+  {
+    "dimension": "Writing",
+    "component": "Writes in an engaging style",
+    "label": "(A)",
+    "text": "Writes in a style that captures the reader’s interest and attention"
+  },
+  {
+    "dimension": "Writing",
+    "component": "Writes in an engaging style",
+    "label": "(B)",
+    "text": "Writes reports that stimulate interest while communicating information"
+  },
+  {
+    "dimension": "Applying Expertise and Technology",
+    "component": "Applies functional expertise",
+    "label": "(A)",
+    "text": "Demonstrates detailed job knowledge and expertise"
+  },
+  {
+    "dimension": "Applying Expertise and Technology",
+    "component": "Applies functional expertise",
+    "label": "(B)",
+    "text": "Applies specialist skills to job tasks"
+  },
+  {
+    "dimension": "Applying Expertise and Technology",
+    "component": "Applies functional expertise",
+    "label": "(C)",
+    "text": "Answers technical questions from clients or colleagues easily and accurately"
+  },
+  {
+    "dimension": "Applying Expertise and Technology",
+    "component": "Applies functional expertise",
+    "label": "(D)",
+    "text": "Demonstrates thorough knowledge of the features of relevant products and services"
+  },
+  {
+    "dimension": "Applying Expertise and Technology",
+    "component": "Communicates using technology",
+    "label": "(A)",
+    "text": "Uses messaging systems to effectively communicate with colleagues, clients, or customers"
+  },
+  {
+    "dimension": "Applying Expertise and Technology",
+    "component": "Communicates using technology",
+    "label": "(B)",
+    "text": "Communicates and disseminates ideas to audiences using multimedia presentation platforms"
+  },
+  {
+    "dimension": "Applying Expertise and Technology",
+    "component": "Communicates using technology",
+    "label": "(C)",
+    "text": "Represents the organization effectively using public facing technologies"
+  },
+  {
+    "dimension": "Applying Expertise and Technology",
+    "component": "Operates job related technology",
+    "label": "(A)",
+    "text": "Maintains awareness of technological developments in relevant fields"
+  },
+  {
+    "dimension": "Applying Expertise and Technology",
+    "component": "Operates job related technology",
+    "label": "(B)",
+    "text": "Learns and adopts new technology with ease"
+  },
+  {
+    "dimension": "Applying Expertise and Technology",
+    "component": "Operates job related technology",
+    "label": "(C)",
+    "text": "Applies technology in a manner that improves productivity and efficiency"
+  },
+  {
+    "dimension": "Applying Expertise and Technology",
+    "component": "Operates job related technology",
+    "label": "(D)",
+    "text": "Identifies useful technology proactively"
+  },
+  {
+    "dimension": "Applying Expertise and Technology",
+    "component": "Installs, troubleshoots, and repairs technology or equipment",
+    "label": "(A)",
+    "text": "Identifies and fixes problems or malfunctions in equipment"
+  },
+  {
+    "dimension": "Applying Expertise and Technology",
+    "component": "Installs, troubleshoots, and repairs technology or equipment",
+    "label": "(B)",
+    "text": "Troubleshoots, debugs, or otherwise resolves problems with computer systems or software"
+  },
+  {
+    "dimension": "Applying Expertise and Technology",
+    "component": "Builds, designs, or creates new tools or systems",
+    "label": "(A)",
+    "text": "Writes scripts or computer programs to solve problems or automate processes"
+  },
+  {
+    "dimension": "Applying Expertise and Technology",
+    "component": "Builds, designs, or creates new tools or systems",
+    "label": "(B)",
+    "text": "Uses code and software to efficiently combine, manipulate, summarize, and report complex data"
+  },
+  {
+    "dimension": "Applying Expertise and Technology",
+    "component": "Builds, designs, or creates new tools or systems",
+    "label": "(C)",
+    "text": "Designs new products or tools for internal or commercial use"
+  },
+  {
+    "dimension": "Critical Thinking",
+    "component": "Categorizes information",
+    "label": "(A)",
+    "text": "Quickly and accurately compares similarities and differences among symbols, objects, pictures, or patterns"
+  },
+  {
+    "dimension": "Critical Thinking",
+    "component": "Categorizes information",
+    "label": "(B)",
+    "text": "Arranges information in a certain order according to a set of rules"
+  },
+  {
+    "dimension": "Critical Thinking",
+    "component": "Analyzes information",
+    "label": "(A)",
+    "text": "Accurately judges the relevance and importance of different pieces of information"
+  },
+  {
+    "dimension": "Critical Thinking",
+    "component": "Analyzes information",
+    "label": "(B)",
+    "text": "Identifies underlying relationships, causes, and effects"
+  },
+  {
+    "dimension": "Critical Thinking",
+    "component": "Analyzes information",
+    "label": "(C)",
+    "text": "Combines pieces of information to form conclusions, general rules, or identify trends"
+  },
+  {
+    "dimension": "Critical Thinking",
+    "component": "Critically evaluates",
+    "label": "(A)",
+    "text": "Identifies potential weaknesses in proposals or plans"
+  },
+  {
+    "dimension": "Critical Thinking",
+    "component": "Critically evaluates",
+    "label": "(B)",
+    "text": "Identifies and uncovers problems"
+  },
+  {
+    "dimension": "Critical Thinking",
+    "component": "Critically evaluates",
+    "label": "(C)",
+    "text": "Critically reviews others' work"
+  },
+  {
+    "dimension": "Critical Thinking",
+    "component": "Makes rational judgments",
+    "label": "(A)",
+    "text": "Bases judgments on logical assessment of the information"
+  },
+  {
+    "dimension": "Critical Thinking",
+    "component": "Makes rational judgments",
+    "label": "(B)",
+    "text": "Takes all relevant information into account when making judgments"
+  },
+  {
+    "dimension": "Critical Thinking",
+    "component": "Offers practical solutions",
+    "label": "(A)",
+    "text": "Produces practical solutions that meet the demands of the situation"
+  },
+  {
+    "dimension": "Critical Thinking",
+    "component": "Offers practical solutions",
+    "label": "(B)",
+    "text": "Suggests solutions quickly and productively"
+  },
+  {
+    "dimension": "Learning",
+    "component": "Learns quickly",
+    "label": "(A)",
+    "text": "Quickly identifies the key ideas behind a topic or technique"
+  },
+  {
+    "dimension": "Learning",
+    "component": "Learns quickly",
+    "label": "(B)",
+    "text": "Commits new information to memory easily"
+  },
+  {
+    "dimension": "Learning",
+    "component": "Learns quickly",
+    "label": "(C)",
+    "text": "Recognizes when own level of knowledge is sufficient for competent application"
+  },
+  {
+    "dimension": "Learning",
+    "component": "Learns quickly",
+    "label": "(D)",
+    "text": "Demonstrates mastery of new techniques, knowledge or information through applying them in own work"
+  },
+  {
+    "dimension": "Learning",
+    "component": "Gathers information",
+    "label": "(A)",
+    "text": "Uses a range of sources to collect all the relevant information"
+  },
+  {
+    "dimension": "Learning",
+    "component": "Gathers information",
+    "label": "(B)",
+    "text": "Gathers a sufficient breadth of information to reach an informed conclusion"
+  },
+  {
+    "dimension": "Learning",
+    "component": "Gathers information",
+    "label": "(C)",
+    "text": "Identifies where further information is required to clarify vague or confusing issues"
+  },
+  {
+    "dimension": "Learning",
+    "component": "Gathers information",
+    "label": "(D)",
+    "text": "Puts effort into ensuring that information gathered is reliable"
+  },
+  {
+    "dimension": "Creativity and Innovation",
+    "component": "Generates new ideas",
+    "label": "(A)",
+    "text": "Generates new ideas easily"
+  },
+  {
+    "dimension": "Creativity and Innovation",
+    "component": "Generates new ideas",
+    "label": "(B)",
+    "text": "Produces novel and original approaches"
+  },
+  {
+    "dimension": "Creativity and Innovation",
+    "component": "Generates new ideas",
+    "label": "(C)",
+    "text": "Formulates creative and imaginative ideas"
+  },
+  {
+    "dimension": "Creativity and Innovation",
+    "component": "Embraces new ideas ",
+    "label": "(A)",
+    "text": "Readily experiments with new or unconventional ideas"
+  },
+  {
+    "dimension": "Creativity and Innovation",
+    "component": "Embraces new ideas ",
+    "label": "(B)",
+    "text": "Demonstrates enthusiasm when presented with new ideas"
+  },
+  {
+    "dimension": "Creativity and Innovation",
+    "component": "Embraces new ideas ",
+    "label": "(C)",
+    "text": "Actively encourages others to produce new ideas"
+  },
+  {
+    "dimension": "Strategic Thinking",
+    "component": "Thinks broadly",
+    "label": "(A)",
+    "text": "Demonstrates an overall view of the internal business and its interrelationships with the external environment"
+  },
+  {
+    "dimension": "Strategic Thinking",
+    "component": "Thinks broadly",
+    "label": "(B)",
+    "text": "Demonstrates awareness of a very broad range of issues related to own work"
+  },
+  {
+    "dimension": "Strategic Thinking",
+    "component": "Thinks broadly",
+    "label": "(C)",
+    "text": "Shows consideration of the factors not intrinsically linked to the immediate work environment"
+  },
+  {
+    "dimension": "Strategic Thinking",
+    "component": "Considers strategic vision",
+    "label": "(A)",
+    "text": "Demonstrates long-term thinking when setting goals"
+  },
+  {
+    "dimension": "Strategic Thinking",
+    "component": "Considers strategic vision",
+    "label": "(B)",
+    "text": "Proactively anticipates future trends and opportunities"
+  },
+  {
+    "dimension": "Strategic Thinking",
+    "component": "Considers strategic vision",
+    "label": "(C)",
+    "text": "Demonstrates a clear vision of long-term goals"
+  },
+  {
+    "dimension": "Strategic Thinking",
+    "component": "Drives improvement",
+    "label": "(A)",
+    "text": "Devises effective ways to implement change"
+  },
+  {
+    "dimension": "Strategic Thinking",
+    "component": "Drives improvement",
+    "label": "(B)",
+    "text": "Constantly seeks opportunities for organizational improvement"
+  },
+  {
+    "dimension": "Strategic Thinking",
+    "component": "Drives improvement",
+    "label": "(C)",
+    "text": "Improves work performance and systems by introducing new ideas"
+  },
+  {
+    "dimension": "Strategic Thinking",
+    "component": "Drives improvement",
+    "label": "(D)",
+    "text": "Encourages others to change inefficient work practices"
+  },
+  {
+    "dimension": "Strategic Thinking",
+    "component": "Drives improvement",
+    "label": "(E)",
+    "text": "Recognizes opportunities for change"
+  },
+  {
+    "dimension": "Planning and Organizing",
+    "component": "Sets objectives",
+    "label": "(A)",
+    "text": "Sets specific, clearly defined objectives"
+  },
+  {
+    "dimension": "Planning and Organizing",
+    "component": "Sets objectives",
+    "label": "(B)",
+    "text": "Specifies timelines for achieving objectives"
+  },
+  {
+    "dimension": "Planning and Organizing",
+    "component": "Sets objectives",
+    "label": "(C)",
+    "text": "Defines sub-goals to act as milestones"
+  },
+  {
+    "dimension": "Planning and Organizing",
+    "component": "Plans ahead",
+    "label": "(A)",
+    "text": "Develops detailed plans before beginning a piece of work"
+  },
+  {
+    "dimension": "Planning and Organizing",
+    "component": "Plans ahead",
+    "label": "(B)",
+    "text": "Determines the order in which tasks should be completed"
+  },
+  {
+    "dimension": "Planning and Organizing",
+    "component": "Plans ahead",
+    "label": "(C)",
+    "text": "Uses plans to guide own work"
+  },
+  {
+    "dimension": "Planning and Organizing",
+    "component": "Uses time efficiently",
+    "label": "(A)",
+    "text": "Works quickly and efficiently"
+  },
+  {
+    "dimension": "Planning and Organizing",
+    "component": "Uses time efficiently",
+    "label": "(B)",
+    "text": "Delivers work on time"
+  },
+  {
+    "dimension": "Planning and Organizing",
+    "component": "Uses time efficiently",
+    "label": "(C)",
+    "text": "Manages own time effectively"
+  },
+  {
+    "dimension": "Planning and Organizing",
+    "component": "Manages resources",
+    "label": "(A)",
+    "text": "Allocates resources to meet work requirements"
+  },
+  {
+    "dimension": "Planning and Organizing",
+    "component": "Manages resources",
+    "label": "(B)",
+    "text": "Anticipates future resourcing needs and potential resource conflicts and creates contingency plans to address them"
+  },
+  {
+    "dimension": "Planning and Organizing",
+    "component": "Manages resources",
+    "label": "(C)",
+    "text": "Monitors whether current resources are sufficient and takes action if they are not"
+  },
+  {
+    "dimension": "Planning and Organizing",
+    "component": "Maintains documentation",
+    "label": "(A)",
+    "text": "Maintains accurate and up-to-date documentation of own work"
+  },
+  {
+    "dimension": "Planning and Organizing",
+    "component": "Maintains documentation",
+    "label": "(B)",
+    "text": "Uses appropriate systems for documenting and storing information"
+  },
+  {
+    "dimension": "Planning and Organizing",
+    "component": "Maintains documentation",
+    "label": "(C)",
+    "text": "Ensures information is easily accessible to relevant others"
+  },
+  {
+    "dimension": "Delivering Results",
+    "component": "Puts customers first",
+    "label": "(A)",
+    "text": "Seeks to understand customer needs"
+  },
+  {
+    "dimension": "Delivering Results",
+    "component": "Puts customers first",
+    "label": "(B)",
+    "text": "Advocates for the customer's interests inside the organization"
+  },
+  {
+    "dimension": "Delivering Results",
+    "component": "Puts customers first",
+    "label": "(C)",
+    "text": "Delivers prompt service"
+  },
+  {
+    "dimension": "Delivering Results",
+    "component": "Puts customers first",
+    "label": "(D)",
+    "text": "Delivers quality service"
+  },
+  {
+    "dimension": "Delivering Results",
+    "component": "Puts customers first",
+    "label": "(E)",
+    "text": "Takes customer complaints seriously and acts on them appropriately"
+  },
+  {
+    "dimension": "Delivering Results",
+    "component": "Works to high quality standards",
+    "label": "(A)",
+    "text": "Produces quality work even at a very detailed level"
+  },
+  {
+    "dimension": "Delivering Results",
+    "component": "Works to high quality standards",
+    "label": "(B)",
+    "text": "Does everything possible to avoid compromising quality in own work"
+  },
+  {
+    "dimension": "Delivering Results",
+    "component": "Works to high quality standards",
+    "label": "(C)",
+    "text": "Carefully checks others' work for mistakes"
+  },
+  {
+    "dimension": "Delivering Results",
+    "component": "Works to high quality standards",
+    "label": "(D)",
+    "text": "Makes sure all work produced meets high quality standards"
+  },
+  {
+    "dimension": "Delivering Results",
+    "component": "Works systematically",
+    "label": "(A)",
+    "text": "Breaks down work into manageable parts, considering dependencies between tasks"
+  },
+  {
+    "dimension": "Delivering Results",
+    "component": "Works systematically",
+    "label": "(B)",
+    "text": "Structures own work activities according to established priorities"
+  },
+  {
+    "dimension": "Delivering Results",
+    "component": "Works systematically",
+    "label": "(C)",
+    "text": "Accurately assesses how long a task will take to complete"
+  },
+  {
+    "dimension": "Delivering Results",
+    "component": "Works systematically",
+    "label": "(D)",
+    "text": "Monitors progress against deadlines and milestones"
+  },
+  {
+    "dimension": "Delivering Results",
+    "component": "Works systematically",
+    "label": "(E)",
+    "text": "Maintains a constant awareness of issues that may help or hinder progress"
+  },
+  {
+    "dimension": "Delivering Results",
+    "component": "Attends to multiple tasks",
+    "label": "(A)",
+    "text": "Attends to multiple tasks without losing focus on some of them"
+  },
+  {
+    "dimension": "Delivering Results",
+    "component": "Attends to multiple tasks",
+    "label": "(B)",
+    "text": "Follows multiple sources of information simultaneously"
+  },
+  {
+    "dimension": "Delivering Results",
+    "component": "Attends to multiple tasks",
+    "label": "(C)",
+    "text": "Delivers on parallel tasks in a timely matter"
+  },
+  {
+    "dimension": "Delivering Results",
+    "component": "Stays focused",
+    "label": "(A)",
+    "text": "Concentrates on a task over a period of time"
+  },
+  {
+    "dimension": "Delivering Results",
+    "component": "Stays focused",
+    "label": "(B)",
+    "text": "Ignores distractions"
+  },
+  {
+    "dimension": "Delivering Results",
+    "component": "Performs repetitive tasks",
+    "label": "(A)",
+    "text": "Diligently carries out repetitive or routine tasks"
+  },
+  {
+    "dimension": "Delivering Results",
+    "component": "Performs repetitive tasks",
+    "label": "(B)",
+    "text": "Maintains concentration when carrying out routine, repetitive tasks"
+  },
+  {
+    "dimension": "Delivering Results",
+    "component": "Shows commitment to the organization",
+    "label": "(A)",
+    "text": "Speaks positively about the organization and defends it against criticisms"
+  },
+  {
+    "dimension": "Delivering Results",
+    "component": "Shows commitment to the organization",
+    "label": "(B)",
+    "text": "Portrays a positive image of the organization and protects its reputation against critics"
+  },
+  {
+    "dimension": "Delivering Results",
+    "component": "Shows commitment to the organization",
+    "label": "(C)",
+    "text": "Demonstrates belief in, and alignment to the organization’s values"
+  },
+  {
+    "dimension": "Delivering Results",
+    "component": "Shows commitment to the organization",
+    "label": "(D)",
+    "text": "Shows loyalty to the organization"
+  },
+  {
+    "dimension": "Dependability",
+    "component": "Accepts direction",
+    "label": "(A)",
+    "text": "Co-operates with instructions willingly"
+  },
+  {
+    "dimension": "Dependability",
+    "component": "Accepts direction",
+    "label": "(B)",
+    "text": "Accepts direction without unnecessarily challenging others’ authority"
+  },
+  {
+    "dimension": "Dependability",
+    "component": "Complies with rules and regulations",
+    "label": "(A)",
+    "text": "Adheres to the organization's regulations"
+  },
+  {
+    "dimension": "Dependability",
+    "component": "Complies with rules and regulations",
+    "label": "(B)",
+    "text": "Follows policies and rules for own job"
+  },
+  {
+    "dimension": "Dependability",
+    "component": "Attends work reliably",
+    "label": "(A)",
+    "text": "Arrives to work and meetings on time"
+  },
+  {
+    "dimension": "Dependability",
+    "component": "Attends work reliably",
+    "label": "(B)",
+    "text": "Notifies others in advance of being absent or late"
+  },
+  {
+    "dimension": "Dependability",
+    "component": "Shows safety awareness",
+    "label": "(A)",
+    "text": "Treats personal safety and the safety of others as a priority"
+  },
+  {
+    "dimension": "Dependability",
+    "component": "Shows safety awareness",
+    "label": "(B)",
+    "text": "Follows health and safety rules and regulations"
+  },
+  {
+    "dimension": "Dependability",
+    "component": "Shows safety awareness",
+    "label": "(C)",
+    "text": "Completes safety checks on materials and equipment"
+  },
+  {
+    "dimension": "Dependability",
+    "component": "Shows safety awareness",
+    "label": "(D)",
+    "text": "Uses materials or equipment in a safe manner"
+  },
+  {
+    "dimension": "Adaptability",
+    "component": "Adapts to change",
+    "label": "(A)",
+    "text": "Remains productive in changing environments"
+  },
+  {
+    "dimension": "Adaptability",
+    "component": "Adapts to change",
+    "label": "(B)",
+    "text": "Adjusts to changes effectively"
+  },
+  {
+    "dimension": "Adaptability",
+    "component": "Copes with uncertainty",
+    "label": "(A)",
+    "text": "Works comfortably with loosely defined tasks and roles"
+  },
+  {
+    "dimension": "Adaptability",
+    "component": "Copes with uncertainty",
+    "label": "(B)",
+    "text": "Works productively in an environment where direction or instructions are not available"
+  },
+  {
+    "dimension": "Adaptability",
+    "component": "Copes with uncertainty",
+    "label": "(C)",
+    "text": "Takes advantage of opportunities offered by ambiguous situations"
+  },
+  {
+    "dimension": "Adaptability",
+    "component": "Adapts to cultural differences",
+    "label": "(A)",
+    "text": "Communicates well with people of different cultures"
+  },
+  {
+    "dimension": "Adaptability",
+    "component": "Adapts to cultural differences",
+    "label": "(B)",
+    "text": "Shows interest in learning about the characteristics of other cultures"
+  },
+  {
+    "dimension": "Adaptability",
+    "component": "Adapts to cultural differences",
+    "label": "(C)",
+    "text": "Adjusts own behavior based on the perspectives of other cultures"
+  },
+  {
+    "dimension": "Resilience",
+    "component": "Thrives under pressure",
+    "label": "(A)",
+    "text": "Remains calm and objective under pressure"
+  },
+  {
+    "dimension": "Resilience",
+    "component": "Thrives under pressure",
+    "label": "(B)",
+    "text": "Retains focus and concentration when under pressure at work"
+  },
+  {
+    "dimension": "Resilience",
+    "component": "Thrives under pressure",
+    "label": "(C)",
+    "text": "Works productively in a high pressure environment"
+  },
+  {
+    "dimension": "Resilience",
+    "component": "Controls emotions",
+    "label": "(A)",
+    "text": "Keeps emotions under control during challenging situations or when dealing with difficult issues"
+  },
+  {
+    "dimension": "Resilience",
+    "component": "Controls emotions",
+    "label": "(B)",
+    "text": "Does not openly show frustration or dissatisfaction"
+  },
+  {
+    "dimension": "Resilience",
+    "component": "Copes with setbacks and criticism",
+    "label": "(A)",
+    "text": "Displays optimism in the face of negative situations"
+  },
+  {
+    "dimension": "Resilience",
+    "component": "Copes with setbacks and criticism",
+    "label": "(B)",
+    "text": "Keeps difficulties in perspective"
+  },
+  {
+    "dimension": "Resilience",
+    "component": "Copes with setbacks and criticism",
+    "label": "(C)",
+    "text": "Moves on quickly from setbacks or criticism"
+  },
+  {
+    "dimension": "Resilience",
+    "component": "Copes with setbacks and criticism",
+    "label": "(D)",
+    "text": "Accepts negative feedback without becoming hostile or overly-defensive"
+  },
+  {
+    "dimension": "Initiative",
+    "component": "Strives to achieve",
+    "label": "(A)",
+    "text": "Seeks and tackles demanding goals"
+  },
+  {
+    "dimension": "Initiative",
+    "component": "Strives to achieve",
+    "label": "(B)",
+    "text": "Sees tasks through to completion"
+  },
+  {
+    "dimension": "Initiative",
+    "component": "Strives to achieve",
+    "label": "(C)",
+    "text": "Invests effort into achieving goals at work"
+  },
+  {
+    "dimension": "Initiative",
+    "component": "Takes action",
+    "label": "(A)",
+    "text": "Seeks new tasks in order to keep busy"
+  },
+  {
+    "dimension": "Initiative",
+    "component": "Takes action",
+    "label": "(B)",
+    "text": "Takes on new responsibilities proactively"
+  },
+  {
+    "dimension": "Initiative",
+    "component": "Focuses on self-development",
+    "label": "(A)",
+    "text": "Actively seeks and incorporates feedback and suggestions for improvement"
+  },
+  {
+    "dimension": "Initiative",
+    "component": "Focuses on self-development",
+    "label": "(B)",
+    "text": "Identifies personal development needs and takes action to improve"
+  },
+  {
+    "dimension": "Initiative",
+    "component": "Focuses on self-development",
+    "label": "(C)",
+    "text": "Learns from mistakes and failures"
+  },
+  {
+    "dimension": "Initiative",
+    "component": "Works autonomously",
+    "label": "(A)",
+    "text": "Demonstrates confidence when working autonomously"
+  },
+  {
+    "dimension": "Initiative",
+    "component": "Works autonomously",
+    "label": "(B)",
+    "text": "Asks for help only when necessary"
+  },
+  {
+    "dimension": "Initiative",
+    "component": "Works autonomously",
+    "label": "(C)",
+    "text": "Works on tasks without the need for supervision"
+  },
+  {
+    "dimension": "Initiative",
+    "component": "Thrives on competition",
+    "label": "(A)",
+    "text": "Works productively in a competitive environment"
+  },
+  {
+    "dimension": "Initiative",
+    "component": "Thrives on competition",
+    "label": "(B)",
+    "text": "Strives to outperform others"
+  },
+  {
+    "dimension": "Initiative",
+    "component": "Thrives on competition",
+    "label": "(C)",
+    "text": "Encourages competition with others"
+  },
+  {
+    "dimension": "Commercial Thinking",
+    "component": "Considers financial impact ",
+    "label": "(A)",
+    "text": "Demonstrates awareness of revenue, cost, and risk factors that drive organizational performance"
+  },
+  {
+    "dimension": "Commercial Thinking",
+    "component": "Considers financial impact ",
+    "label": "(B)",
+    "text": "Prioritizes financial considerations when making decisions"
+  },
+  {
+    "dimension": "Commercial Thinking",
+    "component": "Considers financial impact ",
+    "label": "(C)",
+    "text": "Focuses on activities which will bring the greatest financial or business benefit"
+  },
+  {
+    "dimension": "Commercial Thinking",
+    "component": "Develops new business opportunities",
+    "label": "(A)",
+    "text": "Identifies new and promising business opportunities"
+  },
+  {
+    "dimension": "Commercial Thinking",
+    "component": "Develops new business opportunities",
+    "label": "(B)",
+    "text": "Pursues and secures new business to increase revenue"
+  },
+  {
+    "dimension": "Commercial Thinking",
+    "component": "Uses resources efficiently",
+    "label": "(A)",
+    "text": "Uses resources in a cost effective way, including facilities, materials, and equipment"
+  },
+  {
+    "dimension": "Commercial Thinking",
+    "component": "Uses resources efficiently",
+    "label": "(B)",
+    "text": "Tries to find the most economical way to complete work"
+  },
+  {
+    "dimension": "Commercial Thinking",
+    "component": "Manages commercial risks",
+    "label": "(A)",
+    "text": "Demonstrates an awareness of factors that could put the organization at risk (e.g., legal, commercial, or operational)"
+  },
+  {
+    "dimension": "Commercial Thinking",
+    "component": "Manages commercial risks",
+    "label": "(B)",
+    "text": "Makes choices that help manage and mitigate risks"
+  },
+  {
+    "dimension": "Commercial Thinking",
+    "component": "Manages commercial risks",
+    "label": "(C)",
+    "text": "Balances opportunities with risks to drive business growth"
+  },
+  {
+    "dimension": "Commercial Thinking",
+    "component": "Monitors markets and competitors",
+    "label": "(A)",
+    "text": "Demonstrates an awareness of new developments in own industry"
+  },
+  {
+    "dimension": "Commercial Thinking",
+    "component": "Monitors markets and competitors",
+    "label": "(B)",
+    "text": "Shows knowledge of competitor activities and their impact on the business"
+  },
+  {
+    "dimension": "Commercial Thinking",
+    "component": "Monitors markets and competitors",
+    "label": "(C)",
+    "text": "Displays an awareness of market factors that can have an impact on the business"
+  }
+]

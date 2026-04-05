@@ -23,12 +23,16 @@ export default async function AssessorAssignmentGridPage({ params }: Props) {
   const supabase = await createClient();
   const { engagementId } = params;
 
-  const [engResult, assignResult] = await Promise.all([
-    supabase.from("engagements").select("id, name, organizations(name)").eq("id", engagementId).single(),
+  const [engResult, assignResult, oarResult] = await Promise.all([
+    supabase.from("engagements").select("id, name, status, target_role, start_date, end_date, assessment_type, organizations(name)").eq("id", engagementId).single(),
     // RLS automatically filters to the logged-in assessor's assignments
     supabase
       .from("assessor_assignments")
       .select("id, candidate_id, exercise_id, candidates(id, full_name), exercises(id, name, exercise_type), profiles(id, full_name)")
+      .eq("engagement_id", engagementId),
+    supabase
+      .from("overall_assessment_ratings")
+      .select("candidate_id, overall_score, recommendation")
       .eq("engagement_id", engagementId),
   ]);
 
@@ -36,6 +40,13 @@ export default async function AssessorAssignmentGridPage({ params }: Props) {
 
   const engagement = engResult.data;
   const assignments = assignResult.data ?? [];
+  const oars = oarResult.data ?? [];
+
+  // Build OAR lookup
+  const oarMap = new Map<string, { score: number; recommendation: string }>();
+  for (const o of oars) {
+    oarMap.set(o.candidate_id, { score: o.overall_score, recommendation: o.recommendation });
+  }
 
   // Group by candidate
   const candidateMap = new Map<string, {
@@ -67,9 +78,19 @@ export default async function AssessorAssignmentGridPage({ params }: Props) {
   return (
     <div>
       <div className="mb-6">
-        <BackLink href="/assessor/assignments" label="Back to Engagements" />
+        <BackLink href="/assessor/assignments" label="Back to Projects" />
         <h1 className="mt-2 text-2xl font-bold">{engagement.name}</h1>
-        <p className="text-sm text-muted-foreground">{orgName}</p>
+        <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+          <span>{orgName}</span>
+          <Badge variant="secondary">{engagement.status}</Badge>
+          {engagement.target_role && <span>Role: {engagement.target_role}</span>}
+          {engagement.assessment_type && (
+            <Badge variant="outline" className="text-xs capitalize">{engagement.assessment_type}</Badge>
+          )}
+          {engagement.start_date && engagement.end_date && (
+            <span>{engagement.start_date} — {engagement.end_date}</span>
+          )}
+        </div>
       </div>
 
       {candidateMap.size === 0 ? (
@@ -82,7 +103,14 @@ export default async function AssessorAssignmentGridPage({ params }: Props) {
             <Card key={group.candidateId}>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">{group.candidateName}</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <CardTitle className="text-lg">{group.candidateName}</CardTitle>
+                    {oarMap.has(group.candidateId) && (
+                      <Badge variant={oarMap.get(group.candidateId)!.score >= 3 ? "default" : "destructive"}>
+                        OAR: {oarMap.get(group.candidateId)!.score}/5
+                      </Badge>
+                    )}
+                  </div>
                   <Link href={`/assessor/integration/${engagementId}/${group.candidateId}`}>
                     <Button variant="outline" size="sm">
                       Integration Worksheet

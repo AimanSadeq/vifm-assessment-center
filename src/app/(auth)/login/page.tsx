@@ -15,8 +15,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import { LogIn, Mail, Shield, ClipboardCheck, Users, Building2 } from "lucide-react";
+import { LogIn, Mail, ChevronDown } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+
+const DEMO_ROLES = [
+  { label: "Admin", email: "admin@viftraining.com", password: "admin123", redirect: "/admin" },
+  { label: "Assessor", email: "assessor@viftraining.com", password: "admin123", redirect: "/assessor" },
+  { label: "Candidate", email: "candidate@viftraining.com", password: "admin123", redirect: "/candidate" },
+  { label: "Client", email: "client@viftraining.com", password: "admin123", redirect: "/client" },
+] as const;
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,6 +31,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedRole, setSelectedRole] = useState("");
   const quickLogin = async (targetEmail: string, targetPassword: string, redirect: string) => {
     setLoading(true);
     setError(null);
@@ -103,47 +111,31 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Quick role login buttons */}
-          <div className="grid grid-cols-2 gap-2">
+          {/* Quick role login — compact dropdown for dev/demo */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <select
+                value={selectedRole}
+                onChange={(e) => setSelectedRole(e.target.value)}
+                disabled={loading}
+                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring appearance-none pr-8"
+              >
+                <option value="">Select role...</option>
+                {DEMO_ROLES.map((r) => (
+                  <option key={r.label} value={r.label}>{r.label}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+            </div>
             <Button
-              variant="default"
-              className="gap-2"
-              size="lg"
-              disabled={loading}
-              onClick={() => quickLogin("admin@viftraining.com", "admin123", "/admin")}
+              disabled={loading || !selectedRole}
+              onClick={() => {
+                const role = DEMO_ROLES.find((r) => r.label === selectedRole);
+                if (role) quickLogin(role.email, role.password, role.redirect);
+              }}
+              className="shrink-0"
             >
-              <Shield className="h-4 w-4" />
-              Admin
-            </Button>
-            <Button
-              variant="outline"
-              className="gap-2"
-              size="lg"
-              disabled={loading}
-              onClick={() => quickLogin("assessor@viftraining.com", "admin123", "/assessor")}
-            >
-              <ClipboardCheck className="h-4 w-4" />
-              Assessor
-            </Button>
-            <Button
-              variant="outline"
-              className="gap-2"
-              size="lg"
-              disabled={loading}
-              onClick={() => quickLogin("candidate@viftraining.com", "admin123", "/candidate")}
-            >
-              <Users className="h-4 w-4" />
-              Candidate
-            </Button>
-            <Button
-              variant="outline"
-              className="gap-2"
-              size="lg"
-              disabled={loading}
-              onClick={() => quickLogin("client@viftraining.com", "admin123", "/client")}
-            >
-              <Building2 className="h-4 w-4" />
-              Client
+              {loading ? "Signing in..." : "Quick Login"}
             </Button>
           </div>
 

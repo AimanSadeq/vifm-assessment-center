@@ -152,9 +152,9 @@ export function StepBasicInfo({ organizations: initialOrgs }: Props) {
           </div>
         </div>
 
-        {/* Engagement Name */}
+        {/* Project Name */}
         <div className="space-y-2">
-          <Label>Engagement Name *</Label>
+          <Label>Project Name *</Label>
           <Input
             value={state.engagementName}
             onChange={(e) =>
@@ -182,6 +182,50 @@ export function StepBasicInfo({ organizations: initialOrgs }: Props) {
             }
             placeholder="e.g., Senior Manager, Director"
           />
+        </div>
+
+        {/* Assessment Type & Norm Group */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Assessment Type</Label>
+            <Select
+              value={state.assessmentType}
+              onValueChange={(value) =>
+                dispatch({ type: "SET_BASIC_INFO", field: "assessmentType", value })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select type..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="professional">Professional</SelectItem>
+                <SelectItem value="graduate">Graduate</SelectItem>
+                <SelectItem value="leadership">Leadership</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Norm / Comparison Group</Label>
+            <Select
+              value={state.normGroup}
+              onValueChange={(value) =>
+                dispatch({ type: "SET_BASIC_INFO", field: "normGroup", value })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select norm group..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="gcc_banking">GCC Banking</SelectItem>
+                <SelectItem value="gcc_government">GCC Government</SelectItem>
+                <SelectItem value="mena_corporate">MENA Corporate</SelectItem>
+                <SelectItem value="global_corporate">Global Corporate</SelectItem>
+                <SelectItem value="graduate_program">Graduate Program</SelectItem>
+                <SelectItem value="custom">Custom</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Dates */}

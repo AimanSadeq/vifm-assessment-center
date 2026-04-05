@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { CandidateDemographicsForm } from "./_components/candidate-demographics-form";
 
 type Props = { params: { candidateId: string } };
 
@@ -77,6 +78,19 @@ export default async function CandidateWelcomePage({ params }: Props) {
               <Badge variant="outline">{candidate.status}</Badge>
             </div>
           </div>
+
+          <Separator />
+
+          {/* Demographics form */}
+          <CandidateDemographicsForm
+            candidateId={candidateId}
+            initialData={{
+              department: candidate.department ?? "",
+              gender: candidate.gender ?? "",
+              functionRole: candidate.function_role ?? "",
+              nationalIdHash: candidate.national_id_hash ?? "",
+            }}
+          />
 
           <Separator />
 

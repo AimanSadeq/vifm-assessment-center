@@ -87,6 +87,12 @@ export type Engagement = {
   status: "draft" | "active" | "completed" | "archived";
   start_date: string | null;
   end_date: string | null;
+  assessment_type: string | null;
+  norm_group: string | null;
+  project_type: string | null;
+  cutoff_scores: Record<string, number> | null;
+  device_options: string[] | null;
+  proctoring_enabled: boolean;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -120,6 +126,12 @@ export type Candidate = {
   full_name: string;
   email: string;
   phone: string | null;
+  department: string | null;
+  gender: string | null;
+  age_range: string | null;
+  seniority_level: string | null;
+  national_id_hash: string | null;
+  function_role: string | null;
   status: "invited" | "registered" | "in_progress" | "completed" | "withdrawn";
   created_at: string;
   updated_at: string;
@@ -194,6 +206,27 @@ export type OverallAssessmentRating = {
   summary: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type ConsentRecord = {
+  id: string;
+  candidate_id: string;
+  consent_type: string;
+  consented: boolean;
+  contact_consent: boolean | null;
+  client_forms_accepted: boolean | null;
+  ip_address: string | null;
+  consented_at: string;
+  expires_at: string | null;
+};
+
+export type ProjectTemplate = {
+  id: string;
+  organization_id: string;
+  name: string;
+  config: Record<string, unknown>;
+  created_by: string | null;
+  created_at: string;
 };
 
 // Grouped competency tree for UI display

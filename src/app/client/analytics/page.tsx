@@ -2,7 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import { getClientOrgId } from "@/lib/auth/get-org-id";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BARS_LABELS } from "@/lib/validations/assessor";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
+import { NineBoxGrid } from "./_components/nine-box-grid";
 
 const OAR_LABELS: Record<string, string> = {
   ready_now: "Ready Now",
@@ -24,15 +27,37 @@ export default async function ClientAnalyticsPage() {
   const engIds = (engRows ?? []).map((e) => e.id);
 
   // Scope OAR and consensus queries to org's engagements
-  const [oarResult, consensusResult] = engIds.length > 0
+  const [oarResult, consensusResult, candidatesResult] = engIds.length > 0
     ? await Promise.all([
-        supabase.from("overall_assessment_ratings").select("overall_score, recommendation").in("engagement_id", engIds),
-        supabase.from("consensus_ratings").select("final_score, competency_id, competencies(name)").in("engagement_id", engIds),
+        supabase.from("overall_assessment_ratings").select("candidate_id, overall_score, recommendation").in("engagement_id", engIds),
+        supabase.from("consensus_ratings").select("candidate_id, final_score, competency_id, competencies(name)").in("engagement_id", engIds),
+        supabase.from("candidates").select("id, full_name, department, seniority_level").in("engagement_id", engIds),
       ])
-    : [{ data: [] }, { data: [] }];
+    : [{ data: [] }, { data: [] }, { data: [] }];
 
   const oarData = oarResult.data ?? [];
   const consensusData = consensusResult.data ?? [];
+  const candidatesData = candidatesResult.data ?? [];
+
+  // Build 9-box grid data: Performance (OAR) vs Potential (avg competency score)
+  const nineBoxData = candidatesData.map((c) => {
+    const oar = oarData.find((o) => o.candidate_id === c.id);
+    const candConsensus = consensusData.filter((cr) => cr.candidate_id === c.id);
+    const avgScore = candConsensus.length > 0
+      ? candConsensus.reduce((sum, cr) => sum + cr.final_score, 0) / candConsensus.length
+      : null;
+    return {
+      name: c.full_name,
+      performance: oar?.overall_score ?? 0,
+      potential: avgScore ?? 0,
+      recommendation: oar?.recommendation ?? null,
+    };
+  }).filter((c) => c.performance > 0 || c.potential > 0);
+
+  // HiPo identification
+  const hipos = nineBoxData
+    .filter((c) => c.performance >= 4 && c.potential >= 3.5)
+    .sort((a, b) => (b.performance + b.potential) - (a.performance + a.potential));
 
   const totalAssessed = oarData.length;
   const readyNow = oarData.filter((o) => o.recommendation === "ready_now").length;
@@ -170,6 +195,141 @@ export default async function ClientAnalyticsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* 9-Box Grid */}
+      {nineBoxData.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">9-Box Talent Grid</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Performance (OAR) vs Potential (avg competency score). High-potential talent appears in the top-right quadrant.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <NineBoxGrid data={nineBoxData} />
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* HiPo Identification */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">High-Potential (HiPo) Candidates</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Candidates scoring 4+ on performance and 3.5+ on potential.
+            </p>
+          </CardHeader>
+          <CardContent>
+            {hipos.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">
+                No HiPo candidates identified yet.
+              </p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead className="text-center">Performance</TableHead>
+                    <TableHead className="text-center">Potential</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {hipos.map((h) => (
+                    <TableRow key={h.name}>
+                      <TableCell className="font-medium">{h.name}</TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="default">{h.performance}/5</Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="secondary">{h.potential.toFixed(1)}/5</Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Succession Planning */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Succession Pipeline</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Readiness distribution for succession and leadership development planning.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-32 text-sm font-medium">Ready Now</div>
+                <div className="flex-1 h-6 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-accent rounded-full flex items-center justify-center text-xs text-white font-medium"
+                    style={{ width: totalAssessed > 0 ? `${(readyNow / totalAssessed) * 100}%` : "0%" }}
+                  >
+                    {readyNow}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-32 text-sm font-medium">Ready w/ Dev</div>
+                <div className="flex-1 h-6 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-amber-500 rounded-full flex items-center justify-center text-xs text-white font-medium"
+                    style={{ width: totalAssessed > 0 ? `${(readyDev / totalAssessed) * 100}%` : "0%" }}
+                  >
+                    {readyDev}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-32 text-sm font-medium">Not Ready</div>
+                <div className="flex-1 h-6 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-destructive rounded-full flex items-center justify-center text-xs text-white font-medium"
+                    style={{ width: totalAssessed > 0 ? `${(notReady / totalAssessed) * 100}%` : "0%" }}
+                  >
+                    {notReady}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Leadership Development Priorities */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Leadership Development Priorities</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Based on cohort-wide competency gaps. Focus development investments on these areas.
+          </p>
+        </CardHeader>
+        <CardContent>
+          {developmentAreas.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">
+              No development gaps identified yet.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {developmentAreas.map((c, i) => (
+                <div key={c.name} className="border rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge variant="outline" className="text-xs">Priority {i + 1}</Badge>
+                  </div>
+                  <p className="text-sm font-medium">{c.name}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Cohort avg: {c.avg.toFixed(1)}/5 — Target: 3.5+
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

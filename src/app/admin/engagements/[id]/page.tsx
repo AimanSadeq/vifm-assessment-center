@@ -11,7 +11,7 @@ export default async function EngagementDetailPage({ params }: Props) {
   const supabase = await createClient();
   const { id } = params;
 
-  const [engResult, candsResult, exercisesResult, assignmentsResult, assessorsResult, matrixResult] =
+  const [engResult, candsResult, exercisesResult, assignmentsResult, assessorsResult, matrixResult, wsResult] =
     await Promise.all([
       supabase
         .from("engagements")
@@ -39,6 +39,10 @@ export default async function EngagementDetailPage({ params }: Props) {
         .from("exercise_competency_matrix")
         .select("exercise_id, competency_id, competencies(name)")
         .eq("engagement_id", id),
+      supabase
+        .from("integration_worksheets")
+        .select("*, competencies(name), profiles:assessor_id(full_name)")
+        .eq("engagement_id", id),
     ]);
 
   if (engResult.error || !engResult.data) return notFound();
@@ -49,6 +53,7 @@ export default async function EngagementDetailPage({ params }: Props) {
   const assignments = assignmentsResult.data ?? [];
   const assessors = assessorsResult.data ?? [];
   const matrix = matrixResult.data ?? [];
+  const integrationWorksheets = wsResult.data ?? [];
 
   // Extract exercises from junction table
   const exercises = engExercises
@@ -57,7 +62,7 @@ export default async function EngagementDetailPage({ params }: Props) {
 
   return (
     <div>
-      <BackLink href="/admin/engagements" label="Back to Engagements" />
+      <BackLink href="/admin/engagements" label="Back to Projects" />
       <EngagementDetail
         engagement={engagement}
         candidates={candidates}
@@ -65,6 +70,7 @@ export default async function EngagementDetailPage({ params }: Props) {
         assignments={assignments}
         assessors={assessors}
         matrix={matrix}
+        integrationWorksheets={integrationWorksheets}
       />
     </div>
   );

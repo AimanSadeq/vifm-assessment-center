@@ -28,7 +28,7 @@ import {
 const sidebarLinks: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/clients", label: "Clients", icon: Building2 },
-  { href: "/admin/engagements", label: "Engagements", icon: ClipboardList },
+  { href: "/admin/engagements", label: "Projects", icon: ClipboardList },
   { href: "/admin/exercises", label: "Exercises", icon: Target },
   { href: "/admin/assessors", label: "Assessors", icon: Users },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },

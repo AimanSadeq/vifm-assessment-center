@@ -8,7 +8,12 @@ import {
   type CreateAssignmentValues,
 } from "@/lib/validations/assessor";
 
-export async function addCandidateAction(values: AddCandidateValues) {
+export async function addCandidateAction(values: AddCandidateValues & {
+  department?: string;
+  gender?: string;
+  ageRange?: string;
+  seniorityLevel?: string;
+}) {
   const parsed = addCandidateSchema.safeParse(values);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
@@ -20,6 +25,10 @@ export async function addCandidateAction(values: AddCandidateValues) {
       full_name: parsed.data.fullName,
       email: parsed.data.email,
       phone: parsed.data.phone || null,
+      department: values.department || null,
+      gender: values.gender || null,
+      age_range: values.ageRange || null,
+      seniority_level: values.seniorityLevel || null,
       status: "invited",
     })
     .select()

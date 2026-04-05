@@ -26,6 +26,22 @@ import {
 } from "recharts";
 import type { BiasMetric } from "@/lib/scoring/bias-detection";
 
+type CandidateComparison = {
+  id: string;
+  name: string;
+  department: string;
+  seniority: string;
+  oarScore: number | null;
+  recommendation: string | null;
+  avgCompetencyScore: number | null;
+};
+
+type DepartmentAverage = {
+  department: string;
+  averageOAR: number;
+  count: number;
+};
+
 type Props = {
   engagementCount: number;
   candidateCount: number;
@@ -35,6 +51,8 @@ type Props = {
   biasMetrics: BiasMetric[];
   scoreDistribution: number[];
   competencyAverages: { name: string; average: number; count: number }[];
+  candidateComparisons: CandidateComparison[];
+  departmentAverages: DepartmentAverage[];
 };
 
 export function AnalyticsDashboard({
@@ -46,6 +64,8 @@ export function AnalyticsDashboard({
   biasMetrics,
   scoreDistribution,
   competencyAverages,
+  candidateComparisons,
+  departmentAverages,
 }: Props) {
   const distributionData = [
     { score: "1 - Sig. Dev. Needed", count: scoreDistribution[0] },
@@ -75,7 +95,7 @@ export function AnalyticsDashboard({
         <Card>
           <CardContent className="pt-6">
             <p className="text-2xl font-bold">{engagementCount}</p>
-            <p className="text-sm text-muted-foreground">Engagements</p>
+            <p className="text-sm text-muted-foreground">Projects</p>
           </CardContent>
         </Card>
         <Card>
@@ -163,6 +183,75 @@ export function AnalyticsDashboard({
                 No rating data available yet.
               </p>
             )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Candidate OAR Comparison */}
+      {candidateComparisons.filter((c) => c.oarScore !== null).length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Candidate Comparison (OAR Scores)</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Compare candidates by their Overall Assessment Rating.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart
+                data={candidateComparisons.filter((c) => c.oarScore !== null)}
+                margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" fontSize={10} angle={-20} textAnchor="end" height={60} />
+                <YAxis domain={[0, 5]} fontSize={10} />
+                <Tooltip
+                  contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                  formatter={(value: number) => [value.toFixed(1), "OAR"]}
+                />
+                <Bar dataKey="oarScore" fill="#010131" radius={[4, 4, 0, 0]} name="OAR Score" />
+                {candidateComparisons.some((c) => c.avgCompetencyScore !== null) && (
+                  <Bar dataKey="avgCompetencyScore" fill="#5391D5" radius={[4, 4, 0, 0]} name="Avg Competency" />
+                )}
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-2 gap-6">
+        {/* Department Comparison */}
+        {departmentAverages.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Department Comparison</CardTitle>
+              <p className="text-sm text-muted-foreground">Average OAR scores by department.</p>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={departmentAverages}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="department" fontSize={10} />
+                  <YAxis domain={[0, 5]} fontSize={10} />
+                  <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                  <Bar dataKey="averageOAR" fill="#5391D5" radius={[4, 4, 0, 0]} name="Avg OAR" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Industry Benchmark Placeholder */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Industry Benchmarks</CardTitle>
+            <p className="text-sm text-muted-foreground">Compare against industry norm groups.</p>
+          </CardHeader>
+          <CardContent className="flex items-center justify-center py-12">
+            <div className="text-center text-muted-foreground">
+              <p className="text-sm">Benchmark data will populate as more assessments are completed.</p>
+              <p className="text-xs mt-1">Norm groups: GCC Banking, MENA Corporate, Global Corporate</p>
+            </div>
           </CardContent>
         </Card>
       </div>

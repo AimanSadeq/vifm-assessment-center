@@ -11,6 +11,8 @@ import {
   FileText,
   TrendingUp,
   Building2,
+  Lightbulb,
+  Star,
   type LucideIcon,
 } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
@@ -18,9 +20,11 @@ import { LogoutButton } from "@/components/shared/logout-button";
 
 const navLinks: { href: string; label: string; icon: LucideIcon; exact: boolean }[] = [
   { href: "/client", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { href: "/client/engagements", label: "Engagements", icon: ClipboardList, exact: false },
-  { href: "/client/reports", label: "Reports", icon: FileText, exact: false },
+  { href: "/client/engagements", label: "Projects", icon: ClipboardList, exact: false },
+  { href: "/client/reports", label: "Review", icon: FileText, exact: false },
   { href: "/client/analytics", label: "Analytics", icon: TrendingUp, exact: false },
+  { href: "/client/templates", label: "Templates", icon: Star, exact: false },
+  { href: "/client/solutions", label: "Solutions", icon: Lightbulb, exact: false },
 ];
 
 export default function ClientLayout({

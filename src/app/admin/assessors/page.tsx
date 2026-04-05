@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -68,7 +69,11 @@ export default async function AssessorsPage() {
             <TableBody>
               {assessors.map((a) => (
                 <TableRow key={a.id}>
-                  <TableCell className="font-medium">{a.full_name}</TableCell>
+                  <TableCell className="font-medium">
+                    <Link href={`/admin/assessors/${a.id}`} className="hover:underline text-primary">
+                      {a.full_name}
+                    </Link>
+                  </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{a.email}</TableCell>
                   <TableCell>
                     <Badge variant="outline">{ROLE_LABELS[a.role] ?? a.role}</Badge>

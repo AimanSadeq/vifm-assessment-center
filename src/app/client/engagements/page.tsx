@@ -42,9 +42,9 @@ export default async function ClientEngagementsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">Engagements</h1>
+      <h1 className="text-2xl font-bold">Projects</h1>
       <p className="mt-1 text-muted-foreground">
-        View your assessment center engagements and timelines.
+        View your assessment center projects and timelines.
       </p>
 
       <div className="mt-6">

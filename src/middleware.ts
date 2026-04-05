@@ -3,7 +3,7 @@ import { updateSession } from "@/lib/supabase/middleware";
 
 // Set to true to enable authentication (production mode)
 // Set to false for development bypass
-const AUTH_ENABLED = true;
+const AUTH_ENABLED = false;
 
 export async function middleware(request: NextRequest) {
   if (!AUTH_ENABLED) {

@@ -28,10 +28,10 @@ export default async function AdminDashboardPage() {
     : "/admin/engagements";
 
   const steps: ProcessStep[] = [
-    { id: "engagements", number: 1, title: "Create Engagements", href: "/admin/engagements", iconName: "ClipboardList", metric: e, metricLabel: "engagements", isComplete: e > 0, isActive: e === 0 },
+    { id: "engagements", number: 1, title: "Create Projects", href: "/admin/engagements", iconName: "ClipboardList", metric: e, metricLabel: "projects", isComplete: e > 0, isActive: e === 0 },
     { id: "candidates", number: 2, title: "Add Candidates", href: engDetailHref, iconName: "Users", metric: c, metricLabel: "candidates", isComplete: c > 0, isActive: e > 0 && c === 0 },
     { id: "assessors", number: 3, title: "Assign Assessors", href: engDetailHref, iconName: "UserCheck", metric: a, metricLabel: "assignments", isComplete: a > 0, isActive: c > 0 && a === 0 },
-    { id: "observations", number: 4, title: "Monitor Observations", href: "/admin/analytics", iconName: "Eye", metric: o, metricLabel: "observations", isComplete: o > 0, isActive: a > 0 && o === 0 },
+    { id: "observations", number: 4, title: "Project Analytics", href: "/admin/analytics", iconName: "BarChart3", metric: o, metricLabel: "observations", isComplete: o > 0, isActive: a > 0 && o === 0 },
     { id: "integration", number: 5, title: "Integration & Wash-Up", href: "/admin/analytics", iconName: "GitMerge", metric: ws, metricLabel: "worksheets", isComplete: con > 0, isActive: r > 0 && con === 0 },
     { id: "oar", number: 6, title: "Finalize OAR", href: "/admin/analytics", iconName: "Award", metric: oar, metricLabel: "OARs", isComplete: oar > 0, isActive: con > 0 && oar === 0 },
     { id: "reports", number: 7, title: "Release Reports", href: "/admin/engagements", iconName: "FileText", metric: rep, metricLabel: "reports", isComplete: rel > 0, isActive: oar > 0 && rel === 0 },

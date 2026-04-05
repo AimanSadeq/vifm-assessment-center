@@ -75,56 +75,78 @@ export default async function CandidateAssessmentsPage({ params }: Props) {
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Exercise Schedule</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {exercises.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-8 text-center">
+      {/* Assessment Journey Tiles */}
+      <div>
+        <h2 className="text-lg font-semibold mb-3">Your Assessment Journey</h2>
+        {exercises.length === 0 ? (
+          <div className="rounded-lg border border-dashed p-8 text-center">
+            <p className="text-sm text-muted-foreground">
               No exercises scheduled yet. Check back closer to your assessment date.
             </p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Exercise</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Duration</TableHead>
-                  <TableHead>Scheduled</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {exercises.map((ex) => (
-                  <TableRow key={ex.name}>
-                    <TableCell>
-                      <div>
-                        <span className="font-medium">{ex.name}</span>
-                        {ex.description && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {ex.description}
-                          </p>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {EXERCISE_TYPE_LABELS[ex.exercise_type] ?? ex.exercise_type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {ex.duration_minutes ? `${ex.duration_minutes} min` : "—"}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {ex.scheduled_date ?? "TBD"}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {exercises.map((ex, index) => {
+              // Sequential unlock: first is always available, rest depend on previous
+              const isAvailable = index === 0;
+              const isLocked = index > 0;
+
+              return (
+                <Card
+                  key={ex.name}
+                  className={`relative transition-all ${
+                    isLocked ? "opacity-60" : "hover:shadow-md"
+                  }`}
+                >
+                  {/* Step number */}
+                  <div className="absolute top-3 right-3">
+                    <div className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                      isAvailable
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground"
+                    }`}>
+                      {index + 1}
+                    </div>
+                  </div>
+
+                  <CardHeader className="pb-2 pr-12">
+                    <CardTitle className="text-base">{ex.name}</CardTitle>
+                    <Badge variant="outline" className="w-fit text-xs">
+                      {EXERCISE_TYPE_LABELS[ex.exercise_type] ?? ex.exercise_type}
+                    </Badge>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {ex.description && (
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        {ex.description}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      {ex.duration_minutes && (
+                        <span>{ex.duration_minutes} min</span>
+                      )}
+                      {ex.scheduled_date && (
+                        <span>{ex.scheduled_date}</span>
+                      )}
+                    </div>
+
+                    {/* Status indicator */}
+                    <div className="pt-1">
+                      {isAvailable ? (
+                        <Badge variant="default" className="text-xs">Available</Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-xs">
+                          Locked — Complete previous assessment first
+                        </Badge>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       <Card>
         <CardHeader>

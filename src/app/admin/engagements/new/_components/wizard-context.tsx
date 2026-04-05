@@ -26,6 +26,8 @@ export type WizardState = {
   targetRole: string;
   startDate: string;
   endDate: string;
+  assessmentType: string;
+  normGroup: string;
   // Step 2
   selectedCompetencies: CompetencySelection[];
   // Step 3
@@ -189,6 +191,8 @@ const initialState: WizardState = {
   targetRole: "",
   startDate: "",
   endDate: "",
+  assessmentType: "",
+  normGroup: "",
   selectedCompetencies: [],
   selectedExerciseIds: [],
   matrix: [],

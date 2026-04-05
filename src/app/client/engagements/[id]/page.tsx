@@ -38,7 +38,7 @@ export default async function ClientEngagementDetailPage({ params }: Props) {
     .eq("id", params.id);
   if (orgId) engQuery = engQuery.eq("organization_id", orgId);
 
-  const [engResult, candsResult, oarResult, reportsResult] = await Promise.all([
+  const [engResult, candsResult, oarResult, reportsResult, consensusResult] = await Promise.all([
     engQuery.single(),
     supabase
       .from("candidates")
@@ -53,6 +53,10 @@ export default async function ClientEngagementDetailPage({ params }: Props) {
       .from("candidate_reports")
       .select("candidate_id, status, released_at")
       .eq("engagement_id", params.id),
+    supabase
+      .from("consensus_ratings")
+      .select("candidate_id, competency_id, final_score, competencies(name)")
+      .eq("engagement_id", params.id),
   ]);
 
   if (engResult.error || !engResult.data) return notFound();
@@ -64,6 +68,20 @@ export default async function ClientEngagementDetailPage({ params }: Props) {
 
   const oarMap = new Map(oarRatings.map((o) => [o.candidate_id, o]));
   const reportMap = new Map(reports.map((r) => [r.candidate_id, r]));
+  const consensusRatings = consensusResult.data ?? [];
+
+  // Build competency score matrix
+  const competencyNames = new Map<string, string>();
+  const candidateScores = new Map<string, Map<string, number>>();
+  for (const cr of consensusRatings) {
+    const comp = cr.competencies as unknown as { name: string } | null;
+    if (comp) competencyNames.set(cr.competency_id, comp.name);
+    if (!candidateScores.has(cr.candidate_id)) {
+      candidateScores.set(cr.candidate_id, new Map());
+    }
+    candidateScores.get(cr.candidate_id)!.set(cr.competency_id, cr.final_score);
+  }
+  const compIds = Array.from(competencyNames.keys());
 
   const orgName =
     eng.organizations && typeof eng.organizations === "object" && "name" in eng.organizations
@@ -73,7 +91,7 @@ export default async function ClientEngagementDetailPage({ params }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <BackLink href="/client/engagements" label="Back to Engagements" />
+        <BackLink href="/client/engagements" label="Back to Projects" />
         <h1 className="mt-2 text-2xl font-bold">{eng.name}</h1>
         <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
           <span>{orgName}</span>
@@ -178,6 +196,62 @@ export default async function ClientEngagementDetailPage({ params }: Props) {
           )}
         </CardContent>
       </Card>
+      {/* Competency Score Matrix */}
+      {compIds.length > 0 && candidates.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Competency Score Matrix</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Consensus scores per candidate per competency.
+            </p>
+          </CardHeader>
+          <CardContent className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="sticky left-0 bg-card z-10 min-w-[150px]">Candidate</TableHead>
+                  {compIds.map((cid) => (
+                    <TableHead key={cid} className="text-center text-xs min-w-[80px]">
+                      {(competencyNames.get(cid) ?? "").length > 15
+                        ? (competencyNames.get(cid) ?? "").slice(0, 15) + "..."
+                        : competencyNames.get(cid)}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {candidates.map((c) => {
+                  const scores = candidateScores.get(c.id);
+                  return (
+                    <TableRow key={c.id}>
+                      <TableCell className="sticky left-0 bg-card z-10 font-medium text-sm">
+                        {c.full_name}
+                      </TableCell>
+                      {compIds.map((cid) => {
+                        const score = scores?.get(cid);
+                        return (
+                          <TableCell key={cid} className="text-center">
+                            {score !== undefined ? (
+                              <Badge
+                                variant={score >= 3 ? "default" : "destructive"}
+                                className="text-xs"
+                              >
+                                {score}
+                              </Badge>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

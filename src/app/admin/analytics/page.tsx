@@ -20,7 +20,17 @@ export default async function AnalyticsPage() {
 
   const { data: candidates } = await supabase
     .from("candidates")
-    .select("id, full_name, status, engagement_id");
+    .select("id, full_name, status, engagement_id, department, seniority_level");
+
+  // Get OAR data for candidate comparisons
+  const { data: oars } = await supabase
+    .from("overall_assessment_ratings")
+    .select("candidate_id, overall_score, recommendation");
+
+  // Get consensus ratings for per-candidate competency breakdown
+  const { data: consensusRatings } = await supabase
+    .from("consensus_ratings")
+    .select("candidate_id, competency_id, final_score, competencies(name)");
 
   // Build ICC matrix: each unique (candidate, competency) is a subject, each assessor is a rater
   const subjectKey = (candidateId: string, competencyId: string) =>
@@ -128,6 +138,44 @@ export default async function AnalyticsPage() {
     count: c.count,
   }));
 
+  // Build candidate comparison data
+  const candidateComparisons = (candidates ?? []).map((c) => {
+    const oar = (oars ?? []).find((o) => o.candidate_id === c.id);
+    const candConsensus = (consensusRatings ?? []).filter((cr) => cr.candidate_id === c.id);
+    const avgConsensus = candConsensus.length > 0
+      ? candConsensus.reduce((sum, cr) => sum + cr.final_score, 0) / candConsensus.length
+      : null;
+    return {
+      id: c.id,
+      name: c.full_name,
+      department: c.department ?? "Unassigned",
+      seniority: c.seniority_level ?? "Unknown",
+      oarScore: oar?.overall_score ?? null,
+      recommendation: oar?.recommendation ?? null,
+      avgCompetencyScore: avgConsensus ? Math.round(avgConsensus * 100) / 100 : null,
+    };
+  });
+
+  // Department aggregation
+  const deptMap = new Map<string, { total: number; count: number }>();
+  for (const cc of candidateComparisons) {
+    if (cc.oarScore !== null) {
+      const dept = cc.department;
+      const existing = deptMap.get(dept);
+      if (existing) {
+        existing.total += cc.oarScore;
+        existing.count++;
+      } else {
+        deptMap.set(dept, { total: cc.oarScore, count: 1 });
+      }
+    }
+  }
+  const departmentAverages = Array.from(deptMap.entries()).map(([dept, data]) => ({
+    department: dept,
+    averageOAR: Math.round((data.total / data.count) * 100) / 100,
+    count: data.count,
+  }));
+
   return (
     <AnalyticsDashboard
       engagementCount={engagements?.length ?? 0}
@@ -138,6 +186,8 @@ export default async function AnalyticsPage() {
       biasMetrics={biasMetrics}
       scoreDistribution={scoreDistribution}
       competencyAverages={competencyAverages}
+      candidateComparisons={candidateComparisons}
+      departmentAverages={departmentAverages}
     />
   );
 }

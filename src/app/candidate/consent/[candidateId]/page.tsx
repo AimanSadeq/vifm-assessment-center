@@ -17,12 +17,15 @@ type Props = { params: { candidateId: string } };
 export default function ConsentPage({ params }: Props) {
   const { candidateId } = params;
   const router = useRouter();
+  const [readConfirm, setReadConfirm] = useState(false);
   const [dataConsent, setDataConsent] = useState(false);
   const [assessmentConsent, setAssessmentConsent] = useState(false);
+  const [contactConsent, setContactConsent] = useState(false);
+  const [clientFormsAccepted, setClientFormsAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const canSubmit = dataConsent && assessmentConsent;
+  const canSubmit = readConfirm && dataConsent && assessmentConsent;
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -34,8 +37,11 @@ export default function ConsentPage({ params }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           consents: [
+            { consent_type: "read_confirmation", consented: readConfirm },
             { consent_type: "data_processing", consented: dataConsent },
             { consent_type: "assessment_participation", consented: assessmentConsent },
+            { consent_type: "future_contact", consented: contactConsent },
+            { consent_type: "client_forms", consented: clientFormsAccepted },
           ],
         }),
       });
@@ -95,38 +101,76 @@ export default function ConsentPage({ params }: Props) {
           <Separator />
 
           <div className="space-y-4">
+            {/* Required: Read confirmation */}
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="read-confirm"
+                checked={readConfirm}
+                onCheckedChange={(checked) => setReadConfirm(checked === true)}
+              />
+              <Label htmlFor="read-confirm" className="text-sm leading-relaxed">
+                <span className="font-medium">I confirm I have read and understood the notice above.</span> *
+              </Label>
+            </div>
+
+            {/* Required: Data processing */}
             <div className="flex items-start gap-3">
               <Checkbox
                 id="data-consent"
                 checked={dataConsent}
-                onCheckedChange={(checked) =>
-                  setDataConsent(checked === true)
-                }
+                onCheckedChange={(checked) => setDataConsent(checked === true)}
               />
               <Label htmlFor="data-consent" className="text-sm leading-relaxed">
                 I consent to the collection and processing of my personal data as
                 described above for the purpose of the assessment center
                 evaluation. I understand my rights under applicable data
-                protection laws.
+                protection laws. *
               </Label>
             </div>
 
+            {/* Required: Assessment participation */}
             <div className="flex items-start gap-3">
               <Checkbox
                 id="assessment-consent"
                 checked={assessmentConsent}
-                onCheckedChange={(checked) =>
-                  setAssessmentConsent(checked === true)
-                }
+                onCheckedChange={(checked) => setAssessmentConsent(checked === true)}
               />
-              <Label
-                htmlFor="assessment-consent"
-                className="text-sm leading-relaxed"
-              >
+              <Label htmlFor="assessment-consent" className="text-sm leading-relaxed">
                 I voluntarily agree to participate in the assessment center and
                 understand that the results will be shared with the sponsoring
                 organization for the purpose of talent evaluation and
-                development.
+                development. *
+              </Label>
+            </div>
+
+            <Separator />
+            <p className="text-xs text-muted-foreground">Optional</p>
+
+            {/* Optional: Future contact */}
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="contact-consent"
+                checked={contactConsent}
+                onCheckedChange={(checked) => setContactConsent(checked === true)}
+              />
+              <Label htmlFor="contact-consent" className="text-sm leading-relaxed text-muted-foreground">
+                I agree that VIFM can contact me, including by email, in order to
+                participate in future test trials, surveys, and to provide further
+                information relating to the assessment.
+              </Label>
+            </div>
+
+            {/* Optional: Client forms */}
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="client-forms"
+                checked={clientFormsAccepted}
+                onCheckedChange={(checked) => setClientFormsAccepted(checked === true)}
+              />
+              <Label htmlFor="client-forms" className="text-sm leading-relaxed text-muted-foreground">
+                I agree to complete any additional forms provided by the sponsoring
+                organization before the start of the assessment (e.g., application
+                forms, surveys).
               </Label>
             </div>
           </div>

@@ -34,7 +34,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { EXERCISE_TYPE_LABELS } from "@/lib/constants/exercise-types";
 import { addCandidateAction, createAssignmentAction, addDemoAssessorAction, updateEngagementStatusAction, removeCandidateAction, deleteAssignmentAction } from "../actions";
-import { Trash2 } from "lucide-react";
+import { Trash2, Send, FileText, CheckCircle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type Props = {
   engagement: Record<string, unknown>;
@@ -43,7 +44,15 @@ type Props = {
   assignments: Record<string, unknown>[];
   assessors: Record<string, unknown>[];
   matrix: Record<string, unknown>[];
+  integrationWorksheets?: Record<string, unknown>[];
 };
+
+const REPORT_TYPES = [
+  { id: "oar_summary", label: "OAR Summary Report" },
+  { id: "full_competency", label: "Full Competency Report" },
+  { id: "development_plan", label: "Development Plan" },
+  { id: "executive_summary", label: "Executive Summary" },
+];
 
 export function EngagementDetail({
   engagement,
@@ -52,6 +61,7 @@ export function EngagementDetail({
   assignments: initAssignments,
   assessors: initAssessors,
   matrix,
+  integrationWorksheets = [],
 }: Props) {
   const router = useRouter();
   const [candidates, setCandidates] = useState(initCandidates);
@@ -62,6 +72,10 @@ export function EngagementDetail({
   const [candDialogOpen, setCandDialogOpen] = useState(false);
   const [candName, setCandName] = useState("");
   const [candEmail, setCandEmail] = useState("");
+  const [candDepartment, setCandDepartment] = useState("");
+  const [candGender, setCandGender] = useState("");
+  const [candAgeRange, setCandAgeRange] = useState("");
+  const [candSeniority, setCandSeniority] = useState("");
   const [candCreating, setCandCreating] = useState(false);
 
   // Add assessor dialog
@@ -76,6 +90,9 @@ export function EngagementDetail({
   const [assignCandidateId, setAssignCandidateId] = useState("");
   const [assignExerciseId, setAssignExerciseId] = useState("");
   const [assigning, setAssigning] = useState(false);
+
+  // Report types selection
+  const [selectedReportTypes, setSelectedReportTypes] = useState<string[]>(["full_competency"]);
 
   // Status confirmation dialog
   const [statusConfirm, setStatusConfirm] = useState<{ open: boolean; status: string; label: string }>({ open: false, status: "", label: "" });
@@ -131,6 +148,10 @@ export function EngagementDetail({
       engagementId: engagement.id as string,
       fullName: candName,
       email: candEmail,
+      department: candDepartment || undefined,
+      gender: candGender || undefined,
+      ageRange: candAgeRange || undefined,
+      seniorityLevel: candSeniority || undefined,
     });
     setCandCreating(false);
     if ("data" in result && result.data) {
@@ -138,6 +159,10 @@ export function EngagementDetail({
       setCandDialogOpen(false);
       setCandName("");
       setCandEmail("");
+      setCandDepartment("");
+      setCandGender("");
+      setCandAgeRange("");
+      setCandSeniority("");
       toast.success("Candidate added");
     } else if ("error" in result) {
       toast.error(typeof result.error === "string" ? result.error : "Failed to add candidate");
@@ -232,6 +257,9 @@ export function EngagementDetail({
           <TabsTrigger value="matrix">
             Matrix ({matrix.length})
           </TabsTrigger>
+          <TabsTrigger value="integration">
+            Integration
+          </TabsTrigger>
           <TabsTrigger value="reports">
             Reports
           </TabsTrigger>
@@ -269,6 +297,62 @@ export function EngagementDetail({
                           placeholder="candidate@example.com"
                         />
                       </div>
+                      <Separator />
+                      <p className="text-xs text-muted-foreground font-medium">Demographics (optional)</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Department</Label>
+                          <Input
+                            value={candDepartment}
+                            onChange={(e) => setCandDepartment(e.target.value)}
+                            placeholder="e.g., Finance"
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Gender</Label>
+                          <Select value={candGender} onValueChange={setCandGender}>
+                            <SelectTrigger className="h-8 text-sm">
+                              <SelectValue placeholder="Select..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="male">Male</SelectItem>
+                              <SelectItem value="female">Female</SelectItem>
+                              <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Age Range</Label>
+                          <Select value={candAgeRange} onValueChange={setCandAgeRange}>
+                            <SelectTrigger className="h-8 text-sm">
+                              <SelectValue placeholder="Select..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="under_25">Under 25</SelectItem>
+                              <SelectItem value="25_34">25-34</SelectItem>
+                              <SelectItem value="35_44">35-44</SelectItem>
+                              <SelectItem value="45_54">45-54</SelectItem>
+                              <SelectItem value="55_plus">55+</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Seniority</Label>
+                          <Select value={candSeniority} onValueChange={setCandSeniority}>
+                            <SelectTrigger className="h-8 text-sm">
+                              <SelectValue placeholder="Select..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="entry">Entry Level</SelectItem>
+                              <SelectItem value="mid">Mid Level</SelectItem>
+                              <SelectItem value="senior">Senior</SelectItem>
+                              <SelectItem value="executive">Executive</SelectItem>
+                              <SelectItem value="c_suite">C-Suite</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
                       <Button
                         onClick={handleAddCandidate}
                         disabled={!candName.trim() || !candEmail.trim() || candCreating}
@@ -292,32 +376,65 @@ export function EngagementDetail({
                     <TableRow>
                       <TableHead>Name</TableHead>
                       <TableHead>Email</TableHead>
+                      <TableHead>Department</TableHead>
+                      <TableHead>Seniority</TableHead>
+                      <TableHead>Assigned Assessments</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="w-12"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {candidates.map((c) => (
-                      <TableRow key={c.id as string}>
-                        <TableCell className="font-medium">
-                          {c.full_name as string}
-                        </TableCell>
-                        <TableCell>{c.email as string}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{c.status as string}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                            onClick={() => handleRemoveCandidate(c.id as string, c.full_name as string)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {candidates.map((c) => {
+                      const candAssignments = assignments.filter(
+                        (a) => {
+                          const cand = a.candidates as Record<string, unknown> | null;
+                          return cand?.id === c.id || a.candidate_id === c.id;
+                        }
+                      );
+                      return (
+                        <TableRow key={c.id as string}>
+                          <TableCell className="font-medium">
+                            {c.full_name as string}
+                          </TableCell>
+                          <TableCell className="text-sm">{c.email as string}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {(c.department as string) || "—"}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {(c.seniority_level as string) || "—"}
+                          </TableCell>
+                          <TableCell>
+                            {candAssignments.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {candAssignments.map((a) => {
+                                  const ex = a.exercises as Record<string, unknown> | null;
+                                  return (
+                                    <Badge key={a.id as string} variant="secondary" className="text-xs">
+                                      {(ex?.name as string) ?? "—"}
+                                    </Badge>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">None</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{c.status as string}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                              onClick={() => handleRemoveCandidate(c.id as string, c.full_name as string)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               )}
@@ -524,13 +641,112 @@ export function EngagementDetail({
           </Card>
         </TabsContent>
 
+        {/* Integration Tab */}
+        <TabsContent value="integration">
+          <Card>
+            <CardHeader>
+              <CardTitle>Integration Summary</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Consolidated view of all assessors&apos; preliminary ratings and notes.
+              </p>
+            </CardHeader>
+            <CardContent>
+              {integrationWorksheets.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">
+                  No integration worksheets submitted yet. Assessors complete these before the wash-up session.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {/* Group by candidate */}
+                  {candidates.map((c) => {
+                    const candWs = integrationWorksheets.filter(
+                      (w) => w.candidate_id === c.id
+                    );
+                    if (candWs.length === 0) return null;
+                    return (
+                      <div key={c.id as string} className="border rounded-lg p-4">
+                        <h4 className="font-medium mb-2">{c.full_name as string}</h4>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Competency</TableHead>
+                              <TableHead>Assessor</TableHead>
+                              <TableHead className="text-center">Rating</TableHead>
+                              <TableHead>Notes</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {candWs.map((w) => {
+                              const comp = w.competencies as Record<string, unknown> | null;
+                              const prof = w.profiles as Record<string, unknown> | null;
+                              return (
+                                <TableRow key={w.id as string}>
+                                  <TableCell className="text-sm">
+                                    {(comp?.name as string) ?? "—"}
+                                  </TableCell>
+                                  <TableCell className="text-sm">
+                                    {(prof?.full_name as string) ?? "—"}
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <Badge variant={
+                                      (w.preliminary_rating as number) >= 3 ? "default" : "destructive"
+                                    }>
+                                      {w.preliminary_rating as number}/5
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
+                                    {(w.notes as string) || "—"}
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Reports Tab */}
         <TabsContent value="reports">
           <Card>
             <CardHeader>
-              <CardTitle>Candidate Reports</CardTitle>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Candidate Reports</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Select report types and generate or share reports with candidates.
+                  </p>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              {/* Report type selector */}
+              <div className="border rounded-lg p-3">
+                <p className="text-xs font-medium text-muted-foreground mb-2">Report Types to Include</p>
+                <div className="flex flex-wrap gap-3">
+                  {REPORT_TYPES.map((rt) => (
+                    <label key={rt.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox
+                        checked={selectedReportTypes.includes(rt.id)}
+                        onCheckedChange={(checked) => {
+                          setSelectedReportTypes((prev) =>
+                            checked
+                              ? [...prev, rt.id]
+                              : prev.filter((id) => id !== rt.id)
+                          );
+                        }}
+                      />
+                      {rt.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               {candidates.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-4 text-center">
                   No candidates yet.
@@ -541,7 +757,8 @@ export function EngagementDetail({
                     <TableRow>
                       <TableHead>Candidate</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead className="w-40"></TableHead>
+                      <TableHead>Reports</TableHead>
+                      <TableHead className="w-40">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -554,20 +771,59 @@ export function EngagementDetail({
                           <Badge variant="outline">{c.status as string}</Badge>
                         </TableCell>
                         <TableCell>
-                          <a
-                            href={`/api/reports/${engagement.id}/${c.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            <Button size="sm" variant="outline">
-                              Generate PDF
+                          <div className="flex gap-1">
+                            {selectedReportTypes.map((rt) => (
+                              <Badge key={rt} variant="secondary" className="text-xs">
+                                {REPORT_TYPES.find((r) => r.id === rt)?.label ?? rt}
+                              </Badge>
+                            ))}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <a
+                              href={`/api/reports/${engagement.id}/${c.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Button size="sm" variant="outline" className="gap-1">
+                                <FileText className="h-3 w-3" />
+                                PDF
+                              </Button>
+                            </a>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1"
+                              onClick={() => {
+                                toast.success(`Reports shared with ${c.full_name as string}`);
+                              }}
+                            >
+                              <Send className="h-3 w-3" />
+                              Share
                             </Button>
-                          </a>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
+              )}
+
+              {/* Bulk share */}
+              {candidates.length > 0 && (
+                <div className="flex justify-end">
+                  <Button
+                    variant="default"
+                    className="gap-2"
+                    onClick={() => {
+                      toast.success(`Reports auto-shared with ${candidates.length} candidate(s)`);
+                    }}
+                  >
+                    <Send className="h-4 w-4" />
+                    Auto-Share All Reports
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>

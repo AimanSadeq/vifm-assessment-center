@@ -63,7 +63,21 @@
       "Skill(commit-commands:commit-push-pr)",
       "Skill(commit-commands:commit-push-pr:*)",
       "Bash(gh repo:*)",
-      "Bash(start \"\" \"C:\\\\Users\\\\AimanSadeq\\\\OneDrive - Virginia Institute of Finance\\\\VIFM ASSESSMENT CENTER\\\\VIFM_AC_Portal_Production_Checklist.pdf\")"
+      "Bash(start \"\" \"C:\\\\Users\\\\AimanSadeq\\\\OneDrive - Virginia Institute of Finance\\\\VIFM ASSESSMENT CENTER\\\\VIFM_AC_Portal_Production_Checklist.pdf\")",
+      "Bash(npx tsc:*)",
+      "Bash(netstat -ano)",
+      "Bash(findstr :3000)",
+      "Bash(findstr LISTEN)",
+      "Bash(taskkill /PID 20076 /F)",
+      "Bash(cmd //c \"taskkill /PID 20076 /F\")",
+      "Bash(cmd //c \"FOR /F \"\"tokens=5\"\" %a IN \\(''netstat -ano ^| findstr :3000 ^| findstr LISTEN''\\) DO taskkill /PID %a /F\")",
+      "Bash(taskkill //PID 33640 //F)",
+      "Bash(node -e \"try { require\\(''docx''\\); console.log\\(''docx available''\\); } catch\\(e\\) { console.log\\(''docx not found globally''\\); }\")",
+      "Bash(node scripts/create-user-guide.js)",
+      "Bash(python \"C:\\\\Users\\\\AimanSadeq\\\\AppData\\\\Roaming\\\\Claude\\\\local-agent-mode-sessions\\\\skills-plugin\\\\a766ec16-b6ee-4451-8b59-05b0d9c7ceb4\\\\33d17923-95a2-4d74-a263-b54f625ea553\\\\skills\\\\docx\\\\scripts\\\\office\\\\validate.py\" \"C:\\\\Users\\\\AimanSadeq\\\\OneDrive - Virginia Institute of Finance\\\\VIFM ASSESSMENT CENTER\\\\VIFM_Assessment_Center_User_Guide.docx\")",
+      "Bash(tasklist)",
+      "Bash(taskkill //F //PID 29032)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/)"
     ]
   }
 }

@@ -12,8 +12,7 @@
       "name": "next-start",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "start"],
-      "port": 3000,
-      "autoPort": true
+      "port": 3000
     }
   ]
 }

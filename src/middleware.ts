@@ -5,7 +5,17 @@ import { updateSession } from "@/lib/supabase/middleware";
 // Set to false for development bypass
 const AUTH_ENABLED = false;
 
+// ARA respondent routes use token-based access (no Supabase session).
+// The token is validated server-side against ara_respondents.access_token.
+// Always bypass auth here, even in production mode.
+const isAraRespondentRoute = (pathname: string) =>
+  pathname.startsWith("/ara/respond/") || pathname.startsWith("/api/ara/respond/");
+
 export async function middleware(request: NextRequest) {
+  if (isAraRespondentRoute(request.nextUrl.pathname)) {
+    return NextResponse.next();
+  }
+
   if (!AUTH_ENABLED) {
     // Development mode — allow all access
     return NextResponse.next();

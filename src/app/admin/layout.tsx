@@ -22,6 +22,7 @@ import {
   X,
   ChevronsLeft,
   ChevronsRight,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 
@@ -32,6 +33,7 @@ const sidebarLinks: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/exercises", label: "Exercises", icon: Target },
   { href: "/admin/assessors", label: "Assessors", icon: Users },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/ara", label: "AI Readiness", icon: Sparkles },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 

@@ -6,6 +6,8 @@ Custom-built Assessment Center management platform for Virginia Institute of Fin
 ## Current Status
 All 5 development phases are **complete**. The portal is functionally ready with auth disabled for development. To go to production, flip `AUTH_ENABLED = true` in `src/middleware.ts` and follow `src/lib/auth/README.md`.
 
+**New module in progress:** VIFM ARA (AI Readiness Assessment) — see "ARA Module" section below. M1 (schema + consultant role + nav) complete on branch `feature/ara-module`.
+
 ## Tech Stack
 - **Framework:** Next.js 14 with App Router and TypeScript (strict mode)
 - **Styling:** Tailwind CSS with Shadcn/UI component library (New York style)
@@ -189,3 +191,45 @@ DAILY_API_KEY=your-daily-api-key
 - Auth is disabled for development. Flip `AUTH_ENABLED = true` and follow `src/lib/auth/README.md` for production.
 - No third-party assessment tool references (no SHL, no competitor names) anywhere in the codebase.
 - All competency content (descriptions, behavioral indicators, development tips, tags, Q&A questions) is original VIFM content.
+
+## ARA Module (AI Readiness Assessment)
+
+New module being built alongside the existing AC portal. Full spec in `VIFM_ARA_Handover.md` (on user's Desktop).
+
+### Non-breaking integration
+- All new DB tables prefixed `ara_` — no existing table modified
+- All new pages under `/ara/*` route namespace
+- All new API routes under `/api/ara/*`
+- Added `consultant` to the `user_role` enum (existing values unchanged)
+- Added single nav link "AI Readiness" to admin sidebar — no other nav changes
+- Middleware bypasses auth for `/ara/respond/[token]` routes (token-based access)
+
+### ARA roles
+- **admin** — reuses existing role. Manages question bank, regulatory docs, sandbox.
+- **consultant** — new role. Owns their own assessments; scoped RLS.
+- **respondent** — no account; accesses via `ara_respondents.access_token` validated by service-role API routes.
+
+### ARA tech choices (differ from AC where necessary)
+- **PDF reports:** Puppeteer (not React-PDF) — Arabic shaping + landscape bilingual side-by-side layout. Keep React-PDF for candidate reports.
+- **Languages:** full bilingual EN + Gulf Arabic with RTL. Translation fields on all content tables (`_en` / `_ar` suffixes).
+- **Region-driven content:** UAE clients see UAE frameworks only, Saudi sees Saudi only — never mixed.
+
+### Key ARA database objects
+- 8 pillars (strategy, data, technology, talent, culture, governance, operations, model_management)
+- Question bank versioning via `ara_question_bank_versions` — one active at a time (partial unique index)
+- Regulatory frameworks seeded: 7 UAE + 9 Saudi from handover Section 11
+- Helper function `ara_is_assessment_owner(uuid)` for consultant-scoped RLS
+
+### ARA build order (milestones)
+- **M1 (done):** Schema, consultant role, nav link
+- **M2:** Consultant dashboard + question bank admin + invitation emails
+- **M3:** Client respondent form + scoring engine (Levels 1–7)
+- **M4:** Regulatory engine + Phase 2 consultant tools
+- **M5:** Email automation + 27-page bilingual PDF report
+- **M6:** Annual reassessment, data retention, sandbox cleanup
+
+### Critical ARA business rules
+- Reports are **never** auto-sent to clients — consultant controls delivery
+- No file size limits on supporting material uploads
+- Desktop only — no mobile layouts required
+- UAE/Saudi framework isolation enforced at query and report layer

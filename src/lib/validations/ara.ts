@@ -1,0 +1,84 @@
+import { z } from "zod";
+
+export const araRegionSchema = z.enum(["uae", "saudi"]);
+export const araSectorSchema = z.enum(["government", "banking", "general"]);
+export const araLanguageSchema = z.enum(["en", "ar"]);
+export const araPillarSchema = z.enum([
+  "strategy",
+  "data",
+  "technology",
+  "talent",
+  "culture",
+  "governance",
+  "operations",
+  "model_management",
+]);
+
+// ─── Organizations ─────────────────────────────────────────────
+export const createAraOrganizationSchema = z.object({
+  name: z.string().min(1, "Name is required").max(200),
+  name_ar: z.string().max(200).optional().or(z.literal("")),
+  sector: araSectorSchema,
+  region: araRegionSchema,
+});
+export type CreateAraOrganizationValues = z.infer<typeof createAraOrganizationSchema>;
+
+// ─── Assessments ───────────────────────────────────────────────
+export const createAraAssessmentSchema = z.object({
+  organization_id: z.string().uuid("Select an organization"),
+  region: araRegionSchema,
+  sector: araSectorSchema,
+  default_language: araLanguageSchema,
+  is_sandbox: z.boolean(),
+  question_bank_version_id: z.string().uuid().nullable().optional(),
+});
+export type CreateAraAssessmentValues = z.infer<typeof createAraAssessmentSchema>;
+
+// ─── Respondents ───────────────────────────────────────────────
+export const createAraRespondentSchema = z.object({
+  assessment_id: z.string().uuid(),
+  name: z.string().min(1, "Name is required").max(200),
+  name_ar: z.string().max(200).optional().or(z.literal("")),
+  email: z.string().email("Invalid email address"),
+  role_key: z.string().max(100).optional().or(z.literal("")),
+  role_label_en: z.string().max(200).optional().or(z.literal("")),
+  role_label_ar: z.string().max(200).optional().or(z.literal("")),
+  language_preference: araLanguageSchema,
+  pillar_assignments: z.array(araPillarSchema).default([]),
+});
+export type CreateAraRespondentValues = z.infer<typeof createAraRespondentSchema>;
+
+// ─── Question bank versions ────────────────────────────────────
+export const createAraVersionSchema = z.object({
+  version_number: z
+    .string()
+    .regex(/^\d+\.\d+$/, "Use MAJOR.MINOR format (e.g. 1.0, 1.1, 2.0)"),
+  version_label: z.string().max(200).optional().or(z.literal("")),
+  release_notes: z.string().max(5000).optional().or(z.literal("")),
+});
+export type CreateAraVersionValues = z.infer<typeof createAraVersionSchema>;
+
+// ─── Questions ─────────────────────────────────────────────────
+const questionOptionSchema = z.object({
+  value: z.string().min(1),
+  label: z.string().min(1),
+});
+
+export const createAraQuestionSchema = z.object({
+  version_id: z.string().uuid(),
+  pillar_id: araPillarSchema,
+  question_number: z.coerce.number().int().positive(),
+  question_text_en: z.string().min(1, "English question text required"),
+  question_text_ar: z.string().min(1, "Arabic question text required"),
+  question_type: z.enum(["rating", "multiple_choice", "yes_no", "open_text"]),
+  options_en: z.array(questionOptionSchema).optional().nullable(),
+  options_ar: z.array(questionOptionSchema).optional().nullable(),
+  score_map: z.record(z.string(), z.number()).optional().nullable(),
+  help_text_en: z.string().max(2000).optional().or(z.literal("")),
+  help_text_ar: z.string().max(2000).optional().or(z.literal("")),
+  region: z.enum(["uae", "saudi", "both"]).default("both"),
+  sector: z.enum(["government", "banking", "general", "all"]).default("all"),
+  layer: z.union([z.literal(1), z.literal(2)]).default(1),
+  display_order: z.coerce.number().int().nonnegative().default(0),
+});
+export type CreateAraQuestionValues = z.infer<typeof createAraQuestionSchema>;

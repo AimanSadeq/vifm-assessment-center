@@ -222,11 +222,19 @@ New module being built alongside the existing AC portal. Full spec in `VIFM_ARA_
 
 ### ARA build order (milestones)
 - **M1 (done):** Schema, consultant role, nav link
-- **M2:** Consultant dashboard + question bank admin + invitation emails
-- **M3:** Client respondent form + scoring engine (Levels 1–7)
+- **M2 (core done):** Organizations CRUD, assessments, respondents, question bank versions + add form
+- **M3 (in progress):** Client respondent form + scoring engine (Levels 1–7)
 - **M4:** Regulatory engine + Phase 2 consultant tools
 - **M5:** Email automation + 27-page bilingual PDF report
 - **M6:** Annual reassessment, data retention, sandbox cleanup
+
+### ARA deferred items (from earlier milestones)
+Track here — pick up as scope allows. Do NOT delete without user confirmation.
+- **M2.1 — Invitation email send:** `ara_respondents.access_token` is generated and the link is previewable in the consultant dashboard, but no email is actually sent. Needs a server action that hits SendGrid/Resend with the bilingual welcome template, respects `is_sandbox` → SANDBOX_EMAIL_REDIRECT env var, and writes to `ara_email_log`.
+- **M2.2 — Question edit/delete/reorder:** admin can add but not modify. Needs `updateAraQuestion`, `deleteAraQuestion`, drag-to-reorder server action.
+- **M2.3 — Question CSV bulk import:** per handover Section 13.2 — build after the edit form so admin can re-export and reimport.
+- **M2.4 — Organization edit/delete + anonymize function:** only list + create exist today. Anonymize is required for GDPR/PDPL data-erasure requests (M6 dependency).
+- **M2.5 — Reopen/lock/archive assessment controls** on assessment detail page (`status` lifecycle transitions).
 
 ### Critical ARA business rules
 - Reports are **never** auto-sent to clients — consultant controls delivery

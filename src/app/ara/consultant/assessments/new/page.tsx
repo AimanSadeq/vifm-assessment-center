@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createAraAssessment } from "@/lib/ara/actions";
 import type { AraOrganization, AraQuestionBankVersion } from "@/types/ara";
 
+export const dynamic = "force-dynamic";
+
 export default async function NewAraAssessmentPage() {
   const sb = createServiceClient();
   const [{ data: orgs }, { data: versions }] = await Promise.all([

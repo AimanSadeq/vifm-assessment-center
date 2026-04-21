@@ -1,37 +1,119 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { notFound } from "next/navigation";
+import { FlaskConical } from "lucide-react";
+import { createServiceClient } from "@/lib/supabase/server";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { VifmLogo } from "@/components/shared/vifm-logo";
+import {
+  loadRespondentByToken, loadQuestionsForRespondent,
+} from "@/lib/ara/respondent-access";
+import { touchAraRespondent, markAraRespondentComplete } from "@/lib/ara/respondent-actions";
+import { QuestionsForm, CompleteButton } from "./_components/questions-form";
+import { LanguageToggle } from "./_components/language-toggle";
 
-// Token-based respondent entry point.
-// Access is validated server-side against ara_respondents.access_token
-// via service-role API routes — no RLS coupling needed.
-// Full implementation lands in M3.
+export const dynamic = "force-dynamic";
 
-export default function AraRespondPage({ params }: { params: { token: string } }) {
-  const tokenPreview = params.token.slice(0, 8);
+export default async function AraRespondPage({
+  params,
+}: {
+  params: { token: string };
+}) {
+  const ctx = await loadRespondentByToken(params.token);
+  if (!ctx) return notFound();
+
+  // Update first_opened_at / last_active_at. Must happen before we render.
+  await touchAraRespondent(params.token);
+
+  // Refetch to get the up-to-date language_preference after the touch.
+  const sb = createServiceClient();
+  const { data: refreshed } = await sb
+    .from("ara_respondents")
+    .select("language_preference, completed_at")
+    .eq("id", ctx.respondent.id)
+    .maybeSingle<{ language_preference: "en" | "ar"; completed_at: string | null }>();
+
+  const language = refreshed?.language_preference ?? ctx.respondent.language_preference;
+  const rtl = language === "ar";
+  const completed = !!refreshed?.completed_at;
+
+  const questions = await loadQuestionsForRespondent(ctx);
+
+  const { data: answers } = await sb
+    .from("ara_responses")
+    .select("question_id, answer_value, answer_text, needs_verification")
+    .eq("respondent_id", ctx.respondent.id);
+
+  const completeAction = async () => {
+    "use server";
+    await markAraRespondentComplete(params.token);
+  };
+
+  const orgName = rtl
+    ? ctx.assessment.organization?.name_ar ?? ctx.assessment.organization?.name
+    : ctx.assessment.organization?.name;
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-2xl mx-auto px-6 py-16">
-        <div className="mb-8 flex justify-center">
+    <div className="min-h-screen bg-background" dir={rtl ? "rtl" : "ltr"}>
+      <div className="max-w-3xl mx-auto px-6 py-10 space-y-6">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4">
           <VifmLogo variant="color" size="md" />
+          <LanguageToggle token={params.token} current={language} />
         </div>
+
+        {ctx.assessment.is_sandbox && (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 flex items-center gap-2 text-amber-900 text-sm">
+            <FlaskConical className="h-4 w-4" />
+            <span>
+              {rtl ? "هذا تقييم تجريبي" : "This is a test assessment"}
+            </span>
+          </div>
+        )}
 
         <Card>
           <CardHeader>
-            <CardTitle>AI Readiness Assessment</CardTitle>
-            <CardDescription>
-              Welcome — your assessment will load here once M3 ships.
-            </CardDescription>
+            <CardTitle className="text-xl">
+              {rtl ? "تقييم الاستعداد للذكاء الاصطناعي" : "AI Readiness Assessment"}
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              {orgName ?? "—"}
+            </p>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
+          <CardContent className="text-sm text-muted-foreground space-y-2">
             <p>
-              Token preview: <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{tokenPreview}…</code>
+              {rtl
+                ? `مرحباً ${ctx.respondent.name_ar ?? ctx.respondent.name}. لقد تم تعيينك للأقسام التالية:`
+                : `Welcome ${ctx.respondent.name}. You've been assigned the following sections:`}
             </p>
             <p className="text-xs">
-              The bilingual form, auto-save, and supporting materials upload ship in M3.
+              {rtl
+                ? "إجاباتك محفوظة تلقائياً. يمكنك العودة لاحقاً لإكمال التقييم."
+                : "Your answers are saved automatically. You can return anytime to finish."}
             </p>
           </CardContent>
         </Card>
+
+        {/* Questions form */}
+        <QuestionsForm
+          token={params.token}
+          questions={questions}
+          answers={(answers ?? []).map((a) => ({
+            question_id: a.question_id,
+            answer_value: a.answer_value,
+            answer_text: a.answer_text,
+            needs_verification: a.needs_verification ?? false,
+          }))}
+          language={language}
+        />
+
+        {/* Complete button */}
+        {questions.length > 0 && (
+          <CompleteButton
+            token={params.token}
+            alreadyComplete={completed}
+            language={language}
+            onComplete={completeAction}
+          />
+        )}
       </div>
     </div>
   );

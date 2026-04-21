@@ -81,9 +81,9 @@ CREATE TABLE ara_assessments (
   completed_at               timestamptz,
   frozen_at                  timestamptz,
   archived_at                timestamptz,
-  scheduled_deletion_date    date GENERATED ALWAYS AS (
-    (archived_at + INTERVAL '3 years')::date
-  ) STORED,
+  -- scheduled_deletion_date is computed dynamically by the retention
+  -- engine (M6) as archived_at + INTERVAL '3 years'. Not stored as a
+  -- generated column because timestamptz arithmetic is not IMMUTABLE.
   assessment_year            integer NOT NULL DEFAULT EXTRACT(YEAR FROM now())
 );
 

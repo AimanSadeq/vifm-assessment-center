@@ -12,18 +12,8 @@
 -- token validation.
 -- ============================================================
 
--- ────────────────────────────────────────────────────────────
--- Helper: is current user a consultant who owns this assessment
--- ────────────────────────────────────────────────────────────
-
-CREATE OR REPLACE FUNCTION ara_is_assessment_owner(assessment_uuid uuid)
-RETURNS boolean AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM ara_assessments a
-    WHERE a.id = assessment_uuid
-      AND a.consultant_id = auth.uid()
-  );
-$$ LANGUAGE sql SECURITY DEFINER STABLE;
+-- Helper function ara_is_assessment_owner(uuid) is defined later
+-- in this migration, after the ara_assessments table exists.
 
 
 -- ────────────────────────────────────────────────────────────
@@ -424,6 +414,22 @@ CREATE TABLE ara_data_management_log (
 );
 
 CREATE INDEX idx_ara_dmlog_target ON ara_data_management_log(target_table, target_id);
+
+
+-- ────────────────────────────────────────────────────────────
+-- Helper: is current user a consultant who owns this assessment
+-- (defined after ara_assessments table exists, so SQL-language
+-- function validation succeeds)
+-- ────────────────────────────────────────────────────────────
+
+CREATE OR REPLACE FUNCTION ara_is_assessment_owner(assessment_uuid uuid)
+RETURNS boolean AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM ara_assessments a
+    WHERE a.id = assessment_uuid
+      AND a.consultant_id = auth.uid()
+  );
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
 
 
 -- ────────────────────────────────────────────────────────────

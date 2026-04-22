@@ -26,6 +26,10 @@ import {
 import { summarizeComplianceByFramework } from "@/lib/ara/compliance";
 import { detectAraGaps, detectAraShadowAi } from "@/lib/ara/detectors";
 import { computeYoYComparison } from "@/lib/ara/year-on-year";
+import { ConfirmAction } from "@/components/shared/confirm-action";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ValidatedScoreInput } from "./_components/validated-score-input";
 import type {
   AraAssessment, AraOrganization, AraRespondent, AraRespondentPillarAssignment,
@@ -241,54 +245,90 @@ export default async function AraAssessmentDetailPage({
               {assessment.phase.replace("phase", "Phase ")}
             </Badge>
             {!isArchived && (isFrozen ? (
-              <form action={unfreezeAction}>
-                <Button size="sm" type="submit" variant="outline" className="gap-1">
-                  <Unlock className="h-3 w-3" /> Unfreeze
-                </Button>
-              </form>
+              <ConfirmAction
+                action={unfreezeAction}
+                variant="outline"
+                destructive={false}
+                title="Unfreeze scores?"
+                description="Respondents will be able to update their answers again, and scores will continue to recalculate as responses come in."
+                confirmLabel="Unfreeze"
+                successMessage="Scores unfrozen"
+              >
+                <Unlock className="h-3 w-3" /> Unfreeze
+              </ConfirmAction>
             ) : (
-              <form action={freezeAction}>
-                <Button size="sm" type="submit" className="gap-1">
-                  <Lock className="h-3 w-3" /> Freeze
-                </Button>
-              </form>
+              <ConfirmAction
+                action={freezeAction}
+                variant="default"
+                destructive={false}
+                title="Freeze scores?"
+                description="Takes a snapshot of current scores for the report. Respondents can no longer change answers until you unfreeze. You can always unfreeze and refreeze."
+                confirmLabel="Freeze"
+                successMessage="Scores frozen"
+              >
+                <Lock className="h-3 w-3" /> Freeze
+              </ConfirmAction>
             ))}
-            <div className="relative group">
-              <Button size="sm" variant="outline" className="gap-1">
-                <Eye className="h-3 w-3" /> Preview report
-              </Button>
-              <div className="absolute right-0 top-full pt-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity z-20">
-                <div className="bg-popover border rounded-md shadow-md py-1 min-w-[160px]">
-                  <Link href={`/ara/consultant/assessments/${assessment.id}/report?lang=en`} target="_blank" className="block px-3 py-1.5 text-xs hover:bg-muted">English</Link>
-                  <Link href={`/ara/consultant/assessments/${assessment.id}/report?lang=ar`} target="_blank" className="block px-3 py-1.5 text-xs hover:bg-muted">العربية</Link>
-                  <Link href={`/ara/consultant/assessments/${assessment.id}/report?lang=bilingual`} target="_blank" className="block px-3 py-1.5 text-xs hover:bg-muted">Bilingual</Link>
-                </div>
-              </div>
-            </div>
-            <div className="relative group">
-              <Button size="sm" className="gap-1 bg-primary">
-                <FileDown className="h-3 w-3" /> Download PDF
-              </Button>
-              <div className="absolute right-0 top-full pt-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity z-20">
-                <div className="bg-popover border rounded-md shadow-md py-1 min-w-[160px]">
-                  <a href={`/api/ara/reports/${assessment.id}/pdf?language=en`} className="block px-3 py-1.5 text-xs hover:bg-muted">English</a>
-                  <a href={`/api/ara/reports/${assessment.id}/pdf?language=ar`} className="block px-3 py-1.5 text-xs hover:bg-muted">العربية</a>
-                  <a href={`/api/ara/reports/${assessment.id}/pdf?language=bilingual`} className="block px-3 py-1.5 text-xs hover:bg-muted">Bilingual</a>
-                </div>
-              </div>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline" className="gap-1">
+                  <Eye className="h-3 w-3" /> Preview report
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link href={`/ara/consultant/assessments/${assessment.id}/report?lang=en`} target="_blank">English</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={`/ara/consultant/assessments/${assessment.id}/report?lang=ar`} target="_blank">العربية</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={`/ara/consultant/assessments/${assessment.id}/report?lang=bilingual`} target="_blank">Bilingual</Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" className="gap-1">
+                  <FileDown className="h-3 w-3" /> Download PDF
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <a href={`/api/ara/reports/${assessment.id}/pdf?language=en`}>English</a>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a href={`/api/ara/reports/${assessment.id}/pdf?language=ar`}>العربية</a>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a href={`/api/ara/reports/${assessment.id}/pdf?language=bilingual`}>Bilingual</a>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             {isArchived ? (
-              <form action={reopenAction}>
-                <Button size="sm" type="submit" variant="outline" className="gap-1">
-                  <RotateCcw className="h-3 w-3" /> Reopen
-                </Button>
-              </form>
+              <ConfirmAction
+                action={reopenAction}
+                variant="outline"
+                destructive={false}
+                title="Reopen this assessment?"
+                description="Moves back to Phase 1 and unfreezes scores. Respondents can answer again."
+                confirmLabel="Reopen"
+                successMessage="Assessment reopened"
+              >
+                <RotateCcw className="h-3 w-3" /> Reopen
+              </ConfirmAction>
             ) : (
-              <form action={archiveAction}>
-                <Button size="sm" type="submit" variant="outline" className="gap-1">
-                  <Archive className="h-3 w-3" /> Archive
-                </Button>
-              </form>
+              <ConfirmAction
+                action={archiveAction}
+                variant="outline"
+                destructive={false}
+                title="Archive this assessment?"
+                description="The assessment is closed to further activity. Generated reports are kept. You can reopen later. Archived assessments are purged after 3 years per retention policy."
+                confirmLabel="Archive"
+                successMessage="Assessment archived"
+              >
+                <Archive className="h-3 w-3" /> Archive
+              </ConfirmAction>
             )}
           </div>
         </div>

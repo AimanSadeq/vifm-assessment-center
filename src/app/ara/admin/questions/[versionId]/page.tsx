@@ -13,6 +13,7 @@ import {
   deleteAraQuestion, moveAraQuestion,
   importAraQuestionsCsv,
 } from "@/lib/ara/actions";
+import { ConfirmAction } from "@/components/shared/confirm-action";
 import type { AraQuestion, AraQuestionBankVersion } from "@/types/ara";
 
 export const dynamic = "force-dynamic";
@@ -73,11 +74,25 @@ export default async function AraVersionDetailPage({
             {version.is_active ? (
               <Badge className="bg-emerald-600 hover:bg-emerald-600">Active</Badge>
             ) : (
-              <form action={publishAction}>
-                <Button type="submit" variant="default">
-                  Publish &amp; activate
-                </Button>
-              </form>
+              <ConfirmAction
+                action={publishAction}
+                variant="default"
+                size="default"
+                destructive={false}
+                title="Publish and activate this version?"
+                description={
+                  <>
+                    All new assessments created from now on will use{" "}
+                    <strong>v{version.version_number}</strong> as their question bank.
+                    Existing in-flight assessments keep their original version.
+                    The currently active version (if any) will be deactivated.
+                  </>
+                }
+                confirmLabel="Publish & activate"
+                successMessage={`v${version.version_number} activated`}
+              >
+                Publish &amp; activate
+              </ConfirmAction>
             )}
           </div>
         </div>
@@ -151,15 +166,24 @@ export default async function AraVersionDetailPage({
                               >
                                 <Pencil className="h-3.5 w-3.5" />
                               </Link>
-                              <form action={deleteAction}>
-                                <button
-                                  type="submit"
-                                  className="p-1 text-muted-foreground hover:text-destructive"
-                                  aria-label="Delete"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                              </form>
+                              <ConfirmAction
+                                action={deleteAction}
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-transparent"
+                                title={`Delete Q${q.question_number}?`}
+                                description={
+                                  <>
+                                    Removes this question from v{version.version_number}.
+                                    If any respondent has answered it, that response
+                                    is also removed. Not reversible.
+                                  </>
+                                }
+                                confirmLabel="Delete"
+                                successMessage="Question deleted"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </ConfirmAction>
                             </div>
                           </li>
                         );

@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import {
   updateAraOrganization, deleteAraOrganization, anonymizeAraOrganization,
 } from "@/lib/ara/actions";
+import { ConfirmAction } from "@/components/shared/confirm-action";
 import type { AraOrganization } from "@/types/ara";
 
 export const dynamic = "force-dynamic";
@@ -145,17 +146,25 @@ export default async function EditAraOrganizationPage({
                   PDPL / GDPR erasure requests.
                 </p>
               </div>
-              <form action={anonymizeAction}>
-                <Button
-                  type="submit"
-                  variant="outline"
-                  size="sm"
-                  className="border-destructive text-destructive hover:bg-destructive/10"
-                  disabled={org.data_anonymized}
-                >
-                  {org.data_anonymized ? "Anonymized" : "Anonymize"}
-                </Button>
-              </form>
+              <ConfirmAction
+                action={anonymizeAction}
+                variant="outline"
+                className="border-destructive text-destructive hover:bg-destructive/10"
+                title="Anonymize organization?"
+                description={
+                  <>
+                    Replaces the organization name, all respondent names, and
+                    respondent emails with <code className="mx-1 bg-muted px-1 rounded">[ANONYMIZED]</code>
+                    across all assessments. This cannot be undone. Required
+                    for UAE PDPL / Saudi PDPL / GDPR erasure requests.
+                  </>
+                }
+                confirmLabel="Anonymize"
+                successMessage="Organization anonymized"
+                disabled={org.data_anonymized}
+              >
+                {org.data_anonymized ? "Anonymized" : "Anonymize"}
+              </ConfirmAction>
             </div>
 
             {/* Delete */}
@@ -169,11 +178,23 @@ export default async function EditAraOrganizationPage({
                   are retained as VIFM business records.
                 </p>
               </div>
-              <form action={deleteAction}>
-                <Button type="submit" variant="destructive" size="sm">
-                  Delete
-                </Button>
-              </form>
+              <ConfirmAction
+                action={deleteAction}
+                title="Delete this organization?"
+                description={
+                  <>
+                    This hard-deletes the organization and cascades to{" "}
+                    <strong>{assessmentCount ?? 0} assessment{assessmentCount === 1 ? "" : "s"}</strong>
+                    {" "}and all their respondents, answers, materials, scores,
+                    and compliance results. <strong>Not reversible.</strong>
+                    Generated reports are retained as VIFM business records.
+                  </>
+                }
+                confirmLabel="Delete"
+                successMessage="Organization deleted"
+              >
+                Delete
+              </ConfirmAction>
             </div>
           </CardContent>
         </Card>

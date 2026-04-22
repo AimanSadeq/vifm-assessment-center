@@ -235,6 +235,15 @@ Track here — pick up as scope allows. Do NOT delete without user confirmation.
 - **M2.3 — Question CSV bulk import:** per handover Section 13.2 — build after the edit form so admin can re-export and reimport.
 - **M2.4 — Organization edit/delete + anonymize function:** only list + create exist today. Anonymize is required for GDPR/PDPL data-erasure requests (M6 dependency).
 - **M2.5 — Reopen/lock/archive assessment controls** on assessment detail page (`status` lifecycle transitions).
+- **M3.1 — Supporting Materials upload** on respondent form (URL / Word / PDF / PowerPoint, unlimited, no size limit; see handover Section 10).
+- **M3.2 — Offline banner + retry logic** for connection loss (handover Section 16.3).
+- **M3.3 — Consultant notification email** on respondent completion / all-complete.
+- **M4.1 — Pillar weight editor** on consultant detail (weights must sum to 100, stored in `ara_assessments.pillar_weights`).
+- **M4.2 — Gap Detector alerts** — flag >2-point disagreements across respondents (handover Section 9.5).
+- **M4.3 — Shadow AI Alert** detection from response patterns (handover Section 11.4).
+- **M4.4 — Layer 2 consultant guide questions view** (only visible to consultant, handover Section 7.4).
+- **M4.5 — Perception vs Reality capture** — consultant-entered `consultant_validated_score` per pillar to populate Level 6 gap.
+- **M4.6 — Regulatory document upload + Claude AI requirement extraction** (handover Section 11.7).
 
 ### Critical ARA business rules
 - Reports are **never** auto-sent to clients — consultant controls delivery

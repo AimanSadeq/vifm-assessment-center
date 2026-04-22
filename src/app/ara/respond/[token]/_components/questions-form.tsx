@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { Check, Loader2, AlertCircle, HelpCircle } from "lucide-react";
 import { saveAraAnswer } from "@/lib/ara/respondent-actions";
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
@@ -68,6 +68,11 @@ export function QuestionsForm({ token, questions, answers, language }: Questions
     return s;
   });
 
+  // Ref mirrors state so debounced save reads the latest values, not the
+  // stale closure from the render that scheduled the timer.
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
   const [, startTransition] = useTransition();
   const [timers] = useState<Map<string, ReturnType<typeof setTimeout>>>(() => new Map());
 
@@ -75,7 +80,7 @@ export function QuestionsForm({ token, questions, answers, language }: Questions
     const existing = timers.get(questionId);
     if (existing) clearTimeout(existing);
     const handle = setTimeout(() => {
-      const current = state[questionId];
+      const current = stateRef.current[questionId];
       if (!current) return;
       setState((prev) => ({ ...prev, [questionId]: { ...prev[questionId], state: "saving" } }));
       startTransition(async () => {
@@ -108,7 +113,11 @@ export function QuestionsForm({ token, questions, answers, language }: Questions
   };
 
   const updateAnswer = (questionId: string, patch: Partial<Omit<LocalAnswer, "state">>) => {
-    setState((prev) => ({ ...prev, [questionId]: { ...prev[questionId], ...patch } }));
+    setState((prev) => {
+      const next = { ...prev, [questionId]: { ...prev[questionId], ...patch } };
+      stateRef.current = next; // keep ref in sync for immediate debounce reads
+      return next;
+    });
     scheduleSave(questionId);
   };
 

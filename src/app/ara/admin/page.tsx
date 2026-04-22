@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Building2, Database, FileText, FlaskConical } from "lucide-react";
+import { ArrowLeft, Building2, Database, FileText, FlaskConical, FileClock } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function AraAdminPage() {
@@ -26,11 +26,18 @@ export default function AraAdminPage() {
       status: "Coming in M4",
     },
     {
-      href: null,
+      href: "/ara/admin/sandbox",
       icon: FlaskConical,
       title: "Sandbox Data",
       description: "Clear all sandbox assessments with confirmation.",
-      status: "Coming in M6",
+      status: "Ready",
+    },
+    {
+      href: "/ara/admin/retention",
+      icon: FileClock,
+      title: "Data Retention",
+      description: "Purge archived assessments older than 3 years.",
+      status: "Ready",
     },
   ] as const;
 

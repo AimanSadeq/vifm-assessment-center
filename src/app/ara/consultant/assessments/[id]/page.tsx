@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft, FlaskConical, Mail, Link2, Lock, Unlock, RefreshCw, Plus, Trash2,
-  Archive, RotateCcw, BookOpen, AlertTriangle, ShieldAlert,
+  Archive, RotateCcw, BookOpen, AlertTriangle, ShieldAlert, TrendingUp, TrendingDown, Minus,
 } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +24,7 @@ import {
 } from "@/lib/ara/consultant-actions";
 import { summarizeComplianceByFramework } from "@/lib/ara/compliance";
 import { detectAraGaps, detectAraShadowAi } from "@/lib/ara/detectors";
+import { computeYoYComparison } from "@/lib/ara/year-on-year";
 import { ValidatedScoreInput } from "./_components/validated-score-input";
 import type {
   AraAssessment, AraOrganization, AraRespondent, AraRespondentPillarAssignment,
@@ -155,10 +156,11 @@ export default async function AraAssessmentDetailPage({
   const pillarMap = new Map<string, PillarScoreRow>();
   (pillarScores ?? []).forEach((p) => pillarMap.set(p.pillar_id, p));
 
-  // Gap Detector + Shadow AI Alert — run in parallel
-  const [gapAlerts, shadowAi] = await Promise.all([
+  // Gap Detector + Shadow AI Alert + year-on-year — run in parallel
+  const [gapAlerts, shadowAi, yoy] = await Promise.all([
     detectAraGaps(assessment.id),
     detectAraShadowAi(assessment.id),
+    computeYoYComparison(assessment.id),
   ]);
 
   // Load Layer 2 consultant-guide questions for this version (never shown
@@ -729,6 +731,75 @@ export default async function AraAssessmentDetailPage({
             )}
           </CardContent>
         </Card>
+
+        {/* ─── Year-on-year comparison ─── */}
+        {yoy && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" /> Year-on-year comparison
+              </CardTitle>
+              <CardDescription>
+                {yoy.compatible
+                  ? `Comparing against ${yoy.prior_year} assessment (same major question bank version).`
+                  : yoy.incompatibleReason}
+              </CardDescription>
+            </CardHeader>
+            {yoy.compatible && (
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Pillar</TableHead>
+                      <TableHead className="text-right">{yoy.prior_year ?? "Prior"}</TableHead>
+                      <TableHead className="text-right">{assessment.assessment_year}</TableHead>
+                      <TableHead className="text-right">Δ</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {yoy.pillars.map((p) => {
+                      const DeltaIcon =
+                        p.delta == null ? Minus : p.delta > 0 ? TrendingUp : p.delta < 0 ? TrendingDown : Minus;
+                      const deltaClass =
+                        p.delta == null ? "text-muted-foreground" : p.delta > 0 ? "text-emerald-700" : p.delta < 0 ? "text-destructive" : "text-muted-foreground";
+                      return (
+                        <TableRow key={p.pillar_id}>
+                          <TableCell className="font-medium">{p.pillar_name_en}</TableCell>
+                          <TableCell className="text-right tabular-nums text-muted-foreground">
+                            {p.prior_raw != null ? p.prior_raw.toFixed(2) : "—"}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {p.current_raw != null ? p.current_raw.toFixed(2) : "—"}
+                          </TableCell>
+                          <TableCell className={`text-right tabular-nums ${deltaClass}`}>
+                            <span className="inline-flex items-center gap-1 justify-end">
+                              <DeltaIcon className="h-3 w-3" />
+                              {p.delta != null ? (p.delta > 0 ? `+${p.delta.toFixed(2)}` : p.delta.toFixed(2)) : "—"}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {yoy.current_overall != null && yoy.prior_overall != null && (
+                      <TableRow className="font-semibold border-t-2">
+                        <TableCell>Overall</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {yoy.prior_overall.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {yoy.current_overall.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {(yoy.current_overall - yoy.prior_overall).toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            )}
+          </Card>
+        )}
 
         {/* ─── Supporting Materials ─── */}
         <Card className="mb-6">

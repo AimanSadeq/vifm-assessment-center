@@ -1,20 +1,50 @@
 import { NextRequest, NextResponse } from "next/server";
-import puppeteer from "puppeteer";
+import type { Browser } from "puppeteer-core";
 import { createServiceClient } from "@/lib/supabase/server";
 
-// Dynamic + force-node: Puppeteer needs the Node runtime, not Edge.
+// Puppeteer needs the Node runtime, not Edge.
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Vercel: default serverless timeout is 10s. PDF gen takes ~7–10s for
+// a 29-page report — bump to 60s. Hobby tier caps at 60; Pro goes higher.
+export const maxDuration = 60;
+
 /**
- * GET /api/ara/reports/[assessmentId]/pdf
+ * Launch Chromium, detecting runtime:
+ *   - Vercel / production: puppeteer-core + @sparticuz/chromium
+ *     (small, serverless-compatible, under the 50 MB function bundle)
+ *   - Local dev: full puppeteer package (bundled Chromium)
  *
- * Renders the SSR report page at /ara/consultant/assessments/[id]/report?bare=1
- * in a headless Chromium, outputs an A4 PDF, and persists a row in ara_reports.
+ * The "full" puppeteer package is only required in dev, so we import it
+ * lazily. In production the bundler dead-code-eliminates it.
+ */
+async function launchBrowser(): Promise<Browser> {
+  const isProduction = !!process.env.VERCEL || process.env.NODE_ENV === "production";
+
+  if (isProduction) {
+    const chromium = (await import("@sparticuz/chromium")).default;
+    const puppeteerCore = (await import("puppeteer-core")).default;
+    return puppeteerCore.launch({
+      args: chromium.args,
+      defaultViewport: { width: 1200, height: 900, deviceScaleFactor: 1 },
+      executablePath: await chromium.executablePath(),
+      headless: true,
+    }) as unknown as Browser;
+  }
+
+  const puppeteer = (await import("puppeteer")).default;
+  return puppeteer.launch({
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  }) as unknown as Browser;
+}
+
+/**
+ * GET /api/ara/reports/[assessmentId]/pdf?language=en|ar|bilingual
  *
- * Intentionally simple: we boot a full browser on every request. For
- * production we would switch to @sparticuz/chromium + puppeteer-core on
- * Vercel, or keep a warm browser pool.
+ * Renders the SSR report page at /ara/consultant/assessments/[id]/report?bare=1&lang=<language>
+ * in headless Chromium, outputs PDF, and persists a row in ara_reports.
  */
 export async function GET(
   req: NextRequest,
@@ -27,12 +57,9 @@ export async function GET(
   const reportUrl =
     `${url.origin}/ara/consultant/assessments/${params.assessmentId}/report?bare=1&lang=${language}`;
 
-  let browser: Awaited<ReturnType<typeof puppeteer.launch>> | null = null;
+  let browser: Browser | null = null;
   try {
-    browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+    browser = await launchBrowser();
     const page = await browser.newPage();
     await page.setViewport({ width: 1200, height: 900, deviceScaleFactor: 1 });
     await page.goto(reportUrl, { waitUntil: "networkidle0", timeout: 60_000 });
@@ -44,8 +71,8 @@ export async function GET(
     });
 
     // Log the generation in ara_reports. file_url stays null — we stream
-    // the bytes directly rather than writing to storage. A future pass
-    // can switch to storage-backed durable URLs.
+    // the bytes directly rather than writing to storage. Storage-backed
+    // durable URLs are a future enhancement.
     const sb = createServiceClient();
     const { data: assessment } = await sb
       .from("ara_assessments")

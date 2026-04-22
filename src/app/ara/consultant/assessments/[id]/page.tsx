@@ -30,6 +30,7 @@ import { ConfirmAction } from "@/components/shared/confirm-action";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ValidatedScoreInput } from "./_components/validated-score-input";
 import type {
   AraAssessment, AraOrganization, AraRespondent, AraRespondentPillarAssignment,
@@ -333,6 +334,17 @@ export default async function AraAssessmentDetailPage({
           </div>
         </div>
 
+        <Tabs defaultValue="overview" className="mt-2">
+          <TabsList className="mb-6">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="phase2">Phase 2 notes</TabsTrigger>
+            <TabsTrigger value="compliance">Compliance</TabsTrigger>
+            <TabsTrigger value="portfolio">Portfolio &amp; evidence</TabsTrigger>
+            <TabsTrigger value="respondents">Respondents</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-0">
+
         {/* ─── Shadow AI alert ─── */}
         {shadowAi.triggered && (
           <Card className="mb-6 border-destructive/50 bg-destructive/5">
@@ -577,6 +589,10 @@ export default async function AraAssessmentDetailPage({
           </Card>
         )}
 
+          </TabsContent>
+
+          <TabsContent value="phase2" className="space-y-0">
+
         {/* ─── Layer 2 Consultant Guide ─── */}
         {(layer2Questions ?? []).length > 0 && (
           <Card className="mb-6">
@@ -733,6 +749,10 @@ export default async function AraAssessmentDetailPage({
           </CardContent>
         </Card>
 
+          </TabsContent>
+
+          <TabsContent value="compliance" className="space-y-0">
+
         {/* ─── Regulatory Compliance ─── */}
         <Card className="mb-6">
           <CardHeader className="flex-row items-start justify-between gap-4">
@@ -872,6 +892,10 @@ export default async function AraAssessmentDetailPage({
           </Card>
         )}
 
+          </TabsContent>
+
+          <TabsContent value="portfolio" className="space-y-0">
+
         {/* ─── AI Use Case Portfolio ─── */}
         <Card className="mb-6">
           <CardHeader>
@@ -997,6 +1021,10 @@ export default async function AraAssessmentDetailPage({
             )}
           </CardContent>
         </Card>
+
+          </TabsContent>
+
+          <TabsContent value="respondents" className="space-y-0">
 
         {/* ─── Respondents ─── */}
         <Card className="mb-6">
@@ -1151,6 +1179,9 @@ export default async function AraAssessmentDetailPage({
             </form>
           </CardContent>
         </Card>
+
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

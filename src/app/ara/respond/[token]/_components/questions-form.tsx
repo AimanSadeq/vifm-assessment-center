@@ -84,22 +84,39 @@ export function QuestionsForm({ token, questions, answers, language }: Questions
       if (!current) return;
       setState((prev) => ({ ...prev, [questionId]: { ...prev[questionId], state: "saving" } }));
       startTransition(async () => {
-        const result = await saveAraAnswer({
-          token,
-          questionId,
-          answerValue: current.value,
-          answerText: current.text,
-          needsVerification: current.needsVerification,
-        });
+        // Auto-retry up to 3 times. Handles both action-level errors
+        // (result.ok === false) and network/thrown errors.
+        const MAX_ATTEMPTS = 3;
+        let lastError: string | undefined;
+        let saved = false;
+        for (let attempt = 1; attempt <= MAX_ATTEMPTS && !saved; attempt++) {
+          try {
+            const result = await saveAraAnswer({
+              token,
+              questionId,
+              answerValue: current.value,
+              answerText: current.text,
+              needsVerification: current.needsVerification,
+            });
+            if (result.ok) { saved = true; break; }
+            lastError = result.error;
+          } catch (err) {
+            lastError = err instanceof Error ? err.message : "Network error";
+          }
+          if (attempt < MAX_ATTEMPTS) {
+            // Backoff: 500ms, 1500ms before final attempt
+            await new Promise((r) => setTimeout(r, 500 * attempt));
+          }
+        }
         setState((prev) => ({
           ...prev,
           [questionId]: {
             ...prev[questionId],
-            state: result.ok ? "saved" : "error",
-            error: result.ok ? undefined : result.error,
+            state: saved ? "saved" : "error",
+            error: saved ? undefined : lastError,
           },
         }));
-        if (result.ok) {
+        if (saved) {
           setTimeout(() => {
             setState((prev) => ({
               ...prev,

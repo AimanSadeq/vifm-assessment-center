@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft, FlaskConical, Mail, Link2, Lock, Unlock, RefreshCw, Plus, Trash2,
-  Archive, RotateCcw, BookOpen,
+  Archive, RotateCcw, BookOpen, AlertTriangle, ShieldAlert,
 } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,7 @@ import {
   archiveAssessment, reopenAssessment,
 } from "@/lib/ara/consultant-actions";
 import { summarizeComplianceByFramework } from "@/lib/ara/compliance";
+import { detectAraGaps, detectAraShadowAi } from "@/lib/ara/detectors";
 import { ValidatedScoreInput } from "./_components/validated-score-input";
 import type {
   AraAssessment, AraOrganization, AraRespondent, AraRespondentPillarAssignment,
@@ -154,6 +155,12 @@ export default async function AraAssessmentDetailPage({
   const pillarMap = new Map<string, PillarScoreRow>();
   (pillarScores ?? []).forEach((p) => pillarMap.set(p.pillar_id, p));
 
+  // Gap Detector + Shadow AI Alert — run in parallel
+  const [gapAlerts, shadowAi] = await Promise.all([
+    detectAraGaps(assessment.id),
+    detectAraShadowAi(assessment.id),
+  ]);
+
   // Load Layer 2 consultant-guide questions for this version (never shown
   // to respondents — reference material for the Phase 2 workshop).
   const { data: layer2Questions } = assessment.question_bank_version_id
@@ -252,6 +259,107 @@ export default async function AraAssessmentDetailPage({
             )}
           </div>
         </div>
+
+        {/* ─── Shadow AI alert ─── */}
+        {shadowAi.triggered && (
+          <Card className="mb-6 border-destructive/50 bg-destructive/5">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base text-destructive flex items-center gap-2">
+                <ShieldAlert className="h-4 w-4" /> Shadow AI alert
+              </CardTitle>
+              <CardDescription>
+                Signals suggest employees may be using public AI tools without
+                formal governance. Investigate in Phase 2.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              {shadowAi.matches.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">
+                    AI tool mentions in open-text answers
+                  </p>
+                  <ul className="space-y-1">
+                    {shadowAi.matches.slice(0, 5).map((m, i) => (
+                      <li key={i} className="text-xs">
+                        <span className="font-medium">{m.respondent_name}</span>
+                        {" — "}
+                        <span className="italic">…{m.snippet}…</span>
+                        <span className="ms-1 inline-block px-1.5 py-0.5 rounded bg-destructive/10 text-[10px] uppercase">
+                          {m.keyword}
+                        </span>
+                      </li>
+                    ))}
+                    {shadowAi.matches.length > 5 && (
+                      <li className="text-xs text-muted-foreground">
+                        …and {shadowAi.matches.length - 5} more
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              )}
+              {shadowAi.low_governance_scores.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">
+                    Governance pillar gaps (score ≤ 2.0)
+                  </p>
+                  <ul className="space-y-1 text-xs">
+                    {shadowAi.low_governance_scores.slice(0, 5).map((g, i) => (
+                      <li key={i}>
+                        <span className="font-medium">{g.respondent_name}</span>
+                        {" — Q"}{g.question_number}: {g.question_text_en}
+                        <span className="ms-1 text-destructive font-medium">({g.score.toFixed(1)})</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ─── Gap Detector alerts ─── */}
+        {gapAlerts.length > 0 && (
+          <Card className="mb-6 border-amber-300 bg-amber-50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base text-amber-900 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" /> Gap Detector — {gapAlerts.length} disagreement{gapAlerts.length === 1 ? "" : "s"} flagged
+              </CardTitle>
+              <CardDescription className="text-amber-900/80">
+                Respondents on the same pillar disagree significantly.
+                Investigate in the Phase 2 workshop.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2 text-sm">
+                {gapAlerts.map((a, i) => (
+                  <li key={i} className="border-l-2 border-amber-500 ps-3">
+                    {a.kind === "question" ? (
+                      <>
+                        <p className="font-medium text-xs uppercase text-amber-900/70">
+                          {a.pillar_name_en} — Q{a.question_number} (spread {a.spread.toFixed(1)})
+                        </p>
+                        <p className="text-xs">{a.question_text_en}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {a.low_respondent}: {a.low_score.toFixed(1)} • {a.high_respondent}: {a.high_score.toFixed(1)}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-medium text-xs uppercase text-amber-900/70">
+                          {a.pillar_name_en} — level split
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {a.low_respondent} averaging {a.low_avg.toFixed(1)} while{" "}
+                          {a.high_respondent} averaging {a.high_avg.toFixed(1)}
+                        </p>
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
 
         {/* ─── Overall + Pillar Scores ─── */}
         <Card className="mb-6">

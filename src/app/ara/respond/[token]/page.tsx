@@ -10,6 +10,7 @@ import { touchAraRespondent, markAraRespondentComplete } from "@/lib/ara/respond
 import { QuestionsForm, CompleteButton } from "./_components/questions-form";
 import { LanguageToggle } from "./_components/language-toggle";
 import { MaterialsSection } from "./_components/materials-section";
+import { OfflineBanner } from "./_components/offline-banner";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +61,7 @@ export default async function AraRespondPage({
 
   return (
     <div className="min-h-screen bg-background" dir={rtl ? "rtl" : "ltr"}>
+      <OfflineBanner language={language} />
       <div className="max-w-3xl mx-auto px-6 py-10 space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">

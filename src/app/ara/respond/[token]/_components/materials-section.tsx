@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useRef } from "react";
+import { toast } from "sonner";
 import {
   Link2, FileText, File, Presentation, Plus, Trash2, Loader2, AlertCircle, Check,
 } from "lucide-react";
@@ -92,7 +93,12 @@ export function MaterialsSection({
     setError(null);
     start(async () => {
       const res = await removeAraMaterial(id, token);
-      if (!res.ok) setError(res.error);
+      if (res.ok) {
+        toast.success(rtl ? "تم حذف المادة" : "Material removed");
+      } else {
+        setError(res.error);
+        toast.error(res.error);
+      }
     });
   };
 
@@ -207,14 +213,20 @@ function AddMaterialForm({
     if (name.trim().length < 2) return;
 
     start(async () => {
+      const okMsg = language === "ar" ? "تمت إضافة المادة" : "Material added";
       if (type === "url") {
         const res = await addAraMaterialUrl({
           token,
           material_name: name.trim(),
           link_url: urlValue.trim(),
         });
-        if (res.ok) onSaved();
-        else onError(res.error);
+        if (res.ok) {
+          toast.success(okMsg);
+          onSaved();
+        } else {
+          toast.error(res.error);
+          onError(res.error);
+        }
       } else {
         const file = fileRef.current?.files?.[0];
         if (!file) {
@@ -227,8 +239,13 @@ function AddMaterialForm({
         fd.set("material_type", type);
         fd.set("file", file);
         const res = await addAraMaterialFile(fd);
-        if (res.ok) onSaved();
-        else onError(res.error);
+        if (res.ok) {
+          toast.success(okMsg);
+          onSaved();
+        } else {
+          toast.error(res.error);
+          onError(res.error);
+        }
       }
     });
   };

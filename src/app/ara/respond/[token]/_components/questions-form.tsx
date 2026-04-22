@@ -180,6 +180,9 @@ export function QuestionsForm({ token, questions, answers, language }: Questions
                 <h2 className="text-lg font-semibold text-primary">
                   {rtl ? pillar.name_ar : pillar.name_en}
                 </h2>
+                {/* Opposite-language pillar name as a secondary label so a
+                    respondent reading in one language sees the other on every
+                    pillar header. Intentional dir flip. */}
                 <p className="text-sm text-muted-foreground" dir={rtl ? "ltr" : "rtl"}>
                   {rtl ? pillar.name_en : pillar.name_ar}
                 </p>
@@ -303,22 +306,33 @@ function QuestionInput({
   const currentValue = answer?.value ?? null;
 
   if (type === "rating") {
+    const groupLabel = rtl ? "التقييم من ١ إلى ٥" : "Rating scale from 1 to 5";
     return (
-      <div className="flex items-center gap-2" dir="ltr">
-        {[1, 2, 3, 4, 5].map((n) => (
-          <button
-            key={n}
-            type="button"
-            onClick={() => onAnswer(question.id, { value: String(n) })}
-            className={`h-10 w-10 rounded-md border text-sm font-medium transition-colors ${
-              currentValue === String(n)
-                ? "bg-primary text-primary-foreground border-primary"
-                : "border-input hover:bg-muted"
-            }`}
-          >
-            {n}
-          </button>
-        ))}
+      <div
+        className="flex items-center gap-2"
+        dir="ltr"
+        role="radiogroup"
+        aria-label={groupLabel}
+      >
+        {[1, 2, 3, 4, 5].map((n) => {
+          const selected = currentValue === String(n);
+          return (
+            <button
+              key={n}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              onClick={() => onAnswer(question.id, { value: String(n) })}
+              className={`h-10 w-10 rounded-md border text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                selected
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "border-input hover:bg-muted"
+              }`}
+            >
+              {n}
+            </button>
+          );
+        })}
         <span className="ms-3 text-xs text-muted-foreground">
           1 = {rtl ? "ضعيف" : "Low"} • 5 = {rtl ? "ممتاز" : "High"}
         </span>

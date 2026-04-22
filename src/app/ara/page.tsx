@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Shield, Users, Link2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Shield, Users, Link2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 
@@ -9,8 +9,8 @@ export default function AraRootPage() {
       <div className="max-w-5xl mx-auto px-6 py-12">
         <div className="flex items-center justify-between mb-10">
           <VifmLogo variant="color" size="md" />
-          <Link href="/admin" className="text-sm text-muted-foreground hover:text-foreground">
-            ← Back to Assessment Center
+          <Link href="/admin" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-3 w-3" /> Back to Assessment Center
           </Link>
         </div>
 

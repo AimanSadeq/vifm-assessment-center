@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { Plus, Trash2, Loader2, AlertCircle, Check, Cpu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,18 +59,20 @@ const L = {
   },
 } as const;
 
+// Colors meet WCAG AA (≥ 4.5:1) against white text for stage badges
+// and against white bg for risk text.
 const STAGE_LABEL: Record<AraUseCaseStage, { en: string; ar: string; color: string }> = {
-  ideation: { en: "Ideation", ar: "فكرة", color: "#9ca3af" },
-  piloting: { en: "Piloting", ar: "تجربة", color: "#FD7E14" },
-  production: { en: "Production", ar: "إنتاج", color: "#28A745" },
-  retired: { en: "Retired", ar: "متقاعد", color: "#6b7280" },
+  ideation: { en: "Ideation", ar: "فكرة", color: "#4b5563" },   // gray-600
+  piloting: { en: "Piloting", ar: "تجربة", color: "#c2410c" },  // orange-700
+  production: { en: "Production", ar: "إنتاج", color: "#047857" }, // emerald-700
+  retired: { en: "Retired", ar: "متقاعد", color: "#374151" },   // gray-700
 };
 
 const RISK_LABEL: Record<AraRiskLevel, { en: string; ar: string; color: string }> = {
-  low: { en: "Low", ar: "منخفض", color: "#28A745" },
-  medium: { en: "Medium", ar: "متوسط", color: "#FFC107" },
-  high: { en: "High", ar: "مرتفع", color: "#FD7E14" },
-  critical: { en: "Critical", ar: "حرج", color: "#DC3545" },
+  low: { en: "Low", ar: "منخفض", color: "#047857" },       // emerald-700
+  medium: { en: "Medium", ar: "متوسط", color: "#b45309" }, // amber-700
+  high: { en: "High", ar: "مرتفع", color: "#c2410c" },     // orange-700
+  critical: { en: "Critical", ar: "حرج", color: "#b91c1c" }, // red-700
 };
 
 const VALUE_LABEL: Record<AraValueLevel, { en: string; ar: string }> = {
@@ -97,7 +100,12 @@ export function UseCasesSection({
     setError(null);
     start(async () => {
       const res = await removeAraUseCaseAsRespondent(id, token);
-      if (!res.ok) setError(res.error);
+      if (res.ok) {
+        toast.success(rtl ? "تم حذف حالة الاستخدام" : "Use case removed");
+      } else {
+        setError(res.error);
+        toast.error(res.error);
+      }
     });
   };
 
@@ -233,8 +241,13 @@ function AddUseCaseForm({
         value_level: valueL,
         business_owner: owner.trim() || undefined,
       });
-      if (res.ok) onSaved();
-      else onError(res.error);
+      if (res.ok) {
+        toast.success(language === "ar" ? "تمت إضافة حالة الاستخدام" : "Use case added");
+        onSaved();
+      } else {
+        toast.error(res.error);
+        onError(res.error);
+      }
     });
   };
 

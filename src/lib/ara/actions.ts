@@ -46,6 +46,100 @@ export async function createAraOrganization(formData: FormData) {
   return { ok: true, id: data.id };
 }
 
+export async function updateAraOrganization(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  if (!id) return { ok: false, error: "Missing organization id" };
+
+  const parsed = createAraOrganizationSchema.safeParse({
+    name: formData.get("name"),
+    name_ar: formData.get("name_ar") || "",
+    sector: formData.get("sector"),
+    region: formData.get("region"),
+  });
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
+
+  const sb = createServiceClient();
+  const { error } = await sb
+    .from("ara_organizations")
+    .update({
+      name: parsed.data.name,
+      name_ar: parsed.data.name_ar || null,
+      sector: parsed.data.sector,
+      region: parsed.data.region,
+    })
+    .eq("id", id);
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/ara/admin/organizations");
+  revalidatePath(`/ara/admin/organizations/${id}`);
+  redirect("/ara/admin/organizations");
+  return { ok: true };
+}
+
+export async function deleteAraOrganization(orgId: string) {
+  const sb = createServiceClient();
+  const { error } = await sb.from("ara_organizations").delete().eq("id", orgId);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/ara/admin/organizations");
+  redirect("/ara/admin/organizations");
+  return { ok: true };
+}
+
+/**
+ * Data-erasure operation required by UAE PDPL / Saudi PDPL / GDPR.
+ * Replaces identifying fields on the organization AND all its
+ * respondents with "[ANONYMIZED]", preserving structural data for
+ * VIFM analytics. Writes an entry to the data management audit log.
+ */
+export async function anonymizeAraOrganization(orgId: string, reason: string) {
+  const sb = createServiceClient();
+  const now = new Date().toISOString();
+
+  // 1. Anonymize organization name fields
+  const { error: orgErr } = await sb
+    .from("ara_organizations")
+    .update({
+      name: "[ANONYMIZED]",
+      name_ar: "[ANONYMIZED]",
+      data_anonymized: true,
+      data_anonymized_at: now,
+    })
+    .eq("id", orgId);
+  if (orgErr) return { ok: false, error: orgErr.message };
+
+  // 2. Find all assessments for this org, then anonymize their respondents
+  const { data: assessments } = await sb
+    .from("ara_assessments")
+    .select("id")
+    .eq("organization_id", orgId);
+
+  const assessmentIds = (assessments ?? []).map((a) => a.id);
+  if (assessmentIds.length > 0) {
+    await sb
+      .from("ara_respondents")
+      .update({
+        name: "[ANONYMIZED]",
+        name_ar: "[ANONYMIZED]",
+        email: "anonymized@example.invalid",
+      })
+      .in("assessment_id", assessmentIds);
+  }
+
+  // 3. Audit log
+  await sb.from("ara_data_management_log").insert({
+    action: "anonymize_organization",
+    target_table: "ara_organizations",
+    target_id: orgId,
+    reason,
+    client_request: true,
+    performed_at: now,
+  });
+
+  revalidatePath("/ara/admin/organizations");
+  revalidatePath(`/ara/admin/organizations/${orgId}`);
+  return { ok: true };
+}
+
 // ─────────────────────────────────────────────────────────────
 // Assessments
 // ─────────────────────────────────────────────────────────────

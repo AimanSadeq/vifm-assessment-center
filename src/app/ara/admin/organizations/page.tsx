@@ -58,7 +58,11 @@ export default async function AraOrganizationsPage() {
             <TableBody>
               {orgs.map((org) => (
                 <TableRow key={org.id}>
-                  <TableCell className="font-medium">{org.name}</TableCell>
+                  <TableCell className="font-medium">
+                    <Link href={`/ara/admin/organizations/${org.id}`} className="hover:underline">
+                      {org.name}
+                    </Link>
+                  </TableCell>
                   <TableCell className="text-muted-foreground" dir="rtl">
                     {org.name_ar ?? "—"}
                   </TableCell>

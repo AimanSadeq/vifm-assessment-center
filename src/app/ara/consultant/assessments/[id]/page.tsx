@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft, FlaskConical, Mail, Link2, Lock, Unlock, RefreshCw, Plus, Trash2,
+  Archive, RotateCcw, BookOpen,
 } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
@@ -18,8 +19,11 @@ import {
   createConsultantNote, deleteConsultantNote, toggleNoteIncludeInReport,
   freezeAssessmentScores, unfreezeAssessmentScores,
   recalculateCompliance, overrideComplianceStatus,
+  updatePillarWeights,
+  archiveAssessment, reopenAssessment,
 } from "@/lib/ara/consultant-actions";
 import { summarizeComplianceByFramework } from "@/lib/ara/compliance";
+import { ValidatedScoreInput } from "./_components/validated-score-input";
 import type {
   AraAssessment, AraOrganization, AraRespondent, AraRespondentPillarAssignment,
 } from "@/types/ara";
@@ -38,6 +42,9 @@ type PillarScoreRow = {
   maturity_level: number | null;
   maturity_label_en: string | null;
   benchmark_gap: number | null;
+  self_assessment_score: number | null;
+  consultant_validated_score: number | null;
+  perception_gap: number | null;
 };
 
 type OverallScoreRow = {
@@ -107,6 +114,7 @@ export default async function AraAssessmentDetailPage({
     { data: notes },
     complianceSummaries,
     { data: complianceResults },
+    { data: materials },
   ] = await Promise.all([
     sb
       .from("ara_respondents")
@@ -116,7 +124,7 @@ export default async function AraAssessmentDetailPage({
       .returns<RespondentWithAssignments[]>(),
     sb
       .from("ara_pillar_scores")
-      .select("pillar_id, raw_score, weighted_score, pillar_weight, maturity_level, maturity_label_en, benchmark_gap")
+      .select("pillar_id, raw_score, weighted_score, pillar_weight, maturity_level, maturity_label_en, benchmark_gap, self_assessment_score, consultant_validated_score, perception_gap")
       .eq("assessment_id", assessment.id)
       .returns<PillarScoreRow[]>(),
     sb
@@ -136,12 +144,31 @@ export default async function AraAssessmentDetailPage({
       .select("id, requirement_id, status, status_label_en, evidence_note, requirement:ara_regulatory_requirements(id, requirement_code, requirement_text_en, pillar_id, severity, framework_id)")
       .eq("assessment_id", assessment.id)
       .returns<ComplianceResultRow[]>(),
+    sb
+      .from("ara_supporting_materials")
+      .select("*, respondent:ara_respondents(name, email)")
+      .eq("assessment_id", assessment.id)
+      .order("uploaded_at", { ascending: false }),
   ]);
 
   const pillarMap = new Map<string, PillarScoreRow>();
   (pillarScores ?? []).forEach((p) => pillarMap.set(p.pillar_id, p));
 
+  // Load Layer 2 consultant-guide questions for this version (never shown
+  // to respondents — reference material for the Phase 2 workshop).
+  const { data: layer2Questions } = assessment.question_bank_version_id
+    ? await sb
+        .from("ara_questions")
+        .select("id, pillar_id, question_number, question_text_en, question_text_ar, help_text_en")
+        .eq("version_id", assessment.question_bank_version_id)
+        .eq("layer", 2)
+        .eq("is_active", true)
+        .order("pillar_id")
+        .order("display_order")
+    : { data: [] };
+
   const isFrozen = assessment.status === "frozen";
+  const isArchived = assessment.status === "archived";
   const overall = overallScore?.overall_score;
 
   // Bound inline server actions
@@ -156,6 +183,14 @@ export default async function AraAssessmentDetailPage({
   const recalcAction = async () => {
     "use server";
     await recalculateCompliance(assessment.id);
+  };
+  const archiveAction = async () => {
+    "use server";
+    await archiveAssessment(assessment.id);
+  };
+  const reopenAction = async () => {
+    "use server";
+    await reopenAssessment(assessment.id);
   };
 
   return (
@@ -189,7 +224,7 @@ export default async function AraAssessmentDetailPage({
             <Badge variant="secondary" className="capitalize">
               {assessment.phase.replace("phase", "Phase ")}
             </Badge>
-            {isFrozen ? (
+            {!isArchived && (isFrozen ? (
               <form action={unfreezeAction}>
                 <Button size="sm" type="submit" variant="outline" className="gap-1">
                   <Unlock className="h-3 w-3" /> Unfreeze
@@ -198,7 +233,20 @@ export default async function AraAssessmentDetailPage({
             ) : (
               <form action={freezeAction}>
                 <Button size="sm" type="submit" className="gap-1">
-                  <Lock className="h-3 w-3" /> Freeze scores
+                  <Lock className="h-3 w-3" /> Freeze
+                </Button>
+              </form>
+            ))}
+            {isArchived ? (
+              <form action={reopenAction}>
+                <Button size="sm" type="submit" variant="outline" className="gap-1">
+                  <RotateCcw className="h-3 w-3" /> Reopen
+                </Button>
+              </form>
+            ) : (
+              <form action={archiveAction}>
+                <Button size="sm" type="submit" variant="outline" className="gap-1">
+                  <Archive className="h-3 w-3" /> Archive
                 </Button>
               </form>
             )}
@@ -235,10 +283,12 @@ export default async function AraAssessmentDetailPage({
                 <TableRow>
                   <TableHead>Pillar</TableHead>
                   <TableHead className="text-right">Raw</TableHead>
-                  <TableHead className="text-right">Weight</TableHead>
+                  <TableHead className="text-right">Wt %</TableHead>
                   <TableHead className="text-right">Weighted</TableHead>
                   <TableHead>Maturity</TableHead>
                   <TableHead className="text-right">vs 4.0</TableHead>
+                  <TableHead className="text-right" title="Consultant-validated score (Phase 2)">Validated</TableHead>
+                  <TableHead className="text-right" title="Perception vs reality gap">Gap</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -251,7 +301,7 @@ export default async function AraAssessmentDetailPage({
                         {row?.raw_score != null ? Number(row.raw_score).toFixed(2) : "—"}
                       </TableCell>
                       <TableCell className="text-right tabular-nums text-muted-foreground">
-                        {row?.pillar_weight != null ? `${Number(row.pillar_weight).toFixed(1)}%` : "—"}
+                        {row?.pillar_weight != null ? `${Number(row.pillar_weight).toFixed(1)}` : "—"}
                       </TableCell>
                       <TableCell className="text-right tabular-nums text-muted-foreground">
                         {row?.weighted_score != null ? Number(row.weighted_score).toFixed(3) : "—"}
@@ -272,6 +322,31 @@ export default async function AraAssessmentDetailPage({
                             : Number(row.benchmark_gap).toFixed(2)
                         ) : "—"}
                       </TableCell>
+                      <TableCell className="text-right">
+                        {isFrozen || isArchived ? (
+                          <span className="text-xs tabular-nums text-muted-foreground">
+                            {row?.consultant_validated_score != null
+                              ? Number(row.consultant_validated_score).toFixed(2)
+                              : "—"}
+                          </span>
+                        ) : (
+                          <ValidatedScoreInput
+                            assessmentId={assessment.id}
+                            pillarId={p.id}
+                            defaultValue={row?.consultant_validated_score ?? null}
+                          />
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums text-xs">
+                        {row?.perception_gap != null ? (
+                          <span className={Number(row.perception_gap) > 0 ? "text-amber-700" : Number(row.perception_gap) < 0 ? "text-emerald-700" : ""}>
+                            {Number(row.perception_gap) > 0 ? "+" : ""}
+                            {Number(row.perception_gap).toFixed(2)}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
                     </TableRow>
                   );
                 })}
@@ -279,6 +354,90 @@ export default async function AraAssessmentDetailPage({
             </Table>
           </CardContent>
         </Card>
+
+        {/* ─── Pillar weights editor ─── */}
+        {!isFrozen && !isArchived && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg">Pillar weights</CardTitle>
+              <CardDescription>
+                Adjust how each pillar contributes to the overall score.
+                Weights must sum to 100. Default is equal (12.5% × 8).
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form action={updatePillarWeights} className="space-y-3">
+                <input type="hidden" name="assessment_id" value={assessment.id} />
+                <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-4">
+                  {ARA_PILLARS.map((p) => {
+                    const weights = assessment.pillar_weights as Record<string, number>;
+                    return (
+                      <div key={p.id} className="space-y-1">
+                        <Label htmlFor={`weight_${p.id}`} className="text-xs">
+                          {p.name_en}
+                        </Label>
+                        <Input
+                          id={`weight_${p.id}`}
+                          name={`weight_${p.id}`}
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.5"
+                          defaultValue={weights?.[p.id] ?? 12.5}
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+                <Button type="submit" size="sm">Save weights &amp; recalculate</Button>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ─── Layer 2 Consultant Guide ─── */}
+        {(layer2Questions ?? []).length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <BookOpen className="h-4 w-4" /> Layer 2 — Consultant guide
+              </CardTitle>
+              <CardDescription>
+                Additional questions for your Phase 2 workshop. <strong>Never shown to respondents.</strong>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {ARA_PILLARS.map((pillar) => {
+                  const qs = (layer2Questions ?? []).filter((q) => q.pillar_id === pillar.id);
+                  if (qs.length === 0) return null;
+                  return (
+                    <details key={pillar.id} className="rounded-lg border bg-card">
+                      <summary className="px-3 py-2 cursor-pointer flex items-center justify-between text-sm">
+                        <span className="font-medium">{pillar.name_en}</span>
+                        <Badge variant="outline" className="text-[10px]">{qs.length}</Badge>
+                      </summary>
+                      <ol className="px-4 py-3 space-y-2 list-decimal list-inside text-sm">
+                        {qs.map((q) => (
+                          <li key={q.id}>
+                            <span className="font-medium me-1">Q{q.question_number}.</span>
+                            {q.question_text_en}
+                            {q.help_text_en && (
+                              <p className="mt-1 text-xs text-muted-foreground ms-5">
+                                {q.help_text_en}
+                              </p>
+                            )}
+                          </li>
+                        ))}
+                      </ol>
+                    </details>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* ─── Phase 2 Consultant Notes ─── */}
         <Card className="mb-6">
@@ -459,6 +618,60 @@ export default async function AraAssessmentDetailPage({
                   </div>
                 </details>
               </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* ─── Supporting Materials ─── */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg">Supporting materials</CardTitle>
+            <CardDescription>
+              Documents and links submitted by respondents as evidence.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!materials || materials.length === 0 ? (
+              <p className="text-sm text-muted-foreground">None submitted yet.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Submitted by</TableHead>
+                    <TableHead>Source</TableHead>
+                    <TableHead>Uploaded</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {materials.map((m: any) => (
+                    <TableRow key={m.id}>
+                      <TableCell>
+                        <Badge variant="outline" className="text-[10px] uppercase">
+                          {m.material_type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-medium">{m.material_name}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {m.respondent?.name ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground truncate max-w-xs">
+                        {m.material_type === "url" ? (
+                          <a href={m.link_url} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
+                            {m.link_url}
+                          </a>
+                        ) : (
+                          m.file_name
+                        )}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {new Date(m.uploaded_at).toLocaleDateString()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </CardContent>
         </Card>

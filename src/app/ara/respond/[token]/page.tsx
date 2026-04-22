@@ -9,6 +9,7 @@ import {
 import { touchAraRespondent, markAraRespondentComplete } from "@/lib/ara/respondent-actions";
 import { QuestionsForm, CompleteButton } from "./_components/questions-form";
 import { LanguageToggle } from "./_components/language-toggle";
+import { MaterialsSection } from "./_components/materials-section";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,12 @@ export default async function AraRespondPage({
     .from("ara_responses")
     .select("question_id, answer_value, answer_text, needs_verification")
     .eq("respondent_id", ctx.respondent.id);
+
+  const { data: materials } = await sb
+    .from("ara_supporting_materials")
+    .select("id, material_type, material_name, file_name, link_url")
+    .eq("respondent_id", ctx.respondent.id)
+    .order("uploaded_at", { ascending: false });
 
   const completeAction = async () => {
     "use server";
@@ -103,6 +110,19 @@ export default async function AraRespondPage({
             needs_verification: a.needs_verification ?? false,
           }))}
           language={language}
+        />
+
+        {/* Supporting Materials (optional) */}
+        <MaterialsSection
+          token={params.token}
+          language={language}
+          materials={(materials ?? []).map((m) => ({
+            id: m.id,
+            material_type: m.material_type,
+            material_name: m.material_name,
+            file_name: m.file_name,
+            link_url: m.link_url,
+          }))}
         />
 
         {/* Complete button */}

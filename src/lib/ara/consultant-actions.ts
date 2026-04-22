@@ -133,6 +133,144 @@ export async function recalculateCompliance(assessmentId: string) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Pillar weight editor (Level 4 inputs).
+// Weights must sum to 100. On success recalculates scores so the
+// weighted totals reflect the new distribution immediately.
+// ─────────────────────────────────────────────────────────────
+const PILLAR_IDS = [
+  "strategy", "data", "technology", "talent", "culture",
+  "governance", "operations", "model_management",
+] as const;
+
+const pillarWeightsSchema = z
+  .object(
+    Object.fromEntries(
+      PILLAR_IDS.map((p) => [p, z.coerce.number().min(0).max(100)])
+    ) as Record<(typeof PILLAR_IDS)[number], z.ZodNumber>
+  )
+  .refine(
+    (obj) => {
+      const total = PILLAR_IDS.reduce((sum, p) => sum + (obj[p] ?? 0), 0);
+      return Math.abs(total - 100) < 0.01;
+    },
+    { message: "Pillar weights must sum to 100" }
+  );
+
+export async function updatePillarWeights(formData: FormData) {
+  const assessmentId = String(formData.get("assessment_id") ?? "");
+  if (!assessmentId) return { ok: false, error: "Missing assessment id" };
+
+  const raw: Record<string, number> = {};
+  for (const p of PILLAR_IDS) raw[p] = Number(formData.get(`weight_${p}`) ?? 0);
+
+  const parsed = pillarWeightsSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid weights" };
+
+  const sb = createServiceClient();
+  const { error } = await sb
+    .from("ara_assessments")
+    .update({ pillar_weights: parsed.data })
+    .eq("id", assessmentId);
+  if (error) return { ok: false, error: error.message };
+
+  // Recalculate so the new weights take effect immediately.
+  await recalculateAssessmentScores(assessmentId);
+
+  revalidatePath(`/ara/consultant/assessments/${assessmentId}`);
+  return { ok: true };
+}
+
+// ─────────────────────────────────────────────────────────────
+// Perception vs Reality — consultant enters their validated pillar
+// score in Phase 2. On first save we snapshot the current raw_score
+// as the client self_assessment score so the gap is preserved even
+// if respondents update answers later.
+// ─────────────────────────────────────────────────────────────
+const validatedScoreSchema = z.object({
+  assessment_id: z.string().uuid(),
+  pillar_id: z.string().min(1),
+  consultant_validated_score: z.coerce.number().min(1).max(5),
+});
+
+export async function setConsultantValidatedScore(formData: FormData) {
+  const parsed = validatedScoreSchema.safeParse({
+    assessment_id: formData.get("assessment_id"),
+    pillar_id: formData.get("pillar_id"),
+    consultant_validated_score: formData.get("consultant_validated_score"),
+  });
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
+
+  const sb = createServiceClient();
+
+  // Fetch existing row to know the current raw_score (self-assessment snapshot)
+  // and whether the self_assessment_score has already been captured.
+  const { data: existing } = await sb
+    .from("ara_pillar_scores")
+    .select("raw_score, self_assessment_score")
+    .eq("assessment_id", parsed.data.assessment_id)
+    .eq("pillar_id", parsed.data.pillar_id)
+    .maybeSingle<{ raw_score: number | null; self_assessment_score: number | null }>();
+
+  // Preserve the first-captured self-assessment snapshot. If none yet,
+  // snapshot whatever raw_score the engine has right now.
+  const selfAssessment =
+    existing?.self_assessment_score ?? existing?.raw_score ?? null;
+
+  const validated = parsed.data.consultant_validated_score;
+  const gap = selfAssessment != null ? Number((selfAssessment - validated).toFixed(2)) : null;
+
+  const { error } = await sb
+    .from("ara_pillar_scores")
+    .update({
+      self_assessment_score: selfAssessment,
+      consultant_validated_score: validated,
+      perception_gap: gap,
+      calculated_at: new Date().toISOString(),
+    })
+    .eq("assessment_id", parsed.data.assessment_id)
+    .eq("pillar_id", parsed.data.pillar_id);
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath(`/ara/consultant/assessments/${parsed.data.assessment_id}`);
+  return { ok: true };
+}
+
+// ─────────────────────────────────────────────────────────────
+// Assessment lifecycle controls — archive, reopen
+// ─────────────────────────────────────────────────────────────
+export async function archiveAssessment(assessmentId: string) {
+  const sb = createServiceClient();
+  const now = new Date().toISOString();
+  await sb
+    .from("ara_assessments")
+    .update({ status: "archived", archived_at: now })
+    .eq("id", assessmentId);
+  revalidatePath(`/ara/consultant/assessments/${assessmentId}`);
+  revalidatePath("/ara/consultant");
+  return { ok: true };
+}
+
+export async function reopenAssessment(assessmentId: string) {
+  const sb = createServiceClient();
+  await sb
+    .from("ara_assessments")
+    .update({
+      status: "active",
+      phase: "phase1",
+      frozen_at: null,
+      completed_at: null,
+      archived_at: null,
+    })
+    .eq("id", assessmentId);
+  await sb
+    .from("ara_assessment_scores")
+    .update({ score_frozen_at: null })
+    .eq("assessment_id", assessmentId);
+  revalidatePath(`/ara/consultant/assessments/${assessmentId}`);
+  return { ok: true };
+}
+
+// ─────────────────────────────────────────────────────────────
 // Compliance override (consultant manually sets status + evidence)
 // ─────────────────────────────────────────────────────────────
 const overrideSchema = z.object({

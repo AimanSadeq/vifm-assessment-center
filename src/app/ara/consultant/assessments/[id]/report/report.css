@@ -36,3 +36,83 @@
 .report-body p { margin: 0 0 8pt; }
 .report-body ul, .report-body ol { margin: 0 0 8pt; padding-left: 18pt; }
 .report-body li { margin-bottom: 4pt; }
+
+/* ─── Bilingual side-by-side landscape ─────────────────────────
+   Per handover §5.3. Each page becomes A4 landscape with two
+   half-columns: English left, Arabic right. Visuals can optionally
+   span both columns (add class .report-wide inside a bilingual page). */
+
+@page bilingual-landscape {
+  size: A4 landscape;
+  margin: 0;
+}
+
+.report-page-bilingual {
+  width: 297mm;
+  min-height: 210mm;
+  margin: 0 auto 10mm;
+  background: white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
+  font-family: 'Open Sans', 'Calibri', Arial, sans-serif;
+  color: #121232;
+  page: bilingual-landscape;
+  page-break-after: always;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 10mm;
+  padding: 15mm 12mm;
+}
+
+.report-page-bilingual:last-child {
+  page-break-after: auto;
+}
+
+.report-page-bilingual > .col-en {
+  direction: ltr;
+  text-align: left;
+}
+
+.report-page-bilingual > .col-ar {
+  direction: rtl;
+  text-align: right;
+}
+
+/* A visual that spans both columns — use inside a page that is split
+   vertically into a top "visual" row and bottom "text" row. */
+.report-page-bilingual-with-visual {
+  width: 297mm;
+  min-height: 210mm;
+  margin: 0 auto 10mm;
+  background: white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
+  font-family: 'Open Sans', 'Calibri', Arial, sans-serif;
+  color: #121232;
+  page: bilingual-landscape;
+  page-break-after: always;
+  padding: 15mm 12mm;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 8mm;
+}
+
+.report-page-bilingual-with-visual:last-child {
+  page-break-after: auto;
+}
+
+.report-page-bilingual-with-visual > .bilingual-text {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 10mm;
+}
+
+.report-page-bilingual-with-visual > .bilingual-text > .col-en {
+  direction: ltr;
+  text-align: left;
+}
+
+.report-page-bilingual-with-visual > .bilingual-text > .col-ar {
+  direction: rtl;
+  text-align: right;
+}

@@ -11,6 +11,7 @@ import { GapHeatmap, bucketResponses } from "./_components/gap-heatmap";
 import { InvestmentMatrix } from "./_components/investment-matrix";
 import { GanttRoadmap } from "./_components/gantt-roadmap";
 import { tr, type ReportLang } from "./_components/report-i18n";
+import { BilingualReport } from "./_components/bilingual-report";
 import type {
   AraAssessment, AraOrganization, AraPillarId,
 } from "@/types/ara";
@@ -199,6 +200,47 @@ export default async function AraReportPage({
   const rtl = langParam === "ar";
   const outerDir = rtl ? "rtl" : "ltr";
   const t = (key: Parameters<typeof tr>[1]) => tr(rtl ? "ar" : "en", key);
+
+  // Bilingual side-by-side landscape is its own layout — render it here
+  // instead of the portrait EN/AR flow below.
+  if (langParam === "bilingual") {
+    return (
+      <>
+        {!bare && (
+          <div className="no-print bg-gray-100 py-6 px-4 text-center">
+            <p className="text-sm text-muted-foreground">
+              Bilingual preview (landscape, English left · Arabic right).
+              Use <strong>Download PDF</strong> on the assessment page to export.
+            </p>
+          </div>
+        )}
+        <div className={bare ? "" : "bg-gray-100 py-8"}>
+          <BilingualReport
+            organizationName={assessment.organization?.name ?? "Client"}
+            organizationNameAr={assessment.organization?.name_ar ?? null}
+            region={assessment.region}
+            sector={assessment.sector}
+            isSandbox={assessment.is_sandbox}
+            reportDate={reportDate}
+            overall={overall}
+            overallLabelEn={overallLabel}
+            overallLabelAr={overallScore?.overall_label_ar ?? null}
+            pillarMap={pillarMap}
+            scoreMap={scoreMap}
+            strengths={strengths}
+            gaps={gaps}
+            heatmapData={heatmapData}
+            investmentData={investmentData}
+            roadmapInitiatives={roadmapInitiatives}
+            complianceSummaries={complianceSummaries}
+            notesByPillar={notesByPillar}
+            shadowAiTriggered={shadowAi.triggered}
+            pillarWeights={assessment.pillar_weights as Record<string, number>}
+          />
+        </div>
+      </>
+    );
+  }
 
   return (
     <>

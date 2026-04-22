@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import {
   ArrowLeft, FlaskConical, Mail, Link2, Lock, Unlock, RefreshCw, Plus, Trash2,
   Archive, RotateCcw, BookOpen, AlertTriangle, ShieldAlert, TrendingUp, TrendingDown, Minus,
+  FileDown, Eye,
 } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
@@ -246,6 +247,16 @@ export default async function AraAssessmentDetailPage({
                 </Button>
               </form>
             ))}
+            <Link href={`/ara/consultant/assessments/${assessment.id}/report`} target="_blank">
+              <Button size="sm" variant="outline" className="gap-1">
+                <Eye className="h-3 w-3" /> Preview report
+              </Button>
+            </Link>
+            <a href={`/api/ara/reports/${assessment.id}/pdf`}>
+              <Button size="sm" className="gap-1 bg-primary">
+                <FileDown className="h-3 w-3" /> Download PDF
+              </Button>
+            </a>
             {isArchived ? (
               <form action={reopenAction}>
                 <Button size="sm" type="submit" variant="outline" className="gap-1">

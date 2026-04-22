@@ -247,16 +247,30 @@ export default async function AraAssessmentDetailPage({
                 </Button>
               </form>
             ))}
-            <Link href={`/ara/consultant/assessments/${assessment.id}/report`} target="_blank">
+            <div className="relative group">
               <Button size="sm" variant="outline" className="gap-1">
                 <Eye className="h-3 w-3" /> Preview report
               </Button>
-            </Link>
-            <a href={`/api/ara/reports/${assessment.id}/pdf`}>
+              <div className="absolute right-0 top-full pt-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity z-20">
+                <div className="bg-popover border rounded-md shadow-md py-1 min-w-[160px]">
+                  <Link href={`/ara/consultant/assessments/${assessment.id}/report?lang=en`} target="_blank" className="block px-3 py-1.5 text-xs hover:bg-muted">English</Link>
+                  <Link href={`/ara/consultant/assessments/${assessment.id}/report?lang=ar`} target="_blank" className="block px-3 py-1.5 text-xs hover:bg-muted">العربية</Link>
+                  <Link href={`/ara/consultant/assessments/${assessment.id}/report?lang=bilingual`} target="_blank" className="block px-3 py-1.5 text-xs hover:bg-muted">Bilingual</Link>
+                </div>
+              </div>
+            </div>
+            <div className="relative group">
               <Button size="sm" className="gap-1 bg-primary">
                 <FileDown className="h-3 w-3" /> Download PDF
               </Button>
-            </a>
+              <div className="absolute right-0 top-full pt-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity z-20">
+                <div className="bg-popover border rounded-md shadow-md py-1 min-w-[160px]">
+                  <a href={`/api/ara/reports/${assessment.id}/pdf?language=en`} className="block px-3 py-1.5 text-xs hover:bg-muted">English</a>
+                  <a href={`/api/ara/reports/${assessment.id}/pdf?language=ar`} className="block px-3 py-1.5 text-xs hover:bg-muted">العربية</a>
+                  <a href={`/api/ara/reports/${assessment.id}/pdf?language=bilingual`} className="block px-3 py-1.5 text-xs hover:bg-muted">Bilingual</a>
+                </div>
+              </div>
+            </div>
             {isArchived ? (
               <form action={reopenAction}>
                 <Button size="sm" type="submit" variant="outline" className="gap-1">

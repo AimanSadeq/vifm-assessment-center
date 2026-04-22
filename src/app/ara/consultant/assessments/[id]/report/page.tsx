@@ -7,6 +7,10 @@ import { detectAraShadowAi } from "@/lib/ara/detectors";
 import { MaturityGauge } from "./_components/maturity-gauge";
 import { RadarChart } from "./_components/radar-chart";
 import { ComplianceSummary } from "./_components/compliance-summary";
+import { GapHeatmap, bucketResponses } from "./_components/gap-heatmap";
+import { InvestmentMatrix } from "./_components/investment-matrix";
+import { GanttRoadmap } from "./_components/gantt-roadmap";
+import { tr, type ReportLang } from "./_components/report-i18n";
 import type {
   AraAssessment, AraOrganization, AraPillarId,
 } from "@/types/ara";
@@ -36,9 +40,10 @@ export default async function AraReportPage({
   searchParams,
 }: {
   params: { id: string };
-  searchParams?: { bare?: string };
+  searchParams?: { bare?: string; lang?: string };
 }) {
   const bare = searchParams?.bare === "1";
+  const langParam = searchParams?.lang === "ar" ? "ar" : searchParams?.lang === "bilingual" ? "bilingual" : "en";
   const sb = createServiceClient();
 
   const { data: assessment } = await sb
@@ -103,6 +108,25 @@ export default async function AraReportPage({
       : Promise.resolve({ data: null }),
   ]);
 
+  // Response rows for the gap heatmap — pillar × question-number bucket.
+  const { data: responseRows } = await sb
+    .from("ara_responses")
+    .select("question_score, question:ara_questions(pillar_id, question_number)")
+    .eq("assessment_id", assessment.id);
+
+  const heatmapData = bucketResponses(
+    ((responseRows ?? []) as unknown as Array<{
+      question_score: number | null;
+      question: { pillar_id: string; question_number: number } | null;
+    }>)
+      .filter((r) => r.question)
+      .map((r) => ({
+        pillar_id: r.question!.pillar_id,
+        question_number: r.question!.question_number,
+        question_score: r.question_score,
+      }))
+  );
+
   const pillarMap = new Map<AraPillarId, PillarScoreRow>();
   (pillarScores ?? []).forEach((p) => pillarMap.set(p.pillar_id as AraPillarId, p));
 
@@ -142,6 +166,40 @@ export default async function AraReportPage({
   const region = assessment.region === "uae" ? "United Arab Emirates" : "Saudi Arabia";
   const sectorLabel = assessment.sector.charAt(0).toUpperCase() + assessment.sector.slice(1);
 
+  // Pillar data for the investment priority matrix — uses pillar weights
+  // as the value proxy and benchmark gap as the effort proxy.
+  const investmentData = ARA_PILLARS.map((p) => ({
+    pillar_id: p.id,
+    raw_score: pillarMap.get(p.id)?.raw_score != null ? Number(pillarMap.get(p.id)!.raw_score) : null,
+    pillar_weight: ((assessment.pillar_weights as Record<string, number>)?.[p.id] ?? 12.5),
+  }));
+
+  // Roadmap initiatives — derive from gaps (Quick Wins / Build) and
+  // strengths (Transform). Consultant Phase 2 work can replace later.
+  const roadmapInitiatives = [
+    ...gaps.slice(0, 2).map((g) => ({
+      name: `Stabilise ${g.pillar} fundamentals`,
+      pillar: g.pillar,
+      horizon: "quick" as const,
+    })),
+    ...gaps.slice(0, 3).map((g) => ({
+      name: `Institutionalise ${g.pillar} practices`,
+      pillar: g.pillar,
+      horizon: "build" as const,
+    })),
+    ...strengths.slice(0, 2).map((s) => ({
+      name: `Scale ${s.pillar} leadership`,
+      pillar: s.pillar,
+      horizon: "transform" as const,
+    })),
+  ];
+
+  // Language selection — "bilingual" renders the full report twice,
+  // first in English then in Arabic, with a divider page between.
+  const rtl = langParam === "ar";
+  const outerDir = rtl ? "rtl" : "ltr";
+  const t = (key: Parameters<typeof tr>[1]) => tr(rtl ? "ar" : "en", key);
+
   return (
     <>
       {!bare && (
@@ -153,7 +211,7 @@ export default async function AraReportPage({
         </div>
       )}
 
-      <div className={bare ? "" : "bg-gray-100 py-8"}>
+      <div className={bare ? "" : "bg-gray-100 py-8"} dir={outerDir}>
         {/* ─── PAGE 1 — Cover ─── */}
         <section
           className="report-page flex flex-col justify-between"
@@ -192,7 +250,7 @@ export default async function AraReportPage({
 
         {/* ─── PAGE 2 — Executive Summary ─── */}
         <section className="report-page">
-          <h2 className="report-h2">Executive Summary</h2>
+          <h2 className="report-h2">{t("exec_summary")}</h2>
           <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: "20pt", marginBottom: "16pt" }}>
             <div>
               <p className="report-muted uppercase" style={{ fontSize: "9pt", letterSpacing: "0.05em" }}>
@@ -257,7 +315,7 @@ export default async function AraReportPage({
 
         {/* ─── PAGE 3 — How to Read This Report ─── */}
         <section className="report-page">
-          <h2 className="report-h2">How to Read This Report</h2>
+          <h2 className="report-h2">{t("how_to_read")}</h2>
           <p className="report-body">
             This report summarises findings across eight pillars of AI Readiness.
             Each pillar is scored 1–5 against a behavioural rubric, and the
@@ -331,7 +389,7 @@ export default async function AraReportPage({
 
         {/* ─── PAGE 4 — Organization Profile ─── */}
         <section className="report-page">
-          <h2 className="report-h2">Organization Profile</h2>
+          <h2 className="report-h2">{t("org_profile")}</h2>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20pt", marginBottom: "16pt" }}>
             <div>
@@ -387,7 +445,7 @@ export default async function AraReportPage({
 
         {/* ─── PAGE 5 — Radar Overview ─── */}
         <section className="report-page">
-          <h2 className="report-h2">Pillar Overview</h2>
+          <h2 className="report-h2">{t("pillar_overview")}</h2>
           <p className="report-body">
             The radar below plots current pillar scores against the <strong>AI Ready</strong>{" "}
             benchmark of 4.0 (dashed line). Pillars inside the dashed ring are below the
@@ -415,7 +473,7 @@ export default async function AraReportPage({
 
         {/* ─── PAGE 22 — Strengths & Gaps ─── */}
         <section className="report-page">
-          <h2 className="report-h2">Strengths &amp; Gaps Summary</h2>
+          <h2 className="report-h2">{t("strengths_gaps")}</h2>
           <h3 className="report-h3">Traffic-light grid</h3>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8pt" }}>
             {ARA_PILLARS.map((p) => {
@@ -476,38 +534,56 @@ export default async function AraReportPage({
           </table>
         </section>
 
-        {/* ─── PAGE 23–24 — Roadmap (simplified — 3 horizons) ─── */}
+        {/* ─── Gap analysis heatmap ─── */}
         <section className="report-page">
-          <h2 className="report-h2">AI Readiness Roadmap</h2>
+          <h2 className="report-h2">{t("gap_heatmap")}</h2>
           <p className="report-body">
-            A phased 12-month roadmap translates findings into action across three horizons.
+            Heatmap of average question scores across pillars and question
+            groups. Red cells indicate critical gaps; green cells indicate
+            maturity at or above the AI Ready benchmark.
           </p>
+          <div style={{ marginTop: "16pt" }}>
+            <GapHeatmap scoresByPillarByBucket={heatmapData} />
+          </div>
+          <div style={{ display: "flex", gap: "16pt", marginTop: "12pt", fontSize: "9pt" }}>
+            <span><span style={{ display: "inline-block", width: "10pt", height: "10pt", background: "#DC3545", borderRadius: "2pt", marginRight: "4pt", verticalAlign: "middle" }} />Critical (1–2)</span>
+            <span><span style={{ display: "inline-block", width: "10pt", height: "10pt", background: "#FD7E14", borderRadius: "2pt", marginRight: "4pt", verticalAlign: "middle" }} />Early stage (2–3)</span>
+            <span><span style={{ display: "inline-block", width: "10pt", height: "10pt", background: "#FFC107", borderRadius: "2pt", marginRight: "4pt", verticalAlign: "middle" }} />Developing (3–4)</span>
+            <span><span style={{ display: "inline-block", width: "10pt", height: "10pt", background: "#28A745", borderRadius: "2pt", marginRight: "4pt", verticalAlign: "middle" }} />At or above benchmark (4+)</span>
+          </div>
+        </section>
 
-          {[
-            { horizon: "Quick Wins", timeframe: "0–3 months", color: "#00b4ff", items: gaps.slice(0, 2).map((g) => `Stabilise ${g.pillar} fundamentals`) },
-            { horizon: "Build", timeframe: "3–9 months", color: "#5391D5", items: gaps.slice(0, 3).map((g) => `Institutionalise ${g.pillar} practices`) },
-            { horizon: "Transform", timeframe: "9–12 months", color: "#010131", items: strengths.slice(0, 2).map((s) => `Scale ${s.pillar} leadership`) },
-          ].map((h) => (
-            <div key={h.horizon} style={{ borderLeft: `4pt solid ${h.color}`, paddingLeft: "10pt", marginBottom: "14pt" }}>
-              <h3 className="report-h3" style={{ color: h.color, margin: "0 0 4pt" }}>
-                {h.horizon} <span className="report-muted" style={{ fontWeight: 400 }}>· {h.timeframe}</span>
-              </h3>
-              {h.items.length === 0 ? (
-                <p className="report-body report-muted">Refine in Phase 2 workshop.</p>
-              ) : (
-                <ul className="report-body">
-                  {h.items.map((item, i) => (
-                    <li key={i}>{item}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          ))}
+        {/* ─── Investment priority matrix ─── */}
+        <section className="report-page">
+          <h2 className="report-h2">{t("investment_matrix")}</h2>
+          <p className="report-body">
+            Each pillar plotted by estimated effort required to close the gap
+            (x-axis) versus business value as indicated by pillar weight
+            (y-axis). Focus on the top-left <strong>Quick Wins</strong> quadrant
+            first.
+          </p>
+          <div style={{ marginTop: "16pt" }}>
+            <InvestmentMatrix pillarData={investmentData} />
+          </div>
+        </section>
+
+        {/* ─── PAGE 23–24 — Roadmap ─── */}
+        <section className="report-page">
+          <h2 className="report-h2">{t("roadmap")}</h2>
+          <p className="report-body">
+            A phased 12-month roadmap translates findings into action across
+            three horizons: immediate stabilisation (Quick Wins, months 0–3),
+            institutionalisation (Build, months 3–9), and scaled transformation
+            (Transform, months 9–12).
+          </p>
+          <div style={{ marginTop: "16pt" }}>
+            <GanttRoadmap initiatives={roadmapInitiatives} />
+          </div>
         </section>
 
         {/* ─── PAGE 25 — Regulatory Compliance ─── */}
         <section className="report-page">
-          <h2 className="report-h2">Regulatory Compliance Summary</h2>
+          <h2 className="report-h2">{t("compliance_summary")}</h2>
           <p className="report-body">
             Compliance status against frameworks applicable to {region}, {sectorLabel.toLowerCase()} sector.
             Each framework is scored as a weighted percentage of met + partial requirements.
@@ -541,7 +617,7 @@ export default async function AraReportPage({
         {/* ─── PAGE 26 — Supporting Materials ─── */}
         {(materials ?? []).length > 0 && (
           <section className="report-page">
-            <h2 className="report-h2">Supporting Materials</h2>
+            <h2 className="report-h2">{t("supporting_materials")}</h2>
             <p className="report-body">
               Documents and links submitted by respondents as supporting evidence.
             </p>
@@ -568,7 +644,7 @@ export default async function AraReportPage({
 
         {/* ─── PAGE 27 — Next Steps ─── */}
         <section className="report-page">
-          <h2 className="report-h2">Next Steps with VIFM</h2>
+          <h2 className="report-h2">{t("next_steps")}</h2>
           <p className="report-body">
             Virginia Institute of Finance and Management (VIFM) offers targeted
             services mapped to the gaps identified in this assessment:
@@ -588,7 +664,7 @@ export default async function AraReportPage({
 
         {/* ─── APPENDIX ─── */}
         <section className="report-page">
-          <h2 className="report-h2">Appendix</h2>
+          <h2 className="report-h2">{t("appendix")}</h2>
 
           <h3 className="report-h3">Scoring methodology</h3>
           <p className="report-body">

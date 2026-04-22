@@ -20,8 +20,12 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { assessmentId: string } }
 ) {
-  const { origin } = new URL(req.url);
-  const reportUrl = `${origin}/ara/consultant/assessments/${params.assessmentId}/report?bare=1`;
+  const url = new URL(req.url);
+  const langRaw = url.searchParams.get("language") ?? "en";
+  const language: "en" | "ar" | "bilingual" =
+    langRaw === "ar" ? "ar" : langRaw === "bilingual" ? "bilingual" : "en";
+  const reportUrl =
+    `${url.origin}/ara/consultant/assessments/${params.assessmentId}/report?bare=1&lang=${language}`;
 
   let browser: Awaited<ReturnType<typeof puppeteer.launch>> | null = null;
   try {
@@ -51,13 +55,13 @@ export async function GET(
     if (assessment) {
       await sb.from("ara_reports").insert({
         assessment_id: assessment.id,
-        language: "en",
+        language,
         file_url: null,
         version: 1,
       });
     }
 
-    const filename = `ara-report-${params.assessmentId.slice(0, 8)}.pdf`;
+    const filename = `ara-report-${params.assessmentId.slice(0, 8)}-${language}.pdf`;
     return new NextResponse(pdf as any, {
       status: 200,
       headers: {

@@ -58,6 +58,20 @@ export const createAraVersionSchema = z.object({
 });
 export type CreateAraVersionValues = z.infer<typeof createAraVersionSchema>;
 
+// ─── AI Use Cases ──────────────────────────────────────────────
+export const createAraUseCaseSchema = z.object({
+  assessment_id: z.string().uuid(),
+  name: z.string().min(2, "Use case name is required").max(200),
+  description: z.string().max(2000).optional().or(z.literal("")),
+  stage: z.enum(["ideation", "piloting", "production", "retired"]),
+  pillar_id: araPillarSchema.optional().nullable(),
+  risk_level: z.enum(["low", "medium", "high", "critical"]),
+  value_level: z.enum(["low", "medium", "high"]),
+  business_owner: z.string().max(200).optional().or(z.literal("")),
+  technical_owner: z.string().max(200).optional().or(z.literal("")),
+});
+export type CreateAraUseCaseValues = z.infer<typeof createAraUseCaseSchema>;
+
 // ─── Questions ─────────────────────────────────────────────────
 const questionOptionSchema = z.object({
   value: z.string().min(1),

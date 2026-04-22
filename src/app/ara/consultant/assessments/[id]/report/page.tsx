@@ -4,6 +4,7 @@ import { VifmLogo } from "@/components/shared/vifm-logo";
 import { ARA_PILLARS, ARA_MATURITY_LEVELS, ARA_OVERALL_BANDS } from "@/lib/constants/ara-pillars";
 import { summarizeComplianceByFramework } from "@/lib/ara/compliance";
 import { detectAraShadowAi } from "@/lib/ara/detectors";
+import { computePeerBenchmarks } from "@/lib/ara/peer-benchmarks";
 import { MaturityGauge } from "./_components/maturity-gauge";
 import { RadarChart } from "./_components/radar-chart";
 import { ComplianceSummary } from "./_components/compliance-summary";
@@ -114,6 +115,21 @@ export default async function AraReportPage({
     .from("ara_responses")
     .select("question_score, question:ara_questions(pillar_id, question_number)")
     .eq("assessment_id", assessment.id);
+
+  // Peer benchmarks (real sector medians when N ≥ 3 peers exist).
+  const peerBenchmarks = await computePeerBenchmarks(
+    assessment.id,
+    assessment.region,
+    assessment.sector
+  );
+
+  // Use case inventory for the portfolio report section.
+  const { data: useCaseRows } = await sb
+    .from("ara_use_cases")
+    .select("id, name, stage, pillar_id, risk_level, value_level, business_owner")
+    .eq("assessment_id", assessment.id)
+    .order("stage")
+    .order("created_at");
 
   const heatmapData = bucketResponses(
     ((responseRows ?? []) as unknown as Array<{
@@ -236,6 +252,8 @@ export default async function AraReportPage({
             notesByPillar={notesByPillar}
             shadowAiTriggered={shadowAi.triggered}
             pillarWeights={assessment.pillar_weights as Record<string, number>}
+            peerBenchmarks={peerBenchmarks}
+            useCases={(useCaseRows ?? []) as any}
           />
         </div>
       </>
@@ -545,13 +563,20 @@ export default async function AraReportPage({
           </div>
 
           <h3 className="report-h3">Benchmark comparison</h3>
+          <p className="report-body report-muted" style={{ fontSize: "9pt" }}>
+            {peerBenchmarks.has_enough_data
+              ? `Peer column shows the median score across ${peerBenchmarks.sample_size} anonymised ${sectorLabel.toLowerCase()} organisations in ${region}.`
+              : `Peer column shows indicative GCC best practice. Real peer medians unlock once ≥ ${peerBenchmarks.min_sample_required} comparable engagements have completed (current sample: ${peerBenchmarks.sample_size}).`}
+          </p>
           <table className="report-body" style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "#f3f4f6" }}>
                 <th style={cellHead}>Pillar</th>
                 <th style={cellHeadRight}>Current</th>
                 <th style={cellHeadRight}>AI Ready</th>
-                <th style={cellHeadRight}>GCC Best</th>
+                <th style={cellHeadRight}>
+                  {peerBenchmarks.has_enough_data ? "Peer median" : "GCC Best"}
+                </th>
                 <th style={cellHeadRight}>Gap</th>
               </tr>
             </thead>
@@ -560,12 +585,16 @@ export default async function AraReportPage({
                 const row = pillarMap.get(p.id);
                 const s = row?.raw_score != null ? Number(row.raw_score) : null;
                 const gap = s != null ? Number((4.0 - s).toFixed(2)) : null;
+                const peerCell = peerBenchmarks.pillars.find((pb) => pb.pillar_id === p.id);
+                const peerValue = peerBenchmarks.has_enough_data && peerCell?.median != null
+                  ? peerCell.median.toFixed(2)
+                  : "4.50";
                 return (
                   <tr key={p.id} style={{ borderTop: "1px solid #e5e7eb" }}>
                     <td style={cell}>{p.name_en}</td>
                     <td style={cellRight}>{s != null ? s.toFixed(2) : "—"}</td>
                     <td style={cellRight} className="report-muted">4.00</td>
-                    <td style={cellRight} className="report-muted">4.50</td>
+                    <td style={cellRight} className="report-muted">{peerValue}</td>
                     <td style={{ ...cellRight, color: gap != null && gap > 0 ? "#DC3545" : "#28A745" }}>
                       {gap != null ? (gap > 0 ? `+${gap.toFixed(2)}` : gap.toFixed(2)) : "—"}
                     </td>
@@ -681,6 +710,85 @@ export default async function AraReportPage({
                 ))}
               </tbody>
             </table>
+          </section>
+        )}
+
+        {/* ─── AI Use Case Portfolio ─── */}
+        {(useCaseRows ?? []).length > 0 && (
+          <section className="report-page">
+            <h2 className="report-h2">AI Use Case Portfolio</h2>
+            <p className="report-body">
+              Inventory of AI initiatives across the organization, scored by
+              stage, risk, and business value. Use this to sequence investment
+              and prioritise governance effort.
+            </p>
+            <table className="report-body" style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ background: "#f3f4f6" }}>
+                  <th style={cellHead}>Use case</th>
+                  <th style={cellHead}>Stage</th>
+                  <th style={cellHead}>Risk</th>
+                  <th style={cellHead}>Value</th>
+                  <th style={cellHead}>Pillar</th>
+                  <th style={cellHead}>Owner</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(useCaseRows ?? []).map((u: any) => {
+                  const stageColor: Record<string, string> = {
+                    ideation: "#9ca3af",
+                    piloting: "#FD7E14",
+                    production: "#28A745",
+                    retired: "#6b7280",
+                  };
+                  const riskColor: Record<string, string> = {
+                    low: "#28A745",
+                    medium: "#FFC107",
+                    high: "#FD7E14",
+                    critical: "#DC3545",
+                  };
+                  return (
+                    <tr key={u.id} style={{ borderTop: "1px solid #e5e7eb" }}>
+                      <td style={cell}><strong>{u.name}</strong></td>
+                      <td style={cell}>
+                        <span style={{
+                          background: stageColor[u.stage], color: "white",
+                          padding: "2pt 5pt", borderRadius: "3pt", fontSize: "8pt",
+                          textTransform: "uppercase", fontWeight: 500,
+                        }}>
+                          {u.stage}
+                        </span>
+                      </td>
+                      <td style={{ ...cell, color: riskColor[u.risk_level], fontWeight: 500, textTransform: "capitalize" }}>
+                        {u.risk_level}
+                      </td>
+                      <td style={{ ...cell, textTransform: "capitalize" }}>{u.value_level}</td>
+                      <td style={cell} className="report-muted">
+                        {u.pillar_id
+                          ? ARA_PILLARS.find((p) => p.id === u.pillar_id)?.name_en ?? u.pillar_id
+                          : "—"}
+                      </td>
+                      <td style={cell} className="report-muted">{u.business_owner ?? "—"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            {/* Summary stats */}
+            <div style={{ marginTop: "16pt", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8pt" }}>
+              {(["ideation", "piloting", "production", "retired"] as const).map((stg) => {
+                const count = (useCaseRows ?? []).filter((u: any) => u.stage === stg).length;
+                return (
+                  <div key={stg} style={{ padding: "8pt", background: "#f9fafb", borderRadius: "4pt", textAlign: "center" }}>
+                    <p style={{ fontSize: "20pt", fontWeight: 600, color: "#010131", margin: 0 }}>{count}</p>
+                    <p style={{ fontSize: "9pt", color: "#6b7280", margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                      {stg}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
           </section>
         )}
 

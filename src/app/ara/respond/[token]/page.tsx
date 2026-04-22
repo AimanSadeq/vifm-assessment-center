@@ -10,6 +10,7 @@ import { touchAraRespondent, markAraRespondentComplete } from "@/lib/ara/respond
 import { QuestionsForm, CompleteButton } from "./_components/questions-form";
 import { LanguageToggle } from "./_components/language-toggle";
 import { MaterialsSection } from "./_components/materials-section";
+import { UseCasesSection } from "./_components/use-cases-section";
 import { OfflineBanner } from "./_components/offline-banner";
 
 export const dynamic = "force-dynamic";
@@ -49,6 +50,12 @@ export default async function AraRespondPage({
     .select("id, material_type, material_name, file_name, link_url")
     .eq("respondent_id", ctx.respondent.id)
     .order("uploaded_at", { ascending: false });
+
+  const { data: useCases } = await sb
+    .from("ara_use_cases")
+    .select("id, name, stage, pillar_id, risk_level, value_level, business_owner")
+    .eq("respondent_id", ctx.respondent.id)
+    .order("created_at", { ascending: false });
 
   const completeAction = async () => {
     "use server";
@@ -112,6 +119,13 @@ export default async function AraRespondPage({
             needs_verification: a.needs_verification ?? false,
           }))}
           language={language}
+        />
+
+        {/* AI Use Case Portfolio (optional) */}
+        <UseCasesSection
+          token={params.token}
+          language={language}
+          useCases={(useCases ?? []) as any}
         />
 
         {/* Supporting Materials (optional) */}

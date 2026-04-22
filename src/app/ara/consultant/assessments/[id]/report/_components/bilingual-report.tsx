@@ -1,7 +1,8 @@
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { ARA_PILLARS, ARA_MATURITY_LEVELS, ARA_OVERALL_BANDS } from "@/lib/constants/ara-pillars";
 import type { FrameworkComplianceSummary } from "@/lib/ara/compliance";
-import type { AraPillarId } from "@/types/ara";
+import type { PeerBenchmarkResult } from "@/lib/ara/peer-benchmarks";
+import type { AraPillarId, AraUseCase } from "@/types/ara";
 import { MaturityGauge } from "./maturity-gauge";
 import { RadarChart } from "./radar-chart";
 import { GapHeatmap } from "./gap-heatmap";
@@ -43,6 +44,8 @@ export type BilingualReportProps = {
   notesByPillar: Map<string, ConsultantNote[]>;
   shadowAiTriggered: boolean;
   pillarWeights: Record<string, number>;
+  peerBenchmarks: PeerBenchmarkResult;
+  useCases: Array<Pick<AraUseCase, "id" | "name" | "stage" | "pillar_id" | "risk_level" | "value_level" | "business_owner">>;
 };
 
 /**
@@ -387,6 +390,171 @@ export function BilingualReport(p: BilingualReportProps) {
         </div>
       </section>
 
+      {/* ─── AI Use Case Portfolio ─── */}
+      {p.useCases.length > 0 && (
+        <section className="report-page-bilingual-with-visual">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", marginBottom: "6mm" }}>
+            <h2 className="report-h2" style={{ margin: 0 }}>AI Use Case Portfolio</h2>
+            <h2 className="report-h2" dir="rtl" style={{ margin: 0, textAlign: "right" }}>
+              محفظة حالات استخدام الذكاء الاصطناعي
+            </h2>
+          </div>
+
+          <div>
+            {/* Stage counts */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6pt", marginBottom: "8pt" }}>
+              {(["ideation", "piloting", "production", "retired"] as const).map((stg) => {
+                const count = p.useCases.filter((u) => u.stage === stg).length;
+                const colors = {
+                  ideation: "#9ca3af",
+                  piloting: "#FD7E14",
+                  production: "#28A745",
+                  retired: "#6b7280",
+                };
+                return (
+                  <div key={stg} style={{ padding: "6pt", background: "#f9fafb", borderRadius: "4pt", textAlign: "center" }}>
+                    <p style={{ fontSize: "18pt", fontWeight: 600, color: colors[stg], margin: 0 }}>{count}</p>
+                    <p style={{ fontSize: "8pt", color: "#6b7280", margin: 0, textTransform: "uppercase" }}>{stg}</p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Use case table */}
+            <table className="report-body" style={{ width: "100%", borderCollapse: "collapse", fontSize: "8.5pt" }}>
+              <thead>
+                <tr style={{ background: "#f3f4f6" }}>
+                  <th style={ucHead}>Use case</th>
+                  <th style={ucHead}>Stage</th>
+                  <th style={ucHead}>Risk</th>
+                  <th style={ucHead}>Value</th>
+                  <th style={ucHead}>Pillar</th>
+                </tr>
+              </thead>
+              <tbody>
+                {p.useCases.map((u) => {
+                  const riskColor: Record<string, string> = {
+                    low: "#28A745", medium: "#FFC107", high: "#FD7E14", critical: "#DC3545",
+                  };
+                  return (
+                    <tr key={u.id} style={{ borderTop: "1px solid #e5e7eb" }}>
+                      <td style={ucCell}><strong>{u.name}</strong></td>
+                      <td style={{ ...ucCell, textTransform: "capitalize" }}>{u.stage}</td>
+                      <td style={{ ...ucCell, color: riskColor[u.risk_level], textTransform: "capitalize", fontWeight: 500 }}>
+                        {u.risk_level}
+                      </td>
+                      <td style={{ ...ucCell, textTransform: "capitalize" }}>{u.value_level}</td>
+                      <td style={ucCell}>
+                        {u.pillar_id
+                          ? ARA_PILLARS.find((pp) => pp.id === u.pillar_id)?.name_en ?? u.pillar_id
+                          : "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="bilingual-text">
+            <div className="col-en">
+              <p className="report-body">
+                Inventory of AI initiatives across the organization, scored by
+                stage, risk, and business value. Use this to sequence investment
+                and prioritise governance effort.
+              </p>
+            </div>
+            <div className="col-ar" dir="rtl">
+              <p className="report-body">
+                جرد مبادرات الذكاء الاصطناعي عبر المنظمة، مقيّمة حسب المرحلة
+                والمخاطر والقيمة التجارية. استخدم هذا لترتيب الاستثمار وتحديد
+                أولويات جهد الحوكمة.
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ─── Peer Benchmark (only if real peer data available) ─── */}
+      {p.peerBenchmarks.has_enough_data && (
+        <section className="report-page-bilingual">
+          <div className="col-en">
+            <h2 className="report-h2">Peer benchmark</h2>
+            <p className="report-body">
+              Median pillar scores from {p.peerBenchmarks.sample_size} anonymised
+              peer organisations in the same region and sector.
+            </p>
+            <table className="report-body" style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ background: "#f3f4f6" }}>
+                  <th style={ucHead}>Pillar</th>
+                  <th style={{ ...ucHead, textAlign: "right" }}>You</th>
+                  <th style={{ ...ucHead, textAlign: "right" }}>Peer median</th>
+                  <th style={{ ...ucHead, textAlign: "right" }}>Δ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ARA_PILLARS.map((pp) => {
+                  const row = p.pillarMap.get(pp.id);
+                  const s = row?.raw_score != null ? Number(row.raw_score) : null;
+                  const peer = p.peerBenchmarks.pillars.find((x) => x.pillar_id === pp.id)?.median;
+                  const delta = s != null && peer != null ? s - peer : null;
+                  return (
+                    <tr key={pp.id} style={{ borderTop: "1px solid #e5e7eb" }}>
+                      <td style={ucCell}>{pp.name_en}</td>
+                      <td style={{ ...ucCell, textAlign: "right" }}>{s != null ? s.toFixed(2) : "—"}</td>
+                      <td style={{ ...ucCell, textAlign: "right" }} className="report-muted">
+                        {peer != null ? peer.toFixed(2) : "—"}
+                      </td>
+                      <td style={{ ...ucCell, textAlign: "right", color: delta != null ? (delta >= 0 ? "#28A745" : "#DC3545") : undefined }}>
+                        {delta != null ? (delta > 0 ? `+${delta.toFixed(2)}` : delta.toFixed(2)) : "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="col-ar" dir="rtl">
+            <h2 className="report-h2">المقارنة مع النظراء</h2>
+            <p className="report-body">
+              النتائج الوسيطة للركائز من {p.peerBenchmarks.sample_size} منظمات
+              نظيرة مجهولة الهوية في نفس المنطقة والقطاع.
+            </p>
+            <table className="report-body" style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ background: "#f3f4f6" }}>
+                  <th style={ucHead}>الركيزة</th>
+                  <th style={{ ...ucHead, textAlign: "left" }}>أنت</th>
+                  <th style={{ ...ucHead, textAlign: "left" }}>وسيط النظراء</th>
+                  <th style={{ ...ucHead, textAlign: "left" }}>الفرق</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ARA_PILLARS.map((pp) => {
+                  const row = p.pillarMap.get(pp.id);
+                  const s = row?.raw_score != null ? Number(row.raw_score) : null;
+                  const peer = p.peerBenchmarks.pillars.find((x) => x.pillar_id === pp.id)?.median;
+                  const delta = s != null && peer != null ? s - peer : null;
+                  return (
+                    <tr key={pp.id} style={{ borderTop: "1px solid #e5e7eb" }}>
+                      <td style={ucCell}>{pp.name_ar}</td>
+                      <td style={{ ...ucCell, textAlign: "left" }}>{s != null ? s.toFixed(2) : "—"}</td>
+                      <td style={{ ...ucCell, textAlign: "left" }} className="report-muted">
+                        {peer != null ? peer.toFixed(2) : "—"}
+                      </td>
+                      <td style={{ ...ucCell, textAlign: "left", color: delta != null ? (delta >= 0 ? "#28A745" : "#DC3545") : undefined }}>
+                        {delta != null ? (delta > 0 ? `+${delta.toFixed(2)}` : delta.toFixed(2)) : "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
       {/* ─── Next Steps ─── */}
       <section className="report-page-bilingual">
         <div className="col-en">
@@ -455,6 +623,9 @@ export function BilingualReport(p: BilingualReportProps) {
     </>
   );
 }
+
+const ucCell: React.CSSProperties = { padding: "4pt 6pt", verticalAlign: "top", fontSize: "8.5pt" };
+const ucHead: React.CSSProperties = { ...ucCell, fontWeight: 600, color: "#010131", fontSize: "9pt", textAlign: "left" };
 
 function actionKeys(score: number | null): Array<"action_foundation" | "action_owner" | "action_benchmark" | "action_formalise" | "action_pilot" | "action_crossfunc" | "action_scale" | "action_close_gap" | "action_cadence" | "action_coe" | "action_mentor" | "action_annual"> {
   if (score == null || score < 2.0) return ["action_foundation", "action_owner", "action_benchmark"];

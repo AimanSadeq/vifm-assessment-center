@@ -128,6 +128,26 @@ export type AraQuestion = {
   created_at: string;
 };
 
+export type AraUseCaseStage = "ideation" | "piloting" | "production" | "retired";
+export type AraRiskLevel = "low" | "medium" | "high" | "critical";
+export type AraValueLevel = "low" | "medium" | "high";
+
+export type AraUseCase = {
+  id: string;
+  assessment_id: string;
+  respondent_id: string | null;
+  name: string;
+  description: string | null;
+  stage: AraUseCaseStage;
+  pillar_id: AraPillarId | null;
+  risk_level: AraRiskLevel;
+  value_level: AraValueLevel;
+  business_owner: string | null;
+  technical_owner: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type AraRegulatoryFramework = {
   id: string;
   region: AraRegion;

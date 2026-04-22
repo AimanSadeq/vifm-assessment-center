@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import {
   ArrowLeft, FlaskConical, Mail, Link2, Lock, Unlock, RefreshCw, Plus, Trash2,
   Archive, RotateCcw, BookOpen, AlertTriangle, ShieldAlert, TrendingUp, TrendingDown, Minus,
-  FileDown, Eye,
+  FileDown, Eye, Cpu,
 } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
@@ -118,6 +118,7 @@ export default async function AraAssessmentDetailPage({
     complianceSummaries,
     { data: complianceResults },
     { data: materials },
+    { data: useCases },
   ] = await Promise.all([
     sb
       .from("ara_respondents")
@@ -152,6 +153,11 @@ export default async function AraAssessmentDetailPage({
       .select("*, respondent:ara_respondents(name, email)")
       .eq("assessment_id", assessment.id)
       .order("uploaded_at", { ascending: false }),
+    sb
+      .from("ara_use_cases")
+      .select("*, respondent:ara_respondents(name)")
+      .eq("assessment_id", assessment.id)
+      .order("created_at", { ascending: false }),
   ]);
 
   const pillarMap = new Map<string, PillarScoreRow>();
@@ -825,6 +831,78 @@ export default async function AraAssessmentDetailPage({
             )}
           </Card>
         )}
+
+        {/* ─── AI Use Case Portfolio ─── */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Cpu className="h-4 w-4" /> AI use case portfolio
+            </CardTitle>
+            <CardDescription>
+              AI initiatives inventoried by respondents — stage, risk, and business value.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!useCases || useCases.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No use cases inventoried yet.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Stage</TableHead>
+                    <TableHead>Risk</TableHead>
+                    <TableHead>Value</TableHead>
+                    <TableHead>Pillar</TableHead>
+                    <TableHead>Owner</TableHead>
+                    <TableHead>Submitted by</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {useCases.map((u: any) => {
+                    const stageColors: Record<string, string> = {
+                      ideation: "bg-gray-500",
+                      piloting: "bg-orange-500",
+                      production: "bg-emerald-600",
+                      retired: "bg-gray-400",
+                    };
+                    const riskColors: Record<string, string> = {
+                      low: "text-emerald-700",
+                      medium: "text-amber-700",
+                      high: "text-orange-700",
+                      critical: "text-destructive",
+                    };
+                    return (
+                      <TableRow key={u.id}>
+                        <TableCell className="font-medium">{u.name}</TableCell>
+                        <TableCell>
+                          <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] uppercase text-white font-medium ${stageColors[u.stage]}`}>
+                            {u.stage}
+                          </span>
+                        </TableCell>
+                        <TableCell className={`text-sm font-medium ${riskColors[u.risk_level]}`}>
+                          {u.risk_level}
+                        </TableCell>
+                        <TableCell className="text-sm capitalize">{u.value_level}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {u.pillar_id
+                            ? (ARA_PILLARS.find((p) => p.id === u.pillar_id)?.name_en ?? u.pillar_id)
+                            : "—"}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {u.business_owner ?? "—"}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {u.respondent?.name ?? "—"}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
 
         {/* ─── Supporting Materials ─── */}
         <Card className="mb-6">

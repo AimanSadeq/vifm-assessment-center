@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, ChevronUp, ChevronDown, Upload } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
-import { createAraQuestion, publishAraVersion } from "@/lib/ara/actions";
+import {
+  createAraQuestion, publishAraVersion,
+  deleteAraQuestion, moveAraQuestion,
+  importAraQuestionsCsv,
+} from "@/lib/ara/actions";
 import type { AraQuestion, AraQuestionBankVersion } from "@/types/ara";
+
+export const dynamic = "force-dynamic";
 
 export default async function AraVersionDetailPage({
   params,
@@ -93,15 +99,71 @@ export default async function AraVersionDetailPage({
                   {qs.length === 0 ? (
                     <p className="text-xs text-muted-foreground">No questions in this pillar yet.</p>
                   ) : (
-                    <ol className="space-y-2 list-decimal list-inside">
-                      {qs.map((q) => (
-                        <li key={q.id} className="text-sm">
-                          <span className="font-medium">Q{q.question_number}</span>{" "}
-                          <Badge variant="outline" className="text-[10px] mr-1">L{q.layer}</Badge>
-                          <Badge variant="secondary" className="text-[10px] mr-1 capitalize">{q.question_type}</Badge>
-                          {q.question_text_en}
-                        </li>
-                      ))}
+                    <ol className="space-y-2">
+                      {qs.map((q, idx) => {
+                        const moveUpAction = async () => {
+                          "use server";
+                          await moveAraQuestion(q.id, "up");
+                        };
+                        const moveDownAction = async () => {
+                          "use server";
+                          await moveAraQuestion(q.id, "down");
+                        };
+                        const deleteAction = async () => {
+                          "use server";
+                          await deleteAraQuestion(q.id, version.id);
+                        };
+                        return (
+                          <li key={q.id} className="text-sm flex items-start gap-2">
+                            <div className="flex flex-col -gap-px">
+                              <form action={moveUpAction}>
+                                <button
+                                  type="submit"
+                                  disabled={idx === 0}
+                                  className="h-4 w-5 text-muted-foreground hover:text-foreground disabled:opacity-20"
+                                  aria-label="Move up"
+                                >
+                                  <ChevronUp className="h-3.5 w-3.5" />
+                                </button>
+                              </form>
+                              <form action={moveDownAction}>
+                                <button
+                                  type="submit"
+                                  disabled={idx === qs.length - 1}
+                                  className="h-4 w-5 text-muted-foreground hover:text-foreground disabled:opacity-20"
+                                  aria-label="Move down"
+                                >
+                                  <ChevronDown className="h-3.5 w-3.5" />
+                                </button>
+                              </form>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <span className="font-medium">Q{q.question_number}</span>{" "}
+                              <Badge variant="outline" className="text-[10px] mx-1">L{q.layer}</Badge>
+                              <Badge variant="secondary" className="text-[10px] me-1 capitalize">{q.question_type}</Badge>
+                              {q.question_text_en}
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <Link
+                                href={`/ara/admin/questions/${version.id}/${q.id}`}
+                                className="p-1 text-muted-foreground hover:text-foreground"
+                                aria-label="Edit"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Link>
+                              <form action={deleteAction}>
+                                <button
+                                  type="submit"
+                                  className="p-1 text-muted-foreground hover:text-destructive"
+                                  aria-label="Delete"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </form>
+                            </div>
+                          </li>
+                        );
+                      })}
                     </ol>
                   )}
                 </CardContent>
@@ -109,6 +171,37 @@ export default async function AraVersionDetailPage({
             );
           })}
         </div>
+
+        {/* CSV bulk import */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Upload className="h-4 w-4" /> CSV bulk import
+            </CardTitle>
+            <CardDescription>
+              Required columns: <code className="text-xs">pillar_id, question_number, question_text_en, question_text_ar, question_type</code>.
+              Optional: <code className="text-xs">options_en, options_ar, score_map, help_text_en, help_text_ar, region, sector, layer, display_order</code>.
+              JSON fields accept valid JSON or empty.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form action={importAraQuestionsCsv} className="flex items-end gap-3 flex-wrap">
+              <input type="hidden" name="version_id" value={version.id} />
+              <div className="space-y-1">
+                <Label htmlFor="csv_file" className="text-xs">CSV file</Label>
+                <input
+                  id="csv_file"
+                  type="file"
+                  name="file"
+                  accept=".csv,text/csv"
+                  required
+                  className="text-xs file:me-3 file:rounded-md file:border file:border-input file:bg-background file:px-3 file:py-1.5 file:text-xs"
+                />
+              </div>
+              <Button type="submit" size="sm">Import</Button>
+            </form>
+          </CardContent>
+        </Card>
 
         {/* Add question */}
         <Card>

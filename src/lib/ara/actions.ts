@@ -299,6 +299,233 @@ export async function publishAraVersion(versionId: string) {
 // ─────────────────────────────────────────────────────────────
 // Questions
 // ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// Question CSV bulk import
+// Expected columns (case-sensitive, in any order):
+//   pillar_id, question_number, question_text_en, question_text_ar,
+//   question_type, options_en, options_ar, score_map, help_text_en,
+//   help_text_ar, region, sector, layer, display_order
+// JSON fields (options_*, score_map) should be valid JSON or empty.
+// ─────────────────────────────────────────────────────────────
+function parseCsv(raw: string): Record<string, string>[] {
+  // Minimal quote-aware CSV parser. Handles "" escapes and fields that
+  // contain commas/newlines inside double quotes. No dependency on an
+  // external csv library.
+  const rows: string[][] = [];
+  let field = "";
+  let row: string[] = [];
+  let inQuotes = false;
+
+  for (let i = 0; i < raw.length; i++) {
+    const c = raw[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (raw[i + 1] === '"') { field += '"'; i++; }
+        else { inQuotes = false; }
+      } else {
+        field += c;
+      }
+    } else if (c === '"') {
+      inQuotes = true;
+    } else if (c === ",") {
+      row.push(field); field = "";
+    } else if (c === "\n" || c === "\r") {
+      if (field !== "" || row.length > 0) { row.push(field); rows.push(row); row = []; field = ""; }
+      if (c === "\r" && raw[i + 1] === "\n") i++;
+    } else {
+      field += c;
+    }
+  }
+  if (field !== "" || row.length > 0) { row.push(field); rows.push(row); }
+  if (rows.length === 0) return [];
+  const headers = rows[0].map((h) => h.trim());
+  return rows.slice(1).filter((r) => r.some((c) => c !== "")).map((r) => {
+    const obj: Record<string, string> = {};
+    headers.forEach((h, i) => { obj[h] = (r[i] ?? "").trim(); });
+    return obj;
+  });
+}
+
+export async function importAraQuestionsCsv(formData: FormData) {
+  const versionId = String(formData.get("version_id") ?? "");
+  const file = formData.get("file");
+  if (!versionId) return { ok: false, error: "Missing version id" };
+  if (!(file instanceof File) || file.size === 0) return { ok: false, error: "Choose a CSV file" };
+  if (!file.name.toLowerCase().endsWith(".csv")) return { ok: false, error: "File must be .csv" };
+
+  const text = await file.text();
+  const rows = parseCsv(text);
+  if (rows.length === 0) return { ok: false, error: "CSV is empty" };
+
+  const required = [
+    "pillar_id", "question_number", "question_text_en", "question_text_ar",
+    "question_type",
+  ];
+  const missing = required.filter((c) => !(c in rows[0]));
+  if (missing.length) return { ok: false, error: `Missing required columns: ${missing.join(", ")}` };
+
+  const parseJsonField = (raw: string | undefined) => {
+    if (!raw || raw.trim() === "") return null;
+    try { return JSON.parse(raw); } catch { return null; }
+  };
+
+  const inserts: any[] = [];
+  const errors: string[] = [];
+  rows.forEach((r, idx) => {
+    const rowNum = idx + 2; // +1 for header, +1 for 1-based
+    const parsed = createAraQuestionSchema.safeParse({
+      version_id: versionId,
+      pillar_id: r.pillar_id,
+      question_number: r.question_number,
+      question_text_en: r.question_text_en,
+      question_text_ar: r.question_text_ar,
+      question_type: r.question_type,
+      options_en: parseJsonField(r.options_en),
+      options_ar: parseJsonField(r.options_ar),
+      score_map: parseJsonField(r.score_map),
+      help_text_en: r.help_text_en || "",
+      help_text_ar: r.help_text_ar || "",
+      region: r.region || "both",
+      sector: r.sector || "all",
+      layer: Number(r.layer || 1) as 1 | 2,
+      display_order: r.display_order || 0,
+    });
+    if (!parsed.success) {
+      errors.push(`Row ${rowNum}: ${parsed.error.issues[0]?.message ?? "invalid"}`);
+      return;
+    }
+    inserts.push({
+      version_id: parsed.data.version_id,
+      pillar_id: parsed.data.pillar_id,
+      question_number: parsed.data.question_number,
+      question_text_en: parsed.data.question_text_en,
+      question_text_ar: parsed.data.question_text_ar,
+      question_type: parsed.data.question_type,
+      options_en: parsed.data.options_en,
+      options_ar: parsed.data.options_ar,
+      score_map: parsed.data.score_map,
+      help_text_en: parsed.data.help_text_en || null,
+      help_text_ar: parsed.data.help_text_ar || null,
+      region: parsed.data.region,
+      sector: parsed.data.sector,
+      layer: parsed.data.layer,
+      display_order: parsed.data.display_order,
+    });
+  });
+
+  if (errors.length) {
+    return { ok: false, error: `${errors.length} row(s) failed validation: ${errors.slice(0, 5).join("; ")}${errors.length > 5 ? "…" : ""}` };
+  }
+
+  const sb = createServiceClient();
+  const { error } = await sb.from("ara_questions").insert(inserts);
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath(`/ara/admin/questions/${versionId}`);
+  return { ok: true, imported: inserts.length };
+}
+
+// Delete question (admin)
+export async function deleteAraQuestion(questionId: string, versionId: string) {
+  const sb = createServiceClient();
+  const { error } = await sb.from("ara_questions").delete().eq("id", questionId);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/ara/admin/questions/${versionId}`);
+  return { ok: true };
+}
+
+// Reorder question — swap display_order with neighbour in same pillar
+export async function moveAraQuestion(questionId: string, direction: "up" | "down") {
+  const sb = createServiceClient();
+  const { data: target } = await sb
+    .from("ara_questions")
+    .select("id, version_id, pillar_id, display_order, layer")
+    .eq("id", questionId)
+    .maybeSingle<{ id: string; version_id: string; pillar_id: string; display_order: number; layer: number }>();
+  if (!target) return { ok: false, error: "Question not found" };
+
+  // Find the neighbour in same version + pillar + layer
+  const { data: neighbour } = await sb
+    .from("ara_questions")
+    .select("id, display_order")
+    .eq("version_id", target.version_id)
+    .eq("pillar_id", target.pillar_id)
+    .eq("layer", target.layer)
+    .eq("is_active", true)
+    [direction === "up" ? "lt" : "gt"]("display_order", target.display_order)
+    .order("display_order", { ascending: direction !== "up" })
+    .limit(1)
+    .maybeSingle<{ id: string; display_order: number }>();
+
+  if (!neighbour) return { ok: true }; // Already at edge — no-op
+
+  // Swap. Use a temporary value to avoid unique-index collisions if one exists.
+  await sb.from("ara_questions").update({ display_order: -1 }).eq("id", target.id);
+  await sb.from("ara_questions").update({ display_order: target.display_order }).eq("id", neighbour.id);
+  await sb.from("ara_questions").update({ display_order: neighbour.display_order }).eq("id", target.id);
+
+  revalidatePath(`/ara/admin/questions/${target.version_id}`);
+  return { ok: true };
+}
+
+// Update question (admin) — only editable fields; preserves scored responses
+export async function updateAraQuestion(formData: FormData) {
+  const questionId = String(formData.get("id") ?? "");
+  if (!questionId) return { ok: false, error: "Missing question id" };
+
+  const optionsEnRaw = formData.get("options_en") as string | null;
+  const optionsArRaw = formData.get("options_ar") as string | null;
+  const scoreMapRaw = formData.get("score_map") as string | null;
+  const parseJson = <T,>(raw: string | null): T | null => {
+    if (!raw) return null;
+    try { return JSON.parse(raw) as T; } catch { return null; }
+  };
+
+  const parsed = createAraQuestionSchema.safeParse({
+    version_id: formData.get("version_id"),
+    pillar_id: formData.get("pillar_id"),
+    question_number: formData.get("question_number"),
+    question_text_en: formData.get("question_text_en"),
+    question_text_ar: formData.get("question_text_ar"),
+    question_type: formData.get("question_type"),
+    options_en: parseJson(optionsEnRaw),
+    options_ar: parseJson(optionsArRaw),
+    score_map: parseJson(scoreMapRaw),
+    help_text_en: formData.get("help_text_en") || "",
+    help_text_ar: formData.get("help_text_ar") || "",
+    region: formData.get("region") || "both",
+    sector: formData.get("sector") || "all",
+    layer: Number(formData.get("layer") || 1) as 1 | 2,
+    display_order: formData.get("display_order") || 0,
+  });
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
+
+  const sb = createServiceClient();
+  const { error } = await sb
+    .from("ara_questions")
+    .update({
+      pillar_id: parsed.data.pillar_id,
+      question_number: parsed.data.question_number,
+      question_text_en: parsed.data.question_text_en,
+      question_text_ar: parsed.data.question_text_ar,
+      question_type: parsed.data.question_type,
+      options_en: parsed.data.options_en,
+      options_ar: parsed.data.options_ar,
+      score_map: parsed.data.score_map,
+      help_text_en: parsed.data.help_text_en || null,
+      help_text_ar: parsed.data.help_text_ar || null,
+      region: parsed.data.region,
+      sector: parsed.data.sector,
+      layer: parsed.data.layer,
+      display_order: parsed.data.display_order,
+    })
+    .eq("id", questionId);
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath(`/ara/admin/questions/${parsed.data.version_id}`);
+  redirect(`/ara/admin/questions/${parsed.data.version_id}`);
+}
+
 export async function createAraQuestion(formData: FormData) {
   // Options come in as JSON strings from the client form to keep the
   // FormData interface simple — no client-server array serialization dance.

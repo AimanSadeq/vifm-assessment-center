@@ -3,7 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
 import { createAraUseCaseSchema } from "@/lib/validations/ara";
+import { requireAssessmentOwner, isAuthorizationError } from "@/lib/ara/auth-guards";
 import type { AraRespondent } from "@/types/ara";
+
+function authErr(e: unknown) {
+  if (isAuthorizationError(e)) return { ok: false as const, error: e.message };
+  throw e;
+}
 
 // ─────────────────────────────────────────────────────────────
 // Respondent-facing: add/remove their own use case via access token.
@@ -96,6 +102,9 @@ export async function removeAraUseCaseAsRespondent(
 // Consultant-facing: add/remove use cases directly.
 // ─────────────────────────────────────────────────────────────
 export async function addAraUseCaseAsConsultant(formData: FormData) {
+  const assessmentId = String(formData.get("assessment_id") ?? "");
+  if (!assessmentId) return { ok: false, error: "Missing assessment id" };
+  try { await requireAssessmentOwner(assessmentId); } catch (e) { return authErr(e); }
   const parsed = createAraUseCaseSchema.safeParse({
     assessment_id: formData.get("assessment_id"),
     name: formData.get("name"),
@@ -129,7 +138,16 @@ export async function addAraUseCaseAsConsultant(formData: FormData) {
 }
 
 export async function removeAraUseCase(useCaseId: string, assessmentId: string) {
+  try { await requireAssessmentOwner(assessmentId); } catch (e) { return authErr(e); }
   const sb = createServiceClient();
+  // Verify the use case belongs to this assessment
+  const { data: uc } = await sb
+    .from("ara_use_cases")
+    .select("id")
+    .eq("id", useCaseId)
+    .eq("assessment_id", assessmentId)
+    .maybeSingle<{ id: string }>();
+  if (!uc) return { ok: false, error: "Use case not found on this assessment" };
   const { error } = await sb.from("ara_use_cases").delete().eq("id", useCaseId);
   if (error) return { ok: false, error: error.message };
   revalidatePath(`/ara/consultant/assessments/${assessmentId}`);

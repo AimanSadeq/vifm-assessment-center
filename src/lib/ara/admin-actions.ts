@@ -2,6 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
+import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
+
+function authErr(e: unknown) {
+  if (isAuthorizationError(e)) return { ok: false as const, error: e.message };
+  throw e;
+}
 
 // ─────────────────────────────────────────────────────────────
 // Sandbox cleanup (handover §17.4)
@@ -9,6 +15,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 // sandbox assessment; cascades wipe respondents, answers, materials, etc.
 // ─────────────────────────────────────────────────────────────
 export async function clearAraSandboxData(formData: FormData) {
+  try { await requireRole("admin"); } catch (e) { return authErr(e); }
   const confirmation = String(formData.get("confirmation") ?? "").trim();
   if (confirmation !== "DELETE SANDBOX DATA") {
     return { ok: false, error: 'Type "DELETE SANDBOX DATA" exactly to confirm.' };
@@ -46,6 +53,7 @@ export async function clearAraSandboxData(formData: FormData) {
 const RETENTION_YEARS = 3;
 
 export async function purgeAraExpiredAssessments(formData: FormData) {
+  try { await requireRole("admin"); } catch (e) { return authErr(e); }
   const confirmation = String(formData.get("confirmation") ?? "").trim();
   if (confirmation !== "PURGE EXPIRED DATA") {
     return { ok: false, error: 'Type "PURGE EXPIRED DATA" exactly to confirm.' };

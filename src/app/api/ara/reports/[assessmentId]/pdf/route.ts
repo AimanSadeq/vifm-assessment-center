@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Browser } from "puppeteer-core";
 import { createServiceClient } from "@/lib/supabase/server";
+import { requireAssessmentOwner, isAuthorizationError } from "@/lib/ara/auth-guards";
 
 // Puppeteer needs the Node runtime, not Edge.
 export const runtime = "nodejs";
@@ -50,6 +51,18 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { assessmentId: string } }
 ) {
+  // Authorize: admin or the assessment's owning consultant can generate.
+  // Prevents a consultant from guessing another consultant's assessment
+  // UUID and generating a PDF of it.
+  try {
+    await requireAssessmentOwner(params.assessmentId);
+  } catch (err) {
+    if (isAuthorizationError(err)) {
+      return NextResponse.json({ ok: false, error: err.message }, { status: 403 });
+    }
+    throw err;
+  }
+
   const url = new URL(req.url);
   const langRaw = url.searchParams.get("language") ?? "en";
   const language: "en" | "ar" | "bilingual" =

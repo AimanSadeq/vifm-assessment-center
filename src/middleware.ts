@@ -1,9 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
-
-// Set to true to enable authentication (production mode)
-// Set to false for development bypass
-const AUTH_ENABLED = false;
+import { AUTH_ENABLED } from "@/lib/auth/config";
 
 // ARA respondent routes use token-based access (no Supabase session).
 // The token is validated server-side against ara_respondents.access_token.

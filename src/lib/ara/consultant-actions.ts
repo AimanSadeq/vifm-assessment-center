@@ -5,7 +5,13 @@ import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/server";
 import { recalculateAssessmentCompliance, complianceStatusLabel } from "@/lib/ara/compliance";
 import { recalculateAssessmentScores } from "@/lib/ara/scoring";
+import { requireAssessmentOwner, isAuthorizationError } from "@/lib/ara/auth-guards";
 import type { AraComplianceStatus } from "@/types/ara";
+
+function authErr(e: unknown) {
+  if (isAuthorizationError(e)) return { ok: false as const, error: e.message };
+  throw e;
+}
 
 // ─────────────────────────────────────────────────────────────
 // Phase 2 consultant notes
@@ -19,6 +25,9 @@ const noteSchema = z.object({
 });
 
 export async function createConsultantNote(formData: FormData) {
+  const assessmentId = String(formData.get("assessment_id") ?? "");
+  if (!assessmentId) return { ok: false, error: "Missing assessment id" };
+  try { await requireAssessmentOwner(assessmentId); } catch (e) { return authErr(e); }
   const parsed = noteSchema.safeParse({
     assessment_id: formData.get("assessment_id"),
     pillar_id: formData.get("pillar_id") || null,
@@ -43,7 +52,16 @@ export async function createConsultantNote(formData: FormData) {
 }
 
 export async function deleteConsultantNote(noteId: string, assessmentId: string) {
+  try { await requireAssessmentOwner(assessmentId); } catch (e) { return authErr(e); }
   const sb = createServiceClient();
+  // Verify the note actually belongs to this assessment
+  const { data: note } = await sb
+    .from("ara_consultant_notes")
+    .select("id")
+    .eq("id", noteId)
+    .eq("assessment_id", assessmentId)
+    .maybeSingle<{ id: string }>();
+  if (!note) return { ok: false, error: "Note not found on this assessment" };
   const { error } = await sb.from("ara_consultant_notes").delete().eq("id", noteId);
   if (error) return { ok: false, error: error.message };
   revalidatePath(`/ara/consultant/assessments/${assessmentId}`);
@@ -51,11 +69,13 @@ export async function deleteConsultantNote(noteId: string, assessmentId: string)
 }
 
 export async function toggleNoteIncludeInReport(noteId: string, assessmentId: string, include: boolean) {
+  try { await requireAssessmentOwner(assessmentId); } catch (e) { return authErr(e); }
   const sb = createServiceClient();
   const { error } = await sb
     .from("ara_consultant_notes")
     .update({ include_in_report: include })
-    .eq("id", noteId);
+    .eq("id", noteId)
+    .eq("assessment_id", assessmentId);
   if (error) return { ok: false, error: error.message };
   revalidatePath(`/ara/consultant/assessments/${assessmentId}`);
   return { ok: true };
@@ -65,6 +85,7 @@ export async function toggleNoteIncludeInReport(noteId: string, assessmentId: st
 // Score freeze / unfreeze
 // ─────────────────────────────────────────────────────────────
 export async function freezeAssessmentScores(assessmentId: string) {
+  try { await requireAssessmentOwner(assessmentId); } catch (e) { return authErr(e); }
   const sb = createServiceClient();
 
   // Recalculate fresh right before freezing + compliance
@@ -108,6 +129,7 @@ export async function freezeAssessmentScores(assessmentId: string) {
 }
 
 export async function unfreezeAssessmentScores(assessmentId: string) {
+  try { await requireAssessmentOwner(assessmentId); } catch (e) { return authErr(e); }
   const sb = createServiceClient();
   await sb
     .from("ara_assessment_scores")
@@ -126,6 +148,7 @@ export async function unfreezeAssessmentScores(assessmentId: string) {
 // Full recalc — scores + compliance (explicit button)
 // ─────────────────────────────────────────────────────────────
 export async function recalculateCompliance(assessmentId: string) {
+  try { await requireAssessmentOwner(assessmentId); } catch (e) { return authErr(e); }
   await recalculateAssessmentScores(assessmentId);
   await recalculateAssessmentCompliance(assessmentId);
   revalidatePath(`/ara/consultant/assessments/${assessmentId}`);
@@ -159,6 +182,7 @@ const pillarWeightsSchema = z
 export async function updatePillarWeights(formData: FormData) {
   const assessmentId = String(formData.get("assessment_id") ?? "");
   if (!assessmentId) return { ok: false, error: "Missing assessment id" };
+  try { await requireAssessmentOwner(assessmentId); } catch (e) { return authErr(e); }
 
   const raw: Record<string, number> = {};
   for (const p of PILLAR_IDS) raw[p] = Number(formData.get(`weight_${p}`) ?? 0);
@@ -193,6 +217,9 @@ const validatedScoreSchema = z.object({
 });
 
 export async function setConsultantValidatedScore(formData: FormData) {
+  const assessmentId = String(formData.get("assessment_id") ?? "");
+  if (!assessmentId) return { ok: false, error: "Missing assessment id" };
+  try { await requireAssessmentOwner(assessmentId); } catch (e) { return authErr(e); }
   const parsed = validatedScoreSchema.safeParse({
     assessment_id: formData.get("assessment_id"),
     pillar_id: formData.get("pillar_id"),
@@ -239,6 +266,7 @@ export async function setConsultantValidatedScore(formData: FormData) {
 // Assessment lifecycle controls — archive, reopen
 // ─────────────────────────────────────────────────────────────
 export async function archiveAssessment(assessmentId: string) {
+  try { await requireAssessmentOwner(assessmentId); } catch (e) { return authErr(e); }
   const sb = createServiceClient();
   const now = new Date().toISOString();
   await sb
@@ -251,6 +279,7 @@ export async function archiveAssessment(assessmentId: string) {
 }
 
 export async function reopenAssessment(assessmentId: string) {
+  try { await requireAssessmentOwner(assessmentId); } catch (e) { return authErr(e); }
   const sb = createServiceClient();
   await sb
     .from("ara_assessments")
@@ -281,6 +310,9 @@ const overrideSchema = z.object({
 });
 
 export async function overrideComplianceStatus(formData: FormData) {
+  const assessmentId = String(formData.get("assessment_id") ?? "");
+  if (!assessmentId) return { ok: false, error: "Missing assessment id" };
+  try { await requireAssessmentOwner(assessmentId); } catch (e) { return authErr(e); }
   const parsed = overrideSchema.safeParse({
     assessment_id: formData.get("assessment_id"),
     requirement_id: formData.get("requirement_id"),

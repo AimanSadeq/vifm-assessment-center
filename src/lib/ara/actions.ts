@@ -10,11 +10,24 @@ import {
   createAraVersionSchema,
   createAraQuestionSchema,
 } from "@/lib/validations/ara";
+import {
+  requireRole, requireOrgAccess, requireAssessmentOwner,
+  isAuthorizationError,
+} from "@/lib/ara/auth-guards";
+
+// Uniform auth-error unwrapper — server actions return a shape the UI
+// can render as a toast instead of a Next error screen.
+function authErr(e: unknown) {
+  if (isAuthorizationError(e)) return { ok: false as const, error: e.message };
+  throw e; // non-auth errors propagate to Next's error boundary
+}
 
 // ─────────────────────────────────────────────────────────────
 // Organizations
 // ─────────────────────────────────────────────────────────────
 export async function createAraOrganization(formData: FormData) {
+  let caller;
+  try { caller = await requireRole(["admin", "consultant"]); } catch (e) { return authErr(e); }
   const parsed = createAraOrganizationSchema.safeParse({
     name: formData.get("name"),
     name_ar: formData.get("name_ar") || "",
@@ -34,6 +47,8 @@ export async function createAraOrganization(formData: FormData) {
       name_ar: parsed.data.name_ar || null,
       sector: parsed.data.sector,
       region: parsed.data.region,
+      // Track the creator so RLS can scope future reads per consultant.
+      created_by: caller.isDev ? null : caller.uid,
     })
     .select("id")
     .single();
@@ -49,6 +64,7 @@ export async function createAraOrganization(formData: FormData) {
 export async function updateAraOrganization(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return { ok: false, error: "Missing organization id" };
+  try { await requireOrgAccess(id); } catch (e) { return authErr(e); }
 
   const parsed = createAraOrganizationSchema.safeParse({
     name: formData.get("name"),
@@ -77,6 +93,8 @@ export async function updateAraOrganization(formData: FormData) {
 }
 
 export async function deleteAraOrganization(orgId: string) {
+  // Delete is strictly admin — cascades to all consultants' assessments.
+  try { await requireRole("admin"); } catch (e) { return authErr(e); }
   const sb = createServiceClient();
   const { error } = await sb.from("ara_organizations").delete().eq("id", orgId);
   if (error) return { ok: false, error: error.message };
@@ -92,6 +110,8 @@ export async function deleteAraOrganization(orgId: string) {
  * VIFM analytics. Writes an entry to the data management audit log.
  */
 export async function anonymizeAraOrganization(orgId: string, reason: string) {
+  // Data-erasure is strictly admin — logged in ara_data_management_log.
+  try { await requireRole("admin"); } catch (e) { return authErr(e); }
   const sb = createServiceClient();
   const now = new Date().toISOString();
 
@@ -144,6 +164,8 @@ export async function anonymizeAraOrganization(orgId: string, reason: string) {
 // Assessments
 // ─────────────────────────────────────────────────────────────
 export async function createAraAssessment(formData: FormData) {
+  let caller;
+  try { caller = await requireRole(["admin", "consultant"]); } catch (e) { return authErr(e); }
   const parsed = createAraAssessmentSchema.safeParse({
     organization_id: formData.get("organization_id"),
     region: formData.get("region"),
@@ -169,6 +191,8 @@ export async function createAraAssessment(formData: FormData) {
       question_bank_version_id: parsed.data.question_bank_version_id || null,
       status: "draft",
       phase: "phase1",
+      // Owner is the creating consultant (or null when an admin creates).
+      consultant_id: caller.role === "consultant" && !caller.isDev ? caller.uid : null,
     })
     .select("id")
     .single();
@@ -184,6 +208,9 @@ export async function createAraAssessment(formData: FormData) {
 // Respondents
 // ─────────────────────────────────────────────────────────────
 export async function createAraRespondent(formData: FormData) {
+  const assessmentId = String(formData.get("assessment_id") ?? "");
+  if (!assessmentId) return { ok: false, error: "Missing assessment id" };
+  try { await requireAssessmentOwner(assessmentId); } catch (e) { return authErr(e); }
   const pillars = formData.getAll("pillar_assignments") as string[];
 
   const parsed = createAraRespondentSchema.safeParse({
@@ -237,6 +264,18 @@ export async function createAraRespondent(formData: FormData) {
 }
 
 export async function deleteAraRespondent(respondentId: string, assessmentId: string) {
+  try { await requireAssessmentOwner(assessmentId); } catch (e) { return authErr(e); }
+  // Belt-and-braces: verify the respondent actually belongs to this
+  // assessment (caller could have mismatched IDs).
+  const check = createServiceClient();
+  const { data: r } = await check
+    .from("ara_respondents")
+    .select("id")
+    .eq("id", respondentId)
+    .eq("assessment_id", assessmentId)
+    .maybeSingle<{ id: string }>();
+  if (!r) return { ok: false, error: "Respondent not found on this assessment" };
+
   const sb = createServiceClient();
   const { error } = await sb.from("ara_respondents").delete().eq("id", respondentId);
   if (error) return { ok: false, error: error.message };
@@ -248,6 +287,7 @@ export async function deleteAraRespondent(respondentId: string, assessmentId: st
 // Question bank versions
 // ─────────────────────────────────────────────────────────────
 export async function createAraVersion(formData: FormData) {
+  try { await requireRole("admin"); } catch (e) { return authErr(e); }
   const parsed = createAraVersionSchema.safeParse({
     version_number: formData.get("version_number"),
     version_label: formData.get("version_label") || "",
@@ -278,18 +318,12 @@ export async function createAraVersion(formData: FormData) {
 }
 
 export async function publishAraVersion(versionId: string) {
+  try { await requireRole("admin"); } catch (e) { return authErr(e); }
+  // Atomic publish via Postgres RPC — eliminates the race where two
+  // concurrent publishes could leave the DB with zero or two active
+  // versions. See migration 00011.
   const sb = createServiceClient();
-  // Deactivate all other versions first (the partial unique index enforces one active)
-  const { error: deactErr } = await sb
-    .from("ara_question_bank_versions")
-    .update({ is_active: false })
-    .neq("id", versionId);
-  if (deactErr) return { ok: false, error: deactErr.message };
-
-  const { error } = await sb
-    .from("ara_question_bank_versions")
-    .update({ is_active: true, published_at: new Date().toISOString() })
-    .eq("id", versionId);
+  const { error } = await sb.rpc("ara_publish_version", { p_version_id: versionId });
   if (error) return { ok: false, error: error.message };
 
   revalidatePath("/ara/admin/questions");
@@ -347,6 +381,7 @@ function parseCsv(raw: string): Record<string, string>[] {
 }
 
 export async function importAraQuestionsCsv(formData: FormData) {
+  try { await requireRole("admin"); } catch (e) { return authErr(e); }
   const versionId = String(formData.get("version_id") ?? "");
   const file = formData.get("file");
   if (!versionId) return { ok: false, error: "Missing version id" };
@@ -427,6 +462,7 @@ export async function importAraQuestionsCsv(formData: FormData) {
 
 // Delete question (admin)
 export async function deleteAraQuestion(questionId: string, versionId: string) {
+  try { await requireRole("admin"); } catch (e) { return authErr(e); }
   const sb = createServiceClient();
   const { error } = await sb.from("ara_questions").delete().eq("id", questionId);
   if (error) return { ok: false, error: error.message };
@@ -436,6 +472,7 @@ export async function deleteAraQuestion(questionId: string, versionId: string) {
 
 // Reorder question — swap display_order with neighbour in same pillar
 export async function moveAraQuestion(questionId: string, direction: "up" | "down") {
+  try { await requireRole("admin"); } catch (e) { return authErr(e); }
   const sb = createServiceClient();
   const { data: target } = await sb
     .from("ara_questions")
@@ -470,6 +507,7 @@ export async function moveAraQuestion(questionId: string, direction: "up" | "dow
 
 // Update question (admin) — only editable fields; preserves scored responses
 export async function updateAraQuestion(formData: FormData) {
+  try { await requireRole("admin"); } catch (e) { return authErr(e); }
   const questionId = String(formData.get("id") ?? "");
   if (!questionId) return { ok: false, error: "Missing question id" };
 
@@ -527,6 +565,7 @@ export async function updateAraQuestion(formData: FormData) {
 }
 
 export async function createAraQuestion(formData: FormData) {
+  try { await requireRole("admin"); } catch (e) { return authErr(e); }
   // Options come in as JSON strings from the client form to keep the
   // FormData interface simple — no client-server array serialization dance.
   const optionsEnRaw = formData.get("options_en") as string | null;

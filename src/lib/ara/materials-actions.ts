@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/server";
+import { requireAssessmentOwner } from "@/lib/ara/auth-guards";
 import type { AraMaterialType, AraRespondent } from "@/types/ara";
 
 // ─────────────────────────────────────────────────────────────
@@ -179,13 +180,33 @@ export async function removeAraMaterial(
 }
 
 // ─────────────────────────────────────────────────────────────
-// Consultant-facing: generate a signed download URL for a stored file
+// Consultant-facing: generate a signed download URL for a stored file.
+// Requires the caller to own (or be admin of) the assessment that the
+// file belongs to. Without this check the service-role client would
+// happily sign URLs for any file path in the bucket.
 // ─────────────────────────────────────────────────────────────
 export async function signMaterialDownloadUrl(
   filePath: string,
   expiresInSeconds = 300
 ): Promise<string | null> {
   const sb = createServiceClient();
+
+  // Look up the material row by file_url and confirm the caller can
+  // act on its assessment. If no row matches, the path is either
+  // invalid or belongs to another tenant — deny in both cases.
+  const { data: material } = await sb
+    .from("ara_supporting_materials")
+    .select("id, assessment_id")
+    .eq("file_url", filePath)
+    .maybeSingle<{ id: string; assessment_id: string }>();
+  if (!material) return null;
+
+  try {
+    await requireAssessmentOwner(material.assessment_id);
+  } catch {
+    return null;
+  }
+
   const { data, error } = await sb.storage
     .from(BUCKET)
     .createSignedUrl(filePath, expiresInSeconds);

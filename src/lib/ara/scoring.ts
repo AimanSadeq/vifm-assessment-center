@@ -125,10 +125,16 @@ export async function recalculateAssessmentScores(assessmentId: string): Promise
 
     anyPillarScored = true;
     const raw = scores.reduce((a, b) => a + b, 0) / scores.length;
-    const weighted = Number((raw * (pillarWeight / 100)).toFixed(2));
+    // Accumulate the UNROUNDED weighted value into the overall total so
+    // rounding error does not compound across eight pillars. We still
+    // round the per-pillar weighted value when storing it, because the
+    // column is numeric(4,2) and consultants compare it against the
+    // rounded raw_score in the report.
+    const rawWeighted = raw * (pillarWeight / 100);
+    const weighted = Number(rawWeighted.toFixed(2));
     const maturity = maturityLevelFromScore(raw);
     const benchmarkGap = Number((4.0 - raw).toFixed(2));
-    overallWeighted += weighted;
+    overallWeighted += rawWeighted;
 
     await sb
       .from("ara_pillar_scores")

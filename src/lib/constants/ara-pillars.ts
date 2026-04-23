@@ -61,6 +61,11 @@ export const ARA_PILLAR_MAP: Readonly<Record<AraPillarId, (typeof ARA_PILLARS)[n
     Record<AraPillarId, (typeof ARA_PILLARS)[number]>
   >;
 
+// Level 1 floor is 0.0, not 1.0, so admin-defined score_maps that
+// assign a 0 for "no_policy"-style answers still bucket cleanly into
+// the lowest maturity level. Handover §7.2 shows label ranges starting
+// at 1.0, but the nominal "scoring range" and the bucketing rule are
+// separate concerns — display copy is unchanged.
 export const ARA_MATURITY_LEVELS: ReadonlyArray<{
   level: 1 | 2 | 3 | 4 | 5;
   label_en: string;
@@ -68,13 +73,16 @@ export const ARA_MATURITY_LEVELS: ReadonlyArray<{
   min: number;
   max: number;
 }> = [
-  { level: 1, label_en: "Unaware", label_ar: "غير مدرك", min: 1.0, max: 1.9 },
+  { level: 1, label_en: "Unaware", label_ar: "غير مدرك", min: 0.0, max: 1.9 },
   { level: 2, label_en: "Exploring", label_ar: "يستكشف", min: 2.0, max: 2.9 },
   { level: 3, label_en: "Developing", label_ar: "يطور", min: 3.0, max: 3.9 },
   { level: 4, label_en: "Advancing", label_ar: "يتقدم", min: 4.0, max: 4.4 },
   { level: 5, label_en: "Leading", label_ar: "رائد", min: 4.5, max: 5.0 },
 ] as const;
 
+// Same 0.0 floor as maturity levels — a weighted overall can be below
+// 1.0 when score_map values assign 0 to some answers. Display copy in
+// the report still uses the 1.0–5.0 labels from the handover.
 export const ARA_OVERALL_BANDS: ReadonlyArray<{
   label_en: string;
   label_ar: string;
@@ -82,7 +90,7 @@ export const ARA_OVERALL_BANDS: ReadonlyArray<{
   max: number;
   color: string;
 }> = [
-  { label_en: "Not Ready", label_ar: "غير جاهز", min: 1.0, max: 1.9, color: "#DC3545" },
+  { label_en: "Not Ready", label_ar: "غير جاهز", min: 0.0, max: 1.9, color: "#DC3545" },
   { label_en: "Early Stage", label_ar: "مرحلة مبكرة", min: 2.0, max: 2.9, color: "#FD7E14" },
   { label_en: "In Progress", label_ar: "في التقدم", min: 3.0, max: 3.9, color: "#FFC107" },
   { label_en: "Advanced", label_ar: "متقدم", min: 4.0, max: 4.4, color: "#28A745" },

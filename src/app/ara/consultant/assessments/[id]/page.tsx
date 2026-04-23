@@ -238,18 +238,60 @@ export default async function AraAssessmentDetailPage({
           </div>
         )}
 
-        <div className="flex items-start justify-between mb-8 gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold text-primary">
-              {assessment.organization?.name ?? "(no organization)"}
-            </h1>
-            <p className="text-muted-foreground">
-              {assessment.region === "uae" ? "United Arab Emirates" : "Saudi Arabia"} •{" "}
-              <span className="capitalize">{assessment.sector}</span> •{" "}
-              Default language: {assessment.default_language === "en" ? "English" : "Arabic"}
-            </p>
+        {/* Hero card — score + identity + primary actions */}
+        <div className="rounded-2xl border bg-card overflow-hidden mb-8">
+          <div className="ara-hero-subtle p-6 sm:p-8 flex flex-col lg:flex-row items-start gap-6">
+            {/* Identity */}
+            <div className="flex-1 min-w-0">
+              <span className="ara-eyebrow">
+                Assessment · {assessment.assessment_year}
+              </span>
+              <h1 className="ara-numeral text-3xl sm:text-4xl font-semibold text-primary mt-2 mb-3 leading-tight">
+                {assessment.organization?.name ?? "(no organization)"}
+              </h1>
+              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                <Badge variant="outline" className="capitalize font-medium">
+                  {assessment.region === "uae" ? "UAE" : "Saudi Arabia"}
+                </Badge>
+                <Badge variant="outline" className="capitalize font-medium">
+                  {assessment.sector}
+                </Badge>
+                <span className="text-muted-foreground/60">·</span>
+                <span className="capitalize">{assessment.status}</span>
+                <span className="text-muted-foreground/60">·</span>
+                <span>{assessment.phase.replace("phase", "Phase ")}</span>
+                <span className="text-muted-foreground/60">·</span>
+                <span>Lang: {assessment.default_language.toUpperCase()}</span>
+              </div>
+            </div>
+
+            {/* Score preview */}
+            <div className="flex items-stretch gap-4 w-full lg:w-auto">
+              <div className="rounded-xl border bg-card px-5 py-4 min-w-[140px]">
+                <div className="ara-eyebrow text-muted-foreground/80">Overall</div>
+                <div className="ara-numeral text-3xl font-semibold text-primary mt-1">
+                  {overall != null ? overall.toFixed(2) : "—"}
+                  <span className="text-sm text-muted-foreground font-normal"> / 5</span>
+                </div>
+                <div className="text-xs text-accent font-medium mt-0.5">
+                  {overallScore?.overall_label_en ?? "Not scored"}
+                </div>
+              </div>
+              <div className="rounded-xl border bg-card px-5 py-4 min-w-[140px]">
+                <div className="ara-eyebrow text-muted-foreground/80">Respondents</div>
+                <div className="ara-numeral text-3xl font-semibold text-primary mt-1">
+                  {(respondents ?? []).length}
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  {(respondents ?? []).filter((r) => r.completed_at).length} completed
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+
+          {/* Actions rail */}
+          <div className="border-t px-6 sm:px-8 py-3 flex flex-wrap items-center gap-2 bg-muted/20">
+            <div className="flex items-center gap-2">
             <Badge variant="outline" className="capitalize">{assessment.status}</Badge>
             <Badge variant="secondary" className="capitalize">
               {assessment.phase.replace("phase", "Phase ")}
@@ -340,6 +382,7 @@ export default async function AraAssessmentDetailPage({
                 <Archive className="h-3 w-3" /> Archive
               </ConfirmAction>
             )}
+            </div>
           </div>
         </div>
 

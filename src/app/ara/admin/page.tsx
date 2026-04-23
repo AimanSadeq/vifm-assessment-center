@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { ArrowLeft, Building2, Database, FileText, FlaskConical, FileClock } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Building2, Database, FileText, FlaskConical, FileClock, ArrowRight } from "lucide-react";
+import { AraTopBar } from "@/components/shared/ara-top-bar";
 
 export default function AraAdminPage() {
   const tiles = [
@@ -43,28 +43,40 @@ export default function AraAdminPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-5xl mx-auto px-6 py-10">
-        <Link href="/ara" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6">
-          <ArrowLeft className="h-3 w-3" /> Back to ARA
-        </Link>
+      <AraTopBar role="admin" />
 
-        <h1 className="text-2xl font-semibold text-primary mb-1">ARA Admin Console</h1>
-        <p className="text-muted-foreground mb-8">
-          VIFM staff — manage question bank, regulatory content, and sandbox data.
-        </p>
+      {/* Hero strip */}
+      <section className="border-b bg-card">
+        <div className="max-w-6xl mx-auto px-6 py-8">
+          <span className="ara-eyebrow">Admin</span>
+          <h1 className="ara-numeral text-3xl font-semibold text-primary mt-2">Admin Console</h1>
+          <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
+            VIFM staff — curate the question bank, seed regulatory content,
+            manage sandbox data, and oversee data retention.
+          </p>
+        </div>
+      </section>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {tiles.map((tile) => {
             const Icon = tile.icon;
+            const ready = tile.status === "Ready";
             const inner = (
-              <Card className={tile.href ? "hover:border-primary transition-colors cursor-pointer h-full" : "opacity-60 h-full"}>
-                <CardHeader>
-                  <Icon className="h-5 w-5 text-primary mb-2" />
-                  <CardTitle className="text-base">{tile.title}</CardTitle>
-                  <CardDescription>{tile.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="text-xs text-muted-foreground">{tile.status}</CardContent>
-              </Card>
+              <div className={`ara-tile p-6 h-full flex flex-col ${!tile.href ? "opacity-60 pointer-events-none" : ""}`}>
+                <div className={`h-10 w-10 rounded-lg flex items-center justify-center mb-4 ${ready ? "bg-accent/10 text-accent" : "bg-muted text-muted-foreground"}`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="text-base font-semibold text-primary mb-1">{tile.title}</h3>
+                <p className="text-sm text-muted-foreground flex-1">{tile.description}</p>
+                <div className={`mt-4 inline-flex items-center gap-1 text-xs font-medium ${ready ? "text-accent" : "text-muted-foreground"}`}>
+                  {ready ? (
+                    <>Open <ArrowRight className="h-3 w-3" /></>
+                  ) : (
+                    tile.status
+                  )}
+                </div>
+              </div>
             );
             return tile.href ? (
               <Link key={tile.title} href={tile.href}>{inner}</Link>

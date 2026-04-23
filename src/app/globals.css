@@ -89,4 +89,44 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* ARA module visual language. Used on hero sections and branded
+     chrome so the ARA surfaces feel distinct from the AC portal
+     without loading a second theme. */
+  .ara-hero {
+    background:
+      radial-gradient(circle at top right, rgba(83, 145, 213, 0.18), transparent 50%),
+      radial-gradient(circle at bottom left, rgba(255, 215, 0, 0.06), transparent 60%),
+      linear-gradient(135deg, #010131 0%, #121140 55%, #111232 100%);
+    color: #FEFFF9;
+  }
+  .ara-hero-subtle {
+    background:
+      radial-gradient(circle at top right, rgba(83, 145, 213, 0.08), transparent 60%),
+      linear-gradient(180deg, #FEFFF9 0%, #f8faff 100%);
+  }
+
+  /* Soft card that lifts on hover — used on tile grids */
+  .ara-tile {
+    @apply rounded-xl border bg-card transition-all duration-200;
+    box-shadow: 0 1px 2px rgba(1, 1, 49, 0.04);
+  }
+  .ara-tile:hover {
+    @apply border-accent/50;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(1, 1, 49, 0.08);
+  }
+
+  /* Eyebrow label above big headlines */
+  .ara-eyebrow {
+    @apply inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.12em];
+    color: rgba(83, 145, 213, 0.9);
+  }
+
+  /* Display numeral — for hero score callouts */
+  .ara-numeral {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "ss01";
+    letter-spacing: -0.02em;
+  }
 }

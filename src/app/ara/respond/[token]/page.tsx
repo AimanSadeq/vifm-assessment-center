@@ -69,44 +69,54 @@ export default async function AraRespondPage({
   return (
     <div className="min-h-screen bg-background" dir={rtl ? "rtl" : "ltr"}>
       <OfflineBanner language={language} />
-      <div className="max-w-3xl mx-auto px-6 py-10 space-y-6">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4">
-          <VifmLogo variant="color" size="md" />
-          <LanguageToggle token={params.token} current={language} />
-        </div>
 
-        {ctx.assessment.is_sandbox && (
-          <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 flex items-center gap-2 text-amber-900 text-sm">
-            <FlaskConical className="h-4 w-4" />
-            <span>
-              {rtl ? "هذا تقييم تجريبي" : "This is a test assessment"}
-            </span>
+      {/* ─── Hero welcome ─── */}
+      <section className="ara-hero relative overflow-hidden">
+        <div className="max-w-3xl mx-auto px-6 pt-8 pb-14">
+          <div className="flex items-start justify-between gap-4 mb-10">
+            <VifmLogo variant="white" size="md" />
+            <LanguageToggle token={params.token} current={language} />
           </div>
-        )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl">
-              {rtl ? "تقييم الاستعداد للذكاء الاصطناعي" : "AI Readiness Assessment"}
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              {orgName ?? "—"}
-            </p>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground space-y-2">
-            <p>
-              {rtl
-                ? `مرحباً ${ctx.respondent.name_ar ?? ctx.respondent.name}. لقد تم تعيينك للأقسام التالية:`
-                : `Welcome ${ctx.respondent.name}. You've been assigned the following sections:`}
-            </p>
-            <p className="text-xs">
-              {rtl
-                ? "إجاباتك محفوظة تلقائياً. يمكنك العودة لاحقاً لإكمال التقييم."
-                : "Your answers are saved automatically. You can return anytime to finish."}
-            </p>
-          </CardContent>
-        </Card>
+          {ctx.assessment.is_sandbox && (
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-amber-500/10 border border-amber-300/30 px-3 py-1 text-xs text-amber-200">
+              <FlaskConical className="h-3 w-3" />
+              <span>{rtl ? "تقييم تجريبي" : "Test assessment"}</span>
+            </div>
+          )}
+
+          <span className="ara-eyebrow text-accent">
+            {rtl ? "تقييم الاستعداد للذكاء الاصطناعي" : "AI Readiness Assessment"}
+          </span>
+          <h1 className="ara-numeral text-3xl sm:text-4xl font-semibold text-white mt-3 mb-2 leading-tight">
+            {rtl
+              ? `مرحباً ${ctx.respondent.name_ar ?? ctx.respondent.name}`
+              : `Welcome, ${ctx.respondent.name}`}
+          </h1>
+          <p className="text-base text-white/75 max-w-xl">
+            {orgName ? (
+              rtl ? (
+                <>
+                  أنت تساهم في تقييم{" "}
+                  <span className="text-white font-medium">{orgName}</span>.
+                </>
+              ) : (
+                <>
+                  You're contributing to the AI readiness assessment for{" "}
+                  <span className="text-white font-medium">{orgName}</span>.
+                </>
+              )
+            ) : null}
+          </p>
+          <p className="text-sm text-white/60 mt-4 max-w-xl">
+            {rtl
+              ? "إجاباتك محفوظة تلقائياً. يمكنك إغلاق الصفحة والعودة في أي وقت لإكمال التقييم."
+              : "Your answers save automatically. Close this page and come back anytime to finish."}
+          </p>
+        </div>
+      </section>
+
+      <div className="max-w-3xl mx-auto px-6 py-10 space-y-6 -mt-8 relative z-10">
 
         {/* Questions form */}
         <QuestionsForm

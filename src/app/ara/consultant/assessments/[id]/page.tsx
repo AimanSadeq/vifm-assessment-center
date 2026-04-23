@@ -31,6 +31,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { ValidatedScoreInput } from "./_components/validated-score-input";
 import type {
   AraAssessment, AraOrganization, AraRespondent, AraRespondentPillarAssignment,
@@ -217,6 +218,14 @@ export default async function AraAssessmentDetailPage({
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto px-6 py-10">
+        <Breadcrumbs
+          items={[
+            { label: "ARA", href: "/ara" },
+            { label: "Consultant", href: "/ara/consultant" },
+            { label: "Assessments", href: "/ara/consultant" },
+            { label: assessment.organization?.name ?? "(no org)" },
+          ]}
+        />
         <Link href="/ara/consultant" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6">
           <ArrowLeft className="h-3 w-3" /> Back to assessments
         </Link>

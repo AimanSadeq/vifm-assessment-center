@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { createServiceClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,15 @@ export default async function EditAraQuestionPage({
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-3xl mx-auto px-6 py-10">
+        <Breadcrumbs
+          items={[
+            { label: "ARA", href: "/ara" },
+            { label: "Admin", href: "/ara/admin" },
+            { label: "Question Bank", href: "/ara/admin/questions" },
+            { label: `v${version.version_number}`, href: `/ara/admin/questions/${version.id}` },
+            { label: `Q${question.question_number}` },
+          ]}
+        />
         <Link
           href={`/ara/admin/questions/${version.id}`}
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6"

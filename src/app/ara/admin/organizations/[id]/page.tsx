@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, AlertTriangle } from "lucide-react";
+import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { createServiceClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +52,14 @@ export default async function EditAraOrganizationPage({
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-6 py-10">
+        <Breadcrumbs
+          items={[
+            { label: "ARA", href: "/ara" },
+            { label: "Admin", href: "/ara/admin" },
+            { label: "Organizations", href: "/ara/admin/organizations" },
+            { label: org.name },
+          ]}
+        />
         <Link href="/ara/admin/organizations" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6">
           <ArrowLeft className="h-3 w-3" /> Back to organizations
         </Link>

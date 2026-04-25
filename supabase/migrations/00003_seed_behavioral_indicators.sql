@@ -1,5 +1,5 @@
 -- ============================================================
--- VIFM Assessment Center — Seed: Behavioral Indicators
+-- VIFM Assessment Center - Seed: Behavioral Indicators
 -- Maps UCF behavioral indicators to VIFM 33 competencies
 -- Source: Ahmad's Assessment Tool (UCF sheet)
 -- ============================================================

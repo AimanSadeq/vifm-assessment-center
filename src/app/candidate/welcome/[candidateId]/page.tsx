@@ -62,7 +62,7 @@ export default async function CandidateWelcomePage({ params }: Props) {
             <div className="text-muted-foreground">Assessment</div>
             <div className="font-medium">{eng.name}</div>
             <div className="text-muted-foreground">Organization</div>
-            <div className="font-medium">{eng.organizations?.name ?? "—"}</div>
+            <div className="font-medium">{eng.organizations?.name ?? "-"}</div>
             {eng.target_role && (
               <>
                 <div className="text-muted-foreground">Target Role</div>
@@ -71,7 +71,7 @@ export default async function CandidateWelcomePage({ params }: Props) {
             )}
             <div className="text-muted-foreground">Dates</div>
             <div className="font-medium">
-              {eng.start_date ?? "TBD"} — {eng.end_date ?? "TBD"}
+              {eng.start_date ?? "TBD"} - {eng.end_date ?? "TBD"}
             </div>
             <div className="text-muted-foreground">Status</div>
             <div>

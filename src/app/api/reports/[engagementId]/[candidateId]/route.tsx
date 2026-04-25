@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: { engagementId: string; candidateId: string } }
 ) {
   try {
-    // Auth guard — verify user is authenticated
+    // Auth guard - verify user is authenticated
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {

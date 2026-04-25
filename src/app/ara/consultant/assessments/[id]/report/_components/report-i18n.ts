@@ -1,14 +1,14 @@
 // Report-specific translations. Open-text answer content is never
-// translated per handover §5.4 — only static UI labels live here.
+// translated per handover §5.4 - only static UI labels live here.
 
 export type ReportLang = "en" | "ar";
 
 type Dict = Record<string, string>;
 
 const EN: Dict = {
-  confidential_internal: "Confidential — For Internal VIFM Use",
-  confidential_sample: "Confidential — Sample — Not for Client Distribution",
-  report_title: "AI Readiness Assessment Report",
+  confidential_internal: "Confidential - For Internal VIFM Use",
+  confidential_sample: "Confidential - Sample - Not for Client Distribution",
+  report_title: "AI Readiness Compass Report",
   report_generated: "Report generated",
   org_suffix: "Virginia Institute of Finance and Management",
 
@@ -34,6 +34,7 @@ const EN: Dict = {
   roadmap: "AI Readiness Roadmap",
   compliance_summary: "Regulatory Compliance Summary",
   supporting_materials: "Supporting Materials",
+  year_on_year: "Year-on-Year Progress",
   next_steps: "Next Steps with VIFM",
   appendix: "Appendix",
 
@@ -99,7 +100,7 @@ const EN: Dict = {
   // Body paragraphs
   exec_intro: "This assessment benchmarks the organization across eight AI Readiness pillars. The overall score reflects a weighted aggregate of pillar-level maturity, calibrated against regional regulatory frameworks.",
   no_strengths: "No pillars currently scoring at Advanced or above.",
-  no_gaps: "No pillars scoring below Developing — solid foundation.",
+  no_gaps: "No pillars scoring below Developing - solid foundation.",
   how_to_read_intro: "This report summarises findings across eight pillars of AI Readiness. Each pillar is scored 1–5 against a behavioural rubric, and the overall score is a weighted aggregate.",
   pillar_overview_intro: "The radar below plots current pillar scores against the AI Ready benchmark of 4.0 (dashed line). Pillars inside the dashed ring are below the benchmark and warrant focus.",
   findings_pending: "Detailed findings will be added by the consultant during the Phase 2 workshop.",
@@ -113,13 +114,21 @@ const EN: Dict = {
   roadmap_intro: "A phased 12-month roadmap translates findings into action across three horizons: immediate stabilisation (Quick Wins, months 0–3), institutionalisation (Build, months 3–9), and scaled transformation (Transform, months 9–12).",
   compliance_intro: "Compliance status against frameworks applicable to this region and sector. Each framework is scored as a weighted percentage of met + partial requirements.",
   materials_intro: "Documents and links submitted by respondents as supporting evidence.",
+  yoy_intro: "Compares current pillar maturity against the most recent prior assessment for this organization. Only valid within the same major question-bank version - bumping the major version starts a new baseline.",
+  yoy_no_prior: "This is the first assessment recorded for this organization. Year-on-year deltas will appear here once a subsequent assessment is completed against the same major question-bank version.",
+  yoy_baseline_reset: "Prior assessments exist for this organization but use a different major question-bank version. A new baseline has been established with this engagement.",
+  yoy_overall_delta: "Overall score change",
+  yoy_prior_year: "Prior year",
+  yoy_current_year: "Current year",
+  yoy_delta: "Change",
+  yoy_pillar_table_intro: "Per-pillar comparison against the prior assessment. Positive deltas reflect improvement.",
   next_steps_intro: "Virginia Institute of Finance and Management (VIFM) offers targeted services mapped to the gaps identified in this assessment:",
   next_steps_contact: "To discuss engagement, contact your VIFM consultant or email contact@viftraining.com.",
-  service_strategy: "AI Strategy Workshop — co-design a 12-month AI roadmap aligned to your business goals.",
-  service_data: "Data Foundations Programme — data quality, governance, and sovereignty.",
-  service_governance: "AI Governance Playbook — policy templates, acceptable-use frameworks, DPIAs.",
-  service_talent: "AI Talent Development — role-based learning paths for leaders, specialists, and all staff.",
-  service_annual: "Annual Reassessment — track progress year-on-year against the same benchmark.",
+  service_strategy: "AI Strategy Workshop - co-design a 12-month AI roadmap aligned to your business goals.",
+  service_data: "Data Foundations Programme - data quality, governance, and sovereignty.",
+  service_governance: "AI Governance Playbook - policy templates, acceptable-use frameworks, DPIAs.",
+  service_talent: "AI Talent Development - role-based learning paths for leaders, specialists, and all staff.",
+  service_annual: "Annual Reassessment - track progress year-on-year against the same benchmark.",
   appendix_scoring: "Each pillar raw score is the average of answered questions on a 1–5 scale. Weighted pillar scores are raw × (pillar weight ÷ 100). The overall organizational score is the sum of all eight weighted pillar scores.",
   appendix_disclaimer: "Investment signals indicate relative scale and category of financial commitment required. Actual costs vary based on organization size, existing infrastructure, vendor selection, and negotiated contracts. VIFM recommends conducting a detailed cost-benefit analysis for each high-investment initiative before budget allocation.",
   appendix_retention: "Client assessment data is retained for three years after archival. Generated reports are retained indefinitely as VIFM business records. To request data erasure, contact VIFM directly.",
@@ -140,9 +149,9 @@ const EN: Dict = {
 };
 
 const AR: Dict = {
-  confidential_internal: "سري — لاستخدام VIFM الداخلي",
-  confidential_sample: "سري — عينة — غير مخصص للتوزيع على العميل",
-  report_title: "تقرير تقييم الاستعداد للذكاء الاصطناعي",
+  confidential_internal: "سري - لاستخدام VIFM الداخلي",
+  confidential_sample: "سري - عينة - غير مخصص للتوزيع على العميل",
+  report_title: "تقرير بوصلة الاستعداد للذكاء الاصطناعي",
   report_generated: "تاريخ إصدار التقرير",
   org_suffix: "معهد فرجينيا للتمويل والإدارة",
 
@@ -168,6 +177,7 @@ const AR: Dict = {
   roadmap: "خارطة طريق الاستعداد للذكاء الاصطناعي",
   compliance_summary: "ملخص الامتثال التنظيمي",
   supporting_materials: "المواد الداعمة",
+  year_on_year: "التقدم سنة بعد سنة",
   next_steps: "الخطوات التالية مع VIFM",
   appendix: "الملحق",
 
@@ -232,7 +242,7 @@ const AR: Dict = {
 
   exec_intro: "يقارن هذا التقييم المنظمة عبر ثماني ركائز للاستعداد للذكاء الاصطناعي. تعكس النتيجة الإجمالية مجموعاً مرجحاً لنضج الركائز، معايراً وفقاً للأطر التنظيمية الإقليمية.",
   no_strengths: "لا توجد ركائز تسجل حالياً في مستوى متقدم أو أعلى.",
-  no_gaps: "لا توجد ركائز دون مستوى النضج النامي — أساس متين.",
+  no_gaps: "لا توجد ركائز دون مستوى النضج النامي - أساس متين.",
   how_to_read_intro: "يلخص هذا التقرير النتائج عبر ثماني ركائز للاستعداد للذكاء الاصطناعي. تُقيَّم كل ركيزة من ١ إلى ٥ وفقاً لمعايير سلوكية، وتمثل النتيجة الإجمالية مجموعاً مرجحاً.",
   pillar_overview_intro: "يعرض الرسم البياني أدناه نتائج الركائز الحالية مقارنةً بمعيار الجاهزية للذكاء الاصطناعي البالغ ٤٫٠ (الخط المتقطع). الركائز داخل الحلقة المتقطعة تقع دون المعيار وتستحق التركيز.",
   findings_pending: "ستتم إضافة النتائج التفصيلية من قبل المستشار خلال ورشة المرحلة الثانية.",
@@ -246,13 +256,21 @@ const AR: Dict = {
   roadmap_intro: "خارطة طريق متدرجة لمدة ١٢ شهراً تُترجم النتائج إلى إجراءات عبر ثلاثة آفاق: الاستقرار الفوري (مكاسب سريعة، الأشهر ٠–٣)، المأسسة (البناء، الأشهر ٣–٩)، والتحول الموسع (التحول، الأشهر ٩–١٢).",
   compliance_intro: "حالة الامتثال مقابل الأطر المطبقة على هذه المنطقة والقطاع. كل إطار يُحسب كنسبة مئوية مرجحة للمتطلبات الملباة + الجزئية.",
   materials_intro: "المستندات والروابط المقدمة من المستجيبين كدليل داعم.",
+  yoy_intro: "تقارن نضج الركائز الحالية بأحدث تقييم سابق للمنظمة. صالحة فقط ضمن نفس الإصدار الرئيسي لبنك الأسئلة - رفع الإصدار الرئيسي يُنشئ خط أساس جديداً.",
+  yoy_no_prior: "هذا أول تقييم مسجل لهذه المنظمة. ستظهر الفروقات سنة بعد سنة هنا بمجرد اكتمال تقييم لاحق ضمن نفس الإصدار الرئيسي لبنك الأسئلة.",
+  yoy_baseline_reset: "توجد تقييمات سابقة لهذه المنظمة ولكنها تستخدم إصداراً رئيسياً مختلفاً لبنك الأسئلة. تم إنشاء خط أساس جديد مع هذا الالتزام.",
+  yoy_overall_delta: "تغير النتيجة الإجمالية",
+  yoy_prior_year: "السنة السابقة",
+  yoy_current_year: "السنة الحالية",
+  yoy_delta: "التغير",
+  yoy_pillar_table_intro: "مقارنة لكل ركيزة مع التقييم السابق. الفروقات الإيجابية تعكس التحسن.",
   next_steps_intro: "يقدم معهد فرجينيا للتمويل والإدارة (VIFM) خدمات موجهة تعالج الفجوات المحددة في هذا التقييم:",
   next_steps_contact: "لمناقشة التعاون، اتصل بمستشار VIFM الخاص بك أو راسل contact@viftraining.com.",
-  service_strategy: "ورشة استراتيجية الذكاء الاصطناعي — تصميم مشترك لخارطة طريق لمدة ١٢ شهراً متوافقة مع أهدافك التجارية.",
-  service_data: "برنامج أسس البيانات — جودة البيانات، الحوكمة، والسيادة.",
-  service_governance: "دليل حوكمة الذكاء الاصطناعي — قوالب السياسات، أطر الاستخدام المقبول، تقييمات أثر حماية البيانات.",
-  service_talent: "تطوير مواهب الذكاء الاصطناعي — مسارات تعلم قائمة على الأدوار للقادة والمختصين وجميع الموظفين.",
-  service_annual: "إعادة التقييم السنوية — تتبع التقدم سنة بعد سنة مقابل نفس المعيار.",
+  service_strategy: "ورشة استراتيجية الذكاء الاصطناعي - تصميم مشترك لخارطة طريق لمدة ١٢ شهراً متوافقة مع أهدافك التجارية.",
+  service_data: "برنامج أسس البيانات - جودة البيانات، الحوكمة، والسيادة.",
+  service_governance: "دليل حوكمة الذكاء الاصطناعي - قوالب السياسات، أطر الاستخدام المقبول، تقييمات أثر حماية البيانات.",
+  service_talent: "تطوير مواهب الذكاء الاصطناعي - مسارات تعلم قائمة على الأدوار للقادة والمختصين وجميع الموظفين.",
+  service_annual: "إعادة التقييم السنوية - تتبع التقدم سنة بعد سنة مقابل نفس المعيار.",
   appendix_scoring: "كل نتيجة ركيزة خام هي متوسط الأسئلة المجابة على مقياس ١–٥. النتائج المرجحة للركائز = الخام × (وزن الركيزة ÷ ١٠٠). النتيجة التنظيمية الإجمالية = مجموع النتائج المرجحة للركائز الثماني.",
   appendix_disclaimer: "تشير إشارات الاستثمار إلى الحجم النسبي وفئة الالتزام المالي المطلوب. تختلف التكاليف الفعلية بناءً على حجم المنظمة والبنية التحتية القائمة واختيار المورد والعقود المتفاوض عليها. توصي VIFM بإجراء تحليل تكلفة-فائدة مفصل لكل مبادرة عالية الاستثمار قبل تخصيص الميزانية.",
   appendix_retention: "تُحفظ بيانات تقييم العميل لمدة ثلاث سنوات بعد الأرشفة. تُحتفظ التقارير المنشأة بلا أجل كسجلات أعمال VIFM. لطلب محو البيانات، اتصل بـ VIFM مباشرة.",

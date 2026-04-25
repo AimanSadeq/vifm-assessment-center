@@ -33,7 +33,7 @@ export default async function WashupListPage() {
               typeof eng.organizations === "object" &&
               "name" in eng.organizations
                 ? (eng.organizations as { name: string }).name
-                : "—";
+                : "-";
 
             return (
               <Link key={eng.id} href={`/assessor/washup/${eng.id}`}>

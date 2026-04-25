@@ -130,7 +130,7 @@ export default function AdminLayout({
         />
       )}
 
-      {/* Sidebar — desktop: collapsible, mobile: slide-over */}
+      {/* Sidebar - desktop: collapsible, mobile: slide-over */}
       <aside
         className={cn(
           "bg-sidebar text-sidebar-foreground flex flex-col border-e transition-all duration-300 ease-in-out",

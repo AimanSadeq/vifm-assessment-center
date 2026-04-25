@@ -241,7 +241,7 @@ async function seed() {
       "Consistently demonstrated strategic thinking across all exercises. Minor gap in cross-functional integration.",
       "Good decision-making overall. Needs to consider multiple scenarios and risk mitigation more explicitly.",
       "Strong results orientation with clear accountability measures. Consistent across exercises.",
-      "Excellent communicator across all formats — written, verbal, interpersonal. Strongest competency.",
+      "Excellent communicator across all formats - written, verbal, interpersonal. Strongest competency.",
       "Good foundational talent development skills but needs to probe deeper into root causes.",
       "Demonstrated strong resilience and composure throughout. Handles pressure well.",
     ][i],

@@ -53,7 +53,7 @@ export async function createExerciseAction(values: NewExerciseValues) {
 }
 
 async function rollbackEngagement(supabase: Awaited<ReturnType<typeof createClient>>, engagementId: string) {
-  // Delete in reverse dependency order — cascade should handle most of this
+  // Delete in reverse dependency order - cascade should handle most of this
   // but be explicit to ensure clean rollback
   await supabase.from("exercise_competency_matrix").delete().eq("engagement_id", engagementId);
   await supabase.from("engagement_exercises").delete().eq("engagement_id", engagementId);

@@ -65,7 +65,7 @@ export default async function ClientAnalyticsPage() {
   const notReady = oarData.filter((o) => o.recommendation === "not_ready").length;
   const avgOar = totalAssessed > 0
     ? (oarData.reduce((sum, o) => sum + o.overall_score, 0) / totalAssessed).toFixed(1)
-    : "—";
+    : "-";
 
   // Competency strength/weakness analysis
   const compMap = new Map<string, { name: string; total: number; count: number }>();
@@ -322,7 +322,7 @@ export default async function ClientAnalyticsPage() {
                   </div>
                   <p className="text-sm font-medium">{c.name}</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Cohort avg: {c.avg.toFixed(1)}/5 — Target: 3.5+
+                    Cohort avg: {c.avg.toFixed(1)}/5 - Target: 3.5+
                   </p>
                 </div>
               ))}

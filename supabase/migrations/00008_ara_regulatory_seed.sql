@@ -1,5 +1,5 @@
 -- ============================================================
--- VIFM ARA — Regulatory Frameworks Seed Data
+-- VIFM ARA - Regulatory Frameworks Seed Data
 -- Migration 00008: UAE + Saudi Arabia frameworks and
 -- requirements per handover Section 11.5 & 11.6.
 -- ============================================================
@@ -8,7 +8,7 @@
 -- UAE FRAMEWORKS
 -- ────────────────────────────────────────────────────────────
 
--- UAE_PDPL — Tier 1 — All sectors
+-- UAE_PDPL - Tier 1 - All sectors
 INSERT INTO ara_regulatory_frameworks (
   region, framework_code, framework_name_en, framework_name_ar,
   authority_name_en, authority_name_ar, framework_category, tier,
@@ -26,10 +26,10 @@ INSERT INTO ara_regulatory_requirements (framework_id, requirement_code, require
 SELECT id, v.code, v.en, v.ar, v.cat, v.pillar, v.sev::ara_severity, v.ord
 FROM ara_regulatory_frameworks, (VALUES
   ('UAE_PDPL_01', 'Organization has identified and documented a legal basis for all personal data processing including AI-driven processing.', 'حددت المنظمة ووثقت الأساس القانوني لجميع أنشطة معالجة البيانات الشخصية.', 'data_privacy', 'data', 'mandatory', 1),
-  ('UAE_PDPL_02', 'Organization has appointed a Data Protection Officer where required — particularly for large-scale processing of sensitive data.', 'عينت المنظمة مسؤول حماية البيانات حيثما لزم.', 'data_privacy', 'governance', 'mandatory', 2),
+  ('UAE_PDPL_02', 'Organization has appointed a Data Protection Officer where required - particularly for large-scale processing of sensitive data.', 'عينت المنظمة مسؤول حماية البيانات حيثما لزم.', 'data_privacy', 'governance', 'mandatory', 2),
   ('UAE_PDPL_03', 'Organization maintains a Record of Processing Activities documenting all personal data processing including AI system inputs and outputs.', 'تحتفظ المنظمة بسجل أنشطة المعالجة.', 'data_privacy', 'data', 'mandatory', 3),
   ('UAE_PDPL_04', 'Organization conducts Data Protection Impact Assessments before deploying AI systems involving automated decision-making or large-scale sensitive data.', 'تجري المنظمة تقييمات تأثير حماية البيانات قبل نشر أنظمة الذكاء الاصطناعي.', 'data_privacy', 'governance', 'mandatory', 4),
-  ('UAE_PDPL_05', 'Organization has mechanisms enabling data subjects to exercise their rights — access, rectification, erasure, restriction, objection — including when AI processes their data.', 'لدى المنظمة آليات تمكن أصحاب البيانات من ممارسة حقوقهم.', 'data_privacy', 'governance', 'mandatory', 5),
+  ('UAE_PDPL_05', 'Organization has mechanisms enabling data subjects to exercise their rights - access, rectification, erasure, restriction, objection - including when AI processes their data.', 'لدى المنظمة آليات تمكن أصحاب البيانات من ممارسة حقوقهم.', 'data_privacy', 'governance', 'mandatory', 5),
   ('UAE_PDPL_06', 'Cross-border transfers of personal data processed by AI systems are permitted only to countries with adequate data protection or under appropriate safeguards.', 'تتم عمليات نقل البيانات عبر الحدود فقط إلى دول توفر حماية كافية.', 'data_privacy', 'technology', 'mandatory', 6),
   ('UAE_PDPL_07', 'Organization has a documented data breach incident response plan covering AI system breaches.', 'لدى المنظمة خطة موثقة للاستجابة لاختراقات البيانات.', 'data_privacy', 'governance', 'mandatory', 7),
   ('UAE_PDPL_08', 'Employees using AI tools receive regular training on PDPL obligations and data protection best practices.', 'يتلقى الموظفون تدريباً منتظماً على التزامات القانون.', 'data_privacy', 'talent', 'mandatory', 8)
@@ -37,7 +37,7 @@ FROM ara_regulatory_frameworks, (VALUES
 WHERE framework_code = 'UAE_PDPL';
 
 
--- UAE_AI_STRATEGY — Tier 2 — All sectors
+-- UAE_AI_STRATEGY - Tier 2 - All sectors
 INSERT INTO ara_regulatory_frameworks (
   region, framework_code, framework_name_en, framework_name_ar,
   authority_name_en, authority_name_ar, framework_category, tier,
@@ -62,14 +62,14 @@ FROM ara_regulatory_frameworks, (VALUES
 WHERE framework_code = 'UAE_AI_STRATEGY';
 
 
--- UAE_AI_CHARTER — Tier 2 — All sectors
+-- UAE_AI_CHARTER - Tier 2 - All sectors
 INSERT INTO ara_regulatory_frameworks (
   region, framework_code, framework_name_en, framework_name_ar,
   authority_name_en, authority_name_ar, framework_category, tier,
   is_mandatory, applies_to_sectors, official_url, display_order
 ) VALUES (
   'uae', 'UAE_AI_CHARTER',
-  'UAE Charter for the Development and Use of AI (June 2024 — 12 Principles)',
+  'UAE Charter for the Development and Use of AI (June 2024 - 12 Principles)',
   'ميثاق الإمارات لتطوير واستخدام الذكاء الاصطناعي',
   'UAE Ministry of AI', 'وزارة الذكاء الاصطناعي',
   'ethics', 2, false, '["all"]'::jsonb,
@@ -82,14 +82,14 @@ SELECT id, v.code, v.en, v.ar, v.cat, v.pillar, v.sev::ara_severity, v.ord
 FROM ara_regulatory_frameworks, (VALUES
   ('UAE_CHARTER_01', 'AI systems prioritize human well-being and do not compromise human safety or fundamental rights.', 'تعطي أنظمة الذكاء الاصطناعي الأولوية لرفاهية الإنسان.', 'ethics', 'governance', 'recommended', 1),
   ('UAE_CHARTER_02', 'Organization has assessed AI systems for algorithmic bias and fairness.', 'قيّمت المنظمة أنظمة الذكاء الاصطناعي للتحيز الخوارزمي والعدالة.', 'ethics', 'model_management', 'recommended', 2),
-  ('UAE_CHARTER_03', 'AI systems are transparent — users are informed when interacting with or affected by AI.', 'أنظمة الذكاء الاصطناعي شفافة ويُخطر المستخدمون عند تفاعلهم معها.', 'transparency', 'governance', 'recommended', 3),
+  ('UAE_CHARTER_03', 'AI systems are transparent - users are informed when interacting with or affected by AI.', 'أنظمة الذكاء الاصطناعي شفافة ويُخطر المستخدمون عند تفاعلهم معها.', 'transparency', 'governance', 'recommended', 3),
   ('UAE_CHARTER_04', 'Organization maintains human oversight and control over AI systems for high-stakes decisions.', 'تحافظ المنظمة على الرقابة البشرية على أنظمة الذكاء الاصطناعي.', 'ai_governance', 'model_management', 'recommended', 4),
   ('UAE_CHARTER_05', 'Organization has a governance and accountability structure for AI with clear ownership and defined responsibility.', 'لدى المنظمة هيكل حوكمة ومساءلة للذكاء الاصطناعي مع ملكية واضحة.', 'ai_governance', 'governance', 'recommended', 5)
 ) AS v(code, en, ar, cat, pillar, sev, ord)
 WHERE framework_code = 'UAE_AI_CHARTER';
 
 
--- UAE_AI_ETHICS — Tier 3 — All sectors
+-- UAE_AI_ETHICS - Tier 3 - All sectors
 INSERT INTO ara_regulatory_frameworks (
   region, framework_code, framework_name_en, framework_name_ar,
   authority_name_en, authority_name_ar, framework_category, tier,
@@ -111,7 +111,7 @@ FROM ara_regulatory_frameworks, (VALUES
 WHERE framework_code = 'UAE_AI_ETHICS';
 
 
--- UAE_TDRA — Tier 1 — Government sector only
+-- UAE_TDRA - Tier 1 - Government sector only
 INSERT INTO ara_regulatory_frameworks (
   region, framework_code, framework_name_en, framework_name_ar,
   authority_name_en, authority_name_ar, framework_category, tier,
@@ -128,14 +128,14 @@ INSERT INTO ara_regulatory_frameworks (
 INSERT INTO ara_regulatory_requirements (framework_id, requirement_code, requirement_text_en, requirement_text_ar, requirement_category, pillar_id, severity, applies_to_sectors, display_order)
 SELECT id, v.code, v.en, v.ar, v.cat, v.pillar, v.sev::ara_severity, '["government"]'::jsonb, v.ord
 FROM ara_regulatory_frameworks, (VALUES
-  ('UAE_TDRA_01', 'Government entity complies with TDRA data residency requirements — government data must not be stored outside UAE without authorization.', 'تمتثل الجهة الحكومية لمتطلبات إقامة بيانات TDRA.', 'cybersecurity', 'technology', 'mandatory', 1),
+  ('UAE_TDRA_01', 'Government entity complies with TDRA data residency requirements - government data must not be stored outside UAE without authorization.', 'تمتثل الجهة الحكومية لمتطلبات إقامة بيانات TDRA.', 'cybersecurity', 'technology', 'mandatory', 1),
   ('UAE_TDRA_02', 'AI tools used in citizen-facing government services meet TDRA accessibility, security, and transparency standards.', 'تستوفي أدوات الذكاء الاصطناعي في الخدمات الحكومية معايير TDRA.', 'ai_governance', 'technology', 'mandatory', 2),
   ('UAE_TDRA_03', 'Cloud services used comply with TDRA data residency requirements for government data classification levels.', 'الخدمات السحابية المستخدمة تمتثل لمتطلبات إقامة بيانات TDRA.', 'cybersecurity', 'technology', 'mandatory', 3)
 ) AS v(code, en, ar, cat, pillar, sev, ord)
 WHERE framework_code = 'UAE_TDRA';
 
 
--- UAE_DCAI — Tier 2 — Government sector (Dubai only)
+-- UAE_DCAI - Tier 2 - Government sector (Dubai only)
 INSERT INTO ara_regulatory_frameworks (
   region, framework_code, framework_name_en, framework_name_ar,
   authority_name_en, authority_name_ar, framework_category, tier,
@@ -158,7 +158,7 @@ FROM ara_regulatory_frameworks, (VALUES
 WHERE framework_code = 'UAE_DCAI';
 
 
--- UAE_ADDA — Tier 2 — Government sector (Abu Dhabi only)
+-- UAE_ADDA - Tier 2 - Government sector (Abu Dhabi only)
 INSERT INTO ara_regulatory_frameworks (
   region, framework_code, framework_name_en, framework_name_ar,
   authority_name_en, authority_name_ar, framework_category, tier,
@@ -185,14 +185,14 @@ WHERE framework_code = 'UAE_ADDA';
 -- SAUDI ARABIA FRAMEWORKS
 -- ────────────────────────────────────────────────────────────
 
--- SAU_PDPL — Tier 1 — All sectors
+-- SAU_PDPL - Tier 1 - All sectors
 INSERT INTO ara_regulatory_frameworks (
   region, framework_code, framework_name_en, framework_name_ar,
   authority_name_en, authority_name_ar, framework_category, tier,
   is_mandatory, applies_to_sectors, official_url, display_order
 ) VALUES (
   'saudi', 'SAU_PDPL',
-  'Saudi Personal Data Protection Law (Royal Decree M/19, amended M/148) — Enforceable since September 14, 2024',
+  'Saudi Personal Data Protection Law (Royal Decree M/19, amended M/148) - Enforceable since September 14, 2024',
   'نظام حماية البيانات الشخصية السعودي',
   'SDAIA', 'هيئة البيانات والذكاء الاصطناعي السعودية',
   'data_privacy', 1, true, '["all"]'::jsonb,
@@ -205,16 +205,16 @@ FROM ara_regulatory_frameworks, (VALUES
   ('SAU_PDPL_01', 'Organization has identified and documented a legal basis for all personal data processing including AI-driven processing of Saudi residents'' data.', 'حددت المنظمة ووثقت الأساس القانوني لجميع معالجة البيانات.', 'data_privacy', 'data', 'mandatory', 1),
   ('SAU_PDPL_02', 'Personal data of Saudi residents processed by AI remains within Saudi Arabia unless cross-border transfer conditions under the updated Data Transfer Regulation (September 2024) are satisfied.', 'تبقى البيانات الشخصية للمقيمين السعوديين داخل المملكة إلا إذا استوفت شروط النقل.', 'data_privacy', 'technology', 'mandatory', 2),
   ('SAU_PDPL_03', 'Organization has appointed a Data Protection Officer or equivalent role responsible for PDPL compliance.', 'عينت المنظمة مسؤول حماية البيانات.', 'data_privacy', 'governance', 'mandatory', 3),
-  ('SAU_PDPL_04', 'Organization maintains a Record of Processing Activities for all personal data including AI inputs and outputs — retained for 5 years.', 'تحتفظ المنظمة بسجل أنشطة المعالجة لمدة 5 سنوات.', 'data_privacy', 'data', 'mandatory', 4),
+  ('SAU_PDPL_04', 'Organization maintains a Record of Processing Activities for all personal data including AI inputs and outputs - retained for 5 years.', 'تحتفظ المنظمة بسجل أنشطة المعالجة لمدة 5 سنوات.', 'data_privacy', 'data', 'mandatory', 4),
   ('SAU_PDPL_05', 'Organization has mechanisms enabling Saudi residents to exercise PDPL rights including when data is processed by AI.', 'لدى المنظمة آليات تمكن المقيمين من ممارسة حقوقهم.', 'data_privacy', 'governance', 'mandatory', 5),
-  ('SAU_PDPL_06', 'Sensitive personal data processed by AI — ethnic origin, health, biometric, location, credit — is classified and handled with additional safeguards.', 'البيانات الحساسة التي يعالجها الذكاء الاصطناعي مصنفة ومعالجة بضمانات إضافية.', 'data_privacy', 'data', 'mandatory', 6),
+  ('SAU_PDPL_06', 'Sensitive personal data processed by AI - ethnic origin, health, biometric, location, credit - is classified and handled with additional safeguards.', 'البيانات الحساسة التي يعالجها الذكاء الاصطناعي مصنفة ومعالجة بضمانات إضافية.', 'data_privacy', 'data', 'mandatory', 6),
   ('SAU_PDPL_07', 'Organization has a documented data breach incident response plan covering AI-related breaches with SDAIA notification protocols.', 'لدى المنظمة خطة استجابة لخروقات البيانات مع بروتوكولات إشعار SDAIA.', 'data_privacy', 'governance', 'mandatory', 7),
   ('SAU_PDPL_08', 'Employees using AI tools receive regular training on Saudi PDPL obligations and secure data handling.', 'يتلقى الموظفون تدريباً على التزامات نظام حماية البيانات.', 'data_privacy', 'talent', 'mandatory', 8)
 ) AS v(code, en, ar, cat, pillar, sev, ord)
 WHERE framework_code = 'SAU_PDPL';
 
 
--- SAU_SDAIA_NDGF — Tier 1 — All sectors
+-- SAU_SDAIA_NDGF - Tier 1 - All sectors
 INSERT INTO ara_regulatory_frameworks (
   region, framework_code, framework_name_en, framework_name_ar,
   authority_name_en, authority_name_ar, framework_category, tier,
@@ -231,8 +231,8 @@ INSERT INTO ara_regulatory_frameworks (
 INSERT INTO ara_regulatory_requirements (framework_id, requirement_code, requirement_text_en, requirement_text_ar, requirement_category, pillar_id, severity, display_order)
 SELECT id, v.code, v.en, v.ar, v.cat, v.pillar, v.sev::ara_severity, v.ord
 FROM ara_regulatory_frameworks, (VALUES
-  ('SAU_NDGF_01', 'Organization has adopted SDAIA/NDMO data classification standards — all AI system data is classified by sensitivity level.', 'اعتمدت المنظمة معايير تصنيف البيانات وجميع بيانات أنظمة الذكاء الاصطناعي مصنفة.', 'ai_governance', 'data', 'mandatory', 1),
-  ('SAU_NDGF_02', 'Data governance roles are formally assigned — data owners, stewards, and custodians identified for all AI-related data assets.', 'أدوار حوكمة البيانات محددة رسمياً بما في ذلك لأصول بيانات الذكاء الاصطناعي.', 'ai_governance', 'data', 'mandatory', 2),
+  ('SAU_NDGF_01', 'Organization has adopted SDAIA/NDMO data classification standards - all AI system data is classified by sensitivity level.', 'اعتمدت المنظمة معايير تصنيف البيانات وجميع بيانات أنظمة الذكاء الاصطناعي مصنفة.', 'ai_governance', 'data', 'mandatory', 1),
+  ('SAU_NDGF_02', 'Data governance roles are formally assigned - data owners, stewards, and custodians identified for all AI-related data assets.', 'أدوار حوكمة البيانات محددة رسمياً بما في ذلك لأصول بيانات الذكاء الاصطناعي.', 'ai_governance', 'data', 'mandatory', 2),
   ('SAU_NDGF_03', 'National or sensitive government data used in AI is not processed by non-approved external AI tools or cloud platforms.', 'البيانات الحكومية الحساسة لا تُعالج بأدوات خارجية غير معتمدة.', 'ai_governance', 'technology', 'mandatory', 3),
   ('SAU_NDGF_04', 'Organization has a data catalog documenting all data assets used in AI systems per NDMO standards.', 'لدى المنظمة كتالوج بيانات يوثق أصول بيانات الذكاء الاصطناعي.', 'ai_governance', 'data', 'recommended', 4),
   ('SAU_NDGF_05', 'Organization''s AI governance policy is formally aligned with SDAIA National Data Governance Framework and reviewed annually.', 'سياسة حوكمة الذكاء الاصطناعي متوافقة مع إطار SDAIA ومراجعة سنوياً.', 'ai_governance', 'governance', 'mandatory', 5)
@@ -240,14 +240,14 @@ FROM ara_regulatory_frameworks, (VALUES
 WHERE framework_code = 'SAU_SDAIA_NDGF';
 
 
--- SAU_NCA_ECC — Tier 1 — All sectors
+-- SAU_NCA_ECC - Tier 1 - All sectors
 INSERT INTO ara_regulatory_frameworks (
   region, framework_code, framework_name_en, framework_name_ar,
   authority_name_en, authority_name_ar, framework_category, tier,
   is_mandatory, applies_to_sectors, official_url, display_order
 ) VALUES (
   'saudi', 'SAU_NCA_ECC',
-  'NCA Essential Cybersecurity Controls (ECC-2:2024 — updated October 2024)',
+  'NCA Essential Cybersecurity Controls (ECC-2:2024 - updated October 2024)',
   'الضوابط الأساسية للأمن السيبراني',
   'NCA', 'الهيئة الوطنية للأمن السيبراني',
   'cybersecurity', 1, true, '["all"]'::jsonb,
@@ -262,19 +262,19 @@ FROM ara_regulatory_frameworks, (VALUES
   ('SAU_ECC_03', 'Organization conducts regular cybersecurity risk assessments covering AI system vulnerabilities, model tampering, and training data integrity.', 'تجري المنظمة تقييمات منتظمة لمخاطر الأمن السيبراني تغطي ثغرات أنظمة الذكاء الاصطناعي.', 'cybersecurity', 'governance', 'mandatory', 3),
   ('SAU_ECC_04', 'Organization has an incident response plan covering AI-related cybersecurity incidents aligned to NCA ECC-2:2024.', 'لدى المنظمة خطة استجابة للحوادث تغطي الحوادث السيبرانية المتعلقة بالذكاء الاصطناعي.', 'cybersecurity', 'governance', 'mandatory', 4),
   ('SAU_ECC_05', 'Employee use of public AI tools is governed by a formal AI Acceptable Use Policy aligned to NCA cybersecurity controls.', 'استخدام الموظفين لأدوات الذكاء الاصطناعي العامة محكوم بسياسة استخدام مقبول رسمية.', 'cybersecurity', 'governance', 'mandatory', 5),
-  ('SAU_ECC_06', 'Organization runs regular cybersecurity awareness programs covering AI-specific threats — phishing via AI, data leakage, deepfakes.', 'تنفذ المنظمة برامج توعية بالأمن السيبراني تغطي التهديدات الخاصة بالذكاء الاصطناعي.', 'cybersecurity', 'talent', 'mandatory', 6)
+  ('SAU_ECC_06', 'Organization runs regular cybersecurity awareness programs covering AI-specific threats - phishing via AI, data leakage, deepfakes.', 'تنفذ المنظمة برامج توعية بالأمن السيبراني تغطي التهديدات الخاصة بالذكاء الاصطناعي.', 'cybersecurity', 'talent', 'mandatory', 6)
 ) AS v(code, en, ar, cat, pillar, sev, ord)
 WHERE framework_code = 'SAU_NCA_ECC';
 
 
--- SAU_NCA_CCC — Tier 1 — All sectors
+-- SAU_NCA_CCC - Tier 1 - All sectors
 INSERT INTO ara_regulatory_frameworks (
   region, framework_code, framework_name_en, framework_name_ar,
   authority_name_en, authority_name_ar, framework_category, tier,
   is_mandatory, applies_to_sectors, official_url, display_order
 ) VALUES (
   'saudi', 'SAU_NCA_CCC',
-  'NCA Cloud Cybersecurity Controls (CCC-2:2024 — updated 2024)',
+  'NCA Cloud Cybersecurity Controls (CCC-2:2024 - updated 2024)',
   'ضوابط الأمن السيبراني للحوسبة السحابية',
   'NCA', 'الهيئة الوطنية للأمن السيبراني',
   'cybersecurity', 1, true, '["all"]'::jsonb,
@@ -291,14 +291,14 @@ FROM ara_regulatory_frameworks, (VALUES
 WHERE framework_code = 'SAU_NCA_CCC';
 
 
--- SAU_SDAIA_ETHICS — Tier 3 — All sectors
+-- SAU_SDAIA_ETHICS - Tier 3 - All sectors
 INSERT INTO ara_regulatory_frameworks (
   region, framework_code, framework_name_en, framework_name_ar,
   authority_name_en, authority_name_ar, framework_category, tier,
   is_mandatory, applies_to_sectors, official_url, display_order
 ) VALUES (
   'saudi', 'SAU_SDAIA_ETHICS',
-  'SDAIA AI Ethics Principles (2023 v2 — 12 principles)',
+  'SDAIA AI Ethics Principles (2023 v2 - 12 principles)',
   'مبادئ أخلاقيات الذكاء الاصطناعي لهيئة SDAIA',
   'SDAIA', 'هيئة البيانات والذكاء الاصطناعي',
   'ethics', 3, false, '["all"]'::jsonb,
@@ -314,7 +314,7 @@ FROM ara_regulatory_frameworks, (VALUES
 WHERE framework_code = 'SAU_SDAIA_ETHICS';
 
 
--- SAU_SDAIA_AAF — Tier 2 — All sectors
+-- SAU_SDAIA_AAF - Tier 2 - All sectors
 INSERT INTO ara_regulatory_frameworks (
   region, framework_code, framework_name_en, framework_name_ar,
   authority_name_en, authority_name_ar, framework_category, tier,
@@ -340,14 +340,14 @@ FROM ara_regulatory_frameworks, (VALUES
 WHERE framework_code = 'SAU_SDAIA_AAF';
 
 
--- SAU_VISION2030 — Tier 2 — All sectors
+-- SAU_VISION2030 - Tier 2 - All sectors
 INSERT INTO ara_regulatory_frameworks (
   region, framework_code, framework_name_en, framework_name_ar,
   authority_name_en, authority_name_ar, framework_category, tier,
   is_mandatory, applies_to_sectors, official_url, display_order
 ) VALUES (
   'saudi', 'SAU_VISION2030',
-  'Saudi Vision 2030 — AI and Digital Transformation Targets',
+  'Saudi Vision 2030 - AI and Digital Transformation Targets',
   'رؤية المملكة العربية السعودية 2030',
   'Vision 2030 PMO', 'مكتب إدارة برنامج رؤية 2030',
   'strategy', 2, false, '["all"]'::jsonb,
@@ -363,7 +363,7 @@ FROM ara_regulatory_frameworks, (VALUES
 WHERE framework_code = 'SAU_VISION2030';
 
 
--- SAU_SDAIA_GENAI — Tier 3 — Government sector only
+-- SAU_SDAIA_GENAI - Tier 3 - Government sector only
 INSERT INTO ara_regulatory_frameworks (
   region, framework_code, framework_name_en, framework_name_ar,
   authority_name_en, authority_name_ar, framework_category, tier,

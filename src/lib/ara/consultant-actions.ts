@@ -145,7 +145,7 @@ export async function unfreezeAssessmentScores(assessmentId: string) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Full recalc — scores + compliance (explicit button)
+// Full recalc - scores + compliance (explicit button)
 // ─────────────────────────────────────────────────────────────
 export async function recalculateCompliance(assessmentId: string) {
   try { await requireAssessmentOwner(assessmentId); } catch (e) { return authErr(e); }
@@ -205,7 +205,7 @@ export async function updatePillarWeights(formData: FormData) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Perception vs Reality — consultant enters their validated pillar
+// Perception vs Reality - consultant enters their validated pillar
 // score in Phase 2. On first save we snapshot the current raw_score
 // as the client self_assessment score so the gap is preserved even
 // if respondents update answers later.
@@ -263,7 +263,7 @@ export async function setConsultantValidatedScore(formData: FormData) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Assessment lifecycle controls — archive, reopen
+// Assessment lifecycle controls - archive, reopen
 // ─────────────────────────────────────────────────────────────
 export async function archiveAssessment(assessmentId: string) {
   try { await requireAssessmentOwner(assessmentId); } catch (e) { return authErr(e); }

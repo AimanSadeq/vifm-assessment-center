@@ -26,5 +26,5 @@ export default async function AssessorDashboardPage() {
     { id: "finalize", number: 6, title: "Finalize OAR", href: "/assessor/washup", iconName: "Award", metric: oar, metricLabel: "OARs", isComplete: oar > 0, isActive: c > 0 && oar === 0 },
   ];
 
-  return <ProcessMap title="Assessor Mission Board" subtitle="Your assessment journey — observe, rate, integrate, and reach consensus." steps={steps} completedCount={steps.filter((s) => s.isComplete).length} totalSteps={steps.length} />;
+  return <ProcessMap title="Assessor Mission Board" subtitle="Your assessment journey - observe, rate, integrate, and reach consensus." steps={steps} completedCount={steps.filter((s) => s.isComplete).length} totalSteps={steps.length} />;
 }

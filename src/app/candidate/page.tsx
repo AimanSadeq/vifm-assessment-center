@@ -41,7 +41,7 @@ export default async function CandidateDashboardPage() {
         totalSteps={steps.length}
       />
 
-      {/* Candidate selector — dev mode only, hidden in production */}
+      {/* Candidate selector - dev mode only, hidden in production */}
       {process.env.NODE_ENV === "development" && candidates.length > 1 && (
         <div>
           <h2 className="text-lg font-semibold mb-3">Select Your Profile</h2>
@@ -58,7 +58,7 @@ export default async function CandidateDashboardPage() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-xs text-muted-foreground">{eng?.name ?? "—"}</p>
+                      <p className="text-xs text-muted-foreground">{eng?.name ?? "-"}</p>
                     </CardContent>
                   </Card>
                 </Link>

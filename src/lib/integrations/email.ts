@@ -1,13 +1,13 @@
 /**
- * Email Integration Module — Microsoft Graph API (Outlook/M365)
+ * Email Integration Module - Microsoft Graph API (Outlook/M365)
  *
  * Sends transactional emails via Microsoft Graph API using Azure AD app credentials.
  *
  * Required environment variables:
- *   AZURE_TENANT_ID     — Azure AD tenant ID
- *   AZURE_CLIENT_ID     — App registration client ID
- *   AZURE_CLIENT_SECRET — App registration client secret
- *   EMAIL_FROM_ADDRESS  — Sender email (must be a valid M365 mailbox)
+ *   AZURE_TENANT_ID     - Azure AD tenant ID
+ *   AZURE_CLIENT_ID     - App registration client ID
+ *   AZURE_CLIENT_SECRET - App registration client secret
+ *   EMAIL_FROM_ADDRESS  - Sender email (must be a valid M365 mailbox)
  */
 
 import { ClientSecretCredential } from "@azure/identity";

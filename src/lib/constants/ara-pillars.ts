@@ -65,7 +65,7 @@ export const ARA_PILLAR_MAP: Readonly<Record<AraPillarId, (typeof ARA_PILLARS)[n
 // assign a 0 for "no_policy"-style answers still bucket cleanly into
 // the lowest maturity level. Handover §7.2 shows label ranges starting
 // at 1.0, but the nominal "scoring range" and the bucketing rule are
-// separate concerns — display copy is unchanged.
+// separate concerns - display copy is unchanged.
 export const ARA_MATURITY_LEVELS: ReadonlyArray<{
   level: 1 | 2 | 3 | 4 | 5;
   label_en: string;
@@ -80,7 +80,7 @@ export const ARA_MATURITY_LEVELS: ReadonlyArray<{
   { level: 5, label_en: "Leading", label_ar: "رائد", min: 4.5, max: 5.0 },
 ] as const;
 
-// Same 0.0 floor as maturity levels — a weighted overall can be below
+// Same 0.0 floor as maturity levels - a weighted overall can be below
 // 1.0 when score_map values assign 0 to some answers. Display copy in
 // the report still uses the 1.0–5.0 labels from the handover.
 export const ARA_OVERALL_BANDS: ReadonlyArray<{
@@ -90,9 +90,9 @@ export const ARA_OVERALL_BANDS: ReadonlyArray<{
   max: number;
   color: string;
 }> = [
-  { label_en: "Not Ready", label_ar: "غير جاهز", min: 0.0, max: 1.9, color: "#DC3545" },
-  { label_en: "Early Stage", label_ar: "مرحلة مبكرة", min: 2.0, max: 2.9, color: "#FD7E14" },
-  { label_en: "In Progress", label_ar: "في التقدم", min: 3.0, max: 3.9, color: "#FFC107" },
-  { label_en: "Advanced", label_ar: "متقدم", min: 4.0, max: 4.4, color: "#28A745" },
-  { label_en: "AI Leader", label_ar: "رائد في الذكاء الاصطناعي", min: 4.5, max: 5.0, color: "#FFD700" },
+  { label_en: "Not Ready", label_ar: "غير جاهز", min: 0.0, max: 1.9, color: "#FB7185" },
+  { label_en: "Early Stage", label_ar: "مرحلة مبكرة", min: 2.0, max: 2.9, color: "#FDBA74" },
+  { label_en: "In Progress", label_ar: "في التقدم", min: 3.0, max: 3.9, color: "#FBBF24" },
+  { label_en: "Advanced", label_ar: "متقدم", min: 4.0, max: 4.4, color: "#34D399" },
+  { label_en: "AI Leader", label_ar: "رائد في الذكاء الاصطناعي", min: 4.5, max: 5.0, color: "#FBBF24" },
 ] as const;

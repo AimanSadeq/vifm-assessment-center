@@ -14,11 +14,11 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!AUTH_ENABLED) {
-    // Development mode — allow all access
+    // Development mode - allow all access
     return NextResponse.next();
   }
 
-  // Production mode — enforce authentication
+  // Production mode - enforce authentication
   return await updateSession(request);
 }
 

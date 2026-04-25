@@ -3,7 +3,7 @@ import type {
   AraAssessment, AraComplianceStatus, AraRegulatoryFramework, AraRegulatoryRequirement,
 } from "@/types/ara";
 
-// Extra type — requirements have extra fields not in AraRegulatoryFramework
+// Extra type - requirements have extra fields not in AraRegulatoryFramework
 export type AraRegulatoryRequirementRow = {
   id: string;
   framework_id: string;

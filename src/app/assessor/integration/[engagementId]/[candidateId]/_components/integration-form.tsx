@@ -86,7 +86,7 @@ export function IntegrationForm({
         <BackLink href={`/assessor/assignments/${engagementId}`} label="Back to Assignments" />
         <h1 className="mt-2 text-2xl font-bold">Integration Worksheet</h1>
         <p className="text-sm text-muted-foreground">
-          {candidateName} — {engagementName}
+          {candidateName} - {engagementName}
         </p>
         <Badge variant={completedCount === competencies.length ? "default" : "secondary"} className="mt-2">
           {completedCount}/{competencies.length} competencies rated
@@ -106,7 +106,7 @@ export function IntegrationForm({
                 <CardTitle className="text-base">{comp.name}</CardTitle>
                 {w.rating > 0 && (
                   <Badge variant={w.rating >= 3 ? "default" : "destructive"}>
-                    {w.rating} — {BARS_LABELS[w.rating]}
+                    {w.rating} - {BARS_LABELS[w.rating]}
                   </Badge>
                 )}
               </div>
@@ -190,7 +190,7 @@ export function IntegrationForm({
 
               {/* Notes */}
               <Textarea
-                placeholder="Integration notes — summarize evidence and rationale..."
+                placeholder="Integration notes - summarize evidence and rationale..."
                 rows={2}
                 value={w.notes}
                 onChange={(e) =>

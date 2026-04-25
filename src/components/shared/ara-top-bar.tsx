@@ -19,7 +19,7 @@ export function AraTopBar({
             <VifmLogo variant="color" size="sm" />
             <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.15em] text-muted-foreground font-medium border-l ps-3 ms-1">
               <Sparkles className="h-3 w-3 text-accent" />
-              AI Readiness
+              AI Readiness Compass
             </span>
           </Link>
 
@@ -27,6 +27,8 @@ export function AraTopBar({
             <nav className="hidden md:flex items-center gap-1 text-sm">
               <NavLink href="/ara/consultant">Consultant</NavLink>
               <NavLink href="/ara/admin">Admin</NavLink>
+              <NavLink href="/ara/engage">Engage</NavLink>
+              <NavLink href="/ara/roadmap">Roadmap</NavLink>
             </nav>
           )}
         </div>

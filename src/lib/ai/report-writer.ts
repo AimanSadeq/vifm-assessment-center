@@ -61,7 +61,7 @@ export async function generateReportNarrative(
 Guidelines:
 - Use formal, professional language appropriate for executive-level reports
 - Ground all statements in observed behavioral evidence
-- Be balanced — highlight strengths and development areas
+- Be balanced - highlight strengths and development areas
 - Use specific examples from observations
 - Keep narratives concise but substantive (3-5 sentences per competency)
 - Development recommendations should be actionable and specific

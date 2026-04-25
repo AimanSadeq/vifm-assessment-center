@@ -64,7 +64,7 @@ export default async function AraOrganizationsPage() {
                     </Link>
                   </TableCell>
                   <TableCell className="text-muted-foreground" dir="rtl">
-                    {org.name_ar ?? "—"}
+                    {org.name_ar ?? "-"}
                   </TableCell>
                   <TableCell>
                     <Badge variant={org.region === "uae" ? "default" : "secondary"}>

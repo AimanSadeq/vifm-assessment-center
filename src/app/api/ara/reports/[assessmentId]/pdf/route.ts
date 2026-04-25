@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // Vercel: default serverless timeout is 10s. PDF gen takes ~7–10s for
-// a 29-page report — bump to 60s. Hobby tier caps at 60; Pro goes higher.
+// a 29-page report - bump to 60s. Hobby tier caps at 60; Pro goes higher.
 export const maxDuration = 60;
 
 /**
@@ -83,7 +83,7 @@ export async function GET(
       preferCSSPageSize: true,
     });
 
-    // Log the generation in ara_reports. file_url stays null — we stream
+    // Log the generation in ara_reports. file_url stays null - we stream
     // the bytes directly rather than writing to storage. Storage-backed
     // durable URLs are a future enhancement.
     const sb = createServiceClient();

@@ -6,13 +6,13 @@ Custom-built Assessment Center management platform for Virginia Institute of Fin
 ## Current Status
 All 5 development phases are **complete**. The portal is functionally ready with auth disabled for development. To go to production, flip `AUTH_ENABLED = true` in `src/middleware.ts` and follow `src/lib/auth/README.md`.
 
-**New module in progress:** VIFM ARA (AI Readiness Assessment) — see "ARA Module" section below. M1 (schema + consultant role + nav) complete on branch `feature/ara-module`.
+**New module in progress:** VIFM ARA (AI Readiness Assessment) - see "ARA Module" section below. M1 (schema + consultant role + nav) complete on branch `feature/ara-module`.
 
 ## Tech Stack
 - **Framework:** Next.js 14 with App Router and TypeScript (strict mode)
 - **Styling:** Tailwind CSS with Shadcn/UI component library (New York style)
 - **Database:** Supabase (PostgreSQL + Auth + Storage + Realtime)
-- **Auth:** Supabase Auth with Row-Level Security (RLS) per role — toggle in middleware.ts
+- **Auth:** Supabase Auth with Row-Level Security (RLS) per role - toggle in middleware.ts
 - **Real-Time:** Supabase Realtime (live wash-up collaboration)
 - **Reporting:** React-PDF for candidate reports (6-page professional format), Recharts for analytics
 - **AI:** Anthropic Claude API (observation classifier, report writer, development recommender, bias detector)
@@ -140,15 +140,15 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
-# Optional — enable AI features
+# Optional - enable AI features
 ANTHROPIC_API_KEY=your-anthropic-api-key
 
-# Optional — enable email notifications
+# Optional - enable email notifications
 EMAIL_PROVIDER=sendgrid
 EMAIL_API_KEY=your-email-api-key
 EMAIL_FROM_ADDRESS=noreply@vifm.ae
 
-# Optional — enable video conferencing
+# Optional - enable video conferencing
 DAILY_API_KEY=your-daily-api-key
 ```
 
@@ -197,26 +197,26 @@ DAILY_API_KEY=your-daily-api-key
 New module being built alongside the existing AC portal. Full spec in `VIFM_ARA_Handover.md` (on user's Desktop).
 
 ### Non-breaking integration
-- All new DB tables prefixed `ara_` — no existing table modified
+- All new DB tables prefixed `ara_` - no existing table modified
 - All new pages under `/ara/*` route namespace
 - All new API routes under `/api/ara/*`
 - Added `consultant` to the `user_role` enum (existing values unchanged)
-- Added single nav link "AI Readiness" to admin sidebar — no other nav changes
+- Added single nav link "AI Readiness" to admin sidebar - no other nav changes
 - Middleware bypasses auth for `/ara/respond/[token]` routes (token-based access)
 
 ### ARA roles
-- **admin** — reuses existing role. Manages question bank, regulatory docs, sandbox.
-- **consultant** — new role. Owns their own assessments; scoped RLS.
-- **respondent** — no account; accesses via `ara_respondents.access_token` validated by service-role API routes.
+- **admin** - reuses existing role. Manages question bank, regulatory docs, sandbox.
+- **consultant** - new role. Owns their own assessments; scoped RLS.
+- **respondent** - no account; accesses via `ara_respondents.access_token` validated by service-role API routes.
 
 ### ARA tech choices (differ from AC where necessary)
-- **PDF reports:** Puppeteer (not React-PDF) — Arabic shaping + landscape bilingual side-by-side layout. Keep React-PDF for candidate reports.
+- **PDF reports:** Puppeteer (not React-PDF) - Arabic shaping + landscape bilingual side-by-side layout. Keep React-PDF for candidate reports.
 - **Languages:** full bilingual EN + Gulf Arabic with RTL. Translation fields on all content tables (`_en` / `_ar` suffixes).
-- **Region-driven content:** UAE clients see UAE frameworks only, Saudi sees Saudi only — never mixed.
+- **Region-driven content:** UAE clients see UAE frameworks only, Saudi sees Saudi only - never mixed.
 
 ### Key ARA database objects
 - 8 pillars (strategy, data, technology, talent, culture, governance, operations, model_management)
-- Question bank versioning via `ara_question_bank_versions` — one active at a time (partial unique index)
+- Question bank versioning via `ara_question_bank_versions` - one active at a time (partial unique index)
 - Regulatory frameworks seeded: 7 UAE + 9 Saudi from handover Section 11
 - Helper function `ara_is_assessment_owner(uuid)` for consultant-scoped RLS
 
@@ -229,24 +229,24 @@ New module being built alongside the existing AC portal. Full spec in `VIFM_ARA_
 - **M6:** Annual reassessment, data retention, sandbox cleanup
 
 ### ARA deferred items (from earlier milestones)
-Track here — pick up as scope allows. Do NOT delete without user confirmation.
-- **M2.1 — Invitation email send:** `ara_respondents.access_token` is generated and the link is previewable in the consultant dashboard, but no email is actually sent. Needs a server action that hits SendGrid/Resend with the bilingual welcome template, respects `is_sandbox` → SANDBOX_EMAIL_REDIRECT env var, and writes to `ara_email_log`.
-- **M2.2 — Question edit/delete/reorder:** admin can add but not modify. Needs `updateAraQuestion`, `deleteAraQuestion`, drag-to-reorder server action.
-- **M2.3 — Question CSV bulk import:** per handover Section 13.2 — build after the edit form so admin can re-export and reimport.
-- **M2.4 — Organization edit/delete + anonymize function:** only list + create exist today. Anonymize is required for GDPR/PDPL data-erasure requests (M6 dependency).
-- **M2.5 — Reopen/lock/archive assessment controls** on assessment detail page (`status` lifecycle transitions).
-- **M3.1 — Supporting Materials upload** on respondent form (URL / Word / PDF / PowerPoint, unlimited, no size limit; see handover Section 10).
-- **M3.2 — Offline banner + retry logic** for connection loss (handover Section 16.3).
-- **M3.3 — Consultant notification email** on respondent completion / all-complete.
-- **M4.1 — Pillar weight editor** on consultant detail (weights must sum to 100, stored in `ara_assessments.pillar_weights`).
-- **M4.2 — Gap Detector alerts** — flag >2-point disagreements across respondents (handover Section 9.5).
-- **M4.3 — Shadow AI Alert** detection from response patterns (handover Section 11.4).
-- **M4.4 — Layer 2 consultant guide questions view** (only visible to consultant, handover Section 7.4).
-- **M4.5 — Perception vs Reality capture** — consultant-entered `consultant_validated_score` per pillar to populate Level 6 gap.
-- **M4.6 — Regulatory document upload + Claude AI requirement extraction** (handover Section 11.7).
+Track here - pick up as scope allows. Do NOT delete without user confirmation.
+- **M2.1 - Invitation email send:** `ara_respondents.access_token` is generated and the link is previewable in the consultant dashboard, but no email is actually sent. Needs a server action that hits SendGrid/Resend with the bilingual welcome template, respects `is_sandbox` → SANDBOX_EMAIL_REDIRECT env var, and writes to `ara_email_log`.
+- **M2.2 - Question edit/delete/reorder:** admin can add but not modify. Needs `updateAraQuestion`, `deleteAraQuestion`, drag-to-reorder server action.
+- **M2.3 - Question CSV bulk import:** per handover Section 13.2 - build after the edit form so admin can re-export and reimport.
+- **M2.4 - Organization edit/delete + anonymize function:** only list + create exist today. Anonymize is required for GDPR/PDPL data-erasure requests (M6 dependency).
+- **M2.5 - Reopen/lock/archive assessment controls** on assessment detail page (`status` lifecycle transitions).
+- **M3.1 - Supporting Materials upload** on respondent form (URL / Word / PDF / PowerPoint, unlimited, no size limit; see handover Section 10).
+- **M3.2 - Offline banner + retry logic** for connection loss (handover Section 16.3).
+- **M3.3 - Consultant notification email** on respondent completion / all-complete.
+- **M4.1 - Pillar weight editor** on consultant detail (weights must sum to 100, stored in `ara_assessments.pillar_weights`).
+- **M4.2 - Gap Detector alerts** - flag >2-point disagreements across respondents (handover Section 9.5).
+- **M4.3 - Shadow AI Alert** detection from response patterns (handover Section 11.4).
+- **M4.4 - Layer 2 consultant guide questions view** (only visible to consultant, handover Section 7.4).
+- **M4.5 - Perception vs Reality capture** - consultant-entered `consultant_validated_score` per pillar to populate Level 6 gap.
+- **M4.6 - Regulatory document upload + Claude AI requirement extraction** (handover Section 11.7).
 
 ### Critical ARA business rules
-- Reports are **never** auto-sent to clients — consultant controls delivery
+- Reports are **never** auto-sent to clients - consultant controls delivery
 - No file size limits on supporting material uploads
-- Desktop only — no mobile layouts required
+- Desktop only - no mobile layouts required
 - UAE/Saudi framework isolation enforced at query and report layer

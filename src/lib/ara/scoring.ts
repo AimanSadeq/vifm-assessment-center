@@ -5,7 +5,7 @@ import type {
 } from "@/types/ara";
 
 // ─────────────────────────────────────────────────────────────
-// Level 1 — per-question score
+// Level 1 - per-question score
 // ─────────────────────────────────────────────────────────────
 export function calculateQuestionScore(
   questionType: AraQuestionType,
@@ -32,7 +32,7 @@ export function calculateQuestionScore(
 }
 
 // ─────────────────────────────────────────────────────────────
-// Level 3 — maturity level from raw score
+// Level 3 - maturity level from raw score
 // ─────────────────────────────────────────────────────────────
 export function maturityLevelFromScore(raw: number): {
   level: 1 | 2 | 3 | 4 | 5;
@@ -42,7 +42,7 @@ export function maturityLevelFromScore(raw: number): {
   for (const m of ARA_MATURITY_LEVELS) {
     if (raw >= m.min && raw <= m.max) return m;
   }
-  // Below 1.0 — treat as Level 1
+  // Below 1.0 - treat as Level 1
   return ARA_MATURITY_LEVELS[0];
 }
 
@@ -54,7 +54,7 @@ export function overallBandFromScore(overall: number) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Full recalculation — Levels 2–5
+// Full recalculation - Levels 2–5
 // Called after a response is saved. Idempotent.
 // ─────────────────────────────────────────────────────────────
 export async function recalculateAssessmentScores(assessmentId: string): Promise<void> {
@@ -101,7 +101,7 @@ export async function recalculateAssessmentScores(assessmentId: string): Promise
     const pillarWeight = weights?.[pillar.id] ?? 12.5;
 
     if (scores.length === 0) {
-      // No scored responses yet — upsert with nulls so consultants see
+      // No scored responses yet - upsert with nulls so consultants see
       // "pending" rather than a missing row.
       await sb
         .from("ara_pillar_scores")
@@ -155,7 +155,7 @@ export async function recalculateAssessmentScores(assessmentId: string): Promise
       );
   }
 
-  // Level 5 — overall score. Sum of weighted scores. Only publish a
+  // Level 5 - overall score. Sum of weighted scores. Only publish a
   // non-null overall once at least one pillar has been scored, otherwise
   // the cover page shows 0.00 prematurely.
   const overall = anyPillarScored ? Number(overallWeighted.toFixed(2)) : null;

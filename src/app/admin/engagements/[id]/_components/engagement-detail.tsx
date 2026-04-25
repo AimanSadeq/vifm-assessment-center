@@ -139,7 +139,7 @@ export function EngagementDetail({
     typeof engagement.organizations === "object" &&
     "name" in (engagement.organizations as Record<string, unknown>)
       ? (engagement.organizations as { name: string }).name
-      : "—";
+      : "-";
 
   const handleAddCandidate = async () => {
     if (!candName.trim() || !candEmail.trim()) return;
@@ -398,10 +398,10 @@ export function EngagementDetail({
                           </TableCell>
                           <TableCell className="text-sm">{c.email as string}</TableCell>
                           <TableCell className="text-sm text-muted-foreground">
-                            {(c.department as string) || "—"}
+                            {(c.department as string) || "-"}
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
-                            {(c.seniority_level as string) || "—"}
+                            {(c.seniority_level as string) || "-"}
                           </TableCell>
                           <TableCell>
                             {candAssignments.length > 0 ? (
@@ -410,7 +410,7 @@ export function EngagementDetail({
                                   const ex = a.exercises as Record<string, unknown> | null;
                                   return (
                                     <Badge key={a.id as string} variant="secondary" className="text-xs">
-                                      {(ex?.name as string) ?? "—"}
+                                      {(ex?.name as string) ?? "-"}
                                     </Badge>
                                   );
                                 })}
@@ -575,10 +575,10 @@ export function EngagementDetail({
                       const ex = a.exercises as Record<string, unknown> | null;
                       return (
                         <TableRow key={a.id as string}>
-                          <TableCell>{profile?.full_name as string ?? "—"}</TableCell>
-                          <TableCell>{cand?.full_name as string ?? "—"}</TableCell>
+                          <TableCell>{profile?.full_name as string ?? "-"}</TableCell>
+                          <TableCell>{cand?.full_name as string ?? "-"}</TableCell>
                           <TableCell>
-                            <Badge variant="outline">{ex?.name as string ?? "—"}</Badge>
+                            <Badge variant="outline">{ex?.name as string ?? "-"}</Badge>
                           </TableCell>
                           <TableCell>
                             <Button
@@ -682,10 +682,10 @@ export function EngagementDetail({
                               return (
                                 <TableRow key={w.id as string}>
                                   <TableCell className="text-sm">
-                                    {(comp?.name as string) ?? "—"}
+                                    {(comp?.name as string) ?? "-"}
                                   </TableCell>
                                   <TableCell className="text-sm">
-                                    {(prof?.full_name as string) ?? "—"}
+                                    {(prof?.full_name as string) ?? "-"}
                                   </TableCell>
                                   <TableCell className="text-center">
                                     <Badge variant={
@@ -695,7 +695,7 @@ export function EngagementDetail({
                                     </Badge>
                                   </TableCell>
                                   <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
-                                    {(w.notes as string) || "—"}
+                                    {(w.notes as string) || "-"}
                                   </TableCell>
                                 </TableRow>
                               );

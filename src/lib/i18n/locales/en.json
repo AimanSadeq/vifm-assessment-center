@@ -144,7 +144,7 @@
   "consent": {
     "title": "Consent & Data Protection",
     "dataProcessing": "Data Processing Notice",
-    "iAgree": "I Agree — Proceed to Assessment",
+    "iAgree": "I Agree - Proceed to Assessment",
     "dataConsentLabel": "I consent to the collection and processing of my personal data as described above for the purpose of the assessment center evaluation.",
     "assessmentConsentLabel": "I voluntarily agree to participate in the assessment center and understand that the results will be shared with the sponsoring organization."
   },

@@ -145,7 +145,7 @@ export async function detectAraGaps(assessmentId: string): Promise<GapAlert[]> {
 //                   (ChatGPT, Copilot, Gemini, Claude, etc.), OR
 //                   any governance-pillar question scored ≤ 2.0 that
 //                   relates to AI acceptable-use policy.
-// The alert's business purpose is always "investigate" — so a broad
+// The alert's business purpose is always "investigate" - so a broad
 // text-match is OK. Consultants dismiss false positives.
 // ─────────────────────────────────────────────────────────────
 
@@ -208,7 +208,7 @@ export async function detectAraShadowAi(assessmentId: string): Promise<ShadowAiA
             Math.min(r.answer_text!.length, idx + kw.length + 30)
           );
           matches.push({
-            respondent_name: r.respondent?.name ?? "—",
+            respondent_name: r.respondent?.name ?? "-",
             question_number: r.question?.question_number ?? null,
             question_text_en: r.question?.question_text_en ?? null,
             snippet,
@@ -224,7 +224,7 @@ export async function detectAraShadowAi(assessmentId: string): Promise<ShadowAiA
       Number(r.question_score) <= 2.0
     ) {
       lowGov.push({
-        respondent_name: r.respondent?.name ?? "—",
+        respondent_name: r.respondent?.name ?? "-",
         question_number: r.question.question_number,
         question_text_en: r.question.question_text_en,
         score: Number(r.question_score),

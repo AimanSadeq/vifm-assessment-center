@@ -71,7 +71,7 @@ export default async function ClientEngagementsPage() {
                       {eng.name}
                     </Link>
                   </TableCell>
-                  <TableCell>{eng.target_role ?? "—"}</TableCell>
+                  <TableCell>{eng.target_role ?? "-"}</TableCell>
                   <TableCell>{countMap.get(eng.id) ?? 0}</TableCell>
                   <TableCell>
                     <Badge variant={STATUS_COLORS[eng.status] ?? "secondary"}>
@@ -79,7 +79,7 @@ export default async function ClientEngagementsPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {eng.start_date ?? "—"} — {eng.end_date ?? "—"}
+                    {eng.start_date ?? "-"} - {eng.end_date ?? "-"}
                   </TableCell>
                 </TableRow>
               ))}

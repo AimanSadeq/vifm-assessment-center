@@ -24,7 +24,7 @@ export function GanttRoadmap({
   if (initiatives.length === 0) {
     return (
       <p className="report-body report-muted">
-        No recommendations to plot — populate Phase 2 consultant notes per pillar to generate a roadmap.
+        No recommendations to plot - populate Phase 2 consultant notes per pillar to generate a roadmap.
       </p>
     );
   }

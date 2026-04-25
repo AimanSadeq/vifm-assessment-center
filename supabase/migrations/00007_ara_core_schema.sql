@@ -1,11 +1,11 @@
 -- ============================================================
--- VIFM ARA — Core Schema
+-- VIFM ARA - Core Schema
 -- Migration 00007: All ara_* tables, indexes, triggers, RLS
 --
 -- Non-breaking: every table prefixed 'ara_'. No existing
 -- tables modified. All tables ship with RLS enabled.
 --
--- Respondent access (token-based) is NOT enforced here via RLS —
+-- Respondent access (token-based) is NOT enforced here via RLS -
 -- it will be enforced through service-role API routes at M3.
 -- RLS here locks respondent tables to admin + assessment's
 -- consultant owner; anonymous respondent reads use server-side
@@ -50,7 +50,7 @@ CREATE TABLE ara_question_bank_versions (
   created_at              timestamptz NOT NULL DEFAULT now()
 );
 
--- Only one version may be active at a time — enforced by partial unique index
+-- Only one version may be active at a time - enforced by partial unique index
 CREATE UNIQUE INDEX idx_ara_qbv_single_active
   ON ara_question_bank_versions((is_active)) WHERE is_active = true;
 

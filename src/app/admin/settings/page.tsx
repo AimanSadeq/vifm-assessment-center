@@ -22,7 +22,7 @@ export default function SettingsPage() {
       name: "Supabase Auth",
       icon: Shield,
       status: "pending",
-      description: "Authentication and role-based access control — not yet enabled",
+      description: "Authentication and role-based access control - not yet enabled",
     },
     {
       name: "AI Features (Anthropic Claude)",

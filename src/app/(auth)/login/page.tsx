@@ -111,7 +111,7 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Quick role login — compact dropdown for dev/demo */}
+          {/* Quick role login - compact dropdown for dev/demo */}
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
               <select

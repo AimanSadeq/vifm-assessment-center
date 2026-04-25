@@ -197,7 +197,7 @@ export function StepExercises({ exercises: initialExercises }: Props) {
                   <TableCell>
                     {exercise.duration_minutes
                       ? `${exercise.duration_minutes} min`
-                      : "—"}
+                      : "-"}
                   </TableCell>
                 </TableRow>
               ))}

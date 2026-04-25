@@ -8,6 +8,7 @@ export type AraLanguage = "en" | "ar";
 export type AraReportLanguage = "en" | "ar" | "bilingual";
 export type AraAssessmentStatus = "draft" | "active" | "completed" | "frozen" | "archived";
 export type AraAssessmentPhase = "phase1" | "phase2" | "report";
+export type AraEngagementStage = "department" | "division" | "enterprise";
 export type AraQuestionType = "rating" | "multiple_choice" | "yes_no" | "open_text";
 export type AraMaterialType = "url" | "word" | "pdf" | "powerpoint";
 export type AraFrameworkCategory =
@@ -76,6 +77,9 @@ export type AraAssessment = {
   frozen_at: string | null;
   archived_at: string | null;
   assessment_year: number;
+  engagement_stage: AraEngagementStage;
+  scope_label: string | null;
+  scope_label_ar: string | null;
 };
 
 export type AraRespondent = {

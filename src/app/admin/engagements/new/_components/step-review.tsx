@@ -101,14 +101,14 @@ export function StepReview({
           </div>
           <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
             <div className="text-muted-foreground">Organization</div>
-            <div>{org?.name ?? "—"}</div>
+            <div>{org?.name ?? "-"}</div>
             <div className="text-muted-foreground">Engagement</div>
             <div>{state.engagementName}</div>
             <div className="text-muted-foreground">Target Role</div>
-            <div>{state.targetRole || "—"}</div>
+            <div>{state.targetRole || "-"}</div>
             <div className="text-muted-foreground">Dates</div>
             <div>
-              {state.startDate || "—"} to {state.endDate || "—"}
+              {state.startDate || "-"} to {state.endDate || "-"}
             </div>
           </div>
         </div>

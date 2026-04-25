@@ -1,4 +1,4 @@
-# Authentication & Authorization — Implementation Guide
+# Authentication & Authorization - Implementation Guide
 
 ## Current State (Development)
 - Auth middleware is **disabled** in `src/middleware.ts`
@@ -15,18 +15,18 @@
 
 ### Step 2: Switch to RLS-Aware Client
 Replace `createServiceClient()` with `createClient()` in all page.tsx files:
-- `src/app/admin/*.tsx` — requires user with `admin` role
-- `src/app/assessor/*.tsx` — requires user with `lead_assessor` or `associate_assessor` role
-- `src/app/candidate/*.tsx` — requires user with `candidate` role
-- `src/app/client/*.tsx` — requires user with `client` role
+- `src/app/admin/*.tsx` - requires user with `admin` role
+- `src/app/assessor/*.tsx` - requires user with `lead_assessor` or `associate_assessor` role
+- `src/app/candidate/*.tsx` - requires user with `candidate` role
+- `src/app/client/*.tsx` - requires user with `client` role
 
 Keep `createServiceClient()` ONLY for:
 - Server actions that need elevated privileges
 - Seed scripts and admin operations
 
 ### Step 3: Add Auth Guards to API Routes
-- `src/app/api/reports/*/route.tsx` — verify user is admin, client (own org), or candidate (own report, released)
-- `src/app/api/consent/*/route.ts` — verify user is the candidate
+- `src/app/api/reports/*/route.tsx` - verify user is admin, client (own org), or candidate (own report, released)
+- `src/app/api/consent/*/route.ts` - verify user is the candidate
 
 ### Step 4: Fix Organization Scoping
 - Client pages use `getClientOrgId()` from `src/lib/auth/get-org-id.ts`

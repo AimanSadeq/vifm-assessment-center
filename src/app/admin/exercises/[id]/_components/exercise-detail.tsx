@@ -182,7 +182,7 @@ export function ExerciseDetail({ exercise, rolePlayerPrompts }: Props) {
                   <p className="text-xs text-muted-foreground">Instructions + Preparation + Meeting</p>
                 </div>
                 <div className="text-2xl font-bold text-accent">
-                  {totalMinutes > 0 ? `${totalMinutes} min` : "—"}
+                  {totalMinutes > 0 ? `${totalMinutes} min` : "-"}
                 </div>
               </div>
 
@@ -251,7 +251,7 @@ export function ExerciseDetail({ exercise, rolePlayerPrompts }: Props) {
             <CardHeader>
               <CardTitle className="text-base">Assessor Notes</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Private notes for assessors about this exercise — key issues to watch for, common pitfalls, administration tips.
+                Private notes for assessors about this exercise - key issues to watch for, common pitfalls, administration tips.
               </p>
             </CardHeader>
             <CardContent className="space-y-4">

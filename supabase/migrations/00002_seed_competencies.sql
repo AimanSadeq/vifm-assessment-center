@@ -1,5 +1,5 @@
 -- ============================================================
--- VIFM Assessment Center — Seed: Competency Framework
+-- VIFM Assessment Center - Seed: Competency Framework
 -- 4 Domains → 8 Clusters → 33 Competencies
 -- Source: VIFM Assessment Center Blueprint (Section 3.2)
 -- ============================================================

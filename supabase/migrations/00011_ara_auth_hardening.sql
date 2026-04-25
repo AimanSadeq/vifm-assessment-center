@@ -1,5 +1,5 @@
 -- ============================================================
--- VIFM ARA — auth hardening
+-- VIFM ARA - auth hardening
 -- Migration 00011:
 --   1. Tighten ara_organizations SELECT policy to scope per consultant
 --   2. Atomic publish RPC to eliminate the two-concurrent-publishes
@@ -7,7 +7,7 @@
 -- ============================================================
 
 -- ────────────────────────────────────────────────────────────
--- #9 — Scope ara_organizations visibility per consultant.
+-- #9 - Scope ara_organizations visibility per consultant.
 --
 -- Before: every consultant could SELECT every organization row.
 -- After: a consultant sees only orgs they created OR orgs where they
@@ -29,7 +29,7 @@ CREATE POLICY ara_orgs_consultant_read ON ara_organizations
     )
   );
 
--- Make sure created_by is populated on insert — the app already sets
+-- Make sure created_by is populated on insert - the app already sets
 -- this, but add a trigger to guarantee it never gets left null for
 -- consultant-authored rows (defensive).
 -- NOTE: we don't enforce NOT NULL because admin-created orgs can leave
@@ -37,7 +37,7 @@ CREATE POLICY ara_orgs_consultant_read ON ara_organizations
 
 
 -- ────────────────────────────────────────────────────────────
--- #7 — Atomic publish for question-bank versions.
+-- #7 - Atomic publish for question-bank versions.
 --
 -- The app's previous publishAraVersion did two round trips
 -- (deactivate others, then activate target). Two concurrent publishes
@@ -77,6 +77,6 @@ BEGIN
 END;
 $$;
 
--- Grant execute to authenticated users — the app-level role guard
+-- Grant execute to authenticated users - the app-level role guard
 -- enforces admin-only access in the Next server action.
 GRANT EXECUTE ON FUNCTION ara_publish_version(uuid) TO authenticated;

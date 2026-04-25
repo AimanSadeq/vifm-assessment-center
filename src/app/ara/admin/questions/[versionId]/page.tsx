@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Plus, Pencil, Trash2, ChevronUp, ChevronDown, Upload } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, ChevronUp, ChevronDown, Upload, Sparkles } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,9 @@ import {
   createAraQuestion, publishAraVersion,
   deleteAraQuestion, moveAraQuestion,
   importAraQuestionsCsv,
+  aiAuthorAraQuestion,
 } from "@/lib/ara/actions";
+import { isAIConfigured } from "@/lib/ai/client";
 import { ConfirmAction } from "@/components/shared/confirm-action";
 import type { AraQuestion, AraQuestionBankVersion } from "@/types/ara";
 
@@ -196,6 +198,97 @@ export default async function AraVersionDetailPage({
           })}
         </div>
 
+        {/* AI question authoring assistant */}
+        <Card className="mb-6 overflow-hidden" style={{ borderLeft: "3px solid #7C3AED" }}>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Sparkles className="h-4 w-4" style={{ color: "#7C3AED" }} />
+              Author with AI
+              {!isAIConfigured() && (
+                <Badge variant="outline" className="ms-2 text-[10px] uppercase tracking-widest">
+                  Disabled - configure ANTHROPIC_API_KEY
+                </Badge>
+              )}
+            </CardTitle>
+            <CardDescription>
+              Describe what you want to ask in plain English; the AI drafts a fully-formed bilingual question
+              anchored to a published framework (UAE PDPL, SDAIA NDGF, ISO 42001, NIST AI RMF, OECD AI Principles).
+              Drafts are inserted as <strong>inactive</strong> for human review before going live.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form action={aiAuthorAraQuestion} className="space-y-4">
+              <input type="hidden" name="version_id" value={version.id} />
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="space-y-2">
+                  <Label htmlFor="ai_pillar_id">Pillar *</Label>
+                  <select
+                    id="ai_pillar_id"
+                    name="pillar_id"
+                    required
+                    defaultValue=""
+                    className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="" disabled>Select pillar…</option>
+                    {ARA_PILLARS.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name_en}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="ai_layer">Layer *</Label>
+                  <select
+                    id="ai_layer"
+                    name="layer"
+                    defaultValue="1"
+                    className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="1">Layer 1 - client</option>
+                    <option value="2">Layer 2 - consultant guide</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="ai_similar_to">Similar style to (optional)</Label>
+                  <Input
+                    id="ai_similar_to"
+                    name="similar_to"
+                    placeholder="paste an existing question to mirror tone-of-voice"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="ai_brief">What do you want the question to assess? *</Label>
+                <textarea
+                  id="ai_brief"
+                  name="brief"
+                  rows={3}
+                  required
+                  placeholder='e.g. "Whether the organisation has a formal AI red-team programme that probes models for prompt-injection and jailbreak vulnerabilities before production deployment"'
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                />
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Button
+                  type="submit"
+                  disabled={!isAIConfigured()}
+                  style={{ background: "#7C3AED" }}
+                  className="text-white hover:opacity-90"
+                >
+                  <Sparkles className="h-4 w-4 me-1.5" /> Generate draft
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Drafts insert at the end of the pillar. Review the question, edit if needed, then activate.
+                </p>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+
         {/* CSV bulk import */}
         <Card className="mb-6">
           <CardHeader>
@@ -278,8 +371,8 @@ export default async function AraVersionDetailPage({
                     className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
                     defaultValue="1"
                   >
-                    <option value="1">Layer 1 — client</option>
-                    <option value="2">Layer 2 — consultant guide</option>
+                    <option value="1">Layer 1 - client</option>
+                    <option value="2">Layer 2 - consultant guide</option>
                   </select>
                 </div>
 
@@ -327,7 +420,7 @@ export default async function AraVersionDetailPage({
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="options_en">
-                    Options (English) — JSON array <span className="text-muted-foreground text-xs">(multiple_choice / yes_no)</span>
+                    Options (English) - JSON array <span className="text-muted-foreground text-xs">(multiple_choice / yes_no)</span>
                   </Label>
                   <textarea
                     id="options_en"
@@ -338,7 +431,7 @@ export default async function AraVersionDetailPage({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="options_ar">Options (Arabic) — JSON array</Label>
+                  <Label htmlFor="options_ar">Options (Arabic) - JSON array</Label>
                   <textarea
                     id="options_ar"
                     name="options_ar"
@@ -352,7 +445,7 @@ export default async function AraVersionDetailPage({
 
               <div className="space-y-2">
                 <Label htmlFor="score_map">
-                  Score map — JSON object <span className="text-muted-foreground text-xs">(option value → 1.0–5.0)</span>
+                  Score map - JSON object <span className="text-muted-foreground text-xs">(option value → 1.0–5.0)</span>
                 </Label>
                 <textarea
                   id="score_map"

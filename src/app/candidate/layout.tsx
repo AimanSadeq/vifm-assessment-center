@@ -27,7 +27,7 @@ export default function CandidateLayout({
       <footer className="border-t bg-card py-4 mt-auto">
         <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
           <Shield className="h-3 w-3" />
-          <span>Virginia Institute of Finance and Management — Confidential</span>
+          <span>Virginia Institute of Finance and Management - Confidential</span>
         </div>
       </footer>
     </div>

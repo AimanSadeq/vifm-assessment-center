@@ -1,4 +1,6 @@
 export const dynamic = "force-dynamic";
+import Link from "next/link";
+import { ArrowRight, Sparkles, Compass, Map } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ProcessMap, type ProcessStep } from "@/components/shared/process-map";
 
@@ -37,5 +39,58 @@ export default async function AdminDashboardPage() {
     { id: "reports", number: 7, title: "Release Reports", href: "/admin/engagements", iconName: "FileText", metric: rep, metricLabel: "reports", isComplete: rel > 0, isActive: oar > 0 && rel === 0 },
   ];
 
-  return <ProcessMap title="Assessment Center Command" subtitle="Continuous assessment cycle — track progress across all stages." steps={steps} completedCount={steps.filter((s) => s.isComplete).length} totalSteps={steps.length} />;
+  return (
+    <>
+      {/* ─── Compass-aligned hero strip ─── *
+       * Brings the AC admin dashboard into visual parity with /ara/consultant
+       * by giving it the same dark navy aurora hero treatment + headline +
+       * lightweight call-to-action chips. Deliberately placed ABOVE the
+       * existing ProcessMap so the workflow visualisation stays intact. */}
+      <section className="ara-hero relative overflow-hidden rounded-2xl mb-6">
+        <div className="px-6 py-8 sm:px-8 sm:py-10 relative z-10">
+          <span className="ara-eyebrow text-accent">
+            <Sparkles className="h-3 w-3" />
+            VIFM Assessment Center
+          </span>
+          <h1 className="ara-numeral text-2xl sm:text-3xl font-semibold text-white leading-[1.1] mt-3 mb-3 max-w-2xl">
+            Assessment Center Command
+          </h1>
+          <p className="text-sm text-white/75 max-w-2xl">
+            Track candidate, assessor, and report progress across every stage of
+            every engagement — from brief to released report.
+          </p>
+          <div className="flex flex-wrap items-center gap-2.5 mt-5">
+            <Link
+              href="/ac/engage"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-white px-3.5 py-1.5 rounded-full border border-white/25 bg-white/10 hover:bg-white/15 hover:border-white/40 backdrop-blur transition-colors"
+            >
+              <Compass className="h-3.5 w-3.5" />
+              Engagement tiers
+            </Link>
+            <Link
+              href="/ac/roadmap"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-white/85 px-3.5 py-1.5 rounded-full border border-white/15 bg-white/0 hover:bg-white/10 hover:border-white/30 backdrop-blur transition-colors"
+            >
+              <Map className="h-3.5 w-3.5" />
+              Platform roadmap
+            </Link>
+            <Link
+              href="/ara"
+              className="hidden sm:inline-flex items-center gap-1 text-xs text-white/70 hover:text-white transition-colors ms-2"
+            >
+              AI Readiness Compass <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <ProcessMap
+        title="Assessment Center Command"
+        subtitle="Continuous assessment cycle - track progress across all stages."
+        steps={steps}
+        completedCount={steps.filter((s) => s.isComplete).length}
+        totalSteps={steps.length}
+      />
+    </>
+  );
 }

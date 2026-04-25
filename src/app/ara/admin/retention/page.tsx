@@ -68,7 +68,7 @@ export default async function AraRetentionPage() {
 
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-base">Expired — ready to purge</CardTitle>
+            <CardTitle className="text-base">Expired - ready to purge</CardTitle>
             <CardDescription>
               {list.length} archived assessment{list.length === 1 ? "" : "s"} older than {RETENTION_YEARS} years.
             </CardDescription>
@@ -89,7 +89,7 @@ export default async function AraRetentionPage() {
                 <TableBody>
                   {list.map((e) => (
                     <TableRow key={e.id}>
-                      <TableCell className="font-medium">{e.organization?.name ?? "—"}</TableCell>
+                      <TableCell className="font-medium">{e.organization?.name ?? "-"}</TableCell>
                       <TableCell>{e.assessment_year}</TableCell>
                       <TableCell className="uppercase">{e.region}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">
@@ -121,8 +121,8 @@ export default async function AraRetentionPage() {
                   purgeAt.setFullYear(purgeAt.getFullYear() + RETENTION_YEARS);
                   return (
                     <li key={d.id} className="text-xs text-muted-foreground">
-                      <span className="font-medium text-foreground">{d.organization?.name ?? "—"}</span>
-                      {" — archived "}{archived.toLocaleDateString()}
+                      <span className="font-medium text-foreground">{d.organization?.name ?? "-"}</span>
+                      {" - archived "}{archived.toLocaleDateString()}
                       {", purges after "}{purgeAt.toLocaleDateString()}
                     </li>
                   );

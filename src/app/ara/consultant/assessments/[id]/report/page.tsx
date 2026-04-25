@@ -2,9 +2,11 @@ import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { ARA_PILLARS, ARA_MATURITY_LEVELS, ARA_OVERALL_BANDS } from "@/lib/constants/ara-pillars";
+import { ARA_STAGE_MAP } from "@/lib/constants/ara-stages";
 import { summarizeComplianceByFramework } from "@/lib/ara/compliance";
 import { detectAraShadowAi } from "@/lib/ara/detectors";
 import { computePeerBenchmarks } from "@/lib/ara/peer-benchmarks";
+import { computeYoYComparison } from "@/lib/ara/year-on-year";
 import { MaturityGauge } from "./_components/maturity-gauge";
 import { RadarChart } from "./_components/radar-chart";
 import { ComplianceSummary } from "./_components/compliance-summary";
@@ -13,6 +15,11 @@ import { InvestmentMatrix } from "./_components/investment-matrix";
 import { GanttRoadmap } from "./_components/gantt-roadmap";
 import { tr, type ReportLang } from "./_components/report-i18n";
 import { BilingualReport } from "./_components/bilingual-report";
+import {
+  SectionHeader, StatTile, Metric, FindingCard, inferFindingType,
+  Callout, EmptyCallout, StatusChip, FindingsPanel, RecommendationCard,
+  recommendationsFor, TOKENS,
+} from "./_components/report-primitives";
 import type {
   AraAssessment, AraOrganization, AraPillarId,
 } from "@/types/ara";
@@ -77,11 +84,12 @@ export default async function AraReportPage({
       .returns<PillarScoreRow[]>(),
     sb
       .from("ara_assessment_scores")
-      .select("overall_score, overall_label_en, score_frozen_at")
+      .select("overall_score, overall_label_en, overall_label_ar, score_frozen_at")
       .eq("assessment_id", assessment.id)
       .maybeSingle<{
         overall_score: number | null;
         overall_label_en: string | null;
+        overall_label_ar: string | null;
         score_frozen_at: string | null;
       }>(),
     sb
@@ -110,7 +118,7 @@ export default async function AraReportPage({
       : Promise.resolve({ data: null }),
   ]);
 
-  // Response rows for the gap heatmap — pillar × question-number bucket.
+  // Response rows for the gap heatmap - pillar × question-number bucket.
   const { data: responseRows } = await sb
     .from("ara_responses")
     .select("question_score, question:ara_questions(pillar_id, question_number)")
@@ -122,6 +130,12 @@ export default async function AraReportPage({
     assessment.region,
     assessment.sector
   );
+
+  // Year-on-year comparison against the prior assessment for this org.
+  // Returns null on the first assessment for an org; returns
+  // {compatible: false, ...} when the prior used a different major
+  // question-bank version. The render branch handles all three states.
+  const yoyComparison = await computeYoYComparison(assessment.id);
 
   // Use case inventory for the portfolio report section.
   const { data: useCaseRows } = await sb
@@ -176,6 +190,12 @@ export default async function AraReportPage({
   strengths.sort((a, b) => b.score - a.score);
   gaps.sort((a, b) => a.score - b.score);
 
+  // Stage definition drives which pillars are in scope for this report.
+  // Stage 1 (department) → 4 pillars; Stage 2 (division) → 6; Stage 3
+  // (enterprise) → all 8. We use this to filter deep-dives below.
+  // Defensive fallback - older rows pre-migration default to enterprise.
+  const stageDef = ARA_STAGE_MAP[assessment.engagement_stage] ?? ARA_STAGE_MAP.enterprise;
+
   const reportDate = new Date().toLocaleDateString("en-GB", {
     day: "numeric", month: "long", year: "numeric",
   });
@@ -183,7 +203,7 @@ export default async function AraReportPage({
   const region = assessment.region === "uae" ? "United Arab Emirates" : "Saudi Arabia";
   const sectorLabel = assessment.sector.charAt(0).toUpperCase() + assessment.sector.slice(1);
 
-  // Pillar data for the investment priority matrix — uses pillar weights
+  // Pillar data for the investment priority matrix - uses pillar weights
   // as the value proxy and benchmark gap as the effort proxy.
   const investmentData = ARA_PILLARS.map((p) => ({
     pillar_id: p.id,
@@ -191,7 +211,7 @@ export default async function AraReportPage({
     pillar_weight: ((assessment.pillar_weights as Record<string, number>)?.[p.id] ?? 12.5),
   }));
 
-  // Roadmap initiatives — derive from gaps (Quick Wins / Build) and
+  // Roadmap initiatives - derive from gaps (Quick Wins / Build) and
   // strengths (Transform). Consultant Phase 2 work can replace later.
   const roadmapInitiatives = [
     ...gaps.slice(0, 2).map((g) => ({
@@ -211,13 +231,13 @@ export default async function AraReportPage({
     })),
   ];
 
-  // Language selection — "bilingual" renders the full report twice,
+  // Language selection - "bilingual" renders the full report twice,
   // first in English then in Arabic, with a divider page between.
   const rtl = langParam === "ar";
   const outerDir = rtl ? "rtl" : "ltr";
   const t = (key: Parameters<typeof tr>[1]) => tr(rtl ? "ar" : "en", key);
 
-  // Bilingual side-by-side landscape is its own layout — render it here
+  // Bilingual side-by-side landscape is its own layout - render it here
   // instead of the portrait EN/AR flow below.
   if (langParam === "bilingual") {
     return (
@@ -253,7 +273,13 @@ export default async function AraReportPage({
             shadowAiTriggered={shadowAi.triggered}
             pillarWeights={assessment.pillar_weights as Record<string, number>}
             peerBenchmarks={peerBenchmarks}
+            engagementStage={assessment.engagement_stage}
+            scopeLabel={assessment.scope_label}
+            scopeLabelAr={assessment.scope_label_ar}
             useCases={(useCaseRows ?? []) as any}
+            yoyComparison={yoyComparison}
+            respondents={(respondents ?? []) as any}
+            currentYear={assessment.assessment_year}
           />
         </div>
       </>
@@ -272,7 +298,7 @@ export default async function AraReportPage({
       )}
 
       <div className={bare ? "" : "bg-gray-100 py-8"} dir={outerDir}>
-        {/* ─── PAGE 1 — Cover ─── */}
+        {/* ─── PAGE 1 - Cover ─── */}
         <section
           className="report-page flex flex-col justify-between"
           style={{ background: "#010131", color: "white" }}
@@ -284,16 +310,37 @@ export default async function AraReportPage({
           </div>
           <div className="text-center">
             <p className="text-xs uppercase tracking-widest" style={{ opacity: 0.7 }}>
-              Confidential — {assessment.is_sandbox ? "Sample — Not for Client Distribution" : "For Internal VIFM Use"}
+              Confidential - {assessment.is_sandbox ? "Sample - Not for Client Distribution" : "For Internal VIFM Use"}
             </p>
-            <h1 className="report-h1" style={{ color: "white", fontSize: "36pt", margin: "40pt 0 16pt" }}>
+            {/* Stage badge on the cover - prominent gold/violet/teal pill
+                so readers know which deliverable scope they have. */}
+            <div style={{ marginTop: "18pt" }}>
+              <span style={{
+                display: "inline-flex", alignItems: "center", gap: "6pt",
+                padding: "4pt 12pt", borderRadius: "999pt",
+                fontSize: "9pt", fontWeight: 700, letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                background: stageDef.tone === "teal" ? "rgba(45, 212, 191, 0.15)" : stageDef.tone === "violet" ? "rgba(167, 139, 250, 0.18)" : "rgba(251, 191, 36, 0.15)",
+                color: stageDef.tone === "teal" ? "#5EEAD4" : stageDef.tone === "violet" ? "#C4B5FD" : "#FCD34D",
+                border: `1pt solid ${stageDef.tone === "teal" ? "#5EEAD4" : stageDef.tone === "violet" ? "#C4B5FD" : "#FCD34D"}40`,
+              }}>
+                Stage {stageDef.number} · {stageDef.label_en}
+                {stageDef.is_pro_bono && " · Complimentary"}
+              </span>
+            </div>
+            <h1 className="report-h1" style={{ color: "white", fontSize: "36pt", margin: "20pt 0 8pt" }}>
               {assessment.organization?.name ?? "Client"}
             </h1>
+            {assessment.scope_label && (
+              <p style={{ color: "white", opacity: 0.85, fontSize: "16pt", marginBottom: "12pt", fontWeight: 500 }}>
+                {assessment.scope_label}
+              </p>
+            )}
             <p className="text-lg" style={{ color: "white", opacity: 0.85 }}>
-              AI Readiness Assessment Report
+              AI Readiness Compass Report
             </p>
             <p dir="rtl" className="text-lg" style={{ color: "white", opacity: 0.85, marginTop: 8 }}>
-              تقرير تقييم الاستعداد للذكاء الاصطناعي
+              تقرير بوصلة الاستعداد للذكاء الاصطناعي
             </p>
           </div>
           <div className="flex justify-between text-xs" style={{ color: "white", opacity: 0.75 }}>
@@ -308,72 +355,96 @@ export default async function AraReportPage({
           </div>
         </section>
 
-        {/* ─── PAGE 2 — Executive Summary ─── */}
+        {/* ─── PAGE 2 - Executive Summary ─── */}
         <section className="report-page">
-          <h2 className="report-h2">{t("exec_summary")}</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: "20pt", marginBottom: "16pt" }}>
+          <SectionHeader
+            eyebrow="Executive summary"
+            title={t("exec_summary")}
+            kicker={`Weighted aggregate of eight AI Readiness pillars, calibrated against ${region} frameworks`}
+          />
+
+          {/* KPI strip - four tiles */}
+          <div className="stat-strip">
+            <StatTile
+              label="Overall readiness"
+              value={overall != null ? overall.toFixed(2) : "—"}
+              suffix="/ 5.00"
+              accent={overallLabel ?? ""}
+              accentColor="#5391D5"
+            />
+            <StatTile
+              label="Maturity band"
+              value={overallLabel ?? "—"}
+              accent="Weighted aggregate, 8 pillars"
+              accentColor="#6b7280"
+            />
+            <StatTile
+              label="At / above benchmark"
+              value={String(strengths.length)}
+              suffix="/ 8"
+              accent="Pillars scoring ≥ 4.00"
+              accentColor="#34D399"
+            />
+            <StatTile
+              label="Below benchmark"
+              value={String(gaps.length)}
+              suffix="/ 8"
+              accent="Pillars requiring focus"
+              accentColor="#FB7185"
+            />
+          </div>
+
+          {/* Narrative + gauge */}
+          <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr",
+            gap: "20pt", marginTop: "18pt", alignItems: "center" }}>
             <div>
-              <p className="report-muted uppercase" style={{ fontSize: "9pt", letterSpacing: "0.05em" }}>
-                Overall AI Readiness
+              <p className="report-muted uppercase" style={{ fontSize: "8.5pt",
+                letterSpacing: "0.08em", margin: 0, fontWeight: 600 }}>
+                Narrative
               </p>
-              <p style={{ fontSize: "48pt", fontWeight: 600, color: "#010131", lineHeight: 1, margin: "4pt 0" }}>
-                {overall != null ? overall.toFixed(2) : "—"}
-                <span style={{ fontSize: "18pt", color: "#6b7280", fontWeight: 400 }}> / 5.00</span>
-              </p>
-              {overallLabel && (
-                <p style={{ fontSize: "14pt", color: "#5391D5", fontWeight: 500, marginBottom: "12pt" }}>
-                  {overallLabel}
-                </p>
-              )}
-              <p className="report-body">
-                This assessment benchmarks {assessment.organization?.name ?? "the organization"} across
-                eight AI Readiness pillars. The overall score reflects a weighted aggregate of
-                pillar-level maturity, calibrated against {region} regulatory frameworks.
+              <p className="report-body" style={{ marginTop: "6pt" }}>
+                <strong>{assessment.organization?.name ?? "The organization"}</strong> scores{" "}
+                <strong>{overall != null ? overall.toFixed(2) : "—"} / 5.00</strong>
+                {overallLabel && <> ({overallLabel})</>}. The profile shows{" "}
+                <strong>{strengths.length}</strong> {strengths.length === 1 ? "pillar" : "pillars"} at
+                or above the AI Ready benchmark and <strong>{gaps.length}</strong>{" "}
+                {gaps.length === 1 ? "pillar" : "pillars"} requiring focus.
+                {strengths.length > 0 && (
+                  <> Leading strengths are <strong>{strengths.slice(0, 2).map(s => s.pillar).join(" and ")}</strong>.</>
+                )}
+                {gaps.length > 0 && (
+                  <> Primary gap is <strong>{gaps[0].pillar}</strong>.</>
+                )}
               </p>
             </div>
-            <div>
+            <div style={{ display: "flex", justifyContent: "center" }}>
               <MaturityGauge score={overall} />
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16pt" }}>
-            <div>
-              <h3 className="report-h3" style={{ color: "#28A745" }}>Headline strengths</h3>
-              {strengths.length === 0 ? (
-                <p className="report-body report-muted">
-                  No pillars currently scoring at Advanced or above.
-                </p>
-              ) : (
-                <ul className="report-body">
-                  {strengths.slice(0, 3).map((s) => (
-                    <li key={s.pillar}>
-                      <strong>{s.pillar}</strong> — {s.score.toFixed(2)} / 5.0
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-            <div>
-              <h3 className="report-h3" style={{ color: "#DC3545" }}>Critical gaps</h3>
-              {gaps.length === 0 ? (
-                <p className="report-body report-muted">
-                  No pillars scoring below Developing — solid foundation.
-                </p>
-              ) : (
-                <ul className="report-body">
-                  {gaps.slice(0, 3).map((g) => (
-                    <li key={g.pillar}>
-                      <strong>{g.pillar}</strong> — {g.score.toFixed(2)} / 5.0 ({g.gap > 0 ? "+" : ""}
-                      {g.gap.toFixed(2)} vs AI Ready benchmark)
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+          {/* Findings panels */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr",
+            gap: "12pt", marginTop: "18pt" }}>
+            <FindingsPanel
+              variant="strength"
+              title="Headline strengths"
+              items={strengths.slice(0, 3).map(s => ({
+                headline: s.pillar,
+                metric: `${s.score.toFixed(2)} / 5.0`,
+              }))}
+            />
+            <FindingsPanel
+              variant="gap"
+              title="Critical gaps"
+              items={gaps.slice(0, 3).map(g => ({
+                headline: g.pillar,
+                metric: `${g.score.toFixed(2)} · ${g.gap > 0 ? "+" : ""}${g.gap.toFixed(2)} vs benchmark`,
+              }))}
+            />
           </div>
         </section>
 
-        {/* ─── PAGE 3 — How to Read This Report ─── */}
+        {/* ─── PAGE 3 - How to Read This Report ─── */}
         <section className="report-page">
           <h2 className="report-h2">{t("how_to_read")}</h2>
           <p className="report-body">
@@ -439,15 +510,15 @@ export default async function AraReportPage({
           </div>
 
           <h3 className="report-h3">Compliance Status</h3>
-          <ul className="report-body">
-            <li><strong style={{ color: "#28A745" }}>🟢 Compliant</strong> — fully meets the requirement.</li>
-            <li><strong style={{ color: "#FFC107" }}>🟡 Partially Compliant</strong> — partial evidence; gaps remain.</li>
-            <li><strong style={{ color: "#DC3545" }}>🔴 Action Required</strong> — requirement not met.</li>
-            <li><strong className="report-muted">⚪ Needs Verification</strong> — evidence not yet provided.</li>
-          </ul>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8pt", marginTop: "6pt" }}>
+            <StatusChip color="#34D399" label="Compliant" body="Fully meets the requirement." />
+            <StatusChip color="#FBBF24" label="Partially Compliant" body="Partial evidence; gaps remain." />
+            <StatusChip color="#FB7185" label="Action Required" body="Requirement not met." />
+            <StatusChip color="#9ca3af" label="Needs Verification" body="Evidence not yet provided." />
+          </div>
         </section>
 
-        {/* ─── PAGE 4 — Organization Profile ─── */}
+        {/* ─── PAGE 4 - Organization Profile ─── */}
         <section className="report-page">
           <h2 className="report-h2">{t("org_profile")}</h2>
 
@@ -456,7 +527,7 @@ export default async function AraReportPage({
               <h3 className="report-h3">Client details</h3>
               <table className="report-body" style={{ width: "100%" }}>
                 <tbody>
-                  <tr><td style={cellLabel}>Organization</td><td style={cell}>{assessment.organization?.name ?? "—"}</td></tr>
+                  <tr><td style={cellLabel}>Organization</td><td style={cell}>{assessment.organization?.name ?? "-"}</td></tr>
                   <tr><td style={cellLabel}>Region</td><td style={cell}>{region}</td></tr>
                   <tr><td style={cellLabel}>Sector</td><td style={cell}>{sectorLabel}</td></tr>
                   <tr><td style={cellLabel}>Assessment year</td><td style={cell}>{assessment.assessment_year}</td></tr>
@@ -467,7 +538,7 @@ export default async function AraReportPage({
               <h3 className="report-h3">Methodology</h3>
               <table className="report-body" style={{ width: "100%" }}>
                 <tbody>
-                  <tr><td style={cellLabel}>Question bank</td><td style={cell}>v{version?.version_number ?? "—"} {version?.version_label && `· ${version.version_label}`}</td></tr>
+                  <tr><td style={cellLabel}>Question bank</td><td style={cell}>v{version?.version_number ?? "-"} {version?.version_label && `· ${version.version_label}`}</td></tr>
                   <tr><td style={cellLabel}>Phase</td><td style={cell}>{assessment.phase.replace("phase", "Phase ")}</td></tr>
                   <tr><td style={cellLabel}>Status</td><td style={cell}>{assessment.status}</td></tr>
                   <tr><td style={cellLabel}>Scores frozen</td><td style={cell}>{overallScore?.score_frozen_at ? new Date(overallScore.score_frozen_at).toLocaleDateString() : "Not yet"}</td></tr>
@@ -490,10 +561,10 @@ export default async function AraReportPage({
               {(respondents ?? []).map((r: any, i: number) => (
                 <tr key={i} style={{ borderTop: "1px solid #e5e7eb" }}>
                   <td style={cell}><strong>{r.name}</strong></td>
-                  <td style={cell}>{r.role_label_en ?? "—"}</td>
+                  <td style={cell}>{r.role_label_en ?? "-"}</td>
                   <td style={cell}>
                     {(r.assignments ?? []).length === 0
-                      ? "—"
+                      ? "-"
                       : r.assignments.map((a: any) => ARA_PILLARS.find((p) => p.id === a.pillar_id)?.name_en ?? a.pillar_id).join(", ")}
                   </td>
                   <td style={cell}>{r.completed_at ? "Completed" : "In progress"}</td>
@@ -503,7 +574,7 @@ export default async function AraReportPage({
           </table>
         </section>
 
-        {/* ─── PAGE 5 — Radar Overview ─── */}
+        {/* ─── PAGE 5 - Radar Overview ─── */}
         <section className="report-page">
           <h2 className="report-h2">{t("pillar_overview")}</h2>
           <p className="report-body">
@@ -514,24 +585,29 @@ export default async function AraReportPage({
           <RadarChart pillarScores={scoreMap} size={440} />
         </section>
 
-        {/* ─── PAGES 6–21 — Pillar Deep Dives (2 pages each) ─── */}
-        {ARA_PILLARS.map((pillar) => {
-          const row = pillarMap.get(pillar.id);
-          const pillarNotes = notesByPillar.get(pillar.id) ?? [];
+        {/* ─── PAGES 6–21 - Pillar Deep Dives (2 pages each) ─── *
+         * Only emit deep-dives for pillars that are in scope for the
+         * assessment's engagement stage. Stage 1 produces 4 pillar
+         * pairs; Stage 2 produces 6; Stage 3 produces all 8. */}
+        {ARA_PILLARS
+          .filter((pillar) => stageDef.applicable_pillars.includes(pillar.id))
+          .map((pillar) => {
+            const row = pillarMap.get(pillar.id);
+            const pillarNotes = notesByPillar.get(pillar.id) ?? [];
 
-          return (
-            <PillarPages
-              key={pillar.id}
-              pillarId={pillar.id}
-              name={pillar.name_en}
-              nameAr={pillar.name_ar}
-              row={row}
-              notes={pillarNotes}
-            />
-          );
-        })}
+            return (
+              <PillarPages
+                key={pillar.id}
+                pillarId={pillar.id}
+                name={pillar.name_en}
+                nameAr={pillar.name_ar}
+                row={row}
+                notes={pillarNotes}
+              />
+            );
+          })}
 
-        {/* ─── PAGE 22 — Strengths & Gaps ─── */}
+        {/* ─── PAGE 22 - Strengths & Gaps ─── */}
         <section className="report-page">
           <h2 className="report-h2">{t("strengths_gaps")}</h2>
           <h3 className="report-h3">Traffic-light grid</h3>
@@ -541,9 +617,9 @@ export default async function AraReportPage({
               const s = row?.raw_score != null ? Number(row.raw_score) : null;
               const bg =
                 s == null ? "#f3f4f6"
-                : s >= 4.0 ? "#28A745"
-                : s >= 3.0 ? "#FFC107"
-                : "#DC3545";
+                : s >= 4.0 ? "#34D399"
+                : s >= 3.0 ? "#FBBF24"
+                : "#FB7185";
               const fg = s == null ? "#6b7280" : "white";
               return (
                 <div
@@ -552,10 +628,10 @@ export default async function AraReportPage({
                 >
                   <p style={{ fontWeight: 600, margin: 0 }}>{p.name_en}</p>
                   <p style={{ fontSize: "16pt", fontWeight: 600, margin: "4pt 0 0" }}>
-                    {s != null ? s.toFixed(2) : "—"}
+                    {s != null ? s.toFixed(2) : "-"}
                   </p>
                   <p style={{ fontSize: "8pt", opacity: 0.9, margin: 0 }}>
-                    {row?.maturity_label_en ?? "—"}
+                    {row?.maturity_label_en ?? "-"}
                   </p>
                 </div>
               );
@@ -592,17 +668,116 @@ export default async function AraReportPage({
                 return (
                   <tr key={p.id} style={{ borderTop: "1px solid #e5e7eb" }}>
                     <td style={cell}>{p.name_en}</td>
-                    <td style={cellRight}>{s != null ? s.toFixed(2) : "—"}</td>
+                    <td style={cellRight}>{s != null ? s.toFixed(2) : "-"}</td>
                     <td style={cellRight} className="report-muted">4.00</td>
                     <td style={cellRight} className="report-muted">{peerValue}</td>
-                    <td style={{ ...cellRight, color: gap != null && gap > 0 ? "#DC3545" : "#28A745" }}>
-                      {gap != null ? (gap > 0 ? `+${gap.toFixed(2)}` : gap.toFixed(2)) : "—"}
+                    <td style={{ ...cellRight, color: gap != null && gap > 0 ? "#FB7185" : "#34D399" }}>
+                      {gap != null ? (gap > 0 ? `+${gap.toFixed(2)}` : gap.toFixed(2)) : "-"}
                     </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
+        </section>
+
+        {/* ─── Year-on-Year comparison ─── *
+         * Renders three states:
+         *   1. No prior assessment      → baseline established message
+         *   2. Prior with different major version → baseline-reset message
+         *   3. Compatible prior         → overall delta + per-pillar table
+         * Always rendered so subsequent assessments retain a stable ToC. */}
+        <section className="report-page">
+          <h2 className="report-h2">{t("year_on_year")}</h2>
+          <p className="report-body">{t("yoy_intro")}</p>
+
+          {!yoyComparison && (
+            <EmptyCallout>{t("yoy_no_prior")}</EmptyCallout>
+          )}
+
+          {yoyComparison && !yoyComparison.compatible && (
+            <Callout tone="info" title={t("year_on_year")}>
+              {t("yoy_baseline_reset")}
+            </Callout>
+          )}
+
+          {yoyComparison && yoyComparison.compatible && (
+            <>
+              {(() => {
+                const overallDelta =
+                  yoyComparison.current_overall != null && yoyComparison.prior_overall != null
+                    ? Number((yoyComparison.current_overall - yoyComparison.prior_overall).toFixed(2))
+                    : null;
+                const overallTone: "positive" | "negative" | "neutral" =
+                  overallDelta == null ? "neutral" : overallDelta > 0 ? "positive" : overallDelta < 0 ? "negative" : "neutral";
+                return (
+                  <div className="stat-strip" style={{ marginTop: "12pt" }}>
+                    <StatTile
+                      label={t("yoy_prior_year")}
+                      value={yoyComparison.prior_overall != null ? yoyComparison.prior_overall.toFixed(2) : "—"}
+                      suffix={`/ 5.00 · ${yoyComparison.prior_year ?? ""}`}
+                      accent="Prior baseline"
+                      accentColor="#6b7280"
+                    />
+                    <StatTile
+                      label={t("yoy_current_year")}
+                      value={yoyComparison.current_overall != null ? yoyComparison.current_overall.toFixed(2) : "—"}
+                      suffix={`/ 5.00 · ${assessment.assessment_year}`}
+                      accent="This assessment"
+                      accentColor="#5391D5"
+                    />
+                    <StatTile
+                      label={t("yoy_overall_delta")}
+                      value={overallDelta != null ? (overallDelta > 0 ? `+${overallDelta.toFixed(2)}` : overallDelta.toFixed(2)) : "—"}
+                      suffix="overall"
+                      accent={overallTone === "positive" ? "Improving" : overallTone === "negative" ? "Regressing" : "No change"}
+                      accentColor={overallTone === "positive" ? "#34D399" : overallTone === "negative" ? "#FB7185" : "#6b7280"}
+                    />
+                  </div>
+                );
+              })()}
+
+              <h3 className="report-h3" style={{ marginTop: "18pt" }}>{t("yoy_pillar_table_intro")}</h3>
+              <table className="report-body" style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ background: "#f3f4f6" }}>
+                    <th style={cellHead}>{t("pillar")}</th>
+                    <th style={cellHeadRight}>{t("yoy_prior_year")}</th>
+                    <th style={cellHeadRight}>{t("yoy_current_year")}</th>
+                    <th style={cellHeadRight}>{t("yoy_delta")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {yoyComparison.pillars.map((p) => {
+                    const deltaColor =
+                      p.delta == null ? "#6b7280" :
+                      p.delta > 0 ? "#34D399" :
+                      p.delta < 0 ? "#FB7185" :
+                      "#6b7280";
+                    const deltaLabel =
+                      p.delta == null ? "—" :
+                      p.delta > 0 ? `+${p.delta.toFixed(2)}` :
+                      p.delta.toFixed(2);
+                    const pillarName = ARA_PILLARS.find((x) => x.id === p.pillar_id)?.name_en ?? p.pillar_id;
+                    return (
+                      <tr key={p.pillar_id} style={{ borderTop: "1px solid #e5e7eb" }}>
+                        <td style={cell}>{pillarName}</td>
+                        <td style={cellRight} className="report-muted">
+                          {p.prior_raw != null ? p.prior_raw.toFixed(2) : "—"}
+                        </td>
+                        <td style={cellRight}>
+                          {p.current_raw != null ? p.current_raw.toFixed(2) : "—"}
+                        </td>
+                        <td style={{ ...cellRight, color: deltaColor, fontWeight: 500 }}>
+                          {deltaLabel}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </>
+          )}
         </section>
 
         {/* ─── Gap analysis heatmap ─── */}
@@ -617,42 +792,49 @@ export default async function AraReportPage({
             <GapHeatmap scoresByPillarByBucket={heatmapData} />
           </div>
           <div style={{ display: "flex", gap: "16pt", marginTop: "12pt", fontSize: "9pt" }}>
-            <span><span style={{ display: "inline-block", width: "10pt", height: "10pt", background: "#DC3545", borderRadius: "2pt", marginRight: "4pt", verticalAlign: "middle" }} />Critical (1–2)</span>
-            <span><span style={{ display: "inline-block", width: "10pt", height: "10pt", background: "#FD7E14", borderRadius: "2pt", marginRight: "4pt", verticalAlign: "middle" }} />Early stage (2–3)</span>
-            <span><span style={{ display: "inline-block", width: "10pt", height: "10pt", background: "#FFC107", borderRadius: "2pt", marginRight: "4pt", verticalAlign: "middle" }} />Developing (3–4)</span>
-            <span><span style={{ display: "inline-block", width: "10pt", height: "10pt", background: "#28A745", borderRadius: "2pt", marginRight: "4pt", verticalAlign: "middle" }} />At or above benchmark (4+)</span>
+            <span><span style={{ display: "inline-block", width: "10pt", height: "10pt", background: "#FB7185", borderRadius: "2pt", marginRight: "4pt", verticalAlign: "middle" }} />Critical (1–2)</span>
+            <span><span style={{ display: "inline-block", width: "10pt", height: "10pt", background: "#FDBA74", borderRadius: "2pt", marginRight: "4pt", verticalAlign: "middle" }} />Early stage (2–3)</span>
+            <span><span style={{ display: "inline-block", width: "10pt", height: "10pt", background: "#FBBF24", borderRadius: "2pt", marginRight: "4pt", verticalAlign: "middle" }} />Developing (3–4)</span>
+            <span><span style={{ display: "inline-block", width: "10pt", height: "10pt", background: "#34D399", borderRadius: "2pt", marginRight: "4pt", verticalAlign: "middle" }} />At or above benchmark (4+)</span>
           </div>
         </section>
 
-        {/* ─── Investment priority matrix ─── */}
-        <section className="report-page">
-          <h2 className="report-h2">{t("investment_matrix")}</h2>
-          <p className="report-body">
-            Each pillar plotted by estimated effort required to close the gap
-            (x-axis) versus business value as indicated by pillar weight
-            (y-axis). Focus on the top-left <strong>Quick Wins</strong> quadrant
-            first.
-          </p>
-          <div style={{ marginTop: "16pt" }}>
-            <InvestmentMatrix pillarData={investmentData} />
-          </div>
-        </section>
+        {/* ─── Investment priority matrix ─── *
+         * Strategic-output sections (Investment Matrix + Roadmap) are
+         * Stage 2+ deliverables. Stage 1 Department reports are designed
+         * to be sales-leading samples and stop after the gap heatmap. */}
+        {assessment.engagement_stage !== "department" && (
+          <section className="report-page">
+            <h2 className="report-h2">{t("investment_matrix")}</h2>
+            <p className="report-body">
+              Each pillar plotted by estimated effort required to close the gap
+              (x-axis) versus business value as indicated by pillar weight
+              (y-axis). Focus on the top-left <strong>Quick Wins</strong> quadrant
+              first.
+            </p>
+            <div style={{ marginTop: "16pt" }}>
+              <InvestmentMatrix pillarData={investmentData} />
+            </div>
+          </section>
+        )}
 
-        {/* ─── PAGE 23–24 — Roadmap ─── */}
-        <section className="report-page">
-          <h2 className="report-h2">{t("roadmap")}</h2>
-          <p className="report-body">
-            A phased 12-month roadmap translates findings into action across
-            three horizons: immediate stabilisation (Quick Wins, months 0–3),
-            institutionalisation (Build, months 3–9), and scaled transformation
-            (Transform, months 9–12).
-          </p>
-          <div style={{ marginTop: "16pt" }}>
-            <GanttRoadmap initiatives={roadmapInitiatives} />
-          </div>
-        </section>
+        {/* ─── PAGE 23–24 - Roadmap (Stage 2+ only) ─── */}
+        {assessment.engagement_stage !== "department" && (
+          <section className="report-page">
+            <h2 className="report-h2">{t("roadmap")}</h2>
+            <p className="report-body">
+              A phased 12-month roadmap translates findings into action across
+              three horizons: immediate stabilisation (Quick Wins, months 0–3),
+              institutionalisation (Build, months 3–9), and scaled transformation
+              (Transform, months 9–12).
+            </p>
+            <div style={{ marginTop: "16pt" }}>
+              <GanttRoadmap initiatives={roadmapInitiatives} />
+            </div>
+          </section>
+        )}
 
-        {/* ─── PAGE 25 — Regulatory Compliance ─── */}
+        {/* ─── PAGE 25 - Regulatory Compliance ─── */}
         <section className="report-page">
           <h2 className="report-h2">{t("compliance_summary")}</h2>
           <p className="report-body">
@@ -663,29 +845,16 @@ export default async function AraReportPage({
           <ComplianceSummary frameworks={complianceSummaries} />
 
           {shadowAi.triggered && (
-            <div
-              style={{
-                marginTop: "16pt",
-                padding: "12pt",
-                background: "#fee2e2",
-                border: "1pt solid #DC3545",
-                borderRadius: "6pt",
-              }}
-            >
-              <p style={{ fontWeight: 600, color: "#7f1d1d", margin: 0 }}>
-                ⚠️ Shadow AI Alert
-              </p>
-              <p className="report-body" style={{ marginTop: "4pt" }}>
-                Assessment responses indicate employees may be using public AI tools
-                without formal organizational approval. This creates potential
-                violations of data protection and cybersecurity regulations in {region}.
-                Immediate action required.
-              </p>
-            </div>
+            <Callout tone="danger" title="Shadow AI Alert">
+              Assessment responses indicate employees may be using public AI
+              tools without formal organizational approval. This creates potential
+              violations of data protection and cybersecurity regulations in {region}.
+              Immediate action required.
+            </Callout>
           )}
         </section>
 
-        {/* ─── PAGE 26 — Supporting Materials ─── */}
+        {/* ─── PAGE 26 - Supporting Materials ─── */}
         {(materials ?? []).length > 0 && (
           <section className="report-page">
             <h2 className="report-h2">{t("supporting_materials")}</h2>
@@ -705,7 +874,7 @@ export default async function AraReportPage({
                   <tr key={i} style={{ borderTop: "1px solid #e5e7eb" }}>
                     <td style={cell}>{m.material_type.toUpperCase()}</td>
                     <td style={cell}>{m.material_name}</td>
-                    <td style={cell}>{m.respondent?.name ?? "—"}</td>
+                    <td style={cell}>{m.respondent?.name ?? "-"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -737,15 +906,15 @@ export default async function AraReportPage({
                 {(useCaseRows ?? []).map((u: any) => {
                   const stageColor: Record<string, string> = {
                     ideation: "#9ca3af",
-                    piloting: "#FD7E14",
-                    production: "#28A745",
+                    piloting: "#FDBA74",
+                    production: "#34D399",
                     retired: "#6b7280",
                   };
                   const riskColor: Record<string, string> = {
-                    low: "#28A745",
-                    medium: "#FFC107",
-                    high: "#FD7E14",
-                    critical: "#DC3545",
+                    low: "#34D399",
+                    medium: "#FBBF24",
+                    high: "#FDBA74",
+                    critical: "#FB7185",
                   };
                   return (
                     <tr key={u.id} style={{ borderTop: "1px solid #e5e7eb" }}>
@@ -766,9 +935,9 @@ export default async function AraReportPage({
                       <td style={cell} className="report-muted">
                         {u.pillar_id
                           ? ARA_PILLARS.find((p) => p.id === u.pillar_id)?.name_en ?? u.pillar_id
-                          : "—"}
+                          : "-"}
                       </td>
-                      <td style={cell} className="report-muted">{u.business_owner ?? "—"}</td>
+                      <td style={cell} className="report-muted">{u.business_owner ?? "-"}</td>
                     </tr>
                   );
                 })}
@@ -792,7 +961,7 @@ export default async function AraReportPage({
           </section>
         )}
 
-        {/* ─── PAGE 27 — Next Steps ─── */}
+        {/* ─── PAGE 27 - Next Steps ─── */}
         <section className="report-page">
           <h2 className="report-h2">{t("next_steps")}</h2>
           <p className="report-body">
@@ -800,11 +969,11 @@ export default async function AraReportPage({
             services mapped to the gaps identified in this assessment:
           </p>
           <ul className="report-body">
-            <li><strong>AI Strategy Workshop</strong> — co-design a 12-month AI roadmap aligned to your business goals.</li>
-            <li><strong>Data Foundations Programme</strong> — data quality, governance, and sovereignty.</li>
-            <li><strong>AI Governance Playbook</strong> — policy templates, acceptable-use frameworks, DPIAs tailored to {region}.</li>
-            <li><strong>AI Talent Development</strong> — role-based learning paths for leaders, specialists, and all staff.</li>
-            <li><strong>Annual Reassessment</strong> — track progress year-on-year against the same benchmark.</li>
+            <li><strong>AI Strategy Workshop</strong> - co-design a 12-month AI roadmap aligned to your business goals.</li>
+            <li><strong>Data Foundations Programme</strong> - data quality, governance, and sovereignty.</li>
+            <li><strong>AI Governance Playbook</strong> - policy templates, acceptable-use frameworks, DPIAs tailored to {region}.</li>
+            <li><strong>AI Talent Development</strong> - role-based learning paths for leaders, specialists, and all staff.</li>
+            <li><strong>Annual Reassessment</strong> - track progress year-on-year against the same benchmark.</li>
           </ul>
           <p className="report-body" style={{ marginTop: "16pt" }}>
             To discuss engagement, contact your VIFM consultant or
@@ -881,135 +1050,125 @@ function PillarPages({
   const selfScore = row?.self_assessment_score != null ? Number(row.self_assessment_score) : null;
   const perceptionGap = row?.perception_gap != null ? Number(row.perception_gap) : null;
 
+  const gapValue = gap != null ? (gap > 0 ? `+${gap.toFixed(2)}` : gap.toFixed(2)) : "—";
+  const gapTone: "positive" | "negative" | "neutral" =
+    gap == null ? "neutral" : gap <= 0 ? "positive" : "negative";
+  const perceptionTone: "neutral" | "warning" =
+    perceptionGap != null && Math.abs(perceptionGap) > 0.5 ? "warning" : "neutral";
+  const perceptionValue =
+    perceptionGap != null ? (perceptionGap > 0 ? `+${perceptionGap.toFixed(2)}` : perceptionGap.toFixed(2)) : "—";
+
+  const recs = recommendationsFor(name, score);
+
   return (
     <>
-      {/* Findings */}
+      {/* Findings page */}
       <section className="report-page">
-        <p className="report-muted uppercase" style={{ fontSize: "9pt", letterSpacing: "0.1em", margin: 0 }}>
-          Pillar Deep Dive
-        </p>
-        <h2 className="report-h2">
-          {name}
-          <span className="report-muted" dir="rtl" style={{ fontSize: "12pt", fontWeight: 400, marginLeft: "12pt" }}>
-            {nameAr}
-          </span>
-        </h2>
+        <SectionHeader
+          eyebrow="Pillar deep dive · Findings"
+          title={name}
+          kicker={nameAr}
+        />
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "20pt", marginBottom: "16pt" }}>
-          <div>
-            <p className="report-muted" style={{ fontSize: "9pt", margin: 0 }}>Raw score</p>
-            <p style={{ fontSize: "36pt", fontWeight: 600, color: "#010131", margin: "2pt 0", lineHeight: 1 }}>
-              {score != null ? score.toFixed(2) : "—"}
-            </p>
-            <p className="report-muted" style={{ fontSize: "10pt" }}>
-              {row?.maturity_label_en ?? "Unscored"}
-            </p>
-            {gap != null && (
-              <p className="report-body" style={{ marginTop: "8pt" }}>
-                <strong>{gap > 0 ? `+${gap.toFixed(2)}` : gap.toFixed(2)}</strong> vs AI Ready benchmark (4.00)
-              </p>
-            )}
+        {/* Four-metric strip replaces the old score/gauge grid */}
+        <div className="metric-strip">
+          <Metric
+            label="Raw score"
+            value={score != null ? score.toFixed(2) : "—"}
+            suffix="/ 5.00"
+            tone={score == null ? "neutral" : score >= 4.0 ? "positive" : score < 3.0 ? "negative" : "warning"}
+          />
+          <Metric
+            label="Benchmark gap"
+            value={gapValue}
+            suffix="vs 4.00"
+            tone={gapTone}
+          />
+          <Metric
+            label="Perception gap"
+            value={perceptionValue}
+            suffix={selfScore != null && validated != null
+              ? `self ${selfScore.toFixed(2)} · cons ${validated.toFixed(2)}`
+              : "not validated"}
+            tone={perceptionTone}
+          />
+          <Metric
+            label="Maturity level"
+            value={row?.maturity_label_en ?? "Unscored"}
+            suffix={score != null ? `L${Math.max(1, Math.min(5, Math.ceil(score)))}` : ""}
+            tone="brand"
+          />
+        </div>
+
+        {/* Benchmark bar — slimmer, brand colors */}
+        <div style={{ marginTop: "14pt" }}>
+          <p style={{ fontSize: "8.5pt", letterSpacing: "0.08em",
+            textTransform: "uppercase", color: TOKENS.mute, margin: "0 0 4pt",
+            fontWeight: 600 }}>
+            Score vs AI Ready benchmark
+          </p>
+          <div style={{ position: "relative", height: "14pt",
+            background: TOKENS.line, borderRadius: "3pt", overflow: "hidden" }}>
+            <div style={{
+              position: "absolute", top: 0, left: 0, height: "100%",
+              width: `${((score ?? 0) / 5) * 100}%`,
+              background:
+                score != null && score >= 4.0 ? TOKENS.emerald :
+                score != null && score >= 3.0 ? TOKENS.amber :
+                TOKENS.rose,
+              borderRadius: "3pt",
+            }} />
+            <div style={{
+              position: "absolute", top: "-2pt", left: "80%",
+              height: "calc(100% + 4pt)", borderLeft: `2pt dashed ${TOKENS.navy}`,
+            }} />
           </div>
-          <div>
-            <p className="report-muted" style={{ fontSize: "9pt", margin: "0 0 4pt" }}>
-              Score vs benchmark
-            </p>
-            <div style={{ position: "relative", height: "20pt", background: "#f3f4f6", borderRadius: "4pt" }}>
-              <div
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  height: "100%",
-                  width: `${((score ?? 0) / 5) * 100}%`,
-                  background: score != null && score >= 4.0 ? "#28A745" : score != null && score >= 3.0 ? "#FFC107" : "#DC3545",
-                  borderRadius: "4pt",
-                }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  top: "-2pt",
-                  left: "80%",
-                  height: "calc(100% + 4pt)",
-                  borderLeft: "2pt dashed #374151",
-                }}
-              />
-            </div>
-            <div style={{ fontSize: "8pt", color: "#6b7280", marginTop: "2pt", textAlign: "right" }}>
-              ↑ 4.0 benchmark
-            </div>
-
-            {validated != null && selfScore != null && (
-              <div style={{ marginTop: "16pt" }}>
-                <p className="report-muted" style={{ fontSize: "9pt", margin: "0 0 4pt" }}>
-                  Perception vs Reality
-                </p>
-                <p className="report-body" style={{ margin: 0 }}>
-                  Client rated <strong>{selfScore.toFixed(2)}</strong> · Consultant validated <strong>{validated.toFixed(2)}</strong> · Gap{" "}
-                  <strong style={{ color: perceptionGap != null && perceptionGap > 0 ? "#DC3545" : "#28A745" }}>
-                    {perceptionGap != null ? (perceptionGap > 0 ? `+${perceptionGap.toFixed(2)}` : perceptionGap.toFixed(2)) : "—"}
-                  </strong>
-                </p>
-              </div>
-            )}
+          <div style={{ fontSize: "8pt", color: TOKENS.mute, marginTop: "3pt",
+            textAlign: "right", letterSpacing: "0.05em" }}>
+            4.0 · AI Ready benchmark
           </div>
         </div>
 
-        <h3 className="report-h3">Key findings</h3>
+        {/* Key findings - each note is a typed card */}
+        <h3 className="report-h3" style={{ marginTop: "18pt" }}>Key findings</h3>
         {notes.length === 0 ? (
-          <p className="report-body report-muted">
+          <EmptyCallout>
             Detailed findings will be added by the consultant during the Phase 2 workshop.
-          </p>
+          </EmptyCallout>
         ) : (
-          <ul className="report-body">
+          <div className="finding-stack">
             {notes.map((n, i) => (
-              <li key={i}>{n.note_text}</li>
+              <FindingCard
+                key={i}
+                index={i + 1}
+                type={inferFindingType(n.note_text)}
+                text={n.note_text}
+              />
             ))}
-          </ul>
+          </div>
         )}
       </section>
 
-      {/* Recommendations */}
+      {/* Recommendations page */}
       <section className="report-page">
-        <p className="report-muted uppercase" style={{ fontSize: "9pt", letterSpacing: "0.1em", margin: 0 }}>
-          Pillar Deep Dive · Recommendations
-        </p>
-        <h2 className="report-h2">{name}</h2>
+        <SectionHeader
+          eyebrow="Pillar deep dive · Recommendations"
+          title={name}
+          kicker="Targeted actions to elevate this pillar toward the AI Ready benchmark"
+        />
 
-        <p className="report-body">
-          Targeted actions to elevate this pillar from its current level to the
-          AI Ready benchmark.
-        </p>
+        <div className="rec-stack">
+          {recs.map((r, i) => (
+            <RecommendationCard key={i} rec={r} index={i + 1} />
+          ))}
+        </div>
 
-        <h3 className="report-h3">Suggested actions</h3>
-        <ul className="report-body">
-          {score == null || score < 2.0 ? (
-            <>
-              <li>Establish foundational understanding of {name.toLowerCase()} within leadership.</li>
-              <li>Assign an accountable owner and allocate initial budget.</li>
-              <li>Benchmark against peer organizations in {name.toLowerCase()}.</li>
-            </>
-          ) : score < 3.0 ? (
-            <>
-              <li>Formalise policies and processes covering {name.toLowerCase()}.</li>
-              <li>Pilot one initiative with clear success metrics.</li>
-              <li>Build cross-functional engagement across relevant teams.</li>
-            </>
-          ) : score < 4.0 ? (
-            <>
-              <li>Scale proven pilots into production.</li>
-              <li>Close the gap to the AI Ready benchmark with targeted upskilling.</li>
-              <li>Introduce measurement and review cadence.</li>
-            </>
-          ) : (
-            <>
-              <li>Share your practices internally as a centre of excellence.</li>
-              <li>Mentor other pillars using the patterns that worked here.</li>
-              <li>Continue annual benchmarking to retain leadership.</li>
-            </>
-          )}
-        </ul>
+        <Callout tone="info" title="How to sequence">
+          Work top-to-bottom: the Quick Win actions unblock the Build actions,
+          which in turn unlock the Transform action. Each action has been sized
+          so a typical GCC organisation can complete it within a single quarter
+          without new headcount.
+        </Callout>
       </section>
     </>
   );

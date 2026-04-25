@@ -9,7 +9,7 @@ import type { AraMaterialType, AraRespondent } from "@/types/ara";
 // ─────────────────────────────────────────────────────────────
 // The Supabase Storage bucket used for supporting materials.
 // Must be created once in the Supabase dashboard (Storage → New bucket).
-// Name it exactly "ara-materials". Private bucket is fine — server
+// Name it exactly "ara-materials". Private bucket is fine - server
 // generates signed URLs when consultants download.
 // ─────────────────────────────────────────────────────────────
 const BUCKET = "ara-materials";
@@ -193,7 +193,7 @@ export async function signMaterialDownloadUrl(
 
   // Look up the material row by file_url and confirm the caller can
   // act on its assessment. If no row matches, the path is either
-  // invalid or belongs to another tenant — deny in both cases.
+  // invalid or belongs to another tenant - deny in both cases.
   const { data: material } = await sb
     .from("ara_supporting_materials")
     .select("id, assessment_id")

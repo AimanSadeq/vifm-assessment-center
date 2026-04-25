@@ -15,7 +15,7 @@ import {
   isAuthorizationError,
 } from "@/lib/ara/auth-guards";
 
-// Uniform auth-error unwrapper — server actions return a shape the UI
+// Uniform auth-error unwrapper - server actions return a shape the UI
 // can render as a toast instead of a Next error screen.
 function authErr(e: unknown) {
   if (isAuthorizationError(e)) return { ok: false as const, error: e.message };
@@ -57,7 +57,7 @@ export async function createAraOrganization(formData: FormData) {
 
   revalidatePath("/ara/admin/organizations");
   redirect(`/ara/admin/organizations`);
-  // unreachable — redirect throws
+  // unreachable - redirect throws
   return { ok: true, id: data.id };
 }
 
@@ -93,7 +93,7 @@ export async function updateAraOrganization(formData: FormData) {
 }
 
 export async function deleteAraOrganization(orgId: string) {
-  // Delete is strictly admin — cascades to all consultants' assessments.
+  // Delete is strictly admin - cascades to all consultants' assessments.
   try { await requireRole("admin"); } catch (e) { return authErr(e); }
   const sb = createServiceClient();
   const { error } = await sb.from("ara_organizations").delete().eq("id", orgId);
@@ -110,7 +110,7 @@ export async function deleteAraOrganization(orgId: string) {
  * VIFM analytics. Writes an entry to the data management audit log.
  */
 export async function anonymizeAraOrganization(orgId: string, reason: string) {
-  // Data-erasure is strictly admin — logged in ara_data_management_log.
+  // Data-erasure is strictly admin - logged in ara_data_management_log.
   try { await requireRole("admin"); } catch (e) { return authErr(e); }
   const sb = createServiceClient();
   const now = new Date().toISOString();
@@ -166,6 +166,8 @@ export async function anonymizeAraOrganization(orgId: string, reason: string) {
 export async function createAraAssessment(formData: FormData) {
   let caller;
   try { caller = await requireRole(["admin", "consultant"]); } catch (e) { return authErr(e); }
+  const rawStage = String(formData.get("engagement_stage") ?? "enterprise");
+  const rawScope = String(formData.get("scope_label") ?? "").trim();
   const parsed = createAraAssessmentSchema.safeParse({
     organization_id: formData.get("organization_id"),
     region: formData.get("region"),
@@ -173,6 +175,8 @@ export async function createAraAssessment(formData: FormData) {
     default_language: formData.get("default_language"),
     is_sandbox: formData.get("is_sandbox") === "on",
     question_bank_version_id: formData.get("question_bank_version_id") || null,
+    engagement_stage: rawStage,
+    scope_label: rawScope.length > 0 ? rawScope : null,
   });
 
   if (!parsed.success) {
@@ -189,6 +193,8 @@ export async function createAraAssessment(formData: FormData) {
       default_language: parsed.data.default_language,
       is_sandbox: parsed.data.is_sandbox,
       question_bank_version_id: parsed.data.question_bank_version_id || null,
+      engagement_stage: parsed.data.engagement_stage,
+      scope_label: parsed.data.scope_label ?? null,
       status: "draft",
       phase: "phase1",
       // Owner is the creating consultant (or null when an admin creates).
@@ -284,6 +290,166 @@ export async function deleteAraRespondent(respondentId: string, assessmentId: st
 }
 
 // ─────────────────────────────────────────────────────────────
+// Bulk respondent CSV import
+//
+// Accepts CSV text with a header row. Recognised columns (case-
+// insensitive, any subset is fine):
+//   name              required
+//   email             required (must be unique within the assessment)
+//   name_ar           optional Arabic display name
+//   role_label_en     optional role / title in EN
+//   role_label_ar     optional role / title in AR
+//   language          optional, "en" or "ar" (default: en)
+//   pillars           optional, pipe-separated pillar IDs (e.g. data|talent)
+//
+// Returns a per-row result so the UI can show partial-success state.
+// Idempotent on email collisions: rows with an email that already
+// exists on this assessment are skipped with a "duplicate" error.
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Quote-aware minimal CSV parser. Handles fields wrapped in double
+ * quotes (with embedded commas) and escaped quotes (""). Does NOT
+ * support multi-line quoted fields - sufficient for respondent lists.
+ */
+function parseCsvLine(line: string): string[] {
+  const out: string[] = [];
+  let cur = "";
+  let inQuote = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuote) {
+      if (ch === '"') {
+        if (line[i + 1] === '"') { cur += '"'; i++; }
+        else { inQuote = false; }
+      } else { cur += ch; }
+    } else {
+      if (ch === '"') { inQuote = true; }
+      else if (ch === ",") { out.push(cur.trim()); cur = ""; }
+      else { cur += ch; }
+    }
+  }
+  out.push(cur.trim());
+  return out;
+}
+
+export async function bulkImportAraRespondents(formData: FormData) {
+  const assessmentId = String(formData.get("assessment_id") ?? "");
+  if (!assessmentId) return { ok: false, error: "Missing assessment id" };
+  try { await requireAssessmentOwner(assessmentId); } catch (e) { return authErr(e); }
+
+  const csv = String(formData.get("csv") ?? "").trim();
+  if (!csv) return { ok: false, error: "Paste at least one row of CSV." };
+
+  const lines = csv.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length < 2) return { ok: false, error: "CSV must include a header row plus at least one data row." };
+
+  const header = parseCsvLine(lines[0]).map((h) => h.toLowerCase().trim());
+  const idx = (...names: string[]): number => {
+    for (const n of names) {
+      const i = header.indexOf(n);
+      if (i !== -1) return i;
+    }
+    return -1;
+  };
+  const iName     = idx("name", "full_name", "fullname");
+  const iEmail    = idx("email", "email_address");
+  const iNameAr   = idx("name_ar", "arabic_name");
+  const iRoleEn   = idx("role", "role_label_en", "title");
+  const iRoleAr   = idx("role_label_ar", "role_ar", "arabic_role");
+  const iLang     = idx("language", "lang", "language_preference");
+  const iPillars  = idx("pillars", "pillar_assignments");
+
+  if (iName === -1 || iEmail === -1) {
+    return { ok: false, error: "CSV header must include at least 'name' and 'email' columns." };
+  }
+
+  const sb = createServiceClient();
+
+  // Pre-fetch existing emails on this assessment for duplicate detection.
+  const { data: existing } = await sb
+    .from("ara_respondents")
+    .select("email")
+    .eq("assessment_id", assessmentId);
+  const existingEmails = new Set((existing ?? []).map((r: { email: string }) => r.email.toLowerCase()));
+
+  const results: Array<{ row: number; email: string; ok: boolean; error?: string }> = [];
+  const toInsert: Array<Record<string, unknown>> = [];
+  const pillarsByEmail = new Map<string, string[]>();
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseCsvLine(lines[i]);
+    const name = cols[iName] ?? "";
+    const email = (cols[iEmail] ?? "").toLowerCase();
+
+    if (!name || !email) {
+      results.push({ row: i + 1, email, ok: false, error: "name and email are required" });
+      continue;
+    }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      results.push({ row: i + 1, email, ok: false, error: "invalid email format" });
+      continue;
+    }
+    if (existingEmails.has(email)) {
+      results.push({ row: i + 1, email, ok: false, error: "duplicate (email already on this assessment)" });
+      continue;
+    }
+    existingEmails.add(email);
+
+    const langRaw = (cols[iLang] ?? "en").toLowerCase();
+    const language = langRaw === "ar" || langRaw === "arabic" ? "ar" : "en";
+
+    toInsert.push({
+      assessment_id: assessmentId,
+      name,
+      name_ar: iNameAr >= 0 ? (cols[iNameAr] || null) : null,
+      email,
+      role_label_en: iRoleEn >= 0 ? (cols[iRoleEn] || null) : null,
+      role_label_ar: iRoleAr >= 0 ? (cols[iRoleAr] || null) : null,
+      language_preference: language,
+    });
+
+    if (iPillars >= 0 && cols[iPillars]) {
+      pillarsByEmail.set(
+        email,
+        cols[iPillars].split("|").map((s) => s.trim()).filter(Boolean)
+      );
+    }
+
+    results.push({ row: i + 1, email, ok: true });
+  }
+
+  if (toInsert.length === 0) {
+    return { ok: false, error: "No valid rows to import.", results };
+  }
+
+  const { data: inserted, error } = await sb
+    .from("ara_respondents")
+    .insert(toInsert)
+    .select("id, email");
+
+  if (error) return { ok: false, error: error.message };
+
+  // Wire up pillar assignments for any rows that supplied them.
+  const assignmentRows: Array<{ respondent_id: string; pillar_id: string }> = [];
+  for (const row of inserted ?? []) {
+    const pillars = pillarsByEmail.get(row.email.toLowerCase()) ?? [];
+    for (const p of pillars) assignmentRows.push({ respondent_id: row.id, pillar_id: p });
+  }
+  if (assignmentRows.length > 0) {
+    await sb.from("ara_respondent_pillar_assignments").insert(assignmentRows);
+  }
+
+  revalidatePath(`/ara/consultant/assessments/${assessmentId}`);
+  return {
+    ok: true,
+    imported: inserted?.length ?? 0,
+    skipped: results.filter((r) => !r.ok).length,
+    results,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────
 // Question bank versions
 // ─────────────────────────────────────────────────────────────
 export async function createAraVersion(formData: FormData) {
@@ -319,7 +485,7 @@ export async function createAraVersion(formData: FormData) {
 
 export async function publishAraVersion(versionId: string) {
   try { await requireRole("admin"); } catch (e) { return authErr(e); }
-  // Atomic publish via Postgres RPC — eliminates the race where two
+  // Atomic publish via Postgres RPC - eliminates the race where two
   // concurrent publishes could leave the DB with zero or two active
   // versions. See migration 00011.
   const sb = createServiceClient();
@@ -470,7 +636,7 @@ export async function deleteAraQuestion(questionId: string, versionId: string) {
   return { ok: true };
 }
 
-// Reorder question — swap display_order with neighbour in same pillar
+// Reorder question - swap display_order with neighbour in same pillar
 export async function moveAraQuestion(questionId: string, direction: "up" | "down") {
   try { await requireRole("admin"); } catch (e) { return authErr(e); }
   const sb = createServiceClient();
@@ -494,7 +660,7 @@ export async function moveAraQuestion(questionId: string, direction: "up" | "dow
     .limit(1)
     .maybeSingle<{ id: string; display_order: number }>();
 
-  if (!neighbour) return { ok: true }; // Already at edge — no-op
+  if (!neighbour) return { ok: true }; // Already at edge - no-op
 
   // Swap. Use a temporary value to avoid unique-index collisions if one exists.
   await sb.from("ara_questions").update({ display_order: -1 }).eq("id", target.id);
@@ -505,7 +671,7 @@ export async function moveAraQuestion(questionId: string, direction: "up" | "dow
   return { ok: true };
 }
 
-// Update question (admin) — only editable fields; preserves scored responses
+// Update question (admin) - only editable fields; preserves scored responses
 export async function updateAraQuestion(formData: FormData) {
   try { await requireRole("admin"); } catch (e) { return authErr(e); }
   const questionId = String(formData.get("id") ?? "");
@@ -567,7 +733,7 @@ export async function updateAraQuestion(formData: FormData) {
 export async function createAraQuestion(formData: FormData) {
   try { await requireRole("admin"); } catch (e) { return authErr(e); }
   // Options come in as JSON strings from the client form to keep the
-  // FormData interface simple — no client-server array serialization dance.
+  // FormData interface simple - no client-server array serialization dance.
   const optionsEnRaw = formData.get("options_en") as string | null;
   const optionsArRaw = formData.get("options_ar") as string | null;
   const scoreMapRaw = formData.get("score_map") as string | null;
@@ -626,4 +792,92 @@ export async function createAraQuestion(formData: FormData) {
 
   revalidatePath(`/ara/admin/questions/${parsed.data.version_id}`);
   return { ok: true };
+}
+
+// ─────────────────────────────────────────────────────────────
+// AI question authoring assistant
+//
+// Generates one question via the Anthropic API based on an admin
+// brief, then inserts it into the requested version. The generated
+// question is appended to the end of its pillar (highest existing
+// question_number + 1) and marked is_active=true so it shows up
+// immediately in the admin list. The framework reference cited by
+// the model is stored in help_text_en for audit traceability.
+// ─────────────────────────────────────────────────────────────
+
+export async function aiAuthorAraQuestion(formData: FormData) {
+  try { await requireRole("admin"); } catch (e) { return authErr(e); }
+
+  const versionId = String(formData.get("version_id") ?? "");
+  const pillarId  = String(formData.get("pillar_id") ?? "");
+  const layer     = (Number(formData.get("layer") ?? 1) === 2 ? 2 : 1) as 1 | 2;
+  const brief     = String(formData.get("brief") ?? "").trim();
+  const similarTo = String(formData.get("similar_to") ?? "").trim() || undefined;
+
+  if (!versionId || !pillarId || !brief) {
+    return { ok: false as const, error: "version_id, pillar_id, and brief are required." };
+  }
+
+  // Lazy import so the AI SDK isn't loaded on every action call.
+  const { generateAraQuestion } = await import("@/lib/ai/question-author");
+
+  const result = await generateAraQuestion({
+    brief,
+    pillar: pillarId as Parameters<typeof generateAraQuestion>[0]["pillar"],
+    layer,
+    similarTo,
+  });
+  if (!result.ok) return { ok: false as const, error: result.error };
+
+  const q = result.question;
+
+  // Find the next question_number for this (version, pillar).
+  const sb = createServiceClient();
+  const { data: existing } = await sb
+    .from("ara_questions")
+    .select("question_number, display_order")
+    .eq("version_id", versionId)
+    .eq("pillar_id", pillarId)
+    .order("question_number", { ascending: false })
+    .limit(1)
+    .maybeSingle<{ question_number: number; display_order: number }>();
+
+  const nextNumber = (existing?.question_number ?? 0) + 1;
+  const nextOrder  = (existing?.display_order ?? 0) + 1;
+
+  const { data: created, error } = await sb
+    .from("ara_questions")
+    .insert({
+      version_id: versionId,
+      pillar_id: pillarId,
+      question_number: nextNumber,
+      question_text_en: q.en,
+      question_text_ar: q.ar,
+      question_type: q.type,
+      options_en: q.options_en ?? null,
+      options_ar: q.options_ar ?? null,
+      score_map: q.score_map ?? null,
+      help_text_en: `Reference: ${q.ref} · AI-authored draft - review before activation`,
+      help_text_ar: `المرجع: ${q.ref} · مسودة مولدة - يرجى المراجعة قبل التفعيل`,
+      region: "both",
+      sector: "all",
+      layer: q.layer,
+      display_order: nextOrder,
+      // AI-authored questions are inactive by default - admin must
+      // review and explicitly activate them via the edit page. This
+      // keeps human oversight in the loop per UAE AI Charter Principle 4.
+      is_active: false,
+    })
+    .select("id")
+    .single();
+
+  if (error) return { ok: false as const, error: error.message };
+
+  revalidatePath(`/ara/admin/questions/${versionId}`);
+  return {
+    ok: true as const,
+    question_id: created.id,
+    question_number: nextNumber,
+    rationale: q.rationale,
+  };
 }

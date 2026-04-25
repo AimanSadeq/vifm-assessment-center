@@ -78,7 +78,7 @@ Common rater biases to check:
 - Contrast effect: ratings influenced by previous candidate performance
 - First impression: ratings anchored to early observations
 
-Be balanced — not all patterns indicate bias. Consider the evidence carefully.
+Be balanced - not all patterns indicate bias. Consider the evidence carefully.
 Output ONLY valid JSON.`,
     messages: [
       {

@@ -92,7 +92,7 @@ export default async function ClientReportsPage() {
                           </div>
                         </TableCell>
                         <TableCell className="text-sm">
-                          {eng?.name ?? "—"}
+                          {eng?.name ?? "-"}
                         </TableCell>
                         <TableCell>
                           {oar ? (
@@ -117,7 +117,7 @@ export default async function ClientReportsPage() {
                               {OAR_LABELS[oar.recommendation] ?? oar.recommendation}
                             </Badge>
                           ) : (
-                            <span className="text-xs text-muted-foreground">—</span>
+                            <span className="text-xs text-muted-foreground">-</span>
                           )}
                         </TableCell>
                         <TableCell>

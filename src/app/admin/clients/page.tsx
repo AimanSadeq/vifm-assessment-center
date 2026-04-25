@@ -52,8 +52,8 @@ export default async function ClientsPage() {
               {organizations.map((org) => (
                 <TableRow key={org.id}>
                   <TableCell className="font-medium">{org.name}</TableCell>
-                  <TableCell>{org.industry ?? "—"}</TableCell>
-                  <TableCell>{org.country ?? "—"}</TableCell>
+                  <TableCell>{org.industry ?? "-"}</TableCell>
+                  <TableCell>{org.country ?? "-"}</TableCell>
                   <TableCell>
                     {org.contact_name ? (
                       <div>

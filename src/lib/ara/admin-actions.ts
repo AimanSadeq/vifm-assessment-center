@@ -46,7 +46,7 @@ export async function clearAraSandboxData(formData: FormData) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Retention engine — admin-triggered purge (handover §15.2)
+// Retention engine - admin-triggered purge (handover §15.2)
 // Hard-deletes archived assessments whose archived_at is older than
 // RETENTION_YEARS. Generated reports are NOT deleted (§15.3).
 // ─────────────────────────────────────────────────────────────
@@ -74,7 +74,7 @@ export async function purgeAraExpiredAssessments(formData: FormData) {
   const ids = (expired ?? []).map((e) => e.id);
   if (ids.length === 0) return { ok: true, deleted: 0 };
 
-  // Detach reports so they survive the cascade delete — they are VIFM
+  // Detach reports so they survive the cascade delete - they are VIFM
   // business records per §15.3.
   await sb.from("ara_reports").update({ assessment_id: null }).in("assessment_id", ids);
 

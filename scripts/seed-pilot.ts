@@ -59,7 +59,7 @@ async function seed() {
     if (orgErr) throw new Error(`Org: ${orgErr.message}`);
     org = newOrg;
   }
-  console.log("✅ Step 1: Organization —", org.name);
+  console.log("✅ Step 1: Organization -", org.name);
 
   // ═══════════════════════════════════════════════════════
   // STEP 2: Engagement
@@ -78,7 +78,7 @@ async function seed() {
     .select()
     .single();
   if (engErr) throw new Error(`Engagement: ${engErr.message}`);
-  console.log("✅ Step 2: Engagement —", eng.name);
+  console.log("✅ Step 2: Engagement -", eng.name);
 
   // ═══════════════════════════════════════════════════════
   // STEP 3: Exercises with briefing content
@@ -95,7 +95,7 @@ async function seed() {
       meeting_minutes: 60,
       participant_brief: "You have just been appointed as the new Division Head at a major energy company. Your predecessor left suddenly, and you must address 20 pending items in your inbox on your first day. Some items are urgent, others strategic. You have a team of 5 direct reports you can delegate to.",
       scenario_context: "The company is undergoing a digital transformation while managing a major merger. Several items relate to cross-functional dependencies that test the candidate's ability to see the big picture.",
-      assessor_notes: "Focus on: (1) Prioritization logic — does the candidate distinguish urgent from important? (2) Delegation quality — are tasks assigned to appropriate team members with clear instructions? (3) Strategic connections — does the candidate identify links between items?",
+      assessor_notes: "Focus on: (1) Prioritization logic - does the candidate distinguish urgent from important? (2) Delegation quality - are tasks assigned to appropriate team members with clear instructions? (3) Strategic connections - does the candidate identify links between items?",
     },
     {
       name: "Leadership Role Play",
@@ -106,7 +106,7 @@ async function seed() {
       prep_minutes: 10,
       instructions_minutes: 5,
       meeting_minutes: 15,
-      participant_brief: "Nadia Hassan has been one of your strongest team members for 3 years. Recently her performance has dropped significantly — missing deadlines, making errors, and being absent from team meetings. You need to have a constructive conversation to understand what is happening and agree on next steps.",
+      participant_brief: "Nadia Hassan has been one of your strongest team members for 3 years. Recently her performance has dropped significantly - missing deadlines, making errors, and being absent from team meetings. You need to have a constructive conversation to understand what is happening and agree on next steps.",
       scenario_context: "Nadia is dealing with a family illness but has not disclosed this. She is also frustrated because she was passed over for promotion last quarter. The role player will start defensive but respond well to genuine empathy and support.",
       assessor_notes: "Watch for: (1) Empathy and active listening before problem-solving, (2) Balance of support and accountability, (3) Quality of the development plan, (4) How the candidate handles the emotional reveal about family illness.",
     },
@@ -121,7 +121,7 @@ async function seed() {
       meeting_minutes: 20,
       participant_brief: "Your company is considering entering the Southeast Asian renewable energy market. You have been given market data, competitor analysis, financial projections, and risk assessments. Prepare a recommendation for the Executive Committee on whether to proceed, including your proposed approach, timeline, and resource requirements.",
       scenario_context: "The case has deliberately conflicting data points. Strong candidates will acknowledge uncertainty and present multiple scenarios. The Q&A panel will probe on risk mitigation and implementation feasibility.",
-      assessor_notes: "Evaluate: (1) Analytical rigor — does the candidate use data effectively? (2) Strategic clarity — is the recommendation clear and well-structured? (3) Presentation delivery — confidence, eye contact, visual aids, (4) Q&A handling — composure under challenge.",
+      assessor_notes: "Evaluate: (1) Analytical rigor - does the candidate use data effectively? (2) Strategic clarity - is the recommendation clear and well-structured? (3) Presentation delivery - confidence, eye contact, visual aids, (4) Q&A handling - composure under challenge.",
     },
   ];
 
@@ -130,7 +130,7 @@ async function seed() {
     .insert(exerciseDefs)
     .select();
   if (exErr) throw new Error(`Exercises: ${exErr.message}`);
-  console.log("✅ Step 3: Exercises —", exercises.map((e) => e.name).join(", "));
+  console.log("✅ Step 3: Exercises -", exercises.map((e) => e.name).join(", "));
 
   // ═══════════════════════════════════════════════════════
   // STEP 4: Competencies + Matrix
@@ -178,7 +178,7 @@ async function seed() {
     ])
     .select();
   if (candErr) throw new Error(`Candidates: ${candErr.message}`);
-  console.log("✅ Step 5: Candidates —", candidates.map((c) => c.full_name).join(", "));
+  console.log("✅ Step 5: Candidates -", candidates.map((c) => c.full_name).join(", "));
 
   // ═══════════════════════════════════════════════════════
   // STEP 6: Assessor (use admin account)
@@ -191,7 +191,7 @@ async function seed() {
 
   if (!adminProfile) throw new Error("Admin profile not found. Run create-admin.ts first.");
   const assessorId = adminProfile.id;
-  console.log("✅ Step 6: Using admin as assessor —", assessorId);
+  console.log("✅ Step 6: Using admin as assessor -", assessorId);
 
   // ═══════════════════════════════════════════════════════
   // STEP 7: Assessor Assignments (3 candidates × 3 exercises = 9)
@@ -215,7 +215,7 @@ async function seed() {
 
   // Candidate profiles for observations
   const candidateProfiles = [
-    { // Ahmed — Strong performer (avg ~4.0)
+    { // Ahmed - Strong performer (avg ~4.0)
       name: "Ahmed", scores: [4, 4, 4, 5, 3, 4],
       observations: [
         ["Identified strategic implications of merger before operational items", "Missed cross-functional link between IT budget and digital transformation"],
@@ -226,7 +226,7 @@ async function seed() {
         ["Remained calm when role player became defensive", "Constructive redirection of difficult conversation"],
       ],
     },
-    { // Fatima — Exceptional performer (avg ~4.5)
+    { // Fatima - Exceptional performer (avg ~4.5)
       name: "Fatima", scores: [5, 4, 4, 5, 5, 4],
       observations: [
         ["Exceptional strategic vision connecting all inbox items to long-term goals", "Identified emerging market opportunity others missed"],
@@ -237,7 +237,7 @@ async function seed() {
         ["Handled emotional situation with genuine empathy", "Maintained focus while being compassionate"],
       ],
     },
-    { // Khalid — Developing performer (avg ~3.0)
+    { // Khalid - Developing performer (avg ~3.0)
       name: "Khalid", scores: [3, 2, 3, 3, 2, 3],
       observations: [
         ["Showed awareness of strategic context but struggled with prioritization", "Focused on operational items over strategic ones"],
@@ -340,7 +340,7 @@ async function seed() {
     }));
     await supabase.from("integration_worksheets").insert(wsRows);
 
-    console.log(`✅ Steps 8-10: ${profile.name} — ${obsRows.length} observations, ${ratingRows.length} ratings, 6 worksheets`);
+    console.log(`✅ Steps 8-10: ${profile.name} - ${obsRows.length} observations, ${ratingRows.length} ratings, 6 worksheets`);
   }
 
   // ═══════════════════════════════════════════════════════
@@ -371,14 +371,14 @@ async function seed() {
       candidate_id: candidates[0].id,
       overall_score: 4,
       recommendation: "ready_now",
-      summary: "Ahmed demonstrates strong leadership capabilities across all competency areas. His strategic thinking, communication skills, and results orientation are notable strengths. Minor development needed in talent development — specifically in root cause exploration before jumping to solutions. Recommended for Senior Manager role with coaching support in people development.",
+      summary: "Ahmed demonstrates strong leadership capabilities across all competency areas. His strategic thinking, communication skills, and results orientation are notable strengths. Minor development needed in talent development - specifically in root cause exploration before jumping to solutions. Recommended for Senior Manager role with coaching support in people development.",
     },
     {
       engagement_id: eng.id,
       candidate_id: candidates[1].id,
       overall_score: 5,
       recommendation: "ready_now",
-      summary: "Fatima is an exceptional candidate who consistently demonstrated outstanding competence across all exercises. Her strategic vision, communication excellence, and deep coaching abilities set her apart. She handles pressure with genuine composure and empathy. Strongly recommended for Senior Manager role — she is ready to perform at this level immediately.",
+      summary: "Fatima is an exceptional candidate who consistently demonstrated outstanding competence across all exercises. Her strategic vision, communication excellence, and deep coaching abilities set her apart. She handles pressure with genuine composure and empathy. Strongly recommended for Senior Manager role - she is ready to perform at this level immediately.",
     },
     {
       engagement_id: eng.id,
@@ -389,13 +389,13 @@ async function seed() {
     },
   ];
   await supabase.from("overall_assessment_ratings").insert(oarData);
-  console.log("✅ Step 12: 3 OARs — Ready Now (Ahmed, Fatima), Ready with Development (Khalid)");
+  console.log("✅ Step 12: 3 OARs - Ready Now (Ahmed, Fatima), Ready with Development (Khalid)");
 
   // ═══════════════════════════════════════════════════════
   // SUMMARY
   // ═══════════════════════════════════════════════════════
   console.log("\n════════════════════════════════════════════");
-  console.log("🎉 PILOT ASSESSMENT CENTER — COMPLETE!");
+  console.log("🎉 PILOT ASSESSMENT CENTER - COMPLETE!");
   console.log("════════════════════════════════════════════");
   console.log(`  Organization: ${org.name}`);
   console.log(`  Engagement:   ${eng.name}`);
@@ -409,8 +409,8 @@ async function seed() {
   console.log(`  OARs:         3`);
   console.log("");
   console.log("📋 Now walk through the portal:");
-  console.log("  1. Admin → /admin — verify dashboard shows all data");
-  console.log("  2. Admin → /admin/engagements — click the engagement");
+  console.log("  1. Admin → /admin - verify dashboard shows all data");
+  console.log("  2. Admin → /admin/engagements - click the engagement");
   console.log(`  3. PDF Report → /api/reports/${eng.id}/${candidates[0].id}`);
   console.log(`  4. PDF Report → /api/reports/${eng.id}/${candidates[1].id}`);
   console.log(`  5. PDF Report → /api/reports/${eng.id}/${candidates[2].id}`);

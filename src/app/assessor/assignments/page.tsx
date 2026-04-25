@@ -24,7 +24,7 @@ export default async function AssessorAssignmentsListPage() {
     name: eng.name,
     status: eng.status,
     target_role: eng.target_role,
-    orgName: (eng.organizations as unknown as { name: string })?.name ?? "—",
+    orgName: (eng.organizations as unknown as { name: string })?.name ?? "-",
     assignmentCount: countMap.get(eng.id) ?? 0,
   }));
 

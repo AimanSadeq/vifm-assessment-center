@@ -3,7 +3,7 @@ import { ARA_OVERALL_BANDS } from "@/lib/constants/ara-pillars";
 /**
  * Speedometer-style gauge showing overall score on a 1-5 scale.
  * Five colour bands match the handover §7.3 zones.
- * Pure SVG — prints cleanly and has zero client-side runtime.
+ * Pure SVG - prints cleanly and has zero client-side runtime.
  */
 export function MaturityGauge({ score }: { score: number | null }) {
   const RADIUS = 110;
@@ -49,11 +49,11 @@ export function MaturityGauge({ score }: { score: number | null }) {
   return (
     <svg viewBox="0 0 300 180" className="w-full max-w-md mx-auto">
       {/* Bands */}
-      {arc(1.0, 1.9, "#DC3545")}
-      {arc(2.0, 2.9, "#FD7E14")}
-      {arc(3.0, 3.9, "#FFC107")}
-      {arc(4.0, 4.4, "#28A745")}
-      {arc(4.5, 5.0, "#FFD700")}
+      {arc(1.0, 1.9, "#FB7185")}
+      {arc(2.0, 2.9, "#FDBA74")}
+      {arc(3.0, 3.9, "#FBBF24")}
+      {arc(4.0, 4.4, "#34D399")}
+      {arc(4.5, 5.0, "#FBBF24")}
 
       {/* Needle */}
       {score != null && (
@@ -80,7 +80,7 @@ export function MaturityGauge({ score }: { score: number | null }) {
         fontWeight="600"
         fill="#010131"
       >
-        {score != null ? score.toFixed(2) : "—"}
+        {score != null ? score.toFixed(2) : "-"}
       </text>
       <text
         x={CENTER}

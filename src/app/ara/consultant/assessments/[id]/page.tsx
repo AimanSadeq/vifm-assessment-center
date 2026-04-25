@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import {
   ArrowLeft, FlaskConical, Mail, Link2, Lock, Unlock, RefreshCw, Plus, Trash2,
   Archive, RotateCcw, BookOpen, AlertTriangle, ShieldAlert, TrendingUp, TrendingDown, Minus,
-  FileDown, Eye, Cpu,
+  FileDown, Eye, Cpu, Sparkles,
 } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +15,8 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
-import { createAraRespondent } from "@/lib/ara/actions";
+import { ARA_STAGE_MAP } from "@/lib/constants/ara-stages";
+import { bulkImportAraRespondents, createAraRespondent } from "@/lib/ara/actions";
 import {
   createConsultantNote, deleteConsultantNote, toggleNoteIncludeInReport,
   freezeAssessmentScores, unfreezeAssessmentScores,
@@ -25,6 +26,7 @@ import {
 } from "@/lib/ara/consultant-actions";
 import { summarizeComplianceByFramework } from "@/lib/ara/compliance";
 import { detectAraGaps, detectAraShadowAi } from "@/lib/ara/detectors";
+import { computeAraDistortion } from "@/lib/ara/distortion";
 import { computeYoYComparison } from "@/lib/ara/year-on-year";
 import { ConfirmAction } from "@/components/shared/confirm-action";
 import {
@@ -169,15 +171,16 @@ export default async function AraAssessmentDetailPage({
   const pillarMap = new Map<string, PillarScoreRow>();
   (pillarScores ?? []).forEach((p) => pillarMap.set(p.pillar_id, p));
 
-  // Gap Detector + Shadow AI Alert + year-on-year — run in parallel
-  const [gapAlerts, shadowAi, yoy] = await Promise.all([
+  // Gap Detector + Shadow AI Alert + year-on-year + distortion - run in parallel
+  const [gapAlerts, shadowAi, yoy, distortion] = await Promise.all([
     detectAraGaps(assessment.id),
     detectAraShadowAi(assessment.id),
     computeYoYComparison(assessment.id),
+    computeAraDistortion(assessment.id),
   ]);
 
   // Load Layer 2 consultant-guide questions for this version (never shown
-  // to respondents — reference material for the Phase 2 workshop).
+  // to respondents - reference material for the Phase 2 workshop).
   const { data: layer2Questions } = assessment.question_bank_version_id
     ? await sb
         .from("ara_questions")
@@ -238,17 +241,44 @@ export default async function AraAssessmentDetailPage({
           </div>
         )}
 
-        {/* Hero card — score + identity + primary actions */}
+        {/* Hero card - score + identity + primary actions */}
         <div className="rounded-2xl border bg-card overflow-hidden mb-8">
           <div className="ara-hero-subtle p-6 sm:p-8 flex flex-col lg:flex-row items-start gap-6">
             {/* Identity */}
             <div className="flex-1 min-w-0">
-              <span className="ara-eyebrow">
-                Assessment · {assessment.assessment_year}
-              </span>
-              <h1 className="ara-numeral text-3xl sm:text-4xl font-semibold text-primary mt-2 mb-3 leading-tight">
+              {(() => {
+                const stage = ARA_STAGE_MAP[assessment.engagement_stage] ?? ARA_STAGE_MAP.enterprise;
+                const stageColor =
+                  stage.tone === "teal" ? "#0D9488" :
+                  stage.tone === "violet" ? "#7C3AED" :
+                  "#D97706";
+                return (
+                  <div className="flex items-center gap-2 mb-2">
+                    <span
+                      className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-widest"
+                      style={{
+                        background: `${stageColor}15`,
+                        color: stageColor,
+                        border: `1px solid ${stageColor}40`,
+                      }}
+                    >
+                      {stage.is_pro_bono && <Sparkles className="h-2.5 w-2.5" />}
+                      Stage {stage.number} · {stage.label_en}
+                    </span>
+                    <span className="ara-eyebrow">
+                      {assessment.assessment_year}
+                    </span>
+                  </div>
+                );
+              })()}
+              <h1 className="ara-numeral text-3xl sm:text-4xl font-semibold text-primary mt-1 mb-1 leading-tight">
                 {assessment.organization?.name ?? "(no organization)"}
               </h1>
+              {assessment.scope_label && (
+                <p className="text-sm text-muted-foreground mb-3">
+                  Scope: <span className="font-medium text-foreground">{assessment.scope_label}</span>
+                </p>
+              )}
               <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                 <Badge variant="outline" className="capitalize font-medium">
                   {assessment.region === "uae" ? "UAE" : "Saudi Arabia"}
@@ -270,7 +300,7 @@ export default async function AraAssessmentDetailPage({
               <div className="rounded-xl border bg-card px-5 py-4 min-w-[140px]">
                 <div className="ara-eyebrow text-muted-foreground/80">Overall</div>
                 <div className="ara-numeral text-3xl font-semibold text-primary mt-1">
-                  {overall != null ? overall.toFixed(2) : "—"}
+                  {overall != null ? overall.toFixed(2) : "-"}
                   <span className="text-sm text-muted-foreground font-normal"> / 5</span>
                 </div>
                 <div className="text-xs text-accent font-medium mt-0.5">
@@ -419,7 +449,7 @@ export default async function AraAssessmentDetailPage({
                     {shadowAi.matches.slice(0, 5).map((m, i) => (
                       <li key={i} className="text-xs">
                         <span className="font-medium">{m.respondent_name}</span>
-                        {" — "}
+                        {" - "}
                         <span className="italic">…{m.snippet}…</span>
                         <span className="ms-1 inline-block px-1.5 py-0.5 rounded bg-destructive/10 text-[10px] uppercase">
                           {m.keyword}
@@ -443,7 +473,7 @@ export default async function AraAssessmentDetailPage({
                     {shadowAi.low_governance_scores.slice(0, 5).map((g, i) => (
                       <li key={i}>
                         <span className="font-medium">{g.respondent_name}</span>
-                        {" — Q"}{g.question_number}: {g.question_text_en}
+                        {" - Q"}{g.question_number}: {g.question_text_en}
                         <span className="ms-1 text-destructive font-medium">({g.score.toFixed(1)})</span>
                       </li>
                     ))}
@@ -459,7 +489,7 @@ export default async function AraAssessmentDetailPage({
           <Card className="mb-6 border-amber-300 bg-amber-50">
             <CardHeader className="pb-3">
               <CardTitle className="text-base text-amber-900 flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4" /> Gap Detector — {gapAlerts.length} disagreement{gapAlerts.length === 1 ? "" : "s"} flagged
+                <AlertTriangle className="h-4 w-4" /> Gap Detector - {gapAlerts.length} disagreement{gapAlerts.length === 1 ? "" : "s"} flagged
               </CardTitle>
               <CardDescription className="text-amber-900/80">
                 Respondents on the same pillar disagree significantly.
@@ -473,7 +503,7 @@ export default async function AraAssessmentDetailPage({
                     {a.kind === "question" ? (
                       <>
                         <p className="font-medium text-xs uppercase text-amber-900/70">
-                          {a.pillar_name_en} — Q{a.question_number} (spread {a.spread.toFixed(1)})
+                          {a.pillar_name_en} - Q{a.question_number} (spread {a.spread.toFixed(1)})
                         </p>
                         <p className="text-xs">{a.question_text_en}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">
@@ -483,7 +513,7 @@ export default async function AraAssessmentDetailPage({
                     ) : (
                       <>
                         <p className="font-medium text-xs uppercase text-amber-900/70">
-                          {a.pillar_name_en} — level split
+                          {a.pillar_name_en} - level split
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
                           {a.low_respondent} averaging {a.low_avg.toFixed(1)} while{" "}
@@ -509,7 +539,7 @@ export default async function AraAssessmentDetailPage({
             </div>
             <div className="text-right">
               <div className="text-3xl font-bold text-primary">
-                {overall != null ? overall.toFixed(2) : "—"}
+                {overall != null ? overall.toFixed(2) : "-"}
                 <span className="text-sm text-muted-foreground font-normal"> / 5.0</span>
               </div>
               {overallScore?.overall_label_en && (
@@ -543,21 +573,21 @@ export default async function AraAssessmentDetailPage({
                     <TableRow key={p.id}>
                       <TableCell className="font-medium">{p.name_en}</TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {row?.raw_score != null ? Number(row.raw_score).toFixed(2) : "—"}
+                        {row?.raw_score != null ? Number(row.raw_score).toFixed(2) : "-"}
                       </TableCell>
                       <TableCell className="text-right tabular-nums text-muted-foreground">
-                        {row?.pillar_weight != null ? `${Number(row.pillar_weight).toFixed(1)}` : "—"}
+                        {row?.pillar_weight != null ? `${Number(row.pillar_weight).toFixed(1)}` : "-"}
                       </TableCell>
                       <TableCell className="text-right tabular-nums text-muted-foreground">
-                        {row?.weighted_score != null ? Number(row.weighted_score).toFixed(3) : "—"}
+                        {row?.weighted_score != null ? Number(row.weighted_score).toFixed(3) : "-"}
                       </TableCell>
                       <TableCell>
                         {row?.maturity_label_en ? (
                           <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${maturityColor(row.maturity_level)}`}>
-                            L{row.maturity_level} — {row.maturity_label_en}
+                            L{row.maturity_level} - {row.maturity_label_en}
                           </span>
                         ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
+                          <span className="text-xs text-muted-foreground">-</span>
                         )}
                       </TableCell>
                       <TableCell className="text-right tabular-nums text-xs text-muted-foreground">
@@ -565,14 +595,14 @@ export default async function AraAssessmentDetailPage({
                           Number(row.benchmark_gap) > 0
                             ? `+${Number(row.benchmark_gap).toFixed(2)}`
                             : Number(row.benchmark_gap).toFixed(2)
-                        ) : "—"}
+                        ) : "-"}
                       </TableCell>
                       <TableCell className="text-right">
                         {isFrozen || isArchived ? (
                           <span className="text-xs tabular-nums text-muted-foreground">
                             {row?.consultant_validated_score != null
                               ? Number(row.consultant_validated_score).toFixed(2)
-                              : "—"}
+                              : "-"}
                           </span>
                         ) : (
                           <ValidatedScoreInput
@@ -589,7 +619,7 @@ export default async function AraAssessmentDetailPage({
                             {Number(row.perception_gap).toFixed(2)}
                           </span>
                         ) : (
-                          <span className="text-muted-foreground">—</span>
+                          <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
                     </TableRow>
@@ -650,7 +680,7 @@ export default async function AraAssessmentDetailPage({
           <Card className="mb-6">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <BookOpen className="h-4 w-4" /> Layer 2 — Consultant guide
+                <BookOpen className="h-4 w-4" /> Layer 2 - Consultant guide
               </CardTitle>
               <CardDescription>
                 Additional questions for your Phase 2 workshop. <strong>Never shown to respondents.</strong>
@@ -841,7 +871,7 @@ export default async function AraAssessmentDetailPage({
                       </p>
                       <div className="flex items-center gap-3 text-xs">
                         <span className="tabular-nums font-semibold">
-                          {s.percent != null ? `${s.percent}%` : "—"}
+                          {s.percent != null ? `${s.percent}%` : "-"}
                         </span>
                         <span className="text-emerald-700">{s.met} met</span>
                         <span className="text-amber-700">{s.partial} partial</span>
@@ -855,7 +885,7 @@ export default async function AraAssessmentDetailPage({
                 {/* Requirement list with override forms */}
                 <details className="rounded-lg border bg-muted/30">
                   <summary className="px-4 py-2 cursor-pointer text-sm font-medium">
-                    All requirements ({(complianceResults ?? []).length}) — click to expand
+                    All requirements ({(complianceResults ?? []).length}) - click to expand
                   </summary>
                   <div className="p-4 space-y-2 max-h-[600px] overflow-auto">
                     {(complianceResults ?? []).map((r) => {
@@ -909,15 +939,15 @@ export default async function AraAssessmentDetailPage({
                         <TableRow key={p.pillar_id}>
                           <TableCell className="font-medium">{p.pillar_name_en}</TableCell>
                           <TableCell className="text-right tabular-nums text-muted-foreground">
-                            {p.prior_raw != null ? p.prior_raw.toFixed(2) : "—"}
+                            {p.prior_raw != null ? p.prior_raw.toFixed(2) : "-"}
                           </TableCell>
                           <TableCell className="text-right tabular-nums">
-                            {p.current_raw != null ? p.current_raw.toFixed(2) : "—"}
+                            {p.current_raw != null ? p.current_raw.toFixed(2) : "-"}
                           </TableCell>
                           <TableCell className={`text-right tabular-nums ${deltaClass}`}>
                             <span className="inline-flex items-center gap-1 justify-end">
                               <DeltaIcon className="h-3 w-3" />
-                              {p.delta != null ? (p.delta > 0 ? `+${p.delta.toFixed(2)}` : p.delta.toFixed(2)) : "—"}
+                              {p.delta != null ? (p.delta > 0 ? `+${p.delta.toFixed(2)}` : p.delta.toFixed(2)) : "-"}
                             </span>
                           </TableCell>
                         </TableRow>
@@ -955,7 +985,7 @@ export default async function AraAssessmentDetailPage({
               <Cpu className="h-4 w-4" /> AI use case portfolio
             </CardTitle>
             <CardDescription>
-              AI initiatives inventoried by respondents — stage, risk, and business value.
+              AI initiatives inventoried by respondents - stage, risk, and business value.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -1003,13 +1033,13 @@ export default async function AraAssessmentDetailPage({
                         <TableCell className="text-xs text-muted-foreground">
                           {u.pillar_id
                             ? (ARA_PILLARS.find((p) => p.id === u.pillar_id)?.name_en ?? u.pillar_id)
-                            : "—"}
+                            : "-"}
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
-                          {u.business_owner ?? "—"}
+                          {u.business_owner ?? "-"}
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
-                          {u.respondent?.name ?? "—"}
+                          {u.respondent?.name ?? "-"}
                         </TableCell>
                       </TableRow>
                     );
@@ -1052,7 +1082,7 @@ export default async function AraAssessmentDetailPage({
                       </TableCell>
                       <TableCell className="font-medium">{m.material_name}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {m.respondent?.name ?? "—"}
+                        {m.respondent?.name ?? "-"}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground truncate max-w-xs">
                         {m.material_type === "url" ? (
@@ -1078,13 +1108,69 @@ export default async function AraAssessmentDetailPage({
 
           <TabsContent value="respondents" className="space-y-0">
 
+        {/* ─── Response-validity (distortion) panel ─── *
+         * Surfaces respondents whose answer pattern is statistically
+         * inconsistent (extreme polarisation, straight-lining, drift
+         * from peers). Reads-only signal, never auto-rejects answers. */}
+        {distortion.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <ShieldAlert className="h-4 w-4 text-amber-600" />
+                Response validity
+              </CardTitle>
+              <CardDescription>
+                Statistical signals on each respondent&apos;s answer pattern.
+                Used by the consultant to decide whether to validate input
+                in Phase 2 - never auto-rejects responses.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {distortion.map((d) => {
+                  const tone = d.level === "high"  ? { bg: "#fef2f2", bd: "#FB7185", fg: "#9f1239", label: "High" } :
+                               d.level === "watch" ? { bg: "#fffbeb", bd: "#FBBF24", fg: "#78350f", label: "Watch" } :
+                                                     { bg: "#f0fdf4", bd: "#34D399", fg: "#065f46", label: "Clean" };
+                  return (
+                    <div key={d.respondent_id} className="rounded-lg border p-3"
+                         style={{ background: tone.bg, borderLeft: `3px solid ${tone.bd}` }}>
+                      <div className="flex items-start justify-between gap-3 mb-1">
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">
+                            {d.respondent_name}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            {d.total_responses} answers · extremity {Math.round(d.signals.extremity_pct * 100)}% ·
+                            longest run {d.signals.longest_run} · drift {d.signals.anchor_deviation.toFixed(2)}
+                          </p>
+                        </div>
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full"
+                              style={{ background: `${tone.bd}25`, color: tone.fg, border: `1px solid ${tone.bd}50` }}>
+                          {tone.label} · {d.distortion_score}/100
+                        </span>
+                      </div>
+                      {d.reasons.length > 0 && (
+                        <ul className="text-xs text-foreground mt-2 space-y-0.5">
+                          {d.reasons.map((r, i) => (
+                            <li key={i}>• {r}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* ─── Respondents ─── */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="text-lg">Respondents</CardTitle>
             <CardDescription>
               Stakeholders who will complete their assigned pillar sections.
-              Each receives a unique access link — no account required.
+              Each receives a unique access link - no account required.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -1117,7 +1203,7 @@ export default async function AraAssessmentDetailPage({
                         </span>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {r.role_label_en ?? "—"}
+                        {r.role_label_en ?? "-"}
                       </TableCell>
                       <TableCell className="text-xs uppercase">{r.language_preference}</TableCell>
                       <TableCell>
@@ -1193,7 +1279,7 @@ export default async function AraAssessmentDetailPage({
                     defaultValue={assessment.default_language}
                   >
                     <option value="en">English</option>
-                    <option value="ar">Arabic — العربية</option>
+                    <option value="ar">Arabic - العربية</option>
                   </select>
                 </div>
                 <div className="space-y-2 sm:col-span-2">
@@ -1228,6 +1314,52 @@ export default async function AraAssessmentDetailPage({
               </div>
 
               <Button type="submit">Add respondent</Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* ─── Bulk CSV import ─── *
+         * Lets a consultant paste a CSV (header + rows) to invite many
+         * respondents at once. Matches the parity gap vs Great People
+         * Inside / eSkill which both ship CSV import as a core feature. */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="text-lg">Bulk import (CSV)</CardTitle>
+            <CardDescription>
+              Paste a CSV with a header row to invite multiple respondents at once.
+              Required columns: <code className="bg-muted px-1 py-0.5 rounded text-xs">name</code>,{" "}
+              <code className="bg-muted px-1 py-0.5 rounded text-xs">email</code>.
+              Optional: <code className="bg-muted px-1 py-0.5 rounded text-xs">name_ar</code>,{" "}
+              <code className="bg-muted px-1 py-0.5 rounded text-xs">role</code>,{" "}
+              <code className="bg-muted px-1 py-0.5 rounded text-xs">language</code> (en/ar),{" "}
+              <code className="bg-muted px-1 py-0.5 rounded text-xs">pillars</code> (pipe-separated).
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form action={bulkImportAraRespondents} className="space-y-4">
+              <input type="hidden" name="assessment_id" value={assessment.id} />
+              <div className="space-y-2">
+                <Label htmlFor="csv-paste">CSV content</Label>
+                <textarea
+                  id="csv-paste"
+                  name="csv"
+                  rows={6}
+                  required
+                  placeholder={"name,email,role,language,pillars\nFatima Al-Sayegh,fatima@example.com,Head of AI,en,strategy|model_management\nKhalid bin Sultan,khalid@example.com,Director Risk,ar,governance|culture"}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs font-mono"
+                  spellCheck={false}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Existing emails on this assessment are skipped automatically.
+                  Pillar IDs:{" "}
+                  <code className="text-[10px]">
+                    strategy · data · technology · talent · culture · governance · operations · model_management
+                  </code>
+                </p>
+              </div>
+              <Button type="submit" variant="outline">
+                <Plus className="h-4 w-4 me-1" /> Import CSV
+              </Button>
             </form>
           </CardContent>
         </Card>

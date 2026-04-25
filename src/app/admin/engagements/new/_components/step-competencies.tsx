@@ -131,7 +131,7 @@ export function StepCompetencies({ competencyTree }: Props) {
                                       : null,
                                   })
                                 }
-                                placeholder="—"
+                                placeholder="-"
                               />
                             </div>
                           )}

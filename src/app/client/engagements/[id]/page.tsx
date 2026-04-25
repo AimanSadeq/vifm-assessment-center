@@ -86,7 +86,7 @@ export default async function ClientEngagementDetailPage({ params }: Props) {
   const orgName =
     eng.organizations && typeof eng.organizations === "object" && "name" in eng.organizations
       ? (eng.organizations as { name: string }).name
-      : "—";
+      : "-";
 
   return (
     <div className="space-y-6">
@@ -97,7 +97,7 @@ export default async function ClientEngagementDetailPage({ params }: Props) {
           <span>{orgName}</span>
           <Badge variant="secondary">{eng.status}</Badge>
           {eng.target_role ? <span>Target: {eng.target_role}</span> : null}
-          <span>{eng.start_date ?? "—"} — {eng.end_date ?? "—"}</span>
+          <span>{eng.start_date ?? "-"} - {eng.end_date ?? "-"}</span>
         </div>
       </div>
 
@@ -168,7 +168,7 @@ export default async function ClientEngagementDetailPage({ params }: Props) {
                             {OAR_LABELS[oar.recommendation] ?? oar.recommendation}
                           </Badge>
                         ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
+                          <span className="text-xs text-muted-foreground">-</span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -239,7 +239,7 @@ export default async function ClientEngagementDetailPage({ params }: Props) {
                                 {score}
                               </Badge>
                             ) : (
-                              <span className="text-xs text-muted-foreground">—</span>
+                              <span className="text-xs text-muted-foreground">-</span>
                             )}
                           </TableCell>
                         );

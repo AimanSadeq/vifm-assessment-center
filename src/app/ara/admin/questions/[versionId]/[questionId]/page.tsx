@@ -110,8 +110,8 @@ export default async function EditAraQuestionPage({
                     defaultValue={String(question.layer)}
                     className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
                   >
-                    <option value="1">Layer 1 — client</option>
-                    <option value="2">Layer 2 — consultant guide</option>
+                    <option value="1">Layer 1 - client</option>
+                    <option value="2">Layer 2 - consultant guide</option>
                   </select>
                 </div>
 
@@ -159,7 +159,7 @@ export default async function EditAraQuestionPage({
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="options_en">Options (English) — JSON</Label>
+                  <Label htmlFor="options_en">Options (English) - JSON</Label>
                   <textarea
                     id="options_en"
                     name="options_en"
@@ -169,7 +169,7 @@ export default async function EditAraQuestionPage({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="options_ar">Options (Arabic) — JSON</Label>
+                  <Label htmlFor="options_ar">Options (Arabic) - JSON</Label>
                   <textarea
                     id="options_ar"
                     name="options_ar"
@@ -182,7 +182,7 @@ export default async function EditAraQuestionPage({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="score_map">Score map — JSON</Label>
+                <Label htmlFor="score_map">Score map - JSON</Label>
                 <textarea
                   id="score_map"
                   name="score_map"

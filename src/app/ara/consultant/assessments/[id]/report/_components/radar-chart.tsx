@@ -5,7 +5,7 @@ import type { AraPillarId } from "@/types/ara";
  * 8-axis radar chart.
  * Client scores are drawn as a filled polygon; the 4.0 "AI Ready"
  * benchmark ring is a dashed overlay.
- * Pure SVG — prints cleanly.
+ * Pure SVG - prints cleanly.
  */
 export function RadarChart({
   pillarScores,

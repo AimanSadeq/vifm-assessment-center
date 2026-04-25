@@ -24,7 +24,7 @@ const L = {
   en: {
     title: "AI Use Case Portfolio",
     subtitle: "Optional",
-    intro: "List the AI initiatives your organization is working on — whether at the ideation stage, running as a pilot, or in production. This inventory helps your consultant assess portfolio diversity and risk exposure.",
+    intro: "List the AI initiatives your organization is working on - whether at the ideation stage, running as a pilot, or in production. This inventory helps your consultant assess portfolio diversity and risk exposure.",
     addCta: "+ Add use case",
     name: "Use case name",
     namePlaceholder: "e.g. Customer service chatbot",
@@ -42,7 +42,7 @@ const L = {
   ar: {
     title: "محفظة حالات استخدام الذكاء الاصطناعي",
     subtitle: "اختياري",
-    intro: "أدرج مبادرات الذكاء الاصطناعي التي تعمل عليها منظمتك — سواء في مرحلة الفكرة أو التجربة أو الإنتاج. يساعد هذا الجرد المستشار على تقييم تنوع المحفظة ومستوى المخاطر.",
+    intro: "أدرج مبادرات الذكاء الاصطناعي التي تعمل عليها منظمتك - سواء في مرحلة الفكرة أو التجربة أو الإنتاج. يساعد هذا الجرد المستشار على تقييم تنوع المحفظة ومستوى المخاطر.",
     addCta: "+ إضافة حالة استخدام",
     name: "اسم حالة الاستخدام",
     namePlaceholder: "مثال: روبوت محادثة خدمة العملاء",

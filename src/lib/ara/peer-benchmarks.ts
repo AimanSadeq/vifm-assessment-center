@@ -18,11 +18,11 @@ export type PeerBenchmarkResult = {
 };
 
 // Require at least this many peer completions before we show real
-// numbers — fewer than this and a median is more noise than signal.
+// numbers - fewer than this and a median is more noise than signal.
 const MIN_PEERS = 3;
 
 /**
- * Compute median pillar raw_scores across peer organizations — same
+ * Compute median pillar raw_scores across peer organizations - same
  * region + same sector, status ∈ (completed, frozen, archived),
  * excluding sandbox assessments and the current assessment.
  *
@@ -36,7 +36,7 @@ export async function computePeerBenchmarks(
 ): Promise<PeerBenchmarkResult> {
   const sb = createServiceClient();
 
-  // Find peer assessments — same region + sector, completed data, not sandbox.
+  // Find peer assessments - same region + sector, completed data, not sandbox.
   const { data: peerAssessments } = await sb
     .from("ara_assessments")
     .select("id")

@@ -42,7 +42,7 @@ export default async function AraSandboxPage() {
           <h1 className="text-2xl font-semibold text-primary">Sandbox data</h1>
         </div>
         <p className="text-muted-foreground mb-8">
-          Sandbox assessments and their linked data — test engagements, consultant training,
+          Sandbox assessments and their linked data - test engagements, consultant training,
           demos. Not included in analytics; safe to bulk-delete before a real launch.
         </p>
 
@@ -68,7 +68,7 @@ export default async function AraSandboxPage() {
                 <TableBody>
                   {list.map((s) => (
                     <TableRow key={s.id}>
-                      <TableCell className="font-medium">{s.organization?.name ?? "—"}</TableCell>
+                      <TableCell className="font-medium">{s.organization?.name ?? "-"}</TableCell>
                       <TableCell>
                         <Badge variant={s.region === "uae" ? "default" : "secondary"}>
                           {s.region === "uae" ? "UAE" : "Saudi"}

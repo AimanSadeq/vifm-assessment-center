@@ -105,7 +105,7 @@ export function WashupForm({
   const [lastExternalUpdate, setLastExternalUpdate] = useState<string | null>(null);
   const lastSavedByMe = React.useRef<string | null>(null);
 
-  // Supabase Realtime — subscribe to consensus_ratings changes for this candidate
+  // Supabase Realtime - subscribe to consensus_ratings changes for this candidate
   useEffect(() => {
     const supabase = createClient();
 
@@ -345,7 +345,7 @@ export function WashupForm({
                           {score}
                         </Badge>
                       ) : (
-                        <span className="text-[10px] text-muted-foreground/40 w-6 text-center">—</span>
+                        <span className="text-[10px] text-muted-foreground/40 w-6 text-center">-</span>
                       )}
                     </div>
                   </div>
@@ -500,7 +500,7 @@ export function WashupForm({
 
               {/* Discussion notes */}
               <Textarea
-                placeholder="Discussion notes — key evidence, points of agreement/disagreement..."
+                placeholder="Discussion notes - key evidence, points of agreement/disagreement..."
                 rows={2}
                 value={c.notes}
                 onChange={(e) =>

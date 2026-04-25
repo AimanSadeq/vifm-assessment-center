@@ -83,7 +83,7 @@ export async function computeYoYComparison(
     return {
       compatible: false,
       incompatibleReason:
-        "Prior assessments exist for this organization but use a different major question bank version — a new baseline has been established.",
+        "Prior assessments exist for this organization but use a different major question bank version - a new baseline has been established.",
       pillars: [],
     };
   }

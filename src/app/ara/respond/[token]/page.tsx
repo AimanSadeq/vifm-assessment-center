@@ -3,6 +3,7 @@ import { FlaskConical } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { VifmLogo } from "@/components/shared/vifm-logo";
+import { AnimatedCompass } from "@/components/shared/ara/animated-compass";
 import {
   loadRespondentByToken, loadQuestionsForRespondent,
 } from "@/lib/ara/respondent-access";
@@ -72,7 +73,16 @@ export default async function AraRespondPage({
 
       {/* ─── Hero welcome ─── */}
       <section className="ara-hero relative overflow-hidden">
-        <div className="max-w-3xl mx-auto px-6 pt-8 pb-14">
+        {/* Decorative compass watermark - bottom-right, muted.
+            Hidden on small screens so it never crowds the form. */}
+        <div
+          className={`pointer-events-none hidden md:block absolute bottom-0 ${rtl ? "left-0" : "right-0"} w-[280px] h-[280px] opacity-60 translate-x-8 translate-y-8`}
+          aria-hidden="true"
+        >
+          <AnimatedCompass className="w-full h-full" />
+        </div>
+
+        <div className="max-w-3xl mx-auto px-6 pt-8 pb-14 relative z-10">
           <div className="flex items-start justify-between gap-4 mb-10">
             <VifmLogo variant="white" size="md" />
             <LanguageToggle token={params.token} current={language} />
@@ -86,7 +96,7 @@ export default async function AraRespondPage({
           )}
 
           <span className="ara-eyebrow text-accent">
-            {rtl ? "تقييم الاستعداد للذكاء الاصطناعي" : "AI Readiness Assessment"}
+            {rtl ? "بوصلة الاستعداد للذكاء الاصطناعي" : "AI Readiness Compass"}
           </span>
           <h1 className="ara-numeral text-3xl sm:text-4xl font-semibold text-white mt-3 mb-2 leading-tight">
             {rtl

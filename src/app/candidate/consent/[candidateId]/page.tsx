@@ -1,5 +1,5 @@
 "use client";
-// TODO: Next.js 15 migration — wrap in a server component that passes candidateId as a prop
+// TODO: Next.js 15 migration - wrap in a server component that passes candidateId as a prop
 // instead of accessing params directly in a client component
 
 import { useState } from "react";
@@ -187,7 +187,7 @@ export default function ConsentPage({ params }: Props) {
             className="w-full"
             size="lg"
           >
-            {submitting ? "Submitting..." : "I Agree — Proceed to Assessment"}
+            {submitting ? "Submitting..." : "I Agree - Proceed to Assessment"}
           </Button>
         </CardContent>
       </Card>

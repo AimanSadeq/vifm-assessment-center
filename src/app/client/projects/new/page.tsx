@@ -229,19 +229,19 @@ export default function ClientNewProjectPage() {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-muted-foreground">Project Name</p>
-                <p className="font-medium">{projectName || "—"}</p>
+                <p className="font-medium">{projectName || "-"}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Project Type</p>
-                <p className="font-medium capitalize">{projectType || "—"}</p>
+                <p className="font-medium capitalize">{projectType || "-"}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Norm Group</p>
-                <p className="font-medium">{normGroup ? normGroup.replace(/_/g, " ") : "—"}</p>
+                <p className="font-medium">{normGroup ? normGroup.replace(/_/g, " ") : "-"}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Dates</p>
-                <p className="font-medium">{startDate || "—"} — {endDate || "—"}</p>
+                <p className="font-medium">{startDate || "-"} - {endDate || "-"}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Cutoff Score</p>

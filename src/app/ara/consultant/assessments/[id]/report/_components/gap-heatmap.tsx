@@ -18,10 +18,10 @@ export function GapHeatmap({
 
   const colorFor = (score: number | undefined) => {
     if (score == null) return { bg: "#f3f4f6", fg: "#9ca3af" };
-    if (score >= 4.0) return { bg: "#28A745", fg: "white" };
-    if (score >= 3.0) return { bg: "#FFC107", fg: "white" };
-    if (score >= 2.0) return { bg: "#FD7E14", fg: "white" };
-    return { bg: "#DC3545", fg: "white" };
+    if (score >= 4.0) return { bg: "#34D399", fg: "white" };
+    if (score >= 3.0) return { bg: "#FBBF24", fg: "white" };
+    if (score >= 2.0) return { bg: "#FDBA74", fg: "white" };
+    return { bg: "#FB7185", fg: "white" };
   };
 
   return (
@@ -66,7 +66,7 @@ export function GapHeatmap({
                     minHeight: "24pt",
                   }}
                 >
-                  {score != null ? score.toFixed(2) : "—"}
+                  {score != null ? score.toFixed(2) : "-"}
                 </div>
               );
             })}

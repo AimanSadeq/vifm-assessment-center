@@ -127,7 +127,7 @@ export default async function WashupEngagementPage({ params }: Props) {
                       <TableCell>
                         {oar ? (
                           <Badge variant="outline">
-                            {oar.overall_score}/5 — {OAR_RECOMMENDATION_LABELS[oar.recommendation] ?? oar.recommendation}
+                            {oar.overall_score}/5 - {OAR_RECOMMENDATION_LABELS[oar.recommendation] ?? oar.recommendation}
                           </Badge>
                         ) : (
                           <span className="text-xs text-muted-foreground">Not set</span>

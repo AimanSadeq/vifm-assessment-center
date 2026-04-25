@@ -71,7 +71,7 @@ export default async function CandidateAssessmentsPage({ params }: Props) {
         <BackLink href={`/candidate/welcome/${candidateId}`} label="Back to Welcome" />
         <h1 className="mt-2 text-2xl font-bold">Your Assessments</h1>
         <p className="text-sm text-muted-foreground">
-          {eng.name} — {eng.start_date ?? "TBD"} to {eng.end_date ?? "TBD"}
+          {eng.name} - {eng.start_date ?? "TBD"} to {eng.end_date ?? "TBD"}
         </p>
       </div>
 
@@ -136,7 +136,7 @@ export default async function CandidateAssessmentsPage({ params }: Props) {
                         <Badge variant="default" className="text-xs">Available</Badge>
                       ) : (
                         <Badge variant="secondary" className="text-xs">
-                          Locked — Complete previous assessment first
+                          Locked - Complete previous assessment first
                         </Badge>
                       )}
                     </div>
@@ -159,7 +159,7 @@ export default async function CandidateAssessmentsPage({ params }: Props) {
           </p>
           <p>
             During the exercises, trained assessors will observe your behavior and
-            record observations. There are no right or wrong answers — the
+            record observations. There are no right or wrong answers - the
             assessment evaluates how you approach situations naturally.
           </p>
           <p>

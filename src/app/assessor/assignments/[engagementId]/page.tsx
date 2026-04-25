@@ -88,7 +88,7 @@ export default async function AssessorAssignmentGridPage({ params }: Props) {
             <Badge variant="outline" className="text-xs capitalize">{engagement.assessment_type}</Badge>
           )}
           {engagement.start_date && engagement.end_date && (
-            <span>{engagement.start_date} — {engagement.end_date}</span>
+            <span>{engagement.start_date} - {engagement.end_date}</span>
           )}
         </div>
       </div>
@@ -135,7 +135,7 @@ export default async function AssessorAssignmentGridPage({ params }: Props) {
                       return (
                         <TableRow key={a.id}>
                           <TableCell className="font-medium">
-                            {ex?.name ?? "—"}
+                            {ex?.name ?? "-"}
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline">
@@ -143,7 +143,7 @@ export default async function AssessorAssignmentGridPage({ params }: Props) {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-muted-foreground">
-                            {prof?.full_name ?? "—"}
+                            {prof?.full_name ?? "-"}
                           </TableCell>
                           <TableCell>
                             <Link href={`/assessor/observation/${a.id}`}>

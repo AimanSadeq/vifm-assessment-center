@@ -14,10 +14,10 @@ const sizes = {
 };
 
 /**
- * VIFM Official Logo — uses brand kit images.
- * - "color": Primary color logo (blue V + dark IFM + tagline) — for light backgrounds
- * - "white": White logo (inverted from black) — for dark backgrounds (sidebar, login panel)
- * - "dark": Black monochrome — for light backgrounds without color
+ * VIFM Official Logo - uses brand kit images.
+ * - "color": Primary color logo (blue V + dark IFM + tagline) - for light backgrounds
+ * - "white": White logo (inverted from black) - for dark backgrounds (sidebar, login panel)
+ * - "dark": Black monochrome - for light backgrounds without color
  */
 export function VifmLogo({
   variant = "color",

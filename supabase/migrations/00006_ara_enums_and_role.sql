@@ -1,5 +1,5 @@
 -- ============================================================
--- VIFM ARA (AI Readiness Assessment) — Enums & Role
+-- VIFM ARA (AI Readiness Assessment) - Enums & Role
 -- Migration 00006: Add consultant role + ARA-specific enums
 --
 -- Non-breaking: only adds new enum values and new enum types.

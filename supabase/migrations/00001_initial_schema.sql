@@ -1,5 +1,5 @@
 -- ============================================================
--- VIFM Assessment Center — Initial Schema
+-- VIFM Assessment Center - Initial Schema
 -- Migration 00001: Tables, Enums, Indexes, RLS Policies
 -- ============================================================
 

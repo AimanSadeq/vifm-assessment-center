@@ -10,9 +10,9 @@ export type BreadcrumbItem = {
 /**
  * Lightweight breadcrumb strip for deep ARA routes. Pass an ordered
  * array of { label, href }. The last item should omit href (rendered
- * as plain text — the current page).
+ * as plain text - the current page).
  *
- * Style is deliberately subtle — muted text, small chevron separators,
+ * Style is deliberately subtle - muted text, small chevron separators,
  * matches the existing ArrowLeft back-links in tone.
  */
 export function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {

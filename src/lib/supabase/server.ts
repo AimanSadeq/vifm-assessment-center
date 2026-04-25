@@ -29,7 +29,7 @@ export async function createClient() {
 }
 
 /**
- * Service role client — bypasses RLS.
+ * Service role client - bypasses RLS.
  * Use ONLY in server actions / server components. Never expose to client.
  */
 export function createServiceClient() {

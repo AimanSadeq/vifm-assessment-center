@@ -210,7 +210,7 @@ export function ObservationForm({
             <div>
               <p className="font-semibold text-foreground mb-1">During the Exercise</p>
               <ul className="space-y-1 text-xs">
-                <li>• Record specific behaviors as they occur — use the <strong>Observe</strong> tab</li>
+                <li>• Record specific behaviors as they occur - use the <strong>Observe</strong> tab</li>
                 <li>• Note whether each behavior is a positive (+) or negative (−) indicator</li>
                 <li>• Focus on observable actions, not interpretations or assumptions</li>
                 <li>• Aim to record at least 2-3 observations per competency</li>
@@ -222,7 +222,7 @@ export function ObservationForm({
                 <li>• Use the <strong>Overview</strong> tab to quickly score all competencies at a glance</li>
                 <li>• Use the <strong>Rate</strong> tab to provide detailed justifications for each score</li>
                 <li>• Select <strong>NE</strong> (No Evidence) if you were unable to observe a competency</li>
-                <li>• Write up notes while they are fresh — do not evaluate during the exercise</li>
+                <li>• Write up notes while they are fresh - do not evaluate during the exercise</li>
               </ul>
             </div>
             <div>
@@ -259,7 +259,7 @@ export function ObservationForm({
           <TabsTrigger value="questions">Q&A</TabsTrigger>
         </TabsList>
 
-        {/* OVERVIEW TAB — Quick Score Grid */}
+        {/* OVERVIEW TAB - Quick Score Grid */}
         <TabsContent value="overview" className="space-y-4">
           <Card>
             <CardHeader className="pb-2">
@@ -490,7 +490,7 @@ export function ObservationForm({
                     <CardTitle className="text-sm font-medium">{comp.name}</CardTitle>
                     {r.score > 0 && (
                       <Badge variant={r.score >= 3 ? "default" : "destructive"}>
-                        {r.score} — {BARS_LABELS[r.score]}
+                        {r.score} - {BARS_LABELS[r.score]}
                       </Badge>
                     )}
                   </div>
@@ -549,13 +549,13 @@ export function ObservationForm({
                       size="sm"
                       className="text-xs text-muted-foreground"
                       onClick={() => handleMarkNE(comp.id)}
-                      title="No Evidence — unable to observe this competency in this exercise"
+                      title="No Evidence - unable to observe this competency in this exercise"
                     >
                       NE
                     </Button>
                   </div>
                   <p className="text-xs text-center text-muted-foreground">
-                    {r.score > 0 ? BARS_LABELS[r.score] : !ratings[comp.id] ? "NE — No Evidence" : "Select a rating (1-5)"}
+                    {r.score > 0 ? BARS_LABELS[r.score] : !ratings[comp.id] ? "NE - No Evidence" : "Select a rating (1-5)"}
                   </p>
 
                   {/* Justification */}

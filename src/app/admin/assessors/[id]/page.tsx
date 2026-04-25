@@ -144,13 +144,13 @@ export default async function AssessorDetailPage({
                   const ex = a.exercises as { name: string; exercise_type: string } | null;
                   return (
                     <TableRow key={a.id}>
-                      <TableCell className="font-medium">{eng?.name ?? "—"}</TableCell>
-                      <TableCell>{cand?.full_name ?? "—"}</TableCell>
+                      <TableCell className="font-medium">{eng?.name ?? "-"}</TableCell>
+                      <TableCell>{cand?.full_name ?? "-"}</TableCell>
                       <TableCell>
-                        <Badge variant="secondary">{ex?.name ?? "—"}</Badge>
+                        <Badge variant="secondary">{ex?.name ?? "-"}</Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">{eng?.status ?? "—"}</Badge>
+                        <Badge variant="outline">{eng?.status ?? "-"}</Badge>
                       </TableCell>
                     </TableRow>
                   );

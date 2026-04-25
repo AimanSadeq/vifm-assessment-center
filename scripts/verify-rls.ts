@@ -26,7 +26,7 @@ function assert(condition: boolean, testName: string, detail?: string) {
     console.log(`  ✅ ${testName}`);
     passed++;
   } else {
-    console.log(`  ❌ ${testName}${detail ? ` — ${detail}` : ""}`);
+    console.log(`  ❌ ${testName}${detail ? ` - ${detail}` : ""}`);
     failed++;
   }
 }
@@ -47,7 +47,7 @@ async function main() {
   const { data: profiles } = await service.from("profiles").select("id, email, role, organization_id");
   console.log("Users in system:");
   for (const p of profiles ?? []) {
-    console.log(`  ${p.email} — ${p.role} (org: ${p.organization_id ?? "none"})`);
+    console.log(`  ${p.email} - ${p.role} (org: ${p.organization_id ?? "none"})`);
   }
   console.log("");
 
@@ -58,7 +58,7 @@ async function main() {
   const pw = "admin123";
 
   // ═══════════════════════════════════════════
-  // TEST 1: ADMIN — should see everything
+  // TEST 1: ADMIN - should see everything
   // ═══════════════════════════════════════════
   console.log("── TEST 1: ADMIN ROLE ──");
   const admin = await loginAs(adminEmail, pw);
@@ -90,7 +90,7 @@ async function main() {
   console.log("");
 
   // ═══════════════════════════════════════════
-  // TEST 2: ASSESSOR — should see assigned data only
+  // TEST 2: ASSESSOR - should see assigned data only
   // ═══════════════════════════════════════════
   console.log("── TEST 2: ASSESSOR ROLE ──");
   const assessor = await loginAs(assessorEmail, pw);
@@ -105,7 +105,7 @@ async function main() {
   // Assessor should see engagements they're assigned to
   const { data: assrEngs } = await assessor.from("engagements").select("id");
   // This assessor has no assignments (pilot used admin ID), so should see 0 or based on RLS
-  console.log(`  ℹ️  Assessor sees ${assrEngs?.length ?? 0} engagements (expected: 0 — no assignments for this user)`);
+  console.log(`  ℹ️  Assessor sees ${assrEngs?.length ?? 0} engagements (expected: 0 - no assignments for this user)`);
 
   // Assessor should only see their own profile
   const { data: assrProfiles } = await assessor.from("profiles").select("id");
@@ -127,7 +127,7 @@ async function main() {
   console.log("");
 
   // ═══════════════════════════════════════════
-  // TEST 3: CANDIDATE — should see only own data
+  // TEST 3: CANDIDATE - should see only own data
   // ═══════════════════════════════════════════
   console.log("── TEST 3: CANDIDATE ROLE ──");
   const candidate = await loginAs(candidateEmail, pw);
@@ -141,7 +141,7 @@ async function main() {
 
   // Candidate should NOT see all candidates
   const { data: candCands } = await candidate.from("candidates").select("id");
-  console.log(`  ℹ️  Candidate sees ${candCands?.length ?? 0} candidates (expected: 0 — no candidate record linked to this profile)`);
+  console.log(`  ℹ️  Candidate sees ${candCands?.length ?? 0} candidates (expected: 0 - no candidate record linked to this profile)`);
 
   // Candidate should NOT see observations
   const { data: candObs } = await candidate.from("observations").select("id");
@@ -166,7 +166,7 @@ async function main() {
   console.log("");
 
   // ═══════════════════════════════════════════
-  // TEST 4: CLIENT — should see only own org data
+  // TEST 4: CLIENT - should see only own org data
   // ═══════════════════════════════════════════
   console.log("── TEST 4: CLIENT ROLE ──");
   const client = await loginAs(clientEmail, pw);
@@ -213,7 +213,7 @@ async function main() {
   }).select().single();
 
   if (!org2) {
-    console.log("  ⚠️  Could not create second org — skipping isolation test");
+    console.log("  ⚠️  Could not create second org - skipping isolation test");
   } else {
     // Create second client user
     const { data: authUser2 } = await service.auth.admin.createUser({
@@ -257,7 +257,7 @@ async function main() {
       await service.from("organizations").delete().eq("id", org2.id);
       console.log("  🧹 Cleaned up test org and user");
     } else {
-      console.log("  ⚠️  Could not create second client user — skipping isolation test");
+      console.log("  ⚠️  Could not create second client user - skipping isolation test");
     }
   }
 

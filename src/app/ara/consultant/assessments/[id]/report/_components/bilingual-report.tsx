@@ -1,14 +1,17 @@
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { ARA_PILLARS, ARA_MATURITY_LEVELS, ARA_OVERALL_BANDS } from "@/lib/constants/ara-pillars";
+import { ARA_STAGE_MAP } from "@/lib/constants/ara-stages";
 import type { FrameworkComplianceSummary } from "@/lib/ara/compliance";
 import type { PeerBenchmarkResult } from "@/lib/ara/peer-benchmarks";
-import type { AraPillarId, AraUseCase } from "@/types/ara";
+import type { YoYComparison } from "@/lib/ara/year-on-year";
+import type { AraEngagementStage, AraPillarId, AraUseCase } from "@/types/ara";
 import { MaturityGauge } from "./maturity-gauge";
 import { RadarChart } from "./radar-chart";
 import { GapHeatmap } from "./gap-heatmap";
 import { InvestmentMatrix } from "./investment-matrix";
 import { GanttRoadmap } from "./gantt-roadmap";
 import { ComplianceSummary } from "./compliance-summary";
+import { FindingCard, inferFindingType } from "./report-primitives";
 import { tr } from "./report-i18n";
 
 type PillarRow = {
@@ -46,6 +49,26 @@ export type BilingualReportProps = {
   pillarWeights: Record<string, number>;
   peerBenchmarks: PeerBenchmarkResult;
   useCases: Array<Pick<AraUseCase, "id" | "name" | "stage" | "pillar_id" | "risk_level" | "value_level" | "business_owner">>;
+  /** Engagement stage drives pillar filtering + which sections render.
+   *  Optional during the in-flight migration; defaults to "enterprise"
+   *  so existing call sites keep compiling without a breaking change. */
+  engagementStage?: AraEngagementStage;
+  scopeLabel?: string | null;
+  scopeLabelAr?: string | null;
+  /** Year-on-year comparison vs the prior assessment for this org.
+   *  Null when no prior exists; { compatible: false, ... } when prior
+   *  used a different major question-bank version. */
+  yoyComparison?: YoYComparison | null;
+  /** Respondents list for the Organization Profile page. Optional
+   *  during the in-flight migration. */
+  respondents?: Array<{
+    name: string;
+    role_label_en: string | null;
+    completed_at: string | null;
+    assignments?: Array<{ pillar_id: string }>;
+  }>;
+  /** Current assessment year - shown in the YoY KPI strip. */
+  currentYear?: number;
 };
 
 /**
@@ -57,10 +80,20 @@ export function BilingualReport(p: BilingualReportProps) {
   const regionEn = p.region === "uae" ? "United Arab Emirates" : "Saudi Arabia";
   const regionAr = p.region === "uae" ? "الإمارات العربية المتحدة" : "المملكة العربية السعودية";
   const sectorCap = p.sector.charAt(0).toUpperCase() + p.sector.slice(1);
+  // Stage drives pillar filtering + which strategic-output sections render.
+  const stageDef = ARA_STAGE_MAP[p.engagementStage ?? "enterprise"] ?? ARA_STAGE_MAP.enterprise;
+  const stageBadgeBg =
+    stageDef.tone === "teal" ? "rgba(45, 212, 191, 0.15)" :
+    stageDef.tone === "violet" ? "rgba(167, 139, 250, 0.18)" :
+    "rgba(251, 191, 36, 0.15)";
+  const stageBadgeColor =
+    stageDef.tone === "teal" ? "#5EEAD4" :
+    stageDef.tone === "violet" ? "#C4B5FD" :
+    "#FCD34D";
 
   return (
     <>
-      {/* ─── Cover — already bilingual by design ─── */}
+      {/* ─── Cover - already bilingual by design ─── */}
       <section
         className="report-page-bilingual-with-visual"
         style={{ background: "#010131", color: "white", gridTemplateRows: "auto 1fr auto" }}
@@ -70,17 +103,38 @@ export function BilingualReport(p: BilingualReportProps) {
           <p style={{ fontSize: "9pt", opacity: 0.7, letterSpacing: "0.15em", margin: 0 }}>
             {p.isSandbox ? tr("en", "confidential_sample") : tr("en", "confidential_internal")}
           </p>
-          <h1 style={{ fontSize: "42pt", fontWeight: 600, color: "white", margin: "30pt 0 16pt" }}>
+          {/* Stage badge - mirrors the EN report cover. */}
+          <div style={{ marginTop: "16pt" }}>
+            <span style={{
+              display: "inline-flex", alignItems: "center", gap: "6pt",
+              padding: "4pt 12pt", borderRadius: "999pt",
+              fontSize: "9pt", fontWeight: 700, letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              background: stageBadgeBg, color: stageBadgeColor,
+              border: `1pt solid ${stageBadgeColor}40`,
+            }}>
+              Stage {stageDef.number} · {stageDef.label_en}{stageDef.is_pro_bono && " · Complimentary"}
+            </span>
+          </div>
+          <h1 style={{ fontSize: "42pt", fontWeight: 600, color: "white", margin: "16pt 0 8pt" }}>
             {p.organizationName}
           </h1>
           {p.organizationNameAr && (
-            <p dir="rtl" style={{ fontSize: "24pt", color: "white", opacity: 0.9, margin: "0 0 20pt" }}>
+            <p dir="rtl" style={{ fontSize: "24pt", color: "white", opacity: 0.9, margin: "0 0 12pt" }}>
               {p.organizationNameAr}
             </p>
           )}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20pt", marginTop: "20pt" }}>
+          {p.scopeLabel && (
+            <p style={{ color: "white", opacity: 0.85, fontSize: "16pt", margin: "0 0 8pt", fontWeight: 500 }}>
+              {p.scopeLabel}
+              {p.scopeLabelAr && (
+                <span dir="rtl" style={{ marginLeft: "8pt", opacity: 0.75 }}> · {p.scopeLabelAr}</span>
+              )}
+            </p>
+          )}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20pt", marginTop: "12pt" }}>
             <p style={{ color: "white", opacity: 0.85, fontSize: "14pt" }}>
-              AI Readiness Assessment Report
+              AI Readiness Compass Report
             </p>
             <p dir="rtl" style={{ color: "white", opacity: 0.85, fontSize: "14pt" }}>
               {tr("ar", "report_title")}
@@ -114,11 +168,11 @@ export function BilingualReport(p: BilingualReportProps) {
             </div>
             <div style={{ textAlign: "center" }}>
               <p style={{ fontSize: "60pt", fontWeight: 600, color: "#010131", lineHeight: 1, margin: "0 0 4pt" }}>
-                {p.overall != null ? p.overall.toFixed(2) : "—"}
+                {p.overall != null ? p.overall.toFixed(2) : "-"}
                 <span style={{ fontSize: "22pt", color: "#6b7280", fontWeight: 400 }}> / 5.00</span>
               </p>
               <p style={{ fontSize: "14pt", color: "#5391D5", fontWeight: 500 }}>
-                {p.overallLabelEn ?? "—"}
+                {p.overallLabelEn ?? "-"}
                 {p.overallLabelAr && (
                   <span dir="rtl" style={{ marginLeft: "8pt" }}>· {p.overallLabelAr}</span>
                 )}
@@ -130,30 +184,30 @@ export function BilingualReport(p: BilingualReportProps) {
         <div className="bilingual-text">
           <div className="col-en">
             <p className="report-body">{tr("en", "exec_intro")}</p>
-            <h3 className="report-h3" style={{ color: "#28A745" }}>{tr("en", "headline_strengths")}</h3>
+            <h3 className="report-h3" style={{ color: "#34D399" }}>{tr("en", "headline_strengths")}</h3>
             {p.strengths.length === 0 ? (
               <p className="report-body report-muted">{tr("en", "no_strengths")}</p>
             ) : (
               <ul className="report-body">
                 {p.strengths.slice(0, 3).map((s) => (
-                  <li key={s.pillar}><strong>{s.pillar}</strong> — {s.score.toFixed(2)}</li>
+                  <li key={s.pillar}><strong>{s.pillar}</strong> - {s.score.toFixed(2)}</li>
                 ))}
               </ul>
             )}
-            <h3 className="report-h3" style={{ color: "#DC3545" }}>{tr("en", "critical_gaps")}</h3>
+            <h3 className="report-h3" style={{ color: "#FB7185" }}>{tr("en", "critical_gaps")}</h3>
             {p.gaps.length === 0 ? (
               <p className="report-body report-muted">{tr("en", "no_gaps")}</p>
             ) : (
               <ul className="report-body">
                 {p.gaps.slice(0, 3).map((g) => (
-                  <li key={g.pillar}><strong>{g.pillar}</strong> — {g.score.toFixed(2)}</li>
+                  <li key={g.pillar}><strong>{g.pillar}</strong> - {g.score.toFixed(2)}</li>
                 ))}
               </ul>
             )}
           </div>
           <div className="col-ar" dir="rtl">
             <p className="report-body">{tr("ar", "exec_intro")}</p>
-            <h3 className="report-h3" style={{ color: "#28A745" }}>{tr("ar", "headline_strengths")}</h3>
+            <h3 className="report-h3" style={{ color: "#34D399" }}>{tr("ar", "headline_strengths")}</h3>
             {p.strengths.length === 0 ? (
               <p className="report-body report-muted">{tr("ar", "no_strengths")}</p>
             ) : (
@@ -161,12 +215,12 @@ export function BilingualReport(p: BilingualReportProps) {
                 {p.strengths.slice(0, 3).map((s) => {
                   const pillar = ARA_PILLARS.find((pp) => pp.name_en === s.pillar);
                   return (
-                    <li key={s.pillar}><strong>{pillar?.name_ar ?? s.pillar}</strong> — {s.score.toFixed(2)}</li>
+                    <li key={s.pillar}><strong>{pillar?.name_ar ?? s.pillar}</strong> - {s.score.toFixed(2)}</li>
                   );
                 })}
               </ul>
             )}
-            <h3 className="report-h3" style={{ color: "#DC3545" }}>{tr("ar", "critical_gaps")}</h3>
+            <h3 className="report-h3" style={{ color: "#FB7185" }}>{tr("ar", "critical_gaps")}</h3>
             {p.gaps.length === 0 ? (
               <p className="report-body report-muted">{tr("ar", "no_gaps")}</p>
             ) : (
@@ -174,7 +228,7 @@ export function BilingualReport(p: BilingualReportProps) {
                 {p.gaps.slice(0, 3).map((g) => {
                   const pillar = ARA_PILLARS.find((pp) => pp.name_en === g.pillar);
                   return (
-                    <li key={g.pillar}><strong>{pillar?.name_ar ?? g.pillar}</strong> — {g.score.toFixed(2)}</li>
+                    <li key={g.pillar}><strong>{pillar?.name_ar ?? g.pillar}</strong> - {g.score.toFixed(2)}</li>
                   );
                 })}
               </ul>
@@ -183,7 +237,7 @@ export function BilingualReport(p: BilingualReportProps) {
         </div>
       </section>
 
-      {/* ─── How to Read — pure text side-by-side ─── */}
+      {/* ─── How to Read - pure text side-by-side ─── */}
       <section className="report-page-bilingual">
         <div className="col-en">
           <h2 className="report-h2">{tr("en", "how_to_read")}</h2>
@@ -192,7 +246,7 @@ export function BilingualReport(p: BilingualReportProps) {
           <ul className="report-body">
             {ARA_MATURITY_LEVELS.map((m) => (
               <li key={m.level}>
-                <strong>L{m.level} {m.label_en}</strong> ({m.min.toFixed(1)}–{m.max.toFixed(1)}) — {tr("en", `maturity_l${m.level}` as any)}
+                <strong>L{m.level} {m.label_en}</strong> ({m.min.toFixed(1)}–{m.max.toFixed(1)}) - {tr("en", `maturity_l${m.level}` as any)}
               </li>
             ))}
           </ul>
@@ -212,7 +266,7 @@ export function BilingualReport(p: BilingualReportProps) {
           <ul className="report-body">
             {ARA_MATURITY_LEVELS.map((m) => (
               <li key={m.level}>
-                <strong>المستوى {m.level} — {m.label_ar}</strong> ({m.min.toFixed(1)}–{m.max.toFixed(1)}) — {tr("ar", `maturity_l${m.level}` as any)}
+                <strong>المستوى {m.level} - {m.label_ar}</strong> ({m.min.toFixed(1)}–{m.max.toFixed(1)}) - {tr("ar", `maturity_l${m.level}` as any)}
               </li>
             ))}
           </ul>
@@ -224,6 +278,65 @@ export function BilingualReport(p: BilingualReportProps) {
               </li>
             ))}
           </ul>
+        </div>
+      </section>
+
+      {/* ─── Organization Profile + Respondents ─── *
+       * Mirrors the EN portrait report's profile page so bilingual
+       * readers see methodology + who answered. Always emitted, even
+       * with zero respondents, so the table-of-contents stays stable. */}
+      <section className="report-page-bilingual">
+        <div className="col-en">
+          <h2 className="report-h2">{tr("en", "org_profile")}</h2>
+          <h3 className="report-h3">{tr("en", "respondents")} ({(p.respondents ?? []).length})</h3>
+          {(p.respondents ?? []).length === 0 ? (
+            <p className="report-body report-muted">No respondents recorded.</p>
+          ) : (
+            <table className="report-body" style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ background: "#f3f4f6" }}>
+                  <th style={biCellHead}>{tr("en", "name")}</th>
+                  <th style={biCellHead}>{tr("en", "role")}</th>
+                  <th style={biCellHead}>{tr("en", "status")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(p.respondents ?? []).map((r, i) => (
+                  <tr key={i} style={{ borderTop: "1px solid #e5e7eb" }}>
+                    <td style={biCell}><strong>{r.name}</strong></td>
+                    <td style={biCell}>{r.role_label_en ?? "-"}</td>
+                    <td style={biCell}>{r.completed_at ? tr("en", "completed") : tr("en", "in_progress")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+        <div className="col-ar" dir="rtl">
+          <h2 className="report-h2">{tr("ar", "org_profile")}</h2>
+          <h3 className="report-h3">{tr("ar", "respondents")} ({(p.respondents ?? []).length})</h3>
+          {(p.respondents ?? []).length === 0 ? (
+            <p className="report-body report-muted">لا يوجد مستجيبون مسجلون.</p>
+          ) : (
+            <table className="report-body" style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ background: "#f3f4f6" }}>
+                  <th style={biCellHead}>{tr("ar", "name")}</th>
+                  <th style={biCellHead}>{tr("ar", "role")}</th>
+                  <th style={biCellHead}>{tr("ar", "status")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(p.respondents ?? []).map((r, i) => (
+                  <tr key={i} style={{ borderTop: "1px solid #e5e7eb" }}>
+                    <td style={biCell}><strong>{r.name}</strong></td>
+                    <td style={biCell}>{r.role_label_en ?? "-"}</td>
+                    <td style={biCell}>{r.completed_at ? tr("ar", "completed") : tr("ar", "in_progress")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </section>
 
@@ -248,69 +361,80 @@ export function BilingualReport(p: BilingualReportProps) {
         </div>
       </section>
 
-      {/* ─── Pillar Deep Dives — one page per pillar ─── */}
-      {ARA_PILLARS.map((pillar) => {
-        const row = p.pillarMap.get(pillar.id);
-        const pillarNotes = p.notesByPillar.get(pillar.id) ?? [];
-        const score = row?.raw_score != null ? Number(row.raw_score) : null;
-        const actions = actionKeys(score);
-        return (
-          <section key={pillar.id} className="report-page-bilingual">
-            <div className="col-en">
-              <p className="report-muted" style={{ fontSize: "9pt", letterSpacing: "0.1em", margin: 0, textTransform: "uppercase" }}>
-                {tr("en", "pillar_deep_dive")}
-              </p>
-              <h2 className="report-h2">{pillar.name_en}</h2>
-              <p className="report-body">
-                <strong style={{ fontSize: "28pt", color: "#010131" }}>
-                  {score != null ? score.toFixed(2) : "—"}
-                </strong>
-                <span className="report-muted" style={{ marginLeft: "8pt" }}>
-                  {row?.maturity_label_en ?? "Unscored"}
-                </span>
-              </p>
-              <h3 className="report-h3">{tr("en", "key_findings")}</h3>
-              {pillarNotes.length === 0 ? (
-                <p className="report-body report-muted">{tr("en", "findings_pending")}</p>
-              ) : (
+      {/* ─── Pillar Deep Dives - one page per applicable pillar ─── *
+       * Filtered by engagement stage so a Stage 1 Department report
+       * only emits its 4 in-scope pillars (instead of all 8). */}
+      {ARA_PILLARS
+        .filter((pillar) => stageDef.applicable_pillars.includes(pillar.id))
+        .map((pillar) => {
+          const row = p.pillarMap.get(pillar.id);
+          const pillarNotes = p.notesByPillar.get(pillar.id) ?? [];
+          const score = row?.raw_score != null ? Number(row.raw_score) : null;
+          const actions = actionKeys(score);
+          return (
+            <section key={pillar.id} className="report-page-bilingual">
+              <div className="col-en">
+                <p className="report-muted" style={{ fontSize: "9pt", letterSpacing: "0.1em", margin: 0, textTransform: "uppercase" }}>
+                  {tr("en", "pillar_deep_dive")}
+                </p>
+                <h2 className="report-h2">{pillar.name_en}</h2>
+                <p className="report-body">
+                  <strong style={{ fontSize: "28pt", color: "#010131" }}>
+                    {score != null ? score.toFixed(2) : "-"}
+                  </strong>
+                  <span className="report-muted" style={{ marginLeft: "8pt" }}>
+                    {row?.maturity_label_en ?? "Unscored"}
+                  </span>
+                </p>
+                <h3 className="report-h3">{tr("en", "key_findings")}</h3>
+                {pillarNotes.length === 0 ? (
+                  <p className="report-body report-muted">{tr("en", "findings_pending")}</p>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6pt", marginTop: "4pt" }}>
+                    {pillarNotes.map((n, i) => (
+                      <FindingCard
+                        key={i}
+                        index={i + 1}
+                        type={inferFindingType(n.note_text)}
+                        text={n.note_text}
+                      />
+                    ))}
+                  </div>
+                )}
+                <h3 className="report-h3">{tr("en", "suggested_actions")}</h3>
                 <ul className="report-body">
-                  {pillarNotes.map((n, i) => <li key={i}>{n.note_text}</li>)}
+                  {actions.map((k) => <li key={k}>{tr("en", k)}</li>)}
                 </ul>
-              )}
-              <h3 className="report-h3">{tr("en", "suggested_actions")}</h3>
-              <ul className="report-body">
-                {actions.map((k) => <li key={k}>{tr("en", k)}</li>)}
-              </ul>
-            </div>
-            <div className="col-ar" dir="rtl">
-              <p className="report-muted" style={{ fontSize: "9pt", letterSpacing: "0.1em", margin: 0, textTransform: "uppercase" }}>
-                {tr("ar", "pillar_deep_dive")}
-              </p>
-              <h2 className="report-h2">{pillar.name_ar}</h2>
-              <p className="report-body">
-                <strong style={{ fontSize: "28pt", color: "#010131" }}>
-                  {score != null ? score.toFixed(2) : "—"}
-                </strong>
-                <span className="report-muted" style={{ marginRight: "8pt" }}>
-                  {row?.maturity_label_en ? arabicMaturityLabel(row.maturity_label_en) : "غير مُقيَّم"}
-                </span>
-              </p>
-              <h3 className="report-h3">{tr("ar", "key_findings")}</h3>
-              {pillarNotes.length === 0 ? (
-                <p className="report-body report-muted">{tr("ar", "findings_pending")}</p>
-              ) : (
+              </div>
+              <div className="col-ar" dir="rtl">
+                <p className="report-muted" style={{ fontSize: "9pt", letterSpacing: "0.1em", margin: 0, textTransform: "uppercase" }}>
+                  {tr("ar", "pillar_deep_dive")}
+                </p>
+                <h2 className="report-h2">{pillar.name_ar}</h2>
+                <p className="report-body">
+                  <strong style={{ fontSize: "28pt", color: "#010131" }}>
+                    {score != null ? score.toFixed(2) : "-"}
+                  </strong>
+                  <span className="report-muted" style={{ marginRight: "8pt" }}>
+                    {row?.maturity_label_en ? arabicMaturityLabel(row.maturity_label_en) : "غير مُقيَّم"}
+                  </span>
+                </p>
+                <h3 className="report-h3">{tr("ar", "key_findings")}</h3>
+                {pillarNotes.length === 0 ? (
+                  <p className="report-body report-muted">{tr("ar", "findings_pending")}</p>
+                ) : (
+                  <ul className="report-body">
+                    {pillarNotes.map((n, i) => <li key={i}>{n.note_text}</li>)}
+                  </ul>
+                )}
+                <h3 className="report-h3">{tr("ar", "suggested_actions")}</h3>
                 <ul className="report-body">
-                  {pillarNotes.map((n, i) => <li key={i}>{n.note_text}</li>)}
+                  {actions.map((k) => <li key={k}>{tr("ar", k)}</li>)}
                 </ul>
-              )}
-              <h3 className="report-h3">{tr("ar", "suggested_actions")}</h3>
-              <ul className="report-body">
-                {actions.map((k) => <li key={k}>{tr("ar", k)}</li>)}
-              </ul>
-            </div>
-          </section>
-        );
-      })}
+              </div>
+            </section>
+          );
+        })}
 
       {/* ─── Gap Heatmap ─── */}
       <section className="report-page-bilingual-with-visual">
@@ -327,37 +451,143 @@ export function BilingualReport(p: BilingualReportProps) {
         </div>
       </section>
 
-      {/* ─── Investment Matrix ─── */}
-      <section className="report-page-bilingual-with-visual">
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", marginBottom: "6mm" }}>
-          <h2 className="report-h2" style={{ margin: 0 }}>{tr("en", "investment_matrix")}</h2>
-          <h2 className="report-h2" dir="rtl" style={{ margin: 0, textAlign: "right" }}>
-            {tr("ar", "investment_matrix")}
-          </h2>
-        </div>
-        <div style={{ display: "flex", justifyContent: "center" }}>
-          <InvestmentMatrix pillarData={p.investmentData} />
-        </div>
-        <div className="bilingual-text">
-          <div className="col-en"><p className="report-body">{tr("en", "matrix_intro")}</p></div>
-          <div className="col-ar" dir="rtl"><p className="report-body">{tr("ar", "matrix_intro")}</p></div>
-        </div>
-      </section>
+      {/* ─── Investment Matrix (Stage 2+ only) ─── */}
+      {p.engagementStage !== "department" && (
+        <section className="report-page-bilingual-with-visual">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", marginBottom: "6mm" }}>
+            <h2 className="report-h2" style={{ margin: 0 }}>{tr("en", "investment_matrix")}</h2>
+            <h2 className="report-h2" dir="rtl" style={{ margin: 0, textAlign: "right" }}>
+              {tr("ar", "investment_matrix")}
+            </h2>
+          </div>
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <InvestmentMatrix pillarData={p.investmentData} />
+          </div>
+          <div className="bilingual-text">
+            <div className="col-en"><p className="report-body">{tr("en", "matrix_intro")}</p></div>
+            <div className="col-ar" dir="rtl"><p className="report-body">{tr("ar", "matrix_intro")}</p></div>
+          </div>
+        </section>
+      )}
 
-      {/* ─── Gantt Roadmap ─── */}
-      <section className="report-page-bilingual-with-visual">
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", marginBottom: "6mm" }}>
-          <h2 className="report-h2" style={{ margin: 0 }}>{tr("en", "roadmap")}</h2>
-          <h2 className="report-h2" dir="rtl" style={{ margin: 0, textAlign: "right" }}>
-            {tr("ar", "roadmap")}
-          </h2>
-        </div>
-        <div><GanttRoadmap initiatives={p.roadmapInitiatives} /></div>
-        <div className="bilingual-text">
-          <div className="col-en"><p className="report-body">{tr("en", "roadmap_intro")}</p></div>
-          <div className="col-ar" dir="rtl"><p className="report-body">{tr("ar", "roadmap_intro")}</p></div>
-        </div>
-      </section>
+      {/* ─── Gantt Roadmap (Stage 2+ only) ─── */}
+      {p.engagementStage !== "department" && (
+        <section className="report-page-bilingual-with-visual">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", marginBottom: "6mm" }}>
+            <h2 className="report-h2" style={{ margin: 0 }}>{tr("en", "roadmap")}</h2>
+            <h2 className="report-h2" dir="rtl" style={{ margin: 0, textAlign: "right" }}>
+              {tr("ar", "roadmap")}
+            </h2>
+          </div>
+          <div><GanttRoadmap initiatives={p.roadmapInitiatives} /></div>
+          <div className="bilingual-text">
+            <div className="col-en"><p className="report-body">{tr("en", "roadmap_intro")}</p></div>
+            <div className="col-ar" dir="rtl"><p className="report-body">{tr("ar", "roadmap_intro")}</p></div>
+          </div>
+        </section>
+      )}
+
+      {/* ─── Year-on-Year comparison ─── *
+       * Always rendered. Three states: no prior, baseline-reset, or
+       * a compatible prior with deltas. Mirrors the EN portrait
+       * report's YoY page so bilingual readers see the same view. */}
+      {(() => {
+        const yoy = p.yoyComparison;
+        const overallDelta =
+          yoy && yoy.compatible && yoy.current_overall != null && yoy.prior_overall != null
+            ? Number((yoy.current_overall - yoy.prior_overall).toFixed(2))
+            : null;
+        return (
+          <section className="report-page-bilingual">
+            <div className="col-en">
+              <h2 className="report-h2">{tr("en", "year_on_year")}</h2>
+              <p className="report-body">{tr("en", "yoy_intro")}</p>
+              {!yoy && <p className="report-body report-muted">{tr("en", "yoy_no_prior")}</p>}
+              {yoy && !yoy.compatible && <p className="report-body report-muted">{tr("en", "yoy_baseline_reset")}</p>}
+              {yoy && yoy.compatible && (
+                <>
+                  <table className="report-body" style={{ width: "100%", borderCollapse: "collapse", marginTop: "6pt" }}>
+                    <thead>
+                      <tr style={{ background: "#f3f4f6" }}>
+                        <th style={biCellHead}>{tr("en", "pillar")}</th>
+                        <th style={biCellHeadRight}>{yoy.prior_year ?? tr("en", "yoy_prior_year")}</th>
+                        <th style={biCellHeadRight}>{p.currentYear ?? tr("en", "yoy_current_year")}</th>
+                        <th style={biCellHeadRight}>{tr("en", "yoy_delta")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {yoy.pillars.map((pi) => {
+                        const dColor = pi.delta == null ? "#6b7280" : pi.delta > 0 ? "#34D399" : pi.delta < 0 ? "#FB7185" : "#6b7280";
+                        const dLabel = pi.delta == null ? "—" : pi.delta > 0 ? `+${pi.delta.toFixed(2)}` : pi.delta.toFixed(2);
+                        const name = ARA_PILLARS.find((x) => x.id === pi.pillar_id)?.name_en ?? pi.pillar_id;
+                        return (
+                          <tr key={pi.pillar_id} style={{ borderTop: "1px solid #e5e7eb" }}>
+                            <td style={biCell}>{name}</td>
+                            <td style={biCellRight} className="report-muted">{pi.prior_raw != null ? pi.prior_raw.toFixed(2) : "—"}</td>
+                            <td style={biCellRight}>{pi.current_raw != null ? pi.current_raw.toFixed(2) : "—"}</td>
+                            <td style={{ ...biCellRight, color: dColor, fontWeight: 500 }}>{dLabel}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  {overallDelta != null && (
+                    <p className="report-body" style={{ marginTop: "8pt" }}>
+                      <strong>{tr("en", "yoy_overall_delta")}:</strong>{" "}
+                      <span style={{ color: overallDelta > 0 ? "#34D399" : overallDelta < 0 ? "#FB7185" : "#6b7280", fontWeight: 600 }}>
+                        {overallDelta > 0 ? `+${overallDelta.toFixed(2)}` : overallDelta.toFixed(2)}
+                      </span>
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+            <div className="col-ar" dir="rtl">
+              <h2 className="report-h2">{tr("ar", "year_on_year")}</h2>
+              <p className="report-body">{tr("ar", "yoy_intro")}</p>
+              {!yoy && <p className="report-body report-muted">{tr("ar", "yoy_no_prior")}</p>}
+              {yoy && !yoy.compatible && <p className="report-body report-muted">{tr("ar", "yoy_baseline_reset")}</p>}
+              {yoy && yoy.compatible && (
+                <>
+                  <table className="report-body" style={{ width: "100%", borderCollapse: "collapse", marginTop: "6pt" }}>
+                    <thead>
+                      <tr style={{ background: "#f3f4f6" }}>
+                        <th style={biCellHead}>{tr("ar", "pillar")}</th>
+                        <th style={biCellHeadRight}>{yoy.prior_year ?? tr("ar", "yoy_prior_year")}</th>
+                        <th style={biCellHeadRight}>{p.currentYear ?? tr("ar", "yoy_current_year")}</th>
+                        <th style={biCellHeadRight}>{tr("ar", "yoy_delta")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {yoy.pillars.map((pi) => {
+                        const dColor = pi.delta == null ? "#6b7280" : pi.delta > 0 ? "#34D399" : pi.delta < 0 ? "#FB7185" : "#6b7280";
+                        const dLabel = pi.delta == null ? "—" : pi.delta > 0 ? `+${pi.delta.toFixed(2)}` : pi.delta.toFixed(2);
+                        const name = ARA_PILLARS.find((x) => x.id === pi.pillar_id)?.name_ar ?? pi.pillar_id;
+                        return (
+                          <tr key={pi.pillar_id} style={{ borderTop: "1px solid #e5e7eb" }}>
+                            <td style={biCell}>{name}</td>
+                            <td style={biCellRight} className="report-muted">{pi.prior_raw != null ? pi.prior_raw.toFixed(2) : "—"}</td>
+                            <td style={biCellRight}>{pi.current_raw != null ? pi.current_raw.toFixed(2) : "—"}</td>
+                            <td style={{ ...biCellRight, color: dColor, fontWeight: 500 }}>{dLabel}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  {overallDelta != null && (
+                    <p className="report-body" style={{ marginTop: "8pt" }}>
+                      <strong>{tr("ar", "yoy_overall_delta")}:</strong>{" "}
+                      <span style={{ color: overallDelta > 0 ? "#34D399" : overallDelta < 0 ? "#FB7185" : "#6b7280", fontWeight: 600 }}>
+                        {overallDelta > 0 ? `+${overallDelta.toFixed(2)}` : overallDelta.toFixed(2)}
+                      </span>
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          </section>
+        );
+      })()}
 
       {/* ─── Regulatory Compliance ─── */}
       <section className="report-page-bilingual-with-visual">
@@ -372,8 +602,8 @@ export function BilingualReport(p: BilingualReportProps) {
           <div className="col-en">
             <p className="report-body">{tr("en", "compliance_intro")}</p>
             {p.shadowAiTriggered && (
-              <div style={{ padding: "8pt", background: "#fee2e2", border: "1pt solid #DC3545", borderRadius: "4pt", marginTop: "6pt" }}>
-                <p style={{ fontWeight: 600, color: "#7f1d1d", margin: 0, fontSize: "10pt" }}>⚠️ {tr("en", "shadow_ai_alert")}</p>
+              <div style={{ padding: "8pt", background: "#fee2e2", border: "1pt solid #FB7185", borderRadius: "4pt", marginTop: "6pt" }}>
+                <p style={{ fontWeight: 600, color: "#7f1d1d", margin: 0, fontSize: "10pt", letterSpacing: "0.05em", textTransform: "uppercase" }}>⚠ {tr("en", "shadow_ai_alert")}</p>
                 <p className="report-body" style={{ margin: "4pt 0 0", fontSize: "9.5pt" }}>{tr("en", "shadow_ai_body")}</p>
               </div>
             )}
@@ -381,8 +611,8 @@ export function BilingualReport(p: BilingualReportProps) {
           <div className="col-ar" dir="rtl">
             <p className="report-body">{tr("ar", "compliance_intro")}</p>
             {p.shadowAiTriggered && (
-              <div style={{ padding: "8pt", background: "#fee2e2", border: "1pt solid #DC3545", borderRadius: "4pt", marginTop: "6pt" }}>
-                <p style={{ fontWeight: 600, color: "#7f1d1d", margin: 0, fontSize: "10pt" }}>⚠️ {tr("ar", "shadow_ai_alert")}</p>
+              <div style={{ padding: "8pt", background: "#fee2e2", border: "1pt solid #FB7185", borderRadius: "4pt", marginTop: "6pt" }}>
+                <p style={{ fontWeight: 600, color: "#7f1d1d", margin: 0, fontSize: "10pt", letterSpacing: "0.05em", textTransform: "uppercase" }}>⚠ {tr("ar", "shadow_ai_alert")}</p>
                 <p className="report-body" style={{ margin: "4pt 0 0", fontSize: "9.5pt" }}>{tr("ar", "shadow_ai_body")}</p>
               </div>
             )}
@@ -407,8 +637,8 @@ export function BilingualReport(p: BilingualReportProps) {
                 const count = p.useCases.filter((u) => u.stage === stg).length;
                 const colors = {
                   ideation: "#9ca3af",
-                  piloting: "#FD7E14",
-                  production: "#28A745",
+                  piloting: "#FDBA74",
+                  production: "#34D399",
                   retired: "#6b7280",
                 };
                 return (
@@ -434,7 +664,7 @@ export function BilingualReport(p: BilingualReportProps) {
               <tbody>
                 {p.useCases.map((u) => {
                   const riskColor: Record<string, string> = {
-                    low: "#28A745", medium: "#FFC107", high: "#FD7E14", critical: "#DC3545",
+                    low: "#34D399", medium: "#FBBF24", high: "#FDBA74", critical: "#FB7185",
                   };
                   return (
                     <tr key={u.id} style={{ borderTop: "1px solid #e5e7eb" }}>
@@ -447,7 +677,7 @@ export function BilingualReport(p: BilingualReportProps) {
                       <td style={ucCell}>
                         {u.pillar_id
                           ? ARA_PILLARS.find((pp) => pp.id === u.pillar_id)?.name_en ?? u.pillar_id
-                          : "—"}
+                          : "-"}
                       </td>
                     </tr>
                   );
@@ -502,12 +732,12 @@ export function BilingualReport(p: BilingualReportProps) {
                   return (
                     <tr key={pp.id} style={{ borderTop: "1px solid #e5e7eb" }}>
                       <td style={ucCell}>{pp.name_en}</td>
-                      <td style={{ ...ucCell, textAlign: "right" }}>{s != null ? s.toFixed(2) : "—"}</td>
+                      <td style={{ ...ucCell, textAlign: "right" }}>{s != null ? s.toFixed(2) : "-"}</td>
                       <td style={{ ...ucCell, textAlign: "right" }} className="report-muted">
-                        {peer != null ? peer.toFixed(2) : "—"}
+                        {peer != null ? peer.toFixed(2) : "-"}
                       </td>
-                      <td style={{ ...ucCell, textAlign: "right", color: delta != null ? (delta >= 0 ? "#28A745" : "#DC3545") : undefined }}>
-                        {delta != null ? (delta > 0 ? `+${delta.toFixed(2)}` : delta.toFixed(2)) : "—"}
+                      <td style={{ ...ucCell, textAlign: "right", color: delta != null ? (delta >= 0 ? "#34D399" : "#FB7185") : undefined }}>
+                        {delta != null ? (delta > 0 ? `+${delta.toFixed(2)}` : delta.toFixed(2)) : "-"}
                       </td>
                     </tr>
                   );
@@ -539,12 +769,12 @@ export function BilingualReport(p: BilingualReportProps) {
                   return (
                     <tr key={pp.id} style={{ borderTop: "1px solid #e5e7eb" }}>
                       <td style={ucCell}>{pp.name_ar}</td>
-                      <td style={{ ...ucCell, textAlign: "left" }}>{s != null ? s.toFixed(2) : "—"}</td>
+                      <td style={{ ...ucCell, textAlign: "left" }}>{s != null ? s.toFixed(2) : "-"}</td>
                       <td style={{ ...ucCell, textAlign: "left" }} className="report-muted">
-                        {peer != null ? peer.toFixed(2) : "—"}
+                        {peer != null ? peer.toFixed(2) : "-"}
                       </td>
-                      <td style={{ ...ucCell, textAlign: "left", color: delta != null ? (delta >= 0 ? "#28A745" : "#DC3545") : undefined }}>
-                        {delta != null ? (delta > 0 ? `+${delta.toFixed(2)}` : delta.toFixed(2)) : "—"}
+                      <td style={{ ...ucCell, textAlign: "left", color: delta != null ? (delta >= 0 ? "#34D399" : "#FB7185") : undefined }}>
+                        {delta != null ? (delta > 0 ? `+${delta.toFixed(2)}` : delta.toFixed(2)) : "-"}
                       </td>
                     </tr>
                   );
@@ -593,7 +823,7 @@ export function BilingualReport(p: BilingualReportProps) {
           <ul className="report-body">
             {ARA_PILLARS.map((pp) => (
               <li key={pp.id}>
-                {pp.name_en} — {(p.pillarWeights?.[pp.id] ?? 12.5).toFixed(1)}%
+                {pp.name_en} - {(p.pillarWeights?.[pp.id] ?? 12.5).toFixed(1)}%
               </li>
             ))}
           </ul>
@@ -610,7 +840,7 @@ export function BilingualReport(p: BilingualReportProps) {
           <ul className="report-body">
             {ARA_PILLARS.map((pp) => (
               <li key={pp.id}>
-                {pp.name_ar} — {(p.pillarWeights?.[pp.id] ?? 12.5).toFixed(1)}%
+                {pp.name_ar} - {(p.pillarWeights?.[pp.id] ?? 12.5).toFixed(1)}%
               </li>
             ))}
           </ul>
@@ -626,6 +856,11 @@ export function BilingualReport(p: BilingualReportProps) {
 
 const ucCell: React.CSSProperties = { padding: "4pt 6pt", verticalAlign: "top", fontSize: "8.5pt" };
 const ucHead: React.CSSProperties = { ...ucCell, fontWeight: 600, color: "#010131", fontSize: "9pt", textAlign: "left" };
+
+const biCell: React.CSSProperties = { padding: "5pt 8pt", verticalAlign: "top", fontSize: "9pt" };
+const biCellRight: React.CSSProperties = { ...biCell, textAlign: "right", fontVariantNumeric: "tabular-nums" };
+const biCellHead: React.CSSProperties = { ...biCell, fontWeight: 600, color: "#010131", fontSize: "9.5pt", textAlign: "left" };
+const biCellHeadRight: React.CSSProperties = { ...biCellHead, textAlign: "right" };
 
 function actionKeys(score: number | null): Array<"action_foundation" | "action_owner" | "action_benchmark" | "action_formalise" | "action_pilot" | "action_crossfunc" | "action_scale" | "action_close_gap" | "action_cadence" | "action_coe" | "action_mentor" | "action_annual"> {
   if (score == null || score < 2.0) return ["action_foundation", "action_owner", "action_benchmark"];

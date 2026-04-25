@@ -24,6 +24,8 @@ export const createAraOrganizationSchema = z.object({
 export type CreateAraOrganizationValues = z.infer<typeof createAraOrganizationSchema>;
 
 // ─── Assessments ───────────────────────────────────────────────
+export const araEngagementStageSchema = z.enum(["department", "division", "enterprise"]);
+
 export const createAraAssessmentSchema = z.object({
   organization_id: z.string().uuid("Select an organization"),
   region: araRegionSchema,
@@ -31,6 +33,8 @@ export const createAraAssessmentSchema = z.object({
   default_language: araLanguageSchema,
   is_sandbox: z.boolean(),
   question_bank_version_id: z.string().uuid().nullable().optional(),
+  engagement_stage: araEngagementStageSchema,
+  scope_label: z.string().trim().min(1).max(120).nullable().optional(),
 });
 export type CreateAraAssessmentValues = z.infer<typeof createAraAssessmentSchema>;
 

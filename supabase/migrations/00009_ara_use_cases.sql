@@ -1,5 +1,5 @@
 -- ============================================================
--- VIFM ARA — AI Use Case Portfolio
+-- VIFM ARA - AI Use Case Portfolio
 -- Migration 00009: ara_use_cases table for the use-case inventory
 -- per best-practice enhancement. Respondents list their live AI
 -- initiatives with risk, value, and maturity context. Surfaces as
@@ -52,7 +52,7 @@ CREATE TRIGGER ara_use_cases_updated_at
 
 
 -- ────────────────────────────────────────────────────────────
--- RLS — same pattern as other consultant-scoped tables:
+-- RLS - same pattern as other consultant-scoped tables:
 -- admin full access; consultant access to their own assessments;
 -- respondent access via server-side token validation in actions.
 -- ────────────────────────────────────────────────────────────

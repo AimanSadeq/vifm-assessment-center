@@ -65,7 +65,7 @@ export default async function ExercisesPage() {
                     <TableCell>
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
                         <Clock className="h-3.5 w-3.5" />
-                        {ex.duration_minutes ? `${ex.duration_minutes} min` : "—"}
+                        {ex.duration_minutes ? `${ex.duration_minutes} min` : "-"}
                         {hasTiming && (
                           <span className="text-[10px] text-accent ml-1">(detailed)</span>
                         )}

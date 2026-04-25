@@ -58,7 +58,7 @@ export async function loadRespondentByToken(
 }
 
 /**
- * Load the Layer-1 question set applicable to this respondent — filtered
+ * Load the Layer-1 question set applicable to this respondent - filtered
  * by assessment version, assigned pillars, and (region, sector) match.
  */
 export async function loadQuestionsForRespondent(

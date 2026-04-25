@@ -20,7 +20,7 @@ export default function AuthLayout({
             Assessment Center
           </h1>
           <p className="text-primary-foreground/70 text-sm leading-relaxed">
-            Virginia Institute of Finance and Management — Professional
+            Virginia Institute of Finance and Management - Professional
             assessment center platform for leadership evaluation and talent
             development across the GCC and MENA region.
           </p>

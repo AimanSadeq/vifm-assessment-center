@@ -14,9 +14,9 @@ import type { VariantProps } from "class-variance-authority";
 type ConfirmActionProps = {
   /** Server action to run when the user confirms. Should return void or { ok, error }. */
   action: () => Promise<void | { ok: boolean; error?: string } | undefined>;
-  /** Dialog title — what's about to happen in plain language. */
+  /** Dialog title - what's about to happen in plain language. */
   title: string;
-  /** Body copy — consequences / scope. */
+  /** Body copy - consequences / scope. */
   description: ReactNode;
   /** Confirm button label. */
   confirmLabel?: string;
@@ -41,7 +41,7 @@ type ConfirmActionProps = {
 /**
  * Reusable AlertDialog confirmation wrapper for destructive or
  * irreversible server actions. Handles useTransition + sonner toasts.
- * Renders its own trigger button — wrap around the thing that would
+ * Renders its own trigger button - wrap around the thing that would
  * otherwise be a raw <form action={...}><Button>...</Button></form>.
  */
 export function ConfirmAction({

@@ -8,7 +8,7 @@ import type { AraLanguage, AraQuestion, AraRespondent } from "@/types/ara";
 
 // ─────────────────────────────────────────────────────────────
 // Internal: validate token + return respondent. Never trust the
-// client with a respondent_id — always derive from the token.
+// client with a respondent_id - always derive from the token.
 // ─────────────────────────────────────────────────────────────
 async function requireRespondent(token: string): Promise<AraRespondent> {
   const sb = createServiceClient();

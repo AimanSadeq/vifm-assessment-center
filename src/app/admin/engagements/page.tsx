@@ -122,7 +122,7 @@ export default async function EngagementsPage({
                   typeof eng.organizations === "object" &&
                   "name" in eng.organizations
                     ? (eng.organizations as { name: string }).name
-                    : "—";
+                    : "-";
                 return (
                   <TableRow key={eng.id}>
                     <TableCell className="font-medium">
@@ -131,14 +131,14 @@ export default async function EngagementsPage({
                       </Link>
                     </TableCell>
                     <TableCell>{orgName}</TableCell>
-                    <TableCell>{eng.target_role ?? "—"}</TableCell>
+                    <TableCell>{eng.target_role ?? "-"}</TableCell>
                     <TableCell>
                       <Badge variant={STATUS_COLORS[eng.status] ?? "secondary"}>
                         {eng.status}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {eng.start_date ?? "—"} — {eng.end_date ?? "—"}
+                      {eng.start_date ?? "-"} - {eng.end_date ?? "-"}
                     </TableCell>
                   </TableRow>
                 );

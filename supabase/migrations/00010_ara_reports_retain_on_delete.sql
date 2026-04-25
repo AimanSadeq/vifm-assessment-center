@@ -1,5 +1,5 @@
 -- ============================================================
--- VIFM ARA — retention purge fix
+-- VIFM ARA - retention purge fix
 -- Migration 00010: Make ara_reports.assessment_id nullable and
 -- switch the foreign key from ON DELETE CASCADE to ON DELETE SET NULL.
 --
@@ -7,7 +7,7 @@
 -- indefinitely as VIFM business records, even after the underlying
 -- assessment is purged at 3-year retention. The original schema had
 -- assessment_id NOT NULL + ON DELETE CASCADE, which means reports were
--- deleted together with their assessment — the opposite of the spec —
+-- deleted together with their assessment - the opposite of the spec -
 -- and the retention-purge code that tries to detach reports by setting
 -- assessment_id = null would fail at runtime on the NOT NULL constraint.
 -- ============================================================

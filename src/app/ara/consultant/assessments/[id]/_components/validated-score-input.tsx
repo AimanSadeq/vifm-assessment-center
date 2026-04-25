@@ -49,7 +49,7 @@ export function ValidatedScoreInput({
         }
       }}
       className="w-16 h-7 rounded border border-input bg-background px-2 text-xs text-right tabular-nums disabled:opacity-60"
-      placeholder="—"
+      placeholder="-"
     />
   );
 }

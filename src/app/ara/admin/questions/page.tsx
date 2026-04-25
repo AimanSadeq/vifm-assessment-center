@@ -81,7 +81,7 @@ export default async function AraQuestionsVersionsPage() {
                         </Link>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {v.version_label ?? "—"}
+                        {v.version_label ?? "-"}
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">{countMap.get(v.id) ?? 0}</Badge>
@@ -96,7 +96,7 @@ export default async function AraQuestionsVersionsPage() {
                         )}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
-                        {v.published_at ? new Date(v.published_at).toLocaleDateString() : "—"}
+                        {v.published_at ? new Date(v.published_at).toLocaleDateString() : "-"}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
                         {new Date(v.created_at).toLocaleDateString()}

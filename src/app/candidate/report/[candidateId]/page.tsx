@@ -71,7 +71,7 @@ export default async function CandidateReportPage({ params }: Props) {
         <BackLink href={`/candidate/welcome/${candidateId}`} label="Back to Welcome" />
         <h1 className="mt-2 text-2xl font-bold">Your Assessment Report</h1>
         <p className="text-sm text-muted-foreground">
-          {eng.name} — {eng.organizations?.name ?? ""}
+          {eng.name} - {eng.organizations?.name ?? ""}
         </p>
       </div>
 

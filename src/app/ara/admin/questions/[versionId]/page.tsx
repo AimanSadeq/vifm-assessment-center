@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Plus, Pencil, Trash2, ChevronUp, ChevronDown, Upload, Sparkles } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, ChevronUp, ChevronDown, Upload, Sparkles, Download } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -289,17 +289,29 @@ export default async function AraVersionDetailPage({
           </CardContent>
         </Card>
 
-        {/* CSV bulk import */}
+        {/* CSV bulk import + export */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Upload className="h-4 w-4" /> CSV bulk import
-            </CardTitle>
-            <CardDescription>
-              Required columns: <code className="text-xs">pillar_id, question_number, question_text_en, question_text_ar, question_type</code>.
-              Optional: <code className="text-xs">options_en, options_ar, score_map, help_text_en, help_text_ar, region, sector, layer, display_order</code>.
-              JSON fields accept valid JSON or empty.
-            </CardDescription>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Upload className="h-4 w-4" /> CSV bulk import
+                </CardTitle>
+                <CardDescription>
+                  Required columns: <code className="text-xs">pillar_id, question_number, question_text_en, question_text_ar, question_type</code>.
+                  Optional: <code className="text-xs">options_en, options_ar, score_map, help_text_en, help_text_ar, region, sector, layer, display_order</code>.
+                  JSON fields accept valid JSON or empty.
+                </CardDescription>
+              </div>
+              <a
+                href={`/api/ara/admin/questions/${version.id}/csv`}
+                className="shrink-0"
+              >
+                <Button type="button" variant="outline" size="sm">
+                  <Download className="h-3.5 w-3.5 me-1.5" /> Export CSV
+                </Button>
+              </a>
+            </div>
           </CardHeader>
           <CardContent>
             <form action={importAraQuestionsCsv} className="flex items-end gap-3 flex-wrap">

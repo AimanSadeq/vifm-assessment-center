@@ -11,7 +11,10 @@ import { GapHeatmap } from "./gap-heatmap";
 import { InvestmentMatrix } from "./investment-matrix";
 import { GanttRoadmap } from "./gantt-roadmap";
 import { ComplianceSummary } from "./compliance-summary";
-import { FindingCard, inferFindingType } from "./report-primitives";
+import {
+  FindingCard, inferFindingType,
+  StatTile, Metric, Callout, EmptyCallout, FindingsPanel, TOKENS,
+} from "./report-primitives";
 import { tr } from "./report-i18n";
 
 type PillarRow = {
@@ -153,7 +156,11 @@ export function BilingualReport(p: BilingualReportProps) {
         </div>
       </section>
 
-      {/* ─── Executive Summary (visual span + bilingual text) ─── */}
+      {/* ─── Executive Summary - now mirrors EN portrait shape: ─── *
+       *   1. Bilingual heading row
+       *   2. KPI StatTile strip (4 tiles spanning full width)
+       *   3. Centred MaturityGauge + score block
+       *   4. Bilingual narrative + FindingsPanel (strengths / gaps) */}
       <section className="report-page-bilingual-with-visual">
         <div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", marginBottom: "6mm" }}>
@@ -162,6 +169,41 @@ export function BilingualReport(p: BilingualReportProps) {
               {tr("ar", "exec_summary")}
             </h2>
           </div>
+
+          {/* KPI strip — same 4 tiles as the EN portrait report */}
+          <div style={{
+            display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8pt",
+            marginBottom: "8mm",
+          }}>
+            <StatTile
+              label={tr("en", "overall_readiness")}
+              value={p.overall != null ? p.overall.toFixed(2) : "—"}
+              suffix="/ 5.00"
+              accent={p.overallLabelEn ?? ""}
+              accentColor={TOKENS.accent}
+            />
+            <StatTile
+              label="Maturity band"
+              value={p.overallLabelEn ?? "—"}
+              accent="Weighted aggregate"
+              accentColor={TOKENS.mute}
+            />
+            <StatTile
+              label={tr("en", "headline_strengths")}
+              value={String(p.strengths.length)}
+              suffix="/ 8"
+              accent="Pillars ≥ 4.00"
+              accentColor={TOKENS.emerald}
+            />
+            <StatTile
+              label={tr("en", "critical_gaps")}
+              value={String(p.gaps.length)}
+              suffix="/ 8"
+              accent="Pillars requiring focus"
+              accentColor={TOKENS.rose}
+            />
+          </div>
+
           <div style={{ display: "flex", alignItems: "center", gap: "12mm", justifyContent: "center" }}>
             <div style={{ flex: "0 0 auto" }}>
               <MaturityGauge score={p.overall} />
@@ -184,55 +226,49 @@ export function BilingualReport(p: BilingualReportProps) {
         <div className="bilingual-text">
           <div className="col-en">
             <p className="report-body">{tr("en", "exec_intro")}</p>
-            <h3 className="report-h3" style={{ color: "#34D399" }}>{tr("en", "headline_strengths")}</h3>
-            {p.strengths.length === 0 ? (
-              <p className="report-body report-muted">{tr("en", "no_strengths")}</p>
-            ) : (
-              <ul className="report-body">
-                {p.strengths.slice(0, 3).map((s) => (
-                  <li key={s.pillar}><strong>{s.pillar}</strong> - {s.score.toFixed(2)}</li>
-                ))}
-              </ul>
-            )}
-            <h3 className="report-h3" style={{ color: "#FB7185" }}>{tr("en", "critical_gaps")}</h3>
-            {p.gaps.length === 0 ? (
-              <p className="report-body report-muted">{tr("en", "no_gaps")}</p>
-            ) : (
-              <ul className="report-body">
-                {p.gaps.slice(0, 3).map((g) => (
-                  <li key={g.pillar}><strong>{g.pillar}</strong> - {g.score.toFixed(2)}</li>
-                ))}
-              </ul>
-            )}
+            <FindingsPanel
+              variant="strength"
+              title={tr("en", "headline_strengths")}
+              items={p.strengths.slice(0, 3).map((s) => ({
+                headline: s.pillar,
+                metric: `${s.score.toFixed(2)} / 5.00`,
+              }))}
+            />
+            <div style={{ height: "8pt" }} />
+            <FindingsPanel
+              variant="gap"
+              title={tr("en", "critical_gaps")}
+              items={p.gaps.slice(0, 3).map((g) => ({
+                headline: g.pillar,
+                metric: `${g.score.toFixed(2)} · ${g.gap > 0 ? "+" : ""}${g.gap.toFixed(2)}`,
+              }))}
+            />
           </div>
           <div className="col-ar" dir="rtl">
             <p className="report-body">{tr("ar", "exec_intro")}</p>
-            <h3 className="report-h3" style={{ color: "#34D399" }}>{tr("ar", "headline_strengths")}</h3>
-            {p.strengths.length === 0 ? (
-              <p className="report-body report-muted">{tr("ar", "no_strengths")}</p>
-            ) : (
-              <ul className="report-body">
-                {p.strengths.slice(0, 3).map((s) => {
-                  const pillar = ARA_PILLARS.find((pp) => pp.name_en === s.pillar);
-                  return (
-                    <li key={s.pillar}><strong>{pillar?.name_ar ?? s.pillar}</strong> - {s.score.toFixed(2)}</li>
-                  );
-                })}
-              </ul>
-            )}
-            <h3 className="report-h3" style={{ color: "#FB7185" }}>{tr("ar", "critical_gaps")}</h3>
-            {p.gaps.length === 0 ? (
-              <p className="report-body report-muted">{tr("ar", "no_gaps")}</p>
-            ) : (
-              <ul className="report-body">
-                {p.gaps.slice(0, 3).map((g) => {
-                  const pillar = ARA_PILLARS.find((pp) => pp.name_en === g.pillar);
-                  return (
-                    <li key={g.pillar}><strong>{pillar?.name_ar ?? g.pillar}</strong> - {g.score.toFixed(2)}</li>
-                  );
-                })}
-              </ul>
-            )}
+            <FindingsPanel
+              variant="strength"
+              title={tr("ar", "headline_strengths")}
+              items={p.strengths.slice(0, 3).map((s) => {
+                const pillar = ARA_PILLARS.find((pp) => pp.name_en === s.pillar);
+                return {
+                  headline: pillar?.name_ar ?? s.pillar,
+                  metric: `${s.score.toFixed(2)} / 5.00`,
+                };
+              })}
+            />
+            <div style={{ height: "8pt" }} />
+            <FindingsPanel
+              variant="gap"
+              title={tr("ar", "critical_gaps")}
+              items={p.gaps.slice(0, 3).map((g) => {
+                const pillar = ARA_PILLARS.find((pp) => pp.name_en === g.pillar);
+                return {
+                  headline: pillar?.name_ar ?? g.pillar,
+                  metric: `${g.score.toFixed(2)} · ${g.gap > 0 ? "+" : ""}${g.gap.toFixed(2)}`,
+                };
+              })}
+            />
           </div>
         </div>
       </section>
@@ -362,33 +398,96 @@ export function BilingualReport(p: BilingualReportProps) {
       </section>
 
       {/* ─── Pillar Deep Dives - one page per applicable pillar ─── *
-       * Filtered by engagement stage so a Stage 1 Department report
-       * only emits its 4 in-scope pillars (instead of all 8). */}
+       * Filtered by engagement stage. Now mirrors the EN portrait
+       * pillar deep-dive shape: Metric strip on top (full-width),
+       * then bilingual columns with FindingCard + RecommendationCard
+       * stacks on both sides. */}
       {ARA_PILLARS
         .filter((pillar) => stageDef.applicable_pillars.includes(pillar.id))
         .map((pillar) => {
           const row = p.pillarMap.get(pillar.id);
           const pillarNotes = p.notesByPillar.get(pillar.id) ?? [];
           const score = row?.raw_score != null ? Number(row.raw_score) : null;
+          const gap = row?.benchmark_gap != null ? Number(row.benchmark_gap) : null;
+          const validated = row?.consultant_validated_score != null ? Number(row.consultant_validated_score) : null;
+          const selfScore = row?.self_assessment_score != null ? Number(row.self_assessment_score) : null;
+          const perceptionGap = row?.perception_gap != null ? Number(row.perception_gap) : null;
           const actions = actionKeys(score);
+
+          const gapValue = gap != null ? (gap > 0 ? `+${gap.toFixed(2)}` : gap.toFixed(2)) : "—";
+          const gapTone: "positive" | "negative" | "neutral" =
+            gap == null ? "neutral" : gap <= 0 ? "positive" : "negative";
+          const perceptionTone: "neutral" | "warning" =
+            perceptionGap != null && Math.abs(perceptionGap) > 0.5 ? "warning" : "neutral";
+          const perceptionValue =
+            perceptionGap != null ? (perceptionGap > 0 ? `+${perceptionGap.toFixed(2)}` : perceptionGap.toFixed(2)) : "—";
+
           return (
             <section key={pillar.id} className="report-page-bilingual">
+              {/* Bilingual title row spans both columns */}
+              <div style={{
+                gridColumn: "1 / -1",
+                display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8pt",
+                marginBottom: "8pt", paddingBottom: "6pt",
+                borderBottom: `1pt solid ${TOKENS.line}`,
+              }}>
+                <div>
+                  <p className="report-muted" style={{ fontSize: "9pt", letterSpacing: "0.1em", margin: 0, textTransform: "uppercase" }}>
+                    {tr("en", "pillar_deep_dive")}
+                  </p>
+                  <h2 className="report-h2" style={{ margin: "2pt 0 0", borderBottom: "none", paddingBottom: 0 }}>
+                    {pillar.name_en}
+                  </h2>
+                </div>
+                <div dir="rtl" style={{ textAlign: "right" }}>
+                  <p className="report-muted" style={{ fontSize: "9pt", letterSpacing: "0.1em", margin: 0, textTransform: "uppercase" }}>
+                    {tr("ar", "pillar_deep_dive")}
+                  </p>
+                  <h2 className="report-h2" style={{ margin: "2pt 0 0", borderBottom: "none", paddingBottom: 0 }}>
+                    {pillar.name_ar}
+                  </h2>
+                </div>
+              </div>
+
+              {/* Full-width metric strip — same 4 metrics as EN portrait */}
+              <div style={{
+                gridColumn: "1 / -1",
+                display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6pt",
+                marginBottom: "8pt",
+              }}>
+                <Metric
+                  label={tr("en", "raw_score")}
+                  value={score != null ? score.toFixed(2) : "—"}
+                  suffix="/ 5.00"
+                  tone={score == null ? "neutral" : score >= 4.0 ? "positive" : score < 3.0 ? "negative" : "warning"}
+                />
+                <Metric
+                  label="Benchmark gap"
+                  value={gapValue}
+                  suffix="vs 4.00"
+                  tone={gapTone}
+                />
+                <Metric
+                  label={tr("en", "perception_vs_reality")}
+                  value={perceptionValue}
+                  suffix={selfScore != null && validated != null
+                    ? `self ${selfScore.toFixed(2)} · cons ${validated.toFixed(2)}`
+                    : "not validated"}
+                  tone={perceptionTone}
+                />
+                <Metric
+                  label="Maturity"
+                  value={row?.maturity_label_en ?? "Unscored"}
+                  suffix={score != null ? `L${Math.max(1, Math.min(5, Math.ceil(score)))}` : ""}
+                  tone="brand"
+                />
+              </div>
+
+              {/* Findings + actions, bilingual columns */}
               <div className="col-en">
-                <p className="report-muted" style={{ fontSize: "9pt", letterSpacing: "0.1em", margin: 0, textTransform: "uppercase" }}>
-                  {tr("en", "pillar_deep_dive")}
-                </p>
-                <h2 className="report-h2">{pillar.name_en}</h2>
-                <p className="report-body">
-                  <strong style={{ fontSize: "28pt", color: "#010131" }}>
-                    {score != null ? score.toFixed(2) : "-"}
-                  </strong>
-                  <span className="report-muted" style={{ marginLeft: "8pt" }}>
-                    {row?.maturity_label_en ?? "Unscored"}
-                  </span>
-                </p>
-                <h3 className="report-h3">{tr("en", "key_findings")}</h3>
+                <h3 className="report-h3" style={{ marginTop: "4pt" }}>{tr("en", "key_findings")}</h3>
                 {pillarNotes.length === 0 ? (
-                  <p className="report-body report-muted">{tr("en", "findings_pending")}</p>
+                  <EmptyCallout>{tr("en", "findings_pending")}</EmptyCallout>
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: "6pt", marginTop: "4pt" }}>
                     {pillarNotes.map((n, i) => (
@@ -407,25 +506,20 @@ export function BilingualReport(p: BilingualReportProps) {
                 </ul>
               </div>
               <div className="col-ar" dir="rtl">
-                <p className="report-muted" style={{ fontSize: "9pt", letterSpacing: "0.1em", margin: 0, textTransform: "uppercase" }}>
-                  {tr("ar", "pillar_deep_dive")}
-                </p>
-                <h2 className="report-h2">{pillar.name_ar}</h2>
-                <p className="report-body">
-                  <strong style={{ fontSize: "28pt", color: "#010131" }}>
-                    {score != null ? score.toFixed(2) : "-"}
-                  </strong>
-                  <span className="report-muted" style={{ marginRight: "8pt" }}>
-                    {row?.maturity_label_en ? arabicMaturityLabel(row.maturity_label_en) : "غير مُقيَّم"}
-                  </span>
-                </p>
-                <h3 className="report-h3">{tr("ar", "key_findings")}</h3>
+                <h3 className="report-h3" style={{ marginTop: "4pt" }}>{tr("ar", "key_findings")}</h3>
                 {pillarNotes.length === 0 ? (
-                  <p className="report-body report-muted">{tr("ar", "findings_pending")}</p>
+                  <EmptyCallout>{tr("ar", "findings_pending")}</EmptyCallout>
                 ) : (
-                  <ul className="report-body">
-                    {pillarNotes.map((n, i) => <li key={i}>{n.note_text}</li>)}
-                  </ul>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6pt", marginTop: "4pt" }}>
+                    {pillarNotes.map((n, i) => (
+                      <FindingCard
+                        key={i}
+                        index={i + 1}
+                        type={inferFindingType(n.note_text)}
+                        text={n.note_text}
+                      />
+                    ))}
+                  </div>
                 )}
                 <h3 className="report-h3">{tr("ar", "suggested_actions")}</h3>
                 <ul className="report-body">
@@ -502,8 +596,12 @@ export function BilingualReport(p: BilingualReportProps) {
             <div className="col-en">
               <h2 className="report-h2">{tr("en", "year_on_year")}</h2>
               <p className="report-body">{tr("en", "yoy_intro")}</p>
-              {!yoy && <p className="report-body report-muted">{tr("en", "yoy_no_prior")}</p>}
-              {yoy && !yoy.compatible && <p className="report-body report-muted">{tr("en", "yoy_baseline_reset")}</p>}
+              {!yoy && <EmptyCallout>{tr("en", "yoy_no_prior")}</EmptyCallout>}
+              {yoy && !yoy.compatible && (
+                <Callout tone="info" title={tr("en", "year_on_year")}>
+                  {tr("en", "yoy_baseline_reset")}
+                </Callout>
+              )}
               {yoy && yoy.compatible && (
                 <>
                   <table className="report-body" style={{ width: "100%", borderCollapse: "collapse", marginTop: "6pt" }}>
@@ -545,8 +643,12 @@ export function BilingualReport(p: BilingualReportProps) {
             <div className="col-ar" dir="rtl">
               <h2 className="report-h2">{tr("ar", "year_on_year")}</h2>
               <p className="report-body">{tr("ar", "yoy_intro")}</p>
-              {!yoy && <p className="report-body report-muted">{tr("ar", "yoy_no_prior")}</p>}
-              {yoy && !yoy.compatible && <p className="report-body report-muted">{tr("ar", "yoy_baseline_reset")}</p>}
+              {!yoy && <EmptyCallout>{tr("ar", "yoy_no_prior")}</EmptyCallout>}
+              {yoy && !yoy.compatible && (
+                <Callout tone="info" title={tr("ar", "year_on_year")}>
+                  {tr("ar", "yoy_baseline_reset")}
+                </Callout>
+              )}
               {yoy && yoy.compatible && (
                 <>
                   <table className="report-body" style={{ width: "100%", borderCollapse: "collapse", marginTop: "6pt" }}>
@@ -602,19 +704,17 @@ export function BilingualReport(p: BilingualReportProps) {
           <div className="col-en">
             <p className="report-body">{tr("en", "compliance_intro")}</p>
             {p.shadowAiTriggered && (
-              <div style={{ padding: "8pt", background: "#fee2e2", border: "1pt solid #FB7185", borderRadius: "4pt", marginTop: "6pt" }}>
-                <p style={{ fontWeight: 600, color: "#7f1d1d", margin: 0, fontSize: "10pt", letterSpacing: "0.05em", textTransform: "uppercase" }}>⚠ {tr("en", "shadow_ai_alert")}</p>
-                <p className="report-body" style={{ margin: "4pt 0 0", fontSize: "9.5pt" }}>{tr("en", "shadow_ai_body")}</p>
-              </div>
+              <Callout tone="danger" title={tr("en", "shadow_ai_alert")}>
+                {tr("en", "shadow_ai_body")}
+              </Callout>
             )}
           </div>
           <div className="col-ar" dir="rtl">
             <p className="report-body">{tr("ar", "compliance_intro")}</p>
             {p.shadowAiTriggered && (
-              <div style={{ padding: "8pt", background: "#fee2e2", border: "1pt solid #FB7185", borderRadius: "4pt", marginTop: "6pt" }}>
-                <p style={{ fontWeight: 600, color: "#7f1d1d", margin: 0, fontSize: "10pt", letterSpacing: "0.05em", textTransform: "uppercase" }}>⚠ {tr("ar", "shadow_ai_alert")}</p>
-                <p className="report-body" style={{ margin: "4pt 0 0", fontSize: "9.5pt" }}>{tr("ar", "shadow_ai_body")}</p>
-              </div>
+              <Callout tone="danger" title={tr("ar", "shadow_ai_alert")}>
+                {tr("ar", "shadow_ai_body")}
+              </Callout>
             )}
           </div>
         </div>

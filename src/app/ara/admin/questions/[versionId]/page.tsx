@@ -56,6 +56,21 @@ export default async function AraVersionDetailPage({
     await publishAraVersion(version.id);
   };
 
+  const aiAuthorAction = async (fd: FormData) => {
+    "use server";
+    await aiAuthorAraQuestion(fd);
+  };
+
+  const importCsvAction = async (fd: FormData) => {
+    "use server";
+    await importAraQuestionsCsv(fd);
+  };
+
+  const createQuestionAction = async (fd: FormData) => {
+    "use server";
+    await createAraQuestion(fd);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto px-6 py-10">
@@ -165,7 +180,7 @@ export default async function AraVersionDetailPage({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form action={aiAuthorAraQuestion} className="space-y-4">
+            <form action={aiAuthorAction} className="space-y-4">
               <input type="hidden" name="version_id" value={version.id} />
 
               <div className="grid gap-4 sm:grid-cols-3">
@@ -262,7 +277,7 @@ export default async function AraVersionDetailPage({
             </div>
           </CardHeader>
           <CardContent>
-            <form action={importAraQuestionsCsv} className="flex items-end gap-3 flex-wrap">
+            <form action={importCsvAction} className="flex items-end gap-3 flex-wrap">
               <input type="hidden" name="version_id" value={version.id} />
               <div className="space-y-1">
                 <Label htmlFor="csv_file" className="text-xs">CSV file</Label>
@@ -292,7 +307,7 @@ export default async function AraVersionDetailPage({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form action={createAraQuestion} className="space-y-5">
+            <form action={createQuestionAction} className="space-y-5">
               <input type="hidden" name="version_id" value={version.id} />
 
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

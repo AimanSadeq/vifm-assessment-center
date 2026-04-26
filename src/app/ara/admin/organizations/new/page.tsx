@@ -7,6 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createAraOrganization } from "@/lib/ara/actions";
 
 export default function NewAraOrganizationPage() {
+  const createAction = async (fd: FormData) => {
+    "use server";
+    await createAraOrganization(fd);
+  };
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-6 py-10">
@@ -24,7 +28,7 @@ export default function NewAraOrganizationPage() {
             <CardTitle className="text-base">Organization details</CardTitle>
           </CardHeader>
           <CardContent>
-            <form action={createAraOrganization} className="space-y-5">
+            <form action={createAction} className="space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="name">Name (English) *</Label>
                 <Input id="name" name="name" required maxLength={200} />

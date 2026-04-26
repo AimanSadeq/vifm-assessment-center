@@ -25,6 +25,11 @@ export default async function AraQuestionsVersionsPage() {
   const { data: qCounts } = await sb
     .from("ara_questions")
     .select("version_id");
+  const createVersionAction = async (fd: FormData) => {
+    "use server";
+    await createAraVersion(fd);
+  };
+
   const countMap = new Map<string, number>();
   (qCounts ?? []).forEach((q) => {
     countMap.set(q.version_id, (countMap.get(q.version_id) ?? 0) + 1);
@@ -121,7 +126,7 @@ export default async function AraQuestionsVersionsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form action={createAraVersion} className="space-y-4">
+            <form action={createVersionAction} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="version_number">Version number *</Label>

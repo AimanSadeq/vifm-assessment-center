@@ -217,6 +217,26 @@ export default async function AraAssessmentDetailPage({
     "use server";
     await reopenAssessment(assessment.id);
   };
+  const updatePillarWeightsAction = async (fd: FormData) => {
+    "use server";
+    await updatePillarWeights(fd);
+  };
+  const createConsultantNoteAction = async (fd: FormData) => {
+    "use server";
+    await createConsultantNote(fd);
+  };
+  const createRespondentAction = async (fd: FormData) => {
+    "use server";
+    await createAraRespondent(fd);
+  };
+  const bulkImportRespondentsAction = async (fd: FormData) => {
+    "use server";
+    await bulkImportAraRespondents(fd);
+  };
+  const overrideComplianceAction = async (fd: FormData) => {
+    "use server";
+    await overrideComplianceStatus(fd);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -642,7 +662,7 @@ export default async function AraAssessmentDetailPage({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form action={updatePillarWeights} className="space-y-3">
+              <form action={updatePillarWeightsAction} className="space-y-3">
                 <input type="hidden" name="assessment_id" value={assessment.id} />
                 <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-4">
                   {ARA_PILLARS.map((p) => {
@@ -799,7 +819,7 @@ export default async function AraAssessmentDetailPage({
             )}
 
             {/* Add note form */}
-            <form action={createConsultantNote} className="rounded-lg border p-4 bg-muted/30 space-y-3">
+            <form action={createConsultantNoteAction} className="rounded-lg border p-4 bg-muted/30 space-y-3">
               <input type="hidden" name="assessment_id" value={assessment.id} />
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1">
@@ -1273,7 +1293,7 @@ export default async function AraAssessmentDetailPage({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form action={createAraRespondent} className="space-y-5">
+            <form action={createRespondentAction} className="space-y-5">
               <input type="hidden" name="assessment_id" value={assessment.id} />
 
               <div className="grid gap-4 sm:grid-cols-2">
@@ -1355,7 +1375,7 @@ export default async function AraAssessmentDetailPage({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form action={bulkImportAraRespondents} className="space-y-4">
+            <form action={bulkImportRespondentsAction} className="space-y-4">
               <input type="hidden" name="assessment_id" value={assessment.id} />
               <div className="space-y-2">
                 <Label htmlFor="csv-paste">CSV content</Label>
@@ -1424,7 +1444,7 @@ function ComplianceRequirementRow({
           {result.evidence_note && <span title="Overridden" className="text-[10px]">✎</span>}
         </div>
       </summary>
-      <form action={overrideComplianceStatus} className="px-3 py-3 border-t bg-muted/30 space-y-2">
+      <form action={overrideComplianceAction} className="px-3 py-3 border-t bg-muted/30 space-y-2">
         <input type="hidden" name="assessment_id" value={assessmentId} />
         <input type="hidden" name="requirement_id" value={req.id} />
         <div className="flex items-center gap-2">

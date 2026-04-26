@@ -30,6 +30,11 @@ export default async function AraSandboxPage() {
     organization: { name: string } | null;
   }>;
 
+  const clearAction = async (fd: FormData) => {
+    "use server";
+    await clearAraSandboxData(fd);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-5xl mx-auto px-6 py-10">
@@ -100,7 +105,7 @@ export default async function AraSandboxPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form action={clearAraSandboxData} className="flex items-end gap-3">
+            <form action={clearAction} className="flex items-end gap-3">
               <div className="space-y-1 flex-1 max-w-md">
                 <Label htmlFor="confirmation" className="text-xs">
                   Type <code>DELETE SANDBOX DATA</code> to confirm

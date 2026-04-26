@@ -36,6 +36,11 @@ export default async function EditAraOrganizationPage({
     .select("id", { count: "exact", head: true })
     .eq("organization_id", org.id);
 
+  const updateAction = async (fd: FormData) => {
+    "use server";
+    await updateAraOrganization(fd);
+  };
+
   const deleteAction = async () => {
     "use server";
     await deleteAraOrganization(org.id);
@@ -81,7 +86,7 @@ export default async function EditAraOrganizationPage({
             <CardTitle className="text-base">Details</CardTitle>
           </CardHeader>
           <CardContent>
-            <form action={updateAraOrganization} className="space-y-5">
+            <form action={updateAction} className="space-y-5">
               <input type="hidden" name="id" value={org.id} />
 
               <div className="space-y-2">

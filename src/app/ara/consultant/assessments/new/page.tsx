@@ -221,6 +221,11 @@ export default async function NewAraAssessmentPage({
       : "Optional — leave blank for an organisation-wide assessment.";
   const scopeRequired = stage.id !== "enterprise";
 
+  const createAssessmentAction = async (fd: FormData) => {
+    "use server";
+    await createAraAssessment(fd);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-6 py-10">
@@ -311,7 +316,7 @@ export default async function NewAraAssessmentPage({
             <CardTitle className="text-base">Assessment details</CardTitle>
           </CardHeader>
           <CardContent>
-            <form action={createAraAssessment} className="space-y-5">
+            <form action={createAssessmentAction} className="space-y-5">
               <input
                 type="hidden"
                 name="question_bank_version_id"

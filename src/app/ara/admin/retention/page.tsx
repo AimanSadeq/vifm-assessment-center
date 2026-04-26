@@ -49,6 +49,11 @@ export default async function AraRetentionPage() {
     organization: { name: string } | null;
   }>;
 
+  const purgeAction = async (fd: FormData) => {
+    "use server";
+    await purgeAraExpiredAssessments(fd);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-5xl mx-auto px-6 py-10">
@@ -144,7 +149,7 @@ export default async function AraRetentionPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form action={purgeAraExpiredAssessments} className="flex items-end gap-3">
+            <form action={purgeAction} className="flex items-end gap-3">
               <div className="space-y-1 flex-1 max-w-md">
                 <Label htmlFor="confirmation" className="text-xs">
                   Type <code>PURGE EXPIRED DATA</code> to confirm

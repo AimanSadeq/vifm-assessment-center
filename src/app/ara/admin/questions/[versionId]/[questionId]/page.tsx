@@ -35,6 +35,11 @@ export default async function EditAraQuestionPage({
 
   if (!version || !question) return notFound();
 
+  const updateAction = async (fd: FormData) => {
+    "use server";
+    await updateAraQuestion(fd);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-3xl mx-auto px-6 py-10">
@@ -70,7 +75,7 @@ export default async function EditAraQuestionPage({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form action={updateAraQuestion} className="space-y-5">
+            <form action={updateAction} className="space-y-5">
               <input type="hidden" name="id" value={question.id} />
               <input type="hidden" name="version_id" value={version.id} />
 

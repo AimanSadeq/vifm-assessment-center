@@ -64,6 +64,11 @@ export default async function AraRegulatoryAdminPage() {
 
   const aiReady = isAIConfigured();
 
+  const uploadAction = async (fd: FormData) => {
+    "use server";
+    await uploadAraRegulatoryDocument(fd);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-5xl mx-auto px-6 py-10">
@@ -98,7 +103,7 @@ export default async function AraRegulatoryAdminPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form action={uploadAraRegulatoryDocument} className="space-y-4">
+            <form action={uploadAction} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="framework_id">Framework *</Label>

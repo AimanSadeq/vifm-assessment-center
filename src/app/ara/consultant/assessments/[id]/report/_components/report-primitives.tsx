@@ -162,11 +162,11 @@ export function Metric({ label, value, suffix, tone = "neutral" }: {
 export type FindingType = "strength" | "observation" | "risk";
 
 const FINDING_TOKENS: Record<FindingType, {
-  label: string; color: string; bg: string; Icon: typeof CheckCircle2;
+  label_en: string; label_ar: string; color: string; bg: string; Icon: typeof CheckCircle2;
 }> = {
-  strength:    { label: "Strength",    color: "#065f46", bg: "#ecfdf5", Icon: CheckCircle2 },
-  observation: { label: "Observation", color: "#1e3a8a", bg: "#eff6ff", Icon: Info },
-  risk:        { label: "Risk",        color: "#9f1239", bg: "#fef2f2", Icon: AlertTriangle },
+  strength:    { label_en: "Strength",    label_ar: "نقطة قوة", color: "#065f46", bg: "#ecfdf5", Icon: CheckCircle2 },
+  observation: { label_en: "Observation", label_ar: "ملاحظة",   color: "#1e3a8a", bg: "#eff6ff", Icon: Info },
+  risk:        { label_en: "Risk",        label_ar: "خطر",     color: "#9f1239", bg: "#fef2f2", Icon: AlertTriangle },
 };
 
 /**
@@ -197,12 +197,14 @@ export function inferFindingType(text: string): FindingType {
   return "observation";
 }
 
-export function FindingCard({ type, index, text }: {
+export function FindingCard({ type, index, text, lang = "en" }: {
   type: FindingType;
   index: number;
   text: string;
+  lang?: "en" | "ar";
 }) {
   const t = FINDING_TOKENS[type];
+  const label = lang === "ar" ? t.label_ar : t.label_en;
 
   // Split into headline (first sentence) + body (remainder) for hierarchy.
   const sentences = text.split(/(?<=[.!?])\s+/);
@@ -238,7 +240,7 @@ export function FindingCard({ type, index, text }: {
           fontSize: "8pt", letterSpacing: "0.1em", color: t.color,
           textTransform: "uppercase", fontWeight: 700, margin: "0 0 4pt",
         }}>
-          {t.label}
+          {label}
         </p>
         <p style={{
           fontSize: "10.5pt", fontWeight: 600, color: TOKENS.navy,
@@ -400,10 +402,11 @@ export function FileTypeIcon({ type, size = 20 }: {
 }
 
 // ─── 9. FindingsPanel (for Exec Summary strengths/gaps cards) ─
-export function FindingsPanel({ variant, title, items }: {
+export function FindingsPanel({ variant, title, items, emptyMessage }: {
   variant: "strength" | "gap";
   title: string;
   items: Array<{ headline: string; metric: string }>;
+  emptyMessage?: string;
 }) {
   const color = variant === "strength" ? TOKENS.emerald : TOKENS.rose;
   const Icon = variant === "strength" ? CheckCircle2 : AlertTriangle;
@@ -426,7 +429,7 @@ export function FindingsPanel({ variant, title, items }: {
       </div>
       {items.length === 0 ? (
         <p style={{ fontSize: "9.5pt", color: TOKENS.mute, margin: 0, fontStyle: "italic" }}>
-          {variant === "strength" ? "No pillars at Advanced or above yet." : "No pillars below Developing - solid foundation."}
+          {emptyMessage ?? (variant === "strength" ? "No pillars at Advanced or above yet." : "No pillars below Developing - solid foundation.")}
         </p>
       ) : (
         <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>

@@ -170,38 +170,78 @@ export function BilingualReport(p: BilingualReportProps) {
             </h2>
           </div>
 
-          {/* KPI strip — same 4 tiles as the EN portrait report */}
+          {/* KPI strip — split into two language-locked halves so the
+              left column reads English LTR and the right column reads
+              Arabic RTL. The two halves share a single grid row to stay
+              visually aligned. */}
           <div style={{
-            display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8pt",
+            display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10mm",
             marginBottom: "8mm",
           }}>
-            <StatTile
-              label={tr("en", "overall_readiness")}
-              value={p.overall != null ? p.overall.toFixed(2) : "—"}
-              suffix="/ 5.00"
-              accent={p.overallLabelEn ?? ""}
-              accentColor={TOKENS.accent}
-            />
-            <StatTile
-              label="Maturity band"
-              value={p.overallLabelEn ?? "—"}
-              accent="Weighted aggregate"
-              accentColor={TOKENS.mute}
-            />
-            <StatTile
-              label={tr("en", "headline_strengths")}
-              value={String(p.strengths.length)}
-              suffix="/ 8"
-              accent="Pillars ≥ 4.00"
-              accentColor={TOKENS.emerald}
-            />
-            <StatTile
-              label={tr("en", "critical_gaps")}
-              value={String(p.gaps.length)}
-              suffix="/ 8"
-              accent="Pillars requiring focus"
-              accentColor={TOKENS.rose}
-            />
+            {/* English KPI strip */}
+            <div style={{
+              display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6pt",
+            }}>
+              <StatTile
+                label={tr("en", "overall_readiness")}
+                value={p.overall != null ? p.overall.toFixed(2) : "—"}
+                suffix="/ 5.00"
+                accent={p.overallLabelEn ?? ""}
+                accentColor={TOKENS.accent}
+              />
+              <StatTile
+                label={tr("en", "maturity_band")}
+                value={p.overallLabelEn ?? "—"}
+                accent={tr("en", "weighted_aggregate")}
+                accentColor={TOKENS.mute}
+              />
+              <StatTile
+                label={tr("en", "headline_strengths")}
+                value={String(p.strengths.length)}
+                suffix="/ 8"
+                accent={tr("en", "pillars_at_above_benchmark")}
+                accentColor={TOKENS.emerald}
+              />
+              <StatTile
+                label={tr("en", "critical_gaps")}
+                value={String(p.gaps.length)}
+                suffix="/ 8"
+                accent={tr("en", "pillars_requiring_focus")}
+                accentColor={TOKENS.rose}
+              />
+            </div>
+            {/* Arabic KPI strip — RTL */}
+            <div dir="rtl" style={{
+              display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6pt",
+            }}>
+              <StatTile
+                label={tr("ar", "overall_readiness")}
+                value={p.overall != null ? p.overall.toFixed(2) : "—"}
+                suffix="/ ٥٫٠٠"
+                accent={p.overallLabelAr ?? ""}
+                accentColor={TOKENS.accent}
+              />
+              <StatTile
+                label={tr("ar", "maturity_band")}
+                value={p.overallLabelAr ?? "—"}
+                accent={tr("ar", "weighted_aggregate")}
+                accentColor={TOKENS.mute}
+              />
+              <StatTile
+                label={tr("ar", "headline_strengths")}
+                value={String(p.strengths.length)}
+                suffix="/ ٨"
+                accent={tr("ar", "pillars_at_above_benchmark")}
+                accentColor={TOKENS.emerald}
+              />
+              <StatTile
+                label={tr("ar", "critical_gaps")}
+                value={String(p.gaps.length)}
+                suffix="/ ٨"
+                accent={tr("ar", "pillars_requiring_focus")}
+                accentColor={TOKENS.rose}
+              />
+            </div>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "12mm", justifyContent: "center" }}>
@@ -229,6 +269,7 @@ export function BilingualReport(p: BilingualReportProps) {
             <FindingsPanel
               variant="strength"
               title={tr("en", "headline_strengths")}
+              emptyMessage={tr("en", "no_strengths_panel")}
               items={p.strengths.slice(0, 3).map((s) => ({
                 headline: s.pillar,
                 metric: `${s.score.toFixed(2)} / 5.00`,
@@ -238,6 +279,7 @@ export function BilingualReport(p: BilingualReportProps) {
             <FindingsPanel
               variant="gap"
               title={tr("en", "critical_gaps")}
+              emptyMessage={tr("en", "no_gaps_panel")}
               items={p.gaps.slice(0, 3).map((g) => ({
                 headline: g.pillar,
                 metric: `${g.score.toFixed(2)} · ${g.gap > 0 ? "+" : ""}${g.gap.toFixed(2)}`,
@@ -249,11 +291,12 @@ export function BilingualReport(p: BilingualReportProps) {
             <FindingsPanel
               variant="strength"
               title={tr("ar", "headline_strengths")}
+              emptyMessage={tr("ar", "no_strengths_panel")}
               items={p.strengths.slice(0, 3).map((s) => {
                 const pillar = ARA_PILLARS.find((pp) => pp.name_en === s.pillar);
                 return {
                   headline: pillar?.name_ar ?? s.pillar,
-                  metric: `${s.score.toFixed(2)} / 5.00`,
+                  metric: `${s.score.toFixed(2)} / ٥٫٠٠`,
                 };
               })}
             />
@@ -261,6 +304,7 @@ export function BilingualReport(p: BilingualReportProps) {
             <FindingsPanel
               variant="gap"
               title={tr("ar", "critical_gaps")}
+              emptyMessage={tr("ar", "no_gaps_panel")}
               items={p.gaps.slice(0, 3).map((g) => {
                 const pillar = ARA_PILLARS.find((pp) => pp.name_en === g.pillar);
                 return {
@@ -449,42 +493,76 @@ export function BilingualReport(p: BilingualReportProps) {
                 </div>
               </div>
 
-              {/* Full-width metric strip — same 4 metrics as EN portrait */}
-              <div style={{
-                gridColumn: "1 / -1",
-                display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6pt",
-                marginBottom: "8pt",
-              }}>
-                <Metric
-                  label={tr("en", "raw_score")}
-                  value={score != null ? score.toFixed(2) : "—"}
-                  suffix="/ 5.00"
-                  tone={score == null ? "neutral" : score >= 4.0 ? "positive" : score < 3.0 ? "negative" : "warning"}
-                />
-                <Metric
-                  label="Benchmark gap"
-                  value={gapValue}
-                  suffix="vs 4.00"
-                  tone={gapTone}
-                />
-                <Metric
-                  label={tr("en", "perception_vs_reality")}
-                  value={perceptionValue}
-                  suffix={selfScore != null && validated != null
-                    ? `self ${selfScore.toFixed(2)} · cons ${validated.toFixed(2)}`
-                    : "not validated"}
-                  tone={perceptionTone}
-                />
-                <Metric
-                  label="Maturity"
-                  value={row?.maturity_label_en ?? "Unscored"}
-                  suffix={score != null ? `L${Math.max(1, Math.min(5, Math.ceil(score)))}` : ""}
-                  tone="brand"
-                />
+              {/* Metric strip — split into language-locked halves so the
+                  English column reads LTR and the Arabic column reads RTL.
+                  Sits in the EN/AR columns of the parent grid. */}
+              <div className="col-en" style={{ gridRow: "2", marginBottom: "8pt" }}>
+                <div style={{
+                  display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6pt",
+                }}>
+                  <Metric
+                    label={tr("en", "raw_score")}
+                    value={score != null ? score.toFixed(2) : "—"}
+                    suffix="/ 5.00"
+                    tone={score == null ? "neutral" : score >= 4.0 ? "positive" : score < 3.0 ? "negative" : "warning"}
+                  />
+                  <Metric
+                    label={tr("en", "benchmark_gap")}
+                    value={gapValue}
+                    suffix="vs 4.00"
+                    tone={gapTone}
+                  />
+                  <Metric
+                    label={tr("en", "perception_vs_reality")}
+                    value={perceptionValue}
+                    suffix={selfScore != null && validated != null
+                      ? `${tr("en", "self_short")} ${selfScore.toFixed(2)} · ${tr("en", "consultant_short")} ${validated.toFixed(2)}`
+                      : tr("en", "not_validated")}
+                    tone={perceptionTone}
+                  />
+                  <Metric
+                    label={tr("en", "maturity_short")}
+                    value={row?.maturity_label_en ?? tr("en", "unscored")}
+                    suffix={score != null ? `L${Math.max(1, Math.min(5, Math.ceil(score)))}` : ""}
+                    tone="brand"
+                  />
+                </div>
+              </div>
+              <div className="col-ar" dir="rtl" style={{ gridRow: "2", marginBottom: "8pt" }}>
+                <div style={{
+                  display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6pt",
+                }}>
+                  <Metric
+                    label={tr("ar", "raw_score")}
+                    value={score != null ? score.toFixed(2) : "—"}
+                    suffix="/ ٥٫٠٠"
+                    tone={score == null ? "neutral" : score >= 4.0 ? "positive" : score < 3.0 ? "negative" : "warning"}
+                  />
+                  <Metric
+                    label={tr("ar", "benchmark_gap")}
+                    value={gapValue}
+                    suffix="مقابل ٤٫٠٠"
+                    tone={gapTone}
+                  />
+                  <Metric
+                    label={tr("ar", "perception_vs_reality")}
+                    value={perceptionValue}
+                    suffix={selfScore != null && validated != null
+                      ? `${tr("ar", "self_short")} ${selfScore.toFixed(2)} · ${tr("ar", "consultant_short")} ${validated.toFixed(2)}`
+                      : tr("ar", "not_validated")}
+                    tone={perceptionTone}
+                  />
+                  <Metric
+                    label={tr("ar", "maturity_short")}
+                    value={row?.maturity_label_en ? arabicMaturityLabel(row.maturity_label_en) : tr("ar", "unscored")}
+                    suffix={score != null ? `المستوى ${Math.max(1, Math.min(5, Math.ceil(score)))}` : ""}
+                    tone="brand"
+                  />
+                </div>
               </div>
 
-              {/* Findings + actions, bilingual columns */}
-              <div className="col-en">
+              {/* Findings + actions, bilingual columns (row 3 of the grid) */}
+              <div className="col-en" style={{ gridRow: "3" }}>
                 <h3 className="report-h3" style={{ marginTop: "4pt" }}>{tr("en", "key_findings")}</h3>
                 {pillarNotes.length === 0 ? (
                   <EmptyCallout>{tr("en", "findings_pending")}</EmptyCallout>
@@ -493,6 +571,7 @@ export function BilingualReport(p: BilingualReportProps) {
                     {pillarNotes.map((n, i) => (
                       <FindingCard
                         key={i}
+                        lang="en"
                         index={i + 1}
                         type={inferFindingType(n.note_text)}
                         text={n.note_text}
@@ -505,7 +584,7 @@ export function BilingualReport(p: BilingualReportProps) {
                   {actions.map((k) => <li key={k}>{tr("en", k)}</li>)}
                 </ul>
               </div>
-              <div className="col-ar" dir="rtl">
+              <div className="col-ar" dir="rtl" style={{ gridRow: "3" }}>
                 <h3 className="report-h3" style={{ marginTop: "4pt" }}>{tr("ar", "key_findings")}</h3>
                 {pillarNotes.length === 0 ? (
                   <EmptyCallout>{tr("ar", "findings_pending")}</EmptyCallout>
@@ -514,6 +593,7 @@ export function BilingualReport(p: BilingualReportProps) {
                     {pillarNotes.map((n, i) => (
                       <FindingCard
                         key={i}
+                        lang="ar"
                         index={i + 1}
                         type={inferFindingType(n.note_text)}
                         text={n.note_text}

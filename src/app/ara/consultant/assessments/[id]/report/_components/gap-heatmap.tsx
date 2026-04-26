@@ -95,12 +95,15 @@ export function bucketResponses(
   }
 
   const result = new Map<AraPillarId, Map<number, number>>();
-  for (const [pillar, byBucket] of byPillarBucket.entries()) {
+  Array.from(byPillarBucket.entries()).forEach(([pillar, byBucket]) => {
     const avgMap = new Map<number, number>();
-    for (const [bucket, scores] of byBucket.entries()) {
-      avgMap.set(bucket, scores.reduce((a, b) => a + b, 0) / scores.length);
-    }
+    Array.from(byBucket.entries()).forEach(([bucket, scores]) => {
+      avgMap.set(
+        bucket,
+        scores.reduce((a: number, b: number) => a + b, 0) / scores.length,
+      );
+    });
     result.set(pillar, avgMap);
-  }
+  });
   return result;
 }

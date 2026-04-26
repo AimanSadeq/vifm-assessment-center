@@ -47,9 +47,9 @@ export function QuestionsForm({ token, questions, answers, language }: Questions
       arr.push(q);
       byPillar.set(q.pillar_id, arr);
     }
-    for (const arr of byPillar.values()) {
+    Array.from(byPillar.values()).forEach((arr: AraQuestion[]) => {
       arr.sort((a, b) => a.question_number - b.question_number);
-    }
+    });
     return byPillar;
   }, [questions]);
 

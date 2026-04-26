@@ -34,7 +34,7 @@ export default async function AraRetentionPage() {
     .eq("status", "archived")
     .gte("archived_at", cutoffIso);
 
-  const list = (expired ?? []) as Array<{
+  const list = (expired ?? []) as unknown as Array<{
     id: string;
     archived_at: string;
     region: string;
@@ -43,7 +43,7 @@ export default async function AraRetentionPage() {
     organization: { name: string } | null;
   }>;
 
-  const dueSoonList = (dueSoon ?? []) as Array<{
+  const dueSoonList = (dueSoon ?? []) as unknown as Array<{
     id: string;
     archived_at: string;
     organization: { name: string } | null;

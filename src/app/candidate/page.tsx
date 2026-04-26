@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
+import { Sparkles, HandHeart } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ProcessMap, type ProcessStep } from "@/components/shared/process-map";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,7 +33,29 @@ export default async function CandidateDashboardPage() {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      <section className="ara-hero relative overflow-hidden rounded-2xl">
+        <div className="px-6 py-8 sm:px-8 sm:py-10 relative z-10">
+          <span className="ara-eyebrow text-accent">
+            <Sparkles className="h-3 w-3" />
+            VIFM Assessment Center
+          </span>
+          <h1 className="ara-numeral text-2xl sm:text-3xl font-semibold text-white leading-[1.1] mt-3 mb-3 max-w-2xl">
+            Your Assessment Journey
+          </h1>
+          <p className="text-sm text-white/75 max-w-2xl">
+            A structured experience designed to help you demonstrate your strengths.
+            Follow each step at your own pace.
+          </p>
+          <div className="flex flex-wrap items-center gap-2.5 mt-5">
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-white px-3.5 py-1.5 rounded-full border border-white/25 bg-white/10 backdrop-blur">
+              <HandHeart className="h-3.5 w-3.5" />
+              {steps.filter((s) => s.isComplete).length} of {steps.length} steps complete
+            </span>
+          </div>
+        </div>
+      </section>
+
       <ProcessMap
         title="Your Assessment Journey"
         subtitle="Follow the steps below to complete your assessment center experience."

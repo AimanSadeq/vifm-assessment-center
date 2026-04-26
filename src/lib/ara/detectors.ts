@@ -74,7 +74,13 @@ export async function detectAraGaps(assessmentId: string): Promise<GapAlert[]> {
     byQuestion.set(key, entry);
   }
 
-  for (const entry of byQuestion.values()) {
+  type QEntry = {
+    pillar_id: string;
+    question_number: number;
+    question_text_en: string;
+    items: { name: string; score: number }[];
+  };
+  for (const entry of Array.from(byQuestion.values()) as QEntry[]) {
     if (entry.items.length < 2) continue;
     const sorted = [...entry.items].sort((a, b) => a.score - b.score);
     const low = sorted[0];
@@ -109,9 +115,10 @@ export async function detectAraGaps(assessmentId: string): Promise<GapAlert[]> {
     byPillarByRespondent.set(pillar, perRespondent);
   }
 
-  for (const [pillarId, respMap] of byPillarByRespondent.entries()) {
-    const avgs = Array.from(respMap.values())
-      .map((r) => ({ name: r.name, avg: r.scores.reduce((a, b) => a + b, 0) / r.scores.length }))
+  type RespRec = { name: string; scores: number[] };
+  for (const [pillarId, respMap] of Array.from(byPillarByRespondent.entries())) {
+    const avgs = (Array.from(respMap.values()) as RespRec[])
+      .map((r) => ({ name: r.name, avg: r.scores.reduce((a: number, b: number) => a + b, 0) / r.scores.length }))
       .filter((r) => Number.isFinite(r.avg));
     if (avgs.length < 2) continue;
 

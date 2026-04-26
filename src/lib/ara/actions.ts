@@ -58,7 +58,7 @@ export async function createAraOrganization(formData: FormData) {
   revalidatePath("/ara/admin/organizations");
   redirect(`/ara/admin/organizations`);
   // unreachable - redirect throws
-  return { ok: true, id: data.id };
+  return { ok: true, id: data?.id };
 }
 
 export async function updateAraOrganization(formData: FormData) {
@@ -206,8 +206,8 @@ export async function createAraAssessment(formData: FormData) {
   if (error) return { ok: false, error: error.message };
 
   revalidatePath("/ara/consultant");
-  redirect(`/ara/consultant/assessments/${data.id}`);
-  return { ok: true, id: data.id };
+  redirect(`/ara/consultant/assessments/${data?.id}`);
+  return { ok: true, id: data?.id };
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -479,8 +479,8 @@ export async function createAraVersion(formData: FormData) {
   if (error) return { ok: false, error: error.message };
 
   revalidatePath("/ara/admin/questions");
-  redirect(`/ara/admin/questions/${data.id}`);
-  return { ok: true, id: data.id };
+  redirect(`/ara/admin/questions/${data?.id}`);
+  return { ok: true, id: data?.id };
 }
 
 export async function publishAraVersion(versionId: string) {

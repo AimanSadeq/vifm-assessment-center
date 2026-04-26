@@ -49,7 +49,7 @@ export default async function AssessorDetailPage({
   // Build utilization data: assignments per engagement
   const engMap = new Map<string, { name: string; count: number }>();
   (assignments ?? []).forEach((a) => {
-    const eng = a.engagements as { name: string; status: string } | null;
+    const eng = a.engagements as unknown as { name: string; status: string } | null;
     if (eng) {
       const existing = engMap.get(a.engagement_id);
       if (existing) {
@@ -139,9 +139,9 @@ export default async function AssessorDetailPage({
               </TableHeader>
               <TableBody>
                 {assignments.map((a) => {
-                  const eng = a.engagements as { name: string; status: string } | null;
-                  const cand = a.candidates as { full_name: string } | null;
-                  const ex = a.exercises as { name: string; exercise_type: string } | null;
+                  const eng = a.engagements as unknown as { name: string; status: string } | null;
+                  const cand = a.candidates as unknown as { full_name: string } | null;
+                  const ex = a.exercises as unknown as { name: string; exercise_type: string } | null;
                   return (
                     <TableRow key={a.id}>
                       <TableCell className="font-medium">{eng?.name ?? "-"}</TableCell>

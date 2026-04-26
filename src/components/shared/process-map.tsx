@@ -128,10 +128,16 @@ function DesktopView({ steps, completedCount, totalSteps }: Omit<Props, "title" 
           const a1 = Math.atan2(pos.y - cy, pos.x - cx);
           const a2 = Math.atan2(next.y - cy, next.x - cx);
           const skip = 0.22;
-          const sx = cx + R * Math.cos(a1 + skip);
-          const sy = cy + R * Math.sin(a1 + skip);
-          const ex = cx + R * Math.cos(a2 - skip);
-          const ey = cy + R * Math.sin(a2 - skip);
+          // Round to a fixed precision so server-rendered HTML and the
+          // client re-render produce byte-identical path strings, otherwise
+          // React logs a hydration mismatch warning (the trig functions
+          // can produce different last-digit values between Node and the
+          // browser engine).
+          const round = (n: number) => n.toFixed(3);
+          const sx = round(cx + R * Math.cos(a1 + skip));
+          const sy = round(cy + R * Math.sin(a1 + skip));
+          const ex = round(cx + R * Math.cos(a2 - skip));
+          const ey = round(cy + R * Math.sin(a2 - skip));
           const isDone = steps[i].isComplete;
           const isAct = steps[i].isActive || steps[(i + 1) % N].isActive;
           return (

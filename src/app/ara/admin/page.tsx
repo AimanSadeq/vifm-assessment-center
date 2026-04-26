@@ -102,10 +102,10 @@ export default function AraAdminPage() {
                 </div>
               </div>
             );
-            return tile.href ? (
+            // Every tile is wired to an href today; if a future tile is
+            // disabled (href: null) re-introduce the conditional render.
+            return (
               <Link key={tile.title} href={tile.href}>{inner}</Link>
-            ) : (
-              <div key={tile.title}>{inner}</div>
             );
           })}
         </div>

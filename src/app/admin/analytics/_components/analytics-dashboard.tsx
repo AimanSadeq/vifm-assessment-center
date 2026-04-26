@@ -207,7 +207,7 @@ export function AnalyticsDashboard({
                 <YAxis domain={[0, 5]} fontSize={10} />
                 <Tooltip
                   contentStyle={{ fontSize: 12, borderRadius: 8 }}
-                  formatter={(value: number) => [value.toFixed(1), "OAR"]}
+                  formatter={(value) => [Number(value).toFixed(1), "OAR"] as [string, string]}
                 />
                 <Bar dataKey="oarScore" fill="#010131" radius={[4, 4, 0, 0]} name="OAR Score" />
                 {candidateComparisons.some((c) => c.avgCompetencyScore !== null) && (

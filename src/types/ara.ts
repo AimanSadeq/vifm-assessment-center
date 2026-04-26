@@ -170,3 +170,16 @@ export type AraRegulatoryFramework = {
   display_order: number;
   is_active: boolean;
 };
+
+export type AraRegulatoryRequirement = {
+  id: string;
+  framework_id: string;
+  requirement_code: string;
+  requirement_text_en: string;
+  requirement_text_ar: string;
+  requirement_category: string | null;
+  pillar_id: AraPillarId | null;
+  applies_to_sectors: string[];
+  severity: AraSeverity;
+  display_order: number;
+};

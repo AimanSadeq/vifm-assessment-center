@@ -233,11 +233,6 @@ export default async function AraAssessmentDetailPage({
     "use server";
     await bulkImportAraRespondents(fd);
   };
-  const overrideComplianceAction = async (fd: FormData) => {
-    "use server";
-    await overrideComplianceStatus(fd);
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto px-6 py-10">
@@ -1422,6 +1417,10 @@ function ComplianceRequirementRow({
 }) {
   if (!result.requirement) return null;
   const req = result.requirement;
+  const overrideComplianceAction = async (fd: FormData) => {
+    "use server";
+    await overrideComplianceStatus(fd);
+  };
   const pillar = req.pillar_id ? ARA_PILLARS.find((p) => p.id === req.pillar_id)?.name_en : null;
 
   return (

@@ -21,7 +21,7 @@ export default async function AraSandboxPage() {
     .eq("is_sandbox", true)
     .order("created_at", { ascending: false });
 
-  const list = (sandboxes ?? []) as Array<{
+  const list = (sandboxes ?? []) as unknown as Array<{
     id: string;
     created_at: string;
     region: string;

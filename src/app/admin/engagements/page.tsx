@@ -62,8 +62,8 @@ export default async function EngagementsPage({
   let sorted = engagements ?? [];
   if (sortField === "client") {
     sorted = [...sorted].sort((a, b) => {
-      const aName = (a.organizations as { name: string } | null)?.name ?? "";
-      const bName = (b.organizations as { name: string } | null)?.name ?? "";
+      const aName = (a.organizations as unknown as { name: string } | null)?.name ?? "";
+      const bName = (b.organizations as unknown as { name: string } | null)?.name ?? "";
       return sortDir ? aName.localeCompare(bName) : bName.localeCompare(aName);
     });
   }

@@ -6,7 +6,7 @@ Custom-built Assessment Center management platform for Virginia Institute of Fin
 ## Current Status
 All 5 development phases are **complete**. The portal is functionally ready with auth disabled for development. To go to production, flip `AUTH_ENABLED = true` in `src/middleware.ts` and follow `src/lib/auth/README.md`.
 
-**ARA module status:** VIFM ARA (AI Readiness Assessment) is built out on branch `feature/ara-module`. M1–M5 substantively complete (respondent flow, scoring, distortion, peer benchmarks, year-on-year, EN/AR/bilingual Puppeteer PDF report). M4 partial (Layer 2 view + reg-doc Claude extraction open). M6 (annual reassessment, retention purge, sandbox cleanup) open. See "ARA Module" section below for the current deferred-items list.
+**ARA module status:** VIFM ARA (AI Readiness Assessment) is built out on branch `feature/ara-module`. M1–M5 complete (respondent flow, scoring, distortion, peer benchmarks, year-on-year, bilingual consultant notes, EN/AR/bilingual Puppeteer PDF report, Phase 2 consultant guide, regulatory doc upload with Claude extraction). Three items still open: M2.1 respondent invitation email, M3.3 consultant notification email, M6 annual reassessment + retention scheduler + sandbox cleanup. See "ARA Module" section below for the current deferred-items list.
 
 ## Tech Stack
 - **Framework:** Next.js 14 with App Router and TypeScript (strict mode)
@@ -223,19 +223,16 @@ New module being built alongside the existing AC portal. Full spec in `VIFM_ARA_
 
 ### ARA build order (milestones)
 - **M1 (done):** Schema, consultant role, nav link
-- **M2 (done):** Organizations CRUD + anonymize, assessments, respondents, question bank versions, question CRUD + up/down reorder, CSV import + export
+- **M2 (done):** Organizations CRUD + anonymize, assessments, respondents, question bank versions, question CRUD + drag-to-reorder + per-layer split, CSV import + export
 - **M3 (done):** Respondent form (EN/AR/RTL), auto-save + retry, Levels 1–5 scoring, distortion detection, peer benchmarks, year-on-year, materials upload, offline banner, use-case portfolio
-- **M4 (mostly done):** Pillar weight editor, perception vs reality (validated score), shadow AI alert, gap detector, regulatory engine, compliance summary. **Open:** Layer 2 consultant guide view (M4.4), regulatory doc upload + Claude extraction (M4.6)
-- **M5 (done):** Puppeteer EN/AR/bilingual PDF report (~30 pages), stage-aware pillar filtering, all 8 deep-dives, gap heatmap, investment matrix, gantt roadmap, compliance, use cases, YoY comparison, organization profile
+- **M4 (done):** Pillar weight editor, perception vs reality (validated score), shadow AI alert, gap detector, regulatory engine, compliance summary, **Phase 2 consultant guide tab (Layer 2 questions, bilingual)**, **regulatory document upload + Claude requirement extraction at `/ara/admin/regulatory`**
+- **M5 (done):** Puppeteer EN/AR/bilingual PDF report (~30 pages), stage-aware pillar filtering, all 8 deep-dives, gap heatmap, investment matrix, gantt roadmap, compliance, use cases, YoY comparison, organization profile, **bilingual consultant notes (note_text_ar) auto-translated via Claude on save with hand-written Arabic in seed**
 - **M6 (open):** Annual reassessment workflow, scheduled retention purge, sandbox cleanup
 
 ### ARA deferred items (from earlier milestones)
 Track here - pick up as scope allows. Do NOT delete without user confirmation. Items in this list are confirmed un-shipped; items previously listed and now shipped have been removed.
 - **M2.1 - Respondent invitation email send:** `ara_respondents.access_token` is generated and the link is previewable in the consultant dashboard, but no email is actually sent. Needs a server action that hits the existing Microsoft Graph wrapper (`src/lib/integrations/email.ts`) with a bilingual welcome template, respects `is_sandbox` → SANDBOX_EMAIL_REDIRECT env var, and writes to `ara_email_log`.
-- **M2.2 - Drag-to-reorder questions:** up/down arrow buttons ship today via `moveAraQuestion("up"\|"down")`. Native drag-and-drop UX never built.
 - **M3.3 - Consultant notification email** on respondent completion / all-complete. Hook into `markAraRespondentComplete` and write to `ara_email_log`.
-- **M4.4 - Layer 2 consultant guide questions view** (only visible to consultant, handover Section 7.4).
-- **M4.6 - Regulatory document upload + Claude AI requirement extraction** (handover Section 11.7).
 - **AUTH_ENABLED flip:** still `false` in `src/middleware.ts`. Production switch on requires real Supabase Auth wiring per `src/lib/auth/README.md`.
 
 ### Critical ARA business rules

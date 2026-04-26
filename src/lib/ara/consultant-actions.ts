@@ -37,11 +37,21 @@ export async function createConsultantNote(formData: FormData) {
   });
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
 
+  // Best-effort translation. If ANTHROPIC_API_KEY is missing or the
+  // call fails, we save the note without a translation; the AR side
+  // of the bilingual report will show a "translation pending" caption.
+  const { translateConsultantNote } = await import("@/lib/ai/translate");
+  const noteTextAr =
+    parsed.data.note_language === "en"
+      ? await translateConsultantNote(parsed.data.note_text, "en", "ar")
+      : parsed.data.note_text; // already in AR
+
   const sb = createServiceClient();
   const { error } = await sb.from("ara_consultant_notes").insert({
     assessment_id: parsed.data.assessment_id,
     pillar_id: parsed.data.pillar_id,
     note_text: parsed.data.note_text,
+    note_text_ar: noteTextAr,
     include_in_report: parsed.data.include_in_report,
     note_language: parsed.data.note_language,
   });

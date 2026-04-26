@@ -27,7 +27,11 @@ type PillarRow = {
   perception_gap: number | null;
 };
 
-type ConsultantNote = { pillar_id: string | null; note_text: string };
+type ConsultantNote = {
+  pillar_id: string | null;
+  note_text: string;
+  note_text_ar?: string | null;
+};
 
 export type BilingualReportProps = {
   organizationName: string;
@@ -596,7 +600,7 @@ export function BilingualReport(p: BilingualReportProps) {
                         lang="ar"
                         index={i + 1}
                         type={inferFindingType(n.note_text)}
-                        text={n.note_text}
+                        text={n.note_text_ar ?? n.note_text}
                       />
                     ))}
                   </div>

@@ -544,17 +544,20 @@ const USE_CASES: Array<{
 const NOTES: Array<{
   pillar_id: string | null;
   note_text: string;
+  note_text_ar: string;
   include_in_report: boolean;
 }> = [
   // ─── Overall (cross-pillar) ───
   {
     pillar_id: null,
     note_text: "Overall posture is Advanced (4.08). Leadership alignment on AI is unusually strong for a regional bank - governance and strategy scores reflect board-level sponsorship established in Q3 2024.",
+    note_text_ar: "الموقف العام في المستوى المتقدم (٤٫٠٨). مواءمة القيادة بشأن الذكاء الاصطناعي قوية بشكل استثنائي بالنسبة لبنك إقليمي - تعكس درجات الحوكمة والاستراتيجية رعاية على مستوى مجلس الإدارة منذ الربع الثالث من ٢٠٢٤.",
     include_in_report: true,
   },
   {
     pillar_id: null,
     note_text: "Primary areas for investment are talent development (3.60) and model management cadence (3.60). Both are closable within one to two quarters without new headcount.",
+    note_text_ar: "المجالات الأساسية للاستثمار هي تطوير المواهب (٣٫٦٠) وإيقاع إدارة النماذج (٣٫٦٠). كلاهما قابل للإغلاق خلال ربع إلى ربعين دون توظيف إضافي.",
     include_in_report: true,
   },
 
@@ -562,16 +565,19 @@ const NOTES: Array<{
   {
     pillar_id: "strategy",
     note_text: "Documented AI strategy (v2.1, February 2025) is approved by the board and sponsored by the Chief Digital Officer with a ring-fenced AED 14M three-year budget.",
+    note_text_ar: "استراتيجية الذكاء الاصطناعي الموثقة (v2.1, فبراير ٢٠٢٥) معتمدة من مجلس الإدارة ومدعومة من الرئيس التنفيذي للرقمنة بميزانية مخصصة قدرها ١٤ مليون درهم لمدة ثلاث سنوات.",
     include_in_report: true,
   },
   {
     pillar_id: "strategy",
     note_text: "Strategy is explicitly aligned to the UAE National AI Strategy 2031 and Emirates AI Office programmes, with mapped contribution KPIs against three of the nine national priority sectors.",
+    note_text_ar: "الاستراتيجية متوائمة صراحةً مع الاستراتيجية الوطنية للذكاء الاصطناعي ٢٠٣١ في الإمارات وبرامج مكتب الإمارات للذكاء الاصطناعي، مع مؤشرات أداء مساهمة معينة لثلاثة من القطاعات الوطنية ذات الأولوية التسعة.",
     include_in_report: true,
   },
   {
     pillar_id: "strategy",
     note_text: "Quarterly board reviews of the AI portfolio have been running consistently since Q3 2024 with documented decisions. Recommend publishing an annual external AI transparency report to translate this strength into brand equity.",
+    note_text_ar: "المراجعات ربع السنوية لمجلس الإدارة لمحفظة الذكاء الاصطناعي تجري بانتظام منذ الربع الثالث من ٢٠٢٤ مع قرارات موثقة. يُوصى بنشر تقرير شفافية سنوي خارجي للذكاء الاصطناعي لترجمة هذه القوة إلى قيمة علامة تجارية.",
     include_in_report: true,
   },
 
@@ -579,16 +585,19 @@ const NOTES: Array<{
   {
     pillar_id: "data",
     note_text: "Data quality KPIs are tracked on 11 of 13 critical source systems. The two unmeasured systems (core banking tier-2 and trade-finance ledger) are scheduled for onboarding by end of Q2 2026.",
+    note_text_ar: "مؤشرات جودة البيانات مُتتبَّعة على ١١ من ١٣ نظام مصدر حيوي. النظامان غير المقاسين (المرتبة الثانية للبنوك الأساسية ودفتر تمويل التجارة) مجدولان للإدراج بنهاية الربع الثاني من ٢٠٢٦.",
     include_in_report: true,
   },
   {
     pillar_id: "data",
     note_text: "Data stewardship model is mature: 34 named stewards across 9 business domains, governed by the Data Office under the CDO.",
+    note_text_ar: "نموذج إدارة البيانات ناضج: ٣٤ مشرفاً معيناً عبر ٩ مجالات أعمال، يحكمه مكتب البيانات تحت إشراف المدير التنفيذي للبيانات.",
     include_in_report: true,
   },
   {
     pillar_id: "data",
     note_text: "Shadow AI controls are policy-level only; technical enforcement (DLP for AI endpoints, approved-tools allowlist at the proxy layer) is scheduled but not yet live. Near-term risk vector for UAE PDPL Article 8 compliance.",
+    note_text_ar: "ضوابط الذكاء الاصطناعي الخفي على مستوى السياسات فقط؛ التطبيق التقني (DLP لنقاط نهاية الذكاء الاصطناعي، قائمة الأدوات المعتمدة على طبقة الوكيل) مجدول لكنه ليس فعالاً بعد. متجه خطر قريب الأجل للامتثال للمادة ٨ من قانون حماية البيانات الإماراتي.",
     include_in_report: true,
   },
 
@@ -596,16 +605,19 @@ const NOTES: Array<{
   {
     pillar_id: "technology",
     note_text: "AI workloads run on a UAE-sovereign cloud tenancy (G42 / Microsoft Azure Abu Dhabi region). Data residency controls are validated and auditable.",
+    note_text_ar: "أحمال الذكاء الاصطناعي تعمل على بيئة سحابية سيادية إماراتية (G42 / منطقة Microsoft Azure أبوظبي). ضوابط الإقامة البياناتية موثقة وقابلة للتدقيق.",
     include_in_report: true,
   },
   {
     pillar_id: "technology",
     note_text: "MLOps pipeline is operational for the two production models, with CI/CD and versioned model registry. Monitoring dashboards track accuracy and drift but not yet fairness metrics.",
+    note_text_ar: "خط أنابيب MLOps فعال للنموذجين الإنتاجيين، مع CI/CD وسجل نماذج بإصدارات. لوحات المراقبة تتتبع الدقة والانحراف لكن ليس مقاييس العدالة بعد.",
     include_in_report: true,
   },
   {
     pillar_id: "technology",
     note_text: "Approved-tools list exists for generative AI assistants (Copilot for M365, internal Claude workspace). Adoption monitoring is in place. Sandbox environment is usable but under-promoted - consider internal launch campaign.",
+    note_text_ar: "قائمة الأدوات المعتمدة موجودة لمساعدي الذكاء الاصطناعي التوليدي (Copilot for M365، مساحة عمل Claude الداخلية). مراقبة التبني قائمة. بيئة الاختبار قابلة للاستخدام لكنها أقل ترويجاً - يُنصح بحملة إطلاق داخلية.",
     include_in_report: true,
   },
 
@@ -613,21 +625,25 @@ const NOTES: Array<{
   {
     pillar_id: "talent",
     note_text: "Primary gap identified. Technical AI literacy is concentrated in a 12-person centre of excellence. The remaining ~1,400 staff have received awareness training only. Recommend tiered role-based upskilling within 6 months.",
+    note_text_ar: "تم تحديد الفجوة الرئيسية. الإلمام التقني بالذكاء الاصطناعي مركّز في مركز تميز مكون من ١٢ شخصاً. الموظفون المتبقون (~١٤٠٠) تلقوا تدريب توعية فقط. يُوصى برفع المهارات المتدرج المستند إلى الأدوار خلال ٦ أشهر.",
     include_in_report: true,
   },
   {
     pillar_id: "talent",
     note_text: "No formal AI-role hiring pipeline. Current talent acquisition for the data team relies on general-purpose data-science reqs without AI/ML specialisation tagging. Correct by Q3 2026.",
+    note_text_ar: "لا يوجد خط توظيف رسمي لأدوار الذكاء الاصطناعي. اكتساب المواهب الحالي لفريق البيانات يعتمد على متطلبات علوم البيانات العامة دون وسم تخصص الذكاء الاصطناعي / تعلم الآلة. يُصحَّح بحلول الربع الثالث من ٢٠٢٦.",
     include_in_report: true,
   },
   {
     pillar_id: "talent",
     note_text: "Employee AI-sentiment survey is ad-hoc (two pulses run to date). Recommend moving to a quarterly cadence with segmentation by function so training investment can be targeted.",
+    note_text_ar: "استطلاع مشاعر الموظفين تجاه الذكاء الاصطناعي متفرق (نبضتان أُجريتا حتى الآن). يُوصى بالانتقال إلى إيقاع ربع سنوي مع تقسيم حسب الوظيفة بحيث يمكن استهداف الاستثمار التدريبي.",
     include_in_report: true,
   },
   {
     pillar_id: "talent",
     note_text: "Leadership AI literacy is notably stronger than middle-management - creates a 'frozen middle' risk where strategic intent doesn't cascade into day-to-day decision-making.",
+    note_text_ar: "إلمام القيادة بالذكاء الاصطناعي أقوى بشكل ملحوظ من الإدارة الوسطى - يخلق خطر 'الوسط المتجمد' حيث لا تتدفق النية الاستراتيجية إلى صناعة القرار اليومي.",
     include_in_report: true,
   },
 
@@ -635,21 +651,25 @@ const NOTES: Array<{
   {
     pillar_id: "culture",
     note_text: "Mixed signals. Employee survey shows 76% of staff are 'curious or excited' about AI, but only 34% feel their department has a clear AI plan. Opportunity rather than resistance - the appetite is there.",
+    note_text_ar: "إشارات مختلطة. استطلاع الموظفين يُظهر أن ٧٦٪ من الموظفين 'فضوليون أو متحمسون' تجاه الذكاء الاصطناعي، لكن ٣٤٪ فقط يشعرون أن قسمهم لديه خطة واضحة للذكاء الاصطناعي. فرصة وليس مقاومة - الشهية موجودة.",
     include_in_report: true,
   },
   {
     pillar_id: "culture",
     note_text: "CEO has publicly backed the AI agenda in two all-staff communications, but cascade to mid-level leaders is inconsistent. Recommend quarterly AI town-halls with live Q&A format.",
+    note_text_ar: "دعم الرئيس التنفيذي لأجندة الذكاء الاصطناعي علنياً في رسالتين لجميع الموظفين، لكن التتابع إلى القادة من المستوى المتوسط غير متسق. يُوصى بلقاءات عامة ربع سنوية للذكاء الاصطناعي بصيغة أسئلة وأجوبة مباشرة.",
     include_in_report: true,
   },
   {
     pillar_id: "culture",
     note_text: "Change management is attached to tooling rollouts (Copilot, fraud model) but not yet to the broader cultural shift. No structured 'AI-ready leader' programme exists today.",
+    note_text_ar: "إدارة التغيير مرتبطة بطرح الأدوات (Copilot، نموذج الاحتيال) لكنها ليست مرتبطة بعد بالتحول الثقافي الأشمل. لا يوجد برنامج منظم لـ 'القائد الجاهز للذكاء الاصطناعي' اليوم.",
     include_in_report: true,
   },
   {
     pillar_id: "culture",
     note_text: "Cross-functional collaboration is strong on the two flagship AI initiatives (Risk+Data, Retail+Digital). Silos re-emerge outside those projects - a 'communities of practice' structure would help.",
+    note_text_ar: "التعاون متعدد الوظائف قوي في مبادرتي الذكاء الاصطناعي الرائدتين (المخاطر+البيانات، التجزئة+الرقمنة). تظهر الصوامع مجدداً خارج تلك المشاريع - هيكل 'مجتمعات الممارسة' سيساعد.",
     include_in_report: true,
   },
 
@@ -657,21 +677,25 @@ const NOTES: Array<{
   {
     pillar_id: "governance",
     note_text: "Notable strength. The AI Governance Committee is formally chartered, meets monthly, and has documented decisions since January 2025. This exceeds GCC peer median and is a competitive differentiator.",
+    note_text_ar: "نقطة قوة بارزة. لجنة حوكمة الذكاء الاصطناعي مُؤسَّسة رسمياً، تجتمع شهرياً، ولديها قرارات موثقة منذ يناير ٢٠٢٥. يتجاوز هذا متوسط النظراء الخليجيين ويُعدّ ميزة تنافسية.",
     include_in_report: true,
   },
   {
     pillar_id: "governance",
     note_text: "AI Acceptable Use Policy (v1.3, March 2025) is published and acknowledged by 96% of eligible staff. Third-party AI tool vetting is handled by a joint Risk-IT-Compliance panel with documented review criteria.",
+    note_text_ar: "سياسة الاستخدام المقبول للذكاء الاصطناعي (v1.3، مارس ٢٠٢٥) منشورة ومُقَرَّة من قِبل ٩٦٪ من الموظفين المؤهلين. فحص أدوات الذكاء الاصطناعي من الأطراف الثالثة تتولاه لجنة مشتركة من المخاطر-تكنولوجيا المعلومات-الامتثال بمعايير مراجعة موثقة.",
     include_in_report: true,
   },
   {
     pillar_id: "governance",
     note_text: "Incident response playbook covers three AI-specific scenarios (model drift breach, generative-AI output liability, training-data exposure). Tabletop exercise scheduled for Q2 2026.",
+    note_text_ar: "دليل الاستجابة للحوادث يغطي ثلاثة سيناريوهات خاصة بالذكاء الاصطناعي (خرق انحراف النموذج، مسؤولية مخرجات الذكاء الاصطناعي التوليدي، تعرض بيانات التدريب). تمرين طاولة مجدول للربع الثاني من ٢٠٢٦.",
     include_in_report: true,
   },
   {
     pillar_id: "governance",
     note_text: "Recommend extending the governance committee charter to include a rotating external advisor (academic or regulator liaison) to maintain independence as the portfolio scales.",
+    note_text_ar: "يُوصى بتوسيع ميثاق لجنة الحوكمة ليشمل مستشاراً خارجياً متناوباً (أكاديمي أو منسق مع المنظم) للحفاظ على الاستقلالية مع نمو المحفظة.",
     include_in_report: true,
   },
 
@@ -679,16 +703,19 @@ const NOTES: Array<{
   {
     pillar_id: "operations",
     note_text: "Central AI use-case inventory is live and current (last updated 14 April 2026). 17 use cases tracked across the portfolio with owners, business value, and lifecycle stage.",
+    note_text_ar: "جرد حالات استخدام الذكاء الاصطناعي المركزي فعال وحديث (آخر تحديث ١٤ أبريل ٢٠٢٦). ١٧ حالة استخدام مُتتبَّعة عبر المحفظة مع المالكين، والقيمة التجارية، ومرحلة دورة الحياة.",
     include_in_report: true,
   },
   {
     pillar_id: "operations",
     note_text: "ROI measurement is in place for the two production use cases (fraud: 4.2x first-year ROI; credit scoring: 1.8x first-year). Pilot-stage ROI hypothesis is captured but not yet validated post-launch.",
+    note_text_ar: "قياس العائد على الاستثمار قائم لحالتي الاستخدام الإنتاجيتين (الاحتيال: ٤٫٢ ضعف عائد السنة الأولى؛ تقييم الائتمان: ١٫٨ ضعف للسنة الأولى). فرضية العائد في مرحلة التجربة موثقة لكنها لم تُتحقق بعد الإطلاق.",
     include_in_report: true,
   },
   {
     pillar_id: "operations",
     note_text: "Portfolio-retirement discipline is weak: two unsuccessful 2024 pilots remain in 'on hold' status without an explicit sunset decision. Recommend a quarterly portfolio cleanse with documented lessons-learned.",
+    note_text_ar: "انضباط تقاعد المحفظة ضعيف: تجربتان غير ناجحتين من ٢٠٢٤ تظلان في حالة 'معلق' دون قرار غروب صريح. يُوصى بتنظيف محفظة ربع سنوي مع توثيق الدروس المستفادة.",
     include_in_report: true,
   },
 
@@ -696,21 +723,25 @@ const NOTES: Array<{
   {
     pillar_id: "model_management",
     note_text: "The two production models (fraud detection, credit scoring) have strong monitoring for accuracy and drift but NO formal bias-testing cadence. SDAIA NDGF Article 4.2 and UAE AI Charter Principle 6 both expect periodic fairness reviews.",
+    note_text_ar: "النموذجان الإنتاجيان (كشف الاحتيال، تقييم الائتمان) لهما مراقبة قوية للدقة والانحراف لكن لا يوجد إيقاع رسمي لاختبار التحيز. تتوقع المادة ٤٫٢ من إطار SDAIA NDGF والمبدأ السادس من ميثاق الإمارات للذكاء الاصطناعي مراجعات عدالة دورية.",
     include_in_report: true,
   },
   {
     pillar_id: "model_management",
     note_text: "Model registry exists (MLflow on the Azure tenancy) with version history, but does not yet capture dataset lineage, approval sign-off, or retirement decisions in a single artefact.",
+    note_text_ar: "سجل النماذج موجود (MLflow على بيئة Azure) مع تاريخ الإصدارات، لكنه لا يلتقط بعد نسب مجموعة البيانات، والموافقة، أو قرارات التقاعد في مصدر واحد.",
     include_in_report: true,
   },
   {
     pillar_id: "model_management",
     note_text: "Human-in-the-loop is mandatory for credit scoring decisions above AED 500k (policy-level) but not consistently logged as audit evidence. Recommend instrumenting the override step by Q3 2026.",
+    note_text_ar: "تدخل الإنسان إلزامي لقرارات تقييم الائتمان فوق ٥٠٠ ألف درهم (على مستوى السياسة) لكنه ليس مسجلاً باستمرار كدليل تدقيق. يُوصى بتجهيز خطوة التجاوز بحلول الربع الثالث من ٢٠٢٦.",
     include_in_report: true,
   },
   {
     pillar_id: "model_management",
     note_text: "No formal model-retirement process. Two 2023 pilot models remain 'inactive but deployed' in the staging cluster. Low risk today; becomes a compliance finding as portfolio scales.",
+    note_text_ar: "لا توجد عملية تقاعد رسمية للنماذج. نموذجان تجريبيان من ٢٠٢٣ يظلان 'غير نشطين لكن مُنشَرين' في مجموعة التهيئة. مخاطرة منخفضة اليوم؛ تصبح نتيجة امتثال مع توسع المحفظة.",
     include_in_report: true,
   },
 ];
@@ -1044,16 +1075,31 @@ async function main() {
   // ────────────────────────────────────────────────────────
   log("Seeding consultant notes (Phase 2)...");
   {
-    const rows = NOTES.map((n) => ({
+    // Try with note_text_ar first; fall back to legacy schema if the
+    // 00013 migration hasn't been applied yet. This keeps the seed
+    // runnable on both pre- and post-migration databases.
+    const rowsBilingual = NOTES.map((n) => ({
       assessment_id: assessmentId,
       pillar_id: n.pillar_id,
       note_text: n.note_text,
+      note_text_ar: n.note_text_ar,
       include_in_report: n.include_in_report,
       note_language: "en" as const,
     }));
-    const { error } = await sb.from("ara_consultant_notes").insert(rows);
+    let { error } = await sb.from("ara_consultant_notes").insert(rowsBilingual);
+    if (error && /note_text_ar/.test(error.message)) {
+      log("  ! note_text_ar column missing — apply migration 00013 to enable bilingual notes");
+      const rowsLegacy = NOTES.map((n) => ({
+        assessment_id: assessmentId,
+        pillar_id: n.pillar_id,
+        note_text: n.note_text,
+        include_in_report: n.include_in_report,
+        note_language: "en" as const,
+      }));
+      ({ error } = await sb.from("ara_consultant_notes").insert(rowsLegacy));
+    }
     if (error) await die("notes insert", error);
-    log(`  + seeded ${rows.length} notes (${rows.filter((r) => r.include_in_report).length} flagged for report)`);
+    log(`  + seeded ${rowsBilingual.length} notes (${rowsBilingual.filter((r) => r.include_in_report).length} flagged for report)`);
   }
 
   // ────────────────────────────────────────────────────────

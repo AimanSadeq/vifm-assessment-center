@@ -41,6 +41,7 @@ type PillarScoreRow = {
 type ConsultantNoteRow = {
   pillar_id: string | null;
   note_text: string;
+  note_text_ar: string | null;
   include_in_report: boolean;
 };
 
@@ -94,7 +95,7 @@ export default async function AraReportPage({
       }>(),
     sb
       .from("ara_consultant_notes")
-      .select("pillar_id, note_text, include_in_report")
+      .select("pillar_id, note_text, note_text_ar, include_in_report")
       .eq("assessment_id", assessment.id)
       .eq("include_in_report", true)
       .returns<ConsultantNoteRow[]>(),

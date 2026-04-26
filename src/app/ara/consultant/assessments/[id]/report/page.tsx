@@ -600,10 +600,11 @@ export default async function AraReportPage({
               <PillarPages
                 key={pillar.id}
                 pillarId={pillar.id}
-                name={pillar.name_en}
-                nameAr={pillar.name_ar}
+                name={rtl ? pillar.name_ar : pillar.name_en}
+                nameAr={rtl ? pillar.name_en : pillar.name_ar}
                 row={row}
                 notes={pillarNotes}
+                lang={rtl ? "ar" : "en"}
               />
             );
           })}
@@ -1038,12 +1039,14 @@ function PillarPages({
   nameAr,
   row,
   notes,
+  lang = "en",
 }: {
   pillarId: AraPillarId;
   name: string;
   nameAr: string;
   row: PillarScoreRow | undefined;
   notes: ConsultantNoteRow[];
+  lang?: "en" | "ar";
 }) {
   const score = row?.raw_score != null ? Number(row.raw_score) : null;
   const gap = row?.benchmark_gap != null ? Number(row.benchmark_gap) : null;
@@ -1141,9 +1144,10 @@ function PillarPages({
             {notes.map((n, i) => (
               <FindingCard
                 key={i}
+                lang={lang}
                 index={i + 1}
                 type={inferFindingType(n.note_text)}
-                text={n.note_text}
+                text={lang === "ar" ? (n.note_text_ar ?? n.note_text) : n.note_text}
               />
             ))}
           </div>

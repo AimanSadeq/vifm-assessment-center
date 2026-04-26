@@ -21,12 +21,12 @@ export default function AraAdminPage() {
       status: "Ready",
     },
     {
-      href: null,
+      href: "/ara/admin/regulatory",
       icon: FileText,
       tone: "gold",
       title: "Regulatory Docs",
       description: "Upload regulatory documents; AI-extract requirements.",
-      status: "Coming in M4",
+      status: "Ready",
     },
     {
       href: "/ara/admin/sandbox",

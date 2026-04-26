@@ -184,7 +184,7 @@ export default async function AraAssessmentDetailPage({
   const { data: layer2Questions } = assessment.question_bank_version_id
     ? await sb
         .from("ara_questions")
-        .select("id, pillar_id, question_number, question_text_en, question_text_ar, help_text_en")
+        .select("id, pillar_id, question_number, question_text_en, question_text_ar, help_text_en, help_text_ar")
         .eq("version_id", assessment.question_bank_version_id)
         .eq("layer", 2)
         .eq("is_active", true)
@@ -420,6 +420,7 @@ export default async function AraAssessmentDetailPage({
           <TabsList className="mb-6">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="phase2">Phase 2 notes</TabsTrigger>
+            <TabsTrigger value="guide">Phase 2 guide</TabsTrigger>
             <TabsTrigger value="compliance">Compliance</TabsTrigger>
             <TabsTrigger value="portfolio">Portfolio &amp; evidence</TabsTrigger>
             <TabsTrigger value="respondents">Respondents</TabsTrigger>
@@ -673,17 +674,23 @@ export default async function AraAssessmentDetailPage({
 
           </TabsContent>
 
-          <TabsContent value="phase2" className="space-y-0">
-
-        {/* ─── Layer 2 Consultant Guide ─── */}
-        {(layer2Questions ?? []).length > 0 && (
+          <TabsContent value="guide" className="space-y-0">
+        {(layer2Questions ?? []).length === 0 ? (
+          <Card className="mb-6">
+            <CardContent className="py-10 text-center text-sm text-muted-foreground">
+              No Layer 2 guide questions exist on this version of the bank.
+              Admin can add them at <strong>/ara/admin/questions</strong> with layer set to 2.
+            </CardContent>
+          </Card>
+        ) : (
           <Card className="mb-6">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <BookOpen className="h-4 w-4" /> Layer 2 - Consultant guide
+                <BookOpen className="h-4 w-4" /> Phase 2 consultant guide
               </CardTitle>
               <CardDescription>
-                Additional questions for your Phase 2 workshop. <strong>Never shown to respondents.</strong>
+                Layer 2 questions for the Phase 2 workshop. <strong>Never shown to respondents.</strong>
+                Use these to dig deeper than the Layer 1 self-assessment and uncover the &ldquo;why&rdquo; behind each score.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -692,21 +699,30 @@ export default async function AraAssessmentDetailPage({
                   const qs = (layer2Questions ?? []).filter((q) => q.pillar_id === pillar.id);
                   if (qs.length === 0) return null;
                   return (
-                    <details key={pillar.id} className="rounded-lg border bg-card">
+                    <details key={pillar.id} className="rounded-lg border bg-card" open>
                       <summary className="px-3 py-2 cursor-pointer flex items-center justify-between text-sm">
-                        <span className="font-medium">{pillar.name_en}</span>
+                        <span className="font-medium">
+                          {pillar.name_en}
+                          <span className="text-muted-foreground ms-2" dir="rtl">{pillar.name_ar}</span>
+                        </span>
                         <Badge variant="outline" className="text-[10px]">{qs.length}</Badge>
                       </summary>
-                      <ol className="px-4 py-3 space-y-2 list-decimal list-inside text-sm">
+                      <ol className="px-4 py-3 space-y-3 text-sm border-t">
                         {qs.map((q) => (
-                          <li key={q.id}>
-                            <span className="font-medium me-1">Q{q.question_number}.</span>
-                            {q.question_text_en}
-                            {q.help_text_en && (
-                              <p className="mt-1 text-xs text-muted-foreground ms-5">
-                                {q.help_text_en}
-                              </p>
-                            )}
+                          <li key={q.id} className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                              <span className="font-medium me-1 text-primary">Q{q.question_number}.</span>
+                              {q.question_text_en}
+                              {q.help_text_en && (
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  {q.help_text_en}
+                                </p>
+                              )}
+                            </div>
+                            <div dir="rtl" className="text-right md:border-s md:ps-4">
+                              <span className="font-medium me-1 text-primary">س{q.question_number}.</span>
+                              {q.question_text_ar}
+                            </div>
                           </li>
                         ))}
                       </ol>
@@ -717,6 +733,9 @@ export default async function AraAssessmentDetailPage({
             </CardContent>
           </Card>
         )}
+          </TabsContent>
+
+          <TabsContent value="phase2" className="space-y-0">
 
         {/* ─── Phase 2 Consultant Notes ─── */}
         <Card className="mb-6">

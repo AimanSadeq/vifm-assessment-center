@@ -636,6 +636,64 @@ export async function deleteAraQuestion(questionId: string, versionId: string) {
   return { ok: true };
 }
 
+/**
+ * Bulk reorder questions inside a pillar. Accepts an array of question
+ * IDs in the desired order; rewrites display_order to match the array
+ * index. Used by the drag-and-drop UX on the question list page.
+ *
+ * Authorization: admin only. The IDs are validated to belong to the
+ * given version + pillar + layer scope so a malicious caller cannot
+ * splice in unrelated rows.
+ */
+export async function reorderAraQuestions(
+  versionId: string,
+  pillarId: string,
+  layer: 1 | 2,
+  orderedIds: string[]
+) {
+  try { await requireRole("admin"); } catch (e) { return authErr(e); }
+  if (!versionId || !pillarId || orderedIds.length === 0) {
+    return { ok: false, error: "Missing version, pillar, or ordering" };
+  }
+
+  const sb = createServiceClient();
+
+  // Validate scope: every passed ID must belong to the given pillar/version/layer
+  const { data: rows } = await sb
+    .from("ara_questions")
+    .select("id")
+    .eq("version_id", versionId)
+    .eq("pillar_id", pillarId)
+    .eq("layer", layer)
+    .in("id", orderedIds);
+  const valid = new Set((rows ?? []).map((r) => r.id));
+  if (valid.size !== orderedIds.length || orderedIds.some((id) => !valid.has(id))) {
+    return { ok: false, error: "One or more questions are not part of this scope" };
+  }
+
+  // Two-pass write to dodge unique-constraint collisions if one exists on
+  // (version_id, pillar_id, layer, display_order). First push every row
+  // into a high-numbered range, then write the final positions.
+  const offset = 1000;
+  for (let i = 0; i < orderedIds.length; i++) {
+    const { error } = await sb
+      .from("ara_questions")
+      .update({ display_order: offset + i })
+      .eq("id", orderedIds[i]);
+    if (error) return { ok: false, error: error.message };
+  }
+  for (let i = 0; i < orderedIds.length; i++) {
+    const { error } = await sb
+      .from("ara_questions")
+      .update({ display_order: i })
+      .eq("id", orderedIds[i]);
+    if (error) return { ok: false, error: error.message };
+  }
+
+  revalidatePath(`/ara/admin/questions/${versionId}`);
+  return { ok: true };
+}
+
 // Reorder question - swap display_order with neighbour in same pillar
 export async function moveAraQuestion(questionId: string, direction: "up" | "down") {
   try { await requireRole("admin"); } catch (e) { return authErr(e); }

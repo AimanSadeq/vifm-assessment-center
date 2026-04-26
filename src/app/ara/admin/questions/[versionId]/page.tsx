@@ -10,12 +10,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
 import {
   createAraQuestion, publishAraVersion,
-  deleteAraQuestion, moveAraQuestion,
   importAraQuestionsCsv,
   aiAuthorAraQuestion,
 } from "@/lib/ara/actions";
 import { isAIConfigured } from "@/lib/ai/client";
 import { ConfirmAction } from "@/components/shared/confirm-action";
+import { DraggableQuestionList } from "./_components/draggable-question-list";
 import type { AraQuestion, AraQuestionBankVersion } from "@/types/ara";
 
 export const dynamic = "force-dynamic";
@@ -112,85 +112,33 @@ export default async function AraVersionDetailPage({
                   </CardTitle>
                   <CardDescription dir="rtl" className="text-right">{pillar.name_ar}</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  {qs.length === 0 ? (
+                <CardContent className="space-y-4">
+                  {([1, 2] as const).map((layer) => {
+                    const layerQs = qs.filter((q) => q.layer === layer);
+                    if (layerQs.length === 0) return null;
+                    return (
+                      <div key={layer}>
+                        {layer === 2 && (
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+                            Layer 2 — consultant guide (never shown to respondents)
+                          </p>
+                        )}
+                        <DraggableQuestionList
+                          versionId={version.id}
+                          pillarId={pillar.id}
+                          layer={layer}
+                          initialQuestions={layerQs.map((q) => ({
+                            id: q.id,
+                            question_number: q.question_number,
+                            question_text_en: q.question_text_en,
+                            layer: q.layer,
+                          }))}
+                        />
+                      </div>
+                    );
+                  })}
+                  {qs.length === 0 && (
                     <p className="text-xs text-muted-foreground">No questions in this pillar yet.</p>
-                  ) : (
-                    <ol className="space-y-2">
-                      {qs.map((q, idx) => {
-                        const moveUpAction = async () => {
-                          "use server";
-                          await moveAraQuestion(q.id, "up");
-                        };
-                        const moveDownAction = async () => {
-                          "use server";
-                          await moveAraQuestion(q.id, "down");
-                        };
-                        const deleteAction = async () => {
-                          "use server";
-                          await deleteAraQuestion(q.id, version.id);
-                        };
-                        return (
-                          <li key={q.id} className="text-sm flex items-start gap-2">
-                            <div className="flex flex-col -gap-px">
-                              <form action={moveUpAction}>
-                                <button
-                                  type="submit"
-                                  disabled={idx === 0}
-                                  className="h-4 w-5 text-muted-foreground hover:text-foreground disabled:opacity-20"
-                                  aria-label="Move up"
-                                >
-                                  <ChevronUp className="h-3.5 w-3.5" />
-                                </button>
-                              </form>
-                              <form action={moveDownAction}>
-                                <button
-                                  type="submit"
-                                  disabled={idx === qs.length - 1}
-                                  className="h-4 w-5 text-muted-foreground hover:text-foreground disabled:opacity-20"
-                                  aria-label="Move down"
-                                >
-                                  <ChevronDown className="h-3.5 w-3.5" />
-                                </button>
-                              </form>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <span className="font-medium">Q{q.question_number}</span>{" "}
-                              <Badge variant="outline" className="text-[10px] mx-1">L{q.layer}</Badge>
-                              <Badge variant="secondary" className="text-[10px] me-1 capitalize">{q.question_type}</Badge>
-                              {q.question_text_en}
-                            </div>
-                            <div className="flex items-center gap-1 shrink-0">
-                              <Link
-                                href={`/ara/admin/questions/${version.id}/${q.id}`}
-                                className="p-1 text-muted-foreground hover:text-foreground"
-                                aria-label="Edit"
-                              >
-                                <Pencil className="h-3.5 w-3.5" />
-                              </Link>
-                              <ConfirmAction
-                                action={deleteAction}
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-transparent"
-                                title={`Delete Q${q.question_number}?`}
-                                description={
-                                  <>
-                                    Removes this question from v{version.version_number}.
-                                    If any respondent has answered it, that response
-                                    is also removed. Not reversible.
-                                  </>
-                                }
-                                confirmLabel="Delete"
-                                successMessage="Question deleted"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </ConfirmAction>
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ol>
                   )}
                 </CardContent>
               </Card>

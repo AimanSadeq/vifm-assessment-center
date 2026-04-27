@@ -1,13 +1,29 @@
 import { z } from "zod";
 
+// Permissive UUID-shape check. Zod's .uuid() enforces RFC 4122 (version 1-5,
+// variant 8/9/a/b). The role-profile seed migration uses synthetic UUIDs
+// like "00000001-aaaa-0000-0000-000000000005" which are valid Postgres uuid
+// values but fail the strict check. We trust Postgres to do the real validation.
+const uuidShape = z
+  .string()
+  .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, "Invalid UUID");
+
 export const addCandidateSchema = z.object({
   engagementId: z.string().uuid(),
   fullName: z.string().min(1, "Name is required"),
   email: z.string().email("Valid email required"),
   phone: z.string().optional(),
+  roleProfileId: uuidShape.optional().nullable(),
 });
 
 export type AddCandidateValues = z.infer<typeof addCandidateSchema>;
+
+export const setCandidateRoleProfileSchema = z.object({
+  candidateId: z.string().uuid(),
+  roleProfileId: uuidShape.nullable(),
+});
+
+export type SetCandidateRoleProfileValues = z.infer<typeof setCandidateRoleProfileSchema>;
 
 export const createAssignmentSchema = z.object({
   engagementId: z.string().uuid(),

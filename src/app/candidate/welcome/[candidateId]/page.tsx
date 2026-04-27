@@ -94,7 +94,7 @@ export default async function CandidateWelcomePage({ params }: Props) {
 
           <Separator />
 
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             {!hasConsented ? (
               <Link href={`/candidate/consent/${candidateId}`}>
                 <Button>Proceed to Consent Form</Button>
@@ -103,6 +103,9 @@ export default async function CandidateWelcomePage({ params }: Props) {
               <>
                 <Link href={`/candidate/assessments/${candidateId}`}>
                   <Button>View Assessments</Button>
+                </Link>
+                <Link href={`/candidate/skills/${candidateId}`}>
+                  <Button variant="outline">My Skills</Button>
                 </Link>
                 <Link href={`/candidate/report/${candidateId}`}>
                   <Button variant="outline">View Report</Button>

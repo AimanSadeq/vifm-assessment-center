@@ -33,9 +33,16 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { EXERCISE_TYPE_LABELS } from "@/lib/constants/exercise-types";
-import { addCandidateAction, createAssignmentAction, addDemoAssessorAction, updateEngagementStatusAction, removeCandidateAction, deleteAssignmentAction } from "../actions";
+import { addCandidateAction, createAssignmentAction, addDemoAssessorAction, updateEngagementStatusAction, removeCandidateAction, deleteAssignmentAction, setCandidateRoleProfileAction } from "../actions";
 import { Trash2, Send, FileText, CheckCircle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+
+type RoleProfileOption = {
+  id: string;
+  name_en: string;
+  name_ar: string | null;
+  target_role: string | null;
+};
 
 type Props = {
   engagement: Record<string, unknown>;
@@ -45,7 +52,10 @@ type Props = {
   assessors: Record<string, unknown>[];
   matrix: Record<string, unknown>[];
   integrationWorksheets?: Record<string, unknown>[];
+  roleProfiles?: RoleProfileOption[];
 };
+
+const ROLE_NONE = "__none__";
 
 const REPORT_TYPES = [
   { id: "oar_summary", label: "OAR Summary Report" },
@@ -62,6 +72,7 @@ export function EngagementDetail({
   assessors: initAssessors,
   matrix,
   integrationWorksheets = [],
+  roleProfiles = [],
 }: Props) {
   const router = useRouter();
   const [candidates, setCandidates] = useState(initCandidates);
@@ -76,6 +87,7 @@ export function EngagementDetail({
   const [candGender, setCandGender] = useState("");
   const [candAgeRange, setCandAgeRange] = useState("");
   const [candSeniority, setCandSeniority] = useState("");
+  const [candRoleProfileId, setCandRoleProfileId] = useState<string>("");
   const [candCreating, setCandCreating] = useState(false);
 
   // Add assessor dialog
@@ -152,10 +164,17 @@ export function EngagementDetail({
       gender: candGender || undefined,
       ageRange: candAgeRange || undefined,
       seniorityLevel: candSeniority || undefined,
+      roleProfileId: candRoleProfileId || undefined,
     });
     setCandCreating(false);
     if ("data" in result && result.data) {
-      setCandidates((prev) => [...prev, result.data]);
+      // Hydrate the embedded role_profiles object so the UI shows a name immediately,
+      // matching the shape returned by the engagement-detail page query.
+      const matched = candRoleProfileId
+        ? roleProfiles.find((rp) => rp.id === candRoleProfileId) ?? null
+        : null;
+      const hydrated = { ...result.data, role_profiles: matched } as Record<string, unknown>;
+      setCandidates((prev) => [...prev, hydrated]);
       setCandDialogOpen(false);
       setCandName("");
       setCandEmail("");
@@ -163,10 +182,31 @@ export function EngagementDetail({
       setCandGender("");
       setCandAgeRange("");
       setCandSeniority("");
+      setCandRoleProfileId("");
       toast.success("Candidate added");
     } else if ("error" in result) {
       toast.error(typeof result.error === "string" ? result.error : "Failed to add candidate");
     }
+  };
+
+  const handleSetRoleProfile = async (candidateId: string, value: string) => {
+    const roleProfileId = value === ROLE_NONE ? null : value;
+    const result = await setCandidateRoleProfileAction({ candidateId, roleProfileId });
+    if ("error" in result && result.error) {
+      toast.error(typeof result.error === "string" ? result.error : "Failed to update role");
+      return;
+    }
+    const matched = roleProfileId
+      ? roleProfiles.find((rp) => rp.id === roleProfileId) ?? null
+      : null;
+    setCandidates((prev) =>
+      prev.map((c) =>
+        (c.id as string) === candidateId
+          ? { ...c, role_profile_id: roleProfileId, role_profiles: matched }
+          : c
+      )
+    );
+    toast.success(roleProfileId ? "Role profile assigned" : "Role profile cleared");
   };
 
   const handleAddAssessor = async () => {
@@ -297,6 +337,33 @@ export function EngagementDetail({
                           placeholder="candidate@example.com"
                         />
                       </div>
+                      <div className="space-y-1">
+                        <Label>Role Profile (optional)</Label>
+                        <Select value={candRoleProfileId} onValueChange={setCandRoleProfileId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Unassigned (set later)" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {roleProfiles.length === 0 ? (
+                              <SelectItem value="__empty__" disabled>
+                                No profiles in library yet
+                              </SelectItem>
+                            ) : (
+                              roleProfiles.map((rp) => (
+                                <SelectItem key={rp.id} value={rp.id}>
+                                  {rp.name_en}
+                                  {rp.target_role && rp.target_role !== rp.name_en
+                                    ? ` — ${rp.target_role}`
+                                    : ""}
+                                </SelectItem>
+                              ))
+                            )}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-[11px] text-muted-foreground">
+                          Defines target proficiencies the candidate&apos;s scores will be compared against.
+                        </p>
+                      </div>
                       <Separator />
                       <p className="text-xs text-muted-foreground font-medium">Demographics (optional)</p>
                       <div className="grid grid-cols-2 gap-2">
@@ -376,8 +443,8 @@ export function EngagementDetail({
                     <TableRow>
                       <TableHead>Name</TableHead>
                       <TableHead>Email</TableHead>
+                      <TableHead>Role Profile</TableHead>
                       <TableHead>Department</TableHead>
-                      <TableHead>Seniority</TableHead>
                       <TableHead>Assigned Assessments</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="w-12"></TableHead>
@@ -391,17 +458,33 @@ export function EngagementDetail({
                           return cand?.id === c.id || a.candidate_id === c.id;
                         }
                       );
+                      const currentRoleId = (c.role_profile_id as string | null) ?? null;
                       return (
                         <TableRow key={c.id as string}>
                           <TableCell className="font-medium">
                             {c.full_name as string}
                           </TableCell>
                           <TableCell className="text-sm">{c.email as string}</TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {(c.department as string) || "-"}
+                          <TableCell>
+                            <Select
+                              value={currentRoleId ?? ROLE_NONE}
+                              onValueChange={(v) => handleSetRoleProfile(c.id as string, v)}
+                            >
+                              <SelectTrigger className="h-8 text-xs min-w-[180px] max-w-[240px]">
+                                <SelectValue placeholder="Unassigned" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value={ROLE_NONE}>Unassigned</SelectItem>
+                                {roleProfiles.map((rp) => (
+                                  <SelectItem key={rp.id} value={rp.id}>
+                                    {rp.name_en}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
-                            {(c.seniority_level as string) || "-"}
+                            {(c.department as string) || "-"}
                           </TableCell>
                           <TableCell>
                             {candAssignments.length > 0 ? (

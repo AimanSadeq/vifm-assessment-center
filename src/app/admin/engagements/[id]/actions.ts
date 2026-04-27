@@ -6,6 +6,8 @@ import {
   type AddCandidateValues,
   createAssignmentSchema,
   type CreateAssignmentValues,
+  setCandidateRoleProfileSchema,
+  type SetCandidateRoleProfileValues,
 } from "@/lib/validations/assessor";
 
 export async function addCandidateAction(values: AddCandidateValues & {
@@ -29,6 +31,7 @@ export async function addCandidateAction(values: AddCandidateValues & {
       gender: values.gender || null,
       age_range: values.ageRange || null,
       seniority_level: values.seniorityLevel || null,
+      role_profile_id: parsed.data.roleProfileId ?? null,
       status: "invited",
     })
     .select()
@@ -36,6 +39,20 @@ export async function addCandidateAction(values: AddCandidateValues & {
 
   if (error) return { error: error.message };
   return { data };
+}
+
+export async function setCandidateRoleProfileAction(values: SetCandidateRoleProfileValues) {
+  const parsed = setCandidateRoleProfileSchema.safeParse(values);
+  if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("candidates")
+    .update({ role_profile_id: parsed.data.roleProfileId })
+    .eq("id", parsed.data.candidateId);
+
+  if (error) return { error: error.message };
+  return { success: true };
 }
 
 export async function createAssignmentAction(values: CreateAssignmentValues) {

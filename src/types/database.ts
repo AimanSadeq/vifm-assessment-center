@@ -132,6 +132,7 @@ export type Candidate = {
   seniority_level: string | null;
   national_id_hash: string | null;
   function_role: string | null;
+  role_profile_id: string | null;
   status: "invited" | "registered" | "in_progress" | "completed" | "withdrawn";
   created_at: string;
   updated_at: string;

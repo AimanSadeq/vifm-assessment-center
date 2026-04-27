@@ -37,3 +37,8 @@ next-env.d.ts
 
 # Local scratch (frame extraction, audio, temp work)
 .tmp/
+
+# Claude Code local-only state — should never be committed.
+# (.claude/settings.json is the shared, committed config.)
+.claude/settings.local.json
+.claude/launch-*.json

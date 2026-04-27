@@ -1,0 +1,130 @@
+import Link from "next/link";
+import { ArrowLeft, FlaskConical, AlertTriangle } from "lucide-react";
+import { createServiceClient } from "@/lib/supabase/server";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
+import { clearAraSandboxData } from "@/lib/ara/admin-actions";
+
+export const dynamic = "force-dynamic";
+
+export default async function AraSandboxPage() {
+  const sb = createServiceClient();
+  const { data: sandboxes } = await sb
+    .from("ara_assessments")
+    .select("id, created_at, region, sector, status, organization:ara_organizations(name)")
+    .eq("is_sandbox", true)
+    .order("created_at", { ascending: false });
+
+  const list = (sandboxes ?? []) as unknown as Array<{
+    id: string;
+    created_at: string;
+    region: string;
+    sector: string;
+    status: string;
+    organization: { name: string } | null;
+  }>;
+
+  const clearAction = async (fd: FormData) => {
+    "use server";
+    await clearAraSandboxData(fd);
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="max-w-5xl mx-auto px-6 py-10">
+        <Link href="/ara/admin" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6">
+          <ArrowLeft className="h-3 w-3" /> Back to ARA Admin
+        </Link>
+
+        <div className="flex items-center gap-2 mb-2">
+          <FlaskConical className="h-5 w-5 text-amber-600" />
+          <h1 className="text-2xl font-semibold text-primary">Sandbox data</h1>
+        </div>
+        <p className="text-muted-foreground mb-8">
+          Sandbox assessments and their linked data - test engagements, consultant training,
+          demos. Not included in analytics; safe to bulk-delete before a real launch.
+        </p>
+
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-base">Current sandbox assessments</CardTitle>
+            <CardDescription>{list.length} sandbox assessment{list.length === 1 ? "" : "s"}.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {list.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No sandbox data.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Organization</TableHead>
+                    <TableHead>Region</TableHead>
+                    <TableHead>Sector</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Created</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {list.map((s) => (
+                    <TableRow key={s.id}>
+                      <TableCell className="font-medium">{s.organization?.name ?? "-"}</TableCell>
+                      <TableCell>
+                        <Badge variant={s.region === "uae" ? "default" : "secondary"}>
+                          {s.region === "uae" ? "UAE" : "Saudi"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="capitalize">{s.sector}</TableCell>
+                      <TableCell className="capitalize">{s.status}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {new Date(s.created_at).toLocaleDateString()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-destructive/50">
+          <CardHeader>
+            <CardTitle className="text-base text-destructive flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4" /> Clear all sandbox data
+            </CardTitle>
+            <CardDescription>
+              Hard-deletes every sandbox assessment and cascades to all their
+              respondents, answers, materials, scores, and compliance results.
+              <strong> Not reversible.</strong> Reports (if any) are also deleted
+              since they were sandbox-labelled.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form action={clearAction} className="flex items-end gap-3">
+              <div className="space-y-1 flex-1 max-w-md">
+                <Label htmlFor="confirmation" className="text-xs">
+                  Type <code>DELETE SANDBOX DATA</code> to confirm
+                </Label>
+                <Input
+                  id="confirmation"
+                  name="confirmation"
+                  required
+                  placeholder="DELETE SANDBOX DATA"
+                  autoComplete="off"
+                />
+              </div>
+              <Button type="submit" variant="destructive" disabled={list.length === 0}>
+                Delete {list.length} sandbox assessment{list.length === 1 ? "" : "s"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,203 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+import { LogIn, Mail, ChevronDown } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+
+const DEMO_ROLES = [
+  { label: "Admin", email: "admin@viftraining.com", password: "admin123", redirect: "/admin" },
+  { label: "Assessor", email: "assessor@viftraining.com", password: "admin123", redirect: "/assessor" },
+  { label: "Candidate", email: "candidate@viftraining.com", password: "admin123", redirect: "/candidate" },
+  { label: "Client", email: "client@viftraining.com", password: "admin123", redirect: "/client" },
+] as const;
+
+export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedRole, setSelectedRole] = useState("");
+  const quickLogin = async (targetEmail: string, targetPassword: string, redirect: string) => {
+    setLoading(true);
+    setError(null);
+    const supabase = createClient();
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email: targetEmail,
+      password: targetPassword,
+    });
+    setLoading(false);
+    if (authError) { setError(authError.message); return; }
+    router.push(redirect);
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) return;
+    setLoading(true);
+    setError(null);
+
+    const supabase = createClient();
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    setLoading(false);
+
+    if (authError) {
+      setError(authError.message);
+      return;
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      switch (profile?.role) {
+        case "admin": router.push("/admin"); break;
+        case "lead_assessor":
+        case "associate_assessor": router.push("/assessor"); break;
+        case "candidate": router.push("/candidate"); break;
+        case "client": router.push("/client"); break;
+        default: router.push("/admin");
+      }
+    } else {
+      router.push("/admin");
+    }
+  };
+
+  const handleMagicLink = async () => {
+    if (!email) { setError("Enter your email address first"); return; }
+    setLoading(true);
+    setError(null);
+
+    const supabase = createClient();
+    const { error: authError } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/login` },
+    });
+
+    setLoading(false);
+    if (authError) { setError(authError.message); }
+    else { alert("Check your email for a login link."); }
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl">Sign In</CardTitle>
+          <CardDescription>
+            Welcome to the VIFM Assessment Center Portal. Enter your credentials to continue.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Quick role login - compact dropdown for dev/demo */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <select
+                value={selectedRole}
+                onChange={(e) => setSelectedRole(e.target.value)}
+                disabled={loading}
+                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring appearance-none pr-8"
+              >
+                <option value="">Select role...</option>
+                {DEMO_ROLES.map((r) => (
+                  <option key={r.label} value={r.label}>{r.label}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+            </div>
+            <Button
+              disabled={loading || !selectedRole}
+              onClick={() => {
+                const role = DEMO_ROLES.find((r) => r.label === selectedRole);
+                if (role) quickLogin(role.email, role.password, role.redirect);
+              }}
+              className="shrink-0"
+            >
+              {loading ? "Signing in..." : "Quick Login"}
+            </Button>
+          </div>
+
+          <Separator />
+
+          {/* Email/password form */}
+          {(
+            <form onSubmit={handleLogin} className="space-y-3 pt-2">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@vifm.ae"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+
+              {error && (
+                <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                  {error}
+                </div>
+              )}
+
+              <Button type="submit" disabled={loading} className="w-full gap-2">
+                <LogIn className="h-4 w-4" />
+                {loading ? "Signing in..." : "Sign In"}
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleMagicLink}
+                disabled={loading}
+                className="w-full gap-2"
+              >
+                <Mail className="h-4 w-4" />
+                Sign in with Magic Link
+              </Button>
+
+              <div className="text-center">
+                <Link href="/password-reset" className="text-xs text-muted-foreground hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
+            </form>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

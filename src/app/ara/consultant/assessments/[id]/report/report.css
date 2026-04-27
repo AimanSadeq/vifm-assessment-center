@@ -1,0 +1,216 @@
+/* ARA PDF report styles - used by both on-screen preview and Puppeteer PDF.
+   A4 portrait, ~27 pages. Inline styles on individual elements handle the
+   rest; this file owns @page, @media print, page-break behavior, and the
+   design tokens consumed across the report. */
+
+/* ─── Brand design tokens ────────────────────────────────────
+   These are the same palette the portal's globals.css uses. The
+   report keeps its own copy so Puppeteer rendering is unaffected
+   if the portal layout changes. */
+:root {
+  --ara-navy:     #010131;
+  --ara-navy-2:   #111232;
+  --ara-accent:   #5391D5;
+  --ara-teal:     #2DD4BF;
+  --ara-emerald:  #34D399;
+  --ara-amber:    #FBBF24;
+  --ara-gold:     #FBBF24;
+  --ara-rose:     #FB7185;
+  --ara-violet:   #A78BFA;
+
+  --ara-ink:      #121232;
+  --ara-ink-2:    #374151;
+  --ara-mute:     #6b7280;
+  --ara-line:     #e5e7eb;
+  --ara-bg-soft:  #fafbfc;
+  --ara-bg-panel: #f9fafb;
+}
+
+@page { size: A4; margin: 0; }
+
+@media print {
+  body { background: white !important; }
+  .no-print { display: none !important; }
+}
+
+/* Chrome's print engine drops backgrounds unless we ask for exact color
+   preservation. The report relies on tinted panels and left-border bars,
+   so this flag is non-negotiable for high-fidelity PDF output. */
+.report-page,
+.report-page-bilingual,
+.report-page-bilingual-with-visual {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.report-page {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 20mm 18mm;
+  margin: 0 auto 10mm;
+  background: white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  page-break-after: always;
+  box-sizing: border-box;
+  font-family: 'Open Sans', 'Calibri', Arial, sans-serif;
+  color: var(--ara-ink);
+  position: relative; /* anchors absolutely-positioned PageFooter */
+}
+
+.report-page:last-child {
+  page-break-after: auto;
+}
+
+.report-h1 { font-size: 28pt; font-weight: 700; color: var(--ara-navy); margin: 0 0 8pt; letter-spacing: -0.01em; }
+.report-h2 { font-size: 18pt; font-weight: 700; color: var(--ara-navy); margin: 0 0 12pt; border-bottom: 2px solid var(--ara-accent); padding-bottom: 4pt; letter-spacing: -0.01em; }
+.report-h3 { font-size: 13pt; font-weight: 600; color: var(--ara-navy); margin: 10pt 0 6pt; }
+
+.report-muted { color: var(--ara-mute); font-size: 10pt; }
+
+.report-body { font-size: 10.5pt; line-height: 1.55; color: var(--ara-ink-2); }
+.report-body p { margin: 0 0 8pt; }
+.report-body ul, .report-body ol { margin: 0 0 8pt; padding-left: 18pt; }
+.report-body li { margin-bottom: 4pt; }
+
+/* ─── Shared layout helpers used by report-primitives.tsx ─── */
+.stat-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10pt;
+}
+
+.metric-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16pt;
+  padding: 14pt 18pt;
+  background: var(--ara-bg-soft);
+  border: 1pt solid var(--ara-line);
+  border-radius: 6pt;
+  margin-top: 10pt;
+}
+
+.finding-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8pt;
+  margin-top: 8pt;
+}
+
+.rec-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10pt;
+  margin-top: 10pt;
+}
+
+/* ─── Pillar overview card grid (2×4) ─── */
+.pillar-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10pt;
+  margin-top: 14pt;
+}
+.pillar-card {
+  padding: 12pt;
+  border-radius: 6pt;
+  background: var(--ara-bg-soft);
+  border: 1pt solid var(--ara-line);
+  border-left: 3pt solid var(--ara-accent);
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.pillar-card--leading  { border-left-color: var(--ara-gold);    background: #fefdf6; }
+.pillar-card--advanced { border-left-color: var(--ara-emerald); background: #f4fbf7; }
+.pillar-card--developing { border-left-color: var(--ara-amber); }
+.pillar-card--gap      { border-left-color: var(--ara-rose);    background: #fef6f7; }
+.pillar-card__name { font-size: 9.5pt; font-weight: 600; color: var(--ara-navy); margin: 0; line-height: 1.2; }
+.pillar-card__name-ar { font-size: 8pt; color: var(--ara-mute); margin: 2pt 0 10pt; }
+.pillar-card__score { font-size: 26pt; font-weight: 700; color: var(--ara-navy); font-variant-numeric: tabular-nums; line-height: 1; margin: 0; letter-spacing: -0.02em; }
+.pillar-card__maturity { font-size: 9pt; color: var(--ara-accent); font-weight: 500; margin: 2pt 0 10pt; }
+.pillar-card__track { position: relative; height: 4pt; background: var(--ara-line); border-radius: 2pt; overflow: hidden; }
+.pillar-card__fill { position: absolute; inset: 0 auto 0 0; background: var(--ara-accent); border-radius: 2pt; }
+.pillar-card--advanced .pillar-card__fill,
+.pillar-card--leading  .pillar-card__fill { background: var(--ara-emerald); }
+.pillar-card--gap      .pillar-card__fill { background: var(--ara-rose); }
+.pillar-card__benchmark { position: absolute; top: -2pt; bottom: -2pt; width: 1.5pt; background: var(--ara-navy); }
+
+/* ─── Bilingual side-by-side landscape ─────────────────────────
+   Per handover §5.3. Each page becomes A4 landscape with two
+   half-columns: English left, Arabic right. Visuals can optionally
+   span both columns (add class .report-wide inside a bilingual page). */
+
+@page bilingual-landscape {
+  size: A4 landscape;
+  margin: 0;
+}
+
+.report-page-bilingual {
+  width: 297mm;
+  min-height: 210mm;
+  margin: 0 auto 10mm;
+  background: white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
+  font-family: 'Open Sans', 'Calibri', Arial, sans-serif;
+  color: #121232;
+  page: bilingual-landscape;
+  page-break-after: always;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 10mm;
+  padding: 15mm 12mm;
+}
+
+.report-page-bilingual:last-child {
+  page-break-after: auto;
+}
+
+.report-page-bilingual > .col-en {
+  direction: ltr;
+  text-align: left;
+}
+
+.report-page-bilingual > .col-ar {
+  direction: rtl;
+  text-align: right;
+}
+
+/* A visual that spans both columns - use inside a page that is split
+   vertically into a top "visual" row and bottom "text" row. */
+.report-page-bilingual-with-visual {
+  width: 297mm;
+  min-height: 210mm;
+  margin: 0 auto 10mm;
+  background: white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
+  font-family: 'Open Sans', 'Calibri', Arial, sans-serif;
+  color: #121232;
+  page: bilingual-landscape;
+  page-break-after: always;
+  padding: 15mm 12mm;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 8mm;
+}
+
+.report-page-bilingual-with-visual:last-child {
+  page-break-after: auto;
+}
+
+.report-page-bilingual-with-visual > .bilingual-text {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 10mm;
+}
+
+.report-page-bilingual-with-visual > .bilingual-text > .col-en {
+  direction: ltr;
+  text-align: left;
+}
+
+.report-page-bilingual-with-visual > .bilingual-text > .col-ar {
+  direction: rtl;
+  text-align: right;
+}

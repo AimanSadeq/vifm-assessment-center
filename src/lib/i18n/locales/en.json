@@ -1,0 +1,169 @@
+{
+  "common": {
+    "appName": "VIFM Assessment Center",
+    "vifm": "Virginia Institute of Finance and Management",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "back": "Back",
+    "next": "Next",
+    "create": "Create",
+    "edit": "Edit",
+    "delete": "Delete",
+    "search": "Search",
+    "noData": "No data available.",
+    "confirm": "Confirm",
+    "status": "Status",
+    "actions": "Actions",
+    "confidential": "CONFIDENTIAL"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "clients": "Clients",
+    "engagements": "Engagements",
+    "exercises": "Exercises",
+    "assessors": "Assessors",
+    "analytics": "Analytics",
+    "settings": "Settings",
+    "assignments": "Assignments",
+    "observation": "Observation",
+    "integration": "Integration",
+    "washup": "Wash-Up",
+    "reports": "Reports"
+  },
+  "roles": {
+    "admin": "Administrator",
+    "lead_assessor": "Lead Assessor",
+    "associate_assessor": "Associate Assessor",
+    "candidate": "Candidate",
+    "client": "Client"
+  },
+  "portals": {
+    "admin": "Admin Portal",
+    "assessor": "Assessor Portal",
+    "candidate": "Candidate Portal",
+    "client": "Client Portal"
+  },
+  "engagement": {
+    "title": "Engagements",
+    "new": "New Engagement",
+    "createFirst": "Create your first engagement",
+    "noEngagements": "No engagements yet.",
+    "name": "Engagement Name",
+    "targetRole": "Target Role",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "organization": "Client Organization",
+    "status": {
+      "draft": "Draft",
+      "active": "Active",
+      "completed": "Completed",
+      "archived": "Archived"
+    }
+  },
+  "candidate": {
+    "title": "Candidates",
+    "addCandidate": "Add Candidate",
+    "fullName": "Full Name",
+    "email": "Email",
+    "status": {
+      "invited": "Invited",
+      "registered": "Registered",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "withdrawn": "Withdrawn"
+    }
+  },
+  "competency": {
+    "title": "Competencies",
+    "domains": {
+      "THINKING": "Thinking",
+      "RESULTS": "Results",
+      "PEOPLE": "People",
+      "SELF": "Self"
+    },
+    "selectMin": "Select at least {{count}} competencies",
+    "weight": "Weight"
+  },
+  "exercise": {
+    "title": "Exercises",
+    "addExercise": "Add Exercise",
+    "types": {
+      "in_basket": "In-Basket / E-Tray",
+      "role_play": "Role Play",
+      "group_exercise": "Group Exercise",
+      "case_study": "Case Study Analysis",
+      "oral_presentation": "Oral Presentation",
+      "competency_based_interview": "Competency-Based Interview"
+    },
+    "duration": "Duration",
+    "minutes": "minutes"
+  },
+  "observation": {
+    "title": "Observation",
+    "recordObservation": "Record Observation",
+    "behavioralObservation": "Behavioral Observation",
+    "indicator": "Indicator",
+    "positive": "Positive",
+    "negative": "Negative",
+    "neutral": "Neutral",
+    "addObservation": "Add Observation",
+    "noObservations": "No observations recorded yet."
+  },
+  "rating": {
+    "title": "Rating",
+    "bars": {
+      "1": "Significant Development Needed",
+      "2": "Development Needed",
+      "3": "Competent",
+      "4": "Strength",
+      "5": "Significant Strength"
+    },
+    "justification": "Justification",
+    "saveRating": "Save Rating"
+  },
+  "washup": {
+    "title": "Wash-Up Session",
+    "sessions": "Wash-Up Sessions",
+    "selectEngagement": "Select an engagement to begin the structured data integration discussion.",
+    "consensusRating": "Consensus Rating",
+    "discussionNotes": "Discussion Notes",
+    "saveConsensus": "Save Consensus Rating",
+    "preliminaryRatings": "Assessor Preliminary Ratings",
+    "agreed": "consensus ratings agreed"
+  },
+  "oar": {
+    "title": "Overall Assessment Rating",
+    "overallScore": "Overall Score",
+    "recommendation": "Recommendation",
+    "executiveSummary": "Executive Summary",
+    "readyNow": "Ready Now",
+    "readyWithDevelopment": "Ready with Development",
+    "notReady": "Not Ready"
+  },
+  "consent": {
+    "title": "Consent & Data Protection",
+    "dataProcessing": "Data Processing Notice",
+    "iAgree": "I Agree - Proceed to Assessment",
+    "dataConsentLabel": "I consent to the collection and processing of my personal data as described above for the purpose of the assessment center evaluation.",
+    "assessmentConsentLabel": "I voluntarily agree to participate in the assessment center and understand that the results will be shared with the sponsoring organization."
+  },
+  "report": {
+    "title": "Assessment Report",
+    "generatePdf": "Generate PDF",
+    "downloadPdf": "Download PDF",
+    "notAvailable": "Your report is not yet available.",
+    "competencyScores": "Competency Scores",
+    "developmentRecommendations": "Development Recommendations"
+  },
+  "analytics": {
+    "title": "Analytics",
+    "icc": "ICC (Inter-Rater Reliability)",
+    "biasDetection": "Assessor Bias Detection",
+    "scoreDistribution": "BARS Score Distribution",
+    "competencyAverages": "Competency Average Scores",
+    "totalRatings": "Total Ratings",
+    "engagements": "Engagements",
+    "candidates": "Candidates"
+  }
+}

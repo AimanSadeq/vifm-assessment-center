@@ -1,94 +1,336 @@
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+@layer base {
+  :root {
+    /* VIFM Brand Kit Colors:
+       Off-White: #FEFFF9
+       Dark Blue: #111232
+       Primary Blue: #010131
+       Accent Blue: #5391D5
+       Navy Blue: #121140
+    */
+    --background: 60 100% 99%;      /* #FEFFF9 Off-White */
+    --foreground: 237 51% 13%;       /* #111232 Dark Blue */
+    --card: 0 0% 100%;
+    --card-foreground: 237 51% 13%;  /* #111232 */
+    --popover: 0 0% 100%;
+    --popover-foreground: 237 51% 13%;
+    --primary: 240 97% 10%;          /* #010131 Primary Blue */
+    --primary-foreground: 60 100% 99%; /* #FEFFF9 Off-White */
+    --secondary: 220 14% 94%;
+    --secondary-foreground: 240 97% 10%;
+    --muted: 220 14% 95%;
+    --muted-foreground: 220 9% 46%;
+    --accent: 212 62% 58%;           /* #5391D5 Accent Blue */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 13% 88%;
+    --input: 220 13% 88%;
+    --ring: 240 97% 10%;             /* #010131 */
+    --radius: 0.5rem;
+    --chart-1: 240 97% 20%;
+    --chart-2: 212 62% 58%;          /* #5391D5 Accent Blue */
+    --chart-3: 173 58% 39%;
+    --chart-4: 12 76% 61%;
+    --chart-5: 262 52% 47%;
+    --sidebar-background: 240 97% 10%;  /* #010131 Primary Blue */
+    --sidebar-foreground: 60 100% 95%;
+    --sidebar-primary: 212 62% 58%;     /* #5391D5 Accent Blue */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 237 60% 16%;      /* #121140 Navy Blue */
+    --sidebar-accent-foreground: 60 100% 95%;
+    --sidebar-border: 237 50% 20%;
+    --sidebar-ring: 212 62% 58%;
+  }
+
+  .dark {
+    --background: 240 97% 5%;
+    --foreground: 60 100% 95%;
+    --card: 240 97% 8%;
+    --card-foreground: 60 100% 95%;
+    --popover: 240 97% 8%;
+    --popover-foreground: 60 100% 95%;
+    --primary: 212 62% 58%;          /* #5391D5 Accent Blue as primary in dark mode */
+    --primary-foreground: 240 97% 10%;
+    --secondary: 237 30% 14%;
+    --secondary-foreground: 60 100% 95%;
+    --muted: 237 30% 14%;
+    --muted-foreground: 220 9% 55%;
+    --accent: 212 62% 58%;
+    --accent-foreground: 240 97% 10%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 237 30% 18%;
+    --input: 237 30% 18%;
+    --ring: 212 62% 58%;
+    --chart-1: 212 62% 58%;
+    --chart-2: 240 97% 30%;
+    --chart-3: 173 58% 39%;
+    --chart-4: 12 76% 61%;
+    --chart-5: 262 52% 47%;
+    --sidebar-background: 240 97% 5%;
+    --sidebar-foreground: 60 100% 90%;
+    --sidebar-primary: 212 62% 58%;
+    --sidebar-primary-foreground: 240 97% 5%;
+    --sidebar-accent: 237 40% 12%;
+    --sidebar-accent-foreground: 60 100% 90%;
+    --sidebar-border: 237 30% 14%;
+    --sidebar-ring: 212 62% 58%;
   }
 }
 
 @layer base {
-  .theme {
-    --font-heading: var(--font-sans);
-    --font-sans: var(--font-sans);
-  }
-  :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
-  }
-  .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
-  }
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
   }
-  html {
-    @apply font-sans;
+
+  /* ─── ARA extended palette ───────────────────────────────────────
+     Accent colors used across dashboards, tiles, and hero surfaces.
+     Each has a semantic role so we don't degrade into a rainbow:
+       violet  = AI / premium / authoring
+       teal    = data / tech / respondents
+       gold    = reports / prestige / milestones
+       emerald = compliance / readiness
+       rose    = alerts / critical gaps
+  */
+  :root {
+    --ara-blue:      83 145 213; /* #5391D5 - existing accent */
+    --ara-violet:    167 139 250; /* #A78BFA - on dark */
+    --ara-violet-dk: 124  58 237; /* #7C3AED - on light */
+    --ara-teal:       45 212 191; /* #2DD4BF - on dark */
+    --ara-teal-dk:    13 148 136; /* #0D9488 - on light */
+    --ara-gold:      251 191  36; /* #FBBF24 - on dark */
+    --ara-gold-dk:   217 119   6; /* #D97706 - on light */
+    --ara-emerald:    52 211 153; /* #34D399 - on dark */
+    --ara-emerald-dk:  5 150 105; /* #059669 - on light */
+    --ara-rose:      251 113 133; /* #FB7185 - on dark */
+    --ara-rose-dk:   225  29  72; /* #E11D48 - on light */
+  }
+
+  /* ARA module visual language. Used on hero sections and branded
+     chrome so the ARA surfaces feel distinct from the AC portal
+     without loading a second theme. */
+  .ara-hero {
+    background:
+      radial-gradient(circle at 15% 20%, rgba(83, 145, 213, 0.30), transparent 45%),
+      radial-gradient(circle at 85% 15%, rgba(167, 139, 250, 0.24), transparent 50%),
+      radial-gradient(circle at 75% 80%, rgba(45, 212, 191, 0.18), transparent 50%),
+      radial-gradient(circle at 20% 90%, rgba(251, 191, 36, 0.12), transparent 55%),
+      linear-gradient(135deg, #010131 0%, #121140 50%, #111232 100%);
+    background-size: 200% 200%, 200% 200%, 200% 200%, 200% 200%, 100% 100%;
+    animation: ara-aurora 25s ease-in-out infinite;
+    color: #FEFFF9;
+    position: relative;
+    isolation: isolate;
+  }
+  /* Dot-grid overlay on hero - technical AI-product feel.
+     Soft-masked so it fades toward edges. */
+  .ara-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px);
+    background-size: 26px 26px;
+    -webkit-mask-image: radial-gradient(ellipse at 50% 35%, black 0%, transparent 75%);
+            mask-image: radial-gradient(ellipse at 50% 35%, black 0%, transparent 75%);
+    opacity: 0.55;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .ara-hero > * {
+    position: relative;
+    z-index: 1;
+  }
+  .ara-hero-subtle {
+    background:
+      radial-gradient(circle at 85% 20%, rgba(83, 145, 213, 0.10), transparent 55%),
+      radial-gradient(circle at 15% 80%, rgba(167, 139, 250, 0.08), transparent 55%),
+      radial-gradient(circle at 50% 0%, rgba(251, 191, 36, 0.05), transparent 50%),
+      linear-gradient(180deg, #FEFFF9 0%, #f8faff 100%);
+  }
+
+  /* ─── Icon-tone utilities ───
+     Tinted icon badges used on cards and stat chips. Each has a
+     "-on-dark" variant for hero-background placements. */
+  .ara-icon-blue      { background: rgba(83, 145, 213, 0.12); color: #5391D5; }
+  .ara-icon-violet    { background: rgba(124, 58, 237, 0.10); color: #7C3AED; }
+  .ara-icon-teal      { background: rgba(13, 148, 136, 0.10); color: #0D9488; }
+  .ara-icon-gold      { background: rgba(217, 119, 6, 0.12);  color: #D97706; }
+  .ara-icon-emerald   { background: rgba(5, 150, 105, 0.10);  color: #059669; }
+  .ara-icon-rose      { background: rgba(225, 29, 72, 0.10);  color: #E11D48; }
+
+  .ara-icon-blue-dk    { background: rgba(83, 145, 213, 0.18); color: #ADD8FF; }
+  .ara-icon-violet-dk  { background: rgba(167, 139, 250, 0.18); color: #C4B5FD; }
+  .ara-icon-teal-dk    { background: rgba(45, 212, 191, 0.18); color: #5EEAD4; }
+  .ara-icon-gold-dk    { background: rgba(251, 191, 36, 0.18); color: #FCD34D; }
+  .ara-icon-emerald-dk { background: rgba(52, 211, 153, 0.18); color: #6EE7B7; }
+  .ara-icon-rose-dk    { background: rgba(251, 113, 133, 0.18); color: #FDA4AF; }
+
+  /* Matching text-accent utilities for stat numbers on the hero */
+  .ara-text-violet-dk  { color: #C4B5FD; }
+  .ara-text-teal-dk    { color: #5EEAD4; }
+  .ara-text-gold-dk    { color: #FCD34D; }
+  .ara-text-emerald-dk { color: #6EE7B7; }
+  .ara-text-rose-dk    { color: #FDA4AF; }
+
+  /* Soft card that lifts on hover - used on tile grids */
+  .ara-tile {
+    @apply rounded-xl border bg-card transition-all duration-300;
+    box-shadow: 0 1px 2px rgba(1, 1, 49, 0.04);
+    position: relative;
+    overflow: hidden;
+  }
+  /* Gradient border that brightens on hover */
+  .ara-tile::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(83, 145, 213, 0) 0%, rgba(83, 145, 213, 0.5) 50%, rgba(83, 145, 213, 0) 100%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 300ms ease;
+    pointer-events: none;
+  }
+  .ara-tile:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(1, 1, 49, 0.10);
+  }
+  .ara-tile:hover::after {
+    opacity: 1;
+  }
+  .ara-tile-icon {
+    transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .ara-tile:hover .ara-tile-icon {
+    transform: translateY(-3px) scale(1.06);
+  }
+
+  /* Eyebrow label above big headlines */
+  .ara-eyebrow {
+    @apply inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.12em];
+    color: rgba(83, 145, 213, 0.9);
+  }
+
+  /* Display numeral - for hero score callouts */
+  .ara-numeral {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "ss01";
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer utilities {
+  /* ─── Animated aurora background ─── */
+  @keyframes ara-aurora {
+    0%, 100% {
+      background-position: 0% 0%, 100% 100%, 50% 0%, 0% 100%, 0 0;
+    }
+    50% {
+      background-position: 100% 100%, 0% 0%, 50% 100%, 100% 0%, 0 0;
+    }
+  }
+
+  /* ─── Gradient-sweep text (for "AI" highlight) ───
+     Prismatic sweep through the extended palette - blue, violet,
+     teal, gold - gives the accent word a subtle shimmer that
+     evokes AI/ML product surfaces. */
+  .ara-accent-sweep {
+    background: linear-gradient(
+      90deg,
+      #5391D5 0%,
+      #A78BFA 20%,
+      #FFFFFF 40%,
+      #2DD4BF 60%,
+      #FBBF24 80%,
+      #5391D5 100%
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+            background-clip: text;
+    -webkit-text-fill-color: transparent;
+            color: transparent;
+    animation: ara-sweep 7s linear infinite;
+  }
+  @keyframes ara-sweep {
+    0% { background-position: 200% center; }
+    100% { background-position: 0% center; }
+  }
+
+  /* ─── Slow spin (for the compass rose) ─── */
+  .ara-spin-slow {
+    animation: ara-spin 90s linear infinite;
+    transform-origin: center;
+  }
+  @keyframes ara-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* ─── Pulse ring (for primary CTAs) ─── */
+  .ara-pulse {
+    position: relative;
+  }
+  .ara-pulse::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: 0 0 0 0 rgba(83, 145, 213, 0.55);
+    animation: ara-pulse-ring 2.6s ease-out infinite;
+    pointer-events: none;
+  }
+  @keyframes ara-pulse-ring {
+    0% { box-shadow: 0 0 0 0 rgba(83, 145, 213, 0.55); }
+    80%, 100% { box-shadow: 0 0 0 16px rgba(83, 145, 213, 0); }
+  }
+
+  /* ─── Scroll reveal ─── */
+  .ara-reveal {
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 700ms cubic-bezier(0.22, 1, 0.36, 1),
+                transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .ara-reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ─── Floating glow (for compass ambient ring) ─── */
+  .ara-float-glow {
+    animation: ara-float-glow 7s ease-in-out infinite;
+  }
+  @keyframes ara-float-glow {
+    0%, 100% { opacity: 0.35; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.04); }
+  }
+
+  /* ─── Respect reduced-motion preferences ─── */
+  @media (prefers-reduced-motion: reduce) {
+    .ara-hero,
+    .ara-accent-sweep,
+    .ara-spin-slow,
+    .ara-float-glow {
+      animation: none !important;
+    }
+    .ara-pulse::before {
+      display: none !important;
+    }
+    .ara-reveal {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
   }
 }

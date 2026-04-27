@@ -1,99 +1,173 @@
 # VIFM Assessment Center Digital Portal
 
 ## Project Overview
-Custom-built Assessment Center management platform for Virginia Institute of Finance and Management (VIFM). The portal operationalizes the VIFM-AC Framework Blueprint across four user interfaces: Admin, Assessor, Candidate, and Client. Target market: GCC and MENA region (banking, government, corporate).
+Custom-built Assessment Center management platform for Virginia Institute of Finance and Management (VIFM). The portal operationalizes the VIFM-AC Framework across four user interfaces: Admin, Assessor, Candidate, and Client. Target market: GCC and MENA region (banking, government, corporate).
+
+## Current Status
+All 5 development phases are **complete**. The portal is functionally ready with auth disabled for development. To go to production, flip `AUTH_ENABLED = true` in `src/middleware.ts` and follow `src/lib/auth/README.md`.
+
+**ARA module status:** VIFM ARA (AI Readiness Assessment) is built out on branch `feature/ara-module`. M1–M5 complete (respondent flow, scoring, distortion, peer benchmarks, year-on-year, bilingual consultant notes, EN/AR/bilingual Puppeteer PDF report, Phase 2 consultant guide, regulatory doc upload with Claude extraction). Three items still open: M2.1 respondent invitation email, M3.3 consultant notification email, M6 annual reassessment + retention scheduler + sandbox cleanup. See "ARA Module" section below for the current deferred-items list.
+
+**AC Skillup-MENA parity status:** Six features inspired by the Skillup MENA AC walkthrough are shipped on `feature/ara-module` (P0.1 JD-to-competency extractor, P0.2 role profile library, P0.3 gap-severity badges, Learning Plan PDF, G1 candidate→role-profile binding, G2 learner skill dashboard). Open items: G3 self-serve AI quiz flow (needs product decision — overlaps with assessor-led AC philosophy), G4 bulk JD import, G5 bulk user-persona linking, G6 JSON export, G7 retake/re-assessment requests. Full reconstructed analysis lives in `.tmp/skillup-gap-analysis.md`; see "AC Skillup-MENA Upgrades" section below.
 
 ## Tech Stack
 - **Framework:** Next.js 14 with App Router and TypeScript (strict mode)
-- **Styling:** Tailwind CSS with Shadcn/UI component library
-- **Database:** Supabase (PostgreSQL + Auth + Storage + Realtime + Edge Functions)
-- **Auth:** Supabase Auth with Row-Level Security (RLS) per role
-- **File Storage:** Supabase Storage (exercise materials, reports, video recordings)
-- **Real-Time:** Supabase Realtime (live wash-up collaboration, notifications)
-- **Reporting:** React-PDF for candidate reports, Recharts for analytics charts
-- **Video:** Daily.co SDK for embedded virtual assessment center sessions
+- **Styling:** Tailwind CSS with Shadcn/UI component library (New York style)
+- **Database:** Supabase (PostgreSQL + Auth + Storage + Realtime)
+- **Auth:** Supabase Auth with Row-Level Security (RLS) per role - toggle in middleware.ts
+- **Real-Time:** Supabase Realtime (live wash-up collaboration)
+- **Reporting:** React-PDF for candidate reports (6-page professional format), Recharts for analytics
+- **AI:** Anthropic Claude API (observation classifier, report writer, development recommender, bias detector)
 - **i18n:** react-i18next with RTL support for Arabic
-- **Email:** SendGrid or Resend for transactional emails
+- **Email:** Microsoft Graph API (Azure AD app credentials) — `src/lib/integrations/email.ts` ships 6 AC templates; falls back to console-mock when env vars are absent
+- **Video:** Daily.co SDK placeholder for virtual AC sessions
+- **Font:** Open Sans (VIFM Brand Kit)
+- **Colors:** Primary Blue #010131, Accent Blue #5391D5, Off-White #FEFFF9, Dark Blue #111232, Navy Blue #121140
 - **Deployment:** Vercel (frontend) + Supabase Cloud (backend)
 
 ## Project Structure
 ```
 src/
   app/
-    (auth)/           # Login, register, password reset, magic link
-    admin/            # Admin portal (sidebar nav, org selector)
-      dashboard/
-      clients/
-      engagements/
-      exercises/
-      assessors/
-      analytics/
-      settings/
-    assessor/         # Assessor portal (top nav, exercise tabs)
-      assignments/
+    (auth)/               # Login (email/password + magic link), register, password reset
+    admin/                # Admin portal (collapsible sidebar, process map dashboard)
+      clients/            # Client organization management
+      engagements/        # Engagement list, 5-step wizard, detail with tabs
+        new/              # Engagement creation wizard (5 steps + JD extractor + role profile picker)
+        [id]/             # Engagement detail with role-profile-aware candidates table
+      exercises/          # Exercise library with briefing, timing, role player guides
+        [id]/             # Exercise detail editor (4 tabs)
+      role-profiles/      # Reusable competency packs per role (list, new, [id] editor)
+      assessors/          # Assessor pool management
+      analytics/          # ICC, bias detection, Recharts charts
+      settings/           # Integration status, compliance, environment info
+    assessor/             # Assessor portal (top nav, process map)
+      assignments/        # Engagement picker → assignment grid
+        [engagementId]/   # Candidate-exercise assignment grid with Observe buttons
       observation/
+        [assignmentId]/   # 4-tab observation form (Overview, Observe, Rate, Q&A)
       integration/
-      washup/
-    candidate/        # Candidate portal (minimal nav, progress stepper)
-      welcome/
-      consent/
-      assessments/
-      report/
-    client/           # Client portal (dashboard nav, report viewer)
-      dashboard/
-      engagements/
-      reports/
-      analytics/
+        [engagementId]/
+          [candidateId]/  # Integration worksheet (pre-wash-up consolidation)
+      washup/             # Wash-up engine
+        [engagementId]/   # Candidate list with progress bars
+          [candidateId]/  # Consensus form with radar chart + Realtime
+    candidate/            # Candidate portal (minimal nav, process map)
+      welcome/[id]/       # Personalized welcome with engagement details
+      consent/[id]/       # GDPR/UAE PDPL consent form
+      assessments/[id]/   # Exercise schedule with timing
+      skills/[id]/        # Learner skill dashboard — target vs current per competency, gap badges, grouped by domain (G2)
+      report/[id]/        # Report viewer (gated behind release status)
+    client/               # Client portal (top nav, process map)
+      engagements/        # Org-scoped engagement list
+        [id]/             # Candidate results with OAR and PDF download
+      reports/            # Cross-engagement report viewer
+      analytics/          # Cohort strengths/development areas
+    api/
+      reports/[engId]/[candId]/                # Full assessment report PDF
+      reports/[engId]/[candId]/learning-plan/  # Personalized 30/60/90 Learning Plan PDF
+      consent/[candId]/                        # Consent submission endpoint
   components/
-    ui/               # Shadcn/UI components
-    shared/           # Cross-portal shared components
-    admin/
-    assessor/
-    candidate/
-    client/
+    ui/                   # 17 Shadcn/UI components
+    shared/               # Process map, BackLink, LanguageSwitcher, VifmLogo, EngagementPicker, LogoutButton
   lib/
-    supabase/         # Supabase client, types, helpers
-    auth/             # Auth utilities, middleware, role guards
-    competencies/     # Competency framework data and helpers
-    exercises/        # Exercise types, templates, matrix logic
-    scoring/          # BARS rating logic, ICC calculation, bias detection
-    reports/          # PDF generation, report templates
-    integrations/     # SHL API, video, email, HRIS connectors
-    i18n/             # Translation files and RTL utilities
-    compliance/       # Consent, data retention, audit logging
-  types/              # TypeScript type definitions
-  hooks/              # Custom React hooks
-  utils/              # General utility functions
+    supabase/             # Server client, browser client, middleware, service client
+    auth/                 # getClientOrgId helper, README migration guide
+    ai/                   # AI client, observation assistant, report writer, dev recommender, bias detector, JD competency extractor (P0.1)
+    constants/            # Exercise type labels
+    i18n/                 # Config, provider, English + Arabic locale files
+    integrations/         # Email (6 templates), Video (Daily.co placeholder)
+    reports/              # Candidate report PDF (6 pages) + Learning Plan PDF (3 pages), data fetcher, report types
+    scoring/              # ICC calculation, bias detection, gap-severity computation (P0.3)
+    validations/          # Zod schemas for engagement, assessor, washup
+  types/                  # TypeScript types for all database tables
+  hooks/                  # Custom React hooks (placeholder)
+  utils/                  # General utilities (placeholder)
+supabase/
+  migrations/
+    00001_initial_schema.sql                  # 25 tables + RLS policies + enums + triggers
+    00002_seed_competencies.sql               # 4 domains, 8 clusters, 38 competencies
+    00003_seed_behavioral_indicators.sql      # 249 behavioral indicators
+    00004_seed_development_tips.sql           # 114 development tips (3 per competency)
+    00005_create_engagement_rpc.sql           # Atomic engagement creation function
+    00006_*…00013_*                           # ARA module (enums, core schema, regulatory seed, use cases, retain-on-delete, auth hardening, stages, bilingual notes)
+    00014_ac_role_profiles.sql                # P0.2 Role profile library + role_profile_competencies
+    00015_seed_role_profiles.sql              # 6 GCC banking + government seed profiles
+    00016_ac_candidate_role_profile.sql       # G1 candidates.role_profile_id (nullable FK)
+scripts/
+  seed-test-data.ts       # Creates full test dataset (engagement + candidates + assessor + observations)
+  seed-tags-qa.py         # Populates tags and Q&A questions for competencies
 ```
 
 ## Four User Roles (with RLS policies)
 1. **admin** - VIFM staff. Full access to all modules. Can create engagements, manage clients, assign assessors.
-2. **lead_assessor** / **associate_assessor** - External or internal assessors. See only their assigned candidates and engagements. Can record observations and ratings.
-3. **candidate** - Assessment participants. See only their own data, consent forms, test links, and reports.
-4. **client** - Sponsoring organizations. See only their own engagements and candidate reports once released.
+2. **lead_assessor** / **associate_assessor** - Assessors. See only assigned candidates and engagements. Can record observations, ratings, and consensus.
+3. **candidate** - Assessment participants. See only their own data, consent forms, and released reports.
+4. **client** - Sponsoring organizations. See only their own org's engagements and released candidate reports.
 
 ## Key Domain Concepts
-- **Engagement:** A single assessment center project for a client (e.g., "ADNOC Senior Manager AC - April 2026")
-- **Competency:** A measurable behavioral dimension (e.g., Strategic Thinking, Decision Quality). VIFM framework has 4 domains, 8 clusters, 33 competencies with positive/negative behavioral indicators.
-- **Exercise:** A simulation or test activity (In-Basket, Role Play, Group Exercise, Case Study, Oral Presentation, Competency-Based Interview)
-- **Exercise-to-Competency Matrix:** Maps which competencies are observed in which exercises. Each competency must appear in at least 2 exercises (International Taskforce Guidelines requirement).
-- **Observation:** An assessor's behavioral notes for a specific candidate in a specific exercise, organized by competency.
-- **BARS Rating:** 1-5 Behavioral Anchored Rating Scale (1=Significant Development Needed, 2=Development Needed, 3=Competent, 4=Strength, 5=Significant Strength)
-- **Wash-Up:** Structured data integration discussion where assessors compare ratings, present evidence, and agree on consensus ratings competency-by-competency.
-- **ICC:** Intraclass Correlation Coefficient measuring inter-rater reliability. Target: >0.70 Year 1, >0.80 Year 3.
-- **OAR:** Overall Assessment Rating (1-5) with recommendation: Ready Now / Ready with Development / Not Ready.
+- **Engagement:** A single assessment center project for a client
+- **Competency:** A measurable behavioral dimension. VIFM framework: 4 domains, 8 clusters, 38 competencies with 249 behavioral indicators (positive/negative), 114 development tips, 5 tags, and 3 Q&A questions per competency
+- **Exercise:** A simulation activity (In-Basket, Role Play, Group Exercise, Case Study, Oral Presentation, CBI) with structured timing (instructions/prep/meeting), participant briefing, and role player guides
+- **Exercise-to-Competency Matrix:** Maps which competencies are observed in which exercises. Each competency must appear in at least 2 exercises (enforced by Zod validation)
+- **Observation:** Assessor behavioral notes for a candidate in an exercise, classified by competency with +/- indicators
+- **BARS Rating:** 1-5 scale (1=Significant Development Needed, 2=Development Needed, 3=Competent, 4=Strength, 5=Significant Strength) + NE (No Evidence)
+- **Integration Worksheet:** Pre-wash-up form where assessors consolidate ratings across exercises
+- **Wash-Up:** Structured data integration discussion with Supabase Realtime multi-user collaboration, radar chart, and color-coded score summary
+- **OAR:** Overall Assessment Rating (1-5) with recommendation: Ready Now / Ready with Development / Not Ready
+- **ICC:** Intraclass Correlation Coefficient measuring inter-rater reliability
+- **PDF Report:** 6-page professional report (Cover, About AC, Summary, Competency Detail with Strengths/Development split, Development Recommendations)
 
-## Reference Documents (in project root)
-- `VIFM_Assessment_Center_Blueprint.docx` - Full framework: competency model, exercise library, assessor model, delivery models, scoring methodology, commercial model, implementation roadmap
-- `VIFM_Assessor_Packet.docx` - Operational assessor tools: observation forms for 6 exercise types, competency dictionary with behavioral indicators, BARS scales, integration worksheets, role player prompt sheets, wash-up protocol
-- `VIFM_AC_Portal_Project_Plan.docx` - This development plan: 5 phases, 7 propositions, database schema, Claude Code prompts per module
+## Database
+- **25 tables** with Row-Level Security on every table
+- **8 enums:** user_role, engagement_status, candidate_status, exercise_type, indicator_type, oar_recommendation, report_status, recommendation_priority
+- **363 behavioral indicators** (249 behavioral + 114 development tips)
+- **Competency fields:** tags (text[]), qa_questions (text[])
+- **Exercise fields:** prep_minutes, meeting_minutes, instructions_minutes, participant_brief, scenario_context, assessor_notes
+- **Role player prompts:** character_name, character_role, character_attitude, meeting_objectives
 
-## Development Phases (current plan)
-- **Phase 1 (Weeks 1-4):** Foundation - DB schema, auth, 4 portal shells, compliance module
-- **Phase 2 (Weeks 5-10):** Core Engine - Engagement wizard, digital assessor packet, observation forms, wash-up engine
-- **Phase 3 (Weeks 11-14):** Reporting & Integration - Candidate portal, PDF reports, analytics, SHL/video/email integration
-- **Phase 4 (Weeks 15-17):** Bilingual - Arabic/RTL, client portal
-- **Phase 5 (Weeks 18-21):** AI Enhancements - Voice observation assistant, bias detection, AI report writer, development recommender (using Anthropic Claude Sonnet 4 API)
+## Auth Status
+- Middleware toggle: `AUTH_ENABLED` in `src/middleware.ts` (currently `false`)
+- Login form: email/password + magic link (implemented)
+- Dev bypass: 4 role buttons on login page
+- Production guide: `src/lib/auth/README.md`
+- All pages have `// TODO:` comments for auth integration points
+
+## Brand Kit
+- **Primary Blue:** #010131 (sidebar, primary buttons)
+- **Accent Blue:** #5391D5 (highlights, links, charts)
+- **Off-White:** #FEFFF9 (backgrounds)
+- **Dark Blue:** #111232 (text)
+- **Navy Blue:** #121140 (sidebar accent)
+- **Font:** Open Sans
+- **Logo:** `/public/images/vifm-logo-light.png` (color) and `/public/images/vifm-logo-dark.png` (monochrome)
+
+## Environment Variables
+```
+# Required
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# Optional - enable AI features
+ANTHROPIC_API_KEY=your-anthropic-api-key
+
+# Optional - enable email notifications
+EMAIL_PROVIDER=sendgrid
+EMAIL_API_KEY=your-email-api-key
+EMAIL_FROM_ADDRESS=noreply@vifm.ae
+
+# Optional - enable video conferencing
+DAILY_API_KEY=your-daily-api-key
+```
+
+## Commands
+- `npm run dev` - Start development server (port 3000)
+- `npm run build` - Production build
+- `npm run lint` - ESLint check
+- `npx supabase db push` - Push schema changes to Supabase
+- `npx supabase gen types typescript` - Generate TypeScript types from DB schema
+- `npx tsx scripts/seed-test-data.ts` - Seed test data for development
 
 ## Coding Conventions
 - TypeScript strict mode. No `any` types.
@@ -102,10 +176,13 @@ src/
 - Use Zod for form validation and API input validation.
 - Use Shadcn/UI components as the base. Do not install other UI libraries.
 - Tailwind CSS only for styling. No CSS modules or styled-components.
+- Lucide React for all SVG icons. No emoji icons.
 - File naming: kebab-case for files, PascalCase for components.
 - Commit messages: imperative mood, under 72 characters.
 - Every table must have RLS policies. Never bypass RLS with service role key in client-facing code.
-- All user-facing text must use i18n keys (not hardcoded strings) from Phase 4 onward.
+- All user-facing text should use i18n keys from Phase 4 onward.
+- Toast notifications (Sonner) for all save/error actions.
+- BackLink component for all back navigation (ArrowLeft SVG icon).
 
 ## Compliance Requirements
 - UAE Federal Decree-Law No. 45 of 2021 (Data Protection)
@@ -117,15 +194,82 @@ src/
 - Candidate consent required before any data collection
 - Audit trail on all significant actions (immutable log)
 
-## Commands
-- `npm run dev` - Start development server
-- `npm run build` - Production build
-- `npm run lint` - ESLint check
-- `npx supabase db push` - Push schema changes to Supabase
-- `npx supabase gen types typescript` - Generate TypeScript types from DB schema
-
 ## Important Notes
-- The Wash-Up Engine (Module 6) is the single most important differentiator. No competitor does this well. Invest extra effort here.
-- SHL TalentCentral integration requires a commercial license (API credentials not available without contract). Build the integration layer with mock data first.
-- Arabic competency translations must be human-reviewed. Use placeholder Arabic text during development.
-- Each Claude Code session should produce one working, testable feature. Follow the prompt sequence in the Project Plan.
+- The Wash-Up Engine is the single most important differentiator. It includes Supabase Realtime for live multi-user collaboration.
+- Arabic competency translations are placeholders and must be human-reviewed before going live.
+- Auth is disabled for development. Flip `AUTH_ENABLED = true` and follow `src/lib/auth/README.md` for production.
+- No third-party assessment tool references (no SHL, no competitor names) anywhere in the codebase.
+- All competency content (descriptions, behavioral indicators, development tips, tags, Q&A questions) is original VIFM content.
+
+## ARA Module (AI Readiness Assessment)
+
+New module being built alongside the existing AC portal. Full spec in `VIFM_ARA_Handover.md` (on user's Desktop).
+
+### Non-breaking integration
+- All new DB tables prefixed `ara_` - no existing table modified
+- All new pages under `/ara/*` route namespace
+- All new API routes under `/api/ara/*`
+- Added `consultant` to the `user_role` enum (existing values unchanged)
+- Added single nav link "AI Readiness" to admin sidebar - no other nav changes
+- Middleware bypasses auth for `/ara/respond/[token]` routes (token-based access)
+
+### ARA roles
+- **admin** - reuses existing role. Manages question bank, regulatory docs, sandbox.
+- **consultant** - new role. Owns their own assessments; scoped RLS.
+- **respondent** - no account; accesses via `ara_respondents.access_token` validated by service-role API routes.
+
+### ARA tech choices (differ from AC where necessary)
+- **PDF reports:** Puppeteer + `@sparticuz/chromium` for Vercel — Arabic shaping + landscape bilingual side-by-side layout. Keep React-PDF for AC candidate reports. Endpoint: `/api/ara/reports/[assessmentId]/pdf?language=en|ar|bilingual`.
+- **Languages:** full bilingual EN + Gulf Arabic with RTL. Translation fields on all content tables (`_en` / `_ar` suffixes).
+- **Region-driven content:** UAE clients see UAE frameworks only, Saudi sees Saudi only - never mixed.
+- **Engagement stages:** three-tier model (`department` / `division` / `enterprise`) drives pillar filtering across detail page and report. Stage 1 (4 pillars) doubles as a sales sample.
+
+### Key ARA database objects
+- 8 pillars (strategy, data, technology, talent, culture, governance, operations, model_management)
+- Question bank versioning via `ara_question_bank_versions` - one active at a time (partial unique index)
+- Regulatory frameworks seeded: 7 UAE + 9 Saudi from handover Section 11
+- Helper function `ara_is_assessment_owner(uuid)` for consultant-scoped RLS
+
+### ARA build order (milestones)
+- **M1 (done):** Schema, consultant role, nav link
+- **M2 (done):** Organizations CRUD + anonymize, assessments, respondents, question bank versions, question CRUD + drag-to-reorder + per-layer split, CSV import + export
+- **M3 (done):** Respondent form (EN/AR/RTL), auto-save + retry, Levels 1–5 scoring, distortion detection, peer benchmarks, year-on-year, materials upload, offline banner, use-case portfolio
+- **M4 (done):** Pillar weight editor, perception vs reality (validated score), shadow AI alert, gap detector, regulatory engine, compliance summary, **Phase 2 consultant guide tab (Layer 2 questions, bilingual)**, **regulatory document upload + Claude requirement extraction at `/ara/admin/regulatory`**
+- **M5 (done):** Puppeteer EN/AR/bilingual PDF report (~30 pages), stage-aware pillar filtering, all 8 deep-dives, gap heatmap, investment matrix, gantt roadmap, compliance, use cases, YoY comparison, organization profile, **bilingual consultant notes (note_text_ar) auto-translated via Claude on save with hand-written Arabic in seed**
+- **M6 (open):** Annual reassessment workflow, scheduled retention purge, sandbox cleanup
+
+### ARA deferred items (from earlier milestones)
+Track here - pick up as scope allows. Do NOT delete without user confirmation. Items in this list are confirmed un-shipped; items previously listed and now shipped have been removed.
+- **M2.1 - Respondent invitation email send:** `ara_respondents.access_token` is generated and the link is previewable in the consultant dashboard, but no email is actually sent. Needs a server action that hits the existing Microsoft Graph wrapper (`src/lib/integrations/email.ts`) with a bilingual welcome template, respects `is_sandbox` → SANDBOX_EMAIL_REDIRECT env var, and writes to `ara_email_log`.
+- **M3.3 - Consultant notification email** on respondent completion / all-complete. Hook into `markAraRespondentComplete` and write to `ara_email_log`.
+- **AUTH_ENABLED flip:** still `false` in `src/middleware.ts`. Production switch on requires real Supabase Auth wiring per `src/lib/auth/README.md`.
+
+### Critical ARA business rules
+- Reports are **never** auto-sent to clients - consultant controls delivery
+- No file size limits on supporting material uploads
+- Desktop only - no mobile layouts required
+- UAE/Saudi framework isolation enforced at query and report layer
+
+## AC Skillup-MENA Upgrades
+
+A separate workstream alongside ARA, started after a competitor walkthrough of skillupone.com revealed several capabilities worth porting to the VIFM AC. Reconstructed gap analysis lives in `.tmp/skillup-gap-analysis.md` (the analysis file is not checked in but the conclusions are). Items are tagged P0.x / Gn for traceability.
+
+### Shipped
+- **P0.1 - JD-to-competency extractor** ([src/lib/ai/jd-competency-extractor.ts](src/lib/ai/jd-competency-extractor.ts) + [jd-extractor.tsx](src/app/admin/engagements/new/_components/jd-extractor.tsx)): paste/upload JD (Arabic or English, text or PDF) → Claude returns the most relevant 6–10 VIFM competencies with weight, priority, and reasoning. Surfaces in engagement wizard step 2.
+- **P0.2 - Role profile library** (`/admin/role-profiles/`, migrations 00014 + 00015): reusable competency packs per role with admin-scoped RLS and an authenticated read policy that respects org isolation. Six GCC banking + government profiles seeded.
+- **P0.3 - Gap-severity badges** ([src/components/shared/gap-badge.tsx](src/components/shared/gap-badge.tsx) + [src/lib/scoring/competency-gap.ts](src/lib/scoring/competency-gap.ts)): "Significant Gap (N levels)" / "On Target" / "Strength" chips with a six-tier tone palette. Server-renderable; mirrored as `GapPill` in PDFs. Applied across client engagement results, score matrix, candidate report Summary, and per-competency cards.
+- **Personalized Learning Plan PDF** ([src/lib/reports/learning-plan.tsx](src/lib/reports/learning-plan.tsx)): 3-page React-PDF — Cover, 30/60/90 Day Roadmap, per-competency action cards (uses GapPill), reflection prompts. Endpoint: `/api/reports/[engId]/[candId]/learning-plan` with the same auth + OAR-finalised gate as the main report. Surfaced as a secondary download on the candidate report and client engagement results pages.
+- **G1 - Candidate ↔ role-profile binding** (migration 00016): nullable `candidates.role_profile_id` FK. Engagement detail's candidates table has a per-row Role Profile dropdown; the Add Candidate dialog has the same picker. Permissive UUID-shape regex on the validator so seeded synthetic UUIDs pass Zod.
+- **G2 - Learner skill dashboard** (`/candidate/skills/[candidateId]/`): 4 stat cards (Total / Assessed / Skills with Gaps / Average Score) + per-skill cards grouped by VIFM domain (THINKING / RESULTS / PEOPLE / SELF). Shows target, current BARS score from `consensus_ratings`, and a `<GapBadge>`. Empty-state placeholder when no profile is bound (mirrors Skillup's "No Position Assigned"). Linked from the post-consent welcome page.
+
+### Open (not yet shipped)
+- **G3 - Self-serve AI quiz flow:** Skillup-style per-skill timed AI quiz that feeds back into the gap. **Needs a product call** before starting — overlaps philosophically with the assessor-led AC model. Would touch `src/lib/ai/quiz-generator.ts`, `/candidate/quiz/[skillId]`, results page, new `candidate_quiz_attempts` table.
+- **G4 - Bulk JD import:** folder upload → batch extract → bulk-create role profiles. ~1 day.
+- **G5 - Bulk user-to-persona linking:** CSV (email,role_profile_id) → server action upsert. ~½ day; depends on user accounts existing as durable entities (today candidates are per-engagement).
+- **G6 - JSON export of role profile / skill mapping:** Download button on role-profile detail. ~1h.
+- **G7 - Retake / re-assessment requests:** New request workflow + admin queue. Pairs with the existing ARA reassessment design.
+
+### Skipped intentionally
+- **Cert Builder** (no certificate concept yet — defer)
+- **Color Control / Sidebar customization** (conflicts with VIFM brand kit per "Brand Kit" section)
+- **Index card show/hide** (admin UX nice-to-have, low ROI)

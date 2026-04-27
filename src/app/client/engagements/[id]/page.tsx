@@ -16,6 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { BARS_LABELS } from "@/lib/validations/assessor";
+import { GapBadge } from "@/components/shared/gap-badge";
 
 const OAR_LABELS: Record<string, string> = {
   ready_now: "Ready Now",
@@ -146,9 +147,7 @@ export default async function ClientEngagementDetailPage({ params }: Props) {
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-lg">{oar.overall_score}</span>
                             <span className="text-xs text-muted-foreground">/5</span>
-                            <span className="text-xs text-muted-foreground">
-                              {BARS_LABELS[oar.overall_score] ?? ""}
-                            </span>
+                            <GapBadge score={oar.overall_score} variant="short" />
                           </div>
                         ) : (
                           <span className="text-xs text-muted-foreground">Pending</span>
@@ -232,12 +231,7 @@ export default async function ClientEngagementDetailPage({ params }: Props) {
                         return (
                           <TableCell key={cid} className="text-center">
                             {score !== undefined ? (
-                              <Badge
-                                variant={score >= 3 ? "default" : "destructive"}
-                                className="text-xs"
-                              >
-                                {score}
-                              </Badge>
+                              <GapBadge score={score} variant="score" />
                             ) : (
                               <span className="text-xs text-muted-foreground">-</span>
                             )}

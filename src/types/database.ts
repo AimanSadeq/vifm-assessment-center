@@ -237,3 +237,33 @@ export type CompetencyTree = {
     competencies: Competency[];
   }[];
 }[];
+
+export type RoleProfile = {
+  id: string;
+  organization_id: string | null;
+  name_en: string;
+  name_ar: string | null;
+  description: string | null;
+  target_role: string | null;
+  industry: string | null;
+  region: "uae" | "saudi" | "gcc" | "global" | null;
+  default_target_proficiency: number | null;
+  source_jd: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type RoleProfileCompetency = {
+  id: string;
+  role_profile_id: string;
+  competency_id: string;
+  weight: number | null;
+  priority: "high" | "medium" | "low" | null;
+  reasoning: string | null;
+};
+
+// Role profile + its competencies + denormalized competency name for UI
+export type RoleProfileWithCompetencies = RoleProfile & {
+  competencies: (RoleProfileCompetency & { competency_name: string })[];
+};

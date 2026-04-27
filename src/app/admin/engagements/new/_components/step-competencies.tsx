@@ -8,12 +8,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { JdExtractor } from "./jd-extractor";
+import { RoleProfilePicker, type RoleProfileSummary } from "./role-profile-picker";
 
 type Props = {
   competencyTree: CompetencyTree;
+  roleProfiles: RoleProfileSummary[];
 };
 
-export function StepCompetencies({ competencyTree }: Props) {
+export function StepCompetencies({ competencyTree, roleProfiles }: Props) {
   const state = useWizard();
   const dispatch = useWizardDispatch();
   const [search, setSearch] = useState("");
@@ -56,11 +59,15 @@ export function StepCompetencies({ competencyTree }: Props) {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <CardTitle>Step 2: Select Competencies</CardTitle>
-          <Badge variant={selectedIds.size >= 4 && selectedIds.size <= 15 ? "default" : "destructive"}>
-            {selectedIds.size}/15 selected {selectedIds.size < 4 ? "(min 4)" : selectedIds.size > 15 ? "(max 15)" : ""}
-          </Badge>
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            <RoleProfilePicker profiles={roleProfiles} />
+            <JdExtractor />
+            <Badge variant={selectedIds.size >= 4 && selectedIds.size <= 15 ? "default" : "destructive"}>
+              {selectedIds.size}/15 selected {selectedIds.size < 4 ? "(min 4)" : selectedIds.size > 15 ? "(max 15)" : ""}
+            </Badge>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">

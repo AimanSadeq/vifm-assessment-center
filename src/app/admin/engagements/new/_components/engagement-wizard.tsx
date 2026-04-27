@@ -7,6 +7,7 @@ import { StepCompetencies } from "./step-competencies";
 import { StepExercises } from "./step-exercises";
 import { StepMatrix } from "./step-matrix";
 import { StepReview } from "./step-review";
+import type { RoleProfileSummary } from "./role-profile-picker";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -24,9 +25,10 @@ type Props = {
   organizations: Organization[];
   competencyTree: CompetencyTree;
   exercises: Exercise[];
+  roleProfiles: RoleProfileSummary[];
 };
 
-function WizardInner({ organizations, competencyTree, exercises }: Props) {
+function WizardInner({ organizations, competencyTree, exercises, roleProfiles }: Props) {
   const state = useWizard();
   const dispatch = useWizardDispatch();
 
@@ -97,7 +99,7 @@ function WizardInner({ organizations, competencyTree, exercises }: Props) {
           <StepBasicInfo organizations={organizations} />
         )}
         {state.currentStep === 2 && (
-          <StepCompetencies competencyTree={competencyTree} />
+          <StepCompetencies competencyTree={competencyTree} roleProfiles={roleProfiles} />
         )}
         {state.currentStep === 3 && (
           <StepExercises exercises={exercises} />

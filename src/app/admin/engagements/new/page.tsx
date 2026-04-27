@@ -6,17 +6,24 @@ import type {
 } from "@/types/database";
 import { BackLink } from "@/components/shared/back-link";
 import { EngagementWizard } from "./_components/engagement-wizard";
+import type { RoleProfileSummary } from "./_components/role-profile-picker";
 
 async function fetchWizardData() {
   const supabase = await createClient();
 
-  const [orgsResult, domainsResult, clustersResult, compsResult, exercisesResult] =
+  const [orgsResult, domainsResult, clustersResult, compsResult, exercisesResult, profilesResult] =
     await Promise.all([
       supabase.from("organizations").select("*").order("name"),
       supabase.from("competency_domains").select("*").order("sort_order"),
       supabase.from("competency_clusters").select("*").order("sort_order"),
       supabase.from("competencies").select("*").order("sort_order"),
       supabase.from("exercises").select("*").order("name"),
+      supabase
+        .from("role_profiles")
+        .select(
+          "id, name_en, name_ar, target_role, industry, region, role_profile_competencies(competency_id, weight, priority, reasoning)"
+        )
+        .order("name_en"),
     ]);
 
   const organizations: Organization[] = orgsResult.data ?? [];
@@ -37,11 +44,16 @@ async function fetchWizardData() {
       })),
   }));
 
-  return { organizations, competencyTree, exercises };
+  // role_profiles is optional — table may not exist yet if migration not pushed.
+  const roleProfiles: RoleProfileSummary[] = profilesResult.error
+    ? []
+    : ((profilesResult.data ?? []) as unknown as RoleProfileSummary[]);
+
+  return { organizations, competencyTree, exercises, roleProfiles };
 }
 
 export default async function NewEngagementPage() {
-  const { organizations, competencyTree, exercises } = await fetchWizardData();
+  const { organizations, competencyTree, exercises, roleProfiles } = await fetchWizardData();
 
   return (
     <div>
@@ -55,6 +67,7 @@ export default async function NewEngagementPage() {
           organizations={organizations}
           competencyTree={competencyTree}
           exercises={exercises}
+          roleProfiles={roleProfiles}
         />
       </div>
     </div>

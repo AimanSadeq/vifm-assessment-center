@@ -9,6 +9,128 @@ import {
   newExerciseSchema,
   type NewExerciseValues,
 } from "@/lib/validations/engagement";
+import {
+  extractCompetenciesFromJobDescription,
+  extractCompetenciesFromJdPdf,
+  type ExtractedCompetencyRecommendation,
+} from "@/lib/ai/jd-competency-extractor";
+import { isAIConfigured } from "@/lib/ai/client";
+
+const MAX_JD_FILE_BYTES = 10 * 1024 * 1024;
+
+export async function extractCompetenciesFromJdAction(input: {
+  jobDescription: string;
+  targetRole?: string;
+}): Promise<
+  | { recommendations: ExtractedCompetencyRecommendation[] }
+  | { error: string }
+> {
+  const jd = input.jobDescription?.trim() ?? "";
+  if (jd.length < 50) {
+    return { error: "Paste at least 50 characters of the job description." };
+  }
+  if (jd.length > 20000) {
+    return { error: "Job description is too long (max 20,000 characters)." };
+  }
+
+  if (!isAIConfigured()) {
+    return {
+      error:
+        "AI is not configured on this server. Set ANTHROPIC_API_KEY in .env.local to enable JD extraction.",
+    };
+  }
+
+  const supabase = await createClient();
+  const { data: competencies, error } = await supabase
+    .from("competencies")
+    .select("*")
+    .order("sort_order");
+
+  if (error) return { error: `Could not load competencies: ${error.message}` };
+  if (!competencies || competencies.length === 0) {
+    return { error: "No competencies are seeded — run the seed migration first." };
+  }
+
+  const recommendations = await extractCompetenciesFromJobDescription({
+    jobDescription: jd,
+    targetRole: input.targetRole,
+    competencies,
+  });
+
+  if (recommendations === null) {
+    return { error: "AI extraction failed. Check the server logs and try again." };
+  }
+  if (recommendations.length === 0) {
+    return { error: "No competencies could be extracted from this JD. Try a longer or clearer description." };
+  }
+
+  return { recommendations };
+}
+
+export async function extractCompetenciesFromJdFileAction(
+  formData: FormData
+): Promise<
+  | { recommendations: ExtractedCompetencyRecommendation[]; fileName: string }
+  | { error: string }
+> {
+  const file = formData.get("file");
+  const targetRole = String(formData.get("targetRole") ?? "").trim();
+
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "Choose a JD file to upload." };
+  }
+  if (file.size > MAX_JD_FILE_BYTES) {
+    return { error: "File is too large (max 10MB)." };
+  }
+
+  const lowerName = file.name.toLowerCase();
+  const isPdf = lowerName.endsWith(".pdf") || file.type === "application/pdf";
+  const isTxt = lowerName.endsWith(".txt") || file.type === "text/plain";
+
+  if (!isPdf && !isTxt) {
+    return { error: "Only PDF or TXT files are supported. Convert .docx to PDF first." };
+  }
+
+  if (!isAIConfigured()) {
+    return {
+      error:
+        "AI is not configured on this server. Set ANTHROPIC_API_KEY in .env.local to enable JD extraction.",
+    };
+  }
+
+  const supabase = await createClient();
+  const { data: competencies, error } = await supabase
+    .from("competencies")
+    .select("*")
+    .order("sort_order");
+  if (error) return { error: `Could not load competencies: ${error.message}` };
+  if (!competencies || competencies.length === 0) {
+    return { error: "No competencies are seeded — run the seed migration first." };
+  }
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+
+  const recommendations = isPdf
+    ? await extractCompetenciesFromJdPdf({
+        pdfBase64: buffer.toString("base64"),
+        targetRole: targetRole || undefined,
+        competencies,
+      })
+    : await extractCompetenciesFromJobDescription({
+        jobDescription: buffer.toString("utf8"),
+        targetRole: targetRole || undefined,
+        competencies,
+      });
+
+  if (recommendations === null) {
+    return { error: "AI extraction failed. Check the server logs and try again." };
+  }
+  if (recommendations.length === 0) {
+    return { error: "No competencies could be extracted from this file." };
+  }
+
+  return { recommendations, fileName: file.name };
+}
 
 export async function createOrganizationAction(values: NewOrganizationValues) {
   const parsed = newOrganizationSchema.safeParse(values);

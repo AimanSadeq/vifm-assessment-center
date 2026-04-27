@@ -1,5 +1,6 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import type { ReportData } from "./report-types";
+import { getCompetencyGap, GAP_TONES, type GapBadgeData } from "@/lib/scoring/competency-gap";
 
 const BARS: Record<number, string> = {
   1: "Significant Development Needed", 2: "Development Needed",
@@ -140,6 +141,37 @@ const s = StyleSheet.create({
 
 function scoreColor(n: number): string {
   return [, C.bar1, C.bar2, C.bar3, C.bar4, C.bar5][n] ?? C.bar3;
+}
+
+const gapPillStyles = StyleSheet.create({
+  pill: {
+    paddingHorizontal: 5,
+    paddingVertical: 1.5,
+    borderRadius: 8,
+    borderWidth: 0.5,
+    alignSelf: "flex-start",
+  },
+  pillText: {
+    fontSize: 7,
+    fontFamily: "Helvetica-Bold",
+    letterSpacing: 0.2,
+  },
+});
+
+function GapPill({ data }: { data: GapBadgeData }) {
+  const tone = GAP_TONES[data.severity];
+  return (
+    <View
+      style={[
+        gapPillStyles.pill,
+        { backgroundColor: tone.bg, borderColor: tone.border },
+      ]}
+    >
+      <Text style={[gapPillStyles.pillText, { color: tone.fg }]}>
+        {data.label}
+      </Text>
+    </View>
+  );
 }
 
 /**
@@ -322,15 +354,19 @@ function SummaryPage({ d }: { d: ReportData }) {
 
       {/* Competency score bars */}
       <Text style={s.subSection}>Competency Ratings</Text>
-      {d.competencies.map((c) => (
-        <View key={c.competencyName} style={s.barRow}>
-          <Text style={s.barName}>{c.competencyName}</Text>
-          <View style={s.barTrack}>
-            {c.consensusScore ? <View style={[s.barFill, { width: `${(c.consensusScore / 5) * 100}%`, backgroundColor: scoreColor(c.consensusScore) }]} /> : null}
+      {d.competencies.map((c) => {
+        const gap = getCompetencyGap(c.consensusScore);
+        return (
+          <View key={c.competencyName} style={s.barRow}>
+            <Text style={s.barName}>{c.competencyName}</Text>
+            <View style={s.barTrack}>
+              {c.consensusScore ? <View style={[s.barFill, { width: `${(c.consensusScore / 5) * 100}%`, backgroundColor: scoreColor(c.consensusScore) }]} /> : null}
+            </View>
+            <Text style={[s.barLabel, { width: 40 }]}>{c.consensusScore ? `${c.consensusScore}/5` : "Pending"}</Text>
+            {gap ? <GapPill data={gap} /> : null}
           </View>
-          <Text style={s.barLabel}>{c.consensusScore ? `${c.consensusScore}/5` : "Pending"}</Text>
-        </View>
-      ))}
+        );
+      })}
 
       {/* Top strengths / development - chips with semantic borders */}
       {d.topStrengths.length > 0 && (
@@ -395,6 +431,7 @@ function CompetencyPages({ d }: { d: ReportData }) {
       {d.competencies.map((c) => {
         const sc = c.consensusScore ?? 0;
         const accent = c.consensusScore ? scoreColor(c.consensusScore) : C.textMuted;
+        const gap = getCompetencyGap(c.consensusScore);
         return (
           <View
             key={c.competencyName}
@@ -409,15 +446,18 @@ function CompetencyPages({ d }: { d: ReportData }) {
                   {c.weight ? ` · WEIGHT ${c.weight}` : ""}
                 </Text>
               </View>
-              {c.consensusScore ? (
-                <View style={[s.compBadge, { backgroundColor: scoreColor(c.consensusScore) }]}>
-                  <Text style={s.compBadgeText}>{sc}/5 · {BARS[sc]}</Text>
-                </View>
-              ) : (
-                <View style={[s.compBadge, { backgroundColor: C.borderSoft }]}>
-                  <Text style={[s.compBadgeText, { color: C.textLight }]}>Pending</Text>
-                </View>
-              )}
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                {gap ? <GapPill data={gap} /> : null}
+                {c.consensusScore ? (
+                  <View style={[s.compBadge, { backgroundColor: scoreColor(c.consensusScore) }]}>
+                    <Text style={s.compBadgeText}>{sc}/5 · {BARS[sc]}</Text>
+                  </View>
+                ) : (
+                  <View style={[s.compBadge, { backgroundColor: C.borderSoft }]}>
+                    <Text style={[s.compBadgeText, { color: C.textLight }]}>Pending</Text>
+                  </View>
+                )}
+              </View>
             </View>
             <View style={s.compBody}>
               {/* Exercise ratings strip */}

@@ -15,14 +15,64 @@ import {
   type ExtractedCompetencyRecommendation,
 } from "@/lib/ai/jd-competency-extractor";
 import { isAIConfigured } from "@/lib/ai/client";
+import type { Competency } from "@/types/database";
 
 const MAX_JD_FILE_BYTES = 10 * 1024 * 1024;
+
+export type DomainMapEntry = { id: string; name: string };
+export type CompetencyDomainMap = Record<string, DomainMapEntry>;
+
+type CompetencyWithDomain = Competency & {
+  competency_clusters: {
+    domain_id: string;
+    competency_domains: { id: string; name: string } | null;
+  } | null;
+};
+
+/**
+ * Loads the competency framework with cluster + domain joined, returning
+ * a slim `Competency[]` for the AI extractor and a `Map<competencyId, domain>`
+ * for the H1 category-tally summary card on the recommendations preview.
+ */
+async function loadCompetenciesWithDomains(): Promise<
+  { competencies: Competency[]; domains: CompetencyDomainMap } | { error: string }
+> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("competencies")
+    .select(
+      "id, cluster_id, name, description, sort_order, tags, qa_questions, competency_clusters(domain_id, competency_domains(id, name))"
+    )
+    .order("sort_order");
+
+  if (error) return { error: `Could not load competencies: ${error.message}` };
+  if (!data || data.length === 0) {
+    return { error: "No competencies are seeded — run the seed migration first." };
+  }
+
+  const rows = data as unknown as CompetencyWithDomain[];
+  const domains: CompetencyDomainMap = {};
+  const competencies: Competency[] = rows.map((r) => {
+    const domain = r.competency_clusters?.competency_domains;
+    if (domain) domains[r.id] = { id: domain.id, name: domain.name };
+    return {
+      id: r.id,
+      cluster_id: r.cluster_id,
+      name: r.name,
+      description: r.description,
+      sort_order: r.sort_order,
+      tags: r.tags,
+      qa_questions: r.qa_questions,
+    };
+  });
+  return { competencies, domains };
+}
 
 export async function extractCompetenciesFromJdAction(input: {
   jobDescription: string;
   targetRole?: string;
 }): Promise<
-  | { recommendations: ExtractedCompetencyRecommendation[] }
+  | { recommendations: ExtractedCompetencyRecommendation[]; domains: CompetencyDomainMap }
   | { error: string }
 > {
   const jd = input.jobDescription?.trim() ?? "";
@@ -40,21 +90,13 @@ export async function extractCompetenciesFromJdAction(input: {
     };
   }
 
-  const supabase = await createClient();
-  const { data: competencies, error } = await supabase
-    .from("competencies")
-    .select("*")
-    .order("sort_order");
-
-  if (error) return { error: `Could not load competencies: ${error.message}` };
-  if (!competencies || competencies.length === 0) {
-    return { error: "No competencies are seeded — run the seed migration first." };
-  }
+  const loaded = await loadCompetenciesWithDomains();
+  if ("error" in loaded) return { error: loaded.error };
 
   const recommendations = await extractCompetenciesFromJobDescription({
     jobDescription: jd,
     targetRole: input.targetRole,
-    competencies,
+    competencies: loaded.competencies,
   });
 
   if (recommendations === null) {
@@ -64,13 +106,13 @@ export async function extractCompetenciesFromJdAction(input: {
     return { error: "No competencies could be extracted from this JD. Try a longer or clearer description." };
   }
 
-  return { recommendations };
+  return { recommendations, domains: loaded.domains };
 }
 
 export async function extractCompetenciesFromJdFileAction(
   formData: FormData
 ): Promise<
-  | { recommendations: ExtractedCompetencyRecommendation[]; fileName: string }
+  | { recommendations: ExtractedCompetencyRecommendation[]; fileName: string; domains: CompetencyDomainMap }
   | { error: string }
 > {
   const file = formData.get("file");
@@ -98,15 +140,8 @@ export async function extractCompetenciesFromJdFileAction(
     };
   }
 
-  const supabase = await createClient();
-  const { data: competencies, error } = await supabase
-    .from("competencies")
-    .select("*")
-    .order("sort_order");
-  if (error) return { error: `Could not load competencies: ${error.message}` };
-  if (!competencies || competencies.length === 0) {
-    return { error: "No competencies are seeded — run the seed migration first." };
-  }
+  const loaded = await loadCompetenciesWithDomains();
+  if ("error" in loaded) return { error: loaded.error };
 
   const buffer = Buffer.from(await file.arrayBuffer());
 
@@ -114,12 +149,12 @@ export async function extractCompetenciesFromJdFileAction(
     ? await extractCompetenciesFromJdPdf({
         pdfBase64: buffer.toString("base64"),
         targetRole: targetRole || undefined,
-        competencies,
+        competencies: loaded.competencies,
       })
     : await extractCompetenciesFromJobDescription({
         jobDescription: buffer.toString("utf8"),
         targetRole: targetRole || undefined,
-        competencies,
+        competencies: loaded.competencies,
       });
 
   if (recommendations === null) {
@@ -129,7 +164,7 @@ export async function extractCompetenciesFromJdFileAction(
     return { error: "No competencies could be extracted from this file." };
   }
 
-  return { recommendations, fileName: file.name };
+  return { recommendations, fileName: file.name, domains: loaded.domains };
 }
 
 export async function createOrganizationAction(values: NewOrganizationValues) {

@@ -22,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   extractCompetenciesFromJdAction,
   extractCompetenciesFromJdFileAction,
+  type CompetencyDomainMap,
 } from "../actions";
 import type { ExtractedCompetencyRecommendation } from "@/lib/ai/jd-competency-extractor";
 import { useWizard, useWizardDispatch } from "./wizard-context";
@@ -66,12 +67,14 @@ export function JdExtractor({ onApply, triggerLabel }: JdExtractorProps = {}) {
   const [targetRole, setTargetRole] = useState(wizard.targetRole ?? "");
   const [file, setFile] = useState<File | null>(null);
   const [recs, setRecs] = useState<ExtractedCompetencyRecommendation[]>([]);
+  const [domains, setDomains] = useState<CompetencyDomainMap>({});
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const reset = () => {
     setPhase("input");
     setRecs([]);
+    setDomains({});
     setPicked(new Set());
   };
 
@@ -113,6 +116,7 @@ export function JdExtractor({ onApply, triggerLabel }: JdExtractorProps = {}) {
       return;
     }
     setRecs(result.recommendations);
+    setDomains(result.domains ?? {});
     setPicked(new Set(result.recommendations.map((r) => r.competencyId)));
     setPhase("preview");
     toast.success(`Found ${result.recommendations.length} competencies`);
@@ -284,6 +288,7 @@ export function JdExtractor({ onApply, triggerLabel }: JdExtractorProps = {}) {
 
         {phase === "preview" && (
           <div className="space-y-3">
+            <DomainTallyCard recs={recs} domains={domains} />
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
                 {picked.size} of {recs.length} competencies selected
@@ -369,5 +374,78 @@ export function JdExtractor({ onApply, triggerLabel }: JdExtractorProps = {}) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// VIFM domain ordering — matches `competency_domains.sort_order` in the seed.
+// Skillup uses Functional / Digital / Leadership / Behavioral; we use the
+// VIFM-native 4-domain framework so admins recognise the buckets.
+const DOMAIN_ORDER = ["THINKING", "RESULTS", "PEOPLE", "SELF"] as const;
+
+type DomainTone = { bg: string; fg: string; border: string };
+const DOMAIN_TONES: Record<string, DomainTone> = {
+  THINKING: { bg: "#eff6ff", fg: "#1d4ed8", border: "#bfdbfe" },
+  RESULTS:  { bg: "#ecfdf5", fg: "#047857", border: "#a7f3d0" },
+  PEOPLE:   { bg: "#fff7ed", fg: "#c2410c", border: "#fed7aa" },
+  SELF:     { bg: "#f5f3ff", fg: "#6d28d9", border: "#ddd6fe" },
+};
+
+function DomainTallyCard({
+  recs,
+  domains,
+}: {
+  recs: ExtractedCompetencyRecommendation[];
+  domains: CompetencyDomainMap;
+}) {
+  // If the join didn't return data (e.g. domain seed missing), skip the card
+  // rather than render an empty grid.
+  if (Object.keys(domains).length === 0) return null;
+
+  const counts: Record<string, number> = {};
+  let unmapped = 0;
+  for (const r of recs) {
+    const domain = domains[r.competencyId];
+    if (!domain) {
+      unmapped += 1;
+      continue;
+    }
+    counts[domain.name] = (counts[domain.name] ?? 0) + 1;
+  }
+
+  return (
+    <div className="rounded-md border bg-muted/30 p-3">
+      <div className="flex items-center justify-between gap-3 mb-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          AI Mapping Summary
+        </p>
+        <p className="text-[11px] text-muted-foreground">
+          {recs.length} total
+          {unmapped > 0 ? ` · ${unmapped} unclassified` : ""}
+        </p>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {DOMAIN_ORDER.map((name) => {
+          const count = counts[name] ?? 0;
+          const tone = DOMAIN_TONES[name];
+          return (
+            <div
+              key={name}
+              className="rounded-md border px-2.5 py-1.5"
+              style={{
+                backgroundColor: tone.bg,
+                borderColor: tone.border,
+              }}
+            >
+              <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: tone.fg }}>
+                {name}
+              </p>
+              <p className="text-lg font-bold leading-tight" style={{ color: tone.fg }}>
+                {count}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }

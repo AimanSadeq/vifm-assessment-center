@@ -172,15 +172,26 @@ export default async function ClientEngagementDetailPage({ params }: Props) {
                       </TableCell>
                       <TableCell>
                         {reportReleased ? (
-                          <a
-                            href={`/api/reports/${params.id}/${c.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            <Button size="sm" variant="outline">
-                              Download PDF
-                            </Button>
-                          </a>
+                          <div className="flex flex-col gap-1.5">
+                            <a
+                              href={`/api/reports/${params.id}/${c.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Button size="sm" variant="outline" className="w-full">
+                                Report PDF
+                              </Button>
+                            </a>
+                            <a
+                              href={`/api/reports/${params.id}/${c.id}/learning-plan`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Button size="sm" variant="outline" className="w-full">
+                                Learning Plan
+                              </Button>
+                            </a>
+                          </div>
                         ) : (
                           <span className="text-xs text-muted-foreground">
                             Not released

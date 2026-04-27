@@ -154,22 +154,42 @@ export default async function CandidateReportPage({ params }: Props) {
             </Card>
           )}
 
-          {/* Download PDF */}
+          {/* Downloads */}
           <Card>
-            <CardContent className="py-6 flex items-center justify-between">
-              <div>
-                <p className="font-medium">Download Full Report</p>
-                <p className="text-sm text-muted-foreground">
-                  PDF with detailed behavioral evidence and development recommendations.
-                </p>
+            <CardHeader>
+              <CardTitle>Your PDFs</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between gap-4 rounded-md border p-4">
+                <div>
+                  <p className="font-medium">Full Assessment Report</p>
+                  <p className="text-sm text-muted-foreground">
+                    Detailed behavioral evidence, scores, and competency findings (~6 pages).
+                  </p>
+                </div>
+                <a
+                  href={`/api/reports/${eng.id}/${candidateId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button>Download Report</Button>
+                </a>
               </div>
-              <a
-                href={`/api/reports/${eng.id}/${candidateId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button>Download PDF</Button>
-              </a>
+              <div className="flex items-center justify-between gap-4 rounded-md border p-4 bg-accent/5">
+                <div>
+                  <p className="font-medium">Personalized Learning Plan</p>
+                  <p className="text-sm text-muted-foreground">
+                    Your 30 / 60 / 90 day development roadmap with targeted actions per competency.
+                  </p>
+                </div>
+                <a
+                  href={`/api/reports/${eng.id}/${candidateId}/learning-plan`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button variant="secondary">Download Learning Plan</Button>
+                </a>
+              </div>
             </CardContent>
           </Card>
         </>

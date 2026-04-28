@@ -1,11 +1,14 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { SUPPORTED_LANGUAGES, type LanguageCode } from "@/lib/i18n/config";
+import { LOCALE_COOKIE } from "@/lib/i18n/cookie";
 import { Button } from "@/components/ui/button";
 
 export function LanguageSwitcher() {
   const { i18n } = useTranslation();
+  const router = useRouter();
 
   const handleSwitch = (code: LanguageCode) => {
     i18n.changeLanguage(code);
@@ -13,6 +16,12 @@ export function LanguageSwitcher() {
     document.documentElement.lang = code;
     document.documentElement.dir =
       SUPPORTED_LANGUAGES.find((l) => l.code === code)?.dir ?? "ltr";
+    // Persist as a cookie so server components pick it up on next request.
+    // 1-year expiry; SameSite=Lax so it survives normal navigation.
+    const oneYear = 60 * 60 * 24 * 365;
+    document.cookie = `${LOCALE_COOKIE}=${code}; max-age=${oneYear}; path=/; SameSite=Lax`;
+    // Re-fetch the current page so server components re-render with the new locale.
+    router.refresh();
   };
 
   const currentLang = i18n.language;

@@ -165,5 +165,47 @@
     "totalRatings": "Total Ratings",
     "engagements": "Engagements",
     "candidates": "Candidates"
+  },
+  "candidateSkills": {
+    "title": "My Skills",
+    "backToWelcome": "Back to Welcome",
+    "rolePlaceholder": "Hello {{name}} — your skill map will appear here once a role profile has been assigned to you.",
+    "noProfileTitle": "No Role Profile Assigned",
+    "noProfileBody": "An administrator hasn't linked you to a role profile yet, so there are no target proficiencies to compare your scores against. Check back after the assessment has been set up, or contact your VIFM facilitator if you think this is a mistake.",
+    "migrationMissing": "Admin: run npx supabase db push to apply migration 00016 before binding candidates to role profiles.",
+    "totalSkills": "Total Skills",
+    "assessed": "Assessed",
+    "skillsWithGaps": "Skills with Gaps",
+    "averageScore": "Average Score",
+    "assessedOf": "of {{total}}",
+    "notYetAssessed": "Not yet assessed",
+    "domainEyebrow": "Domain",
+    "noCompetencies": "This role profile has no competencies linked yet. Ask your administrator to populate the profile.",
+    "targetLabel": "Target:",
+    "currentLabel": "Current:",
+    "level": "Level {{n}}",
+    "notAssessedBadge": "Not Assessed",
+    "stats": {
+      "eyebrow": "My Personal Statistics",
+      "subtitle": "Based on consensus ratings from your assessment",
+      "progressTitle": "Assessment Progress",
+      "progressBlurb": "How much of your role profile has been assessed.",
+      "byDomainTitle": "Skills by Domain",
+      "byDomainBlurb": "How your role profile is distributed across the VIFM framework.",
+      "avgByDomainTitle": "Average Score by Domain",
+      "avgByDomainBlurb": "Your average BARS score (1–5) per VIFM domain. 0 = not yet assessed.",
+      "legendAssessed": "Assessed",
+      "legendNotAssessed": "Not Assessed",
+      "skillsLabel": "skills",
+      "scoreLabel": "Score",
+      "noProfileSkills": "No competencies in this profile.",
+      "tooltipNotYetAssessed": "Not yet assessed"
+    }
+  },
+  "domainNames": {
+    "THINKING": "THINKING",
+    "RESULTS": "RESULTS",
+    "PEOPLE": "PEOPLE",
+    "SELF": "SELF"
   }
 }

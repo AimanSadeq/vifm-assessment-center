@@ -3,12 +3,11 @@ import { initReactI18next } from "react-i18next";
 import en from "./locales/en.json";
 import ar from "./locales/ar.json";
 
-export const SUPPORTED_LANGUAGES = [
-  { code: "en", label: "English", dir: "ltr" as const },
-  { code: "ar", label: "العربية", dir: "rtl" as const },
-] as const;
-
-export type LanguageCode = (typeof SUPPORTED_LANGUAGES)[number]["code"];
+// SUPPORTED_LANGUAGES + LanguageCode now live in ./cookie so they
+// can be imported from server components without dragging in
+// react-i18next. Re-exported here for backwards compatibility with
+// existing client imports.
+export { SUPPORTED_LANGUAGES, type LanguageCode } from "./cookie";
 
 i18n.use(initReactI18next).init({
   resources: {

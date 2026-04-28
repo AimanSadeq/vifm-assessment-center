@@ -165,5 +165,47 @@
     "totalRatings": "إجمالي التقييمات",
     "engagements": "المشاريع",
     "candidates": "المرشحون"
+  },
+  "candidateSkills": {
+    "title": "مهاراتي",
+    "backToWelcome": "العودة إلى الترحيب",
+    "rolePlaceholder": "مرحبًا {{name}} — ستظهر خريطة مهاراتك هنا بمجرد تعيين ملف وظيفي لك.",
+    "noProfileTitle": "لم يتم تعيين ملف وظيفي",
+    "noProfileBody": "لم يقم أحد المسؤولين بربطك بملف وظيفي بعد، لذا لا توجد كفاءات مستهدفة لمقارنة درجاتك بها. تحقق مرة أخرى بعد إعداد التقييم، أو تواصل مع منسق VIFM إذا كنت تعتقد أن هذا خطأ.",
+    "migrationMissing": "للمسؤول: شغّل npx supabase db push لتطبيق الترحيل 00016 قبل ربط المرشحين بالملفات الوظيفية.",
+    "totalSkills": "إجمالي المهارات",
+    "assessed": "مقيَّمة",
+    "skillsWithGaps": "مهارات بها فجوات",
+    "averageScore": "المتوسط",
+    "assessedOf": "من {{total}}",
+    "notYetAssessed": "لم تُقيَّم بعد",
+    "domainEyebrow": "المجال",
+    "noCompetencies": "هذا الملف الوظيفي لا يحتوي على كفاءات مرتبطة بعد. اطلب من المسؤول إضافة الكفاءات.",
+    "targetLabel": "المستهدف:",
+    "currentLabel": "الحالي:",
+    "level": "المستوى {{n}}",
+    "notAssessedBadge": "غير مقيَّمة",
+    "stats": {
+      "eyebrow": "إحصائياتي الشخصية",
+      "subtitle": "استنادًا إلى التقييمات التوافقية من جلسة التقييم الخاصة بك",
+      "progressTitle": "تقدّم التقييم",
+      "progressBlurb": "نسبة ما تم تقييمه من ملفك الوظيفي.",
+      "byDomainTitle": "المهارات حسب المجال",
+      "byDomainBlurb": "كيفية توزيع ملفك الوظيفي عبر إطار VIFM.",
+      "avgByDomainTitle": "متوسط الدرجات حسب المجال",
+      "avgByDomainBlurb": "متوسط درجة BARS (1–5) لكل مجال من مجالات VIFM. 0 = لم تُقيَّم بعد.",
+      "legendAssessed": "مقيَّمة",
+      "legendNotAssessed": "غير مقيَّمة",
+      "skillsLabel": "مهارات",
+      "scoreLabel": "الدرجة",
+      "noProfileSkills": "لا توجد كفاءات في هذا الملف.",
+      "tooltipNotYetAssessed": "لم تُقيَّم بعد"
+    }
+  },
+  "domainNames": {
+    "THINKING": "التفكير",
+    "RESULTS": "النتائج",
+    "PEOPLE": "الأشخاص",
+    "SELF": "الذات"
   }
 }

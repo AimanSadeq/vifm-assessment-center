@@ -12,6 +12,7 @@ import { Target, AlertTriangle, CheckCircle2, BookOpen } from "lucide-react";
 import { PersonalStatistics, type DomainRollup } from "./_components/personal-statistics";
 import { StartQuizButton } from "./_components/start-quiz-button";
 import { ImpersonationBanner } from "@/components/shared/impersonation-banner";
+import { getServerT } from "@/lib/i18n/server";
 
 type Props = {
   params: { candidateId: string };
@@ -57,6 +58,7 @@ type DomainGroup = {
 
 export default async function CandidateSkillsPage({ params, searchParams }: Props) {
   const supabase = await createClient();
+  const t = await getServerT();
   const { candidateId } = params;
   const asAdmin = searchParams?.asAdmin === "1";
 
@@ -106,34 +108,28 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
             exitHref={`/admin/engagements/${candidate.engagement_id}`}
           />
         )}
-        <BackLink href={`/candidate/welcome/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`} label="Back to Welcome" />
+        <BackLink href={`/candidate/welcome/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`} label={t("candidateSkills.backToWelcome")} />
         <div>
-          <h1 className="mt-2 text-2xl font-bold">My Skills</h1>
+          <h1 className="mt-2 text-2xl font-bold">{t("candidateSkills.title")}</h1>
           <p className="text-sm text-muted-foreground">
-            Hello {candidate.full_name} — your skill map will appear here once a
-            role profile has been assigned to you.
+            {t("candidateSkills.rolePlaceholder", { name: candidate.full_name })}
           </p>
         </div>
         <Card>
           <CardContent className="py-12 flex flex-col items-center gap-3 text-center">
             <AlertTriangle className="h-8 w-8 text-amber-500" />
-            <p className="font-medium">No Role Profile Assigned</p>
+            <p className="font-medium">{t("candidateSkills.noProfileTitle")}</p>
             <p className="text-sm text-muted-foreground max-w-md">
-              An administrator hasn&apos;t linked you to a role profile yet, so
-              there are no target proficiencies to compare your scores against.
-              Check back after the assessment has been set up, or contact your
-              VIFM facilitator if you think this is a mistake.
+              {t("candidateSkills.noProfileBody")}
             </p>
             {migrationMissing && (
               <p className="text-[11px] text-muted-foreground max-w-md">
-                Admin: run <code className="font-mono">npx supabase db push</code> to
-                apply migration <code>00016</code> before binding candidates to role
-                profiles.
+                {t("candidateSkills.migrationMissing")}
               </p>
             )}
             <Link href={`/candidate/welcome/${candidateId}`} className="mt-2">
               <Button variant="outline" size="sm">
-                Back to Welcome
+                {t("candidateSkills.backToWelcome")}
               </Button>
             </Link>
           </CardContent>
@@ -238,10 +234,10 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
           exitHref={`/admin/engagements/${candidate.engagement_id}`}
         />
       )}
-      <BackLink href={`/candidate/welcome/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`} label="Back to Welcome" />
+      <BackLink href={`/candidate/welcome/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`} label={t("candidateSkills.backToWelcome")} />
 
       <div>
-        <h1 className="mt-2 text-2xl font-bold">My Skills</h1>
+        <h1 className="mt-2 text-2xl font-bold">{t("candidateSkills.title")}</h1>
         <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
           <Target className="h-3.5 w-3.5" />
           <span className="font-medium">{profileLabel}</span>
@@ -256,17 +252,21 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard label="Total Skills" value={total} />
-        <StatCard label="Assessed" value={assessed} sub={`of ${total}`} />
+        <StatCard label={t("candidateSkills.totalSkills")} value={total} />
         <StatCard
-          label="Skills with Gaps"
+          label={t("candidateSkills.assessed")}
+          value={assessed}
+          sub={t("candidateSkills.assessedOf", { total })}
+        />
+        <StatCard
+          label={t("candidateSkills.skillsWithGaps")}
           value={withGaps}
           tone={withGaps > 0 ? "warning" : "neutral"}
         />
         <StatCard
-          label="Average Score"
+          label={t("candidateSkills.averageScore")}
           value={average !== null ? `${average}/5` : "—"}
-          sub={average === null ? "Not yet assessed" : undefined}
+          sub={average === null ? t("candidateSkills.notYetAssessed") : undefined}
         />
       </div>
 
@@ -274,8 +274,7 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
       {domainGroups.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-sm text-muted-foreground">
-            This role profile has no competencies linked yet. Ask your administrator
-            to populate the profile.
+            {t("candidateSkills.noCompetencies")}
           </CardContent>
         </Card>
       ) : (
@@ -284,9 +283,9 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <span className="uppercase tracking-wide text-xs text-muted-foreground">
-                  Domain
+                  {t("candidateSkills.domainEyebrow")}
                 </span>
-                <span>{group.name}</span>
+                <span>{t(`domainNames.${group.name}`)}</span>
                 <Badge variant="secondary" className="ms-auto">
                   {group.competencies.length}
                 </Badge>
@@ -320,12 +319,17 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
 
                       <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
                         <span>
-                          Target: <span className="font-semibold text-foreground">Level {comp.target}</span>
+                          {t("candidateSkills.targetLabel")}{" "}
+                          <span className="font-semibold text-foreground">
+                            {t("candidateSkills.level", { n: comp.target })}
+                          </span>
                         </span>
                         <span>
-                          Current:{" "}
+                          {t("candidateSkills.currentLabel")}{" "}
                           <span className="font-semibold text-foreground">
-                            {isAssessed ? `Level ${comp.score}` : "—"}
+                            {isAssessed && comp.score !== null
+                              ? t("candidateSkills.level", { n: comp.score })
+                              : "—"}
                           </span>
                         </span>
                       </div>
@@ -339,7 +343,7 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
                           />
                         ) : (
                           <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                            Not Assessed
+                            {t("candidateSkills.notAssessedBadge")}
                           </span>
                         )}
                       </div>

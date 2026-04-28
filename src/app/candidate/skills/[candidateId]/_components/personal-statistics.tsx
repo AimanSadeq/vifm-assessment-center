@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
 import {
   PieChart,
   Pie,
@@ -46,13 +47,14 @@ export function PersonalStatistics({
   notAssessed,
   byDomain,
 }: PersonalStatisticsProps) {
+  const { t } = useTranslation();
   const total = assessed + notAssessed;
   const progressData =
     total === 0
-      ? [{ name: "Awaiting first assessment", value: 1, _placeholder: true }]
+      ? [{ name: t("candidateSkills.notYetAssessed"), value: 1, _placeholder: true }]
       : [
-          { name: "Assessed", value: assessed },
-          { name: "Not Assessed", value: notAssessed },
+          { name: t("candidateSkills.stats.legendAssessed"), value: assessed },
+          { name: t("candidateSkills.stats.legendNotAssessed"), value: notAssessed },
         ];
 
   // Filter out empty domains so the category donut only shows what's actually
@@ -74,19 +76,19 @@ export function PersonalStatistics({
     <section className="space-y-3">
       <div className="flex items-baseline justify-between">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          My Personal Statistics
+          {t("candidateSkills.stats.eyebrow")}
         </p>
         <p className="text-[11px] text-muted-foreground">
-          Based on consensus ratings from your assessment
+          {t("candidateSkills.stats.subtitle")}
         </p>
       </div>
 
       <div className="grid gap-3 md:grid-cols-3">
         {/* Donut 1 — Assessment Progress */}
         <div className="rounded-md border bg-card p-3">
-          <p className="text-sm font-semibold mb-1">Assessment Progress</p>
+          <p className="text-sm font-semibold mb-1">{t("candidateSkills.stats.progressTitle")}</p>
           <p className="text-[11px] text-muted-foreground mb-2">
-            How much of your role profile has been assessed.
+            {t("candidateSkills.stats.progressBlurb")}
           </p>
           <div className="h-44">
             <ResponsiveContainer width="100%" height="100%">
@@ -118,7 +120,7 @@ export function PersonalStatistics({
                 {anyAssessed && (
                   <Tooltip
                     contentStyle={{ fontSize: 11, borderRadius: 6 }}
-                    formatter={(value, name) => [`${value} skills`, String(name)]}
+                    formatter={(value, name) => [`${value} ${t("candidateSkills.stats.skillsLabel")}`, String(name)]}
                   />
                 )}
               </PieChart>
@@ -127,25 +129,25 @@ export function PersonalStatistics({
           <div className="flex items-center justify-center gap-3 text-[11px] text-muted-foreground mt-1">
             <span className="inline-flex items-center gap-1">
               <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: PROGRESS_COLOURS.assessed }} />
-              Assessed {assessed}
+              {t("candidateSkills.stats.legendAssessed")} {assessed}
             </span>
             <span className="inline-flex items-center gap-1">
               <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: PROGRESS_COLOURS.notAssessed }} />
-              Not Assessed {notAssessed}
+              {t("candidateSkills.stats.legendNotAssessed")} {notAssessed}
             </span>
           </div>
         </div>
 
         {/* Donut 2 — Skills by Category */}
         <div className="rounded-md border bg-card p-3">
-          <p className="text-sm font-semibold mb-1">Skills by Domain</p>
+          <p className="text-sm font-semibold mb-1">{t("candidateSkills.stats.byDomainTitle")}</p>
           <p className="text-[11px] text-muted-foreground mb-2">
-            How your role profile is distributed across the VIFM framework.
+            {t("candidateSkills.stats.byDomainBlurb")}
           </p>
           <div className="h-44">
             {categoryData.length === 0 ? (
               <div className="flex h-full items-center justify-center text-[11px] text-muted-foreground">
-                No competencies in this profile.
+                {t("candidateSkills.stats.noProfileSkills")}
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
@@ -167,7 +169,7 @@ export function PersonalStatistics({
                   </Pie>
                   <Tooltip
                     contentStyle={{ fontSize: 11, borderRadius: 6 }}
-                    formatter={(value, name) => [`${value} skills`, String(name)]}
+                    formatter={(value, name) => [`${value} ${t("candidateSkills.stats.skillsLabel")}`, String(name)]}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -180,7 +182,7 @@ export function PersonalStatistics({
                   className="inline-block h-2 w-2 rounded-full"
                   style={{ backgroundColor: DOMAIN_COLOURS[d.name] ?? DOMAIN_FALLBACK }}
                 />
-                {d.name} {d.count}
+                {t(`domainNames.${d.name}`)} {d.count}
               </span>
             ))}
           </div>
@@ -188,22 +190,28 @@ export function PersonalStatistics({
 
         {/* Bar — Average Score by Domain */}
         <div className="rounded-md border bg-card p-3">
-          <p className="text-sm font-semibold mb-1">Average Score by Domain</p>
+          <p className="text-sm font-semibold mb-1">{t("candidateSkills.stats.avgByDomainTitle")}</p>
           <p className="text-[11px] text-muted-foreground mb-2">
-            Your average BARS score (1–5) per VIFM domain. 0 = not yet assessed.
+            {t("candidateSkills.stats.avgByDomainBlurb")}
           </p>
           <div className="h-44">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={barData} margin={{ top: 4, right: 4, bottom: 0, left: -16 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={{ stroke: "#e5e7eb" }} />
+                <XAxis
+                  dataKey="name"
+                  fontSize={10}
+                  tickLine={false}
+                  axisLine={{ stroke: "#e5e7eb" }}
+                  tickFormatter={(name) => t(`domainNames.${name}`)}
+                />
                 <YAxis domain={[0, 5]} ticks={[0, 1, 2, 3, 4, 5]} fontSize={10} tickLine={false} axisLine={{ stroke: "#e5e7eb" }} />
                 <Tooltip
                   contentStyle={{ fontSize: 11, borderRadius: 6 }}
                   formatter={(value, _name, props) => {
                     const hasData = (props?.payload as { hasData?: boolean } | undefined)?.hasData;
-                    if (!hasData) return ["Not yet assessed", "Score"];
-                    return [typeof value === "number" ? value.toFixed(1) : String(value), "Score"];
+                    if (!hasData) return [t("candidateSkills.stats.tooltipNotYetAssessed"), t("candidateSkills.stats.scoreLabel")];
+                    return [typeof value === "number" ? value.toFixed(1) : String(value), t("candidateSkills.stats.scoreLabel")];
                   }}
                 />
                 <Bar dataKey="score" radius={[4, 4, 0, 0]}>

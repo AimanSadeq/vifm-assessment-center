@@ -8,10 +8,12 @@ import { loadRespondentByToken, loadQuestionsForRespondent } from "@/lib/ara/res
 import {
   ARA_INDIVIDUAL_FACTORS,
   ARA_INDIVIDUAL_FACTOR_IDS,
+  getIndividualMaturityStage,
   type AraIndividualFactorId,
 } from "@/lib/constants/ara-individual-factors";
 import { recommendCoursesForIndividualSnapshot } from "@/lib/recommender/courses";
 import { RecommendedCoursesPanel } from "@/components/shared/recommended-courses-panel";
+import { computeWorkforceReadiness } from "@/lib/ara/workforce-readiness";
 
 export const dynamic = "force-dynamic";
 
@@ -93,6 +95,32 @@ export default async function PersonalResultsPage({ params }: Props) {
     limit: 5,
   });
 
+  // Mode C only — individual-vs-cohort means on each factor card.
+  // We deliberately exclude the current respondent from the cohort
+  // mean so the delta isn't self-referential when the cohort is small.
+  // Suppress the pill entirely when there are no other respondents
+  // (cohort of 1) or when a factor has no other data.
+  const isModeC =
+    ctx.assessment.engagement_stage !== "individual" &&
+    !!ctx.assessment.include_individual_layer;
+  const cohortMeans: Partial<Record<AraIndividualFactorId, number>> = {};
+  let cohortPeerCount = 0;
+  if (isModeC) {
+    const rollup = await computeWorkforceReadiness(ctx.assessment.id).catch(() => null);
+    if (rollup) {
+      const peers = rollup.respondents.filter((r) => r.respondent_id !== ctx.respondent.id);
+      cohortPeerCount = peers.length;
+      for (const id of ARA_INDIVIDUAL_FACTOR_IDS) {
+        const vals = peers
+          .map((r) => r.per_factor[id])
+          .filter((v): v is number => typeof v === "number");
+        if (vals.length > 0) {
+          cohortMeans[id] = vals.reduce((a, b) => a + b, 0) / vals.length;
+        }
+      }
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background" dir={isAr ? "rtl" : "ltr"}>
       <div className="max-w-3xl mx-auto px-6 py-10 space-y-6">
@@ -128,26 +156,42 @@ export default async function PersonalResultsPage({ params }: Props) {
         </div>
 
         {/* Overall score card */}
-        <Card className="bg-gradient-to-br from-primary to-navy-blue text-primary-foreground border-0">
-          <CardContent className="p-5 flex items-center gap-5">
-            <div>
-              <p className="text-xs uppercase tracking-widest opacity-70">
-                {isAr ? "النتيجة الإجمالية" : "Overall snapshot"}
-              </p>
-              <p className="text-4xl font-bold tabular-nums mt-1">
-                {overallScore.toFixed(1)}
-                <span className="text-sm opacity-60 font-normal"> / 5</span>
-              </p>
-            </div>
-            <div className="text-sm opacity-90 max-w-md">
-              {overallScore >= 4
-                ? (isAr ? "جاهزية عالية. أنت بالفعل تستفيد من الذكاء الاصطناعي بشكل جيد عبر العوامل الأربعة." : "Strong readiness. You're already getting good leverage from AI across all four factors.")
-                : overallScore >= 3
-                  ? (isAr ? "جاهزية متوسطة. هناك عاملان أو ثلاثة يمكن تطويرها لزيادة تأثيرك." : "Moderate readiness — two or three factors are ripe for development to lift your impact.")
-                  : (isAr ? "فرصة كبيرة للتطوير. ابدأ بالعامل ذي الدرجة الأقل لتحقيق أكبر تأثير." : "Significant opportunity to develop. Start with your lowest-scoring factor for the biggest lift.")}
-            </div>
-          </CardContent>
-        </Card>
+        {(() => {
+          const stage = getIndividualMaturityStage(overallScore);
+          const stageBadgeTone =
+            stage.id === "embedded"
+              ? "bg-emerald-400/20 border-emerald-300/30 text-emerald-100"
+              : stage.id === "practising"
+              ? "bg-amber-400/20 border-amber-300/30 text-amber-100"
+              : "bg-rose-400/20 border-rose-300/30 text-rose-100";
+          return (
+            <Card className="bg-gradient-to-br from-primary to-navy-blue text-primary-foreground border-0">
+              <CardContent className="p-5 flex items-start gap-5">
+                <div>
+                  <p className="text-xs uppercase tracking-widest opacity-70">
+                    {isAr ? "النتيجة الإجمالية" : "Overall snapshot"}
+                  </p>
+                  <p className="text-4xl font-bold tabular-nums mt-1">
+                    {overallScore.toFixed(1)}
+                    <span className="text-sm opacity-60 font-normal"> / 5</span>
+                  </p>
+                  {overallScore > 0 && (
+                    <span
+                      className={`inline-block mt-2 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${stageBadgeTone}`}
+                    >
+                      {isAr ? stage.name_ar : stage.name_en}
+                    </span>
+                  )}
+                </div>
+                <div className="text-sm opacity-90 max-w-md">
+                  {overallScore > 0
+                    ? (isAr ? stage.blurb_ar : stage.blurb_en)
+                    : (isAr ? "لا توجد بيانات بعد." : "No data yet.")}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
 
         {/* Per-factor breakdown */}
         <div className="grid gap-3 sm:grid-cols-2">
@@ -158,6 +202,15 @@ export default async function PersonalResultsPage({ params }: Props) {
               score >= 4 ? "bg-emerald-100 text-emerald-900 border-emerald-200"
               : score >= 3 ? "bg-amber-100 text-amber-900 border-amber-200"
               : "bg-rose-100 text-rose-900 border-rose-200";
+            // Mode C only — show delta vs cohort peers (excluding self).
+            const peerMean = cohortMeans[f.id];
+            const showDelta = isModeC && cohortPeerCount > 0 && peerMean != null && score > 0;
+            const delta = showDelta ? score - (peerMean as number) : 0;
+            const deltaTone =
+              delta >= 0.25 ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+              : delta <= -0.25 ? "text-rose-700 bg-rose-50 border-rose-200"
+              : "text-muted-foreground bg-muted border-border";
+            const deltaSign = delta > 0 ? "+" : delta < 0 ? "" : "±";
             return (
               <div key={f.id} className="rounded-md border bg-card p-3">
                 <div className="flex items-center gap-2 mb-1">
@@ -173,10 +226,25 @@ export default async function PersonalResultsPage({ params }: Props) {
                   </span>
                 </div>
                 <p className="text-sm font-semibold">{isAr ? f.name_ar : f.name_en}</p>
-                <p className="text-2xl font-bold tabular-nums mt-1">
-                  {score > 0 ? score.toFixed(1) : "—"}
-                  <span className="text-xs text-muted-foreground font-normal"> / 5</span>
-                </p>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <p className="text-2xl font-bold tabular-nums">
+                    {score > 0 ? score.toFixed(1) : "—"}
+                    <span className="text-xs text-muted-foreground font-normal"> / 5</span>
+                  </p>
+                  {showDelta && (
+                    <span
+                      className={`text-[10px] font-semibold tabular-nums px-1.5 py-0.5 rounded-md border ${deltaTone}`}
+                      title={
+                        isAr
+                          ? `متوسط الزملاء: ${(peerMean as number).toFixed(1)} (n=${cohortPeerCount})`
+                          : `Peer average: ${(peerMean as number).toFixed(1)} (n=${cohortPeerCount})`
+                      }
+                    >
+                      {deltaSign}
+                      {delta.toFixed(1)} {isAr ? "مقارنةً بالزملاء" : "vs cohort"}
+                    </span>
+                  )}
+                </div>
                 <p className="text-[11px] text-muted-foreground mt-2 leading-snug">
                   {isAr ? f.description_ar : f.description_en}
                 </p>

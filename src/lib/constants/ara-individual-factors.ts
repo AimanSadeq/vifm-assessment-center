@@ -43,13 +43,15 @@ export const ARA_INDIVIDUAL_FACTORS: AraIndividualFactor[] = [
     name_en: "AI Sense-Check",
     name_ar: "تحقّق الذكاء الاصطناعي",
     description_en:
-      "How critically you evaluate AI output — spotting hallucinations, " +
-      "validating against your own domain expertise, and applying human " +
-      "judgment before relying on AI-generated work.",
+      "Treats AI output as a draft to be checked, not a finished answer. " +
+      "Tests claims against domain knowledge, catches fabricated citations " +
+      "and confidently-wrong facts, and decides what to keep, edit, or " +
+      "discard before it leaves your hands.",
     description_ar:
-      "مدى نقدك لمخرجات الذكاء الاصطناعي - رصد الهلوسة، والتحقق من خبرتك " +
-      "في مجالك، وتطبيق الحكم البشري قبل الاعتماد على ما ينتجه الذكاء " +
-      "الاصطناعي.",
+      "تتعامل مع مخرجات الذكاء الاصطناعي كمسودة تحتاج إلى مراجعة، لا كإجابة " +
+      "نهائية. تختبر الادعاءات في ضوء معرفتك المتخصصة، وترصد المراجع " +
+      "الملفقة والأخطاء المُقدَّمة بثقة، وتقرر ما تُبقي عليه أو تعدّله أو " +
+      "تستبعده قبل تسليمه.",
     color: "#5391D5", // THINKING blue
     ac_competency_names: [
       "Analytical Reasoning",
@@ -63,13 +65,15 @@ export const ARA_INDIVIDUAL_FACTORS: AraIndividualFactor[] = [
     name_en: "AI Working Practice",
     name_ar: "ممارسة العمل بالذكاء الاصطناعي",
     description_en:
-      "How fluently you use AI tools to deliver work outcomes — prompt " +
-      "craft, integrating AI into your workflow, and turning it into real " +
-      "productivity rather than novelty.",
+      "Builds AI into the way you already work — writes clear prompts, " +
+      "iterates when the first answer misses, and folds the tool into " +
+      "recurring tasks. Measures success by faster, better deliverables, " +
+      "not by how often the tool is opened.",
     description_ar:
-      "مدى إتقانك لاستخدام أدوات الذكاء الاصطناعي لتحقيق نتائج العمل - " +
-      "صياغة التعليمات، ودمج الذكاء الاصطناعي في سير عملك، وتحويله إلى " +
-      "إنتاجية حقيقية بدلاً من مجرد تجربة.",
+      "تدمج الذكاء الاصطناعي في أسلوب عملك الحالي - تصيغ تعليمات واضحة، " +
+      "وتعيد المحاولة عندما لا يصيب الجواب الأول الهدف، وتُدخل الأداة في " +
+      "المهام المتكررة. تقيس النجاح بسرعة وجودة المخرجات، لا بعدد مرات " +
+      "استخدام الأداة.",
     color: "#047857", // RESULTS emerald
     ac_competency_names: [
       "Action Orientation",
@@ -83,13 +87,15 @@ export const ARA_INDIVIDUAL_FACTORS: AraIndividualFactor[] = [
     name_en: "AI Collaboration",
     name_ar: "التعاون مع الذكاء الاصطناعي",
     description_en:
-      "How you lead or support team adoption of AI — communicating " +
-      "what AI can and can't do, helping colleagues build confidence, " +
-      "and shaping shared norms for responsible use.",
+      "Helps the team move with AI rather than around it. Explains what " +
+      "the tools can and can't do without overselling, shares prompts " +
+      "and patterns that worked, and pushes back when teammates take an " +
+      "output at face value or use it where they shouldn't.",
     description_ar:
-      "كيف تقود أو تدعم تبني الفريق للذكاء الاصطناعي - التواصل حول ما " +
-      "يستطيع الذكاء الاصطناعي وما لا يستطيع، ومساعدة الزملاء على بناء " +
-      "الثقة، وتشكيل معايير مشتركة للاستخدام المسؤول.",
+      "تساعد الفريق على التحرّك مع الذكاء الاصطناعي بدلاً من تجاوزه. تشرح " +
+      "ما يستطيع وما لا يستطيع دون مبالغة، وتُشارك التعليمات والأنماط التي " +
+      "نجحت، وتعترض حين يأخذ الزملاء المخرجات على ظاهرها أو يستخدمونها في " +
+      "غير موضعها.",
     color: "#c2410c", // PEOPLE orange
     ac_competency_names: [
       "Communicates",
@@ -104,13 +110,15 @@ export const ARA_INDIVIDUAL_FACTORS: AraIndividualFactor[] = [
     name_en: "AI Adaptive Mindset",
     name_ar: "العقلية المتكيفة مع الذكاء الاصطناعي",
     description_en:
-      "Your openness, curiosity, and willingness to relearn workflows " +
-      "as AI changes how work gets done — plus the responsible posture " +
-      "(ethics, privacy, organisational policy) that goes with it.",
+      "Stays open as AI changes how the work gets done — relearns " +
+      "familiar workflows when something better appears, asks where " +
+      "models can fail you, and keeps confidentiality, fairness, and " +
+      "policy in view when deciding what to feed into a system.",
     description_ar:
-      "انفتاحك وفضولك واستعدادك لإعادة تعلم سير العمل مع تغيير الذكاء " +
-      "الاصطناعي لطريقة إنجاز العمل - بالإضافة إلى الموقف المسؤول " +
-      "(الأخلاق، الخصوصية، سياسة المنظمة) الذي يصاحبه.",
+      "تظل منفتحاً مع تغيُّر طريقة إنجاز العمل بفعل الذكاء الاصطناعي - " +
+      "تعيد تعلّم المهام المألوفة عند ظهور ما هو أفضل، وتسأل أين يمكن أن " +
+      "تخفق النماذج، وتُبقي السرية والإنصاف وسياسة المنظمة حاضرةً عند " +
+      "اختيار ما تُدخله إلى النظام.",
     color: "#6d28d9", // SELF violet
     ac_competency_names: [
       "Self-Development",
@@ -131,4 +139,77 @@ export const ARA_INDIVIDUAL_FACTOR_IDS: AraIndividualFactorId[] = [
   "results_working_practice",
   "people_collaboration",
   "self_adaptive_mindset",
+];
+
+/**
+ * Three narrative stages for an individual's overall AI-readiness score.
+ * Aligns with the rose/amber/emerald tone tiers used elsewhere
+ * (<3 / 3–3.99 / ≥4) so the stage label and the visual tone agree.
+ *
+ * Names are VIFM-original; thresholds are tuned to the 1–5 scoring scale.
+ */
+export type AraIndividualMaturityStageId = "emerging" | "practising" | "embedded";
+
+export type AraIndividualMaturityStage = {
+  id: AraIndividualMaturityStageId;
+  name_en: string;
+  name_ar: string;
+  blurb_en: string;
+  blurb_ar: string;
+};
+
+const STAGE_EMERGING: AraIndividualMaturityStage = {
+  id: "emerging",
+  name_en: "Emerging",
+  name_ar: "ناشئة",
+  blurb_en:
+    "Foundation-laying — early exposure to AI tools, with room to build " +
+    "the core habits and judgment that turn experiments into impact.",
+  blurb_ar:
+    "مرحلة التأسيس - انكشاف مبكر على أدوات الذكاء الاصطناعي، وفسحة " +
+    "لبناء العادات والحُكم الأساسي اللازم لتحويل التجريب إلى أثر.",
+};
+
+const STAGE_PRACTISING: AraIndividualMaturityStage = {
+  id: "practising",
+  name_en: "Practising",
+  name_ar: "ممارَسة",
+  blurb_en:
+    "Building rhythm — using AI on real work, sharpening prompts and " +
+    "review habits, and starting to feel where the tools help and where " +
+    "they don't.",
+  blurb_ar:
+    "بناء الإيقاع - استخدام الذكاء الاصطناعي في العمل الفعلي، وصقل " +
+    "التعليمات وعادات المراجعة، والبدء في إدراك مواضع نفع الأدوات " +
+    "ومواضع قصورها.",
+};
+
+const STAGE_EMBEDDED: AraIndividualMaturityStage = {
+  id: "embedded",
+  name_en: "Embedded",
+  name_ar: "راسخة",
+  blurb_en:
+    "Operating fluently — AI is part of how you work, with confident " +
+    "judgment about when to lean on it, when to push back on its " +
+    "output, and when not to use it at all.",
+  blurb_ar:
+    "إتقان متمكّن - الذكاء الاصطناعي جزء من طريقة عملك، مع حُكم واثق " +
+    "بشأن متى تعتمد عليه، ومتى ترفض مخرجاته، ومتى لا تستخدمه أصلاً.",
+};
+
+/**
+ * Bucket an overall 1–5 readiness score into one of three narrative
+ * stages. Returns Emerging for any score below 3 (including 0 from
+ * "no data" — caller should suppress the badge in that case).
+ */
+export function getIndividualMaturityStage(score: number): AraIndividualMaturityStage {
+  if (score >= 4) return STAGE_EMBEDDED;
+  if (score >= 3) return STAGE_PRACTISING;
+  return STAGE_EMERGING;
+}
+
+export const ARA_INDIVIDUAL_MATURITY_STAGES = [
+  STAGE_EMERGING,
+  STAGE_PRACTISING,
+  STAGE_EMBEDDED,
 ];

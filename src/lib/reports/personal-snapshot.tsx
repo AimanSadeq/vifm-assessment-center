@@ -1,6 +1,7 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import {
   ARA_INDIVIDUAL_FACTORS,
+  getIndividualMaturityStage,
   type AraIndividualFactorId,
 } from "@/lib/constants/ara-individual-factors";
 import { VIFM_VERTICAL_LABELS, type VifmVertical } from "@/types/database";
@@ -63,6 +64,19 @@ const s = StyleSheet.create({
   heroScoreNum: { fontSize: 38, fontFamily: "Helvetica-Bold", color: "#fff" },
   heroScoreOf: { fontSize: 11, color: "#fff", opacity: 0.6, marginBottom: 5 },
   heroVerdict: { fontSize: 9.5, color: "#fff", opacity: 0.85, lineHeight: 1.5, marginTop: 12, maxWidth: 380 },
+  heroStagePill: {
+    fontSize: 7.5,
+    fontFamily: "Helvetica-Bold",
+    color: "#fff",
+    backgroundColor: "rgba(255,255,255,0.18)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    marginTop: 8,
+    alignSelf: "flex-start",
+  },
 
   // Sections
   sectionEyebrow: { fontSize: 8, color: C.accent, letterSpacing: 2, textTransform: "uppercase", marginBottom: 4, fontFamily: "Helvetica-Bold" },
@@ -174,13 +188,20 @@ function toneFor(score: number): { label: string; bg: string; fg: string } {
   return { label: "Opportunity", bg: "#fee2e2", fg: "#991b1b" };
 }
 
-function verdict(score: number): string {
-  if (score >= 4) return "Strong readiness. You're already getting good leverage from AI across all four factors.";
-  if (score >= 3) return "Moderate readiness — two or three factors are ripe for development to lift your impact.";
-  return "Significant opportunity to develop. Start with your lowest-scoring factor for the biggest lift.";
+// Trim to fit the factor card without slicing mid-word. Prefer cutting
+// at a sentence boundary inside the budget; otherwise fall back to the
+// last word boundary and add an ellipsis.
+function trimDesc(d: string, max = 145): string {
+  if (d.length <= max) return d;
+  const upTo = d.slice(0, max);
+  const lastPeriod = upTo.lastIndexOf(". ");
+  if (lastPeriod >= max - 60) return upTo.slice(0, lastPeriod + 1);
+  const lastSpace = upTo.lastIndexOf(" ");
+  return (lastSpace > 0 ? upTo.slice(0, lastSpace) : upTo) + "…";
 }
 
 export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
+  const stage = getIndividualMaturityStage(data.overallScore);
   return (
     <Document
       title={`Personal AI Readiness Snapshot - ${data.respondentName}`}
@@ -199,7 +220,12 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
             <Text style={s.heroScoreNum}>{data.overallScore.toFixed(1)}</Text>
             <Text style={s.heroScoreOf}>/ 5 overall</Text>
           </View>
-          <Text style={s.heroVerdict}>{verdict(data.overallScore)}</Text>
+          {data.overallScore > 0 && (
+            <Text style={s.heroStagePill}>{stage.name_en}</Text>
+          )}
+          <Text style={s.heroVerdict}>
+            {data.overallScore > 0 ? stage.blurb_en : "No data yet."}
+          </Text>
         </View>
 
         {/* Factors */}
@@ -226,9 +252,7 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
                   </Text>
                   <Text style={s.factorScoreOf}>/ 5</Text>
                 </View>
-                <Text style={s.factorDesc}>
-                  {f.description_en.length > 145 ? f.description_en.slice(0, 145) + "…" : f.description_en}
-                </Text>
+                <Text style={s.factorDesc}>{trimDesc(f.description_en)}</Text>
               </View>
             );
           })}

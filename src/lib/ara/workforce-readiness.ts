@@ -21,6 +21,12 @@ export type WorkforceFactorAverage = {
   average: number;
   /** Number of distinct respondents counted in the average. */
   respondent_count: number;
+  /**
+   * Number of respondents whose factor score is below the target (4).
+   * Drives the "% below target" distribution histogram on the workforce
+   * rollup card. Excludes respondents with no answers in this factor.
+   */
+  below_target_count: number;
 };
 
 export type WorkforceRespondent = {
@@ -161,12 +167,28 @@ export async function computeWorkforceReadiness(
     };
   });
 
+  // Below-target tally per factor — counts respondents whose factor
+  // score is below 4 (the same target the recommender uses). Powers
+  // the "% below target" distribution histogram on the workforce card.
+  const TARGET = 4;
+  const belowTargetByFactor = ARA_INDIVIDUAL_FACTOR_IDS.reduce<Record<AraIndividualFactorId, number>>(
+    (acc, id) => { acc[id] = 0; return acc; },
+    {} as Record<AraIndividualFactorId, number>
+  );
+  for (const r of respondentSummaries) {
+    for (const id of ARA_INDIVIDUAL_FACTOR_IDS) {
+      const v = r.per_factor[id];
+      if (v != null && v < TARGET) belowTargetByFactor[id] += 1;
+    }
+  }
+
   const factor_averages: WorkforceFactorAverage[] = ARA_INDIVIDUAL_FACTOR_IDS.map((id) => {
     const acc = cohortAcc[id];
     return {
       factor_id: id,
       average: acc.count > 0 ? acc.sum / acc.count : 0,
       respondent_count: acc.count,
+      below_target_count: belowTargetByFactor[id],
     };
   });
 

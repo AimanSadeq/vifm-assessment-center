@@ -885,6 +885,45 @@ export default async function AraAssessmentDetailPage({
                     })}
                   </div>
 
+                  {/* Distribution histogram — % of cohort below target per factor */}
+                  <div>
+                    <p className="text-xs font-semibold mb-2 text-muted-foreground uppercase tracking-wider">
+                      Development demand · % of cohort below target (4)
+                    </p>
+                    <div className="space-y-2">
+                      {workforceRollup.factor_averages.map((f) => {
+                        const factor = ARA_INDIVIDUAL_FACTORS.find((x) => x.id === f.factor_id);
+                        const pct = f.respondent_count > 0
+                          ? Math.round((f.below_target_count / f.respondent_count) * 100)
+                          : 0;
+                        const barTone =
+                          pct >= 60 ? "bg-rose-500"
+                          : pct >= 30 ? "bg-amber-500"
+                          : "bg-emerald-500";
+                        return (
+                          <div key={f.factor_id} className="flex items-center gap-3 text-xs">
+                            <span className="w-36 shrink-0 flex items-center gap-1.5">
+                              <span
+                                className="inline-block h-2 w-2 rounded-full shrink-0"
+                                style={{ backgroundColor: factor?.color }}
+                              />
+                              <span className="truncate">{factor?.name_en}</span>
+                            </span>
+                            <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                              <div
+                                className={`h-full ${barTone} transition-[width]`}
+                                style={{ width: `${Math.max(pct, 2)}%` }}
+                              />
+                            </div>
+                            <span className="w-28 shrink-0 text-right text-muted-foreground tabular-nums">
+                              {f.below_target_count} of {f.respondent_count} ({pct}%)
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   {/* Per-respondent table */}
                   <div>
                     <p className="text-xs font-semibold mb-2 text-muted-foreground uppercase tracking-wider">

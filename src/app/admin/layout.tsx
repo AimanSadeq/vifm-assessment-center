@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { LogoutButton } from "@/components/shared/logout-button";
+import { NotificationBellClient } from "@/components/shared/notification-bell-client";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -185,6 +186,14 @@ export default function AdminLayout({
             <Menu className="h-5 w-5" />
           </Button>
           <VifmLogo variant="color" size="sm" />
+          <div className="ms-auto">
+            <NotificationBellClient />
+          </div>
+        </div>
+
+        {/* Desktop top bar — just the bell, right-aligned */}
+        <div className="hidden lg:flex items-center justify-end border-b bg-card px-6 py-2">
+          <NotificationBellClient />
         </div>
 
         <main className="flex-1 p-4 lg:p-8 overflow-auto">{children}</main>

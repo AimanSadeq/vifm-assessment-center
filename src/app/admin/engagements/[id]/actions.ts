@@ -9,6 +9,7 @@ import {
   setCandidateRoleProfileSchema,
   type SetCandidateRoleProfileValues,
 } from "@/lib/validations/assessor";
+import { publishNotification, publishToAllAdmins } from "@/lib/notifications/publish";
 
 export async function addCandidateAction(values: AddCandidateValues & {
   department?: string;
@@ -52,6 +53,37 @@ export async function setCandidateRoleProfileAction(values: SetCandidateRoleProf
     .eq("id", parsed.data.candidateId);
 
   if (error) return { error: error.message };
+
+  // H3: notify the candidate when their role profile gets bound. Use the
+  // service client through publishNotification so the admin's session can
+  // write to a row owned by another profile. Failures are logged but never
+  // thrown — never block the assignment save on a notification glitch.
+  if (parsed.data.roleProfileId) {
+    const service = createServiceClient();
+    const { data: cand } = await service
+      .from("candidates")
+      .select("profile_id, full_name")
+      .eq("id", parsed.data.candidateId)
+      .single();
+    const { data: rp } = await service
+      .from("role_profiles")
+      .select("name_en")
+      .eq("id", parsed.data.roleProfileId)
+      .single();
+    if (cand?.profile_id) {
+      await publishNotification({
+        profileId: cand.profile_id as string,
+        kind: "role_profile_assigned",
+        title: "A role profile was assigned to your assessment",
+        body: rp?.name_en
+          ? `Your skills will be measured against the "${rp.name_en}" profile.`
+          : null,
+        link: `/candidate/skills/${parsed.data.candidateId}`,
+        data: { roleProfileId: parsed.data.roleProfileId },
+      });
+    }
+  }
+
   return { success: true };
 }
 

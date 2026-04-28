@@ -316,3 +316,25 @@ export type CandidateQuizAttempt = {
   created_at: string;
   updated_at: string;
 };
+
+// H3 — In-app notification feed (admin and candidate headers)
+export type NotificationKind =
+  | "report_released"
+  | "role_profile_assigned"
+  | "quiz_completed"
+  | "washup_consensus_reached"
+  | "candidate_added"
+  | "engagement_completed"
+  | "info";
+
+export type Notification = {
+  id: string;
+  profile_id: string;
+  kind: NotificationKind | string;
+  title: string;
+  body: string | null;
+  link: string | null;
+  data: Record<string, unknown>;
+  read_at: string | null;
+  created_at: string;
+};

@@ -12,6 +12,7 @@ import {
 } from "@/lib/validations/assessor";
 import { generateQuizQuestions } from "@/lib/ai/quiz-generator";
 import { isAIConfigured } from "@/lib/ai/client";
+import { publishToAllAdmins } from "@/lib/notifications/publish";
 import type { BehavioralIndicator, QuizAnswer, QuizQuestion } from "@/types/database";
 
 /**
@@ -235,6 +236,31 @@ export async function completeQuizAttemptAction(values: CompleteQuizValues) {
     .eq("id", attemptId);
 
   if (updateErr) return { error: updateErr.message };
+
+  // H3: notify admins when a quiz completes — useful signal that a learner
+  // is engaging with self-serve content between assessor-led sessions.
+  // Pull candidate + competency labels for a meaningful body.
+  const { data: candNamed } = await supabase
+    .from("candidates")
+    .select("full_name")
+    .eq("id", attempt.candidate_id)
+    .maybeSingle();
+  const competencyId = (await supabase
+    .from("candidate_quiz_attempts")
+    .select("competency_id, competencies(name)")
+    .eq("id", attemptId)
+    .maybeSingle()).data;
+  const competencyName = (competencyId?.competencies as unknown as { name?: string } | null)
+    ?.name;
+  await publishToAllAdmins({
+    kind: "quiz_completed",
+    title: `${candNamed?.full_name ?? "A candidate"} completed an AI quiz`,
+    body: competencyName
+      ? `${competencyName} · ${Math.round(scorePct)}% (${correctCount}/${questions.length})`
+      : `Score: ${Math.round(scorePct)}%`,
+    link: `/admin/engagements`,
+    data: { attemptId, scorePct, correctCount },
+  });
 
   revalidatePath(`/candidate/skills/${attempt.candidate_id}`);
   return { success: true, scorePct, correctCount };

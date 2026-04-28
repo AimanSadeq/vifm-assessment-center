@@ -71,8 +71,11 @@ const PILLAR_IDS: ExtractedCoursePayload["pillar_tags"][number]["pillar_id"][] =
 const SYSTEM_PROMPT =
   `You are a curriculum analyst for VIFM (Virginia Institute of Finance and Management). ` +
   `VIFM delivers training courses across 14 verticals. Each course outline PDF you receive ` +
-  `follows a fixed six-block structure: course overview, target competencies, target audience, ` +
-  `course objectives, course methodology, detailed course outline. ` +
+  `follows a fixed six-block structure in this order: ` +
+  `(1) COURSE OVERVIEW, (2) TARGET COMPETENCIES, (3) COURSE OBJECTIVES, ` +
+  `(4) TARGET AUDIENCE, (5) COURSE METHODOLOGY, (6) COURSE OUTLINE. ` +
+  `On the page, TARGET COMPETENCIES and TARGET AUDIENCE may render side-by-side in two columns, ` +
+  `but the canonical sequence is the one above — extract accordingly. ` +
   `Your job: extract the structured catalogue record AND propose two sets of tags — ` +
   `(a) which AC behavioural competencies the course develops (from a supplied list), and ` +
   `(b) which ARA pillars the course addresses topically. ` +
@@ -97,17 +100,17 @@ function buildInstructions(competencies: Competency[]): string {
     `  "default_duration_days": <number, infer from overview if mentioned (e.g. 'intensive 5-day course'); default 5 if unstated>,\n` +
     `  "min_duration_days": <number; default 2 — VIFM corporate/in-house can compress courses>,\n` +
     `  "max_duration_days": <number; default 5 — VIFM public delivery>,\n` +
-    `  "overview_en": "<Block 1 verbatim, English>",\n` +
+    `  "overview_en": "<Block 1 (COURSE OVERVIEW) verbatim, English>",\n` +
     `  "overview_ar": "<Block 1 verbatim, Arabic if present, else null>",\n` +
-    `  "target_competencies_raw_en": ["<each bullet from Block 2 verbatim>", ...],\n` +
+    `  "target_competencies_raw_en": ["<each bullet from Block 2 (TARGET COMPETENCIES) verbatim>", ...],\n` +
     `  "target_competencies_raw_ar": ["<Arabic block 2 if present, else null>", ...],\n` +
-    `  "audience_en": "<Block 3 verbatim>",\n` +
-    `  "audience_ar": "<null or Arabic>",\n` +
-    `  "objectives_en": ["<each Block 4 bullet verbatim>", ...],\n` +
+    `  "objectives_en": ["<each Block 3 (COURSE OBJECTIVES) bullet verbatim>", ...],\n` +
     `  "objectives_ar": null | ["..."],\n` +
-    `  "methodology_en": "<Block 5 verbatim>",\n` +
+    `  "audience_en": "<Block 4 (TARGET AUDIENCE) verbatim>",\n` +
+    `  "audience_ar": "<null or Arabic>",\n` +
+    `  "methodology_en": "<Block 5 (COURSE METHODOLOGY) verbatim>",\n` +
     `  "methodology_ar": null | "...",\n` +
-    `  "outline_en": [{ "title": "<section heading>", "bullets": ["<each sub-bullet>", ...] }, ...],\n` +
+    `  "outline_en": [{ "title": "<section heading from Block 6 (COURSE OUTLINE)>", "bullets": ["<each sub-bullet>", ...] }, ...],\n` +
     `  "outline_ar": null | [...],\n` +
     `  "competency_tags": [\n` +
     `    { "competency_id": "<id from VIFM AC list below>",\n` +

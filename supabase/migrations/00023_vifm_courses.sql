@@ -3,9 +3,16 @@
 --
 -- Bridges the diagnostic side of the portal (AC engagements,
 -- ARA assessments) to VIFM's actual revenue-generating offering:
--- training courses. Each course is a PDF outline today with
--- six building blocks (overview / target competencies / target
--- audience / course objectives / methodology / outline). This
+-- training courses. Each course is a PDF outline today with six
+-- building blocks in this canonical order:
+--   1. COURSE OVERVIEW
+--   2. TARGET COMPETENCIES
+--   3. COURSE OBJECTIVES
+--   4. TARGET AUDIENCE
+--   5. COURSE METHODOLOGY
+--   6. COURSE OUTLINE
+-- (On the page, blocks 2 and 4 may render side-by-side in two
+-- columns, but the canonical sequence is as listed.) This
 -- migration adds:
 --
 --   vifm_courses                    — one row per course, all 6 blocks
@@ -68,26 +75,27 @@ CREATE TABLE vifm_courses (
 
   -- Six building blocks (bilingual where applicable). The "_raw"
   -- variants preserve the PDF's literal text for audit/QA; the
-  -- structured variants drive the UI.
-  -- Block 1 — Overview
+  -- structured variants drive the UI. Column order below mirrors
+  -- the canonical six-block sequence.
+  -- Block 1 — COURSE OVERVIEW
   overview_en            text,
   overview_ar            text,
-  -- Block 2 — Target competencies (topical, NOT behavioural — the
+  -- Block 2 — TARGET COMPETENCIES (topical, NOT behavioural — the
   -- PDF's own list, e.g. "Detection Capabilities", "Bookkeeping
   -- Automation"). Map separately to AC behavioural competencies via
   -- vifm_course_competency_tags.
   target_competencies_raw_en  text[],
   target_competencies_raw_ar  text[],
-  -- Block 3 — Target audience
-  audience_en            text,
-  audience_ar            text,
-  -- Block 4 — Course objectives (bullet list)
+  -- Block 3 — COURSE OBJECTIVES (bullet list)
   objectives_en          text[],
   objectives_ar          text[],
-  -- Block 5 — Methodology
+  -- Block 4 — TARGET AUDIENCE
+  audience_en            text,
+  audience_ar            text,
+  -- Block 5 — COURSE METHODOLOGY
   methodology_en         text,
   methodology_ar         text,
-  -- Block 6 — Detailed outline (structured: array of {title, bullets[]})
+  -- Block 6 — COURSE OUTLINE (structured: array of {title, bullets[]})
   outline_en             jsonb,
   outline_ar             jsonb,
 

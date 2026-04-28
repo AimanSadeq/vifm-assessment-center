@@ -42,13 +42,24 @@ export function CourseForm(props: Props) {
   const [minDuration, setMinDuration] = useState(initial?.min_duration_days ?? 2);
   const [maxDuration, setMaxDuration] = useState(initial?.max_duration_days ?? 5);
   const [overviewEn, setOverviewEn] = useState(initial?.overview_en ?? "");
+  const [objectivesEnText, setObjectivesEnText] = useState(
+    initial?.objectives_en ? initial.objectives_en.join("\n") : ""
+  );
   const [audienceEn, setAudienceEn] = useState(initial?.audience_en ?? "");
+  const [methodologyEn, setMethodologyEn] = useState(initial?.methodology_en ?? "");
 
   const [pending, start] = useTransition();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     start(async () => {
+      // Objectives is a textarea where each line is one bullet —
+      // matches how the PDFs render Block 3 (one bullet per line).
+      const objectivesArr = objectivesEnText
+        .split("\n")
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+
       const result = await upsertCourseAction({
         id: initial?.id,
         title_en: titleEn,
@@ -63,7 +74,9 @@ export function CourseForm(props: Props) {
         delivery_modes: initial?.delivery_modes ?? ["classroom", "virtual"],
         languages: initial?.languages ?? ["en"],
         overview_en: overviewEn || null,
+        objectives_en: objectivesArr.length > 0 ? objectivesArr : null,
         audience_en: audienceEn || null,
+        methodology_en: methodologyEn || null,
         is_active: initial?.is_active ?? true,
       });
       if ("error" in result && result.error) {
@@ -157,26 +170,55 @@ export function CourseForm(props: Props) {
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="overview_en">Course overview</Label>
+        <Label htmlFor="overview_en">1 · Course overview</Label>
         <textarea
           id="overview_en"
           rows={4}
           value={overviewEn ?? ""}
           onChange={(e) => setOverviewEn(e.target.value)}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-          placeholder="Block 1 — paste the course overview paragraph here."
+          placeholder="Block 1 — paste the course overview paragraph."
         />
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="audience_en">Target audience</Label>
+        <Label htmlFor="objectives_en">3 · Course objectives</Label>
+        <textarea
+          id="objectives_en"
+          rows={4}
+          value={objectivesEnText}
+          onChange={(e) => setObjectivesEnText(e.target.value)}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          placeholder={"Block 3 — one objective per line. e.g.\nApply prompt engineering techniques\nCreate content using AI tools\nAnalyse business data with AI"}
+        />
+        <p className="text-[11px] text-muted-foreground">
+          One bullet per line. Block 2 (Target Competencies) and Block 6
+          (Detailed Outline) are populated by the AI importer or manually
+          via SQL until the full editor lands in Day 3.
+        </p>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="audience_en">4 · Target audience</Label>
         <textarea
           id="audience_en"
           rows={3}
           value={audienceEn ?? ""}
           onChange={(e) => setAudienceEn(e.target.value)}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-          placeholder="Block 3 — who should attend."
+          placeholder="Block 4 — who should attend."
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="methodology_en">5 · Course methodology</Label>
+        <textarea
+          id="methodology_en"
+          rows={3}
+          value={methodologyEn ?? ""}
+          onChange={(e) => setMethodologyEn(e.target.value)}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          placeholder="Block 5 — how the course is delivered (lectures, case studies, hands-on, etc.)."
         />
       </div>
 
@@ -191,9 +233,11 @@ export function CourseForm(props: Props) {
       </div>
 
       <p className="text-[11px] text-muted-foreground">
-        Day 1 form covers identity + duration + the easy text blocks. Day 2
-        adds the AI-extraction path that pulls all six blocks from a PDF
-        automatically; Day 3 adds the competency / pillar mapping panel.
+        Six-block order: 1 Overview · 2 Target competencies · 3 Objectives ·
+        4 Target audience · 5 Methodology · 6 Detailed outline. Manual form
+        currently captures blocks 1, 3, 4, 5; use the PDF importer for the
+        full six-block ingest. Day 3 adds the competency / pillar mapping
+        panel and full block-2 + block-6 editors.
       </p>
     </form>
   );

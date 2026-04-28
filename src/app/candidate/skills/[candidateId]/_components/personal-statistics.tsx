@@ -48,7 +48,8 @@ export function PersonalStatistics({
   notAssessed,
   byDomain,
 }: PersonalStatisticsProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isAr = i18n.language === "ar";
 
   // Recharts' ResponsiveContainer caches its internal width/height from
   // the first measurement of its parent. On initial hydration the
@@ -210,7 +211,18 @@ export function PersonalStatistics({
           </p>
           <div className="h-44">
             <ResponsiveContainer key={chartKey} width="100%" height="100%">
-              <BarChart data={barData} margin={{ top: 4, right: 4, bottom: 0, left: -16 }}>
+              <BarChart
+                data={barData}
+                margin={{
+                  top: 4,
+                  // Flip the negative inset based on locale: under LTR the
+                  // Y-axis sits on the left and we tighten the left margin;
+                  // under RTL the Y-axis sits on the right and we mirror.
+                  right: isAr ? -16 : 4,
+                  bottom: 0,
+                  left: isAr ? 4 : -16,
+                }}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
                 <XAxis
                   dataKey="name"
@@ -218,8 +230,16 @@ export function PersonalStatistics({
                   tickLine={false}
                   axisLine={{ stroke: "#e5e7eb" }}
                   tickFormatter={(name) => t(`domainNames.${name}`)}
+                  reversed={isAr}
                 />
-                <YAxis domain={[0, 5]} ticks={[0, 1, 2, 3, 4, 5]} fontSize={10} tickLine={false} axisLine={{ stroke: "#e5e7eb" }} />
+                <YAxis
+                  domain={[0, 5]}
+                  ticks={[0, 1, 2, 3, 4, 5]}
+                  fontSize={10}
+                  tickLine={false}
+                  axisLine={{ stroke: "#e5e7eb" }}
+                  orientation={isAr ? "right" : "left"}
+                />
                 <Tooltip
                   contentStyle={{ fontSize: 11, borderRadius: 6 }}
                   formatter={(value, _name, props) => {

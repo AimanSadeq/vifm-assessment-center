@@ -265,6 +265,12 @@ export async function completeQuizAttemptAction(values: CompleteQuizValues) {
     .maybeSingle()).data;
   const competencyName = (competencyId?.competencies as unknown as { name?: string } | null)
     ?.name;
+  // Dedupe retake-spam: a candidate finishing the same competency's
+  // quiz multiple times in 24h produces one admin notification, not N.
+  // The latest score isn't reflected in the surviving notification, but
+  // the admin still sees the candidate is engaging — which is the
+  // signal the notification is for.
+  const competencyIdValue = (competencyId?.competency_id as string | undefined) ?? "unknown";
   await publishToAllAdmins({
     kind: "quiz_completed",
     title: `${candNamed?.full_name ?? "A candidate"} completed an AI quiz`,
@@ -273,6 +279,7 @@ export async function completeQuizAttemptAction(values: CompleteQuizValues) {
       : `Score: ${Math.round(scorePct)}%`,
     link: `/admin/engagements`,
     data: { attemptId, scorePct, correctCount },
+    dedupeKey: `quiz_completed:${attempt.candidate_id}:${competencyIdValue}`,
   });
 
   revalidatePath(`/candidate/skills/${attempt.candidate_id}`);

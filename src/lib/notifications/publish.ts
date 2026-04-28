@@ -42,6 +42,13 @@ export async function publishNotification(input: {
  * Fan-out to every admin profile. Used when a candidate completes a
  * quiz, a role profile is auto-extracted, etc — events the whole admin
  * team probably wants to see.
+ *
+ * Optional `dedupeKey` + `dedupeWindowHours` skips the publish if a
+ * notification of the same `kind` with the same `data.dedupeKey` was
+ * created within the window. Use it to suppress retake-spam, e.g.
+ * passing `dedupeKey: "quiz_completed:<candId>:<compId>"` means a
+ * candidate retaking the same quiz five times in a day produces one
+ * notification, not five.
  */
 export async function publishToAllAdmins(input: {
   kind: NotificationKind | string;
@@ -49,9 +56,34 @@ export async function publishToAllAdmins(input: {
   body?: string | null;
   link?: string | null;
   data?: Record<string, unknown>;
+  dedupeKey?: string;
+  /** Defaults to 24 hours when dedupeKey is provided. */
+  dedupeWindowHours?: number;
 }) {
   try {
     const supabase = createServiceClient();
+
+    if (input.dedupeKey) {
+      const windowHours = input.dedupeWindowHours ?? 24;
+      const cutoffIso = new Date(
+        Date.now() - windowHours * 60 * 60 * 1000
+      ).toISOString();
+      const { data: existing, error: dupErr } = await supabase
+        .from("notifications")
+        .select("id")
+        .eq("kind", input.kind)
+        .eq("data->>dedupeKey", input.dedupeKey)
+        .gte("created_at", cutoffIso)
+        .limit(1);
+      if (dupErr) {
+        console.error("[notifications.publishToAllAdmins] dedupe check failed:", dupErr);
+        // Fall through and publish anyway — better to over-notify than to
+        // silently drop a notification because of a transient query error.
+      } else if (existing && existing.length > 0) {
+        return;
+      }
+    }
+
     const { data: admins, error } = await supabase
       .from("profiles")
       .select("id")
@@ -62,13 +94,19 @@ export async function publishToAllAdmins(input: {
     }
     if (!admins || admins.length === 0) return;
 
+    // Embed the dedupeKey inside `data` so the dedupe check above can
+    // find it on subsequent calls. The recipient never sees it directly.
+    const dataWithKey = input.dedupeKey
+      ? { ...(input.data ?? {}), dedupeKey: input.dedupeKey }
+      : (input.data ?? {});
+
     const rows = admins.map((a: { id: string }) => ({
       profile_id: a.id,
       kind: input.kind,
       title: input.title,
       body: input.body ?? null,
       link: input.link ?? null,
-      data: input.data ?? {},
+      data: dataWithKey,
     }));
     const { error: insertErr } = await supabase.from("notifications").insert(rows);
     if (insertErr) {

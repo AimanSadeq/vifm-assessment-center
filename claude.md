@@ -10,6 +10,8 @@ All 5 development phases are **complete**. The portal is functionally ready with
 
 **AC Skillup-MENA parity status:** Fourteen features inspired by the Skillup MENA AC walkthrough are shipped on `master` (P0.1 JD-to-competency extractor, P0.2 role profile library, P0.3 gap-severity badges, Learning Plan PDF, G1 candidate→role-profile binding, G2 learner skill dashboard, G3 self-serve AI quiz flow with MCQ + cognitive items + per-question AI explanations, G4 bulk JD import, G5 bulk CSV user-to-persona linking, G6 JSON export, H1 JD-extractor domain tally card, H2 personal-statistics donut + bar charts on /candidate/skills, H3 in-app notification bell, H4 admin "view as candidate" banner). G7 retake-quiz path is shipped implicitly via the existing G3 "Retake Quiz" button; full AC re-engagement workflow deferred until product demand. Full second-pass analysis (158-frame video sweep) lives in `.tmp/skillup-gap-analysis.md`; see "AC Skillup-MENA Upgrades" section below.
 
+**Hardening + i18n status (2026-04-28):** Migration 00019 hardens the Skillup-parity tables — `notifications` split into per-op policies + read-only-recipient trigger, `candidate_quiz_attempts` immutable-fields trigger + initial-state CHECK constraint preventing fabricated score writes. Bilingual EN/AR translations shipped on the candidate-facing surfaces (skills dashboard, personal-statistics charts, quiz interface, quiz results, Start AI Quiz button, notification bell, admin "view as" banner, candidate layout chrome) plus AI-generated quiz prompts/options/explanations now bilingual via `bilingual: true` on the generator. I18nProvider is route-aware: only `/candidate/*` and `/ara/respond/*` honour the `vifm-locale` cookie; admin / login / assessor / client portals stay LTR/EN regardless (closes a dir-leak that drifted the admin sidebar to centre when the cookie was `ar`). Full roadmap with statuses lives in `docs/post-skillup-roadmap.md`.
+
 ## Tech Stack
 - **Framework:** Next.js 14 with App Router and TypeScript (strict mode)
 - **Styling:** Tailwind CSS with Shadcn/UI component library (New York style)
@@ -79,7 +81,7 @@ src/
     ai/                   # AI client, observation assistant, report writer, dev recommender, bias detector, JD competency extractor (P0.1), quiz generator (G3)
     notifications/        # Publish + load + mark-read helpers (H3)
     constants/            # Exercise type labels
-    i18n/                 # Config, provider, English + Arabic locale files
+    i18n/                 # Config, provider (route-aware), cookie + locale constants, server-side getServerT helper, EN + AR locale files
     integrations/         # Email (6 templates), Video (Daily.co placeholder)
     reports/              # Candidate report PDF (6 pages) + Learning Plan PDF (3 pages), data fetcher, report types
     scoring/              # ICC calculation, bias detection, gap-severity computation (P0.3)
@@ -100,6 +102,7 @@ supabase/
     00016_ac_candidate_role_profile.sql       # G1 candidates.role_profile_id (nullable FK)
     00017_ac_candidate_quiz_attempts.sql      # G3 candidate_quiz_attempts (questions + answers JSONB)
     00018_ac_notifications.sql                # H3 notifications table + RLS
+    00019_ac_auth_hardening.sql               # Notifications + quiz-attempts immutability triggers + CHECK
 scripts/
   seed-test-data.ts       # Creates full test dataset (engagement + candidates + assessor + observations)
   seed-tags-qa.py         # Populates tags and Q&A questions for competencies
@@ -280,6 +283,12 @@ A separate workstream alongside ARA, started after a competitor walkthrough of s
 
 ### G7 status — implicit, full workflow deferred
 The candidate-side retake path is already shipped: the G3 quiz results page has a "Retake Quiz" button that returns to `/candidate/skills/[id]` with a `?retakeCompetencyId=…` query, where they can click "Start AI Quiz" again to generate a fresh attempt. No formal admin queue or approval workflow has been built — that pairs with the larger ARA M6 reassessment design and should be tackled when there's product demand (e.g. SLAs around when candidates can retake an AC engagement, not just a quiz).
+
+### Post-parity hardening + polish (2026-04-28)
+- **Migration 00019 — auth hardening** (commit `b10afe9`): `notifications` policy split into per-op (no INSERT for recipients; trigger restricts updates to `read_at` only). `candidate_quiz_attempts` BEFORE UPDATE trigger refuses candidate-context writes to immutable + score fields and any update once status leaves `in_progress`; CHECK constraint blocks fabricated `status='completed'` inserts. Quiz finalisation actions switched to `createServiceClient()` so the trigger short-circuits for the legitimate write path.
+- **Bilingual EN/AR** (commits `3bc9593`, `ac79916`, `3fdaeee`): cookie-driven via `vifm-locale`. Server components read it through `getServerT()` (`src/lib/i18n/server.ts`); client components use the existing `useTranslation()`. Locale-aware routes are `/candidate/*` and `/ara/respond/*` only — every other portal stays LTR/EN regardless of cookie (this prevents the admin sidebar drifting to centre when an admin enters from a candidate's Arabic session). AI-generated quiz prompts/options/explanations are also bilingual via `bilingual: true` on the generator.
+- **Defence-in-depth admin role checks** (commit `574509a`): five sensitive AC admin actions (`addCandidateAction`, `setCandidateRoleProfileAction`, `bulkAssignRoleProfilesAction`, `bulkExtractJdsAction`, `bulkCreateRoleProfilesAction`) wrap their entry with `requireRole(["admin"])` from the existing ARA auth-guards module. Under AUTH_ENABLED=false the guard returns a synthetic admin so dev work continues; under auth=on it refuses non-admin callers cleanly.
+- **Skipped (intentionally)**: SECURITY DEFINER RPC for quiz scoring — gold-plating now that 00019's trigger covers the realistic threat model. Re-open if a real exploit surfaces.
 
 ### Skipped intentionally
 - **Cert Builder** (no certificate concept yet — defer)

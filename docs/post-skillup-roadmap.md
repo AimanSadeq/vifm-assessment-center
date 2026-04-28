@@ -104,21 +104,31 @@ a fire-and-forget dynamic import — failures logged, never thrown.
 
 ---
 
-## 5. AUTH_ENABLED flip — ½ day + careful testing · status: pending
+## 5. AUTH_ENABLED flip — ½ day + careful testing · status: PENDING (user-paused 2026-04-28)
 
-Currently `false` in [src/middleware.ts](../src/middleware.ts). Per
-CLAUDE.md, [src/lib/auth/README.md](../src/lib/auth/README.md) has the
-production migration steps.
+Items 2, 3, and 4 are all shipped — the prerequisites are clear. User
+explicitly asked to defer this step, with a reminder. Don't auto-start
+without explicit go-ahead.
 
-**Don't do this before items 2 and 3.** Flipping auth before the RLS
-audit will surface policy bugs under client load. Flipping before
-translations means non-English testers see a half-translated UI.
+When picking this back up, the simplified plan (per the chat session
+that paused this):
+- [ ] Flip `AUTH_ENABLED = true` in [src/middleware.ts](../src/middleware.ts)
+- [ ] Hide the 4 quick-login role buttons on `/login` in production
+      builds (gate to `process.env.NODE_ENV === "development"`)
+- [ ] Create 4 test user accounts in Supabase Auth (admin, lead_assessor,
+      candidate, client) and seed matching `profiles` rows with the
+      correct `role` value
+- [ ] Log in as the candidate, attempt cross-candidate reads — confirm
+      the migration 00019 hardening blocks them
+- [ ] `npm run build` — make sure the production build passes
+- [ ] Run [scripts/verify-rls.ts](../scripts/verify-rls.ts) against the
+      fresh test DB
+- [ ] Smoke the new parity surfaces (G2 / G3 / H1–H4) under each role
+- [ ] Commit; revert path is `git revert` since the change is one file
 
-**Steps once 2 and 3 are done:**
-- [ ] Run `verify-rls.ts` against a fresh test DB
-- [ ] Flip the flag, run the full pilot seed script, log in as each role,
-      confirm the matrix
-- [ ] Smoke-test the new parity surfaces with each role
+Production deployment (separate from the local flip): coordinate with
+client onboarding so test accounts exist before the flip lands on the
+deployed environment.
 
 ---
 

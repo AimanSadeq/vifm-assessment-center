@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,11 +19,11 @@ const QUIZ_DURATION_SECONDS = 5 * 60;
 
 const DIFFICULTY_TONES: Record<
   QuizQuestion["difficulty"],
-  { bg: string; fg: string; border: string; label: string }
+  { bg: string; fg: string; border: string }
 > = {
-  easy:   { bg: "#ecfdf5", fg: "#047857", border: "#a7f3d0", label: "Easy" },
-  medium: { bg: "#fffbeb", fg: "#a16207", border: "#fde68a", label: "Medium" },
-  hard:   { bg: "#fef2f2", fg: "#b91c1c", border: "#fecaca", label: "Hard" },
+  easy:   { bg: "#ecfdf5", fg: "#047857", border: "#a7f3d0" },
+  medium: { bg: "#fffbeb", fg: "#a16207", border: "#fde68a" },
+  hard:   { bg: "#fef2f2", fg: "#b91c1c", border: "#fecaca" },
 };
 
 type Props = {
@@ -43,6 +44,7 @@ export function QuizInterface({
   startedAt,
 }: Props) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [picks, setPicks] = useState<(number | null)[]>(
     initialAnswers.map((a) => a.picked_index)
   );
@@ -85,7 +87,7 @@ export function QuizInterface({
     }).then((result) => {
       setSavingPick(false);
       if ("error" in result && result.error) {
-        const msg = typeof result.error === "string" ? result.error : "Save failed";
+        const msg = typeof result.error === "string" ? result.error : t("quiz.saveFailed");
         toast.error(msg);
       }
     });
@@ -93,7 +95,7 @@ export function QuizInterface({
 
   const handleNext = () => {
     if (picks[currentIdx] === null) {
-      toast.error("Pick an answer to continue.");
+      toast.error(t("quiz.pickAnswer"));
       return;
     }
     if (isFinal) {
@@ -111,7 +113,7 @@ export function QuizInterface({
     startTransition(async () => {
       const result = await completeQuizAttemptAction({ attemptId });
       if ("error" in result && result.error) {
-        toast.error(typeof result.error === "string" ? result.error : "Could not finalise");
+        toast.error(typeof result.error === "string" ? result.error : t("quiz.completeFail"));
         return;
       }
       router.push(`/candidate/quiz/${attemptId}/results`);
@@ -119,17 +121,13 @@ export function QuizInterface({
   };
 
   const handleEndSession = () => {
-    if (
-      !window.confirm(
-        "End this session? Your unanswered questions will count as zero. You can retake at any time."
-      )
-    ) {
+    if (!window.confirm(t("quiz.endSessionConfirm"))) {
       return;
     }
     startTransition(async () => {
       const result = await abandonQuizAttemptAction({ attemptId });
       if ("error" in result && result.error) {
-        toast.error(typeof result.error === "string" ? result.error : "Could not end session");
+        toast.error(typeof result.error === "string" ? result.error : t("quiz.endSessionFail"));
         return;
       }
       router.push(`/candidate/quiz/${attemptId}/results`);
@@ -151,7 +149,7 @@ export function QuizInterface({
       <div className="rounded-md border bg-gradient-to-r from-primary to-navy-blue text-white p-4 flex flex-wrap items-center gap-3">
         <Badge className="bg-white/15 text-white border-white/20 gap-1">
           <Sparkles className="h-3 w-3" />
-          AI POWERED
+          {t("quiz.aiPowered")}
         </Badge>
         <p className="text-sm font-medium truncate me-auto">{competencyName}</p>
         <div
@@ -169,20 +167,20 @@ export function QuizInterface({
         <CardContent className="p-6 space-y-5">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Question {currentIdx + 1} of {questions.length}
+              {t("quiz.questionOfTotal", { n: currentIdx + 1, total: questions.length })}
             </p>
             <span
               className="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold"
               style={{ backgroundColor: tone.bg, color: tone.fg, borderColor: tone.border }}
             >
-              {tone.label}
+              {t(`quiz.difficulty.${q.difficulty}`)}
             </span>
             <Badge variant="secondary" className="text-[11px]">
-              {q.points} pts
+              {t("quiz.points", { n: q.points })}
             </Badge>
             {q.type === "pattern_recognition" && (
               <Badge variant="outline" className="text-[11px]">
-                Cognitive Challenge — Pattern Recognition
+                {t("quiz.patternBadge")}
               </Badge>
             )}
           </div>
@@ -246,24 +244,28 @@ export function QuizInterface({
           className="gap-2"
         >
           <AlertTriangle className="h-4 w-4" />
-          End Session
+          {t("quiz.endSession")}
         </Button>
 
         <div className="ms-auto flex items-center gap-2">
           {currentIdx > 0 && (
             <Button variant="ghost" onClick={handlePrev} disabled={submitting}>
-              Previous
+              {t("quiz.previous")}
             </Button>
           )}
           <Button onClick={handleNext} disabled={submitting}>
             {submitting && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
-            {isFinal ? (allAnswered ? "Submit" : "Submit (skip remaining)") : "Next →"}
+            {isFinal
+              ? allAnswered
+                ? t("quiz.submit")
+                : t("quiz.submitSkipping")
+              : t("quiz.next")}
           </Button>
         </div>
       </div>
 
       <p className="text-[11px] text-muted-foreground text-center">
-        Your answer for this question is saved automatically. Candidate ID: {candidateId}
+        {t("quiz.autoSavedHint", { id: candidateId })}
       </p>
     </div>
   );

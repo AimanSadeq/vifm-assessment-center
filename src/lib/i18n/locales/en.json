@@ -207,5 +207,75 @@
     "RESULTS": "RESULTS",
     "PEOPLE": "PEOPLE",
     "SELF": "SELF"
+  },
+  "quiz": {
+    "aiPowered": "AI POWERED",
+    "questionOfTotal": "Question {{n}} of {{total}}",
+    "difficulty": {
+      "easy": "Easy",
+      "medium": "Medium",
+      "hard": "Hard"
+    },
+    "points": "{{n}} pts",
+    "patternBadge": "Cognitive Challenge — Pattern Recognition",
+    "endSession": "End Session",
+    "endSessionConfirm": "End this session? Your unanswered questions will count as zero. You can retake at any time.",
+    "endSessionFail": "Could not end session",
+    "previous": "Previous",
+    "next": "Next →",
+    "submit": "Submit",
+    "submitSkipping": "Submit (skip remaining)",
+    "saveFailed": "Save failed",
+    "completeFail": "Could not finalise",
+    "pickAnswer": "Pick an answer to continue.",
+    "autoSavedHint": "Your answer for this question is saved automatically. Candidate ID: {{id}}",
+    "startButton": "Start AI Quiz",
+    "startPreparing": "Preparing...",
+    "startGenericError": "Could not start the quiz",
+    "results": {
+      "backToSkills": "Back to My Skills",
+      "competencyEyebrow": "Competency",
+      "headerWellDone": "Well done!",
+      "headerWellDoneBody": "Great work on this competency. Try a harder one next.",
+      "headerKeepLearning": "Keep Learning!",
+      "headerKeepLearningBody": "You can retake the quiz at any time to improve your score.",
+      "headerSessionEnded": "Session Ended",
+      "headerSessionEndedBody": "You can retake the quiz at any time to improve your score.",
+      "yourScore": "Your Score",
+      "timeTaken": "Time Taken",
+      "passingScore": "Passing Score",
+      "correctAnswers": "Correct Answers",
+      "questionsForReview": "Questions for Review",
+      "questionLabel": "Question {{n}}",
+      "patternShort": "Pattern",
+      "skipped": "Skipped",
+      "correct": "Correct",
+      "incorrect": "Incorrect",
+      "yourAnswer": "Your answer",
+      "correctAnswer": "Correct answer",
+      "explanationLabel": "Explanation",
+      "retakeButton": "Retake Quiz"
+    }
+  },
+  "notifications": {
+    "ariaLabel": "Notifications",
+    "ariaLabelWithUnread": "Notifications ({{count}} unread)",
+    "header": "Notifications",
+    "markAllRead": "Mark all read",
+    "emptyState": "You're all caught up.",
+    "candidateEmpty": "You're all caught up — no notifications yet.",
+    "markAllReadFail": "Could not mark all read",
+    "time": {
+      "justNow": "just now",
+      "minutesAgo": "{{n}}m ago",
+      "hoursAgo": "{{n}}h ago",
+      "daysAgo": "{{n}}d ago",
+      "weeksAgo": "{{n}}w ago"
+    }
+  },
+  "impersonation": {
+    "eyebrow": "Admin view",
+    "viewingAs": "Viewing as",
+    "exit": "Exit view"
   }
 }

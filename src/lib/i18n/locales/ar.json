@@ -207,5 +207,75 @@
     "RESULTS": "النتائج",
     "PEOPLE": "الأشخاص",
     "SELF": "الذات"
+  },
+  "quiz": {
+    "aiPowered": "مدعوم بالذكاء الاصطناعي",
+    "questionOfTotal": "السؤال {{n}} من {{total}}",
+    "difficulty": {
+      "easy": "سهل",
+      "medium": "متوسط",
+      "hard": "صعب"
+    },
+    "points": "{{n}} نقطة",
+    "patternBadge": "تحدٍ معرفي — تمييز الأنماط",
+    "endSession": "إنهاء الجلسة",
+    "endSessionConfirm": "هل تريد إنهاء هذه الجلسة؟ ستُحسب الأسئلة غير المُجاب عنها كصفر. يمكنك إعادة المحاولة في أي وقت.",
+    "endSessionFail": "تعذّر إنهاء الجلسة",
+    "previous": "السابق",
+    "next": "التالي ←",
+    "submit": "إرسال",
+    "submitSkipping": "إرسال (تخطي المتبقي)",
+    "saveFailed": "فشل الحفظ",
+    "completeFail": "تعذّر الإنهاء",
+    "pickAnswer": "اختر إجابة للمتابعة.",
+    "autoSavedHint": "تم حفظ إجابتك تلقائيًا. معرّف المرشح: {{id}}",
+    "startButton": "ابدأ اختبار الذكاء الاصطناعي",
+    "startPreparing": "يجري التحضير...",
+    "startGenericError": "تعذّر بدء الاختبار",
+    "results": {
+      "backToSkills": "العودة إلى مهاراتي",
+      "competencyEyebrow": "الكفاءة",
+      "headerWellDone": "أحسنت!",
+      "headerWellDoneBody": "عمل جيد في هذه الكفاءة. جرّب كفاءة أصعب في المرة القادمة.",
+      "headerKeepLearning": "واصل التعلّم!",
+      "headerKeepLearningBody": "يمكنك إعادة الاختبار في أي وقت لتحسين درجتك.",
+      "headerSessionEnded": "انتهت الجلسة",
+      "headerSessionEndedBody": "يمكنك إعادة الاختبار في أي وقت لتحسين درجتك.",
+      "yourScore": "درجتك",
+      "timeTaken": "الوقت المستغرق",
+      "passingScore": "درجة النجاح",
+      "correctAnswers": "الإجابات الصحيحة",
+      "questionsForReview": "أسئلة للمراجعة",
+      "questionLabel": "السؤال {{n}}",
+      "patternShort": "نمط",
+      "skipped": "تم تخطّيه",
+      "correct": "صحيح",
+      "incorrect": "غير صحيح",
+      "yourAnswer": "إجابتك",
+      "correctAnswer": "الإجابة الصحيحة",
+      "explanationLabel": "الشرح",
+      "retakeButton": "إعادة الاختبار"
+    }
+  },
+  "notifications": {
+    "ariaLabel": "الإشعارات",
+    "ariaLabelWithUnread": "الإشعارات ({{count}} غير مقروءة)",
+    "header": "الإشعارات",
+    "markAllRead": "تحديد الكل كمقروء",
+    "emptyState": "لا توجد إشعارات جديدة.",
+    "candidateEmpty": "لا توجد إشعارات جديدة بعد.",
+    "markAllReadFail": "تعذّر تحديد الكل كمقروء",
+    "time": {
+      "justNow": "الآن",
+      "minutesAgo": "قبل {{n}} د",
+      "hoursAgo": "قبل {{n}} س",
+      "daysAgo": "قبل {{n}} ي",
+      "weeksAgo": "قبل {{n}} أسبوع"
+    }
+  },
+  "impersonation": {
+    "eyebrow": "عرض المسؤول",
+    "viewingAs": "تشاهد بصفة",
+    "exit": "إنهاء العرض"
   }
 }

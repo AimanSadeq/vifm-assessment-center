@@ -17,16 +17,17 @@ import {
   RefreshCw,
 } from "lucide-react";
 import type { CandidateQuizAttempt, QuizQuestion, QuizAnswer } from "@/types/database";
+import { getServerT } from "@/lib/i18n/server";
 
 type Props = { params: { attemptId: string } };
 
 const DIFFICULTY_TONES: Record<
   QuizQuestion["difficulty"],
-  { bg: string; fg: string; border: string; label: string }
+  { bg: string; fg: string; border: string }
 > = {
-  easy:   { bg: "#ecfdf5", fg: "#047857", border: "#a7f3d0", label: "Easy" },
-  medium: { bg: "#fffbeb", fg: "#a16207", border: "#fde68a", label: "Medium" },
-  hard:   { bg: "#fef2f2", fg: "#b91c1c", border: "#fecaca", label: "Hard" },
+  easy:   { bg: "#ecfdf5", fg: "#047857", border: "#a7f3d0" },
+  medium: { bg: "#fffbeb", fg: "#a16207", border: "#fde68a" },
+  hard:   { bg: "#fef2f2", fg: "#b91c1c", border: "#fecaca" },
 };
 
 function formatDuration(seconds: number): string {
@@ -37,6 +38,7 @@ function formatDuration(seconds: number): string {
 
 export default async function QuizResultsPage({ params }: Props) {
   const supabase = await createClient();
+  const t = await getServerT();
   const { attemptId } = params;
 
   const { data: attempt, error } = await supabase
@@ -64,10 +66,31 @@ export default async function QuizResultsPage({ params }: Props) {
   //   abandoned → amber "Session ended early"
   //   completed-but-failed → rose "Keep Learning!"
   const headerTone = abandoned
-    ? { bg: "#fffbeb", fg: "#a16207", border: "#fde68a", icon: "⏸", title: "Session Ended" }
+    ? {
+        bg: "#fffbeb",
+        fg: "#a16207",
+        border: "#fde68a",
+        icon: "⏸",
+        title: t("quiz.results.headerSessionEnded"),
+        body: t("quiz.results.headerSessionEndedBody"),
+      }
     : passed
-      ? { bg: "#ecfdf5", fg: "#047857", border: "#a7f3d0", icon: "✓", title: "Well done!" }
-      : { bg: "#fef2f2", fg: "#b91c1c", border: "#fecaca", icon: "📚", title: "Keep Learning!" };
+      ? {
+          bg: "#ecfdf5",
+          fg: "#047857",
+          border: "#a7f3d0",
+          icon: "✓",
+          title: t("quiz.results.headerWellDone"),
+          body: t("quiz.results.headerWellDoneBody"),
+        }
+      : {
+          bg: "#fef2f2",
+          fg: "#b91c1c",
+          border: "#fecaca",
+          icon: "📚",
+          title: t("quiz.results.headerKeepLearning"),
+          body: t("quiz.results.headerKeepLearningBody"),
+        };
 
   const competencyName = a.competencies?.name ?? "Skill";
   const scoreLabel = a.score_pct !== null ? `${Math.round(a.score_pct)}%` : "—";
@@ -75,7 +98,7 @@ export default async function QuizResultsPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <BackLink href={`/candidate/skills/${a.candidate_id}`} label="Back to My Skills" />
+      <BackLink href={`/candidate/skills/${a.candidate_id}`} label={t("quiz.results.backToSkills")} />
 
       {/* Banner */}
       <div
@@ -95,11 +118,7 @@ export default async function QuizResultsPage({ params }: Props) {
               {headerTone.title}
             </p>
             <p className="text-xs mt-0.5" style={{ color: headerTone.fg, opacity: 0.85 }}>
-              {abandoned
-                ? "You can retake the quiz at any time to improve your score."
-                : passed
-                  ? "Great work on this competency. Try a harder one next."
-                  : "You can retake the quiz at any time to improve your score."}
+              {headerTone.body}
             </p>
           </div>
         </div>
@@ -110,24 +129,24 @@ export default async function QuizResultsPage({ params }: Props) {
         <Card className="sm:col-span-1">
           <CardContent className="p-4 flex flex-col items-center justify-center gap-1">
             <ScoreCircle pct={scoreFraction} label={scoreLabel} />
-            <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Your Score</p>
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wide">{t("quiz.results.yourScore")}</p>
           </CardContent>
         </Card>
 
         <StatCard
-          label="Time Taken"
+          label={t("quiz.results.timeTaken")}
           value={
             a.time_taken_seconds !== null ? formatDuration(a.time_taken_seconds) : "—"
           }
           icon={<Clock className="h-4 w-4" />}
         />
         <StatCard
-          label="Passing Score"
+          label={t("quiz.results.passingScore")}
           value={`${Math.round(a.passing_score_pct)}%`}
           icon={<Target className="h-4 w-4" />}
         />
         <StatCard
-          label="Correct Answers"
+          label={t("quiz.results.correctAnswers")}
           value={
             a.correct_count !== null ? `${a.correct_count}/${a.total_count}` : "—"
           }
@@ -140,7 +159,7 @@ export default async function QuizResultsPage({ params }: Props) {
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-accent" />
-            Questions for Review
+            {t("quiz.results.questionsForReview")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -154,36 +173,36 @@ export default async function QuizResultsPage({ params }: Props) {
               <div key={q.id} className="rounded-md border p-4 space-y-3">
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Question {i + 1}
+                    {t("quiz.results.questionLabel", { n: i + 1 })}
                   </p>
                   <span
                     className="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold"
                     style={{ backgroundColor: tone.bg, color: tone.fg, borderColor: tone.border }}
                   >
-                    {tone.label}
+                    {t(`quiz.difficulty.${q.difficulty}`)}
                   </span>
                   <Badge variant="secondary" className="text-[10px]">
-                    {q.points} pts
+                    {t("quiz.points", { n: q.points })}
                   </Badge>
                   {q.type === "pattern_recognition" && (
                     <Badge variant="outline" className="text-[10px]">
-                      Pattern
+                      {t("quiz.results.patternShort")}
                     </Badge>
                   )}
                   <span className="ms-auto inline-flex items-center gap-1 text-[11px]">
                     {!wasAnswered ? (
                       <>
-                        <span className="text-amber-600">Skipped</span>
+                        <span className="text-amber-600">{t("quiz.results.skipped")}</span>
                       </>
                     ) : isCorrect ? (
                       <>
                         <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                        <span className="text-emerald-700">Correct</span>
+                        <span className="text-emerald-700">{t("quiz.results.correct")}</span>
                       </>
                     ) : (
                       <>
                         <XCircle className="h-3.5 w-3.5 text-rose-600" />
-                        <span className="text-rose-700">Incorrect</span>
+                        <span className="text-rose-700">{t("quiz.results.incorrect")}</span>
                       </>
                     )}
                   </span>
@@ -223,7 +242,7 @@ export default async function QuizResultsPage({ params }: Props) {
                           <XCircle className="h-4 w-4 text-rose-600 shrink-0" />
                         )}
                         <span className="text-[11px] font-semibold uppercase tracking-wide">
-                          Your answer
+                          {t("quiz.results.yourAnswer")}
                         </span>
                       </div>
                       <p className="text-sm mt-1">{q.options_en[picked!]}</p>
@@ -234,7 +253,7 @@ export default async function QuizResultsPage({ params }: Props) {
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
                         <span className="text-[11px] font-semibold uppercase tracking-wide">
-                          Correct answer
+                          {t("quiz.results.correctAnswer")}
                         </span>
                       </div>
                       <p className="text-sm mt-1">{q.options_en[q.correct_index]}</p>
@@ -247,7 +266,7 @@ export default async function QuizResultsPage({ params }: Props) {
                   <div className="flex items-center gap-2">
                     <Lightbulb className="h-4 w-4 text-accent shrink-0" />
                     <span className="text-[11px] font-semibold uppercase tracking-wide text-accent">
-                      Explanation
+                      {t("quiz.results.explanationLabel")}
                     </span>
                   </div>
                   <p className="text-sm mt-1 text-foreground/80 leading-relaxed">
@@ -263,14 +282,14 @@ export default async function QuizResultsPage({ params }: Props) {
       {/* Footer actions */}
       <div className="flex flex-wrap items-center gap-3">
         <Link href={`/candidate/skills/${a.candidate_id}`}>
-          <Button variant="outline">Back to My Skills</Button>
+          <Button variant="outline">{t("quiz.results.backToSkills")}</Button>
         </Link>
         <Link
           href={`/candidate/skills/${a.candidate_id}?retakeCompetencyId=${a.competency_id}`}
         >
           <Button className="gap-2">
             <RefreshCw className="h-4 w-4" />
-            Retake Quiz
+            {t("quiz.results.retakeButton")}
           </Button>
         </Link>
       </div>

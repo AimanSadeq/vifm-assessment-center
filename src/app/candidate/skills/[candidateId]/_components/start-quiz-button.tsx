@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2 } from "lucide-react";
@@ -14,6 +15,7 @@ type Props = {
 
 export function StartQuizButton({ candidateId, competencyId }: Props) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [pending, startTransition] = useTransition();
   const [generating, setGenerating] = useState(false);
 
@@ -23,7 +25,7 @@ export function StartQuizButton({ candidateId, competencyId }: Props) {
       const result = await startQuizAttemptAction({ candidateId, competencyId });
       setGenerating(false);
       if ("error" in result && result.error) {
-        const msg = typeof result.error === "string" ? result.error : "Could not start the quiz";
+        const msg = typeof result.error === "string" ? result.error : t("quiz.startGenericError");
         toast.error(msg);
         return;
       }
@@ -44,12 +46,12 @@ export function StartQuizButton({ candidateId, competencyId }: Props) {
       {disabled ? (
         <>
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          Preparing...
+          {t("quiz.startPreparing")}
         </>
       ) : (
         <>
           <Sparkles className="h-3.5 w-3.5" />
-          Start AI Quiz
+          {t("quiz.startButton")}
         </>
       )}
     </Button>

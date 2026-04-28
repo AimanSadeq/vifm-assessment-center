@@ -299,30 +299,64 @@ export async function createReengagementAction(input: {
   }
 
   if (input.carryCandidates) {
-    const { data: priorCands } = await sb
-      .from("candidates")
-      .select("id, full_name, email, phone, profile_id, role_profile_id, department, gender, age_range, seniority_level")
-      .eq("engagement_id", prior.id);
+    // Core columns only - the demographic columns from migration
+    // 00008_stakeholder_feedback (department/gender/age_range/seniority_level)
+    // are optional and may be absent on some environments. We try them
+    // first and gracefully fall back to the always-present columns if
+    // the schema rejects the SELECT.
+    let priorCands: Array<{
+      id: string; full_name: string; email: string; phone: string | null;
+      profile_id: string | null; role_profile_id: string | null;
+      department?: string | null; gender?: string | null;
+      age_range?: string | null; seniority_level?: string | null;
+    }> | null = null;
+    {
+      const richSelect = await sb
+        .from("candidates")
+        .select("id, full_name, email, phone, profile_id, role_profile_id, department, gender, age_range, seniority_level")
+        .eq("engagement_id", prior.id);
+      if (!richSelect.error) {
+        priorCands = richSelect.data;
+      } else {
+        const coreSelect = await sb
+          .from("candidates")
+          .select("id, full_name, email, phone, profile_id, role_profile_id")
+          .eq("engagement_id", prior.id);
+        if (coreSelect.error) {
+          await rollback();
+          return { error: `Candidates fetch: ${coreSelect.error.message}` };
+        }
+        priorCands = coreSelect.data;
+      }
+    }
     if (priorCands && priorCands.length > 0) {
-      const { error } = await sb.from("candidates").insert(
-        priorCands.map((c) => ({
-          engagement_id: newId,
-          full_name: c.full_name,
-          email: c.email,
-          phone: c.phone,
-          profile_id: c.profile_id,
-          role_profile_id: c.role_profile_id,
-          department: c.department,
-          gender: c.gender,
-          age_range: c.age_range,
-          seniority_level: c.seniority_level,
-          status: "invited",
-          prior_candidate_id: c.id,
-        }))
-      );
-      if (error) {
+      const tryRow = (c: typeof priorCands[number], includeDemos: boolean) => ({
+        engagement_id: newId,
+        full_name: c.full_name,
+        email: c.email,
+        phone: c.phone,
+        profile_id: c.profile_id,
+        role_profile_id: c.role_profile_id,
+        status: "invited",
+        prior_candidate_id: c.id,
+        ...(includeDemos
+          ? {
+              department: c.department ?? null,
+              gender: c.gender ?? null,
+              age_range: c.age_range ?? null,
+              seniority_level: c.seniority_level ?? null,
+            }
+          : {}),
+      });
+      let insertErr: { message: string } | null = null;
+      const richInsert = await sb.from("candidates").insert(priorCands.map((c) => tryRow(c, true)));
+      if (richInsert.error) {
+        const coreInsert = await sb.from("candidates").insert(priorCands.map((c) => tryRow(c, false)));
+        insertErr = coreInsert.error;
+      }
+      if (insertErr) {
         await rollback();
-        return { error: `Candidates: ${error.message}` };
+        return { error: `Candidates: ${insertErr.message}` };
       }
     }
   }

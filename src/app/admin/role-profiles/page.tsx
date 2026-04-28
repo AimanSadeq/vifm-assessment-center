@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Sparkles, Globe, Building2 } from "lucide-react";
+import { Plus, Sparkles, Globe, Building2, Users, FileUp } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -49,12 +49,26 @@ export default async function RoleProfilesListPage() {
             competencies, weights, and priorities.
           </p>
         </div>
-        <Link href="/admin/role-profiles/new">
-          <Button>
-            <Plus className="h-4 w-4 me-1.5" />
-            New role profile
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/admin/role-profiles/bulk-import">
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <FileUp className="h-3.5 w-3.5" />
+              Bulk JD import
+            </Button>
+          </Link>
+          <Link href="/admin/role-profiles/bulk-assign">
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <Users className="h-3.5 w-3.5" />
+              Bulk-Link candidates
+            </Button>
+          </Link>
+          <Link href="/admin/role-profiles/new">
+            <Button>
+              <Plus className="h-4 w-4 me-1.5" />
+              New role profile
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {error && (

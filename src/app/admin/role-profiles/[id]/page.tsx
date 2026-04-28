@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { CompetencyTree } from "@/types/database";
 import { BackLink } from "@/components/shared/back-link";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 import {
   RoleProfileEditor,
   type RoleProfileEditorInitial,
@@ -80,7 +82,20 @@ export default async function RoleProfileDetailPage({ params }: Props) {
             </p>
           )}
         </div>
-        <DeleteRoleProfileButton id={p.id} name={p.name_en} />
+        <div className="flex items-center gap-2">
+          <a
+            href={`/api/role-profiles/${p.id}/export`}
+            download
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <Download className="h-3.5 w-3.5" />
+              Export JSON
+            </Button>
+          </a>
+          <DeleteRoleProfileButton id={p.id} name={p.name_en} />
+        </div>
       </div>
       <RoleProfileEditor initial={initial} competencyTree={treeData} mode="edit" />
     </div>

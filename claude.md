@@ -8,7 +8,7 @@ All 5 development phases are **complete**. The portal is functionally ready with
 
 **ARA module status:** VIFM ARA (AI Readiness Assessment) is built out on branch `feature/ara-module`. M1–M5 complete (respondent flow, scoring, distortion, peer benchmarks, year-on-year, bilingual consultant notes, EN/AR/bilingual Puppeteer PDF report, Phase 2 consultant guide, regulatory doc upload with Claude extraction). Three items still open: M2.1 respondent invitation email, M3.3 consultant notification email, M6 annual reassessment + retention scheduler + sandbox cleanup. See "ARA Module" section below for the current deferred-items list.
 
-**AC Skillup-MENA parity status:** Eleven features inspired by the Skillup MENA AC walkthrough are shipped on `master` (P0.1 JD-to-competency extractor, P0.2 role profile library, P0.3 gap-severity badges, Learning Plan PDF, G1 candidate→role-profile binding, G2 learner skill dashboard, G3 self-serve AI quiz flow with MCQ + cognitive items + per-question AI explanations, H1 JD-extractor domain tally card, H2 personal-statistics donut + bar charts on /candidate/skills, H3 in-app notification bell, H4 admin "view as candidate" banner). Remaining open: G4 bulk JD import, G5 bulk user-persona linking, G6 JSON export, G7 retake/re-assessment workflow. Full second-pass analysis (158-frame video sweep) lives in `.tmp/skillup-gap-analysis.md`; see "AC Skillup-MENA Upgrades" section below.
+**AC Skillup-MENA parity status:** Fourteen features inspired by the Skillup MENA AC walkthrough are shipped on `master` (P0.1 JD-to-competency extractor, P0.2 role profile library, P0.3 gap-severity badges, Learning Plan PDF, G1 candidate→role-profile binding, G2 learner skill dashboard, G3 self-serve AI quiz flow with MCQ + cognitive items + per-question AI explanations, G4 bulk JD import, G5 bulk CSV user-to-persona linking, G6 JSON export, H1 JD-extractor domain tally card, H2 personal-statistics donut + bar charts on /candidate/skills, H3 in-app notification bell, H4 admin "view as candidate" banner). G7 retake-quiz path is shipped implicitly via the existing G3 "Retake Quiz" button; full AC re-engagement workflow deferred until product demand. Full second-pass analysis (158-frame video sweep) lives in `.tmp/skillup-gap-analysis.md`; see "AC Skillup-MENA Upgrades" section below.
 
 ## Tech Stack
 - **Framework:** Next.js 14 with App Router and TypeScript (strict mode)
@@ -37,7 +37,7 @@ src/
         [id]/             # Engagement detail with role-profile-aware candidates table
       exercises/          # Exercise library with briefing, timing, role player guides
         [id]/             # Exercise detail editor (4 tabs)
-      role-profiles/      # Reusable competency packs per role (list, new, [id] editor)
+      role-profiles/      # Reusable competency packs per role (list, new, [id] editor, bulk-import, bulk-assign)
       assessors/          # Assessor pool management
       analytics/          # ICC, bias detection, Recharts charts
       settings/           # Integration status, compliance, environment info
@@ -68,6 +68,7 @@ src/
     api/
       reports/[engId]/[candId]/                # Full assessment report PDF
       reports/[engId]/[candId]/learning-plan/  # Personalized 30/60/90 Learning Plan PDF
+      role-profiles/[id]/export/               # JSON export of role profile + competencies (G6)
       consent/[candId]/                        # Consent submission endpoint
   components/
     ui/                   # 17 Shadcn/UI components
@@ -274,11 +275,13 @@ A separate workstream alongside ARA, started after a competitor walkthrough of s
 - **H3 - In-app notification bell** (migration 00018, [src/lib/notifications/publish.ts](src/lib/notifications/publish.ts), [notification-bell-client.tsx](src/components/shared/notification-bell-client.tsx)): bell with rose unread badge in admin + candidate headers. Popover lists the 20 newest items with title / body / relative time. Click marks read (optimistic, RLS-protected), "Mark all read" CTA when unread > 0. Publishers wired in: candidate notified on role-profile binding, all admins notified on quiz completion. Tolerant of the table not existing yet (renders disabled).
 - **H4 - Admin "view as candidate" banner** ([impersonation-banner.tsx](src/components/shared/impersonation-banner.tsx)): amber strip at the top of any /candidate/* page when `?asAdmin=1` is in the URL, showing candidate name + email + "Exit view" CTA back to the source engagement. Per-row Eye icon on the engagement detail's candidates table opens the candidate portal in a new tab with the query pre-applied.
 
-### Open (not yet shipped)
-- **G4 - Bulk JD import:** folder upload → batch extract → bulk-create role profiles. ~1 day.
-- **G5 - Bulk user-to-persona linking:** CSV (email,role_profile_id) → server action upsert. ~½ day; depends on user accounts existing as durable entities (today candidates are per-engagement).
-- **G6 - JSON export of role profile / skill mapping:** Download button on role-profile detail. ~1h.
-- **G7 - Retake / re-assessment requests:** New request workflow + admin queue. Pairs with the existing ARA reassessment design.
+### Shipped (third pass — G4 / G5 / G6)
+- **G4 - Bulk JD import** (`/admin/role-profiles/bulk-import/`): multi-file drop zone (up to 25 PDF/TXT) → batch AI extraction → per-file results table with editable name + accept/skip checkbox + competency chip preview → "Create N role profiles" creates them in one server roundtrip. Each accepted file becomes one new `role_profiles` row with its `role_profile_competencies` populated; failures roll back the empty shell so no orphaned rows.
+- **G5 - Bulk CSV user-to-persona linking** (`/admin/role-profiles/bulk-assign/`): paste-CSV or upload-file UI accepting `email,role_profile_id` (UUID) or `email,role_profile_name` (case-insensitive); optional default profile for blank rows; per-row results table showing Updated / No match / No change / Error with status pills. Matches by email — supports a candidate having the same email across multiple engagements.
+- **G6 - JSON export** (`/api/role-profiles/[id]/export`): self-describing JSON with schema version, exported_at, profile metadata + organisation name, and competencies enriched with cluster + domain names. Triggered by a "Export JSON" button on the role-profile detail page.
+
+### G7 status — implicit, full workflow deferred
+The candidate-side retake path is already shipped: the G3 quiz results page has a "Retake Quiz" button that returns to `/candidate/skills/[id]` with a `?retakeCompetencyId=…` query, where they can click "Start AI Quiz" again to generate a fresh attempt. No formal admin queue or approval workflow has been built — that pairs with the larger ARA M6 reassessment design and should be tackled when there's product demand (e.g. SLAs around when candidates can retake an AC engagement, not just a quiz).
 
 ### Skipped intentionally
 - **Cert Builder** (no certificate concept yet — defer)

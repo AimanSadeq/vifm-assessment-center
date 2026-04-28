@@ -105,6 +105,7 @@ supabase/
     00019_ac_auth_hardening.sql               # Notifications + quiz-attempts immutability triggers + CHECK
     00020_reassessment_links.sql              # ARA M6 + AC G7 prior_assessment_id / prior_engagement_id / prior_candidate_id FKs
     00021_ara_seed_question_bank.sql          # Vetted Production Bank v1.1 (125 questions, bilingual) — fresh clones get the active bank for free
+    00022_ara_culture_talent_rebalance.sql    # +10 questions to v1.1 (4 L1+1 L2 talent, 4 L1+1 L2 culture) closing the people-pillar coverage gap
 scripts/
   seed-test-data.ts       # Creates full test dataset (engagement + candidates + assessor + observations)
   seed-tags-qa.py         # Populates tags and Q&A questions for competencies

@@ -268,3 +268,51 @@ export type RoleProfileCompetency = {
 export type RoleProfileWithCompetencies = RoleProfile & {
   competencies: (RoleProfileCompetency & { competency_name: string })[];
 };
+
+// G3 — Self-serve AI quiz on a single competency.
+// Questions and answers are stored as JSONB on the attempt so the deck
+// is frozen at start-time and reproducible on the results page.
+
+export type QuizQuestionType = "true_false" | "multiple_choice" | "pattern_recognition";
+
+export type QuizDifficulty = "easy" | "medium" | "hard";
+
+export type QuizQuestion = {
+  id: string;
+  type: QuizQuestionType;
+  prompt_en: string;
+  prompt_ar: string | null;
+  options_en: string[];
+  options_ar: string[] | null;
+  correct_index: number;
+  points: number;
+  difficulty: QuizDifficulty;
+  explanation_en: string;
+  explanation_ar: string | null;
+  // Only populated when type === "pattern_recognition"
+  sequence?: (string | number | null)[];
+};
+
+export type QuizAnswer = {
+  question_id: string;
+  picked_index: number | null;
+  answered_at: string;
+};
+
+export type CandidateQuizAttempt = {
+  id: string;
+  candidate_id: string;
+  competency_id: string;
+  status: "in_progress" | "completed" | "abandoned";
+  questions: QuizQuestion[];
+  answers: QuizAnswer[];
+  score_pct: number | null;
+  correct_count: number | null;
+  total_count: number;
+  passing_score_pct: number;
+  time_taken_seconds: number | null;
+  started_at: string;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+};

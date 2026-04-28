@@ -10,6 +10,7 @@ import { GapBadge } from "@/components/shared/gap-badge";
 import { getCompetencyGap } from "@/lib/scoring/competency-gap";
 import { Target, AlertTriangle, CheckCircle2, BookOpen } from "lucide-react";
 import { PersonalStatistics, type DomainRollup } from "./_components/personal-statistics";
+import { StartQuizButton } from "./_components/start-quiz-button";
 
 type Props = { params: { candidateId: string } };
 
@@ -323,6 +324,8 @@ export default async function CandidateSkillsPage({ params }: Props) {
                           </span>
                         )}
                       </div>
+
+                      <StartQuizButton candidateId={candidateId} competencyId={comp.id} />
                     </div>
                   );
                 })}

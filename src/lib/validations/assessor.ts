@@ -70,3 +70,21 @@ export const BARS_LABELS: Record<number, string> = {
   4: "Strength",
   5: "Significant Strength",
 };
+
+export const startQuizSchema = z.object({
+  candidateId: uuidShape,
+  competencyId: uuidShape,
+});
+export type StartQuizValues = z.infer<typeof startQuizSchema>;
+
+export const saveQuizAnswerSchema = z.object({
+  attemptId: uuidShape,
+  questionIndex: z.number().int().min(0).max(20),
+  pickedIndex: z.number().int().min(0).max(20).nullable(),
+});
+export type SaveQuizAnswerValues = z.infer<typeof saveQuizAnswerSchema>;
+
+export const completeQuizSchema = z.object({
+  attemptId: uuidShape,
+});
+export type CompleteQuizValues = z.infer<typeof completeQuizSchema>;

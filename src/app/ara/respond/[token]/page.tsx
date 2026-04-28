@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { FlaskConical } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,6 +38,13 @@ export default async function AraRespondPage({
   const language = refreshed?.language_preference ?? ctx.respondent.language_preference;
   const rtl = language === "ar";
   const completed = !!refreshed?.completed_at;
+
+  // Personal / individual stage gets its own results layout — redirect
+  // straight there once they've completed. The org-side respondent flow
+  // continues to render its own thank-you state.
+  if (completed && ctx.assessment.engagement_stage === "individual") {
+    redirect(`/ara/personal/results/${params.token}`);
+  }
 
   const questions = await loadQuestionsForRespondent(ctx);
 

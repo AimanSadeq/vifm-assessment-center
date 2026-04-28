@@ -1,15 +1,21 @@
 import type { AraEngagementStage, AraPillarId } from "@/types/ara";
 
 /**
- * Three-stage product line for the AI Readiness Compass.
+ * Stage tiers for the AI Readiness Compass.
  *
  *   Stage 1 - Department  | complimentary | 4 pillars
  *   Stage 2 - Division    | fee-based     | 6 pillars
  *   Stage 3 - Enterprise  | fee-based     | 8 pillars (full)
+ *   Personal              | self-served   | 4 individual factors (not pillars)
  *
  * Pillar applicability is defined here and consulted by the report
  * generator, the assessment detail page, and the seed script. Keep
  * this file as the single source of truth for what each stage covers.
+ *
+ * Note on Personal: it doesn't use the org-side pillar model — the
+ * applicable_pillars array stays empty because the respondent flow
+ * keys off individual_factor_id instead. The entry exists so the
+ * Record<AraEngagementStage, ...> type is exhaustive.
  */
 
 export const ARA_STAGE_DEFINITIONS: ReadonlyArray<{
@@ -96,6 +102,27 @@ export const ARA_STAGE_DEFINITIONS: ReadonlyArray<{
     ],
     typical_respondents: "8-15+",
     report_pages: "27-60",
+  },
+  {
+    id: "individual",
+    number: 1,
+    label_en: "Personal",
+    label_ar: "شخصي",
+    scope_en: "One person — self-assessment of AI behaviours",
+    scope_ar: "شخص واحد - تقييم ذاتي لسلوكيات الذكاء الاصطناعي",
+    tagline_en: "How AI-ready are you, personally?",
+    tagline_ar: "ما مدى جاهزيتك الشخصية للذكاء الاصطناعي؟",
+    is_pro_bono: true,
+    price_label_en: "Free, self-served",
+    price_label_ar: "مجاني، خدمة ذاتية",
+    cta_en: "Take the snapshot",
+    cta_ar: "ابدأ اللقطة",
+    tone: "teal",
+    // Personal stage uses 4 individual factors instead of org pillars.
+    // Empty array keeps any pillar-applicability check from over-counting.
+    applicable_pillars: [],
+    typical_respondents: "1",
+    report_pages: "1",
   },
 ] as const;
 

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {
-  ArrowRight, Shield, Users, Link2, Sparkles, CheckCircle2, BarChart3, Globe, Route,
+  ArrowRight, Shield, Users, Link2, Sparkles, CheckCircle2, BarChart3, Globe, Route, User,
 } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { AnimatedCompass } from "@/components/shared/ara/animated-compass";
@@ -135,15 +135,28 @@ export default function AraRootPage() {
           </FadeIn>
           <FadeIn delay={240}>
             <EntryCard
-              icon={Link2}
+              href="/ara/personal/start"
+              icon={User}
               tone="teal"
-              title="Respondent"
-              subtitle="Token-based access"
-              description="Stakeholders receive a unique URL - no account required. Bilingual form with auto-save, offline detection, and evidence upload."
-              cta="/ara/respond/[token]"
-              disabled
+              title="Personal snapshot"
+              subtitle="Self-served, free"
+              description="A short bilingual self-assessment for individuals — 5-7 minutes, four VIFM factors, plus personalised VIFM training recommendations to act on the gaps."
+              cta="Take the snapshot"
             />
           </FadeIn>
+        </div>
+
+        {/* Subtle separate row for the org-side respondent flow note —
+            kept in the layout so consultants who land here remember the
+            token URL exists, but visually demoted vs the three primary
+            entry cards. */}
+        <div className="mt-4 flex items-center justify-center gap-2 text-[11px] text-muted-foreground">
+          <Link2 className="h-3 w-3" />
+          <span>
+            Org respondents arrive via a consultant-issued token URL{" "}
+            <code className="text-[10px]">/ara/respond/[token]</code> — no
+            account or self-service required.
+          </span>
         </div>
       </section>
 

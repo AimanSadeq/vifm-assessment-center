@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Building2, Network, Globe2, Sparkles, Check } from "lucide-react";
+import { ArrowLeft, Building2, Network, Globe2, Sparkles, Check, User } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,10 @@ const STAGE_ICONS: Record<AraEngagementStage, typeof Building2> = {
   department: Building2,
   division: Network,
   enterprise: Globe2,
+  // 'individual' shouldn't normally appear in the consultant wizard
+  // (it's for the self-served /ara/personal flow), but we cover the
+  // type so a stage-aware route never crashes if one slips through.
+  individual: User,
 };
 
 const TONE_MAP = {

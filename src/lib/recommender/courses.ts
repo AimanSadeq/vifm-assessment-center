@@ -26,6 +26,10 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_TARGET } from "@/lib/scoring/competency-gap";
+import {
+  ARA_INDIVIDUAL_FACTORS,
+  type AraIndividualFactorId,
+} from "@/lib/constants/ara-individual-factors";
 import type {
   VifmCourseLevel,
   VifmVertical,
@@ -390,4 +394,137 @@ function finaliseRanking(
     return a.title_en.localeCompare(b.title_en);
   });
   return ranked.slice(0, limit);
+}
+
+// ──────────────────────────────────────────────────────────────
+// Personal — per-individual-snapshot recommender
+// ──────────────────────────────────────────────────────────────
+
+/**
+ * Course recommender for the Personal AI Readiness Snapshot.
+ *
+ * Input: per-factor average scores (1-5 Likert) computed from the
+ * respondent's answers. The factor → AC behavioural competency
+ * mapping lives in src/lib/constants/ara-individual-factors.ts.
+ *
+ * For each factor below target, look up its mapped AC competency
+ * names, find courses tagged to those competencies (case-sensitive
+ * name lookup on the competencies table), and rank by
+ * sum(gap × relevance_weight). Default target is 4 (Agree) — a
+ * personal score of 5 is "Strongly Agree" and ≤3 is the actionable
+ * range.
+ */
+export async function recommendCoursesForIndividualSnapshot(args: {
+  factorScores: Record<AraIndividualFactorId, number>;
+  target?: number;
+  limit?: number;
+}): Promise<RecommendedCourse[]> {
+  const limit = args.limit ?? TAG_LIMIT_DEFAULT;
+  const target = args.target ?? 4;
+  const sb = await createClient();
+
+  // 1. Build a flat list of (factor, competency_name, gap) tuples.
+  type FactorGap = { factorId: AraIndividualFactorId; factorLabel: string; competencyNames: string[]; gap: number };
+  const factorGaps: FactorGap[] = ARA_INDIVIDUAL_FACTORS
+    .map((f) => ({
+      factorId: f.id,
+      factorLabel: f.name_en,
+      competencyNames: f.ac_competency_names,
+      gap: target - (args.factorScores[f.id] ?? target),
+    }))
+    .filter((fg) => fg.gap > 0 && fg.competencyNames.length > 0);
+
+  if (factorGaps.length === 0) return [];
+
+  // 2. Resolve all referenced competency names to ids in one round-trip.
+  const allCompetencyNames = Array.from(
+    new Set(factorGaps.flatMap((fg) => fg.competencyNames))
+  );
+  const compsRes = await sb
+    .from("competencies")
+    .select("id, name")
+    .in("name", allCompetencyNames);
+  const comps = (compsRes.data ?? []) as Array<{ id: string; name: string }>;
+  const nameToId = new Map(comps.map((c) => [c.name, c.id]));
+
+  // Build (factor → competency_id list) so we can compute per-factor
+  // contributions when ranking.
+  type FactorCompPair = { factorLabel: string; competency_id: string; gap: number };
+  const pairs: FactorCompPair[] = [];
+  for (const fg of factorGaps) {
+    for (const name of fg.competencyNames) {
+      const compId = nameToId.get(name);
+      if (!compId) continue; // competency name not in catalogue — skip
+      pairs.push({
+        factorLabel: fg.factorLabel,
+        competency_id: compId,
+        gap: fg.gap,
+      });
+    }
+  }
+  if (pairs.length === 0) return [];
+
+  // 3. Pull all course→competency tag rows for those competencies.
+  const competencyIds = Array.from(new Set(pairs.map((p) => p.competency_id)));
+  const tagsRes = await sb
+    .from("vifm_course_competency_tags")
+    .select(
+      "course_id, competency_id, relevance_weight, rationale, " +
+      "vifm_courses(id, code, title_en, title_ar, vertical, level, " +
+      "default_duration_days, min_duration_days, max_duration_days, is_active)"
+    )
+    .in("competency_id", competencyIds);
+  const tags = (tagsRes.data ?? []) as unknown as CompetencyTagJoin[];
+
+  // 4. Aggregate. A course can be pulled in by multiple factors —
+  // each contributes (gap × relevance) to the total score, with the
+  // factor surfacing as a driver chip on the card.
+  const accumulator = new Map<string, RecommendedCourse>();
+  for (const tag of tags) {
+    const course = tag.vifm_courses;
+    if (!course || !course.is_active) continue;
+
+    // A competency can appear in multiple factors (rare but valid).
+    // Sum each factor's contribution separately so the driver list
+    // reflects the actual breakdown.
+    const matchingPairs = pairs.filter((p) => p.competency_id === tag.competency_id);
+    for (const pair of matchingPairs) {
+      const contribution = pair.gap * tag.relevance_weight;
+      const existing = accumulator.get(course.id);
+      if (existing) {
+        existing.total_score += contribution;
+        existing.drivers.push({
+          label: pair.factorLabel,
+          kind: "competency",
+          gap: pair.gap,
+          relevance: tag.relevance_weight,
+          contribution,
+          rationale: tag.rationale,
+        });
+      } else {
+        accumulator.set(course.id, {
+          course_id: course.id,
+          course_code: course.code,
+          title_en: course.title_en,
+          title_ar: course.title_ar,
+          vertical: course.vertical,
+          level: course.level,
+          default_duration_days: course.default_duration_days,
+          min_duration_days: course.min_duration_days,
+          max_duration_days: course.max_duration_days,
+          total_score: contribution,
+          drivers: [{
+            label: pair.factorLabel,
+            kind: "competency",
+            gap: pair.gap,
+            relevance: tag.relevance_weight,
+            contribution,
+            rationale: tag.rationale,
+          }],
+        });
+      }
+    }
+  }
+
+  return finaliseRanking(accumulator, limit);
 }

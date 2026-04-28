@@ -8,7 +8,7 @@ export type AraLanguage = "en" | "ar";
 export type AraReportLanguage = "en" | "ar" | "bilingual";
 export type AraAssessmentStatus = "draft" | "active" | "completed" | "frozen" | "archived";
 export type AraAssessmentPhase = "phase1" | "phase2" | "report";
-export type AraEngagementStage = "department" | "division" | "enterprise";
+export type AraEngagementStage = "department" | "division" | "enterprise" | "individual";
 export type AraQuestionType = "rating" | "multiple_choice" | "yes_no" | "open_text";
 export type AraMaterialType = "url" | "word" | "pdf" | "powerpoint";
 export type AraFrameworkCategory =
@@ -130,6 +130,13 @@ export type AraQuestion = {
   valid_until: string | null;
   is_active: boolean;
   created_at: string;
+  /** Set on the 16 personal/individual factor items added by migration 00026. NULL on org-side questions. */
+  individual_factor_id:
+    | "thinking_sense_check"
+    | "results_working_practice"
+    | "people_collaboration"
+    | "self_adaptive_mindset"
+    | null;
 };
 
 export type AraUseCaseStage = "ideation" | "piloting" | "production" | "retired";

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {
-  ArrowRight, Check, Minus, Sparkles, Building2, Network, Globe2,
+  ArrowRight, Check, Minus, Sparkles, Building2, Network, Globe2, User,
 } from "lucide-react";
 import { AraTopBar } from "@/components/shared/ara-top-bar";
 import { AnimatedCompass } from "@/components/shared/ara/animated-compass";
@@ -18,6 +18,7 @@ const STAGE_ICONS: Record<AraEngagementStage, typeof Building2> = {
   department: Building2,
   division: Network,
   enterprise: Globe2,
+  individual: User,
 };
 
 /**

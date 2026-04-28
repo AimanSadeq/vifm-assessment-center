@@ -58,8 +58,21 @@ export async function loadRespondentByToken(
 }
 
 /**
- * Load the Layer-1 question set applicable to this respondent - filtered
- * by assessment version, assigned pillars, and (region, sector) match.
+ * Load the Layer-1 question set applicable to this respondent.
+ *
+ * Two modes:
+ *
+ *   Individual stage — assessment.engagement_stage === 'individual'
+ *     Returns the 16 self-assessment items where individual_factor_id
+ *     IS NOT NULL. Pillar assignment is ignored (the respondent is the
+ *     person themselves; there's no consultant-curated pillar set).
+ *
+ *   Org-side stages — department / division / enterprise
+ *     Returns the original behaviour: filter by assessment version,
+ *     respondent's assigned pillars, region, sector. EXCLUDES the
+ *     individual-factor items (added by migration 00026) so org-side
+ *     respondents never see them, even when assigned to the talent
+ *     pillar where the seed lives.
  */
 export async function loadQuestionsForRespondent(
   ctx: AraRespondentContext
@@ -67,16 +80,29 @@ export async function loadQuestionsForRespondent(
   const sb = createServiceClient();
 
   if (!ctx.assessment.question_bank_version_id) return [];
-  if (ctx.assignedPillars.length === 0) return [];
 
-  const { data: questions } = await sb
+  const isIndividual = ctx.assessment.engagement_stage === "individual";
+
+  // For individual stage we don't need pillar assignments — the bank
+  // is keyed off individual_factor_id.
+  if (!isIndividual && ctx.assignedPillars.length === 0) return [];
+
+  let query = sb
     .from("ara_questions")
     .select("*")
     .eq("version_id", ctx.assessment.question_bank_version_id)
     .eq("layer", 1)
-    .eq("is_active", true)
-    .in("pillar_id", ctx.assignedPillars)
-    .returns<AraQuestion[]>();
+    .eq("is_active", true);
+
+  if (isIndividual) {
+    query = query.not("individual_factor_id", "is", null);
+  } else {
+    query = query
+      .in("pillar_id", ctx.assignedPillars)
+      .is("individual_factor_id", null);
+  }
+
+  const { data: questions } = await query.returns<AraQuestion[]>();
 
   return (questions ?? []).filter((q) => {
     const regionOk = q.region === "both" || q.region === ctx.assessment.region;

@@ -191,26 +191,28 @@ export default function AraRoadmapPage() {
         </div>
       </section>
 
-      {/* ─── Three engagement stages (NEW) ─── */}
+      {/* ─── Four engagement stages (Personal + 3 org tiers) ─── */}
       <section className="max-w-6xl mx-auto px-6 py-14">
         <div className="text-center mb-10">
           <span className="ara-eyebrow">How to engage</span>
           <h2 className="text-3xl font-semibold text-primary mt-3">
-            Three stages. One Compass.
+            Four stages. One Compass.
           </h2>
           <p className="text-sm text-muted-foreground mt-3 max-w-2xl mx-auto">
-            Same diagnostic engine, scope that scales. Start with a complimentary
-            Department assessment; expand to Division and Enterprise when ready.
+            Same diagnostic engine, scope that scales. Start with a free
+            Personal Snapshot or a complimentary Department assessment, then
+            expand to Division and Enterprise when ready.
           </p>
         </div>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[
-            { num: 1, name: "Department", scope: "One department",                       price: "Complimentary",       pillars: 4, color: "#0D9488" },
-            { num: 2, name: "Division",   scope: "A division of several departments",    price: "Fee-based",           pillars: 6, color: "#7C3AED" },
-            { num: 3, name: "Enterprise", scope: "The whole organisation, board-level",  price: "Fee-based",           pillars: 8, color: "#D97706" },
+            { label: "Personal",   name: "Personal",   scope: "One person, self-served",            price: "Free",          metric: "4 personal factors", color: "#0D9488" },
+            { label: "Stage 1",    name: "Department", scope: "One department",                     price: "Complimentary", metric: "4 of 8 pillars",     color: "#0D9488" },
+            { label: "Stage 2",    name: "Division",   scope: "A division of several departments",  price: "Fee-based",     metric: "6 of 8 pillars",     color: "#7C3AED" },
+            { label: "Stage 3",    name: "Enterprise", scope: "The whole organisation, board-level", price: "Fee-based",    metric: "8 of 8 pillars",     color: "#D97706" },
           ].map((s) => (
             <div
-              key={s.num}
+              key={s.name}
               className="ara-tile p-5 flex flex-col"
               style={{ borderTop: `3px solid ${s.color}` }}
             >
@@ -219,7 +221,7 @@ export default function AraRoadmapPage() {
                   className="text-[10px] font-semibold uppercase tracking-widest"
                   style={{ color: s.color }}
                 >
-                  Stage {s.num}
+                  {s.label}
                 </span>
                 <span
                   className="text-[10px] font-semibold uppercase tracking-widest"
@@ -231,7 +233,7 @@ export default function AraRoadmapPage() {
               <h3 className="text-lg font-semibold text-primary">{s.name}</h3>
               <p className="text-xs text-muted-foreground mt-1 mb-3">{s.scope}</p>
               <div className="text-[11px] text-muted-foreground mt-auto">
-                <span className="font-semibold text-primary ara-numeral">{s.pillars}</span> of 8 pillars
+                <span className="font-semibold text-primary ara-numeral">{s.metric}</span>
               </div>
             </div>
           ))}
@@ -320,7 +322,7 @@ export default function AraRoadmapPage() {
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <EngineItem icon={BarChart3}    tone="blue"    title="Scoring engine"  body="7-layer computation, perception-vs-reality" />
-                <EngineItem icon={Shield}       tone="emerald" title="Compliance"      body="15 frameworks, 56 requirements" />
+                <EngineItem icon={Shield}       tone="emerald" title="Compliance"      body="16 frameworks, 56 requirements" />
                 <EngineItem icon={TrendingUp}   tone="gold"    title="Peer benchmarks" body="Sector medians, YoY trajectory" />
                 <EngineItem icon={FileClock}    tone="rose"    title="Retention"       body="3-year purge, GDPR / PDPL compliant" />
               </div>

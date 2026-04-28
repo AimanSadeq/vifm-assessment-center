@@ -61,9 +61,10 @@ export default function AraRootPage() {
               The VIFM AI Readiness Compass - a bilingual diagnostic calibrated for the GCC.
             </p>
             <p className="text-lg text-white/75 max-w-2xl leading-relaxed">
-              Eight pillars, fifteen regulatory frameworks, and a bilingual branded report
-              - delivered in English, Arabic, or side-by-side landscape. Built for
-              consultant-led engagements across UAE and Saudi Arabia.
+              Eight pillars, sixteen regulatory frameworks, and a bilingual branded
+              report — delivered in English, Arabic, or side-by-side landscape.
+              Plus a free, self-served Personal Snapshot for individuals. Built
+              for consultant-led engagements across UAE and Saudi Arabia.
             </p>
 
             <div className="flex flex-wrap gap-3 mt-8">

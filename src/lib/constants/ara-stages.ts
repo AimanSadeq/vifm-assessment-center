@@ -154,57 +154,64 @@ export const ARA_STAGE_CAPABILITIES: ReadonlyArray<{
   group: string;
   feature_en: string;
   feature_ar: string;
+  individual: boolean | string;
   department: boolean | string;
   division: boolean | string;
   enterprise: boolean | string;
 }> = [
   // Scope
   { group: "Scope", feature_en: "Pillars assessed", feature_ar: "الركائز المقيّمة",
-    department: "4 of 8", division: "6 of 8", enterprise: "All 8" },
+    individual: "4 personal factors", department: "4 of 8", division: "6 of 8", enterprise: "All 8" },
   { group: "Scope", feature_en: "Typical stakeholders", feature_ar: "المستجيبون النموذجيون",
-    department: "1-2", division: "4-8", enterprise: "8-15+" },
+    individual: "1", department: "1-2", division: "4-8", enterprise: "8-15+" },
   { group: "Scope", feature_en: "Bilingual EN / AR", feature_ar: "ثنائي اللغة",
-    department: true, division: true, enterprise: true },
+    individual: true, department: true, division: true, enterprise: true },
 
   // Diagnostic
   { group: "Diagnostic", feature_en: "Layer 1 self-assessment questions", feature_ar: "أسئلة الطبقة الأولى",
-    department: true, division: true, enterprise: true },
+    individual: true, department: true, division: true, enterprise: true },
   { group: "Diagnostic", feature_en: "Layer 2 consultant guide questions", feature_ar: "أسئلة الطبقة الثانية",
-    department: false, division: true, enterprise: true },
+    individual: false, department: false, division: true, enterprise: true },
   { group: "Diagnostic", feature_en: "Supporting evidence upload", feature_ar: "رفع الأدلة الداعمة",
-    department: true, division: true, enterprise: true },
+    individual: false, department: true, division: true, enterprise: true },
   { group: "Diagnostic", feature_en: "AI use-case portfolio review", feature_ar: "مراجعة محفظة حالات الاستخدام",
-    department: false, division: true, enterprise: true },
+    individual: false, department: false, division: true, enterprise: true },
 
   // Validation
   { group: "Validation", feature_en: "Auto-scored maturity bands", feature_ar: "تصنيف نضج تلقائي",
-    department: true, division: true, enterprise: true },
+    individual: true, department: true, division: true, enterprise: true },
   { group: "Validation", feature_en: "Phase 2 consultant validation workshop", feature_ar: "ورشة تحقق المستشار",
-    department: false, division: true, enterprise: true },
+    individual: false, department: false, division: true, enterprise: true },
   { group: "Validation", feature_en: "Perception vs Reality analysis", feature_ar: "تحليل التصور مقابل الواقع",
-    department: false, division: true, enterprise: true },
+    individual: false, department: false, division: true, enterprise: true },
 
   // Regulatory
   { group: "Regulatory", feature_en: "Regulatory framework mapping", feature_ar: "ربط الأطر التنظيمية",
-    department: "Top 3 frameworks", division: "All applicable", enterprise: "All applicable + sectoral" },
+    individual: false, department: "Top 3 frameworks", division: "All applicable", enterprise: "All applicable + sectoral" },
   { group: "Regulatory", feature_en: "Shadow AI alert detection", feature_ar: "كشف تنبيهات الذكاء الاصطناعي الخفي",
-    department: false, division: true, enterprise: true },
+    individual: false, department: false, division: true, enterprise: true },
 
   // Strategic outputs
   { group: "Strategic outputs", feature_en: "Investment priority matrix", feature_ar: "مصفوفة أولويات الاستثمار",
-    department: false, division: true, enterprise: true },
+    individual: false, department: false, division: true, enterprise: true },
   { group: "Strategic outputs", feature_en: "12-month action roadmap", feature_ar: "خارطة طريق ١٢ شهراً",
-    department: false, division: true, enterprise: true },
+    individual: false, department: false, division: true, enterprise: true },
   { group: "Strategic outputs", feature_en: "Peer benchmarks (sector medians)", feature_ar: "مقارنة بالنظراء",
-    department: false, division: false, enterprise: true },
+    individual: false, department: false, division: false, enterprise: true },
   { group: "Strategic outputs", feature_en: "Year-on-year reassessment", feature_ar: "إعادة التقييم السنوية",
-    department: false, division: false, enterprise: true },
+    individual: false, department: false, division: false, enterprise: true },
 
   // Deliverable
   { group: "Deliverable", feature_en: "Branded PDF report", feature_ar: "تقرير PDF مع علامتنا",
-    department: "8 pages", division: "27 pages", enterprise: "27-60 pages" },
+    individual: "1-page snapshot", department: "8 pages", division: "27 pages", enterprise: "27-60 pages" },
   { group: "Deliverable", feature_en: "Side-by-side bilingual landscape report", feature_ar: "تقرير ثنائي اللغة أفقي",
-    department: false, division: false, enterprise: true },
+    individual: false, department: false, division: false, enterprise: true },
   { group: "Deliverable", feature_en: "Consultant report walkthrough", feature_ar: "جلسة عرض التقرير",
-    department: "Optional", division: true, enterprise: true },
+    individual: false, department: "Optional", division: true, enterprise: true },
+
+  // Outputs unique to Personal
+  { group: "Personal-only", feature_en: "VIFM training course recommendations", feature_ar: "توصيات دورات VIFM",
+    individual: true, department: true, division: true, enterprise: true },
+  { group: "Personal-only", feature_en: "Maturity-stage narrative (Emerging / Practising / Embedded)", feature_ar: "وصف مرحلة النضج",
+    individual: true, department: false, division: false, enterprise: false },
 ];

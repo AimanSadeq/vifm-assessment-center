@@ -24,7 +24,13 @@ export const createAraOrganizationSchema = z.object({
 export type CreateAraOrganizationValues = z.infer<typeof createAraOrganizationSchema>;
 
 // ─── Assessments ───────────────────────────────────────────────
-export const araEngagementStageSchema = z.enum(["department", "division", "enterprise"]);
+// 'individual' is the Personal stage (Mode A free snapshot, Mode B paid
+// deep-dive). It uses different create flows (/ara/personal/start and
+// /ara/consultant/personal-deep-dive/new) but is still a valid value
+// for the engagement_stage column — the schema must accept it.
+export const araEngagementStageSchema = z.enum([
+  "department", "division", "enterprise", "individual",
+]);
 export const araAssessmentTierSchema = z.enum(["snapshot", "deep_dive"]);
 
 export const createAraAssessmentSchema = z.object({

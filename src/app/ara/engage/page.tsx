@@ -25,12 +25,43 @@ const STAGE_ICONS: Record<AraEngagementStage, typeof Building2> = {
  * Tone token map - mirrors the ara-icon-* utilities in globals.css but
  * referenced as inline values so the page stays print/SSR-safe and does
  * not depend on Tailwind's JIT for arbitrary value classes.
+ *
+ * Four stage tones: Personal reuses the teal palette since both
+ * Personal and Department are entry-level / complimentary tier — but
+ * the comparison-matrix Cell tone keeps `teal` reserved for Personal
+ * and re-tags Department's column with the same palette to keep the
+ * card-tone agreement on screen.
  */
 const TONE_MAP = {
   teal:   { fg: "#0D9488", bgSoft: "rgba(13, 148, 136, 0.08)", border: "rgba(13, 148, 136, 0.3)",  bgIcon: "rgba(13, 148, 136, 0.10)" },
   violet: { fg: "#7C3AED", bgSoft: "rgba(124, 58, 237, 0.06)", border: "rgba(124, 58, 237, 0.3)",  bgIcon: "rgba(124, 58, 237, 0.10)" },
   gold:   { fg: "#D97706", bgSoft: "rgba(217, 119, 6, 0.06)",  border: "rgba(217, 119, 6, 0.3)",   bgIcon: "rgba(217, 119, 6, 0.12)" },
 } as const;
+
+/**
+ * Personal stage label override — `stage.number` is 1 for both
+ * Department and Personal, so we show "Personal" instead of "Stage 1"
+ * for the individual stage to keep the badge readable across the page.
+ */
+function stageBadge(stage: { id: string; number: number }): string {
+  return stage.id === "individual" ? "Personal" : `Stage ${stage.number}`;
+}
+
+/**
+ * Display order on this page — Personal first (lowest tier / free),
+ * then ascending Department / Division / Enterprise. We don't reorder
+ * the ARA_STAGE_DEFINITIONS export itself so other consumers (eg. the
+ * consultant wizard, which filters Personal out) see the original order.
+ */
+const DISPLAY_ORDER: Array<"individual" | "department" | "division" | "enterprise"> = [
+  "individual",
+  "department",
+  "division",
+  "enterprise",
+];
+const STAGES_IN_DISPLAY_ORDER = DISPLAY_ORDER.map(
+  (id) => ARA_STAGE_DEFINITIONS.find((s) => s.id === id)!
+);
 
 export default function AraEngagePage() {
   return (
@@ -51,12 +82,13 @@ export default function AraEngagePage() {
               How to engage
             </span>
             <h1 className="ara-numeral text-4xl sm:text-5xl font-semibold text-white leading-[1.05] mt-4 mb-5">
-              Three stages. <span className="ara-accent-sweep">One Compass.</span>
+              Four stages. <span className="ara-accent-sweep">One Compass.</span>
             </h1>
             <p className="text-lg text-white/75 max-w-2xl leading-relaxed">
-              Start with a complimentary department assessment. Expand to a
-              division, then to the whole enterprise as your appetite grows.
-              Same diagnostic engine, scope that scales with you.
+              Start with a free Personal Snapshot for one individual, or a
+              complimentary Department assessment for one team. Expand to a
+              Division or the whole Enterprise as your appetite grows. Same
+              diagnostic engine, scope that scales with you.
             </p>
           </div>
         </div>
@@ -64,8 +96,8 @@ export default function AraEngagePage() {
 
       {/* ─── Stage cards ─── */}
       <section className="max-w-6xl mx-auto px-6 -mt-10 relative z-10 pb-12">
-        <div className="grid gap-5 md:grid-cols-3">
-          {ARA_STAGE_DEFINITIONS.map((stage, i) => {
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+          {STAGES_IN_DISPLAY_ORDER.map((stage, i) => {
             const tone = TONE_MAP[stage.tone];
             const Icon = STAGE_ICONS[stage.id];
             return (
@@ -85,7 +117,7 @@ export default function AraEngagePage() {
                       className="text-[10px] font-semibold uppercase tracking-widest"
                       style={{ color: tone.fg }}
                     >
-                      Stage {stage.number}
+                      {stageBadge(stage)}
                     </span>
                   </div>
 
@@ -114,12 +146,15 @@ export default function AraEngagePage() {
                     {stage.tagline_en}
                   </p>
 
-                  {/* At-a-glance facts */}
+                  {/* At-a-glance facts — Personal uses 4 factors not pillars,
+                       and a 1-page report rather than the multi-page formats. */}
                   <ul className="text-xs text-muted-foreground space-y-2 mb-6 flex-1">
                     <li className="flex justify-between border-b pb-2">
-                      <span>Pillars assessed</span>
+                      <span>{stage.id === "individual" ? "Factors assessed" : "Pillars assessed"}</span>
                       <span className="font-semibold text-primary ara-numeral">
-                        {stage.applicable_pillars.length} / 8
+                        {stage.id === "individual"
+                          ? "4 personal"
+                          : `${stage.applicable_pillars.length} / 8`}
                       </span>
                     </li>
                     <li className="flex justify-between border-b pb-2">
@@ -138,7 +173,9 @@ export default function AraEngagePage() {
 
                   {stage.is_pro_bono ? (
                     <Link
-                      href="/ara/consultant/assessments/new"
+                      href={stage.id === "individual"
+                        ? "/ara/personal/start"
+                        : "/ara/consultant/assessments/new"}
                       className="ara-pulse inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium text-white transition-colors w-full"
                       style={{ background: tone.fg }}
                     >
@@ -173,8 +210,10 @@ export default function AraEngagePage() {
               What is included at each stage
             </h2>
             <p className="text-sm text-muted-foreground mt-3">
-              Stages are cumulative. Everything in Department is also in Division.
-              Everything in Division is also in Enterprise.
+              Personal is a free self-assessment for one individual.
+              Department, Division, and Enterprise are cumulative engagements
+              for organisations — everything in Department is also in
+              Division, and everything in Division is also in Enterprise.
             </p>
           </div>
 
@@ -187,19 +226,26 @@ export default function AraEngagePage() {
       {/* ─── Final CTA ─── */}
       <section className="max-w-4xl mx-auto px-6 py-16 text-center">
         <h2 className="text-3xl font-semibold text-primary mb-3">
-          Start with a department. Grow when ready.
+          Start where you stand. Grow when ready.
         </h2>
         <p className="text-base text-muted-foreground max-w-xl mx-auto mb-8">
-          Most engagements start with a complimentary Stage 1 to prove value
-          inside one department, then progress to a paid Division or Enterprise
-          engagement once internal sponsorship is secured.
+          Take a free Personal Snapshot in five minutes, or run a complimentary
+          Department assessment to prove value inside one team. Progress to a
+          paid Division or Enterprise engagement when internal sponsorship is
+          secured.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3">
+          <Link
+            href="/ara/personal/start"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-5 py-3 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+          >
+            Take the free snapshot
+          </Link>
           <Link
             href="/ara/consultant/assessments/new"
             className="ara-pulse inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-3 text-sm font-medium text-white hover:bg-accent/90 transition-colors"
           >
-            Start a complimentary assessment <ArrowRight className="h-4 w-4" />
+            Start a complimentary department assessment <ArrowRight className="h-4 w-4" />
           </Link>
           <Link
             href="mailto:contact@viftraining.com?subject=AI%20Readiness%20Compass%20Engagement%20Enquiry"
@@ -247,14 +293,14 @@ function CapabilityMatrix() {
       {/* Header row - sticks at top of table on scroll */}
       <div
         className="grid items-end border-b bg-card/95 backdrop-blur"
-        style={{ gridTemplateColumns: "minmax(220px, 2fr) repeat(3, 1fr)" }}
+        style={{ gridTemplateColumns: "minmax(220px, 2fr) repeat(4, 1fr)" }}
       >
         <div className="p-4">
           <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">
             Capability
           </p>
         </div>
-        {ARA_STAGE_DEFINITIONS.map((stage) => {
+        {STAGES_IN_DISPLAY_ORDER.map((stage) => {
           const tone = TONE_MAP[stage.tone];
           const Icon = STAGE_ICONS[stage.id];
           return (
@@ -269,14 +315,16 @@ function CapabilityMatrix() {
                   className="text-[10px] font-semibold uppercase tracking-widest"
                   style={{ color: tone.fg }}
                 >
-                  Stage {stage.number}
+                  {stageBadge(stage)}
                 </span>
               </div>
               <p className="text-sm font-semibold text-primary">
                 {stage.label_en}
               </p>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                {stage.is_pro_bono ? "Complimentary" : "Fee-based"}
+                {stage.id === "individual"
+                  ? "Free, self-served"
+                  : stage.is_pro_bono ? "Complimentary" : "Fee-based"}
               </p>
             </div>
           );
@@ -295,11 +343,12 @@ function CapabilityMatrix() {
             <div
               key={`${g.group}-${row.feature_en}`}
               className={`grid items-center ${idx > 0 ? "border-t" : ""}`}
-              style={{ gridTemplateColumns: "minmax(220px, 2fr) repeat(3, 1fr)" }}
+              style={{ gridTemplateColumns: "minmax(220px, 2fr) repeat(4, 1fr)" }}
             >
               <div className="p-4 text-sm text-foreground">
                 {row.feature_en}
               </div>
+              <Cell value={row.individual} tone="teal" />
               <Cell value={row.department} tone="teal" />
               <Cell value={row.division} tone="violet" />
               <Cell value={row.enterprise} tone="gold" />

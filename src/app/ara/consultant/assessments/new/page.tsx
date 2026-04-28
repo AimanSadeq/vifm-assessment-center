@@ -74,10 +74,17 @@ export default async function NewAraAssessmentPage({
             Stage drives the pillars in scope, the report length, and whether
             this is a complimentary lead-in or a fee-based engagement. You
             can&apos;t change it later — start a new assessment if scope grows.
+            Looking for the Personal Snapshot? It has its own self-served flow at{" "}
+            <Link href="/ara/personal/start" className="underline hover:text-foreground">
+              /ara/personal/start
+            </Link>
+            .
           </p>
 
           <div className="grid gap-5 md:grid-cols-3">
-            {ARA_STAGE_DEFINITIONS.map((stage) => {
+            {ARA_STAGE_DEFINITIONS
+              .filter((stage) => stage.id !== "individual")
+              .map((stage) => {
               const tone = TONE_MAP[stage.tone];
               const Icon = STAGE_ICONS[stage.id];
               return (

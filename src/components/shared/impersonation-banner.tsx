@@ -1,6 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 import { Eye, ArrowLeft } from "lucide-react";
-import { getServerT } from "@/lib/i18n/server";
 
 /**
  * H4 — admin "view as candidate" banner.
@@ -9,6 +11,13 @@ import { getServerT } from "@/lib/i18n/server";
  * Designed to be visually loud without overwhelming — the candidate-portal
  * shell underneath stays the same, so admins see exactly what the candidate
  * sees with a clear "you're impersonating" reminder.
+ *
+ * Marked "use client" because it's imported by both server pages (welcome,
+ * skills, assessments, report) AND a client page (consent). React Server
+ * Components and "use client" components compose freely in app router, but a
+ * client page can't import an async server component — Render's production
+ * build flags this as an RSC/pages mismatch. Using useTranslation() instead
+ * of getServerT() keeps the banner usable from either context.
  *
  * Auth note: in production this should also check the session role to refuse
  * the asAdmin query when the caller isn't actually an admin. With
@@ -24,12 +33,12 @@ export type ImpersonationBannerProps = {
   exitHref?: string;
 };
 
-export async function ImpersonationBanner({
+export function ImpersonationBanner({
   candidateName,
   candidateEmail,
   exitHref = "/admin/engagements",
 }: ImpersonationBannerProps) {
-  const t = await getServerT();
+  const { t } = useTranslation();
   return (
     <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 mb-4 flex items-center gap-3 text-amber-900">
       <Eye className="h-4 w-4 shrink-0" />

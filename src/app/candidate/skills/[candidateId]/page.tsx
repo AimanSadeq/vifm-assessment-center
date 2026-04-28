@@ -9,6 +9,7 @@ import { BackLink } from "@/components/shared/back-link";
 import { GapBadge } from "@/components/shared/gap-badge";
 import { getCompetencyGap } from "@/lib/scoring/competency-gap";
 import { Target, AlertTriangle, CheckCircle2, BookOpen } from "lucide-react";
+import { PersonalStatistics, type DomainRollup } from "./_components/personal-statistics";
 
 type Props = { params: { candidateId: string } };
 
@@ -195,6 +196,20 @@ export default async function CandidateSkillsPage({ params }: Props) {
         10
       : null;
 
+  // Per-domain rollup for the H2 personal-statistics charts.
+  // Iterating domainGroups instead of recomputing keeps the order consistent
+  // with the cards rendered above (THINKING -> RESULTS -> PEOPLE -> SELF).
+  const byDomain: DomainRollup[] = domainGroups.map((g) => {
+    const scores = g.competencies
+      .map((c) => c.score)
+      .filter((s): s is number => typeof s === "number");
+    const avgScore =
+      scores.length > 0
+        ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10
+        : null;
+    return { name: g.name, count: g.competencies.length, avgScore };
+  });
+
   const profileLabel = profile.name_en;
   const profileSubLabel =
     profile.target_role && profile.target_role !== profile.name_en
@@ -315,6 +330,15 @@ export default async function CandidateSkillsPage({ params }: Props) {
             </CardContent>
           </Card>
         ))
+      )}
+
+      {/* H2: personal statistics charts */}
+      {domainGroups.length > 0 && (
+        <PersonalStatistics
+          assessed={assessed}
+          notAssessed={total - assessed}
+          byDomain={byDomain}
+        />
       )}
     </div>
   );

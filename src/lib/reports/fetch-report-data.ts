@@ -1,5 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
-import type { ReportData, ReportCompetencyData } from "./report-types";
+import { recommendCoursesForAcCandidate } from "@/lib/recommender/courses";
+import { VIFM_VERTICAL_LABELS } from "@/types/database";
+import type {
+  ReportData,
+  ReportCompetencyData,
+  ReportRecommendedCourse,
+} from "./report-types";
+import type { VifmVertical } from "@/types/database";
 
 export async function fetchReportData(
   engagementId: string,
@@ -145,6 +152,39 @@ export async function fetchReportData(
   const startDate = formatDate(eng.start_date);
   const endDate = formatDate(eng.end_date);
 
+  // Day 3f — VIFM training-course recommendations. Catches and swallows
+  // errors so the rest of the report still generates if the recommender
+  // tables don't exist on a given env or if the catalogue is empty.
+  let recommendedCourses: ReportRecommendedCourse[] = [];
+  try {
+    const raw = await recommendCoursesForAcCandidate({
+      engagementId,
+      candidateId,
+      limit: 5, // top 5 fits cleanly on one PDF page
+    });
+    recommendedCourses = raw.map((c) => ({
+      course_id: c.course_id,
+      code: c.course_code,
+      title_en: c.title_en,
+      title_ar: c.title_ar,
+      vertical: VIFM_VERTICAL_LABELS[c.vertical as VifmVertical] ?? c.vertical,
+      level: c.level,
+      duration_label:
+        c.min_duration_days === c.max_duration_days
+          ? `${c.default_duration_days}d`
+          : `${c.min_duration_days}–${c.max_duration_days}d`,
+      total_score: c.total_score,
+      drivers: c.drivers.map((d) => ({
+        label: d.label,
+        gap: d.gap,
+        relevance: d.relevance,
+        rationale: d.rationale,
+      })),
+    }));
+  } catch (e) {
+    console.error("[fetch-report-data] recommender failed (non-fatal):", e);
+  }
+
   return {
     engagementName: eng.name,
     organizationName: orgName,
@@ -162,5 +202,6 @@ export async function fetchReportData(
     developmentRecommendations,
     generatedAt: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }),
     assessorNames: Array.from(assessorNameSet),
+    recommendedCourses,
   };
 }

@@ -54,4 +54,25 @@ export type ReportData = {
   // Meta
   generatedAt: string;
   assessorNames: string[];
+  // Day 3f — VIFM training-course recommendations driven by this
+  // candidate's competency gaps. Optional — renders an extra Learning
+  // Plan PDF page when populated, omitted gracefully when empty.
+  recommendedCourses?: ReportRecommendedCourse[];
+};
+
+export type ReportRecommendedCourse = {
+  course_id: string;
+  code: string | null;
+  title_en: string;
+  title_ar: string | null;
+  vertical: string;
+  level: string;
+  duration_label: string;
+  total_score: number;
+  drivers: Array<{
+    label: string;
+    gap: number;
+    relevance: 1 | 2 | 3;
+    rationale?: string | null;
+  }>;
 };

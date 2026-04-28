@@ -163,6 +163,57 @@ const s = StyleSheet.create({
     backgroundColor: "#eff6ff",
   },
 
+  // Course recommendation cards (Day 3f)
+  courseCard: {
+    marginBottom: 10,
+    borderWidth: 0.5,
+    borderColor: C.border,
+    borderRadius: 4,
+    padding: 10,
+    backgroundColor: C.bgSoft,
+  },
+  courseTitle: { fontSize: 11, fontFamily: "Helvetica-Bold", color: C.primary },
+  courseTitleAr: { fontSize: 8.5, color: C.textLight, marginTop: 2 },
+  courseMetaRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 4,
+    marginTop: 4,
+    marginBottom: 6,
+  },
+  courseMetaPill: {
+    fontSize: 7,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 0.5,
+    borderColor: C.border,
+    backgroundColor: C.bg,
+    color: C.text,
+  },
+  courseFitPill: {
+    fontSize: 7.5,
+    fontFamily: "Helvetica-Bold",
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 8,
+    backgroundColor: "#fef3c7",
+    color: "#92400e",
+    letterSpacing: 0.3,
+  },
+  driverChip: {
+    fontSize: 7.5,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 0.5,
+    borderColor: "#bfdbfe",
+    backgroundColor: "#eff6ff",
+    color: "#1e40af",
+    marginRight: 4,
+    marginBottom: 4,
+  },
+
   footer: {
     position: "absolute",
     bottom: 26,
@@ -419,6 +470,75 @@ function CompetencyDevelopmentPage({ d }: { d: ReportData }) {
   );
 }
 
+function CoursesPage({ d }: { d: ReportData }) {
+  const courses = d.recommendedCourses ?? [];
+  if (courses.length === 0) return null;
+
+  return (
+    <Page size="A4" style={s.page} wrap>
+      <Text style={s.sectionEyebrow}>Targeted training</Text>
+      <Text style={s.sectionTitle}>Recommended VIFM Programmes</Text>
+      <View style={s.sectionRule} />
+
+      <Text style={s.bodyText}>
+        These VIFM training courses map to the competencies where your
+        scores fell below target. They&apos;re ordered by fit — calculated
+        as the sum of (gap size × course relevance) across the
+        competencies the course develops. Discuss with your manager or
+        VIFM consultant which course best fits your current development
+        priority.
+      </Text>
+
+      {courses.map((c) => {
+        const isHighFit = c.total_score >= 4;
+        return (
+          <View key={c.course_id} style={s.courseCard} wrap={false}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={s.courseTitle}>
+                  {c.title_en}
+                  {c.code && (
+                    <Text style={{ fontSize: 8, color: C.textLight, fontFamily: "Helvetica" }}>{`  ${c.code}`}</Text>
+                  )}
+                </Text>
+                {c.title_ar && <Text style={s.courseTitleAr}>{c.title_ar}</Text>}
+              </View>
+              {isHighFit && (
+                <Text style={s.courseFitPill}>★ HIGH FIT · {c.total_score}</Text>
+              )}
+            </View>
+
+            <View style={s.courseMetaRow}>
+              <Text style={s.courseMetaPill}>{c.vertical}</Text>
+              <Text style={s.courseMetaPill}>{c.level.charAt(0).toUpperCase() + c.level.slice(1)}</Text>
+              <Text style={s.courseMetaPill}>{c.duration_label}</Text>
+              {!isHighFit && (
+                <Text style={s.courseMetaPill}>fit score · {c.total_score}</Text>
+              )}
+            </View>
+
+            <Text style={[s.groupTitle, { marginTop: 4 }]}>Why this course</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+              {c.drivers.map((d, i) => (
+                <Text key={i} style={s.driverChip}>
+                  {d.label} · gap {d.gap} × ×{d.relevance}
+                </Text>
+              ))}
+            </View>
+            {c.drivers[0]?.rationale && (
+              <Text style={[s.tipText, { marginTop: 4, fontSize: 8, color: C.textLight }]}>
+                {c.drivers[0].rationale}
+              </Text>
+            )}
+          </View>
+        );
+      })}
+
+      <Footer name={d.candidateName} />
+    </Page>
+  );
+}
+
 export function LearningPlan({ data }: { data: ReportData }) {
   return (
     <Document
@@ -429,6 +549,7 @@ export function LearningPlan({ data }: { data: ReportData }) {
       <CoverPage d={data} />
       <RoadmapPage d={data} />
       <CompetencyDevelopmentPage d={data} />
+      <CoursesPage d={data} />
     </Document>
   );
 }

@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 
 const uuidShape = z
   .string()
@@ -40,6 +41,15 @@ export type BulkAssignRowResult = {
 export async function bulkAssignRoleProfilesAction(input: {
   rows: { email: string; roleProfileId: string | null }[];
 }) {
+  // Defence-in-depth: bulk operations are admin-only at the action layer
+  // even though RLS already requires admin to write to candidates.
+  try {
+    await requireRole(["admin"]);
+  } catch (e) {
+    if (isAuthorizationError(e)) return { error: e.message };
+    throw e;
+  }
+
   const parsed = bulkAssignSchema.safeParse(input);
   if (!parsed.success) {
     return { error: parsed.error.flatten().fieldErrors };

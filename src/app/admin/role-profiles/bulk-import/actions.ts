@@ -3,6 +3,17 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { isAIConfigured } from "@/lib/ai/client";
+import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
+
+async function gateAdmin(): Promise<{ error: string } | null> {
+  try {
+    await requireRole(["admin"]);
+    return null;
+  } catch (e) {
+    if (isAuthorizationError(e)) return { error: e.message };
+    throw e;
+  }
+}
 import {
   extractCompetenciesFromJobDescription,
   extractCompetenciesFromJdPdf,
@@ -39,6 +50,9 @@ export type BulkJdExtractItem =
 export async function bulkExtractJdsAction(
   formData: FormData
 ): Promise<{ items: BulkJdExtractItem[] } | { error: string }> {
+  const denied = await gateAdmin();
+  if (denied) return denied;
+
   if (!isAIConfigured()) {
     return {
       error:
@@ -170,6 +184,9 @@ export async function bulkCreateRoleProfilesAction(input: {
     recommendations: ExtractedCompetencyRecommendation[];
   }[];
 }) {
+  const denied = await gateAdmin();
+  if (denied) return denied;
+
   const parsed = bulkCreateSchema.safeParse(input);
   if (!parsed.success) {
     return { error: "Validation failed. Check each profile name and recommendations." };

@@ -132,6 +132,15 @@ deployed environment.
 
 ---
 
+## Polish items (post-roadmap, all shipped or explicitly deferred)
+
+| Item | Status |
+|---|---|
+| Bilingual AI quiz output (set `bilingual: true`, render *_ar fields) | ✅ Shipped 2026-04-28 (commit `3fdaeee`) |
+| Candidate layout chrome translation (Portal subtitle, Sign Out, footer) | ✅ Shipped 2026-04-28 (commit `3fdaeee`) |
+| Defence-in-depth `requireRole(["admin"])` on key AC admin actions | ✅ Shipped 2026-04-28 — `addCandidateAction`, `setCandidateRoleProfileAction`, `bulkAssignRoleProfilesAction`, `bulkExtractJdsAction`, `bulkCreateRoleProfilesAction` |
+| Quiz finalisation as SECURITY DEFINER Postgres RPC | **Deferred — gold-plating.** Migration 00019's `candidate_quiz_attempts_immutable_check` trigger already blocks candidate-side score writes; service-role completion goes through a separate path that bypasses the trigger. Moving scoring to a SECURITY DEFINER RPC would eliminate one remaining attack-shape (candidate calls the action via DevTools fetch with a crafted payload) but the action's auth-aware read-then-service-role-write pattern already validates ownership before the score lands. Reopen if a real attack surfaces. |
+
 ## Explicitly skipped
 
 | Item | Reason |

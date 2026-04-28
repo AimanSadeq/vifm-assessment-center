@@ -10,6 +10,23 @@ import {
   type SetCandidateRoleProfileValues,
 } from "@/lib/validations/assessor";
 import { publishNotification, publishToAllAdmins } from "@/lib/notifications/publish";
+import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
+
+// Defence-in-depth: every admin-only mutating action runs through this.
+// Under AUTH_ENABLED=false the helper returns a synthetic admin so dev
+// still works; under auth=true it throws AuthorizationError if the
+// caller isn't admin. RLS still backs us up at the DB layer regardless.
+async function requireAdmin() {
+  try {
+    await requireRole(["admin"]);
+    return null;
+  } catch (e) {
+    if (isAuthorizationError(e)) {
+      return { error: e.message };
+    }
+    throw e;
+  }
+}
 
 export async function addCandidateAction(values: AddCandidateValues & {
   department?: string;
@@ -17,6 +34,9 @@ export async function addCandidateAction(values: AddCandidateValues & {
   ageRange?: string;
   seniorityLevel?: string;
 }) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const parsed = addCandidateSchema.safeParse(values);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
@@ -43,6 +63,9 @@ export async function addCandidateAction(values: AddCandidateValues & {
 }
 
 export async function setCandidateRoleProfileAction(values: SetCandidateRoleProfileValues) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const parsed = setCandidateRoleProfileSchema.safeParse(values);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 

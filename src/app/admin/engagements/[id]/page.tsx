@@ -3,15 +3,21 @@ import { notFound } from "next/navigation";
 import { BackLink } from "@/components/shared/back-link";
 import { EngagementDetail } from "./_components/engagement-detail";
 import { RecommendedCoursesPanel } from "@/components/shared/recommended-courses-panel";
-import { recommendCoursesForAcCohort } from "@/lib/recommender/courses";
+import {
+  recommendCoursesForAcCohort,
+  recommendCoursesForAcCandidate,
+} from "@/lib/recommender/courses";
+import { CandidateFilterBar } from "./_components/candidate-filter-bar";
 
 type Props = {
   params: { id: string };
+  searchParams: { candidate?: string };
 };
 
-export default async function EngagementDetailPage({ params }: Props) {
+export default async function EngagementDetailPage({ params, searchParams }: Props) {
   const supabase = await createClient();
   const { id } = params;
+  const focusedCandidateId = searchParams.candidate ?? null;
 
   const [engResult, candsResult, exercisesResult, assignmentsResult, assessorsResult, matrixResult, wsResult, profilesResult] =
     await Promise.all([
@@ -96,16 +102,24 @@ export default async function EngagementDetailPage({ params }: Props) {
     .map((ee: Record<string, unknown>) => ee.exercises)
     .filter(Boolean) as Record<string, unknown>[];
 
-  // Day 3 — cohort-level course recommendations driven by aggregated
-  // gap severity across the candidates. Tolerant of the recommender
-  // tables not existing yet (returns empty array, the panel renders
-  // a graceful empty state).
+  // Day 3 — VIFM training-course recommendations. Cohort-aggregated
+  // by default; if the URL carries ?candidate=<id>, focus on just
+  // that candidate's gaps so the consultant can use the panel as a
+  // 1:1 development plan instead of a group plan.
   let recommendedCourses: Awaited<ReturnType<typeof recommendCoursesForAcCohort>> = [];
   try {
-    recommendedCourses = await recommendCoursesForAcCohort({ engagementId: id });
+    recommendedCourses = focusedCandidateId
+      ? await recommendCoursesForAcCandidate({
+          engagementId: id,
+          candidateId: focusedCandidateId,
+        })
+      : await recommendCoursesForAcCohort({ engagementId: id });
   } catch (e) {
     console.error("[ac-engagement-detail] recommender failed:", e);
   }
+  const focusedCandidate = focusedCandidateId
+    ? candidates.find((c) => c.id === focusedCandidateId)
+    : null;
 
   return (
     <div className="space-y-6">
@@ -122,10 +136,30 @@ export default async function EngagementDetailPage({ params }: Props) {
         priorOarMap={priorOarMap}
         currentOarMap={currentOarMap}
       />
+      <CandidateFilterBar
+        engagementId={id}
+        candidates={candidates.map((c) => ({
+          id: c.id as string,
+          full_name: c.full_name as string,
+        }))}
+        focused={focusedCandidateId}
+      />
       <RecommendedCoursesPanel
-        title="Recommended VIFM training programmes"
-        description="Cohort-aggregated — courses ranked by total gap severity × course relevance across every candidate in the engagement. Higher fit score = larger development impact across the group."
-        emptyMessage="No course recommendations yet — either no consensus ratings have been finalised, the cohort is on or above target across all competencies, or the catalogue doesn't yet cover the relevant competencies."
+        title={
+          focusedCandidate
+            ? `Recommended VIFM training — ${focusedCandidate.full_name as string}`
+            : "Recommended VIFM training programmes"
+        }
+        description={
+          focusedCandidate
+            ? "Per-candidate — courses ranked by this candidate's competency gaps × course relevance. Use this view to anchor a 1:1 development conversation."
+            : "Cohort-aggregated — courses ranked by total gap severity × course relevance across every candidate in the engagement. Higher fit score = larger development impact across the group."
+        }
+        emptyMessage={
+          focusedCandidate
+            ? `No course recommendations for ${focusedCandidate.full_name} — either no consensus ratings have been finalised, this candidate is on or above target across all competencies, or the catalogue doesn't yet cover the relevant competencies.`
+            : "No course recommendations yet — either no consensus ratings have been finalised, the cohort is on or above target across all competencies, or the catalogue doesn't yet cover the relevant competencies."
+        }
         courses={recommendedCourses}
         context="ac"
       />

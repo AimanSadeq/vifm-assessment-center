@@ -4,19 +4,21 @@ import { VifmLogo } from "@/components/shared/vifm-logo";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
 import { NotificationBellClient } from "@/components/shared/notification-bell-client";
+import { getServerT } from "@/lib/i18n/server";
 
-export default function CandidateLayout({
+export default async function CandidateLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const t = await getServerT();
   return (
     <div className="min-h-screen bg-muted/30 flex flex-col">
       <header className="border-b bg-card shadow-sm px-4 sm:px-6 py-4">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <Link href="/candidate" className="flex items-center gap-2 sm:gap-3">
             <VifmLogo variant="color" size="sm" />
-            <p className="text-xs text-muted-foreground hidden sm:block">Candidate Portal</p>
+            <p className="text-xs text-muted-foreground hidden sm:block">{t("common.candidatePortal")}</p>
           </Link>
           <div className="flex items-center gap-2">
             <NotificationBellClient />
@@ -29,7 +31,7 @@ export default function CandidateLayout({
       <footer className="border-t bg-card py-4 mt-auto">
         <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
           <Shield className="h-3 w-3" />
-          <span>Virginia Institute of Finance and Management - Confidential</span>
+          <span>{t("common.footerConfidentialLine")}</span>
         </div>
       </footer>
     </div>

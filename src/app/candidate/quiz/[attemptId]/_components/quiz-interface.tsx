@@ -44,7 +44,18 @@ export function QuizInterface({
   startedAt,
 }: Props) {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isAr = i18n.language === "ar";
+
+  // Locale-aware prompt + options. The quiz generator now writes both
+  // *_en and *_ar (since we passed bilingual:true); fall back to en
+  // when ar is missing (rare but graceful).
+  const promptFor = (q: QuizQuestion): string =>
+    isAr && q.prompt_ar ? q.prompt_ar : q.prompt_en;
+  const optionsFor = (q: QuizQuestion): string[] =>
+    isAr && q.options_ar && q.options_ar.length === q.options_en.length
+      ? q.options_ar
+      : q.options_en;
   const [picks, setPicks] = useState<(number | null)[]>(
     initialAnswers.map((a) => a.picked_index)
   );
@@ -185,7 +196,7 @@ export function QuizInterface({
             )}
           </div>
 
-          <p className="text-base leading-relaxed">{q.prompt_en}</p>
+          <p className="text-base leading-relaxed">{promptFor(q)}</p>
 
           {q.type === "pattern_recognition" && q.sequence && (
             <div className="flex flex-wrap items-center gap-2">
@@ -204,7 +215,7 @@ export function QuizInterface({
 
           {/* Options */}
           <div className="grid gap-2">
-            {q.options_en.map((opt, i) => {
+            {optionsFor(q).map((opt, i) => {
               const picked = picks[currentIdx] === i;
               return (
                 <button

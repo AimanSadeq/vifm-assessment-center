@@ -15,7 +15,10 @@
     "confirm": "Confirm",
     "status": "Status",
     "actions": "Actions",
-    "confidential": "CONFIDENTIAL"
+    "confidential": "CONFIDENTIAL",
+    "signOut": "Sign Out",
+    "candidatePortal": "Candidate Portal",
+    "footerConfidentialLine": "Virginia Institute of Finance and Management - Confidential"
   },
   "nav": {
     "dashboard": "Dashboard",

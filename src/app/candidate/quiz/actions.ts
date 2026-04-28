@@ -86,12 +86,18 @@ export async function startQuizAttemptAction(values: StartQuizValues) {
     .map((r) => r.description.replace(/^\[DEV TIP\]\s*/, ""))
     .slice(0, 3);
 
+  // Always ask for bilingual output (en + ar). The candidate's locale
+  // toggle on the quiz page picks which to show; if they never switch
+  // languages, the Arabic fields just sit unused. Cost is one extra
+  // pass through Claude per generation, which is fine because
+  // generation is a one-shot per attempt.
   const questions = await generateQuizQuestions({
     competency: compRes.data,
     indicators,
     developmentTips,
     currentScore,
     targetScore: target,
+    bilingual: true,
   });
 
   if (!questions || questions.length === 0) {

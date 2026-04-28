@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
@@ -11,6 +12,7 @@ type Props = {
 
 export function LogoutButton({ variant = "default" }: Props) {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -25,7 +27,7 @@ export function LogoutButton({ variant = "default" }: Props) {
         className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] text-sidebar-foreground/40 hover:text-sidebar-foreground/70 hover:bg-sidebar-accent/30 transition-colors w-full"
       >
         <LogOut className="h-3.5 w-3.5 shrink-0" />
-        <span>Sign Out</span>
+        <span>{t("common.signOut")}</span>
       </button>
     );
   }
@@ -38,7 +40,7 @@ export function LogoutButton({ variant = "default" }: Props) {
       className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
     >
       <LogOut className="h-3.5 w-3.5" />
-      Sign Out
+      {t("common.signOut")}
     </Button>
   );
 }

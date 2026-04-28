@@ -17,7 +17,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import type { CandidateQuizAttempt, QuizQuestion, QuizAnswer } from "@/types/database";
-import { getServerT } from "@/lib/i18n/server";
+import { getServerLocale, getServerT } from "@/lib/i18n/server";
 
 type Props = { params: { attemptId: string } };
 
@@ -39,7 +39,20 @@ function formatDuration(seconds: number): string {
 export default async function QuizResultsPage({ params }: Props) {
   const supabase = await createClient();
   const t = await getServerT();
+  const locale = await getServerLocale();
+  const isAr = locale === "ar";
   const { attemptId } = params;
+
+  // Locale-aware accessor for the JSONB question fields. The generator
+  // writes both *_en and *_ar; we render the matching one per locale.
+  const promptFor = (q: QuizQuestion): string =>
+    isAr && q.prompt_ar ? q.prompt_ar : q.prompt_en;
+  const optionsFor = (q: QuizQuestion): string[] =>
+    isAr && q.options_ar && q.options_ar.length === q.options_en.length
+      ? q.options_ar
+      : q.options_en;
+  const explanationFor = (q: QuizQuestion): string =>
+    isAr && q.explanation_ar ? q.explanation_ar : q.explanation_en;
 
   const { data: attempt, error } = await supabase
     .from("candidate_quiz_attempts")
@@ -208,7 +221,7 @@ export default async function QuizResultsPage({ params }: Props) {
                   </span>
                 </div>
 
-                <p className="text-sm leading-relaxed">{q.prompt_en}</p>
+                <p className="text-sm leading-relaxed">{promptFor(q)}</p>
 
                 {q.type === "pattern_recognition" && q.sequence && (
                   <div className="flex flex-wrap items-center gap-1.5">
@@ -245,7 +258,7 @@ export default async function QuizResultsPage({ params }: Props) {
                           {t("quiz.results.yourAnswer")}
                         </span>
                       </div>
-                      <p className="text-sm mt-1">{q.options_en[picked!]}</p>
+                      <p className="text-sm mt-1">{optionsFor(q)[picked!]}</p>
                     </div>
                   )}
                   {!isCorrect && (
@@ -256,7 +269,7 @@ export default async function QuizResultsPage({ params }: Props) {
                           {t("quiz.results.correctAnswer")}
                         </span>
                       </div>
-                      <p className="text-sm mt-1">{q.options_en[q.correct_index]}</p>
+                      <p className="text-sm mt-1">{optionsFor(q)[q.correct_index]}</p>
                     </div>
                   )}
                 </div>
@@ -270,7 +283,7 @@ export default async function QuizResultsPage({ params }: Props) {
                     </span>
                   </div>
                   <p className="text-sm mt-1 text-foreground/80 leading-relaxed">
-                    {q.explanation_en}
+                    {explanationFor(q)}
                   </p>
                 </div>
               </div>

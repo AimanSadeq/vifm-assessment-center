@@ -15,7 +15,10 @@
     "confirm": "تأكيد",
     "status": "الحالة",
     "actions": "الإجراءات",
-    "confidential": "سري"
+    "confidential": "سري",
+    "signOut": "تسجيل الخروج",
+    "candidatePortal": "بوابة المرشح",
+    "footerConfidentialLine": "معهد فرجينيا للتمويل والإدارة - سرّي"
   },
   "nav": {
     "dashboard": "لوحة التحكم",

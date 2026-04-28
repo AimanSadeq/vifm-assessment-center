@@ -1,11 +1,12 @@
 -- ============================================================
 -- VIFM Assessment Center - In-app notifications (H3)
 --
--- Skillup MENA's admin and learner headers show an envelope and a bell
--- with a red badge ("3" admin, "1" learner). Our portal currently has
--- no in-app event surface — only email goes out. This adds a single
--- notifications table that any portal layout can poll for unread
--- count + recent items.
+-- Industry assessment portals typically expose an in-app notification
+-- bell in the admin and learner headers (envelope or bell icon plus
+-- a red unread-count badge). Our portal previously had no in-app event
+-- surface — only email went out. This adds a single notifications
+-- table that any portal layout can poll for unread count + recent
+-- items.
 --
 -- Design notes:
 --   - profile_id is the canonical recipient — works for any role

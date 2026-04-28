@@ -3,9 +3,10 @@ import type { AraEngagementStage, AraPillarId, AraRegion, AraSector } from "@/ty
 /**
  * Pre-packaged assessment templates - the "catalogue".
  *
- * Mirrors what GPI and eSkill ship out of the box: named, role- and
- * sector-specific bundles a consultant can launch in one click instead
- * of configuring everything by hand.
+ * Industry assessment vendors typically ship a similar bundle library
+ * out of the box. This is VIFM's GCC-tuned equivalent: named, role-
+ * and sector-specific bundles a consultant can launch in one click
+ * instead of configuring everything by hand.
  *
  * Each template is a configuration preset for the assessment-creation
  * wizard. The consultant picks one in the wizard, the wizard pre-fills

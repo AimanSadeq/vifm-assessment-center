@@ -152,8 +152,9 @@ export default async function NewAraAssessmentPage({
           {/* ─── Starter templates catalogue ─── *
            * Pre-packaged role / sector / capability bundles - one-click
            * jump straight to Step 2 with the right stage + scope already
-           * filled. Mirrors GPI's GR8 X / GR8 Y product line and eSkill's
-           * job-based assessment library. */}
+           * filled. Industry assessment vendors typically ship a similar
+           * job-based assessment library; this is VIFM's GCC-tuned
+           * equivalent. */}
           <section className="mt-14">
             <span className="ara-eyebrow">Or start from a template</span>
             <h2 className="text-xl font-semibold text-primary mt-2 mb-1">

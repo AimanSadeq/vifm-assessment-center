@@ -1,12 +1,12 @@
 -- ============================================================
 -- VIFM Assessment Center - Bind candidates to role profiles
 --
--- G1 from the Skillup MENA gap analysis. Without this link the
--- shipped role profile library is admin-only — gap badges can't
--- render in candidate-facing views because there's no "target"
--- to compare BARS scores against. Nullable so existing data
--- stays valid; a candidate without a profile shows the
--- "No Position Assigned" placeholder in the learner dashboard.
+-- G1 from the competitor-parity gap analysis. Without this link
+-- the shipped role profile library is admin-only — gap badges
+-- can't render in candidate-facing views because there's no
+-- "target" to compare BARS scores against. Nullable so existing
+-- data stays valid; a candidate without a profile shows the
+-- empty-state placeholder in the learner dashboard.
 -- ============================================================
 
 ALTER TABLE candidates

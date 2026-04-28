@@ -97,7 +97,7 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
     profile = (candWithProfile.data?.role_profiles as unknown as RoleProfileRow | null) ?? null;
   }
 
-  // Empty state — no role profile assigned (matches Skillup's "No Position Assigned")
+  // Empty state — no role profile assigned
   if (!profile) {
     return (
       <div className="space-y-6">

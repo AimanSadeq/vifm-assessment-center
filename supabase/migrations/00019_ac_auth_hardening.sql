@@ -1,5 +1,5 @@
 -- ============================================================
--- VIFM Assessment Center - Auth hardening for Skillup-parity tables
+-- VIFM Assessment Center - Auth hardening for the parity tables
 -- Migration 00019:
 --   1. notifications: stop candidates writing self-spoofed rows; lock
 --      down which fields a recipient can mutate (read_at only).

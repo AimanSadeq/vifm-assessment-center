@@ -5,7 +5,7 @@ import type { AraPillarId } from "@/types/ara";
  * Response-validity ("distortion") detection.
  *
  * Modelled on faking / response-bias techniques used in commercial
- * psychometric platforms (Great People Inside, eSkill, SHL, Pearson).
+ * psychometric platforms (Competitor One, Competitor Two, etc.).
  * The Compass cannot detect intentional faking with certainty, but it
  * can flag respondents whose answer pattern is statistically
  * inconsistent with the population, suggesting the consultant should

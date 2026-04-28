@@ -1392,8 +1392,8 @@ export default async function AraAssessmentDetailPage({
 
         {/* ─── Bulk CSV import ─── *
          * Lets a consultant paste a CSV (header + rows) to invite many
-         * respondents at once. Matches the parity gap vs Great People
-         * Inside / eSkill which both ship CSV import as a core feature. */}
+         * respondents at once. Closes a parity gap with industry
+         * assessment platforms that ship CSV import as a core feature. */}
         <Card className="mt-6">
           <CardHeader>
             <CardTitle className="text-lg">Bulk import (CSV)</CardTitle>

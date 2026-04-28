@@ -5,11 +5,11 @@ import type { AraPillarId } from "@/types/ara";
 /**
  * AI-assisted question authoring for the ARA Compass question bank.
  *
- * Mirrors the value proposition of eSkill's "Linea AI" feature: take a
- * natural-language brief from the admin ("a question about model
- * retirement discipline") and generate one or more well-formed,
- * framework-anchored Layer-1 or Layer-2 questions ready to be saved
- * into the question bank.
+ * Same value proposition as the AI-author features shipped by industry
+ * assessment vendors: take a natural-language brief from the admin
+ * ("a question about model retirement discipline") and generate one or
+ * more well-formed, framework-anchored Layer-1 or Layer-2 questions
+ * ready to be saved into the question bank.
  *
  * The LLM is instructed to return strict JSON. We validate the shape
  * before inserting; malformed responses surface as a clear error so

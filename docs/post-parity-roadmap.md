@@ -1,6 +1,6 @@
-# Post-Skillup-parity hardening roadmap
+# Post-parity hardening roadmap
 
-Anchor for the work that comes after the 2026-04-28 Skillup-parity sweep.
+Anchor for the work that comes after the 2026-04-28 competitor-parity sweep.
 14 features shipped (P0.1, P0.2, P0.3, Learning Plan, G1, G2, G3, G4, G5,
 G6, H1, H2, H3, H4) — the next phase is **hardening, not breadth**.
 
@@ -146,7 +146,7 @@ deployed environment.
 | Item | Reason |
 |---|---|
 | Mobile / responsive | CLAUDE.md is desktop-only by design |
-| Skillup blind-spot pages (Dashboard, Skill Visualization, Report Manager, 11 Control Panel sub-tabs) | No recording available; guessing would waste effort |
+| Competitor blind-spot pages (Dashboard, Skill Visualization, Report Manager, 11 Control Panel sub-tabs) | No recording available; guessing would waste effort |
 | Color customisation / Sidebar reordering | Brand kit is fixed |
 | Full AC re-engagement workflow (G7) | Quiz retake covers the candidate side; product input needed for the admin queue |
 | Cert builder | No certificate concept yet |

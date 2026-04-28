@@ -8,8 +8,8 @@ import type { Competency, QuizQuestion, BehavioralIndicator } from "@/types/data
  *   - 5 knowledge / scenario questions (true/false + multiple choice)
  *     grounded in the competency's behavioural indicators and dev tips.
  *   - 1 pattern-recognition / cognitive item that targets the same broad
- *     ability the competency assesses — anchors the deck in line with
- *     Skillup's "Cognitive Challenge" inserts.
+ *     ability the competency assesses — anchors the deck in a way that
+ *     matches the cognitive-insert pattern seen in industry assessments.
  *   - 1 application MCQ tied to the candidate's gap level — harder when
  *     the gap is significant, easier when they're already on target.
  *

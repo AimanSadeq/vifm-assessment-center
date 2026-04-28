@@ -91,18 +91,16 @@ components.
 
 ---
 
-## 4. Wire ARA M2.1 + M3.3 emails — ½ day · status: pending
+## 4. Wire ARA M2.1 + M3.3 emails — ½ day · status: ✅ shipped 2026-04-28
 
-Both have been deferred since the ARA M3 commit. The Microsoft Graph
-wrapper (`src/lib/integrations/email.ts`) ships with 6 templates already.
-
-- [ ] **M2.1** — server action that fires on respondent token generation,
-      hits the Graph wrapper with a bilingual welcome template, respects
-      `is_sandbox` → `SANDBOX_EMAIL_REDIRECT` env var, writes to
-      `ara_email_log`
-- [ ] **M3.3** — hook into `markAraRespondentComplete` to email the
-      consultant when each respondent completes / when all complete.
-      Writes to `ara_email_log`.
+Shipped in commit `3b190cc`. New `src/lib/ara/email.ts` module with
+bilingual templates (en / ar / bilingual HTML) for both events.
+Honours `assessment.is_sandbox` → SANDBOX_EMAIL_REDIRECT, falls back
+to a console mock when AZURE_* env vars are unset, always writes
+to `ara_email_log` (even mocks). New `<SendInvitationButton />` per
+respondent row in `/ara/consultant/assessments/[id]` Respondents tab.
+`markAraRespondentComplete` now fires the consultant notification via
+a fire-and-forget dynamic import — failures logged, never thrown.
 
 ---
 

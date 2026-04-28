@@ -6,7 +6,7 @@ Custom-built Assessment Center management platform for Virginia Institute of Fin
 ## Current Status
 All 5 development phases are **complete**. The portal is functionally ready with auth disabled for development. To go to production, flip `AUTH_ENABLED = true` in `src/middleware.ts` and follow `src/lib/auth/README.md`.
 
-**ARA module status:** VIFM ARA (AI Readiness Assessment) is built out on branch `feature/ara-module`. M1–M5 complete (respondent flow, scoring, distortion, peer benchmarks, year-on-year, bilingual consultant notes, EN/AR/bilingual Puppeteer PDF report, Phase 2 consultant guide, regulatory doc upload with Claude extraction). Three items still open: M2.1 respondent invitation email, M3.3 consultant notification email, M6 annual reassessment + retention scheduler + sandbox cleanup. See "ARA Module" section below for the current deferred-items list.
+**ARA module status:** VIFM ARA (AI Readiness Assessment) is built out and merged into master. M1–M5 complete (respondent flow, scoring, distortion, peer benchmarks, year-on-year, bilingual consultant notes, EN/AR/bilingual Puppeteer PDF report, Phase 2 consultant guide, regulatory doc upload with Claude extraction). M2.1 (respondent invitation email) and M3.3 (consultant completion notification) shipped 2026-04-28 via `src/lib/ara/email.ts` with bilingual templates + sandbox redirect + ara_email_log writes. Remaining: M6 annual reassessment workflow + retention scheduler + sandbox cleanup. See "ARA Module" section below for the current deferred-items list.
 
 **AC Skillup-MENA parity status:** Fourteen features inspired by the Skillup MENA AC walkthrough are shipped on `master` (P0.1 JD-to-competency extractor, P0.2 role profile library, P0.3 gap-severity badges, Learning Plan PDF, G1 candidate→role-profile binding, G2 learner skill dashboard, G3 self-serve AI quiz flow with MCQ + cognitive items + per-question AI explanations, G4 bulk JD import, G5 bulk CSV user-to-persona linking, G6 JSON export, H1 JD-extractor domain tally card, H2 personal-statistics donut + bar charts on /candidate/skills, H3 in-app notification bell, H4 admin "view as candidate" banner). G7 retake-quiz path is shipped implicitly via the existing G3 "Retake Quiz" button; full AC re-engagement workflow deferred until product demand. Full second-pass analysis (158-frame video sweep) lives in `.tmp/skillup-gap-analysis.md`; see "AC Skillup-MENA Upgrades" section below.
 
@@ -246,8 +246,6 @@ New module being built alongside the existing AC portal. Full spec in `VIFM_ARA_
 
 ### ARA deferred items (from earlier milestones)
 Track here - pick up as scope allows. Do NOT delete without user confirmation. Items in this list are confirmed un-shipped; items previously listed and now shipped have been removed.
-- **M2.1 - Respondent invitation email send:** `ara_respondents.access_token` is generated and the link is previewable in the consultant dashboard, but no email is actually sent. Needs a server action that hits the existing Microsoft Graph wrapper (`src/lib/integrations/email.ts`) with a bilingual welcome template, respects `is_sandbox` → SANDBOX_EMAIL_REDIRECT env var, and writes to `ara_email_log`.
-- **M3.3 - Consultant notification email** on respondent completion / all-complete. Hook into `markAraRespondentComplete` and write to `ara_email_log`.
 - **AUTH_ENABLED flip:** still `false` in `src/middleware.ts`. Production switch on requires real Supabase Auth wiring per `src/lib/auth/README.md`.
 
 ### Critical ARA business rules

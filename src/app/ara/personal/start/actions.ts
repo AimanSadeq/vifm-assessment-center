@@ -1,7 +1,6 @@
 "use server";
 
 import { z } from "zod";
-import { redirect } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
 
 const startSchema = z.object({
@@ -27,8 +26,15 @@ const PERSONAL_ORG_NAME_AR = "الجاهزية الشخصية للذكاء ال�
  *      it picks up the 16 individual-factor items from migration
  *      00026.
  *   3. Create a single respondent (the person themselves), generate
- *      a fresh access_token, and redirect them straight into the
- *      respondent flow at /ara/respond/[token].
+ *      a fresh access_token, and return the respondent URL so the
+ *      client can router.push() into the respondent flow.
+ *
+ * Returns { ok: true, redirectTo } on success rather than calling
+ * redirect() directly — calling redirect() inside a server action
+ * that's invoked via useTransition() can silently swallow the
+ * redirect because the transition wraps the throw. Returning the
+ * URL and letting the client navigate sidesteps that whole class
+ * of issue.
  *
  * The respondent loader (loadQuestionsForRespondent) detects
  * engagement_stage === 'individual' and serves only the four-factor
@@ -36,7 +42,10 @@ const PERSONAL_ORG_NAME_AR = "الجاهزية الشخصية للذكاء ال�
  */
 export async function startPersonalAssessmentAction(
   formData: FormData
-): Promise<{ ok: false; error: string } | never> {
+): Promise<
+  | { ok: false; error: string }
+  | { ok: true; redirectTo: string }
+> {
   const parsed = startSchema.safeParse({
     full_name: formData.get("full_name"),
     email: formData.get("email"),
@@ -97,6 +106,9 @@ export async function startPersonalAssessmentAction(
   //    flow doesn't run a Phase 2 — it's Phase 1 only — so phase
   //    stays at default 'phase1'. consultant_id stays null because
   //    there's no consultant on a self-served flow.
+  //    pillar_weights is omitted so the column's DEFAULT '{}' fires;
+  //    individual-stage assessments don't use pillar weighting at all
+  //    (they score against four factors, not eight pillars).
   const { data: assessment, error: assessErr } = await sb
     .from("ara_assessments")
     .insert({
@@ -108,7 +120,6 @@ export async function startPersonalAssessmentAction(
       is_sandbox: false,
       engagement_stage: "individual",
       scope_label: parsed.data.full_name,
-      pillar_weights: null,
       question_bank_version_id: activeBank.id,
       status: "active",
       phase: "phase1",
@@ -143,7 +154,8 @@ export async function startPersonalAssessmentAction(
     };
   }
 
-  // Server-side redirect throws NEXT_REDIRECT, which Next.js handles.
-  // Caller never sees a return value from this branch.
-  redirect(`/ara/respond/${respondent.access_token}`);
+  return {
+    ok: true,
+    redirectTo: `/ara/respond/${respondent.access_token}`,
+  };
 }

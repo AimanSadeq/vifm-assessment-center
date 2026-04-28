@@ -1,13 +1,16 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, ArrowRight } from "lucide-react";
 
-type StartActionResult = { ok: false; error: string } | never;
+type StartActionResult =
+  | { ok: false; error: string }
+  | { ok: true; redirectTo: string };
 
 type Props = {
   action: (fd: FormData) => Promise<StartActionResult>;
@@ -15,10 +18,11 @@ type Props = {
 
 /**
  * Tiny client wrapper around the personal-assessment start server
- * action. The action redirects on success, so the only outcome we
- * surface here is the error case.
+ * action. The action returns either an error or a redirectTo URL;
+ * we navigate via router.push on success.
  */
 export function StartForm({ action }: Props) {
+  const router = useRouter();
   const [pending, start] = useTransition();
   const [language, setLanguage] = useState<"en" | "ar">("en");
   const [region, setRegion] = useState<"uae" | "saudi">("uae");
@@ -30,10 +34,11 @@ export function StartForm({ action }: Props) {
     fd.set("region", region);
     start(async () => {
       const result = await action(fd);
-      // Success path is a redirect — only failures land here.
-      if (result && "error" in result) {
+      if (!result.ok) {
         toast.error(result.error);
+        return;
       }
+      router.push(result.redirectTo);
     });
   };
 

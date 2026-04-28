@@ -76,6 +76,8 @@ const courseUpsertSchema = z.object({
   methodology_ar: z.string().nullable().optional(),
   outline_en: z.array(outlineSectionSchema).nullable().optional(),
   outline_ar: z.array(outlineSectionSchema).nullable().optional(),
+  note_en: z.string().nullable().optional(),
+  note_ar: z.string().nullable().optional(),
   source_pdf_path: z.string().nullable().optional(),
   is_active: z.boolean().default(true),
 });

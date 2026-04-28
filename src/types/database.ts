@@ -433,6 +433,9 @@ export type VifmCourse = {
   methodology_ar: string | null;
   outline_en: VifmCourseOutlineSection[] | null;
   outline_ar: VifmCourseOutlineSection[] | null;
+  // Block 7 — admin note (free text, not from the PDF). Bilingual.
+  note_en: string | null;
+  note_ar: string | null;
   source_pdf_path: string | null;
   extraction_confidence: number | null;
   is_active: boolean;

@@ -52,6 +52,7 @@ export function CourseForm(props: Props) {
   const [audienceEn, setAudienceEn] = useState(initial?.audience_en ?? "");
   const [methodologyEn, setMethodologyEn] = useState(initial?.methodology_en ?? "");
   const [outlineEnText, setOutlineEnText] = useState(outlineToText(initial?.outline_en));
+  const [noteEn, setNoteEn] = useState(initial?.note_en ?? "");
 
   const [pending, start] = useTransition();
 
@@ -89,6 +90,7 @@ export function CourseForm(props: Props) {
         audience_en: audienceEn || null,
         methodology_en: methodologyEn || null,
         outline_en: outlineParsed.length > 0 ? outlineParsed : null,
+        note_en: noteEn.trim() ? noteEn : null,
         is_active: initial?.is_active ?? true,
       });
       if ("error" in result && result.error) {
@@ -271,6 +273,23 @@ export function CourseForm(props: Props) {
           and indented <code>-</code> is a sub-bullet. Each section uses
           either flat bullets <em>or</em> sub-headers, never both. Saved
           structure round-trips back into this textarea on edit.
+        </p>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="note_en">7 · Note</Label>
+        <textarea
+          id="note_en"
+          rows={3}
+          value={noteEn}
+          onChange={(e) => setNoteEn(e.target.value)}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          placeholder="Internal note — not from the PDF, not shown to clients. e.g. 'Run only with senior cohort', 'Pricing reviewed Q1 2026'."
+        />
+        <p className="text-[11px] text-muted-foreground">
+          Free-text admin annotation. Not part of the source PDF, not
+          surfaced on client-facing reports. Shown only here and on the
+          recommender&apos;s internal panel.
         </p>
       </div>
 

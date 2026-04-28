@@ -231,7 +231,7 @@
     "saveFailed": "Save failed",
     "completeFail": "Could not finalise",
     "pickAnswer": "Pick an answer to continue.",
-    "autoSavedHint": "Your answer for this question is saved automatically. Candidate ID: {{id}}",
+    "autoSavedHint": "Your answer for this question is saved automatically.",
     "startButton": "Start AI Quiz",
     "startPreparing": "Preparing...",
     "startGenericError": "Could not start the quiz",

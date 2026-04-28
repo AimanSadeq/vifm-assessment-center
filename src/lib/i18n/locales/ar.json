@@ -231,7 +231,7 @@
     "saveFailed": "فشل الحفظ",
     "completeFail": "تعذّر الإنهاء",
     "pickAnswer": "اختر إجابة للمتابعة.",
-    "autoSavedHint": "تم حفظ إجابتك تلقائيًا. معرّف المرشح: {{id}}",
+    "autoSavedHint": "تم حفظ إجابتك تلقائيًا.",
     "startButton": "ابدأ اختبار الذكاء الاصطناعي",
     "startPreparing": "يجري التحضير...",
     "startGenericError": "تعذّر بدء الاختبار",

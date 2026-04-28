@@ -28,7 +28,6 @@ const DIFFICULTY_TONES: Record<
 
 type Props = {
   attemptId: string;
-  candidateId: string;
   competencyName: string;
   questions: QuizQuestion[];
   initialAnswers: QuizAnswer[];
@@ -37,7 +36,6 @@ type Props = {
 
 export function QuizInterface({
   attemptId,
-  candidateId,
   competencyName,
   questions,
   initialAnswers,
@@ -276,7 +274,7 @@ export function QuizInterface({
       </div>
 
       <p className="text-[11px] text-muted-foreground text-center">
-        {t("quiz.autoSavedHint", { id: candidateId })}
+        {t("quiz.autoSavedHint")}
       </p>
     </div>
   );

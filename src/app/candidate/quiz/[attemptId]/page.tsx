@@ -31,7 +31,6 @@ export default async function QuizAttemptPage({ params }: Props) {
   return (
     <QuizInterface
       attemptId={attempt.id as string}
-      candidateId={attempt.candidate_id as string}
       competencyName={competency?.name ?? "Skill"}
       questions={attempt.questions as CandidateQuizAttempt["questions"]}
       initialAnswers={attempt.answers as CandidateQuizAttempt["answers"]}

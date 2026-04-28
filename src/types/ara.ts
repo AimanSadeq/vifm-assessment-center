@@ -80,6 +80,10 @@ export type AraAssessment = {
   engagement_stage: AraEngagementStage;
   scope_label: string | null;
   scope_label_ar: string | null;
+  /** 'snapshot' (24 individual items) or 'deep_dive' (48 items). Defaults to snapshot. */
+  assessment_tier: "snapshot" | "deep_dive";
+  /** Org-stage assessments can opt-in to also serving the individual factor items to all respondents. */
+  include_individual_layer: boolean;
 };
 
 export type AraRespondent = {
@@ -100,6 +104,8 @@ export type AraRespondent = {
   reminder_count: number;
   last_reminder_sent_at: string | null;
   created_at: string;
+  /** When true, this respondent skips org-side pillar questions and only answers the individual-factor items. */
+  individual_only: boolean;
 };
 
 export type AraRespondentPillarAssignment = {
@@ -130,13 +136,15 @@ export type AraQuestion = {
   valid_until: string | null;
   is_active: boolean;
   created_at: string;
-  /** Set on the 16 personal/individual factor items added by migration 00026. NULL on org-side questions. */
+  /** Set on the personal/individual factor items added by migrations 00026 + 00027. NULL on org-side questions. */
   individual_factor_id:
     | "thinking_sense_check"
     | "results_working_practice"
     | "people_collaboration"
     | "self_adaptive_mindset"
     | null;
+  /** 'snapshot' for the always-shown 24 items; 'deep_dive_extra' for the additional 24 only shown in deep-dive tier. */
+  tier: "snapshot" | "deep_dive_extra";
 };
 
 export type AraUseCaseStage = "ideation" | "piloting" | "production" | "retired";

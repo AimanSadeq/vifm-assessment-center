@@ -76,24 +76,26 @@ export default async function AraConsultantPage() {
     id: string;
     created_at: string;
     scope_label: string | null;
+    assessment_tier: "snapshot" | "deep_dive";
     respondent: { name: string; email: string; completed_at: string | null; access_token: string | null }[] | null;
   };
   const { data: personalRows } = await sb
     .from("ara_assessments")
     .select(
-      "id, created_at, scope_label, " +
+      "id, created_at, scope_label, assessment_tier, " +
       "respondent:ara_respondents(name, email, completed_at, access_token)"
     )
     .eq("engagement_stage", "individual")
     .gte("created_at", thirtyDaysAgo)
     .order("created_at", { ascending: false })
-    .limit(8)
+    .limit(10)
     .returns<PersonalSnapshotRow[]>();
   const personalSnapshots = (personalRows ?? []).map((row) => {
     const r = row.respondent?.[0] ?? null;
     return {
       id: row.id,
       created_at: row.created_at,
+      tier: row.assessment_tier ?? "snapshot",
       name: r?.name ?? row.scope_label ?? "Anonymous",
       email: r?.email ?? null,
       completed_at: r?.completed_at ?? null,
@@ -101,6 +103,7 @@ export default async function AraConsultantPage() {
     };
   });
   const personalCompletedCount = personalSnapshots.filter((p) => p.completed_at).length;
+  const personalDeepDiveCount = personalSnapshots.filter((p) => p.tier === "deep_dive").length;
 
   // Aggregate: total + per-status counts for the pipeline funnel.
   const all = rows ?? [];
@@ -134,7 +137,12 @@ export default async function AraConsultantPage() {
             <StatChip icon={ClipboardList} label="Total"     value={total}     tone="blue" />
             <StatChip icon={CheckCircle2}  label="Completed" value={completed} tone="emerald" />
             <StatChip icon={Snowflake}     label="Frozen"    value={frozen}    tone="teal" />
-            <Link href="/ara/consultant/assessments/new" className="ms-2">
+            <Link href="/ara/consultant/personal-deep-dive/new" className="ms-2">
+              <Button variant="outline" className="gap-2">
+                <User className="h-4 w-4" /> New deep-dive
+              </Button>
+            </Link>
+            <Link href="/ara/consultant/assessments/new">
               <Button className="gap-2">
                 <Plus className="h-4 w-4" /> New assessment
               </Button>
@@ -198,6 +206,7 @@ export default async function AraConsultantPage() {
                 </span>
                 <Badge variant="secondary" className="text-[10px]">
                   {personalSnapshots.length} started · {personalCompletedCount} completed
+                  {personalDeepDiveCount > 0 && ` · ${personalDeepDiveCount} deep-dive`}
                 </Badge>
               </div>
               <Link
@@ -214,6 +223,7 @@ export default async function AraConsultantPage() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
+                  <TableHead>Tier</TableHead>
                   <TableHead>Started</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="w-12"></TableHead>
@@ -224,6 +234,17 @@ export default async function AraConsultantPage() {
                   <TableRow key={p.id}>
                     <TableCell className="font-medium">{p.name}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{p.email}</TableCell>
+                    <TableCell>
+                      {p.tier === "deep_dive" ? (
+                        <Badge className="bg-violet-600 hover:bg-violet-600 text-[10px]">
+                          Deep-dive · 48 items
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[10px]">
+                          Snapshot · 24 items
+                        </Badge>
+                      )}
+                    </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       {new Date(p.created_at).toLocaleDateString("en-GB", {
                         day: "numeric", month: "short", year: "numeric",

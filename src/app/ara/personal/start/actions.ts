@@ -123,6 +123,10 @@ export async function startPersonalAssessmentAction(
       question_bank_version_id: activeBank.id,
       status: "active",
       phase: "phase1",
+      // Explicit so future schema-default changes don't accidentally
+      // up-tier the free flow into the paid 48-item bank.
+      assessment_tier: "snapshot",
+      include_individual_layer: false,
     })
     .select("id")
     .single<{ id: string }>();

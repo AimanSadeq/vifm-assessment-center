@@ -60,53 +60,84 @@ export async function loadRespondentByToken(
 /**
  * Load the Layer-1 question set applicable to this respondent.
  *
- * Two modes:
+ * Three deployment modes:
  *
- *   Individual stage — assessment.engagement_stage === 'individual'
- *     Returns the 16 self-assessment items where individual_factor_id
- *     IS NOT NULL. Pillar assignment is ignored (the respondent is the
- *     person themselves; there's no consultant-curated pillar set).
+ *   A) Individual stage (engagement_stage === 'individual')
+ *      Personal AI Readiness only — no pillar assignments needed.
+ *      Filter by individual_factor_id IS NOT NULL.
+ *      assessment_tier='snapshot' → only tier='snapshot' (24 items)
+ *      assessment_tier='deep_dive' → all individual items (48 items)
  *
- *   Org-side stages — department / division / enterprise
- *     Returns the original behaviour: filter by assessment version,
- *     respondent's assigned pillars, region, sector. EXCLUDES the
- *     individual-factor items (added by migration 00026) so org-side
- *     respondents never see them, even when assigned to the talent
- *     pillar where the seed lives.
+ *   B) Org stage with include_individual_layer=true
+ *      Respondent answers their assigned pillar questions PLUS the
+ *      individual-factor items (24 or 48 depending on assessment_tier).
+ *      Unless respondent.individual_only=true — then they skip pillar
+ *      questions and only do the individual layer.
+ *
+ *   C) Org stage with include_individual_layer=false (the original behaviour)
+ *      Pillar questions only, individual-factor items excluded.
  */
 export async function loadQuestionsForRespondent(
   ctx: AraRespondentContext
 ): Promise<AraQuestion[]> {
   const sb = createServiceClient();
+  const versionId = ctx.assessment.question_bank_version_id;
+  if (!versionId) return [];
 
-  if (!ctx.assessment.question_bank_version_id) return [];
+  const isIndividualStage = ctx.assessment.engagement_stage === "individual";
+  const includeIndividualLayer = !!ctx.assessment.include_individual_layer;
+  const respondentIndividualOnly = !!ctx.respondent.individual_only;
 
-  const isIndividual = ctx.assessment.engagement_stage === "individual";
+  const wantsPillar = !isIndividualStage && !respondentIndividualOnly;
+  const wantsIndividual = isIndividualStage || includeIndividualLayer;
 
-  // For individual stage we don't need pillar assignments — the bank
-  // is keyed off individual_factor_id.
-  if (!isIndividual && ctx.assignedPillars.length === 0) return [];
+  if (!wantsPillar && !wantsIndividual) return [];
 
-  let query = sb
-    .from("ara_questions")
-    .select("*")
-    .eq("version_id", ctx.assessment.question_bank_version_id)
-    .eq("layer", 1)
-    .eq("is_active", true);
-
-  if (isIndividual) {
-    query = query.not("individual_factor_id", "is", null);
-  } else {
-    query = query
-      .in("pillar_id", ctx.assignedPillars)
-      .is("individual_factor_id", null);
+  // Pillar assignment is required when serving pillar questions.
+  if (wantsPillar && ctx.assignedPillars.length === 0) {
+    // No pillar questions; if also no individual layer there's nothing to serve.
+    if (!wantsIndividual) return [];
   }
 
-  const { data: questions } = await query.returns<AraQuestion[]>();
+  const collected: AraQuestion[] = [];
 
-  return (questions ?? []).filter((q) => {
-    const regionOk = q.region === "both" || q.region === ctx.assessment.region;
-    const sectorOk = q.sector === "all" || q.sector === ctx.assessment.sector;
+  // ── Pillar questions (Mode B without individual_only, Mode C) ──
+  if (wantsPillar && ctx.assignedPillars.length > 0) {
+    const { data } = await sb
+      .from("ara_questions")
+      .select("*")
+      .eq("version_id", versionId)
+      .eq("layer", 1)
+      .eq("is_active", true)
+      .in("pillar_id", ctx.assignedPillars)
+      .is("individual_factor_id", null)
+      .returns<AraQuestion[]>();
+    collected.push(...(data ?? []));
+  }
+
+  // ── Individual layer (Mode A, Mode B) ──
+  if (wantsIndividual) {
+    let q = sb
+      .from("ara_questions")
+      .select("*")
+      .eq("version_id", versionId)
+      .eq("layer", 1)
+      .eq("is_active", true)
+      .not("individual_factor_id", "is", null);
+
+    if (ctx.assessment.assessment_tier === "snapshot") {
+      q = q.eq("tier", "snapshot");
+    }
+    // 'deep_dive' includes both 'snapshot' and 'deep_dive_extra'
+
+    const { data } = await q.returns<AraQuestion[]>();
+    collected.push(...(data ?? []));
+  }
+
+  // Region/sector filter applies to all questions uniformly.
+  return collected.filter((qq) => {
+    const regionOk = qq.region === "both" || qq.region === ctx.assessment.region;
+    const sectorOk = qq.sector === "all" || qq.sector === ctx.assessment.sector;
     return regionOk && sectorOk;
   });
 }

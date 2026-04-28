@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   PieChart,
@@ -48,6 +49,19 @@ export function PersonalStatistics({
   byDomain,
 }: PersonalStatisticsProps) {
   const { t } = useTranslation();
+
+  // Recharts' ResponsiveContainer caches its internal width/height from
+  // the first measurement of its parent. On initial hydration the
+  // parent grid cell often reports 0px before flexbox/grid layout
+  // settles, so the container caches 0×0 and the chart paths render
+  // empty even after a later resize event. Bumping a `chartKey` after
+  // a short delay fully remounts the chart subtree so it remeasures
+  // from a settled layout.
+  const [chartKey, setChartKey] = useState(0);
+  useEffect(() => {
+    const id = window.setTimeout(() => setChartKey(1), 100);
+    return () => window.clearTimeout(id);
+  }, []);
   const total = assessed + notAssessed;
   const progressData =
     total === 0
@@ -91,7 +105,7 @@ export function PersonalStatistics({
             {t("candidateSkills.stats.progressBlurb")}
           </p>
           <div className="h-44">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer key={chartKey} width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={progressData}
@@ -150,7 +164,7 @@ export function PersonalStatistics({
                 {t("candidateSkills.stats.noProfileSkills")}
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer key={chartKey} width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={categoryData}
@@ -195,7 +209,7 @@ export function PersonalStatistics({
             {t("candidateSkills.stats.avgByDomainBlurb")}
           </p>
           <div className="h-44">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer key={chartKey} width="100%" height="100%">
               <BarChart data={barData} margin={{ top: 4, right: 4, bottom: 0, left: -16 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
                 <XAxis

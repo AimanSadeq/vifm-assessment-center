@@ -50,13 +50,14 @@ export async function extractCoursesFromPdfsAction(
   }
 
   const sb = await createClient();
+  // Only id/name/description are used by the extractor prompt — keep
+  // the SELECT minimal so this works on environments where the Arabic
+  // competency columns from later migrations haven't been applied.
   const { data: comps, error: compErr } = await sb
     .from("competencies")
-    .select("id, name, description, cluster_id, name_ar, description_ar")
+    .select("id, name, description")
     .order("name");
   if (compErr) return { ok: false, error: `Couldn't load competencies: ${compErr.message}` };
-  // Cast via unknown — the extractor only reads {id, name, description},
-  // so a partial Competency shape is fine for this use case.
   const competencies = (comps ?? []) as unknown as Competency[];
 
   // Process in parallel, capped — 25 PDFs at once would hammer the

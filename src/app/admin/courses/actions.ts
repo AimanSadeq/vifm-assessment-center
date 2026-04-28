@@ -5,10 +5,8 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import type {
-  VifmCourse,
   VifmCourseLevel,
   VifmVertical,
-  VifmCourseOutlineSection,
 } from "@/types/database";
 
 async function requireAdmin() {
@@ -35,6 +33,24 @@ const PILLAR_IDS = [
   "governance", "operations", "model_management",
 ] as const;
 
+// Block 6 outline — supports both shapes (flat bullets, nested subsections).
+// See VifmCourseOutlineSection in src/types/database.ts for the field
+// semantics. Each section uses ONE shape, never both.
+const outlineBulletSchema = z.object({
+  text: z.string(),
+  sub_bullets: z.array(z.string()).optional(),
+});
+const outlineSectionSchema = z.object({
+  main_header: z.string(),
+  bullets: z.array(outlineBulletSchema).optional(),
+  subsections: z
+    .array(z.object({
+      sub_header: z.string(),
+      bullets: z.array(outlineBulletSchema),
+    }))
+    .optional(),
+});
+
 const courseUpsertSchema = z.object({
   id: z.string().uuid().optional(),
   code: z.string().min(1).max(40).nullable().optional(),
@@ -58,14 +74,8 @@ const courseUpsertSchema = z.object({
   objectives_ar: z.array(z.string()).nullable().optional(),
   methodology_en: z.string().nullable().optional(),
   methodology_ar: z.string().nullable().optional(),
-  outline_en: z
-    .array(z.object({ title: z.string(), bullets: z.array(z.string()) }))
-    .nullable()
-    .optional(),
-  outline_ar: z
-    .array(z.object({ title: z.string(), bullets: z.array(z.string()) }))
-    .nullable()
-    .optional(),
+  outline_en: z.array(outlineSectionSchema).nullable().optional(),
+  outline_ar: z.array(outlineSectionSchema).nullable().optional(),
   source_pdf_path: z.string().nullable().optional(),
   is_active: z.boolean().default(true),
 });

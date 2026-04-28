@@ -17,6 +17,7 @@ import {
   type VifmVertical,
 } from "@/types/database";
 import { upsertCourseAction } from "../actions";
+import { parseOutlineText, outlineToText } from "./outline-parser";
 
 type Props =
   | { mode: "create" }
@@ -50,6 +51,7 @@ export function CourseForm(props: Props) {
   );
   const [audienceEn, setAudienceEn] = useState(initial?.audience_en ?? "");
   const [methodologyEn, setMethodologyEn] = useState(initial?.methodology_en ?? "");
+  const [outlineEnText, setOutlineEnText] = useState(outlineToText(initial?.outline_en));
 
   const [pending, start] = useTransition();
 
@@ -66,6 +68,7 @@ export function CourseForm(props: Props) {
 
       const targetCompsArr = lineToArray(targetCompsEnText);
       const objectivesArr = lineToArray(objectivesEnText);
+      const outlineParsed = parseOutlineText(outlineEnText);
 
       const result = await upsertCourseAction({
         id: initial?.id,
@@ -85,6 +88,7 @@ export function CourseForm(props: Props) {
         objectives_en: objectivesArr.length > 0 ? objectivesArr : null,
         audience_en: audienceEn || null,
         methodology_en: methodologyEn || null,
+        outline_en: outlineParsed.length > 0 ? outlineParsed : null,
         is_active: initial?.is_active ?? true,
       });
       if ("error" in result && result.error) {
@@ -243,6 +247,33 @@ export function CourseForm(props: Props) {
         />
       </div>
 
+      <div className="space-y-1.5">
+        <Label htmlFor="outline_en">6 · Detailed course outline</Label>
+        <textarea
+          id="outline_en"
+          rows={14}
+          value={outlineEnText}
+          onChange={(e) => setOutlineEnText(e.target.value)}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono"
+          placeholder={[
+            "# MAIN HEADER (use # at the start of the line)",
+            "## Sub-header (use ## — optional, only when the section has named sub-headers)",
+            "- Bullet (use - or • or *)",
+            "  - Sub-bullet (indent 2+ spaces, then dash)",
+            "",
+            "# ANOTHER MAIN HEADER",
+            "- Bullet without any sub-header above it works too",
+          ].join("\n")}
+        />
+        <p className="text-[11px] text-muted-foreground">
+          Markdown-style format — <code>#</code> starts a main header,{" "}
+          <code>##</code> starts a sub-header, <code>-</code> is a bullet,
+          and indented <code>-</code> is a sub-bullet. Each section uses
+          either flat bullets <em>or</em> sub-headers, never both. Saved
+          structure round-trips back into this textarea on edit.
+        </p>
+      </div>
+
       <div className="flex items-center gap-2">
         <Button type="submit" disabled={pending || !titleEn.trim()}>
           {pending && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
@@ -255,10 +286,9 @@ export function CourseForm(props: Props) {
 
       <p className="text-[11px] text-muted-foreground">
         Six-block order: 1 Overview · 2 Target competencies · 3 Objectives ·
-        4 Target audience · 5 Methodology · 6 Detailed outline. Manual form
-        captures blocks 1-5; block 6 (the structured outline) needs the
-        PDF importer or the block-6 editor that ships in Day 3 alongside
-        the AC competency / ARA pillar mapping panel.
+        4 Target audience · 5 Methodology · 6 Detailed outline — all
+        editable here. Day 3 adds the AC competency / ARA pillar mapping
+        panel and an Arabic-side editor.
       </p>
     </form>
   );

@@ -110,7 +110,7 @@ function buildInstructions(competencies: Competency[]): string {
     `  "audience_ar": "<null or Arabic>",\n` +
     `  "methodology_en": "<Block 5 (COURSE METHODOLOGY) verbatim>",\n` +
     `  "methodology_ar": null | "...",\n` +
-    `  "outline_en": [{ "title": "<section heading from Block 6 (COURSE OUTLINE)>", "bullets": ["<each sub-bullet>", ...] }, ...],\n` +
+    `  "outline_en": [<each top-level section from Block 6 (COURSE OUTLINE) — see SHAPE below>, ...],\n` +
     `  "outline_ar": null | [...],\n` +
     `  "competency_tags": [\n` +
     `    { "competency_id": "<id from VIFM AC list below>",\n` +
@@ -127,6 +127,34 @@ function buildInstructions(competencies: Competency[]): string {
     `  ],\n` +
     `  "extraction_confidence": <0.0-1.0; how cleanly the PDF mapped to the 6-block structure>\n` +
     `}\n\n` +
+    `── BLOCK 6 OUTLINE SHAPE ──\n` +
+    `Each top-level section in outline_en / outline_ar uses ONE of two shapes:\n` +
+    `\n` +
+    `Shape A — flat bullets (no sub-headers, e.g. Cyber Enabled Crime):\n` +
+    `{ "main_header": "CYBER THREAT DETECTION",\n` +
+    `  "bullets": [\n` +
+    `    { "text": "Identifying common cyber threats and attack vectors." },\n` +
+    `    { "text": "Analyzing indicators of compromise (IOCs)." }\n` +
+    `  ] }\n` +
+    `\n` +
+    `Shape B — nested sub-headers + sub-bullets (e.g. AI Strategy Professional):\n` +
+    `{ "main_header": "FOUNDATIONS OF AI STRATEGY",\n` +
+    `  "subsections": [\n` +
+    `    { "sub_header": "Strategic Foresight",\n` +
+    `      "bullets": [\n` +
+    `        { "text": "Understanding the AI landscape and its evolution",\n` +
+    `          "sub_bullets": [\n` +
+    `            "Historical context and key milestones",\n` +
+    `            "Current trends and emerging technologies"\n` +
+    `          ] },\n` +
+    `        { "text": "Identifying strategic opportunities and threats posed by AI" }\n` +
+    `      ] }\n` +
+    `  ] }\n` +
+    `\n` +
+    `Use Shape A when the section has bullets directly under the main header. ` +
+    `Use Shape B when the section has named sub-headers each containing bullets. ` +
+    `Use sub_bullets only when the source PDF has a third indentation level under a bullet (commonly bullets prefixed with "o" in the layout). ` +
+    `Each section picks ONE shape — never mix bullets and subsections in the same section.\n\n` +
     `── COMPETENCY TAGGING (BEHAVIOURAL AXIS) ──\n` +
     `These are VIFM's AC behavioural competencies (how a person works), NOT topical capabilities. ` +
     `Map a course to a competency only when the course materially develops that *behaviour*, not just ` +

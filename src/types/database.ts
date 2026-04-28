@@ -378,9 +378,34 @@ export const VIFM_VERTICAL_LABELS: Record<VifmVertical, string> = {
 
 export type VifmCourseLevel = "foundation" | "intermediate" | "advanced";
 
+// Block 6 (COURSE OUTLINE) supports 2-4 levels of depth depending on
+// how the source PDF is structured.
+//
+// Simple 2-level case (e.g. "Cyber Enabled Crime"):
+//   main_header + bullets[]
+//
+// 3-4 level case (e.g. "AI Strategy Professional"):
+//   main_header → subsections[] → bullets[] → sub_bullets[]
+//
+// The two shapes coexist on a single course only when needed —
+// most courses use one or the other consistently.
+
+export type VifmCourseOutlineBullet = {
+  text: string;
+  sub_bullets?: string[];
+};
+
+export type VifmCourseOutlineSubsection = {
+  sub_header: string;
+  bullets: VifmCourseOutlineBullet[];
+};
+
 export type VifmCourseOutlineSection = {
-  title: string;
-  bullets: string[];
+  main_header: string;
+  // Flat-bullets shape: used when a section has no sub-headers.
+  bullets?: VifmCourseOutlineBullet[];
+  // Nested shape: used when a section has sub-headers.
+  subsections?: VifmCourseOutlineSubsection[];
 };
 
 export type VifmCourse = {

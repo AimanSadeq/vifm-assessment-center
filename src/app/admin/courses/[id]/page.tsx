@@ -5,20 +5,49 @@ import { createClient } from "@/lib/supabase/server";
 import { BackLink } from "@/components/shared/back-link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { CourseForm } from "../_components/course-form";
+import { CourseTagsPanel } from "../_components/course-tags-panel";
 import type { VifmCourse } from "@/types/database";
 
 type Props = { params: { id: string } };
 
 export default async function EditCoursePage({ params }: Props) {
   const sb = await createClient();
-  const { data, error } = await sb
-    .from("vifm_courses")
-    .select("*")
-    .eq("id", params.id)
-    .maybeSingle();
-  if (error || !data) return notFound();
 
-  const course = data as VifmCourse;
+  const [courseRes, compTagsRes, pillarTagsRes, allCompsRes] = await Promise.all([
+    sb.from("vifm_courses").select("*").eq("id", params.id).maybeSingle(),
+    sb
+      .from("vifm_course_competency_tags")
+      .select("id, competency_id, relevance_weight, rationale, source")
+      .eq("course_id", params.id),
+    sb
+      .from("vifm_course_pillar_tags")
+      .select("id, pillar_id, relevance_weight, rationale, source")
+      .eq("course_id", params.id),
+    // The full AC competency menu so the panel can offer add-tag pickers.
+    // RLS on competencies grants authenticated read; nothing fancy needed.
+    sb.from("competencies").select("id, name").order("name"),
+  ]);
+
+  if (courseRes.error || !courseRes.data) return notFound();
+
+  const course = courseRes.data as VifmCourse;
+  const competencyTags = (compTagsRes.data ?? []) as Array<{
+    id: string;
+    competency_id: string;
+    relevance_weight: 1 | 2 | 3;
+    rationale: string | null;
+    source: "manual" | "ai_proposed" | "ai_accepted";
+  }>;
+  const pillarTags = (pillarTagsRes.data ?? []) as Array<{
+    id: string;
+    pillar_id:
+      | "strategy" | "data" | "technology" | "talent" | "culture"
+      | "governance" | "operations" | "model_management";
+    relevance_weight: 1 | 2 | 3;
+    rationale: string | null;
+    source: "manual" | "ai_proposed" | "ai_accepted";
+  }>;
+  const allCompetencies = (allCompsRes.data ?? []) as Array<{ id: string; name: string }>;
 
   return (
     <div className="space-y-4">
@@ -27,14 +56,23 @@ export default async function EditCoursePage({ params }: Props) {
         <CardHeader>
           <CardTitle>{course.title_en}</CardTitle>
           <CardDescription>
-            Edit the catalogue entry. The mapping panel (AC competencies +
-            ARA pillars) ships in Day 3 of this workstream.
+            Edit the catalogue entry. The mapping panel below shows the
+            AC competency + ARA pillar tags that drive the recommender —
+            edit them when you spot an over- or under-tag from the AI
+            extraction.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <CourseForm mode="edit" course={course} />
         </CardContent>
       </Card>
+
+      <CourseTagsPanel
+        courseId={course.id}
+        initialCompetencyTags={competencyTags}
+        initialPillarTags={pillarTags}
+        allCompetencies={allCompetencies}
+      />
     </div>
   );
 }

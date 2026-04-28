@@ -21,7 +21,18 @@ async function requireAdmin() {
 }
 
 export type ExtractRowResult =
-  | { ok: true; filename: string; payload: ExtractedCoursePayload }
+  | {
+      ok: true;
+      filename: string;
+      payload: ExtractedCoursePayload;
+      // When the extracted record matches an existing course (by code,
+      // or falling back to title_en case-insensitive), the existing
+      // course's id and a friendly label come back so the import UI can
+      // show "Replace existing" and the user can choose to overwrite or
+      // skip per-row before committing.
+      existing_course_id: string | null;
+      existing_course_label: string | null;
+    }
   | { ok: false; filename: string; error: string };
 
 /**
@@ -82,7 +93,13 @@ export async function extractCoursesFromPdfsAction(
         if (!payload) {
           results.push({ ok: false, filename: file.name, error: "AI extraction failed — see server logs" });
         } else {
-          results.push({ ok: true, filename: file.name, payload });
+          results.push({
+            ok: true,
+            filename: file.name,
+            payload,
+            existing_course_id: null,
+            existing_course_label: null,
+          });
         }
       } catch (e) {
         results.push({
@@ -95,6 +112,55 @@ export async function extractCoursesFromPdfsAction(
   }
 
   await Promise.all(Array.from({ length: Math.min(concurrency, files.length) }, () => worker()));
+
+  // Duplicate detection — match each successful extraction against the
+  // existing catalogue so the UI can show "Replace existing" per row.
+  // Match priority: 1) code (case-insensitive) when the extraction
+  // produced one, 2) title_en (case-insensitive). Code wins because a
+  // re-uploaded PDF whose title was rephrased slightly is still the
+  // same course.
+  const successRows = results.filter((r): r is Extract<ExtractRowResult, { ok: true }> => r.ok);
+  if (successRows.length > 0) {
+    const codes = successRows
+      .map((r) => r.payload.code?.trim().toLowerCase())
+      .filter((c): c is string => !!c);
+    const titles = successRows.map((r) => r.payload.title_en.trim().toLowerCase());
+
+    const { data: existingByCode } = codes.length > 0
+      ? await sb
+          .from("vifm_courses")
+          .select("id, title_en, code")
+          .not("code", "is", null)
+          .in("code", codes)
+      : { data: [] as Array<{ id: string; title_en: string; code: string | null }> };
+
+    const { data: existingByTitle } = await sb
+      .from("vifm_courses")
+      .select("id, title_en, code")
+      .in("title_en", successRows.map((r) => r.payload.title_en));
+
+    type ExistingRow = { id: string; title_en: string; code: string | null };
+    const codeIndex = new Map<string, ExistingRow>();
+    for (const row of (existingByCode ?? []) as ExistingRow[]) {
+      if (row.code) codeIndex.set(row.code.toLowerCase(), row);
+    }
+    const titleIndex = new Map<string, ExistingRow>();
+    for (const row of (existingByTitle ?? []) as ExistingRow[]) {
+      titleIndex.set(row.title_en.toLowerCase(), row);
+    }
+
+    for (const row of successRows) {
+      const code = row.payload.code?.trim().toLowerCase();
+      const title = row.payload.title_en.trim().toLowerCase();
+      const match = (code && codeIndex.get(code)) || titleIndex.get(title) || null;
+      if (match) {
+        row.existing_course_id = match.id;
+        row.existing_course_label = match.code
+          ? `${match.title_en} (${match.code})`
+          : match.title_en;
+      }
+    }
+  }
 
   // Stable ordering by original upload order
   const orderByName = new Map(files.map((f, i) => [f.name, i]));
@@ -113,13 +179,17 @@ export async function createCoursesFromProposalsAction(
   proposals: Array<{
     payload: ExtractedCoursePayload;
     filename: string;
+    // When set, the action UPDATES the existing course rather than
+    // INSERTing a new one — used for the "Replace existing" path on
+    // re-imports.
+    replace_course_id?: string | null;
   }>
 ): Promise<{
   ok: false;
   error: string;
 } | {
   ok: true;
-  created: Array<{ filename: string; courseId: string }>;
+  created: Array<{ filename: string; courseId: string; replaced: boolean }>;
   failed: Array<{ filename: string; error: string }>;
 }> {
   const denied = await requireAdmin();
@@ -128,10 +198,10 @@ export async function createCoursesFromProposalsAction(
 
   const sb = await createClient();
 
-  const created: Array<{ filename: string; courseId: string }> = [];
+  const created: Array<{ filename: string; courseId: string; replaced: boolean }> = [];
   const failed: Array<{ filename: string; error: string }> = [];
 
-  for (const { payload, filename } of proposals) {
+  for (const { payload, filename, replace_course_id } of proposals) {
     const VALID_LEVELS: VifmCourseLevel[] = ["foundation", "intermediate", "advanced"];
     const VALID_VERTICALS: VifmVertical[] = [
       "finance", "investment", "treasury", "accounting", "banking", "tax",
@@ -174,16 +244,43 @@ export async function createCoursesFromProposalsAction(
       is_active: true,
     };
 
-    const insertRes = await sb
-      .from("vifm_courses")
-      .insert(courseRow)
-      .select("id")
-      .single();
-    if (insertRes.error || !insertRes.data) {
-      failed.push({ filename, error: insertRes.error?.message ?? "Course insert failed" });
-      continue;
+    let courseId: string;
+    let replaced = false;
+    if (replace_course_id) {
+      const updateRes = await sb
+        .from("vifm_courses")
+        .update(courseRow)
+        .eq("id", replace_course_id)
+        .select("id")
+        .single();
+      if (updateRes.error || !updateRes.data) {
+        failed.push({
+          filename,
+          error: updateRes.error?.message ?? "Course replace failed",
+        });
+        continue;
+      }
+      courseId = updateRes.data.id as string;
+      replaced = true;
+      // Wipe the old tag mappings — Day 2's import flow regenerates
+      // them from the freshly-extracted payload below. We don't try
+      // to merge old + new because the AI's tag set may legitimately
+      // shift between extractions of two different revisions of the
+      // same course outline.
+      await sb.from("vifm_course_competency_tags").delete().eq("course_id", courseId);
+      await sb.from("vifm_course_pillar_tags").delete().eq("course_id", courseId);
+    } else {
+      const insertRes = await sb
+        .from("vifm_courses")
+        .insert(courseRow)
+        .select("id")
+        .single();
+      if (insertRes.error || !insertRes.data) {
+        failed.push({ filename, error: insertRes.error?.message ?? "Course insert failed" });
+        continue;
+      }
+      courseId = insertRes.data.id as string;
     }
-    const courseId = insertRes.data.id as string;
 
     // Tag rows — best-effort. If they fail we keep the course (the
     // catalogue entry is still useful) but report the partial failure.
@@ -222,7 +319,7 @@ export async function createCoursesFromProposalsAction(
       }
     }
 
-    created.push({ filename, courseId });
+    created.push({ filename, courseId, replaced });
   }
 
   revalidatePath("/admin/courses");

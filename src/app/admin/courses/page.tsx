@@ -14,6 +14,7 @@ import {
   type VifmCourse,
   type VifmVertical,
 } from "@/types/database";
+import { DeleteCourseButton } from "./_components/delete-course-button";
 
 type CourseRow = Pick<
   VifmCourse,
@@ -141,6 +142,7 @@ export default async function CoursesListPage() {
                   <TableHead>Level</TableHead>
                   <TableHead>Duration</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="w-12"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -187,6 +189,9 @@ export default async function CoursesListPage() {
                           Hidden
                         </Badge>
                       )}
+                    </TableCell>
+                    <TableCell className="text-right pr-2">
+                      <DeleteCourseButton courseId={c.id} title={c.title_en} />
                     </TableCell>
                   </TableRow>
                 ))}

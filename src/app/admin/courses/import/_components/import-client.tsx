@@ -6,15 +6,13 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Sparkles, Upload, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Loader2, Sparkles, Upload, CheckCircle2, AlertTriangle, RotateCcw } from "lucide-react";
 import {
   extractCoursesFromPdfsAction,
   createCoursesFromProposalsAction,
   type ExtractRowResult,
 } from "../actions";
 import { VIFM_VERTICAL_LABELS } from "@/types/database";
-
-type AcceptedRow = Extract<ExtractRowResult, { ok: true }> & { accepted: boolean };
 
 export function CoursesImportClient() {
   const router = useRouter();
@@ -23,6 +21,10 @@ export function CoursesImportClient() {
   const [committing, startCommit] = useTransition();
   const [results, setResults] = useState<ExtractRowResult[]>([]);
   const [accepted, setAccepted] = useState<Record<string, boolean>>({});
+  // Per-row replace toggle. Defaults to true when an existing match
+  // was found — overwriting is the more common intent on re-import,
+  // but admin can opt out per-row to import as a separate course.
+  const [replaceMatched, setReplaceMatched] = useState<Record<string, boolean>>({});
 
   const handleFiles = (selected: FileList | null) => {
     if (!selected) return;
@@ -53,24 +55,52 @@ export function CoursesImportClient() {
       }
       setResults(r.results);
       // default-accept every successful row; admin can deselect
-      const init: Record<string, boolean> = {};
+      const initAccepted: Record<string, boolean> = {};
+      const initReplace: Record<string, boolean> = {};
       for (const row of r.results) {
-        if (row.ok) init[row.filename] = true;
+        if (row.ok) {
+          initAccepted[row.filename] = true;
+          // Default to replace when a match was found — re-uploading
+          // a PDF with the same code/title almost always means
+          // "update", not "create a duplicate".
+          initReplace[row.filename] = !!row.existing_course_id;
+        }
       }
-      setAccepted(init);
+      setAccepted(initAccepted);
+      setReplaceMatched(initReplace);
       const okCount = r.results.filter((x) => x.ok).length;
-      toast.success(`Extracted ${okCount} of ${r.results.length} PDFs`);
+      const matchedCount = r.results.filter((x) => x.ok && x.existing_course_id).length;
+      toast.success(
+        matchedCount > 0
+          ? `Extracted ${okCount} of ${r.results.length} PDFs · ${matchedCount} match existing course${matchedCount === 1 ? "" : "s"}`
+          : `Extracted ${okCount} of ${r.results.length} PDFs`
+      );
     });
   };
 
   const successRows = results.filter((r): r is Extract<ExtractRowResult, { ok: true }> => r.ok);
   const failedRows = results.filter((r): r is Extract<ExtractRowResult, { ok: false }> => !r.ok);
-  const acceptedCount = successRows.filter((r) => accepted[r.filename]).length;
+  const acceptedRows = successRows.filter((r) => accepted[r.filename]);
+  const acceptedCount = acceptedRows.length;
+  const willReplaceCount = acceptedRows.filter(
+    (r) => r.existing_course_id && replaceMatched[r.filename]
+  ).length;
+  const willCreateCount = acceptedCount - willReplaceCount;
 
   const handleCommit = () => {
     const proposals = successRows
       .filter((r) => accepted[r.filename])
-      .map((r) => ({ payload: r.payload, filename: r.filename }));
+      .map((r) => ({
+        payload: r.payload,
+        filename: r.filename,
+        // Only send replace_course_id when a match was found AND the
+        // row's replace toggle is on. Otherwise the action creates a
+        // new course row.
+        replace_course_id:
+          r.existing_course_id && (replaceMatched[r.filename] ?? false)
+            ? r.existing_course_id
+            : null,
+      }));
     if (proposals.length === 0) {
       toast.error("Nothing accepted to create");
       return;
@@ -81,9 +111,13 @@ export function CoursesImportClient() {
         toast.error(r.error);
         return;
       }
-      const msg = `Created ${r.created.length} course${r.created.length === 1 ? "" : "s"}` +
-        (r.failed.length > 0 ? ` (${r.failed.length} failed — see logs)` : "");
-      toast.success(msg);
+      const replacedCount = r.created.filter((c) => c.replaced).length;
+      const newCount = r.created.length - replacedCount;
+      const parts: string[] = [];
+      if (newCount > 0) parts.push(`${newCount} created`);
+      if (replacedCount > 0) parts.push(`${replacedCount} replaced`);
+      if (r.failed.length > 0) parts.push(`${r.failed.length} failed`);
+      toast.success(parts.join(" · ") || "Done");
       router.push("/admin/courses");
     });
   };
@@ -162,7 +196,11 @@ export function CoursesImportClient() {
                 className="gap-2"
               >
                 {committing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                Create {acceptedCount} course{acceptedCount === 1 ? "" : "s"}
+                {willReplaceCount > 0 && willCreateCount > 0
+                  ? `Save ${acceptedCount} (${willCreateCount} new · ${willReplaceCount} replaced)`
+                  : willReplaceCount > 0
+                    ? `Replace ${willReplaceCount} course${willReplaceCount === 1 ? "" : "s"}`
+                    : `Create ${acceptedCount} course${acceptedCount === 1 ? "" : "s"}`}
               </Button>
             </div>
           </div>
@@ -217,6 +255,39 @@ export function CoursesImportClient() {
                         {p.code && <Badge variant="outline" className="text-[10px] font-mono">{p.code}</Badge>}
                       </div>
                     </div>
+
+                    {row.existing_course_id && (
+                      <div
+                        className={`flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-[11px] ${
+                          replaceMatched[row.filename]
+                            ? "bg-amber-50 border-amber-200 text-amber-900"
+                            : "bg-muted/40 border-muted text-muted-foreground"
+                        }`}
+                      >
+                        <RotateCcw className="h-3 w-3 shrink-0" />
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={replaceMatched[row.filename] ?? false}
+                            onChange={(e) =>
+                              setReplaceMatched((prev) => ({
+                                ...prev,
+                                [row.filename]: e.target.checked,
+                              }))
+                            }
+                            className="h-3.5 w-3.5 rounded border-input"
+                          />
+                          <span>
+                            {replaceMatched[row.filename]
+                              ? "Replace existing course"
+                              : "Existing course found — uncheck to import as new"}
+                          </span>
+                        </label>
+                        <span className="text-muted-foreground/80 truncate">
+                          ↳ {row.existing_course_label}
+                        </span>
+                      </div>
+                    )}
 
                     {p.competency_tags.length > 0 && (
                       <div className="text-[11px] text-muted-foreground">

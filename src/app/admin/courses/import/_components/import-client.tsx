@@ -25,6 +25,9 @@ export function CoursesImportClient() {
   // was found — overwriting is the more common intent on re-import,
   // but admin can opt out per-row to import as a separate course.
   const [replaceMatched, setReplaceMatched] = useState<Record<string, boolean>>({});
+  // Drag-state for the drop zone — drives the highlighted style
+  // when files are being dragged over.
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const handleFiles = (selected: FileList | null) => {
     if (!selected) return;
@@ -37,6 +40,28 @@ export function CoursesImportClient() {
       const existingNames = new Set(prev.map((f) => f.name));
       return [...prev, ...arr.filter((f) => !existingNames.has(f.name))];
     });
+  };
+
+  // Drag-and-drop handlers. preventDefault on dragOver is required
+  // for the drop event to fire at all; the rest just maintain the
+  // highlighted style + read e.dataTransfer.files on drop.
+  const onDropZoneDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDragOver) setIsDragOver(true);
+  };
+  const onDropZoneDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+  const onDropZoneDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    if (e.dataTransfer?.files) {
+      handleFiles(e.dataTransfer.files);
+    }
   };
 
   const handleExtract = () => {
@@ -124,14 +149,22 @@ export function CoursesImportClient() {
 
   return (
     <div className="space-y-4">
-      {/* Drop zone */}
+      {/* Drop zone — both click-to-browse and drag-and-drop work */}
       <label
         htmlFor="course-pdf-upload"
-        className="block rounded-lg border-2 border-dashed bg-muted/30 hover:bg-muted/50 cursor-pointer p-8 text-center transition-colors"
+        onDragOver={onDropZoneDragOver}
+        onDragEnter={onDropZoneDragOver}
+        onDragLeave={onDropZoneDragLeave}
+        onDrop={onDropZoneDrop}
+        className={`block rounded-lg border-2 border-dashed cursor-pointer p-8 text-center transition-colors ${
+          isDragOver
+            ? "bg-accent/10 border-accent"
+            : "bg-muted/30 hover:bg-muted/50"
+        }`}
       >
-        <Upload className="h-8 w-8 mx-auto text-muted-foreground" />
+        <Upload className={`h-8 w-8 mx-auto ${isDragOver ? "text-accent" : "text-muted-foreground"}`} />
         <p className="text-sm font-medium mt-2">
-          Drop PDFs here or click to browse
+          {isDragOver ? "Drop to upload" : "Drop PDFs here or click to browse"}
         </p>
         <p className="text-[11px] text-muted-foreground mt-1">
           Up to 25 PDFs per batch · processed 5 in parallel · ~10-30s per file

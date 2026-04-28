@@ -17,6 +17,7 @@ import {
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
 import { ARA_STAGE_MAP } from "@/lib/constants/ara-stages";
 import { bulkImportAraRespondents, createAraRespondent } from "@/lib/ara/actions";
+import { SendInvitationButton } from "./_components/send-invitation-button";
 import {
   createConsultantNote, deleteConsultantNote, toggleNoteIncludeInReport,
   freezeAssessmentScores, unfreezeAssessmentScores,
@@ -1263,13 +1264,20 @@ export default async function AraAssessmentDetailPage({
                         )}
                       </TableCell>
                       <TableCell>
-                        <Link
-                          href={`/ara/respond/${r.access_token}`}
-                          target="_blank"
-                          className="inline-flex items-center gap-1 text-xs text-accent hover:underline"
-                        >
-                          <Link2 className="h-3 w-3" /> Preview
-                        </Link>
+                        <div className="flex items-center gap-3">
+                          <Link
+                            href={`/ara/respond/${r.access_token}`}
+                            target="_blank"
+                            className="inline-flex items-center gap-1 text-xs text-accent hover:underline"
+                          >
+                            <Link2 className="h-3 w-3" /> Preview
+                          </Link>
+                          <SendInvitationButton
+                            respondentId={r.id}
+                            isSandbox={!!assessment.is_sandbox}
+                            alreadySent={!!r.first_opened_at}
+                          />
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

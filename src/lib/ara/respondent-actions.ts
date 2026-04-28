@@ -162,4 +162,15 @@ export async function markAraRespondentComplete(token: string): Promise<void> {
     .update({ completed_at: now, last_active_at: now })
     .eq("id", respondent.id);
   revalidatePath(`/ara/respond/${token}`);
+
+  // M3.3 — fire-and-forget notification to the assessment's consultant.
+  // Failures are logged inside notifyConsultantOnRespondentComplete and
+  // never thrown, so a Graph outage can't block the respondent's
+  // completion.
+  try {
+    const { notifyConsultantOnRespondentComplete } = await import("@/lib/ara/actions");
+    await notifyConsultantOnRespondentComplete(respondent.id);
+  } catch (err) {
+    console.error("[markAraRespondentComplete] consultant notify failed:", err);
+  }
 }

@@ -14,6 +14,7 @@ import {
   requireRole, requireOrgAccess, requireAssessmentOwner,
   isAuthorizationError,
 } from "@/lib/ara/auth-guards";
+import { sendAraEmail, type AraEmailLanguage } from "@/lib/ara/email";
 
 // Uniform auth-error unwrapper - server actions return a shape the UI
 // can render as a toast instead of a Next error screen.
@@ -938,4 +939,170 @@ export async function aiAuthorAraQuestion(formData: FormData) {
     question_number: nextNumber,
     rationale: q.rationale,
   };
+}
+
+// ─────────────────────────────────────────────────────────────
+// M2.1 — Send respondent invitation email
+//
+// Loads the respondent + assessment + organisation, renders the
+// bilingual welcome template (language honours the respondent's own
+// language_preference, with "bilingual" as the default fallback),
+// fires through src/lib/ara/email.ts, and writes to ara_email_log.
+//
+// Honours assessment.is_sandbox: in sandbox mode the recipient is
+// overridden to SANDBOX_EMAIL_REDIRECT (set via env var). The log row
+// is flagged so the consultant knows it didn't reach the real address.
+// ─────────────────────────────────────────────────────────────
+function appBaseUrl(): string {
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+    "http://localhost:3000"
+  );
+}
+
+export async function sendAraRespondentInvitation(respondentId: string) {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(respondentId)) {
+    return { ok: false as const, error: "Invalid respondent id" };
+  }
+
+  const sb = createServiceClient();
+  const { data: r, error: rErr } = await sb
+    .from("ara_respondents")
+    .select(
+      "id, name, name_ar, email, language_preference, access_token, assessment_id"
+    )
+    .eq("id", respondentId)
+    .maybeSingle();
+  if (rErr) return { ok: false as const, error: rErr.message };
+  if (!r) return { ok: false as const, error: "Respondent not found" };
+
+  // Authorise the caller as the assessment's consultant (or admin).
+  try {
+    await requireAssessmentOwner(r.assessment_id as string);
+  } catch (e) {
+    return authErr(e);
+  }
+
+  const { data: a } = await sb
+    .from("ara_assessments")
+    .select(
+      "id, name, name_ar, is_sandbox, consultant_id, organization_id, ara_organizations(name, name_ar)"
+    )
+    .eq("id", r.assessment_id)
+    .single();
+
+  const org = a?.ara_organizations as unknown as { name: string; name_ar: string | null } | null;
+  // Pick the consultant's display name from profiles for the salutation.
+  let consultantName = "";
+  if (a?.consultant_id) {
+    const { data: p } = await sb
+      .from("profiles")
+      .select("full_name")
+      .eq("id", a.consultant_id)
+      .maybeSingle();
+    consultantName = (p?.full_name as string | undefined) ?? "";
+  }
+
+  // language_preference is per-respondent; we honour it for the email
+  // template choice. Fall back to bilingual when unset so the respondent
+  // sees both halves rather than the wrong one.
+  const langPref = (r.language_preference as string | null) ?? null;
+  const language: AraEmailLanguage =
+    langPref === "ar" ? "ar" : langPref === "en" ? "en" : "bilingual";
+
+  const respondentUrl = `${appBaseUrl()}/ara/respond/${r.access_token}`;
+
+  const result = await sendAraEmail({
+    to: r.email as string,
+    emailType: "ara_respondent_invitation",
+    language,
+    isSandbox: !!a?.is_sandbox,
+    respondentId: r.id as string,
+    assessmentId: r.assessment_id as string,
+    data: {
+      respondentName:
+        language === "ar"
+          ? (r.name_ar as string | null) || (r.name as string)
+          : (r.name as string),
+      assessmentName:
+        language === "ar"
+          ? (a?.name_ar as string | null) || (a?.name as string) || ""
+          : (a?.name as string) || "",
+      organizationName:
+        language === "ar"
+          ? org?.name_ar || org?.name || ""
+          : org?.name || "",
+      consultantName,
+      respondentUrl,
+    },
+  });
+
+  if (!result.ok) return { ok: false as const, error: result.error ?? "Email failed" };
+
+  revalidatePath(`/ara/consultant/assessments/${r.assessment_id}`);
+  return { ok: true as const };
+}
+
+// ─────────────────────────────────────────────────────────────
+// M3.3 — Notify the assessment's consultant when a respondent
+// completes. Fire-and-forget from markAraRespondentComplete; failures
+// are logged but never block the caller.
+// ─────────────────────────────────────────────────────────────
+export async function notifyConsultantOnRespondentComplete(respondentId: string) {
+  const sb = createServiceClient();
+  const { data: r } = await sb
+    .from("ara_respondents")
+    .select("id, name, name_ar, assessment_id")
+    .eq("id", respondentId)
+    .single();
+  if (!r) return;
+
+  const { data: a } = await sb
+    .from("ara_assessments")
+    .select(
+      "id, name, name_ar, is_sandbox, consultant_id, ara_organizations(name, name_ar)"
+    )
+    .eq("id", r.assessment_id)
+    .single();
+  if (!a?.consultant_id) return;
+
+  const { data: consultantProfile } = await sb
+    .from("profiles")
+    .select("email, full_name")
+    .eq("id", a.consultant_id)
+    .maybeSingle();
+  const consultantEmail = (consultantProfile?.email as string | undefined) ?? "";
+  if (!consultantEmail) return;
+
+  // Tally completion progress for the body.
+  const { count: totalCount } = await sb
+    .from("ara_respondents")
+    .select("*", { count: "exact", head: true })
+    .eq("assessment_id", r.assessment_id);
+  const { count: completedCount } = await sb
+    .from("ara_respondents")
+    .select("*", { count: "exact", head: true })
+    .eq("assessment_id", r.assessment_id)
+    .not("completed_at", "is", null);
+
+  const org = a.ara_organizations as unknown as { name: string; name_ar: string | null } | null;
+
+  await sendAraEmail({
+    to: consultantEmail,
+    emailType: "ara_consultant_completion",
+    language: "en",
+    isSandbox: !!a.is_sandbox,
+    respondentId: r.id as string,
+    assessmentId: r.assessment_id as string,
+    data: {
+      consultantName: (consultantProfile?.full_name as string | undefined) ?? "Consultant",
+      respondentName: (r.name as string) || "A respondent",
+      assessmentName: (a.name as string) || "",
+      organizationName: org?.name || "",
+      assessmentUrl: `${appBaseUrl()}/ara/consultant/assessments/${r.assessment_id}`,
+      completedCount: String(completedCount ?? 0),
+      totalCount: String(totalCount ?? 0),
+    },
+  });
 }

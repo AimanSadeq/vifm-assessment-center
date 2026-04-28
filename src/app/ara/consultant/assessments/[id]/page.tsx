@@ -30,8 +30,13 @@ import { summarizeComplianceByFramework } from "@/lib/ara/compliance";
 import { detectAraGaps, detectAraShadowAi } from "@/lib/ara/detectors";
 import { computeAraDistortion } from "@/lib/ara/distortion";
 import { computeYoYComparison } from "@/lib/ara/year-on-year";
-import { recommendCoursesForAraAssessment } from "@/lib/recommender/courses";
+import {
+  recommendCoursesForAraAssessment,
+  recommendCoursesForIndividualSnapshot,
+} from "@/lib/recommender/courses";
 import { RecommendedCoursesPanel } from "@/components/shared/recommended-courses-panel";
+import { computeWorkforceReadiness } from "@/lib/ara/workforce-readiness";
+import { ARA_INDIVIDUAL_FACTORS } from "@/lib/constants/ara-individual-factors";
 import { ConfirmAction } from "@/components/shared/confirm-action";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -194,6 +199,26 @@ export default async function AraAssessmentDetailPage({
   } catch (e) {
     console.error("[ara-assessment-detail] recommender failed:", e);
   }
+
+  // Mode C — workforce readiness rollup, only when the org assessment
+  // opted into the individual layer. Pulls per-respondent factor scores
+  // and cohort means; tolerant of empty data with null return.
+  const workforceRollup = assessment.include_individual_layer
+    ? await computeWorkforceReadiness(assessment.id).catch((e) => {
+        console.error("[ara-assessment-detail] workforce rollup failed:", e);
+        return null;
+      })
+    : null;
+  const workforceCourseRecs = workforceRollup
+    ? await recommendCoursesForIndividualSnapshot({
+        factorScores: workforceRollup.factor_scores_for_recommender,
+        target: 4,
+        limit: 5,
+      }).catch((e) => {
+        console.error("[ara-assessment-detail] workforce recommender failed:", e);
+        return [];
+      })
+    : [];
 
   // Load Layer 2 consultant-guide questions for this version (never shown
   // to respondents - reference material for the Phase 2 workshop).
@@ -782,6 +807,144 @@ export default async function AraAssessmentDetailPage({
           courses={araRecommendedCourses}
           context="ara"
         />
+
+        {/* ─── Workforce readiness rollup (Mode C) ─── *
+         * Only renders when the assessment opted into the individual
+         * layer. Consultant sees cohort-level factor means + per-
+         * respondent breakdown + course recommendations driven by
+         * cohort gaps. */}
+        {assessment.include_individual_layer && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                Workforce readiness
+                <Badge variant="secondary" className="text-[10px]">
+                  {assessment.assessment_tier === "deep_dive"
+                    ? "Deep-dive · 48 items"
+                    : "Snapshot · 24 items"}
+                </Badge>
+              </CardTitle>
+              <CardDescription>
+                Cohort-level four-factor readiness rolled up across every
+                respondent who answered the individual layer. Per-person
+                breakdown shows who is pulling the cohort up or down.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              {!workforceRollup || workforceRollup.respondents.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No individual-layer responses yet. Once respondents
+                  complete the assessment, their four-factor scores roll
+                  up here.
+                </p>
+              ) : (
+                <>
+                  {/* Cohort overall + factor averages */}
+                  <div className="grid gap-3 sm:grid-cols-5">
+                    <div className="rounded-md border bg-muted/20 p-3">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                        Cohort overall
+                      </p>
+                      <p className="text-2xl font-bold tabular-nums mt-1">
+                        {workforceRollup.cohort_overall != null
+                          ? workforceRollup.cohort_overall.toFixed(2)
+                          : "—"}
+                        <span className="text-xs text-muted-foreground font-normal"> / 5</span>
+                      </p>
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        {workforceRollup.completed_count} of {workforceRollup.cohort_size} completed
+                      </p>
+                    </div>
+                    {workforceRollup.factor_averages.map((f) => {
+                      const factor = ARA_INDIVIDUAL_FACTORS.find((x) => x.id === f.factor_id);
+                      const tone =
+                        f.average >= 4 ? "bg-emerald-50 border-emerald-200"
+                        : f.average >= 3 ? "bg-amber-50 border-amber-200"
+                        : "bg-rose-50 border-rose-200";
+                      return (
+                        <div key={f.factor_id} className={`rounded-md border p-3 ${tone}`}>
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className="inline-block h-2 w-2 rounded-full"
+                              style={{ backgroundColor: factor?.color }}
+                            />
+                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                              {factor?.domain}
+                            </span>
+                          </div>
+                          <p className="text-xs font-semibold mt-0.5">{factor?.name_en}</p>
+                          <p className="text-2xl font-bold tabular-nums mt-1">
+                            {f.respondent_count > 0 ? f.average.toFixed(2) : "—"}
+                            <span className="text-xs text-muted-foreground font-normal"> / 5</span>
+                          </p>
+                          <p className="text-[10px] text-muted-foreground mt-1">
+                            {f.respondent_count} respondent{f.respondent_count === 1 ? "" : "s"}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Per-respondent table */}
+                  <div>
+                    <p className="text-xs font-semibold mb-2 text-muted-foreground uppercase tracking-wider">
+                      Per-respondent breakdown
+                    </p>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Respondent</TableHead>
+                          <TableHead className="text-center">Sense-Check</TableHead>
+                          <TableHead className="text-center">Working Practice</TableHead>
+                          <TableHead className="text-center">Collaboration</TableHead>
+                          <TableHead className="text-center">Adaptive Mindset</TableHead>
+                          <TableHead className="text-right">Overall</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {workforceRollup.respondents.map((r) => (
+                          <TableRow key={r.respondent_id}>
+                            <TableCell>
+                              <div className="text-sm font-medium">{r.name}</div>
+                              <div className="text-[10px] text-muted-foreground">
+                                {r.email}
+                                {r.individual_only && " · individual-only"}
+                              </div>
+                            </TableCell>
+                            {(["thinking_sense_check", "results_working_practice", "people_collaboration", "self_adaptive_mindset"] as const).map((fid) => {
+                              const v = r.per_factor[fid];
+                              return (
+                                <TableCell key={fid} className="text-center text-xs tabular-nums">
+                                  {v != null ? v.toFixed(1) : "—"}
+                                </TableCell>
+                              );
+                            })}
+                            <TableCell className="text-right font-semibold tabular-nums">
+                              {r.overall != null ? r.overall.toFixed(2) : "—"}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Workforce-readiness course recommendations — driven by
+            cohort gaps on the individual factors. Renders only when
+            we have data to compute against. */}
+        {assessment.include_individual_layer && workforceRollup && workforceRollup.respondents.length > 0 && (
+          <RecommendedCoursesPanel
+            title="Workforce training plan — based on cohort factor gaps"
+            description="VIFM courses ranked by where the cohort scores below target across the four individual readiness factors. Driver chips show which factor's gap pulled each course into the list."
+            emptyMessage="No recommendations yet — cohort means are at or above target across all four factors, or the catalogue doesn't yet cover the relevant capabilities."
+            courses={workforceCourseRecs}
+            context="ac"
+          />
+        )}
 
         {/* ─── Phase 2 Consultant Notes ─── */}
         <Card className="mb-6">
@@ -1383,7 +1546,37 @@ export default async function AraAssessmentDetailPage({
                     </label>
                   ))}
                 </div>
+                {assessment.include_individual_layer && (
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Note: this assessment has the individual readiness layer
+                    enabled. Respondents will also receive the four-factor
+                    items in addition to their pillar questions.
+                  </p>
+                )}
               </div>
+
+              {assessment.include_individual_layer && (
+                <div className="flex items-start gap-3 rounded-lg border p-4 bg-violet-50">
+                  <input
+                    type="checkbox"
+                    id="individual_only"
+                    name="individual_only"
+                    className="mt-0.5 h-4 w-4 rounded border-input"
+                  />
+                  <div className="flex-1">
+                    <Label htmlFor="individual_only" className="cursor-pointer text-sm font-semibold">
+                      Individual layer only — skip pillar questions
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      For workforce-wide invitees who shouldn&apos;t answer
+                      org-side pillar questions (e.g. inviting 50 line
+                      employees while only 8 senior leaders cover the
+                      pillars). Respondent gets only the four-factor items.
+                      Ignore the pillar checkboxes above.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               <Button type="submit">Add respondent</Button>
             </form>

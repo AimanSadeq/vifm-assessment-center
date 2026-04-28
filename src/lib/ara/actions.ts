@@ -169,6 +169,8 @@ export async function createAraAssessment(formData: FormData) {
   try { caller = await requireRole(["admin", "consultant"]); } catch (e) { return authErr(e); }
   const rawStage = String(formData.get("engagement_stage") ?? "enterprise");
   const rawScope = String(formData.get("scope_label") ?? "").trim();
+  const includeIndividual = formData.get("include_individual_layer") === "on";
+  const rawTier = String(formData.get("assessment_tier") ?? "snapshot");
   const parsed = createAraAssessmentSchema.safeParse({
     organization_id: formData.get("organization_id"),
     region: formData.get("region"),
@@ -178,6 +180,9 @@ export async function createAraAssessment(formData: FormData) {
     question_bank_version_id: formData.get("question_bank_version_id") || null,
     engagement_stage: rawStage,
     scope_label: rawScope.length > 0 ? rawScope : null,
+    include_individual_layer: includeIndividual,
+    // Tier only matters when the layer is on; default to snapshot otherwise.
+    assessment_tier: includeIndividual && rawTier === "deep_dive" ? "deep_dive" : "snapshot",
   });
 
   if (!parsed.success) {
@@ -200,6 +205,8 @@ export async function createAraAssessment(formData: FormData) {
       phase: "phase1",
       // Owner is the creating consultant (or null when an admin creates).
       consultant_id: caller.role === "consultant" && !caller.isDev ? caller.uid : null,
+      include_individual_layer: parsed.data.include_individual_layer,
+      assessment_tier: parsed.data.assessment_tier,
     })
     .select("id")
     .single();
@@ -236,7 +243,24 @@ export async function createAraRespondent(formData: FormData) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
+  // Mode C — individual-only respondents skip pillar assignments and
+  // only answer the four-factor items. Honoured only when the parent
+  // assessment has include_individual_layer=true (defensive).
+  const individualOnly = formData.get("individual_only") === "on";
+
   const sb = createServiceClient();
+
+  let layerEnabled = false;
+  if (individualOnly) {
+    const { data: a } = await sb
+      .from("ara_assessments")
+      .select("include_individual_layer")
+      .eq("id", parsed.data.assessment_id)
+      .maybeSingle<{ include_individual_layer: boolean }>();
+    layerEnabled = !!a?.include_individual_layer;
+  }
+  const finalIndividualOnly = individualOnly && layerEnabled;
+
   const { data: respondent, error } = await sb
     .from("ara_respondents")
     .insert({
@@ -248,13 +272,17 @@ export async function createAraRespondent(formData: FormData) {
       role_label_en: parsed.data.role_label_en || null,
       role_label_ar: parsed.data.role_label_ar || null,
       language_preference: parsed.data.language_preference,
+      individual_only: finalIndividualOnly,
     })
     .select("id")
     .single();
 
   if (error) return { ok: false, error: error.message };
 
-  if (parsed.data.pillar_assignments.length > 0) {
+  // Pillar assignments are skipped for individual-only respondents —
+  // they don't answer pillar questions, so a pillar row would be
+  // confusing data noise.
+  if (!finalIndividualOnly && parsed.data.pillar_assignments.length > 0) {
     const { error: paError } = await sb
       .from("ara_respondent_pillar_assignments")
       .insert(

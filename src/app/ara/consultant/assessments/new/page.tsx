@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, Building2, Network, Globe2, Sparkles, Check, User } from "lucide-react";
+import { IndividualLayerToggle } from "./_components/individual-layer-toggle";
 import { createServiceClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -414,6 +415,8 @@ export default async function NewAraAssessmentPage({
                   Overridable per respondent.
                 </p>
               </div>
+
+              <IndividualLayerToggle />
 
               <div className="flex items-start gap-3 rounded-lg border p-4 bg-muted/30">
                 <input

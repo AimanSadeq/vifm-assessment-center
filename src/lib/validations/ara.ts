@@ -25,6 +25,7 @@ export type CreateAraOrganizationValues = z.infer<typeof createAraOrganizationSc
 
 // ─── Assessments ───────────────────────────────────────────────
 export const araEngagementStageSchema = z.enum(["department", "division", "enterprise"]);
+export const araAssessmentTierSchema = z.enum(["snapshot", "deep_dive"]);
 
 export const createAraAssessmentSchema = z.object({
   organization_id: z.string().uuid("Select an organization"),
@@ -35,6 +36,11 @@ export const createAraAssessmentSchema = z.object({
   question_bank_version_id: z.string().uuid().nullable().optional(),
   engagement_stage: araEngagementStageSchema,
   scope_label: z.string().trim().min(1).max(120).nullable().optional(),
+  // Mode C — workforce readiness layer alongside the org pillar items.
+  include_individual_layer: z.boolean().default(false),
+  // Tier of the individual items when include_individual_layer is true.
+  // Ignored on assessments where include_individual_layer=false.
+  assessment_tier: araAssessmentTierSchema.default("snapshot"),
 });
 export type CreateAraAssessmentValues = z.infer<typeof createAraAssessmentSchema>;
 

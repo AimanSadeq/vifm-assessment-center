@@ -42,6 +42,9 @@ export function CourseForm(props: Props) {
   const [minDuration, setMinDuration] = useState(initial?.min_duration_days ?? 2);
   const [maxDuration, setMaxDuration] = useState(initial?.max_duration_days ?? 5);
   const [overviewEn, setOverviewEn] = useState(initial?.overview_en ?? "");
+  const [targetCompsEnText, setTargetCompsEnText] = useState(
+    initial?.target_competencies_raw_en ? initial.target_competencies_raw_en.join("\n") : ""
+  );
   const [objectivesEnText, setObjectivesEnText] = useState(
     initial?.objectives_en ? initial.objectives_en.join("\n") : ""
   );
@@ -53,12 +56,16 @@ export function CourseForm(props: Props) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     start(async () => {
-      // Objectives is a textarea where each line is one bullet —
-      // matches how the PDFs render Block 3 (one bullet per line).
-      const objectivesArr = objectivesEnText
+      // Both target competencies (block 2) and objectives (block 3)
+      // are textareas where each line is one bullet — matches how
+      // the PDFs render those blocks (one phrase / one bullet per line).
+      const lineToArray = (text: string) => text
         .split("\n")
         .map((s) => s.trim())
         .filter((s) => s.length > 0);
+
+      const targetCompsArr = lineToArray(targetCompsEnText);
+      const objectivesArr = lineToArray(objectivesEnText);
 
       const result = await upsertCourseAction({
         id: initial?.id,
@@ -74,6 +81,7 @@ export function CourseForm(props: Props) {
         delivery_modes: initial?.delivery_modes ?? ["classroom", "virtual"],
         languages: initial?.languages ?? ["en"],
         overview_en: overviewEn || null,
+        target_competencies_raw_en: targetCompsArr.length > 0 ? targetCompsArr : null,
         objectives_en: objectivesArr.length > 0 ? objectivesArr : null,
         audience_en: audienceEn || null,
         methodology_en: methodologyEn || null,
@@ -182,6 +190,24 @@ export function CourseForm(props: Props) {
       </div>
 
       <div className="space-y-1.5">
+        <Label htmlFor="target_competencies_en">2 · Target competencies</Label>
+        <textarea
+          id="target_competencies_en"
+          rows={5}
+          value={targetCompsEnText}
+          onChange={(e) => setTargetCompsEnText(e.target.value)}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          placeholder={"Block 2 — one competency phrase per line. e.g.\nDetection Capabilities\nIncident Response\nDigital Forensics\nRisk Mitigation"}
+        />
+        <p className="text-[11px] text-muted-foreground">
+          These are the PDF&apos;s own topical &quot;Target Competencies&quot;
+          list (e.g., &quot;Bookkeeping Automation&quot;), kept verbatim
+          for audit. The mapping to AC&apos;s 38 behavioural competencies
+          and ARA&apos;s 8 pillars is a separate step (Day 3).
+        </p>
+      </div>
+
+      <div className="space-y-1.5">
         <Label htmlFor="objectives_en">3 · Course objectives</Label>
         <textarea
           id="objectives_en"
@@ -191,11 +217,6 @@ export function CourseForm(props: Props) {
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
           placeholder={"Block 3 — one objective per line. e.g.\nApply prompt engineering techniques\nCreate content using AI tools\nAnalyse business data with AI"}
         />
-        <p className="text-[11px] text-muted-foreground">
-          One bullet per line. Block 2 (Target Competencies) and Block 6
-          (Detailed Outline) are populated by the AI importer or manually
-          via SQL until the full editor lands in Day 3.
-        </p>
       </div>
 
       <div className="space-y-1.5">
@@ -235,9 +256,9 @@ export function CourseForm(props: Props) {
       <p className="text-[11px] text-muted-foreground">
         Six-block order: 1 Overview · 2 Target competencies · 3 Objectives ·
         4 Target audience · 5 Methodology · 6 Detailed outline. Manual form
-        currently captures blocks 1, 3, 4, 5; use the PDF importer for the
-        full six-block ingest. Day 3 adds the competency / pillar mapping
-        panel and full block-2 + block-6 editors.
+        captures blocks 1-5; block 6 (the structured outline) needs the
+        PDF importer or the block-6 editor that ships in Day 3 alongside
+        the AC competency / ARA pillar mapping panel.
       </p>
     </form>
   );

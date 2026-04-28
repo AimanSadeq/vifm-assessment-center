@@ -17,6 +17,15 @@ ALTER TABLE role_player_prompts ADD COLUMN IF NOT EXISTS meeting_objectives text
 
 -- Add UNIQUE constraint on integration_worksheets to prevent duplicates
 -- (Fixes the race condition identified in the assessor audit)
-ALTER TABLE integration_worksheets
-  ADD CONSTRAINT integration_worksheets_unique
-  UNIQUE (engagement_id, assessor_id, candidate_id, competency_id);
+-- Wrapped in DO block because Postgres doesn't support
+-- `ADD CONSTRAINT ... IF NOT EXISTS` — needed for idempotent re-runs.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'integration_worksheets_unique'
+  ) THEN
+    ALTER TABLE integration_worksheets
+      ADD CONSTRAINT integration_worksheets_unique
+      UNIQUE (engagement_id, assessor_id, candidate_id, competency_id);
+  END IF;
+END $$;

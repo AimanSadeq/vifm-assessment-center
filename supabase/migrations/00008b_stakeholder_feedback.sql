@@ -35,7 +35,11 @@ CREATE TABLE IF NOT EXISTS project_templates (
 
 ALTER TABLE project_templates ENABLE ROW LEVEL SECURITY;
 
+-- DROP-then-CREATE pattern keeps these idempotent. Postgres lacks
+-- `CREATE POLICY ... IF NOT EXISTS` so we drop-if-exists first.
+
 -- Clients can manage their own org templates
+DROP POLICY IF EXISTS templates_select_own_org ON project_templates;
 CREATE POLICY templates_select_own_org ON project_templates
   FOR SELECT USING (
     organization_id IN (
@@ -43,6 +47,7 @@ CREATE POLICY templates_select_own_org ON project_templates
     )
   );
 
+DROP POLICY IF EXISTS templates_insert_own_org ON project_templates;
 CREATE POLICY templates_insert_own_org ON project_templates
   FOR INSERT WITH CHECK (
     organization_id IN (
@@ -50,6 +55,7 @@ CREATE POLICY templates_insert_own_org ON project_templates
     )
   );
 
+DROP POLICY IF EXISTS templates_update_own_org ON project_templates;
 CREATE POLICY templates_update_own_org ON project_templates
   FOR UPDATE USING (
     organization_id IN (
@@ -57,6 +63,7 @@ CREATE POLICY templates_update_own_org ON project_templates
     )
   );
 
+DROP POLICY IF EXISTS templates_delete_own_org ON project_templates;
 CREATE POLICY templates_delete_own_org ON project_templates
   FOR DELETE USING (
     organization_id IN (
@@ -65,9 +72,10 @@ CREATE POLICY templates_delete_own_org ON project_templates
   );
 
 -- Admin full access to templates
+DROP POLICY IF EXISTS templates_admin_all ON project_templates;
 CREATE POLICY templates_admin_all ON project_templates
   FOR ALL USING (
     EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
   );
 
-CREATE INDEX idx_templates_org ON project_templates(organization_id);
+CREATE INDEX IF NOT EXISTS idx_templates_org ON project_templates(organization_id);

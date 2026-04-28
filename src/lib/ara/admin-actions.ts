@@ -177,13 +177,19 @@ export async function clearAraSandboxData(formData: FormData) {
 // ─────────────────────────────────────────────────────────────
 const RETENTION_YEARS = 3;
 
-export async function purgeAraExpiredAssessments(formData: FormData) {
-  try { await requireRole("admin"); } catch (e) { return authErr(e); }
-  const confirmation = String(formData.get("confirmation") ?? "").trim();
-  if (confirmation !== "PURGE EXPIRED DATA") {
-    return { ok: false, error: 'Type "PURGE EXPIRED DATA" exactly to confirm.' };
-  }
-
+/**
+ * Core retention-purge logic — no auth check inside, so it can be
+ * called from BOTH the admin form action (which gates on
+ * requireRole + confirmation string) AND a system-triggered cron
+ * route (which gates on a CRON_SECRET bearer header). Always uses
+ * service-role + audit-logs every deletion regardless of trigger.
+ *
+ * The `trigger` param distinguishes admin vs cron in the audit log
+ * so we can later trace which run touched what.
+ */
+export async function runRetentionPurge(
+  trigger: "admin" | "cron"
+): Promise<{ ok: true; deleted: number } | { ok: false; error: string }> {
   const sb = createServiceClient();
   const cutoff = new Date();
   cutoff.setFullYear(cutoff.getFullYear() - RETENTION_YEARS);
@@ -209,19 +215,33 @@ export async function purgeAraExpiredAssessments(formData: FormData) {
     .in("id", ids);
   if (delErr) return { ok: false, error: delErr.message };
 
-  // Audit log
+  // Audit log — record trigger so admin-triggered vs cron-triggered
+  // runs are distinguishable downstream.
   await sb.from("ara_data_management_log").insert(
     ids.map((id) => ({
       action: "retention_purge",
       target_table: "ara_assessments",
       target_id: id,
-      reason: `Archived > ${RETENTION_YEARS} years`,
+      reason: `Archived > ${RETENTION_YEARS} years (trigger: ${trigger})`,
       client_request: false,
     }))
   );
 
+  return { ok: true, deleted: ids.length };
+}
+
+export async function purgeAraExpiredAssessments(formData: FormData) {
+  try { await requireRole("admin"); } catch (e) { return authErr(e); }
+  const confirmation = String(formData.get("confirmation") ?? "").trim();
+  if (confirmation !== "PURGE EXPIRED DATA") {
+    return { ok: false, error: 'Type "PURGE EXPIRED DATA" exactly to confirm.' };
+  }
+
+  const result = await runRetentionPurge("admin");
+  if (!result.ok) return result;
+
   revalidatePath("/ara/admin/retention");
   revalidatePath("/ara/consultant");
-  return { ok: true, deleted: ids.length };
+  return { ok: true, deleted: result.deleted };
 }
 

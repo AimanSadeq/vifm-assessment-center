@@ -338,3 +338,110 @@ export type Notification = {
   read_at: string | null;
   created_at: string;
 };
+
+// ──────────────────────────────────────────────────────────────
+// VIFM Courses (catalogue + tagging)
+// ──────────────────────────────────────────────────────────────
+
+export type VifmVertical =
+  | "finance"
+  | "investment"
+  | "treasury"
+  | "accounting"
+  | "banking"
+  | "tax"
+  | "analytics"
+  | "business_intelligence"
+  | "artificial_intelligence"
+  | "business_reporting"
+  | "leadership"
+  | "strategy"
+  | "project_management"
+  | "real_estate";
+
+export const VIFM_VERTICAL_LABELS: Record<VifmVertical, string> = {
+  finance: "Finance",
+  investment: "Investment",
+  treasury: "Treasury",
+  accounting: "Accounting",
+  banking: "Banking",
+  tax: "Tax",
+  analytics: "Analytics",
+  business_intelligence: "Business Intelligence",
+  artificial_intelligence: "Artificial Intelligence",
+  business_reporting: "Business Reporting",
+  leadership: "Leadership",
+  strategy: "Strategy",
+  project_management: "Project Management",
+  real_estate: "Real Estate",
+};
+
+export type VifmCourseLevel = "foundation" | "intermediate" | "advanced";
+
+export type VifmCourseOutlineSection = {
+  title: string;
+  bullets: string[];
+};
+
+export type VifmCourse = {
+  id: string;
+  code: string | null;
+  title_en: string;
+  title_ar: string | null;
+  vertical: VifmVertical;
+  level: VifmCourseLevel;
+  certification_code: string | null;
+  default_duration_days: number;
+  min_duration_days: number;
+  max_duration_days: number;
+  delivery_modes: string[];
+  languages: string[];
+  overview_en: string | null;
+  overview_ar: string | null;
+  target_competencies_raw_en: string[] | null;
+  target_competencies_raw_ar: string[] | null;
+  audience_en: string | null;
+  audience_ar: string | null;
+  objectives_en: string[] | null;
+  objectives_ar: string[] | null;
+  methodology_en: string | null;
+  methodology_ar: string | null;
+  outline_en: VifmCourseOutlineSection[] | null;
+  outline_ar: VifmCourseOutlineSection[] | null;
+  source_pdf_path: string | null;
+  extraction_confidence: number | null;
+  is_active: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type VifmCourseTagSource = "manual" | "ai_proposed" | "ai_accepted";
+
+export type VifmCourseCompetencyTag = {
+  id: string;
+  course_id: string;
+  competency_id: string;
+  relevance_weight: 1 | 2 | 3;
+  rationale: string | null;
+  source: VifmCourseTagSource;
+  created_at: string;
+};
+
+export type VifmCoursePillarTag = {
+  id: string;
+  course_id: string;
+  pillar_id:
+    | "strategy"
+    | "data"
+    | "technology"
+    | "talent"
+    | "culture"
+    | "governance"
+    | "operations"
+    | "model_management";
+  relevance_weight: 1 | 2 | 3;
+  rationale: string | null;
+  source: VifmCourseTagSource;
+  created_at: string;
+};

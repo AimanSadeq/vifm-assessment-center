@@ -121,14 +121,17 @@ export default function AraEngagePage() {
                     </span>
                   </div>
 
-                  <h3 className="text-2xl font-semibold text-primary mb-1">
+                  {/* Fixed-height rows so title, scope, and price-label
+                       align across all four cards regardless of how the
+                       scope text wraps at a given viewport width. */}
+                  <h3 className="text-2xl font-semibold text-primary leading-tight mb-1 min-h-[2rem]">
                     {stage.label_en}
                   </h3>
-                  <p className="text-sm text-muted-foreground mb-3">
+                  <p className="text-sm text-muted-foreground mb-3 min-h-[3.25rem]">
                     {stage.scope_en}
                   </p>
 
-                  <div className="mb-5">
+                  <div className="mb-5 min-h-[1.75rem]">
                     <span
                       className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full"
                       style={{

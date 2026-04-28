@@ -11,8 +11,12 @@ import { getCompetencyGap } from "@/lib/scoring/competency-gap";
 import { Target, AlertTriangle, CheckCircle2, BookOpen } from "lucide-react";
 import { PersonalStatistics, type DomainRollup } from "./_components/personal-statistics";
 import { StartQuizButton } from "./_components/start-quiz-button";
+import { ImpersonationBanner } from "@/components/shared/impersonation-banner";
 
-type Props = { params: { candidateId: string } };
+type Props = {
+  params: { candidateId: string };
+  searchParams?: { asAdmin?: string };
+};
 
 type RoleProfileCompetencyRow = {
   competency_id: string;
@@ -51,13 +55,14 @@ type DomainGroup = {
   }[];
 };
 
-export default async function CandidateSkillsPage({ params }: Props) {
+export default async function CandidateSkillsPage({ params, searchParams }: Props) {
   const supabase = await createClient();
   const { candidateId } = params;
+  const asAdmin = searchParams?.asAdmin === "1";
 
   const { data: candidate, error: candErr } = await supabase
     .from("candidates")
-    .select("id, full_name, engagement_id")
+    .select("id, full_name, email, engagement_id")
     .eq("id", candidateId)
     .single();
 
@@ -94,7 +99,14 @@ export default async function CandidateSkillsPage({ params }: Props) {
   if (!profile) {
     return (
       <div className="space-y-6">
-        <BackLink href={`/candidate/welcome/${candidateId}`} label="Back to Welcome" />
+        {asAdmin && (
+          <ImpersonationBanner
+            candidateName={candidate.full_name}
+            candidateEmail={candidate.email}
+            exitHref={`/admin/engagements/${candidate.engagement_id}`}
+          />
+        )}
+        <BackLink href={`/candidate/welcome/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`} label="Back to Welcome" />
         <div>
           <h1 className="mt-2 text-2xl font-bold">My Skills</h1>
           <p className="text-sm text-muted-foreground">
@@ -219,7 +231,14 @@ export default async function CandidateSkillsPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <BackLink href={`/candidate/welcome/${candidateId}`} label="Back to Welcome" />
+      {asAdmin && (
+        <ImpersonationBanner
+          candidateName={candidate.full_name}
+          candidateEmail={candidate.email}
+          exitHref={`/admin/engagements/${candidate.engagement_id}`}
+        />
+      )}
+      <BackLink href={`/candidate/welcome/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`} label="Back to Welcome" />
 
       <div>
         <h1 className="mt-2 text-2xl font-bold">My Skills</h1>

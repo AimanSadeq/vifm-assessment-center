@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { BARS_LABELS } from "@/lib/validations/assessor";
+import { ImpersonationBanner } from "@/components/shared/impersonation-banner";
 
 const OAR_LABELS: Record<string, string> = {
   ready_now: "Ready Now",
@@ -15,17 +16,21 @@ const OAR_LABELS: Record<string, string> = {
   not_ready: "Not Ready",
 };
 
-type Props = { params: { candidateId: string } };
+type Props = {
+  params: { candidateId: string };
+  searchParams?: { asAdmin?: string };
+};
 
-export default async function CandidateReportPage({ params }: Props) {
+export default async function CandidateReportPage({ params, searchParams }: Props) {
   const supabase = await createClient();
   const { candidateId } = params;
+  const asAdmin = searchParams?.asAdmin === "1";
 
   const [candResult, reportResult, oarResult, consensusResult] =
     await Promise.all([
       supabase
         .from("candidates")
-        .select("id, full_name, engagement_id, engagements(id, name, organizations(name))")
+        .select("id, full_name, email, engagement_id, engagements(id, name, organizations(name))")
         .eq("id", candidateId)
         .single(),
       supabase
@@ -67,8 +72,15 @@ export default async function CandidateReportPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
+      {asAdmin && (
+        <ImpersonationBanner
+          candidateName={candidate.full_name}
+          candidateEmail={candidate.email as string | null}
+          exitHref={`/admin/engagements/${eng.id}`}
+        />
+      )}
       <div>
-        <BackLink href={`/candidate/welcome/${candidateId}`} label="Back to Welcome" />
+        <BackLink href={`/candidate/welcome/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`} label="Back to Welcome" />
         <h1 className="mt-2 text-2xl font-bold">Your Assessment Report</h1>
         <p className="text-sm text-muted-foreground">
           {eng.name} - {eng.organizations?.name ?? ""}

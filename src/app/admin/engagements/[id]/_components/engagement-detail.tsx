@@ -34,7 +34,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { EXERCISE_TYPE_LABELS } from "@/lib/constants/exercise-types";
 import { addCandidateAction, createAssignmentAction, addDemoAssessorAction, updateEngagementStatusAction, removeCandidateAction, deleteAssignmentAction, setCandidateRoleProfileAction } from "../actions";
-import { Trash2, Send, FileText, CheckCircle } from "lucide-react";
+import { Trash2, Send, FileText, CheckCircle, Eye } from "lucide-react";
+import Link from "next/link";
 import { Checkbox } from "@/components/ui/checkbox";
 
 type RoleProfileOption = {
@@ -506,14 +507,30 @@ export function EngagementDetail({
                             <Badge variant="outline">{c.status as string}</Badge>
                           </TableCell>
                           <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                              onClick={() => handleRemoveCandidate(c.id as string, c.full_name as string)}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
+                            <div className="flex items-center justify-end gap-0.5">
+                              <Link
+                                href={`/candidate/welcome/${c.id as string}?asAdmin=1`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="View as candidate (opens in new tab)"
+                              >
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                                >
+                                  <Eye className="h-3.5 w-3.5" />
+                                </Button>
+                              </Link>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                                onClick={() => handleRemoveCandidate(c.id as string, c.full_name as string)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       );

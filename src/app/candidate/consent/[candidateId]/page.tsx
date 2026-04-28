@@ -3,7 +3,7 @@
 // instead of accessing params directly in a client component
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,12 +11,15 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { BackLink } from "@/components/shared/back-link";
+import { ImpersonationBanner } from "@/components/shared/impersonation-banner";
 
 type Props = { params: { candidateId: string } };
 
 export default function ConsentPage({ params }: Props) {
   const { candidateId } = params;
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const asAdmin = searchParams?.get("asAdmin") === "1";
   const [readConfirm, setReadConfirm] = useState(false);
   const [dataConsent, setDataConsent] = useState(false);
   const [assessmentConsent, setAssessmentConsent] = useState(false);
@@ -54,7 +57,7 @@ export default function ConsentPage({ params }: Props) {
       }
 
       toast.success("Consent submitted successfully");
-      router.push(`/candidate/assessments/${candidateId}`);
+      router.push(`/candidate/assessments/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`);
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -64,7 +67,13 @@ export default function ConsentPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <BackLink href={`/candidate/welcome/${candidateId}`} label="Back to Welcome" />
+      {asAdmin && (
+        <ImpersonationBanner
+          candidateName="this candidate"
+          exitHref="/admin/engagements"
+        />
+      )}
+      <BackLink href={`/candidate/welcome/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`} label="Back to Welcome" />
       <Card>
         <CardHeader>
           <CardTitle>Consent & Data Protection</CardTitle>

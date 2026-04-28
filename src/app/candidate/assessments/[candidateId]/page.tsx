@@ -15,17 +15,22 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { EXERCISE_TYPE_LABELS } from "@/lib/constants/exercise-types";
+import { ImpersonationBanner } from "@/components/shared/impersonation-banner";
 
-type Props = { params: { candidateId: string } };
+type Props = {
+  params: { candidateId: string };
+  searchParams?: { asAdmin?: string };
+};
 
-export default async function CandidateAssessmentsPage({ params }: Props) {
+export default async function CandidateAssessmentsPage({ params, searchParams }: Props) {
   const supabase = await createClient();
   const { candidateId } = params;
+  const asAdmin = searchParams?.asAdmin === "1";
 
   const [candResult, assignResult] = await Promise.all([
     supabase
       .from("candidates")
-      .select("id, full_name, engagement_id, engagements(name, start_date, end_date)")
+      .select("id, full_name, email, engagement_id, engagements(name, start_date, end_date)")
       .eq("id", candidateId)
       .single(),
     supabase
@@ -67,8 +72,15 @@ export default async function CandidateAssessmentsPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
+      {asAdmin && (
+        <ImpersonationBanner
+          candidateName={candidate.full_name}
+          candidateEmail={candidate.email}
+          exitHref={`/admin/engagements/${candidate.engagement_id}`}
+        />
+      )}
       <div>
-        <BackLink href={`/candidate/welcome/${candidateId}`} label="Back to Welcome" />
+        <BackLink href={`/candidate/welcome/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`} label="Back to Welcome" />
         <h1 className="mt-2 text-2xl font-bold">Your Assessments</h1>
         <p className="text-sm text-muted-foreground">
           {eng.name} - {eng.start_date ?? "TBD"} to {eng.end_date ?? "TBD"}

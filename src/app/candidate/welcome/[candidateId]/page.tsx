@@ -7,10 +7,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { CandidateDemographicsForm } from "./_components/candidate-demographics-form";
+import { ImpersonationBanner } from "@/components/shared/impersonation-banner";
 
-type Props = { params: { candidateId: string } };
+type Props = {
+  params: { candidateId: string };
+  searchParams: { asAdmin?: string };
+};
 
-export default async function CandidateWelcomePage({ params }: Props) {
+export default async function CandidateWelcomePage({ params, searchParams }: Props) {
   const supabase = await createClient();
   const { candidateId } = params;
 
@@ -21,6 +25,7 @@ export default async function CandidateWelcomePage({ params }: Props) {
     .single();
 
   if (error || !candidate) return notFound();
+  const asAdmin = searchParams?.asAdmin === "1";
 
   const eng = candidate.engagements as unknown as {
     id: string;
@@ -42,6 +47,13 @@ export default async function CandidateWelcomePage({ params }: Props) {
 
   return (
     <div className="space-y-6">
+      {asAdmin && (
+        <ImpersonationBanner
+          candidateName={candidate.full_name}
+          candidateEmail={candidate.email}
+          exitHref={`/admin/engagements/${eng.id}`}
+        />
+      )}
       <Card>
         <CardHeader>
           <CardTitle className="text-xl">
@@ -96,18 +108,18 @@ export default async function CandidateWelcomePage({ params }: Props) {
 
           <div className="flex flex-wrap gap-3">
             {!hasConsented ? (
-              <Link href={`/candidate/consent/${candidateId}`}>
+              <Link href={`/candidate/consent/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`}>
                 <Button>Proceed to Consent Form</Button>
               </Link>
             ) : (
               <>
-                <Link href={`/candidate/assessments/${candidateId}`}>
+                <Link href={`/candidate/assessments/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`}>
                   <Button>View Assessments</Button>
                 </Link>
-                <Link href={`/candidate/skills/${candidateId}`}>
+                <Link href={`/candidate/skills/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`}>
                   <Button variant="outline">My Skills</Button>
                 </Link>
-                <Link href={`/candidate/report/${candidateId}`}>
+                <Link href={`/candidate/report/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`}>
                   <Button variant="outline">View Report</Button>
                 </Link>
               </>

@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { BackLink } from "@/components/shared/back-link";
 import { EngagementDetail } from "./_components/engagement-detail";
+import { RecommendedCoursesPanel } from "@/components/shared/recommended-courses-panel";
+import { recommendCoursesForAcCohort } from "@/lib/recommender/courses";
 
 type Props = {
   params: { id: string };
@@ -94,8 +96,19 @@ export default async function EngagementDetailPage({ params }: Props) {
     .map((ee: Record<string, unknown>) => ee.exercises)
     .filter(Boolean) as Record<string, unknown>[];
 
+  // Day 3 — cohort-level course recommendations driven by aggregated
+  // gap severity across the candidates. Tolerant of the recommender
+  // tables not existing yet (returns empty array, the panel renders
+  // a graceful empty state).
+  let recommendedCourses: Awaited<ReturnType<typeof recommendCoursesForAcCohort>> = [];
+  try {
+    recommendedCourses = await recommendCoursesForAcCohort({ engagementId: id });
+  } catch (e) {
+    console.error("[ac-engagement-detail] recommender failed:", e);
+  }
+
   return (
-    <div>
+    <div className="space-y-6">
       <BackLink href="/admin/engagements" label="Back to Projects" />
       <EngagementDetail
         engagement={engagement}
@@ -108,6 +121,13 @@ export default async function EngagementDetailPage({ params }: Props) {
         roleProfiles={roleProfiles}
         priorOarMap={priorOarMap}
         currentOarMap={currentOarMap}
+      />
+      <RecommendedCoursesPanel
+        title="Recommended VIFM training programmes"
+        description="Cohort-aggregated — courses ranked by total gap severity × course relevance across every candidate in the engagement. Higher fit score = larger development impact across the group."
+        emptyMessage="No course recommendations yet — either no consensus ratings have been finalised, the cohort is on or above target across all competencies, or the catalogue doesn't yet cover the relevant competencies."
+        courses={recommendedCourses}
+        context="ac"
       />
     </div>
   );

@@ -30,6 +30,8 @@ import { summarizeComplianceByFramework } from "@/lib/ara/compliance";
 import { detectAraGaps, detectAraShadowAi } from "@/lib/ara/detectors";
 import { computeAraDistortion } from "@/lib/ara/distortion";
 import { computeYoYComparison } from "@/lib/ara/year-on-year";
+import { recommendCoursesForAraAssessment } from "@/lib/recommender/courses";
+import { RecommendedCoursesPanel } from "@/components/shared/recommended-courses-panel";
 import { ConfirmAction } from "@/components/shared/confirm-action";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -180,6 +182,18 @@ export default async function AraAssessmentDetailPage({
     computeYoYComparison(assessment.id),
     computeAraDistortion(assessment.id),
   ]);
+
+  // Day 3 — VIFM training recommendations driven by per-pillar maturity
+  // gap. Sits in the Phase 2 tab as the consultant's capability-building
+  // plan. Tolerant of the recommender catalogue being empty.
+  let araRecommendedCourses: Awaited<ReturnType<typeof recommendCoursesForAraAssessment>> = [];
+  try {
+    araRecommendedCourses = await recommendCoursesForAraAssessment({
+      assessmentId: assessment.id,
+    });
+  } catch (e) {
+    console.error("[ara-assessment-detail] recommender failed:", e);
+  }
 
   // Load Layer 2 consultant-guide questions for this version (never shown
   // to respondents - reference material for the Phase 2 workshop).
@@ -758,7 +772,16 @@ export default async function AraAssessmentDetailPage({
         )}
           </TabsContent>
 
-          <TabsContent value="phase2" className="space-y-0">
+          <TabsContent value="phase2" className="space-y-6">
+
+        {/* ─── Capability-building plan (course recommender) ─── */}
+        <RecommendedCoursesPanel
+          title="Capability-building plan — VIFM training programmes"
+          description="Per-pillar maturity gap (target 4) × course relevance. Use during the Phase 2 workshop to anchor the development conversation in concrete VIFM offerings."
+          emptyMessage="No course recommendations yet — either no pillar scores have been computed, the org is at or above target maturity (level 4) on all pillars, or the catalogue doesn't yet cover the relevant pillars."
+          courses={araRecommendedCourses}
+          context="ara"
+        />
 
         {/* ─── Phase 2 Consultant Notes ─── */}
         <Card className="mb-6">

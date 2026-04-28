@@ -48,12 +48,18 @@ export async function bulkAssignRoleProfilesAction(input: {
   const supabase = await createClient();
   const results: BulkAssignRowResult[] = [];
 
+  // Postgres LIKE/ILIKE treats `%` and `_` as wildcards. A CSV row like
+  // `t_st@example.com` would otherwise broaden the match unexpectedly.
+  // Escape both characters before passing to ilike.
+  const escapeLikeWildcards = (s: string) =>
+    s.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
+
   for (const row of parsed.data.rows) {
     const trimmedEmail = row.email.trim().toLowerCase();
     const { data: matches, error: findErr } = await supabase
       .from("candidates")
       .select("id, full_name, role_profile_id")
-      .ilike("email", trimmedEmail);
+      .ilike("email", escapeLikeWildcards(trimmedEmail));
 
     if (findErr) {
       results.push({

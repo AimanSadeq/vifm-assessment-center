@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import {
   startQuizSchema,
   saveQuizAnswerSchema,
@@ -224,7 +224,14 @@ export async function completeQuizAttemptAction(values: CompleteQuizValues) {
     Math.round((completedAt.getTime() - startedAt.getTime()) / 1000)
   );
 
-  const { error: updateErr } = await supabase
+  // The auth-aware client read above already enforced ownership. The write
+  // now runs through the service-role client because migration 00019's
+  // candidate_quiz_attempts_immutable_check trigger would refuse a
+  // candidate's own session updating status/score/completed_at fields.
+  // Service-role contexts have auth_role()=null and short-circuit the
+  // trigger.
+  const service = createServiceClient();
+  const { error: updateErr } = await service
     .from("candidate_quiz_attempts")
     .update({
       status: "completed",
@@ -295,7 +302,11 @@ export async function abandonQuizAttemptAction(values: CompleteQuizValues) {
     Math.round((completedAt.getTime() - startedAt.getTime()) / 1000)
   );
 
-  const { error: updateErr } = await supabase
+  // Service-role write — same reason as completeQuizAttemptAction:
+  // the candidate_quiz_attempts_immutable_check trigger refuses
+  // candidate-context updates to status/completed_at.
+  const service = createServiceClient();
+  const { error: updateErr } = await service
     .from("candidate_quiz_attempts")
     .update({
       status: "abandoned",

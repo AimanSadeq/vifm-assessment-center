@@ -1,0 +1,135 @@
+# Post-Skillup-parity hardening roadmap
+
+Anchor for the work that comes after the 2026-04-28 Skillup-parity sweep.
+14 features shipped (P0.1, P0.2, P0.3, Learning Plan, G1, G2, G3, G4, G5,
+G6, H1, H2, H3, H4) — the next phase is **hardening, not breadth**.
+
+Source recommendation conversation: chat session 2026-04-28.
+
+---
+
+## 1. Verify the AI paths actually work — 15 min · status: in progress
+
+Quiz generator (G3), bulk JD import (G4), and the original JD extractor (P0.1)
+were only smoke-tested via the "AI is not configured" error path because
+`ANTHROPIC_API_KEY` isn't set on this dev box.
+
+**Steps:**
+- [ ] Add `ANTHROPIC_API_KEY=...` to `.env.local`
+- [ ] Restart `npm run dev` so Next.js picks up the env var
+- [ ] Click "Start AI Quiz" on `/candidate/skills/<a candidate with a role profile>` — confirm 7 questions render, complete one, confirm results page shows AI explanations
+- [ ] Visit `/admin/role-profiles/bulk-import`, upload one JD, confirm the recommendations table renders, click Create — confirm the new role profile appears in `/admin/role-profiles`
+- [ ] If anything fails, fix before moving on
+
+**Why this is first:** if the AI path is broken we shipped a placebo.
+
+---
+
+## 2. Auth + RLS audit on the new tables — ½ day · status: pending
+
+Five new tables / extensions added in the parity sweep. ARA already had a
+dedicated [auth-hardening commit](https://github.com/AimanSadeq/vifm-assessment-center/commit/4012054)
+(`4012054`); the AC parity tables owe the same scrutiny.
+
+**New surfaces to audit:**
+- `candidates.role_profile_id` (migration 00016)
+- `candidate_quiz_attempts` (migration 00017) — questions/answers JSONB
+- `notifications` (migration 00018)
+
+**Specific scenarios to verify:**
+- [ ] Candidate A can NOT read Candidate B's `candidate_quiz_attempts` rows
+      via UUID guessing
+- [ ] Candidate A can NOT write to `notifications` with another user's
+      `profile_id` — current policy allows this (no `WITH CHECK`); needs a
+      `WITH CHECK (profile_id = auth.uid())` to lock it down
+- [ ] `setCandidateRoleProfileAction` notification publisher tolerates a
+      candidate whose `profile_id` is null (it currently no-ops, verify)
+- [ ] Client role can read quiz attempts only for candidates in their org's
+      engagements (existing policy, but the JOIN-through-engagements path
+      hasn't been exercised)
+- [ ] `bulkAssignRoleProfilesAction` and `bulkExtractJdsAction` work under
+      RLS — i.e. an admin's session has the right policy hits when iterating
+      thousands of rows
+
+**Output:** an `00019_ac_auth_hardening.sql` migration with any policy
+fixes, plus a checklist commit message similar to `4012054`.
+
+---
+
+## 3. Bilingual EN/AR translations for the new UI — ~1 week · status: pending
+
+CLAUDE.md: "All user-facing text should use i18n keys from Phase 4 onward."
+The 14 parity surfaces shipped this week are English-only.
+
+**Surfaces missing Arabic:**
+- G1 — Role Profile column header + dropdown labels in engagement detail
+- G2 — `/candidate/skills/[id]` (My Skills, Total Skills, Assessed, gap
+  badge labels, empty-state copy, domain group titles)
+- G3 — Quiz interface chrome (AI POWERED badge, "Question N of 7",
+  difficulty pills, "End Session", "Next") + Results page chrome ("Keep
+  Learning!", stat card labels, "Questions for Review", "Your answer",
+  "Correct answer", "Explanation"). Note: AI-generated questions and
+  explanations are already bilingual when the generator is invoked with
+  `bilingual: true` — currently we don't pass the flag, so add that path.
+- G4 — `/admin/role-profiles/bulk-import` chrome
+- G5 — `/admin/role-profiles/bulk-assign` chrome
+- G6 — "Export JSON" button label
+- H1 — "AI Mapping Summary" eyebrow + domain chip headings
+- H2 — Chart titles + tooltips ("Assessment Progress", "Skills by Domain",
+  "Average Score by Domain")
+- H3 — Notification bell aria-label, popover header, "Mark all read",
+  empty-state copy, relative-time strings ("just now", "5m ago", etc.)
+- H4 — "Admin view · Viewing as", "Exit view"
+
+**Existing patterns:** `src/lib/i18n/locales/{en,ar}.json` +
+`useTranslation()` hook. Each surface is ½ day; total ~1 week.
+
+**Tip:** ARA already has full bilingual support — copy the pattern from
+`/ara/respond/[token]/page.tsx` for any client component, and from the
+existing AC bilingual screens (e.g. login, candidate welcome) for server
+components.
+
+---
+
+## 4. Wire ARA M2.1 + M3.3 emails — ½ day · status: pending
+
+Both have been deferred since the ARA M3 commit. The Microsoft Graph
+wrapper (`src/lib/integrations/email.ts`) ships with 6 templates already.
+
+- [ ] **M2.1** — server action that fires on respondent token generation,
+      hits the Graph wrapper with a bilingual welcome template, respects
+      `is_sandbox` → `SANDBOX_EMAIL_REDIRECT` env var, writes to
+      `ara_email_log`
+- [ ] **M3.3** — hook into `markAraRespondentComplete` to email the
+      consultant when each respondent completes / when all complete.
+      Writes to `ara_email_log`.
+
+---
+
+## 5. AUTH_ENABLED flip — ½ day + careful testing · status: pending
+
+Currently `false` in [src/middleware.ts](../src/middleware.ts). Per
+CLAUDE.md, [src/lib/auth/README.md](../src/lib/auth/README.md) has the
+production migration steps.
+
+**Don't do this before items 2 and 3.** Flipping auth before the RLS
+audit will surface policy bugs under client load. Flipping before
+translations means non-English testers see a half-translated UI.
+
+**Steps once 2 and 3 are done:**
+- [ ] Run `verify-rls.ts` against a fresh test DB
+- [ ] Flip the flag, run the full pilot seed script, log in as each role,
+      confirm the matrix
+- [ ] Smoke-test the new parity surfaces with each role
+
+---
+
+## Explicitly skipped
+
+| Item | Reason |
+|---|---|
+| Mobile / responsive | CLAUDE.md is desktop-only by design |
+| Skillup blind-spot pages (Dashboard, Skill Visualization, Report Manager, 11 Control Panel sub-tabs) | No recording available; guessing would waste effort |
+| Color customisation / Sidebar reordering | Brand kit is fixed |
+| Full AC re-engagement workflow (G7) | Quiz retake covers the candidate side; product input needed for the admin queue |
+| Cert builder | No certificate concept yet |

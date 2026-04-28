@@ -1598,6 +1598,13 @@ export default async function AraAssessmentDetailPage({
               <code className="bg-muted px-1 py-0.5 rounded text-xs">role</code>,{" "}
               <code className="bg-muted px-1 py-0.5 rounded text-xs">language</code> (en/ar),{" "}
               <code className="bg-muted px-1 py-0.5 rounded text-xs">pillars</code> (pipe-separated).
+              {assessment.include_individual_layer && (
+                <>
+                  {" "}For workforce-only invitees,{" "}
+                  <code className="bg-muted px-1 py-0.5 rounded text-xs">individual_only</code>{" "}
+                  (yes/no) skips pillar questions and serves only the four-factor items.
+                </>
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent>

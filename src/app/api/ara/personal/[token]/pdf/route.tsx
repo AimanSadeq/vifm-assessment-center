@@ -36,9 +36,14 @@ export async function GET(
     if (!ctx) {
       return NextResponse.json({ error: "Token not found" }, { status: 404 });
     }
-    if (ctx.assessment.engagement_stage !== "individual") {
+    // Same eligibility rule as the results page — Mode A/B individual-stage
+    // OR Mode C org-stage with include_individual_layer=true.
+    const isPersonalEligible =
+      ctx.assessment.engagement_stage === "individual" ||
+      !!ctx.assessment.include_individual_layer;
+    if (!isPersonalEligible) {
       return NextResponse.json(
-        { error: "This endpoint is for personal-stage snapshots only." },
+        { error: "This endpoint is for personal-readiness snapshots only." },
         { status: 400 }
       );
     }

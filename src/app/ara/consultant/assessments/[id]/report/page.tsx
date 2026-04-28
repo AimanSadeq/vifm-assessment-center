@@ -7,6 +7,8 @@ import { summarizeComplianceByFramework } from "@/lib/ara/compliance";
 import { detectAraShadowAi } from "@/lib/ara/detectors";
 import { computePeerBenchmarks } from "@/lib/ara/peer-benchmarks";
 import { computeYoYComparison } from "@/lib/ara/year-on-year";
+import { computeWorkforceReadiness } from "@/lib/ara/workforce-readiness";
+import { ARA_INDIVIDUAL_FACTORS } from "@/lib/constants/ara-individual-factors";
 import { MaturityGauge } from "./_components/maturity-gauge";
 import { RadarChart } from "./_components/radar-chart";
 import { ComplianceSummary } from "./_components/compliance-summary";
@@ -137,6 +139,16 @@ export default async function AraReportPage({
   // {compatible: false, ...} when the prior used a different major
   // question-bank version. The render branch handles all three states.
   const yoyComparison = await computeYoYComparison(assessment.id);
+
+  // Mode C workforce readiness rollup — only when the assessment opted
+  // into the individual layer. Tolerant of missing data: returns null
+  // and the section render branch falls through to nothing.
+  const workforceRollup = assessment.include_individual_layer
+    ? await computeWorkforceReadiness(assessment.id).catch((e) => {
+        console.error("[ara-report] workforce rollup failed:", e);
+        return null;
+      })
+    : null;
 
   // Use case inventory for the portfolio report section.
   const { data: useCaseRows } = await sb
@@ -960,6 +972,85 @@ export default async function AraReportPage({
                 );
               })}
             </div>
+          </section>
+        )}
+
+        {/* ─── Workforce AI Readiness — Mode C only ─── *
+         * Renders only when this assessment opted into the individual
+         * readiness layer AND respondents have answered four-factor
+         * items. Cohort-level rollup with overall + per-factor mean
+         * + the four VIFM individual factors. Per-respondent breakdown
+         * stays in the consultant view (not in the client-facing PDF
+         * for confidentiality + page-count reasons). */}
+        {assessment.include_individual_layer && workforceRollup && workforceRollup.respondents.some((r) => r.overall != null) && (
+          <section className="report-page">
+            <h2 className="report-h2">Workforce AI Readiness</h2>
+            <p className="report-body">
+              In addition to the eight pillar maturity scores, this assessment
+              measured the personal AI readiness of {workforceRollup.cohort_size}{" "}
+              respondent{workforceRollup.cohort_size === 1 ? "" : "s"}{" "}
+              ({workforceRollup.completed_count} completed) across four VIFM
+              individual readiness factors. The factors map to VIFM&apos;s
+              behavioural framework — THINKING, RESULTS, PEOPLE, SELF.
+              {assessment.assessment_tier === "deep_dive"
+                ? " The deep-dive tier (12 items per factor) was used — research-grade reliability."
+                : " The snapshot tier (6 items per factor) was used — directional reliability."}
+            </p>
+
+            <h3 className="report-h3">Cohort overall</h3>
+            <table className="report-body" style={{ width: "100%", borderCollapse: "collapse", marginBottom: "12pt" }}>
+              <thead>
+                <tr style={{ borderBottom: "2px solid " + TOKENS.navy }}>
+                  <th style={{ ...cell, fontWeight: 700, textAlign: "left" }}>Metric</th>
+                  <th style={{ ...cellRight, fontWeight: 700 }}>Score / 5</th>
+                  <th style={{ ...cellRight, fontWeight: 700 }}>Respondents</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style={{ borderTop: "1px solid #e5e7eb", background: TOKENS.bgPanel }}>
+                  <td style={{ ...cell, fontWeight: 700 }}>Cohort overall</td>
+                  <td style={{ ...cellRight, fontWeight: 700 }}>
+                    {workforceRollup.cohort_overall != null
+                      ? workforceRollup.cohort_overall.toFixed(2)
+                      : "—"}
+                  </td>
+                  <td style={cellRight}>{workforceRollup.completed_count}</td>
+                </tr>
+                {ARA_INDIVIDUAL_FACTORS.map((f) => {
+                  const avg = workforceRollup.factor_averages.find((x) => x.factor_id === f.id);
+                  return (
+                    <tr key={f.id} style={{ borderTop: "1px solid #e5e7eb" }}>
+                      <td style={cell}>
+                        <span style={{ display: "inline-block", width: "8pt", height: "8pt", borderRadius: "4pt", background: f.color, marginRight: "6pt", verticalAlign: "middle" }} />
+                        <strong>{f.name_en}</strong>{" "}
+                        <span className="report-muted" style={{ fontSize: "9pt" }}>
+                          ({f.domain})
+                        </span>
+                      </td>
+                      <td style={cellRight}>
+                        {avg && avg.respondent_count > 0 ? avg.average.toFixed(2) : "—"}
+                      </td>
+                      <td style={cellRight}>{avg?.respondent_count ?? 0}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            <h3 className="report-h3">Reading the factor scores</h3>
+            <ul className="report-body">
+              <li><strong>4.0 and above</strong> — strong readiness on this factor; the cohort leverages AI well in this area.</li>
+              <li><strong>3.0 to 3.9</strong> — developing; a clear opportunity to lift impact through targeted training or coaching.</li>
+              <li><strong>Below 3.0</strong> — significant opportunity; address this factor first for the largest readiness lift.</li>
+            </ul>
+
+            <p className="report-body report-muted" style={{ fontSize: "9pt", marginTop: "12pt" }}>
+              Per-respondent factor breakdown is available to consultants in the
+              VIFM portal (Phase 2 tab on the assessment detail) but is not
+              included in this client-facing report by default. Discuss with
+              your VIFM consultant if you want named individual results
+              surfaced or anonymised.
+            </p>
           </section>
         )}
 

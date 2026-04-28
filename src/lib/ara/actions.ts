@@ -388,12 +388,23 @@ export async function bulkImportAraRespondents(formData: FormData) {
   const iRoleAr   = idx("role_label_ar", "role_ar", "arabic_role");
   const iLang     = idx("language", "lang", "language_preference");
   const iPillars  = idx("pillars", "pillar_assignments");
+  // Mode C — workforce-readiness only respondents (skip pillar questions).
+  const iIndividualOnly = idx("individual_only", "individual", "personal_only");
 
   if (iName === -1 || iEmail === -1) {
     return { ok: false, error: "CSV header must include at least 'name' and 'email' columns." };
   }
 
   const sb = createServiceClient();
+
+  // Look up the parent assessment's include_individual_layer flag once
+  // — we only honour individual_only when the layer is actually on.
+  const { data: parentAssessment } = await sb
+    .from("ara_assessments")
+    .select("include_individual_layer")
+    .eq("id", assessmentId)
+    .maybeSingle<{ include_individual_layer: boolean }>();
+  const layerOn = !!parentAssessment?.include_individual_layer;
 
   // Pre-fetch existing emails on this assessment for duplicate detection.
   const { data: existing } = await sb
@@ -428,6 +439,11 @@ export async function bulkImportAraRespondents(formData: FormData) {
     const langRaw = (cols[iLang] ?? "en").toLowerCase();
     const language = langRaw === "ar" || langRaw === "arabic" ? "ar" : "en";
 
+    // individual_only — accept yes/y/true/1 (case-insensitive). Honoured
+    // only when the parent assessment has the individual layer on.
+    const individualOnlyRaw = iIndividualOnly >= 0 ? (cols[iIndividualOnly] ?? "").trim().toLowerCase() : "";
+    const individualOnly = layerOn && ["yes", "y", "true", "1", "on"].includes(individualOnlyRaw);
+
     toInsert.push({
       assessment_id: assessmentId,
       name,
@@ -436,9 +452,12 @@ export async function bulkImportAraRespondents(formData: FormData) {
       role_label_en: iRoleEn >= 0 ? (cols[iRoleEn] || null) : null,
       role_label_ar: iRoleAr >= 0 ? (cols[iRoleAr] || null) : null,
       language_preference: language,
+      individual_only: individualOnly,
     });
 
-    if (iPillars >= 0 && cols[iPillars]) {
+    // Pillar assignments are skipped for individual-only respondents
+    // — they don't answer pillar questions.
+    if (!individualOnly && iPillars >= 0 && cols[iPillars]) {
       pillarsByEmail.set(
         email,
         cols[iPillars].split("|").map((s) => s.trim()).filter(Boolean)

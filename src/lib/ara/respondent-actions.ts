@@ -163,44 +163,61 @@ export async function markAraRespondentComplete(token: string): Promise<void> {
     .eq("id", respondent.id);
   revalidatePath(`/ara/respond/${token}`);
 
-  // Look up the assessment to decide whether to fire the org-side
-  // consultant notification (org stages) or the self-served personal
-  // results-link email (individual stage). Both fire-and-forget — a
-  // Graph outage can't block the respondent's completion.
+  // Look up the assessment to decide which downstream notifications fire.
+  // All branches are fire-and-forget — a Graph outage can't block the
+  // respondent's completion.
   const { data: a } = await sb
     .from("ara_assessments")
-    .select("engagement_stage, is_sandbox, default_language")
+    .select("engagement_stage, is_sandbox, default_language, include_individual_layer")
     .eq("id", respondent.assessment_id)
-    .maybeSingle<{ engagement_stage: string; is_sandbox: boolean; default_language: "en" | "ar" }>();
+    .maybeSingle<{
+      engagement_stage: string;
+      is_sandbox: boolean;
+      default_language: "en" | "ar";
+      include_individual_layer: boolean;
+    }>();
 
-  if (a?.engagement_stage === "individual") {
+  // Personal results email — fires for any respondent whose assessment
+  // produced individual-factor answers worth surfacing back to them:
+  //   - engagement_stage='individual' (Modes A + B), OR
+  //   - org stage with include_individual_layer=true (Mode C)
+  // Org-only respondents on assessments without the layer don't get
+  // the email (their results live in the consultant's report).
+  const personalEmailApplies =
+    a?.engagement_stage === "individual" ||
+    (a?.include_individual_layer === true);
+
+  if (personalEmailApplies) {
     try {
       const { sendAraEmail } = await import("@/lib/ara/email");
       const baseUrl =
         process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-        process.env.VERCEL_URL
-          ? `https://${process.env.VERCEL_URL}`
-          : "http://localhost:3000";
+        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
       const resultsUrl = `${baseUrl}/ara/personal/results/${token}`;
       const pdfUrl = `${baseUrl}/api/ara/personal/${token}/pdf`;
       await sendAraEmail({
         to: respondent.email,
         emailType: "ara_personal_results_link",
-        language: respondent.language_preference ?? a.default_language ?? "en",
+        language: respondent.language_preference ?? a?.default_language ?? "en",
         data: {
           respondentName: respondent.name,
           resultsUrl,
           pdfUrl,
         },
-        isSandbox: !!a.is_sandbox,
+        isSandbox: !!a?.is_sandbox,
         respondentId: respondent.id,
         assessmentId: respondent.assessment_id,
       });
     } catch (err) {
       console.error("[markAraRespondentComplete] personal results email failed:", err);
     }
-  } else {
-    // M3.3 — fire-and-forget notification to the assessment's consultant.
+  }
+
+  // Consultant notification — fires for org-stage assessments. Mode C
+  // assessments still get this on top of the personal email above
+  // because the consultant cares about completion progress regardless
+  // of whether the respondent also did the individual layer.
+  if (a?.engagement_stage !== "individual") {
     try {
       const { notifyConsultantOnRespondentComplete } = await import("@/lib/ara/actions");
       await notifyConsultantOnRespondentComplete(respondent.id);

@@ -23,9 +23,16 @@ export default async function PersonalResultsPage({ params }: Props) {
   const ctx = await loadRespondentByToken(params.token);
   if (!ctx) return notFound();
 
-  // Defensive: only render the personal results layout for individual-stage
-  // assessments. Org respondents who happen to land here get redirected.
-  if (ctx.assessment.engagement_stage !== "individual") {
+  // Personal results page is valid for:
+  //   - Mode A/B individual-stage assessments (the primary case), AND
+  //   - Mode C respondents on an org assessment that has the individual
+  //     layer enabled — those respondents have answered the four-factor
+  //     items and are entitled to see their personal breakdown.
+  // Anyone else (org respondent on a no-layer assessment) gets a 404.
+  const isPersonalEligible =
+    ctx.assessment.engagement_stage === "individual" ||
+    !!ctx.assessment.include_individual_layer;
+  if (!isPersonalEligible) {
     return notFound();
   }
 

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Compass, Sparkles, ArrowLeft } from "lucide-react";
+import { Compass, Sparkles, ArrowLeft, FileDown } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -101,12 +101,23 @@ export default async function PersonalResultsPage({ params }: Props) {
             <Compass className="h-6 w-6 text-accent" />
             <Sparkles className="h-4 w-4 text-accent" />
           </div>
-          <h1 className="text-2xl font-bold">
-            {isAr ? "لقطة الجاهزية الشخصية للذكاء الاصطناعي" : "Personal AI Readiness Snapshot"}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {ctx.respondent.name} · {ctx.respondent.email}
-          </p>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-bold">
+                {isAr ? "لقطة الجاهزية الشخصية للذكاء الاصطناعي" : "Personal AI Readiness Snapshot"}
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                {ctx.respondent.name} · {ctx.respondent.email}
+              </p>
+            </div>
+            <a
+              href={`/api/ara/personal/${params.token}/pdf`}
+              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md border border-input bg-card hover:bg-muted/50 shrink-0"
+            >
+              <FileDown className="h-3.5 w-3.5" />
+              {isAr ? "تنزيل PDF" : "Download PDF"}
+            </a>
+          </div>
         </div>
 
         {/* Overall score card */}

@@ -27,7 +27,10 @@ import { Client } from "@microsoft/microsoft-graph-client";
 import { TokenCredentialAuthenticationProvider } from "@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials/index.js";
 import { createServiceClient } from "@/lib/supabase/server";
 
-export type AraEmailType = "ara_respondent_invitation" | "ara_consultant_completion";
+export type AraEmailType =
+  | "ara_respondent_invitation"
+  | "ara_consultant_completion"
+  | "ara_personal_results_link";
 export type AraEmailLanguage = "en" | "ar" | "bilingual";
 
 type RenderedEmail = {
@@ -130,6 +133,67 @@ ${d.assessmentUrl}
       body: `${d.respondentName} marked complete for ${d.assessmentName} (${d.completedCount}/${d.totalCount}).
 
 Dashboard: ${d.assessmentUrl}`,
+    }),
+  },
+
+  // Sent to a person who just finished their Personal AI Readiness
+  // Snapshot. Carries the bookmarkable results URL plus the PDF
+  // download URL so they can open either from any device. No
+  // marketing copy — keep it minimal and respectful.
+  ara_personal_results_link: {
+    en: (d) => ({
+      contentType: "Text",
+      subject: `Your VIFM Personal AI Readiness Snapshot is ready`,
+      body: `Hello ${d.respondentName},
+
+Thank you for completing the VIFM Personal AI Readiness Snapshot.
+
+Your results page (bookmark this — return any time):
+${d.resultsUrl}
+
+Download as PDF:
+${d.pdfUrl}
+
+Your snapshot is private to you. The results page lists the four
+VIFM factor scores and the VIFM training programmes most likely to
+help you close any gaps.
+
+Best regards,
+Virginia Institute of Finance and Management`,
+    }),
+    ar: (d) => ({
+      contentType: "Text",
+      subject: `لقطتك الشخصية للجاهزية للذكاء الاصطناعي من VIFM جاهزة`,
+      body: `مرحبًا ${d.respondentName}،
+
+شكراً لإكمالك لقطة الجاهزية الشخصية للذكاء الاصطناعي من VIFM.
+
+صفحة نتائجك (احفظها للرجوع إليها في أي وقت):
+${d.resultsUrl}
+
+تنزيل بصيغة PDF:
+${d.pdfUrl}
+
+لقطتك خاصة بك. تعرض صفحة النتائج درجات عوامل VIFM الأربعة وبرامج
+التدريب الأكثر ملاءمة لمساعدتك في معالجة أي فجوات.
+
+مع أطيب التحيات،
+معهد فرجينيا للتمويل والإدارة`,
+    }),
+    bilingual: (d) => ({
+      contentType: "HTML",
+      subject: `Your VIFM Personal AI Readiness Snapshot — لقطتك الشخصية`,
+      body: `<div style="font-family:'Open Sans',Arial,sans-serif;line-height:1.55;color:#121232;">
+<p>Hello ${d.respondentName},</p>
+<p>Thank you for completing the VIFM Personal AI Readiness Snapshot.</p>
+<p><strong>Results page:</strong> <a href="${d.resultsUrl}">${d.resultsUrl}</a><br/>
+<strong>PDF download:</strong> <a href="${d.pdfUrl}">${d.pdfUrl}</a></p>
+<hr style="border:0;border-top:1px solid #e5e7eb;margin:18px 0;"/>
+<div dir="rtl" style="font-family:'Open Sans',Arial,sans-serif;">
+<p>مرحبًا ${d.respondentName}،</p>
+<p>شكراً لإكمالك اللقطة الشخصية. احفظ الرابط أعلاه للرجوع إليه من أي جهاز.</p>
+</div>
+</div>`,
     }),
   },
 };

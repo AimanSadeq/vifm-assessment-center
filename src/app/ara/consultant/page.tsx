@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, FlaskConical, ClipboardList, CheckCircle2, Snowflake } from "lucide-react";
+import { Plus, FlaskConical, ClipboardList, CheckCircle2, Snowflake, User, ArrowRight } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,11 +57,50 @@ const statusVariant: Record<AraAssessment["status"], "default" | "secondary" | "
 
 export default async function AraConsultantPage() {
   const sb = createServiceClient();
+
+  // Org-side assessments only — personal snapshots have a separate
+  // panel below so they don't inflate the consultant's pipeline.
   const { data: rows } = await sb
     .from("ara_assessments")
     .select("*, organization:ara_organizations(id, name, name_ar)")
+    .neq("engagement_stage", "individual")
     .order("created_at", { ascending: false })
     .returns<AssessmentRow[]>();
+
+  // Personal snapshots in the last 30 days — fire-and-forget panel.
+  // We use service-role here because consultant RLS doesn't grant
+  // visibility on individual-stage rows (no consultant_id), and the
+  // intel value of seeing self-served activity is high.
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  type PersonalSnapshotRow = {
+    id: string;
+    created_at: string;
+    scope_label: string | null;
+    respondent: { name: string; email: string; completed_at: string | null; access_token: string | null }[] | null;
+  };
+  const { data: personalRows } = await sb
+    .from("ara_assessments")
+    .select(
+      "id, created_at, scope_label, " +
+      "respondent:ara_respondents(name, email, completed_at, access_token)"
+    )
+    .eq("engagement_stage", "individual")
+    .gte("created_at", thirtyDaysAgo)
+    .order("created_at", { ascending: false })
+    .limit(8)
+    .returns<PersonalSnapshotRow[]>();
+  const personalSnapshots = (personalRows ?? []).map((row) => {
+    const r = row.respondent?.[0] ?? null;
+    return {
+      id: row.id,
+      created_at: row.created_at,
+      name: r?.name ?? row.scope_label ?? "Anonymous",
+      email: r?.email ?? null,
+      completed_at: r?.completed_at ?? null,
+      access_token: r?.access_token ?? null,
+    };
+  });
+  const personalCompletedCount = personalSnapshots.filter((p) => p.completed_at).length;
 
   // Aggregate: total + per-status counts for the pipeline funnel.
   const all = rows ?? [];
@@ -140,6 +179,84 @@ export default async function AraConsultantPage() {
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {/* ─── Personal snapshot activity (last 30d) ─── *
+         * Self-served Personal AI Readiness Snapshots aren't owned by
+         * any consultant, but they're a valuable signal for VIFM's
+         * adoption funnel. Surface the recent activity in a quiet
+         * panel so consultants can spot trends without it competing
+         * with their org-side pipeline. */}
+        {personalSnapshots.length > 0 && (
+          <div className="mb-8 rounded-2xl border bg-card p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <span className="ara-eyebrow flex items-center gap-1.5">
+                  <User className="h-3 w-3" />
+                  Personal snapshots · last 30 days
+                </span>
+                <Badge variant="secondary" className="text-[10px]">
+                  {personalSnapshots.length} started · {personalCompletedCount} completed
+                </Badge>
+              </div>
+              <Link
+                href="/ara/personal/start"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] text-accent hover:underline inline-flex items-center gap-1"
+              >
+                Open public start page <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Started</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="w-12"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {personalSnapshots.map((p) => (
+                  <TableRow key={p.id}>
+                    <TableCell className="font-medium">{p.name}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{p.email}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {new Date(p.created_at).toLocaleDateString("en-GB", {
+                        day: "numeric", month: "short", year: "numeric",
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      {p.completed_at ? (
+                        <Badge className="bg-emerald-600 hover:bg-emerald-600 text-[10px]">
+                          Completed
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[10px]">
+                          In progress
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {p.completed_at && p.access_token && (
+                        <Link
+                          href={`/ara/personal/results/${p.access_token}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="View snapshot"
+                          className="inline-flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                        >
+                          <ArrowRight className="h-3.5 w-3.5" />
+                        </Link>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         )}
 

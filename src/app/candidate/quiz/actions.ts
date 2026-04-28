@@ -271,14 +271,19 @@ export async function completeQuizAttemptAction(values: CompleteQuizValues) {
   // the admin still sees the candidate is engaging — which is the
   // signal the notification is for.
   const competencyIdValue = (competencyId?.competency_id as string | undefined) ?? "unknown";
+  // MM:SS so admins can spot speed-runs (suspicious) and slow-thoughtful
+  // attempts (engaged) at a glance, without expanding the notification.
+  const mins = Math.floor(timeTakenSeconds / 60);
+  const secs = timeTakenSeconds % 60;
+  const durationLabel = `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   await publishToAllAdmins({
     kind: "quiz_completed",
     title: `${candNamed?.full_name ?? "A candidate"} completed an AI quiz`,
     body: competencyName
-      ? `${competencyName} · ${Math.round(scorePct)}% (${correctCount}/${questions.length})`
-      : `Score: ${Math.round(scorePct)}%`,
+      ? `${competencyName} · ${Math.round(scorePct)}% (${correctCount}/${questions.length}) · ${durationLabel}`
+      : `Score: ${Math.round(scorePct)}% · ${durationLabel}`,
     link: `/admin/engagements`,
-    data: { attemptId, scorePct, correctCount },
+    data: { attemptId, scorePct, correctCount, timeTakenSeconds },
     dedupeKey: `quiz_completed:${attempt.candidate_id}:${competencyIdValue}`,
   });
 

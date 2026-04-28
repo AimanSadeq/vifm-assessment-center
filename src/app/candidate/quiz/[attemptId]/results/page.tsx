@@ -14,7 +14,7 @@ import {
   Clock,
   Target,
   Lightbulb,
-  RefreshCw,
+  Repeat2,
 } from "lucide-react";
 import type { CandidateQuizAttempt, QuizQuestion, QuizAnswer } from "@/types/database";
 import { getServerLocale, getServerT } from "@/lib/i18n/server";
@@ -301,7 +301,7 @@ export default async function QuizResultsPage({ params }: Props) {
           href={`/candidate/skills/${a.candidate_id}?retakeCompetencyId=${a.competency_id}`}
         >
           <Button className="gap-2">
-            <RefreshCw className="h-4 w-4" />
+            <Repeat2 className="h-4 w-4" />
             {t("quiz.results.retakeButton")}
           </Button>
         </Link>

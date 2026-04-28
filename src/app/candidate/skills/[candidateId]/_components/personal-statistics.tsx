@@ -64,12 +64,19 @@ export function PersonalStatistics({
     return () => window.clearTimeout(id);
   }, []);
   const total = assessed + notAssessed;
-  const progressData =
+  // `kind` is a locale-stable discriminator so the Cell fill below picks
+  // the right colour under both en and ar — comparing the localized
+  // `name` directly miscolours the donut in Arabic (both slices grey).
+  const progressData: Array<{
+    name: string;
+    value: number;
+    kind: "assessed" | "notAssessed" | "placeholder";
+  }> =
     total === 0
-      ? [{ name: t("candidateSkills.notYetAssessed"), value: 1, _placeholder: true }]
+      ? [{ name: t("candidateSkills.notYetAssessed"), value: 1, kind: "placeholder" }]
       : [
-          { name: t("candidateSkills.stats.legendAssessed"), value: assessed },
-          { name: t("candidateSkills.stats.legendNotAssessed"), value: notAssessed },
+          { name: t("candidateSkills.stats.legendAssessed"), value: assessed, kind: "assessed" },
+          { name: t("candidateSkills.stats.legendNotAssessed"), value: notAssessed, kind: "notAssessed" },
         ];
 
   // Filter out empty domains so the category donut only shows what's actually
@@ -123,11 +130,9 @@ export function PersonalStatistics({
                     <Cell
                       key={i}
                       fill={
-                        "_placeholder" in entry
-                          ? PROGRESS_COLOURS.notAssessed
-                          : entry.name === "Assessed"
-                            ? PROGRESS_COLOURS.assessed
-                            : PROGRESS_COLOURS.notAssessed
+                        entry.kind === "assessed"
+                          ? PROGRESS_COLOURS.assessed
+                          : PROGRESS_COLOURS.notAssessed
                       }
                     />
                   ))}

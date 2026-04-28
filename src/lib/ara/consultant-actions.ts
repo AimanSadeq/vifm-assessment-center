@@ -310,6 +310,154 @@ export async function reopenAssessment(assessmentId: string) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// M6 - Annual reassessment workflow.
+//
+// Spawns a new assessment for the same organisation seeded from a prior
+// completed/frozen/archived one. Carries forward identity (region,
+// sector, stage, scope, default language, sandbox flag) and pillar
+// weights so the consultant doesn't re-enter them. Question bank
+// version is *not* copied - we deliberately pick the active version at
+// reassessment time so the new year starts on the latest framework.
+//
+// Respondent carry-over is opt-in (carryRespondents): a typical year-2
+// reassessment re-invites the same stakeholders, but each respondent
+// gets a fresh access_token and fresh invited_at=null so the consultant
+// must explicitly send the new invitations.
+// ─────────────────────────────────────────────────────────────
+export async function createReassessmentFromPrior(
+  priorAssessmentId: string,
+  options: { carryRespondents: boolean } = { carryRespondents: true }
+) {
+  try { await requireAssessmentOwner(priorAssessmentId); } catch (e) { return authErr(e); }
+  const sb = createServiceClient();
+
+  const { data: prior, error: priorErr } = await sb
+    .from("ara_assessments")
+    .select(
+      "id, organization_id, consultant_id, region, sector, default_language, is_sandbox, " +
+      "engagement_stage, scope_label, scope_label_ar, status, pillar_weights, assessment_year"
+    )
+    .eq("id", priorAssessmentId)
+    .maybeSingle<{
+      id: string;
+      organization_id: string;
+      consultant_id: string | null;
+      region: string;
+      sector: string;
+      default_language: "en" | "ar";
+      is_sandbox: boolean;
+      engagement_stage: string;
+      scope_label: string | null;
+      scope_label_ar: string | null;
+      status: string;
+      pillar_weights: Record<string, number> | null;
+      assessment_year: number;
+    }>();
+  if (priorErr || !prior) return { ok: false, error: priorErr?.message ?? "Prior assessment not found" };
+
+  // Reassessment only makes sense once the prior has reached an end state.
+  // Allowing it from a draft/active prior would let a consultant fork an
+  // assessment mid-flight and produce a confusing parallel record.
+  if (!["completed", "frozen", "archived"].includes(prior.status)) {
+    return {
+      ok: false,
+      error: "Only completed, frozen, or archived assessments can be reassessed.",
+    };
+  }
+
+  const { data: activeBank, error: bankErr } = await sb
+    .from("ara_question_bank_versions")
+    .select("id")
+    .eq("is_active", true)
+    .maybeSingle<{ id: string }>();
+  if (bankErr || !activeBank) {
+    return { ok: false, error: "No active question bank version. Activate one in /ara/admin/questions first." };
+  }
+
+  const nextYear = Math.max(prior.assessment_year + 1, new Date().getUTCFullYear());
+
+  const { data: created, error: insertErr } = await sb
+    .from("ara_assessments")
+    .insert({
+      organization_id: prior.organization_id,
+      consultant_id: prior.consultant_id,
+      region: prior.region,
+      sector: prior.sector,
+      default_language: prior.default_language,
+      is_sandbox: prior.is_sandbox,
+      engagement_stage: prior.engagement_stage,
+      scope_label: prior.scope_label,
+      scope_label_ar: prior.scope_label_ar,
+      pillar_weights: prior.pillar_weights ?? null,
+      assessment_year: nextYear,
+      question_bank_version_id: activeBank.id,
+      status: "draft",
+      phase: "phase1",
+      prior_assessment_id: prior.id,
+    })
+    .select("id")
+    .single<{ id: string }>();
+  if (insertErr || !created) {
+    return { ok: false, error: insertErr?.message ?? "Failed to create reassessment" };
+  }
+
+  if (options.carryRespondents) {
+    const { data: priorRespondents } = await sb
+      .from("ara_respondents")
+      .select("id, name, name_ar, email, role_label_en, role_label_ar, language_preference")
+      .eq("assessment_id", prior.id);
+
+    if (priorRespondents && priorRespondents.length > 0) {
+      const newRows = priorRespondents.map((r) => ({
+        assessment_id: created.id,
+        name: r.name,
+        name_ar: r.name_ar,
+        email: r.email,
+        role_label_en: r.role_label_en,
+        role_label_ar: r.role_label_ar,
+        language_preference: r.language_preference,
+      }));
+      const { data: insertedRespondents, error: respErr } = await sb
+        .from("ara_respondents")
+        .insert(newRows)
+        .select("id, email");
+      if (respErr) {
+        // Clean up the assessment if respondent copy failed - otherwise
+        // the consultant would be left with an empty draft tied to the
+        // wrong baseline.
+        await sb.from("ara_assessments").delete().eq("id", created.id);
+        return { ok: false, error: `Respondent copy: ${respErr.message}` };
+      }
+
+      // Pillar assignments need a prior→new respondent ID map.
+      const idByEmail = new Map(priorRespondents.map((r) => [r.email, r.id]));
+      const newIdByEmail = new Map((insertedRespondents ?? []).map((r) => [r.email, r.id]));
+      const { data: priorAssignments } = await sb
+        .from("ara_respondent_pillar_assignments")
+        .select("respondent_id, pillar_id")
+        .in("respondent_id", Array.from(idByEmail.values()));
+      if (priorAssignments && priorAssignments.length > 0) {
+        const priorIdToEmail = new Map(priorRespondents.map((r) => [r.id, r.email]));
+        const assignmentRows = priorAssignments
+          .map((a) => {
+            const email = priorIdToEmail.get(a.respondent_id);
+            const newId = email ? newIdByEmail.get(email) : null;
+            return newId ? { respondent_id: newId, pillar_id: a.pillar_id } : null;
+          })
+          .filter(<T>(x: T | null): x is T => x !== null);
+        if (assignmentRows.length > 0) {
+          await sb.from("ara_respondent_pillar_assignments").insert(assignmentRows);
+        }
+      }
+    }
+  }
+
+  revalidatePath("/ara/consultant");
+  revalidatePath(`/ara/consultant/assessments/${priorAssessmentId}`);
+  return { ok: true, assessmentId: created.id };
+}
+
+// ─────────────────────────────────────────────────────────────
 // Compliance override (consultant manually sets status + evidence)
 // ─────────────────────────────────────────────────────────────
 const overrideSchema = z.object({

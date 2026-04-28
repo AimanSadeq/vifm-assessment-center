@@ -33,8 +33,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { EXERCISE_TYPE_LABELS } from "@/lib/constants/exercise-types";
-import { addCandidateAction, createAssignmentAction, addDemoAssessorAction, updateEngagementStatusAction, removeCandidateAction, deleteAssignmentAction, setCandidateRoleProfileAction } from "../actions";
-import { Trash2, Send, FileText, CheckCircle, Eye } from "lucide-react";
+import { addCandidateAction, createAssignmentAction, addDemoAssessorAction, updateEngagementStatusAction, removeCandidateAction, deleteAssignmentAction, setCandidateRoleProfileAction, createReengagementAction } from "../actions";
+import { Trash2, Send, FileText, CheckCircle, Eye, Repeat2, Loader2, History } from "lucide-react";
 import Link from "next/link";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -54,6 +54,10 @@ type Props = {
   matrix: Record<string, unknown>[];
   integrationWorksheets?: Record<string, unknown>[];
   roleProfiles?: RoleProfileOption[];
+  /** G7 - prior OAR keyed by *prior* candidate_id; empty when not a re-engagement. */
+  priorOarMap?: Record<string, number>;
+  /** G7 - current OAR keyed by *current* candidate_id; used to compute delta. */
+  currentOarMap?: Record<string, number>;
 };
 
 const ROLE_NONE = "__none__";
@@ -74,6 +78,8 @@ export function EngagementDetail({
   matrix,
   integrationWorksheets = [],
   roleProfiles = [],
+  priorOarMap = {},
+  currentOarMap = {},
 }: Props) {
   const router = useRouter();
   const [candidates, setCandidates] = useState(initCandidates);
@@ -110,6 +116,29 @@ export function EngagementDetail({
   // Status confirmation dialog
   const [statusConfirm, setStatusConfirm] = useState<{ open: boolean; status: string; label: string }>({ open: false, status: "", label: "" });
   const [statusUpdating, setStatusUpdating] = useState(false);
+
+  // G7 - re-engagement dialog
+  const [reengageOpen, setReengageOpen] = useState(false);
+  const [reengageCarryCandidates, setReengageCarryCandidates] = useState(true);
+  const [reengaging, setReengaging] = useState(false);
+
+  const handleReengage = async () => {
+    setReengaging(true);
+    const result = await createReengagementAction({
+      priorEngagementId: engagement.id as string,
+      carryCandidates: reengageCarryCandidates,
+    });
+    setReengaging(false);
+    if ("error" in result && result.error) {
+      toast.error(typeof result.error === "string" ? result.error : "Failed to create re-engagement");
+      return;
+    }
+    if ("data" in result && result.data) {
+      setReengageOpen(false);
+      toast.success("Re-engagement created");
+      router.push(`/admin/engagements/${result.data.id}`);
+    }
+  };
 
   const handleStatusChange = async () => {
     setStatusUpdating(true);
@@ -257,6 +286,8 @@ export function EngagementDetail({
     }
   };
 
+  const priorEngagementId = (engagement.prior_engagement_id as string | null) ?? null;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -266,6 +297,16 @@ export function EngagementDetail({
           <span>{orgName}</span>
           <Badge variant="secondary">{engagement.status as string}</Badge>
           {engagement.target_role ? <span>Target: {engagement.target_role as string}</span> : null}
+          {priorEngagementId && (
+            <Link
+              href={`/admin/engagements/${priorEngagementId}`}
+              className="inline-flex items-center gap-1 text-xs text-accent hover:underline"
+              title="View the prior engagement this one was seeded from"
+            >
+              <History className="h-3 w-3" />
+              Re-engagement of prior cohort
+            </Link>
+          )}
           {/* Status transitions */}
           <div className="flex gap-1 ms-auto">
             {engagement.status === "draft" && (
@@ -283,9 +324,64 @@ export function EngagementDetail({
                 Archive
               </Button>
             )}
+            {(engagement.status === "completed" || engagement.status === "archived") && (
+              <Button
+                size="sm"
+                variant="default"
+                className="gap-1"
+                onClick={() => setReengageOpen(true)}
+              >
+                <Repeat2 className="h-3 w-3" />
+                Re-engage cohort
+              </Button>
+            )}
           </div>
         </div>
       </div>
+
+      {/* G7 - re-engagement confirmation dialog */}
+      <Dialog open={reengageOpen} onOpenChange={setReengageOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Re-engage this cohort</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 text-sm">
+            <p className="text-muted-foreground">
+              Creates a new draft engagement seeded from this one. The role
+              profile, competencies, exercises, and matrix carry over so you
+              don&apos;t have to rebuild the design. Prior assessor assignments,
+              ratings, and reports are not copied — the new run earns its
+              own scores.
+            </p>
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={reengageCarryCandidates}
+                onChange={(e) => setReengageCarryCandidates(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-input"
+              />
+              <span>
+                Carry over the candidates from this engagement (each new
+                candidate row is linked to its prior so deltas can show on
+                the report).
+              </span>
+            </label>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                variant="ghost"
+                onClick={() => setReengageOpen(false)}
+                disabled={reengaging}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleReengage} disabled={reengaging}>
+                {reengaging && <Loader2 className="h-3 w-3 me-1 animate-spin" />}
+                Create re-engagement
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Tabs defaultValue="candidates">
         <TabsList>
@@ -447,6 +543,7 @@ export function EngagementDetail({
                       <TableHead>Role Profile</TableHead>
                       <TableHead>Department</TableHead>
                       <TableHead>Assigned Assessments</TableHead>
+                      {priorEngagementId && <TableHead>vs Prior</TableHead>}
                       <TableHead>Status</TableHead>
                       <TableHead className="w-12"></TableHead>
                     </TableRow>
@@ -503,6 +600,41 @@ export function EngagementDetail({
                               <span className="text-xs text-muted-foreground">None</span>
                             )}
                           </TableCell>
+                          {priorEngagementId && (
+                            <TableCell>
+                              {(() => {
+                                const priorCandId = c.prior_candidate_id as string | null;
+                                const priorOar = priorCandId ? priorOarMap[priorCandId] : undefined;
+                                const currOar = currentOarMap[c.id as string];
+                                if (priorOar == null) {
+                                  return <span className="text-xs text-muted-foreground">-</span>;
+                                }
+                                if (currOar == null) {
+                                  return (
+                                    <Badge variant="secondary" className="text-[11px] gap-1">
+                                      <History className="h-3 w-3" /> Prior {priorOar}
+                                    </Badge>
+                                  );
+                                }
+                                const delta = currOar - priorOar;
+                                const tone =
+                                  delta > 0
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                    : delta < 0
+                                      ? "bg-rose-50 text-rose-700 border-rose-200"
+                                      : "bg-muted text-muted-foreground";
+                                const arrow = delta > 0 ? "↑" : delta < 0 ? "↓" : "=";
+                                return (
+                                  <span
+                                    className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] tabular-nums ${tone}`}
+                                    title={`Prior OAR ${priorOar} → ${currOar}`}
+                                  >
+                                    {arrow} {delta > 0 ? `+${delta}` : delta} vs prior
+                                  </span>
+                                );
+                              })()}
+                            </TableCell>
+                          )}
                           <TableCell>
                             <Badge variant="outline">{c.status as string}</Badge>
                           </TableCell>

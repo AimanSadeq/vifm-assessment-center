@@ -18,6 +18,7 @@ import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
 import { ARA_STAGE_MAP } from "@/lib/constants/ara-stages";
 import { bulkImportAraRespondents, createAraRespondent } from "@/lib/ara/actions";
 import { SendInvitationButton } from "./_components/send-invitation-button";
+import { StartReassessmentButton } from "./_components/start-reassessment-button";
 import {
   createConsultantNote, deleteConsultantNote, toggleNoteIncludeInReport,
   freezeAssessmentScores, unfreezeAssessmentScores,
@@ -427,6 +428,12 @@ export default async function AraAssessmentDetailPage({
               >
                 <Archive className="h-3 w-3" /> Archive
               </ConfirmAction>
+            )}
+            {(assessment.status === "completed" || isFrozen || isArchived) && (
+              <StartReassessmentButton
+                priorAssessmentId={assessment.id}
+                priorYear={assessment.assessment_year}
+              />
             )}
             </div>
           </div>

@@ -60,6 +60,35 @@ export default async function EngagementDetailPage({ params }: Props) {
   const integrationWorksheets = wsResult.data ?? [];
   const roleProfiles = profilesResult.data ?? [];
 
+  // G7 - re-engagement deltas: when this engagement was seeded from a
+  // prior one, fetch the prior OAR for each carried-over candidate so
+  // the candidate row can show "↑1 vs prior" or "↓1" once the new run
+  // produces its own OAR. Skipped (and the map stays empty) when this
+  // is a fresh engagement, which keeps the cost zero on the common path.
+  const priorCandidateIds = candidates
+    .map((c) => c.prior_candidate_id as string | null)
+    .filter((x): x is string => !!x);
+  const priorOarMap: Record<string, number> = {};
+  const currentOarMap: Record<string, number> = {};
+  if (priorCandidateIds.length > 0) {
+    const [{ data: priorOars }, { data: currOars }] = await Promise.all([
+      supabase
+        .from("overall_assessment_ratings")
+        .select("candidate_id, overall_score")
+        .in("candidate_id", priorCandidateIds),
+      supabase
+        .from("overall_assessment_ratings")
+        .select("candidate_id, overall_score")
+        .eq("engagement_id", id),
+    ]);
+    for (const row of priorOars ?? []) {
+      priorOarMap[row.candidate_id as string] = row.overall_score as number;
+    }
+    for (const row of currOars ?? []) {
+      currentOarMap[row.candidate_id as string] = row.overall_score as number;
+    }
+  }
+
   // Extract exercises from junction table
   const exercises = engExercises
     .map((ee: Record<string, unknown>) => ee.exercises)
@@ -77,6 +106,8 @@ export default async function EngagementDetailPage({ params }: Props) {
         matrix={matrix}
         integrationWorksheets={integrationWorksheets}
         roleProfiles={roleProfiles}
+        priorOarMap={priorOarMap}
+        currentOarMap={currentOarMap}
       />
     </div>
   );

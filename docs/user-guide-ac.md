@@ -226,8 +226,6 @@ The engagement detail page shows progress. Below the candidates table:
 
 After all assessors have rated, run the wash-up at `/assessor/washup/[engagementId]/[candidateId]` (consultants are typically present too).
 
-![Wash-up consensus screen](images/ac/13-washup.png)
-
 Features:
 
 - **Supabase Realtime** — multiple users see edits live without refresh
@@ -284,8 +282,6 @@ The grid shows rows for candidates and columns for exercises. Each cell is your 
 #### 2. Observation form (4 tabs)
 
 `/assessor/observation/[assignmentId]`.
-
-![Observation form — 4 tabs](images/ac/21-observation-form.png)
 
 **Tab 1 — Overview:** Exercise type, candidate, target competencies, timing breakdown (instructions / prep / meeting), participant brief, scenario context.
 
@@ -349,16 +345,12 @@ What's on this page:
 
 Click *Start AI Quiz* on any skill card → `/candidate/quiz/[attemptId]`.
 
-![Quiz interface](images/ac/32-quiz.png)
-
 - **7 questions** mixing 4 multiple-choice + 2 true/false + 1 cognitive pattern-recognition
 - **Mixed difficulty** — Easy / Medium / Hard pills
 - **5-minute timer** with graceful "End Session" option
 - Bilingual EN/AR via i18n
 
 Results page (`/candidate/quiz/[attemptId]/results`):
-
-![Quiz results with AI explanation](images/ac/33-quiz-results.png)
 
 - Score circle + 3 stat cards
 - Per-question review with **AI-generated explanation in a Lightbulb tip box** — the highest-value learning moment
@@ -375,8 +367,6 @@ In the header of every `/candidate/*` page. Rose unread badge. Click for the 20 
 - 6-page bilingual report
 - Two PDF downloads: **Full report** (`/api/reports/[engId]/[candId]/pdf`) and **Learning Plan** (`/api/reports/[engId]/[candId]/learning-plan`)
 
-![Candidate report — gap-severity badges](images/ac/34-candidate-report.png)
-
 The report uses **gap-severity badges** to communicate where the candidate stands per competency: Significant Gap (N levels) · On Target · Strength.
 
 #### 8. Learning Plan PDF
@@ -387,8 +377,6 @@ A 4-page React-PDF personalised plan:
 2. **30/60/90-Day Roadmap** — concrete actions per phase
 3. **Per-competency action cards** with `<GapPill>` mirroring the on-screen badges
 4. **Top-5 recommended VIFM programmes** with ★ HIGH FIT badges, per-driver chips, AI rationale
-
-![Learning Plan PDF](images/ac/35-learning-plan-pdf.png)
 
 ---
 

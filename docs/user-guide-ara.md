@@ -217,8 +217,6 @@ Tick the respondents you want to invite, click *Send invitations*. The system:
 3. Logs the send to `ara_email_log` for audit
 4. (In sandbox or when `SANDBOX_EMAIL_REDIRECT` is set) routes to a single email for testing
 
-![Send invitations dialog](images/ara/15-send-invitations.png)
-
 #### 6. Monitor progress
 
 The *Progress* panel on the detail page shows a per-respondent table:
@@ -252,8 +250,6 @@ Click *Generate report* → `/api/ara/reports/[id]/pdf?language=en|ar|bilingual`
 
 The Workforce AI Readiness section appears in the PDF when `include_individual_layer=true` and respondents have answered.
 
-![Bilingual PDF — cover page](images/ara/17-pdf-cover.png)
-
 #### 9. Deliver and re-engage
 
 Once generated, the PDF stays attached to the assessment record (it survives even if the assessment is later archived — VIFM business records per retention §15.3). Deliver to the client out-of-band (email, secure file share).
@@ -266,11 +262,7 @@ For year-on-year, on the assessment detail action rail click *Start reassessment
 
 #### 1. Receive the invitation
 
-The respondent receives a bilingual email with a unique token URL.
-
-![Respondent invitation email](images/ara/20-invitation-email.png)
-
-The link looks like `https://your-tenant.vifm.ae/ara/respond/<token>`. No account or login is needed — the token is the credential.
+The respondent receives a bilingual email with a unique token URL. The link looks like `https://your-tenant.vifm.ae/ara/respond/<token>`. No account or login is needed — the token is the credential.
 
 #### 2. Open the survey
 
@@ -341,8 +333,6 @@ The results page surfaces:
 #### 4. Download the PDF
 
 Click *Download PDF* on the results page → `/api/ara/personal/<token>/pdf`. One-page bilingual mini-report with your snapshot + course recs.
-
-![Personal snapshot PDF](images/ara/32-personal-pdf.png)
 
 ---
 

@@ -199,14 +199,14 @@ export default function AraRoadmapPage() {
             Four stages. One Compass.
           </h2>
           <p className="text-sm text-muted-foreground mt-3 max-w-2xl mx-auto">
-            Same diagnostic engine, scope that scales. Start with a free
-            Personal Snapshot or a complimentary Department assessment, then
-            expand to Division and Enterprise when ready.
+            Same diagnostic engine, scope that scales. Start with a
+            complimentary Personal Snapshot or a complimentary Department
+            assessment, then expand to Division and Enterprise when ready.
           </p>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[
-            { label: "Personal",   name: "Personal",   scope: "One person, self-served",            price: "Free",          metric: "4 personal factors", color: "#0D9488" },
+            { label: "Personal",   name: "Personal",   scope: "One person, self-served",            price: "Complimentary", metric: "4 personal factors", color: "#0D9488" },
             { label: "Stage 1",    name: "Department", scope: "One department",                     price: "Complimentary", metric: "4 of 8 pillars",     color: "#0D9488" },
             { label: "Stage 2",    name: "Division",   scope: "A division of several departments",  price: "Fee-based",     metric: "6 of 8 pillars",     color: "#7C3AED" },
             { label: "Stage 3",    name: "Enterprise", scope: "The whole organisation, board-level", price: "Fee-based",    metric: "8 of 8 pillars",     color: "#D97706" },

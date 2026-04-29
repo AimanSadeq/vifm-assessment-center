@@ -21,7 +21,7 @@ export default function PersonalAssessmentStartPage() {
           <p className="text-sm text-muted-foreground mt-2 max-w-lg mx-auto">
             A short self-assessment — about 5-7 minutes — that gives you a
             clear read on how AI-ready you personally are across four
-            VIFM factors. Free. No account required.
+            VIFM factors. Complimentary. No account required.
           </p>
         </div>
 

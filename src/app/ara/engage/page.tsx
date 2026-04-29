@@ -85,10 +85,10 @@ export default function AraEngagePage() {
               Four stages. <span className="ara-accent-sweep">One Compass.</span>
             </h1>
             <p className="text-lg text-white/75 max-w-2xl leading-relaxed">
-              Start with a free Personal Snapshot for one individual, or a
-              complimentary Department assessment for one team. Expand to a
-              Division or the whole Enterprise as your appetite grows. Same
-              diagnostic engine, scope that scales with you.
+              Start with a complimentary Personal Snapshot for one individual,
+              or a complimentary Department assessment for one team. Expand
+              to a Division or the whole Enterprise as your appetite grows.
+              Same diagnostic engine, scope that scales with you.
             </p>
           </div>
         </div>
@@ -213,7 +213,7 @@ export default function AraEngagePage() {
               What is included at each stage
             </h2>
             <p className="text-sm text-muted-foreground mt-3">
-              Personal is a free self-assessment for one individual.
+              Personal is a complimentary self-assessment for one individual.
               Department, Division, and Enterprise are cumulative engagements
               for organisations — everything in Department is also in
               Division, and everything in Division is also in Enterprise.
@@ -232,17 +232,17 @@ export default function AraEngagePage() {
           Start where you stand. Grow when ready.
         </h2>
         <p className="text-base text-muted-foreground max-w-xl mx-auto mb-8">
-          Take a free Personal Snapshot in five minutes, or run a complimentary
-          Department assessment to prove value inside one team. Progress to a
-          paid Division or Enterprise engagement when internal sponsorship is
-          secured.
+          Take a complimentary Personal Snapshot in five minutes, or run a
+          complimentary Department assessment to prove value inside one team.
+          Progress to a paid Division or Enterprise engagement when internal
+          sponsorship is secured.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Link
             href="/ara/personal/start"
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-5 py-3 text-sm font-medium text-foreground hover:bg-muted transition-colors"
           >
-            Take the free snapshot
+            Take the complimentary snapshot
           </Link>
           <Link
             href="/ara/consultant/assessments/new"
@@ -325,9 +325,7 @@ function CapabilityMatrix() {
                 {stage.label_en}
               </p>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                {stage.id === "individual"
-                  ? "Free, self-served"
-                  : stage.is_pro_bono ? "Complimentary" : "Fee-based"}
+                {stage.is_pro_bono ? "Complimentary" : "Fee-based"}
               </p>
             </div>
           );

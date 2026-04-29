@@ -6,7 +6,7 @@ export const metadata: Metadata = {
     template: "%s · VIFM AI Readiness Compass",
   },
   description:
-    "VIFM AI Readiness Compass - bilingual diagnostic platform for AI readiness across the GCC. Eight organisational pillars, sixteen regulatory frameworks, four engagement stages from a free Personal Snapshot to a board-grade Enterprise diagnostic. Calibrated for UAE and Saudi Arabia.",
+    "VIFM AI Readiness Compass - bilingual diagnostic platform for AI readiness across the GCC. Eight organisational pillars, sixteen regulatory frameworks, four engagement stages from a complimentary Personal Snapshot to a board-grade Enterprise diagnostic. Calibrated for UAE and Saudi Arabia.",
 };
 
 export default function AraLayout({

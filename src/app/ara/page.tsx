@@ -63,7 +63,7 @@ export default function AraRootPage() {
             <p className="text-lg text-white/75 max-w-2xl leading-relaxed">
               Eight pillars, sixteen regulatory frameworks, and a bilingual branded
               report — delivered in English, Arabic, or side-by-side landscape.
-              Plus a free, self-served Personal Snapshot for individuals. Built
+              Plus a complimentary, self-served Personal Snapshot for individuals. Built
               for consultant-led engagements across UAE and Saudi Arabia.
             </p>
 
@@ -140,7 +140,7 @@ export default function AraRootPage() {
               icon={User}
               tone="teal"
               title="Personal snapshot"
-              subtitle="Self-served, free"
+              subtitle="Self-served, complimentary"
               description="A short bilingual self-assessment for individuals — 5-7 minutes, four VIFM factors, plus personalised VIFM training recommendations to act on the gaps."
               cta="Take the snapshot"
             />

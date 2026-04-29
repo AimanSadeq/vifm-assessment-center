@@ -61,21 +61,36 @@ const SHOTS: Shot[] = [
   { module: "ara", file: "40-admin-question-banks.png",   path: "/ara/admin/questions" },
   { module: "ara", file: "41-admin-regulatory.png",       path: "/ara/admin/regulatory" },
 
+  // ── ARA — extra consultant-flow shots ────────────────────
+  { module: "ara", file: "02-engage.png",                 path: "/ara/engage" },
+  { module: "ara", file: "50-new-organization.png",       path: "/ara/admin/organizations/new" },
+  { module: "ara", file: "53-personal-deep-dive-form.png", path: "/ara/consultant/personal-deep-dive/new" },
+
   // ── ARA — data-dependent (try to resolve a real record) ──
+  { module: "ara", file: "51-assessment-overview-tab.png", path: "/ara/consultant/assessments/{assessmentId}" },
   { module: "ara", file: "14-respondents-tab.png",        path: "/ara/consultant/assessments/{assessmentId}",                clickByText: "Respondents" },
   { module: "ara", file: "16-phase2-tab.png",             path: "/ara/consultant/assessments/{assessmentId}",                clickByText: "Phase 2 notes" },
+  { module: "ara", file: "52-phase2-guide-tab.png",       path: "/ara/consultant/assessments/{assessmentId}",                clickByText: "Phase 2 guide" },
+  { module: "ara", file: "54-compliance-tab.png",         path: "/ara/consultant/assessments/{assessmentId}",                clickByText: "Compliance" },
   { module: "ara", file: "21-respondent-welcome.png",     path: "/ara/respond/{respondentToken}" },
   { module: "ara", file: "22-respondent-question.png",    path: "/ara/respond/{respondentToken}", scrollY: 400 },
   { module: "ara", file: "31-personal-results.png",       path: "/ara/personal/results/{personalResultsToken}" },
 
   // ── AC — public ───────────────────────────────────────────
   { module: "ac",  file: "01-admin-home.png",             path: "/admin" },
+  { module: "ac",  file: "02-login.png",                  path: "/login" },
+  { module: "ac",  file: "03-clients.png",                path: "/admin/clients" },
   { module: "ac",  file: "10-admin-portal.png",           path: "/admin/engagements" },
   { module: "ac",  file: "11-jd-extractor.png",           path: "/admin/engagements/new" },
   { module: "ac",  file: "14-admin-courses.png",          path: "/admin/courses" },
+  { module: "ac",  file: "53-role-profiles.png",          path: "/admin/role-profiles" },
+  { module: "ac",  file: "54-courses-import.png",         path: "/admin/courses/import" },
 
   // ── AC — data-dependent ──────────────────────────────────
   { module: "ac",  file: "12-engagement-detail.png",      path: "/admin/engagements/{engagementId}" },
+  { module: "ac",  file: "50-engagement-assignments-tab.png", path: "/admin/engagements/{engagementId}",                  clickByText: "Assignments" },
+  { module: "ac",  file: "51-engagement-matrix-tab.png",  path: "/admin/engagements/{engagementId}",                      clickByText: "Matrix" },
+  { module: "ac",  file: "52-engagement-reports-tab.png", path: "/admin/engagements/{engagementId}",                      clickByText: "Reports" },
   { module: "ac",  file: "20-assessor-assignments.png",   path: "/assessor/assignments/{engagementId}" },
   { module: "ac",  file: "30-candidate-welcome.png",      path: "/candidate/welcome/{candidateId}" },
   { module: "ac",  file: "31-skills-dashboard.png",       path: "/candidate/skills/{candidateId}" },
@@ -186,7 +201,18 @@ async function captureOne(browser: Browser, shot: Shot, placeholders: Record<str
         const candidates = Array.from(
           document.querySelectorAll('button, [role="tab"], a')
         ) as HTMLElement[];
-        return candidates.find((c) => c.textContent?.trim() === needle) ?? null;
+        // Prefer exact match, then startsWith — handles tab labels with
+        // appended counts like "Assignments (9)". Inline trim() rather
+        // than a helper because tsx transpilation injects __name() calls
+        // into the helper that don't exist in the browser eval context.
+        let exact = null as HTMLElement | null;
+        let prefix = null as HTMLElement | null;
+        for (const c of candidates) {
+          const t = (c.textContent ?? "").trim();
+          if (t === needle) { exact = c; break; }
+          if (!prefix && t.startsWith(needle + " ")) prefix = c;
+        }
+        return exact ?? prefix;
       }, shot.clickByText);
       const el = handle.asElement();
       if (el) {

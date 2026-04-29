@@ -45,6 +45,9 @@ type Shot = {
   waitFor?: string;
   /** Optional scrollY before snapping */
   scrollY?: number;
+  /** Optional click — element text to find and click after navigation
+   *   (used to switch Radix Tabs which are client-state, not URL-driven). */
+  clickByText?: string;
 };
 
 const SHOTS: Shot[] = [
@@ -59,8 +62,8 @@ const SHOTS: Shot[] = [
   { module: "ara", file: "41-admin-regulatory.png",       path: "/ara/admin/regulatory" },
 
   // ── ARA — data-dependent (try to resolve a real record) ──
-  { module: "ara", file: "14-respondents-tab.png",        path: "/ara/consultant/assessments/{assessmentId}?tab=respondents" },
-  { module: "ara", file: "16-phase2-tab.png",             path: "/ara/consultant/assessments/{assessmentId}?tab=phase2" },
+  { module: "ara", file: "14-respondents-tab.png",        path: "/ara/consultant/assessments/{assessmentId}",                clickByText: "Respondents" },
+  { module: "ara", file: "16-phase2-tab.png",             path: "/ara/consultant/assessments/{assessmentId}",                clickByText: "Phase 2 notes" },
   { module: "ara", file: "21-respondent-welcome.png",     path: "/ara/respond/{respondentToken}" },
   { module: "ara", file: "22-respondent-question.png",    path: "/ara/respond/{respondentToken}", scrollY: 400 },
   { module: "ara", file: "31-personal-results.png",       path: "/ara/personal/results/{personalResultsToken}" },
@@ -173,6 +176,27 @@ async function captureOne(browser: Browser, shot: Shot, placeholders: Record<str
     }
     if (shot.waitFor) {
       await page.waitForSelector(shot.waitFor, { timeout: 5_000 }).catch(() => {});
+    }
+    if (shot.clickByText) {
+      // Find the element by text content (typically a Radix TabsTrigger
+      // <button role="tab"> with the given label) and click via
+      // Puppeteer's mouse so the pointer events fire — bare HTMLElement
+      // .click() doesn't trigger Radix's internal pointerdown listeners.
+      const handle = await page.evaluateHandle((needle: string) => {
+        const candidates = Array.from(
+          document.querySelectorAll('button, [role="tab"], a')
+        ) as HTMLElement[];
+        return candidates.find((c) => c.textContent?.trim() === needle) ?? null;
+      }, shot.clickByText);
+      const el = handle.asElement();
+      if (el) {
+        await (el as import("puppeteer").ElementHandle<HTMLElement>).click();
+      } else {
+        console.warn(`    (clickByText: "${shot.clickByText}" not found on page)`);
+      }
+      await handle.dispose();
+      // Tab content render + any animation settle.
+      await new Promise((r) => setTimeout(r, 1000));
     }
     if (shot.scrollY) {
       await page.evaluate((y) => window.scrollTo(0, y), shot.scrollY);

@@ -148,12 +148,18 @@ export default async function AraRespondPage({
           language={language}
         />
 
-        {/* AI Use Case Portfolio (optional) */}
-        <UseCasesSection
-          token={params.token}
-          language={language}
-          useCases={(useCases ?? []) as any}
-        />
+        {/* AI Use Case Portfolio (optional) — org-side only. Personal /
+             individual-stage respondents (Mode A snapshot, Mode B deep-dive)
+             are answering about their own behaviours, not their org's
+             portfolio, so the section is suppressed and the "your
+             consultant" copy doesn't leak into the self-served flow. */}
+        {ctx.assessment.engagement_stage !== "individual" && (
+          <UseCasesSection
+            token={params.token}
+            language={language}
+            useCases={(useCases ?? []) as any}
+          />
+        )}
 
         {/* Supporting Materials (optional) */}
         <MaterialsSection

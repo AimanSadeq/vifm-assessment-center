@@ -273,16 +273,27 @@ function QuestionRow({
         onAnswer={onAnswer}
       />
 
-      {/* Need to verify toggle */}
-      <label className="mt-3 inline-flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+      {/* Flag-for-follow-up toggle. Was previously labelled "Need to
+           verify", which read ambiguously to respondents — verify what,
+           by whom? Reframed as a self-flag for items the respondent
+           wants to revisit later. */}
+      <label
+        className="mt-3 inline-flex items-start gap-2 text-xs text-muted-foreground cursor-pointer"
+        title={rtl
+          ? "ضع علامة على البنود التي لست متأكداً منها أو تريد مراجعتها قبل التسليم."
+          : "Mark items you're unsure about or want to revisit before you finish."}
+      >
         <input
           type="checkbox"
-          className="h-3.5 w-3.5 rounded border-input"
+          className="h-3.5 w-3.5 rounded border-input mt-0.5"
           checked={answer?.needsVerification ?? false}
           onChange={(e) => onAnswer(question.id, { needsVerification: e.target.checked })}
         />
         <span>
-          {rtl ? "يحتاج إلى التحقق" : "Need to verify"}
+          {rtl ? "تحديد للمراجعة لاحقاً" : "Flag for follow-up"}
+          <span className="ms-1 opacity-70">
+            {rtl ? "— غير متأكد، أراجع لاحقاً" : "— I'm not sure, I'll revisit"}
+          </span>
         </span>
       </label>
     </div>

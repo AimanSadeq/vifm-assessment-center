@@ -1,8 +1,9 @@
 import Link from "next/link";
 import {
-  ArrowRight, Check, Minus, Sparkles, Users, Building2, Crown,
+  ArrowRight, Check, Minus, Sparkles, Users, Building2, Crown, FileDown,
 } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
+import { CompetencyConfigurator } from "./_components/competency-configurator";
 
 export const metadata = {
   title: "Engage · VIFM Assessment Center",
@@ -40,8 +41,16 @@ const TIERS: Array<{
   price: string;
   cta: string;
   ctaHref: string;
+  /** Static sample-report PDF served from /public/samples/. Generated
+   *  via scripts/build-sample-reports.ts so prospects see exactly the
+   *  shape of the deliverable they'll get. */
+  sampleHref: string;
   tone: keyof typeof TIER_TONES;
   icon: typeof Users;
+  /** Tier-card facts. We deliberately don't sell on page count
+   *  ("8 pages / 27 pages") because the reviewer (2026-04-29 voice
+   *  note) flagged that as a turn-off — clients care about content,
+   *  not length. So `Report` describes what's *in* the report. */
   facts: Array<{ label: string; value: string }>;
 }> = [
   {
@@ -53,13 +62,14 @@ const TIERS: Array<{
     price: "Fee-based engagement",
     cta: "Talk to a consultant",
     ctaHref: "mailto:contact@viftraining.com?subject=AC%20Single%20Engagement%20Enquiry",
+    sampleHref: "/samples/VIFM-AC-Sample-Report-Single.pdf",
     tone: "blue",
     icon: Users,
     facts: [
       { label: "Candidates",   value: "Up to 6" },
-      { label: "Exercises",    value: "3–4" },
+      { label: "Driven by",    value: "Competency count" },
       { label: "Assessor pool", value: "2–3 lead assessors" },
-      { label: "Report",       value: "6-page individual" },
+      { label: "Report",       value: "9-box grid · OAR + recommendation · per-competency development tips" },
     ],
   },
   {
@@ -71,13 +81,14 @@ const TIERS: Array<{
     price: "Fee-based · volume-discounted",
     cta: "Discuss a programme",
     ctaHref: "mailto:contact@viftraining.com?subject=AC%20Programme%20Enquiry",
+    sampleHref: "/samples/VIFM-AC-Sample-Report-Programme.pdf",
     tone: "violet",
     icon: Building2,
     facts: [
       { label: "Candidates",   value: "20–60" },
-      { label: "Exercises",    value: "4–6 per cohort" },
+      { label: "Driven by",    value: "Competency count × cohort size" },
       { label: "Assessor pool", value: "Lead + Associate" },
-      { label: "Report",       value: "Individual + cohort analytics" },
+      { label: "Report",       value: "Individual report · cohort analytics dashboard · ICC + bias detection" },
     ],
   },
   {
@@ -89,13 +100,14 @@ const TIERS: Array<{
     price: "Premium retainer",
     cta: "Explore partnership",
     ctaHref: "mailto:contact@viftraining.com?subject=AC%20Strategic%20Talent%20Partnership%20Enquiry",
+    sampleHref: "/samples/VIFM-AC-Sample-Report-Partnership.pdf",
     tone: "gold",
     icon: Crown,
     facts: [
       { label: "Candidates",   value: "Unlimited" },
-      { label: "Exercises",    value: "Library + bespoke" },
+      { label: "Driven by",    value: "Custom framework + bespoke exercises" },
       { label: "Assessor pool", value: "Dedicated team" },
-      { label: "Report",       value: "Branded + quarterly cohort reviews" },
+      { label: "Report",       value: "Branded individual + quarterly board review · year-on-year talent trajectory" },
     ],
   },
 ];
@@ -188,8 +200,11 @@ export default function AcEngagePage() {
         </div>
       </section>
 
+      {/* ─── Competency-count configurator (recommends a tier) ─── */}
+      <CompetencyConfigurator />
+
       {/* ─── Tier cards ─── */}
-      <section className="max-w-6xl mx-auto px-6 -mt-10 relative z-10 pb-12">
+      <section className="max-w-6xl mx-auto px-6 relative z-10 pb-12">
         <div className="grid gap-5 md:grid-cols-3">
           {TIERS.map((t) => {
             const tone = TIER_TONES[t.tone];
@@ -260,6 +275,14 @@ export default function AcEngagePage() {
                 >
                   {t.cta} <ArrowRight className="h-4 w-4" />
                 </Link>
+                <a
+                  href={t.sampleHref}
+                  download
+                  className="mt-2 inline-flex items-center justify-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <FileDown className="h-3.5 w-3.5" />
+                  Download sample report (PDF)
+                </a>
               </article>
             );
           })}

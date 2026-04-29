@@ -823,11 +823,22 @@ export default async function AraAssessmentDetailPage({
                     ? "Deep-dive · 48 items"
                     : "Snapshot · 24 items"}
                 </Badge>
+                <Link
+                  href={`/ara/cohort/${assessment.id}`}
+                  target="_blank"
+                  className="ms-auto text-[11px] font-medium text-accent hover:underline inline-flex items-center gap-1"
+                  title="Open the read-only cohort dashboard — share this URL with the client sponsor"
+                >
+                  Open client dashboard ↗
+                </Link>
               </CardTitle>
               <CardDescription>
                 Cohort-level four-factor readiness rolled up across every
                 respondent who answered the individual layer. Per-person
-                breakdown shows who is pulling the cohort up or down.
+                breakdown shows who is pulling the cohort up or down. The
+                <span className="font-medium text-foreground"> client dashboard</span> link
+                above opens a read-only summary (no respondent identities) at
+                a public URL you can share with engagement sponsors.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">

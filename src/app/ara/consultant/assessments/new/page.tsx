@@ -146,6 +146,10 @@ export default async function NewAraAssessmentPage({
                         <Check className="h-3 w-3" style={{ color: tone.fg }} />
                         {stage.report_pages}-page branded report
                       </li>
+                      <li className="flex items-center gap-1.5 opacity-75">
+                        <User className="h-3 w-3" style={{ color: tone.fg }} />
+                        + optional individual readiness layer
+                      </li>
                     </ul>
                   </article>
                 </Link>
@@ -153,7 +157,31 @@ export default async function NewAraAssessmentPage({
             })}
           </div>
 
-          <p className="text-xs text-muted-foreground mt-8">
+          {/* Mode C signpost. The "Include individual layer" toggle is on
+              Step 2, but reviewers (incl. one on 2026-04-29) miss it
+              entirely and assume the platform "removed corporate /
+              department / division". Calling it out here means it's
+              visible regardless of which stage card the consultant
+              clicks through. */}
+          <div className="mt-8 rounded-lg border border-accent/30 bg-accent/5 p-4 flex items-start gap-3">
+            <div className="rounded-full bg-accent/15 p-1.5 mt-0.5">
+              <User className="h-3.5 w-3.5 text-accent" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-primary">
+                Add a workforce-readiness layer to any stage
+              </p>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                Every Department, Division, or Enterprise assessment can
+                optionally include the four-factor individual layer alongside
+                the org-side pillar items — gives you a per-respondent
+                personal readiness rollup plus a cohort dashboard. You&apos;ll
+                find the toggle on Step 2 once you pick a stage.
+              </p>
+            </div>
+          </div>
+
+          <p className="text-xs text-muted-foreground mt-6">
             Need help choosing?{" "}
             <Link href="/ara/engage" className="underline hover:text-foreground">
               See the full comparison

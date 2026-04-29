@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Compass, Sparkles, ArrowLeft, FileDown } from "lucide-react";
+import { Compass, Sparkles, ArrowLeft, FileDown, BookOpen } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -269,6 +269,36 @@ export default async function PersonalResultsPage({ params }: Props) {
           courses={recommendations}
           context="ac"
         />
+
+        {/* Methodology trust badge — first asked-for concern from any
+             stakeholder reviewing the platform: "where did the questions
+             come from?". Links out to the methodology brief which
+             answers item development, content validity, reliability
+             planning, and limitations. */}
+        <div className="rounded-md border bg-muted/20 p-3 flex items-start gap-3">
+          <div className="rounded-full bg-accent/15 p-1.5 mt-0.5">
+            <BookOpen className="h-3.5 w-3.5 text-accent" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold">
+              {isAr ? "كيف بنينا هذا التقييم" : "How we built this assessment"}
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
+              {isAr
+                ? "تطوير البنود، صدق المحتوى، خطة الثبات، الأطر المرجعية، والحدود الصريحة — موثقة في موجز المنهجية."
+                : "Item development, content validity, reliability plan, reference frameworks, and explicit limitations — documented in the methodology brief."}
+            </p>
+            <a
+              href="https://github.com/AimanSadeq/vifm-assessment-center/blob/master/docs/ARA-Methodology-Brief.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-accent hover:underline mt-1"
+            >
+              {isAr ? "اقرأ موجز المنهجية" : "Read the methodology brief"}
+              <ArrowLeft className="h-3 w-3 rotate-180" />
+            </a>
+          </div>
+        </div>
 
         <p className="text-[11px] text-muted-foreground text-center">
           {isAr

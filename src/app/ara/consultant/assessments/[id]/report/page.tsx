@@ -1085,6 +1085,40 @@ export default async function AraReportPage({
             organizational score is the sum of all eight weighted pillar scores.
           </p>
 
+          <h3 className="report-h3">Item development &amp; validation</h3>
+          <p className="report-body">
+            Items in the v1.1 production bank were developed through three rounds:
+            initial drafting by VIFM consultants against the VIFM-AC behavioural
+            framework and reference regulatory frameworks; AI-assisted expansion
+            with every suggestion reviewed by at least one consultant before
+            inclusion; and a bilingual rewrite in Gulf Arabic at source rather
+            than back-translation. Every item is tagged at the database level to
+            exactly one construct (a pillar, on the org-side) — the assessment
+            locks to the question-bank version active at creation, so this
+            report is reproducible against the same items even if the bank
+            advances. The full methodology brief (item development, content
+            validity, reliability planning, reference frameworks, limitations)
+            is published at{" "}
+            <span style={{ fontFamily: "monospace", fontSize: "9pt" }}>
+              docs/ARA-Methodology-Brief.md
+            </span>{" "}
+            on the VIFM platform repository.
+          </p>
+
+          <h3 className="report-h3">Validity and reliability disclosures</h3>
+          <p className="report-body report-muted" style={{ fontSize: "9pt" }}>
+            Construct validity (does the four-factor / eight-pillar model carve
+            nature at its joints?) requires confirmatory factor analysis with
+            N ≥ 200 individual responses and N ≥ 50 organisational responses.
+            We are accumulating responses passively and will publish loadings
+            and fit indices once the threshold is met. Pre-CFA, the model is
+            treated as a content-validated heuristic, not an empirically
+            validated structure. Cronbach&apos;s alpha will be reported per
+            construct on the same cadence. Inter-rater reliability is
+            measurable from the Phase 2 audit trail and will be surfaced in
+            the consultant analytics console at N ≥ 30 multi-rater workshops.
+          </p>
+
           <h3 className="report-h3">Pillar weights used</h3>
           <table className="report-body" style={{ width: "60%", borderCollapse: "collapse" }}>
             <tbody>

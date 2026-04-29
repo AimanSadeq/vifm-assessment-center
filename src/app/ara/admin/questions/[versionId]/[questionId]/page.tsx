@@ -1,13 +1,17 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, GitBranch } from "lucide-react";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { createServiceClient } from "@/lib/supabase/server";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
+import {
+  ARA_INDIVIDUAL_FACTOR_MAP, type AraIndividualFactorId,
+} from "@/lib/constants/ara-individual-factors";
 import { updateAraQuestion } from "@/lib/ara/actions";
 import type { AraQuestion, AraQuestionBankVersion } from "@/types/ara";
 
@@ -66,6 +70,14 @@ export default async function EditAraQuestionPage({
           Changes apply to all in-flight assessments. Historical completed
           assessments keep their original question text via version snapshots.
         </p>
+
+        {/* ─── Lineage card ─────────────────────────────────────
+            Surfaces the full chain item → construct → AC competencies →
+            score map in one place. The reviewer (2026-04-29 voice note)
+            flagged that consultants and clients ask "where did the
+            questions come from? what are they measuring?" — this card
+            makes every question's lineage explicit and copyable. */}
+        <QuestionLineageCard question={question} />
 
         <Card>
           <CardHeader>
@@ -250,5 +262,142 @@ export default async function EditAraQuestionPage({
         </Card>
       </div>
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Lineage card — explicit item → construct → AC competencies → score map
+// ─────────────────────────────────────────────────────────────
+function QuestionLineageCard({ question }: { question: AraQuestion }) {
+  const pillar = ARA_PILLARS.find((p) => p.id === question.pillar_id);
+  const factorId = question.individual_factor_id as AraIndividualFactorId | null;
+  const factor = factorId ? ARA_INDIVIDUAL_FACTOR_MAP[factorId] : null;
+  const isIndividual = !!factor;
+
+  const scoreMap = (question.score_map ?? null) as Record<string, number> | null;
+  const optionsEn = (question.options_en ?? null) as string[] | null;
+
+  return (
+    <Card className="mb-6 border-accent/30 bg-accent/[0.03]">
+      <CardHeader className="pb-3">
+        <div className="flex items-center gap-2">
+          <GitBranch className="h-4 w-4 text-accent" />
+          <CardTitle className="text-base">Lineage</CardTitle>
+          {isIndividual ? (
+            <Badge variant="secondary" className="text-[10px]">Individual layer</Badge>
+          ) : (
+            <Badge variant="secondary" className="text-[10px]">Org pillar layer</Badge>
+          )}
+          <Badge variant="outline" className="text-[10px] ms-auto">
+            Layer {question.layer} · {question.question_type}
+          </Badge>
+        </div>
+        <CardDescription>
+          Every question is tagged at the database level to exactly one
+          construct. This is the chain a consultant or client can show the
+          stakeholder asking <em>&ldquo;where did this question come from?&rdquo;</em>
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Item text */}
+        <div>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">
+            1 · Item
+          </p>
+          <p className="text-sm">{question.question_text_en}</p>
+          <p className="text-xs text-muted-foreground mt-1" dir="rtl">{question.question_text_ar}</p>
+        </div>
+
+        {/* Construct mapping */}
+        <div>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">
+            2 · {isIndividual ? "Individual factor" : "Pillar"}
+          </p>
+          {isIndividual && factor ? (
+            <div className="rounded-md border bg-card p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <span
+                  className="inline-block h-2 w-2 rounded-full"
+                  style={{ backgroundColor: factor.color }}
+                />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  {factor.domain}
+                </span>
+                <span className="text-sm font-semibold">{factor.name_en}</span>
+                <span className="text-xs text-muted-foreground" dir="rtl">{factor.name_ar}</span>
+              </div>
+              <p className="text-xs text-muted-foreground leading-snug">{factor.description_en}</p>
+            </div>
+          ) : pillar ? (
+            <div className="rounded-md border bg-card p-3">
+              <div className="text-sm font-semibold">{pillar.name_en}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">{pillar.description_en}</div>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground italic">
+              No construct mapping found — investigate before publishing.
+            </p>
+          )}
+        </div>
+
+        {/* AC competencies (individual-only) */}
+        {isIndividual && factor && factor.ac_competency_names.length > 0 && (
+          <div>
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">
+              3 · Mapped AC competencies (drives course recommender + Learning Plan)
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {factor.ac_competency_names.map((name) => (
+                <Badge key={name} variant="outline" className="text-[11px] font-normal">
+                  {name}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Score map */}
+        <div>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">
+            {isIndividual ? "4" : "3"} · Score map
+          </p>
+          {scoreMap && Object.keys(scoreMap).length > 0 ? (
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-start py-1.5 font-semibold text-muted-foreground">Option</th>
+                  <th className="text-end py-1.5 font-semibold text-muted-foreground w-24">Score (1–5)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(optionsEn ?? Object.keys(scoreMap)).map((opt) => (
+                  <tr key={opt} className="border-b last:border-b-0">
+                    <td className="py-1.5">{opt}</td>
+                    <td className="py-1.5 text-end font-mono tabular-nums">
+                      {scoreMap[opt] ?? "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="text-xs text-muted-foreground italic">
+              No score map (open-text or unscored item).
+            </p>
+          )}
+        </div>
+
+        {/* Region / sector filters */}
+        <div className="flex items-center gap-2 text-[11px] text-muted-foreground pt-1 border-t">
+          <span>Region: <strong className="text-foreground">{question.region}</strong></span>
+          <span>·</span>
+          <span>Sector: <strong className="text-foreground">{question.sector}</strong></span>
+          <span>·</span>
+          <span>Display order: <strong className="text-foreground">{question.display_order}</strong></span>
+          <span>·</span>
+          <span>{question.is_active ? "Active" : "Inactive"}</span>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

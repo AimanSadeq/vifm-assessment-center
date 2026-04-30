@@ -27,11 +27,15 @@ export default async function AraVersionDetailPage({
 }) {
   const sb = createServiceClient();
 
-  const { data: version } = await sb
-    .from("ara_question_bank_versions")
-    .select("*")
-    .eq("id", params.versionId)
-    .maybeSingle<AraQuestionBankVersion>();
+  // The route accepts either a UUID (the canonical id) or a human-
+  // friendly version_number like "v1.1" / "1.1" so admins can type the
+  // version label they actually remember instead of pasting a UUID.
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const param = params.versionId;
+  const versionLookup = UUID_RE.test(param)
+    ? sb.from("ara_question_bank_versions").select("*").eq("id", param).maybeSingle<AraQuestionBankVersion>()
+    : sb.from("ara_question_bank_versions").select("*").eq("version_number", param.replace(/^v/i, "")).maybeSingle<AraQuestionBankVersion>();
+  const { data: version } = await versionLookup;
 
   if (!version) return notFound();
 

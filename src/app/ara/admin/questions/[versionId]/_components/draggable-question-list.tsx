@@ -14,13 +14,25 @@ import type { AraQuestion } from "@/types/ara";
 type Item = Pick<
   AraQuestion,
   "id" | "question_number" | "question_text_en" | "layer"
->;
+> & {
+  /** Validation-evidence review status, surfaced as a per-row chip
+   *  so admins can see at a glance which questions still need an
+   *  anchor citation reviewed. Null = no evidence captured yet. */
+  evidence_status?: "ai_proposed" | "verified" | "edited" | "rejected" | null;
+};
 
 type DraggableQuestionListProps = {
   versionId: string;
   pillarId: string;
   layer: 1 | 2;
   initialQuestions: Item[];
+};
+
+const EVIDENCE_TONE: Record<NonNullable<Item["evidence_status"]>, { label: string; cls: string; title: string }> = {
+  ai_proposed: { label: "AI proposed", cls: "bg-amber-100 text-amber-900 border-amber-200", title: "AI suggestion saved — admin review required before clients see it" },
+  verified:    { label: "Verified",    cls: "bg-emerald-100 text-emerald-900 border-emerald-200", title: "Citation verified by admin — surfaces in the report appendix" },
+  edited:      { label: "Edited",      cls: "bg-sky-100 text-sky-900 border-sky-200", title: "Admin edited the AI proposal — surfaces in the report appendix" },
+  rejected:    { label: "Rejected",    cls: "bg-rose-100 text-rose-900 border-rose-200", title: "Admin rejected the proposal — does not surface in the report" },
 };
 
 /**
@@ -171,12 +183,24 @@ export function DraggableQuestionList({
                   <ChevronDown className="h-3.5 w-3.5" />
                 </button>
               </div>
-              <div className="flex-1 min-w-0">
+              <Link
+                href={`/ara/admin/questions/${versionId}/${q.id}`}
+                className="flex-1 min-w-0 hover:text-accent group"
+                title="Open question detail (lineage + validation evidence + edit form)"
+              >
                 <span className="font-medium">Q{q.question_number}</span>{" "}
                 <Badge variant="outline" className="text-[10px] mx-1">L{q.layer}</Badge>
-                <span className="text-muted-foreground">{q.question_text_en}</span>
-              </div>
+                <span className="text-muted-foreground group-hover:text-accent">{q.question_text_en}</span>
+              </Link>
               <div className="flex items-center gap-1 shrink-0">
+                {q.evidence_status && EVIDENCE_TONE[q.evidence_status] && (
+                  <span
+                    className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full border ${EVIDENCE_TONE[q.evidence_status].cls}`}
+                    title={EVIDENCE_TONE[q.evidence_status].title}
+                  >
+                    {EVIDENCE_TONE[q.evidence_status].label}
+                  </span>
+                )}
                 <Link
                   href={`/ara/admin/questions/${versionId}/${q.id}`}
                   className="h-6 w-6 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"

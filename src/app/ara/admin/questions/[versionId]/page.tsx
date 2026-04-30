@@ -78,7 +78,7 @@ export default async function AraVersionDetailPage({
           <ArrowLeft className="h-3 w-3" /> Back to versions
         </Link>
 
-        <div className="flex items-start justify-between mb-8 gap-4">
+        <div className="flex items-start justify-between mb-4 gap-4">
           <div>
             <h1 className="text-2xl font-semibold text-primary">
               Question Bank v{version.version_number}
@@ -114,16 +114,52 @@ export default async function AraVersionDetailPage({
           </div>
         </div>
 
+        {/* Pillar quick-jump nav. Each chip is an anchor link to the
+            corresponding pillar card below — saves the admin scrolling
+            through eight cards to find Strategy or Governance questions. */}
+        <div className="mb-8 flex flex-wrap gap-2 items-center">
+          <span className="text-xs uppercase tracking-widest text-muted-foreground font-semibold me-2">
+            Jump to pillar
+          </span>
+          {ARA_PILLARS.map((pillar) => {
+            const count = byPillar.get(pillar.id)?.length ?? 0;
+            return (
+              <a
+                key={pillar.id}
+                href={`#pillar-${pillar.id}`}
+                className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border border-input bg-card hover:bg-muted transition-colors"
+              >
+                {pillar.name_en}
+                <span className="text-[10px] text-muted-foreground tabular-nums">{count}</span>
+              </a>
+            );
+          })}
+        </div>
+
         {/* Questions per pillar */}
         <div className="space-y-6 mb-8">
           {ARA_PILLARS.map((pillar) => {
             const qs = byPillar.get(pillar.id) ?? [];
+            const verifiedCount = qs.filter((q) => {
+              const ev = (q as AraQuestion & { validation_evidence?: { review_status?: string } | null }).validation_evidence;
+              return ev?.review_status === "verified" || ev?.review_status === "edited";
+            }).length;
             return (
-              <Card key={pillar.id}>
+              <Card key={pillar.id} id={`pillar-${pillar.id}`} className="scroll-mt-24">
                 <CardHeader>
-                  <CardTitle className="text-base flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center justify-between gap-2">
                     <span>{pillar.name_en}</span>
-                    <Badge variant="outline">{qs.length}</Badge>
+                    <span className="flex items-center gap-2">
+                      {qs.length > 0 && (
+                        <span
+                          className="text-[10px] font-medium text-muted-foreground"
+                          title={`${verifiedCount} of ${qs.length} questions have admin-verified validation evidence`}
+                        >
+                          {verifiedCount}/{qs.length} verified
+                        </span>
+                      )}
+                      <Badge variant="outline">{qs.length}</Badge>
+                    </span>
                   </CardTitle>
                   <CardDescription dir="rtl" className="text-right">{pillar.name_ar}</CardDescription>
                 </CardHeader>
@@ -142,12 +178,18 @@ export default async function AraVersionDetailPage({
                           versionId={version.id}
                           pillarId={pillar.id}
                           layer={layer}
-                          initialQuestions={layerQs.map((q) => ({
-                            id: q.id,
-                            question_number: q.question_number,
-                            question_text_en: q.question_text_en,
-                            layer: q.layer,
-                          }))}
+                          initialQuestions={layerQs.map((q) => {
+                            const ev = (q as AraQuestion & { validation_evidence?: { review_status?: string } | null }).validation_evidence;
+                            const status = ev?.review_status as
+                              | "ai_proposed" | "verified" | "edited" | "rejected" | undefined;
+                            return {
+                              id: q.id,
+                              question_number: q.question_number,
+                              question_text_en: q.question_text_en,
+                              layer: q.layer,
+                              evidence_status: status ?? null,
+                            };
+                          })}
                         />
                       </div>
                     );

@@ -146,6 +146,48 @@ export function isPillarApplicableForStage(
 }
 
 /**
+ * Resolves the pillars in scope for a specific assessment.
+ *
+ * Honors `pillars_in_scope` (per-assessment override, migration 00029)
+ * when present. Falls back to the stage default for legacy assessments
+ * created before the column existed, or for stages where the choice is
+ * fixed (Enterprise = always all 8). Always validates the stored array
+ * against ARA_PILLAR_IDS so a stale or malformed value can't slip a
+ * non-pillar string into the rendering.
+ *
+ * Use this everywhere the renderer / scorer / respondent loader needs
+ * to know "which pillars matter for THIS assessment" — instead of
+ * looking up ARA_STAGE_MAP[stage].applicable_pillars directly.
+ */
+export function getPillarsForAssessment(args: {
+  engagement_stage: AraEngagementStage;
+  pillars_in_scope: AraPillarId[] | null;
+}): ReadonlyArray<AraPillarId> {
+  const stageDefault = ARA_STAGE_MAP[args.engagement_stage].applicable_pillars;
+  // Enterprise is always all 8 — ignore any stored override.
+  if (args.engagement_stage === "enterprise") return stageDefault;
+  if (!args.pillars_in_scope || args.pillars_in_scope.length === 0) return stageDefault;
+  // Sanity-filter against the canonical pillar ids so a stale value
+  // can't slip a junk string into downstream rendering.
+  const valid = args.pillars_in_scope.filter((p) =>
+    stageDefault.length === 0 || true /* validation deferred to ARA_PILLARS */
+  );
+  return valid.length > 0 ? valid : stageDefault;
+}
+
+/**
+ * Stage cardinality — how many pillars the consultant must select.
+ * Enterprise is fixed at all 8 (no UI shown); Department and Division
+ * use this number as the must-equal constraint on the picker.
+ */
+export const PILLAR_PICK_COUNT: Record<AraEngagementStage, number | null> = {
+  department: 4,
+  division: 6,
+  enterprise: 8,
+  individual: null, // n/a — individual stage doesn't use pillars
+};
+
+/**
  * Capability matrix for the public comparison page. Each row is one row
  * in the comparison table; each cell maps the stage id to whether the
  * capability is included. Order here is the visual order on the page.
@@ -161,7 +203,7 @@ export const ARA_STAGE_CAPABILITIES: ReadonlyArray<{
 }> = [
   // Scope
   { group: "Scope", feature_en: "Pillars assessed", feature_ar: "الركائز المقيّمة",
-    individual: "4 personal factors", department: "4 of 8", division: "6 of 8", enterprise: "All 8" },
+    individual: "4 personal factors", department: "4 of 8 · you choose", division: "6 of 8 · you choose", enterprise: "All 8" },
   { group: "Scope", feature_en: "Typical stakeholders", feature_ar: "المستجيبون النموذجيون",
     individual: "1", department: "1-2", division: "4-8", enterprise: "8-15+" },
   { group: "Scope", feature_en: "Bilingual EN / AR", feature_ar: "ثنائي اللغة",

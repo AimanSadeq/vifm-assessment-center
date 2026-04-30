@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { ARA_PILLARS, ARA_MATURITY_LEVELS, ARA_OVERALL_BANDS } from "@/lib/constants/ara-pillars";
-import { ARA_STAGE_MAP } from "@/lib/constants/ara-stages";
+import { ARA_STAGE_MAP, getPillarsForAssessment } from "@/lib/constants/ara-stages";
 import { summarizeComplianceByFramework } from "@/lib/ara/compliance";
 import { detectAraShadowAi } from "@/lib/ara/detectors";
 import { computePeerBenchmarks } from "@/lib/ara/peer-benchmarks";
@@ -331,6 +331,10 @@ export default async function AraReportPage({
             yoyComparison={yoyComparison}
             respondents={(respondents ?? []) as any}
             currentYear={assessment.assessment_year}
+            pillarsInScope={getPillarsForAssessment({
+              engagement_stage: assessment.engagement_stage,
+              pillars_in_scope: assessment.pillars_in_scope ?? null,
+            })}
           />
         </div>
       </>
@@ -640,9 +644,17 @@ export default async function AraReportPage({
          * Only emit deep-dives for pillars that are in scope for the
          * assessment's engagement stage. Stage 1 produces 4 pillar
          * pairs; Stage 2 produces 6; Stage 3 produces all 8. */}
-        {ARA_PILLARS
-          .filter((pillar) => stageDef.applicable_pillars.includes(pillar.id))
-          .map((pillar) => {
+        {(() => {
+          // Use the per-assessment pillar override (00029) when set,
+          // falling back to the stage default. Renders the deep-dive
+          // pages only for pillars actually in scope for THIS run.
+          const pillarsInScope = getPillarsForAssessment({
+            engagement_stage: assessment.engagement_stage,
+            pillars_in_scope: assessment.pillars_in_scope ?? null,
+          });
+          return ARA_PILLARS
+            .filter((pillar) => pillarsInScope.includes(pillar.id))
+            .map((pillar) => {
             const row = pillarMap.get(pillar.id);
             const pillarNotes = notesByPillar.get(pillar.id) ?? [];
 
@@ -657,7 +669,8 @@ export default async function AraReportPage({
                 lang={rtl ? "ar" : "en"}
               />
             );
-          })}
+          });
+        })()}
 
         {/* ─── PAGE 22 - Strengths & Gaps ─── */}
         <section className="report-page">

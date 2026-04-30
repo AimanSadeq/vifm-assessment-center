@@ -171,6 +171,11 @@ export async function createAraAssessment(formData: FormData) {
   const rawScope = String(formData.get("scope_label") ?? "").trim();
   const includeIndividual = formData.get("include_individual_layer") === "on";
   const rawTier = String(formData.get("assessment_tier") ?? "snapshot");
+  // Pillars-in-scope override (migration 00029). Posted as multiple
+  // form values under the same `pillars_in_scope` key. We collect them
+  // into an array, dedupe, and validate cardinality against the stage.
+  const rawPillars = formData.getAll("pillars_in_scope").map(String).filter(Boolean);
+  const dedupedPillars = Array.from(new Set(rawPillars));
   const parsed = createAraAssessmentSchema.safeParse({
     organization_id: formData.get("organization_id"),
     region: formData.get("region"),
@@ -183,10 +188,25 @@ export async function createAraAssessment(formData: FormData) {
     include_individual_layer: includeIndividual,
     // Tier only matters when the layer is on; default to snapshot otherwise.
     assessment_tier: includeIndividual && rawTier === "deep_dive" ? "deep_dive" : "snapshot",
+    pillars_in_scope: dedupedPillars.length > 0 ? dedupedPillars : null,
   });
 
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+
+  // Cardinality enforcement per stage. department=4, division=6, and
+  // enterprise ignores any user-submitted set (always all 8). individual
+  // doesn't use pillars at all.
+  let pillarsToStore: string[] | null = parsed.data.pillars_in_scope ?? null;
+  if (parsed.data.engagement_stage === "department" && pillarsToStore && pillarsToStore.length !== 4) {
+    return { ok: false, error: "Department assessments must include exactly 4 pillars." };
+  }
+  if (parsed.data.engagement_stage === "division" && pillarsToStore && pillarsToStore.length !== 6) {
+    return { ok: false, error: "Division assessments must include exactly 6 pillars." };
+  }
+  if (parsed.data.engagement_stage === "enterprise" || parsed.data.engagement_stage === "individual") {
+    pillarsToStore = null;
   }
 
   const sb = createServiceClient();
@@ -207,6 +227,7 @@ export async function createAraAssessment(formData: FormData) {
       consultant_id: caller.role === "consultant" && !caller.isDev ? caller.uid : null,
       include_individual_layer: parsed.data.include_individual_layer,
       assessment_tier: parsed.data.assessment_tier,
+      pillars_in_scope: pillarsToStore,
     })
     .select("id")
     .single();

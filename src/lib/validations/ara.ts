@@ -47,6 +47,11 @@ export const createAraAssessmentSchema = z.object({
   // Tier of the individual items when include_individual_layer is true.
   // Ignored on assessments where include_individual_layer=false.
   assessment_tier: araAssessmentTierSchema.default("snapshot"),
+  // Per-assessment pillars-in-scope override (migration 00029).
+  // Department-stage assessments must hold exactly 4 pillars; Division
+  // exactly 6; Enterprise is always all 8 (NULL skips the override).
+  // Cardinality is checked at the action level after the stage is known.
+  pillars_in_scope: z.array(araPillarSchema).nullable().optional(),
 });
 export type CreateAraAssessmentValues = z.infer<typeof createAraAssessmentSchema>;
 

@@ -84,6 +84,10 @@ export type AraAssessment = {
   assessment_tier: "snapshot" | "deep_dive";
   /** Org-stage assessments can opt-in to also serving the individual factor items to all respondents. */
   include_individual_layer: boolean;
+  /** Optional override of the pillars in scope (migration 00029). NULL means "use the
+   *  engagement_stage default" via getPillarsForAssessment. Department-stage assessments
+   *  must hold exactly 4; Division must hold exactly 6; Enterprise stays NULL (always all 8). */
+  pillars_in_scope: AraPillarId[] | null;
 };
 
 export type AraRespondent = {

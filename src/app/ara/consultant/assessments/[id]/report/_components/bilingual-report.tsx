@@ -76,6 +76,11 @@ export type BilingualReportProps = {
   }>;
   /** Current assessment year - shown in the YoY KPI strip. */
   currentYear?: number;
+  /** Pillars in scope (migration 00029). Honours the per-assessment
+   *  pillars_in_scope override when set, falls back to the stage default
+   *  when null. Caller resolves via getPillarsForAssessment. Optional —
+   *  defaults to stage default when omitted (back-compat). */
+  pillarsInScope?: ReadonlyArray<AraPillarId>;
 };
 
 /**
@@ -451,7 +456,7 @@ export function BilingualReport(p: BilingualReportProps) {
        * then bilingual columns with FindingCard + RecommendationCard
        * stacks on both sides. */}
       {ARA_PILLARS
-        .filter((pillar) => stageDef.applicable_pillars.includes(pillar.id))
+        .filter((pillar) => (p.pillarsInScope ?? stageDef.applicable_pillars).includes(pillar.id))
         .map((pillar) => {
           const row = p.pillarMap.get(pillar.id);
           const pillarNotes = p.notesByPillar.get(pillar.id) ?? [];

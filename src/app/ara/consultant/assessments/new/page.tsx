@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, Building2, Network, Globe2, Sparkles, Check, User } from "lucide-react";
 import { IndividualLayerToggle } from "./_components/individual-layer-toggle";
+import { PillarPicker } from "./_components/pillar-picker";
 import { createServiceClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -452,6 +453,24 @@ export default async function NewAraAssessmentPage({
               </div>
 
               <IndividualLayerToggle />
+
+              {/* Pillar selector — Department picks 4, Division picks 6.
+                  Enterprise stays at all 8 (no UI shown). */}
+              {(stage.id === "department" || stage.id === "division") && (
+                <div className="rounded-lg border p-4 bg-muted/20">
+                  <Label className="text-sm font-semibold">
+                    Pillars in scope · pick {stage.id === "department" ? "4" : "6"} of 8
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-1 mb-3">
+                    Different sectors prioritise different pillars. Defaults
+                    are recommended; swap any to match the client&apos;s focus.
+                  </p>
+                  <PillarPicker
+                    defaultPillars={stage.applicable_pillars}
+                    requiredCount={stage.id === "department" ? 4 : 6}
+                  />
+                </div>
+              )}
 
               <div className="flex items-start gap-3 rounded-lg border p-4 bg-muted/30">
                 <input

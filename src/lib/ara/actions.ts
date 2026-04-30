@@ -1153,3 +1153,122 @@ export async function notifyConsultantOnRespondentComplete(respondentId: string)
     },
   });
 }
+
+// ─────────────────────────────────────────────────────────────
+// Per-item validation-evidence (migration 00028)
+// ─────────────────────────────────────────────────────────────
+//
+// Two flows here:
+//
+//   suggestQuestionValidationEvidence(questionId)
+//     - Calls Claude via the suggester
+//     - Saves the proposal with review_status='ai_proposed'
+//     - The admin UI surfaces it but does NOT show it in any
+//       client-facing report
+//
+//   saveQuestionValidationEvidence(questionId, evidence)
+//     - Admin endpoint
+//     - Used after the admin reviewed/edited/rejected the AI proposal
+//     - Sets review_status='verified' / 'edited' / 'rejected' and
+//       stamps reviewed_by + reviewed_at
+//     - Verified/edited evidence DOES propagate to client-facing
+//       surfaces (report appendix, public bibliography)
+
+import {
+  ARA_INDIVIDUAL_FACTOR_MAP,
+  type AraIndividualFactorId,
+} from "@/lib/constants/ara-individual-factors";
+import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
+import { suggestValidationEvidence } from "@/lib/ai/validation-evidence-suggester";
+import type { AraQuestionValidationEvidence } from "@/types/ara";
+
+export async function suggestQuestionValidationEvidence(questionId: string) {
+  try { await requireRole("admin"); } catch (e) { return authErr(e); }
+
+  const sb = createServiceClient();
+  const { data: q, error } = await sb
+    .from("ara_questions")
+    .select("id, version_id, question_text_en, pillar_id, individual_factor_id")
+    .eq("id", questionId)
+    .maybeSingle<{
+      id: string;
+      version_id: string;
+      question_text_en: string;
+      pillar_id: string;
+      individual_factor_id: AraIndividualFactorId | null;
+    }>();
+  if (error || !q) return { ok: false as const, error: "Question not found" };
+
+  // Resolve construct context — prefer individual factor when set,
+  // otherwise fall back to the pillar.
+  let constructId: string;
+  let constructName: string;
+  let constructDescription: string;
+  if (q.individual_factor_id) {
+    const f = ARA_INDIVIDUAL_FACTOR_MAP[q.individual_factor_id];
+    constructId = f.id;
+    constructName = f.name_en;
+    constructDescription = f.description_en;
+  } else {
+    const p = ARA_PILLARS.find((x) => x.id === q.pillar_id);
+    constructId = q.pillar_id;
+    constructName = p?.name_en ?? q.pillar_id;
+    constructDescription = p?.description_en ?? "";
+  }
+
+  const proposed = await suggestValidationEvidence({
+    question_text_en: q.question_text_en,
+    construct_id: constructId,
+    construct_name: constructName,
+    construct_description: constructDescription,
+  });
+
+  if (!proposed) {
+    return {
+      ok: false as const,
+      error:
+        "AI suggester returned nothing. Check ANTHROPIC_API_KEY in .env.local and re-run.",
+    };
+  }
+
+  const { error: upErr } = await sb
+    .from("ara_questions")
+    .update({ validation_evidence: proposed })
+    .eq("id", questionId);
+  if (upErr) return { ok: false as const, error: upErr.message };
+
+  revalidatePath(`/ara/admin/questions/${q.version_id}/${questionId}`);
+  return { ok: true as const, evidence: proposed };
+}
+
+/**
+ * Save admin-reviewed evidence. Pass review_status='verified' to
+ * accept the AI proposal as-is, 'edited' if the admin tweaked it, or
+ * 'rejected' to suppress it from client-facing surfaces. Stamps the
+ * reviewer email + timestamp from the current admin session.
+ */
+export async function saveQuestionValidationEvidence(
+  questionId: string,
+  evidence: AraQuestionValidationEvidence,
+  reviewerEmail: string
+) {
+  try { await requireRole("admin"); } catch (e) { return authErr(e); }
+
+  const sb = createServiceClient();
+  const stamped: AraQuestionValidationEvidence = {
+    ...evidence,
+    reviewed_by: reviewerEmail,
+    reviewed_at: new Date().toISOString(),
+  };
+
+  const { data: q, error } = await sb
+    .from("ara_questions")
+    .update({ validation_evidence: stamped })
+    .eq("id", questionId)
+    .select("version_id")
+    .maybeSingle<{ version_id: string }>();
+  if (error || !q) return { ok: false as const, error: error?.message ?? "Save failed" };
+
+  revalidatePath(`/ara/admin/questions/${q.version_id}/${questionId}`);
+  return { ok: true as const };
+}

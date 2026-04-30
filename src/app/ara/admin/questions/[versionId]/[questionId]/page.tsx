@@ -14,6 +14,7 @@ import {
 } from "@/lib/constants/ara-individual-factors";
 import { updateAraQuestion } from "@/lib/ara/actions";
 import type { AraQuestion, AraQuestionBankVersion } from "@/types/ara";
+import { ValidationEvidencePanel } from "./_components/validation-evidence-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -78,6 +79,17 @@ export default async function EditAraQuestionPage({
             questions come from? what are they measuring?" — this card
             makes every question's lineage explicit and copyable. */}
         <QuestionLineageCard question={question} />
+
+        {/* ─── Validation-evidence panel (migration 00028) ──────
+            Per-item content-validity trail. AI-suggested anchors get
+            saved as 'ai_proposed' and stay invisible to clients until
+            an admin verifies them — guards against LLM-hallucinated
+            citations leaking into the consultant report. */}
+        <ValidationEvidencePanel
+          questionId={question.id}
+          reviewerEmail="admin@vifm.ae"
+          initialEvidence={question.validation_evidence ?? null}
+        />
 
         <Card>
           <CardHeader>

@@ -127,6 +127,44 @@ export default async function AraReportPage({
     .select("question_score, question:ara_questions(pillar_id, question_number)")
     .eq("assessment_id", assessment.id);
 
+  // Verified validation-evidence for the appendix — surfaces every
+  // distinct anchor-instrument citation used by any question in the
+  // bank version this assessment locked to. Filtered server-side to
+  // only `verified` / `edited` items so AI-proposed-but-not-reviewed
+  // anchors never reach the client. (Migration 00028.)
+  // Wrapped in try/catch so reports continue to render on databases
+  // that haven't applied 00028 yet — the appendix subsection just
+  // won't appear, instead of erroring the whole report.
+  let questionsWithEvidence: Array<{ validation_evidence: unknown }> | null = null;
+  if (assessment.question_bank_version_id) {
+    try {
+      const { data, error } = await sb
+        .from("ara_questions")
+        .select("validation_evidence")
+        .eq("version_id", assessment.question_bank_version_id)
+        .not("validation_evidence", "is", null);
+      if (!error) questionsWithEvidence = (data as Array<{ validation_evidence: unknown }>) ?? null;
+    } catch {
+      // column doesn't exist (pre-migration-00028) — leave null.
+    }
+  }
+
+  type AnchorInstrument = { name: string; citation: string };
+  const evidenceAnchors: AnchorInstrument[] = [];
+  const seenCitations = new Set<string>();
+  for (const r of (questionsWithEvidence ?? []) as Array<{ validation_evidence: { review_status?: string; anchor_instruments?: AnchorInstrument[] } | null }>) {
+    const ev = r.validation_evidence;
+    if (!ev) continue;
+    if (ev.review_status !== "verified" && ev.review_status !== "edited") continue;
+    for (const a of ev.anchor_instruments ?? []) {
+      if (!seenCitations.has(a.citation)) {
+        seenCitations.add(a.citation);
+        evidenceAnchors.push({ name: a.name, citation: a.citation });
+      }
+    }
+  }
+  evidenceAnchors.sort((a, b) => a.name.localeCompare(b.name));
+
   // Peer benchmarks (real sector medians when N ≥ 3 peers exist).
   const peerBenchmarks = await computePeerBenchmarks(
     assessment.id,
@@ -1104,6 +1142,28 @@ export default async function AraReportPage({
             </span>{" "}
             on the VIFM platform repository.
           </p>
+
+          {evidenceAnchors.length > 0 && (
+            <>
+              <h3 className="report-h3">Anchor instruments (item-by-item)</h3>
+              <p className="report-body">
+                Every question in this bank is content-aligned with at least
+                one published instrument. The full list of distinct anchor
+                instruments used across the version applied to this
+                assessment is below. Per-item citations are maintained in the
+                admin question bank and verified by VIFM staff before they
+                appear here — AI-suggested-but-unverified anchors are
+                deliberately excluded.
+              </p>
+              <ul className="report-body" style={{ paddingInlineStart: 18 }}>
+                {evidenceAnchors.map((a) => (
+                  <li key={a.citation} style={{ marginBottom: 6 }}>
+                    <strong>{a.name}.</strong> {a.citation}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
 
           <h3 className="report-h3">Validity and reliability disclosures</h3>
           <p className="report-body report-muted" style={{ fontSize: "9pt" }}>

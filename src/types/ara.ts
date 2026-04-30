@@ -145,6 +145,48 @@ export type AraQuestion = {
     | null;
   /** 'snapshot' for the always-shown 24 items; 'deep_dive_extra' for the additional 24 only shown in deep-dive tier. */
   tier: "snapshot" | "deep_dive_extra";
+  /** Per-item validation-evidence trail (migration 00028). Null when
+   *  evidence has not been generated/curated yet. Only surfaced in
+   *  client-facing reports when review_status is 'verified' or 'edited'. */
+  validation_evidence: AraQuestionValidationEvidence | null;
+};
+
+/**
+ * Per-item validation-evidence trail. Anchors a question to one or
+ * more published instruments + tracks human review of AI-suggested
+ * citations (LLMs can hallucinate paper-level details, so we never
+ * publish without explicit human verification).
+ */
+export type AraQuestionValidationEvidence = {
+  /** One or more published instruments this item content-aligns with.
+   *  Limited to seminal / textbook-stable works listed in
+   *  docs/ARA-Methodology-Brief.md §6 to keep citations spot-checkable. */
+  anchor_instruments: Array<{
+    /** Common name of the instrument or framework, e.g. "Technology Acceptance Model". */
+    name: string;
+    /** Full bibliographic citation (APA-style preferred). */
+    citation: string;
+    /** Optional DOI for click-through verification. */
+    doi?: string | null;
+    /** Strength of the alignment between this item and the anchor. */
+    confidence: "direct_adaptation" | "construct_aligned" | "novel";
+    /** One-sentence rationale shown in the admin lineage card. */
+    rationale: string;
+  }>;
+  /** Short label of the broader construct this item measures, e.g. "Technology adoption — perceived usefulness". */
+  construct_summary: string;
+  /** Gate that decides whether this evidence shows in the client-facing report.
+   *  - ai_proposed: do not surface
+   *  - verified:    surface as-is
+   *  - edited:      surface (admin made changes)
+   *  - rejected:    do not surface (admin disagreed) */
+  review_status: "ai_proposed" | "verified" | "edited" | "rejected";
+  /** Email of whoever reviewed it; null while still ai_proposed. */
+  reviewed_by: string | null;
+  /** ISO timestamp of last review action. */
+  reviewed_at: string | null;
+  /** Model that produced the AI proposal — for audit. */
+  ai_model: string | null;
 };
 
 export type AraUseCaseStage = "ideation" | "piloting" | "production" | "retired";

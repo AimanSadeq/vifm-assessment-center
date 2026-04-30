@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, GraduationCap, Sparkles, Copy } from "lucide-react";
+import { Plus, GraduationCap, Sparkles, Copy, Inbox } from "lucide-react";
 import {
   VIFM_VERTICAL_LABELS,
   type VifmCourse,
@@ -61,6 +61,12 @@ export default async function CoursesListPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Link href="/admin/courses/quotes">
+            <Button variant="outline" className="gap-2">
+              <Inbox className="h-4 w-4" />
+              Quote requests
+            </Button>
+          </Link>
           <Link href="/admin/courses/duplicates">
             <Button variant="outline" className="gap-2">
               <Copy className="h-4 w-4" />

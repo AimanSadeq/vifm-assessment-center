@@ -20,7 +20,8 @@ export type EmailTemplate =
   | "consent_confirmation"
   | "report_released"
   | "washup_scheduled"
-  | "engagement_created";
+  | "engagement_created"
+  | "course_quote_request";
 
 export type EmailPayload = {
   to: string;
@@ -119,6 +120,25 @@ Dates: {{assessmentDates}}
 
 Best regards,
 VIFM Assessment Center`,
+  },
+  course_quote_request: {
+    subject: "New quote request — {{courseTitle}}",
+    body: `A new course quote request has come in from the public catalogue.
+
+Course:    {{courseTitle}}{{courseCode}}
+Requester: {{requesterName}} <{{requesterEmail}}>
+Company:   {{requesterCompany}}
+Group size: {{groupSize}}
+Preferred start: {{preferredStart}}
+Delivery: {{deliveryMode}}
+Language: {{preferredLanguage}}
+
+Notes:
+{{notes}}
+
+Manage this request: {{adminUrl}}
+
+— VIFM Assessment Platform`,
   },
 };
 

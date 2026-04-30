@@ -8,8 +8,18 @@ import { AUTH_ENABLED } from "@/lib/auth/config";
 const isAraRespondentRoute = (pathname: string) =>
   pathname.startsWith("/ara/respond/") || pathname.startsWith("/api/ara/respond/");
 
+// Public training catalogue + quote-request flow. Anyone (no account)
+// browses /courses and submits a quote request — the quote-request
+// server action persists via the service-role client. Treated like
+// the ARA respondent flow: bypass auth in both dev and prod.
+const isPublicCoursesRoute = (pathname: string) =>
+  pathname === "/courses" || pathname.startsWith("/courses/");
+
 export async function middleware(request: NextRequest) {
-  if (isAraRespondentRoute(request.nextUrl.pathname)) {
+  if (
+    isAraRespondentRoute(request.nextUrl.pathname) ||
+    isPublicCoursesRoute(request.nextUrl.pathname)
+  ) {
     return NextResponse.next();
   }
 

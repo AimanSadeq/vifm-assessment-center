@@ -446,6 +446,50 @@ export type VifmCourse = {
 
 export type VifmCourseTagSource = "manual" | "ai_proposed" | "ai_accepted";
 
+// ────────────────────────────────────────────────────────────
+// Public catalogue: lead-capture quote requests (migration 00030)
+// ────────────────────────────────────────────────────────────
+
+export type VifmCourseQuoteRequestStatus =
+  | "new" | "contacted" | "quoted" | "won" | "lost";
+
+export type VifmCourseQuoteRequestDeliveryMode =
+  | "in_person" | "virtual" | "hybrid";
+
+export type VifmCourseQuoteRequestLanguage = "en" | "ar" | "bilingual";
+
+export type VifmCourseQuoteRequest = {
+  id: string;
+  course_id: string | null;
+  course_code_snapshot: string | null;
+  course_title_snapshot: string | null;
+  // Requester (always required)
+  requester_name: string;
+  requester_email: string;
+  requester_company: string;
+  requester_phone: string | null;
+  requester_role: string | null;
+  // Quote scope (optional)
+  estimated_group_size: number | null;
+  preferred_start_date: string | null; // ISO date
+  preferred_language: VifmCourseQuoteRequestLanguage | null;
+  delivery_mode: VifmCourseQuoteRequestDeliveryMode | null;
+  notes: string | null;
+  // Workflow
+  status: VifmCourseQuoteRequestStatus;
+  assigned_to: string | null;
+  internal_notes: string | null;
+  contacted_at: string | null;
+  quoted_at: string | null;
+  closed_at: string | null;
+  // Audit
+  created_at: string;
+  updated_at: string;
+  // Anti-abuse / forensic-only
+  ip_address: string | null;
+  user_agent: string | null;
+};
+
 export type VifmCourseCompetencyTag = {
   id: string;
   course_id: string;

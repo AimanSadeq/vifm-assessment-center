@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, FileClock, AlertTriangle } from "lucide-react";
+import { ArrowLeft, FileClock, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,11 +65,19 @@ export default async function AraRetentionPage() {
           <FileClock className="h-5 w-5 text-primary" />
           <h1 className="text-2xl font-semibold text-primary">Data retention</h1>
         </div>
-        <p className="text-muted-foreground mb-8">
+        <p className="text-muted-foreground mb-6">
           Assessments archived more than {RETENTION_YEARS} years ago are due for
           deletion per UAE PDPL / Saudi PDPL / GDPR retention rules. Generated
           reports are retained as VIFM business records.
         </p>
+
+        {/* Cron status banner — surfaces whether the daily auto-purge is
+            actually wired up. The cron route at /api/ara/admin/retention/cron
+            returns 503 unless CRON_SECRET is set in the runtime env, so the
+            check below mirrors that gate. Without the env var the manual
+            purge form below still works; it's only the automated daily
+            execution that's gated. */}
+        <CronStatusBanner cronSecretConfigured={!!process.env.CRON_SECRET} />
 
         <Card className="mb-6">
           <CardHeader>
@@ -168,6 +176,78 @@ export default async function AraRetentionPage() {
             </form>
           </CardContent>
         </Card>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Cron status banner — non-destructive UI affordance that surfaces
+// whether the daily auto-purge is actually wired up. Two states:
+//
+//   CRON_SECRET set  → green banner "Daily auto-purge is active.
+//                       Next run 03:00 UTC."
+//   CRON_SECRET not  → amber banner with the one-line ops
+//                       instruction (set the env var in Vercel),
+//                       so this doesn't get forgotten between
+//                       project hand-off and production launch.
+//
+// Inert in dev because process.env.CRON_SECRET will not be set
+// locally — same as production-without-it. The amber state shows
+// in both. That's intentional: the banner is a checklist item.
+// ─────────────────────────────────────────────────────────────
+function CronStatusBanner({ cronSecretConfigured }: { cronSecretConfigured: boolean }) {
+  if (cronSecretConfigured) {
+    return (
+      <div className="mb-6 rounded-lg border border-emerald-300 bg-emerald-50 p-4 flex items-start gap-3">
+        <CheckCircle2 className="h-5 w-5 text-emerald-700 mt-0.5 shrink-0" />
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-emerald-950">
+            Daily auto-purge is active
+          </p>
+          <p className="text-xs text-emerald-900 mt-1 leading-relaxed">
+            Vercel Cron will fire <code className="font-mono">/api/ara/admin/retention/cron</code> at
+            03:00 UTC each day with the configured <code className="font-mono">CRON_SECRET</code>.
+            The manual <em>Purge</em> form below remains available as an override.
+          </p>
+        </div>
+        <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-emerald-700 font-semibold shrink-0">
+          <Clock className="h-3 w-3" /> 03:00 UTC daily
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4 flex items-start gap-3">
+      <AlertTriangle className="h-5 w-5 text-amber-700 mt-0.5 shrink-0" />
+      <div className="flex-1">
+        <p className="text-sm font-semibold text-amber-950">
+          Daily auto-purge is currently disabled
+        </p>
+        <p className="text-xs text-amber-900 mt-1 leading-relaxed">
+          The retention-purge cron at{" "}
+          <code className="font-mono">/api/ara/admin/retention/cron</code> is gated by
+          a <code className="font-mono">CRON_SECRET</code> bearer header, and that env
+          var is not set in the current runtime. Until it is, the cron route returns
+          503 (intentional kill-switch — prevents accidental purges from a stray
+          browser fetch). The manual <em>Purge</em> form below still works.
+        </p>
+        <details className="mt-2 text-xs text-amber-900">
+          <summary className="cursor-pointer font-medium">How to enable in production</summary>
+          <ol className="mt-2 list-decimal ms-5 space-y-1">
+            <li>Vercel project → Settings → Environment Variables</li>
+            <li>
+              Add <code className="font-mono">CRON_SECRET</code> with a long random string
+              (treat as a secret; rotate periodically)
+            </li>
+            <li>Redeploy</li>
+          </ol>
+          <p className="mt-2">
+            Once set, Vercel Cron auto-attaches the bearer header on every scheduled
+            invocation; this banner flips green on the next page load.
+          </p>
+        </details>
       </div>
     </div>
   );

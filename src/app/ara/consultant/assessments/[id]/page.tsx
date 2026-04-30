@@ -15,7 +15,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
-import { ARA_STAGE_MAP } from "@/lib/constants/ara-stages";
+import { ARA_STAGE_MAP, getPillarsForAssessment } from "@/lib/constants/ara-stages";
 import { bulkImportAraRespondents, createAraRespondent } from "@/lib/ara/actions";
 import { SendInvitationButton } from "./_components/send-invitation-button";
 import { StartReassessmentButton } from "./_components/start-reassessment-button";
@@ -126,6 +126,17 @@ export default async function AraAssessmentDetailPage({
     .maybeSingle<AraAssessment & { organization: Pick<AraOrganization, "id" | "name" | "name_ar" | "region" | "sector"> | null }>();
 
   if (!assessment) return notFound();
+
+  // Pillars in scope for THIS assessment (migration 00029). Honours
+  // pillars_in_scope when set, falls back to the stage default. Used
+  // to filter every "list of pillars" UI on this page so consultants
+  // can't accidentally assign / weight / read a pillar that isn't
+  // part of the engagement.
+  const pillarsInScope = getPillarsForAssessment({
+    engagement_stage: assessment.engagement_stage,
+    pillars_in_scope: assessment.pillars_in_scope ?? null,
+  });
+  const inScopePillars = ARA_PILLARS.filter((p) => pillarsInScope.includes(p.id));
 
   const [
     { data: respondents },
@@ -630,7 +641,7 @@ export default async function AraAssessmentDetailPage({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {ARA_PILLARS.map((p) => {
+                {inScopePillars.map((p) => {
                   const row = pillarMap.get(p.id);
                   return (
                     <TableRow key={p.id}>
@@ -707,7 +718,7 @@ export default async function AraAssessmentDetailPage({
               <form action={updatePillarWeightsAction} className="space-y-3">
                 <input type="hidden" name="assessment_id" value={assessment.id} />
                 <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-4">
-                  {ARA_PILLARS.map((p) => {
+                  {inScopePillars.map((p) => {
                     const weights = assessment.pillar_weights as Record<string, number>;
                     return (
                       <div key={p.id} className="space-y-1">
@@ -757,7 +768,7 @@ export default async function AraAssessmentDetailPage({
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {ARA_PILLARS.map((pillar) => {
+                {inScopePillars.map((pillar) => {
                   const qs = (layer2Questions ?? []).filter((q) => q.pillar_id === pillar.id);
                   if (qs.length === 0) return null;
                   return (
@@ -1070,7 +1081,7 @@ export default async function AraAssessmentDetailPage({
                     defaultValue=""
                   >
                     <option value="">General (not pillar-specific)</option>
-                    {ARA_PILLARS.map((p) => (
+                    {inScopePillars.map((p) => (
                       <option key={p.id} value={p.id}>{p.name_en}</option>
                     ))}
                   </select>
@@ -1580,8 +1591,14 @@ export default async function AraAssessmentDetailPage({
 
               <div className="space-y-2">
                 <Label>Assign pillars</Label>
+                <p className="text-xs text-muted-foreground">
+                  Only pillars selected as in-scope at assessment creation
+                  appear here ({inScopePillars.length} of 8). Out-of-scope
+                  pillars are hidden so a respondent can&apos;t be assigned to
+                  a pillar the report won&apos;t render.
+                </p>
                 <div className="grid gap-2 sm:grid-cols-2 rounded-lg border p-4">
-                  {ARA_PILLARS.map((p) => (
+                  {inScopePillars.map((p) => (
                     <label key={p.id} className="flex items-start gap-2 cursor-pointer">
                       <input
                         type="checkbox"

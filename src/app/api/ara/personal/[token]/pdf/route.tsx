@@ -15,6 +15,13 @@ import {
   type PersonalSnapshotData,
 } from "@/lib/reports/personal-snapshot";
 
+// Without this, Next.js will cache the GET response per URL. That caused a
+// real bug in production: a request hitting the route before the respondent
+// finished the assessment cached the "not complete yet" 400, and every
+// subsequent request — including the one after submission — kept getting
+// the stale 400.
+export const dynamic = "force-dynamic";
+
 const TARGET = 4;
 
 /**

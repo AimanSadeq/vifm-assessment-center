@@ -65,15 +65,18 @@ export async function saveAraAnswer(input: z.infer<typeof saveAnswerSchema>): Pr
   // Fetch the question with its score_map so we can derive the per-answer score
   const { data: question } = await sb
     .from("ara_questions")
-    .select("id, version_id, pillar_id, question_type, score_map, layer")
+    .select("id, version_id, pillar_id, individual_factor_id, question_type, score_map, layer")
     .eq("id", parsed.data.questionId)
-    .maybeSingle<Pick<AraQuestion, "id" | "version_id" | "pillar_id" | "question_type" | "score_map" | "layer">>();
+    .maybeSingle<Pick<AraQuestion, "id" | "version_id" | "pillar_id" | "individual_factor_id" | "question_type" | "score_map" | "layer">>();
 
   if (!question) return { ok: false, error: "Question not found" };
   if (question.layer !== 1) return { ok: false, error: "Layer 2 questions are not respondent-facing" };
 
-  // Authorisation: question must belong to this assessment's active version
-  // and the respondent must have the pillar assigned.
+  // Authorisation: question must belong to this assessment's active version.
+  // Pillar-assignment is enforced only for org-pillar questions; individual-
+  // factor items (Mode A/B/C) are seeded with pillar_id='talent' but the
+  // respondent never has a pillar assignment row, so a uniform check would
+  // silently reject every Personal Snapshot answer.
   const { data: assessment } = await sb
     .from("ara_assessments")
     .select("question_bank_version_id, status")
@@ -87,14 +90,16 @@ export async function saveAraAnswer(input: z.infer<typeof saveAnswerSchema>): Pr
     return { ok: false, error: "This assessment is closed to further answers" };
   }
 
-  const { data: assignment } = await sb
-    .from("ara_respondent_pillar_assignments")
-    .select("id")
-    .eq("respondent_id", respondent.id)
-    .eq("pillar_id", question.pillar_id)
-    .maybeSingle<{ id: string }>();
+  if (!question.individual_factor_id) {
+    const { data: assignment } = await sb
+      .from("ara_respondent_pillar_assignments")
+      .select("id")
+      .eq("respondent_id", respondent.id)
+      .eq("pillar_id", question.pillar_id)
+      .maybeSingle<{ id: string }>();
 
-  if (!assignment) return { ok: false, error: "You are not assigned to this section" };
+    if (!assignment) return { ok: false, error: "You are not assigned to this section" };
+  }
 
   const score = calculateQuestionScore(
     question.question_type,

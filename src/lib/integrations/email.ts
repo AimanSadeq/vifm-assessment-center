@@ -3,16 +3,23 @@
  *
  * Sends transactional emails via Microsoft Graph API using Azure AD app credentials.
  *
- * Required environment variables:
- *   AZURE_TENANT_ID     - Azure AD tenant ID
- *   AZURE_CLIENT_ID     - App registration client ID
- *   AZURE_CLIENT_SECRET - App registration client secret
- *   EMAIL_FROM_ADDRESS  - Sender email (must be a valid M365 mailbox)
+ * Required environment variables (either naming convention works; OUTLOOK_*
+ * takes precedence so the existing Render production env stays the source of
+ * truth):
+ *   OUTLOOK_TENANT_ID     or AZURE_TENANT_ID     - Azure AD tenant ID
+ *   OUTLOOK_CLIENT_ID     or AZURE_CLIENT_ID     - App registration client ID
+ *   OUTLOOK_CLIENT_SECRET or AZURE_CLIENT_SECRET - App registration client secret
+ *   OUTLOOK_SENDER_EMAIL  or EMAIL_FROM_ADDRESS  - Sender email (must be a valid M365 mailbox)
  */
 
 import { ClientSecretCredential } from "@azure/identity";
 import { Client } from "@microsoft/microsoft-graph-client";
 import { TokenCredentialAuthenticationProvider } from "@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials/index.js";
+
+const graphTenantId = () => process.env.OUTLOOK_TENANT_ID ?? process.env.AZURE_TENANT_ID;
+const graphClientId = () => process.env.OUTLOOK_CLIENT_ID ?? process.env.AZURE_CLIENT_ID;
+const graphClientSecret = () => process.env.OUTLOOK_CLIENT_SECRET ?? process.env.AZURE_CLIENT_SECRET;
+const graphFromAddress = () => process.env.OUTLOOK_SENDER_EMAIL ?? process.env.EMAIL_FROM_ADDRESS;
 
 export type EmailTemplate =
   | "candidate_invitation"
@@ -30,9 +37,9 @@ export type EmailPayload = {
 };
 
 function getGraphClient(): Client | null {
-  const tenantId = process.env.AZURE_TENANT_ID;
-  const clientId = process.env.AZURE_CLIENT_ID;
-  const clientSecret = process.env.AZURE_CLIENT_SECRET;
+  const tenantId = graphTenantId();
+  const clientId = graphClientId();
+  const clientSecret = graphClientSecret();
 
   if (!tenantId || !clientId || !clientSecret) return null;
 
@@ -158,12 +165,12 @@ function renderTemplate(template: EmailTemplate, data: Record<string, string>) {
 
 export async function sendEmail(payload: EmailPayload): Promise<boolean> {
   const { subject, body } = renderTemplate(payload.template, payload.data);
-  const fromAddress = process.env.EMAIL_FROM_ADDRESS;
+  const fromAddress = graphFromAddress();
 
   const graphClient = getGraphClient();
 
   if (!graphClient || !fromAddress) {
-    console.warn("Email integration not configured. Set AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, EMAIL_FROM_ADDRESS.");
+    console.warn("Email integration not configured. Set OUTLOOK_TENANT_ID / OUTLOOK_CLIENT_ID / OUTLOOK_CLIENT_SECRET / OUTLOOK_SENDER_EMAIL (or the AZURE_*/EMAIL_FROM_ADDRESS equivalents).");
     console.log(`[EMAIL MOCK] To: ${payload.to}`);
     console.log(`[EMAIL MOCK] Subject: ${subject}`);
     console.log(`[EMAIL MOCK] Body:\n${body}\n`);
@@ -198,10 +205,5 @@ export async function sendEmail(payload: EmailPayload): Promise<boolean> {
 }
 
 export function isEmailConfigured(): boolean {
-  return !!(
-    process.env.AZURE_TENANT_ID &&
-    process.env.AZURE_CLIENT_ID &&
-    process.env.AZURE_CLIENT_SECRET &&
-    process.env.EMAIL_FROM_ADDRESS
-  );
+  return !!(graphTenantId() && graphClientId() && graphClientSecret() && graphFromAddress());
 }

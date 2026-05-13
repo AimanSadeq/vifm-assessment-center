@@ -199,9 +199,11 @@ ${d.pdfUrl}
 };
 
 function getGraphClient(): Client | null {
-  const tenantId = process.env.AZURE_TENANT_ID;
-  const clientId = process.env.AZURE_CLIENT_ID;
-  const clientSecret = process.env.AZURE_CLIENT_SECRET;
+  // Production (Render) uses OUTLOOK_* env-var names; documentation and
+  // .env.local.example use AZURE_*. Accept either, prefer OUTLOOK_*.
+  const tenantId = process.env.OUTLOOK_TENANT_ID ?? process.env.AZURE_TENANT_ID;
+  const clientId = process.env.OUTLOOK_CLIENT_ID ?? process.env.AZURE_CLIENT_ID;
+  const clientSecret = process.env.OUTLOOK_CLIENT_SECRET ?? process.env.AZURE_CLIENT_SECRET;
   if (!tenantId || !clientId || !clientSecret) return null;
 
   const credential = new ClientSecretCredential(tenantId, clientId, clientSecret);
@@ -232,7 +234,7 @@ export async function sendAraEmail(input: SendAraEmailInput): Promise<{ ok: bool
   const isRedirected = !!input.isSandbox && !!sandboxRedirect;
   const recipient = isRedirected ? sandboxRedirect! : input.to;
 
-  const fromAddress = process.env.EMAIL_FROM_ADDRESS;
+  const fromAddress = process.env.OUTLOOK_SENDER_EMAIL ?? process.env.EMAIL_FROM_ADDRESS;
   const graphClient = getGraphClient();
 
   let status: "sent" | "mocked" | "failed" = "sent";

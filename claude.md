@@ -256,7 +256,7 @@ New module being built alongside the existing AC portal. Full spec in `VIFM_ARA_
 - **respondent** - no account; accesses via `ara_respondents.access_token` validated by service-role API routes.
 
 ### ARA tech choices (differ from AC where necessary)
-- **PDF reports:** Puppeteer + `@sparticuz/chromium` for Vercel — Arabic shaping + landscape bilingual side-by-side layout. Keep React-PDF for AC candidate reports. Endpoint: `/api/ara/reports/[assessmentId]/pdf?language=en|ar|bilingual`.
+- **PDF reports:** Standard Puppeteer (bundled Chromium) on Render — Arabic shaping + landscape bilingual side-by-side layout. Keep React-PDF for AC candidate reports. Endpoint: `/api/ara/reports/[assessmentId]/pdf?language=en|ar|bilingual`. Production is Render, not Vercel — the Lambda-stripped `@sparticuz/chromium` is no longer used (the package is still in `package.json` from the prior Vercel era but is unimported).
 - **Languages:** full bilingual EN + Gulf Arabic with RTL. Translation fields on all content tables (`_en` / `_ar` suffixes).
 - **Region-driven content:** UAE clients see UAE frameworks only, Saudi sees Saudi only - never mixed.
 - **Engagement stages:** three-tier model (`department` / `division` / `enterprise`) drives pillar filtering across detail page and report. Stage 1 (4 pillars) doubles as a sales sample.

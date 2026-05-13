@@ -187,7 +187,11 @@ async function maybeNotifySales(args: {
   preferredLanguage: string | null;
   notes: string | null;
 }): Promise<void> {
-  const salesAddress = process.env.VIFM_SALES_EMAIL ?? process.env.EMAIL_FROM_ADDRESS ?? null;
+  const salesAddress =
+    process.env.VIFM_SALES_EMAIL ??
+    process.env.OUTLOOK_SENDER_EMAIL ??
+    process.env.EMAIL_FROM_ADDRESS ??
+    null;
   if (!salesAddress) {
     console.log(
       `[quote-request] notification skipped (no VIFM_SALES_EMAIL env). Quote ${args.requestId} from ${args.requesterEmail}/${args.requesterCompany} on "${args.courseTitle}".`

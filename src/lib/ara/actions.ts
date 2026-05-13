@@ -1055,7 +1055,7 @@ export async function sendAraRespondentInvitation(respondentId: string) {
   const { data: a } = await sb
     .from("ara_assessments")
     .select(
-      "id, name, name_ar, is_sandbox, consultant_id, organization_id, ara_organizations(name, name_ar)"
+      "id, scope_label, scope_label_ar, is_sandbox, consultant_id, organization_id, ara_organizations(name, name_ar)"
     )
     .eq("id", r.assessment_id)
     .single();
@@ -1095,8 +1095,8 @@ export async function sendAraRespondentInvitation(respondentId: string) {
           : (r.name as string),
       assessmentName:
         language === "ar"
-          ? (a?.name_ar as string | null) || (a?.name as string) || ""
-          : (a?.name as string) || "",
+          ? (a?.scope_label_ar as string | null) || (a?.scope_label as string) || ""
+          : (a?.scope_label as string) || "",
       organizationName:
         language === "ar"
           ? org?.name_ar || org?.name || ""
@@ -1129,7 +1129,7 @@ export async function notifyConsultantOnRespondentComplete(respondentId: string)
   const { data: a } = await sb
     .from("ara_assessments")
     .select(
-      "id, name, name_ar, is_sandbox, consultant_id, ara_organizations(name, name_ar)"
+      "id, scope_label, scope_label_ar, is_sandbox, consultant_id, ara_organizations(name, name_ar)"
     )
     .eq("id", r.assessment_id)
     .single();
@@ -1166,7 +1166,7 @@ export async function notifyConsultantOnRespondentComplete(respondentId: string)
     data: {
       consultantName: (consultantProfile?.full_name as string | undefined) ?? "Consultant",
       respondentName: (r.name as string) || "A respondent",
-      assessmentName: (a.name as string) || "",
+      assessmentName: (a.scope_label as string) || "",
       organizationName: org?.name || "",
       assessmentUrl: `${appBaseUrl()}/ara/consultant/assessments/${r.assessment_id}`,
       completedCount: String(completedCount ?? 0),

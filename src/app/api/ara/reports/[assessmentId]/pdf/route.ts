@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { Browser } from "puppeteer-core";
+import type { Browser } from "puppeteer";
 import { createServiceClient } from "@/lib/supabase/server";
 import { requireAssessmentOwner, isAuthorizationError } from "@/lib/ara/auth-guards";
 
@@ -7,36 +7,20 @@ import { requireAssessmentOwner, isAuthorizationError } from "@/lib/ara/auth-gua
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Vercel: default serverless timeout is 10s. PDF gen takes ~7–10s for
-// a 29-page report - bump to 60s. Hobby tier caps at 60; Pro goes higher.
-export const maxDuration = 60;
-
 /**
- * Launch Chromium, detecting runtime:
- *   - Vercel / production: puppeteer-core + @sparticuz/chromium
- *     (small, serverless-compatible, under the 50 MB function bundle)
- *   - Local dev: full puppeteer package (bundled Chromium)
+ * Launch Chromium via standard puppeteer for both dev and prod.
  *
- * The "full" puppeteer package is only required in dev, so we import it
- * lazily. In production the bundler dead-code-eliminates it.
+ * Render runs Node web services in full Linux containers, so we use the
+ * bundled Chromium that puppeteer ships with rather than the stripped
+ * @sparticuz/chromium build. Sparticuz is meant for AWS Lambda's /tmp
+ * size + cold-start constraints, has a thinner font set (Arabic in
+ * particular can fall through to tofu), and offers no advantage here.
  */
 async function launchBrowser(): Promise<Browser> {
-  const isProduction = !!process.env.VERCEL || process.env.NODE_ENV === "production";
-
-  if (isProduction) {
-    const chromium = (await import("@sparticuz/chromium")).default;
-    const puppeteerCore = (await import("puppeteer-core")).default;
-    return puppeteerCore.launch({
-      args: chromium.args,
-      defaultViewport: { width: 1200, height: 900, deviceScaleFactor: 1 },
-      executablePath: await chromium.executablePath(),
-      headless: true,
-    }) as unknown as Browser;
-  }
-
   const puppeteer = (await import("puppeteer")).default;
   return puppeteer.launch({
     headless: true,
+    defaultViewport: { width: 1200, height: 900, deviceScaleFactor: 1 },
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
   }) as unknown as Browser;
 }

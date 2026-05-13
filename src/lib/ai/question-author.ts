@@ -3,7 +3,7 @@ import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
 import type { AraPillarId } from "@/types/ara";
 
 /**
- * AI-assisted question authoring for the ARA Compass question bank.
+ * AI-assisted question authoring for the AR Compass question bank.
  *
  * Same value proposition as the AI-author features shipped by industry
  * assessment vendors: take a natural-language brief from the admin

@@ -16,12 +16,18 @@ import {
   type PersonalSnapshotData,
 } from "@/lib/reports/personal-snapshot";
 
-// Without this, Next.js will cache the GET response per URL. That caused a
-// real bug in production: a request hitting the route before the respondent
-// finished the assessment cached the "not complete yet" 400, and every
-// subsequent request — including the one after submission — kept getting
-// the stale 400.
+// Without these, Next.js production builds cache fetches inside route
+// handlers and reuse the stale "not complete yet" 400 from a request
+// that hit the endpoint before the respondent finished. `force-dynamic`
+// alone is not enough — it opts the route out of static rendering but
+// doesn't disable fetch-level caching for libraries (the Supabase client
+// here) that go through Next.js's patched global fetch. `fetchCache =
+// "force-no-store"` plugs that hole, and `revalidate = 0` is explicit
+// belt-and-suspenders so future Next.js versions don't introduce a
+// default revalidation window.
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+export const revalidate = 0;
 
 const TARGET = 4;
 

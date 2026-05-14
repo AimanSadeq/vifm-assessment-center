@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, ArrowRight, Sparkles, Compass } from "lucide-react";
+import { VifmLogo } from "@/components/shared/vifm-logo";
 import { ARA_INDIVIDUAL_FACTORS } from "@/lib/constants/ara-individual-factors";
 
 type StartActionResult =
@@ -99,6 +100,9 @@ export function StartForm({ action }: Props) {
 
   return (
     <div className="space-y-6" dir={isAr ? "rtl" : "ltr"}>
+      <div className="flex justify-center">
+        <VifmLogo variant="color" size="md" />
+      </div>
       <div className="text-center">
         <div className="inline-flex items-center gap-2 mb-3">
           <Compass className="h-7 w-7 text-accent" />
@@ -188,29 +192,12 @@ export function StartForm({ action }: Props) {
                   </Button>
                 </div>
               </div>
-              <div className="space-y-1.5">
-                <Label>{t.regionLabel}</Label>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant={region === "uae" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setRegion("uae")}
-                    className="flex-1"
-                  >
-                    {t.uae}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={region === "saudi" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setRegion("saudi")}
-                    className="flex-1"
-                  >
-                    {t.saudi}
-                  </Button>
-                </div>
-              </div>
+              {/* Region pill intentionally omitted from the personal flow:
+                   regulatory frameworks (the org pillar use of region)
+                   don't apply to a self-served personal snapshot, so the
+                   selection had no observable effect. The action defaults
+                   region to 'uae' on the server side. Restore the pill
+                   only when region-specific norm-group copy ships. */}
             </div>
 
             <Button type="submit" disabled={pending} className="w-full gap-2">

@@ -111,7 +111,13 @@ export default async function AraRespondPage({
               : `Welcome, ${ctx.respondent.name}`}
           </h1>
           <p className="text-base text-white/75 max-w-xl">
-            {orgName ? (
+            {ctx.assessment.engagement_stage === "individual" ? (
+              rtl ? (
+                "أنت تأخذ تقييم الجاهزية الشخصية للذكاء الاصطناعي."
+              ) : (
+                "You're taking the Personal AI Readiness assessment."
+              )
+            ) : orgName ? (
               rtl ? (
                 <>
                   أنت تساهم في تقييم{" "}

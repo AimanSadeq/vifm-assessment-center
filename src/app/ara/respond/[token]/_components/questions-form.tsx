@@ -435,8 +435,14 @@ function QuestionInput({
             </button>
           );
         })}
-        <span className="ms-3 text-xs text-muted-foreground">
-          1 = {rtl ? "ضعيف" : "Low"} • 5 = {rtl ? "ممتاز" : "High"}
+        {/* Use Arabic-Indic digits in the Arabic legend so the
+             "digit = label" pairs read naturally in RTL flow. Without
+             this, Western digits inside an RTL paragraph render LTR-
+             isolated by Unicode BiDi rules and the visual order looks
+             reversed (ضعيف 5 • ممتاز 1), which respondents misread as
+             5=weak / 1=excellent. */}
+        <span className="ms-3 text-xs text-muted-foreground" dir={rtl ? "rtl" : "ltr"}>
+          {rtl ? "١ = ضعيف • ٥ = ممتاز" : "1 = Low • 5 = High"}
         </span>
       </div>
     );

@@ -198,6 +198,16 @@ const s = StyleSheet.create({
     marginRight: 3,
     marginBottom: 3,
   },
+  fitExplainerBox: {
+    borderWidth: 0.5,
+    borderColor: C.border,
+    borderRadius: 4,
+    padding: 9,
+    marginBottom: 8,
+    backgroundColor: C.bgSoft,
+  },
+  fitExplainerText: { fontSize: 8, color: C.text, lineHeight: 1.5 },
+  fitExplainerMono: { fontFamily: "Courier", fontSize: 8 },
   emptyCourses: {
     borderWidth: 0.5,
     borderColor: C.border,
@@ -483,6 +493,25 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
         <Text style={s.sectionEyebrow}>Targeted training</Text>
         <Text style={s.sectionTitle}>Develop with VIFM programmes</Text>
         <View style={s.sectionRule} />
+        {data.recommendedCourses.length > 0 && (
+          <View style={s.fitExplainerBox} wrap={false}>
+            <Text style={s.fitExplainerText}>
+              <Text style={{ fontFamily: "Helvetica-Bold" }}>How to read these.</Text>{" "}
+              Each chip below is one match between a course and a factor where
+              you scored below the target of 4 / 5. The notation{" "}
+              <Text style={s.fitExplainerMono}>gap N x xR</Text>{" "}means your gap
+              to target (N) multiplied by how strongly the course is tagged to
+              that factor's competencies (relevance{" "}
+              <Text style={s.fitExplainerMono}>x1</Text> light,{" "}
+              <Text style={s.fitExplainerMono}>x2</Text> medium,{" "}
+              <Text style={s.fitExplainerMono}>x3</Text> strong). The{" "}
+              <Text style={{ fontFamily: "Helvetica-Bold" }}>fit score</Text>{" "}
+              is the sum of those matches.{" "}
+              <Text style={{ fontFamily: "Helvetica-Bold" }}>* High fit</Text>{" "}
+              marks programmes at fit 4 or higher.
+            </Text>
+          </View>
+        )}
         {data.recommendedCourses.length > 0 ? (
           data.recommendedCourses.slice(0, 5).map((c) => {
             const isHighFit = c.total_score >= 4;

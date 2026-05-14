@@ -68,6 +68,27 @@ export function RecommendedCoursesPanel({
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
+        {/* How-fit explainer — without this, "fit score 28" and chips
+            like "gap 2 · ×3" are opaque numbers. The math is small
+            (gap × relevance, summed), so the cost of a one-line
+            caption is cheap and the user trust gain is large. */}
+        <div className="rounded-md bg-muted/40 border border-border/60 px-3 py-2 text-[11px] text-muted-foreground leading-relaxed">
+          <p>
+            <span className="font-semibold text-foreground">How to read these</span> —
+            {" "}each chip is one match between a course and a factor where you're
+            below the target of 4 / 5. The notation
+            {" "}<span className="font-mono text-foreground">gap N · ×R</span>{" "}
+            means your gap to target ({" "}<span className="font-mono">N</span>{" "})
+            multiplied by how strongly the course is tagged to that factor's
+            competencies (relevance {" "}<span className="font-mono">×1</span>{" "}light,
+            {" "}<span className="font-mono">×2</span>{" "}medium,
+            {" "}<span className="font-mono">×3</span>{" "}strong). The
+            {" "}<span className="font-semibold text-foreground">fit score</span>{" "}
+            is the sum of all those matches.
+            {" "}<span className="font-semibold text-foreground">★ High fit</span>{" "}
+            marks programmes at fit ≥ {HIGH_FIT_THRESHOLD}.
+          </p>
+        </div>
         {courses.map((c) => {
           const isHighFit = c.total_score >= HIGH_FIT_THRESHOLD;
           return (

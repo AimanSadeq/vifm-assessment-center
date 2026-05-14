@@ -24,7 +24,7 @@
  * tables grant authenticated read; no service-role escape needed.
  */
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { DEFAULT_TARGET } from "@/lib/scoring/competency-gap";
 import {
   ARA_INDIVIDUAL_FACTORS,
@@ -421,7 +421,13 @@ export async function recommendCoursesForIndividualSnapshot(args: {
 }): Promise<RecommendedCourse[]> {
   const limit = args.limit ?? TAG_LIMIT_DEFAULT;
   const target = args.target ?? 4;
-  const sb = await createClient();
+  // Personal snapshot is anonymous — the respondent is not logged in.
+  // The regular `createClient()` returns an anon-role client and RLS
+  // blocks reads on competencies / vifm_courses / vifm_course_competency_tags,
+  // which silently empties the recommendation list regardless of gap size.
+  // Use the service client here: this function is server-side only and
+  // its inputs come from the trusted respondent-results / PDF routes.
+  const sb = createServiceClient();
 
   // 1. Build a flat list of (factor, competency_name, gap) tuples.
   type FactorGap = { factorId: AraIndividualFactorId; factorLabel: string; competencyNames: string[]; gap: number };

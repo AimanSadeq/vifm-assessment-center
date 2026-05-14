@@ -56,7 +56,7 @@ export const ARA_INDIVIDUAL_FACTORS: AraIndividualFactor[] = [
     ac_competency_names: [
       "Analytical Reasoning",
       "Decision Quality",
-      "Strategic Thinking",
+      "Strategic Mindset",
     ],
   },
   {
@@ -76,8 +76,8 @@ export const ARA_INDIVIDUAL_FACTORS: AraIndividualFactor[] = [
       "استخدام الأداة.",
     color: "#047857", // RESULTS emerald
     ac_competency_names: [
-      "Action Orientation",
-      "Drive for Results",
+      "Action Oriented",
+      "Drives Results",
       "Plans and Aligns",
     ],
   },
@@ -98,8 +98,8 @@ export const ARA_INDIVIDUAL_FACTORS: AraIndividualFactor[] = [
       "غير موضعها.",
     color: "#c2410c", // PEOPLE orange
     ac_competency_names: [
-      "Communicates",
-      "Influences",
+      "Communicates Effectively",
+      "Persuades",
       "Develops Talent",
       "Builds Networks",
     ],
@@ -122,7 +122,7 @@ export const ARA_INDIVIDUAL_FACTORS: AraIndividualFactor[] = [
     color: "#6d28d9", // SELF violet
     ac_competency_names: [
       "Self-Development",
-      "Resilience",
+      "Being Resilient",
       "Manages Ambiguity",
       "Self-Awareness",
     ],

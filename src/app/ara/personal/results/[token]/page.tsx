@@ -5,6 +5,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { loadRespondentByToken, loadQuestionsForRespondent } from "@/lib/ara/respondent-access";
+import { calculateQuestionScore } from "@/lib/ara/scoring";
 import {
   ARA_INDIVIDUAL_FACTORS,
   ARA_INDIVIDUAL_FACTOR_IDS,
@@ -63,14 +64,8 @@ export default async function PersonalResultsPage({ params }: Props) {
     const factorId = q.individual_factor_id as AraIndividualFactorId | null;
     if (!factorId) continue;
     const ans = answerByQuestionId.get(q.id);
-    if (ans == null) continue;
-    // Likert items use score_map keyed on the option label; look up the
-    // numeric score for the given answer_value. answer_value is the label
-    // they picked.
-    const numeric = typeof ans === "number"
-      ? ans
-      : (q.score_map?.[String(ans)] ?? null);
-    if (typeof numeric === "number" && Number.isFinite(numeric)) {
+    const numeric = calculateQuestionScore(q.question_type, ans ?? null, q.score_map);
+    if (numeric != null) {
       factorTotals[factorId].sum += numeric;
       factorTotals[factorId].count += 1;
     }

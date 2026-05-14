@@ -4,6 +4,10 @@ import { useMemo, useRef, useState, useTransition } from "react";
 import { Check, Loader2, AlertCircle, HelpCircle } from "lucide-react";
 import { saveAraAnswer } from "@/lib/ara/respondent-actions";
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
+import {
+  ARA_INDIVIDUAL_FACTORS,
+  type AraIndividualFactorId,
+} from "@/lib/constants/ara-individual-factors";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type {
@@ -39,18 +43,33 @@ const DEBOUNCE_MS = 600;
 export function QuestionsForm({ token, questions, answers, language }: QuestionsFormProps) {
   const rtl = language === "ar";
 
-  // Group questions by pillar in the order defined by ARA_PILLARS.
-  const grouped = useMemo(() => {
+  // Split questions into pillar-only and individual-factor groups.
+  // Items with individual_factor_id set belong to the personal factor
+  // sections (AI Sense-Check etc.); items without belong to the org
+  // pillar sections (Strategy etc.). A Mode B/C respondent gets both;
+  // a Mode A (pure personal) respondent gets only the factor sections.
+  const { byPillar, byFactor } = useMemo(() => {
     const byPillar = new Map<AraPillarId, AraQuestion[]>();
+    const byFactor = new Map<AraIndividualFactorId, AraQuestion[]>();
     for (const q of questions) {
-      const arr = byPillar.get(q.pillar_id) ?? [];
-      arr.push(q);
-      byPillar.set(q.pillar_id, arr);
+      if (q.individual_factor_id) {
+        const fid = q.individual_factor_id as AraIndividualFactorId;
+        const arr = byFactor.get(fid) ?? [];
+        arr.push(q);
+        byFactor.set(fid, arr);
+      } else {
+        const arr = byPillar.get(q.pillar_id) ?? [];
+        arr.push(q);
+        byPillar.set(q.pillar_id, arr);
+      }
     }
-    Array.from(byPillar.values()).forEach((arr: AraQuestion[]) => {
+    for (const arr of byPillar.values()) {
       arr.sort((a, b) => a.question_number - b.question_number);
-    });
-    return byPillar;
+    }
+    for (const arr of byFactor.values()) {
+      arr.sort((a, b) => a.question_number - b.question_number);
+    }
+    return { byPillar, byFactor };
   }, [questions]);
 
   // Seed local state from existing answers.
@@ -165,7 +184,7 @@ export function QuestionsForm({ token, questions, answers, language }: Questions
       </div>
 
       {ARA_PILLARS.map((pillar) => {
-        const qs = grouped.get(pillar.id) ?? [];
+        const qs = byPillar.get(pillar.id) ?? [];
         if (qs.length === 0) return null;
 
         const pillarAnswered = qs.filter((q) => {
@@ -189,6 +208,60 @@ export function QuestionsForm({ token, questions, answers, language }: Questions
               </div>
               <Badge variant="outline" className="shrink-0">
                 {pillarAnswered} / {qs.length}
+              </Badge>
+            </header>
+
+            <div className="divide-y">
+              {qs.map((q) => (
+                <QuestionRow
+                  key={q.id}
+                  question={q}
+                  answer={state[q.id]}
+                  language={language}
+                  onAnswer={updateAnswer}
+                />
+              ))}
+            </div>
+          </section>
+        );
+      })}
+
+      {/* Personal / individual-factor sections — render after any pillar
+           sections so a Mode B/C respondent sees pillars first then
+           personal factors. Pure Mode A respondents (Personal Snapshot)
+           only have factor questions, so this is the only rendered group. */}
+      {ARA_INDIVIDUAL_FACTORS.map((factor) => {
+        const qs = byFactor.get(factor.id) ?? [];
+        if (qs.length === 0) return null;
+
+        const factorAnswered = qs.filter((q) => {
+          const a = state[q.id];
+          return a && (a.value !== null || (q.question_type === "open_text" && a.text));
+        }).length;
+
+        return (
+          <section key={factor.id} id={`factor-${factor.id}`} className="rounded-lg border bg-card">
+            <header className="border-b px-6 py-4 flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <span
+                  className="inline-block h-2.5 w-2.5 rounded-full mt-2 shrink-0"
+                  style={{ backgroundColor: factor.color }}
+                  aria-hidden="true"
+                />
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
+                    {factor.domain}
+                  </span>
+                  <h2 className="text-lg font-semibold text-primary">
+                    {rtl ? factor.name_ar : factor.name_en}
+                  </h2>
+                  <p className="text-sm text-muted-foreground" dir={rtl ? "ltr" : "rtl"}>
+                    {rtl ? factor.name_en : factor.name_ar}
+                  </p>
+                </div>
+              </div>
+              <Badge variant="outline" className="shrink-0">
+                {factorAnswered} / {qs.length}
               </Badge>
             </header>
 

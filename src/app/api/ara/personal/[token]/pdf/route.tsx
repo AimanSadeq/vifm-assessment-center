@@ -4,6 +4,7 @@ import {
   loadRespondentByToken,
   loadQuestionsForRespondent,
 } from "@/lib/ara/respondent-access";
+import { calculateQuestionScore } from "@/lib/ara/scoring";
 import { createServiceClient } from "@/lib/supabase/server";
 import {
   ARA_INDIVIDUAL_FACTOR_IDS,
@@ -82,10 +83,8 @@ export async function GET(
       const factorId = q.individual_factor_id as AraIndividualFactorId | null;
       if (!factorId) continue;
       const ans = answerByQuestionId.get(q.id);
-      if (ans == null) continue;
-      const numeric =
-        typeof ans === "number" ? ans : (q.score_map?.[String(ans)] ?? null);
-      if (typeof numeric === "number" && Number.isFinite(numeric)) {
+      const numeric = calculateQuestionScore(q.question_type, ans ?? null, q.score_map);
+      if (numeric != null) {
         factorTotals[factorId].sum += numeric;
         factorTotals[factorId].count += 1;
       }

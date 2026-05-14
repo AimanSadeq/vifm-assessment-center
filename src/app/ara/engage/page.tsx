@@ -174,6 +174,26 @@ export default function AraEngagePage() {
                     </li>
                   </ul>
 
+                  {/* Workforce-layer cross-reference — only on the org tiers.
+                       Pillar maturity alone misses adoption: the org can build
+                       great Data + Strategy infrastructure while the workforce
+                       doesn't actually use it. Surfacing the optional Mode-C
+                       layer here means consultants and clients see the
+                       capability/adoption pairing BEFORE they reach the
+                       wizard, not as a buried toggle inside it. */}
+                  {stage.id !== "individual" && (
+                    <div className="rounded-md bg-accent/5 border border-accent/20 px-3 py-2 mb-4 text-[11px] leading-relaxed text-muted-foreground">
+                      <span className="font-semibold text-accent">
+                        + Workforce readiness layer (optional)
+                      </span>{" "}
+                      — each respondent also answers the four personal
+                      factor items, so the report measures{" "}
+                      <span className="italic">adoption</span> alongside{" "}
+                      <span className="italic">capability</span>. People are
+                      what makes a department.
+                    </div>
+                  )}
+
                   {stage.is_pro_bono ? (
                     <Link
                       href={stage.id === "individual"

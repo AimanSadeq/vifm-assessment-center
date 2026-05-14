@@ -3,10 +3,12 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, ArrowRight } from "lucide-react";
+import { Loader2, ArrowRight, Sparkles, Compass } from "lucide-react";
+import { ARA_INDIVIDUAL_FACTORS } from "@/lib/constants/ara-individual-factors";
 
 type StartActionResult =
   | { ok: false; error: string }
@@ -16,16 +18,69 @@ type Props = {
   action: (fd: FormData) => Promise<StartActionResult>;
 };
 
+const COPY = {
+  en: {
+    h1: "Personal AI Readiness Snapshot",
+    subtitle:
+      "A short self-assessment — about 5-7 minutes — that gives you a clear read on how AI-ready you personally are across four VIFM factors. Complimentary. No account required.",
+    whatYoullGet: "What you'll get",
+    startYourSnapshot: "Start your snapshot",
+    privacyNote:
+      "Your answers are private. Email is used only to send your personal results link — we don't market to you.",
+    nameLabel: "Your name *",
+    namePlaceholder: "e.g. Sara Al Hashimi",
+    emailLabel: "Email *",
+    emailPlaceholder: "you@example.com",
+    languageLabel: "Language",
+    regionLabel: "Region",
+    uae: "UAE",
+    saudi: "Saudi Arabia",
+    submit: "Start the snapshot",
+    submitting: "Starting…",
+    footnote:
+      "The Personal Snapshot is one of three diagnostic tiers in the VIFM AI Readiness Compass. The org-level tiers (Department, Division, Enterprise) are consultant-led and run separately.",
+  },
+  ar: {
+    h1: "لقطة الجاهزية الشخصية للذكاء الاصطناعي",
+    subtitle:
+      "تقييم ذاتي قصير — يستغرق نحو 5-7 دقائق — يمنحك قراءة واضحة لمدى جاهزيتك الشخصية للذكاء الاصطناعي عبر أربعة عوامل من VIFM. مجاني، ولا يتطلب إنشاء حساب.",
+    whatYoullGet: "ماذا ستحصل عليه",
+    startYourSnapshot: "ابدأ لقطتك",
+    privacyNote:
+      "إجاباتك خاصة. نستخدم بريدك الإلكتروني فقط لإرسال رابط نتائجك الشخصية — لا نستخدمه للتسويق.",
+    nameLabel: "اسمك *",
+    namePlaceholder: "مثال: سارة الهاشمي",
+    emailLabel: "البريد الإلكتروني *",
+    emailPlaceholder: "you@example.com",
+    languageLabel: "اللغة",
+    regionLabel: "المنطقة",
+    uae: "الإمارات",
+    saudi: "السعودية",
+    submit: "ابدأ اللقطة",
+    submitting: "جارٍ البدء…",
+    footnote:
+      "اللقطة الشخصية واحدة من ثلاثة مستويات تشخيصية ضمن بوصلة VIFM للاستعداد للذكاء الاصطناعي. تُدار المستويات على مستوى المؤسسة (إدارة، شعبة، مؤسسة) من قِبل المستشارين بشكل منفصل.",
+  },
+} as const;
+
 /**
- * Tiny client wrapper around the personal-assessment start server
- * action. The action returns either an error or a redirectTo URL;
- * we navigate via router.push on success.
+ * Personal Snapshot start page — full client surface so the language
+ * toggle inside the form drives the entire page's strings reactively.
+ * (Previously the toggle only set the respondent's preferred language
+ * for the downstream respond form, leaving the start page stuck in
+ * English regardless of selection.)
+ *
+ * Page chrome that lives outside this component is intentionally
+ * empty: the header, factor preview cards, form, and footnote all
+ * render from here so the locale state flows everywhere.
  */
 export function StartForm({ action }: Props) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [language, setLanguage] = useState<"en" | "ar">("en");
   const [region, setRegion] = useState<"uae" | "saudi">("uae");
+  const isAr = language === "ar";
+  const t = COPY[language];
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -43,82 +98,132 @@ export function StartForm({ action }: Props) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="full_name">Your name *</Label>
-          <Input
-            id="full_name"
-            name="full_name"
-            required
-            minLength={2}
-            maxLength={200}
-            placeholder="e.g. Sara Al Hashimi"
-          />
+    <div className="space-y-6" dir={isAr ? "rtl" : "ltr"}>
+      <div className="text-center">
+        <div className="inline-flex items-center gap-2 mb-3">
+          <Compass className="h-7 w-7 text-accent" />
+          <Sparkles className="h-5 w-5 text-accent" />
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="email">Email *</Label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            required
-            maxLength={200}
-            placeholder="you@example.com"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label>Language</Label>
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant={language === "en" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setLanguage("en")}
-              className="flex-1"
-            >
-              English
-            </Button>
-            <Button
-              type="button"
-              variant={language === "ar" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setLanguage("ar")}
-              className="flex-1"
-            >
-              العربية
-            </Button>
-          </div>
-        </div>
-        <div className="space-y-1.5">
-          <Label>Region</Label>
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant={region === "uae" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setRegion("uae")}
-              className="flex-1"
-            >
-              UAE
-            </Button>
-            <Button
-              type="button"
-              variant={region === "saudi" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setRegion("saudi")}
-              className="flex-1"
-            >
-              Saudi Arabia
-            </Button>
-          </div>
-        </div>
+        <h1 className="text-3xl font-bold tracking-tight">{t.h1}</h1>
+        <p className="text-sm text-muted-foreground mt-2 max-w-lg mx-auto">
+          {t.subtitle}
+        </p>
       </div>
 
-      <Button type="submit" disabled={pending} className="w-full gap-2">
-        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-        {pending ? "Starting…" : "Start the snapshot"}
-      </Button>
-    </form>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">{t.whatYoullGet}</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-2">
+          {ARA_INDIVIDUAL_FACTORS.map((f) => (
+            <div key={f.id} className="rounded-md border p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <span
+                  className="inline-block h-2 w-2 rounded-full"
+                  style={{ backgroundColor: f.color }}
+                />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  {f.domain}
+                </span>
+              </div>
+              <p className="text-sm font-semibold">{isAr ? f.name_ar : f.name_en}</p>
+              <p className="text-xs text-muted-foreground mt-1 leading-snug">
+                {isAr ? f.description_ar : f.description_en}
+              </p>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">{t.startYourSnapshot}</CardTitle>
+          <CardDescription>{t.privacyNote}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="full_name">{t.nameLabel}</Label>
+                <Input
+                  id="full_name"
+                  name="full_name"
+                  required
+                  minLength={2}
+                  maxLength={200}
+                  placeholder={t.namePlaceholder}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="email">{t.emailLabel}</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  maxLength={200}
+                  placeholder={t.emailPlaceholder}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t.languageLabel}</Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={language === "en" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setLanguage("en")}
+                    className="flex-1"
+                  >
+                    English
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={language === "ar" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setLanguage("ar")}
+                    className="flex-1"
+                  >
+                    العربية
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t.regionLabel}</Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={region === "uae" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setRegion("uae")}
+                    className="flex-1"
+                  >
+                    {t.uae}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={region === "saudi" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setRegion("saudi")}
+                    className="flex-1"
+                  >
+                    {t.saudi}
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <Button type="submit" disabled={pending} className="w-full gap-2">
+              {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+              {pending ? t.submitting : t.submit}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <p className="text-[11px] text-muted-foreground text-center">
+        {t.footnote}
+      </p>
+    </div>
   );
 }

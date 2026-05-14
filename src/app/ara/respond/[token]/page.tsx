@@ -161,18 +161,23 @@ export default async function AraRespondPage({
           />
         )}
 
-        {/* Supporting Materials (optional) */}
-        <MaterialsSection
-          token={params.token}
-          language={language}
-          materials={(materials ?? []).map((m) => ({
-            id: m.id,
-            material_type: m.material_type,
-            material_name: m.material_name,
-            file_name: m.file_name,
-            link_url: m.link_url,
-          }))}
-        />
+        {/* Supporting Materials (optional) — org-side only. Personal /
+             individual-stage respondents are submitting a self-assessment,
+             not org-level evidence, so the regulatory-docs upload affordance
+             is suppressed. */}
+        {ctx.assessment.engagement_stage !== "individual" && !ctx.respondent.individual_only && (
+          <MaterialsSection
+            token={params.token}
+            language={language}
+            materials={(materials ?? []).map((m) => ({
+              id: m.id,
+              material_type: m.material_type,
+              material_name: m.material_name,
+              file_name: m.file_name,
+              link_url: m.link_url,
+            }))}
+          />
+        )}
 
         {/* Complete button */}
         {questions.length > 0 && (

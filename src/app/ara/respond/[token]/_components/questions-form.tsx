@@ -48,7 +48,11 @@ export function QuestionsForm({ token, questions, answers, language }: Questions
   // sections (AI Sense-Check etc.); items without belong to the org
   // pillar sections (Strategy etc.). A Mode B/C respondent gets both;
   // a Mode A (pure personal) respondent gets only the factor sections.
-  const { byPillar, byFactor } = useMemo(() => {
+  //
+  // displayNumberById renumbers personal items 1..N in factor-then-
+  // question-number order, so a Mode A respondent sees Q1..Q24 instead
+  // of the org-style Q101..Q124 internal numbering.
+  const { byPillar, byFactor, displayNumberById } = useMemo(() => {
     const byPillar = new Map<AraPillarId, AraQuestion[]>();
     const byFactor = new Map<AraIndividualFactorId, AraQuestion[]>();
     for (const q of questions) {
@@ -69,7 +73,16 @@ export function QuestionsForm({ token, questions, answers, language }: Questions
     for (const arr of byFactor.values()) {
       arr.sort((a, b) => a.question_number - b.question_number);
     }
-    return { byPillar, byFactor };
+    const displayNumberById = new Map<string, number>();
+    let counter = 0;
+    for (const factor of ARA_INDIVIDUAL_FACTORS) {
+      const arr = byFactor.get(factor.id) ?? [];
+      for (const q of arr) {
+        counter += 1;
+        displayNumberById.set(q.id, counter);
+      }
+    }
+    return { byPillar, byFactor, displayNumberById };
   }, [questions]);
 
   // Seed local state from existing answers.
@@ -273,6 +286,7 @@ export function QuestionsForm({ token, questions, answers, language }: Questions
                   answer={state[q.id]}
                   language={language}
                   onAnswer={updateAnswer}
+                  displayNumber={displayNumberById.get(q.id)}
                 />
               ))}
             </div>
@@ -301,23 +315,27 @@ function QuestionRow({
   answer,
   language,
   onAnswer,
+  displayNumber,
 }: {
   question: AraQuestion;
   answer: LocalAnswer | undefined;
   language: AraLanguage;
   onAnswer: (id: string, patch: Partial<Omit<LocalAnswer, "state">>) => void;
+  /** Override for the visible Q code; falls back to question_number. */
+  displayNumber?: number;
 }) {
   const rtl = language === "ar";
   const text = rtl ? question.question_text_ar : question.question_text_en;
   const helpText = rtl ? question.help_text_ar : question.help_text_en;
   const [helpOpen, setHelpOpen] = useState(false);
+  const codeNumber = displayNumber ?? question.question_number;
 
   return (
     <div className="px-6 py-5" dir={rtl ? "rtl" : "ltr"}>
       <div className="flex items-start justify-between gap-4 mb-3">
         <div className="flex-1">
           <p className="text-sm font-medium leading-relaxed">
-            <span className="text-muted-foreground me-2">Q{question.question_number}.</span>
+            <span className="text-muted-foreground me-2">Q{codeNumber}.</span>
             {text}
           </p>
           {helpText && (

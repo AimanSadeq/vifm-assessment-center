@@ -67,21 +67,21 @@ export function QuestionsForm({ token, questions, answers, language }: Questions
         byPillar.set(q.pillar_id, arr);
       }
     }
-    for (const arr of byPillar.values()) {
+    Array.from(byPillar.values()).forEach((arr: AraQuestion[]) => {
       arr.sort((a, b) => a.question_number - b.question_number);
-    }
-    for (const arr of byFactor.values()) {
+    });
+    Array.from(byFactor.values()).forEach((arr: AraQuestion[]) => {
       arr.sort((a, b) => a.question_number - b.question_number);
-    }
+    });
     const displayNumberById = new Map<string, number>();
     let counter = 0;
-    for (const factor of ARA_INDIVIDUAL_FACTORS) {
+    ARA_INDIVIDUAL_FACTORS.forEach((factor) => {
       const arr = byFactor.get(factor.id) ?? [];
-      for (const q of arr) {
+      arr.forEach((q) => {
         counter += 1;
         displayNumberById.set(q.id, counter);
-      }
-    }
+      });
+    });
     return { byPillar, byFactor, displayNumberById };
   }, [questions]);
 

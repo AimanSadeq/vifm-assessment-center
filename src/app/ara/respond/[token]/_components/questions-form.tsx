@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Check, Loader2, AlertCircle, HelpCircle } from "lucide-react";
 import { saveAraAnswer } from "@/lib/ara/respondent-actions";
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
@@ -13,6 +13,21 @@ import { Button } from "@/components/ui/button";
 import type {
   AraLanguage, AraPillarId, AraQuestion, AraQuestionType,
 } from "@/types/ara";
+
+/**
+ * Cross-component signal so the CompleteButton can flush any pending
+ * auto-saves before firing markAraRespondentComplete. Without this gate
+ * a respondent who clicks Submit while the last 1-2 answers are still
+ * debounced in client state ends up with completed_at set but only
+ * N-of-24 responses persisted — the audit on 2026-05-15 hit this in a
+ * fast-click scripted run. Keyed by respondent token so multiple forms
+ * on the same page (would only happen in dev) don't collide.
+ */
+type FormSaveGate = {
+  hasPendingSaves: () => boolean;
+  flushPendingSaves: () => Promise<void>;
+};
+const FORM_GATES = new Map<string, FormSaveGate>();
 
 type ExistingAnswer = {
   question_id: string;
@@ -107,56 +122,70 @@ export function QuestionsForm({ token, questions, answers, language }: Questions
 
   const [, startTransition] = useTransition();
   const [timers] = useState<Map<string, ReturnType<typeof setTimeout>>>(() => new Map());
+  // Tracks each in-flight save promise so the gate can await all of
+  // them when Submit needs to wait for stragglers to land.
+  const inFlightRef = useRef<Set<Promise<void>>>(new Set());
+
+  // Runs the actual save (no debounce; called by both the timer
+  // callback and the flush path). Returns a promise that resolves
+  // when the save has either succeeded or exhausted retries.
+  const runSave = (questionId: string): Promise<void> => {
+    const current = stateRef.current[questionId];
+    if (!current) return Promise.resolve();
+    setState((prev) => ({ ...prev, [questionId]: { ...prev[questionId], state: "saving" } }));
+    const promise = (async () => {
+      // Auto-retry up to 3 times. Handles both action-level errors
+      // (result.ok === false) and network/thrown errors.
+      const MAX_ATTEMPTS = 3;
+      let lastError: string | undefined;
+      let saved = false;
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS && !saved; attempt++) {
+        try {
+          const result = await saveAraAnswer({
+            token,
+            questionId,
+            answerValue: current.value,
+            answerText: current.text,
+            needsVerification: current.needsVerification,
+          });
+          if (result.ok) { saved = true; break; }
+          lastError = result.error;
+        } catch (err) {
+          lastError = err instanceof Error ? err.message : "Network error";
+        }
+        if (attempt < MAX_ATTEMPTS) {
+          // Backoff: 500ms, 1500ms before final attempt
+          await new Promise((r) => setTimeout(r, 500 * attempt));
+        }
+      }
+      setState((prev) => ({
+        ...prev,
+        [questionId]: {
+          ...prev[questionId],
+          state: saved ? "saved" : "error",
+          error: saved ? undefined : lastError,
+        },
+      }));
+      if (saved) {
+        setTimeout(() => {
+          setState((prev) => ({
+            ...prev,
+            [questionId]: { ...prev[questionId], state: "idle" },
+          }));
+        }, 1500);
+      }
+    })();
+    inFlightRef.current.add(promise);
+    promise.finally(() => { inFlightRef.current.delete(promise); });
+    return promise;
+  };
 
   const scheduleSave = (questionId: string) => {
     const existing = timers.get(questionId);
     if (existing) clearTimeout(existing);
     const handle = setTimeout(() => {
-      const current = stateRef.current[questionId];
-      if (!current) return;
-      setState((prev) => ({ ...prev, [questionId]: { ...prev[questionId], state: "saving" } }));
-      startTransition(async () => {
-        // Auto-retry up to 3 times. Handles both action-level errors
-        // (result.ok === false) and network/thrown errors.
-        const MAX_ATTEMPTS = 3;
-        let lastError: string | undefined;
-        let saved = false;
-        for (let attempt = 1; attempt <= MAX_ATTEMPTS && !saved; attempt++) {
-          try {
-            const result = await saveAraAnswer({
-              token,
-              questionId,
-              answerValue: current.value,
-              answerText: current.text,
-              needsVerification: current.needsVerification,
-            });
-            if (result.ok) { saved = true; break; }
-            lastError = result.error;
-          } catch (err) {
-            lastError = err instanceof Error ? err.message : "Network error";
-          }
-          if (attempt < MAX_ATTEMPTS) {
-            // Backoff: 500ms, 1500ms before final attempt
-            await new Promise((r) => setTimeout(r, 500 * attempt));
-          }
-        }
-        setState((prev) => ({
-          ...prev,
-          [questionId]: {
-            ...prev[questionId],
-            state: saved ? "saved" : "error",
-            error: saved ? undefined : lastError,
-          },
-        }));
-        if (saved) {
-          setTimeout(() => {
-            setState((prev) => ({
-              ...prev,
-              [questionId]: { ...prev[questionId], state: "idle" },
-            }));
-          }, 1500);
-        }
-      });
+      timers.delete(questionId);
+      startTransition(() => { void runSave(questionId); });
     }, DEBOUNCE_MS);
     timers.set(questionId, handle);
   };
@@ -169,6 +198,40 @@ export function QuestionsForm({ token, questions, answers, language }: Questions
     });
     scheduleSave(questionId);
   };
+
+  // Register / unregister this form's save gate so the sibling
+  // CompleteButton can flush before firing the completion server
+  // action. Captures the timers Map and inFlightRef by closure.
+  useEffect(() => {
+    const gate: FormSaveGate = {
+      hasPendingSaves: () => timers.size > 0 || inFlightRef.current.size > 0,
+      flushPendingSaves: async () => {
+        // Fire every debounced save immediately, then wait for it +
+        // anything already in flight to settle. Loop until both queues
+        // are empty in case a save scheduled while we were awaiting.
+        const guard = Date.now() + 30_000; // hard 30s safety
+        while (Date.now() < guard) {
+          const pendingIds = Array.from(timers.keys());
+          for (const id of pendingIds) {
+            const t = timers.get(id);
+            if (t) clearTimeout(t);
+            timers.delete(id);
+            void runSave(id);
+          }
+          if (inFlightRef.current.size === 0 && timers.size === 0) break;
+          await Promise.allSettled(Array.from(inFlightRef.current));
+        }
+      },
+    };
+    FORM_GATES.set(token, gate);
+    return () => {
+      FORM_GATES.delete(token);
+    };
+    // runSave is stable across renders (no deps that change identity);
+    // we deliberately don't include it to avoid re-registering the gate
+    // on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, timers]);
 
   // Progress metrics
   const answeredCount = questions.filter((q) => {
@@ -567,6 +630,12 @@ export function CompleteButton({
 }) {
   const rtl = language === "ar";
   const [pending, start] = useTransition();
+  // Distinct flushing state so the button label can show a more
+  // honest "saving your answers" before it flips to "submitting"
+  // — this is the gap the audit caught (clicks fired in <200ms
+  // outran the debounce, click→submit was instant and left answers
+  // unsaved).
+  const [flushing, setFlushing] = useState(false);
 
   if (alreadyComplete) {
     return (
@@ -579,13 +648,34 @@ export function CompleteButton({
     );
   }
 
+  const handleClick = () => {
+    start(async () => {
+      const gate = FORM_GATES.get(token);
+      if (gate && gate.hasPendingSaves()) {
+        setFlushing(true);
+        try {
+          await gate.flushPendingSaves();
+        } finally {
+          setFlushing(false);
+        }
+      }
+      await onComplete();
+    });
+  };
+
+  const label = pending
+    ? (flushing
+        ? (rtl ? "جارٍ حفظ إجاباتك..." : "Saving your answers…")
+        : (rtl ? "جارٍ الإرسال..." : "Submitting…"))
+    : (rtl ? "إرسال التقييم" : "Submit assessment");
+
   return (
     <Button
-      onClick={() => start(() => onComplete())}
+      onClick={handleClick}
       disabled={pending}
       className="w-full"
     >
-      {pending ? (rtl ? "جارٍ الإرسال..." : "Submitting…") : rtl ? "إرسال التقييم" : "Submit assessment"}
+      {label}
     </Button>
   );
 }

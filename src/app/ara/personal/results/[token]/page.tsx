@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Compass, Sparkles, ArrowLeft, FileDown, BookOpen } from "lucide-react";
+import { Compass, Sparkles, ArrowLeft, FileDown, BookOpen, GraduationCap } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -264,6 +264,37 @@ export default async function PersonalResultsPage({ params }: Props) {
           courses={recommendations}
           context="ac"
         />
+
+        {/* Browse-the-full-catalogue CTA — the recommender shows up to
+             five gap-driven programmes; people with strong scores see
+             the empty-state. Either way, a respondent who wants to
+             explore VIFM's broader curriculum should have one click to
+             the public training catalogue from here. The recommender
+             is gap-driven; the catalogue is content-driven. */}
+        <div className="rounded-md border bg-accent/5 p-3 flex items-center justify-between gap-3">
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            <div className="rounded-full bg-accent/15 p-1.5 mt-0.5 shrink-0">
+              <GraduationCap className="h-3.5 w-3.5 text-accent" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold">
+                {isAr ? "تصفّح كتالوج VIFM الكامل" : "Browse the full VIFM catalogue"}
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
+                {isAr
+                  ? "أكثر من مئة برنامج في المالية والذكاء الاصطناعي والقيادة والحوكمة — احصل على عرض سعر مخصّص لأي برنامج."
+                  : "Over a hundred programmes across finance, AI, leadership and governance — request a tailored quote for any of them."}
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/courses"
+            className="inline-flex items-center gap-1 text-[11px] font-semibold text-accent hover:underline shrink-0"
+          >
+            {isAr ? "افتح الكتالوج" : "Open catalogue"}
+            <ArrowLeft className="h-3 w-3 rotate-180" />
+          </Link>
+        </div>
 
         {/* Methodology trust badge — first asked-for concern from any
              stakeholder reviewing the platform: "where did the questions

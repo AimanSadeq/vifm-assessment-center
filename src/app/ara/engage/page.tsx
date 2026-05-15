@@ -279,6 +279,30 @@ export default function AraEngagePage() {
         </div>
       </section>
 
+      {/* Training catalogue bridge — the diagnostic surfaces gap-driven
+           course recommendations on every report, but a visitor on this
+           marketing page may want to explore the broader VIFM curriculum
+           independently. Linked from the homepage header and surfaced
+           again here as a discrete bridge into /courses. */}
+      <section className="border-t bg-muted/30">
+        <div className="max-w-4xl mx-auto px-6 py-12 text-center">
+          <h2 className="text-2xl font-semibold text-primary mb-2">
+            Or browse VIFM&apos;s full training catalogue
+          </h2>
+          <p className="text-sm text-muted-foreground max-w-xl mx-auto mb-6">
+            Over a hundred programmes across finance, AI, leadership, and
+            governance — request a tailored quote for any of them. The
+            diagnostic narrows the field; the catalogue shows the field.
+          </p>
+          <Link
+            href="/courses"
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-5 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+          >
+            Open the training catalogue <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="border-t bg-card/50">
         <div className="max-w-6xl mx-auto px-6 py-8 text-center text-xs text-muted-foreground">

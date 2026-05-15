@@ -4,11 +4,20 @@ import { runRetentionPurge } from "@/lib/ara/admin-actions";
 /**
  * Daily retention-purge cron endpoint.
  *
- * Scheduled by `vercel.json` to fire once a day. Vercel Cron sends
- * `Authorization: Bearer <CRON_SECRET>` automatically when CRON_SECRET
- * is set in the project's env vars — we verify it matches before
- * running. Without the env var (e.g. local dev), the route refuses
+ * Scheduled by `.github/workflows/ara-retention-purge.yml` (GitHub
+ * Actions cron) — the workflow fires daily and sends an
+ * `Authorization: Bearer <CRON_SECRET>` header pulled from the repo's
+ * Actions secrets. The same CRON_SECRET must be set as a Render env
+ * var on the vifm-assessment-center service for the route to verify
+ * the bearer. Without the env var (e.g. local dev), the route refuses
  * to run, preventing accidental purges from a stray browser fetch.
+ *
+ * History: the original deployment was on Vercel, where the cron
+ * lived in `vercel.json`. After the move to Render the vercel.json
+ * was effectively no-op, so the cron became admin-triggered until
+ * the GitHub Actions workflow was wired in. The endpoint accepts the
+ * same bearer header from either trigger, so a future move back to
+ * Vercel or to Render Cron Jobs needs zero code change.
  *
  * Body: { ok: true, deleted: N, trigger: 'cron' } on success;
  *       { ok: false, error: '...' } on failure.

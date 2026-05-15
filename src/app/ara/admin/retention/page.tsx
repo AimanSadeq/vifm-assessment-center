@@ -206,9 +206,12 @@ function CronStatusBanner({ cronSecretConfigured }: { cronSecretConfigured: bool
             Daily auto-purge is active
           </p>
           <p className="text-xs text-emerald-900 mt-1 leading-relaxed">
-            Vercel Cron will fire <code className="font-mono">/api/ara/admin/retention/cron</code> at
-            03:00 UTC each day with the configured <code className="font-mono">CRON_SECRET</code>.
-            The manual <em>Purge</em> form below remains available as an override.
+            GitHub Actions fires{" "}
+            <code className="font-mono">.github/workflows/ara-retention-purge.yml</code>{" "}
+            daily at 03:00 UTC, which hits{" "}
+            <code className="font-mono">/api/ara/admin/retention/cron</code> with the
+            configured <code className="font-mono">CRON_SECRET</code>. The manual{" "}
+            <em>Purge</em> form below remains available as an override.
           </p>
         </div>
         <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-emerald-700 font-semibold shrink-0">
@@ -236,16 +239,29 @@ function CronStatusBanner({ cronSecretConfigured }: { cronSecretConfigured: bool
         <details className="mt-2 text-xs text-amber-900">
           <summary className="cursor-pointer font-medium">How to enable in production</summary>
           <ol className="mt-2 list-decimal ms-5 space-y-1">
-            <li>Vercel project → Settings → Environment Variables</li>
             <li>
-              Add <code className="font-mono">CRON_SECRET</code> with a long random string
-              (treat as a secret; rotate periodically)
+              Generate a long random string (32+ chars), e.g.{" "}
+              <code className="font-mono">openssl rand -hex 32</code>
             </li>
-            <li>Redeploy</li>
+            <li>
+              Render dashboard → vifm-assessment-center → Environment → add{" "}
+              <code className="font-mono">CRON_SECRET</code> with that value, then
+              trigger a deploy so the route can verify the bearer.
+            </li>
+            <li>
+              GitHub repo → Settings → Secrets and variables → Actions → add{" "}
+              <code className="font-mono">CRON_SECRET</code> with the SAME value.
+            </li>
+            <li>
+              Optional: Actions tab →{" "}
+              <code className="font-mono">ARA · retention purge</code> → Run workflow,
+              to verify end-to-end before waiting for the next 03:00 UTC fire.
+            </li>
           </ol>
           <p className="mt-2">
-            Once set, Vercel Cron auto-attaches the bearer header on every scheduled
-            invocation; this banner flips green on the next page load.
+            Once both env vars are set, the GitHub Actions workflow attaches the bearer
+            header on every scheduled invocation; this banner flips green on the next
+            page load.
           </p>
         </details>
       </div>

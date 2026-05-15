@@ -1,0 +1,88 @@
+name: ARA · retention purge
+
+# Daily unattended cron for the ARA retention-purge endpoint.
+#
+# Why GitHub Actions and not Render Cron:
+#   The web service is on Render's Starter plan, where Cron Jobs are a
+#   separate paid service. GitHub Actions cron is free, version-
+#   controlled, and runs from outside Render so it isn't blocked by an
+#   app-level outage. We've kept the existing /api/ara/admin/retention/
+#   cron endpoint and its CRON_SECRET-bearer-token gate untouched —
+#   this workflow is just the trigger.
+#
+# Setup (one-time, by a repo admin):
+#   1. Generate a long random string (32+ chars), e.g.
+#        openssl rand -hex 32
+#   2. Add it to Render env vars on the vifm-assessment-center service as
+#        CRON_SECRET=<value>
+#      and trigger a deploy so the route can verify the bearer.
+#   3. Add the SAME value to this repo's GitHub Secrets at
+#        Settings → Secrets and variables → Actions → New repository secret
+#      with name CRON_SECRET.
+#   4. Optionally trigger this workflow manually once to verify
+#      (Actions tab → ARA · retention purge → Run workflow).
+#
+# Behaviour:
+#   - Fires daily at 03:00 UTC. Adjust the cron expression if a different
+#     UTC time fits the org's quiet-hour better — keep it nightly so the
+#     cascade delete doesn't run during business hours.
+#   - On HTTP 200, the workflow exits success and the deleted count is
+#     visible in the run logs.
+#   - On any non-2xx response, the workflow fails and a notification is
+#     surfaced to the repo's Actions tab. Repo admins / Aiman should
+#     check the run log + the ara_data_management_log table for the
+#     trigger=cron entry.
+
+on:
+  schedule:
+    # 03:00 UTC daily = 07:00 GST (UAE) / 06:00 AST (Saudi)
+    - cron: "0 3 * * *"
+  workflow_dispatch: # allow manual trigger from the Actions tab
+
+permissions:
+  contents: read
+
+concurrency:
+  # Never run two purges back-to-back if a previous one is still running.
+  group: ara-retention-purge
+  cancel-in-progress: false
+
+jobs:
+  purge:
+    name: Hit retention-purge endpoint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Fire retention-purge endpoint
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "::error::CRON_SECRET secret is not set on this repo. See workflow file header for setup."
+            exit 1
+          fi
+
+          ENDPOINT="https://caliber.viftraining.com/api/ara/admin/retention/cron"
+          echo "Calling $ENDPOINT"
+
+          # -f makes curl exit non-zero on HTTP 4xx/5xx, which fails the
+          # job. -sS suppresses progress meter but keeps errors visible.
+          # We capture the body so the log shows what the endpoint
+          # returned (deleted count or error).
+          BODY=$(curl -fsS \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Accept: application/json" \
+            --max-time 120 \
+            "$ENDPOINT")
+
+          echo "Response body:"
+          echo "$BODY"
+
+          # Sanity-check the response shape.
+          echo "$BODY" | grep -q '"ok":true' || {
+            echo "::error::Response did not include ok:true"
+            exit 1
+          }

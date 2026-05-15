@@ -1,5 +1,6 @@
 import { renderToBuffer } from "@react-pdf/renderer";
 import { NextResponse } from "next/server";
+import type { Browser } from "puppeteer";
 import {
   loadRespondentByToken,
   loadQuestionsForRespondent,
@@ -15,6 +16,15 @@ import {
   PersonalSnapshot,
   type PersonalSnapshotData,
 } from "@/lib/reports/personal-snapshot";
+import {
+  renderPersonalSnapshotHtmlAr,
+  type PersonalSnapshotArData,
+} from "@/lib/reports/personal-snapshot-ar-html";
+
+// Puppeteer is required for the Arabic path (React-PDF cannot shape
+// Arabic glyphs). The Node runtime is required because Puppeteer
+// can't run on the Edge runtime.
+export const runtime = "nodejs";
 
 // Without these, Next.js production builds cache fetches inside route
 // handlers and reuse the stale "not complete yet" 400 from a request
@@ -114,42 +124,72 @@ export async function GET(
       limit: 5,
     });
 
+    // Format-shared course shape (same fields for both renderers).
+    const recommendedCourses = raw.map((c) => ({
+      course_id: c.course_id,
+      title_en: c.title_en,
+      title_ar: c.title_ar,
+      code: c.course_code,
+      vertical: c.vertical,
+      level: c.level,
+      duration_label:
+        c.min_duration_days === c.max_duration_days
+          ? `${c.default_duration_days}d`
+          : `${c.min_duration_days}–${c.max_duration_days}d`,
+      total_score: c.total_score,
+      drivers: c.drivers.map((d) => ({
+        label: d.label,
+        gap: d.gap,
+        relevance: d.relevance,
+      })),
+    }));
+
+    const language = ctx.respondent.language_preference ?? "en";
+    const safeName = ctx.respondent.name
+      .replace(/[^a-zA-Z0-9\s]/g, "")
+      .replace(/\s+/g, "_") || "Snapshot";
+    const filename = `VIFM_Personal_AI_Snapshot_${safeName}_${language}.pdf`;
+
+    // ── Arabic path: Puppeteer renders HTML so Chromium can shape
+    //    the Arabic glyphs that React-PDF cannot. The HTML is built
+    //    from the same data shape; layout mirrors the EN three-page
+    //    template so the two versions feel like the same report.
+    if (language === "ar") {
+      const generatedAt = new Date().toLocaleDateString("ar-AE", {
+        day: "numeric", month: "long", year: "numeric",
+      });
+      const arData: PersonalSnapshotArData = {
+        respondentName: ctx.respondent.name,
+        respondentEmail: ctx.respondent.email,
+        generatedAt,
+        overallScore,
+        factorScores,
+        recommendedCourses,
+      };
+      const html = renderPersonalSnapshotHtmlAr(arData);
+      const buffer = await renderHtmlToPdfBuffer(html);
+      return new NextResponse(new Uint8Array(buffer), {
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `attachment; filename="${filename}"`,
+        },
+      });
+    }
+
+    // ── English path: existing React-PDF renderer. Unchanged.
+    const generatedAt = new Date().toLocaleDateString("en-GB", {
+      day: "numeric", month: "long", year: "numeric",
+    });
     const data: PersonalSnapshotData = {
       respondentName: ctx.respondent.name,
       respondentEmail: ctx.respondent.email,
-      language: ctx.respondent.language_preference ?? "en",
-      generatedAt: new Date().toLocaleDateString("en-GB", {
-        day: "numeric", month: "long", year: "numeric",
-      }),
+      language: "en",
+      generatedAt,
       overallScore,
       factorScores,
-      recommendedCourses: raw.map((c) => ({
-        course_id: c.course_id,
-        title_en: c.title_en,
-        title_ar: c.title_ar,
-        code: c.course_code,
-        vertical: c.vertical,
-        level: c.level,
-        duration_label:
-          c.min_duration_days === c.max_duration_days
-            ? `${c.default_duration_days}d`
-            : `${c.min_duration_days}–${c.max_duration_days}d`,
-        total_score: c.total_score,
-        drivers: c.drivers.map((d) => ({
-          label: d.label,
-          gap: d.gap,
-          relevance: d.relevance,
-        })),
-      })),
+      recommendedCourses,
     };
-
     const buffer = await renderToBuffer(<PersonalSnapshot data={data} />);
-
-    const safeName = ctx.respondent.name
-      .replace(/[^a-zA-Z0-9\s]/g, "")
-      .replace(/\s+/g, "_");
-    const filename = `VIFM_Personal_AI_Snapshot_${safeName}.pdf`;
-
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/pdf",
@@ -160,6 +200,46 @@ export async function GET(
     console.error("Personal snapshot PDF error:", error);
     const message = error instanceof Error ? error.message : "Failed to generate PDF";
     return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+/**
+ * Launch Chromium, render the HTML to PDF, and clean up. Mirrors the
+ * pattern in /api/ara/reports/[id]/pdf — bundled puppeteer Chromium
+ * (not @sparticuz/chromium) because Render runs in full Linux
+ * containers and the bundled build has the Arabic font fallbacks
+ * the stripped Lambda build lacks. waitUntil:'networkidle0' lets
+ * the Google Fonts stylesheet for Noto Naskh Arabic finish loading
+ * before we capture; without that the Arabic falls back to a
+ * generic sans-serif and the diacritics get clipped.
+ */
+async function renderHtmlToPdfBuffer(html: string): Promise<Buffer> {
+  const puppeteer = (await import("puppeteer")).default;
+  const browser: Browser = (await puppeteer.launch({
+    headless: true,
+    defaultViewport: { width: 1200, height: 900, deviceScaleFactor: 1 },
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  })) as unknown as Browser;
+  try {
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "networkidle0", timeout: 60_000 });
+    // Belt-and-suspenders: explicitly wait for the fonts to be ready
+    // so the first paint includes shaped Arabic glyphs. Cheap (a few
+    // ms when fonts are already cached) and prevents a class of
+    // intermittent "tofu rectangles in the PDF" bugs that only show
+    // up under cold-start latency.
+    await page.evaluate(async () => {
+      const f = (document as any).fonts;
+      if (f && typeof f.ready?.then === "function") await f.ready;
+    });
+    const pdf = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      preferCSSPageSize: true,
+    });
+    return Buffer.from(pdf);
+  } finally {
+    await browser.close().catch(() => {});
   }
 }
 

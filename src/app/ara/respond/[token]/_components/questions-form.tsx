@@ -206,6 +206,22 @@ export function QuestionsForm({ token, questions, answers, language }: Questions
     const gate: FormSaveGate = {
       hasPendingSaves: () => timers.size > 0 || inFlightRef.current.size > 0,
       flushPendingSaves: async () => {
+        // Yield one macrotask before reading state. The audit on
+        // 2026-05-15 caught a real-world reproducer: a respondent
+        // who clicks Submit in the same React event-batch as the
+        // last answer-click (e.g. fast-tab + Enter on the rating
+        // buttons, or our scripted-click test) is in the middle of
+        // a single synthetic event when this function runs. React
+        // hasn't flushed the queued setStates yet, so stateRef.current
+        // still holds the pre-click answer values (null for any
+        // unanswered factor). Without this yield, every runSave
+        // call reads stale state and writes null answer_values to
+        // the DB — opposite of what the gate is meant to fix. A
+        // setTimeout(0) yield gives React one macrotask to commit
+        // the batched updates, after which stateRef.current is
+        // current and the saves carry real values.
+        await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
         // Fire every debounced save immediately, then wait for it +
         // anything already in flight to settle. Loop until both queues
         // are empty in case a save scheduled while we were awaiting.

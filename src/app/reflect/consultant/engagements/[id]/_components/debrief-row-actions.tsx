@@ -56,7 +56,7 @@ export function DebriefRowActions({
       });
       if (!res.ok) {
         setFeedback("err");
-        setErrMsg(res.error);
+        setErrMsg(res.error ?? "Update failed");
         return;
       }
       setFeedback("saved");

@@ -66,10 +66,10 @@ export function StepPeople({ engagementId }: Props) {
         rows: parsed,
       });
       if (!res.ok) {
-        setPResult({ inserted: 0, errors: [res.error] });
+        setPResult({ inserted: 0, errors: [res.error ?? "Import failed"] });
         return;
       }
-      setPResult({ inserted: res.inserted, errors: [] });
+      setPResult({ inserted: res.inserted ?? 0, errors: [] });
     });
   };
 
@@ -95,11 +95,11 @@ export function StepPeople({ engagementId }: Props) {
         rows: parsed,
       });
       if (!res.ok) {
-        setRResult({ inserted: 0, unmatched: 0, unmatched_emails: [], errors: [res.error] });
+        setRResult({ inserted: 0, unmatched: 0, unmatched_emails: [], errors: [res.error ?? "Import failed"] });
         return;
       }
       setRResult({
-        inserted: res.inserted,
+        inserted: res.inserted ?? 0,
         unmatched: res.unmatched_count ?? 0,
         unmatched_emails: res.unmatched_emails ?? [],
         errors: [],

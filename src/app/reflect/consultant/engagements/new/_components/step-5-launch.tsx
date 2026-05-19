@@ -27,7 +27,7 @@ export function StepLaunch({ state, engagementId, onLaunched }: Props) {
     startTransition(async () => {
       const res = await launchReflectEngagement(engagementId);
       if (!res.ok) {
-        setError(res.error);
+        setError(res.error ?? "Launch failed");
         return;
       }
       onLaunched();

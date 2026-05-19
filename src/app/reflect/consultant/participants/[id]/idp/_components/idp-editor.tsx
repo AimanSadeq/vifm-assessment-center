@@ -86,7 +86,7 @@ export function IdpEditor({ participantId, competencies, initial }: Props) {
         status: newStatus ?? status,
       });
       if (!res.ok) {
-        setSaveMessage({ kind: "err", text: res.error });
+        setSaveMessage({ kind: "err", text: res.error ?? "Save failed" });
         return;
       }
       if (newStatus) setStatus(newStatus);
@@ -101,7 +101,7 @@ export function IdpEditor({ participantId, competencies, initial }: Props) {
       await save();
       const res = await signOffReflectIdp(participantId);
       if (!res.ok) {
-        setSaveMessage({ kind: "err", text: res.error });
+        setSaveMessage({ kind: "err", text: res.error ?? "Sign-off failed" });
         return;
       }
       setStatus("agreed");

@@ -249,10 +249,12 @@ function findAcMatch(
   if (subs.length > 0) return subs[0];
 
   // Strategy 3: token overlap (>= 2 long tokens shared). Higher overlap wins.
+  // Array.from on the Set so the iteration works under the project's TS target.
+  const tokenList = Array.from(tokens);
   let best: { c: AcCompetencyLite; shared: number } | null = null;
   for (const c of catalogue) {
     let shared = 0;
-    for (const t of tokens) if (c.tokens.has(t)) shared += 1;
+    for (const t of tokenList) if (c.tokens.has(t)) shared += 1;
     if (shared >= 2 && (!best || shared > best.shared)) {
       best = { c, shared };
     }

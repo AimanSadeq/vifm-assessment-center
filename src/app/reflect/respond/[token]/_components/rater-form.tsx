@@ -278,7 +278,7 @@ export function RaterForm({ ctx }: Props) {
     startSubmitting(async () => {
       // 1. Fire any pending debounced comment saves immediately
       const timers = Array.from(commentTimersRef.current.entries());
-      for (const [bid, timer] of timers) {
+      for (const [bid, timer] of Array.from(timers)) {
         clearTimeout(timer);
         commentTimersRef.current.delete(bid);
         const a = answers[bid];
@@ -547,7 +547,7 @@ function ScaleLegend({
   scale,
   rtl,
 }: {
-  scale: (typeof SCALE_LABELS)["en"];
+  scale: (typeof SCALE_LABELS)["en"] | (typeof SCALE_LABELS)["ar"];
   rtl: boolean;
 }) {
   return (
@@ -569,7 +569,7 @@ function SaveBadge({
   t,
 }: {
   state: "idle" | "saving" | "failed";
-  t: (typeof UI)["en"];
+  t: (typeof UI)["en"] | (typeof UI)["ar"];
 }) {
   if (state === "saving") {
     return (

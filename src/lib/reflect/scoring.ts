@@ -231,7 +231,7 @@ export async function computeParticipantScoring(
     const allScores: number[] = [];
     for (const id of respondedIds) {
       const map = responsesByRater.get(id)!;
-      for (const v of map.values()) allScores.push(v);
+      for (const v of Array.from(map.values())) allScores.push(v);
     }
     const groupMean = mean(allScores);
     // Anonymity: hide peer / direct_report / skip_level / other below the
@@ -256,7 +256,7 @@ export async function computeParticipantScoring(
   const overallOthersScores: number[] = [];
   for (const id of othersResponded) {
     const map = responsesByRater.get(id)!;
-    for (const v of map.values()) overallOthersScores.push(v);
+    for (const v of Array.from(map.values())) overallOthersScores.push(v);
   }
   const overallOthers = mean(overallOthersScores);
 
@@ -266,7 +266,7 @@ export async function computeParticipantScoring(
   const overallSelfScores: number[] = [];
   for (const id of selfRespondedIds) {
     const map = responsesByRater.get(id)!;
-    for (const v of map.values()) overallSelfScores.push(v);
+    for (const v of Array.from(map.values())) overallSelfScores.push(v);
   }
   const overallSelf = mean(overallSelfScores);
 
@@ -289,14 +289,14 @@ export async function computeParticipantScoring(
     const selfScores: number[] = [];
     for (const id of selfRespondedIds) {
       const map = responsesByRater.get(id)!;
-      for (const [bid, v] of map.entries()) {
+      for (const [bid, v] of Array.from(map.entries())) {
         if (compBehIds.has(bid)) selfScores.push(v);
       }
     }
     const othersScores: number[] = [];
     for (const id of othersResponded) {
       const map = responsesByRater.get(id)!;
-      for (const [bid, v] of map.entries()) {
+      for (const [bid, v] of Array.from(map.entries())) {
         if (compBehIds.has(bid)) othersScores.push(v);
       }
     }
@@ -309,7 +309,7 @@ export async function computeParticipantScoring(
       const scores: number[] = [];
       for (const id of respondedIds) {
         const map = responsesByRater.get(id)!;
-        for (const [bid, v] of map.entries()) {
+        for (const [bid, v] of Array.from(map.entries())) {
           if (compBehIds.has(bid)) scores.push(v);
         }
       }

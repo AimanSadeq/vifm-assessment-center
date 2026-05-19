@@ -201,6 +201,154 @@ export async function recommendCoursesForAcCohort(args: {
 }
 
 // ──────────────────────────────────────────────────────────────
+// Reflect — per-participant
+//
+// Reflect frameworks are CUSTOM per engagement (the consultant clones
+// a template or builds bespoke), so reflect_competencies.id can't be
+// joined directly to vifm_course_competency_tags. We match by name:
+//
+//   1. Normalise both names (lowercase, strip non-alphanumeric,
+//      collapse whitespace)
+//   2. Exact match wins
+//   3. Substring match in either direction wins next
+//   4. Major-token overlap (>=2 shared tokens >=4 chars) wins last
+//
+// If no AC competency matches, that Reflect competency contributes
+// nothing to the ranking (graceful degradation). The PDF caller can
+// detect an empty list and show "Bring your own course mapping"
+// guidance.
+// ──────────────────────────────────────────────────────────────
+
+type AcCompetencyLite = { id: string; name: string; normalized: string; tokens: Set<string> };
+
+function normalizeName(s: string): { normalized: string; tokens: Set<string> } {
+  const cleaned = s
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const tokens = new Set(cleaned.split(" ").filter((t) => t.length >= 4));
+  return { normalized: cleaned, tokens };
+}
+
+function findAcMatch(
+  reflectName: string,
+  catalogue: AcCompetencyLite[]
+): AcCompetencyLite | null {
+  const { normalized, tokens } = normalizeName(reflectName);
+  if (!normalized) return null;
+
+  // Strategy 1: exact normalized match
+  const exact = catalogue.find((c) => c.normalized === normalized);
+  if (exact) return exact;
+
+  // Strategy 2: substring in either direction. Prefer longer match.
+  const subs = catalogue
+    .filter((c) => normalized.includes(c.normalized) || c.normalized.includes(normalized))
+    .sort((a, b) => b.normalized.length - a.normalized.length);
+  if (subs.length > 0) return subs[0];
+
+  // Strategy 3: token overlap (>= 2 long tokens shared). Higher overlap wins.
+  let best: { c: AcCompetencyLite; shared: number } | null = null;
+  for (const c of catalogue) {
+    let shared = 0;
+    for (const t of tokens) if (c.tokens.has(t)) shared += 1;
+    if (shared >= 2 && (!best || shared > best.shared)) {
+      best = { c, shared };
+    }
+  }
+  return best?.c ?? null;
+}
+
+export async function recommendCoursesForReflectParticipant(args: {
+  participantId: string;
+  /** Target mean — defaults to 4 (Often). Below this counts as a gap. */
+  target?: number;
+  limit?: number;
+}): Promise<{
+  recommendations: RecommendedCourse[];
+  /** Reflect competency names that couldn't be matched to any AC competency. Useful for the PDF caller. */
+  unmapped: string[];
+}> {
+  const limit = args.limit ?? TAG_LIMIT_DEFAULT;
+  const target = args.target ?? 4;
+  const sb = createServiceClient();
+
+  // 1. Compute the participant's per-competency scoring (Others' view).
+  // We re-import inline rather than statically to avoid a cycle (scoring
+  // doesn't import the recommender, but explicit import here keeps the
+  // module dependency graph one-directional).
+  const { computeParticipantScoring } = await import("@/lib/reflect/scoring");
+  const scoring = await computeParticipantScoring(args.participantId);
+  if (!scoring) return { recommendations: [], unmapped: [] };
+
+  // 2. Build gap list. Use others_mean (excludes self bias); fall back
+  //    to self_mean when no Others view exists.
+  type RawGap = { reflect_name: string; reflect_id: string; gap: number };
+  const rawGaps: RawGap[] = scoring.competencies
+    .map((c) => {
+      const observed = c.others_mean ?? c.self_mean;
+      if (observed === null) return null;
+      return {
+        reflect_name: c.name_en,
+        reflect_id: c.competency_id,
+        gap: target - observed,
+      };
+    })
+    .filter((g): g is RawGap => g !== null && g.gap > 0);
+
+  if (rawGaps.length === 0) return { recommendations: [], unmapped: [] };
+
+  // 3. Pull the AC competency catalogue once.
+  const { data: acRows } = await sb.from("competencies").select("id, name");
+  const catalogue: AcCompetencyLite[] = ((acRows ?? []) as Array<{ id: string; name: string }>).map(
+    (r) => {
+      const n = normalizeName(r.name);
+      return { id: r.id, name: r.name, normalized: n.normalized, tokens: n.tokens };
+    }
+  );
+
+  // 4. Map each Reflect gap → AC competency. Keep the AC label so the
+  //    PDF can show "Communication & Influence → Communicates Effectively".
+  type MappedGap = { competency_id: string; name: string; gap: number };
+  const mappedGaps: MappedGap[] = [];
+  const unmapped: string[] = [];
+  for (const g of rawGaps) {
+    const m = findAcMatch(g.reflect_name, catalogue);
+    if (m) {
+      mappedGaps.push({
+        competency_id: m.id,
+        // Use the Reflect name in the label — that's what the participant saw
+        // in their report. The driver chip will read e.g. "People Leadership
+        // (gap 1.2 × relevance 3)".
+        name: g.reflect_name,
+        gap: g.gap,
+      });
+    } else {
+      unmapped.push(g.reflect_name);
+    }
+  }
+
+  if (mappedGaps.length === 0) return { recommendations: [], unmapped };
+
+  // 5. Pull course tags for the mapped competency IDs.
+  const competencyIds = Array.from(new Set(mappedGaps.map((g) => g.competency_id)));
+  const { data: tagsRows } = await sb
+    .from("vifm_course_competency_tags")
+    .select(
+      "course_id, competency_id, relevance_weight, rationale, " +
+      "vifm_courses(id, code, title_en, title_ar, vertical, level, " +
+      "default_duration_days, min_duration_days, max_duration_days, is_active)"
+    )
+    .in("competency_id", competencyIds);
+  const tags = (tagsRows ?? []) as unknown as CompetencyTagJoin[];
+
+  const recommendations = rankFromCompetencyTags(tags, mappedGaps, limit);
+  return { recommendations, unmapped };
+}
+
+
+// ──────────────────────────────────────────────────────────────
 // ARA — per-assessment
 // ──────────────────────────────────────────────────────────────
 

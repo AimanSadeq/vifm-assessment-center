@@ -16,6 +16,12 @@ function authErr(e: unknown) {
  * Public-facing schema for the quote-request form. Anonymous submission
  * is allowed (the public /courses/[code]/request-quote page hits this
  * action) so server-side validation has to be tight.
+ *
+ * Optional engagement-context fields (engagement_type +
+ * reflect_engagement_id + reflect_participant_id) are sent as hidden
+ * inputs when the form is loaded from a Reflect participant report. They
+ * are stripped and validated server-side; the public flow doesn't see
+ * them and stays as engagement_type='direct'.
  */
 const submitQuoteRequestSchema = z.object({
   course_id: z.string().uuid("Invalid course id"),
@@ -29,6 +35,9 @@ const submitQuoteRequestSchema = z.object({
   preferred_language: z.enum(["en", "ar", "bilingual"]).optional().or(z.literal("")),
   delivery_mode: z.enum(["in_person", "virtual", "hybrid"]).optional().or(z.literal("")),
   notes: z.string().trim().max(2000).optional().or(z.literal("")),
+  engagement_type: z.enum(["direct", "ac", "ara", "reflect"]).optional().or(z.literal("")),
+  reflect_engagement_id: z.string().uuid().optional().or(z.literal("")),
+  reflect_participant_id: z.string().uuid().optional().or(z.literal("")),
 });
 
 const empty = (v: unknown) => v === "" || v === null || v === undefined;
@@ -48,6 +57,9 @@ export async function submitCourseQuoteRequest(formData: FormData) {
     preferred_language: formData.get("preferred_language") ?? "",
     delivery_mode: formData.get("delivery_mode") ?? "",
     notes: formData.get("notes") ?? "",
+    engagement_type: formData.get("engagement_type") ?? "",
+    reflect_engagement_id: formData.get("reflect_engagement_id") ?? "",
+    reflect_participant_id: formData.get("reflect_participant_id") ?? "",
   });
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Invalid input" };
@@ -72,6 +84,36 @@ export async function submitCourseQuoteRequest(formData: FormData) {
   const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
   const ua = h.get("user-agent") ?? null;
 
+  // Validate the engagement context if provided: an engagement_type of
+  // 'reflect' requires both reflect_engagement_id + reflect_participant_id
+  // and that the participant actually belongs to that engagement. Anything
+  // off → silently downgrade to 'direct' so a malformed referrer never
+  // blocks the lead from being captured.
+  let resolvedEngagementType: "direct" | "ac" | "ara" | "reflect" =
+    (v.engagement_type as "direct" | "ac" | "ara" | "reflect" | "") || "direct";
+  let resolvedReflectEngagementId: string | null = null;
+  let resolvedReflectParticipantId: string | null = null;
+
+  if (resolvedEngagementType === "reflect") {
+    const eId = orNull(v.reflect_engagement_id);
+    const pId = orNull(v.reflect_participant_id);
+    if (eId && pId) {
+      const { data: p } = await sb
+        .from("reflect_participants")
+        .select("id, engagement_id")
+        .eq("id", pId)
+        .maybeSingle<{ id: string; engagement_id: string }>();
+      if (p && p.engagement_id === eId) {
+        resolvedReflectEngagementId = eId;
+        resolvedReflectParticipantId = pId;
+      } else {
+        resolvedEngagementType = "direct";
+      }
+    } else {
+      resolvedEngagementType = "direct";
+    }
+  }
+
   const { data: inserted, error } = await sb
     .from("vifm_course_quote_requests")
     .insert({
@@ -89,6 +131,9 @@ export async function submitCourseQuoteRequest(formData: FormData) {
       delivery_mode: orNull(v.delivery_mode),
       notes: orNull(v.notes),
       status: "new" as VifmCourseQuoteRequestStatus,
+      engagement_type: resolvedEngagementType,
+      reflect_engagement_id: resolvedReflectEngagementId,
+      reflect_participant_id: resolvedReflectParticipantId,
       ip_address: ip,
       user_agent: ua,
     })

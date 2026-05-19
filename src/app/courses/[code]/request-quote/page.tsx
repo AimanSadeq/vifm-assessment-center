@@ -12,8 +12,14 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 export default async function QuoteRequestPage({
   params,
+  searchParams,
 }: {
   params: { code: string };
+  searchParams?: {
+    source?: string;
+    engagement?: string;
+    participant?: string;
+  };
 }) {
   const sb = createServiceClient();
   const lookup = UUID_RE.test(params.code)
@@ -21,6 +27,52 @@ export default async function QuoteRequestPage({
     : sb.from("vifm_courses").select("id, code, title_en, title_ar, vertical, level, default_duration_days, min_duration_days, max_duration_days, languages, delivery_modes").eq("code", params.code).maybeSingle<Pick<VifmCourse, "id" | "code" | "title_en" | "title_ar" | "vertical" | "level" | "default_duration_days" | "min_duration_days" | "max_duration_days" | "languages" | "delivery_modes">>();
   const { data: course } = await lookup;
   if (!course) return notFound();
+
+  // Optional Reflect engagement context. Drives form prefill + hidden
+  // inputs that ultimately land in vifm_course_quote_requests with
+  // engagement_type='reflect'. We validate that the participant belongs
+  // to the engagement before prefilling; otherwise we silently degrade
+  // to the public "direct" flow.
+  let reflectContext: {
+    engagement_type: "reflect";
+    reflect_engagement_id: string;
+    reflect_participant_id: string;
+    prefillName: string;
+    prefillEmail: string;
+    prefillCompany: string;
+  } | null = null;
+
+  if (
+    searchParams?.source === "reflect" &&
+    searchParams.engagement &&
+    searchParams.participant &&
+    UUID_RE.test(searchParams.engagement) &&
+    UUID_RE.test(searchParams.participant)
+  ) {
+    const { data: participant } = await sb
+      .from("reflect_participants")
+      .select(
+        "id, full_name, email, engagement_id, reflect_engagements!inner(id, ara_organizations(name))"
+      )
+      .eq("id", searchParams.participant)
+      .maybeSingle<{
+        id: string;
+        full_name: string;
+        email: string;
+        engagement_id: string;
+        reflect_engagements: { id: string; ara_organizations: { name: string } | null };
+      }>();
+    if (participant && participant.engagement_id === searchParams.engagement) {
+      reflectContext = {
+        engagement_type: "reflect",
+        reflect_engagement_id: participant.engagement_id,
+        reflect_participant_id: participant.id,
+        prefillName: participant.full_name,
+        prefillEmail: participant.email,
+        prefillCompany: participant.reflect_engagements.ara_organizations?.name ?? "",
+      };
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -58,11 +110,29 @@ export default async function QuoteRequestPage({
             : `${course.min_duration_days}–${course.max_duration_days} days`}
         </p>
 
+        {reflectContext && (
+          <div className="mb-6 rounded-lg border border-accent/30 bg-accent/5 p-4 text-sm">
+            <div className="font-medium text-primary mb-1">
+              Quote-request from your VIFM Reflect 360° report
+            </div>
+            <div className="text-muted-foreground">
+              We&apos;ve pre-filled your name, email, and organisation. Edit anything
+              below or add the rest, then send the request.
+            </div>
+          </div>
+        )}
+
         <QuoteRequestForm
           courseId={course.id}
           courseTitle={course.title_en}
           courseLanguages={course.languages ?? []}
           courseDeliveryModes={course.delivery_modes ?? []}
+          engagementType={reflectContext?.engagement_type}
+          reflectEngagementId={reflectContext?.reflect_engagement_id}
+          reflectParticipantId={reflectContext?.reflect_participant_id}
+          prefillName={reflectContext?.prefillName}
+          prefillEmail={reflectContext?.prefillEmail}
+          prefillCompany={reflectContext?.prefillCompany}
         />
 
         <p className="text-[11px] text-muted-foreground text-center mt-6">

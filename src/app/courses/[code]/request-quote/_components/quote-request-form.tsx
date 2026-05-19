@@ -16,6 +16,16 @@ type Props = {
   courseLanguages: string[];
   /** Course's supported delivery modes, e.g. ['in_person', 'virtual', 'hybrid']. */
   courseDeliveryModes: string[];
+  /** Optional engagement-context fields. Sent as hidden inputs and
+   *  consumed by submitCourseQuoteRequest to set the engagement_type
+   *  discriminator + FK columns on the request row. */
+  engagementType?: "direct" | "ac" | "ara" | "reflect";
+  reflectEngagementId?: string;
+  reflectParticipantId?: string;
+  /** Optional prefill values when launching from a diagnostic report. */
+  prefillName?: string;
+  prefillEmail?: string;
+  prefillCompany?: string;
 };
 
 /**
@@ -29,7 +39,18 @@ type Props = {
  *  - "success" : confirmation panel with reset button
  *  - "error"   : red banner above the form, form remains editable
  */
-export function QuoteRequestForm({ courseId, courseTitle, courseLanguages, courseDeliveryModes }: Props) {
+export function QuoteRequestForm({
+  courseId,
+  courseTitle,
+  courseLanguages,
+  courseDeliveryModes,
+  engagementType,
+  reflectEngagementId,
+  reflectParticipantId,
+  prefillName,
+  prefillEmail,
+  prefillCompany,
+}: Props) {
   const [state, setState] = useState<"form" | "success">("form");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -37,6 +58,9 @@ export function QuoteRequestForm({ courseId, courseTitle, courseLanguages, cours
   function onSubmit(formData: FormData) {
     setError(null);
     formData.set("course_id", courseId);
+    if (engagementType) formData.set("engagement_type", engagementType);
+    if (reflectEngagementId) formData.set("reflect_engagement_id", reflectEngagementId);
+    if (reflectParticipantId) formData.set("reflect_participant_id", reflectParticipantId);
     startTransition(async () => {
       const result = await submitCourseQuoteRequest(formData);
       if (!result.ok) {
@@ -90,10 +114,10 @@ export function QuoteRequestForm({ courseId, courseTitle, courseLanguages, cours
       )}
 
       <Section title="Your details">
-        <Field label="Full name" name="requester_name" required />
-        <Field label="Work email" name="requester_email" type="email" required />
+        <Field label="Full name" name="requester_name" required defaultValue={prefillName} />
+        <Field label="Work email" name="requester_email" type="email" required defaultValue={prefillEmail} />
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Company" name="requester_company" required />
+          <Field label="Company" name="requester_company" required defaultValue={prefillCompany} />
           <Field label="Your role" name="requester_role" placeholder="e.g. L&D Manager" />
         </div>
         <Field label="Phone (optional)" name="requester_phone" type="tel" placeholder="+971 ..." />
@@ -165,7 +189,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function Field({
-  label, name, type = "text", placeholder, required, min,
+  label, name, type = "text", placeholder, required, min, defaultValue,
 }: {
   label: string;
   name: string;
@@ -173,6 +197,7 @@ function Field({
   placeholder?: string;
   required?: boolean;
   min?: number;
+  defaultValue?: string;
 }) {
   return (
     <div>
@@ -187,6 +212,7 @@ function Field({
         required={required}
         placeholder={placeholder}
         min={min}
+        defaultValue={defaultValue}
         className="mt-1"
       />
     </div>

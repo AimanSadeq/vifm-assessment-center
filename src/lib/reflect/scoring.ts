@@ -1,0 +1,582 @@
+import { createServiceClient } from "@/lib/supabase/server";
+import type { ReflectRaterRole } from "./validations";
+
+// ──────────────────────────────────────────────────────────────
+// Scoring types
+// ──────────────────────────────────────────────────────────────
+
+export type RaterGroupScore = {
+  rater_role: ReflectRaterRole;
+  rater_count: number;
+  response_count: number;
+  mean: number | null;
+  /** True when the rater group has fewer raters than the anonymity threshold. */
+  hidden_by_anonymity: boolean;
+};
+
+export type CompetencyScore = {
+  competency_id: string;
+  name_en: string;
+  name_ar: string | null;
+  display_order: number;
+  self_mean: number | null;
+  others_mean: number | null;
+  gap: number | null;
+  by_group: RaterGroupScore[];
+};
+
+export type BehaviorScore = {
+  behavior_id: string;
+  competency_id: string;
+  text_en: string;
+  text_ar: string | null;
+  self_score: number | null;
+  others_mean: number | null;
+  others_count: number;
+  gap: number | null;
+};
+
+export type ParticipantScoring = {
+  participant_id: string;
+  participant_name: string;
+  participant_name_ar: string | null;
+  participant_role_title: string | null;
+  engagement_id: string;
+  engagement_name: string;
+  organization_name: string;
+  organization_name_ar: string | null;
+  anonymity_min_n: number;
+  overall_mean: number | null;
+  overall_self: number | null;
+  overall_others: number | null;
+  overall_gap: number | null;
+  by_group: RaterGroupScore[];
+  competencies: CompetencyScore[];
+  behaviors: BehaviorScore[];
+  strengths: BehaviorScore[];
+  development_areas: BehaviorScore[];
+  blind_spots: BehaviorScore[];
+  hidden_strengths: BehaviorScore[];
+  generated_at: string;
+};
+
+export type CohortScoring = {
+  engagement_id: string;
+  engagement_name: string;
+  organization_name: string;
+  participant_count: number;
+  rater_count: number;
+  response_count: number;
+  overall_mean: number | null;
+  competencies: Array<{
+    competency_id: string;
+    name_en: string;
+    name_ar: string | null;
+    display_order: number;
+    mean: number | null;
+    /** Per-participant means in display_order — used to render the heatmap. */
+    per_participant_means: Array<{ participant_id: string; mean: number | null }>;
+  }>;
+  participants: Array<{
+    participant_id: string;
+    participant_name: string;
+    overall_mean: number | null;
+    completion_pct: number;
+  }>;
+  /** Top-3 highest-rated competencies across the cohort. */
+  top_strengths: Array<{ competency_id: string; name_en: string; name_ar: string | null; mean: number | null }>;
+  /** Bottom-3 lowest-rated competencies across the cohort. */
+  top_development_areas: Array<{ competency_id: string; name_en: string; name_ar: string | null; mean: number | null }>;
+  generated_at: string;
+};
+
+
+// ──────────────────────────────────────────────────────────────
+// Internal helpers
+// ──────────────────────────────────────────────────────────────
+
+const RATER_GROUPS_FOR_OTHERS: ReflectRaterRole[] = [
+  "manager",
+  "peer",
+  "direct_report",
+  "skip_level",
+  "other",
+];
+
+function mean(values: number[]): number | null {
+  if (values.length === 0) return null;
+  return values.reduce((s, v) => s + v, 0) / values.length;
+}
+
+function round2(v: number | null): number | null {
+  if (v === null) return null;
+  return Math.round(v * 100) / 100;
+}
+
+
+// ──────────────────────────────────────────────────────────────
+// Participant scoring
+//
+// One DB read for the raw data, then pure aggregations. Anonymity
+// threshold is applied at the per-group level: a group's mean is
+// nulled out when rater_count < anonymity_min_n EXCEPT for the
+// 'self' and 'manager' groups which are never anonymised (you
+// always know what you said about yourself, and a participant
+// can usually deduce a single-line-manager rating from context).
+// ──────────────────────────────────────────────────────────────
+
+export async function computeParticipantScoring(
+  participantId: string
+): Promise<ParticipantScoring | null> {
+  const sb = createServiceClient();
+
+  const { data: participant } = await sb
+    .from("reflect_participants")
+    .select("id, full_name, full_name_ar, role_title, engagement_id")
+    .eq("id", participantId)
+    .maybeSingle<{
+      id: string;
+      full_name: string;
+      full_name_ar: string | null;
+      role_title: string | null;
+      engagement_id: string;
+    }>();
+  if (!participant) return null;
+
+  const { data: engagement } = await sb
+    .from("reflect_engagements")
+    .select(
+      "id, name, anonymity_min_n, ara_organizations(name, name_ar)"
+    )
+    .eq("id", participant.engagement_id)
+    .maybeSingle<{
+      id: string;
+      name: string;
+      anonymity_min_n: number;
+      ara_organizations: { name: string; name_ar: string | null } | null;
+    }>();
+  if (!engagement) return null;
+
+  // Pull the framework for this engagement
+  const { data: framework } = await sb
+    .from("reflect_frameworks")
+    .select("id")
+    .eq("engagement_id", participant.engagement_id)
+    .maybeSingle<{ id: string }>();
+  if (!framework) return null;
+
+  const { data: comps } = await sb
+    .from("reflect_competencies")
+    .select("id, name_en, name_ar, display_order")
+    .eq("framework_id", framework.id)
+    .order("display_order");
+
+  const compIds = (comps ?? []).map((c) => c.id);
+  const { data: behs } =
+    compIds.length === 0
+      ? { data: [] as Array<{ id: string; competency_id: string; text_en: string; text_ar: string | null }> }
+      : await sb
+          .from("reflect_behaviors")
+          .select("id, competency_id, text_en, text_ar")
+          .in("competency_id", compIds);
+
+  // Raters for this participant
+  const { data: raters } = await sb
+    .from("reflect_raters")
+    .select("id, rater_role, status")
+    .eq("participant_id", participantId);
+
+  // Responses across all raters
+  const raterIds = (raters ?? []).map((r) => r.id);
+  const { data: responses } =
+    raterIds.length === 0
+      ? { data: [] as Array<{ rater_id: string; behavior_id: string; score: number | null; is_na: boolean }> }
+      : await sb
+          .from("reflect_responses")
+          .select("rater_id, behavior_id, score, is_na")
+          .in("rater_id", raterIds);
+
+  // Index raters by id and by role
+  const raterById = new Map<string, { role: ReflectRaterRole; status: string }>();
+  const ratersByRole = new Map<ReflectRaterRole, string[]>();
+  for (const r of raters ?? []) {
+    raterById.set(r.id, { role: r.rater_role, status: r.status });
+    const arr = ratersByRole.get(r.rater_role) ?? [];
+    arr.push(r.id);
+    ratersByRole.set(r.rater_role, arr);
+  }
+
+  // Index responses by rater + behavior. Drop is_na (excluded from means).
+  const responsesByRater = new Map<string, Map<string, number>>();
+  for (const r of responses ?? []) {
+    if (r.score === null || r.is_na) continue;
+    if (!responsesByRater.has(r.rater_id)) responsesByRater.set(r.rater_id, new Map());
+    responsesByRater.get(r.rater_id)!.set(r.behavior_id, r.score);
+  }
+
+  const min_n = engagement.anonymity_min_n;
+
+  // ── Per-rater-group rollup at the overall level ──
+  const allRoles: ReflectRaterRole[] = [
+    "self",
+    "manager",
+    "peer",
+    "direct_report",
+    "skip_level",
+    "other",
+  ];
+  const by_group: RaterGroupScore[] = allRoles.map((role) => {
+    const ids = ratersByRole.get(role) ?? [];
+    const respondedIds = ids.filter((id) => responsesByRater.has(id));
+    const allScores: number[] = [];
+    for (const id of respondedIds) {
+      const map = responsesByRater.get(id)!;
+      for (const v of map.values()) allScores.push(v);
+    }
+    const groupMean = mean(allScores);
+    // Anonymity: hide peer / direct_report / skip_level / other below the
+    // threshold. Self and manager are never anonymised.
+    const sensitive = role !== "self" && role !== "manager";
+    const hidden = sensitive && respondedIds.length < min_n;
+    return {
+      rater_role: role,
+      rater_count: respondedIds.length,
+      response_count: allScores.length,
+      mean: hidden ? null : round2(groupMean),
+      hidden_by_anonymity: hidden,
+    };
+  });
+
+  // ── Pooled "Others" view (non-self) ──
+  const othersRaterIds: string[] = [];
+  for (const role of RATER_GROUPS_FOR_OTHERS) {
+    othersRaterIds.push(...(ratersByRole.get(role) ?? []));
+  }
+  const othersResponded = othersRaterIds.filter((id) => responsesByRater.has(id));
+  const overallOthersScores: number[] = [];
+  for (const id of othersResponded) {
+    const map = responsesByRater.get(id)!;
+    for (const v of map.values()) overallOthersScores.push(v);
+  }
+  const overallOthers = mean(overallOthersScores);
+
+  // ── Self view ──
+  const selfRaterIds = ratersByRole.get("self") ?? [];
+  const selfRespondedIds = selfRaterIds.filter((id) => responsesByRater.has(id));
+  const overallSelfScores: number[] = [];
+  for (const id of selfRespondedIds) {
+    const map = responsesByRater.get(id)!;
+    for (const v of map.values()) overallSelfScores.push(v);
+  }
+  const overallSelf = mean(overallSelfScores);
+
+  // Combined overall = average of self + others if both present, else
+  // whichever is available.
+  const overallAll: number[] = [...overallSelfScores, ...overallOthersScores];
+  const overallMean = mean(overallAll);
+
+  // ── Per-competency ──
+  const behaviorsByComp = new Map<string, Array<{ id: string; text_en: string; text_ar: string | null }>>();
+  for (const b of behs ?? []) {
+    if (!behaviorsByComp.has(b.competency_id)) behaviorsByComp.set(b.competency_id, []);
+    behaviorsByComp.get(b.competency_id)!.push({ id: b.id, text_en: b.text_en, text_ar: b.text_ar });
+  }
+
+  const competencies: CompetencyScore[] = (comps ?? []).map((c) => {
+    const bs = behaviorsByComp.get(c.id) ?? [];
+    const compBehIds = new Set(bs.map((b) => b.id));
+
+    const selfScores: number[] = [];
+    for (const id of selfRespondedIds) {
+      const map = responsesByRater.get(id)!;
+      for (const [bid, v] of map.entries()) {
+        if (compBehIds.has(bid)) selfScores.push(v);
+      }
+    }
+    const othersScores: number[] = [];
+    for (const id of othersResponded) {
+      const map = responsesByRater.get(id)!;
+      for (const [bid, v] of map.entries()) {
+        if (compBehIds.has(bid)) othersScores.push(v);
+      }
+    }
+    const sMean = mean(selfScores);
+    const oMean = mean(othersScores);
+
+    const compByGroup: RaterGroupScore[] = allRoles.map((role) => {
+      const ids = ratersByRole.get(role) ?? [];
+      const respondedIds = ids.filter((id) => responsesByRater.has(id));
+      const scores: number[] = [];
+      for (const id of respondedIds) {
+        const map = responsesByRater.get(id)!;
+        for (const [bid, v] of map.entries()) {
+          if (compBehIds.has(bid)) scores.push(v);
+        }
+      }
+      const sensitive = role !== "self" && role !== "manager";
+      const hidden = sensitive && respondedIds.length < min_n;
+      return {
+        rater_role: role,
+        rater_count: respondedIds.length,
+        response_count: scores.length,
+        mean: hidden ? null : round2(mean(scores)),
+        hidden_by_anonymity: hidden,
+      };
+    });
+
+    return {
+      competency_id: c.id,
+      name_en: c.name_en,
+      name_ar: c.name_ar,
+      display_order: c.display_order,
+      self_mean: round2(sMean),
+      others_mean: round2(oMean),
+      gap: sMean !== null && oMean !== null ? round2(sMean - oMean) : null,
+      by_group: compByGroup,
+    };
+  });
+
+  // ── Per-behavior (used for strength / dev / blind / hidden rankings) ──
+  const behaviors: BehaviorScore[] = (behs ?? []).map((b) => {
+    let selfScore: number | null = null;
+    for (const id of selfRespondedIds) {
+      const map = responsesByRater.get(id)!;
+      if (map.has(b.id)) {
+        selfScore = map.get(b.id) ?? null;
+        break;
+      }
+    }
+    const othersScores: number[] = [];
+    for (const id of othersResponded) {
+      const map = responsesByRater.get(id)!;
+      if (map.has(b.id)) othersScores.push(map.get(b.id)!);
+    }
+    const oMean = mean(othersScores);
+    return {
+      behavior_id: b.id,
+      competency_id: b.competency_id,
+      text_en: b.text_en,
+      text_ar: b.text_ar,
+      self_score: selfScore,
+      others_mean: round2(oMean),
+      others_count: othersScores.length,
+      gap: selfScore !== null && oMean !== null ? round2(selfScore - oMean) : null,
+    };
+  });
+
+  // Rankings — only behaviors that have a meaningful Others view (>=2 responses)
+  // qualify for strength / development / blind-spot / hidden-strength lists.
+  const ranked = behaviors.filter((b) => b.others_mean !== null && b.others_count >= 2);
+
+  const strengths = [...ranked]
+    .sort((a, b) => (b.others_mean! - a.others_mean!))
+    .slice(0, 5);
+
+  const development_areas = [...ranked]
+    .sort((a, b) => (a.others_mean! - b.others_mean!))
+    .slice(0, 5);
+
+  const withGap = behaviors.filter((b) => b.gap !== null);
+  const blind_spots = [...withGap]
+    .sort((a, b) => b.gap! - a.gap!) // largest positive gap = self ≫ others
+    .slice(0, 5)
+    .filter((b) => b.gap! > 0);
+
+  const hidden_strengths = [...withGap]
+    .sort((a, b) => a.gap! - b.gap!) // most negative gap = others ≫ self
+    .slice(0, 5)
+    .filter((b) => b.gap! < 0);
+
+  return {
+    participant_id: participant.id,
+    participant_name: participant.full_name,
+    participant_name_ar: participant.full_name_ar,
+    participant_role_title: participant.role_title,
+    engagement_id: engagement.id,
+    engagement_name: engagement.name,
+    organization_name: engagement.ara_organizations?.name ?? "",
+    organization_name_ar: engagement.ara_organizations?.name_ar ?? null,
+    anonymity_min_n: min_n,
+    overall_mean: round2(overallMean),
+    overall_self: round2(overallSelf),
+    overall_others: round2(overallOthers),
+    overall_gap:
+      overallSelf !== null && overallOthers !== null
+        ? round2(overallSelf - overallOthers)
+        : null,
+    by_group,
+    competencies,
+    behaviors,
+    strengths,
+    development_areas,
+    blind_spots,
+    hidden_strengths,
+    generated_at: new Date().toISOString(),
+  };
+}
+
+
+// ──────────────────────────────────────────────────────────────
+// Cohort scoring — overlay every participant's mean per competency
+// for the heatmap, plus aggregate strengths and development areas.
+// ──────────────────────────────────────────────────────────────
+
+export async function computeCohortScoring(
+  engagementId: string
+): Promise<CohortScoring | null> {
+  const sb = createServiceClient();
+
+  const { data: engagement } = await sb
+    .from("reflect_engagements")
+    .select("id, name, ara_organizations(name)")
+    .eq("id", engagementId)
+    .maybeSingle<{
+      id: string;
+      name: string;
+      ara_organizations: { name: string } | null;
+    }>();
+  if (!engagement) return null;
+
+  const { data: participants } = await sb
+    .from("reflect_participants")
+    .select("id, full_name")
+    .eq("engagement_id", engagementId)
+    .order("full_name");
+
+  if (!participants || participants.length === 0) {
+    return {
+      engagement_id: engagement.id,
+      engagement_name: engagement.name,
+      organization_name: engagement.ara_organizations?.name ?? "",
+      participant_count: 0,
+      rater_count: 0,
+      response_count: 0,
+      overall_mean: null,
+      competencies: [],
+      participants: [],
+      top_strengths: [],
+      top_development_areas: [],
+      generated_at: new Date().toISOString(),
+    };
+  }
+
+  // Reuse per-participant scoring (computing 117 participants serially
+  // is slow; for v1 we accept the latency and revisit with parallelism
+  // / materialised views in a later iteration).
+  const scorings: ParticipantScoring[] = [];
+  for (const p of participants) {
+    const s = await computeParticipantScoring(p.id);
+    if (s) scorings.push(s);
+  }
+
+  // Aggregate per-competency means across the cohort
+  const compMap = new Map<
+    string,
+    {
+      name_en: string;
+      name_ar: string | null;
+      display_order: number;
+      sumOfMeans: number;
+      participantsCounted: number;
+      perParticipant: Map<string, number | null>;
+    }
+  >();
+
+  for (const s of scorings) {
+    for (const c of s.competencies) {
+      if (!compMap.has(c.competency_id)) {
+        compMap.set(c.competency_id, {
+          name_en: c.name_en,
+          name_ar: c.name_ar,
+          display_order: c.display_order,
+          sumOfMeans: 0,
+          participantsCounted: 0,
+          perParticipant: new Map(),
+        });
+      }
+      const entry = compMap.get(c.competency_id)!;
+      // Use others_mean for the cohort view (excludes self bias)
+      const m = c.others_mean ?? c.self_mean;
+      entry.perParticipant.set(s.participant_id, m);
+      if (m !== null) {
+        entry.sumOfMeans += m;
+        entry.participantsCounted += 1;
+      }
+    }
+  }
+
+  const competencies = Array.from(compMap.entries())
+    .map(([id, e]) => ({
+      competency_id: id,
+      name_en: e.name_en,
+      name_ar: e.name_ar,
+      display_order: e.display_order,
+      mean:
+        e.participantsCounted > 0
+          ? round2(e.sumOfMeans / e.participantsCounted)
+          : null,
+      per_participant_means: participants.map((p) => ({
+        participant_id: p.id,
+        mean: e.perParticipant.get(p.id) ?? null,
+      })),
+    }))
+    .sort((a, b) => a.display_order - b.display_order);
+
+  const participantsRollup = participants.map((p) => {
+    const s = scorings.find((x) => x.participant_id === p.id);
+    const overall = s?.overall_others ?? s?.overall_mean ?? null;
+    // Completion %: how many of this participant's raters reached "completed"
+    const groupRaters = s?.by_group ?? [];
+    const totalRaters = groupRaters.reduce((sum, g) => sum + g.rater_count, 0);
+    return {
+      participant_id: p.id,
+      participant_name: p.full_name,
+      overall_mean: overall,
+      completion_pct: totalRaters === 0 ? 0 : Math.round((totalRaters / Math.max(totalRaters, 1)) * 100),
+    };
+  });
+
+  const overallMean = mean(
+    competencies.map((c) => c.mean).filter((v): v is number => v !== null)
+  );
+
+  const top_strengths = [...competencies]
+    .filter((c) => c.mean !== null)
+    .sort((a, b) => b.mean! - a.mean!)
+    .slice(0, 3)
+    .map((c) => ({ competency_id: c.competency_id, name_en: c.name_en, name_ar: c.name_ar, mean: c.mean }));
+
+  const top_development_areas = [...competencies]
+    .filter((c) => c.mean !== null)
+    .sort((a, b) => a.mean! - b.mean!)
+    .slice(0, 3)
+    .map((c) => ({ competency_id: c.competency_id, name_en: c.name_en, name_ar: c.name_ar, mean: c.mean }));
+
+  // Rough rater + response counters
+  const { count: raterCount } = await sb
+    .from("reflect_raters")
+    .select("id, reflect_participants!inner(engagement_id)", { count: "exact", head: true })
+    .eq("reflect_participants.engagement_id", engagementId);
+  const { count: responseCount } = await sb
+    .from("reflect_responses")
+    .select(
+      "id, reflect_raters!inner(reflect_participants!inner(engagement_id))",
+      { count: "exact", head: true }
+    )
+    .eq("reflect_raters.reflect_participants.engagement_id", engagementId);
+
+  return {
+    engagement_id: engagement.id,
+    engagement_name: engagement.name,
+    organization_name: engagement.ara_organizations?.name ?? "",
+    participant_count: participants.length,
+    rater_count: raterCount ?? 0,
+    response_count: responseCount ?? 0,
+    overall_mean: round2(overallMean),
+    competencies,
+    participants: participantsRollup,
+    top_strengths,
+    top_development_areas,
+    generated_at: new Date().toISOString(),
+  };
+}

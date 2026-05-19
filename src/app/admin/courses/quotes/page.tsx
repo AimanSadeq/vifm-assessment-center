@@ -32,7 +32,17 @@ type QuoteRow = Pick<
   | "requester_name" | "requester_email" | "requester_company"
   | "course_id" | "course_code_snapshot" | "course_title_snapshot"
   | "estimated_group_size" | "preferred_start_date"
->;
+> & {
+  engagement_type?: string;
+  reflect_engagement_id?: string | null;
+};
+
+const ENGAGEMENT_TONE: Record<string, string> = {
+  direct: "bg-muted text-muted-foreground border-border",
+  ac: "bg-sky-50 text-sky-700 border-sky-200",
+  ara: "bg-violet-50 text-violet-700 border-violet-200",
+  reflect: "bg-emerald-50 text-emerald-700 border-emerald-200",
+};
 
 export default async function QuoteRequestsListPage({
   searchParams,
@@ -45,7 +55,7 @@ export default async function QuoteRequestsListPage({
   let query = sb
     .from("vifm_course_quote_requests")
     .select(
-      "id, status, created_at, updated_at, requester_name, requester_email, requester_company, course_id, course_code_snapshot, course_title_snapshot, estimated_group_size, preferred_start_date"
+      "id, status, created_at, updated_at, requester_name, requester_email, requester_company, course_id, course_code_snapshot, course_title_snapshot, estimated_group_size, preferred_start_date, engagement_type, reflect_engagement_id"
     )
     .order("created_at", { ascending: false });
 
@@ -165,6 +175,26 @@ export default async function QuoteRequestsListPage({
                         <div className="text-sm">{r.course_title_snapshot ?? "(course removed)"}</div>
                         {r.course_code_snapshot && (
                           <div className="text-[10px] font-mono text-muted-foreground">{r.course_code_snapshot}</div>
+                        )}
+                        {r.engagement_type && r.engagement_type !== "direct" && (
+                          <div className="mt-1 inline-flex items-center gap-1.5">
+                            <span
+                              className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-full border ${
+                                ENGAGEMENT_TONE[r.engagement_type] ?? ENGAGEMENT_TONE.direct
+                              }`}
+                            >
+                              {r.engagement_type}
+                            </span>
+                            {r.engagement_type === "reflect" && r.reflect_engagement_id && (
+                              <Link
+                                href={`/reflect/consultant/engagements/${r.reflect_engagement_id}`}
+                                className="text-[10px] text-accent hover:underline"
+                                title="Open the source Reflect engagement"
+                              >
+                                source ↗
+                              </Link>
+                            )}
+                          </div>
                         )}
                       </TableCell>
                       <TableCell className="text-center align-top">

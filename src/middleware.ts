@@ -8,6 +8,11 @@ import { AUTH_ENABLED } from "@/lib/auth/config";
 const isAraRespondentRoute = (pathname: string) =>
   pathname.startsWith("/ara/respond/") || pathname.startsWith("/api/ara/respond/");
 
+// Reflect rater routes follow the same token pattern — rater identity
+// is established server-side from reflect_raters.access_token.
+const isReflectRaterRoute = (pathname: string) =>
+  pathname.startsWith("/reflect/respond/") || pathname.startsWith("/api/reflect/respond/");
+
 // Public training catalogue + quote-request flow. Anyone (no account)
 // browses /courses and submits a quote request — the quote-request
 // server action persists via the service-role client. Treated like
@@ -18,6 +23,7 @@ const isPublicCoursesRoute = (pathname: string) =>
 export async function middleware(request: NextRequest) {
   if (
     isAraRespondentRoute(request.nextUrl.pathname) ||
+    isReflectRaterRoute(request.nextUrl.pathname) ||
     isPublicCoursesRoute(request.nextUrl.pathname)
   ) {
     return NextResponse.next();

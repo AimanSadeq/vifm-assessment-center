@@ -1,0 +1,65 @@
+name: Reflect · rater reminders
+
+# Daily cron to nudge Reflect raters whose form is still open. Same posture
+# as the ARA retention purge: CRON_SECRET-bearer-gated POST to a server-only
+# endpoint, GitHub Actions cron triggers it.
+#
+# Behaviour:
+#   - Sweeps every reflect_engagement in status='live'
+#   - For each, calls sendReflectRemindersForEngagement which only nudges
+#     raters who haven't been reminded recently AND haven't been active
+#     recently (default stale window: 72h).
+#   - Logs a cron.reminders_sent row to reflect_audit_log.
+#
+# Setup is identical to the ARA workflow:
+#   1. CRON_SECRET set in Render env + this repo's GitHub Secrets.
+#   2. Workflow can be triggered manually from the Actions tab.
+
+on:
+  schedule:
+    # 08:00 UTC daily = 12:00 GST (UAE) / 11:00 AST (Saudi). Reminders go out
+    # mid-morning local time when raters are most likely to action them.
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reflect-rater-reminders
+  cancel-in-progress: false
+
+jobs:
+  remind:
+    name: Hit Reflect reminder endpoint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Fire reminder endpoint
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "::error::CRON_SECRET secret is not set on this repo."
+            exit 1
+          fi
+
+          ENDPOINT="https://caliber.viftraining.com/api/reflect/admin/reminders/cron"
+          echo "Calling $ENDPOINT"
+
+          BODY=$(curl -fsS -X POST \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Accept: application/json" \
+            --max-time 300 \
+            "$ENDPOINT")
+
+          echo "Response body:"
+          echo "$BODY"
+
+          echo "$BODY" | grep -q '"ok":true' || {
+            echo "::error::Response did not include ok:true"
+            exit 1
+          }

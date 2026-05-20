@@ -109,6 +109,47 @@ async function requireEngagementOwner(engagementId: string) {
   return caller;
 }
 
+/** Resolve a framework to its engagement_id and check ownership. */
+async function requireEngagementOwnerByFramework(frameworkId: string) {
+  const sb = createServiceClient();
+  const { data } = await sb
+    .from("reflect_frameworks")
+    .select("engagement_id")
+    .eq("id", frameworkId)
+    .maybeSingle<{ engagement_id: string | null }>();
+  if (!data?.engagement_id) throw new AuthorizationError("Framework not found");
+  return requireEngagementOwner(data.engagement_id);
+}
+
+/** Resolve a competency to its engagement_id and check ownership. */
+async function requireOwnerForCompetency(competencyId: string) {
+  const sb = createServiceClient();
+  const { data } = await sb
+    .from("reflect_competencies")
+    .select("reflect_frameworks!inner(engagement_id)")
+    .eq("id", competencyId)
+    .maybeSingle<{ reflect_frameworks: { engagement_id: string } }>();
+  if (!data?.reflect_frameworks?.engagement_id) {
+    throw new AuthorizationError("Competency not found");
+  }
+  return requireEngagementOwner(data.reflect_frameworks.engagement_id);
+}
+
+/** Resolve a behavior to its engagement_id and check ownership. */
+async function requireOwnerForBehavior(behaviorId: string) {
+  const sb = createServiceClient();
+  const { data } = await sb
+    .from("reflect_behaviors")
+    .select("reflect_competencies!inner(reflect_frameworks!inner(engagement_id))")
+    .eq("id", behaviorId)
+    .maybeSingle<{
+      reflect_competencies: { reflect_frameworks: { engagement_id: string } };
+    }>();
+  const engagementId = data?.reflect_competencies?.reflect_frameworks?.engagement_id;
+  if (!engagementId) throw new AuthorizationError("Behavior not found");
+  return requireEngagementOwner(engagementId);
+}
+
 
 // ──────────────────────────────────────────────────────────────
 // Create engagement
@@ -360,13 +401,17 @@ async function cloneTemplateInternal(
 // ──────────────────────────────────────────────────────────────
 
 export async function upsertReflectCompetency(payload: UpsertCompetencyPayload) {
-  try {
-    await requireRole(["admin", "consultant"]);
-  } catch (e) { return authErr(e); }
-
   const parsed = upsertCompetencySchema.safeParse(payload);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   const p = parsed.data;
+
+  // P3-audit fix: gate updates on competency ownership (was previously
+  // only a role check, which let a consultant overwrite another
+  // consultant's competencies by guessing the id).
+  try {
+    if (p.id) await requireOwnerForCompetency(p.id);
+    else await requireEngagementOwnerByFramework(p.framework_id);
+  } catch (e) { return authErr(e); }
 
   const sb = createServiceClient();
   if (p.id) {
@@ -401,13 +446,16 @@ export async function upsertReflectCompetency(payload: UpsertCompetencyPayload) 
 
 
 export async function upsertReflectBehavior(payload: UpsertBehaviorPayload) {
-  try {
-    await requireRole(["admin", "consultant"]);
-  } catch (e) { return authErr(e); }
-
   const parsed = upsertBehaviorSchema.safeParse(payload);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   const p = parsed.data;
+
+  // P3-audit fix: gate on behavior ownership (was previously only a
+  // role check).
+  try {
+    if (p.id) await requireOwnerForBehavior(p.id);
+    else await requireOwnerForCompetency(p.competency_id);
+  } catch (e) { return authErr(e); }
 
   const sb = createServiceClient();
   if (p.id) {
@@ -441,7 +489,8 @@ export async function upsertReflectBehavior(payload: UpsertBehaviorPayload) {
 
 
 export async function deleteReflectCompetency(competencyId: string) {
-  try { await requireRole(["admin", "consultant"]); } catch (e) { return authErr(e); }
+  // P3-audit fix: scope delete to the calling consultant's engagements.
+  try { await requireOwnerForCompetency(competencyId); } catch (e) { return authErr(e); }
   const sb = createServiceClient();
   const { error } = await sb.from("reflect_competencies").delete().eq("id", competencyId);
   if (error) return { ok: false, error: error.message };
@@ -450,7 +499,8 @@ export async function deleteReflectCompetency(competencyId: string) {
 
 
 export async function deleteReflectBehavior(behaviorId: string) {
-  try { await requireRole(["admin", "consultant"]); } catch (e) { return authErr(e); }
+  // P3-audit fix: scope delete to the calling consultant's engagements.
+  try { await requireOwnerForBehavior(behaviorId); } catch (e) { return authErr(e); }
   const sb = createServiceClient();
   const { error } = await sb.from("reflect_behaviors").delete().eq("id", behaviorId);
   if (error) return { ok: false, error: error.message };
@@ -863,6 +913,16 @@ export async function createReflectReassessmentFromPrior(input: {
   priorEngagementId: string;
   carryParticipants?: boolean;
 }): Promise<CreateReassessmentResult> {
+  // P3-audit fix: must own the prior engagement before we can clone it
+  // (or be admin). Previously this had NO auth check at all, letting
+  // any authenticated user enumerate + exfiltrate another consultant's
+  // engagement design.
+  try {
+    await requireEngagementOwner(input.priorEngagementId);
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Not the prior engagement owner" };
+  }
+
   const sb = createServiceClient();
   const carry = input.carryParticipants ?? true;
 

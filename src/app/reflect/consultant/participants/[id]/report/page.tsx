@@ -5,6 +5,10 @@ import {
   HIGH_FIT_THRESHOLD,
   type RecommendedCourse,
 } from "@/lib/recommender/courses";
+import {
+  generateReflectBehaviorTips,
+  type BehaviorTip,
+} from "@/lib/ai/reflect-behavior-tips";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +32,17 @@ export default async function ReflectParticipantReportPage({
     limit: 5,
   });
 
+  // P3.4 — Per-behavior AI development tips for the top-5 dev areas.
+  // Single Claude call; falls back to a generic tip when no API key.
+  const behaviorTips = await generateReflectBehaviorTips(
+    scoring.development_areas.map((b) => ({
+      behavior_id: b.behavior_id,
+      text_en: b.text_en,
+      text_ar: b.text_ar,
+      others_mean: b.others_mean,
+    }))
+  );
+
   const bare = sp.bare === "1";
   const lang: "en" | "ar" | "bilingual" =
     sp.lang === "ar" ? "ar" : sp.lang === "bilingual" ? "bilingual" : "en";
@@ -37,6 +52,7 @@ export default async function ReflectParticipantReportPage({
       scoring={scoring}
       recommendations={recPayload.recommendations}
       unmappedCompetencies={recPayload.unmapped}
+      behaviorTips={behaviorTips}
       lang={lang}
       bare={bare}
     />
@@ -51,12 +67,14 @@ function ReportBody({
   scoring,
   recommendations,
   unmappedCompetencies,
+  behaviorTips,
   lang,
   bare,
 }: {
   scoring: ParticipantScoring;
   recommendations: RecommendedCourse[];
   unmappedCompetencies: string[];
+  behaviorTips: BehaviorTip[];
   lang: "en" | "ar" | "bilingual";
   bare: boolean;
 }) {
@@ -90,6 +108,9 @@ function ReportBody({
               ? "سرّي — للاستخدام التطويري الفردي فقط. لا يُستخدم لأغراض الاختيار أو الترقية."
               : "Confidential — for personal development use only. Not to be used for selection or promotion decisions."}
           </div>
+
+          {/* P3.1 Cover wheel — Self vs Others polygons on the competency axes */}
+          <CoverWheel scoring={scoring} rtl={rtl} />
         </div>
       </section>
 
@@ -200,13 +221,14 @@ function ReportBody({
         tone="strength"
       />
 
-      {/* Development areas */}
+      {/* Development areas — with P3.4 AI coaching tips */}
       <BehaviorListPage
         title={rtl ? "مجالات التطوير" : "Development areas"}
-        subtitle={rtl ? "أقل 5 سلوكيات حسب رأي الآخرين" : "Bottom 5 behaviours by Others' mean"}
+        subtitle={rtl ? "أقل 5 سلوكيات حسب رأي الآخرين — مع نصيحة تطويرية لكل سلوك" : "Bottom 5 behaviours by Others' mean — with a coaching tip for each"}
         behaviors={scoring.development_areas}
         rtl={rtl}
         tone="develop"
+        tips={behaviorTips}
       />
 
       {/* Blind spots */}
@@ -298,6 +320,12 @@ function ReportBody({
           );
         })}
       </section>
+
+      {/* P3.2 Reference Group Comparison — single horizontal-dots view */}
+      <ReferenceGroupComparisonPage scoring={scoring} rtl={rtl} />
+
+      {/* P3.3 Strengths & Development Summary */}
+      <StrengthsDevSummaryPage scoring={scoring} rtl={rtl} />
 
       {/* Item-level detail (P0 parity pass) */}
       <ItemLevelDetailPages
@@ -459,6 +487,7 @@ function BehaviorListPage({
   behaviors,
   rtl,
   tone,
+  tips,
 }: {
   title: string;
   subtitle: string;
@@ -472,7 +501,9 @@ function BehaviorListPage({
   }>;
   rtl: boolean;
   tone: "strength" | "develop" | "blind" | "hidden";
+  tips?: BehaviorTip[];
 }) {
+  const tipById = new Map(tips?.map((t) => [t.behavior_id, t]) ?? []);
   return (
     <section className={`page tone-${tone}`}>
       <h2>{title}</h2>
@@ -481,22 +512,168 @@ function BehaviorListPage({
         <p className="empty">{rtl ? "لا توجد عناصر في هذه القائمة." : "Nothing in this list."}</p>
       ) : (
         <ol className="behavior-list">
-          {behaviors.map((b, i) => (
-            <li key={b.behavior_id}>
-              <div className="behavior-text">
-                <span className="behavior-rank">{i + 1}</span>
-                {rtl ? b.text_ar ?? b.text_en : b.text_en}
-              </div>
-              <div className="behavior-meta">
-                <span><strong>{rtl ? "أنت" : "Self"}:</strong> {fmtScore(b.self_score)}</span>
-                <span><strong>{rtl ? "الآخرون" : "Others"}:</strong> {fmtScore(b.others_mean)}</span>
-                <span><strong>{rtl ? "الفجوة" : "Gap"}:</strong> {b.gap !== null ? (b.gap > 0 ? `+${b.gap.toFixed(2)}` : b.gap.toFixed(2)) : "—"}</span>
-              </div>
-            </li>
-          ))}
+          {behaviors.map((b, i) => {
+            const tip = tipById.get(b.behavior_id);
+            return (
+              <li key={b.behavior_id}>
+                <div className="behavior-text">
+                  <span className="behavior-rank">{i + 1}</span>
+                  {rtl ? b.text_ar ?? b.text_en : b.text_en}
+                </div>
+                <div className="behavior-meta">
+                  <span><strong>{rtl ? "أنت" : "Self"}:</strong> {fmtScore(b.self_score)}</span>
+                  <span><strong>{rtl ? "الآخرون" : "Others"}:</strong> {fmtScore(b.others_mean)}</span>
+                  <span><strong>{rtl ? "الفجوة" : "Gap"}:</strong> {b.gap !== null ? (b.gap > 0 ? `+${b.gap.toFixed(2)}` : b.gap.toFixed(2)) : "—"}</span>
+                </div>
+                {tip && (
+                  <div className="behavior-tip">
+                    <span className="behavior-tip-label">
+                      {rtl ? "نصيحة تطويرية" : "Coaching tip"}
+                    </span>
+                    <p className="behavior-tip-text">{rtl ? tip.tip_ar : tip.tip_en}</p>
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ol>
       )}
     </section>
+  );
+}
+
+
+// ──────────────────────────────────────────────────────────────
+// Cover-page wheel (P3.1). SVG radar chart with two polygons:
+// Self (purple) and Others (teal), one axis per competency. The
+// iconic 360 visualization. Pure SVG so it renders cleanly under
+// Puppeteer without any client-side chart library.
+// ──────────────────────────────────────────────────────────────
+
+function CoverWheel({
+  scoring,
+  rtl,
+}: {
+  scoring: ParticipantScoring;
+  rtl: boolean;
+}) {
+  const comps = scoring.competencies;
+  if (comps.length < 3) return null;
+
+  const size = 220;
+  const cx = size / 2;
+  const cy = size / 2;
+  const r = (size / 2) - 32;
+  const labelR = r + 18;
+
+  // Angle per competency, starting at the top (12 o'clock) and going
+  // clockwise. Same convention as every competitor we sampled.
+  const angle = (i: number): number => (i / comps.length) * 2 * Math.PI - Math.PI / 2;
+
+  const pointAt = (val: number, i: number) => {
+    const a = angle(i);
+    const ratio = Math.max(0, Math.min(5, val)) / 5;
+    return [cx + r * ratio * Math.cos(a), cy + r * ratio * Math.sin(a)] as const;
+  };
+
+  const polygonPoints = (
+    accessor: (c: ParticipantScoring["competencies"][number]) => number | null
+  ): string | null => {
+    const pts: Array<readonly [number, number]> = [];
+    for (let i = 0; i < comps.length; i += 1) {
+      const v = accessor(comps[i]);
+      if (v === null) return null;
+      pts.push(pointAt(v, i));
+    }
+    return pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+  };
+
+  const selfPoly = polygonPoints((c) => c.self_mean);
+  const othersPoly = polygonPoints((c) => c.others_mean);
+
+  // Concentric grid rings at 1, 2, 3, 4, 5
+  const rings = [1, 2, 3, 4, 5].map((n) => (n / 5) * r);
+
+  return (
+    <div className="cover-wheel-wrap">
+      <svg viewBox={`0 0 ${size} ${size}`} width="100%" height="auto" className="cover-wheel">
+        {/* Favorable Zone band (3.5–4.25) — annular wedge */}
+        <circle cx={cx} cy={cy} r={(4.25 / 5) * r} fill="rgba(217, 119, 6, 0.10)" />
+        <circle cx={cx} cy={cy} r={(3.5 / 5) * r} fill="white" />
+
+        {/* Grid rings */}
+        {rings.map((rr, i) => (
+          <circle key={i} cx={cx} cy={cy} r={rr} fill="none" stroke="#E5EAF2" strokeWidth={0.5} />
+        ))}
+
+        {/* Axis lines */}
+        {comps.map((_, i) => {
+          const [x, y] = pointAt(5, i);
+          return (
+            <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="#E5EAF2" strokeWidth={0.5} />
+          );
+        })}
+
+        {/* Others polygon (teal) */}
+        {othersPoly && (
+          <polygon
+            points={othersPoly}
+            fill="rgba(83, 145, 213, 0.20)"
+            stroke="#5391D5"
+            strokeWidth={1.2}
+            strokeLinejoin="round"
+          />
+        )}
+
+        {/* Self polygon (purple) */}
+        {selfPoly && (
+          <polygon
+            points={selfPoly}
+            fill="rgba(109, 40, 217, 0.18)"
+            stroke="#6D28D9"
+            strokeWidth={1.2}
+            strokeLinejoin="round"
+            strokeDasharray="2.5,2"
+          />
+        )}
+
+        {/* Axis labels */}
+        {comps.map((c, i) => {
+          const a = angle(i);
+          const x = cx + labelR * Math.cos(a);
+          const y = cy + labelR * Math.sin(a);
+          const name = rtl ? c.name_ar ?? c.name_en : c.name_en;
+          const short = name.length > 16 ? name.slice(0, 15) + "…" : name;
+          return (
+            <text
+              key={i}
+              x={x}
+              y={y}
+              fontSize={5}
+              fill="#111232"
+              textAnchor={Math.abs(Math.cos(a)) < 0.2 ? "middle" : Math.cos(a) > 0 ? "start" : "end"}
+              dominantBaseline={Math.sin(a) > 0.3 ? "hanging" : Math.sin(a) < -0.3 ? "alphabetic" : "middle"}
+            >
+              {short}
+            </text>
+          );
+        })}
+      </svg>
+      <div className="cover-wheel-legend">
+        <span className="cover-wheel-legend-item">
+          <span className="cover-wheel-swatch cover-wheel-swatch-self" />
+          {rtl ? "أنت" : "Self"}
+        </span>
+        <span className="cover-wheel-legend-item">
+          <span className="cover-wheel-swatch cover-wheel-swatch-others" />
+          {rtl ? "الآخرون" : "Others"}
+        </span>
+        <span className="cover-wheel-legend-item cover-wheel-legend-zone">
+          <span className="cover-wheel-swatch cover-wheel-swatch-zone" />
+          {rtl ? "النطاق المرجعي" : "Favorable Zone"}
+        </span>
+      </div>
+    </div>
   );
 }
 
@@ -731,6 +908,179 @@ function CriticalAlignmentCard({
 
 
 // ──────────────────────────────────────────────────────────────
+// Reference Group Comparison (P3.2). For every competency, a
+// horizontal 1–5 line with a coloured dot per rater group. Lets
+// the reader scan misalignment patterns ("manager + peers low,
+// direct reports high") in one page. Mirrors competitor pattern.
+// ──────────────────────────────────────────────────────────────
+
+const GROUP_LEGEND: Array<{ role: string; en: string; ar: string; color: string }> = [
+  { role: "self", en: "Self", ar: "أنت", color: "#6D28D9" },
+  { role: "manager", en: "Manager", ar: "المدير", color: "#B45309" },
+  { role: "peer", en: "Peers", ar: "الزملاء", color: "#5391D5" },
+  { role: "direct_report", en: "Direct reports", ar: "التقارير المباشرة", color: "#047857" },
+  { role: "skip_level", en: "Skip-level", ar: "أعلى", color: "#9F1239" },
+  { role: "other", en: "Other", ar: "أخرى", color: "#6B7280" },
+];
+
+function ReferenceGroupComparisonPage({
+  scoring,
+  rtl,
+}: {
+  scoring: ParticipantScoring;
+  rtl: boolean;
+}) {
+  return (
+    <section className="page no-break-after">
+      <h2>{rtl ? "مقارنة فئات المقيّمين" : "Reference group comparison"}</h2>
+      <p className="lead">
+        {rtl
+          ? "كل كفاية على خط واحد. نقطة لكل فئة من المقيّمين. النقاط المتفرقة على نفس الخط تكشف اختلاف الإدراك بين الفئات بسرعة."
+          : "Every competency on one line. One dot per rater group. Spread dots reveal differing perceptions across the groups at a glance."}
+      </p>
+
+      <div className="rgc-legend">
+        {GROUP_LEGEND.map((g) => (
+          <span key={g.role} className="rgc-legend-item">
+            <span className="rgc-dot-swatch" style={{ background: g.color }} />
+            {rtl ? g.ar : g.en}
+          </span>
+        ))}
+      </div>
+
+      <div className="rgc-axis">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <span key={n} className="rgc-axis-tick">{n}</span>
+        ))}
+      </div>
+
+      <div className="rgc-rows">
+        {scoring.competencies.map((c) => (
+          <div key={c.competency_id} className="rgc-row">
+            <span className="rgc-label">{rtl ? c.name_ar ?? c.name_en : c.name_en}</span>
+            <div className="rgc-track">
+              {/* Favorable Zone band */}
+              <span className="rgc-zone" />
+              {/* Grid lines at 1..5 */}
+              {[1, 2, 3, 4, 5].map((n) => (
+                <span
+                  key={n}
+                  className="rgc-grid"
+                  style={{ left: `${((n - 1) / 4) * 100}%` }}
+                />
+              ))}
+              {c.by_group.map((g) => {
+                if (g.mean === null) return null;
+                const def = GROUP_LEGEND.find((x) => x.role === g.rater_role);
+                if (!def) return null;
+                const left = `${((g.mean - 1) / 4) * 100}%`;
+                return (
+                  <span
+                    key={g.rater_role}
+                    className="rgc-dot"
+                    style={{ left, background: def.color }}
+                    title={`${rtl ? def.ar : def.en}: ${g.mean.toFixed(2)}`}
+                  >
+                    <span className="rgc-dot-letter">
+                      {(rtl ? def.ar : def.en).charAt(0)}
+                    </span>
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+
+// ──────────────────────────────────────────────────────────────
+// Strengths & Development Summary (P3.3). Ranks every competency
+// by Others-mean and splits into "Strengths" (within/above zone)
+// and "Development areas" (below zone). When a competency is also
+// flagged as role-critical (P1.5), it gets a "Critical Development
+// Area!" tag — the single most impactful coaching signal.
+// ──────────────────────────────────────────────────────────────
+
+function StrengthsDevSummaryPage({
+  scoring,
+  rtl,
+}: {
+  scoring: ParticipantScoring;
+  rtl: boolean;
+}) {
+  const ZONE_LOW = 3.5;
+  const criticalUnion = new Set([
+    ...scoring.critical_alignment.self_picks,
+    ...scoring.critical_alignment.manager_picks,
+  ]);
+
+  const ranked = scoring.competencies
+    .filter((c) => c.others_mean !== null)
+    .slice()
+    .sort((a, b) => (b.others_mean ?? 0) - (a.others_mean ?? 0));
+
+  const strengths = ranked.filter((c) => (c.others_mean ?? 0) >= ZONE_LOW);
+  const dev = ranked.filter((c) => (c.others_mean ?? 0) < ZONE_LOW);
+
+  return (
+    <section className="page">
+      <h2>{rtl ? "ملخّص نقاط القوة والتطوير" : "Strengths & Development Summary"}</h2>
+      <p className="lead">
+        {rtl
+          ? "كل كفاية مرتّبة حسب رأي الآخرين. النطاق المرجعي يبدأ من 3.5. الكفايات الموسومة بـ «نقطة تطوير حرجة» اخترتموها أنت أو مديرك كحرجة وهي تحت النطاق — أعطها الأولوية في الخطة."
+          : "Every competency ranked by Others' view. The Favorable Zone starts at 3.5. Anything flagged Critical Development Area was picked as role-critical by you or your manager AND is below the zone — prioritise these first in your plan."}
+      </p>
+
+      <h3 className="sds-strength-h">{rtl ? "نقاط القوة" : "Strengths"}</h3>
+      {strengths.length === 0 ? (
+        <p className="empty">{rtl ? "لم تُسجَّل بعد." : "None yet."}</p>
+      ) : (
+        <ul className="sds-list">
+          {strengths.map((c) => (
+            <li key={c.competency_id}>
+              <span className="sds-name">
+                {rtl ? c.name_ar ?? c.name_en : c.name_en}
+                {criticalUnion.has(c.competency_id) && (
+                  <span className="sds-critical-tag sds-critical-strength">
+                    {rtl ? "كفاية حرجة" : "Critical Skill"}
+                  </span>
+                )}
+              </span>
+              <span className="sds-value">{fmtScore(c.others_mean)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <h3 className="sds-dev-h">{rtl ? "مجالات التطوير" : "Development areas"}</h3>
+      {dev.length === 0 ? (
+        <p className="empty">{rtl ? "كل الكفايات في النطاق المرجعي أو أعلى." : "Every competency is within or above the Favorable Zone."}</p>
+      ) : (
+        <ul className="sds-list">
+          {dev.map((c) => (
+            <li key={c.competency_id}>
+              <span className="sds-name">
+                {rtl ? c.name_ar ?? c.name_en : c.name_en}
+                {criticalUnion.has(c.competency_id) && (
+                  <span className="sds-critical-tag sds-critical-dev">
+                    {rtl ? "نقطة تطوير حرجة!" : "Critical Development Area!"}
+                  </span>
+                )}
+              </span>
+              <span className="sds-value">{fmtScore(c.others_mean)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+
+// ──────────────────────────────────────────────────────────────
 // Item-level detail — every behaviour with the per-rater-group
 // breakdown that competitors put at the back of every report.
 // Pages are chunked at ~12 rows per page so they always render
@@ -780,38 +1130,65 @@ function ItemLevelDetailPages({
                 </tr>
               </thead>
               <tbody>
-                {compBehs.map((b) => (
-                  <tr key={b.behavior_id}>
-                    <td className="item-behavior">
-                      {rtl ? b.text_ar ?? b.text_en : b.text_en}
-                    </td>
-                    {RATER_GROUPS_FOR_TABLE.map((g) => {
-                      const grp = b.by_group.find((x) => x.rater_role === g.role);
-                      if (!grp || grp.rater_count === 0) {
-                        return <td key={g.role} className="item-group dim">—</td>;
-                      }
-                      if (grp.hidden_by_anonymity) {
-                        return <td key={g.role} className="item-group dim">·</td>;
-                      }
-                      const noConsensus = grp.spread !== null && grp.spread >= 3;
-                      return (
-                        <td key={g.role} className={noConsensus ? "item-group flag" : "item-group"}>
-                          {fmtScore(grp.mean)}
-                          {noConsensus && (
-                            <span className="consensus-flag" title="raters disagree by 3+ points"> ⚠</span>
-                          )}
+                {/* Return an array of <tr> per behavior (one main + one
+                    optional comments row) instead of wrapping in a fragment.
+                    Fragments inside <tbody> can corrupt table layout under
+                    Puppeteer's strict table-parsing path — flagged by P3 audit. */}
+                {compBehs.flatMap((b) => {
+                  const rows = [
+                    <tr key={b.behavior_id}>
+                      <td className="item-behavior">
+                        {rtl ? b.text_ar ?? b.text_en : b.text_en}
+                      </td>
+                      {RATER_GROUPS_FOR_TABLE.map((g) => {
+                        const grp = b.by_group.find((x) => x.rater_role === g.role);
+                        if (!grp || grp.rater_count === 0) {
+                          return <td key={g.role} className="item-group dim">—</td>;
+                        }
+                        if (grp.hidden_by_anonymity) {
+                          return <td key={g.role} className="item-group dim">·</td>;
+                        }
+                        const noConsensus = grp.spread !== null && grp.spread >= 3;
+                        return (
+                          <td key={g.role} className={noConsensus ? "item-group flag" : "item-group"}>
+                            {fmtScore(grp.mean)}
+                            {noConsensus && (
+                              <span className="consensus-flag" title="raters disagree by 3+ points"> ⚠</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                      <td className="item-group">
+                        {b.gap === null
+                          ? "—"
+                          : b.gap > 0
+                            ? `+${b.gap.toFixed(2)}`
+                            : b.gap.toFixed(2)}
+                      </td>
+                    </tr>,
+                  ];
+                  if (b.comments.length > 0) {
+                    rows.push(
+                      <tr key={`${b.behavior_id}-comments`} className="item-comments-row">
+                        <td colSpan={RATER_GROUPS_FOR_TABLE.length + 2} className="item-comments-cell">
+                          <ul className="item-comments-list">
+                            {b.comments.map((c, ci) => (
+                              <li key={ci}>
+                                <span className="item-comments-role">
+                                  {roleLabelShort(c.rater_role, rtl)}
+                                </span>
+                                <span className="item-comments-text">
+                                  &ldquo;{c.text}&rdquo;
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
                         </td>
-                      );
-                    })}
-                    <td className="item-group">
-                      {b.gap === null
-                        ? "—"
-                        : b.gap > 0
-                          ? `+${b.gap.toFixed(2)}`
-                          : b.gap.toFixed(2)}
-                    </td>
-                  </tr>
-                ))}
+                      </tr>
+                    );
+                  }
+                  return rows;
+                })}
               </tbody>
             </table>
           </div>
@@ -1081,6 +1458,11 @@ h4 { color: var(--vifm-primary); font-size: 11pt; font-weight: 700; margin: 3mm 
 .behavior-rank { display: inline-flex; align-items: center; justify-content: center; width: 6mm; height: 6mm; border-radius: 50%; background: var(--vifm-soft); color: var(--vifm-primary); font-size: 9pt; font-weight: 700; margin-right: 3mm; }
 .behavior-text { font-size: 10.5pt; color: var(--vifm-dark); display: flex; align-items: flex-start; gap: 1mm; }
 .behavior-meta { color: var(--vifm-muted); font-size: 9pt; margin-top: 1.5mm; padding-left: 9mm; display: flex; gap: 6mm; flex-wrap: wrap; }
+/* P3.4 AI development tip */
+.behavior-tip { margin: 2mm 0 0 9mm; padding: 3mm 4mm; border-left: 2.5pt solid var(--tone-develop); background: #FFFBEB; border-radius: 2mm; page-break-inside: avoid; }
+.behavior-tip-label { display: block; font-size: 7.5pt; font-weight: 700; color: var(--tone-develop); letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 1mm; }
+.behavior-tip-text { margin: 0; color: var(--vifm-dark); font-size: 10pt; line-height: 1.5; }
+.reflect-pdf[dir="rtl"] .behavior-tip { margin-left: 0; margin-right: 9mm; border-left: 0; border-right: 2.5pt solid var(--tone-develop); }
 .empty { color: var(--vifm-muted); font-style: italic; }
 
 /* Per-competency */
@@ -1134,6 +1516,16 @@ h4 { color: var(--vifm-primary); font-size: 11pt; font-weight: 700; margin: 3mm 
 .idp-row > span:first-child { color: var(--vifm-muted); font-size: 9pt; min-width: 42mm; }
 .idp-line { flex: 1; border-bottom: 0.6pt solid var(--vifm-border); height: 5mm; }
 
+/* P3.1 Cover wheel — Self vs Others polygons on a polar plot */
+.cover-wheel-wrap { margin-top: 12mm; padding: 4mm; background: white; border: 1px solid var(--vifm-border); border-radius: 3mm; max-width: 110mm; }
+.cover-wheel { display: block; }
+.cover-wheel-legend { display: flex; flex-wrap: wrap; gap: 4mm; justify-content: center; margin-top: 2mm; font-size: 8.5pt; color: var(--vifm-muted); }
+.cover-wheel-legend-item { display: inline-flex; align-items: center; gap: 1.5mm; }
+.cover-wheel-swatch { display: inline-block; width: 5mm; height: 2.5mm; border-radius: 0.5mm; }
+.cover-wheel-swatch-self { background: rgba(109, 40, 217, 0.18); border: 0.6pt dashed #6D28D9; }
+.cover-wheel-swatch-others { background: rgba(83, 145, 213, 0.20); border: 0.6pt solid #5391D5; }
+.cover-wheel-swatch-zone { background: rgba(217, 119, 6, 0.20); border: 0.4pt solid rgba(217, 119, 6, 0.5); }
+
 /* P2 reassessment — prior delta card + inline */
 .prior-card { display: flex; flex-direction: column; gap: 2mm; padding: 4mm 5mm; margin: 3mm 0 5mm; border-radius: 2.5mm; border: 1px solid var(--vifm-border); }
 .prior-card-up { background: linear-gradient(180deg, #ECFDF5 0%, #D1FAE5 100%); border-color: #6EE7B7; }
@@ -1185,6 +1577,35 @@ h4 { color: var(--vifm-primary); font-size: 11pt; font-weight: 700; margin: 3mm 
 .critical-mgr { color: #B45309; background: #FEF3C7; border: 0.5pt solid #FCD34D; }
 .reflect-pdf[dir="rtl"] .critical-pill { margin-left: 0; margin-right: 3mm; }
 
+/* P3.2 Reference Group Comparison */
+.rgc-legend { display: flex; flex-wrap: wrap; gap: 4mm; margin-bottom: 4mm; font-size: 9pt; color: var(--vifm-muted); padding: 2.5mm 4mm; background: var(--vifm-soft); border-radius: 2mm; }
+.rgc-legend-item { display: inline-flex; align-items: center; gap: 1.5mm; }
+.rgc-dot-swatch { display: inline-block; width: 3mm; height: 3mm; border-radius: 50%; }
+.rgc-axis { display: flex; justify-content: space-between; margin: 0 0 1mm 65mm; font-size: 8.5pt; color: var(--vifm-muted); font-variant-numeric: tabular-nums; }
+.rgc-axis-tick { width: 0; }
+.rgc-rows { display: grid; gap: 1.5mm; }
+.rgc-row { display: grid; grid-template-columns: 60mm 1fr; gap: 5mm; align-items: center; }
+.rgc-label { font-size: 9.5pt; color: var(--vifm-dark); }
+.rgc-track { position: relative; height: 6mm; background: var(--vifm-soft); border-radius: 1mm; }
+.rgc-zone { position: absolute; top: 0; bottom: 0; left: 62.5%; width: 18.75%; background: rgba(217, 119, 6, 0.15); }
+.rgc-grid { position: absolute; top: 0; bottom: 0; width: 0; border-left: 0.4pt solid var(--vifm-border); }
+.rgc-dot { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 5mm; height: 5mm; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 0.5pt white; }
+.rgc-dot-letter { color: white; font-size: 6.5pt; font-weight: 700; line-height: 1; }
+.reflect-pdf[dir="rtl"] .rgc-zone { left: auto; right: 62.5%; }
+
+/* P3.3 Strengths & Development Summary */
+.sds-strength-h { border-bottom: 0.6pt solid #047857; color: #047857; padding-bottom: 1mm; }
+.sds-dev-h { border-bottom: 0.6pt solid #B45309; color: #B45309; padding-bottom: 1mm; }
+.sds-list { list-style: none; padding: 0; margin: 0 0 4mm; }
+.sds-list li { display: flex; justify-content: space-between; align-items: baseline; gap: 4mm; padding: 2.5mm 0; border-bottom: 0.5pt solid var(--vifm-border); }
+.sds-list li:last-child { border-bottom: 0; }
+.sds-name { color: var(--vifm-dark); font-size: 10.5pt; }
+.sds-value { color: var(--vifm-primary); font-weight: 700; font-variant-numeric: tabular-nums; font-size: 11pt; }
+.sds-critical-tag { display: inline-block; margin-left: 3mm; font-size: 8pt; font-weight: 700; padding: 0.5mm 2mm; border-radius: 4mm; text-transform: uppercase; letter-spacing: 0.04em; line-height: 1.2; vertical-align: middle; }
+.sds-critical-strength { color: #047857; background: #D1FAE5; border: 0.5pt solid #6EE7B7; }
+.sds-critical-dev { color: #9F1239; background: #FEE2E2; border: 0.5pt solid #FCA5A5; }
+.reflect-pdf[dir="rtl"] .sds-critical-tag { margin-left: 0; margin-right: 3mm; }
+
 /* Item-level table */
 .item-table-card { margin-bottom: 4mm; page-break-inside: avoid; }
 .item-table { width: 100%; border-collapse: collapse; font-size: 9pt; margin-top: 1.5mm; }
@@ -1196,6 +1617,12 @@ h4 { color: var(--vifm-primary); font-size: 11pt; font-weight: 700; margin: 3mm 
 .item-table td.flag { background: rgba(217, 119, 6, 0.08); color: var(--vifm-dark); }
 .item-table .consensus-flag { color: #B45309; font-weight: 700; font-size: 8.5pt; }
 .item-table tr:last-child td { border-bottom: 0; }
+/* P4.2 per-behavior comments row */
+.item-comments-row td { background: var(--vifm-soft); padding: 2mm 4mm; border-bottom: 0.5pt solid var(--vifm-border); }
+.item-comments-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 1mm; }
+.item-comments-list li { display: grid; grid-template-columns: 22mm 1fr; gap: 3mm; align-items: baseline; }
+.item-comments-role { color: var(--vifm-accent); font-size: 8pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.item-comments-text { color: var(--vifm-dark); font-size: 9pt; line-height: 1.4; font-style: italic; }
 
 /* Verbatim Start/Stop/Continue */
 .verbatim-section { margin-bottom: 5mm; page-break-inside: avoid; }

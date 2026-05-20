@@ -54,6 +54,13 @@ export type BehaviorScore = {
    * nulled out when rater_count < anonymity_min_n.
    */
   by_group: RaterGroupScore[];
+  /**
+   * P4.2 per-behavior verbatim comments. The form collects an optional
+   * comment alongside each behaviour rating. Comments are anonymity-
+   * filtered the same way verbatims are: peer/direct_report/etc. only
+   * shown when the group meets the anonymity threshold.
+   */
+  comments: Array<{ rater_role: ReflectRaterRole; text: string }>;
 };
 
 export type ReflectRaterTenure =
@@ -144,6 +151,13 @@ export type CohortScoring = {
   rater_count: number;
   response_count: number;
   overall_mean: number | null;
+  /**
+   * P4.3 cohort prior-delta. Populated when this engagement has a
+   * prior_engagement_id and the prior has scored data. The per-
+   * competency `prior_mean` lets the report show "↑+0.4 vs prior".
+   */
+  prior_overall_mean: number | null;
+  prior_engagement_name: string | null;
   competencies: Array<{
     competency_id: string;
     name_en: string;
@@ -166,6 +180,8 @@ export type CohortScoring = {
       above: number;
       counted: number;
     };
+    /** Prior cohort mean for this competency, matched by name. Null otherwise. */
+    prior_mean: number | null;
   }>;
   participants: Array<{
     participant_id: string;
@@ -229,8 +245,12 @@ export const CONSENSUS_FLAG_SPREAD = 3;
 // ──────────────────────────────────────────────────────────────
 
 export async function computeParticipantScoring(
-  participantId: string
+  participantId: string,
+  /** Internal: cycle-guard for prior_participant_id chains. */
+  _visited: Set<string> = new Set<string>()
 ): Promise<ParticipantScoring | null> {
+  if (_visited.has(participantId)) return null;
+  _visited.add(participantId);
   const sb = createServiceClient();
 
   const { data: participant } = await sb
@@ -342,14 +362,15 @@ export async function computeParticipantScoring(
     }
   }
 
-  // Responses across all raters
+  // Responses across all raters. comment_text powers the P4.2 per-behavior
+  // verbatim section in the report.
   const raterIds = (raters ?? []).map((r) => r.id);
   const { data: responses } =
     raterIds.length === 0
-      ? { data: [] as Array<{ rater_id: string; behavior_id: string; score: number | null; is_na: boolean }> }
+      ? { data: [] as Array<{ rater_id: string; behavior_id: string; score: number | null; is_na: boolean; comment_text: string | null }> }
       : await sb
           .from("reflect_responses")
-          .select("rater_id, behavior_id, score, is_na")
+          .select("rater_id, behavior_id, score, is_na, comment_text")
           .in("rater_id", raterIds);
 
   // Index raters by id and by role
@@ -364,10 +385,19 @@ export async function computeParticipantScoring(
 
   // Index responses by rater + behavior. Drop is_na (excluded from means).
   const responsesByRater = new Map<string, Map<string, number>>();
+  // Separate comment map — comments are independent of score: a rater can
+  // mark N/A and still leave a comment about why.
+  const commentsByBehavior = new Map<string, Array<{ raterId: string; text: string }>>();
   for (const r of responses ?? []) {
-    if (r.score === null || r.is_na) continue;
-    if (!responsesByRater.has(r.rater_id)) responsesByRater.set(r.rater_id, new Map());
-    responsesByRater.get(r.rater_id)!.set(r.behavior_id, r.score);
+    if (r.score !== null && !r.is_na) {
+      if (!responsesByRater.has(r.rater_id)) responsesByRater.set(r.rater_id, new Map());
+      responsesByRater.get(r.rater_id)!.set(r.behavior_id, r.score);
+    }
+    if (r.comment_text && r.comment_text.trim().length > 0) {
+      const arr = commentsByBehavior.get(r.behavior_id) ?? [];
+      arr.push({ raterId: r.rater_id, text: r.comment_text.trim() });
+      commentsByBehavior.set(r.behavior_id, arr);
+    }
   }
 
   const min_n = engagement.anonymity_min_n;
@@ -536,6 +566,23 @@ export async function computeParticipantScoring(
       };
     });
 
+    // P4.2: per-behavior comments. Anonymity: only show a comment when
+    // its rater's group meets the min_n threshold for RESPONDED raters
+    // (not invited). Audit fix: was previously using total invited count
+    // which could de-anonymise a single peer when 4 others were invited
+    // but never responded. Self + manager are always shown.
+    const rawComments = commentsByBehavior.get(b.id) ?? [];
+    const visibleComments: Array<{ rater_role: ReflectRaterRole; text: string }> = [];
+    for (const c of rawComments) {
+      const meta = raterById.get(c.raterId);
+      if (!meta) continue;
+      const sensitive = meta.role !== "self" && meta.role !== "manager";
+      const respondedCount = (ratersByRole.get(meta.role) ?? [])
+        .filter((id) => responsesByRater.has(id)).length;
+      if (sensitive && respondedCount < min_n) continue;
+      visibleComments.push({ rater_role: meta.role, text: c.text });
+    }
+
     return {
       behavior_id: b.id,
       competency_id: b.competency_id,
@@ -546,6 +593,7 @@ export async function computeParticipantScoring(
       others_count: othersScores.length,
       gap: selfScore !== null && oMean !== null ? round2(selfScore - oMean) : null,
       by_group: behByGroup,
+      comments: visibleComments,
     };
   });
 
@@ -657,7 +705,10 @@ export async function computeParticipantScoring(
   let prior_overall_others: number | null = null;
   let prior_engagement_name: string | null = null;
   if (participant.prior_participant_id) {
-    const priorScoring = await computeParticipantScoring(participant.prior_participant_id);
+    const priorScoring = await computeParticipantScoring(
+      participant.prior_participant_id,
+      _visited
+    );
     if (priorScoring) {
       prior_overall_others = priorScoring.overall_others;
       prior_engagement_name = priorScoring.engagement_name;
@@ -712,17 +763,22 @@ export async function computeParticipantScoring(
 // ──────────────────────────────────────────────────────────────
 
 export async function computeCohortScoring(
-  engagementId: string
+  engagementId: string,
+  /** Internal: cycle-guard for prior_engagement_id chains. */
+  _visited: Set<string> = new Set<string>()
 ): Promise<CohortScoring | null> {
+  if (_visited.has(engagementId)) return null;
+  _visited.add(engagementId);
   const sb = createServiceClient();
 
   const { data: engagement } = await sb
     .from("reflect_engagements")
-    .select("id, name, ara_organizations(name)")
+    .select("id, name, prior_engagement_id, ara_organizations(name)")
     .eq("id", engagementId)
     .maybeSingle<{
       id: string;
       name: string;
+      prior_engagement_id: string | null;
       ara_organizations: { name: string } | null;
     }>();
   if (!engagement) return null;
@@ -742,6 +798,8 @@ export async function computeCohortScoring(
       rater_count: 0,
       response_count: 0,
       overall_mean: null,
+      prior_overall_mean: null,
+      prior_engagement_name: null,
       competencies: [],
       participants: [],
       top_strengths: [],
@@ -785,8 +843,12 @@ export async function computeCohortScoring(
         });
       }
       const entry = compMap.get(c.competency_id)!;
-      // Use others_mean for the cohort view (excludes self bias)
-      const m = c.others_mean ?? c.self_mean;
+      // P4.1 anonymity: cohort heatmap uses Others-mean ONLY. We
+      // deliberately do NOT fall back to self_mean — surfacing a
+      // self-only score in the cohort view would let the CHRO infer
+      // who hasn't yet gathered a real 360 dataset, which leaks the
+      // wrong signal (rater turnout) into the cohort capability view.
+      const m = c.others_mean;
       entry.perParticipant.set(s.participant_id, m);
       if (m !== null) {
         entry.sumOfMeans += m;
@@ -824,6 +886,7 @@ export async function computeCohortScoring(
             : null,
         per_participant_means: perParticipantArr,
         distribution,
+        prior_mean: null as number | null,
       };
     })
     .sort((a, b) => a.display_order - b.display_order);
@@ -871,6 +934,30 @@ export async function computeCohortScoring(
     )
     .eq("reflect_raters.reflect_participants.engagement_id", engagementId);
 
+  // P4.3 cohort prior-delta: pull the prior cohort, overlay per-
+  // competency means by name match. Same shape as the per-participant
+  // prior overlay so the report can render identical visuals.
+  let prior_overall_mean: number | null = null;
+  let prior_engagement_name: string | null = null;
+  if (engagement.prior_engagement_id) {
+    const priorCohort = await computeCohortScoring(
+      engagement.prior_engagement_id,
+      _visited
+    );
+    if (priorCohort) {
+      prior_overall_mean = priorCohort.overall_mean;
+      prior_engagement_name = priorCohort.engagement_name;
+      const priorByName = new Map<string, number | null>();
+      for (const pc of priorCohort.competencies) {
+        priorByName.set(pc.name_en.trim().toLowerCase(), pc.mean);
+      }
+      for (const c of competencies) {
+        const m = priorByName.get(c.name_en.trim().toLowerCase());
+        if (m !== undefined) c.prior_mean = m;
+      }
+    }
+  }
+
   return {
     engagement_id: engagement.id,
     engagement_name: engagement.name,
@@ -879,6 +966,8 @@ export async function computeCohortScoring(
     rater_count: raterCount ?? 0,
     response_count: responseCount ?? 0,
     overall_mean: round2(overallMean),
+    prior_overall_mean,
+    prior_engagement_name,
     competencies,
     participants: participantsRollup,
     top_strengths,

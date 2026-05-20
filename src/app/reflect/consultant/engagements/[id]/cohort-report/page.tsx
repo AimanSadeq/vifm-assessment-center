@@ -218,6 +218,39 @@ function CohortReport({
         </div>
       </section>
 
+      {/* P4.3 Cohort prior-delta — visible only when this is a reassessment */}
+      {scoring.prior_overall_mean !== null && (
+        <section className="page">
+          <h2>{rtl ? "مقارنة بالتقييم السابق على مستوى المجموعة" : "Cohort delta vs prior assessment"}</h2>
+          <p className="lead">
+            {rtl
+              ? `مقارنة بين هذه الدورة و: ${scoring.prior_engagement_name ?? "التقييم السابق"}. الأسهم الخضراء = تحسن، الحمراء = تراجع، الرمادية = ثبات (±0.2).`
+              : `Comparison against ${scoring.prior_engagement_name ?? "the prior assessment"}. Green arrows = improvement, red = decline, grey = flat (±0.2).`}
+          </p>
+
+          <div className="cohort-delta-overall">
+            <CohortPriorRow
+              label={rtl ? "المعدّل العام للمجموعة" : "Cohort overall"}
+              prior={scoring.prior_overall_mean}
+              current={scoring.overall_mean}
+              rtl={rtl}
+              emphasis
+            />
+          </div>
+
+          <h3>{rtl ? "حسب الكفاية" : "By competency"}</h3>
+          {scoring.competencies.map((c) => (
+            <CohortPriorRow
+              key={c.competency_id}
+              label={rtl ? c.name_ar ?? c.name_en : c.name_en}
+              prior={c.prior_mean}
+              current={c.mean}
+              rtl={rtl}
+            />
+          ))}
+        </section>
+      )}
+
       {/* Cohort training plan — VIFM programmes ranked by aggregated gap */}
       {recommendations.length > 0 && (
         <section className="page">
@@ -308,6 +341,47 @@ function CohortReport({
           </tbody>
         </table>
       </section>
+    </div>
+  );
+}
+
+/**
+ * P4.3 cohort delta row. Renders "label: prior → current  ↑+0.4" with
+ * a colour tone reflecting the delta size. Used in the bulk cohort-prior
+ * page and once with emphasis=true for the headline overall row.
+ */
+function CohortPriorRow({
+  label,
+  prior,
+  current,
+  rtl,
+  emphasis,
+}: {
+  label: string;
+  prior: number | null;
+  current: number | null;
+  rtl: boolean;
+  emphasis?: boolean;
+}) {
+  if (prior === null || current === null) {
+    return (
+      <div className={`cd-row cd-empty${emphasis ? " cd-emphasis" : ""}`}>
+        <span className="cd-label">{label}</span>
+        <span className="cd-missing">{rtl ? "لا توجد بيانات سابقة" : "no prior data"}</span>
+      </div>
+    );
+  }
+  const delta = current - prior;
+  const sign = delta > 0 ? "+" : "";
+  const tone = delta >= 0.2 ? "up" : delta <= -0.2 ? "down" : "flat";
+  const arrow = tone === "up" ? "↑" : tone === "down" ? "↓" : "→";
+  return (
+    <div className={`cd-row cd-${tone}${emphasis ? " cd-emphasis" : ""}`}>
+      <span className="cd-label">{label}</span>
+      <span className="cd-prior">{prior.toFixed(2)}</span>
+      <span className="cd-arrow">{arrow}</span>
+      <span className="cd-current">{current.toFixed(2)}</span>
+      <span className="cd-delta">{sign}{delta.toFixed(2)}</span>
     </div>
   );
 }
@@ -409,6 +483,26 @@ h3 { color: var(--vifm-primary); font-size: 12pt; font-weight: 700; margin: 4mm 
 .comp-table th.num { text-align: right; }
 .comp-table td { padding: 2.5mm 3mm; border-bottom: 0.6pt solid var(--vifm-border); }
 .comp-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* P4.3 cohort delta rows */
+.cohort-delta-overall { margin-bottom: 5mm; }
+.cd-row { display: grid; grid-template-columns: 1fr 14mm 8mm 14mm 18mm; gap: 3mm; align-items: baseline; padding: 1.8mm 3mm; border-bottom: 0.5pt solid var(--vifm-border); font-size: 9.5pt; }
+.cd-row:last-child { border-bottom: 0; }
+.cd-emphasis { padding: 3mm; border: 1px solid var(--vifm-border); border-radius: 2mm; background: var(--vifm-soft); margin-bottom: 4mm; font-size: 11pt; }
+.cd-emphasis .cd-label { font-weight: 700; color: var(--vifm-primary); }
+.cd-label { color: var(--vifm-dark); }
+.cd-prior, .cd-current, .cd-delta { font-variant-numeric: tabular-nums; text-align: right; }
+.cd-prior { color: var(--vifm-muted); }
+.cd-current { color: var(--vifm-primary); font-weight: 600; }
+.cd-arrow { text-align: center; font-weight: 700; }
+.cd-delta { font-weight: 700; padding: 0.2mm 1.5mm; border-radius: 2mm; }
+.cd-up .cd-arrow, .cd-up .cd-delta { color: #047857; }
+.cd-up .cd-delta { background: #D1FAE5; }
+.cd-down .cd-arrow, .cd-down .cd-delta { color: #9F1239; }
+.cd-down .cd-delta { background: #FEE2E2; }
+.cd-flat .cd-arrow, .cd-flat .cd-delta { color: var(--vifm-muted); }
+.cd-empty { color: var(--vifm-muted); font-style: italic; }
+.cd-missing { grid-column: 2 / -1; text-align: right; font-size: 9pt; }
 
 /* Cohort training plan — programme cards mirror the per-participant report */
 .programme-list { padding: 0; margin: 0; list-style: none; }

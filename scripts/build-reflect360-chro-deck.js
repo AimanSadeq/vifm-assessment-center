@@ -1,14 +1,19 @@
 /**
- * Build a CHRO briefing deck (.pptx) for VIFM Reflect 360.
+ * Build a CHRO briefing deck (.pptx) for VIFM Reflect 360 — MIAHONA edition.
  *
- * Audience: a CHRO who's about to ask "what is this and how does it run?"
- * Tone: high-level, story-led, no implementation jargon. 12 slides.
+ * Audience: MIAHONA CHRO + executive HR team. Customised against:
+ *   - MIAHONA Leadership Competencies (6 competencies × 4 proficiency levels)
+ *   - MIAHONA leadership population: 67 leaders (7 C-Suite / 13 Directors /
+ *     4 Senior Managers / 43 Managers)
+ *   - Colleague additions: business-impact slide, pilot deliverables, "Why
+ *     VIFM" positioning, security / data-hosting slide, embedded visuals.
  *
- * Reuses VIFM brand palette + slide-layout idioms from the existing
- * ARC deck builder so this looks like the same product family.
+ * Real product screenshots embedded from .tmp/deck-screenshots/* (rendered
+ * from the Reflect 360 PDF endpoints at 200 DPI).
  */
 
 const pptxgen = require("pptxgenjs");
+const path = require("path");
 
 // VIFM brand palette
 const C = {
@@ -28,40 +33,49 @@ const C = {
   hidden:   "6D28D9",
 };
 
-const FOOTER = "VIFM Reflect 360 . CHRO briefing . (c) Virginia Institute of Finance and Management";
+const FOOTER = "VIFM Reflect 360 . Prepared for MIAHONA . (c) Virginia Institute of Finance and Management";
+
+// Screenshot files (200-DPI PNG renders of the real Reflect 360 PDF output)
+const SHOTS_DIR = path.join(".tmp", "deck-screenshots");
+const SHOT = {
+  participantCover:    path.join(SHOTS_DIR, "participant-report-p01.png"),
+  participantSummary:  path.join(SHOTS_DIR, "participant-report-p03.png"),
+  participantDevelop:  path.join(SHOTS_DIR, "participant-report-p05.png"),
+  participantDetail:   path.join(SHOTS_DIR, "participant-report-p09.png"),
+  participantRefGroup: path.join(SHOTS_DIR, "participant-report-p10.png"),
+  cohortHeatmap:       path.join(SHOTS_DIR, "cohort-report-p02.png"),
+};
 
 const pres = new pptxgen();
 pres.layout = "LAYOUT_16x9";
 pres.author = "VIFM";
-pres.title = "VIFM Reflect 360 — CHRO Briefing";
+pres.title = "VIFM Reflect 360 — MIAHONA CHRO Briefing";
 pres.company = "Virginia Institute of Finance and Management";
 
 // ────────────────────────────────────────────────────────────────
-// 1 — Cover
+// 1 — Cover  (customised for MIAHONA)
 // ────────────────────────────────────────────────────────────────
 {
   const s = pres.addSlide();
   s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:10, h:5.625, fill:{color:C.primary}, line:{color:C.primary} });
   s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:0.18, h:5.625, fill:{color:C.accent}, line:{color:C.accent} });
-  // Stylised wheel as a decorative motif (matches the cover wheel inside the actual product report)
   s.addShape(pres.shapes.OVAL, { x:7.4, y:1.0, w:2.4, h:2.4, fill:{type:"solid", color:C.accent, transparency:80}, line:{color:C.accent, width:1.2} });
   s.addShape(pres.shapes.OVAL, { x:7.85, y:1.45, w:1.5, h:1.5, fill:{type:"solid", color:C.accent, transparency:70}, line:{color:C.accent, width:1} });
   s.addShape(pres.shapes.OVAL, { x:8.25, y:1.85, w:0.7, h:0.7, fill:{color:C.accent}, line:{color:C.accent} });
 
-  s.addText("[ CHRO BRIEFING ]", { x:0.4, y:0.25, w:6, h:0.28, fontSize:9, color:C.accent, fontFace:"Open Sans", charSpacing:3 });
+  s.addText("[ PREPARED FOR MIAHONA  .  CHRO BRIEFING ]", { x:0.4, y:0.25, w:7.5, h:0.28, fontSize:9, color:C.accent, fontFace:"Open Sans", charSpacing:3 });
   s.addText("VIFM Reflect 360", {
     x:0.4, y:1.0, w:7.5, h:1.3,
     fontSize:54, bold:true, color:C.white, fontFace:"Open Sans",
   });
-  s.addText("Leadership feedback. Built for the GCC. Connected to capability.", {
+  s.addText("Leadership feedback for your top 67. Mapped to MIAHONA's six competencies.", {
     x:0.4, y:2.55, w:7.0, h:0.9,
-    fontSize:18, color:C.light, fontFace:"Open Sans", italic:true,
+    fontSize:16, color:C.light, fontFace:"Open Sans", italic:true,
   });
 
   s.addShape(pres.shapes.RECTANGLE, { x:0.4, y:3.7, w:3.5, h:0.05, fill:{color:C.accent}, line:{color:C.accent} });
 
-  // Three at-a-glance tags
-  const tags = ["Bilingual EN + AR", "Custom framework", "Annual reassessment"];
+  const tags = ["Bilingual EN + AR", "Your 6 competencies", "4 proficiency levels"];
   tags.forEach((t, i) => {
     s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x:0.4 + i*2.7, y:3.95, w:2.5, h:0.5, rectRadius:0.05, fill:{color:C.navy}, line:{color:C.accent, width:0.5} });
     s.addText(t, { x:0.4 + i*2.7, y:3.95, w:2.5, h:0.5, fontSize:11, bold:true, color:C.white, fontFace:"Open Sans", align:"center", valign:"middle" });
@@ -79,14 +93,13 @@ pres.company = "Virginia Institute of Finance and Management";
   s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:10, h:5.625, fill:{color:C.offWhite}, line:{color:C.offWhite} });
   s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:0.18, h:5.625, fill:{color:C.accent}, line:{color:C.accent} });
   s.addText("[ THE QUESTION ON THE BOARDROOM TABLE ]", { x:0.4, y:0.25, w:6, h:0.28, fontSize:9, color:C.accent, fontFace:"Open Sans", charSpacing:3 });
-  s.addText("How are our leaders actually performing — and what do we do about it?", {
-    x:0.4, y:0.7, w:9.2, h:1.0, fontSize:22, bold:true, color:C.primary, fontFace:"Open Sans",
+  s.addText("How are MIAHONA's leaders actually performing — and what do we do about it?", {
+    x:0.4, y:0.7, w:9.2, h:1.0, fontSize:21, bold:true, color:C.primary, fontFace:"Open Sans",
   });
 
-  // 3 pain points in cards
   const pains = [
-    { h:"No common evidence base", b:"Performance reviews tell us what got done. They don't tell us how our leaders show up — or how their teams experience them." },
-    { h:"Feedback that goes nowhere", b:"Most 360 reports are a one-off PDF. Six months later nobody can show whether anything changed, or what training to invest in next." },
+    { h:"No common evidence base", b:"Performance reviews tell us what got done. They don't tell us how leaders show up against MIAHONA's six approved competencies, or how their teams experience them." },
+    { h:"Feedback that goes nowhere", b:"Most 360 reports are a one-off PDF. Twelve months later nobody can show whether anything changed, or which programmes to invest in next." },
     { h:"Generic, foreign frameworks", b:"Off-the-shelf 360 tools were built for US and UK leaders. They translate the words but not the cultural context, and never the language." },
   ];
   pains.forEach((p, i) => {
@@ -94,17 +107,100 @@ pres.company = "Virginia Institute of Finance and Management";
     s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y:2.0, w:3.0, h:2.6, rectRadius:0.1, fill:{color:C.white}, line:{color:C.pale, width:1} });
     s.addShape(pres.shapes.RECTANGLE, { x, y:2.0, w:3.0, h:0.08, fill:{color:C.accent}, line:{color:C.accent} });
     s.addText(p.h, { x:x+0.2, y:2.25, w:2.6, h:0.6, fontSize:14, bold:true, color:C.primary, fontFace:"Open Sans" });
-    s.addText(p.b, { x:x+0.2, y:2.9, w:2.6, h:1.6, fontSize:11, color:C.text, fontFace:"Open Sans", wrap:true });
+    s.addText(p.b, { x:x+0.2, y:2.9, w:2.6, h:1.6, fontSize:10.5, color:C.text, fontFace:"Open Sans", wrap:true });
   });
 
-  s.addText("Reflect 360 is VIFM's answer to all three.", {
-    x:0.4, y:4.85, w:9.2, h:0.40, fontSize:14, italic:true, color:C.accent, fontFace:"Open Sans", align:"center",
+  s.addText("Reflect 360 is VIFM's answer to all three — built around your framework, not ours.", {
+    x:0.4, y:4.85, w:9.2, h:0.40, fontSize:13, italic:true, color:C.accent, fontFace:"Open Sans", align:"center",
   });
   s.addText(FOOTER, { x:0.4, y:5.22, w:9.2, h:0.25, fontSize:8, color:C.textMute, fontFace:"Open Sans" });
 }
 
 // ────────────────────────────────────────────────────────────────
-// 3 — What Reflect 360 is (split panel)
+// 3 — What's in it for MIAHONA  (business impact — NEW)
+// ────────────────────────────────────────────────────────────────
+{
+  const s = pres.addSlide();
+  s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:10, h:5.625, fill:{color:C.offWhite}, line:{color:C.offWhite} });
+  s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:0.18, h:5.625, fill:{color:C.accent}, line:{color:C.accent} });
+  s.addText("[ WHAT'S IN IT FOR MIAHONA ]", { x:0.4, y:0.25, w:5, h:0.28, fontSize:9, color:C.accent, fontFace:"Open Sans", charSpacing:3 });
+  s.addText("Five outcomes the CHRO can defend to the board", {
+    x:0.4, y:0.7, w:9.2, h:0.5, fontSize:22, bold:true, color:C.primary, fontFace:"Open Sans",
+  });
+
+  const impacts = [
+    { h:"Retention",            b:"Honest, structured feedback signals MIAHONA invests in its leaders. Reduces the silent attrition of high-potential talent." },
+    { h:"Succession readiness", b:"Identifies who is ready now, who is ready in 12-24 months, and who needs more time for each level above them." },
+    { h:"Leadership pipeline",  b:"Heatmap of capability across Managers → Directors → C-Suite. Names the bench strength gaps before they become hiring crises." },
+    { h:"Culture alignment",    b:"Triangulates self vs others vs manager on every behaviour. Shows whether stated values are lived behaviour." },
+    { h:"Reduced risk",         b:"Decision Quality + Strategic Mindset measured at the team level. Catches governance blind spots before they hit operations." },
+  ];
+
+  // Single row of five cards
+  impacts.forEach((it, i) => {
+    const x = 0.4 + i*1.88;
+    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y:1.6, w:1.78, h:3.3, rectRadius:0.10, fill:{color:C.white}, line:{color:C.pale, width:1} });
+    s.addShape(pres.shapes.RECTANGLE, { x, y:1.6, w:1.78, h:0.55, fill:{color:C.primary}, line:{color:C.primary} });
+    s.addText(it.h, { x:x+0.1, y:1.6, w:1.58, h:0.55, fontSize:13, bold:true, color:C.white, fontFace:"Open Sans", align:"center", valign:"middle" });
+    s.addText(it.b, { x:x+0.15, y:2.30, w:1.48, h:2.5, fontSize:10, color:C.text, fontFace:"Open Sans", wrap:true });
+  });
+
+  s.addShape(pres.shapes.RECTANGLE, { x:0.4, y:5.05, w:9.2, h:0.10, fill:{color:C.accent}, line:{color:C.accent} });
+  s.addText("Each outcome is evidenced in the Individual + Cohort reports MIAHONA receives at the end of the pilot.", {
+    x:0.4, y:5.20, w:9.2, h:0.30, fontSize:10, italic:true, color:C.accent, fontFace:"Open Sans", align:"center",
+  });
+  s.addText(FOOTER, { x:0.4, y:5.45, w:9.2, h:0.20, fontSize:8, color:C.textMute, fontFace:"Open Sans" });
+}
+
+// ────────────────────────────────────────────────────────────────
+// 4 — Pilot scope: 67 MIAHONA leaders  (NEW from client email)
+// ────────────────────────────────────────────────────────────────
+{
+  const s = pres.addSlide();
+  s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:10, h:5.625, fill:{color:C.primary}, line:{color:C.primary} });
+  s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:0.18, h:5.625, fill:{color:C.accent}, line:{color:C.accent} });
+  s.addText("[ PILOT SCOPE  .  THE 67 LEADERS ]", { x:0.4, y:0.25, w:5, h:0.28, fontSize:9, color:C.accent, fontFace:"Open Sans", charSpacing:3 });
+  s.addText("MIAHONA's leadership population", {
+    x:0.4, y:0.7, w:9.2, h:0.5, fontSize:22, bold:true, color:C.white, fontFace:"Open Sans",
+  });
+  s.addText("Population shared by MIAHONA HR — this is what the pilot covers, end to end.", {
+    x:0.4, y:1.20, w:9.2, h:0.30, fontSize:11, italic:true, color:C.light, fontFace:"Open Sans",
+  });
+
+  // Big number on the left
+  s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x:0.4, y:1.75, w:2.7, h:3.3, rectRadius:0.15, fill:{color:C.navy}, line:{color:C.accent, width:1} });
+  s.addShape(pres.shapes.RECTANGLE, { x:0.4, y:1.75, w:0.08, h:3.3, fill:{color:C.accent}, line:{color:C.accent} });
+  s.addText("LEADERS IN SCOPE", { x:0.5, y:1.9, w:2.5, h:0.3, fontSize:10, color:C.accent, fontFace:"Open Sans", charSpacing:2, align:"center" });
+  s.addText("67", { x:0.5, y:2.25, w:2.5, h:1.6, fontSize:96, bold:true, color:C.white, fontFace:"Open Sans", align:"center" });
+  s.addText("~10 raters each", { x:0.5, y:3.95, w:2.5, h:0.35, fontSize:13, color:C.light, fontFace:"Open Sans", italic:true, align:"center" });
+  s.addText("= ~670 raters in total", { x:0.5, y:4.35, w:2.5, h:0.35, fontSize:13, bold:true, color:C.accent, fontFace:"Open Sans", align:"center" });
+
+  // Four tiers as horizontal bars sized proportionally
+  const tiers = [
+    { label:"Executive / C-Suite",   n:7,  pct: 7/67  },
+    { label:"Directors",             n:13, pct: 13/67 },
+    { label:"Senior Managers",       n:4,  pct: 4/67  },
+    { label:"Managers",              n:43, pct: 43/67 },
+  ];
+  // Find max for visual scaling
+  const maxN = Math.max(...tiers.map(t => t.n));
+  tiers.forEach((t, i) => {
+    const y = 1.85 + i*0.78;
+    s.addText(t.label, { x:3.3, y, w:2.2, h:0.30, fontSize:12, bold:true, color:C.white, fontFace:"Open Sans" });
+    // Bar background
+    s.addShape(pres.shapes.RECTANGLE, { x:3.3, y:y+0.35, w:5.8, h:0.32, fill:{color:C.navy}, line:{color:C.navy} });
+    // Bar fill proportional to tier size
+    const fillW = 5.8 * (t.n / maxN);
+    s.addShape(pres.shapes.RECTANGLE, { x:3.3, y:y+0.35, w:fillW, h:0.32, fill:{color:C.accent}, line:{color:C.accent} });
+    // Number
+    s.addText(`${t.n}`, { x:9.15, y:y+0.30, w:0.65, h:0.4, fontSize:18, bold:true, color:C.white, fontFace:"Open Sans", align:"left" });
+  });
+
+  s.addText(FOOTER, { x:0.4, y:5.22, w:9.2, h:0.25, fontSize:8, color:C.navy, fontFace:"Open Sans" });
+}
+
+// ────────────────────────────────────────────────────────────────
+// 5 — What Reflect 360 is (split panel)
 // ────────────────────────────────────────────────────────────────
 {
   const s = pres.addSlide();
@@ -128,8 +224,8 @@ pres.company = "Virginia Institute of Finance and Management";
   const bullets = [
     "A 360-degree leadership feedback platform built from scratch for VIFM — not a re-branded vendor product.",
     "Bilingual end-to-end with proper Arabic RTL shaping on every screen, every report, every email.",
-    "Custom frameworks per engagement: clone a VIFM template, import from a job description, or build from scratch.",
-    "Plugged into VIFM's training catalogue so each leader sees the programmes that close their specific gaps.",
+    "Custom frameworks per engagement: for MIAHONA, the six approved competencies are loaded as-is, with Arabic text supplied.",
+    "Plugged into VIFM's 127-programme training catalogue so each leader sees the programmes that close their specific gaps.",
     "Built for the long game: annual reassessment with year-on-year delta arrows shows whether development actually moved the needle.",
   ];
   bullets.forEach((b, i) => {
@@ -140,7 +236,62 @@ pres.company = "Virginia Institute of Finance and Management";
 }
 
 // ────────────────────────────────────────────────────────────────
-// 4 — The six-stage engagement workflow
+// 6 — Mapped to MIAHONA's 6 competencies  (NEW from PDF)
+// ────────────────────────────────────────────────────────────────
+{
+  const s = pres.addSlide();
+  s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:10, h:5.625, fill:{color:C.offWhite}, line:{color:C.offWhite} });
+  s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:0.18, h:5.625, fill:{color:C.accent}, line:{color:C.accent} });
+  s.addText("[ MAPPED TO YOUR FRAMEWORK ]", { x:0.4, y:0.25, w:5, h:0.28, fontSize:9, color:C.accent, fontFace:"Open Sans", charSpacing:3 });
+  s.addText("MIAHONA's six competencies — measured at four proficiency levels", {
+    x:0.4, y:0.7, w:9.2, h:0.5, fontSize:19, bold:true, color:C.primary, fontFace:"Open Sans",
+  });
+  s.addText("Source: MIAHONA Approved Competencies (Foundational & Leadership). No reframing, no translation drift.", {
+    x:0.4, y:1.15, w:9.2, h:0.30, fontSize:10, italic:true, color:C.textMute, fontFace:"Open Sans",
+  });
+
+  // 6 competencies as 2 rows × 3 cols
+  const comps = [
+    { h:"Customer Focus",            b:"Building strong customer relationships and delivering customer-centric solutions." },
+    { h:"Communicates Effectively",  b:"Developing and delivering multi-mode communications across diverse audiences." },
+    { h:"Strategic Mindset",         b:"Seeing ahead to future possibilities and translating them into breakthrough strategies." },
+    { h:"Drives Results",            b:"Consistently achieving results, even under tough circumstances." },
+    { h:"Builds Effective Teams",    b:"Building strong-identity teams that apply diverse skills toward common goals." },
+    { h:"Decision Quality",          b:"Making good and timely decisions that keep the organisation moving forward." },
+  ];
+  comps.forEach((c, i) => {
+    const col = i % 3, row = Math.floor(i / 3);
+    const x = 0.4 + col*3.2;
+    const y = 1.65 + row*1.3;
+    s.addShape(pres.shapes.RECTANGLE, { x, y, w:3.0, h:1.2, fill:{color:C.white}, line:{color:C.pale, width:1} });
+    s.addShape(pres.shapes.RECTANGLE, { x, y, w:0.06, h:1.2, fill:{color:C.accent}, line:{color:C.accent} });
+    s.addText(c.h, { x:x+0.15, y:y+0.10, w:2.75, h:0.35, fontSize:12, bold:true, color:C.primary, fontFace:"Open Sans" });
+    s.addText(c.b, { x:x+0.15, y:y+0.48, w:2.75, h:0.65, fontSize:9.5, color:C.text, fontFace:"Open Sans", wrap:true });
+  });
+
+  // 4-level model row
+  s.addShape(pres.shapes.RECTANGLE, { x:0.4, y:4.40, w:9.2, h:0.60, fill:{color:C.primary}, line:{color:C.primary} });
+  const levels = [
+    { lvl:"L1", lab:"Contributing Dependently"  },
+    { lvl:"L2", lab:"Contributing Independently"},
+    { lvl:"L3", lab:"Contributing Through Others"},
+    { lvl:"L4", lab:"Contributing Strategically"},
+  ];
+  levels.forEach((lv, i) => {
+    const x = 0.4 + i*2.3;
+    s.addShape(pres.shapes.RECTANGLE, { x, y:4.40, w:0.45, h:0.60, fill:{color:C.accent}, line:{color:C.accent} });
+    s.addText(lv.lvl, { x, y:4.40, w:0.45, h:0.60, fontSize:14, bold:true, color:C.white, fontFace:"Open Sans", align:"center", valign:"middle" });
+    s.addText(lv.lab, { x:x+0.5, y:4.40, w:1.8, h:0.60, fontSize:10, color:C.light, fontFace:"Open Sans", valign:"middle" });
+  });
+
+  s.addText("Each behaviour is scored on a 5-point scale; the four MIAHONA proficiency tiers are derived from the behaviours mapped to each level.", {
+    x:0.4, y:5.10, w:9.2, h:0.30, fontSize:9.5, italic:true, color:C.accent, fontFace:"Open Sans", align:"center",
+  });
+  s.addText(FOOTER, { x:0.4, y:5.40, w:9.2, h:0.20, fontSize:8, color:C.textMute, fontFace:"Open Sans" });
+}
+
+// ────────────────────────────────────────────────────────────────
+// 7 — The six-stage engagement workflow
 // ────────────────────────────────────────────────────────────────
 {
   const s = pres.addSlide();
@@ -150,19 +301,18 @@ pres.company = "Virginia Institute of Finance and Management";
   s.addText("Six stages, end to end", {
     x:0.4, y:0.7, w:9.2, h:0.5, fontSize:22, bold:true, color:C.primary, fontFace:"Open Sans",
   });
-  s.addText("A typical cohort runs in 6–8 weeks. Consultant-led at every stage.", {
+  s.addText("Pilot cycle for MIAHONA's 67 leaders: 6–8 weeks, consultant-led at every stage.", {
     x:0.4, y:1.20, w:9.2, h:0.35, fontSize:12, italic:true, color:C.textMute, fontFace:"Open Sans",
   });
 
   const stages = [
-    { n:"1", h:"Discovery",        b:"Frame the leadership question. Who's in scope, what's the decision the report should inform." },
-    { n:"2", h:"Framework setup",  b:"Clone a VIFM template, build custom, or extract competencies from a job description with AI." },
-    { n:"3", h:"Cohort enrolment", b:"Add participants + each leader's raters (manager, peers, direct reports). CSV upload supported." },
+    { n:"1", h:"Discovery",        b:"Confirm scope, decisions the report should inform, communication plan with the MIAHONA HR office." },
+    { n:"2", h:"Framework setup",  b:"Load the six MIAHONA competencies + behaviours. Add Arabic translations supplied by MIAHONA." },
+    { n:"3", h:"Cohort enrolment", b:"Enrol the 67 leaders + each one's raters (manager, peers, direct reports). CSV bulk-load supported." },
     { n:"4", h:"Field window",     b:"Raters complete a bilingual mobile-ready form. Auto-reminders. Anonymity enforced from day one." },
-    { n:"5", h:"Report & debrief", b:"Individual report (12 sections) for each leader + cohort report for the HR office. 1:1 debrief by VIFM coach." },
+    { n:"5", h:"Report & debrief", b:"Individual report (12 sections) for each leader + cohort report for MIAHONA's HR office. 1:1 debriefs by VIFM coach." },
     { n:"6", h:"Develop & reassess", b:"IDP in Keep/Stop/Start frame, paired with VIFM courses. Reassess 12 months later with delta arrows." },
   ];
-  // 2 rows × 3 cols
   stages.forEach((st, i) => {
     const col = i % 3, row = Math.floor(i / 3);
     const x = 0.4 + col*3.2;
@@ -171,57 +321,13 @@ pres.company = "Virginia Institute of Finance and Management";
     s.addShape(pres.shapes.OVAL, { x:x+0.2, y:y+0.2, w:0.55, h:0.55, fill:{color:C.accent}, line:{color:C.accent} });
     s.addText(st.n, { x:x+0.2, y:y+0.2, w:0.55, h:0.55, fontSize:18, bold:true, color:C.white, fontFace:"Open Sans", align:"center", valign:"middle" });
     s.addText(st.h, { x:x+0.85, y:y+0.18, w:2.0, h:0.4, fontSize:13, bold:true, color:C.primary, fontFace:"Open Sans" });
-    s.addText(st.b, { x:x+0.2, y:y+0.80, w:2.7, h:0.65, fontSize:10, color:C.text, fontFace:"Open Sans", wrap:true });
+    s.addText(st.b, { x:x+0.2, y:y+0.80, w:2.7, h:0.65, fontSize:9.5, color:C.text, fontFace:"Open Sans", wrap:true });
   });
   s.addText(FOOTER, { x:0.4, y:5.22, w:9.2, h:0.25, fontSize:8, color:C.textMute, fontFace:"Open Sans" });
 }
 
 // ────────────────────────────────────────────────────────────────
-// 5 — Framework: three ways to set one up
-// ────────────────────────────────────────────────────────────────
-{
-  const s = pres.addSlide();
-  s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:10, h:5.625, fill:{color:C.offWhite}, line:{color:C.offWhite} });
-  s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:0.18, h:5.625, fill:{color:C.accent}, line:{color:C.accent} });
-  s.addText("[ STAGE 2 — FRAMEWORK SETUP ]", { x:0.4, y:0.25, w:5, h:0.28, fontSize:9, color:C.accent, fontFace:"Open Sans", charSpacing:3 });
-  s.addText("Three ways to define what \"good leadership\" looks like for this cohort", {
-    x:0.4, y:0.7, w:9.2, h:0.7, fontSize:18, bold:true, color:C.primary, fontFace:"Open Sans",
-  });
-
-  const opts = [
-    {
-      title:"Clone a VIFM template",
-      sub:"Fastest",
-      body:"Pick from a library of curated frameworks (Banking Leadership, Government Manager, Treasury Lead) and tweak the wording. Behaviours are pre-translated to Arabic.",
-    },
-    {
-      title:"Extract from a Job Description",
-      sub:"Most relevant",
-      body:"Paste the leader's JD. Claude reads it and proposes 6–10 competencies with rationale. Consultant reviews, accepts, edits.",
-    },
-    {
-      title:"Build from scratch",
-      sub:"Bespoke",
-      body:"Some clients (Treasury, Risk) need a framework that mirrors their internal capability model. The platform lets the consultant author every competency and behaviour by hand.",
-    },
-  ];
-
-  opts.forEach((o, i) => {
-    const x = 0.4 + i*3.2;
-    s.addShape(pres.shapes.RECTANGLE, { x, y:1.65, w:3.0, h:3.3, fill:{color:C.white}, line:{color:C.pale, width:1} });
-    s.addShape(pres.shapes.RECTANGLE, { x, y:1.65, w:3.0, h:0.55, fill:{color:C.primary}, line:{color:C.primary} });
-    s.addText(o.title, { x:x+0.15, y:1.65, w:2.7, h:0.55, fontSize:13, bold:true, color:C.white, fontFace:"Open Sans", valign:"middle" });
-    s.addText(o.sub, { x:x+0.2, y:2.30, w:2.6, h:0.30, fontSize:10, italic:true, color:C.accent, fontFace:"Open Sans" });
-    s.addText(o.body, { x:x+0.2, y:2.65, w:2.6, h:2.1, fontSize:11, color:C.text, fontFace:"Open Sans", wrap:true });
-  });
-  s.addText("Every framework is bilingual. Every behaviour has an English text and an Arabic text. The respondent sees the language they prefer.", {
-    x:0.4, y:5.05, w:9.2, h:0.30, fontSize:10, italic:true, color:C.accent, fontFace:"Open Sans", align:"center",
-  });
-  s.addText(FOOTER, { x:0.4, y:5.35, w:9.2, h:0.25, fontSize:8, color:C.textMute, fontFace:"Open Sans" });
-}
-
-// ────────────────────────────────────────────────────────────────
-// 6 — The respondent experience
+// 8 — The respondent experience
 // ────────────────────────────────────────────────────────────────
 {
   const s = pres.addSlide();
@@ -232,7 +338,6 @@ pres.company = "Virginia Institute of Finance and Management";
     x:0.4, y:0.7, w:9.2, h:0.5, fontSize:22, bold:true, color:C.white, fontFace:"Open Sans",
   });
 
-  // Left: phone-shaped mock with a few features as bullets inside
   s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x:0.5, y:1.5, w:3.0, h:3.6, rectRadius:0.2, fill:{color:C.navy}, line:{color:C.accent, width:1.5} });
   s.addText("[ MOBILE-READY FORM ]", { x:0.55, y:1.65, w:2.9, h:0.25, fontSize:8, color:C.accent, fontFace:"Open Sans", charSpacing:2, align:"center" });
   s.addText("Listens openly to all viewpoints", { x:0.6, y:2.0, w:2.8, h:0.4, fontSize:10, bold:true, color:C.white, fontFace:"Open Sans" });
@@ -245,7 +350,6 @@ pres.company = "Virginia Institute of Finance and Management";
   s.addShape(pres.shapes.RECTANGLE, { x:0.6, y:3.45, w:2.8, h:0.04, fill:{color:C.accent}, line:{color:C.accent} });
   s.addText("Save & resume . Bilingual . 15-20 min", { x:0.6, y:3.55, w:2.8, h:0.3, fontSize:9, color:C.light, fontFace:"Open Sans" });
 
-  // Right: feature list
   const features = [
     "Bilingual: respondent picks English or Arabic at the top of every page. Full RTL layout when Arabic.",
     "Anonymity from day one: scores from peers / direct reports never show until at least 3 raters in that group have responded.",
@@ -263,104 +367,124 @@ pres.company = "Virginia Institute of Finance and Management";
 }
 
 // ────────────────────────────────────────────────────────────────
-// 7 — The individual leader's report (the heart of the product)
+// 9 — Individual leader's report  +  REAL SCREENSHOTS
 // ────────────────────────────────────────────────────────────────
 {
   const s = pres.addSlide();
   s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:10, h:5.625, fill:{color:C.offWhite}, line:{color:C.offWhite} });
   s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:0.18, h:5.625, fill:{color:C.accent}, line:{color:C.accent} });
   s.addText("[ STAGE 5 — INDIVIDUAL REPORT ]", { x:0.4, y:0.25, w:5, h:0.28, fontSize:9, color:C.accent, fontFace:"Open Sans", charSpacing:3 });
-  s.addText("What each leader gets in their PDF", {
+  s.addText("What each MIAHONA leader receives", {
     x:0.4, y:0.7, w:9.2, h:0.5, fontSize:22, bold:true, color:C.primary, fontFace:"Open Sans",
   });
-  s.addText("12 sections. Bilingual. Confidential to the leader and their VIFM coach.", {
-    x:0.4, y:1.20, w:9.2, h:0.30, fontSize:11, italic:true, color:C.textMute, fontFace:"Open Sans",
-  });
+  s.addText("12 sections, bilingual, confidential to the leader and their VIFM coach. Actual product output shown below.",
+    { x:0.4, y:1.20, w:9.2, h:0.30, fontSize:10, italic:true, color:C.textMute, fontFace:"Open Sans" });
 
+  // Left panel: 6 most important sections
   const sections = [
-    { h:"Cover wheel",                    b:"Self vs Others polygons on the competency axes" },
-    { h:"Summary KPIs",                   b:"Overall mean, self-view, others' view, gap" },
-    { h:"Critical-competency alignment",  b:"Self + Manager pick — alignment % + breakdown" },
-    { h:"Strengths & Development",        b:"Top-5 strengths, top-5 dev areas, ranked" },
-    { h:"Blind spots / Hidden strengths", b:"Triangulated Self-vs-Others gaps, auto-flagged" },
-    { h:"Per-competency detail",          b:"Bars per rater group with Favorable Zone band" },
-    { h:"Reference group comparison",     b:"Every group, every competency, one page" },
-    { h:"Item-level table",               b:"Every behaviour, every group, consensus flags" },
-    { h:"Verbatims",                      b:"Start / Stop / Continue in raters' own words" },
-    { h:"AI coaching tips",               b:"60-90 word actionable tip per dev-area behaviour" },
-    { h:"Recommended VIFM programmes",    b:"Top-5 courses with HIGH FIT badging" },
-    { h:"IDP scaffold",                   b:"Keep / Stop / Start, ready for the debrief" },
+    { h:"Cover wheel",                    b:"Self vs Others polygons" },
+    { h:"Summary KPIs",                   b:"Overall mean . self . others . gap" },
+    { h:"Critical-competency alignment",  b:"Self + Manager picks vs reality" },
+    { h:"Strengths & Development",        b:"Top-5 each, ranked" },
+    { h:"Blind spots / Hidden strengths", b:"Triangulated Self-vs-Others gaps" },
+    { h:"Verbatim comments",              b:"Start / Stop / Continue, in raters' own words" },
   ];
-
-  // 3 columns x 4 rows
   sections.forEach((sec, i) => {
-    const col = i % 3, row = Math.floor(i / 3);
-    const x = 0.4 + col*3.2;
-    const y = 1.65 + row*0.85;
-    s.addShape(pres.shapes.RECTANGLE, { x, y, w:3.0, h:0.78, fill:{color:C.white}, line:{color:C.pale, width:0.5} });
-    s.addShape(pres.shapes.RECTANGLE, { x, y, w:0.05, h:0.78, fill:{color:C.accent}, line:{color:C.accent} });
-    s.addText(sec.h, { x:x+0.15, y:y+0.06, w:2.75, h:0.32, fontSize:11, bold:true, color:C.primary, fontFace:"Open Sans" });
-    s.addText(sec.b, { x:x+0.15, y:y+0.36, w:2.75, h:0.40, fontSize:9, color:C.text, fontFace:"Open Sans", wrap:true });
+    const y = 1.65 + i*0.55;
+    s.addShape(pres.shapes.RECTANGLE, { x:0.4, y, w:4.0, h:0.50, fill:{color:C.white}, line:{color:C.pale, width:0.5} });
+    s.addShape(pres.shapes.RECTANGLE, { x:0.4, y, w:0.05, h:0.50, fill:{color:C.accent}, line:{color:C.accent} });
+    s.addText(sec.h, { x:0.55, y:y+0.04, w:3.85, h:0.25, fontSize:11, bold:true, color:C.primary, fontFace:"Open Sans" });
+    s.addText(sec.b, { x:0.55, y:y+0.27, w:3.85, h:0.22, fontSize:9, color:C.text, fontFace:"Open Sans" });
   });
 
-  s.addText("Available in English, Arabic, or side-by-side bilingual. Generated as PDF on demand.", {
-    x:0.4, y:5.10, w:9.2, h:0.30, fontSize:10, italic:true, color:C.accent, fontFace:"Open Sans", align:"center",
-  });
-  s.addText(FOOTER, { x:0.4, y:5.35, w:9.2, h:0.25, fontSize:8, color:C.textMute, fontFace:"Open Sans" });
+  // Right side: two real screenshots side-by-side
+  // Portrait images at aspect 1653×2339 ≈ 0.707 (w/h)
+  // Image height 3.5"  →  width 2.475"
+  // Two images: 2.475 + 0.10 gap + 2.475 = 5.05" total, fit in 5.0" wide right panel
+  s.addText("ACTUAL PRODUCT PAGES", { x:4.75, y:1.65, w:5.0, h:0.25, fontSize:8, color:C.accent, fontFace:"Open Sans", charSpacing:2 });
+  s.addImage({ path:SHOT.participantCover,    x:4.75, y:1.95, w:2.45, h:3.46, sizing:{type:"contain", w:2.45, h:3.46} });
+  s.addImage({ path:SHOT.participantRefGroup, x:7.30, y:1.95, w:2.45, h:3.46, sizing:{type:"contain", w:2.45, h:3.46} });
+  s.addText("Cover wheel + KPIs", { x:4.75, y:5.42, w:2.45, h:0.20, fontSize:8, color:C.textMute, fontFace:"Open Sans", align:"center", italic:true });
+  s.addText("Reference Group Comparison", { x:7.30, y:5.42, w:2.45, h:0.20, fontSize:8, color:C.textMute, fontFace:"Open Sans", align:"center", italic:true });
+
+  s.addText(FOOTER, { x:0.4, y:5.42, w:4.2, h:0.20, fontSize:8, color:C.textMute, fontFace:"Open Sans" });
 }
 
 // ────────────────────────────────────────────────────────────────
-// 8 — The cohort report (for the HR office)
+// 10 — AI coaching tips  +  REAL SCREENSHOT (development page)
+// ────────────────────────────────────────────────────────────────
+{
+  const s = pres.addSlide();
+  s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:10, h:5.625, fill:{color:C.offWhite}, line:{color:C.offWhite} });
+  s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:0.18, h:5.625, fill:{color:C.accent}, line:{color:C.accent} });
+  s.addText("[ INSIDE THE REPORT ]", { x:0.4, y:0.25, w:5, h:0.28, fontSize:9, color:C.accent, fontFace:"Open Sans", charSpacing:3 });
+  s.addText("Every development area comes with a coaching tip", {
+    x:0.4, y:0.7, w:9.2, h:0.5, fontSize:22, bold:true, color:C.primary, fontFace:"Open Sans",
+  });
+  s.addText("Generated by Claude against the leader's specific behaviours — not a stock library.",
+    { x:0.4, y:1.20, w:9.2, h:0.30, fontSize:11, italic:true, color:C.textMute, fontFace:"Open Sans" });
+
+  // Left: explanation
+  const tips = [
+    { h:"60-90 words",         b:"Long enough to be useful in a 1:1, short enough to scan in a coaching session." },
+    { h:"Bilingual EN + AR",   b:"Same content, same length, same level of concreteness — Modern Standard Arabic." },
+    { h:"Context-aware",       b:"Anchored to the leader's current rating: below 3 = focus on basics; 3-3.5 = focus on consistency." },
+    { h:"Action-oriented",     b:"Names a specific meeting, project, or conversation in the next 2-4 weeks — not generic advice." },
+    { h:"Consultant-editable", b:"VIFM coach can override or refine before the final PDF is generated." },
+  ];
+  tips.forEach((t, i) => {
+    const y = 1.65 + i*0.72;
+    s.addShape(pres.shapes.RECTANGLE, { x:0.4, y, w:5.0, h:0.66, fill:{color:C.white}, line:{color:C.pale, width:0.5} });
+    s.addShape(pres.shapes.RECTANGLE, { x:0.4, y, w:0.06, h:0.66, fill:{color:C.accent}, line:{color:C.accent} });
+    s.addText(t.h, { x:0.55, y:y+0.05, w:4.85, h:0.25, fontSize:11, bold:true, color:C.primary, fontFace:"Open Sans" });
+    s.addText(t.b, { x:0.55, y:y+0.30, w:4.85, h:0.34, fontSize:10, color:C.text, fontFace:"Open Sans", wrap:true });
+  });
+
+  // Right: screenshot of development page
+  s.addText("ACTUAL DEVELOPMENT PAGE", { x:5.8, y:1.40, w:4.0, h:0.25, fontSize:8, color:C.accent, fontFace:"Open Sans", charSpacing:2 });
+  s.addImage({ path:SHOT.participantDevelop, x:5.8, y:1.65, w:3.8, h:3.55 });
+
+  s.addText(FOOTER, { x:0.4, y:5.42, w:9.2, h:0.20, fontSize:8, color:C.textMute, fontFace:"Open Sans" });
+}
+
+// ────────────────────────────────────────────────────────────────
+// 11 — Cohort report  +  REAL SCREENSHOT
 // ────────────────────────────────────────────────────────────────
 {
   const s = pres.addSlide();
   s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:10, h:5.625, fill:{color:C.offWhite}, line:{color:C.offWhite} });
   s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:0.18, h:5.625, fill:{color:C.accent}, line:{color:C.accent} });
   s.addText("[ STAGE 5 — COHORT REPORT ]", { x:0.4, y:0.25, w:5, h:0.28, fontSize:9, color:C.accent, fontFace:"Open Sans", charSpacing:3 });
-  s.addText("What the HR office sees", {
+  s.addText("What MIAHONA's HR office sees", {
     x:0.4, y:0.7, w:9.2, h:0.5, fontSize:22, bold:true, color:C.primary, fontFace:"Open Sans",
   });
 
-  // Left column: cohort KPI summary
-  s.addShape(pres.shapes.RECTANGLE, { x:0.4, y:1.55, w:4.7, h:3.5, fill:{color:C.white}, line:{color:C.pale, width:1} });
-  s.addText("AT A GLANCE", { x:0.55, y:1.65, w:4.5, h:0.28, fontSize:9, color:C.accent, fontFace:"Open Sans", charSpacing:2 });
+  // Left column: cohort kpi summary
+  s.addShape(pres.shapes.RECTANGLE, { x:0.4, y:1.55, w:4.2, h:3.55, fill:{color:C.white}, line:{color:C.pale, width:1} });
+  s.addText("AT A GLANCE", { x:0.55, y:1.65, w:4.0, h:0.28, fontSize:9, color:C.accent, fontFace:"Open Sans", charSpacing:2 });
   const kpis = [
     { label:"Top strengths",                  v:"Ranked list of the three competencies the cohort is strongest at." },
     { label:"Top development areas",          v:"Where to invest training budget first. Same ranking logic." },
     { label:"Competency heatmap",             v:"Every leader, every competency, colour-coded so patterns jump out." },
-    { label:"% below / within / above zone",  v:"For each competency, the share of the cohort in each band. The exec-summary chart." },
+    { label:"% below / within / above zone",  v:"For each competency, the share of the cohort in each band." },
     { label:"Year-on-year delta",             v:"On a reassessment, ↑+0.4 / ↓-0.2 arrows show what's moved." },
   ];
   kpis.forEach((k, i) => {
-    const y = 2.0 + i*0.62;
+    const y = 2.0 + i*0.60;
     s.addShape(pres.shapes.OVAL, { x:0.55, y:y+0.12, w:0.18, h:0.18, fill:{color:C.accent}, line:{color:C.accent} });
-    s.addText(k.label, { x:0.85, y, w:4.0, h:0.28, fontSize:11, bold:true, color:C.primary, fontFace:"Open Sans" });
-    s.addText(k.v, { x:0.85, y:y+0.27, w:4.1, h:0.40, fontSize:9.5, color:C.text, fontFace:"Open Sans", wrap:true });
+    s.addText(k.label, { x:0.85, y, w:3.6, h:0.28, fontSize:11, bold:true, color:C.primary, fontFace:"Open Sans" });
+    s.addText(k.v, { x:0.85, y:y+0.27, w:3.6, h:0.35, fontSize:9.5, color:C.text, fontFace:"Open Sans", wrap:true });
   });
 
-  // Right column: how the CHRO actually uses it
-  s.addShape(pres.shapes.RECTANGLE, { x:5.3, y:1.55, w:4.3, h:3.5, fill:{color:C.primary}, line:{color:C.primary} });
-  s.addShape(pres.shapes.RECTANGLE, { x:5.3, y:1.55, w:0.06, h:3.5, fill:{color:C.accent}, line:{color:C.accent} });
-  s.addText("HOW THE CHRO USES IT", { x:5.5, y:1.65, w:4.0, h:0.28, fontSize:9, color:C.accent, fontFace:"Open Sans", charSpacing:2 });
-  s.addText("Three conversations the cohort report drives", {
-    x:5.5, y:1.95, w:4.0, h:0.7, fontSize:13, bold:true, color:C.white, fontFace:"Open Sans",
-  });
-  const uses = [
-    "With the CEO: where the leadership bench is strong, where the gaps are, and what we're doing about each one.",
-    "With the L&D budget owner: which VIFM programmes to commit to next quarter, ranked by aggregated cohort gap.",
-    "With each leader's line manager: priorities for the year, anchored on data instead of opinion.",
-  ];
-  uses.forEach((u, i) => {
-    const y = 2.85 + i*0.65;
-    s.addShape(pres.shapes.RECTANGLE, { x:5.5, y, w:0.05, h:0.55, fill:{color:C.accent}, line:{color:C.accent} });
-    s.addText(u, { x:5.6, y:y-0.02, w:3.9, h:0.6, fontSize:10, color:C.light, fontFace:"Open Sans", valign:"middle", wrap:true });
-  });
+  // Right: cohort screenshot
+  s.addText("ACTUAL COHORT PAGE", { x:4.95, y:1.40, w:4.8, h:0.25, fontSize:8, color:C.accent, fontFace:"Open Sans", charSpacing:2 });
+  s.addImage({ path:SHOT.cohortHeatmap, x:4.95, y:1.65, w:4.8, h:3.55 });
 
-  s.addText(FOOTER, { x:0.4, y:5.22, w:9.2, h:0.25, fontSize:8, color:C.textMute, fontFace:"Open Sans" });
+  s.addText(FOOTER, { x:0.4, y:5.30, w:9.2, h:0.25, fontSize:8, color:C.textMute, fontFace:"Open Sans" });
 }
 
 // ────────────────────────────────────────────────────────────────
-// 9 — The training bridge
+// 12 — The training bridge
 // ────────────────────────────────────────────────────────────────
 {
   const s = pres.addSlide();
@@ -374,11 +498,10 @@ pres.company = "Virginia Institute of Finance and Management";
     x:0.4, y:1.20, w:9.2, h:0.30, fontSize:12, italic:true, color:C.textMute, fontFace:"Open Sans",
   });
 
-  // Three-step flow
   const flow = [
-    { tag:"Step 1", title:"Gaps identified",       body:"Scoring engine extracts the leader's lowest-scoring competencies (or, on the cohort report, the aggregated lowest)." },
+    { tag:"Step 1", title:"Gaps identified",       body:"Scoring engine extracts each leader's lowest-scoring competencies (or, on the cohort report, the aggregated lowest)." },
     { tag:"Step 2", title:"Programmes matched",    body:"Each competency is matched against the 127 programmes in the VIFM catalogue — tagged by relevance + rationale." },
-    { tag:"Step 3", title:"Quote requested",       body:"Each programme has a Request a Quote link in the PDF. One click and the L&D team is in the consultant's inbox." },
+    { tag:"Step 3", title:"Quote requested",       body:"Each programme has a Request a Quote link in the PDF. One click and the MIAHONA L&D team is in the consultant's inbox." },
   ];
   flow.forEach((f, i) => {
     const x = 0.4 + i*3.2;
@@ -389,13 +512,12 @@ pres.company = "Virginia Institute of Finance and Management";
     s.addText(f.body, { x:x+0.2, y:2.95, w:2.6, h:1.3, fontSize:11, color:C.text, fontFace:"Open Sans", wrap:true });
 
     if (i < 2) {
-      // arrow chevron
       s.addShape(pres.shapes.RIGHT_TRIANGLE, { x:3.45 + i*3.2, y:2.85, w:0.3, h:0.3, fill:{color:C.accent}, line:{color:C.accent}, rotate:0 });
     }
   });
 
   s.addShape(pres.shapes.RECTANGLE, { x:0.4, y:4.55, w:9.2, h:0.55, fill:{color:C.primary}, line:{color:C.primary} });
-  s.addText("Same engine for individual reports (top-5 programmes per leader) and cohort reports (top-6 programmes for the whole group).", {
+  s.addText("Same engine for individual reports (top-5 programmes per leader) and the cohort report (top-6 programmes for the whole group).", {
     x:0.6, y:4.55, w:8.8, h:0.55, fontSize:11, italic:true, color:C.white, fontFace:"Open Sans", valign:"middle",
   });
 
@@ -403,98 +525,118 @@ pres.company = "Virginia Institute of Finance and Management";
 }
 
 // ────────────────────────────────────────────────────────────────
-// 10 — Privacy, anonymity, compliance
+// 13 — Pilot deliverables  (NEW — "What you'll receive")
 // ────────────────────────────────────────────────────────────────
 {
   const s = pres.addSlide();
   s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:10, h:5.625, fill:{color:C.primary}, line:{color:C.primary} });
   s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:0.18, h:5.625, fill:{color:C.accent}, line:{color:C.accent} });
-  s.addText("[ TRUST + COMPLIANCE ]", { x:0.4, y:0.25, w:5, h:0.28, fontSize:9, color:C.accent, fontFace:"Open Sans", charSpacing:3 });
-  s.addText("Built so raters can be honest, and the data is yours", {
+  s.addText("[ WHAT MIAHONA RECEIVES ]", { x:0.4, y:0.25, w:5, h:0.28, fontSize:9, color:C.accent, fontFace:"Open Sans", charSpacing:3 });
+  s.addText("Pilot deliverables — the tangible artefacts", {
     x:0.4, y:0.7, w:9.2, h:0.5, fontSize:22, bold:true, color:C.white, fontFace:"Open Sans",
   });
+  s.addText("Six deliverables, each owned and produced by the VIFM consultant team.", {
+    x:0.4, y:1.20, w:9.2, h:0.30, fontSize:11, italic:true, color:C.light, fontFace:"Open Sans",
+  });
 
-  const items = [
-    { h:"Anonymity threshold",       b:"No score (or comment) from peers, direct reports, or skip-level appears in any report until at least 3 raters in that group have responded. Configurable per engagement." },
-    { h:"Self + Manager always shown", b:"You see your own scores. You see your manager's scores. That's the design — a 360 isn't a 360 without them." },
-    { h:"UAE PDPL + KSA PDPL + GDPR", b:"Designed for the regulatory landscape we operate in. Consent captured at invitation. Right-to-erasure honoured. Data segregated per client." },
-    { h:"ISO 10667 aligned",          b:"International standard for assessment of people in work and organisational settings. Methodology and reporting follow the framework." },
-    { h:"2-year retention by default",b:"Automated purge of expired data. Customers can request extended retention via contract." },
-    { h:"No vendor lock-in",          b:"Your framework and your data are exportable on demand. JSON for frameworks, PDF + CSV for reports." },
+  const deliverables = [
+    { n:"67",   h:"Individual bilingual PDF reports",   b:"One per leader. EN, AR, or side-by-side. Confidential to leader + coach." },
+    { n:"1",    h:"Cohort report for the HR office",    b:"Heatmap, % within zone, top strengths / dev areas, capability-building plan." },
+    { n:"67",   h:"1:1 debriefs with VIFM coaches",     b:"45-minute structured conversation. Anchored on the report, ends with an IDP draft." },
+    { n:"67",   h:"Individual Development Plans",       b:"Keep / Stop / Start frame, ready for line-manager sign-off." },
+    { n:"127",  h:"Training programmes available",      b:"Top-5 matched per leader, top-6 matched for cohort. Quote-request link in every PDF." },
+    { n:"2027", h:"Year-on-year baseline",              b:"All pilot data preserved for the 12-month reassessment, with delta arrows showing what moved." },
   ];
-
-  // 2 cols x 3 rows
-  items.forEach((it, i) => {
-    const col = i % 2, row = Math.floor(i / 2);
-    const x = 0.4 + col*4.7;
-    const y = 1.55 + row*1.2;
-    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y, w:4.5, h:1.1, rectRadius:0.08, fill:{color:C.navy}, line:{color:C.accent, width:0.5} });
-    s.addShape(pres.shapes.RECTANGLE, { x, y, w:0.06, h:1.1, fill:{color:C.accent}, line:{color:C.accent} });
-    s.addText(it.h, { x:x+0.18, y:y+0.08, w:4.2, h:0.32, fontSize:12, bold:true, color:C.white, fontFace:"Open Sans" });
-    s.addText(it.b, { x:x+0.18, y:y+0.40, w:4.2, h:0.65, fontSize:10, color:C.light, fontFace:"Open Sans", wrap:true });
+  deliverables.forEach((d, i) => {
+    const col = i % 3, row = Math.floor(i / 3);
+    const x = 0.4 + col*3.2;
+    const y = 1.65 + row*1.65;
+    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y, w:3.0, h:1.5, rectRadius:0.10, fill:{color:C.navy}, line:{color:C.accent, width:0.5} });
+    s.addShape(pres.shapes.RECTANGLE, { x, y, w:0.06, h:1.5, fill:{color:C.accent}, line:{color:C.accent} });
+    s.addText(d.n, { x:x+0.18, y:y+0.10, w:1.5, h:0.55, fontSize:24, bold:true, color:C.accent, fontFace:"Open Sans" });
+    s.addText(d.h, { x:x+1.55, y:y+0.10, w:1.4, h:0.55, fontSize:10.5, bold:true, color:C.white, fontFace:"Open Sans", valign:"middle" });
+    s.addText(d.b, { x:x+0.18, y:y+0.75, w:2.75, h:0.70, fontSize:9.5, color:C.light, fontFace:"Open Sans", wrap:true });
   });
 
   s.addText(FOOTER, { x:0.4, y:5.22, w:9.2, h:0.25, fontSize:8, color:C.navy, fontFace:"Open Sans" });
 }
 
 // ────────────────────────────────────────────────────────────────
-// 11 — VIFM vs the market
+// 14 — Security, data hosting & confidentiality  (EXPANDED)
 // ────────────────────────────────────────────────────────────────
 {
   const s = pres.addSlide();
   s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:10, h:5.625, fill:{color:C.offWhite}, line:{color:C.offWhite} });
   s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:0.18, h:5.625, fill:{color:C.accent}, line:{color:C.accent} });
-  s.addText("[ POSITIONING ]", { x:0.4, y:0.25, w:5, h:0.28, fontSize:9, color:C.accent, fontFace:"Open Sans", charSpacing:3 });
-  s.addText("How Reflect 360 compares", {
+  s.addText("[ SECURITY  .  DATA HOSTING  .  CONFIDENTIALITY ]", { x:0.4, y:0.25, w:6, h:0.28, fontSize:9, color:C.accent, fontFace:"Open Sans", charSpacing:3 });
+  s.addText("Built so raters can be honest, and the data is yours", {
     x:0.4, y:0.7, w:9.2, h:0.5, fontSize:22, bold:true, color:C.primary, fontFace:"Open Sans",
   });
-  s.addText("Sample-pack of competitor reports reviewed prior to building Reflect 360.",
-    { x:0.4, y:1.20, w:9.2, h:0.30, fontSize:10, italic:true, color:C.textMute, fontFace:"Open Sans" });
 
-  // Table header
-  const colX = [0.4, 3.4, 5.2, 6.6, 8.0];
-  const colW = [3.0, 1.8, 1.4, 1.4, 1.6];
-  const headers = ["Capability", "Reflect 360", "Vendor A", "Vendor B", "Vendor C"];
-  headers.forEach((h, i) => {
-    s.addShape(pres.shapes.RECTANGLE, { x:colX[i], y:1.65, w:colW[i], h:0.45, fill:{color:C.primary}, line:{color:C.primary} });
-    s.addText(h, { x:colX[i]+0.1, y:1.65, w:colW[i]-0.2, h:0.45, fontSize:11, bold:true, color:C.white, fontFace:"Open Sans", valign:"middle", align: i===0 ? "left" : "center" });
-  });
-
-  // Rows
-  const rows = [
-    ["Bilingual EN + AR (native, not translated)", "Yes", "Partial", "No",      "Partial"],
-    ["Custom framework per engagement",            "Yes", "Limited", "No",      "Limited"],
-    ["GCC cultural anchoring",                     "Yes", "No",      "No",      "No"     ],
-    ["Integrated training catalogue",              "Yes", "No",      "No",      "Partial"],
-    ["Annual reassessment with delta arrows",      "Yes", "Add-on",  "Add-on",  "Add-on" ],
-    ["Per-leader price band (USD)",                "Competitive", "350-500", "345", "255"],
+  const items = [
+    { h:"Anonymity threshold",       b:"No score (or comment) from peers, direct reports, or skip-level appears in any report until at least 3 raters in that group have responded. Configurable per engagement." },
+    { h:"Encryption end to end",     b:"TLS 1.2+ in transit. AES-256 encryption at rest on the database and storage layer. Per-row access policies enforced server-side, not in the browser." },
+    { h:"Role-based access control", b:"Four roles — admin, consultant, candidate, client. Each role's view is enforced at the database level via row-level security. No cross-contamination across clients." },
+    { h:"Regulatory alignment",      b:"KSA PDPL + UAE PDPL + GDPR aware. Consent captured at invitation. Right-to-erasure honoured. ISO 10667 methodology alignment." },
+    { h:"Data residency on request", b:"Cloud-hosted with configurable regional residency. MIAHONA can specify the deployment region; data segregation is contractual and technical." },
+    { h:"No vendor lock-in",         b:"Two-year default retention with automatic purge. Frameworks exportable as JSON. Reports + raw responses exportable as PDF + CSV on demand." },
   ];
-  rows.forEach((r, ri) => {
-    const y = 2.10 + ri*0.45;
-    const stripe = ri % 2 === 0 ? C.white : C.pale;
-    r.forEach((cell, ci) => {
-      s.addShape(pres.shapes.RECTANGLE, { x:colX[ci], y, w:colW[ci], h:0.45, fill:{color:stripe}, line:{color:C.pale, width:0.3} });
-      const isReflect = ci === 1;
-      const text = cell;
-      s.addText(text, {
-        x:colX[ci]+0.1, y, w:colW[ci]-0.2, h:0.45,
-        fontSize: 10.5,
-        bold: isReflect,
-        color: isReflect ? C.accent : C.text,
-        fontFace:"Open Sans", valign:"middle",
-        align: ci===0 ? "left" : "center",
-      });
-    });
+
+  items.forEach((it, i) => {
+    const col = i % 2, row = Math.floor(i / 2);
+    const x = 0.4 + col*4.7;
+    const y = 1.45 + row*1.2;
+    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y, w:4.5, h:1.1, rectRadius:0.08, fill:{color:C.white}, line:{color:C.pale, width:1} });
+    s.addShape(pres.shapes.RECTANGLE, { x, y, w:0.06, h:1.1, fill:{color:C.accent}, line:{color:C.accent} });
+    s.addText(it.h, { x:x+0.18, y:y+0.08, w:4.2, h:0.32, fontSize:12, bold:true, color:C.primary, fontFace:"Open Sans" });
+    s.addText(it.b, { x:x+0.18, y:y+0.40, w:4.2, h:0.65, fontSize:9.5, color:C.text, fontFace:"Open Sans", wrap:true });
   });
 
-  s.addText("Vendors anonymised. Sample reports + pricing reviewed in May 2026.", {
-    x:0.4, y:4.95, w:9.2, h:0.30, fontSize:9, italic:true, color:C.textMute, fontFace:"Open Sans", align:"center",
+  s.addShape(pres.shapes.RECTANGLE, { x:0.4, y:5.10, w:9.2, h:0.08, fill:{color:C.accent}, line:{color:C.accent} });
+  s.addText("Detailed Security & Data Hosting addendum available on request from the MIAHONA project sponsor.", {
+    x:0.4, y:5.25, w:9.2, h:0.25, fontSize:9, italic:true, color:C.accent, fontFace:"Open Sans", align:"center",
   });
-  s.addText(FOOTER, { x:0.4, y:5.30, w:9.2, h:0.25, fontSize:8, color:C.textMute, fontFace:"Open Sans" });
+  s.addText(FOOTER, { x:0.4, y:5.45, w:9.2, h:0.20, fontSize:8, color:C.textMute, fontFace:"Open Sans" });
 }
 
 // ────────────────────────────────────────────────────────────────
-// 12 — Commercial model + next steps (closing CTA)
+// 15 — Why VIFM  (NEW positioning slide)
+// ────────────────────────────────────────────────────────────────
+{
+  const s = pres.addSlide();
+  s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:10, h:5.625, fill:{color:C.offWhite}, line:{color:C.offWhite} });
+  s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:0.18, h:5.625, fill:{color:C.accent}, line:{color:C.accent} });
+  s.addText("[ WHY VIFM ]", { x:0.4, y:0.25, w:5, h:0.28, fontSize:9, color:C.accent, fontFace:"Open Sans", charSpacing:3 });
+  s.addText("Why MIAHONA chose to talk to us first", {
+    x:0.4, y:0.7, w:9.2, h:0.5, fontSize:22, bold:true, color:C.primary, fontFace:"Open Sans",
+  });
+  s.addText("Reflect 360 is not a SaaS bought-in. It is built and owned by a GCC training company.",
+    { x:0.4, y:1.20, w:9.2, h:0.30, fontSize:11, italic:true, color:C.textMute, fontFace:"Open Sans" });
+
+  const reasons = [
+    { h:"Training company first",   b:"VIFM's core business is leadership and finance development. The 360 platform is built to feed that engine — not as a stand-alone diagnostic." },
+    { h:"Bilingual native",         b:"English and Arabic are first-class throughout. Not a Google-translated overlay, not a separate Arabic file. The same product, in the language each rater prefers." },
+    { h:"GCC-anchored content",     b:"The competency templates, behavioural anchors, and AI coaching prompts are written for the cultural context our clients operate in." },
+    { h:"Custom-built",             b:"No vendor licence dictating what we can and can't change. MIAHONA's six competencies load as-is — VIFM does not impose its own framework on top." },
+    { h:"127-programme catalogue",  b:"The gaps the 360 surfaces are immediately matched to the courses that close them. One vendor, one continuous engagement from diagnosis to capability." },
+    { h:"Consultant-led",           b:"Every engagement has a named VIFM lead who owns the framework setup, debrief, and reassessment cycle. The platform is the toolkit, not the relationship." },
+  ];
+
+  reasons.forEach((r, i) => {
+    const col = i % 3, row = Math.floor(i / 3);
+    const x = 0.4 + col*3.2;
+    const y = 1.65 + row*1.65;
+    s.addShape(pres.shapes.RECTANGLE, { x, y, w:3.0, h:1.5, fill:{color:C.white}, line:{color:C.pale, width:1} });
+    s.addShape(pres.shapes.RECTANGLE, { x, y, w:3.0, h:0.06, fill:{color:C.accent}, line:{color:C.accent} });
+    s.addText(r.h, { x:x+0.15, y:y+0.15, w:2.75, h:0.35, fontSize:12, bold:true, color:C.primary, fontFace:"Open Sans" });
+    s.addText(r.b, { x:x+0.15, y:y+0.55, w:2.75, h:0.92, fontSize:10, color:C.text, fontFace:"Open Sans", wrap:true });
+  });
+
+  s.addText(FOOTER, { x:0.4, y:5.22, w:9.2, h:0.25, fontSize:8, color:C.textMute, fontFace:"Open Sans" });
+}
+
+// ────────────────────────────────────────────────────────────────
+// 16 — Next steps  (closing CTA, re-targeted to 67 leaders)
 // ────────────────────────────────────────────────────────────────
 {
   const s = pres.addSlide();
@@ -504,30 +646,28 @@ pres.company = "Virginia Institute of Finance and Management";
   s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:0.18, h:5.625, fill:{color:C.accent}, line:{color:C.accent} });
 
   s.addText("[ TO MOVE FORWARD ]", { x:0.4, y:0.30, w:5, h:0.30, fontSize:9, bold:true, color:C.accent, fontFace:"Open Sans", charSpacing:3 });
-  s.addText("Pilot first.\nScale on the\nback of evidence.", { x:0.4, y:0.95, w:6.2, h:2.2, fontSize:36, bold:true, color:C.white, fontFace:"Open Sans" });
+  s.addText("Pilot first.\nScale on evidence.", { x:0.4, y:0.95, w:6.2, h:2.0, fontSize:38, bold:true, color:C.white, fontFace:"Open Sans" });
 
-  s.addText("Pricing tracks the GCC market band per focus person (one leader + ~10 raters). Volume discounts apply at 20+. Pilot pricing available on request.", {
-    x:0.4, y:3.30, w:6.2, h:0.85, fontSize:12, color:C.light, fontFace:"Open Sans", italic:true,
-  });
+  s.addText("Phased rollout proposal: pilot the 7 Executive / C-Suite first to anchor the framework. Add the 13 Directors and 4 Senior Managers in wave 2. The 43 Managers in wave 3.",
+    { x:0.4, y:3.15, w:6.2, h:1.0, fontSize:12, color:C.light, fontFace:"Open Sans", italic:true });
 
   s.addShape(pres.shapes.RECTANGLE, { x:0.4, y:4.20, w:3.5, h:0.05, fill:{color:C.accent}, line:{color:C.accent} });
   s.addText("caliber.viftraining.com / reflect", {
     x:0.4, y:4.35, w:6.2, h:0.45, fontSize:14, bold:true, color:C.accent, fontFace:"Consolas",
   });
 
-  // Right panel: next steps
   s.addText("NEXT STEPS", { x:7.65, y:0.45, w:2.2, h:0.30, fontSize:9, bold:true, color:C.accent, fontFace:"Open Sans", charSpacing:3 });
   const next = [
+    "VIFM company profile shared with MIAHONA CHRO",
     "Sample report walk-through (45 min)",
-    "Pilot: 5 leaders, 4-6 week cycle",
-    "Pilot debrief + roll-out plan",
-    "Year-1 cohort: 20-30 leaders",
+    "Pilot scoping — wave 1 (7 leaders)",
+    "Full rollout: wave 2 + 3 to 67 total",
   ];
   next.forEach((n, i) => {
     s.addShape(pres.shapes.RECTANGLE, { x:7.65, y:0.90+i*0.95, w:2.20, h:0.80, fill:{color:C.primary}, line:{color:C.primary} });
     s.addShape(pres.shapes.RECTANGLE, { x:7.65, y:0.90+i*0.95, w:0.06, h:0.80, fill:{color:C.accent}, line:{color:C.accent} });
     s.addText(`${i+1}`, { x:7.80, y:0.90+i*0.95, w:0.40, h:0.80, fontSize:18, bold:true, color:C.accent, fontFace:"Open Sans", align:"center", valign:"middle" });
-    s.addText(n, { x:8.20, y:0.90+i*0.95, w:1.62, h:0.80, fontSize:10, color:C.white, fontFace:"Open Sans", valign:"middle", wrap:true });
+    s.addText(n, { x:8.20, y:0.90+i*0.95, w:1.62, h:0.80, fontSize:9.5, color:C.white, fontFace:"Open Sans", valign:"middle", wrap:true });
   });
 
   s.addText(FOOTER, { x:0.4, y:5.22, w:5, h:0.25, fontSize:8, color:C.navy, fontFace:"Open Sans" });

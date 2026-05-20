@@ -7,6 +7,7 @@ import {
   CircleDot,
   Globe,
   GraduationCap,
+  BarChart3,
 } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 
@@ -65,8 +66,10 @@ export default function ReflectRootPage() {
             <p className="text-lg text-white/75 max-w-2xl leading-relaxed">
               Bring your Corporate Values and Leadership Competencies. We turn them
               into behavioural items, gather feedback from peers, managers, and direct
-              reports, and deliver each leader a development-grade report and an
-              individual development plan — in English, Arabic, or both.
+              reports, and deliver two layers of insight — a development-grade report
+              and Individual Development Plan for each leader, plus an organisation-wide
+              cohort view that surfaces the gaps shaping your culture. In English,
+              Arabic, or both.
             </p>
 
             <div className="flex flex-wrap gap-3 mt-8">
@@ -96,7 +99,7 @@ export default function ReflectRootPage() {
             tone="blue"
             title="Consultant"
             subtitle="Run engagements"
-            description="Create a 360° engagement, build the competency framework from the client's values, invite participants and raters, score, and release reports."
+            description="Create a 360° engagement, build the competency framework from the client's values, invite participants and raters, then release both individual reports and the organisation-wide cohort view."
             cta="Open dashboard"
           />
           <EntryCard
@@ -129,7 +132,7 @@ export default function ReflectRootPage() {
             Development-grade 360°, built on your competency model — not ours.
           </h2>
 
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {[
               {
                 icon: Aperture,
@@ -141,7 +144,13 @@ export default function ReflectRootPage() {
                 icon: Users,
                 tone: "violet" as const,
                 title: "Multi-rater, anonymised",
-                body: "Self, Manager, Peer, Direct Report — with a configurable minimum-N threshold (default 3) before peer and direct-report scores are revealed.",
+                body: "Self, Manager, Peer, Direct Report — minimum 3 raters per group before peer and direct-report scores are revealed.",
+              },
+              {
+                icon: BarChart3,
+                tone: "rose" as const,
+                title: "Organisational insights",
+                body: "Beyond individual reports — a cohort heatmap of every leader × every competency, top-3 strengths and development areas across the org, and an exportable culture view for the CHRO office.",
               },
               {
                 icon: Globe,

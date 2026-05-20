@@ -59,7 +59,10 @@ export const createEngagementSchema = z.object({
   sector: z.enum(SECTOR).nullable().optional(),
   default_language: z.enum(REFLECT_DEFAULT_LANGUAGE).default("en"),
   report_language: z.enum(REFLECT_REPORT_LANGUAGE).default("bilingual"),
-  anonymity_min_n: z.number().int().min(1).max(10).default(3),
+  // Industry-standard minimum is 3 — anything lower defeats the
+  // anonymity of pooled peer / direct-report views. We hard-floor at 3
+  // and let consultants raise it for stricter use cases.
+  anonymity_min_n: z.number().int().min(3).max(10).default(3),
   participant_target_count: z.number().int().min(1).nullable().optional(),
   field_window_start: z.string().nullable().optional(),
   field_window_end: z.string().nullable().optional(),

@@ -1,17 +1,56 @@
 "use client";
 
+import { useState, useTransition } from "react";
+import { Plus, Loader2 } from "lucide-react";
 import type { WizardOrg, WizardState } from "./wizard";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { createInlineReflectOrganisation } from "@/lib/reflect/actions";
 
 type Props = {
   state: WizardState;
   update: (patch: Partial<WizardState>) => void;
   orgs: WizardOrg[];
+  /** Callback so newly-created orgs propagate up to the wizard's prop list. */
+  onOrgCreated: (org: WizardOrg) => void;
 };
 
-export function StepBasics({ state, update, orgs }: Props) {
+export function StepBasics({ state, update, orgs, onOrgCreated }: Props) {
+  const [addOpen, setAddOpen] = useState(false);
+  const [newOrgName, setNewOrgName] = useState("");
+  const [newOrgNameAr, setNewOrgNameAr] = useState("");
+  const [newOrgRegion, setNewOrgRegion] = useState<"uae" | "saudi">("uae");
+  const [newOrgSector, setNewOrgSector] = useState<"government" | "banking" | "general">("banking");
+  const [addError, setAddError] = useState<string | null>(null);
+  const [addPending, startAddTransition] = useTransition();
+
+  const submitNewOrg = () => {
+    setAddError(null);
+    startAddTransition(async () => {
+      const res = await createInlineReflectOrganisation({
+        name: newOrgName.trim(),
+        name_ar: newOrgNameAr.trim() || "",
+        region: newOrgRegion,
+        sector: newOrgSector,
+      });
+      if (!res.ok) {
+        setAddError(res.error);
+        return;
+      }
+      onOrgCreated(res.org);
+      update({
+        organization_id: res.org.id,
+        region: res.org.region,
+        sector: res.org.sector,
+      });
+      setAddOpen(false);
+      setNewOrgName("");
+      setNewOrgNameAr("");
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -33,7 +72,16 @@ export function StepBasics({ state, update, orgs }: Props) {
         </div>
 
         <div>
-          <Label htmlFor="rf-org">Client organisation</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="rf-org">Client organisation</Label>
+            <button
+              type="button"
+              onClick={() => setAddOpen(true)}
+              className="text-[11px] text-accent hover:underline inline-flex items-center gap-0.5"
+            >
+              <Plus className="h-3 w-3" /> Add new
+            </button>
+          </div>
           <select
             id="rf-org"
             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
@@ -57,7 +105,7 @@ export function StepBasics({ state, update, orgs }: Props) {
           </select>
           {orgs.length === 0 && (
             <p className="text-xs text-muted-foreground mt-1">
-              No organisations yet. Create one in the AI Readiness admin first — Reflect reuses the same client list.
+              No organisations yet — click <strong>Add new</strong> above to create one.
             </p>
           )}
         </div>
@@ -112,13 +160,16 @@ export function StepBasics({ state, update, orgs }: Props) {
           <Input
             id="rf-anon"
             type="number"
-            min={1}
+            min={3}
             max={10}
             value={state.anonymity_min_n}
-            onChange={(e) => update({ anonymity_min_n: Number(e.target.value) || 3 })}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              update({ anonymity_min_n: Number.isFinite(v) && v >= 3 ? v : 3 });
+            }}
           />
           <p className="text-xs text-muted-foreground mt-1">
-            Industry standard is 3. Peer and direct-report scores hide until this many raters in the group have responded.
+            Minimum 3 — anything lower can&apos;t be conducted anonymously. Peer and direct-report scores stay hidden until this many raters in the group have responded.
           </p>
         </div>
 
@@ -154,6 +205,90 @@ export function StepBasics({ state, update, orgs }: Props) {
           </Label>
         </div>
       </div>
+
+      {/* Add-new-org modal */}
+      {addOpen && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center px-6 z-50">
+          <div className="bg-card rounded-xl border p-6 max-w-md w-full space-y-4">
+            <div>
+              <h3 className="text-base font-semibold text-primary">Add a new organisation</h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Stored in the shared client list — also available to AI Readiness engagements.
+              </p>
+            </div>
+
+            <div>
+              <Label htmlFor="rf-new-org-name">Name <span className="text-rose-700">*</span></Label>
+              <Input
+                id="rf-new-org-name"
+                value={newOrgName}
+                onChange={(e) => setNewOrgName(e.target.value)}
+                placeholder="e.g. Acme Bank"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="rf-new-org-name-ar">Name (Arabic) <span className="text-muted-foreground">(optional)</span></Label>
+              <Input
+                id="rf-new-org-name-ar"
+                value={newOrgNameAr}
+                onChange={(e) => setNewOrgNameAr(e.target.value)}
+                dir="rtl"
+                placeholder="بنك أكمي"
+              />
+            </div>
+
+            <div className="grid gap-3 grid-cols-2">
+              <div>
+                <Label htmlFor="rf-new-org-region">Region</Label>
+                <select
+                  id="rf-new-org-region"
+                  value={newOrgRegion}
+                  onChange={(e) => setNewOrgRegion(e.target.value as "uae" | "saudi")}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                >
+                  <option value="uae">UAE</option>
+                  <option value="saudi">Saudi Arabia</option>
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="rf-new-org-sector">Sector</Label>
+                <select
+                  id="rf-new-org-sector"
+                  value={newOrgSector}
+                  onChange={(e) => setNewOrgSector(e.target.value as "government" | "banking" | "general")}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                >
+                  <option value="banking">Banking</option>
+                  <option value="government">Government</option>
+                  <option value="general">General</option>
+                </select>
+              </div>
+            </div>
+
+            {addError && (
+              <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
+                {addError}
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => { setAddOpen(false); setAddError(null); }}
+                disabled={addPending}
+                className="rounded-md border px-3 py-2 text-sm text-foreground hover:bg-muted"
+              >
+                Cancel
+              </button>
+              <Button type="button" onClick={submitNewOrg} disabled={addPending || !newOrgName.trim()}>
+                {addPending && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
+                Add organisation
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

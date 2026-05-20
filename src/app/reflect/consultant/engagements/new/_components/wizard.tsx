@@ -74,8 +74,10 @@ type Props = {
   templates: WizardTemplate[];
 };
 
-export function ReflectWizard({ orgs, templates }: Props) {
+export function ReflectWizard({ orgs: initialOrgs, templates }: Props) {
   const router = useRouter();
+  // Local copy so inline org creation (Step 1) can append without a refetch.
+  const [orgs, setOrgs] = useState<WizardOrg[]>(initialOrgs);
   const [state, setState] = useState<WizardState>({
     name: "",
     organization_id: "",
@@ -111,7 +113,7 @@ export function ReflectWizard({ orgs, templates }: Props) {
       case 1:
         if (!state.name.trim()) return "Engagement name is required.";
         if (!state.organization_id) return "Pick a client organisation.";
-        if (state.anonymity_min_n < 1) return "Anonymity threshold must be at least 1.";
+        if (state.anonymity_min_n < 3) return "Anonymity threshold must be at least 3.";
         return null;
       case 2:
         if (state.framework_kind === "clone") {
@@ -255,7 +257,12 @@ export function ReflectWizard({ orgs, templates }: Props) {
       {/* Step body */}
       <div className="rounded-xl border bg-card p-6">
         {step === 1 && (
-          <StepBasics state={state} update={update} orgs={orgs} />
+          <StepBasics
+            state={state}
+            update={update}
+            orgs={orgs}
+            onOrgCreated={(org) => setOrgs((prev) => [org, ...prev])}
+          />
         )}
         {step === 2 && (
           <StepFramework state={state} update={update} templates={templates} />

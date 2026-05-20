@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Users, Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
+import { useRef, useState, useTransition } from "react";
+import { Users, Loader2, CheckCircle2, AlertTriangle, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -33,6 +33,44 @@ type RaterResult = {
 const PARTICIPANT_HEADERS = ["full_name", "email", "role_title", "business_unit", "level_tier", "manager_email", "language_preference"];
 const RATER_HEADERS = ["participant_email", "rater_role", "full_name", "email", "language_preference"];
 
+// ──────────────────────────────────────────────────────────────
+// Normalisers — accept the variants consultants will realistically
+// type and coerce them to the canonical enum values. Without this,
+// "Senior Manager", "direct-report", "Peer", "Arabic" all fail
+// validation even though the intent is unambiguous.
+// ──────────────────────────────────────────────────────────────
+
+function normaliseRaterRole(raw: string | undefined | null): string {
+  if (!raw) return "peer";
+  const k = raw.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  if (["self"].includes(k)) return "self";
+  if (["manager", "line_manager"].includes(k)) return "manager";
+  if (["peer", "peers", "colleague"].includes(k)) return "peer";
+  if (["direct_report", "direct_reports", "report", "dr"].includes(k)) return "direct_report";
+  if (["skip_level", "skip_level_manager", "skip", "skip_lvl"].includes(k)) return "skip_level";
+  if (["other", "internal_client", "cross_functional"].includes(k)) return "other";
+  return k; // let Zod surface a clean error if it's still off
+}
+
+function normaliseLevelTier(raw: string | undefined | null): string {
+  if (!raw) return "manager";
+  const k = raw.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  if (["exec", "executive", "c_suite", "csuite", "c_level"].includes(k)) return "exec";
+  if (["senior_mgr", "senior_manager", "snr_mgr", "sr_mgr", "department_head", "vp", "director"].includes(k)) return "senior_mgr";
+  if (["manager", "team_lead", "section_head", "line_manager"].includes(k)) return "manager";
+  if (["individual_contributor", "ic", "senior_ic", "senior_individual_contributor"].includes(k)) return "individual_contributor";
+  if (["all", "any"].includes(k)) return "all";
+  return k;
+}
+
+function normaliseLanguage(raw: string | undefined | null): string {
+  if (!raw) return "en";
+  const k = raw.trim().toLowerCase();
+  if (["en", "english", "eng"].includes(k)) return "en";
+  if (["ar", "arabic", "arabe", "ara"].includes(k)) return "ar";
+  return k;
+}
+
 export function StepPeople({ engagementId }: Props) {
   const [pCsv, setPCsv] = useState("");
   const [pResult, setPResult] = useState<ParticipantResult>(null);
@@ -41,6 +79,25 @@ export function StepPeople({ engagementId }: Props) {
   const [rCsv, setRCsv] = useState("");
   const [rResult, setRResult] = useState<RaterResult>(null);
   const [rPending, startRTransition] = useTransition();
+
+  // Refs for the hidden file pickers — labels can't be inside a parent
+  // <Button>, so we use refs to fire .click() from the visible buttons.
+  const pFileRef = useRef<HTMLInputElement | null>(null);
+  const rFileRef = useRef<HTMLInputElement | null>(null);
+
+  const readFileIntoTextarea = async (
+    file: File,
+    setter: (text: string) => void
+  ) => {
+    try {
+      const text = await file.text();
+      // Normalise line endings + strip BOM (Excel-saved CSVs ship UTF-8 BOM)
+      const cleaned = text.replace(/^﻿/, "").replace(/\r\n?/g, "\n");
+      setter(cleaned);
+    } catch (err) {
+      console.error("[reflect:file-upload] failed", err);
+    }
+  };
 
   const submitParticipants = () => {
     setPResult(null);
@@ -52,12 +109,13 @@ export function StepPeople({ engagementId }: Props) {
     }
     const parsed = rows.map((r) => ({
       full_name: r[0] ?? "",
-      email: r[1] ?? "",
+      email: (r[1] ?? "").toLowerCase(),
       role_title: r[2] ?? null,
       business_unit: r[3] ?? null,
-      level_tier: (r[4] || "manager"),
-      manager_email: r[5] || null,
-      language_preference: (r[6] || "en"),
+      // Normalise spelling — accept "Senior Manager", "senior-mgr", "Senior_Mgr" etc.
+      level_tier: normaliseLevelTier(r[4]),
+      manager_email: r[5] ? r[5].toLowerCase() : null,
+      language_preference: normaliseLanguage(r[6]),
     }));
 
     startPTransition(async () => {
@@ -82,11 +140,11 @@ export function StepPeople({ engagementId }: Props) {
       return;
     }
     const parsed = rows.map((r) => ({
-      participant_email: r[0] ?? "",
-      rater_role: (r[1] || "peer"),
+      participant_email: (r[0] ?? "").toLowerCase(),
+      rater_role: normaliseRaterRole(r[1]),
       full_name: r[2] ?? "",
-      email: r[3] ?? "",
-      language_preference: (r[4] || "en"),
+      email: (r[3] ?? "").toLowerCase(),
+      language_preference: normaliseLanguage(r[4]),
     }));
 
     startRTransition(async () => {
@@ -121,10 +179,33 @@ export function StepPeople({ engagementId }: Props) {
 
       {/* Participants */}
       <section className="rounded-lg border bg-card p-5 space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <h3 className="text-sm font-semibold text-primary">1. Participants</h3>
             <p className="text-xs text-muted-foreground">The people being assessed.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              ref={pFileRef}
+              type="file"
+              accept=".csv,.tsv,.txt,text/csv,text/plain"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) readFileIntoTextarea(f, setPCsv);
+                e.target.value = "";
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => pFileRef.current?.click()}
+              className="text-xs"
+            >
+              <Upload className="h-3.5 w-3.5 me-1.5" />
+              Upload CSV file
+            </Button>
           </div>
         </div>
         <div className="rounded-md bg-muted/40 px-3 py-2 text-xs font-mono text-muted-foreground">
@@ -167,10 +248,33 @@ export function StepPeople({ engagementId }: Props) {
 
       {/* Raters */}
       <section className="rounded-lg border bg-card p-5 space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <h3 className="text-sm font-semibold text-primary">2. Raters</h3>
             <p className="text-xs text-muted-foreground">The people giving 360° feedback to each participant.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              ref={rFileRef}
+              type="file"
+              accept=".csv,.tsv,.txt,text/csv,text/plain"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) readFileIntoTextarea(f, setRCsv);
+                e.target.value = "";
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => rFileRef.current?.click()}
+              className="text-xs"
+            >
+              <Upload className="h-3.5 w-3.5 me-1.5" />
+              Upload CSV file
+            </Button>
           </div>
         </div>
         <div className="rounded-md bg-muted/40 px-3 py-2 text-xs font-mono text-muted-foreground">

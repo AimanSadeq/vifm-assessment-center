@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/server";
 import {
   requireRole,
@@ -20,6 +21,66 @@ import {
 } from "./validations";
 import { extractBehaviorsFromValues } from "@/lib/ai/reflect-behavior-extractor";
 import { sendReflectEmail, roleLabel } from "./email";
+
+// ──────────────────────────────────────────────────────────────
+// Inline org creation — used by the wizard's "Add new" affordance.
+// Inserts into ara_organizations (Reflect reuses the AR Compass
+// client list) and returns the newly created row so the wizard can
+// merge it into the picker without a refetch.
+// ──────────────────────────────────────────────────────────────
+
+const createInlineOrgSchema = z.object({
+  name: z.string().trim().min(2, "Name is required").max(160),
+  name_ar: z.string().trim().max(160).optional().or(z.literal("")),
+  region: z.enum(["uae", "saudi"]),
+  sector: z.enum(["government", "banking", "general"]),
+});
+
+export type CreateInlineOrgPayload = z.infer<typeof createInlineOrgSchema>;
+
+export async function createInlineReflectOrganisation(
+  payload: CreateInlineOrgPayload
+): Promise<
+  | { ok: true; org: { id: string; name: string; name_ar: string | null; region: "uae" | "saudi"; sector: "government" | "banking" | "general" } }
+  | { ok: false; error: string }
+> {
+  let caller;
+  try {
+    caller = await requireRole(["admin", "consultant"]);
+  } catch (e) {
+    if (isAuthorizationError(e)) return { ok: false, error: e.message };
+    throw e;
+  }
+
+  const parsed = createInlineOrgSchema.safeParse(payload);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+  const p = parsed.data;
+
+  const sb = createServiceClient();
+  const { data, error } = await sb
+    .from("ara_organizations")
+    .insert({
+      name: p.name,
+      name_ar: p.name_ar ? p.name_ar : null,
+      sector: p.sector,
+      region: p.region,
+      created_by: caller.isDev ? null : caller.uid,
+    })
+    .select("id, name, name_ar, region, sector")
+    .single<{
+      id: string;
+      name: string;
+      name_ar: string | null;
+      region: "uae" | "saudi";
+      sector: "government" | "banking" | "general";
+    }>();
+  if (error || !data) return { ok: false, error: error?.message ?? "Insert failed" };
+
+  return { ok: true, org: data };
+}
+
 
 function authErr(e: unknown) {
   if (isAuthorizationError(e)) return { ok: false as const, error: e.message };
@@ -491,10 +552,12 @@ export async function bulkUpsertReflectRaters(input: {
   }
 
   if (resolved.length === 0) {
-    return {
-      ok: false,
-      error: `No raters matched a known participant. Unmatched emails: ${unmatched.slice(0, 5).join(", ")}`,
-    };
+    const sample = unmatched.slice(0, 5).join(", ");
+    const hint =
+      participants && participants.length === 0
+        ? " Tip: import participants first — raters reference participants by email."
+        : ` Tip: each rater's participant_email must exactly match an imported participant. Unmatched: ${sample}`;
+    return { ok: false, error: `No raters matched a known participant.${hint}` };
   }
 
   const { error, count } = await sb
@@ -676,4 +739,100 @@ export async function resendReflectInvitationsAction(engagementId: string) {
   const result = await sendInvitationsForEngagement(engagementId, { onlyUninvited: true });
   revalidatePath(`/reflect/consultant/engagements/${engagementId}`);
   return { ok: true, ...result };
+}
+
+
+// ──────────────────────────────────────────────────────────────
+// Read the framework + competencies + behaviours for an engagement.
+// Powers the review-before-launch panel and the framework-PDF
+// download in Step 5 of the wizard.
+// ──────────────────────────────────────────────────────────────
+
+export type ReflectFrameworkBundle = {
+  framework: {
+    id: string;
+    name_en: string;
+    name_ar: string | null;
+    source: "custom" | "template";
+  };
+  competencies: Array<{
+    id: string;
+    name_en: string;
+    name_ar: string | null;
+    description_en: string | null;
+    description_ar: string | null;
+    display_order: number;
+    behaviors: Array<{
+      id: string;
+      text_en: string;
+      text_ar: string | null;
+      source: "manual" | "ai_proposed" | "ai_accepted";
+      ai_rationale: string | null;
+      display_order: number;
+    }>;
+  }>;
+};
+
+export async function loadReflectFrameworkForEngagement(
+  engagementId: string
+): Promise<ReflectFrameworkBundle | null> {
+  const sb = createServiceClient();
+
+  const { data: framework } = await sb
+    .from("reflect_frameworks")
+    .select("id, name_en, name_ar, source")
+    .eq("engagement_id", engagementId)
+    .maybeSingle<{
+      id: string;
+      name_en: string;
+      name_ar: string | null;
+      source: "custom" | "template";
+    }>();
+  if (!framework) return null;
+
+  const { data: comps } = await sb
+    .from("reflect_competencies")
+    .select("id, name_en, name_ar, description_en, description_ar, display_order")
+    .eq("framework_id", framework.id)
+    .order("display_order");
+
+  const compIds = (comps ?? []).map((c) => c.id);
+  const { data: behs } =
+    compIds.length === 0
+      ? { data: [] as Array<{ id: string; competency_id: string; text_en: string; text_ar: string | null; source: "manual" | "ai_proposed" | "ai_accepted"; ai_rationale: string | null; display_order: number }> }
+      : await sb
+          .from("reflect_behaviors")
+          .select("id, competency_id, text_en, text_ar, source, ai_rationale, display_order")
+          .in("competency_id", compIds)
+          .order("display_order");
+
+  return {
+    framework,
+    competencies: (comps ?? []).map((c) => ({
+      id: c.id,
+      name_en: c.name_en,
+      name_ar: c.name_ar,
+      description_en: c.description_en,
+      description_ar: c.description_ar,
+      display_order: c.display_order,
+      behaviors: ((behs ?? []) as Array<{
+        id: string;
+        competency_id: string;
+        text_en: string;
+        text_ar: string | null;
+        source: "manual" | "ai_proposed" | "ai_accepted";
+        ai_rationale: string | null;
+        display_order: number;
+      }>)
+        .filter((b) => b.competency_id === c.id)
+        .map((b) => ({
+          id: b.id,
+          text_en: b.text_en,
+          text_ar: b.text_ar,
+          source: b.source,
+          ai_rationale: b.ai_rationale,
+          display_order: b.display_order,
+        })),
+    })),
+  };
 }

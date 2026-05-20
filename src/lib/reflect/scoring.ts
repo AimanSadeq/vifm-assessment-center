@@ -30,6 +30,12 @@ export type CompetencyScore = {
   others_mean: number | null;
   gap: number | null;
   by_group: RaterGroupScore[];
+  /**
+   * P2 reassessment: this competency's Others-mean from the prior
+   * engagement. Resolved by matching on name (frameworks may have
+   * been edited between runs). Null when no prior link or no match.
+   */
+  prior_others_mean: number | null;
 };
 
 export type BehaviorScore = {
@@ -50,11 +56,28 @@ export type BehaviorScore = {
   by_group: RaterGroupScore[];
 };
 
+export type ReflectRaterTenure =
+  | "less_than_6mo"
+  | "six_mo_to_2yr"
+  | "two_to_5yr"
+  | "over_5yr";
+
 export type OpenVerbatim = {
   /** "start" | "stop" | "continue" */
   kind: "start" | "stop" | "continue";
   rater_role: ReflectRaterRole;
   text: string;
+  /** P2: how long this rater has worked with the participant. NULL when not provided. */
+  tenure: ReflectRaterTenure | null;
+};
+
+export type TenureBreakdown = {
+  /** Per-bucket count across all responding raters (excluding Self). */
+  counts: Record<ReflectRaterTenure, number>;
+  /** Number of raters who answered the tenure question. */
+  answered: number;
+  /** Number of raters who didn't answer. */
+  unanswered: number;
 };
 
 export type ParticipantScoring = {
@@ -100,6 +123,16 @@ export type ParticipantScoring = {
     self_picked: boolean;
     manager_picked: boolean;
   };
+  /** P2 tenure breakdown across all non-self raters. */
+  tenure_breakdown: TenureBreakdown;
+  /**
+   * P2 reassessment: prior-run overall Others-mean if this participant
+   * was carried over from a prior engagement. Null when not a
+   * reassessment OR no link found.
+   */
+  prior_overall_others: number | null;
+  /** Display name of the prior engagement, for the report subtitle. */
+  prior_engagement_name: string | null;
   generated_at: string;
 };
 
@@ -202,7 +235,7 @@ export async function computeParticipantScoring(
 
   const { data: participant } = await sb
     .from("reflect_participants")
-    .select("id, full_name, full_name_ar, role_title, engagement_id")
+    .select("id, full_name, full_name_ar, role_title, engagement_id, prior_participant_id")
     .eq("id", participantId)
     .maybeSingle<{
       id: string;
@@ -210,6 +243,7 @@ export async function computeParticipantScoring(
       full_name_ar: string | null;
       role_title: string | null;
       engagement_id: string;
+      prior_participant_id: string | null;
     }>();
   if (!participant) return null;
 
@@ -262,13 +296,14 @@ export async function computeParticipantScoring(
     open_stop: string | null;
     open_continue: string | null;
     critical_competency_ids: string[];
+    tenure: ReflectRaterTenure | null;
   };
   let raters: RaterMiniRow[] | null = null;
   {
     const full = await sb
       .from("reflect_raters")
       .select(
-        "id, rater_role, status, open_start, open_stop, open_continue, critical_competency_ids"
+        "id, rater_role, status, open_start, open_stop, open_continue, critical_competency_ids, tenure"
       )
       .eq("participant_id", participantId);
     if (full.error) {
@@ -284,6 +319,7 @@ export async function computeParticipantScoring(
         open_stop: null,
         open_continue: null,
         critical_competency_ids: [],
+        tenure: null,
       }));
     } else {
       raters = (full.data ?? []).map((r) => {
@@ -300,6 +336,7 @@ export async function computeParticipantScoring(
           open_stop: row.open_stop ?? null,
           open_continue: row.open_continue ?? null,
           critical_competency_ids: row.critical_competency_ids ?? [],
+          tenure: row.tenure ?? null,
         };
       });
     }
@@ -454,6 +491,7 @@ export async function computeParticipantScoring(
       others_mean: round2(oMean),
       gap: sMean !== null && oMean !== null ? round2(sMean - oMean) : null,
       by_group: compByGroup,
+      prior_others_mean: null,
     };
   });
 
@@ -550,13 +588,33 @@ export async function computeParticipantScoring(
     const sensitive = r.rater_role !== "self" && r.rater_role !== "manager";
     if (sensitive && groupRaterCount(r.rater_role) < min_n) continue;
     if (r.open_start) {
-      open_responses.push({ kind: "start", rater_role: r.rater_role, text: r.open_start });
+      open_responses.push({ kind: "start", rater_role: r.rater_role, text: r.open_start, tenure: r.tenure });
     }
     if (r.open_stop) {
-      open_responses.push({ kind: "stop", rater_role: r.rater_role, text: r.open_stop });
+      open_responses.push({ kind: "stop", rater_role: r.rater_role, text: r.open_stop, tenure: r.tenure });
     }
     if (r.open_continue) {
-      open_responses.push({ kind: "continue", rater_role: r.rater_role, text: r.open_continue });
+      open_responses.push({ kind: "continue", rater_role: r.rater_role, text: r.open_continue, tenure: r.tenure });
+    }
+  }
+
+  // ── P2 tenure breakdown ──
+  // Self raters are excluded (they're rating themselves; tenure makes no
+  // sense). NULL tenures land in unanswered. Used by the report Summary
+  // card to give a 1-line read on "how deep is the bench behind this
+  // feedback".
+  const tenure_breakdown: TenureBreakdown = {
+    counts: { less_than_6mo: 0, six_mo_to_2yr: 0, two_to_5yr: 0, over_5yr: 0 },
+    answered: 0,
+    unanswered: 0,
+  };
+  for (const r of raters) {
+    if (r.rater_role === "self") continue;
+    if (r.tenure === null) {
+      tenure_breakdown.unanswered += 1;
+    } else {
+      tenure_breakdown.counts[r.tenure] += 1;
+      tenure_breakdown.answered += 1;
     }
   }
 
@@ -591,6 +649,29 @@ export async function computeParticipantScoring(
     manager_picked: managerPicks.length > 0,
   };
 
+  // ── P2 reassessment: pull the prior participant's overall +
+  //    per-competency Others-mean if linked. Re-uses this same scoring
+  //    function (one extra DB read pass; small participants). When the
+  //    framework was edited between runs, competencies are matched by
+  //    case-insensitive name so renames don't lose the link entirely.
+  let prior_overall_others: number | null = null;
+  let prior_engagement_name: string | null = null;
+  if (participant.prior_participant_id) {
+    const priorScoring = await computeParticipantScoring(participant.prior_participant_id);
+    if (priorScoring) {
+      prior_overall_others = priorScoring.overall_others;
+      prior_engagement_name = priorScoring.engagement_name;
+      const priorByName = new Map<string, number | null>();
+      for (const pc of priorScoring.competencies) {
+        priorByName.set(pc.name_en.trim().toLowerCase(), pc.others_mean);
+      }
+      for (const c of competencies) {
+        const m = priorByName.get(c.name_en.trim().toLowerCase());
+        if (m !== undefined) c.prior_others_mean = m;
+      }
+    }
+  }
+
   return {
     participant_id: participant.id,
     participant_name: participant.full_name,
@@ -617,6 +698,9 @@ export async function computeParticipantScoring(
     hidden_strengths,
     open_responses,
     critical_alignment,
+    tenure_breakdown,
+    prior_overall_others,
+    prior_engagement_name,
     generated_at: new Date().toISOString(),
   };
 }

@@ -23,7 +23,15 @@ export type RaterRow = {
    * for this role. Empty array = not yet picked.
    */
   critical_competency_ids: string[];
+  /** P2 tenure (migration 00038). NULL until the rater answers it. */
+  tenure: ReflectRaterTenure | null;
 };
+
+export type ReflectRaterTenure =
+  | "less_than_6mo"
+  | "six_mo_to_2yr"
+  | "two_to_5yr"
+  | "over_5yr";
 
 export type ParticipantRow = {
   id: string;
@@ -97,6 +105,8 @@ export type RaterContext = {
   };
   /** P1: list of competency_ids the rater flagged as role-critical. */
   criticalCompetencyIds: string[];
+  /** P2: rater tenure (how long they've worked with the participant). */
+  tenure: ReflectRaterTenure | null;
 };
 
 /**
@@ -202,6 +212,8 @@ export async function loadRaterByToken(token: string): Promise<RaterContext | nu
     // P1 critical-competency picks (00037). Defensively coerces missing
     // column to empty so the form simply hides the picker.
     criticalCompetencyIds: rater.critical_competency_ids ?? [],
+    // P2 tenure (00038). NULL until the rater answers.
+    tenure: rater.tenure ?? null,
   };
 }
 

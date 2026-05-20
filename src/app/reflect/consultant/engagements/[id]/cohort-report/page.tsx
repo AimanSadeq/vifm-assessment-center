@@ -1,5 +1,10 @@
 import { notFound } from "next/navigation";
 import { computeCohortScoring, type CohortScoring } from "@/lib/reflect/scoring";
+import {
+  recommendCoursesForReflectCohort,
+  HIGH_FIT_THRESHOLD,
+  type RecommendedCourse,
+} from "@/lib/recommender/courses";
 
 export const dynamic = "force-dynamic";
 
@@ -15,19 +20,38 @@ export default async function ReflectCohortReportPage({
   const scoring = await computeCohortScoring(id);
   if (!scoring) return notFound();
 
+  // Cohort training plan — best-effort. Empty list is fine; the page
+  // hides the section entirely when nothing matched.
+  const courses = await recommendCoursesForReflectCohort({
+    engagementId: id,
+    limit: 6,
+  });
+
   const bare = sp.bare === "1";
   const lang: "en" | "ar" | "bilingual" =
     sp.lang === "ar" ? "ar" : sp.lang === "bilingual" ? "bilingual" : "en";
 
-  return <CohortReport scoring={scoring} lang={lang} bare={bare} />;
+  return (
+    <CohortReport
+      scoring={scoring}
+      recommendations={courses.recommendations}
+      unmappedCompetencies={courses.unmapped}
+      lang={lang}
+      bare={bare}
+    />
+  );
 }
 
 function CohortReport({
   scoring,
+  recommendations,
+  unmappedCompetencies,
   lang,
   bare,
 }: {
   scoring: CohortScoring;
+  recommendations: RecommendedCourse[];
+  unmappedCompetencies: string[];
   lang: "en" | "ar" | "bilingual";
   bare: boolean;
 }) {
@@ -194,6 +218,71 @@ function CohortReport({
         </div>
       </section>
 
+      {/* Cohort training plan — VIFM programmes ranked by aggregated gap */}
+      {recommendations.length > 0 && (
+        <section className="page">
+          <h2>{rtl ? "خطة تطوير الكفايات على مستوى المجموعة" : "Cohort training plan"}</h2>
+          <p className="lead">
+            {rtl
+              ? "برامج VIFM المُرشّحة بناءً على مجموع الفجوات في كل كفاية على مستوى المشاركين كلهم. هذه الترتيبات تجعل البرامج التي تخدم أكبر عدد من القادة في المقدّمة."
+              : "VIFM programmes ranked by the aggregated gap across every participant — the programmes that serve the largest slice of the cohort sit at the top."}
+          </p>
+          <ol className="programme-list">
+            {recommendations.map((p, i) => {
+              const isHighFit = p.total_score >= HIGH_FIT_THRESHOLD;
+              const topDriver = p.drivers.slice().sort((a, b) => b.contribution - a.contribution)[0];
+              const courseSlug = p.course_code ?? p.course_id;
+              const quoteUrl =
+                `/courses/${encodeURIComponent(courseSlug)}/request-quote?source=reflect-cohort` +
+                `&engagement=${scoring.engagement_id}`;
+              return (
+                <li key={p.course_id}>
+                  <div className="programme-head">
+                    <span className="programme-rank">{i + 1}</span>
+                    <span className="programme-title">
+                      {rtl ? p.title_ar ?? p.title_en : p.title_en}
+                    </span>
+                    {isHighFit && (
+                      <span className="programme-fit">{rtl ? "★ مناسب جدًا" : "★ HIGH FIT"}</span>
+                    )}
+                  </div>
+                  <div className="programme-meta">
+                    {p.course_code && <span>{p.course_code}</span>}
+                    <span>{p.vertical.replace(/_/g, " ")}</span>
+                    <span>{rtl ? "المستوى" : "Level"}: {p.level}</span>
+                    <span>{p.default_duration_days} {rtl ? "أيام" : "days"}</span>
+                  </div>
+                  <div className="programme-drivers">
+                    {p.drivers.map((d, di) => (
+                      <span key={di} className="programme-driver-chip">
+                        {d.label}{" "}
+                        <span className="programme-driver-math">
+                          ({d.gap.toFixed(1)} × {d.relevance})
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                  {topDriver?.rationale && (
+                    <p className="programme-rationale">{topDriver.rationale}</p>
+                  )}
+                  <div className="programme-cta">
+                    <a href={quoteUrl} className="programme-cta-link">
+                      {rtl ? "اطلب عرض سعر ←" : "Request a quote →"}
+                    </a>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+          {unmappedCompetencies.length > 0 && (
+            <div className="unmapped-detail">
+              {rtl ? "كفايات لم تُربط: " : "Unmapped competencies: "}
+              {unmappedCompetencies.join(" · ")}
+            </div>
+          )}
+        </section>
+      )}
+
       {/* Per-competency table */}
       <section className="page">
         <h2>{rtl ? "متوسط الكفايات على مستوى المجموعة" : "Competency means at the cohort level"}</h2>
@@ -320,6 +409,27 @@ h3 { color: var(--vifm-primary); font-size: 12pt; font-weight: 700; margin: 4mm 
 .comp-table th.num { text-align: right; }
 .comp-table td { padding: 2.5mm 3mm; border-bottom: 0.6pt solid var(--vifm-border); }
 .comp-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Cohort training plan — programme cards mirror the per-participant report */
+.programme-list { padding: 0; margin: 0; list-style: none; }
+.programme-list > li { padding: 4mm 0; border-bottom: 0.6pt solid var(--vifm-border); page-break-inside: avoid; }
+.programme-list > li:last-child { border-bottom: 0; }
+.programme-head { display: flex; align-items: baseline; gap: 3mm; flex-wrap: wrap; }
+.programme-rank { display: inline-flex; align-items: center; justify-content: center; width: 6mm; height: 6mm; border-radius: 50%; background: var(--vifm-soft); color: var(--vifm-primary); font-size: 9pt; font-weight: 700; }
+.programme-title { font-size: 11.5pt; font-weight: 700; color: var(--vifm-primary); }
+.programme-fit { display: inline-block; font-size: 8pt; font-weight: 700; color: #047857; background: #D1FAE5; border: 0.6pt solid #6EE7B7; padding: 0.5mm 2mm; border-radius: 6mm; letter-spacing: 0.04em; }
+.programme-meta { display: flex; gap: 4mm; flex-wrap: wrap; color: var(--vifm-muted); font-size: 9pt; margin: 1.5mm 0 2mm 9mm; text-transform: capitalize; }
+.programme-drivers { display: flex; gap: 2mm; flex-wrap: wrap; margin-left: 9mm; }
+.programme-driver-chip { display: inline-block; background: var(--vifm-soft); color: var(--vifm-primary); padding: 0.6mm 2.4mm; border-radius: 3mm; font-size: 9pt; }
+.programme-driver-math { color: var(--vifm-muted); font-size: 8.5pt; }
+.programme-rationale { margin: 2mm 0 0 9mm; color: var(--vifm-muted); font-size: 9pt; font-style: italic; }
+.programme-cta { margin: 2.5mm 0 0 9mm; }
+.programme-cta-link { color: var(--vifm-accent); font-size: 9.5pt; font-weight: 600; text-decoration: none; }
+.unmapped-detail { margin-top: 3mm; color: var(--vifm-muted); font-size: 9pt; }
+.reflect-pdf[dir="rtl"] .programme-meta,
+.reflect-pdf[dir="rtl"] .programme-drivers,
+.reflect-pdf[dir="rtl"] .programme-rationale,
+.reflect-pdf[dir="rtl"] .programme-cta { margin-left: 0; margin-right: 9mm; }
 
 /* Distribution stacked-bars */
 .dist-bars { display: grid; gap: 2mm; margin-bottom: 4mm; }

@@ -836,3 +836,201 @@ export async function loadReflectFrameworkForEngagement(
     })),
   };
 }
+
+
+// ────────────────────────────────────────────────────────────────────
+// Reassessment workflow — clones the design + (optionally) the
+// participant list into a fresh draft engagement.
+//
+// Mirrors the ARA / AC pattern (00020 in the AC schema). What's copied:
+//   - Engagement metadata (name suffixed with "(reassessment YYYY)")
+//   - Framework — competencies + behaviours
+//   - Participants — if carryParticipants=true. Each new participant
+//     row stores its prior_participant_id so the report can render
+//     "↑ +0.4 vs prior" deltas after the new run scores.
+//
+// What's NOT copied:
+//   - Raters (each participant invites fresh raters)
+//   - Responses, IDPs, reports — these are participant-level artefacts
+//     for the prior run only.
+// ────────────────────────────────────────────────────────────────────
+
+export type CreateReassessmentResult =
+  | { ok: true; newEngagementId: string }
+  | { ok: false; error: string };
+
+export async function createReflectReassessmentFromPrior(input: {
+  priorEngagementId: string;
+  carryParticipants?: boolean;
+}): Promise<CreateReassessmentResult> {
+  const sb = createServiceClient();
+  const carry = input.carryParticipants ?? true;
+
+  // 1. Validate the prior engagement exists and is in a state where a
+  //    reassessment makes sense (completed / archived).
+  const { data: prior } = await sb
+    .from("reflect_engagements")
+    .select("*")
+    .eq("id", input.priorEngagementId)
+    .maybeSingle();
+  if (!prior) return { ok: false, error: "Prior engagement not found" };
+  if (!["completed", "live", "archived"].includes(prior.status)) {
+    return {
+      ok: false,
+      error: `Engagement status "${prior.status}" can't be reassessed yet — wait until it's at least live.`,
+    };
+  }
+
+  // 2. Create the new draft engagement, suffixing the name with the year.
+  const year = new Date().getFullYear();
+  const baseName = (prior.name as string).replace(/\s*\(reassessment\s+\d{4}\)\s*$/i, "");
+  const newName = `${baseName} (reassessment ${year})`;
+
+  const { data: newEng, error: newEngErr } = await sb
+    .from("reflect_engagements")
+    .insert({
+      organization_id: prior.organization_id,
+      consultant_id: prior.consultant_id,
+      name: newName,
+      region: prior.region,
+      sector: prior.sector,
+      status: "draft",
+      default_language: prior.default_language,
+      report_language: prior.report_language,
+      scale_type: prior.scale_type,
+      anonymity_min_n: prior.anonymity_min_n,
+      participant_target_count: prior.participant_target_count,
+      is_sandbox: prior.is_sandbox,
+      prior_engagement_id: prior.id,
+    })
+    .select("id")
+    .single<{ id: string }>();
+  if (newEngErr || !newEng) {
+    return { ok: false, error: newEngErr?.message ?? "Could not create reassessment engagement" };
+  }
+
+  // 3. Clone the framework (competencies + behaviours). Look up the
+  //    prior engagement's framework, copy each row, keep a map of
+  //    old-comp-id → new-comp-id so we can rewrite the behaviour links.
+  const { data: priorFw } = await sb
+    .from("reflect_frameworks")
+    .select("id, name_en, name_ar, description_en, description_ar, source")
+    .eq("engagement_id", prior.id)
+    .maybeSingle<{
+      id: string;
+      name_en: string;
+      name_ar: string | null;
+      description_en: string | null;
+      description_ar: string | null;
+      source: "custom" | "template";
+    }>();
+  if (priorFw) {
+    const { data: newFw, error: newFwErr } = await sb
+      .from("reflect_frameworks")
+      .insert({
+        engagement_id: newEng.id,
+        name_en: priorFw.name_en,
+        name_ar: priorFw.name_ar,
+        description_en: priorFw.description_en,
+        description_ar: priorFw.description_ar,
+        source: priorFw.source,
+        is_template: false,
+        is_active: true,
+      })
+      .select("id")
+      .single<{ id: string }>();
+    if (newFwErr || !newFw) {
+      return { ok: false, error: newFwErr?.message ?? "Could not clone framework" };
+    }
+
+    const { data: priorComps } = await sb
+      .from("reflect_competencies")
+      .select("id, name_en, name_ar, description_en, description_ar, display_order")
+      .eq("framework_id", priorFw.id)
+      .order("display_order");
+
+    const compIdMap = new Map<string, string>();
+    for (const c of priorComps ?? []) {
+      const { data: newComp } = await sb
+        .from("reflect_competencies")
+        .insert({
+          framework_id: newFw.id,
+          name_en: c.name_en,
+          name_ar: c.name_ar,
+          description_en: c.description_en,
+          description_ar: c.description_ar,
+          display_order: c.display_order,
+        })
+        .select("id")
+        .single<{ id: string }>();
+      if (newComp) compIdMap.set(c.id, newComp.id);
+    }
+
+    const priorCompIds = Array.from(compIdMap.keys());
+    if (priorCompIds.length > 0) {
+      const { data: priorBehs } = await sb
+        .from("reflect_behaviors")
+        .select("competency_id, level_tier, text_en, text_ar, source, ai_rationale, display_order")
+        .in("competency_id", priorCompIds);
+      if (priorBehs && priorBehs.length > 0) {
+        const behaviorRows = priorBehs
+          .map((b) => {
+            const newCompId = compIdMap.get(b.competency_id);
+            if (!newCompId) return null;
+            return {
+              competency_id: newCompId,
+              level_tier: b.level_tier,
+              text_en: b.text_en,
+              text_ar: b.text_ar,
+              source: b.source,
+              ai_rationale: b.ai_rationale,
+              display_order: b.display_order,
+            };
+          })
+          .filter((b): b is NonNullable<typeof b> => b !== null);
+        if (behaviorRows.length > 0) {
+          await sb.from("reflect_behaviors").insert(behaviorRows);
+        }
+      }
+    }
+  }
+
+  // 4. Optionally carry the participants over.
+  if (carry) {
+    const { data: priorParticipants } = await sb
+      .from("reflect_participants")
+      .select(
+        "id, full_name, full_name_ar, email, role_title, business_unit, level_tier, manager_email, language_preference"
+      )
+      .eq("engagement_id", prior.id);
+    if (priorParticipants && priorParticipants.length > 0) {
+      const rows = priorParticipants.map((p) => ({
+        engagement_id: newEng.id,
+        full_name: p.full_name,
+        full_name_ar: p.full_name_ar,
+        email: p.email,
+        role_title: p.role_title,
+        business_unit: p.business_unit,
+        level_tier: p.level_tier,
+        manager_email: p.manager_email,
+        language_preference: p.language_preference,
+        status: "invited" as const,
+        prior_participant_id: p.id,
+      }));
+      await sb.from("reflect_participants").insert(rows);
+    }
+  }
+
+  // 5. Audit row so the consultant dashboard shows the lineage.
+  await sb.from("reflect_audit_log").insert({
+    action: "engagement.reassessment_created",
+    target_table: "reflect_engagements",
+    target_id: newEng.id,
+    metadata: {
+      prior_engagement_id: prior.id,
+      carry_participants: carry,
+    },
+  });
+
+  return { ok: true, newEngagementId: newEng.id };
+}

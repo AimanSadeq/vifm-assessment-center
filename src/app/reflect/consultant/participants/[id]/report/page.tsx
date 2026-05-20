@@ -153,6 +153,11 @@ function ReportBody({
           />
         </div>
 
+        {/* P2 reassessment: side-by-side overall comparison */}
+        {scoring.prior_overall_others !== null && (
+          <PriorDeltaCard scoring={scoring} rtl={rtl} />
+        )}
+
         {/* P1: Critical-competency alignment between Self and Manager */}
         <CriticalAlignmentCard scoring={scoring} rtl={rtl} />
 
@@ -181,6 +186,9 @@ function ReportBody({
             ))}
           </tbody>
         </table>
+
+        {/* P2: tenure breakdown */}
+        <TenureBreakdownCard scoring={scoring} rtl={rtl} />
       </section>
 
       {/* Strengths */}
@@ -261,6 +269,13 @@ function ReportBody({
                 label={rtl ? "الفجوة" : "Gap"}
                 value={c.gap !== null ? (c.gap > 0 ? `+${c.gap.toFixed(2)}` : c.gap.toFixed(2)) : "—"}
               />
+              {c.prior_others_mean !== null && c.others_mean !== null && (
+                <PriorDeltaInline
+                  prior={c.prior_others_mean}
+                  current={c.others_mean}
+                  rtl={rtl}
+                />
+              )}
             </div>
             <div className="group-bars">
               {c.by_group.filter((g) => g.rater_count > 0).map((g) => (
@@ -482,6 +497,127 @@ function BehaviorListPage({
         </ol>
       )}
     </section>
+  );
+}
+
+
+// ──────────────────────────────────────────────────────────────
+// Prior-delta components (P2 reassessment). The card sits on the
+// Summary page and gives a punchy headline ("↑ +0.4 vs prior run").
+// The inline variant lives on every per-competency card.
+// ──────────────────────────────────────────────────────────────
+
+function PriorDeltaCard({
+  scoring,
+  rtl,
+}: {
+  scoring: ParticipantScoring;
+  rtl: boolean;
+}) {
+  if (scoring.prior_overall_others === null || scoring.overall_others === null) return null;
+  const delta = scoring.overall_others - scoring.prior_overall_others;
+  const sign = delta > 0 ? "+" : "";
+  const tone = delta >= 0.2 ? "up" : delta <= -0.2 ? "down" : "flat";
+  return (
+    <div className={`prior-card prior-card-${tone}`}>
+      <div className="prior-card-head">
+        <span className="prior-card-eyebrow">
+          {rtl ? "مقارنة بالتقييم السابق" : "vs prior assessment"}
+        </span>
+        {scoring.prior_engagement_name && (
+          <span className="prior-card-name">{scoring.prior_engagement_name}</span>
+        )}
+      </div>
+      <div className="prior-card-row">
+        <div className="prior-card-side">
+          <div className="prior-card-label">{rtl ? "السابق" : "Prior"}</div>
+          <div className="prior-card-value">{scoring.prior_overall_others.toFixed(2)}</div>
+        </div>
+        <div className="prior-card-arrow">
+          {tone === "up" ? "↑" : tone === "down" ? "↓" : "→"}
+        </div>
+        <div className="prior-card-side">
+          <div className="prior-card-label">{rtl ? "الآن" : "Now"}</div>
+          <div className="prior-card-value">{scoring.overall_others.toFixed(2)}</div>
+        </div>
+        <div className="prior-card-delta">
+          {sign}{delta.toFixed(2)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PriorDeltaInline({
+  prior,
+  current,
+  rtl,
+}: {
+  prior: number;
+  current: number;
+  rtl: boolean;
+}) {
+  const delta = current - prior;
+  const sign = delta > 0 ? "+" : "";
+  const tone = delta >= 0.2 ? "up" : delta <= -0.2 ? "down" : "flat";
+  return (
+    <span className={`prior-inline prior-inline-${tone}`}>
+      <span className="kpi-inline-label">{rtl ? "مقابل السابق" : "vs prior"}</span>
+      <span className="kpi-inline-value">
+        {tone === "up" ? "↑" : tone === "down" ? "↓" : "→"} {sign}{delta.toFixed(2)}
+      </span>
+    </span>
+  );
+}
+
+
+// ──────────────────────────────────────────────────────────────
+// Tenure breakdown. Tiny strip on the Summary page that gives a
+// one-line read on "how much do these raters actually know this
+// person" — competitor reports surface this as small chips next
+// to each verbatim and we follow the same pattern.
+// ──────────────────────────────────────────────────────────────
+
+function TenureBreakdownCard({
+  scoring,
+  rtl,
+}: {
+  scoring: ParticipantScoring;
+  rtl: boolean;
+}) {
+  const tb = scoring.tenure_breakdown;
+  // Don't render the card if nobody answered — the field is optional.
+  if (tb.answered === 0 && tb.unanswered === 0) return null;
+  if (tb.answered === 0) return null;
+
+  const rows: Array<{ key: keyof typeof tb.counts; label: string }> = [
+    { key: "less_than_6mo", label: rtl ? "أقل من 6 أشهر" : "Less than 6 months" },
+    { key: "six_mo_to_2yr", label: rtl ? "من 6 أشهر إلى سنتين" : "6 months – 2 years" },
+    { key: "two_to_5yr", label: rtl ? "من سنتين إلى 5 سنوات" : "2 – 5 years" },
+    { key: "over_5yr", label: rtl ? "أكثر من 5 سنوات" : "More than 5 years" },
+  ];
+
+  return (
+    <>
+      <h3>{rtl ? "مدة معرفة المقيّمين بك" : "How long raters have known you"}</h3>
+      <div className="tenure-chips">
+        {rows.map((r) => {
+          const n = tb.counts[r.key];
+          if (n === 0) return null;
+          return (
+            <span key={r.key} className="tenure-chip">
+              <strong>{n}</strong> · {r.label}
+            </span>
+          );
+        })}
+        {tb.unanswered > 0 && (
+          <span className="tenure-chip tenure-chip-muted">
+            <strong>{tb.unanswered}</strong> ·{" "}
+            {rtl ? "لم يجب على هذا السؤال" : "didn't answer"}
+          </span>
+        )}
+      </div>
+    </>
   );
 }
 
@@ -742,12 +878,39 @@ function VerbatimPage({
           <div key={s.kind} className="verbatim-section">
             <h3>{rtl ? s.ar : s.en}</h3>
             <ul className="verbatim-list">
-              {items.map((v, i) => (
-                <li key={`${s.kind}-${i}`} className="verbatim-item">
-                  <span className="verbatim-role">{roleLabelShort(v.rater_role, rtl)}</span>
-                  <span className="verbatim-text">{v.text}</span>
-                </li>
-              ))}
+              {items.map((v, i) => {
+                const lang = detectVerbatimLanguage(v.text);
+                const reportLang: "en" | "ar" = rtl ? "ar" : "en";
+                // Only show the language chip when the verbatim language
+                // doesn't match the report language — that's the case
+                // where the consultant needs to be aware (and consider
+                // translating during debrief).
+                const showLangChip = lang !== "unknown" && lang !== reportLang;
+                return (
+                  <li key={`${s.kind}-${i}`} className="verbatim-item">
+                    <span className="verbatim-role">
+                      {roleLabelShort(v.rater_role, rtl)}
+                      {v.tenure && (
+                        <span className="verbatim-tenure">· {tenureLabelShort(v.tenure, rtl)}</span>
+                      )}
+                      {showLangChip && (
+                        <span
+                          className={`verbatim-lang verbatim-lang-${lang}`}
+                          dir="ltr"
+                        >
+                          {lang === "ar" ? "AR" : "EN"}
+                        </span>
+                      )}
+                    </span>
+                    <span
+                      className="verbatim-text"
+                      dir={lang === "ar" ? "rtl" : lang === "en" ? "ltr" : undefined}
+                    >
+                      {v.text}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         );
@@ -764,6 +927,49 @@ function VerbatimPage({
 function fmtScore(v: number | null): string {
   if (v === null) return "—";
   return v.toFixed(2);
+}
+
+/**
+ * Detect whether a verbatim is predominantly Arabic, predominantly
+ * Latin/English, or neither. Counts characters in each Unicode block.
+ * Returns "unknown" for short / mixed / non-text content so the caller
+ * can decide not to render a chip.
+ *
+ * The Arabic block range U+0600–U+06FF covers all standard Arabic
+ * letters; the Latin range U+0041–U+007A covers A–Z and a–z. We don't
+ * try to be exhaustive about CJK / Cyrillic / etc — the only choice the
+ * consultant is making is "do I need Arabic translation for this?".
+ */
+function detectVerbatimLanguage(text: string): "ar" | "en" | "unknown" {
+  let arabic = 0;
+  let latin = 0;
+  for (const ch of text) {
+    const cp = ch.codePointAt(0);
+    if (cp === undefined) continue;
+    if (cp >= 0x0600 && cp <= 0x06FF) arabic += 1;
+    else if ((cp >= 0x0041 && cp <= 0x005A) || (cp >= 0x0061 && cp <= 0x007A)) latin += 1;
+  }
+  const total = arabic + latin;
+  if (total < 4) return "unknown";
+  if (arabic / total >= 0.5) return "ar";
+  if (latin / total >= 0.5) return "en";
+  return "unknown";
+}
+
+function tenureLabelShort(t: string, rtl: boolean): string {
+  const en: Record<string, string> = {
+    less_than_6mo: "<6mo",
+    six_mo_to_2yr: "6mo–2y",
+    two_to_5yr: "2–5y",
+    over_5yr: "5y+",
+  };
+  const ar: Record<string, string> = {
+    less_than_6mo: "أقل من 6 أشهر",
+    six_mo_to_2yr: "6 أشهر–سنتان",
+    two_to_5yr: "سنتان–5 سنوات",
+    over_5yr: "5 سنوات+",
+  };
+  return (rtl ? ar : en)[t] ?? t;
 }
 
 function roleLabelShort(role: string, rtl: boolean): string {
@@ -928,6 +1134,33 @@ h4 { color: var(--vifm-primary); font-size: 11pt; font-weight: 700; margin: 3mm 
 .idp-row > span:first-child { color: var(--vifm-muted); font-size: 9pt; min-width: 42mm; }
 .idp-line { flex: 1; border-bottom: 0.6pt solid var(--vifm-border); height: 5mm; }
 
+/* P2 reassessment — prior delta card + inline */
+.prior-card { display: flex; flex-direction: column; gap: 2mm; padding: 4mm 5mm; margin: 3mm 0 5mm; border-radius: 2.5mm; border: 1px solid var(--vifm-border); }
+.prior-card-up { background: linear-gradient(180deg, #ECFDF5 0%, #D1FAE5 100%); border-color: #6EE7B7; }
+.prior-card-down { background: linear-gradient(180deg, #FEF2F2 0%, #FEE2E2 100%); border-color: #FCA5A5; }
+.prior-card-flat { background: var(--vifm-soft); }
+.prior-card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 3mm; flex-wrap: wrap; }
+.prior-card-eyebrow { color: var(--vifm-muted); font-size: 8.5pt; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; }
+.prior-card-name { color: var(--vifm-muted); font-size: 9pt; font-style: italic; }
+.prior-card-row { display: flex; align-items: center; gap: 4mm; }
+.prior-card-side { display: flex; flex-direction: column; gap: 0.5mm; min-width: 14mm; }
+.prior-card-label { color: var(--vifm-muted); font-size: 8.5pt; text-transform: uppercase; letter-spacing: 0.04em; }
+.prior-card-value { color: var(--vifm-dark); font-size: 18pt; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
+.prior-card-arrow { color: var(--vifm-muted); font-size: 16pt; font-weight: 700; padding: 0 1mm; }
+.prior-card-up .prior-card-arrow { color: #047857; }
+.prior-card-down .prior-card-arrow { color: #9F1239; }
+.prior-card-delta { margin-left: auto; font-size: 14pt; font-weight: 700; font-variant-numeric: tabular-nums; padding: 1mm 3mm; border-radius: 4mm; }
+.prior-card-up .prior-card-delta { color: #047857; background: rgba(255,255,255,0.6); }
+.prior-card-down .prior-card-delta { color: #9F1239; background: rgba(255,255,255,0.6); }
+.prior-card-flat .prior-card-delta { color: var(--vifm-muted); background: white; }
+.prior-inline { display: inline-flex; gap: 1.5mm; align-items: baseline; font-size: 10pt; padding: 0.4mm 2mm; border-radius: 3mm; }
+.prior-inline-up { background: #D1FAE5; }
+.prior-inline-up .kpi-inline-value { color: #047857; }
+.prior-inline-down { background: #FEE2E2; }
+.prior-inline-down .kpi-inline-value { color: #9F1239; }
+.prior-inline-flat { background: var(--vifm-soft); }
+.reflect-pdf[dir="rtl"] .prior-card-delta { margin-left: 0; margin-right: auto; }
+
 /* Critical-competency alignment card */
 .critical-card { border: 1px solid var(--vifm-border); border-radius: 2.5mm; padding: 4mm 5mm; margin: 4mm 0 6mm; background: var(--vifm-soft); page-break-inside: avoid; }
 .critical-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 4mm; flex-wrap: wrap; }
@@ -969,8 +1202,18 @@ h4 { color: var(--vifm-primary); font-size: 11pt; font-weight: 700; margin: 3mm 
 .verbatim-list { list-style: none; padding: 0; margin: 0; }
 .verbatim-item { padding: 2.5mm 0; border-bottom: 0.5pt solid var(--vifm-border); display: grid; grid-template-columns: 28mm 1fr; gap: 4mm; align-items: baseline; }
 .verbatim-item:last-child { border-bottom: 0; }
-.verbatim-role { color: var(--vifm-muted); font-size: 9pt; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+.verbatim-role { color: var(--vifm-muted); font-size: 9pt; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; display: flex; flex-direction: column; gap: 1mm; }
+.verbatim-tenure { color: var(--vifm-muted); font-size: 8pt; font-weight: 500; text-transform: none; letter-spacing: 0; opacity: 0.85; }
+.verbatim-lang { display: inline-block; align-self: flex-start; margin-top: 0.5mm; font-size: 7.5pt; font-weight: 700; padding: 0.3mm 1.5mm; border-radius: 3mm; letter-spacing: 0.06em; text-transform: uppercase; }
+.verbatim-lang-ar { background: #FEF3C7; color: #92400E; border: 0.4pt solid #FCD34D; }
+.verbatim-lang-en { background: #DBEAFE; color: #1E40AF; border: 0.4pt solid #93C5FD; }
 .verbatim-text { color: var(--vifm-dark); font-size: 10.5pt; line-height: 1.45; white-space: pre-wrap; }
+
+/* Tenure chips on Summary page */
+.tenure-chips { display: flex; flex-wrap: wrap; gap: 2mm; margin-top: 2mm; }
+.tenure-chip { display: inline-flex; align-items: center; gap: 1mm; background: var(--vifm-soft); border: 0.5pt solid var(--vifm-border); border-radius: 3mm; padding: 1.2mm 3mm; font-size: 9pt; color: var(--vifm-dark); }
+.tenure-chip strong { color: var(--vifm-primary); font-weight: 700; font-variant-numeric: tabular-nums; }
+.tenure-chip-muted { background: transparent; color: var(--vifm-muted); border-style: dashed; }
 
 /* RTL */
 .reflect-pdf[dir="rtl"] .item-table th.item-behavior { text-align: right; }

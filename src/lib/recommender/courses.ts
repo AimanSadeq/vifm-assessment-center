@@ -351,6 +351,88 @@ export async function recommendCoursesForReflectParticipant(args: {
 
 
 // ──────────────────────────────────────────────────────────────
+// Reflect — cohort (every participant in an engagement). Sums
+// each competency's gap across the cohort: a wider cohort gap
+// makes the course more valuable to run as a programme. Mirrors
+// the per-participant function's name-matching layer 1:1.
+// ──────────────────────────────────────────────────────────────
+
+export async function recommendCoursesForReflectCohort(args: {
+  engagementId: string;
+  target?: number;
+  limit?: number;
+}): Promise<{
+  recommendations: RecommendedCourse[];
+  unmapped: string[];
+}> {
+  const limit = args.limit ?? TAG_LIMIT_DEFAULT;
+  const target = args.target ?? 4;
+  const sb = createServiceClient();
+
+  const { computeCohortScoring } = await import("@/lib/reflect/scoring");
+  const cohort = await computeCohortScoring(args.engagementId);
+  if (!cohort) return { recommendations: [], unmapped: [] };
+
+  // Sum gap × participants-counted per competency. Using a sum (not a
+  // mean) so that a competency where 8 of 10 participants are below
+  // target outranks one where only 3 of 10 are — same logic as the AC
+  // cohort recommender.
+  type RawGap = { reflect_name: string; gap: number };
+  const rawGaps: RawGap[] = [];
+  for (const c of cohort.competencies) {
+    const observed = c.mean;
+    if (observed === null) continue;
+    const gapPerParticipant = target - observed;
+    if (gapPerParticipant <= 0) continue;
+    rawGaps.push({
+      reflect_name: c.name_en,
+      gap: gapPerParticipant * Math.max(c.distribution.counted, 1),
+    });
+  }
+  if (rawGaps.length === 0) return { recommendations: [], unmapped: [] };
+
+  const { data: acRows } = await sb.from("competencies").select("id, name");
+  const catalogue: AcCompetencyLite[] = ((acRows ?? []) as Array<{ id: string; name: string }>).map(
+    (r) => {
+      const n = normalizeName(r.name);
+      return { id: r.id, name: r.name, normalized: n.normalized, tokens: n.tokens };
+    }
+  );
+
+  type MappedGap = { competency_id: string; name: string; gap: number };
+  const mappedGaps: MappedGap[] = [];
+  const unmapped: string[] = [];
+  for (const g of rawGaps) {
+    const m = findAcMatch(g.reflect_name, catalogue);
+    if (m) {
+      mappedGaps.push({
+        competency_id: m.id,
+        name: g.reflect_name,
+        gap: g.gap,
+      });
+    } else {
+      unmapped.push(g.reflect_name);
+    }
+  }
+  if (mappedGaps.length === 0) return { recommendations: [], unmapped };
+
+  const competencyIds = Array.from(new Set(mappedGaps.map((g) => g.competency_id)));
+  const { data: tagsRows } = await sb
+    .from("vifm_course_competency_tags")
+    .select(
+      "course_id, competency_id, relevance_weight, rationale, " +
+      "vifm_courses(id, code, title_en, title_ar, vertical, level, " +
+      "default_duration_days, min_duration_days, max_duration_days, is_active)"
+    )
+    .in("competency_id", competencyIds);
+  const tags = (tagsRows ?? []) as unknown as CompetencyTagJoin[];
+
+  const recommendations = rankFromCompetencyTags(tags, mappedGaps, limit);
+  return { recommendations, unmapped };
+}
+
+
+// ──────────────────────────────────────────────────────────────
 // ARA — per-assessment
 // ──────────────────────────────────────────────────────────────
 

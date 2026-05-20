@@ -209,6 +209,49 @@ export async function saveReflectOpenResponse(
 
 
 // ──────────────────────────────────────────────────────────────
+// Save the rater's tenure (P2 parity pass). "How long have you
+// worked with this person?" — one of four buckets. NULL clears
+// the value if the rater changes their mind.
+// ──────────────────────────────────────────────────────────────
+
+const saveTenureSchema = z.object({
+  token: z.string().min(1),
+  tenure: z
+    .enum(["less_than_6mo", "six_mo_to_2yr", "two_to_5yr", "over_5yr"])
+    .nullable(),
+});
+
+export type SaveTenureResult = { ok: true } | { ok: false; error: string };
+
+export async function saveReflectRaterTenure(
+  input: z.infer<typeof saveTenureSchema>
+): Promise<SaveTenureResult> {
+  const parsed = saveTenureSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  const p = parsed.data;
+
+  let ctx;
+  try {
+    ctx = await requireRater(p.token);
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Token failed" };
+  }
+
+  const sb = createServiceClient();
+  const { error } = await sb
+    .from("reflect_raters")
+    .update({
+      tenure: p.tenure,
+      last_active_at: new Date().toISOString(),
+    })
+    .eq("id", ctx.rater.id)
+    .neq("status", "completed");
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+
+// ──────────────────────────────────────────────────────────────
 // Save the Self/Manager rater's critical-competency picks (P1
 // parity pass). Validates every pick is a real competency_id from
 // THIS engagement's framework. Refuses the call when the rater is

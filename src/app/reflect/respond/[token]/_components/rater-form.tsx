@@ -16,8 +16,9 @@ import {
   markReflectRaterComplete,
   saveReflectOpenResponse,
   saveReflectCriticalPicks,
+  saveReflectRaterTenure,
 } from "@/lib/reflect/rater-actions";
-import type { RaterContext } from "@/lib/reflect/rater-access";
+import type { RaterContext, ReflectRaterTenure } from "@/lib/reflect/rater-access";
 
 type LocalAnswer = {
   score: number | null;
@@ -96,6 +97,14 @@ const UI = {
     openStopLabelSelf: "What do you want to STOP doing to be more effective?",
     openContinueLabelSelf: "What do you want to CONTINUE doing?",
     openPlaceholder: "Optional — write as much or as little as you like.",
+    tenureHeading: "Before you start — how long have you worked with this person?",
+    tenureLead: "Optional. Helps the report show the depth of experience behind each piece of feedback.",
+    tenureChoices: {
+      less_than_6mo: "Less than 6 months",
+      six_mo_to_2yr: "6 months – 2 years",
+      two_to_5yr: "2 – 5 years",
+      over_5yr: "More than 5 years",
+    },
     criticalHeading: "Which competencies are most critical for this role?",
     criticalLeadSelf:
       "Pick the competencies you consider most critical for your role. Your manager picks independently — the alignment between your picks (and theirs) is itself a coaching moment.",
@@ -132,6 +141,14 @@ const UI = {
     openStopLabelSelf: "ما الذي تريد أن تتوقّف عن فعله لتصبح أكثر فاعلية؟",
     openContinueLabelSelf: "ما الذي تريد الاستمرار في فعله؟",
     openPlaceholder: "اختياري — اكتب بقدر ما تشاء.",
+    tenureHeading: "قبل أن تبدأ — منذ متى تعمل مع هذا الشخص؟",
+    tenureLead: "اختياري. يساعد في أن يُظهر التقرير عمق الخبرة وراء كل رأي.",
+    tenureChoices: {
+      less_than_6mo: "أقل من 6 أشهر",
+      six_mo_to_2yr: "من 6 أشهر إلى سنتين",
+      two_to_5yr: "من سنتين إلى 5 سنوات",
+      over_5yr: "أكثر من 5 سنوات",
+    },
     criticalHeading: "ما الكفايات الأكثر أهمية لهذا الدور؟",
     criticalLeadSelf:
       "اختر الكفايات التي تعتبرها الأكثر أهمية لدورك. سيختار مديرك بشكل مستقل — والتوافق بين اختياراتك (واختياراته) يُعدّ في حدّ ذاته فرصةً للتعلّم.",
@@ -184,6 +201,37 @@ export function RaterForm({ ctx }: Props) {
   );
   const showCriticalPicker =
     ctx.rater.rater_role === "self" || ctx.rater.rater_role === "manager";
+
+  // P2: tenure — "how long have you known this person?" Self raters skip
+  // this since they're rating themselves.
+  const [tenure, setTenureState] = useState<ReflectRaterTenure | null>(ctx.tenure);
+  const showTenurePicker = ctx.rater.rater_role !== "self";
+
+  const setTenure = (next: ReflectRaterTenure | null) => {
+    setTenureState(next);
+    setSaveState("saving");
+    const myId = ++saveIdRef.current;
+    const p = (async () => {
+      try {
+        const res = await saveReflectRaterTenure({
+          token: ctx.rater.access_token,
+          tenure: next,
+        });
+        if (!res.ok) {
+          setSaveState("failed");
+          return;
+        }
+      } catch {
+        setSaveState("failed");
+      } finally {
+        inflightRef.current.delete(myId);
+        if (inflightRef.current.size === 0) {
+          setSaveState((cur) => (cur === "failed" ? cur : "idle"));
+        }
+      }
+    })();
+    inflightRef.current.set(myId, p);
+  };
   const [saveState, setSaveState] = useState<"idle" | "saving" | "failed">("idle");
   const [submitConfirmOpen, setSubmitConfirmOpen] = useState(false);
   const [showCommentFor, setShowCommentFor] = useState<Set<string>>(() => {
@@ -519,6 +567,38 @@ export function RaterForm({ ctx }: Props) {
           </p>
           <ScaleLegend scale={scale} rtl={rtl} />
         </section>
+
+        {/* P2: Rater tenure picker (everyone except Self) */}
+        {showTenurePicker && (
+          <section className="rounded-lg border bg-card p-5 space-y-3">
+            <div>
+              <h2 className="text-sm font-semibold text-primary">{t.tenureHeading}</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">{t.tenureLead}</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(
+                ["less_than_6mo", "six_mo_to_2yr", "two_to_5yr", "over_5yr"] as const
+              ).map((bucket) => {
+                const selected = tenure === bucket;
+                return (
+                  <button
+                    key={bucket}
+                    type="button"
+                    onClick={() => setTenure(selected ? null : bucket)}
+                    className={cn(
+                      "rounded-md border px-3 py-1.5 text-xs transition-colors",
+                      selected
+                        ? "bg-accent text-white border-accent font-medium"
+                        : "bg-card text-foreground hover:border-accent/40 hover:bg-accent/5"
+                    )}
+                  >
+                    {t.tenureChoices[bucket]}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* Competency sections */}
         {ctx.competencies.map((c) => (

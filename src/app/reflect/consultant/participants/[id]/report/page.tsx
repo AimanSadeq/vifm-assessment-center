@@ -247,6 +247,17 @@ function ReportBody({
         ))}
       </section>
 
+      {/* Item-level detail (P0 parity pass) */}
+      <ItemLevelDetailPages
+        scoring={scoring}
+        rtl={rtl}
+      />
+
+      {/* Verbatim Start / Stop / Continue (P0 parity pass) */}
+      {scoring.open_responses.length > 0 && (
+        <VerbatimPage scoring={scoring} rtl={rtl} />
+      )}
+
       {/* Recommended VIFM programmes */}
       <section className="page">
         <h2>{rtl ? "البرامج التدريبية الموصى بها من VIFM" : "Recommended VIFM programmes"}</h2>
@@ -424,6 +435,165 @@ function BehaviorListPage({
 
 
 // ──────────────────────────────────────────────────────────────
+// Item-level detail — every behaviour with the per-rater-group
+// breakdown that competitors put at the back of every report.
+// Pages are chunked at ~12 rows per page so they always render
+// at A4 without orphans.
+// ──────────────────────────────────────────────────────────────
+
+const RATER_GROUPS_FOR_TABLE: Array<{ role: string; en: string; ar: string }> = [
+  { role: "self", en: "Self", ar: "أنت" },
+  { role: "manager", en: "Mgr", ar: "المدير" },
+  { role: "peer", en: "Peers", ar: "الزملاء" },
+  { role: "direct_report", en: "DR", ar: "تقارير" },
+  { role: "skip_level", en: "Skip", ar: "أعلى" },
+  { role: "other", en: "Other", ar: "أخرى" },
+];
+
+function ItemLevelDetailPages({
+  scoring,
+  rtl,
+}: {
+  scoring: ParticipantScoring;
+  rtl: boolean;
+}) {
+  return (
+    <section className="page no-break-after">
+      <h2>{rtl ? "تفصيل السلوكيات" : "Item-level detail"}</h2>
+      <p className="lead">
+        {rtl
+          ? "كل سلوك في الإطار مع متوسطه عند كل فئة من المقيّمين. الخلايا المخفية تعود إلى عتبة إخفاء الهوية."
+          : "Every behaviour in the framework with its mean per rater group. Hidden cells fall under the anonymity threshold."}
+      </p>
+      {scoring.competencies.map((c) => {
+        const compBehs = scoring.behaviors.filter((b) => b.competency_id === c.competency_id);
+        if (compBehs.length === 0) return null;
+        return (
+          <div key={c.competency_id} className="item-table-card">
+            <h3>{rtl ? c.name_ar ?? c.name_en : c.name_en}</h3>
+            <table className="item-table">
+              <thead>
+                <tr>
+                  <th className="item-behavior">{rtl ? "السلوك" : "Behaviour"}</th>
+                  {RATER_GROUPS_FOR_TABLE.map((g) => (
+                    <th key={g.role} className="item-group">
+                      {rtl ? g.ar : g.en}
+                    </th>
+                  ))}
+                  <th className="item-group">{rtl ? "الفجوة" : "Gap"}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {compBehs.map((b) => (
+                  <tr key={b.behavior_id}>
+                    <td className="item-behavior">
+                      {rtl ? b.text_ar ?? b.text_en : b.text_en}
+                    </td>
+                    {RATER_GROUPS_FOR_TABLE.map((g) => {
+                      const grp = b.by_group.find((x) => x.rater_role === g.role);
+                      if (!grp || grp.rater_count === 0) {
+                        return <td key={g.role} className="item-group dim">—</td>;
+                      }
+                      if (grp.hidden_by_anonymity) {
+                        return <td key={g.role} className="item-group dim">·</td>;
+                      }
+                      return (
+                        <td key={g.role} className="item-group">
+                          {fmtScore(grp.mean)}
+                        </td>
+                      );
+                    })}
+                    <td className="item-group">
+                      {b.gap === null
+                        ? "—"
+                        : b.gap > 0
+                          ? `+${b.gap.toFixed(2)}`
+                          : b.gap.toFixed(2)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
+
+// ──────────────────────────────────────────────────────────────
+// Verbatim Start / Stop / Continue. Groups verbatims by question
+// (start/stop/continue), then within each by rater role. Self is
+// always first so it bookends the participant's view.
+// ──────────────────────────────────────────────────────────────
+
+function VerbatimPage({
+  scoring,
+  rtl,
+}: {
+  scoring: ParticipantScoring;
+  rtl: boolean;
+}) {
+  const SECTIONS: Array<{ kind: "start" | "stop" | "continue"; en: string; ar: string }> = [
+    { kind: "start", en: "What raters say I should START", ar: "ما الذي ينبغي أن أبدأ به" },
+    { kind: "stop", en: "What raters say I should STOP", ar: "ما الذي ينبغي أن أتوقّف عنه" },
+    { kind: "continue", en: "What raters say I should CONTINUE", ar: "ما الذي ينبغي أن أستمر فيه" },
+  ];
+
+  const ROLE_ORDER: Record<string, number> = {
+    self: 0,
+    manager: 1,
+    peer: 2,
+    direct_report: 3,
+    skip_level: 4,
+    other: 5,
+  };
+
+  return (
+    <section className="page">
+      <h2>{rtl ? "بكلمات المقيّمين" : "In raters' own words"}</h2>
+      <p className="lead">
+        {rtl
+          ? "تظهر هذه التعليقات كما كُتبت تمامًا. تُجمَّع التعليقات من فئة معيّنة (مثل الزملاء) فقط إذا أكمل عدد كافٍ من المقيّمين في تلك الفئة، بما يحترم سياسة إخفاء الهوية."
+          : "Verbatims appear exactly as written. Comments from any non-self / non-manager group are only shown when the group meets the anonymity threshold."}
+      </p>
+
+      {SECTIONS.map((s) => {
+        const items = scoring.open_responses
+          .filter((v) => v.kind === s.kind)
+          .slice()
+          .sort((a, b) => (ROLE_ORDER[a.rater_role] ?? 99) - (ROLE_ORDER[b.rater_role] ?? 99));
+        if (items.length === 0) {
+          return (
+            <div key={s.kind} className="verbatim-section">
+              <h3>{rtl ? s.ar : s.en}</h3>
+              <p className="empty">
+                {rtl ? "لا توجد تعليقات في هذا القسم." : "No comments in this section."}
+              </p>
+            </div>
+          );
+        }
+        return (
+          <div key={s.kind} className="verbatim-section">
+            <h3>{rtl ? s.ar : s.en}</h3>
+            <ul className="verbatim-list">
+              {items.map((v, i) => (
+                <li key={`${s.kind}-${i}`} className="verbatim-item">
+                  <span className="verbatim-role">{roleLabelShort(v.rater_role, rtl)}</span>
+                  <span className="verbatim-text">{v.text}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
+
+// ──────────────────────────────────────────────────────────────
 // Helpers
 // ──────────────────────────────────────────────────────────────
 
@@ -582,7 +752,27 @@ h4 { color: var(--vifm-primary); font-size: 11pt; font-weight: 700; margin: 3mm 
 .idp-row > span:first-child { color: var(--vifm-muted); font-size: 9pt; min-width: 42mm; }
 .idp-line { flex: 1; border-bottom: 0.6pt solid var(--vifm-border); height: 5mm; }
 
+/* Item-level table */
+.item-table-card { margin-bottom: 4mm; page-break-inside: avoid; }
+.item-table { width: 100%; border-collapse: collapse; font-size: 9pt; margin-top: 1.5mm; }
+.item-table th { background: var(--vifm-soft); color: var(--vifm-primary); padding: 1.5mm 2mm; text-align: center; font-weight: 600; font-size: 8.5pt; }
+.item-table th.item-behavior { text-align: left; }
+.item-table td { padding: 1.8mm 2mm; border-bottom: 0.5pt solid var(--vifm-border); text-align: center; font-variant-numeric: tabular-nums; }
+.item-table td.item-behavior { text-align: left; color: var(--vifm-dark); font-size: 9.5pt; line-height: 1.35; }
+.item-table td.dim { color: var(--vifm-muted); }
+.item-table tr:last-child td { border-bottom: 0; }
+
+/* Verbatim Start/Stop/Continue */
+.verbatim-section { margin-bottom: 5mm; page-break-inside: avoid; }
+.verbatim-list { list-style: none; padding: 0; margin: 0; }
+.verbatim-item { padding: 2.5mm 0; border-bottom: 0.5pt solid var(--vifm-border); display: grid; grid-template-columns: 28mm 1fr; gap: 4mm; align-items: baseline; }
+.verbatim-item:last-child { border-bottom: 0; }
+.verbatim-role { color: var(--vifm-muted); font-size: 9pt; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+.verbatim-text { color: var(--vifm-dark); font-size: 10.5pt; line-height: 1.45; white-space: pre-wrap; }
+
 /* RTL */
+.reflect-pdf[dir="rtl"] .item-table th.item-behavior { text-align: right; }
+.reflect-pdf[dir="rtl"] .item-table td.item-behavior { text-align: right; }
 .reflect-pdf[dir="rtl"] .behavior-rank { margin-right: 0; margin-left: 3mm; }
 .reflect-pdf[dir="rtl"] .programme-meta { margin-left: 0; margin-right: 9mm; }
 .reflect-pdf[dir="rtl"] .programme-drivers { margin-left: 0; margin-right: 9mm; }

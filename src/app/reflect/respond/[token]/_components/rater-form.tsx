@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import {
   saveReflectResponse,
   markReflectRaterComplete,
+  saveReflectOpenResponse,
 } from "@/lib/reflect/rater-actions";
 import type { RaterContext } from "@/lib/reflect/rater-access";
 
@@ -82,6 +83,18 @@ const UI = {
     submitConfirmBody: "Once submitted, you can't change your responses.",
     submitConfirmCta: "Yes, submit",
     submitConfirmCancel: "Keep editing",
+    openHeading: "In your own words",
+    openLead:
+      "These three questions are the most useful part of any 360. Answers are shared with your colleague exactly as written — no edits, no aggregation. Skip any you'd rather not answer.",
+    openLeadSelf:
+      "These three questions are the most useful part of any 360. Use them to capture what you want to keep, change, or start — they'll appear in your own report exactly as written.",
+    openStartLabel: "What should this person START doing to be more effective?",
+    openStopLabel: "What should this person STOP doing to be more effective?",
+    openContinueLabel: "What should this person CONTINUE doing?",
+    openStartLabelSelf: "What do you want to START doing to be more effective?",
+    openStopLabelSelf: "What do you want to STOP doing to be more effective?",
+    openContinueLabelSelf: "What do you want to CONTINUE doing?",
+    openPlaceholder: "Optional — write as much or as little as you like.",
   },
   ar: {
     progressLabel: "تم تقييمها",
@@ -100,6 +113,18 @@ const UI = {
     submitConfirmBody: "بعد الإرسال، لن تتمكن من تعديل إجاباتك.",
     submitConfirmCta: "نعم، أرسل",
     submitConfirmCancel: "متابعة التعديل",
+    openHeading: "بكلماتك الخاصة",
+    openLead:
+      "هذه الأسئلة الثلاثة من أهم ما يخرج به أي تقييم 360. تُشارَك إجاباتك مع زميلك كما هي بالضبط — دون تعديل أو دمج. يمكنك تجاوز أي منها إن لم ترغب في الإجابة.",
+    openLeadSelf:
+      "هذه الأسئلة الثلاثة من أهم ما يخرج به أي تقييم 360. استخدمها لتسجيل ما تريد الاستمرار فيه وتغييره والبدء به — وستظهر في تقريرك كما كتبتها تمامًا.",
+    openStartLabel: "ما الذي ينبغي على هذا الشخص أن يبدأ بفعله ليصبح أكثر فاعلية؟",
+    openStopLabel: "ما الذي ينبغي على هذا الشخص أن يتوقّف عن فعله ليصبح أكثر فاعلية؟",
+    openContinueLabel: "ما الذي ينبغي على هذا الشخص الاستمرار في فعله؟",
+    openStartLabelSelf: "ما الذي تريد أن تبدأ بفعله لتصبح أكثر فاعلية؟",
+    openStopLabelSelf: "ما الذي تريد أن تتوقّف عن فعله لتصبح أكثر فاعلية؟",
+    openContinueLabelSelf: "ما الذي تريد الاستمرار في فعله؟",
+    openPlaceholder: "اختياري — اكتب بقدر ما تشاء.",
   },
 } as const;
 
@@ -134,6 +159,11 @@ export function RaterForm({ ctx }: Props) {
   }, [ctx]);
 
   const [answers, setAnswers] = useState<Record<string, LocalAnswer>>(initial);
+  const [openText, setOpenText] = useState<{ start: string; stop: string; continue_: string }>({
+    start: ctx.openResponses.start,
+    stop: ctx.openResponses.stop,
+    continue_: ctx.openResponses.continue_,
+  });
   const [saveState, setSaveState] = useState<"idle" | "saving" | "failed">("idle");
   const [submitConfirmOpen, setSubmitConfirmOpen] = useState(false);
   const [showCommentFor, setShowCommentFor] = useState<Set<string>>(() => {
@@ -159,6 +189,52 @@ export function RaterForm({ ctx }: Props) {
   // Debounced comment saves — comments are typed character by character
   // so we debounce 700ms before firing the network request.
   const commentTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  // Same pattern for Start / Stop / Continue free-text. Keyed by kind so
+  // a fast typist doesn't fire 30 saves while drafting a single answer.
+  const openTimersRef = useRef<
+    Map<"start" | "stop" | "continue", ReturnType<typeof setTimeout>>
+  >(new Map());
+
+  const persistOpen = (kind: "start" | "stop" | "continue", text: string) => {
+    setSaveState("saving");
+    const myId = ++saveIdRef.current;
+    const p = (async () => {
+      try {
+        const res = await saveReflectOpenResponse({
+          token: ctx.rater.access_token,
+          kind,
+          text,
+        });
+        if (!res.ok) {
+          setSaveState("failed");
+          return;
+        }
+      } catch {
+        setSaveState("failed");
+      } finally {
+        inflightRef.current.delete(myId);
+        if (inflightRef.current.size === 0) {
+          setSaveState((cur) => (cur === "failed" ? cur : "idle"));
+        }
+      }
+    })();
+    inflightRef.current.set(myId, p);
+    return p;
+  };
+
+  const setOpen = (kind: "start" | "stop" | "continue", value: string) => {
+    const stateKey = kind === "continue" ? "continue_" : kind;
+    setOpenText((prev) => ({ ...prev, [stateKey]: value }));
+
+    const existing = openTimersRef.current.get(kind);
+    if (existing) clearTimeout(existing);
+    const timer = setTimeout(() => {
+      persistOpen(kind, value);
+      openTimersRef.current.delete(kind);
+    }, 700);
+    openTimersRef.current.set(kind, timer);
+  };
 
   // Online / offline awareness for the banner
   useEffect(() => {
@@ -283,6 +359,15 @@ export function RaterForm({ ctx }: Props) {
         commentTimersRef.current.delete(bid);
         const a = answers[bid];
         if (a) persistOne(bid, a);
+      }
+
+      // 1b. Fire any pending open-response saves the same way
+      const openTimers = Array.from(openTimersRef.current.entries());
+      for (const [kind, timer] of Array.from(openTimers)) {
+        clearTimeout(timer);
+        openTimersRef.current.delete(kind);
+        const stateKey = kind === "continue" ? "continue_" : kind;
+        persistOpen(kind, openText[stateKey]);
       }
 
       // 2. Await every in-flight save (the freshly fired ones included)
@@ -473,6 +558,37 @@ export function RaterForm({ ctx }: Props) {
           </section>
         ))}
 
+        {/* Start / Stop / Continue */}
+        <section className="rounded-lg border bg-card p-5 space-y-4">
+          <div>
+            <h2 className="text-base font-semibold text-primary">{t.openHeading}</h2>
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+              {ctx.rater.rater_role === "self" ? t.openLeadSelf : t.openLead}
+            </p>
+          </div>
+          <OpenQuestion
+            label={ctx.rater.rater_role === "self" ? t.openStartLabelSelf : t.openStartLabel}
+            placeholder={t.openPlaceholder}
+            value={openText.start}
+            onChange={(v) => setOpen("start", v)}
+            rtl={rtl}
+          />
+          <OpenQuestion
+            label={ctx.rater.rater_role === "self" ? t.openStopLabelSelf : t.openStopLabel}
+            placeholder={t.openPlaceholder}
+            value={openText.stop}
+            onChange={(v) => setOpen("stop", v)}
+            rtl={rtl}
+          />
+          <OpenQuestion
+            label={ctx.rater.rater_role === "self" ? t.openContinueLabelSelf : t.openContinueLabel}
+            placeholder={t.openPlaceholder}
+            value={openText.continue_}
+            onChange={(v) => setOpen("continue", v)}
+            rtl={rtl}
+          />
+        </section>
+
         {/* Submit rail */}
         <section className="rounded-lg border bg-card p-5 flex flex-col gap-3">
           <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -560,6 +676,37 @@ function ScaleLegend({
           <span className={cn(rtl && "text-end")}>{scale[n as 1 | 2 | 3 | 4 | 5]}</span>
         </div>
       ))}
+    </div>
+  );
+}
+
+function OpenQuestion({
+  label,
+  placeholder,
+  value,
+  onChange,
+  rtl,
+}: {
+  label: string;
+  placeholder: string;
+  value: string;
+  onChange: (v: string) => void;
+  rtl: boolean;
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-primary mb-1.5 leading-snug">
+        {label}
+      </label>
+      <textarea
+        className="w-full rounded-md border bg-background px-3 py-2 text-sm leading-relaxed"
+        rows={3}
+        placeholder={placeholder}
+        dir={rtl ? "rtl" : "ltr"}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        maxLength={2000}
+      />
     </div>
   );
 }

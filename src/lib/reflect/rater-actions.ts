@@ -153,6 +153,62 @@ export async function saveReflectResponse(
 }
 
 // ──────────────────────────────────────────────────────────────
+// Save Start / Stop / Continue open-ended answer. Each kind maps
+// to its own column on reflect_raters. Empty string clears the
+// column to NULL so the report never renders blank verbatims.
+// Same lifecycle rules as saveReflectResponse: token must be valid
+// and the rater not yet completed. Bumps last_active_at without
+// writing status.
+// ──────────────────────────────────────────────────────────────
+
+const saveOpenResponseSchema = z.object({
+  token: z.string().min(1),
+  kind: z.enum(["start", "stop", "continue"]),
+  text: z.string().max(2000),
+});
+
+export type SaveOpenResponseResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+export async function saveReflectOpenResponse(
+  input: z.infer<typeof saveOpenResponseSchema>
+): Promise<SaveOpenResponseResult> {
+  const parsed = saveOpenResponseSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  const p = parsed.data;
+
+  let ctx;
+  try {
+    ctx = await requireRater(p.token);
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Token failed" };
+  }
+
+  const colByKind = {
+    start: "open_start",
+    stop: "open_stop",
+    continue: "open_continue",
+  } as const;
+  const col = colByKind[p.kind];
+  const trimmed = p.text.trim();
+
+  const sb = createServiceClient();
+  const { error } = await sb
+    .from("reflect_raters")
+    .update({
+      [col]: trimmed.length === 0 ? null : trimmed,
+      last_active_at: new Date().toISOString(),
+    })
+    .eq("id", ctx.rater.id)
+    .neq("status", "completed");
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+
+// ──────────────────────────────────────────────────────────────
 // Mark the rater as complete. Idempotent — calling twice on an
 // already-completed rater is a no-op success.
 // ──────────────────────────────────────────────────────────────

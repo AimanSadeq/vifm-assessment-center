@@ -34,6 +34,20 @@ export type BehaviorScore = {
   others_mean: number | null;
   others_count: number;
   gap: number | null;
+  /**
+   * Per-rater-group means for this behaviour — surfaces the item-level
+   * detail page (P0 parity pass). Anonymity is applied identically to
+   * CompetencyScore.by_group: peer/direct_report/skip_level/other are
+   * nulled out when rater_count < anonymity_min_n.
+   */
+  by_group: RaterGroupScore[];
+};
+
+export type OpenVerbatim = {
+  /** "start" | "stop" | "continue" */
+  kind: "start" | "stop" | "continue";
+  rater_role: ReflectRaterRole;
+  text: string;
 };
 
 export type ParticipantScoring = {
@@ -57,6 +71,12 @@ export type ParticipantScoring = {
   development_areas: BehaviorScore[];
   blind_spots: BehaviorScore[];
   hidden_strengths: BehaviorScore[];
+  /**
+   * Start / Stop / Continue verbatims. Self answers are always shown;
+   * other rater-group answers are hidden when that group has fewer
+   * raters than anonymity_min_n, matching the numeric-score policy.
+   */
+  open_responses: OpenVerbatim[];
   generated_at: string;
 };
 
@@ -180,11 +200,40 @@ export async function computeParticipantScoring(
           .select("id, competency_id, text_en, text_ar")
           .in("competency_id", compIds);
 
-  // Raters for this participant
-  const { data: raters } = await sb
-    .from("reflect_raters")
-    .select("id, rater_role, status")
-    .eq("participant_id", participantId);
+  // Raters for this participant. open_* columns power the verbatim section.
+  // They're added by migration 00036 — until that runs in prod, fall back to
+  // the older shape and the verbatim section just renders empty.
+  type RaterMiniRow = {
+    id: string;
+    rater_role: ReflectRaterRole;
+    status: string;
+    open_start: string | null;
+    open_stop: string | null;
+    open_continue: string | null;
+  };
+  let raters: RaterMiniRow[] | null = null;
+  {
+    const withOpen = await sb
+      .from("reflect_raters")
+      .select("id, rater_role, status, open_start, open_stop, open_continue")
+      .eq("participant_id", participantId);
+    if (withOpen.error) {
+      // Columns probably missing — re-query without them so the rest of the
+      // pipeline still works.
+      const fallback = await sb
+        .from("reflect_raters")
+        .select("id, rater_role, status")
+        .eq("participant_id", participantId);
+      raters = (fallback.data ?? []).map((r) => ({
+        ...(r as { id: string; rater_role: ReflectRaterRole; status: string }),
+        open_start: null,
+        open_stop: null,
+        open_continue: null,
+      }));
+    } else {
+      raters = (withOpen.data ?? []) as RaterMiniRow[];
+    }
+  }
 
   // Responses across all raters
   const raterIds = (raters ?? []).map((r) => r.id);
@@ -199,7 +248,7 @@ export async function computeParticipantScoring(
   // Index raters by id and by role
   const raterById = new Map<string, { role: ReflectRaterRole; status: string }>();
   const ratersByRole = new Map<ReflectRaterRole, string[]>();
-  for (const r of raters ?? []) {
+  for (const r of raters) {
     raterById.set(r.id, { role: r.rater_role, status: r.status });
     const arr = ratersByRole.get(r.rater_role) ?? [];
     arr.push(r.id);
@@ -336,7 +385,8 @@ export async function computeParticipantScoring(
     };
   });
 
-  // ── Per-behavior (used for strength / dev / blind / hidden rankings) ──
+  // ── Per-behavior (used for strength / dev / blind / hidden rankings
+  //    AND the new item-level detail table) ──
   const behaviors: BehaviorScore[] = (behs ?? []).map((b) => {
     let selfScore: number | null = null;
     for (const id of selfRespondedIds) {
@@ -352,6 +402,29 @@ export async function computeParticipantScoring(
       if (map.has(b.id)) othersScores.push(map.get(b.id)!);
     }
     const oMean = mean(othersScores);
+
+    // Per-rater-group means for THIS behaviour. Anonymity threshold
+    // mirrors the competency-level policy: hide peer/direct_report/
+    // skip_level/other groups when rater_count < min_n.
+    const behByGroup: RaterGroupScore[] = allRoles.map((role) => {
+      const ids = ratersByRole.get(role) ?? [];
+      const respondedIds = ids.filter((id) => responsesByRater.has(id));
+      const scores: number[] = [];
+      for (const id of respondedIds) {
+        const map = responsesByRater.get(id)!;
+        if (map.has(b.id)) scores.push(map.get(b.id)!);
+      }
+      const sensitive = role !== "self" && role !== "manager";
+      const hidden = sensitive && respondedIds.length < min_n;
+      return {
+        rater_role: role,
+        rater_count: respondedIds.length,
+        response_count: scores.length,
+        mean: hidden ? null : round2(mean(scores)),
+        hidden_by_anonymity: hidden,
+      };
+    });
+
     return {
       behavior_id: b.id,
       competency_id: b.competency_id,
@@ -361,6 +434,7 @@ export async function computeParticipantScoring(
       others_mean: round2(oMean),
       others_count: othersScores.length,
       gap: selfScore !== null && oMean !== null ? round2(selfScore - oMean) : null,
+      by_group: behByGroup,
     };
   });
 
@@ -387,6 +461,32 @@ export async function computeParticipantScoring(
     .slice(0, 5)
     .filter((b) => b.gap! < 0);
 
+  // ── Verbatim Start/Stop/Continue answers ──
+  // Self answers always show. For all other roles we apply the same
+  // anonymity threshold as the numeric scores: when a group has fewer
+  // raters than anonymity_min_n, drop EVERY verbatim from that group
+  // entirely. We don't try to mask individual contributors within an
+  // above-threshold group — the consultant + participant know how many
+  // people contributed; trying to randomise speaker order while keeping
+  // the count "anonymous enough" creates more risk than value.
+  const groupRaterCount = (role: ReflectRaterRole): number =>
+    (ratersByRole.get(role) ?? []).length;
+
+  const open_responses: OpenVerbatim[] = [];
+  for (const r of raters) {
+    const sensitive = r.rater_role !== "self" && r.rater_role !== "manager";
+    if (sensitive && groupRaterCount(r.rater_role) < min_n) continue;
+    if (r.open_start) {
+      open_responses.push({ kind: "start", rater_role: r.rater_role, text: r.open_start });
+    }
+    if (r.open_stop) {
+      open_responses.push({ kind: "stop", rater_role: r.rater_role, text: r.open_stop });
+    }
+    if (r.open_continue) {
+      open_responses.push({ kind: "continue", rater_role: r.rater_role, text: r.open_continue });
+    }
+  }
+
   return {
     participant_id: participant.id,
     participant_name: participant.full_name,
@@ -411,6 +511,7 @@ export async function computeParticipantScoring(
     development_areas,
     blind_spots,
     hidden_strengths,
+    open_responses,
     generated_at: new Date().toISOString(),
   };
 }

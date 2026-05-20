@@ -13,6 +13,10 @@ export type RaterRow = {
   invited_at: string | null;
   first_opened_at: string | null;
   completed_at: string | null;
+  /** Start/Stop/Continue open-ended answers (P0 parity pass, migration 00036). */
+  open_start: string | null;
+  open_stop: string | null;
+  open_continue: string | null;
 };
 
 export type ParticipantRow = {
@@ -79,6 +83,12 @@ export type RaterContext = {
     string,
     { score: number | null; is_na: boolean; comment_text: string | null }
   >;
+  /** Start/Stop/Continue open answers — survives revisits. */
+  openResponses: {
+    start: string;
+    stop: string;
+    continue_: string;
+  };
 };
 
 /**
@@ -174,6 +184,13 @@ export async function loadRaterByToken(token: string): Promise<RaterContext | nu
     framework,
     competencies,
     responses: respMap,
+    // open_* may be undefined when migration 00036 hasn't run in the
+    // target environment yet — coerce via ??/?? to empty strings.
+    openResponses: {
+      start: (rater.open_start ?? "") || "",
+      stop: (rater.open_stop ?? "") || "",
+      continue_: (rater.open_continue ?? "") || "",
+    },
   };
 }
 

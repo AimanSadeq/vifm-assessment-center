@@ -15,6 +15,7 @@ import {
   saveReflectResponse,
   markReflectRaterComplete,
   saveReflectOpenResponse,
+  saveReflectCriticalPicks,
 } from "@/lib/reflect/rater-actions";
 import type { RaterContext } from "@/lib/reflect/rater-access";
 
@@ -95,6 +96,12 @@ const UI = {
     openStopLabelSelf: "What do you want to STOP doing to be more effective?",
     openContinueLabelSelf: "What do you want to CONTINUE doing?",
     openPlaceholder: "Optional — write as much or as little as you like.",
+    criticalHeading: "Which competencies are most critical for this role?",
+    criticalLeadSelf:
+      "Pick the competencies you consider most critical for your role. Your manager picks independently — the alignment between your picks (and theirs) is itself a coaching moment.",
+    criticalLeadManager:
+      "Pick the competencies you consider most critical for this person's role. They've picked independently — the alignment between your picks and theirs is itself a coaching moment.",
+    criticalPickedCount: "picked",
   },
   ar: {
     progressLabel: "تم تقييمها",
@@ -125,6 +132,12 @@ const UI = {
     openStopLabelSelf: "ما الذي تريد أن تتوقّف عن فعله لتصبح أكثر فاعلية؟",
     openContinueLabelSelf: "ما الذي تريد الاستمرار في فعله؟",
     openPlaceholder: "اختياري — اكتب بقدر ما تشاء.",
+    criticalHeading: "ما الكفايات الأكثر أهمية لهذا الدور؟",
+    criticalLeadSelf:
+      "اختر الكفايات التي تعتبرها الأكثر أهمية لدورك. سيختار مديرك بشكل مستقل — والتوافق بين اختياراتك (واختياراته) يُعدّ في حدّ ذاته فرصةً للتعلّم.",
+    criticalLeadManager:
+      "اختر الكفايات التي تعتبرها الأكثر أهمية لدور هذا الشخص. لقد اختار/ت بشكل مستقل — والتوافق بين اختياراتك واختياراته يُعدّ في حدّ ذاته فرصةً للتعلّم.",
+    criticalPickedCount: "تم اختيارها",
   },
 } as const;
 
@@ -164,6 +177,13 @@ export function RaterForm({ ctx }: Props) {
     stop: ctx.openResponses.stop,
     continue_: ctx.openResponses.continue_,
   });
+  // P1: Self + Manager critical-competency picks. Other roles never see
+  // the picker so the set stays empty for them.
+  const [criticalPicks, setCriticalPicks] = useState<Set<string>>(
+    () => new Set(ctx.criticalCompetencyIds)
+  );
+  const showCriticalPicker =
+    ctx.rater.rater_role === "self" || ctx.rater.rater_role === "manager";
   const [saveState, setSaveState] = useState<"idle" | "saving" | "failed">("idle");
   const [submitConfirmOpen, setSubmitConfirmOpen] = useState(false);
   const [showCommentFor, setShowCommentFor] = useState<Set<string>>(() => {
@@ -221,6 +241,43 @@ export function RaterForm({ ctx }: Props) {
     })();
     inflightRef.current.set(myId, p);
     return p;
+  };
+
+  // P1: critical-competency toggle. No debounce needed — each click is a
+  // discrete user intent, same as a score click. The save goes through the
+  // same inflight-tracking Map as everything else so the submit-flush gate
+  // covers it without extra work.
+  const toggleCritical = (competencyId: string) => {
+    setCriticalPicks((prev) => {
+      const next = new Set(prev);
+      if (next.has(competencyId)) next.delete(competencyId);
+      else next.add(competencyId);
+      // Fire save with the NEXT snapshot. setState is async, so we can't
+      // read it back synchronously — but `next` is the value we just built.
+      setSaveState("saving");
+      const myId = ++saveIdRef.current;
+      const p = (async () => {
+        try {
+          const res = await saveReflectCriticalPicks({
+            token: ctx.rater.access_token,
+            competency_ids: Array.from(next),
+          });
+          if (!res.ok) {
+            setSaveState("failed");
+            return;
+          }
+        } catch {
+          setSaveState("failed");
+        } finally {
+          inflightRef.current.delete(myId);
+          if (inflightRef.current.size === 0) {
+            setSaveState((cur) => (cur === "failed" ? cur : "idle"));
+          }
+        }
+      })();
+      inflightRef.current.set(myId, p);
+      return next;
+    });
   };
 
   const setOpen = (kind: "start" | "stop" | "continue", value: string) => {
@@ -557,6 +614,53 @@ export function RaterForm({ ctx }: Props) {
             </ul>
           </section>
         ))}
+
+        {/* P1: Critical-competency picks (Self + Manager only) */}
+        {showCriticalPicker && (
+          <section className="rounded-lg border bg-card p-5 space-y-4">
+            <div>
+              <h2 className="text-base font-semibold text-primary">{t.criticalHeading}</h2>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                {ctx.rater.rater_role === "self" ? t.criticalLeadSelf : t.criticalLeadManager}
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-2 tabular-nums">
+                {criticalPicks.size} {t.criticalPickedCount}
+              </p>
+            </div>
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {ctx.competencies.map((c) => {
+                const picked = criticalPicks.has(c.id);
+                return (
+                  <li key={c.id}>
+                    <button
+                      type="button"
+                      onClick={() => toggleCritical(c.id)}
+                      className={cn(
+                        "w-full text-start rounded-md border px-3 py-2 text-sm leading-snug transition-colors",
+                        picked
+                          ? "bg-accent/10 border-accent text-primary font-medium"
+                          : "bg-card hover:border-accent/40 hover:bg-accent/5 text-foreground"
+                      )}
+                      dir={rtl ? "rtl" : "ltr"}
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <span
+                          className={cn(
+                            "inline-flex items-center justify-center h-4 w-4 rounded-sm border shrink-0",
+                            picked ? "bg-accent border-accent text-white" : "bg-card border-border"
+                          )}
+                        >
+                          {picked ? "✓" : ""}
+                        </span>
+                        <span>{rtl ? c.name_ar ?? c.name_en : c.name_en}</span>
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
 
         {/* Start / Stop / Continue */}
         <section className="rounded-lg border bg-card p-5 space-y-4">

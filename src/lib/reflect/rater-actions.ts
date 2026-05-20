@@ -209,6 +209,76 @@ export async function saveReflectOpenResponse(
 
 
 // ──────────────────────────────────────────────────────────────
+// Save the Self/Manager rater's critical-competency picks (P1
+// parity pass). Validates every pick is a real competency_id from
+// THIS engagement's framework. Refuses the call when the rater is
+// not self or manager — those are the only two roles a 360
+// typically asks "what's role-critical?".
+// ──────────────────────────────────────────────────────────────
+
+const saveCriticalPicksSchema = z.object({
+  token: z.string().min(1),
+  competency_ids: z.array(z.string().uuid()),
+});
+
+export type SaveCriticalPicksResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+export async function saveReflectCriticalPicks(
+  input: z.infer<typeof saveCriticalPicksSchema>
+): Promise<SaveCriticalPicksResult> {
+  const parsed = saveCriticalPicksSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  const p = parsed.data;
+
+  let ctx;
+  try {
+    ctx = await requireRater(p.token);
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Token failed" };
+  }
+
+  // Critical-competency picks only make sense for Self + Manager. Block
+  // peer / direct_report / skip_level / other so we never store noise
+  // that would skew the alignment % computation.
+  if (ctx.rater.rater_role !== "self" && ctx.rater.rater_role !== "manager") {
+    return { ok: false, error: "Critical-competency picks are only collected from Self and Manager raters" };
+  }
+
+  const sb = createServiceClient();
+
+  // Validate every pick really belongs to THIS engagement's framework.
+  if (p.competency_ids.length > 0) {
+    const { data: validIds } = await sb
+      .from("reflect_competencies")
+      .select("id, reflect_frameworks!inner(engagement_id)")
+      .in("id", p.competency_ids)
+      .returns<Array<{ id: string; reflect_frameworks: { engagement_id: string } }>>();
+    const okIds = new Set(
+      (validIds ?? [])
+        .filter((c) => c.reflect_frameworks.engagement_id === ctx.engagementId)
+        .map((c) => c.id)
+    );
+    if (okIds.size !== p.competency_ids.length) {
+      return { ok: false, error: "One or more picks don't belong to this engagement" };
+    }
+  }
+
+  const { error } = await sb
+    .from("reflect_raters")
+    .update({
+      critical_competency_ids: p.competency_ids,
+      last_active_at: new Date().toISOString(),
+    })
+    .eq("id", ctx.rater.id)
+    .neq("status", "completed");
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+
+// ──────────────────────────────────────────────────────────────
 // Mark the rater as complete. Idempotent — calling twice on an
 // already-completed rater is a no-op success.
 // ──────────────────────────────────────────────────────────────

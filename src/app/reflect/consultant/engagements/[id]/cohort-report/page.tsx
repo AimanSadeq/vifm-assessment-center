@@ -140,6 +140,60 @@ function CohortReport({
         </div>
       </section>
 
+      {/* Distribution stacked-bars — % below/within/above Favorable Zone */}
+      <section className="page">
+        <h2>{rtl ? "توزيع القادة حول النطاق المرجعي" : "Where the cohort sits vs the Favorable Zone"}</h2>
+        <p className="lead">
+          {rtl
+            ? "لكل كفاية، نسبة المشاركين الذين يقع متوسط آراء الآخرين عنهم تحت النطاق المرجعي (<3.5)، داخله (3.5–4.25)، أو فوقه (>4.25). البرامج التدريبية تستهدف عادةً الكفايات التي تظهر فيها شريحة حمراء كبيرة."
+            : "For each competency, the share of participants whose Others-mean sits below the Favorable Zone (<3.5), within it (3.5–4.25), or above (>4.25). Training programmes typically target competencies showing a large red segment."}
+        </p>
+        <div className="dist-bars">
+          {scoring.competencies.map((c) => {
+            const d = c.distribution;
+            const total = d.counted;
+            const belowPct = total > 0 ? (d.below / total) * 100 : 0;
+            const withinPct = total > 0 ? (d.within / total) * 100 : 0;
+            const abovePct = total > 0 ? (d.above / total) * 100 : 0;
+            return (
+              <div key={c.competency_id} className="dist-row">
+                <div className="dist-label">
+                  {rtl ? c.name_ar ?? c.name_en : c.name_en}
+                  <span className="dist-n">n={total}</span>
+                </div>
+                <div className="dist-track">
+                  {total === 0 ? (
+                    <em className="dist-empty">
+                      {rtl ? "لا توجد بيانات بعد" : "No data yet"}
+                    </em>
+                  ) : (
+                    <>
+                      <span className="dist-below" style={{ width: `${belowPct}%` }}>
+                        {belowPct >= 10 ? `${Math.round(belowPct)}%` : ""}
+                      </span>
+                      <span className="dist-within" style={{ width: `${withinPct}%` }}>
+                        {withinPct >= 10 ? `${Math.round(withinPct)}%` : ""}
+                      </span>
+                      <span className="dist-above" style={{ width: `${abovePct}%` }}>
+                        {abovePct >= 10 ? `${Math.round(abovePct)}%` : ""}
+                      </span>
+                    </>
+                  )}
+                </div>
+                <div className="dist-counts">
+                  {d.below}/{d.within}/{d.above}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="dist-legend">
+          <span className="dist-legend-item"><span className="dist-swatch dist-below" /> {rtl ? "أقل من النطاق (<3.5)" : "Below zone (<3.5)"}</span>
+          <span className="dist-legend-item"><span className="dist-swatch dist-within" /> {rtl ? "داخل النطاق (3.5–4.25)" : "Within zone (3.5–4.25)"}</span>
+          <span className="dist-legend-item"><span className="dist-swatch dist-above" /> {rtl ? "أعلى من النطاق (>4.25)" : "Above zone (>4.25)"}</span>
+        </div>
+      </section>
+
       {/* Per-competency table */}
       <section className="page">
         <h2>{rtl ? "متوسط الكفايات على مستوى المجموعة" : "Competency means at the cohort level"}</h2>
@@ -267,7 +321,24 @@ h3 { color: var(--vifm-primary); font-size: 12pt; font-weight: 700; margin: 4mm 
 .comp-table td { padding: 2.5mm 3mm; border-bottom: 0.6pt solid var(--vifm-border); }
 .comp-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
 
+/* Distribution stacked-bars */
+.dist-bars { display: grid; gap: 2mm; margin-bottom: 4mm; }
+.dist-row { display: grid; grid-template-columns: 55mm 1fr 18mm; gap: 3mm; align-items: center; font-size: 9.5pt; }
+.dist-label { color: var(--vifm-dark); font-weight: 500; display: flex; justify-content: space-between; align-items: baseline; gap: 2mm; }
+.dist-n { color: var(--vifm-muted); font-size: 8.5pt; font-weight: 400; }
+.dist-track { display: flex; height: 5mm; background: var(--vifm-soft); border-radius: 1mm; overflow: hidden; }
+.dist-empty { color: var(--vifm-muted); font-style: italic; font-size: 9pt; padding: 0 2mm; align-self: center; }
+.dist-below { background: #FCA5A5; }
+.dist-within { background: #FCD34D; }
+.dist-above { background: #6EE7B7; }
+.dist-track > span { display: flex; align-items: center; justify-content: center; color: var(--vifm-dark); font-size: 8.5pt; font-weight: 600; min-width: 0; transition: width 0.2s; }
+.dist-counts { color: var(--vifm-muted); font-size: 8.5pt; font-variant-numeric: tabular-nums; text-align: right; }
+.dist-legend { display: flex; flex-wrap: wrap; gap: 5mm; margin-top: 3mm; background: var(--vifm-soft); padding: 3mm 4mm; border-radius: 2mm; font-size: 9pt; color: var(--vifm-muted); }
+.dist-legend-item { display: inline-flex; align-items: center; gap: 1.5mm; }
+.dist-swatch { display: inline-block; width: 4mm; height: 4mm; border-radius: 0.8mm; }
+
 .reflect-pdf[dir="rtl"] .confidentiality { border-left: 0; border-right: 3pt solid var(--vifm-accent); }
 .reflect-pdf[dir="rtl"] .hm-row-head { text-align: right; }
 .reflect-pdf[dir="rtl"] .comp-table td.num, .reflect-pdf[dir="rtl"] .comp-table th.num { text-align: left; }
+.reflect-pdf[dir="rtl"] .dist-counts { text-align: left; }
 `;

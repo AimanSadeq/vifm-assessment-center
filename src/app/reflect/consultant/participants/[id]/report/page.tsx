@@ -115,6 +115,16 @@ function ReportBody({
             ? `تظل آراء الزملاء والتقارير المباشرة مجهولة الهوية: لا يُكشف أي متوسط لفئة معينة إلا إذا أكمل ${scoring.anonymity_min_n} مقيّمين على الأقل في تلك الفئة.`
             : `Peer and direct-report responses are anonymised: no group score is shown until at least ${scoring.anonymity_min_n} raters in that group have responded.`}
         </div>
+
+        <h3>{rtl ? "النطاق المرجعي" : "The Favorable Zone"}</h3>
+        <div className="favorable-zone-legend">
+          <span className="favorable-zone-swatch" />
+          <span>
+            {rtl
+              ? "النطاق المرجعي (3.5–4.25) هو المدى الذي يتم فيه عادةً تقييم القادة الفعّالين في 360 درجة. تظهر شرائح ملوّنة خفيفة على كل شريط لتعطيك خلفية مقارنة سريعة."
+              : "The Favorable Zone (3.5–4.25) is the range where effective leaders are typically rated on 360s. A soft band appears on every bar so you can see, at a glance, whether each rater group's mean is within, below, or above that benchmark."}
+          </span>
+        </div>
       </section>
 
       {/* Summary */}
@@ -142,6 +152,9 @@ function ReportBody({
             sub={rtl ? "أنت ↔ الآخرون" : "Self ↔ Others"}
           />
         </div>
+
+        {/* P1: Critical-competency alignment between Self and Manager */}
+        <CriticalAlignmentCard scoring={scoring} rtl={rtl} />
 
         <h3>{rtl ? "متوسطات حسب الفئة" : "Means by rater group"}</h3>
         <table className="group-table">
@@ -217,9 +230,30 @@ function ReportBody({
       {/* Per-competency detail */}
       <section className="page no-break-after">
         <h2>{rtl ? "تفاصيل حسب الكفاية" : "Per-competency detail"}</h2>
-        {scoring.competencies.map((c) => (
+        {scoring.competencies.map((c) => {
+          const selfMarkedCritical = scoring.critical_alignment.self_picks.includes(c.competency_id);
+          const managerMarkedCritical = scoring.critical_alignment.manager_picks.includes(c.competency_id);
+          const bothMarkedCritical = selfMarkedCritical && managerMarkedCritical;
+          return (
           <div key={c.competency_id} className="comp-card">
-            <h3>{rtl ? c.name_ar ?? c.name_en : c.name_en}</h3>
+            <h3>
+              {rtl ? c.name_ar ?? c.name_en : c.name_en}
+              {bothMarkedCritical && (
+                <span className="critical-pill critical-both">
+                  {rtl ? "حرج (أنت + المدير)" : "Critical (Self + Mgr)"}
+                </span>
+              )}
+              {!bothMarkedCritical && selfMarkedCritical && (
+                <span className="critical-pill critical-self">
+                  {rtl ? "حرج (أنت)" : "Critical (Self)"}
+                </span>
+              )}
+              {!bothMarkedCritical && managerMarkedCritical && (
+                <span className="critical-pill critical-mgr">
+                  {rtl ? "حرج (المدير)" : "Critical (Mgr)"}
+                </span>
+              )}
+            </h3>
             <div className="comp-row">
               <KpiInline label={rtl ? "أنت" : "Self"} value={fmtScore(c.self_mean)} />
               <KpiInline label={rtl ? "الآخرون" : "Others"} value={fmtScore(c.others_mean)} />
@@ -233,6 +267,8 @@ function ReportBody({
                 <div key={g.rater_role} className="group-bar-row">
                   <span className="group-bar-label">{roleLabelShort(g.rater_role, rtl)}</span>
                   <span className="group-bar-track">
+                    {/* Favorable Zone band: 3.5–4.25 on a 0–5 scale = 70%–85% of track */}
+                    <span className="favorable-zone" />
                     {g.hidden_by_anonymity ? (
                       <em className="group-bar-hidden">{rtl ? "إخفاء الهوية" : "Anonymised"}</em>
                     ) : (
@@ -244,7 +280,8 @@ function ReportBody({
               ))}
             </div>
           </div>
-        ))}
+          );
+        })}
       </section>
 
       {/* Item-level detail (P0 parity pass) */}
@@ -332,18 +369,33 @@ function ReportBody({
         )}
       </section>
 
-      {/* IDP scaffold */}
+      {/* IDP scaffold — K-S-S frame (KEEP / STOP / START) */}
       <section className="page">
         <h2>{rtl ? "خطة التطوير الفردية" : "Your Individual Development Plan"}</h2>
         <p className="lead">
           {rtl
-            ? "استخدم هذا الإطار خلال جلسة الاستخلاص مع مستشار VIFM. ستحدّدون معًا الأولويات الثلاث الأهم بناءً على ما قرأته أعلاه."
-            : "Use this scaffold during your debrief session with a VIFM coach. Together you'll lock in your top three development priorities based on what you've read above."}
+            ? "هذا الإطار يلتقط ما تريد الاحتفاظ به وما تريد التخلص منه وما تريد البدء به. املأه خلال جلسة الاستخلاص مع مستشار VIFM — مستندًا إلى ما كتبه المقيّمون أعلاه."
+            : "This scaffold captures what to keep doing, what to stop, and what to start. Complete it during your debrief with a VIFM coach — anchored to what your raters wrote above."}
         </p>
         <ol className="idp">
-          {[1, 2, 3].map((n) => (
-            <li key={n}>
-              <h4>{rtl ? `الأولوية ${n}` : `Priority ${n}`}</h4>
+          {(rtl
+            ? [
+                { tag: "KSS", title: "احتفظ بـ", caption: "السلوكيات التي تخدمك جيدًا — لا تفقدها أثناء التغيير." },
+                { tag: "KSS", title: "توقّف عن", caption: "السلوكيات التي تكلّفك أكثر مما تعطيك — تخلّص منها أولًا." },
+                { tag: "KSS", title: "ابدأ في", caption: "السلوكيات الجديدة التي ستحدث الفرق الأكبر — جرّب واحدًا في وقت." },
+              ]
+            : [
+                { tag: "KEEP", title: "KEEP doing", caption: "Behaviours that serve you well — don't lose these as you change." },
+                { tag: "STOP", title: "STOP doing", caption: "Behaviours that cost more than they give — drop these first." },
+                { tag: "START", title: "START doing", caption: "New behaviours that will move the needle most — try one at a time." },
+              ]
+          ).map((block, i) => (
+            <li key={i}>
+              <h4>
+                <span className={`kss-tag kss-${i === 0 ? "keep" : i === 1 ? "stop" : "start"}`}>{block.tag}</span>
+                {block.title}
+              </h4>
+              <p className="kss-caption">{block.caption}</p>
               <div className="idp-row"><span>{rtl ? "السلوك المستهدف" : "Target behaviour"}</span><span className="idp-line" /></div>
               <div className="idp-row"><span>{rtl ? "لماذا الآن" : "Why now"}</span><span className="idp-line" /></div>
               <div className="idp-row"><span>{rtl ? "الإجراءات الأولى" : "First actions"}</span><span className="idp-line" /></div>
@@ -435,6 +487,114 @@ function BehaviorListPage({
 
 
 // ──────────────────────────────────────────────────────────────
+// Critical-competency alignment card. The single most-quoted
+// coaching anchor from competitor 360s — shows the % overlap
+// between Self's picks and the Manager's picks. When either side
+// hasn't picked yet, we say so explicitly rather than rendering a
+// misleading 0%.
+// ──────────────────────────────────────────────────────────────
+
+function CriticalAlignmentCard({
+  scoring,
+  rtl,
+}: {
+  scoring: ParticipantScoring;
+  rtl: boolean;
+}) {
+  const a = scoring.critical_alignment;
+
+  if (!a.self_picked && !a.manager_picked) {
+    return null;
+  }
+
+  const competencyName = (id: string): string => {
+    const c = scoring.competencies.find((x) => x.competency_id === id);
+    if (!c) return id.slice(0, 8);
+    return rtl ? c.name_ar ?? c.name_en : c.name_en;
+  };
+
+  const onlyOnePicked = a.self_picked !== a.manager_picked;
+
+  return (
+    <div className="critical-card">
+      <div className="critical-card-head">
+        <h3 className="critical-card-title">
+          {rtl ? "التوافق على الكفايات الحرجة" : "Critical-competency alignment"}
+        </h3>
+        <span className={`critical-card-pct critical-pct-${a.alignment_pct === null || a.alignment_pct >= 67 ? "high" : a.alignment_pct >= 34 ? "mid" : "low"}`}>
+          {a.alignment_pct === null ? "—" : `${a.alignment_pct}%`}
+        </span>
+      </div>
+      <p className="critical-card-lead">
+        {onlyOnePicked
+          ? rtl
+            ? `${a.self_picked ? "أنت اخترت" : "اختار مديرك"} الكفايات الحرجة، لكن الجهة الأخرى لم تختر بعد. تابع معها لإكمال الصورة.`
+            : `${a.self_picked ? "You've picked" : "Your manager has picked"} their critical competencies, but the other side hasn't yet. Follow up to complete the picture.`
+          : rtl
+            ? "تشير النسبة إلى مدى توافقك أنت ومديرك على أهم الكفايات لدورك. النسبة المنخفضة في حد ذاتها فرصة للحوار قبل أن تكون مشكلة."
+            : "The percentage shows how much you and your manager agree on what's most critical for your role. A low alignment is a coaching opportunity, not a problem."}
+      </p>
+      <div className="critical-grid">
+        <div className="critical-col">
+          <div className="critical-col-head">
+            {rtl ? "اختار كلاكما" : "Both picked"}{" "}
+            <span className="critical-col-count">({a.both_picks.length})</span>
+          </div>
+          {a.both_picks.length === 0 ? (
+            <em className="critical-empty">{rtl ? "لا يوجد" : "None"}</em>
+          ) : (
+            <ul className="critical-list">
+              {a.both_picks.map((id) => (
+                <li key={id}>{competencyName(id)}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <div className="critical-col">
+          <div className="critical-col-head">
+            {rtl ? "اخترت أنت فقط" : "Self only"}{" "}
+            <span className="critical-col-count">
+              ({a.self_picks.filter((id) => !a.manager_picks.includes(id)).length})
+            </span>
+          </div>
+          {a.self_picks.filter((id) => !a.manager_picks.includes(id)).length === 0 ? (
+            <em className="critical-empty">{rtl ? "لا يوجد" : "None"}</em>
+          ) : (
+            <ul className="critical-list">
+              {a.self_picks
+                .filter((id) => !a.manager_picks.includes(id))
+                .map((id) => (
+                  <li key={id}>{competencyName(id)}</li>
+                ))}
+            </ul>
+          )}
+        </div>
+        <div className="critical-col">
+          <div className="critical-col-head">
+            {rtl ? "اختار المدير فقط" : "Manager only"}{" "}
+            <span className="critical-col-count">
+              ({a.manager_picks.filter((id) => !a.self_picks.includes(id)).length})
+            </span>
+          </div>
+          {a.manager_picks.filter((id) => !a.self_picks.includes(id)).length === 0 ? (
+            <em className="critical-empty">{rtl ? "لا يوجد" : "None"}</em>
+          ) : (
+            <ul className="critical-list">
+              {a.manager_picks
+                .filter((id) => !a.self_picks.includes(id))
+                .map((id) => (
+                  <li key={id}>{competencyName(id)}</li>
+                ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ──────────────────────────────────────────────────────────────
 // Item-level detail — every behaviour with the per-rater-group
 // breakdown that competitors put at the back of every report.
 // Pages are chunked at ~12 rows per page so they always render
@@ -462,8 +622,8 @@ function ItemLevelDetailPages({
       <h2>{rtl ? "تفصيل السلوكيات" : "Item-level detail"}</h2>
       <p className="lead">
         {rtl
-          ? "كل سلوك في الإطار مع متوسطه عند كل فئة من المقيّمين. الخلايا المخفية تعود إلى عتبة إخفاء الهوية."
-          : "Every behaviour in the framework with its mean per rater group. Hidden cells fall under the anonymity threshold."}
+          ? "كل سلوك في الإطار مع متوسطه عند كل فئة من المقيّمين. الخلايا المخفية تعود إلى عتبة إخفاء الهوية. تشير علامة ⚠ إلى أن المقيّمين في تلك الفئة يختلفون بمقدار 3 درجات أو أكثر — اقرأ المتوسط بحذر."
+          : "Every behaviour in the framework with its mean per rater group. Hidden cells fall under the anonymity threshold. A ⚠ flag means raters within that group disagree by 3+ points — read the mean with care."}
       </p>
       {scoring.competencies.map((c) => {
         const compBehs = scoring.behaviors.filter((b) => b.competency_id === c.competency_id);
@@ -497,9 +657,13 @@ function ItemLevelDetailPages({
                       if (grp.hidden_by_anonymity) {
                         return <td key={g.role} className="item-group dim">·</td>;
                       }
+                      const noConsensus = grp.spread !== null && grp.spread >= 3;
                       return (
-                        <td key={g.role} className="item-group">
+                        <td key={g.role} className={noConsensus ? "item-group flag" : "item-group"}>
                           {fmtScore(grp.mean)}
+                          {noConsensus && (
+                            <span className="consensus-flag" title="raters disagree by 3+ points"> ⚠</span>
+                          )}
                         </td>
                       );
                     })}
@@ -722,8 +886,14 @@ h4 { color: var(--vifm-primary); font-size: 11pt; font-weight: 700; margin: 3mm 
 .group-bars { display: grid; gap: 1.5mm; margin-top: 2mm; }
 .group-bar-row { display: grid; grid-template-columns: 28mm 1fr 12mm; gap: 3mm; align-items: center; font-size: 9pt; }
 .group-bar-label { color: var(--vifm-muted); }
-.group-bar-track { height: 3mm; background: var(--vifm-soft); border-radius: 1.5mm; overflow: hidden; }
-.group-bar-fill { display: block; height: 100%; background: linear-gradient(90deg, var(--vifm-accent), var(--vifm-primary)); }
+.group-bar-track { height: 3mm; background: var(--vifm-soft); border-radius: 1.5mm; overflow: hidden; position: relative; }
+.group-bar-fill { display: block; height: 100%; background: linear-gradient(90deg, var(--vifm-accent), var(--vifm-primary)); position: relative; z-index: 1; }
+/* Favorable Zone overlay: 3.5–4.25 on 0–5 scale = 70%–85% of track. Sits
+   under the score fill so the fill still reads clearly. */
+.favorable-zone { position: absolute; top: 0; bottom: 0; left: 70%; width: 15%; background: rgba(217, 119, 6, 0.18); border-left: 0.4pt dashed rgba(217, 119, 6, 0.55); border-right: 0.4pt dashed rgba(217, 119, 6, 0.55); z-index: 0; }
+.favorable-zone-legend { display: flex; gap: 4mm; align-items: center; font-size: 9.5pt; color: var(--vifm-muted); background: var(--vifm-soft); padding: 3mm 4mm; border-radius: 2mm; margin-top: 2mm; }
+.favorable-zone-swatch { display: inline-block; width: 14mm; height: 5mm; background: rgba(217, 119, 6, 0.18); border-left: 0.6pt dashed rgba(217, 119, 6, 0.7); border-right: 0.6pt dashed rgba(217, 119, 6, 0.7); border-radius: 1mm; flex-shrink: 0; }
+.reflect-pdf[dir="rtl"] .favorable-zone { left: auto; right: 70%; }
 .group-bar-value { text-align: right; font-variant-numeric: tabular-nums; color: var(--vifm-dark); }
 .group-bar-hidden { color: var(--vifm-muted); font-size: 8pt; padding: 0 2mm; }
 
@@ -744,13 +914,43 @@ h4 { color: var(--vifm-primary); font-size: 11pt; font-weight: 700; margin: 3mm 
 .programme-cta-link { color: var(--vifm-accent); font-size: 9.5pt; font-weight: 600; text-decoration: none; }
 .unmapped-detail { margin-top: 2mm; color: var(--vifm-muted); font-size: 9pt; }
 
-/* IDP */
-.idp { padding-left: 5mm; margin: 0; }
-.idp li { padding: 3mm 0; border-bottom: 0.6pt solid var(--vifm-border); page-break-inside: avoid; }
+/* IDP — K-S-S frame */
+.idp { padding-left: 5mm; margin: 0; list-style: none; }
+.idp li { padding: 3mm 0 4mm; border-bottom: 0.6pt solid var(--vifm-border); page-break-inside: avoid; }
 .idp li:last-child { border-bottom: 0; }
+.idp h4 { display: flex; align-items: center; gap: 3mm; margin: 1mm 0 0.5mm; }
+.kss-tag { display: inline-block; font-size: 8pt; font-weight: 700; padding: 0.6mm 2.4mm; border-radius: 4mm; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1; }
+.kss-keep { background: #D1FAE5; color: #047857; border: 0.5pt solid #6EE7B7; }
+.kss-stop { background: #FEE2E2; color: #9F1239; border: 0.5pt solid #FCA5A5; }
+.kss-start { background: #EDE9FE; color: #6D28D9; border: 0.5pt solid #C4B5FD; }
+.kss-caption { color: var(--vifm-muted); font-size: 9pt; margin: 0 0 2mm; font-style: italic; }
 .idp-row { display: flex; gap: 4mm; align-items: baseline; margin: 2mm 0; }
 .idp-row > span:first-child { color: var(--vifm-muted); font-size: 9pt; min-width: 42mm; }
 .idp-line { flex: 1; border-bottom: 0.6pt solid var(--vifm-border); height: 5mm; }
+
+/* Critical-competency alignment card */
+.critical-card { border: 1px solid var(--vifm-border); border-radius: 2.5mm; padding: 4mm 5mm; margin: 4mm 0 6mm; background: var(--vifm-soft); page-break-inside: avoid; }
+.critical-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 4mm; flex-wrap: wrap; }
+.critical-card-title { margin: 0; color: var(--vifm-primary); font-size: 12pt; font-weight: 700; border-bottom: 0; padding: 0; }
+.critical-card-pct { font-size: 18pt; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; padding: 0.6mm 3mm; border-radius: 4mm; }
+.critical-pct-high { color: #047857; background: #D1FAE5; border: 0.5pt solid #6EE7B7; }
+.critical-pct-mid { color: #B45309; background: #FEF3C7; border: 0.5pt solid #FCD34D; }
+.critical-pct-low { color: #9F1239; background: #FEE2E2; border: 0.5pt solid #FCA5A5; }
+.critical-card-lead { color: var(--vifm-muted); font-size: 9.5pt; margin: 2mm 0 4mm; line-height: 1.5; }
+.critical-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4mm; }
+.critical-col-head { font-size: 9pt; font-weight: 600; color: var(--vifm-primary); margin-bottom: 1.5mm; text-transform: uppercase; letter-spacing: 0.05em; }
+.critical-col-count { font-weight: 500; color: var(--vifm-muted); font-variant-numeric: tabular-nums; }
+.critical-list { list-style: none; padding: 0; margin: 0; }
+.critical-list li { font-size: 9.5pt; color: var(--vifm-dark); padding: 1.2mm 0; border-bottom: 0.4pt dotted var(--vifm-border); }
+.critical-list li:last-child { border-bottom: 0; }
+.critical-empty { color: var(--vifm-muted); font-style: italic; font-size: 9.5pt; }
+
+/* Critical pill on per-competency cards */
+.critical-pill { display: inline-block; margin-left: 3mm; font-size: 8pt; font-weight: 700; padding: 0.5mm 2mm; border-radius: 4mm; text-transform: uppercase; letter-spacing: 0.04em; line-height: 1.2; vertical-align: middle; }
+.critical-both { color: #047857; background: #D1FAE5; border: 0.5pt solid #6EE7B7; }
+.critical-self { color: #6D28D9; background: #EDE9FE; border: 0.5pt solid #C4B5FD; }
+.critical-mgr { color: #B45309; background: #FEF3C7; border: 0.5pt solid #FCD34D; }
+.reflect-pdf[dir="rtl"] .critical-pill { margin-left: 0; margin-right: 3mm; }
 
 /* Item-level table */
 .item-table-card { margin-bottom: 4mm; page-break-inside: avoid; }
@@ -760,6 +960,8 @@ h4 { color: var(--vifm-primary); font-size: 11pt; font-weight: 700; margin: 3mm 
 .item-table td { padding: 1.8mm 2mm; border-bottom: 0.5pt solid var(--vifm-border); text-align: center; font-variant-numeric: tabular-nums; }
 .item-table td.item-behavior { text-align: left; color: var(--vifm-dark); font-size: 9.5pt; line-height: 1.35; }
 .item-table td.dim { color: var(--vifm-muted); }
+.item-table td.flag { background: rgba(217, 119, 6, 0.08); color: var(--vifm-dark); }
+.item-table .consensus-flag { color: #B45309; font-weight: 700; font-size: 8.5pt; }
 .item-table tr:last-child td { border-bottom: 0; }
 
 /* Verbatim Start/Stop/Continue */

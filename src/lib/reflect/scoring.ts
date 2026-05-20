@@ -12,6 +12,13 @@ export type RaterGroupScore = {
   mean: number | null;
   /** True when the rater group has fewer raters than the anonymity threshold. */
   hidden_by_anonymity: boolean;
+  /**
+   * Within-group spread (max - min). Used by the P1 consensus flag — when
+   * this is >= 3 on a 5-point scale, the raters meaningfully disagree and
+   * the reader should treat the mean with care. null when fewer than 2
+   * responses contributed (a single response can't disagree with itself).
+   */
+  spread: number | null;
 };
 
 export type CompetencyScore = {
@@ -77,6 +84,22 @@ export type ParticipantScoring = {
    * raters than anonymity_min_n, matching the numeric-score policy.
    */
   open_responses: OpenVerbatim[];
+  /**
+   * P1 critical-competency alignment between Self and Manager picks.
+   * Renders as the central coaching anchor on the report. When either
+   * side hasn't picked yet, alignment_pct is null and the report shows
+   * "not yet picked" instead of a misleading 0%.
+   */
+  critical_alignment: {
+    self_picks: string[];
+    manager_picks: string[];
+    both_picks: string[];
+    /** |both| / |union| × 100. null when both sides are empty. */
+    alignment_pct: number | null;
+    /** Whether each side has submitted any picks. */
+    self_picked: boolean;
+    manager_picked: boolean;
+  };
   generated_at: string;
 };
 
@@ -96,6 +119,20 @@ export type CohortScoring = {
     mean: number | null;
     /** Per-participant means in display_order — used to render the heatmap. */
     per_participant_means: Array<{ participant_id: string; mean: number | null }>;
+    /**
+     * P1 cohort distribution: counts of participants whose Others-mean for
+     * THIS competency falls below the favorable zone (<3.5), within it
+     * (3.5–4.25 inclusive), or above (>4.25). Participants with no others
+     * data are excluded from all three. Used by the "% below / within /
+     * above" stacked-bar on the cohort PDF — the exec-summary slide every
+     * competitor uses to anchor org-level training decisions.
+     */
+    distribution: {
+      below: number;
+      within: number;
+      above: number;
+      counted: number;
+    };
   }>;
   participants: Array<{
     participant_id: string;
@@ -132,6 +169,19 @@ function round2(v: number | null): number | null {
   if (v === null) return null;
   return Math.round(v * 100) / 100;
 }
+
+/**
+ * Within-group spread = max - min on the 5-point scale. The P1 consensus
+ * flag fires at spread >= 3. Returns null when fewer than 2 values
+ * contributed (one rater can't disagree with itself).
+ */
+function spreadOf(values: number[]): number | null {
+  if (values.length < 2) return null;
+  return Math.max(...values) - Math.min(...values);
+}
+
+/** Threshold above which a within-group spread counts as "raters disagree". */
+export const CONSENSUS_FLAG_SPREAD = 3;
 
 
 // ──────────────────────────────────────────────────────────────
@@ -200,9 +250,10 @@ export async function computeParticipantScoring(
           .select("id, competency_id, text_en, text_ar")
           .in("competency_id", compIds);
 
-  // Raters for this participant. open_* columns power the verbatim section.
-  // They're added by migration 00036 — until that runs in prod, fall back to
-  // the older shape and the verbatim section just renders empty.
+  // Raters for this participant. open_* and critical_competency_ids columns
+  // power the verbatim section + critical-competency alignment respectively.
+  // Both are added by P0/P1 migrations (00036/00037) — until those run in
+  // prod, fall back to the older shape and the relevant features render empty.
   type RaterMiniRow = {
     id: string;
     rater_role: ReflectRaterRole;
@@ -210,14 +261,17 @@ export async function computeParticipantScoring(
     open_start: string | null;
     open_stop: string | null;
     open_continue: string | null;
+    critical_competency_ids: string[];
   };
   let raters: RaterMiniRow[] | null = null;
   {
-    const withOpen = await sb
+    const full = await sb
       .from("reflect_raters")
-      .select("id, rater_role, status, open_start, open_stop, open_continue")
+      .select(
+        "id, rater_role, status, open_start, open_stop, open_continue, critical_competency_ids"
+      )
       .eq("participant_id", participantId);
-    if (withOpen.error) {
+    if (full.error) {
       // Columns probably missing — re-query without them so the rest of the
       // pipeline still works.
       const fallback = await sb
@@ -229,9 +283,25 @@ export async function computeParticipantScoring(
         open_start: null,
         open_stop: null,
         open_continue: null,
+        critical_competency_ids: [],
       }));
     } else {
-      raters = (withOpen.data ?? []) as RaterMiniRow[];
+      raters = (full.data ?? []).map((r) => {
+        const row = r as Partial<RaterMiniRow> & {
+          id: string;
+          rater_role: ReflectRaterRole;
+          status: string;
+        };
+        return {
+          id: row.id,
+          rater_role: row.rater_role,
+          status: row.status,
+          open_start: row.open_start ?? null,
+          open_stop: row.open_stop ?? null,
+          open_continue: row.open_continue ?? null,
+          critical_competency_ids: row.critical_competency_ids ?? [],
+        };
+      });
     }
   }
 
@@ -293,6 +363,7 @@ export async function computeParticipantScoring(
       response_count: allScores.length,
       mean: hidden ? null : round2(groupMean),
       hidden_by_anonymity: hidden,
+      spread: hidden ? null : spreadOf(allScores),
     };
   });
 
@@ -370,6 +441,7 @@ export async function computeParticipantScoring(
         response_count: scores.length,
         mean: hidden ? null : round2(mean(scores)),
         hidden_by_anonymity: hidden,
+        spread: hidden ? null : spreadOf(scores),
       };
     });
 
@@ -422,6 +494,7 @@ export async function computeParticipantScoring(
         response_count: scores.length,
         mean: hidden ? null : round2(mean(scores)),
         hidden_by_anonymity: hidden,
+        spread: hidden ? null : spreadOf(scores),
       };
     });
 
@@ -487,6 +560,37 @@ export async function computeParticipantScoring(
     }
   }
 
+  // ── P1 critical-competency alignment ──
+  // Picks come from the FIRST Self / Manager rater respectively. If
+  // multiple Self/Manager raters somehow exist (data quirk), we still
+  // pick one — the unique-self DB constraint already guarantees this
+  // for self, and a participant typically only ever has one manager.
+  const selfRater = raters.find((r) => r.rater_role === "self");
+  const managerRater = raters.find((r) => r.rater_role === "manager");
+  const selfPicks = selfRater?.critical_competency_ids ?? [];
+  const managerPicks = managerRater?.critical_competency_ids ?? [];
+  const selfSet = new Set(selfPicks);
+  const managerSet = new Set(managerPicks);
+  const both: string[] = [];
+  const unionSet = new Set<string>();
+  for (const id of Array.from(selfSet)) unionSet.add(id);
+  for (const id of Array.from(managerSet)) {
+    unionSet.add(id);
+    if (selfSet.has(id)) both.push(id);
+  }
+  const alignment_pct =
+    unionSet.size === 0
+      ? null
+      : Math.round((both.length / unionSet.size) * 100);
+  const critical_alignment = {
+    self_picks: selfPicks,
+    manager_picks: managerPicks,
+    both_picks: both,
+    alignment_pct,
+    self_picked: selfPicks.length > 0,
+    manager_picked: managerPicks.length > 0,
+  };
+
   return {
     participant_id: participant.id,
     participant_name: participant.full_name,
@@ -512,6 +616,7 @@ export async function computeParticipantScoring(
     blind_spots,
     hidden_strengths,
     open_responses,
+    critical_alignment,
     generated_at: new Date().toISOString(),
   };
 }
@@ -606,21 +711,37 @@ export async function computeCohortScoring(
     }
   }
 
+  // Favorable Zone bounds (industry standard).
+  const ZONE_LOW = 3.5;
+  const ZONE_HIGH = 4.25;
+
   const competencies = Array.from(compMap.entries())
-    .map(([id, e]) => ({
-      competency_id: id,
-      name_en: e.name_en,
-      name_ar: e.name_ar,
-      display_order: e.display_order,
-      mean:
-        e.participantsCounted > 0
-          ? round2(e.sumOfMeans / e.participantsCounted)
-          : null,
-      per_participant_means: participants.map((p) => ({
+    .map(([id, e]) => {
+      const perParticipantArr = participants.map((p) => ({
         participant_id: p.id,
         mean: e.perParticipant.get(p.id) ?? null,
-      })),
-    }))
+      }));
+      const distribution = { below: 0, within: 0, above: 0, counted: 0 };
+      for (const pp of perParticipantArr) {
+        if (pp.mean === null) continue;
+        distribution.counted += 1;
+        if (pp.mean < ZONE_LOW) distribution.below += 1;
+        else if (pp.mean > ZONE_HIGH) distribution.above += 1;
+        else distribution.within += 1;
+      }
+      return {
+        competency_id: id,
+        name_en: e.name_en,
+        name_ar: e.name_ar,
+        display_order: e.display_order,
+        mean:
+          e.participantsCounted > 0
+            ? round2(e.sumOfMeans / e.participantsCounted)
+            : null,
+        per_participant_means: perParticipantArr,
+        distribution,
+      };
+    })
     .sort((a, b) => a.display_order - b.display_order);
 
   const participantsRollup = participants.map((p) => {

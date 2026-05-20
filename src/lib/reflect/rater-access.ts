@@ -17,6 +17,12 @@ export type RaterRow = {
   open_start: string | null;
   open_stop: string | null;
   open_continue: string | null;
+  /**
+   * P1 critical-competency picks (migration 00037). Used only by Self and
+   * Manager raters — they pick competencies they consider most critical
+   * for this role. Empty array = not yet picked.
+   */
+  critical_competency_ids: string[];
 };
 
 export type ParticipantRow = {
@@ -89,6 +95,8 @@ export type RaterContext = {
     stop: string;
     continue_: string;
   };
+  /** P1: list of competency_ids the rater flagged as role-critical. */
+  criticalCompetencyIds: string[];
 };
 
 /**
@@ -191,6 +199,9 @@ export async function loadRaterByToken(token: string): Promise<RaterContext | nu
       stop: (rater.open_stop ?? "") || "",
       continue_: (rater.open_continue ?? "") || "",
     },
+    // P1 critical-competency picks (00037). Defensively coerces missing
+    // column to empty so the form simply hides the picker.
+    criticalCompetencyIds: rater.critical_competency_ids ?? [],
   };
 }
 

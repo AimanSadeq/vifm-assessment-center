@@ -1,14 +1,14 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BackLink } from "@/components/shared/back-link";
 import { GapBadge } from "@/components/shared/gap-badge";
 import { getCompetencyGap } from "@/lib/scoring/competency-gap";
-import { Target, AlertTriangle, CheckCircle2, BookOpen, Route } from "lucide-react";
+import { Target, AlertTriangle, CheckCircle2, BookOpen, Route, Languages, Award } from "lucide-react";
 import { PersonalStatistics, type DomainRollup } from "./_components/personal-statistics";
 import { StartQuizButton } from "./_components/start-quiz-button";
 import { ImpersonationBanner } from "@/components/shared/impersonation-banner";
@@ -69,6 +69,26 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
     .single();
 
   if (candErr || !candidate) return notFound();
+
+  // VIFM Fluent English placement bound to this candidate (migration 00044).
+  // Read via the service client — eng_fluent_results RLS is admin-only, and
+  // the candidate context is already established above. Tolerant: stays null
+  // if the table/columns aren't migrated or no placement exists.
+  type FluentLite = { id: string; overall_cefr: string; candidate_id: string | null; created_at: string };
+  let latestFluent: FluentLite | null = null;
+  try {
+    const svc = createServiceClient();
+    const fres = (await svc
+      .from("eng_fluent_results")
+      .select("id, overall_cefr, candidate_id, created_at")
+      .order("created_at", { ascending: false })
+      .limit(200)) as unknown as { data: FluentLite[] | null; error: unknown };
+    if (!fres.error && Array.isArray(fres.data)) {
+      latestFluent = fres.data.find((r) => r.candidate_id === candidateId) ?? null;
+    }
+  } catch {
+    /* table/columns absent — ignore */
+  }
 
   // Role profile is fetched separately so the page still renders if migration
   // 00016 hasn't been pushed (the join would otherwise 500). Falls through to
@@ -256,6 +276,27 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
       >
         <Route className="h-4 w-4" /> {t("candidateSkills.buildPathway")}
       </Link>
+
+      {/* VIFM Fluent English placement (when bound to this candidate) */}
+      {latestFluent && (
+        <div className="flex items-center gap-3 rounded-md border bg-card p-4">
+          <Languages className="h-5 w-5 text-[#5391D5]" />
+          <div>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              {t("candidateSkills.englishPlacement")}
+            </p>
+            <p className="text-lg font-bold">{latestFluent.overall_cefr}</p>
+          </div>
+          <a
+            href={`/api/ac/fluent/${latestFluent.id}/certificate?format=pdf`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ms-auto inline-flex items-center gap-1 text-xs font-medium text-[#5391D5] hover:underline"
+          >
+            <Award className="h-3.5 w-3.5" /> {t("candidateSkills.certificate")}
+          </a>
+        </div>
+      )}
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

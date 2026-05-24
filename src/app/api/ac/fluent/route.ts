@@ -49,6 +49,8 @@ type Body = {
   takerEmail?: string | null;
   aiGenerated?: boolean;
   integrityFlags?: IntegrityFlags;
+  candidateId?: string | null;
+  engagementId?: string | null;
 };
 
 const CEFR_LABEL: Record<string, string> = {
@@ -75,6 +77,8 @@ async function persistResult(
     takerEmail: string | null;
     aiGenerated: boolean;
     integrityFlags: IntegrityFlags | null;
+    candidateId: string | null;
+    engagementId: string | null;
   }
 ): Promise<string | null> {
   try {
@@ -112,6 +116,18 @@ async function persistResult(
         await sb.from("eng_fluent_results").update({ integrity_flags: meta.integrityFlags }).eq("id", id);
       } catch {
         /* column not migrated — ignore */
+      }
+    }
+
+    // Best-effort: candidate binding columns exist only after migration 00044.
+    if (meta.candidateId) {
+      try {
+        await sb
+          .from("eng_fluent_results")
+          .update({ candidate_id: meta.candidateId, engagement_id: meta.engagementId })
+          .eq("id", id);
+      } catch {
+        /* columns not migrated — ignore */
       }
     }
     return id;
@@ -211,6 +227,8 @@ export async function POST(req: Request) {
       takerEmail,
       aiGenerated: body.aiGenerated === true,
       integrityFlags: body.integrityFlags ?? null,
+      candidateId: body.candidateId?.trim() ? body.candidateId.trim() : null,
+      engagementId: body.engagementId?.trim() ? body.engagementId.trim() : null,
     });
 
     // Email the taker their result + certificate link (best-effort).

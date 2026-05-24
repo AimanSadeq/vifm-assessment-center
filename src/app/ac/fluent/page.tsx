@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ArrowLeft, Languages, Users } from "lucide-react";
+import { ArrowLeft, Languages, Users, UserCheck } from "lucide-react";
 import { isAIConfigured } from "@/lib/ai/client";
+import { createServiceClient } from "@/lib/supabase/server";
 import { FluentClient } from "./_components/fluent-client";
 
 export const dynamic = "force-dynamic";
@@ -9,8 +10,36 @@ export const metadata = {
   title: "VIFM Fluent · English placement (prototype)",
 };
 
-export default function FluentPage() {
+type Props = {
+  searchParams?: { candidateId?: string; engagementId?: string };
+};
+
+export default async function FluentPage({ searchParams }: Props) {
   const aiConfigured = isAIConfigured();
+
+  // Optional candidate binding: launch /ac/fluent?candidateId=… to attach the
+  // result to a candidate record. Tolerant — anonymous self-serve if absent.
+  const candidateId = searchParams?.candidateId?.trim() || null;
+  let candidateName: string | null = null;
+  let candidateEmail: string | null = null;
+  let engagementId: string | null = searchParams?.engagementId?.trim() || null;
+  if (candidateId) {
+    try {
+      const sb = createServiceClient();
+      const { data } = await sb
+        .from("candidates")
+        .select("full_name, email, engagement_id")
+        .eq("id", candidateId)
+        .single();
+      if (data) {
+        candidateName = (data.full_name as string) ?? null;
+        candidateEmail = (data.email as string) ?? null;
+        engagementId = engagementId ?? ((data.engagement_id as string) ?? null);
+      }
+    } catch {
+      /* candidate lookup failed — fall back to anonymous mode */
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#F5F7FA]">
@@ -47,6 +76,15 @@ export default function FluentPage() {
       </header>
 
       <main className="max-w-4xl mx-auto px-6 py-8">
+        {candidateName && (
+          <div className="mb-6 flex items-center gap-2 rounded-lg border border-[#5391D5]/40 bg-[#5391D5]/5 px-4 py-3 text-sm text-[#010131]">
+            <UserCheck className="h-4 w-4 text-[#5391D5]" />
+            <span>
+              This placement will be linked to candidate record{" "}
+              <strong>{candidateName}</strong>.
+            </span>
+          </div>
+        )}
         {!aiConfigured && (
           <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             <strong>AI key not set.</strong> The test runs in fallback mode (a small
@@ -56,11 +94,16 @@ export default function FluentPage() {
           </div>
         )}
         <p className="mb-6 text-xs text-muted-foreground">
-          Indicative placement, not a certified high-stakes score. Listening, Speaking
-          (via Whisper), persistence, cohort reporting and certificates are planned
-          follow-ons.
+          Indicative placement, not a certified high-stakes score. Four skills (Reading,
+          Listening, Writing, Speaking), a downloadable CEFR certificate, cohort reporting,
+          and an emailed result are built in.
         </p>
-        <FluentClient />
+        <FluentClient
+          candidateId={candidateId}
+          engagementId={engagementId}
+          prefillName={candidateName ?? undefined}
+          prefillEmail={candidateEmail ?? undefined}
+        />
       </main>
     </div>
   );

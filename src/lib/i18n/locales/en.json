@@ -172,6 +172,8 @@
   "candidateSkills": {
     "title": "My Skills",
     "buildPathway": "Build my learning pathway",
+    "englishPlacement": "English placement (VIFM Fluent)",
+    "certificate": "Certificate",
     "backToWelcome": "Back to Welcome",
     "rolePlaceholder": "Hello {{name}} — your skill map will appear here once a role profile has been assigned to you.",
     "noProfileTitle": "No Role Profile Assigned",

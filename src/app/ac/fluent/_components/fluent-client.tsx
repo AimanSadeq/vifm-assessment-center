@@ -101,7 +101,17 @@ const CEFR_TONE: Record<Cefr, string> = {
 const ttsAvailable = () =>
   typeof window !== "undefined" && "speechSynthesis" in window && typeof SpeechSynthesisUtterance !== "undefined";
 
-export function FluentClient() {
+export function FluentClient({
+  candidateId = null,
+  engagementId = null,
+  prefillName,
+  prefillEmail,
+}: {
+  candidateId?: string | null;
+  engagementId?: string | null;
+  prefillName?: string;
+  prefillEmail?: string;
+} = {}) {
   const [language, setLanguage] = useState<Language>("en");
   const [phase, setPhase] = useState<"intro" | "test" | "result">("intro");
   const [test, setTest] = useState<FluentTest | null>(null);
@@ -111,9 +121,9 @@ export function FluentClient() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  // Taker identity (self-entered; powers persistence + certificate).
-  const [takerName, setTakerName] = useState("");
-  const [takerEmail, setTakerEmail] = useState("");
+  // Taker identity (self-entered, or prefilled from a bound candidate).
+  const [takerName, setTakerName] = useState(prefillName ?? "");
+  const [takerEmail, setTakerEmail] = useState(prefillEmail ?? "");
 
   // Lightweight proctoring signals (advisory — surfaced to admins only).
   const [blurCount, setBlurCount] = useState(0);
@@ -265,6 +275,7 @@ export function FluentClient() {
           takerName: takerName.trim() || null, takerEmail: takerEmail.trim() || null,
           aiGenerated: test.ai_generated,
           integrityFlags: { blurCount, pasteCount },
+          candidateId, engagementId,
         }),
       });
       const data = (await res.json()) as FluentResult;

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Languages } from "lucide-react";
+import { ArrowLeft, Languages, Users } from "lucide-react";
 import { isAIConfigured } from "@/lib/ai/client";
 import { FluentClient } from "./_components/fluent-client";
 
@@ -30,12 +30,19 @@ export default function FluentPage() {
             </span>
           </div>
           <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-            A bilingual English placement test. <strong>Reading</strong> items are
-            AI-generated and auto-scored; the <strong>Writing</strong> task is scored
+            A bilingual English placement test across four skills.{" "}
+            <strong>Reading</strong> and <strong>Listening</strong> are AI-generated and
+            auto-scored; <strong>Writing</strong> and <strong>Speaking</strong> are scored
             live by Claude against the CEFR criteria — the part IELTS/TOEFL pay human
-            examiners for. You get an indicative CEFR level (A1–C2) with feedback in
-            minutes. Navigate and read feedback in English or Arabic.
+            examiners for. Speaking is transcribed with Whisper. You get an indicative CEFR
+            level (A1–C2) with feedback in minutes, in English or Arabic.
           </p>
+          <Link
+            href="/ac/fluent/cohort"
+            className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-[#5391D5] hover:underline"
+          >
+            <Users className="h-3.5 w-3.5" /> View cohort report
+          </Link>
         </div>
       </header>
 

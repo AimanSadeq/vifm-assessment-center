@@ -6,7 +6,7 @@ import { IdpEditor } from "./_components/idp-editor";
 import type { IdpAction, IdpPriority, ReflectIdpStatus } from "@/lib/reflect/idp-actions";
 
 export const metadata = {
-  title: "Reflect · IDP",
+  title: "VIFM Reflect 360 · IDP",
 };
 
 type Params = { params: Promise<{ id: string }> };

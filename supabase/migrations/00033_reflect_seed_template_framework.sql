@@ -1,5 +1,5 @@
 -- ============================================================
--- VIFM Reflect - Seed: "VIFM Leadership Essentials" template
+-- VIFM Reflect 360 - Seed: "VIFM Leadership Essentials" template
 -- Migration 00033
 --
 -- Library template framework that consultants can clone when a

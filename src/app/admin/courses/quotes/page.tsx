@@ -189,7 +189,7 @@ export default async function QuoteRequestsListPage({
                               <Link
                                 href={`/reflect/consultant/engagements/${r.reflect_engagement_id}`}
                                 className="text-[10px] text-accent hover:underline"
-                                title="Open the source Reflect engagement"
+                                title="Open the source VIFM Reflect 360 engagement"
                               >
                                 source ↗
                               </Link>

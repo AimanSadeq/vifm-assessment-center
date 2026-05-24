@@ -13,7 +13,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 
 export const metadata = {
-  title: "Reflect · Consultant",
+  title: "VIFM Reflect 360 · Consultant",
 };
 
 type EngagementRow = {
@@ -83,7 +83,7 @@ export default async function ReflectConsultantPage() {
               href="/reflect"
               className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-1"
             >
-              <ArrowLeft className="h-3 w-3" /> Reflect
+              <ArrowLeft className="h-3 w-3" /> VIFM Reflect 360
             </Link>
             <div className="flex items-center gap-2">
               <Aperture className="h-5 w-5 text-accent" />

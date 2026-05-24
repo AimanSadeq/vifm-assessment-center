@@ -1,5 +1,5 @@
 -- ============================================================
--- VIFM Reflect — align template competency names with AC catalogue
+-- VIFM Reflect 360 — align template competency names with AC catalogue
 -- Migration 00034
 --
 -- The seed template from 00033 used VIFM-flavoured competency names

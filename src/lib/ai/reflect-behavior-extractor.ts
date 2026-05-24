@@ -13,7 +13,7 @@ export type ExtractedBehaviorProposal = {
 };
 
 const SYSTEM_PROMPT =
-  `You are an assessment designer for VIFM Reflect, a 360° leadership feedback platform calibrated for the GCC. ` +
+  `You are an assessment designer for VIFM Reflect 360, a leadership feedback platform calibrated for the GCC. ` +
   `Given a client's Corporate Values and/or Leadership Competencies in English or Arabic, you decompose each into ` +
   `3 to 5 observable behaviours that raters can score on a 5-point frequency scale ` +
   `(Almost never → Almost always). ` +

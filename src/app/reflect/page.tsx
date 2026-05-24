@@ -12,9 +12,9 @@ import {
 import { VifmLogo } from "@/components/shared/vifm-logo";
 
 export const metadata = {
-  title: "VIFM Reflect · 360° leadership feedback",
+  title: "VIFM Reflect 360 · Leadership feedback",
   description:
-    "VIFM Reflect — a bilingual 360° leadership feedback platform that turns Corporate Values and Leadership Competencies into actionable insight for the GCC.",
+    "VIFM Reflect 360 — a bilingual leadership feedback platform that turns Corporate Values and Leadership Competencies into actionable insight for the GCC.",
 };
 
 export default function ReflectRootPage() {
@@ -52,7 +52,7 @@ export default function ReflectRootPage() {
           <div className="max-w-3xl relative z-10">
             <span className="ara-eyebrow text-accent">
               <Aperture className="h-3 w-3" />
-              VIFM Reflect
+              VIFM Reflect 360
             </span>
             <h1 className="ara-numeral text-4xl sm:text-5xl lg:text-6xl font-semibold text-white leading-[1.05] mt-4 mb-5">
               See yourself
@@ -60,7 +60,7 @@ export default function ReflectRootPage() {
               <span className="ara-accent-sweep">from every angle.</span>
             </h1>
             <p className="text-base text-white/70 mb-6 italic">
-              VIFM Reflect — bilingual 360° leadership feedback, calibrated to your
+              VIFM Reflect 360 — bilingual leadership feedback, calibrated to your
               own values and leadership competencies.
             </p>
             <p className="text-lg text-white/75 max-w-2xl leading-relaxed">

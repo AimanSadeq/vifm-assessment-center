@@ -40,7 +40,7 @@ export function StepFramework({ state, update, templates }: Props) {
       <div>
         <h2 className="text-lg font-semibold text-primary">Competency framework</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Reflect builds every 360° on the client&apos;s own values and competencies. Choose how you&apos;d like to populate this framework.
+          VIFM Reflect 360 builds every engagement on the client&apos;s own values and competencies. Choose how you&apos;d like to populate this framework.
         </p>
       </div>
 

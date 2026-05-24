@@ -1,5 +1,5 @@
 -- ============================================================
--- VIFM Reflect (360° Leadership Feedback) - Enums
+-- VIFM Reflect 360 (Leadership Feedback) - Enums
 -- Migration 00031: Reflect-specific enums
 --
 -- Non-breaking: only adds new enum types. The 'consultant'

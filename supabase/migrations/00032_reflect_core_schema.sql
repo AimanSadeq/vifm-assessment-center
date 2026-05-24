@@ -1,5 +1,5 @@
 -- ============================================================
--- VIFM Reflect (360° Leadership Feedback) - Core Schema
+-- VIFM Reflect 360 (Leadership Feedback) - Core Schema
 -- Migration 00032: All reflect_* tables, indexes, triggers, RLS
 --
 -- Non-breaking: every table prefixed 'reflect_'. No existing

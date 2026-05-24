@@ -5,6 +5,7 @@ import { GraduationCap, ArrowRight } from "lucide-react";
 import { VIFM_VERTICAL_LABELS, type VifmVertical } from "@/types/database";
 import type { RecommendedCourse } from "@/lib/recommender/courses";
 import { HIGH_FIT_THRESHOLD } from "@/lib/recommender/courses";
+import { formatFitScore } from "@/lib/recommender/format";
 
 type Props = {
   title: string;
@@ -132,7 +133,7 @@ export function RecommendedCoursesPanel({
                       >
                         <span className="font-medium">{d.label}</span>
                         <span className="opacity-70 tabular-nums">
-                          gap {d.gap} · ×{d.relevance}
+                          gap {formatFitScore(d.gap)} · ×{d.relevance}
                         </span>
                       </span>
                     ))}
@@ -144,7 +145,7 @@ export function RecommendedCoursesPanel({
                     fit score
                   </span>
                   <span className="text-base font-bold tabular-nums">
-                    {c.total_score}
+                    {formatFitScore(c.total_score)}
                   </span>
                 </div>
               </div>

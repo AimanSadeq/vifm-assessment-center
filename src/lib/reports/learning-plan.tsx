@@ -1,6 +1,7 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import type { ReportData } from "./report-types";
 import { getCompetencyGap, GAP_TONES } from "@/lib/scoring/competency-gap";
+import { formatFitScore } from "@/lib/recommender/format";
 
 const C = {
   primary: "#010131",
@@ -504,7 +505,7 @@ function CoursesPage({ d }: { d: ReportData }) {
                 {c.title_ar && <Text style={s.courseTitleAr}>{c.title_ar}</Text>}
               </View>
               {isHighFit && (
-                <Text style={s.courseFitPill}>★ HIGH FIT · {c.total_score}</Text>
+                <Text style={s.courseFitPill}>★ HIGH FIT · {formatFitScore(c.total_score)}</Text>
               )}
             </View>
 
@@ -513,7 +514,7 @@ function CoursesPage({ d }: { d: ReportData }) {
               <Text style={s.courseMetaPill}>{c.level.charAt(0).toUpperCase() + c.level.slice(1)}</Text>
               <Text style={s.courseMetaPill}>{c.duration_label}</Text>
               {!isHighFit && (
-                <Text style={s.courseMetaPill}>fit score · {c.total_score}</Text>
+                <Text style={s.courseMetaPill}>fit score · {formatFitScore(c.total_score)}</Text>
               )}
             </View>
 
@@ -521,7 +522,7 @@ function CoursesPage({ d }: { d: ReportData }) {
             <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
               {c.drivers.map((d, i) => (
                 <Text key={i} style={s.driverChip}>
-                  {d.label} · gap {d.gap} × ×{d.relevance}
+                  {d.label} · gap {formatFitScore(d.gap)} × ×{d.relevance}
                 </Text>
               ))}
             </View>

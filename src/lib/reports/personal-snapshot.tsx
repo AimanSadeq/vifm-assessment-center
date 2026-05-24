@@ -1,4 +1,5 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { formatFitScore } from "@/lib/recommender/format";
 import {
   ARA_INDIVIDUAL_FACTORS,
   getIndividualMaturityStage,
@@ -526,7 +527,7 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
                       </Text>
                     )}
                   </Text>
-                  {isHighFit && <Text style={s.courseFitPill}>★ HIGH FIT · {c.total_score}</Text>}
+                  {isHighFit && <Text style={s.courseFitPill}>★ HIGH FIT · {formatFitScore(c.total_score)}</Text>}
                 </View>
                 <View style={s.courseMetaRow}>
                   <Text style={s.courseMetaPill}>
@@ -536,12 +537,12 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
                     {c.level.charAt(0).toUpperCase() + c.level.slice(1)}
                   </Text>
                   <Text style={s.courseMetaPill}>{c.duration_label}</Text>
-                  {!isHighFit && <Text style={s.courseMetaPill}>fit · {c.total_score}</Text>}
+                  {!isHighFit && <Text style={s.courseMetaPill}>fit · {formatFitScore(c.total_score)}</Text>}
                 </View>
                 <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
                   {c.drivers.map((d, i) => (
                     <Text key={i} style={s.driverChip}>
-                      {d.label} · gap {d.gap} × ×{d.relevance}
+                      {d.label} · gap {formatFitScore(d.gap)} × ×{d.relevance}
                     </Text>
                   ))}
                 </View>

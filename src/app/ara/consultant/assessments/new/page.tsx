@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, Building2, Network, Globe2, Sparkles, Check, User } from "lucide-react";
 import { IndividualLayerToggle } from "./_components/individual-layer-toggle";
+import { AgenticLayerToggle } from "./_components/agentic-layer-toggle";
 import { PillarPicker } from "./_components/pillar-picker";
 import { createServiceClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
@@ -453,6 +454,8 @@ export default async function NewAraAssessmentPage({
               </div>
 
               <IndividualLayerToggle />
+
+              <AgenticLayerToggle />
 
               {/* Pillar selector — Department picks 4, Division picks 6.
                   Enterprise stays at all 8 (no UI shown). */}

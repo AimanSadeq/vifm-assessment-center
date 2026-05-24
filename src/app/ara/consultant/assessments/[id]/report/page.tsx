@@ -8,7 +8,9 @@ import { detectAraShadowAi } from "@/lib/ara/detectors";
 import { computePeerBenchmarks } from "@/lib/ara/peer-benchmarks";
 import { computeYoYComparison } from "@/lib/ara/year-on-year";
 import { computeWorkforceReadiness } from "@/lib/ara/workforce-readiness";
+import { computeAgenticReadiness } from "@/lib/ara/agentic-readiness";
 import { ARA_INDIVIDUAL_FACTORS } from "@/lib/constants/ara-individual-factors";
+import { ARA_AGENTIC_DIMENSIONS } from "@/lib/constants/ara-agentic-dimensions";
 import { MaturityGauge } from "./_components/maturity-gauge";
 import { RadarChart } from "./_components/radar-chart";
 import { ComplianceSummary } from "./_components/compliance-summary";
@@ -184,6 +186,15 @@ export default async function AraReportPage({
   const workforceRollup = assessment.include_individual_layer
     ? await computeWorkforceReadiness(assessment.id).catch((e) => {
         console.error("[ara-report] workforce rollup failed:", e);
+        return null;
+      })
+    : null;
+
+  // Agentic-AI Readiness rollup — only when the assessment opted into the
+  // agentic layer. Same tolerant pattern as the workforce rollup.
+  const agenticRollup = assessment.include_agentic_layer
+    ? await computeAgenticReadiness(assessment.id).catch((e) => {
+        console.error("[ara-report] agentic rollup failed:", e);
         return null;
       })
     : null;
@@ -1101,6 +1112,77 @@ export default async function AraReportPage({
               included in this client-facing report by default. Discuss with
               your VIFM consultant if you want named individual results
               surfaced or anonymised.
+            </p>
+          </section>
+        )}
+
+        {/* ─── Agentic-AI Readiness — agentic layer only ─── *
+         * Renders only when this assessment opted into the agentic layer
+         * AND respondents have answered agentic-dimension items. Cohort
+         * overall + per-dimension mean across the six VIFM agentic
+         * dimensions. Per-respondent breakdown stays in the consultant
+         * view (not in the client-facing PDF). */}
+        {assessment.include_agentic_layer && agenticRollup && agenticRollup.respondents.some((r) => r.overall != null) && (
+          <section className="report-page">
+            <h2 className="report-h2">Agentic-AI Readiness</h2>
+            <p className="report-body">
+              Beyond readiness to <em>use</em> AI, this assessment measured the
+              organisation&apos;s readiness to safely <em>delegate</em> work to
+              autonomous AI agents. {agenticRollup.completed_count} respondent
+              {agenticRollup.completed_count === 1 ? "" : "s"} answered the
+              Agentic-AI Readiness layer across six governance dimensions that
+              extend the Governance and Model Management pillars to the frontier
+              of autonomous AI.
+            </p>
+
+            <h3 className="report-h3">Cohort overall</h3>
+            <table className="report-body" style={{ width: "100%", borderCollapse: "collapse", marginBottom: "12pt" }}>
+              <thead>
+                <tr style={{ borderBottom: "2px solid " + TOKENS.navy }}>
+                  <th style={{ ...cell, fontWeight: 700, textAlign: "left" }}>Dimension</th>
+                  <th style={{ ...cellRight, fontWeight: 700 }}>Score / 5</th>
+                  <th style={{ ...cellRight, fontWeight: 700 }}>Respondents</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style={{ borderTop: "1px solid #e5e7eb", background: TOKENS.bgPanel }}>
+                  <td style={{ ...cell, fontWeight: 700 }}>Cohort overall</td>
+                  <td style={{ ...cellRight, fontWeight: 700 }}>
+                    {agenticRollup.cohort_overall != null
+                      ? agenticRollup.cohort_overall.toFixed(2)
+                      : "—"}
+                  </td>
+                  <td style={cellRight}>{agenticRollup.completed_count}</td>
+                </tr>
+                {ARA_AGENTIC_DIMENSIONS.map((d) => {
+                  const avg = agenticRollup.dimension_averages.find((x) => x.dimension_id === d.id);
+                  return (
+                    <tr key={d.id} style={{ borderTop: "1px solid #e5e7eb" }}>
+                      <td style={cell}>
+                        <span style={{ display: "inline-block", width: "8pt", height: "8pt", borderRadius: "4pt", background: d.color, marginRight: "6pt", verticalAlign: "middle" }} />
+                        <strong>{d.name_en}</strong>
+                      </td>
+                      <td style={cellRight}>
+                        {avg && avg.respondent_count > 0 ? avg.average.toFixed(2) : "—"}
+                      </td>
+                      <td style={cellRight}>{avg?.respondent_count ?? 0}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            <h3 className="report-h3">Reading the dimension scores</h3>
+            <ul className="report-body">
+              <li><strong>4.0 and above</strong> — mature controls; the organisation can delegate to agents in this area with confidence.</li>
+              <li><strong>3.0 to 3.9</strong> — developing; tighten controls before widening autonomous deployment.</li>
+              <li><strong>Below 3.0</strong> — significant gap; address before granting agents autonomy that touches this area.</li>
+            </ul>
+
+            <p className="report-body report-muted" style={{ fontSize: "9pt", marginTop: "12pt" }}>
+              Per-respondent dimension breakdown is available to consultants in
+              the VIFM portal but is not included in this client-facing report
+              by default.
             </p>
           </section>
         )}

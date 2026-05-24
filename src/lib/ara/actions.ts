@@ -170,6 +170,7 @@ export async function createAraAssessment(formData: FormData) {
   const rawStage = String(formData.get("engagement_stage") ?? "enterprise");
   const rawScope = String(formData.get("scope_label") ?? "").trim();
   const includeIndividual = formData.get("include_individual_layer") === "on";
+  const includeAgentic = formData.get("include_agentic_layer") === "on";
   const rawTier = String(formData.get("assessment_tier") ?? "snapshot");
   // Pillars-in-scope override (migration 00029). Posted as multiple
   // form values under the same `pillars_in_scope` key. We collect them
@@ -186,6 +187,7 @@ export async function createAraAssessment(formData: FormData) {
     engagement_stage: rawStage,
     scope_label: rawScope.length > 0 ? rawScope : null,
     include_individual_layer: includeIndividual,
+    include_agentic_layer: includeAgentic,
     // Tier only matters when the layer is on; default to snapshot otherwise.
     assessment_tier: includeIndividual && rawTier === "deep_dive" ? "deep_dive" : "snapshot",
     pillars_in_scope: dedupedPillars.length > 0 ? dedupedPillars : null,
@@ -226,6 +228,7 @@ export async function createAraAssessment(formData: FormData) {
       // Owner is the creating consultant (or null when an admin creates).
       consultant_id: caller.role === "consultant" && !caller.isDev ? caller.uid : null,
       include_individual_layer: parsed.data.include_individual_layer,
+      include_agentic_layer: parsed.data.include_agentic_layer,
       assessment_tier: parsed.data.assessment_tier,
       pillars_in_scope: pillarsToStore,
     })

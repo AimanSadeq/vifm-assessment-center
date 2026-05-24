@@ -44,6 +44,8 @@ export const createAraAssessmentSchema = z.object({
   scope_label: z.string().trim().min(1).max(120).nullable().optional(),
   // Mode C — workforce readiness layer alongside the org pillar items.
   include_individual_layer: z.boolean().default(false),
+  // Agentic-AI Readiness layer alongside the org pillar items (migration 00041).
+  include_agentic_layer: z.boolean().default(false),
   // Tier of the individual items when include_individual_layer is true.
   // Ignored on assessments where include_individual_layer=false.
   assessment_tier: araAssessmentTierSchema.default("snapshot"),

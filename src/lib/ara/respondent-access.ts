@@ -86,12 +86,17 @@ export async function loadQuestionsForRespondent(
 
   const isIndividualStage = ctx.assessment.engagement_stage === "individual";
   const includeIndividualLayer = !!ctx.assessment.include_individual_layer;
+  const includeAgenticLayer = !!ctx.assessment.include_agentic_layer;
   const respondentIndividualOnly = !!ctx.respondent.individual_only;
 
   const wantsPillar = !isIndividualStage && !respondentIndividualOnly;
   const wantsIndividual = isIndividualStage || includeIndividualLayer;
+  // Agentic-AI Readiness is an org-level construct — served to org
+  // respondents (never the personal-only ones, never on a personal
+  // individual-stage assessment).
+  const wantsAgentic = !isIndividualStage && includeAgenticLayer && !respondentIndividualOnly;
 
-  if (!wantsPillar && !wantsIndividual) return [];
+  if (!wantsPillar && !wantsIndividual && !wantsAgentic) return [];
 
   // Pillar assignment is required when serving pillar questions.
   if (wantsPillar && ctx.assignedPillars.length === 0) {
@@ -111,6 +116,7 @@ export async function loadQuestionsForRespondent(
       .eq("is_active", true)
       .in("pillar_id", ctx.assignedPillars)
       .is("individual_factor_id", null)
+      .is("agentic_dimension_id", null)
       .returns<AraQuestion[]>();
     collected.push(...(data ?? []));
   }
@@ -131,6 +137,20 @@ export async function loadQuestionsForRespondent(
     // 'deep_dive' includes both 'snapshot' and 'deep_dive_extra'
 
     const { data } = await q.returns<AraQuestion[]>();
+    collected.push(...(data ?? []));
+  }
+
+  // ── Agentic-AI Readiness layer (org opt-in via include_agentic_layer) ──
+  // Identified purely by agentic_dimension_id, so it is layer-agnostic and
+  // the layer-1 pillar query above never picks these items up.
+  if (wantsAgentic) {
+    const { data } = await sb
+      .from("ara_questions")
+      .select("*")
+      .eq("version_id", versionId)
+      .eq("is_active", true)
+      .not("agentic_dimension_id", "is", null)
+      .returns<AraQuestion[]>();
     collected.push(...(data ?? []));
   }
 

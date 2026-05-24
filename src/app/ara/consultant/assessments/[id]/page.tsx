@@ -36,7 +36,9 @@ import {
 } from "@/lib/recommender/courses";
 import { RecommendedCoursesPanel } from "@/components/shared/recommended-courses-panel";
 import { computeWorkforceReadiness } from "@/lib/ara/workforce-readiness";
+import { computeAgenticReadiness } from "@/lib/ara/agentic-readiness";
 import { ARA_INDIVIDUAL_FACTORS } from "@/lib/constants/ara-individual-factors";
+import { ARA_AGENTIC_DIMENSIONS } from "@/lib/constants/ara-agentic-dimensions";
 import { ConfirmAction } from "@/components/shared/confirm-action";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -217,6 +219,15 @@ export default async function AraAssessmentDetailPage({
   const workforceRollup = assessment.include_individual_layer
     ? await computeWorkforceReadiness(assessment.id).catch((e) => {
         console.error("[ara-assessment-detail] workforce rollup failed:", e);
+        return null;
+      })
+    : null;
+
+  // Agentic-AI Readiness rollup — only when the assessment opted into the
+  // agentic layer. Same tolerant pattern as the workforce rollup.
+  const agenticRollup = assessment.include_agentic_layer
+    ? await computeAgenticReadiness(assessment.id).catch((e) => {
+        console.error("[ara-assessment-detail] agentic rollup failed:", e);
         return null;
       })
     : null;
@@ -1005,6 +1016,151 @@ export default async function AraAssessmentDetailPage({
             courses={workforceCourseRecs}
             context="ac"
           />
+        )}
+
+        {/* ─── Agentic-AI Readiness rollup ─── *
+         * Renders when the assessment opted into the agentic layer.
+         * Cohort-level means across the six agentic governance dimensions
+         * + per-respondent breakdown. */}
+        {assessment.include_agentic_layer && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                Agentic-AI Readiness
+                <Badge variant="secondary" className="text-[10px]">18 items · 6 dimensions</Badge>
+              </CardTitle>
+              <CardDescription>
+                Readiness to safely <span className="font-medium text-foreground">delegate</span> to
+                autonomous AI agents — six governance dimensions that extend the
+                Governance and Model Management pillars. Rolled up across every
+                respondent who answered the agentic layer.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              {!agenticRollup || !agenticRollup.respondents.some((r) => r.overall != null) ? (
+                <p className="text-sm text-muted-foreground">
+                  No agentic-layer responses yet. Once respondents complete the
+                  assessment, their six-dimension scores roll up here.
+                </p>
+              ) : (
+                <>
+                  {/* Cohort overall + dimension averages */}
+                  <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 lg:grid-cols-7">
+                    <div className="rounded-md border bg-muted/20 p-3">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                        Cohort overall
+                      </p>
+                      <p className="text-2xl font-bold tabular-nums mt-1">
+                        {agenticRollup.cohort_overall != null
+                          ? agenticRollup.cohort_overall.toFixed(2)
+                          : "—"}
+                        <span className="text-xs text-muted-foreground font-normal"> / 5</span>
+                      </p>
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        {agenticRollup.completed_count} completed
+                      </p>
+                    </div>
+                    {agenticRollup.dimension_averages.map((d) => {
+                      const dim = ARA_AGENTIC_DIMENSIONS.find((x) => x.id === d.dimension_id);
+                      const tone =
+                        d.average >= 4 ? "bg-emerald-50 border-emerald-200"
+                        : d.average >= 3 ? "bg-amber-50 border-amber-200"
+                        : "bg-rose-50 border-rose-200";
+                      return (
+                        <div key={d.dimension_id} className={`rounded-md border p-3 ${tone}`}>
+                          <div className="flex items-center gap-1.5">
+                            <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: dim?.color }} />
+                          </div>
+                          <p className="text-xs font-semibold mt-0.5 leading-tight">{dim?.name_en}</p>
+                          <p className="text-2xl font-bold tabular-nums mt-1">
+                            {d.respondent_count > 0 ? d.average.toFixed(2) : "—"}
+                            <span className="text-xs text-muted-foreground font-normal"> / 5</span>
+                          </p>
+                          <p className="text-[10px] text-muted-foreground mt-1">
+                            {d.respondent_count} respondent{d.respondent_count === 1 ? "" : "s"}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Development-demand histogram — % below target per dimension */}
+                  <div>
+                    <p className="text-xs font-semibold mb-2 text-muted-foreground uppercase tracking-wider">
+                      Control gaps · % of cohort below target (4)
+                    </p>
+                    <div className="space-y-2">
+                      {agenticRollup.dimension_averages.map((d) => {
+                        const dim = ARA_AGENTIC_DIMENSIONS.find((x) => x.id === d.dimension_id);
+                        const pct = d.respondent_count > 0
+                          ? Math.round((d.below_target_count / d.respondent_count) * 100)
+                          : 0;
+                        const barTone = pct >= 60 ? "bg-rose-500" : pct >= 30 ? "bg-amber-500" : "bg-emerald-500";
+                        return (
+                          <div key={d.dimension_id} className="flex items-center gap-3 text-xs">
+                            <span className="w-44 shrink-0 flex items-center gap-1.5">
+                              <span className="inline-block h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: dim?.color }} />
+                              <span className="truncate">{dim?.name_en}</span>
+                            </span>
+                            <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                              <div className={`h-full ${barTone} transition-[width]`} style={{ width: `${Math.max(pct, 2)}%` }} />
+                            </div>
+                            <span className="w-28 shrink-0 text-right text-muted-foreground tabular-nums">
+                              {d.below_target_count} of {d.respondent_count} ({pct}%)
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Per-respondent breakdown */}
+                  <div>
+                    <p className="text-xs font-semibold mb-2 text-muted-foreground uppercase tracking-wider">
+                      Per-respondent breakdown
+                    </p>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Respondent</TableHead>
+                          <TableHead className="text-center">Governance</TableHead>
+                          <TableHead className="text-center">Oversight</TableHead>
+                          <TableHead className="text-center">Risk</TableHead>
+                          <TableHead className="text-center">Access</TableHead>
+                          <TableHead className="text-center">Autonomy</TableHead>
+                          <TableHead className="text-center">Audit</TableHead>
+                          <TableHead className="text-right">Overall</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {agenticRollup.respondents
+                          .filter((r) => r.overall != null)
+                          .map((r) => (
+                            <TableRow key={r.respondent_id}>
+                              <TableCell>
+                                <div className="text-sm font-medium">{r.name}</div>
+                                <div className="text-[10px] text-muted-foreground">{r.email}</div>
+                              </TableCell>
+                              {(["agent_governance", "human_oversight", "risk_failure", "access_control", "autonomy_calibration", "auditability"] as const).map((did) => {
+                                const v = r.per_dimension[did];
+                                return (
+                                  <TableCell key={did} className="text-center text-xs tabular-nums">
+                                    {v != null ? v.toFixed(1) : "—"}
+                                  </TableCell>
+                                );
+                              })}
+                              <TableCell className="text-right font-semibold tabular-nums">
+                                {r.overall != null ? r.overall.toFixed(2) : "—"}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
         )}
 
         {/* ─── Phase 2 Consultant Notes ─── */}

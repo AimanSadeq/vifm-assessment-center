@@ -84,6 +84,8 @@ export type AraAssessment = {
   assessment_tier: "snapshot" | "deep_dive";
   /** Org-stage assessments can opt-in to also serving the individual factor items to all respondents. */
   include_individual_layer: boolean;
+  /** Org-stage assessments can opt-in to the Agentic-AI Readiness layer (18 items, 6 dimensions; migration 00041). */
+  include_agentic_layer: boolean;
   /** Optional override of the pillars in scope (migration 00029). NULL means "use the
    *  engagement_stage default" via getPillarsForAssessment. Department-stage assessments
    *  must hold exactly 4; Division must hold exactly 6; Enterprise stays NULL (always all 8). */
@@ -146,6 +148,15 @@ export type AraQuestion = {
     | "results_working_practice"
     | "people_collaboration"
     | "self_adaptive_mindset"
+    | null;
+  /** Set on the Agentic-AI Readiness items (migration 00041). NULL on pillar + individual questions. */
+  agentic_dimension_id:
+    | "agent_governance"
+    | "human_oversight"
+    | "risk_failure"
+    | "access_control"
+    | "autonomy_calibration"
+    | "auditability"
     | null;
   /** 'snapshot' for the always-shown 24 items; 'deep_dive_extra' for the additional 24 only shown in deep-dive tier. */
   tier: "snapshot" | "deep_dive_extra";

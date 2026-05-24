@@ -72,21 +72,27 @@ export async function recalculateAssessmentScores(assessmentId: string): Promise
   // Note: open_text responses have question_score = null and are skipped.
   const { data: rows } = await sb
     .from("ara_responses")
-    .select("question_score, question:ara_questions(pillar_id)")
+    .select("question_score, question:ara_questions(pillar_id, individual_factor_id, agentic_dimension_id)")
     .eq("assessment_id", assessmentId);
 
   type RowShape = {
     question_score: number | null;
-    question: Pick<AraQuestion, "pillar_id"> | null;
+    question: Pick<AraQuestion, "pillar_id" | "individual_factor_id" | "agentic_dimension_id"> | null;
   };
   const typed = (rows ?? []) as unknown as RowShape[];
 
-  // Group scored responses by pillar.
+  // Group scored responses by pillar. Pillar scores must reflect ONLY
+  // pillar questions — exclude personal-layer (individual_factor_id) and
+  // Agentic-AI Readiness (agentic_dimension_id) items. Those reuse a
+  // pillar_id for storage but are scored as separate constructs, so
+  // counting them here would pollute the eight pillar means.
   const byPillar = new Map<AraPillarId, number[]>();
   for (const p of ARA_PILLARS) byPillar.set(p.id, []);
 
   for (const r of typed) {
     if (r.question_score == null || !r.question?.pillar_id) continue;
+    if (r.question.individual_factor_id != null) continue;
+    if (r.question.agentic_dimension_id != null) continue;
     const arr = byPillar.get(r.question.pillar_id as AraPillarId);
     if (arr) arr.push(Number(r.question_score));
   }

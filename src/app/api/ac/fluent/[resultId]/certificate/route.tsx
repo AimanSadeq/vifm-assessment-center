@@ -1,17 +1,19 @@
 /**
- * VIFM Fluent — CEFR placement certificate (printable HTML).
+ * VIFM Fluent — CEFR placement certificate.
  *
- * GET /api/ac/fluent/[resultId]/certificate
- *   -> a self-contained, print-optimised HTML certificate for a persisted
- *      result. Opens in a new tab; "Print / Save as PDF" gives the taker a
- *      downloadable artefact without pulling in a PDF renderer for the
- *      prototype. Indicative placement — not a certified high-stakes score.
+ * GET /api/ac/fluent/[resultId]/certificate            -> printable HTML
+ * GET /api/ac/fluent/[resultId]/certificate?format=pdf -> downloadable PDF
  *
- * Reads via the service client (results are anonymous, written by the
- * scoring route). 404s cleanly if the row or table is absent.
+ * HTML is the default (view + browser "Save as PDF"); ?format=pdf returns
+ * a true React-PDF document as an attachment. Reads via the service client
+ * (results are anonymous, written by the scoring route). 404s cleanly if
+ * the row or table is absent. Indicative placement — not a certified score.
  */
 
+import { NextResponse } from "next/server";
+import { renderToBuffer } from "@react-pdf/renderer";
 import { createServiceClient } from "@/lib/supabase/server";
+import { FluentCertificate, type FluentCertificateData } from "@/lib/reports/fluent-certificate";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -55,10 +57,7 @@ type Row = {
   speaking_cefr: string | null;
 };
 
-export async function GET(
-  _req: Request,
-  { params }: { params: { resultId: string } }
-) {
+export async function GET(req: Request, { params }: { params: { resultId: string } }) {
   let row: Row | null = null;
   try {
     const sb = createServiceClient();
@@ -81,21 +80,42 @@ export async function GET(
     month: "long",
     year: "numeric",
   });
-  const level = esc(row.overall_cefr);
+  const level = row.overall_cefr;
   const levelLabel = CEFR_LABEL[row.overall_cefr] ?? "";
-
-  const skills: Array<{ label: string; cefr: string | null }> = [
-    { label: "Reading", cefr: row.reading_cefr },
-    ...(row.listening_total > 0 ? [{ label: "Listening", cefr: row.listening_cefr }] : []),
-    { label: "Writing", cefr: row.writing_cefr },
-    ...(row.speaking_attempted ? [{ label: "Speaking", cefr: row.speaking_cefr }] : []),
+  const skills: Array<{ label: string; cefr: string }> = [
+    { label: "Reading", cefr: row.reading_cefr ?? "—" },
+    ...(row.listening_total > 0 ? [{ label: "Listening", cefr: row.listening_cefr ?? "—" }] : []),
+    { label: "Writing", cefr: row.writing_cefr ?? "—" },
+    ...(row.speaking_attempted ? [{ label: "Speaking", cefr: row.speaking_cefr ?? "—" }] : []),
   ];
 
+  // ── PDF branch ──
+  if (new URL(req.url).searchParams.get("format") === "pdf") {
+    const data: FluentCertificateData = {
+      id: row.id,
+      name,
+      date,
+      overall_cefr: level,
+      level_label: levelLabel,
+      skills,
+    };
+    const buffer = await renderToBuffer(<FluentCertificate data={data} />);
+    const safeName = name.replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "candidate";
+    return new NextResponse(new Uint8Array(buffer), {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="VIFM-Fluent-Certificate-${safeName}.pdf"`,
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+
+  // ── HTML branch (default, printable) ──
   const skillCells = skills
     .map(
-      (s) =>
-        `<div class="skill"><span class="skill-label">${esc(s.label)}</span>` +
-        `<span class="skill-cefr">${esc(s.cefr ?? "—")}</span></div>`
+      (sk) =>
+        `<div class="skill"><span class="skill-label">${esc(sk.label)}</span>` +
+        `<span class="skill-cefr">${esc(sk.cefr)}</span></div>`
     )
     .join("");
 
@@ -110,8 +130,9 @@ export async function GET(
   * { box-sizing: border-box; }
   body { margin:0; font-family: "Open Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:#eef2f7; color:var(--ink); }
   .toolbar { text-align:center; padding:16px; }
-  .toolbar button { background:var(--navy); color:#fff; border:0; border-radius:8px; padding:10px 20px; font-size:14px; font-weight:600; cursor:pointer; }
-  .toolbar button:hover { background:#121140; }
+  .toolbar a, .toolbar button { display:inline-block; background:var(--navy); color:#fff; border:0; border-radius:8px; padding:10px 20px; font-size:14px; font-weight:600; cursor:pointer; text-decoration:none; margin:0 4px; }
+  .toolbar a.alt { background:var(--accent); }
+  .toolbar button:hover, .toolbar a:hover { opacity:.92; }
   .sheet { width:1000px; max-width:94vw; margin:0 auto 40px; background:#fff; border:1px solid #dbe3ec; border-radius:14px; padding:56px 64px; box-shadow:0 8px 30px rgba(1,1,49,.08); }
   .frame { border:3px double var(--accent); border-radius:10px; padding:44px 48px; text-align:center; }
   .brand { font-size:13px; letter-spacing:.28em; text-transform:uppercase; color:var(--accent); font-weight:700; }
@@ -142,7 +163,10 @@ export async function GET(
 </style>
 </head>
 <body>
-  <div class="toolbar"><button onclick="window.print()">Print / Save as PDF</button></div>
+  <div class="toolbar">
+    <button onclick="window.print()">Print</button>
+    <a class="alt" href="?format=pdf">Download PDF</a>
+  </div>
   <div class="sheet">
     <div class="frame">
       <div class="brand">Virginia Institute of Finance &amp; Management</div>
@@ -153,9 +177,9 @@ export async function GET(
       <div class="name">${esc(name)}</div>
 
       <div class="level-wrap">
-        <div class="level"><span class="lv">${level}</span><span class="lb">CEFR</span></div>
+        <div class="level"><span class="lv">${esc(level)}</span><span class="lb">CEFR</span></div>
       </div>
-      <div class="level-desc">Indicative level <strong>${level}</strong>${levelLabel ? ` — ${esc(levelLabel)}` : ""}</div>
+      <div class="level-desc">Indicative level <strong>${esc(level)}</strong>${levelLabel ? ` — ${esc(levelLabel)}` : ""}</div>
 
       <div class="skills">${skillCells}</div>
 

@@ -113,17 +113,36 @@ export type FluentResult = {
   speaking: SpeakingScore;
 };
 
-// ── Receptive-skill CEFR from accuracy ───────────────────────────
-// Maps overall accuracy to an indicative band. Calibrated for a
-// difficulty-ramped set; replace with IRT once an item bank exists.
-function receptiveCefrFromAccuracy(correct: number, total: number): CefrLevel {
-  if (total === 0) return "A1";
-  const pct = correct / total;
-  if (pct >= 0.9) return "C1";
-  if (pct >= 0.75) return "B2";
-  if (pct >= 0.55) return "B1";
-  if (pct >= 0.35) return "A2";
-  return "A1";
+// ── Difficulty-weighted receptive scoring (IRT-lite) ─────────────
+// A correct answer earns weight = its CEFR rank (A1=1 … C2=6), so
+// getting a hard item right counts more than an easy one and a learner
+// can't reach a high band on easy items alone. Band comes from the
+// ratio of earned to total available weight. A proper item bank + IRT
+// would replace this, but it's a real step up from flat % correct.
+function receptiveCefrWeighted(
+  items: Array<{ id: string; correct_index: number; cefr: CefrLevel }>,
+  answers: Record<string, number>
+): { correct: number; total: number; cefr: CefrLevel } {
+  let correct = 0;
+  let earnedWeight = 0;
+  let totalWeight = 0;
+  for (const it of items) {
+    const w = cefrToNum(it.cefr);
+    totalWeight += w;
+    if (answers[it.id] === it.correct_index) {
+      correct += 1;
+      earnedWeight += w;
+    }
+  }
+  const ratio = totalWeight > 0 ? earnedWeight / totalWeight : 0;
+  let cefr: CefrLevel = "A1";
+  if (items.length === 0) cefr = "A1";
+  else if (ratio >= 0.9) cefr = "C1";
+  else if (ratio >= 0.75) cefr = "B2";
+  else if (ratio >= 0.55) cefr = "B1";
+  else if (ratio >= 0.35) cefr = "A2";
+  else cefr = "A1";
+  return { correct, total: items.length, cefr };
 }
 
 const FALLBACK_TEST: FluentTest = {
@@ -557,20 +576,15 @@ export function computeFluentResult(input: {
   writing: WritingScore;
   speaking?: SpeakingScore;
 }): FluentResult {
-  const readingTotal = input.reading.length;
-  let readingCorrect = 0;
-  for (const item of input.reading) {
-    if (input.answers[item.id] === item.correct_index) readingCorrect += 1;
-  }
-  const reading_cefr = receptiveCefrFromAccuracy(readingCorrect, readingTotal);
+  const r = receptiveCefrWeighted(input.reading, input.answers);
+  const readingCorrect = r.correct;
+  const readingTotal = r.total;
+  const reading_cefr = r.cefr;
 
-  const listeningItems = input.listening ?? [];
-  const listeningTotal = listeningItems.length;
-  let listeningCorrect = 0;
-  for (const item of listeningItems) {
-    if (input.answers[item.id] === item.correct_index) listeningCorrect += 1;
-  }
-  const listening_cefr = receptiveCefrFromAccuracy(listeningCorrect, listeningTotal);
+  const l = receptiveCefrWeighted(input.listening ?? [], input.answers);
+  const listeningCorrect = l.correct;
+  const listeningTotal = l.total;
+  const listening_cefr = l.cefr;
 
   const speaking = input.speaking ?? SPEAKING_NOT_ATTEMPTED;
 

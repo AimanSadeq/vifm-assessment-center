@@ -51,6 +51,7 @@ const T = {
     writeCrit: { task_achievement: "Task achievement", coherence: "Coherence & cohesion", lexical_range: "Lexical resource", grammar: "Grammar range & accuracy" },
     speakCrit: { fluency: "Fluency", coherence: "Coherence & cohesion", lexical_range: "Lexical resource", grammar: "Grammar range & accuracy" },
     writeHere: "Write your response here…", pickLang: "Test language", target: "Target",
+    proctorNote: "Integrity monitoring is on — tab switches and pasting are recorded.",
     nameLabel: "Your name (optional)", emailLabel: "Email (optional)",
     namePlaceholder: "e.g. Sara Al Mansoori", emailPlaceholder: "you@example.com",
     listenHint: "Listen, then answer. You can replay each clip up to twice.",
@@ -73,6 +74,7 @@ const T = {
     writeCrit: { task_achievement: "تحقيق المهمة", coherence: "الترابط والتماسك", lexical_range: "الثروة اللغوية", grammar: "القواعد ودقتها" },
     speakCrit: { fluency: "الطلاقة", coherence: "الترابط والتماسك", lexical_range: "الثروة اللغوية", grammar: "القواعد ودقتها" },
     writeHere: "اكتب إجابتك هنا…", pickLang: "لغة الاختبار", target: "المستوى المستهدف",
+    proctorNote: "مراقبة النزاهة مُفعّلة — يتم تسجيل تبديل التبويبات واللصق.",
     nameLabel: "اسمك (اختياري)", emailLabel: "البريد الإلكتروني (اختياري)",
     namePlaceholder: "مثال: سارة المنصوري", emailPlaceholder: "you@example.com",
     listenHint: "استمع ثم أجب. يمكنك إعادة تشغيل كل مقطع مرتين كحدٍّ أقصى.",
@@ -113,6 +115,10 @@ export function FluentClient() {
   const [takerName, setTakerName] = useState("");
   const [takerEmail, setTakerEmail] = useState("");
 
+  // Lightweight proctoring signals (advisory — surfaced to admins only).
+  const [blurCount, setBlurCount] = useState(0);
+  const [pasteCount, setPasteCount] = useState(0);
+
   // Listening playback state.
   const [plays, setPlays] = useState<Record<string, number>>({});
   const [playingId, setPlayingId] = useState<string | null>(null);
@@ -140,6 +146,15 @@ export function FluentClient() {
       streamRef.current?.getTracks().forEach((tr) => tr.stop());
     };
   }, []);
+
+  // Proctoring: count how many times the page is hidden (tab switch /
+  // minimise) while the test is in progress. Advisory signal only.
+  useEffect(() => {
+    if (phase !== "test") return;
+    const onVis = () => { if (document.hidden) setBlurCount((c) => c + 1); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [phase]);
 
   const playClip = useCallback((item: ListeningItem) => {
     if (!ttsAvailable()) return;
@@ -228,6 +243,7 @@ export function FluentClient() {
       setAnswers({}); setWriting(""); setResult(null);
       setPlays({}); setPlayingId(null);
       setTranscript(""); setSpeakNote(""); setSpeakMode("record"); setRecSeconds(0);
+      setBlurCount(0); setPasteCount(0);
       setPhase("test");
     } catch {
       setError("Could not build the test. Please try again.");
@@ -248,6 +264,7 @@ export function FluentClient() {
           speakingTask: test.speaking, speakingTranscript: transcript,
           takerName: takerName.trim() || null, takerEmail: takerEmail.trim() || null,
           aiGenerated: test.ai_generated,
+          integrityFlags: { blurCount, pasteCount },
         }),
       });
       const data = (await res.json()) as FluentResult;
@@ -262,6 +279,7 @@ export function FluentClient() {
     setPhase("intro"); setTest(null); setAnswers({}); setWriting(""); setResult(null); setError("");
     setPlays({}); setPlayingId(null);
     setTranscript(""); setSpeakNote(""); setSpeakMode("record"); setRecSeconds(0);
+    setBlurCount(0); setPasteCount(0);
   }
 
   const wordCount = writing.trim() ? writing.trim().split(/\s+/).length : 0;
@@ -382,6 +400,7 @@ export function FluentClient() {
               <p dir="rtl" className="mt-1 text-sm text-slate-600">{test.writing.prompt_ar}</p>
             )}
             <textarea value={writing} onChange={(e) => setWriting(e.target.value)} rows={7}
+              onPaste={() => setPasteCount((c) => c + 1)}
               placeholder={t.writeHere} dir="ltr"
               className="mt-3 w-full resize-y rounded-md border border-slate-300 px-3 py-2 text-sm text-[#111232] focus:border-[#5391D5] focus:outline-none" />
             <div className="mt-1 text-[11px] text-slate-500">
@@ -443,6 +462,7 @@ export function FluentClient() {
             ) : (
               <div className="mt-3 space-y-2">
                 <textarea value={transcript} onChange={(e) => setTranscript(e.target.value)} rows={4}
+                  onPaste={() => setPasteCount((c) => c + 1)}
                   placeholder={t.speakTypeHere} dir="ltr"
                   className="w-full resize-y rounded-md border border-slate-300 px-3 py-2 text-sm text-[#111232] focus:border-[#5391D5] focus:outline-none" />
                 <button onClick={() => { setSpeakMode("record"); setSpeakNote(""); }}
@@ -463,6 +483,7 @@ export function FluentClient() {
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
             {busy ? t.scoring : t.submit}
           </button>
+          <p className="mt-2 text-[11px] text-slate-400">{t.proctorNote}</p>
         </>
       )}
 
@@ -525,7 +546,7 @@ export function FluentClient() {
               <RotateCcw className="h-4 w-4" /> {t.startOver}
             </button>
             {result.result_id && (
-              <a href={`/api/ac/fluent/${result.result_id}/certificate`} target="_blank" rel="noopener noreferrer"
+              <a href={`/api/ac/fluent/${result.result_id}/certificate?format=pdf`} target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-md bg-[#5391D5] px-4 py-2 text-sm font-semibold text-white hover:bg-[#4380c4]">
                 <Award className="h-4 w-4" /> {t.certificate}
               </a>

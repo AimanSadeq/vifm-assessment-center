@@ -17,6 +17,7 @@
 
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { sendEmail } from "@/lib/integrations/email";
 import {
   generateFluentTest,
   scoreFluentWriting,
@@ -32,6 +33,8 @@ import {
 
 export const dynamic = "force-dynamic";
 
+type IntegrityFlags = { blurCount?: number; pasteCount?: number };
+
 type Body = {
   action?: "start" | "score";
   language?: FluentLanguage;
@@ -45,6 +48,16 @@ type Body = {
   takerName?: string | null;
   takerEmail?: string | null;
   aiGenerated?: boolean;
+  integrityFlags?: IntegrityFlags;
+};
+
+const CEFR_LABEL: Record<string, string> = {
+  A1: "Beginner",
+  A2: "Elementary",
+  B1: "Intermediate",
+  B2: "Upper-intermediate",
+  C1: "Advanced",
+  C2: "Proficient / Mastery",
 };
 
 /**
@@ -56,7 +69,13 @@ type Body = {
  */
 async function persistResult(
   result: FluentResult,
-  meta: { language: FluentLanguage; takerName: string | null; takerEmail: string | null; aiGenerated: boolean }
+  meta: {
+    language: FluentLanguage;
+    takerName: string | null;
+    takerEmail: string | null;
+    aiGenerated: boolean;
+    integrityFlags: IntegrityFlags | null;
+  }
 ): Promise<string | null> {
   try {
     const sb = createServiceClient();
@@ -84,9 +103,55 @@ async function persistResult(
       .select("id")
       .single();
     if (error || !data) return null;
-    return data.id as string;
+    const id = data.id as string;
+
+    // Best-effort: integrity_flags exists only after migration 00043. A
+    // separate update (not part of the insert) keeps a 00042-only DB working.
+    if (meta.integrityFlags && Object.keys(meta.integrityFlags).length > 0) {
+      try {
+        await sb.from("eng_fluent_results").update({ integrity_flags: meta.integrityFlags }).eq("id", id);
+      } catch {
+        /* column not migrated — ignore */
+      }
+    }
+    return id;
   } catch {
     return null;
+  }
+}
+
+/** Email the taker their result + certificate link. Best-effort. */
+async function emailFluentResult(
+  resultId: string,
+  to: string,
+  takerName: string | null,
+  result: FluentResult
+): Promise<void> {
+  try {
+    const base = (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/+$/, "");
+    const certUrl = `${base}/api/ac/fluent/${resultId}/certificate`;
+    await sendEmail({
+      to,
+      template: "fluent_result",
+      data: {
+        takerName: takerName || "Candidate",
+        level: result.overall_cefr,
+        levelLabel: CEFR_LABEL[result.overall_cefr] || "",
+        reading: result.reading_cefr ?? "—",
+        listening: result.listening_total > 0 ? result.listening_cefr : "—",
+        writing: result.writing.cefr,
+        speaking: result.speaking.attempted ? result.speaking.cefr : "—",
+        certUrl,
+      },
+    });
+    const sb = createServiceClient();
+    try {
+      await sb.from("eng_fluent_results").update({ email_sent_at: new Date().toISOString() }).eq("id", resultId);
+    } catch {
+      /* email_sent_at column not migrated — ignore */
+    }
+  } catch (e) {
+    console.error("[fluent] result email failed:", e);
   }
 }
 
@@ -137,12 +202,21 @@ export async function POST(req: Request) {
       speaking,
     });
 
+    const takerName = body.takerName?.trim() ? body.takerName.trim() : null;
+    const takerEmail = body.takerEmail?.trim() ? body.takerEmail.trim() : null;
+
     const result_id = await persistResult(result, {
       language,
-      takerName: body.takerName?.trim() ? body.takerName.trim() : null,
-      takerEmail: body.takerEmail?.trim() ? body.takerEmail.trim() : null,
+      takerName,
+      takerEmail,
       aiGenerated: body.aiGenerated === true,
+      integrityFlags: body.integrityFlags ?? null,
     });
+
+    // Email the taker their result + certificate link (best-effort).
+    if (result_id && takerEmail) {
+      await emailFluentResult(result_id, takerEmail, takerName, result);
+    }
 
     return NextResponse.json({ ...result, result_id });
   }

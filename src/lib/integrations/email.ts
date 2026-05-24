@@ -28,7 +28,8 @@ export type EmailTemplate =
   | "report_released"
   | "washup_scheduled"
   | "engagement_created"
-  | "course_quote_request";
+  | "course_quote_request"
+  | "fluent_result";
 
 export type EmailPayload = {
   to: string;
@@ -146,6 +147,24 @@ Notes:
 Manage this request: {{adminUrl}}
 
 — VIFM Assessment Platform`,
+  },
+  fluent_result: {
+    subject: "Your VIFM Fluent result — {{level}}",
+    body: `Dear {{takerName}},
+
+Thank you for completing the VIFM Fluent English placement test.
+
+Your indicative CEFR level: {{level}} ({{levelLabel}})
+  Reading: {{reading}}    Listening: {{listening}}
+  Writing: {{writing}}    Speaking: {{speaking}}
+
+View and download your certificate:
+{{certUrl}}
+
+This is an indicative placement for development purposes — not a certified high-stakes language qualification.
+
+Best regards,
+VIFM Assessment Center`,
   },
 };
 

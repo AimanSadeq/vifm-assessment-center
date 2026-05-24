@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Users, BookOpen, Headphones, PenLine, Mic, Award, Sparkles } from "lucide-react";
+import { ArrowLeft, Users, BookOpen, Headphones, PenLine, Mic, Award, Sparkles, Flag, MailCheck } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { CEFR_ORDER, type CefrLevel } from "@/lib/ai/fluent-english";
 
@@ -22,6 +22,8 @@ type Row = {
   speaking_attempted: boolean;
   speaking_cefr: string | null;
   ai_scored: boolean;
+  integrity_flags?: { blurCount?: number; pasteCount?: number } | null;
+  email_sent_at?: string | null;
 };
 
 const CEFR_TONE: Record<string, string> = {
@@ -43,18 +45,25 @@ function avgBand(values: Array<string | null | undefined>): { band: CefrLevel; n
   return { band: numToCefr(nums.reduce((a, b) => a + b, 0) / nums.length), n: nums.length };
 }
 
+type LoadResp = { data: Row[] | null; error: unknown };
+
 async function loadRows(): Promise<Row[] | null> {
   try {
     const sb = createServiceClient();
-    const { data, error } = await sb
-      .from("eng_fluent_results")
-      .select(
-        "id, created_at, taker_name, taker_email, overall_cefr, reading_cefr, listening_cefr, listening_total, writing_cefr, speaking_attempted, speaking_cefr, ai_scored"
-      )
-      .order("created_at", { ascending: false })
-      .limit(500);
-    if (error) return null;
-    return (data as Row[]) ?? [];
+    const base =
+      "id, created_at, taker_name, taker_email, overall_cefr, reading_cefr, listening_cefr, listening_total, writing_cefr, speaking_attempted, speaking_cefr, ai_scored";
+    const query = (cols: string) =>
+      sb.from("eng_fluent_results").select(cols).order("created_at", { ascending: false }).limit(500);
+
+    // Try with the depth columns (migration 00043); fall back without them
+    // so a 00042-only database still renders the report. The cast via unknown
+    // sidesteps the typed client treating the not-yet-generated columns as errors.
+    let res = (await query(base + ", integrity_flags, email_sent_at")) as unknown as LoadResp;
+    if (res.error) {
+      res = (await query(base)) as unknown as LoadResp;
+    }
+    if (res.error) return null;
+    return res.data ?? [];
   } catch {
     return null;
   }
@@ -193,6 +202,7 @@ function CohortBody({ rows }: { rows: Row[] }) {
                 <th className="px-3 py-2.5 text-center font-medium">L</th>
                 <th className="px-3 py-2.5 text-center font-medium">W</th>
                 <th className="px-3 py-2.5 text-center font-medium">S</th>
+                <th className="px-3 py-2.5 text-center font-medium">Integrity</th>
                 <th className="px-4 py-2.5 font-medium">Certificate</th>
               </tr>
             </thead>
@@ -203,7 +213,12 @@ function CohortBody({ rows }: { rows: Row[] }) {
                     {new Date(r.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" })}
                   </td>
                   <td className="px-4 py-2.5 font-medium text-[#111232]">{r.taker_name || <span className="text-slate-400">Anonymous</span>}</td>
-                  <td className="px-4 py-2.5 text-slate-500">{r.taker_email || "—"}</td>
+                  <td className="px-4 py-2.5 text-slate-500">
+                    <span className="inline-flex items-center gap-1">
+                      {r.taker_email || "—"}
+                      {r.email_sent_at && <MailCheck className="h-3 w-3 text-emerald-600" />}
+                    </span>
+                  </td>
                   <td className="px-3 py-2.5 text-center">
                     <span className={`inline-block rounded border px-1.5 py-0.5 text-xs font-bold ${CEFR_TONE[r.overall_cefr] ?? ""}`}>{r.overall_cefr}</span>
                   </td>
@@ -211,6 +226,19 @@ function CohortBody({ rows }: { rows: Row[] }) {
                   <td className="px-3 py-2.5 text-center text-slate-600">{r.listening_total > 0 ? r.listening_cefr ?? "—" : "—"}</td>
                   <td className="px-3 py-2.5 text-center text-slate-600">{r.writing_cefr ?? "—"}</td>
                   <td className="px-3 py-2.5 text-center text-slate-600">{r.speaking_attempted ? r.speaking_cefr ?? "—" : "—"}</td>
+                  <td className="px-3 py-2.5 text-center">
+                    {(() => {
+                      const b = r.integrity_flags?.blurCount ?? 0;
+                      const p = r.integrity_flags?.pasteCount ?? 0;
+                      return b > 0 || p > 0 ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700" title={`${b} tab switch(es), ${p} paste(s)`}>
+                          <Flag className="h-3 w-3" />{b}t·{p}p
+                        </span>
+                      ) : (
+                        <span className="text-slate-300">—</span>
+                      );
+                    })()}
+                  </td>
                   <td className="px-4 py-2.5">
                     <a
                       href={`/api/ac/fluent/${r.id}/certificate`}

@@ -19,6 +19,7 @@ import { ARA_STAGE_MAP, getPillarsForAssessment } from "@/lib/constants/ara-stag
 import { bulkImportAraRespondents, createAraRespondent } from "@/lib/ara/actions";
 import { SendInvitationButton } from "./_components/send-invitation-button";
 import { StartReassessmentButton } from "./_components/start-reassessment-button";
+import { AraPathwayCard } from "./_components/ara-pathway-card";
 import {
   createConsultantNote, deleteConsultantNote, toggleNoteIncludeInReport,
   freezeAssessmentScores, unfreezeAssessmentScores,
@@ -829,6 +830,16 @@ export default async function AraAssessmentDetailPage({
           courses={araRecommendedCourses}
           context="ara"
         />
+
+        {/* ─── Upskilling pathway (AI-sequenced plan from the same gaps) ─── */}
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold text-foreground">Upskilling pathway — sequenced plan</h3>
+          <p className="mb-3 text-sm text-muted-foreground">
+            AI orders the recommended programmes into a foundation-first sequence, with a rationale,
+            milestone, and target outcome per stage. Generate on demand for the Phase 2 conversation.
+          </p>
+          <AraPathwayCard assessmentId={assessment.id} />
+        </div>
 
         {/* ─── Workforce readiness rollup (Mode C) ─── *
          * Only renders when the assessment opted into the individual

@@ -171,6 +171,7 @@
   },
   "candidateSkills": {
     "title": "مهاراتي",
+    "buildPathway": "بناء مسار تعلّمي",
     "backToWelcome": "العودة إلى الترحيب",
     "rolePlaceholder": "مرحبًا {{name}} — ستظهر خريطة مهاراتك هنا بمجرد تعيين ملف وظيفي لك.",
     "noProfileTitle": "لم يتم تعيين ملف وظيفي",

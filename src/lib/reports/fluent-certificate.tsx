@@ -15,6 +15,7 @@ export type FluentCertificateData = {
   date: string; // already formatted
   overall_cefr: string;
   level_label: string;
+  range?: string | null; // indicative confidence band, e.g. "B1–B2"
   skills: Array<{ label: string; cefr: string }>;
 };
 
@@ -65,7 +66,8 @@ const s = StyleSheet.create({
   },
   circleLv: { fontSize: 38, color: "#fff", fontFamily: "Helvetica-Bold" },
   circleLb: { fontSize: 8, color: "#fff", letterSpacing: 1, marginTop: 2 },
-  levelDesc: { fontSize: 11, color: C.light, marginTop: 8, marginBottom: 16 },
+  levelDesc: { fontSize: 11, color: C.light, marginTop: 8, marginBottom: 4 },
+  rangeNote: { fontSize: 9, color: C.muted, marginBottom: 14 },
   skillsRow: { flexDirection: "row", marginBottom: 16 },
   skill: {
     borderWidth: 1,
@@ -110,6 +112,7 @@ export function FluentCertificate({ data }: { data: FluentCertificateData }) {
             Indicative level {data.overall_cefr}
             {data.level_label ? ` — ${data.level_label}` : ""}
           </Text>
+          {data.range ? <Text style={s.rangeNote}>Indicative range: {data.range}</Text> : null}
 
           <View style={s.skillsRow}>
             {data.skills.map((sk) => (

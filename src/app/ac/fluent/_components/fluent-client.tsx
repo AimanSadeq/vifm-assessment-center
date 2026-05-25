@@ -32,11 +32,15 @@ type SpeakingScore = {
   attempted: boolean; cefr: Cefr; fluency: number; coherence: number; lexical_range: number; grammar: number;
   transcript: string; feedback_en: string; feedback_ar: string | null; ai_generated: boolean;
 };
+type ConfidenceBand = { overall: Cefr; low: Cefr; high: Cefr; halfWidth: number; underpowered: boolean; receptiveItems: number };
 type FluentResult = {
   overall_cefr: Cefr; reading_correct: number; reading_total: number; reading_cefr: Cefr;
   listening_correct: number; listening_total: number; listening_cefr: Cefr;
   writing: WritingScore; speaking: SpeakingScore; result_id?: string | null;
+  reliability?: ConfidenceBand;
 };
+
+const bandText = (r: ConfidenceBand): string => (r.low === r.high ? r.low : `${r.low}–${r.high}`);
 
 const MAX_PLAYS = 2;
 
@@ -46,6 +50,7 @@ const T = {
     reading: "Reading", listening: "Listening", writing: "Writing", speaking: "Speaking",
     words: "words", min: "min", submit: "Submit for scoring", scoring: "Scoring your responses…",
     yourLevel: "Your indicative level", overall: "Overall",
+    range: "Indicative range", indicative: "short test, wide margin",
     readingScore: "Reading", listeningScore: "Listening", writingScore: "Writing", speakingScore: "Speaking",
     feedback: "Examiner feedback", startOver: "Start over", correct: "correct",
     writeCrit: { task_achievement: "Task achievement", coherence: "Coherence & cohesion", lexical_range: "Lexical resource", grammar: "Grammar range & accuracy" },
@@ -69,6 +74,7 @@ const T = {
     reading: "القراءة", listening: "الاستماع", writing: "الكتابة", speaking: "التحدث",
     words: "كلمة", min: "الحد الأدنى", submit: "أرسل للتقييم", scoring: "جارٍ تقييم إجاباتك…",
     yourLevel: "مستواك التقريبي", overall: "الإجمالي",
+    range: "النطاق التقريبي", indicative: "اختبار قصير، هامش واسع",
     readingScore: "القراءة", listeningScore: "الاستماع", writingScore: "الكتابة", speakingScore: "التحدث",
     feedback: "ملاحظات المُقيّم", startOver: "ابدأ من جديد", correct: "صحيحة",
     writeCrit: { task_achievement: "تحقيق المهمة", coherence: "الترابط والتماسك", lexical_range: "الثروة اللغوية", grammar: "القواعد ودقتها" },
@@ -521,6 +527,12 @@ export function FluentClient({
               <div className={`mt-1 inline-flex items-center justify-center rounded-xl border-2 px-5 py-3 text-4xl font-bold ${CEFR_TONE[result.overall_cefr]}`}>
                 {result.overall_cefr}
               </div>
+              {result.reliability && (
+                <p className="mt-1.5 text-[11px] text-slate-500">
+                  {t.range}: <span className="font-semibold text-slate-700">{bandText(result.reliability)}</span>
+                  {result.reliability.underpowered ? ` · ${t.indicative}` : ""}
+                </p>
+              )}
             </div>
             <div className="flex flex-wrap gap-3">
               <ScoreChip label={t.readingScore} main={`${result.reading_correct}/${result.reading_total}`} sub={`${result.reading_cefr} · ${result.reading_correct} ${t.correct}`} />

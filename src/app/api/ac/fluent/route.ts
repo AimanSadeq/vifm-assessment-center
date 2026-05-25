@@ -37,6 +37,7 @@ import {
   type SpeakingTask,
 } from "@/lib/ai/fluent-english";
 import { AI_MODEL } from "@/lib/ai/client";
+import { overallConfidenceBand, type ConfidenceBand } from "@/lib/scoring/reliability";
 
 export const dynamic = "force-dynamic";
 
@@ -87,6 +88,7 @@ async function persistResult(
     integrityFlags: IntegrityFlags | null;
     candidateId: string | null;
     engagementId: string | null;
+    reliability: ConfidenceBand;
   }
 ): Promise<string | null> {
   try {
@@ -110,7 +112,7 @@ async function persistResult(
         speaking_cefr: result.speaking.attempted ? result.speaking.cefr : null,
         ai_generated: meta.aiGenerated,
         ai_scored: aiScored,
-        result,
+        result: { ...result, reliability: meta.reliability },
       })
       .select("id")
       .single();
@@ -361,6 +363,7 @@ export async function POST(req: Request) {
       writing,
       speaking,
     });
+    const reliability = overallConfidenceBand(result);
 
     const takerName = body.takerName?.trim() ? body.takerName.trim() : null;
     const takerEmail = body.takerEmail?.trim() ? body.takerEmail.trim() : null;
@@ -373,6 +376,7 @@ export async function POST(req: Request) {
       integrityFlags: body.integrityFlags ?? null,
       candidateId: body.candidateId?.trim() ? body.candidateId.trim() : null,
       engagementId: body.engagementId?.trim() ? body.engagementId.trim() : null,
+      reliability,
     });
 
     // Audit the AI scoring run for calibration (best-effort).
@@ -385,7 +389,7 @@ export async function POST(req: Request) {
       await emailFluentResult(result_id, takerEmail, takerName, result);
     }
 
-    return NextResponse.json({ ...result, result_id });
+    return NextResponse.json({ ...result, reliability, result_id });
   }
 
   return NextResponse.json({ error: "action must be 'start' or 'score'" }, { status: 400 });

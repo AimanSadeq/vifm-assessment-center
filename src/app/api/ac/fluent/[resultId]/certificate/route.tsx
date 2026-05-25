@@ -55,6 +55,7 @@ type Row = {
   writing_cefr: string | null;
   speaking_attempted: boolean;
   speaking_cefr: string | null;
+  result: { reliability?: { low?: string; high?: string } } | null;
 };
 
 export async function GET(req: Request, { params }: { params: { resultId: string } }) {
@@ -64,7 +65,7 @@ export async function GET(req: Request, { params }: { params: { resultId: string
     const { data } = await sb
       .from("eng_fluent_results")
       .select(
-        "id, created_at, taker_name, overall_cefr, reading_cefr, listening_cefr, listening_total, writing_cefr, speaking_attempted, speaking_cefr"
+        "id, created_at, taker_name, overall_cefr, reading_cefr, listening_cefr, listening_total, writing_cefr, speaking_attempted, speaking_cefr, result"
       )
       .eq("id", params.resultId)
       .single();
@@ -88,6 +89,9 @@ export async function GET(req: Request, { params }: { params: { resultId: string
     { label: "Writing", cefr: row.writing_cefr ?? "—" },
     ...(row.speaking_attempted ? [{ label: "Speaking", cefr: row.speaking_cefr ?? "—" }] : []),
   ];
+  const band = row.result?.reliability;
+  const rangeText =
+    band?.low && band?.high ? (band.low === band.high ? band.low : `${band.low}–${band.high}`) : null;
 
   // ── PDF branch ──
   if (new URL(req.url).searchParams.get("format") === "pdf") {
@@ -97,6 +101,7 @@ export async function GET(req: Request, { params }: { params: { resultId: string
       date,
       overall_cefr: level,
       level_label: levelLabel,
+      range: rangeText,
       skills,
     };
     const buffer = await renderToBuffer(<FluentCertificate data={data} />);
@@ -190,7 +195,7 @@ export async function GET(req: Request, { params }: { params: { resultId: string
 
       <p class="disclaimer">
         This certificate reflects an AI-assisted, CEFR-aligned <strong>indicative</strong> placement produced by VIFM Fluent.
-        It is intended for placement and development purposes and is <strong>not</strong> a certified high-stakes language qualification.
+        It is intended for placement and development purposes and is <strong>not</strong> a certified high-stakes language qualification.${rangeText ? ` Indicative CEFR range: ${esc(rangeText)}.` : ""}
       </p>
       <p class="verify">Verification ID: ${esc(row.id)}</p>
     </div>

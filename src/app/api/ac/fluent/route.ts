@@ -22,18 +22,21 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/integrations/email";
 import {
   generateFluentTest,
-  scoreFluentWriting,
-  scoreFluentSpeaking,
+  scoreFluentWritingEnsemble,
+  scoreFluentSpeakingEnsemble,
   computeFluentResult,
   stripAnswerKey,
   type FluentLanguage,
   type FluentResult,
   type FluentTest,
+  type WritingScore,
+  type SpeakingScore,
   type ReadingItem,
   type ListeningItem,
   type WritingTask,
   type SpeakingTask,
 } from "@/lib/ai/fluent-english";
+import { AI_MODEL } from "@/lib/ai/client";
 
 export const dynamic = "force-dynamic";
 
@@ -176,6 +179,55 @@ async function emailFluentResult(
   }
 }
 
+/** Audit each AI scoring run for calibration (best-effort; migration 00046). */
+async function persistScoreRuns(
+  resultId: string,
+  writing: WritingScore,
+  speaking: SpeakingScore | undefined,
+  samples: number,
+  texts: { writingResponse: string; speakingTranscript: string }
+): Promise<void> {
+  try {
+    const sb = createServiceClient();
+    const rows: Array<Record<string, unknown>> = [
+      {
+        result_id: resultId,
+        skill: "writing",
+        model: AI_MODEL,
+        ai_cefr: writing.cefr,
+        samples,
+        criteria: {
+          task_achievement: writing.task_achievement,
+          coherence: writing.coherence,
+          lexical_range: writing.lexical_range,
+          grammar: writing.grammar,
+        },
+        // Keep the candidate's text so a human can re-rate it for calibration.
+        raw: { ai_generated: writing.ai_generated, response: texts.writingResponse.slice(0, 8000) },
+      },
+    ];
+    if (speaking?.attempted) {
+      rows.push({
+        result_id: resultId,
+        skill: "speaking",
+        model: AI_MODEL,
+        ai_cefr: speaking.cefr,
+        samples,
+        criteria: {
+          fluency: speaking.fluency,
+          coherence: speaking.coherence,
+          lexical_range: speaking.lexical_range,
+          grammar: speaking.grammar,
+        },
+        raw: { ai_generated: speaking.ai_generated, transcript: texts.speakingTranscript.slice(0, 8000) },
+      });
+    }
+    await sb.from("eng_fluent_score_runs").insert(rows);
+  } catch {
+    /* table not migrated — ignore */
+  }
+}
+
 const SESSION_TTL_MS = 1000 * 60 * 60 * 3; // 3 hours
 
 /**
@@ -286,16 +338,20 @@ export async function POST(req: Request) {
       );
     }
 
-    const writing = await scoreFluentWriting({
+    // Self-consistency: average over FLUENT_SCORE_SAMPLES model calls (default 1).
+    const samples = Math.max(1, Math.min(5, Number(process.env.FLUENT_SCORE_SAMPLES) || 1));
+    const writingResponse = String(body.writingResponse ?? "");
+    const writing = await scoreFluentWritingEnsemble({
       task: writingTask,
-      response: String(body.writingResponse ?? ""),
+      response: writingResponse,
       language,
+      samples,
     });
 
     const speakingTranscript = String(body.speakingTranscript ?? "").trim();
     const speaking =
       speakingTask && speakingTranscript
-        ? await scoreFluentSpeaking({ task: speakingTask, transcript: speakingTranscript, language })
+        ? await scoreFluentSpeakingEnsemble({ task: speakingTask, transcript: speakingTranscript, language, samples })
         : undefined;
 
     const result = computeFluentResult({
@@ -318,6 +374,11 @@ export async function POST(req: Request) {
       candidateId: body.candidateId?.trim() ? body.candidateId.trim() : null,
       engagementId: body.engagementId?.trim() ? body.engagementId.trim() : null,
     });
+
+    // Audit the AI scoring run for calibration (best-effort).
+    if (result_id) {
+      await persistScoreRuns(result_id, writing, speaking, samples, { writingResponse, speakingTranscript });
+    }
 
     // Email the taker their result + certificate link (best-effort).
     if (result_id && takerEmail) {

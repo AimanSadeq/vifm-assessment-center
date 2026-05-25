@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Languages, Users, UserCheck } from "lucide-react";
+import { ArrowLeft, Languages, Users, UserCheck, ClipboardCheck } from "lucide-react";
 import { isAIConfigured } from "@/lib/ai/client";
 import { createServiceClient } from "@/lib/supabase/server";
 import { FluentClient } from "./_components/fluent-client";
@@ -66,12 +66,20 @@ export default async function FluentPage({ searchParams }: Props) {
             examiners for. Speaking is transcribed with Whisper. You get an indicative CEFR
             level (A1–C2) with feedback in minutes, in English or Arabic.
           </p>
-          <Link
-            href="/ac/fluent/cohort"
-            className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-[#5391D5] hover:underline"
-          >
-            <Users className="h-3.5 w-3.5" /> View cohort report
-          </Link>
+          <div className="mt-3 flex flex-wrap items-center gap-4">
+            <Link
+              href="/ac/fluent/cohort"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-[#5391D5] hover:underline"
+            >
+              <Users className="h-3.5 w-3.5" /> View cohort report
+            </Link>
+            <Link
+              href="/ac/fluent/calibration"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-[#5391D5] hover:underline"
+            >
+              <ClipboardCheck className="h-3.5 w-3.5" /> Scoring calibration
+            </Link>
+          </div>
         </div>
       </header>
 

@@ -419,6 +419,41 @@ const sanitizeResponse = (s: string): string =>
     .replace(/[ -]/g, " ")
     .slice(0, 4000);
 
+// Compact CEFR band anchors injected into the writing/speaking prompts so the
+// model scores against a shared reference rather than drifting — anchoring is
+// a cheap, evidence-backed way to raise AI↔human agreement (QWK). See the
+// calibration harness (src/lib/scoring/qwk.ts + /ac/fluent/calibration).
+const CEFR_ANCHORS =
+  "Anchor the OVERALL CEFR level to these bands: " +
+  "A1 = isolated words/short phrases, frequent breakdowns; " +
+  "A2 = simple sentences on familiar topics, basic connectors (and/but/because); " +
+  "B1 = connected text on familiar matters, generally clear despite recurrent errors; " +
+  "B2 = clear, detailed text with good control and a range of structures, errors rarely impede; " +
+  "C1 = fluent, well-organised, flexible and precise language, only occasional minor errors; " +
+  "C2 = consistently precise, nuanced, near-native control.";
+
+// ── Ensemble aggregation helpers (self-consistency) ──────────────
+const medianInt = (xs: number[]): number => {
+  if (xs.length === 0) return 3;
+  const s = [...xs].sort((a, b) => a - b);
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : Math.round((s[m - 1] + s[m]) / 2);
+};
+
+const modalCefr = (cefrs: CefrLevel[]): CefrLevel => {
+  const counts = new Map<CefrLevel, number>();
+  for (const c of cefrs) counts.set(c, (counts.get(c) ?? 0) + 1);
+  let best = cefrs[0] ?? "B1";
+  let bestN = 0;
+  for (const [c, n] of Array.from(counts.entries())) {
+    if (n > bestN) {
+      best = c;
+      bestN = n;
+    }
+  }
+  return best;
+};
+
 // ── 2. Score a writing response (the differentiator) ─────────────
 export async function scoreFluentWriting(input: {
   task: WritingTask;
@@ -449,7 +484,8 @@ export async function scoreFluentWriting(input: {
     `5 = excellent for the level): Task Achievement, Coherence & Cohesion, Lexical ` +
     `Resource, Grammatical Range & Accuracy. Then assign an overall CEFR level ` +
     `(A1–C2) and give 2–3 sentences of specific, constructive feedback. Be fair but ` +
-    `rigorous; reward communication, not just accuracy.`;
+    `rigorous; reward communication, not just accuracy. ` +
+    CEFR_ANCHORS;
 
   const user = [
     `TASK (target ${input.task.cefr_target}): ${input.task.prompt_en}`,
@@ -540,7 +576,8 @@ export async function scoreFluentSpeaking(input: {
     `1–5: Fluency & Coherence (infer hesitation/repetition/false-starts from the text), ` +
     `Coherence & Cohesion, Lexical Resource, Grammatical Range & Accuracy. Then assign ` +
     `an overall CEFR level (A1–C2) and give 2–3 sentences of specific, constructive ` +
-    `feedback. Reward communication and content relevance to the task.`;
+    `feedback. Reward communication and content relevance to the task. ` +
+    CEFR_ANCHORS;
 
   const user = [
     `TASK (target ${input.task.cefr_target}): ${input.task.prompt_en}`,
@@ -598,6 +635,68 @@ export async function scoreFluentSpeaking(input: {
       ai_generated: false,
     };
   }
+}
+
+// ── Ensemble scorers (self-consistency) ──────────────────────────
+// Sample the model N times and aggregate (median criteria + modal CEFR) to
+// cut single-sample variance. Enabled via FLUENT_SCORE_SAMPLES > 1 in the
+// scoring route; N=1 is identical to the single-call scorer.
+export async function scoreFluentWritingEnsemble(input: {
+  task: WritingTask;
+  response: string;
+  language: FluentLanguage;
+  samples?: number;
+}): Promise<WritingScore> {
+  const n = Math.max(1, Math.min(5, Math.round(input.samples ?? 1)));
+  if (n === 1) return scoreFluentWriting(input);
+  const runs = await Promise.all(
+    Array.from({ length: n }, () =>
+      scoreFluentWriting({ task: input.task, response: input.response, language: input.language })
+    )
+  );
+  const cefr = modalCefr(runs.map((r) => r.cefr));
+  const pick = runs.find((r) => r.cefr === cefr) ?? runs[0];
+  return {
+    cefr,
+    task_achievement: medianInt(runs.map((r) => r.task_achievement)),
+    coherence: medianInt(runs.map((r) => r.coherence)),
+    lexical_range: medianInt(runs.map((r) => r.lexical_range)),
+    grammar: medianInt(runs.map((r) => r.grammar)),
+    feedback_en: pick.feedback_en,
+    feedback_ar: pick.feedback_ar,
+    ai_generated: runs.some((r) => r.ai_generated),
+  };
+}
+
+export async function scoreFluentSpeakingEnsemble(input: {
+  task: SpeakingTask;
+  transcript: string;
+  language: FluentLanguage;
+  samples?: number;
+}): Promise<SpeakingScore> {
+  const n = Math.max(1, Math.min(5, Math.round(input.samples ?? 1)));
+  if (n === 1) return scoreFluentSpeaking(input);
+  const runs = await Promise.all(
+    Array.from({ length: n }, () =>
+      scoreFluentSpeaking({ task: input.task, transcript: input.transcript, language: input.language })
+    )
+  );
+  const attempted = runs.filter((r) => r.attempted);
+  if (attempted.length === 0) return runs[0];
+  const cefr = modalCefr(attempted.map((r) => r.cefr));
+  const pick = attempted.find((r) => r.cefr === cefr) ?? attempted[0];
+  return {
+    attempted: true,
+    cefr,
+    fluency: medianInt(attempted.map((r) => r.fluency)),
+    coherence: medianInt(attempted.map((r) => r.coherence)),
+    lexical_range: medianInt(attempted.map((r) => r.lexical_range)),
+    grammar: medianInt(attempted.map((r) => r.grammar)),
+    transcript: pick.transcript,
+    feedback_en: pick.feedback_en,
+    feedback_ar: pick.feedback_ar,
+    ai_generated: attempted.some((r) => r.ai_generated),
+  };
 }
 
 // ── 4. Combine all assessed skills → overall CEFR ────────────────

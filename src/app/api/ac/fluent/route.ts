@@ -26,6 +26,7 @@ import {
   scoreFluentSpeakingEnsemble,
   computeFluentResult,
   stripAnswerKey,
+  blendPronunciation,
   type FluentLanguage,
   type FluentResult,
   type FluentTest,
@@ -38,6 +39,7 @@ import {
 } from "@/lib/ai/fluent-english";
 import { AI_MODEL } from "@/lib/ai/client";
 import { overallConfidenceBand, type ConfidenceBand } from "@/lib/scoring/reliability";
+import { isAzureSpeechConfigured, type PronunciationScore } from "@/lib/integrations/speech";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +62,7 @@ type Body = {
   integrityFlags?: IntegrityFlags;
   candidateId?: string | null;
   engagementId?: string | null;
+  pronunciation?: PronunciationScore | null;
 };
 
 const CEFR_LABEL: Record<string, string> = {
@@ -299,12 +302,24 @@ export async function POST(req: Request) {
     const candidateId = body.candidateId?.trim() ? body.candidateId.trim() : null;
     const engagementId = body.engagementId?.trim() ? body.engagementId.trim() : null;
     const session_id = await createSession(test, { language, candidateId, engagementId });
+    const tts = isAzureSpeechConfigured();
     if (session_id) {
       // Secure flow: the answer key stays server-side.
-      return NextResponse.json({ session_id, test: stripAnswerKey(test) });
+      const publicTest = stripAnswerKey(test);
+      // When neural TTS is on, the client plays listening audio via /tts and
+      // never needs the script text — strip it from the payload too.
+      if (tts) {
+        publicTest.listening = publicTest.listening.map((it) => ({
+          id: it.id,
+          question: it.question,
+          options: it.options,
+          cefr: it.cefr,
+        }));
+      }
+      return NextResponse.json({ session_id, test: publicTest, tts });
     }
     // Legacy fallback (eng_fluent_sessions not migrated): full test client-side.
-    return NextResponse.json(test);
+    return NextResponse.json({ ...test, tts });
   }
 
   if (body.action === "score") {
@@ -351,10 +366,14 @@ export async function POST(req: Request) {
     });
 
     const speakingTranscript = String(body.speakingTranscript ?? "").trim();
-    const speaking =
+    const speakingBase =
       speakingTask && speakingTranscript
         ? await scoreFluentSpeakingEnsemble({ task: speakingTask, transcript: speakingTranscript, language, samples })
         : undefined;
+    // Blend Azure pronunciation (acoustic) into the Claude content score.
+    const speaking = speakingBase
+      ? blendPronunciation(speakingBase, body.pronunciation ?? null)
+      : undefined;
 
     const result = computeFluentResult({
       reading,

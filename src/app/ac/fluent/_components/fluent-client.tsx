@@ -8,12 +8,13 @@ import {
 
 type Language = "en" | "ar";
 type Cefr = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
+type PronunciationLike = { accuracy: number; fluency: number; completeness: number; prosody: number | null; pron: number };
 
 type ReadingItem = {
   id: string; passage: string; question: string; options: string[]; cefr: Cefr;
 };
 type ListeningItem = {
-  id: string; script: string; question: string; options: string[]; cefr: Cefr;
+  id: string; script?: string; question: string; options: string[]; cefr: Cefr;
 };
 type WritingTask = {
   id: string; prompt_en: string; prompt_ar: string | null; cefr_target: Cefr; min_words: number;
@@ -22,7 +23,7 @@ type SpeakingTask = {
   id: string; prompt_en: string; prompt_ar: string | null; cefr_target: Cefr; min_seconds: number;
 };
 type FluentTest = {
-  reading: ReadingItem[]; listening: ListeningItem[]; writing: WritingTask; speaking: SpeakingTask; ai_generated: boolean;
+  reading: ReadingItem[]; listening: ListeningItem[]; writing: WritingTask; speaking: SpeakingTask; ai_generated: boolean; tts?: boolean;
 };
 type WritingScore = {
   cefr: Cefr; task_achievement: number; coherence: number; lexical_range: number; grammar: number;
@@ -31,6 +32,7 @@ type WritingScore = {
 type SpeakingScore = {
   attempted: boolean; cefr: Cefr; fluency: number; coherence: number; lexical_range: number; grammar: number;
   transcript: string; feedback_en: string; feedback_ar: string | null; ai_generated: boolean;
+  pronunciation?: number; azure?: PronunciationLike | null;
 };
 type ConfidenceBand = { overall: Cefr; low: Cefr; high: Cefr; halfWidth: number; underpowered: boolean; receptiveItems: number };
 type FluentResult = {
@@ -55,6 +57,7 @@ const T = {
     feedback: "Examiner feedback", startOver: "Start over", correct: "correct",
     writeCrit: { task_achievement: "Task achievement", coherence: "Coherence & cohesion", lexical_range: "Lexical resource", grammar: "Grammar range & accuracy" },
     speakCrit: { fluency: "Fluency", coherence: "Coherence & cohesion", lexical_range: "Lexical resource", grammar: "Grammar range & accuracy" },
+    pronunciation: "Pronunciation (acoustic)", azureNote: "Azure speech",
     writeHere: "Write your response here…", pickLang: "Test language", target: "Target",
     proctorNote: "Integrity monitoring is on — tab switches and pasting are recorded.",
     nameLabel: "Your name (optional)", emailLabel: "Email (optional)",
@@ -79,6 +82,7 @@ const T = {
     feedback: "ملاحظات المُقيّم", startOver: "ابدأ من جديد", correct: "صحيحة",
     writeCrit: { task_achievement: "تحقيق المهمة", coherence: "الترابط والتماسك", lexical_range: "الثروة اللغوية", grammar: "القواعد ودقتها" },
     speakCrit: { fluency: "الطلاقة", coherence: "الترابط والتماسك", lexical_range: "الثروة اللغوية", grammar: "القواعد ودقتها" },
+    pronunciation: "النطق (صوتيًا)", azureNote: "تحليل Azure الصوتي",
     writeHere: "اكتب إجابتك هنا…", pickLang: "لغة الاختبار", target: "المستوى المستهدف",
     proctorNote: "مراقبة النزاهة مُفعّلة — يتم تسجيل تبديل التبويبات واللصق.",
     nameLabel: "اسمك (اختياري)", emailLabel: "البريد الإلكتروني (اختياري)",
@@ -146,6 +150,7 @@ export function FluentClient({
   const [recSeconds, setRecSeconds] = useState(0);
   const [transcribing, setTranscribing] = useState(false);
   const [transcript, setTranscript] = useState("");
+  const [pronunciation, setPronunciation] = useState<PronunciationLike | null>(null);
   const [speakNote, setSpeakNote] = useState("");
   const mediaRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -174,7 +179,7 @@ export function FluentClient({
   }, [phase]);
 
   const playClip = useCallback((item: ListeningItem) => {
-    if (!ttsAvailable()) return;
+    if (!ttsAvailable() || !item.script) return;
     const used = plays[item.id] ?? 0;
     if (used >= MAX_PLAYS) return;
     const synth = window.speechSynthesis;
@@ -233,12 +238,13 @@ export function FluentClient({
       const fd = new FormData();
       fd.append("audio", blob, "speaking.webm");
       const res = await fetch("/api/ac/fluent/transcribe", { method: "POST", body: fd });
-      const data = (await res.json()) as { transcript?: string; error?: string };
+      const data = (await res.json()) as { transcript?: string; error?: string; pronunciation?: PronunciationLike | null };
       if (!res.ok || typeof data.transcript !== "string") {
         setSpeakMode("type");
         setSpeakNote(t.transcribeFailed);
       } else {
         setTranscript(data.transcript);
+        setPronunciation(data.pronunciation ?? null);
       }
     } catch {
       setSpeakMode("type");
@@ -256,13 +262,13 @@ export function FluentClient({
         body: JSON.stringify({ action: "start", language, candidateId, engagementId }),
       });
       // Secure response: { session_id, test }; legacy response: the test itself.
-      const raw = (await res.json()) as (FluentTest & { session_id?: string; test?: FluentTest });
-      const testData = (raw.test ?? raw) as FluentTest;
+      const raw = (await res.json()) as (FluentTest & { session_id?: string; test?: FluentTest; tts?: boolean });
+      const testData = { ...((raw.test ?? raw) as FluentTest), tts: raw.tts };
       setSessionId(raw.session_id ?? null);
       setTest(testData);
       setAnswers({}); setWriting(""); setResult(null);
       setPlays({}); setPlayingId(null);
-      setTranscript(""); setSpeakNote(""); setSpeakMode("record"); setRecSeconds(0);
+      setTranscript(""); setPronunciation(null); setSpeakNote(""); setSpeakMode("record"); setRecSeconds(0);
       setBlurCount(0); setPasteCount(0);
       setPhase("test");
     } catch {
@@ -280,7 +286,7 @@ export function FluentClient({
         writingResponse: writing, speakingTranscript: transcript,
         takerName: takerName.trim() || null, takerEmail: takerEmail.trim() || null,
         integrityFlags: { blurCount, pasteCount },
-        candidateId, engagementId,
+        candidateId, engagementId, pronunciation,
       };
       // Secure: server grades from the stored session. Legacy: post the test.
       const payload = sessionId
@@ -306,7 +312,7 @@ export function FluentClient({
     if (ttsAvailable()) window.speechSynthesis.cancel();
     setPhase("intro"); setTest(null); setSessionId(null); setAnswers({}); setWriting(""); setResult(null); setError("");
     setPlays({}); setPlayingId(null);
-    setTranscript(""); setSpeakNote(""); setSpeakMode("record"); setRecSeconds(0);
+    setTranscript(""); setPronunciation(null); setSpeakNote(""); setSpeakMode("record"); setRecSeconds(0);
     setBlurCount(0); setPasteCount(0);
   }
 
@@ -394,17 +400,24 @@ export function FluentClient({
                 return (
                   <div key={item.id} className="rounded-lg border border-slate-200 p-4">
                     <div className="flex items-center gap-3">
-                      {ttsAvailable() ? (
-                        <button onClick={() => playClip(item)} disabled={used >= MAX_PLAYS || isPlaying}
-                          className="inline-flex items-center gap-1.5 rounded-md bg-[#5391D5] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#4380c4] disabled:opacity-50">
-                          {isPlaying ? <Volume2 className="h-3.5 w-3.5 animate-pulse" /> : <Play className="h-3.5 w-3.5" />}
-                          {isPlaying ? t.playing : t.play}
-                        </button>
+                      {test.tts && sessionId ? (
+                        <audio
+                          controls
+                          preload="none"
+                          className="h-9 w-full max-w-xs"
+                          src={`/api/ac/fluent/tts?session=${sessionId}&item=${encodeURIComponent(item.id)}`}
+                        />
+                      ) : ttsAvailable() ? (
+                        <>
+                          <button onClick={() => playClip(item)} disabled={used >= MAX_PLAYS || isPlaying}
+                            className="inline-flex items-center gap-1.5 rounded-md bg-[#5391D5] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#4380c4] disabled:opacity-50">
+                            {isPlaying ? <Volume2 className="h-3.5 w-3.5 animate-pulse" /> : <Play className="h-3.5 w-3.5" />}
+                            {isPlaying ? t.playing : t.play}
+                          </button>
+                          <span className="text-[11px] text-slate-400">{Math.max(0, MAX_PLAYS - used)} {t.replaysLeft}</span>
+                        </>
                       ) : (
                         <p dir="ltr" className="text-sm italic text-slate-600">“{item.script}”</p>
-                      )}
-                      {ttsAvailable() && (
-                        <span className="text-[11px] text-slate-400">{Math.max(0, MAX_PLAYS - used)} {t.replaysLeft}</span>
                       )}
                     </div>
                     <p dir="ltr" className="mt-3 text-sm font-semibold text-[#010131]">{i + 1}. {item.question}</p>
@@ -564,6 +577,23 @@ export function FluentClient({
             <div className="rounded-lg border border-slate-200 p-4">
               <p className="mb-2 inline-flex items-center gap-1.5 text-sm font-semibold text-[#010131]"><Mic className="h-4 w-4 text-[#5391D5]" /> {t.speaking}</p>
               <CriteriaBars values={result.speaking} keys={["fluency", "coherence", "lexical_range", "grammar"] as const} labels={t.speakCrit} />
+              {typeof result.speaking.pronunciation === "number" && (
+                <div className="mt-2 flex items-center gap-3 text-xs">
+                  <span className="w-44 shrink-0">{t.pronunciation}</span>
+                  <div className="flex flex-1 gap-1">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <span key={n} className={`h-2 flex-1 rounded-full ${n <= (result.speaking.pronunciation ?? 0) ? "bg-[#5391D5]" : "bg-slate-200"}`} />
+                    ))}
+                  </div>
+                  <span className="w-8 shrink-0 text-right tabular-nums text-slate-500">{result.speaking.pronunciation}/5</span>
+                </div>
+              )}
+              {result.speaking.azure && (
+                <p className="mt-1 text-[10px] text-slate-400">
+                  {t.azureNote}: accuracy {Math.round(result.speaking.azure.accuracy)} · fluency {Math.round(result.speaking.azure.fluency)}
+                  {result.speaking.azure.prosody != null ? ` · prosody ${Math.round(result.speaking.azure.prosody)}` : ""}
+                </p>
+              )}
               {result.speaking.transcript && (
                 <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3">
                   <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t.transcriptHeading}</p>

@@ -15,15 +15,21 @@
 import { NextResponse } from "next/server";
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { mkdtemp, writeFile, rm } from "node:fs/promises";
+import { mkdtemp, writeFile, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import {
+  isAzureSpeechConfigured,
+  assessPronunciation,
+  type PronunciationScore,
+} from "@/lib/integrations/speech";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
 const PYTHON_BIN = process.env.PYTHON_BIN || "python";
+const FFMPEG_BIN = process.env.FFMPEG_BIN || "ffmpeg";
 const SCRIPT = join(process.cwd(), "scripts", "whisper-transcribe.py");
 const TIMEOUT_MS = 180_000;
 
@@ -72,6 +78,27 @@ function runWhisper(audioPath: string): Promise<{ transcript?: string; error?: s
   });
 }
 
+/** Transcode any ffmpeg-decodable audio to 16 kHz mono PCM WAV (for Azure). */
+function transcodeToWav(input: string, output: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const child = spawn(FFMPEG_BIN, ["-y", "-i", input, "-ar", "16000", "-ac", "1", "-f", "wav", output], {
+      windowsHide: true,
+    });
+    const timer = setTimeout(() => {
+      child.kill();
+      resolve(false);
+    }, 30_000);
+    child.on("error", () => {
+      clearTimeout(timer);
+      resolve(false);
+    });
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      resolve(code === 0);
+    });
+  });
+}
+
 export async function POST(req: Request) {
   let form: FormData;
   try {
@@ -101,7 +128,22 @@ export async function POST(req: Request) {
         { status: 422 }
       );
     }
-    return NextResponse.json({ transcript: result.transcript });
+
+    // Acoustic pronunciation scoring (Azure) — best-effort; transcript-only
+    // when Azure isn't configured or the assessment fails.
+    let pronunciation: PronunciationScore | null = null;
+    if (isAzureSpeechConfigured()) {
+      try {
+        const wavPath = join(dir, `${randomUUID()}.wav`);
+        if (await transcodeToWav(audioPath, wavPath)) {
+          pronunciation = await assessPronunciation(await readFile(wavPath));
+        }
+      } catch {
+        pronunciation = null;
+      }
+    }
+
+    return NextResponse.json({ transcript: result.transcript, pronunciation });
   } catch (err) {
     console.error("[fluent-transcribe] failed:", err);
     return NextResponse.json({ error: "internal transcription error" }, { status: 500 });

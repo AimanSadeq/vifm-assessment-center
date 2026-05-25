@@ -1,4 +1,5 @@
 import { getAIClient, AI_MODEL } from "./client";
+import type { PronunciationScore } from "@/lib/integrations/speech";
 
 /**
  * VIFM Fluent — English-language assessment engine (prototype).
@@ -83,7 +84,9 @@ export type FluentTest = {
 // this stripped shape so the answer key can't be read in DevTools. Writing
 // and speaking tasks carry no key, so they pass through unchanged.
 export type PublicReadingItem = Omit<ReadingItem, "correct_index">;
-export type PublicListeningItem = Omit<ListeningItem, "correct_index">;
+// `script` is optional: present for browser-TTS fallback, omitted when Azure
+// neural TTS is on (the client plays audio via /api/ac/fluent/tts instead).
+export type PublicListeningItem = Omit<ListeningItem, "correct_index" | "script"> & { script?: string };
 export type PublicFluentTest = {
   reading: PublicReadingItem[];
   listening: PublicListeningItem[];
@@ -136,6 +139,8 @@ export type SpeakingScore = {
   feedback_en: string;
   feedback_ar: string | null;
   ai_generated: boolean;
+  pronunciation?: number; // 1–5, mapped from Azure pronunciation assessment
+  azure?: PronunciationScore | null; // raw 0–100 acoustic scores (accuracy/fluency/prosody)
 };
 
 export type FluentResult = {
@@ -696,6 +701,33 @@ export async function scoreFluentSpeakingEnsemble(input: {
     feedback_en: pick.feedback_en,
     feedback_ar: pick.feedback_ar,
     ai_generated: attempted.some((r) => r.ai_generated),
+  };
+}
+
+// Azure PronScore (0–100) → CEFR rank (1–6) for blending into the speaking band.
+const pronToNum = (pron: number): number => {
+  if (pron >= 88) return 6;
+  if (pron >= 78) return 5;
+  if (pron >= 64) return 4;
+  if (pron >= 48) return 3;
+  if (pron >= 30) return 2;
+  return 1;
+};
+
+/**
+ * Blend Azure pronunciation into a Claude-scored speaking result: the overall
+ * speaking CEFR becomes 0.7·content + 0.3·pronunciation, and pronunciation is
+ * surfaced as a fifth criterion (1–5) plus the raw Azure scores. Returns the
+ * score unchanged when no pronunciation assessment is available.
+ */
+export function blendPronunciation(score: SpeakingScore, pron: PronunciationScore | null): SpeakingScore {
+  if (!pron || !score.attempted) return score;
+  const blendedNum = cefrToNum(score.cefr) * 0.7 + pronToNum(pron.pron) * 0.3;
+  return {
+    ...score,
+    cefr: numToCefr(blendedNum),
+    pronunciation: Math.min(5, Math.max(1, Math.round(pron.pron / 20))),
+    azure: pron,
   };
 }
 

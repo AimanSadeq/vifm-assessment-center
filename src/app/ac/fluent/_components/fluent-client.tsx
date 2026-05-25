@@ -10,10 +10,10 @@ type Language = "en" | "ar";
 type Cefr = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
 
 type ReadingItem = {
-  id: string; passage: string; question: string; options: string[]; correct_index: number; cefr: Cefr;
+  id: string; passage: string; question: string; options: string[]; cefr: Cefr;
 };
 type ListeningItem = {
-  id: string; script: string; question: string; options: string[]; correct_index: number; cefr: Cefr;
+  id: string; script: string; question: string; options: string[]; cefr: Cefr;
 };
 type WritingTask = {
   id: string; prompt_en: string; prompt_ar: string | null; cefr_target: Cefr; min_words: number;
@@ -115,6 +115,7 @@ export function FluentClient({
   const [language, setLanguage] = useState<Language>("en");
   const [phase, setPhase] = useState<"intro" | "test" | "result">("intro");
   const [test, setTest] = useState<FluentTest | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [writing, setWriting] = useState("");
   const [result, setResult] = useState<FluentResult | null>(null);
@@ -246,10 +247,13 @@ export function FluentClient({
     try {
       const res = await fetch("/api/ac/fluent", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "start", language }),
+        body: JSON.stringify({ action: "start", language, candidateId, engagementId }),
       });
-      const data = (await res.json()) as FluentTest;
-      setTest(data);
+      // Secure response: { session_id, test }; legacy response: the test itself.
+      const raw = (await res.json()) as (FluentTest & { session_id?: string; test?: FluentTest });
+      const testData = (raw.test ?? raw) as FluentTest;
+      setSessionId(raw.session_id ?? null);
+      setTest(testData);
       setAnswers({}); setWriting(""); setResult(null);
       setPlays({}); setPlayingId(null);
       setTranscript(""); setSpeakNote(""); setSpeakMode("record"); setRecSeconds(0);
@@ -265,18 +269,25 @@ export function FluentClient({
     if (ttsAvailable()) window.speechSynthesis.cancel();
     setBusy(true); setError("");
     try {
+      const common = {
+        action: "score" as const, language, answers,
+        writingResponse: writing, speakingTranscript: transcript,
+        takerName: takerName.trim() || null, takerEmail: takerEmail.trim() || null,
+        integrityFlags: { blurCount, pasteCount },
+        candidateId, engagementId,
+      };
+      // Secure: server grades from the stored session. Legacy: post the test.
+      const payload = sessionId
+        ? { ...common, sessionId }
+        : {
+            ...common,
+            reading: test.reading, listening: test.listening,
+            writingTask: test.writing, speakingTask: test.speaking,
+            aiGenerated: test.ai_generated,
+          };
       const res = await fetch("/api/ac/fluent", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "score", language,
-          reading: test.reading, listening: test.listening, answers,
-          writingTask: test.writing, writingResponse: writing,
-          speakingTask: test.speaking, speakingTranscript: transcript,
-          takerName: takerName.trim() || null, takerEmail: takerEmail.trim() || null,
-          aiGenerated: test.ai_generated,
-          integrityFlags: { blurCount, pasteCount },
-          candidateId, engagementId,
-        }),
+        body: JSON.stringify(payload),
       });
       const data = (await res.json()) as FluentResult;
       setResult(data); setPhase("result");
@@ -287,7 +298,7 @@ export function FluentClient({
 
   function reset() {
     if (ttsAvailable()) window.speechSynthesis.cancel();
-    setPhase("intro"); setTest(null); setAnswers({}); setWriting(""); setResult(null); setError("");
+    setPhase("intro"); setTest(null); setSessionId(null); setAnswers({}); setWriting(""); setResult(null); setError("");
     setPlays({}); setPlayingId(null);
     setTranscript(""); setSpeakNote(""); setSpeakMode("record"); setRecSeconds(0);
     setBlurCount(0); setPasteCount(0);

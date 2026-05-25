@@ -77,6 +77,43 @@ export type FluentTest = {
   ai_generated: boolean;
 };
 
+// ── Public (answer-key-stripped) test for the browser ────────────
+// The full FluentTest (with `correct_index`) is persisted server-side in
+// eng_fluent_sessions and never sent to the client; the browser receives
+// this stripped shape so the answer key can't be read in DevTools. Writing
+// and speaking tasks carry no key, so they pass through unchanged.
+export type PublicReadingItem = Omit<ReadingItem, "correct_index">;
+export type PublicListeningItem = Omit<ListeningItem, "correct_index">;
+export type PublicFluentTest = {
+  reading: PublicReadingItem[];
+  listening: PublicListeningItem[];
+  writing: WritingTask;
+  speaking: SpeakingTask;
+  ai_generated: boolean;
+};
+
+export function stripAnswerKey(test: FluentTest): PublicFluentTest {
+  return {
+    reading: test.reading.map(({ id, passage, question, options, cefr }) => ({
+      id,
+      passage,
+      question,
+      options,
+      cefr,
+    })),
+    listening: test.listening.map(({ id, script, question, options, cefr }) => ({
+      id,
+      script,
+      question,
+      options,
+      cefr,
+    })),
+    writing: test.writing,
+    speaking: test.speaking,
+    ai_generated: test.ai_generated,
+  };
+}
+
 export type WritingScore = {
   cefr: CefrLevel;
   task_achievement: number; // 1–5

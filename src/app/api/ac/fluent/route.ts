@@ -1,15 +1,17 @@
 /**
- * VIFM Fluent — English placement prototype API (stateless scoring).
+ * VIFM Fluent — English placement API.
  *
  * POST /api/ac/fluent
- *   { action: "start", language }                     -> FluentTest
- *   { action: "score", language, reading, listening,
- *     answers, writingTask, writingResponse,
- *     speakingTask, speakingTranscript }               -> FluentResult
+ *   { action: "start", language }
+ *     -> { session_id, test }  (test is answer-key STRIPPED; the full test
+ *        with correct_index is held server-side in eng_fluent_sessions)
+ *   { action: "score", language, sessionId, answers, writingResponse,
+ *     speakingTranscript, takerName, takerEmail, integrityFlags, ... }
+ *     -> FluentResult  (server loads the stored test by sessionId and grades it)
  *
- * Prototype note: the test (incl. answer key) lives client-side between
- * start and score — fine for a demo. Production would persist the test
- * server-side (eng_* tables) so the key never reaches the browser.
+ * Integrity: the answer key never reaches the browser. If eng_fluent_sessions
+ * isn't migrated yet, both actions fall back to the legacy client-graded path
+ * (full test to the browser, client posts it back) so deployment is non-breaking.
  *
  * Speaking audio is transcribed by the sibling /transcribe route (Whisper);
  * this route only ever sees the resulting text.
@@ -23,8 +25,10 @@ import {
   scoreFluentWriting,
   scoreFluentSpeaking,
   computeFluentResult,
+  stripAnswerKey,
   type FluentLanguage,
   type FluentResult,
+  type FluentTest,
   type ReadingItem,
   type ListeningItem,
   type WritingTask,
@@ -38,6 +42,7 @@ type IntegrityFlags = { blurCount?: number; pasteCount?: number };
 type Body = {
   action?: "start" | "score";
   language?: FluentLanguage;
+  sessionId?: string;
   reading?: ReadingItem[];
   listening?: ListeningItem[];
   answers?: Record<string, number>;
@@ -171,6 +176,60 @@ async function emailFluentResult(
   }
 }
 
+const SESSION_TTL_MS = 1000 * 60 * 60 * 3; // 3 hours
+
+/**
+ * Persist the full generated test (with answer key) server-side and return a
+ * session id. Best-effort: returns null if eng_fluent_sessions isn't migrated,
+ * so the caller falls back to the legacy client-graded flow.
+ */
+async function createSession(
+  test: FluentTest,
+  meta: { language: FluentLanguage; candidateId: string | null; engagementId: string | null }
+): Promise<string | null> {
+  try {
+    const sb = createServiceClient();
+    const { data, error } = await sb
+      .from("eng_fluent_sessions")
+      .insert({
+        ui_language: meta.language,
+        test,
+        candidate_id: meta.candidateId,
+        engagement_id: meta.engagementId,
+        expires_at: new Date(Date.now() + SESSION_TTL_MS).toISOString(),
+      })
+      .select("id")
+      .single();
+    if (error || !data) return null;
+    return data.id as string;
+  } catch {
+    return null;
+  }
+}
+
+/** Load the full server-stored test by session id; null if missing/expired. */
+async function loadSession(id: string): Promise<FluentTest | null> {
+  try {
+    const sb = createServiceClient();
+    const { data, error } = await sb
+      .from("eng_fluent_sessions")
+      .select("test, expires_at")
+      .eq("id", id)
+      .single();
+    if (error || !data || !data.test) return null;
+    if (data.expires_at && new Date(data.expires_at as string).getTime() < Date.now()) return null;
+    // Record consumption (best-effort; re-scoring is allowed).
+    try {
+      await sb.from("eng_fluent_sessions").update({ consumed_at: new Date().toISOString() }).eq("id", id);
+    } catch {
+      /* ignore */
+    }
+    return data.test as FluentTest;
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(req: Request) {
   let body: Body;
   try {
@@ -183,16 +242,46 @@ export async function POST(req: Request) {
 
   if (body.action === "start") {
     const test = await generateFluentTest({ language });
+    const candidateId = body.candidateId?.trim() ? body.candidateId.trim() : null;
+    const engagementId = body.engagementId?.trim() ? body.engagementId.trim() : null;
+    const session_id = await createSession(test, { language, candidateId, engagementId });
+    if (session_id) {
+      // Secure flow: the answer key stays server-side.
+      return NextResponse.json({ session_id, test: stripAnswerKey(test) });
+    }
+    // Legacy fallback (eng_fluent_sessions not migrated): full test client-side.
     return NextResponse.json(test);
   }
 
   if (body.action === "score") {
-    const reading = Array.isArray(body.reading) ? body.reading : null;
-    const listening = Array.isArray(body.listening) ? body.listening : [];
-    const writingTask = body.writingTask ?? null;
+    // Resolve the test: secure path loads it server-side by session id (the
+    // answer key never left the server); legacy path uses the posted test.
+    let reading: ReadingItem[] | null = null;
+    let listening: ListeningItem[] = [];
+    let writingTask: WritingTask | null = null;
+    let speakingTask: SpeakingTask | null = null;
+    let aiGenerated = body.aiGenerated === true;
+
+    if (body.sessionId) {
+      const test = await loadSession(body.sessionId);
+      if (!test) {
+        return NextResponse.json({ error: "invalid or expired session" }, { status: 400 });
+      }
+      reading = test.reading;
+      listening = test.listening ?? [];
+      writingTask = test.writing;
+      speakingTask = test.speaking;
+      aiGenerated = test.ai_generated;
+    } else {
+      reading = Array.isArray(body.reading) ? body.reading : null;
+      listening = Array.isArray(body.listening) ? body.listening : [];
+      writingTask = body.writingTask ?? null;
+      speakingTask = body.speakingTask ?? null;
+    }
+
     if (!reading || !writingTask) {
       return NextResponse.json(
-        { error: "reading items and writingTask are required" },
+        { error: "a valid session (or reading items + writingTask) is required" },
         { status: 400 }
       );
     }
@@ -203,7 +292,6 @@ export async function POST(req: Request) {
       language,
     });
 
-    const speakingTask = body.speakingTask ?? null;
     const speakingTranscript = String(body.speakingTranscript ?? "").trim();
     const speaking =
       speakingTask && speakingTranscript
@@ -225,7 +313,7 @@ export async function POST(req: Request) {
       language,
       takerName,
       takerEmail,
-      aiGenerated: body.aiGenerated === true,
+      aiGenerated,
       integrityFlags: body.integrityFlags ?? null,
       candidateId: body.candidateId?.trim() ? body.candidateId.trim() : null,
       engagementId: body.engagementId?.trim() ? body.engagementId.trim() : null,

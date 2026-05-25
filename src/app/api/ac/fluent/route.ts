@@ -40,6 +40,7 @@ import {
 import { AI_MODEL } from "@/lib/ai/client";
 import { overallConfidenceBand, type ConfidenceBand } from "@/lib/scoring/reliability";
 import { isAzureSpeechConfigured, type PronunciationScore } from "@/lib/integrations/speech";
+import { createHash } from "node:crypto";
 
 export const dynamic = "force-dynamic";
 
@@ -233,6 +234,72 @@ async function persistScoreRuns(
   }
 }
 
+/** Stable content identity for an item, so identical items merge in the bank. */
+function itemHash(skill: string, content: string, question: string, options: string[], correctIndex: number): string {
+  return createHash("sha256")
+    .update(JSON.stringify({ skill, content, question, options, correctIndex }))
+    .digest("hex");
+}
+
+/**
+ * Log receptive responses into the item bank for future Rasch calibration
+ * (migration 00048). Best-effort: upserts each distinct item by content_hash,
+ * then records which option was chosen + whether it was correct. No-op if the
+ * tables aren't migrated.
+ */
+async function logItemResponses(
+  reading: ReadingItem[],
+  listening: ListeningItem[],
+  answers: Record<string, number>,
+  sessionId: string | null
+): Promise<void> {
+  try {
+    const all = [
+      ...reading.map((r) => ({
+        skill: "reading" as const,
+        hash: itemHash("reading", r.passage, r.question, r.options, r.correct_index),
+        item: r,
+      })),
+      ...listening.map((l) => ({
+        skill: "listening" as const,
+        hash: itemHash("listening", l.script, l.question, l.options, l.correct_index),
+        item: l,
+      })),
+    ];
+    if (all.length === 0) return;
+
+    const sb = createServiceClient();
+    const { data: upserted, error } = await sb
+      .from("eng_fluent_items")
+      .upsert(
+        all.map((a) => ({ content_hash: a.hash, skill: a.skill, stem: a.item, cefr_label: a.item.cefr })),
+        { onConflict: "content_hash" }
+      )
+      .select("id, content_hash");
+    if (error || !upserted) return;
+
+    const idByHash = new Map(
+      (upserted as Array<{ id: string; content_hash: string }>).map((u) => [u.content_hash, u.id])
+    );
+    const rows = all
+      .map((a) => {
+        const itemId = idByHash.get(a.hash);
+        if (!itemId) return null;
+        const chosen = answers[a.item.id];
+        return {
+          item_id: itemId,
+          session_id: sessionId,
+          chosen_index: typeof chosen === "number" ? chosen : null,
+          correct: chosen === a.item.correct_index,
+        };
+      })
+      .filter((r): r is NonNullable<typeof r> => r !== null);
+    if (rows.length > 0) await sb.from("eng_fluent_item_responses").insert(rows);
+  } catch {
+    /* item bank not migrated — ignore */
+  }
+}
+
 const SESSION_TTL_MS = 1000 * 60 * 60 * 3; // 3 hours
 
 /**
@@ -402,6 +469,9 @@ export async function POST(req: Request) {
     if (result_id) {
       await persistScoreRuns(result_id, writing, speaking, samples, { writingResponse, speakingTranscript });
     }
+
+    // Log receptive responses into the item bank (best-effort; CAT groundwork).
+    await logItemResponses(reading, listening, body.answers ?? {}, body.sessionId ?? null);
 
     // Email the taker their result + certificate link (best-effort).
     if (result_id && takerEmail) {

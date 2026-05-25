@@ -22,8 +22,16 @@ const key = () => process.env.AZURE_SPEECH_KEY;
 const region = () => process.env.AZURE_SPEECH_REGION;
 const voice = () => process.env.AZURE_SPEECH_VOICE || "en-US-JennyNeural";
 
+// A value is "real" only if non-empty and not a leftover placeholder like
+// "<your Azure Speech resource key>" or "<e.g. uaenorth>" (angle brackets or
+// whitespace). This prevents a half-broken state where non-empty placeholder
+// env values make us think Azure is on, breaking the listening audio instead
+// of falling back to browser TTS.
+const looksReal = (v?: string): boolean =>
+  !!v && v.trim().length > 0 && !/[<>]/.test(v) && !/\s/.test(v.trim());
+
 export function isAzureSpeechConfigured(): boolean {
-  return !!(key() && region());
+  return looksReal(key()) && looksReal(region());
 }
 
 const escapeXml = (s: string): string =>

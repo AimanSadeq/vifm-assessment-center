@@ -148,7 +148,7 @@
     z-index: 1;
   }
 
-  /* ─── VIFM Fluent visual language ───
+  /* ─── Fluent visual language ───
      Shares the platform's deep-navy hero base (so Fluent reads as part
      of the same suite as the AC portal + ARA Compass) but carries a
      cooler blue→teal "fluency" signature instead of ARA's four-hue
@@ -265,6 +265,20 @@
       transition: none !important;
     }
     .launcher-card:hover { transform: none; }
+  }
+
+  /* RTL polish: draw the accent line + glyph from the trailing (left) edge,
+     and slide the CTA arrow toward the reading direction. */
+  [dir="rtl"] .launcher-card::before {
+    transform-origin: right;
+    background: linear-gradient(270deg, rgb(var(--tone)), rgb(var(--tone) / 0) 75%);
+  }
+  [dir="rtl"] .launcher-card-glyph {
+    right: auto;
+    left: -12px;
+  }
+  [dir="rtl"] .launcher-card:hover .launcher-card-cta svg {
+    transform: translateX(-4px);
   }
 
   .ara-hero-subtle {

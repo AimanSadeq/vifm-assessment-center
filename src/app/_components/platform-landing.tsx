@@ -199,7 +199,7 @@ export function PlatformLanding() {
                       <Icon className="h-6 w-6" />
                     </div>
                     <div className="ara-eyebrow mb-1.5">{svc.tagline}</div>
-                    <h2 className="text-xl font-semibold text-primary">{svc.name}</h2>
+                    <h2 className="text-2xl font-semibold text-primary">{svc.name}</h2>
                     <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">
                       {svc.description}
                     </p>

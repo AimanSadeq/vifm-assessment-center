@@ -83,15 +83,16 @@ export type PronunciationScore = {
   pron: number; // 0–100, overall pronunciation score
 };
 
-type AzureNBest = {
-  PronunciationAssessment?: {
-    AccuracyScore?: number;
-    FluencyScore?: number;
-    CompletenessScore?: number;
-    PronScore?: number;
-    ProsodyScore?: number;
-  };
+type AzureScores = {
+  AccuracyScore?: number;
+  FluencyScore?: number;
+  CompletenessScore?: number;
+  PronScore?: number;
+  ProsodyScore?: number;
 };
+// The conversation REST endpoint returns the assessment scores flat on
+// NBest[0]; some SDK/response variants nest them under PronunciationAssessment.
+type AzureNBest = AzureScores & { PronunciationAssessment?: AzureScores };
 
 /**
  * Unscripted pronunciation assessment on a 16 kHz mono PCM WAV buffer.
@@ -131,7 +132,8 @@ export async function assessPronunciation(wav: Buffer): Promise<PronunciationSco
       return null;
     }
     const json = (await res.json()) as { NBest?: AzureNBest[] };
-    const pa = json.NBest?.[0]?.PronunciationAssessment;
+    const nb = json.NBest?.[0];
+    const pa = nb?.PronunciationAssessment ?? nb;
     if (!pa || typeof pa.PronScore !== "number") return null;
     return {
       accuracy: pa.AccuracyScore ?? 0,

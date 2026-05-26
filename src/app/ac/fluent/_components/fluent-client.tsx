@@ -57,13 +57,13 @@ const T = {
     feedback: "Examiner feedback", startOver: "Start over", correct: "correct",
     writeCrit: { task_achievement: "Task achievement", coherence: "Coherence & cohesion", lexical_range: "Lexical resource", grammar: "Grammar range & accuracy" },
     speakCrit: { fluency: "Fluency", coherence: "Coherence & cohesion", lexical_range: "Lexical resource", grammar: "Grammar range & accuracy" },
-    pronunciation: "Pronunciation (acoustic)", azureNote: "Azure speech",
+    pronunciation: "Pronunciation (acoustic)", azureNote: "Acoustic analysis",
     writeHere: "Write your response here…", pickLang: "Test language", target: "Target",
-    proctorNote: "Integrity monitoring is on — tab switches and pasting are recorded.",
+    proctorNote: "Integrity monitoring is on - tab switches and pasting are recorded.",
     nameLabel: "Your name (optional)", emailLabel: "Email (optional)",
     namePlaceholder: "e.g. Sara Al Mansoori", emailPlaceholder: "you@example.com",
     listenHint: "Listen, then answer. You can replay each clip up to twice.",
-    play: "Play", playing: "Playing…", replaysLeft: "replays left", noTts: "Audio playback isn't available here — the script is shown so you can still answer.",
+    play: "Play", playing: "Playing…", replaysLeft: "replays left", noTts: "Audio playback isn't available here - the script is shown so you can still answer.",
     speakHint: "Record about 45 seconds. We transcribe your speech and assess it.",
     record: "Record", stop: "Stop", recording: "Recording", transcribing: "Transcribing your speech…",
     yourTranscript: "What we heard", reRecord: "Re-record", typeInstead: "Type instead", recordInstead: "Record instead",
@@ -71,6 +71,8 @@ const T = {
     transcribeFailed: "Transcription didn't work. You can type your answer instead.",
     optional: "optional", certificate: "Download certificate", resultFor: "Result for",
     transcriptHeading: "Your transcript",
+    beginTitle: "Begin your placement",
+    beginSub: "About 15 minutes · four skills · an indicative CEFR level the moment you finish.",
   },
   ar: {
     start: "ابدأ اختبار تحديد المستوى", starting: "جارٍ إعداد اختبارك…",
@@ -82,13 +84,13 @@ const T = {
     feedback: "ملاحظات المُقيّم", startOver: "ابدأ من جديد", correct: "صحيحة",
     writeCrit: { task_achievement: "تحقيق المهمة", coherence: "الترابط والتماسك", lexical_range: "الثروة اللغوية", grammar: "القواعد ودقتها" },
     speakCrit: { fluency: "الطلاقة", coherence: "الترابط والتماسك", lexical_range: "الثروة اللغوية", grammar: "القواعد ودقتها" },
-    pronunciation: "النطق (صوتيًا)", azureNote: "تحليل Azure الصوتي",
+    pronunciation: "النطق (صوتيًا)", azureNote: "تحليل صوتي",
     writeHere: "اكتب إجابتك هنا…", pickLang: "لغة الاختبار", target: "المستوى المستهدف",
-    proctorNote: "مراقبة النزاهة مُفعّلة — يتم تسجيل تبديل التبويبات واللصق.",
+    proctorNote: "مراقبة النزاهة مُفعّلة - يتم تسجيل تبديل التبويبات واللصق.",
     nameLabel: "اسمك (اختياري)", emailLabel: "البريد الإلكتروني (اختياري)",
     namePlaceholder: "مثال: سارة المنصوري", emailPlaceholder: "you@example.com",
     listenHint: "استمع ثم أجب. يمكنك إعادة تشغيل كل مقطع مرتين كحدٍّ أقصى.",
-    play: "تشغيل", playing: "جارٍ التشغيل…", replaysLeft: "إعادة متبقية", noTts: "تشغيل الصوت غير متاح هنا — يظهر النص لتتمكن من الإجابة.",
+    play: "تشغيل", playing: "جارٍ التشغيل…", replaysLeft: "إعادة متبقية", noTts: "تشغيل الصوت غير متاح هنا - يظهر النص لتتمكن من الإجابة.",
     speakHint: "سجّل نحو 45 ثانية. نقوم بتفريغ كلامك وتقييمه.",
     record: "تسجيل", stop: "إيقاف", recording: "جارٍ التسجيل", transcribing: "جارٍ تفريغ كلامك…",
     yourTranscript: "ما سمعناه", reRecord: "إعادة التسجيل", typeInstead: "اكتب بدلاً من ذلك", recordInstead: "سجّل بدلاً من ذلك",
@@ -96,6 +98,8 @@ const T = {
     transcribeFailed: "تعذّر التفريغ. يمكنك كتابة إجابتك بدلاً من ذلك.",
     optional: "اختياري", certificate: "تنزيل الشهادة", resultFor: "نتيجة",
     transcriptHeading: "نص كلامك",
+    beginTitle: "ابدأ تحديد مستواك",
+    beginSub: "نحو 15 دقيقة · أربع مهارات · مستوى CEFR تقريبي فور انتهائك.",
   },
 } as const;
 
@@ -136,7 +140,7 @@ export function FluentClient({
   const [takerName, setTakerName] = useState(prefillName ?? "");
   const [takerEmail, setTakerEmail] = useState(prefillEmail ?? "");
 
-  // Lightweight proctoring signals (advisory — surfaced to admins only).
+  // Lightweight proctoring signals (advisory - surfaced to admins only).
   const [blurCount, setBlurCount] = useState(0);
   const [pasteCount, setPasteCount] = useState(0);
 
@@ -325,41 +329,50 @@ export function FluentClient({
     <div dir={rtl ? "rtl" : "ltr"} className="space-y-5">
       {error && <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
 
-      {/* ── Intro ── */}
+      {/* ── Intro / start card ── */}
       {phase === "intro" && (
-        <div className="rounded-xl border bg-white p-6 shadow-sm">
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-medium text-slate-500">{t.pickLang}:</span>
-            <div className="inline-flex overflow-hidden rounded-md border border-slate-300">
-              {(["en", "ar"] as const).map((l) => (
-                <button key={l} onClick={() => setLanguage(l)}
-                  className={`px-3 py-1.5 text-sm font-medium ${language === l ? "bg-[#5391D5] text-white" : "bg-white text-slate-600 hover:bg-slate-50"}`}>
-                  {l === "en" ? "English" : "العربية"}
-                </button>
-              ))}
+        <div className="rounded-2xl border bg-card p-6 shadow-[0_16px_48px_-12px_rgba(1,1,49,0.18)] sm:p-8">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-[#010131]">{t.beginTitle}</h2>
+              <p className="mt-1 text-sm text-slate-500">{t.beginSub}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{t.pickLang}</span>
+              <div className="inline-flex rounded-lg border border-slate-200 p-0.5">
+                {(["en", "ar"] as const).map((l) => (
+                  <button key={l} onClick={() => setLanguage(l)}
+                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${language === l ? "bg-[#5391D5] text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"}`}>
+                    {l === "en" ? "English" : "العربية"}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <label className="block">
               <span className="text-xs font-medium text-slate-500">{t.nameLabel}</span>
               <input value={takerName} onChange={(e) => setTakerName(e.target.value)} dir="ltr"
                 placeholder={t.namePlaceholder}
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-[#5391D5] focus:outline-none" />
+                className="mt-1.5 w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm transition-colors focus:border-[#5391D5] focus:outline-none focus:ring-2 focus:ring-[#5391D5]/20" />
             </label>
             <label className="block">
               <span className="text-xs font-medium text-slate-500">{t.emailLabel}</span>
               <input value={takerEmail} onChange={(e) => setTakerEmail(e.target.value)} type="email" dir="ltr"
                 placeholder={t.emailPlaceholder}
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-[#5391D5] focus:outline-none" />
+                className="mt-1.5 w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm transition-colors focus:border-[#5391D5] focus:outline-none focus:ring-2 focus:ring-[#5391D5]/20" />
             </label>
           </div>
 
-          <button onClick={start} disabled={busy}
-            className="mt-5 inline-flex items-center gap-2 rounded-md bg-[#010131] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#121140] disabled:opacity-50">
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            {busy ? t.starting : t.start}
-          </button>
+          <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2">
+            <button onClick={start} disabled={busy}
+              className="ara-pulse inline-flex items-center gap-2 rounded-lg bg-[#010131] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#121140] disabled:cursor-not-allowed disabled:opacity-60">
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              {busy ? t.starting : t.start}
+            </button>
+            <span className="text-[11px] text-slate-400">{t.proctorNote}</span>
+          </div>
         </div>
       )}
 

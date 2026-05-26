@@ -147,6 +147,42 @@
     position: relative;
     z-index: 1;
   }
+
+  /* ─── VIFM Fluent visual language ───
+     Shares the platform's deep-navy hero base (so Fluent reads as part
+     of the same suite as the AC portal + ARA Compass) but carries a
+     cooler blue→teal "fluency" signature instead of ARA's four-hue
+     aurora - a deliberate, subtle differentiator for the placement
+     product. Reuses the ara-aurora keyframes + dot-grid treatment. */
+  .fluent-hero {
+    background:
+      radial-gradient(circle at 12% 18%, rgba(83, 145, 213, 0.34), transparent 46%),
+      radial-gradient(circle at 88% 12%, rgba(45, 212, 191, 0.20), transparent 50%),
+      radial-gradient(circle at 78% 88%, rgba(83, 145, 213, 0.16), transparent 52%),
+      linear-gradient(135deg, #010131 0%, #121140 52%, #111232 100%);
+    background-size: 200% 200%, 200% 200%, 200% 200%, 100% 100%;
+    animation: ara-aurora 25s ease-in-out infinite;
+    color: #fefff9;
+    position: relative;
+    isolation: isolate;
+  }
+  .fluent-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.10) 1px, transparent 1px);
+    background-size: 26px 26px;
+    -webkit-mask-image: radial-gradient(ellipse at 50% 30%, black 0%, transparent 78%);
+            mask-image: radial-gradient(ellipse at 50% 30%, black 0%, transparent 78%);
+    opacity: 0.5;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .fluent-hero > * {
+    position: relative;
+    z-index: 1;
+  }
+
   .ara-hero-subtle {
     background:
       radial-gradient(circle at 85% 20%, rgba(83, 145, 213, 0.10), transparent 55%),
@@ -267,6 +303,26 @@
     100% { background-position: 0% center; }
   }
 
+  /* ─── Fluent headline sweep ───
+     A cooler blue→teal variant of the ARA accent sweep, used on the
+     Fluent hero keyword. Reuses the ara-sweep keyframes. */
+  .fluent-sweep {
+    background: linear-gradient(
+      90deg,
+      #5391d5 0%,
+      #2dd4bf 35%,
+      #ffffff 50%,
+      #5391d5 70%,
+      #2dd4bf 100%
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+            background-clip: text;
+    -webkit-text-fill-color: transparent;
+            color: transparent;
+    animation: ara-sweep 7s linear infinite;
+  }
+
   /* ─── Slow spin (for the compass rose) ─── */
   .ara-spin-slow {
     animation: ara-spin 90s linear infinite;
@@ -319,7 +375,9 @@
   /* ─── Respect reduced-motion preferences ─── */
   @media (prefers-reduced-motion: reduce) {
     .ara-hero,
+    .fluent-hero,
     .ara-accent-sweep,
+    .fluent-sweep,
     .ara-spin-slow,
     .ara-float-glow {
       animation: none !important;

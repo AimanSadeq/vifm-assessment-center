@@ -269,7 +269,7 @@ export type RoleProfileWithCompetencies = RoleProfile & {
   competencies: (RoleProfileCompetency & { competency_name: string })[];
 };
 
-// G3 — Self-serve AI quiz on a single competency.
+// G3 - Self-serve AI quiz on a single competency.
 // Questions and answers are stored as JSONB on the attempt so the deck
 // is frozen at start-time and reproducible on the results page.
 
@@ -317,7 +317,7 @@ export type CandidateQuizAttempt = {
   updated_at: string;
 };
 
-// H3 — In-app notification feed (admin and candidate headers)
+// H3 - In-app notification feed (admin and candidate headers)
 export type NotificationKind =
   | "report_released"
   | "role_profile_assigned"
@@ -387,7 +387,7 @@ export type VifmCourseLevel = "foundation" | "intermediate" | "advanced";
 // 3-4 level case (e.g. "AI Strategy Professional"):
 //   main_header → subsections[] → bullets[] → sub_bullets[]
 //
-// The two shapes coexist on a single course only when needed —
+// The two shapes coexist on a single course only when needed -
 // most courses use one or the other consistently.
 
 export type VifmCourseOutlineBullet = {
@@ -433,7 +433,7 @@ export type VifmCourse = {
   methodology_ar: string | null;
   outline_en: VifmCourseOutlineSection[] | null;
   outline_ar: VifmCourseOutlineSection[] | null;
-  // Block 7 — admin note (free text, not from the PDF). Bilingual.
+  // Block 7 - admin note (free text, not from the PDF). Bilingual.
   note_en: string | null;
   note_ar: string | null;
   source_pdf_path: string | null;

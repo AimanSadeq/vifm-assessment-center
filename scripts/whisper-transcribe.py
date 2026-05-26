@@ -1,5 +1,5 @@
 """
-VIFM Fluent — speaking-task transcription via faster-whisper.
+VIFM Fluent - speaking-task transcription via faster-whisper.
 
 Called by the /api/ac/fluent/transcribe route. Reads one audio file
 (any ffmpeg-decodable container: webm/ogg/mp4/wav) and prints a single

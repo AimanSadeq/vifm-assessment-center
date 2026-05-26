@@ -124,7 +124,7 @@ function CalibrationBody({ results, runs, humans }: { results: ResultRow[]; runs
       <section className="space-y-4">
         {results.length === 0 && (
           <div className="rounded-xl border bg-white p-6 text-center text-sm text-muted-foreground shadow-sm">
-            No results yet — take a test at <Link href="/ac/fluent" className="text-[#5391D5] underline">/ac/fluent</Link>.
+            No results yet - take a test at <Link href="/ac/fluent" className="text-[#5391D5] underline">/ac/fluent</Link>.
           </div>
         )}
         {results.map((res) => {
@@ -167,7 +167,7 @@ function QwkCard({ label, icon, q, n }: { label: string; icon: ReactNode; q: num
     <div className="rounded-xl border bg-white p-4 shadow-sm">
       <p className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-slate-500">{icon} {label} QWK</p>
       <p className={`mt-1 text-2xl font-bold ${Number.isNaN(q) ? "text-slate-400" : ok ? "text-emerald-600" : "text-amber-600"}`}>
-        {Number.isNaN(q) ? "—" : q.toFixed(2)}
+        {Number.isNaN(q) ? "-" : q.toFixed(2)}
       </p>
       <p className="text-[11px] text-slate-500">
         {n === 0 ? "no human ratings yet" : `${n} rated · ${ok ? "acceptable (≥0.70)" : "below 0.70"}`}
@@ -188,7 +188,7 @@ function Block({ icon, title, aiCefr, text }: { icon: ReactNode; title: string; 
         )}
       </div>
       <p dir="ltr" className="max-h-32 overflow-y-auto whitespace-pre-wrap text-xs leading-relaxed text-slate-700">
-        {text || <span className="text-slate-400">(no text captured — re-take a test after migration 00046 to capture responses)</span>}
+        {text || <span className="text-slate-400">(no text captured - re-take a test after migration 00046 to capture responses)</span>}
       </p>
     </div>
   );

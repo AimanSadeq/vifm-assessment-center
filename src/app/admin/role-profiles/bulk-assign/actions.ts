@@ -29,13 +29,13 @@ export type BulkAssignRowResult = {
 };
 
 /**
- * G5 — Bulk user-to-persona linking.
+ * G5 - Bulk user-to-persona linking.
  *
  * Match candidates by email, set role_profile_id (or null to clear).
  * Returns one row per input so the UI can show a per-row status table.
  *
  * Implementation note: matches are done per-row to keep RLS in play and
- * to give the user precise feedback. The 2000-row cap is generous —
+ * to give the user precise feedback. The 2000-row cap is generous -
  * larger imports should use Supabase's CSV-based bulk loader directly.
  */
 export async function bulkAssignRoleProfilesAction(input: {

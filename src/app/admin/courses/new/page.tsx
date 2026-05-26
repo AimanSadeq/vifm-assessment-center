@@ -13,7 +13,7 @@ export default function NewCoursePage() {
           <CardTitle>New course</CardTitle>
           <CardDescription>
             Add a course manually. To bulk-load 80 PDFs in one shot, use{" "}
-            <strong>Import PDFs</strong> on the courses list — that route runs
+            <strong>Import PDFs</strong> on the courses list - that route runs
             AI extraction across the six standard blocks.
           </CardDescription>
         </CardHeader>

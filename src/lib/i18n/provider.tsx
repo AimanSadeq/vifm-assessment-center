@@ -15,7 +15,7 @@ function readCookie(name: string): string | null {
 /**
  * Routes that opt INTO the user's locale cookie. Everything else
  * (admin, login, etc.) stays English/LTR regardless of cookie because
- * those surfaces aren't translated yet — applying RTL there breaks
+ * those surfaces aren't translated yet - applying RTL there breaks
  * the layout (e.g. the admin sidebar's `start-0` logical-property
  * positioning lands on the wrong side).
  */

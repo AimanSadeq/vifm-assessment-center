@@ -23,11 +23,11 @@ const COPY = {
   en: {
     h1: "Personal AI Readiness Snapshot",
     subtitle:
-      "A short self-assessment — about 5-7 minutes — that gives you a clear read on how AI-ready you personally are across four VIFM factors. Complimentary. No account required.",
+      "A short self-assessment - about 5-7 minutes - that gives you a clear read on how AI-ready you personally are across four VIFM factors. Complimentary. No account required.",
     whatYoullGet: "What you'll get",
     startYourSnapshot: "Start your snapshot",
     privacyNote:
-      "Your answers are private. Email is used only to send your personal results link — we don't market to you.",
+      "Your answers are private. Email is used only to send your personal results link - we don't market to you.",
     nameLabel: "Your name *",
     namePlaceholder: "e.g. Sara Al Hashimi",
     emailLabel: "Email *",
@@ -44,11 +44,11 @@ const COPY = {
   ar: {
     h1: "لقطة الجاهزية الشخصية للذكاء الاصطناعي",
     subtitle:
-      "تقييم ذاتي قصير — يستغرق نحو 5-7 دقائق — يمنحك قراءة واضحة لمدى جاهزيتك الشخصية للذكاء الاصطناعي عبر أربعة عوامل من VIFM. مجاني، ولا يتطلب إنشاء حساب.",
+      "تقييم ذاتي قصير - يستغرق نحو 5-7 دقائق - يمنحك قراءة واضحة لمدى جاهزيتك الشخصية للذكاء الاصطناعي عبر أربعة عوامل من VIFM. مجاني، ولا يتطلب إنشاء حساب.",
     whatYoullGet: "ماذا ستحصل عليه",
     startYourSnapshot: "ابدأ لقطتك",
     privacyNote:
-      "إجاباتك خاصة. نستخدم بريدك الإلكتروني فقط لإرسال رابط نتائجك الشخصية — لا نستخدمه للتسويق.",
+      "إجاباتك خاصة. نستخدم بريدك الإلكتروني فقط لإرسال رابط نتائجك الشخصية - لا نستخدمه للتسويق.",
     nameLabel: "اسمك *",
     namePlaceholder: "مثال: سارة الهاشمي",
     emailLabel: "البريد الإلكتروني *",
@@ -65,7 +65,7 @@ const COPY = {
 } as const;
 
 /**
- * Personal Snapshot start page — full client surface so the language
+ * Personal Snapshot start page - full client surface so the language
  * toggle inside the form drives the entire page's strings reactively.
  * (Previously the toggle only set the respondent's preferred language
  * for the downstream respond form, leaving the start page stuck in

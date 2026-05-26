@@ -1,12 +1,12 @@
 import { getAIClient, AI_MODEL } from "./client";
 
 /**
- * AI Upskilling Pathways — the prescriptive layer above the course
+ * AI Upskilling Pathways - the prescriptive layer above the course
  * recommender (src/lib/recommender/courses.ts).
  *
  * The recommender answers "which VIFM courses are relevant to this
  * learner's gaps?". This engine answers "in what ORDER, grouped how,
- * and why?" — it sequences the recommended courses into 2–4 stages,
+ * and why?" - it sequences the recommended courses into 2–4 stages,
  * foundational competencies first, and writes a rationale, a concrete
  * milestone, and a measurable outcome for each stage. Bilingual EN/AR.
  *
@@ -66,10 +66,10 @@ function onTrackPathway(language: PathwayLanguage): UpskillingPathway {
     horizon_weeks: 0,
     stages: [],
     summary_en:
-      "No development gaps were detected against your target levels — you're on track. Keep consolidating your strengths; revisit this pathway after your next assessment.",
+      "No development gaps were detected against your target levels - you're on track. Keep consolidating your strengths; revisit this pathway after your next assessment.",
     summary_ar:
       language === "ar"
-        ? "لم يتم رصد فجوات تطويرية مقارنة بمستوياتك المستهدفة — أنت على المسار الصحيح. واصل ترسيخ نقاط قوتك، وراجع هذا المسار بعد تقييمك التالي."
+        ? "لم يتم رصد فجوات تطويرية مقارنة بمستوياتك المستهدفة - أنت على المسار الصحيح. واصل ترسيخ نقاط قوتك، وراجع هذا المسار بعد تقييمك التالي."
         : null,
   };
 }
@@ -79,8 +79,8 @@ const STAGE_TEMPLATES = [
   {
     title_en: "Foundation",
     title_ar: "التأسيس",
-    rationale_en: "Close the widest gaps first — these are the foundations the rest of your development builds on.",
-    rationale_ar: "أغلق أوسع الفجوات أولًا — فهي الأساس الذي يُبنى عليه بقية تطويرك.",
+    rationale_en: "Close the widest gaps first - these are the foundations the rest of your development builds on.",
+    rationale_ar: "أغلق أوسع الفجوات أولًا - فهي الأساس الذي يُبنى عليه بقية تطويرك.",
     milestone_en: "Complete the foundation course(s) and apply one new technique in your day-to-day work.",
     milestone_ar: "أكمل دورة (دورات) التأسيس وطبّق أسلوبًا جديدًا واحدًا في عملك اليومي.",
     outcome_en: "Move the targeted competencies up at least one proficiency level.",
@@ -150,9 +150,9 @@ function fallbackPathway(
     horizon_weeks: stages.reduce((a, s) => a + s.estimated_weeks, 0),
     stages,
     summary_en:
-      "A sequenced plan built from your highest-priority gaps: start with the foundations, then build, then apply. (AI narration is disabled — set ANTHROPIC_API_KEY for a tailored rationale.)",
+      "A sequenced plan built from your highest-priority gaps: start with the foundations, then build, then apply. (AI narration is disabled - set ANTHROPIC_API_KEY for a tailored rationale.)",
     summary_ar: wantsAr
-      ? "خطة متسلسلة مبنية على فجواتك الأعلى أولوية: ابدأ بالأساسيات ثم البناء ثم التطبيق. (سرد الذكاء الاصطناعي مُعطّل — اضبط ANTHROPIC_API_KEY للحصول على مبرر مخصص.)"
+      ? "خطة متسلسلة مبنية على فجواتك الأعلى أولوية: ابدأ بالأساسيات ثم البناء ثم التطبيق. (سرد الذكاء الاصطناعي مُعطّل - اضبط ANTHROPIC_API_KEY للحصول على مبرر مخصص.)"
       : null,
   };
 }
@@ -264,11 +264,11 @@ export async function generateUpskillingPathway(input: {
           title_ar: wantsAr ? strOrNull(s.title_ar) : null,
           focus,
           course_codes: codes,
-          rationale_en: str(s.rationale_en) || "—",
+          rationale_en: str(s.rationale_en) || "-",
           rationale_ar: wantsAr ? strOrNull(s.rationale_ar) : null,
-          milestone_en: str(s.milestone_en) || "—",
+          milestone_en: str(s.milestone_en) || "-",
           milestone_ar: wantsAr ? strOrNull(s.milestone_ar) : null,
-          outcome_en: str(s.outcome_en) || "—",
+          outcome_en: str(s.outcome_en) || "-",
           outcome_ar: wantsAr ? strOrNull(s.outcome_ar) : null,
           estimated_weeks: clampInt(s.estimated_weeks, 1, 26, 4),
         };

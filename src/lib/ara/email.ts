@@ -6,10 +6,10 @@
  * CLAUDE.md (M2.1 deferred items list).
  *
  * Two templates today:
- *   - ara_respondent_invitation (M2.1) — bilingual welcome with the
+ *   - ara_respondent_invitation (M2.1) - bilingual welcome with the
  *     access-token URL, sent by a consultant to a freshly-created
  *     respondent.
- *   - ara_consultant_completion (M3.3) — quiet notification fired when
+ *   - ara_consultant_completion (M3.3) - quiet notification fired when
  *     a respondent marks themselves complete.
  *
  * Sandbox behaviour: when the source assessment has is_sandbox=true,
@@ -19,7 +19,7 @@
  *
  * Every send writes a row to ara_email_log with respondent_id,
  * assessment_id, email_type, recipient_email, language, and the
- * is_sandbox_redirect flag — all four fields exist in migration 00007.
+ * is_sandbox_redirect flag - all four fields exist in migration 00007.
  */
 
 import { ClientSecretCredential } from "@azure/identity";
@@ -79,7 +79,7 @@ ${d.respondentUrl}
     }),
     bilingual: (d) => ({
       contentType: "HTML",
-      subject: `${d.assessmentName} — AI Readiness Assessment / تقييم الجاهزية للذكاء الاصطناعي`,
+      subject: `${d.assessmentName} - AI Readiness Assessment / تقييم الجاهزية للذكاء الاصطناعي`,
       body: `<div style="font-family:'Open Sans',Arial,sans-serif;line-height:1.55;color:#121232;">
         <p>Hello ${d.respondentName},</p>
         <p>${d.consultantName ? `${d.consultantName} has invited you` : "You have been invited"} to participate in the AI Readiness Assessment for <strong>${d.organizationName}</strong>: ${d.assessmentName}.</p>
@@ -99,7 +99,7 @@ ${d.respondentUrl}
   ara_consultant_completion: {
     en: (d) => ({
       contentType: "Text",
-      subject: `Respondent completed: ${d.respondentName} — ${d.assessmentName}`,
+      subject: `Respondent completed: ${d.respondentName} - ${d.assessmentName}`,
       body: `Hi ${d.consultantName},
 
 ${d.respondentName} has marked their responses complete for ${d.assessmentName} (${d.organizationName}).
@@ -110,11 +110,11 @@ ${d.assessmentUrl}
 Status snapshot:
   Completed: ${d.completedCount} of ${d.totalCount}
 
-— VIFM ARA`,
+- VIFM ARA`,
     }),
     ar: (d) => ({
       contentType: "Text",
-      subject: `إكمال المستجيب: ${d.respondentName} — ${d.assessmentName}`,
+      subject: `إكمال المستجيب: ${d.respondentName} - ${d.assessmentName}`,
       body: `مرحبًا ${d.consultantName}،
 
 أكمل ${d.respondentName} الردود الخاصة بـ ${d.assessmentName} (${d.organizationName}).
@@ -125,11 +125,11 @@ ${d.assessmentUrl}
 ملخص الحالة:
   المُكتمل: ${d.completedCount} من ${d.totalCount}
 
-— VIFM ARA`,
+- VIFM ARA`,
     }),
     bilingual: (d) => ({
       contentType: "Text",
-      subject: `Respondent completed / إكمال المستجيب — ${d.assessmentName}`,
+      subject: `Respondent completed / إكمال المستجيب - ${d.assessmentName}`,
       body: `${d.respondentName} marked complete for ${d.assessmentName} (${d.completedCount}/${d.totalCount}).
 
 Dashboard: ${d.assessmentUrl}`,
@@ -139,7 +139,7 @@ Dashboard: ${d.assessmentUrl}`,
   // Sent to a person who just finished their Personal AI Readiness
   // Snapshot. Carries the bookmarkable results URL plus the PDF
   // download URL so they can open either from any device. No
-  // marketing copy — keep it minimal and respectful.
+  // marketing copy - keep it minimal and respectful.
   ara_personal_results_link: {
     en: (d) => ({
       contentType: "Text",
@@ -148,7 +148,7 @@ Dashboard: ${d.assessmentUrl}`,
 
 Thank you for completing the VIFM Personal AI Readiness Snapshot.
 
-Your results page (bookmark this — return any time):
+Your results page (bookmark this - return any time):
 ${d.resultsUrl}
 
 Download as PDF:
@@ -182,7 +182,7 @@ ${d.pdfUrl}
     }),
     bilingual: (d) => ({
       contentType: "HTML",
-      subject: `Your VIFM Personal AI Readiness Snapshot — لقطتك الشخصية`,
+      subject: `Your VIFM Personal AI Readiness Snapshot - لقطتك الشخصية`,
       body: `<div style="font-family:'Open Sans',Arial,sans-serif;line-height:1.55;color:#121232;">
 <p>Hello ${d.respondentName},</p>
 <p>Thank you for completing the VIFM Personal AI Readiness Snapshot.</p>
@@ -242,7 +242,7 @@ export async function sendAraEmail(input: SendAraEmailInput): Promise<{ ok: bool
 
   if (!graphClient || !fromAddress) {
     status = "mocked";
-    console.warn("[ara-email] Graph not configured — falling back to console mock.");
+    console.warn("[ara-email] Graph not configured - falling back to console mock.");
     console.log(`[ara-email MOCK] type=${input.emailType} lang=${input.language} to=${recipient}${isRedirected ? " (sandbox)" : ""}`);
     console.log(`[ara-email MOCK] subject=${rendered.subject}`);
   } else {
@@ -262,7 +262,7 @@ export async function sendAraEmail(input: SendAraEmailInput): Promise<{ ok: bool
     }
   }
 
-  // Always write to ara_email_log — even mocks — so the consultant has
+  // Always write to ara_email_log - even mocks - so the consultant has
   // a paper trail of what would have been sent. Never throw on log
   // failure; emails are a nicety, never a blocker.
   try {

@@ -1,5 +1,5 @@
 /**
- * VIFM Fluent — English placement API.
+ * VIFM Fluent - English placement API.
  *
  * POST /api/ac/fluent
  *   { action: "start", language }
@@ -79,7 +79,7 @@ const CEFR_LABEL: Record<string, string> = {
  * Persist a completed result so it survives a refresh and feeds the
  * cohort report + certificate. Best-effort: if the eng_fluent_results
  * table isn't migrated yet (or the write fails), we swallow the error
- * and return the result without an id — the flow still completes, the
+ * and return the result without an id - the flow still completes, the
  * certificate button just won't appear.
  */
 async function persistResult(
@@ -129,7 +129,7 @@ async function persistResult(
       try {
         await sb.from("eng_fluent_results").update({ integrity_flags: meta.integrityFlags }).eq("id", id);
       } catch {
-        /* column not migrated — ignore */
+        /* column not migrated - ignore */
       }
     }
 
@@ -141,7 +141,7 @@ async function persistResult(
           .update({ candidate_id: meta.candidateId, engagement_id: meta.engagementId })
           .eq("id", id);
       } catch {
-        /* columns not migrated — ignore */
+        /* columns not migrated - ignore */
       }
     }
     return id;
@@ -167,10 +167,10 @@ async function emailFluentResult(
         takerName: takerName || "Candidate",
         level: result.overall_cefr,
         levelLabel: CEFR_LABEL[result.overall_cefr] || "",
-        reading: result.reading_cefr ?? "—",
-        listening: result.listening_total > 0 ? result.listening_cefr : "—",
+        reading: result.reading_cefr ?? "-",
+        listening: result.listening_total > 0 ? result.listening_cefr : "-",
         writing: result.writing.cefr,
-        speaking: result.speaking.attempted ? result.speaking.cefr : "—",
+        speaking: result.speaking.attempted ? result.speaking.cefr : "-",
         certUrl,
       },
     });
@@ -178,7 +178,7 @@ async function emailFluentResult(
     try {
       await sb.from("eng_fluent_results").update({ email_sent_at: new Date().toISOString() }).eq("id", resultId);
     } catch {
-      /* email_sent_at column not migrated — ignore */
+      /* email_sent_at column not migrated - ignore */
     }
   } catch (e) {
     console.error("[fluent] result email failed:", e);
@@ -230,7 +230,7 @@ async function persistScoreRuns(
     }
     await sb.from("eng_fluent_score_runs").insert(rows);
   } catch {
-    /* table not migrated — ignore */
+    /* table not migrated - ignore */
   }
 }
 
@@ -296,7 +296,7 @@ async function logItemResponses(
       .filter((r): r is NonNullable<typeof r> => r !== null);
     if (rows.length > 0) await sb.from("eng_fluent_item_responses").insert(rows);
   } catch {
-    /* item bank not migrated — ignore */
+    /* item bank not migrated - ignore */
   }
 }
 
@@ -374,7 +374,7 @@ export async function POST(req: Request) {
       // Secure flow: the answer key stays server-side.
       const publicTest = stripAnswerKey(test);
       // When neural TTS is on, the client plays listening audio via /tts and
-      // never needs the script text — strip it from the payload too.
+      // never needs the script text - strip it from the payload too.
       if (tts) {
         publicTest.listening = publicTest.listening.map((it) => ({
           id: it.id,

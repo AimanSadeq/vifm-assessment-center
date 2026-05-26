@@ -306,13 +306,13 @@ function SummaryPage({ d }: { d: ReportData }) {
       <View style={s.statStrip}>
         <StatTile
           label="Overall rating"
-          value={d.overallScore ? `${d.overallScore}/5` : "—"}
+          value={d.overallScore ? `${d.overallScore}/5` : "-"}
           suffix={d.overallScore ? (BARS[d.overallScore] ?? "") : "Pending"}
           accent={d.overallScore ? scoreColor(d.overallScore) : C.textMuted}
         />
         <StatTile
           label="Recommendation"
-          value={d.recommendation ? (OAR_LABELS[d.recommendation] ?? "—") : "—"}
+          value={d.recommendation ? (OAR_LABELS[d.recommendation] ?? "-") : "-"}
           suffix={d.recommendation ? "Per assessor consensus" : "Pending wash-up"}
           accent={
             d.recommendation === "ready_now" ? C.positive :

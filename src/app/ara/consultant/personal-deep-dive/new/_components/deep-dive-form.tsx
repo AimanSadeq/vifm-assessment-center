@@ -46,7 +46,7 @@ export function DeepDiveForm({ action }: Props) {
         respondentUrl: result.respondentUrl,
         name,
       });
-      toast.success("Deep-dive issued — copy the link below");
+      toast.success("Deep-dive issued - copy the link below");
     });
   };
 
@@ -60,7 +60,7 @@ export function DeepDiveForm({ action }: Props) {
       await navigator.clipboard.writeText(fullUrl);
       toast.success("Link copied to clipboard");
     } catch {
-      toast.error("Couldn't copy — please select and copy manually");
+      toast.error("Couldn't copy - please select and copy manually");
     }
   };
 
@@ -125,7 +125,7 @@ export function DeepDiveForm({ action }: Props) {
             id="organization_name"
             name="organization_name"
             maxLength={300}
-            placeholder="e.g. ACME Bank — keeps deep-dives associated with the paying client"
+            placeholder="e.g. ACME Bank - keeps deep-dives associated with the paying client"
           />
         </div>
         <div className="space-y-1.5">

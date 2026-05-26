@@ -37,7 +37,7 @@ async function main() {
   }
   const ratings = (humans ?? []) as HumanRating[];
   if (ratings.length === 0) {
-    console.log("No human ratings yet — rate some results at /ac/fluent/calibration, then re-run.");
+    console.log("No human ratings yet - rate some results at /ac/fluent/calibration, then re-run.");
     return;
   }
 
@@ -59,7 +59,7 @@ async function main() {
       continue;
     }
     const q = quadraticWeightedKappa(pairs.map((p) => p.ai), pairs.map((p) => p.human));
-    const verdict = q >= QWK_ACCEPTABLE ? "✓ acceptable (>=0.70)" : "✗ below 0.70 — calibrate";
+    const verdict = q >= QWK_ACCEPTABLE ? "✓ acceptable (>=0.70)" : "✗ below 0.70 - calibrate";
     console.log(`\n${skill}: n=${pairs.length}  QWK=${q.toFixed(3)}  ${verdict}`);
     const M = confusionMatrix(pairs.map((p) => p.ai), pairs.map((p) => p.human));
     console.log("  confusion (rows=AI, cols=human; A1 A2 B1 B2 C1 C2):");

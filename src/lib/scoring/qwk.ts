@@ -1,5 +1,5 @@
 /**
- * Quadratic Weighted Kappa (QWK) — the field-standard metric for agreement
+ * Quadratic Weighted Kappa (QWK) - the field-standard metric for agreement
  * between an automated scorer and human raters in automated essay/speech
  * scoring. QWK ≥ 0.70 is the conventional "acceptable" threshold.
  *

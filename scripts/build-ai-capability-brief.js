@@ -4,7 +4,7 @@
  * Covers three tightly-related additions that extend the AI Readiness
  * Compass into a complete AI-capability lifecycle:
  *   1. Agentic-AI Readiness   (diagnose the frontier)
- *   2. AI Conversational Assessor (assess — already prototyped)
+ *   2. AI Conversational Assessor (assess - already prototyped)
  *   3. AI Upskilling Pathways (close the gap)
  *
  * Run:
@@ -78,7 +78,7 @@ const dataTable = (headers, rows, widths) => {
 
 const doc = new Document({
   creator: "VIFM",
-  title: "VIFM AI Capability — Concept Brief",
+  title: "VIFM AI Capability - Concept Brief",
   description: "Concept brief extending the AI Readiness Compass into a complete AI-capability lifecycle.",
   styles: {
     default: { document: { run: { font: FONT, size: 22, color: C.text } } },
@@ -103,7 +103,7 @@ const doc = new Document({
         new Paragraph({ spacing: { before: 2600 }, children: [t("STRATEGIC CONCEPT BRIEF  ·  CONFIDENTIAL", { color: C.accent, bold: true, size: 18, allCaps: true })] }),
         new Paragraph({ spacing: { before: 240 }, children: [t("VIFM AI Capability", { bold: true, size: 60, color: C.primary })] }),
         new Paragraph({ border: { bottom: { style: BorderStyle.SINGLE, size: 18, color: C.accent, space: 8 } }, spacing: { before: 60, after: 260 }, children: [t("")] }),
-        new Paragraph({ spacing: { after: 120, line: 320 }, children: [t("Extending the AI Readiness Compass into a complete AI-capability lifecycle — diagnose, assess, upskill.", { italics: true, size: 26, color: C.navy })] }),
+        new Paragraph({ spacing: { after: 120, line: 320 }, children: [t("Extending the AI Readiness Compass into a complete AI-capability lifecycle - diagnose, assess, upskill.", { italics: true, size: 26, color: C.navy })] }),
         new Paragraph({ spacing: { before: 1700, after: 40 }, children: [t("Prepared for", { color: C.mute, size: 18 })] }),
         new Paragraph({ spacing: { after: 30 }, children: [t("VIFM Leadership", { bold: true, size: 22, color: C.text })] }),
         new Paragraph({ children: [t("Virginia Institute of Finance and Management", { size: 20, color: C.text })] }),
@@ -113,17 +113,17 @@ const doc = new Document({
     { properties: { page: { size: { width: 12240, height: 15840 }, margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } } },
       headers: { default: new Header({ children: [new Paragraph({
         border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: C.rule, space: 4 } },
-        children: [t("VIFM AI Capability — Strategic Concept Brief", { color: C.mute, size: 16 })] })] }) },
+        children: [t("VIFM AI Capability - Strategic Concept Brief", { color: C.mute, size: 16 })] })] }) },
       footers: { default: new Footer({ children: [new Paragraph({
         border: { top: { style: BorderStyle.SINGLE, size: 4, color: C.rule, space: 4 } },
-        children: [t("Confidential — for VIFM internal use only        ", { color: C.mute, size: 15 }),
+        children: [t("Confidential - for VIFM internal use only        ", { color: C.mute, size: 15 }),
           new TextRun({ children: ["Page ", PageNumber.CURRENT, " of ", PageNumber.TOTAL_PAGES], font: FONT, size: 15, color: C.mute })] })] }) },
       children: [
         H1("1.  Executive summary"),
         body([
           t("VIFM's "), t("AI Readiness Compass", { bold: true }),
-          t(" (ARC) answers one question — "), t("“are we AI-ready?”", { italics: true }),
-          t(" — and stops there. This brief proposes three tightly-related additions that turn that single diagnostic into a complete "),
+          t(" (ARC) answers one question - "), t("“are we AI-ready?”", { italics: true }),
+          t(" - and stops there. This brief proposes three tightly-related additions that turn that single diagnostic into a complete "),
           t("AI-capability lifecycle", { bold: true }),
           t(": "), t("Agentic-AI Readiness", { bold: true }), t(" (diagnose the frontier of delegating to autonomous agents), the "),
           t("AI Conversational Assessor", { bold: true }), t(" (assess individuals at depth and scale via a bilingual Claude interviewer), and "),
@@ -134,29 +134,29 @@ const doc = new Document({
           t("diagnose → assess → upskill → re-diagnose", { bold: true, color: C.accent }),
           t(". Crucially, all three are mostly assembly over infrastructure VIFM has "),
           t("already built", { bold: true }),
-          t(" — the same AI client, the same competency framework, the same bilingual report factory, the same recommender. One of the three, the Conversational Assessor, is "),
+          t(" - the same AI client, the same competency framework, the same bilingual report factory, the same recommender. One of the three, the Conversational Assessor, is "),
           t("already running as a working prototype", { bold: true }),
           t(" in the portal."),
         ]),
         callout("The one-line version",
-          [t("ARC tells a client they have an AI gap. These three let VIFM measure it precisely, prove an individual's capability under interview, and close the gap with training — without leaving the platform.", { italics: true, size: 22, color: C.navy })]),
+          [t("ARC tells a client they have an AI gap. These three let VIFM measure it precisely, prove an individual's capability under interview, and close the gap with training - without leaving the platform.", { italics: true, size: 22, color: C.navy })]),
 
         H1("2.  The reframe: one diagnostic becomes a lifecycle"),
         body("ARC today is a snapshot. The three additions complete a loop that compounds in value because each stage feeds the next and the whole thing is re-runnable:"),
-        bullet([t("Diagnose — ", { bold: true }), t("ARC (org 8 pillars + 4 personal factors). Exists today.")]),
-        bullet([t("Diagnose the frontier — ", { bold: true }), t("Agentic-AI Readiness: can you safely delegate to autonomous agents?")]),
-        bullet([t("Assess the individual — ", { bold: true }), t("the AI Conversational Assessor scores a person against the framework, at depth and at scale.")]),
-        bullet([t("Close the gap — ", { bold: true }), t("AI Upskilling Pathways turn each below-target factor into a sequenced learning track.")]),
-        bullet([t("Re-diagnose — ", { bold: true }), t("the existing reassessment spine proves movement year on year.")]),
+        bullet([t("Diagnose - ", { bold: true }), t("ARC (org 8 pillars + 4 personal factors). Exists today.")]),
+        bullet([t("Diagnose the frontier - ", { bold: true }), t("Agentic-AI Readiness: can you safely delegate to autonomous agents?")]),
+        bullet([t("Assess the individual - ", { bold: true }), t("the AI Conversational Assessor scores a person against the framework, at depth and at scale.")]),
+        bullet([t("Close the gap - ", { bold: true }), t("AI Upskilling Pathways turn each below-target factor into a sequenced learning track.")]),
+        bullet([t("Re-diagnose - ", { bold: true }), t("the existing reassessment spine proves movement year on year.")]),
 
         // 3a
-        H1("3a.  Agentic-AI Readiness  —  the market-making frontier"),
+        H1("3a.  Agentic-AI Readiness  -  the market-making frontier"),
         body([
           t("The bet: ", { bold: true }),
           t("ARC measures whether people "), t("use", { italics: true }),
           t(" AI. The 2026 frontier is whether an organisation can "),
           t("delegate to autonomous agents", { italics: true }),
-          t(" — and almost nobody assesses readiness to do that safely."),
+          t(" - and almost nobody assesses readiness to do that safely."),
         ]),
         body("A premium ARC layer measuring whether an org (and its leaders) can deploy agentic AI with the right guardrails. Proposed dimensions: agent governance & accountability; human-in-the-loop design; failure-mode & risk awareness; tool/data access control; autonomy calibration by task risk; and auditability & oversight."),
         body([
@@ -172,10 +172,10 @@ const doc = new Document({
           [t("Agentic AI is the hottest enterprise topic of 2026 and there is essentially no assessment for readiness to deploy it safely. First-mover, and aligned to emerging GCC and international AI-governance regulation.", { italics: true, size: 22, color: C.navy })]),
 
         // 3b
-        H1("3b.  AI Conversational Assessor  —  prototyped"),
+        H1("3b.  AI Conversational Assessor  -  prototyped"),
         body([
           t("The bet: ", { bold: true }),
-          t("a Claude agent runs structured competency-based interviews in Arabic and English and scores them against the VIFM framework — scaling the single most expensive part of an Assessment Center: assessor time."),
+          t("a Claude agent runs structured competency-based interviews in Arabic and English and scores them against the VIFM framework - scaling the single most expensive part of an Assessment Center: assessor time."),
         ]),
         body([
           t("Status: ", { bold: true, color: C.good }),
@@ -184,28 +184,28 @@ const doc = new Document({
         body([
           t("Reuses: ", { bold: true }),
           t("the existing "), t("competency_based_interview", { italics: true }),
-          t(" exercise type and — critically — the "), t("observation-assistant", { italics: true }),
+          t(" exercise type and - critically - the "), t("observation-assistant", { italics: true }),
           t(" engine, which already classifies free-form text into competency + behaviour + polarity + confidence. Whisper handles voice; the bias-detector audits the AI's own scoring for fairness. "),
           t("Net-new: ", { bold: true }),
           t("the stateful interview orchestration, the live chat UI, and a scoring-to-BARS bridge with a human-review gate."),
         ]),
         callout("The positioning guardrail",
-          [t("Position as a screening / sifting aid that runs BEFORE a human assessor — never the final hiring decision. The human validates the shortlist. This removes most of the manual interview load while sidestepping the legal and fairness risk of fully-automated hiring.", { italics: true, size: 22, color: C.navy })]),
+          [t("Position as a screening / sifting aid that runs BEFORE a human assessor - never the final hiring decision. The human validates the shortlist. This removes most of the manual interview load while sidestepping the legal and fairness risk of fully-automated hiring.", { italics: true, size: 22, color: C.navy })]),
 
         // 3c
-        H1("3c.  AI Upskilling Pathways  —  the loop-closer"),
+        H1("3c.  AI Upskilling Pathways  -  the loop-closer"),
         body([
           t("The bet: ", { bold: true }),
           t("ARC diagnoses AI gaps; the obvious actuator is personalised AI-capability tracks tied to the four personal factors."),
         ]),
-        body("Each factor becomes a sequenced learning track — not a flat course list:"),
+        body("Each factor becomes a sequenced learning track - not a flat course list:"),
         dataTable(
           ["Personal factor (exists)", "Upskilling track"],
           [
-            ["AI Sense-Check (THINKING)", "Critical evaluation of AI output — hallucination detection, verification, domain validation"],
+            ["AI Sense-Check (THINKING)", "Critical evaluation of AI output - hallucination detection, verification, domain validation"],
             ["AI Working Practice (RESULTS)", "Prompt-craft & workflow integration"],
-            ["AI Collaboration (PEOPLE)", "Leading team AI adoption — norms, communication"],
-            ["AI Adaptive Mindset (SELF)", "Responsible & governed AI use — ethics, confidentiality, policy"],
+            ["AI Collaboration (PEOPLE)", "Leading team AI adoption - norms, communication"],
+            ["AI Adaptive Mindset (SELF)", "Responsible & governed AI use - ethics, confidentiality, policy"],
           ],
           [3400, 5960]
         ),
@@ -216,18 +216,18 @@ const doc = new Document({
           t(" course vertical "), t("already exists", { bold: true }),
           t(", so the loop can close today. "),
           t("Net-new: ", { bold: true }),
-          t("the pathway structure (sequenced modules + prerequisites), progress tracking, and — likely — some short-form AI micro-content, since the current catalogue is multi-day."),
+          t("the pathway structure (sequenced modules + prerequisites), progress tracking, and - likely - some short-form AI micro-content, since the current catalogue is multi-day."),
         ]),
 
         // 4
         H1("4.  Why now"),
-        bullet([t("AI is the board question. ", { bold: true }), t("Every CHRO and board is now asking how ready their people and their organisation are — a question that did not exist three years ago.")]),
+        bullet([t("AI is the board question. ", { bold: true }), t("Every CHRO and board is now asking how ready their people and their organisation are - a question that did not exist three years ago.")]),
         bullet([t("Agentic is the 2026 frontier. ", { bold: true }), t("Enterprises are moving from using AI to delegating to it; readiness to do so safely is unmeasured and urgent.")]),
         bullet([t("Vision 2030 makes capability national. ", { bold: true }), t("AI capability sits squarely inside the Human Capability Development agenda and parallel UAE programmes.")]),
         bullet([t("Regulation is arriving. ", { bold: true }), t("ISO 42001, the EU AI Act, and Gulf AI-governance guidance create demand for defensible AI-governance readiness evidence.")]),
 
         // 5
-        H1("5.  What it reuses — day one is not zero"),
+        H1("5.  What it reuses - day one is not zero"),
         body("The strategic point: almost all of this is assembly over assets VIFM has already built and proven."),
         dataTable(
           ["Addition", "Reuses (already built)", "Net-new"],
@@ -240,32 +240,32 @@ const doc = new Document({
         ),
 
         // 6
-        H1("6.  The moat — why VIFM"),
-        bullet([t("Bilingual-native AI assessment. ", { bold: true }), t("A Claude interviewer and AI feedback authored in Arabic and English for the GCC — not translated.")]),
-        bullet([t("The competency framework. ", { bold: true }), t("These tools score against VIFM's 38-competency model and 4 AI factors, not a generic rubric — the output plugs straight into the rest of the platform.")]),
-        bullet([t("One vendor, full loop. ", { bold: true }), t("Diagnose, assess, and the training catalogue that closes the gap — and the reassessment that proves it — all in one place.")]),
+        H1("6.  The moat - why VIFM"),
+        bullet([t("Bilingual-native AI assessment. ", { bold: true }), t("A Claude interviewer and AI feedback authored in Arabic and English for the GCC - not translated.")]),
+        bullet([t("The competency framework. ", { bold: true }), t("These tools score against VIFM's 38-competency model and 4 AI factors, not a generic rubric - the output plugs straight into the rest of the platform.")]),
+        bullet([t("One vendor, full loop. ", { bold: true }), t("Diagnose, assess, and the training catalogue that closes the gap - and the reassessment that proves it - all in one place.")]),
         bullet([t("Consultant-led. ", { bold: true }), t("AI does the scale work; a named VIFM lead owns the judgement calls, the human-review gate, and the relationship.")]),
 
         // 7
         H1("7.  Sequencing"),
-        body([t("1.  ", { bold: true, color: C.accent }), t("Conversational Assessor — already prototyped; productionise it first (human-review gate, persist evidence to the observation pipeline). Highest ROI, most demoable.")]),
-        body([t("2.  ", { bold: true, color: C.accent }), t("Agentic-AI Readiness — the market-making bet; mostly content plus a tier flag on the existing question bank.")]),
-        body([t("3.  ", { bold: true, color: C.accent }), t("Upskilling Pathways — organise the existing AI courses into factor tracks and add progress tracking; close the loop.")]),
+        body([t("1.  ", { bold: true, color: C.accent }), t("Conversational Assessor - already prototyped; productionise it first (human-review gate, persist evidence to the observation pipeline). Highest ROI, most demoable.")]),
+        body([t("2.  ", { bold: true, color: C.accent }), t("Agentic-AI Readiness - the market-making bet; mostly content plus a tier flag on the existing question bank.")]),
+        body([t("3.  ", { bold: true, color: C.accent }), t("Upskilling Pathways - organise the existing AI courses into factor tracks and add progress tracking; close the loop.")]),
 
         // 8
         H1("8.  Risks and open questions"),
         bullet([t("AI scoring validity & fairness. ", { bold: true }), t("Interview and agentic scoring need calibration against human raters; the bias-detector and the human-review gate are the mitigations. Keep the assessor at screening stakes, not final decisions.")]),
         bullet([t("Agentic content credibility. ", { bold: true }), t("The agentic framework needs SME authoring and a defensible mapping to AI-governance standards before it carries the VIFM name.")]),
         bullet([t("Anti-gaming. ", { bold: true }), t("Candidates may use AI to answer interview questions; mitigate with timing, voice, and probing follow-ups that require genuine recall.")]),
-        bullet([t("Micro-content build. ", { bold: true }), t("Pathways imply finer-grained content than the current multi-day catalogue — a content decision, not a platform one.")]),
+        bullet([t("Micro-content build. ", { bold: true }), t("Pathways imply finer-grained content than the current multi-day catalogue - a content decision, not a platform one.")]),
 
         // 9
         H1("9.  Recommended next steps"),
-        body([t("1.  ", { bold: true, color: C.accent }), t("Productionise the Conversational Assessor — wire the human-review gate and persist scored evidence into the existing observation/consensus pipeline.")]),
-        body([t("2.  ", { bold: true, color: C.accent }), t("Commission the Agentic-AI Readiness framework — SME-authored dimensions + the regulation map — as a new tier on the ARC question bank.")]),
+        body([t("1.  ", { bold: true, color: C.accent }), t("Productionise the Conversational Assessor - wire the human-review gate and persist scored evidence into the existing observation/consensus pipeline.")]),
+        body([t("2.  ", { bold: true, color: C.accent }), t("Commission the Agentic-AI Readiness framework - SME-authored dimensions + the regulation map - as a new tier on the ARC question bank.")]),
         body([t("3.  ", { bold: true, color: C.accent }), t("Organise the AI course vertical into the four factor tracks and add pathway progress tracking.")]),
         new Paragraph({ spacing: { before: 240 }, children: [
-          t("Prepared as a discussion draft. The through-line is the same one that makes Capability Assurance compelling: VIFM has already built the hard parts — the AI client, the competency framework, the evidence engine, the recommender and the report factory. These three additions are mostly assembly, and they convert ARC from a one-off readiness check into an AI-capability lifecycle that the GCC market is asking for right now.",
+          t("Prepared as a discussion draft. The through-line is the same one that makes Capability Assurance compelling: VIFM has already built the hard parts - the AI client, the competency framework, the evidence engine, the recommender and the report factory. These three additions are mostly assembly, and they convert ARC from a one-off readiness check into an AI-capability lifecycle that the GCC market is asking for right now.",
             { italics: true, color: C.mute, size: 20 }),
         ]}),
       ] },

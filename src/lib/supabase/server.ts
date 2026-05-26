@@ -35,7 +35,7 @@ export async function createClient() {
  * Cache discipline: every PostgREST request is forced through fetch with
  * `cache: 'no-store'` so Next.js can never serve a stale snapshot from its
  * internal Data Cache. Without this, two reads against the same URL+headers
- * within the same render pass can return the same body — including across
+ * within the same render pass can return the same body - including across
  * write-then-read flows where the second read needs to see the post-write
  * state. Confirmed during Reflect M3 verification: `.select("*")` returned
  * cached `status=pending` even after a server action had committed

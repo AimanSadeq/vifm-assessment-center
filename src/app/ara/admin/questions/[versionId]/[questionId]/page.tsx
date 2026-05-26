@@ -76,14 +76,14 @@ export default async function EditAraQuestionPage({
             Surfaces the full chain item → construct → AC competencies →
             score map in one place. The reviewer (2026-04-29 voice note)
             flagged that consultants and clients ask "where did the
-            questions come from? what are they measuring?" — this card
+            questions come from? what are they measuring?" - this card
             makes every question's lineage explicit and copyable. */}
         <QuestionLineageCard question={question} />
 
         {/* ─── Validation-evidence panel (migration 00028) ──────
             Per-item content-validity trail. AI-suggested anchors get
             saved as 'ai_proposed' and stay invisible to clients until
-            an admin verifies them — guards against LLM-hallucinated
+            an admin verifies them - guards against LLM-hallucinated
             citations leaking into the consultant report. */}
         <ValidationEvidencePanel
           questionId={question.id}
@@ -278,7 +278,7 @@ export default async function EditAraQuestionPage({
 }
 
 // ─────────────────────────────────────────────────────────────
-// Lineage card — explicit item → construct → AC competencies → score map
+// Lineage card - explicit item → construct → AC competencies → score map
 // ─────────────────────────────────────────────────────────────
 function QuestionLineageCard({ question }: { question: AraQuestion }) {
   const pillar = ARA_PILLARS.find((p) => p.id === question.pillar_id);
@@ -347,7 +347,7 @@ function QuestionLineageCard({ question }: { question: AraQuestion }) {
             </div>
           ) : (
             <p className="text-xs text-muted-foreground italic">
-              No construct mapping found — investigate before publishing.
+              No construct mapping found - investigate before publishing.
             </p>
           )}
         </div>
@@ -386,7 +386,7 @@ function QuestionLineageCard({ question }: { question: AraQuestion }) {
                   <tr key={opt} className="border-b last:border-b-0">
                     <td className="py-1.5">{opt}</td>
                     <td className="py-1.5 text-end font-mono tabular-nums">
-                      {scoreMap[opt] ?? "—"}
+                      {scoreMap[opt] ?? "-"}
                     </td>
                   </tr>
                 ))}

@@ -14,7 +14,7 @@ function authErr(e: unknown) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Sandbox purge — irreversibly deletes every reflect_engagement with
+// Sandbox purge - irreversibly deletes every reflect_engagement with
 // is_sandbox=true. Cascades drop the framework, participants, raters,
 // responses, IDPs, reports, and email/audit log rows. Same posture as
 // /ara/admin/sandbox: require a typed confirmation phrase so the
@@ -67,7 +67,7 @@ export async function purgeReflectSandboxEngagements(
 
 
 // ──────────────────────────────────────────────────────────────
-// Retention purge — irreversibly deletes archived engagements whose
+// Retention purge - irreversibly deletes archived engagements whose
 // archived_at is older than N years. Default 2 to match the project's
 // retention policy. Same typed-confirmation pattern.
 // ──────────────────────────────────────────────────────────────

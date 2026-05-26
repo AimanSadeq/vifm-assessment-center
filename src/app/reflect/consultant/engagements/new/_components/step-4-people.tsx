@@ -34,7 +34,7 @@ const PARTICIPANT_HEADERS = ["full_name", "email", "role_title", "business_unit"
 const RATER_HEADERS = ["participant_email", "rater_role", "full_name", "email", "language_preference"];
 
 // ──────────────────────────────────────────────────────────────
-// Normalisers — accept the variants consultants will realistically
+// Normalisers - accept the variants consultants will realistically
 // type and coerce them to the canonical enum values. Without this,
 // "Senior Manager", "direct-report", "Peer", "Arabic" all fail
 // validation even though the intent is unambiguous.
@@ -80,7 +80,7 @@ export function StepPeople({ engagementId }: Props) {
   const [rResult, setRResult] = useState<RaterResult>(null);
   const [rPending, startRTransition] = useTransition();
 
-  // Refs for the hidden file pickers — labels can't be inside a parent
+  // Refs for the hidden file pickers - labels can't be inside a parent
   // <Button>, so we use refs to fire .click() from the visible buttons.
   const pFileRef = useRef<HTMLInputElement | null>(null);
   const rFileRef = useRef<HTMLInputElement | null>(null);
@@ -112,7 +112,7 @@ export function StepPeople({ engagementId }: Props) {
       email: (r[1] ?? "").toLowerCase(),
       role_title: r[2] ?? null,
       business_unit: r[3] ?? null,
-      // Normalise spelling — accept "Senior Manager", "senior-mgr", "Senior_Mgr" etc.
+      // Normalise spelling - accept "Senior Manager", "senior-mgr", "Senior_Mgr" etc.
       level_tier: normaliseLevelTier(r[4]),
       manager_email: r[5] ? r[5].toLowerCase() : null,
       language_preference: normaliseLanguage(r[6]),

@@ -22,7 +22,7 @@ async function launchBrowser(): Promise<Browser> {
  * Renders the SSR report page at /reflect/consultant/participants/[id]/report?bare=1&lang=<language>
  * in headless Chromium, outputs PDF, and persists a row in reflect_reports.
  *
- * No auth guard yet — for M4 we keep this endpoint open to whoever has
+ * No auth guard yet - for M4 we keep this endpoint open to whoever has
  * the link. When AUTH_ENABLED flips on, this should require the
  * engagement consultant or admin (mirrors the ARA PDF route).
  */

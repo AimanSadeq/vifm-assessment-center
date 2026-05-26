@@ -111,7 +111,7 @@ function FrameworkCard({ f }: { f: FrameworkComplianceSummary }) {
             margin: 0, lineHeight: 1, fontVariantNumeric: "tabular-nums",
             letterSpacing: "-0.02em",
           }}>
-            {f.percent == null ? "—" : `${f.percent}%`}
+            {f.percent == null ? "-" : `${f.percent}%`}
           </p>
           <p style={{
             fontSize: "8pt", color: TOKENS.mute,

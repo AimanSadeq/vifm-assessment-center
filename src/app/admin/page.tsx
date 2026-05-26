@@ -57,7 +57,7 @@ export default async function AdminDashboardPage() {
           </h1>
           <p className="text-sm text-white/75 max-w-2xl">
             Track candidate, assessor, and report progress across every stage of
-            every engagement — from brief to released report.
+            every engagement - from brief to released report.
           </p>
           <div className="flex flex-wrap items-center gap-2.5 mt-5">
             <Link

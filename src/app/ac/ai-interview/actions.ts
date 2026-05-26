@@ -6,13 +6,13 @@ import { revalidatePath } from "next/cache";
 /**
  * Server actions for the AI Conversational Assessor production path.
  *
- * persistCbiDraftAction  — save the transcript + AI draft as an audit row.
- * approveCbiToPipelineAction — THE HUMAN-REVIEW GATE. Takes the assessor's
+ * persistCbiDraftAction  - save the transcript + AI draft as an audit row.
+ * approveCbiToPipelineAction - THE HUMAN-REVIEW GATE. Takes the assessor's
  *   reviewed evidence + rating and writes them into the same observations
  *   + ratings tables the manual flow uses, then marks the session approved.
- * discardCbiSessionAction — mark a draft discarded.
+ * discardCbiSessionAction - mark a draft discarded.
  *
- * Uses the service client (bypasses RLS) — the same pattern other AI
+ * Uses the service client (bypasses RLS) - the same pattern other AI
  * write-paths use for their legitimate server-side writes.
  */
 

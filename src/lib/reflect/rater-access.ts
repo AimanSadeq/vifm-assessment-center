@@ -19,7 +19,7 @@ export type RaterRow = {
   open_continue: string | null;
   /**
    * P1 critical-competency picks (migration 00037). Used only by Self and
-   * Manager raters — they pick competencies they consider most critical
+   * Manager raters - they pick competencies they consider most critical
    * for this role. Empty array = not yet picked.
    */
   critical_competency_ids: string[];
@@ -97,7 +97,7 @@ export type RaterContext = {
     string,
     { score: number | null; is_na: boolean; comment_text: string | null }
   >;
-  /** Start/Stop/Continue open answers — survives revisits. */
+  /** Start/Stop/Continue open answers - survives revisits. */
   openResponses: {
     start: string;
     stop: string;
@@ -114,7 +114,7 @@ export type RaterContext = {
  * token is invalid OR the engagement is not 'live' (rater can't submit when
  * the engagement is closed/archived).
  *
- * The rater never has a Supabase session — token alone establishes identity.
+ * The rater never has a Supabase session - token alone establishes identity.
  */
 export async function loadRaterByToken(token: string): Promise<RaterContext | null> {
   const sb = createServiceClient();
@@ -203,7 +203,7 @@ export async function loadRaterByToken(token: string): Promise<RaterContext | nu
     competencies,
     responses: respMap,
     // open_* may be undefined when migration 00036 hasn't run in the
-    // target environment yet — coerce via ??/?? to empty strings.
+    // target environment yet - coerce via ??/?? to empty strings.
     openResponses: {
       start: (rater.open_start ?? "") || "",
       stop: (rater.open_stop ?? "") || "",

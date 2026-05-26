@@ -6,7 +6,7 @@
  * consistent across the AC and ARA portals. Each factor groups
  * 4-5 self-assessment items in the seed (migration 00026).
  *
- * Naming and structure are VIFM original — not derived from any
+ * Naming and structure are VIFM original - not derived from any
  * external assessment vendor's framework.
  */
 
@@ -27,7 +27,7 @@ export type AraIndividualFactor = {
   /** Hex tone aligned to the AC domain palette used elsewhere. */
   color: string;
   /**
-   * VIFM AC behavioural competency *names* this factor maps to —
+   * VIFM AC behavioural competency *names* this factor maps to -
    * used by the recommender to surface VIFM courses that develop
    * the underlying capability. Empty string entries are filtered
    * out at lookup time, so it's safe to edit this list as the AC
@@ -65,7 +65,7 @@ export const ARA_INDIVIDUAL_FACTORS: AraIndividualFactor[] = [
     name_en: "AI Working Practice",
     name_ar: "ممارسة العمل بالذكاء الاصطناعي",
     description_en:
-      "Builds AI into the way you already work — writes clear prompts, " +
+      "Builds AI into the way you already work - writes clear prompts, " +
       "iterates when the first answer misses, and folds the tool into " +
       "recurring tasks. Measures success by faster, better deliverables, " +
       "not by how often the tool is opened.",
@@ -110,7 +110,7 @@ export const ARA_INDIVIDUAL_FACTORS: AraIndividualFactor[] = [
     name_en: "AI Adaptive Mindset",
     name_ar: "العقلية المتكيفة مع الذكاء الاصطناعي",
     description_en:
-      "Stays open as AI changes how the work gets done — relearns " +
+      "Stays open as AI changes how the work gets done - relearns " +
       "familiar workflows when something better appears, asks where " +
       "models can fail you, and keeps confidentiality, fairness, and " +
       "policy in view when deciding what to feed into a system.",
@@ -163,7 +163,7 @@ const STAGE_EMERGING: AraIndividualMaturityStage = {
   name_en: "Emerging",
   name_ar: "ناشئة",
   blurb_en:
-    "Foundation-laying — early exposure to AI tools, with room to build " +
+    "Foundation-laying - early exposure to AI tools, with room to build " +
     "the core habits and judgment that turn experiments into impact.",
   blurb_ar:
     "مرحلة التأسيس - انكشاف مبكر على أدوات الذكاء الاصطناعي، وفسحة " +
@@ -175,7 +175,7 @@ const STAGE_PRACTISING: AraIndividualMaturityStage = {
   name_en: "Practising",
   name_ar: "ممارَسة",
   blurb_en:
-    "Building rhythm — using AI on real work, sharpening prompts and " +
+    "Building rhythm - using AI on real work, sharpening prompts and " +
     "review habits, and starting to feel where the tools help and where " +
     "they don't.",
   blurb_ar:
@@ -189,7 +189,7 @@ const STAGE_EMBEDDED: AraIndividualMaturityStage = {
   name_en: "Embedded",
   name_ar: "راسخة",
   blurb_en:
-    "Operating fluently — AI is part of how you work, with confident " +
+    "Operating fluently - AI is part of how you work, with confident " +
     "judgment about when to lean on it, when to push back on its " +
     "output, and when not to use it at all.",
   blurb_ar:
@@ -200,7 +200,7 @@ const STAGE_EMBEDDED: AraIndividualMaturityStage = {
 /**
  * Bucket an overall 1–5 readiness score into one of three narrative
  * stages. Returns Emerging for any score below 3 (including 0 from
- * "no data" — caller should suppress the badge in that case).
+ * "no data" - caller should suppress the badge in that case).
  */
 export function getIndividualMaturityStage(score: number): AraIndividualMaturityStage {
   if (score >= 4) return STAGE_EMBEDDED;

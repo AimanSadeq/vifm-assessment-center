@@ -5,21 +5,21 @@ import { Label } from "@/components/ui/label";
 import { Users, Sparkles } from "lucide-react";
 
 /**
- * Mode-C toggle on the assessment-create wizard — the bridge that lets
+ * Mode-C toggle on the assessment-create wizard - the bridge that lets
  * a Department / Division / Enterprise engagement also measure
  * individual behaviour, not only org capability.
  *
  * Rewritten 2026-05-14 from a quiet "optional add-on" into a recommended
  * default with a visible "why this matters" framing: pillars measure
  * what the organisation has built, factors measure how its people behave.
- * A department's realised readiness is the intersection of both — and
+ * A department's realised readiness is the intersection of both - and
  * the wizard is the only place the consultant can wire them together
  * inside one engagement, so we surface the framing prominently here.
  *
  * When checked, every respondent on this org assessment also answers
  * the four-factor individual readiness items (24 if tier=snapshot, 48
  * if tier=deep_dive). When unchecked, the assessment runs as a pure
- * org-pillar diagnostic — original behaviour.
+ * org-pillar diagnostic - original behaviour.
  */
 export function IndividualLayerToggle() {
   const [enabled, setEnabled] = useState(false);
@@ -33,7 +33,7 @@ export function IndividualLayerToggle() {
           : "border-accent/30 bg-accent/[0.03] hover:bg-accent/[0.06]"
       }`}
     >
-      {/* Why this matters — visible whether the toggle is on or off. The
+      {/* Why this matters - visible whether the toggle is on or off. The
            framing comes first; the checkbox is a consequence of it. */}
       <div className="px-4 pt-4 pb-3 border-b border-accent/20">
         <div className="inline-flex items-center gap-1.5 mb-2">
@@ -47,7 +47,7 @@ export function IndividualLayerToggle() {
           {" "}<span className="text-accent">Factors measure how its people behave.</span>
         </p>
         <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-          A department&apos;s realised AI readiness is the intersection of both —
+          A department&apos;s realised AI readiness is the intersection of both -
           the org can score 5 / 5 on Data and Strategy, but if the workforce
           scores 2 / 5 on AI Working Practice the value still doesn&apos;t land.
           Adding the individual layer is the one place the consultant report

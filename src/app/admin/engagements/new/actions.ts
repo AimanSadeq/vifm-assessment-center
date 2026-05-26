@@ -47,7 +47,7 @@ async function loadCompetenciesWithDomains(): Promise<
 
   if (error) return { error: `Could not load competencies: ${error.message}` };
   if (!data || data.length === 0) {
-    return { error: "No competencies are seeded — run the seed migration first." };
+    return { error: "No competencies are seeded - run the seed migration first." };
   }
 
   const rows = data as unknown as CompetencyWithDomain[];

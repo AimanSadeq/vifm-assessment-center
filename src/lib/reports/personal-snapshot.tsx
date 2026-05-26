@@ -9,15 +9,15 @@ import {
 import { VIFM_VERTICAL_LABELS, type VifmVertical } from "@/types/database";
 
 /**
- * Personal AI Readiness Snapshot — multi-page mini-report.
+ * Personal AI Readiness Snapshot - multi-page mini-report.
  *
- * Page 1 — score & per-factor stand
+ * Page 1 - score & per-factor stand
  *   Hero:  overall score, stage pill, stage narrative
  *   Legend: how to read the 1-5 scale + tone bands
  *   Cards: four factors with score, tone, description, and stage-
  *          keyed "where to focus next" guidance
  *
- * Page 2 — context, training, methodology
+ * Page 2 - context, training, methodology
  *   Cohort: how the four factors map to VIFM AC competencies
  *   Stage:  three personalised next-step prompts keyed to the
  *           overall maturity stage
@@ -26,7 +26,7 @@ import { VIFM_VERTICAL_LABELS, type VifmVertical } from "@/types/database";
  *   Methodology: short paragraph + pointer to the brief
  *
  * Pure React-PDF (same engine as the AC Learning Plan). English-only
- * for now — Arabic rendering needs a Puppeteer port (React-PDF does
+ * for now - Arabic rendering needs a Puppeteer port (React-PDF does
  * not shape Arabic glyphs). The org-side ARA report PDFs already use
  * Puppeteer for that reason; we'll bring the personal PDF onto the
  * same pipeline when bilingual is prioritised.
@@ -275,7 +275,7 @@ function toneFor(score: number): { label: string; bg: string; fg: string; stageI
  * Stage-keyed coaching guidance, factor by factor. Three short blurbs
  * per factor (one per maturity tier) tell the respondent what to do
  * next given where they actually sit on that factor. Generic factor
- * descriptions can't do that — they describe the construct without
+ * descriptions can't do that - they describe the construct without
  * adapting to the score.
  */
 const FACTOR_GUIDANCE: Record<
@@ -284,7 +284,7 @@ const FACTOR_GUIDANCE: Record<
 > = {
   thinking_sense_check: {
     emerging:
-      "Treat every AI output as a draft. Build a personal checklist of 'always verify' items — numbers, names, citations — and run it before anything leaves your hands.",
+      "Treat every AI output as a draft. Build a personal checklist of 'always verify' items - numbers, names, citations - and run it before anything leaves your hands.",
     practising:
       "You're checking AI work, but probably only when it feels off. Define explicit triggers (high-stakes claims, unfamiliar domains) that automatically push you to verify, so the habit doesn't depend on suspicion.",
     embedded:
@@ -292,32 +292,32 @@ const FACTOR_GUIDANCE: Record<
   },
   results_working_practice: {
     emerging:
-      "Pick one recurring task and integrate AI into it for two weeks. Track the time saved — that data builds confidence faster than experimenting at random across everything you do.",
+      "Pick one recurring task and integrate AI into it for two weeks. Track the time saved - that data builds confidence faster than experimenting at random across everything you do.",
     practising:
       "You're using AI on real work. Invest now in prompt templates and reusable workflows so your productivity compounds across runs instead of starting from scratch each time.",
     embedded:
-      "AI is part of how you work. Document your strongest workflow patterns so colleagues can adopt them without re-inventing the wheel — multiplying your impact past your own keyboard.",
+      "AI is part of how you work. Document your strongest workflow patterns so colleagues can adopt them without re-inventing the wheel - multiplying your impact past your own keyboard.",
   },
   people_collaboration: {
     emerging:
       "Start as a translator: when AI helps you on a task, briefly tell a colleague what it did well and where you stepped in. That opens the conversation without putting anyone on the spot.",
     practising:
-      "You're sharing AI usefully. Go further — invite teammates to bring their AI questions to you, and set a recurring 15-minute slot for the team to compare prompts and patterns.",
+      "You're sharing AI usefully. Go further - invite teammates to bring their AI questions to you, and set a recurring 15-minute slot for the team to compare prompts and patterns.",
     embedded:
       "You're a multiplier on AI adoption. Watch for over-reliance signals (colleagues taking outputs at face value) and surface them constructively before they show up in a deliverable.",
   },
   self_adaptive_mindset: {
     emerging:
-      "Block 30 minutes a week to learn about one new AI capability — not to use it, just to know it exists. Curiosity is the leading indicator of every other factor improving.",
+      "Block 30 minutes a week to learn about one new AI capability - not to use it, just to know it exists. Curiosity is the leading indicator of every other factor improving.",
     practising:
-      "You stay curious. Stress-test your role now: pick a task you do well and ask 'what would AI need to do this better?' — that surfaces where to lean in versus where to deepen your own expertise.",
+      "You stay curious. Stress-test your role now: pick a task you do well and ask 'what would AI need to do this better?' - that surfaces where to lean in versus where to deepen your own expertise.",
     embedded:
-      "You adapt fluidly. Use that capacity to mentor someone earlier in their AI journey — teaching cements your own adaptability and surfaces your blind spots.",
+      "You adapt fluidly. Use that capacity to mentor someone earlier in their AI journey - teaching cements your own adaptability and surfaces your blind spots.",
   },
 };
 
 /**
- * Overall-stage 'what to do next' bullets — three concrete moves keyed
+ * Overall-stage 'what to do next' bullets - three concrete moves keyed
  * to the respondent's overall maturity, shown on page 2.
  */
 const STAGE_NEXT_STEPS: Record<AraIndividualMaturityStageId, { title: string; bullets: string[] }> = {
@@ -326,7 +326,7 @@ const STAGE_NEXT_STEPS: Record<AraIndividualMaturityStageId, { title: string; bu
     bullets: [
       "Pick the one factor with your lowest score and apply the per-factor guidance from page 1 for the next two weeks. Don't try to lift all four at once.",
       "Schedule a single 30-minute weekly slot specifically for AI practice. Without a calendar block, the habit won't form.",
-      "Find one person on your team who's further along on AI — a peer, not a manager — and ask them to share one prompt they trust. Borrowing beats starting cold.",
+      "Find one person on your team who's further along on AI - a peer, not a manager - and ask them to share one prompt they trust. Borrowing beats starting cold.",
     ],
   },
   practising: {
@@ -334,7 +334,7 @@ const STAGE_NEXT_STEPS: Record<AraIndividualMaturityStageId, { title: string; bu
     bullets: [
       "You're past the experiment phase. Convert your three most-repeated AI interactions into named, saved prompts so you stop reinventing them.",
       "Pair your strongest factor with your weakest: use the muscle you've already built to expand into the area you're avoiding. AI Working Practice often pulls AI Sense-Check up with it, for example.",
-      "Surface one concrete AI-assisted outcome to your manager or team this month — speed gain, quality lift, mistake caught. Visibility unlocks investment.",
+      "Surface one concrete AI-assisted outcome to your manager or team this month - speed gain, quality lift, mistake caught. Visibility unlocks investment.",
     ],
   },
   embedded: {
@@ -342,7 +342,7 @@ const STAGE_NEXT_STEPS: Record<AraIndividualMaturityStageId, { title: string; bu
     bullets: [
       "Your individual fluency is solid. The next ceiling is influence: pick one team norm (verification, prompt sharing, escalation rules) and propose it.",
       "Audit one of your AI workflows for fairness, confidentiality, and policy fit. Embedded users get blindsided by governance, not by tools.",
-      "Mentor someone in the Emerging tier — the act of teaching one person will surface gaps in your own model and harden your judgment.",
+      "Mentor someone in the Emerging tier - the act of teaching one person will surface gaps in your own model and harden your judgment.",
     ],
   },
 };
@@ -351,16 +351,16 @@ const HOW_TO_USE_PANELS = {
   read: {
     title: "How to read these scores",
     bullets: [
-      "1.0 - 2.9 — Opportunity. Foundation-building zone; deliberate practice will move the needle quickly.",
-      "3.0 - 3.9 — Developing. The habit exists; the next gain is making it reliable rather than situational.",
-      "4.0 - 5.0 — Strong. You operate fluently; the lift now is sharing the practice and stress-testing it.",
+      "1.0 - 2.9 - Opportunity. Foundation-building zone; deliberate practice will move the needle quickly.",
+      "3.0 - 3.9 - Developing. The habit exists; the next gain is making it reliable rather than situational.",
+      "4.0 - 5.0 - Strong. You operate fluently; the lift now is sharing the practice and stress-testing it.",
     ],
   },
   about: {
     title: "What this measures",
     bullets: [
       "Four behavioural factors that predict whether AI tools turn into real outcomes for you, not just experiments.",
-      "Each factor maps to VIFM Assessment Centre competencies you may already be working on — so AI growth compounds with the rest of your development.",
+      "Each factor maps to VIFM Assessment Centre competencies you may already be working on - so AI growth compounds with the rest of your development.",
       "This snapshot is self-report only. A consultant-led deep-dive doubles the items and adds peer benchmarking.",
     ],
   },
@@ -375,7 +375,7 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
       author="VIFM Assessment Center"
       subject="Personal AI Readiness Snapshot"
     >
-      {/* ─── Page 1 — Score & per-factor stand ───────────────── */}
+      {/* ─── Page 1 - Score & per-factor stand ───────────────── */}
       <Page size="A4" style={s.page} wrap>
         {/* Hero */}
         <View style={s.hero}>
@@ -444,7 +444,7 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
                 <Text style={s.factorName}>{f.name_en}</Text>
                 <View style={s.factorScoreRow}>
                   <Text style={s.factorScoreNum}>
-                    {score > 0 ? score.toFixed(1) : "—"}
+                    {score > 0 ? score.toFixed(1) : "-"}
                   </Text>
                   <Text style={s.factorScoreOf}>/ 5</Text>
                 </View>
@@ -469,7 +469,7 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
         </View>
       </Page>
 
-      {/* ─── Page 2 — Context, training, methodology ─────────── */}
+      {/* ─── Page 2 - Context, training, methodology ─────────── */}
       <Page size="A4" style={s.page} wrap>
         {/* Context panels */}
         <Text style={s.sectionEyebrow}>How to use this snapshot</Text>
@@ -571,7 +571,7 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
             scale, scored as the unweighted mean per factor. Factors map to the
             VIFM AC behavioural competency model so personal AI readiness lines
             up with the development work you're already doing. This is a
-            snapshot — a paid consultant-led deep-dive doubles the items and
+            snapshot - a paid consultant-led deep-dive doubles the items and
             adds peer benchmarking and a structured conversation about
             findings.
           </Text>

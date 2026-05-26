@@ -19,7 +19,7 @@ import type {
  * auto-saves before firing markAraRespondentComplete. Without this gate
  * a respondent who clicks Submit while the last 1-2 answers are still
  * debounced in client state ends up with completed_at set but only
- * N-of-24 responses persisted — the audit on 2026-05-15 hit this in a
+ * N-of-24 responses persisted - the audit on 2026-05-15 hit this in a
  * fast-click scripted run. Keyed by respondent token so multiple forms
  * on the same page (would only happen in dev) don't collide.
  */
@@ -216,7 +216,7 @@ export function QuestionsForm({ token, questions, answers, language }: Questions
         // still holds the pre-click answer values (null for any
         // unanswered factor). Without this yield, every runSave
         // call reads stale state and writes null answer_values to
-        // the DB — opposite of what the gate is meant to fix. A
+        // the DB - opposite of what the gate is meant to fix. A
         // setTimeout(0) yield gives React one macrotask to commit
         // the batched updates, after which stateRef.current is
         // current and the saves carry real values.
@@ -318,7 +318,7 @@ export function QuestionsForm({ token, questions, answers, language }: Questions
         );
       })}
 
-      {/* Personal / individual-factor sections — render after any pillar
+      {/* Personal / individual-factor sections - render after any pillar
            sections so a Mode B/C respondent sees pillars first then
            personal factors. Pure Mode A respondents (Personal Snapshot)
            only have factor questions, so this is the only rendered group. */}
@@ -444,7 +444,7 @@ function QuestionRow({
       />
 
       {/* Flag-for-follow-up toggle. Was previously labelled "Need to
-           verify", which read ambiguously to respondents — verify what,
+           verify", which read ambiguously to respondents - verify what,
            by whom? Reframed as a self-flag for items the respondent
            wants to revisit later. */}
       <label
@@ -462,7 +462,7 @@ function QuestionRow({
         <span>
           {rtl ? "تحديد للمراجعة لاحقاً" : "Flag for follow-up"}
           <span className="ms-1 opacity-70">
-            {rtl ? "— غير متأكد، أراجع لاحقاً" : "— I'm not sure, I'll revisit"}
+            {rtl ? "- غير متأكد، أراجع لاحقاً" : "- I'm not sure, I'll revisit"}
           </span>
         </span>
       </label>
@@ -648,7 +648,7 @@ export function CompleteButton({
   const [pending, start] = useTransition();
   // Distinct flushing state so the button label can show a more
   // honest "saving your answers" before it flips to "submitting"
-  // — this is the gap the audit caught (clicks fired in <200ms
+  // - this is the gap the audit caught (clicks fired in <200ms
   // outran the debounce, click→submit was instant and left answers
   // unsaved).
   const [flushing, setFlushing] = useState(false);

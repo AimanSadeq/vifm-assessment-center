@@ -16,7 +16,7 @@
  *      fix). Identified by their UUIDs which were captured in
  *      conversation logs.
  *
- * Idempotent — safe to re-run. Anything already deleted just
+ * Idempotent - safe to re-run. Anything already deleted just
  * reports `not found` and moves on.
  *
  * Run:  npx tsx scripts/cleanup-test-data.ts
@@ -28,7 +28,7 @@ loadEnv({ path: ".env.local" });
 
 const TEST_PERSONAL_EMAIL = "test+personal@vifm.ae";
 
-// G7 re-engagement test drafts — captured during diagnosis. Both
+// G7 re-engagement test drafts - captured during diagnosis. Both
 // were ADNOC-engagement re-engagements that were created with
 // 0 candidates due to the demographic-columns bug.
 const ORPHAN_REENGAGEMENT_IDS = [
@@ -53,7 +53,7 @@ async function main() {
     .eq("email", TEST_PERSONAL_EMAIL);
 
   if (!testRespondents || testRespondents.length === 0) {
-    console.log("    no test respondents found — nothing to delete");
+    console.log("    no test respondents found - nothing to delete");
   } else {
     console.log(`    found ${testRespondents.length} test respondent(s):`);
     for (const r of testRespondents) {
@@ -67,7 +67,7 @@ async function main() {
     await sb.from("ara_responses").delete().in("respondent_id", respIds);
     // Delete respondents (cascades pillar assignments, supporting materials).
     await sb.from("ara_respondents").delete().in("id", respIds);
-    // Delete the parent assessments — they were created solely for the
+    // Delete the parent assessments - they were created solely for the
     // test respondents, so leaving them would mean orphan personal
     // assessments cluttering the consultant dashboard.
     const { error: assessErr } = await sb
@@ -90,17 +90,17 @@ async function main() {
       .eq("id", id)
       .maybeSingle<{ id: string; name: string; status: string }>();
     if (!existing) {
-      console.log(`    ${id} — not found (already cleaned up)`);
+      console.log(`    ${id} - not found (already cleaned up)`);
       continue;
     }
     // Sanity-check: should be 0 candidates. If not, we don't auto-delete
-    // — this row may have been repurposed by the user since the test.
+    // - this row may have been repurposed by the user since the test.
     const { count } = await sb
       .from("candidates")
       .select("id", { count: "exact", head: true })
       .eq("engagement_id", id);
     if ((count ?? 0) > 0) {
-      console.log(`    ${id} ("${existing.name}") — has ${count} candidate(s); SKIPPING for safety`);
+      console.log(`    ${id} ("${existing.name}") - has ${count} candidate(s); SKIPPING for safety`);
       continue;
     }
 
@@ -111,9 +111,9 @@ async function main() {
     await sb.from("engagement_competencies").delete().eq("engagement_id", id);
     const { error: engErr } = await sb.from("engagements").delete().eq("id", id);
     if (engErr) {
-      console.warn(`    ${id} — delete failed: ${engErr.message}`);
+      console.warn(`    ${id} - delete failed: ${engErr.message}`);
     } else {
-      console.log(`    ${id} ("${existing.name}") — deleted`);
+      console.log(`    ${id} ("${existing.name}") - deleted`);
     }
   }
 

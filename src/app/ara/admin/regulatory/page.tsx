@@ -117,7 +117,7 @@ export default async function AraRegulatoryAdminPage() {
                     <option value="" disabled>Select…</option>
                     {(frameworks ?? []).map((f) => (
                       <option key={f.id} value={f.id}>
-                        [{f.region.toUpperCase()} · T{f.tier}] {f.framework_code} — {f.framework_name_en}
+                        [{f.region.toUpperCase()} · T{f.tier}] {f.framework_code} - {f.framework_name_en}
                       </option>
                     ))}
                   </select>

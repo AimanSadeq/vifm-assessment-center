@@ -203,7 +203,7 @@ export default async function QuoteRequestsListPage({
                         </span>
                       </TableCell>
                       <TableCell className="text-sm align-top">
-                        {r.estimated_group_size ?? "—"}
+                        {r.estimated_group_size ?? "-"}
                         {r.preferred_start_date && (
                           <div className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
                             <Calendar className="h-3 w-3" /> {r.preferred_start_date}

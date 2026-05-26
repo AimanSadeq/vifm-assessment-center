@@ -267,7 +267,7 @@ export async function createAraRespondent(formData: FormData) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  // Mode C — individual-only respondents skip pillar assignments and
+  // Mode C - individual-only respondents skip pillar assignments and
   // only answer the four-factor items. Honoured only when the parent
   // assessment has include_individual_layer=true (defensive).
   const individualOnly = formData.get("individual_only") === "on";
@@ -303,7 +303,7 @@ export async function createAraRespondent(formData: FormData) {
 
   if (error) return { ok: false, error: error.message };
 
-  // Pillar assignments are skipped for individual-only respondents —
+  // Pillar assignments are skipped for individual-only respondents -
   // they don't answer pillar questions, so a pillar row would be
   // confusing data noise.
   if (!finalIndividualOnly && parsed.data.pillar_assignments.length > 0) {
@@ -412,7 +412,7 @@ export async function bulkImportAraRespondents(formData: FormData) {
   const iRoleAr   = idx("role_label_ar", "role_ar", "arabic_role");
   const iLang     = idx("language", "lang", "language_preference");
   const iPillars  = idx("pillars", "pillar_assignments");
-  // Mode C — workforce-readiness only respondents (skip pillar questions).
+  // Mode C - workforce-readiness only respondents (skip pillar questions).
   const iIndividualOnly = idx("individual_only", "individual", "personal_only");
 
   if (iName === -1 || iEmail === -1) {
@@ -422,7 +422,7 @@ export async function bulkImportAraRespondents(formData: FormData) {
   const sb = createServiceClient();
 
   // Look up the parent assessment's include_individual_layer flag once
-  // — we only honour individual_only when the layer is actually on.
+  // - we only honour individual_only when the layer is actually on.
   const { data: parentAssessment } = await sb
     .from("ara_assessments")
     .select("include_individual_layer")
@@ -463,7 +463,7 @@ export async function bulkImportAraRespondents(formData: FormData) {
     const langRaw = (cols[iLang] ?? "en").toLowerCase();
     const language = langRaw === "ar" || langRaw === "arabic" ? "ar" : "en";
 
-    // individual_only — accept yes/y/true/1 (case-insensitive). Honoured
+    // individual_only - accept yes/y/true/1 (case-insensitive). Honoured
     // only when the parent assessment has the individual layer on.
     const individualOnlyRaw = iIndividualOnly >= 0 ? (cols[iIndividualOnly] ?? "").trim().toLowerCase() : "";
     const individualOnly = layerOn && ["yes", "y", "true", "1", "on"].includes(individualOnlyRaw);
@@ -480,7 +480,7 @@ export async function bulkImportAraRespondents(formData: FormData) {
     });
 
     // Pillar assignments are skipped for individual-only respondents
-    // — they don't answer pillar questions.
+    // - they don't answer pillar questions.
     if (!individualOnly && iPillars >= 0 && cols[iPillars]) {
       pillarsByEmail.set(
         email,
@@ -1013,7 +1013,7 @@ export async function aiAuthorAraQuestion(formData: FormData) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// M2.1 — Send respondent invitation email
+// M2.1 - Send respondent invitation email
 //
 // Loads the respondent + assessment + organisation, renders the
 // bilingual welcome template (language honours the respondent's own
@@ -1116,7 +1116,7 @@ export async function sendAraRespondentInvitation(respondentId: string) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// M3.3 — Notify the assessment's consultant when a respondent
+// M3.3 - Notify the assessment's consultant when a respondent
 // completes. Fire-and-forget from markAraRespondentComplete; failures
 // are logged but never block the caller.
 // ─────────────────────────────────────────────────────────────
@@ -1223,7 +1223,7 @@ export async function suggestQuestionValidationEvidence(questionId: string) {
     }>();
   if (error || !q) return { ok: false as const, error: "Question not found" };
 
-  // Resolve construct context — prefer individual factor when set,
+  // Resolve construct context - prefer individual factor when set,
   // otherwise fall back to the pillar.
   let constructId: string;
   let constructName: string;

@@ -152,7 +152,7 @@ export function ValidationEvidencePanel({ questionId, reviewerEmail, initialEvid
       {evidence.anchor_instruments.length === 0 ? (
         <p className="text-sm text-muted-foreground italic">
           No anchor instruments captured. The suggester returned a 'novel'
-          confidence — this item may need a custom citation or item revision.
+          confidence - this item may need a custom citation or item revision.
         </p>
       ) : (
         <ul className="space-y-3">

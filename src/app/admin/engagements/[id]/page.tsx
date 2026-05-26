@@ -102,7 +102,7 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
     .map((ee: Record<string, unknown>) => ee.exercises)
     .filter(Boolean) as Record<string, unknown>[];
 
-  // Day 3 — VIFM training-course recommendations. Cohort-aggregated
+  // Day 3 - VIFM training-course recommendations. Cohort-aggregated
   // by default; if the URL carries ?candidate=<id>, focus on just
   // that candidate's gaps so the consultant can use the panel as a
   // 1:1 development plan instead of a group plan.
@@ -147,18 +147,18 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
       <RecommendedCoursesPanel
         title={
           focusedCandidate
-            ? `Recommended VIFM training — ${focusedCandidate.full_name as string}`
+            ? `Recommended VIFM training - ${focusedCandidate.full_name as string}`
             : "Recommended VIFM training programmes"
         }
         description={
           focusedCandidate
-            ? "Per-candidate — courses ranked by this candidate's competency gaps × course relevance. Use this view to anchor a 1:1 development conversation."
-            : "Cohort-aggregated — courses ranked by total gap severity × course relevance across every candidate in the engagement. Higher fit score = larger development impact across the group."
+            ? "Per-candidate - courses ranked by this candidate's competency gaps × course relevance. Use this view to anchor a 1:1 development conversation."
+            : "Cohort-aggregated - courses ranked by total gap severity × course relevance across every candidate in the engagement. Higher fit score = larger development impact across the group."
         }
         emptyMessage={
           focusedCandidate
-            ? `No course recommendations for ${focusedCandidate.full_name} — either no consensus ratings have been finalised, this candidate is on or above target across all competencies, or the catalogue doesn't yet cover the relevant competencies.`
-            : "No course recommendations yet — either no consensus ratings have been finalised, the cohort is on or above target across all competencies, or the catalogue doesn't yet cover the relevant competencies."
+            ? `No course recommendations for ${focusedCandidate.full_name} - either no consensus ratings have been finalised, this candidate is on or above target across all competencies, or the catalogue doesn't yet cover the relevant competencies.`
+            : "No course recommendations yet - either no consensus ratings have been finalised, the cohort is on or above target across all competencies, or the catalogue doesn't yet cover the relevant competencies."
         }
         courses={recommendedCourses}
         context="ac"

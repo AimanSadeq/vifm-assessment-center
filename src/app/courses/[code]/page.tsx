@@ -12,7 +12,7 @@ import { VIFM_VERTICAL_LABELS, type VifmCourse, type VifmVertical } from "@/type
 export const dynamic = "force-dynamic";
 
 /**
- * Public course detail page. Lookup by `code` (preferred — readable
+ * Public course detail page. Lookup by `code` (preferred - readable
  * URL like /courses/CPMA-AI) or by uuid (fallback for legacy links).
  *
  * Renders the seven course "blocks":
@@ -117,10 +117,10 @@ export default async function CourseDetailPage({
         </div>
       </section>
 
-      {/* Body — content + sidebar */}
+      {/* Body - content + sidebar */}
       <section className="max-w-6xl mx-auto px-6 py-10 grid gap-8 lg:grid-cols-[1fr_320px]">
         <article className="space-y-8 order-2 lg:order-1">
-          {/* Block 1 — Course Overview */}
+          {/* Block 1 - Course Overview */}
           {course.overview_en && (
             <Block icon={Compass} title="Course overview">
               <p className="leading-relaxed">{course.overview_en}</p>
@@ -130,14 +130,14 @@ export default async function CourseDetailPage({
             </Block>
           )}
 
-          {/* Block 4 — Target audience */}
+          {/* Block 4 - Target audience */}
           {course.audience_en && (
             <Block icon={Users} title="Target audience">
               <p className="leading-relaxed">{course.audience_en}</p>
             </Block>
           )}
 
-          {/* Block 3 — Objectives */}
+          {/* Block 3 - Objectives */}
           {course.objectives_en && course.objectives_en.length > 0 && (
             <Block icon={Target} title="Course objectives">
               <ul className="list-disc ms-5 space-y-1.5">
@@ -148,7 +148,7 @@ export default async function CourseDetailPage({
             </Block>
           )}
 
-          {/* Block 2 — Target competencies */}
+          {/* Block 2 - Target competencies */}
           {course.target_competencies_raw_en && course.target_competencies_raw_en.length > 0 && (
             <Block icon={Award} title="Target competencies">
               <div className="flex flex-wrap gap-1.5">
@@ -161,14 +161,14 @@ export default async function CourseDetailPage({
             </Block>
           )}
 
-          {/* Block 5 — Methodology */}
+          {/* Block 5 - Methodology */}
           {course.methodology_en && (
             <Block icon={BookOpen} title="Course methodology">
               <p className="leading-relaxed whitespace-pre-line">{course.methodology_en}</p>
             </Block>
           )}
 
-          {/* Block 6 — Detailed outline. Two shapes are supported by
+          {/* Block 6 - Detailed outline. Two shapes are supported by
                VifmCourseOutlineSection: flat bullets, or nested
                sub-sections each with their own bullets. */}
           {course.outline_en && course.outline_en.length > 0 && (
@@ -224,7 +224,7 @@ export default async function CourseDetailPage({
             </Block>
           )}
 
-          {/* Block 7 — Note */}
+          {/* Block 7 - Note */}
           {course.note_en && (
             <Block icon={Sparkles} title="Note">
               <p className="leading-relaxed text-muted-foreground italic">{course.note_en}</p>
@@ -237,7 +237,7 @@ export default async function CourseDetailPage({
               Want to run this for your team?
             </h2>
             <p className="text-sm text-muted-foreground max-w-md mx-auto mb-5">
-              Request a tailored quote — we&apos;ll come back with delivery options,
+              Request a tailored quote - we&apos;ll come back with delivery options,
               language preferences, group-size pricing, and dates that work for you.
             </p>
             <Link
@@ -262,12 +262,12 @@ export default async function CourseDetailPage({
               Typically scoped within 2 working days.
             </p>
             <div className="border-t pt-4 space-y-3 text-xs">
-              <Fact label="Programme code" value={course.code ?? "—"} mono />
+              <Fact label="Programme code" value={course.code ?? "-"} mono />
               <Fact label="Vertical" value={VIFM_VERTICAL_LABELS[course.vertical as VifmVertical] ?? course.vertical} />
               <Fact label="Level" value={course.level.charAt(0).toUpperCase() + course.level.slice(1)} />
               <Fact label="Duration" value={durationLabel} />
-              <Fact label="Languages" value={course.languages?.map((l) => l.toUpperCase()).join(" · ") ?? "—"} />
-              <Fact label="Delivery" value={course.delivery_modes?.join(" · ") ?? "—"} />
+              <Fact label="Languages" value={course.languages?.map((l) => l.toUpperCase()).join(" · ") ?? "-"} />
+              <Fact label="Delivery" value={course.delivery_modes?.join(" · ") ?? "-"} />
               {course.certification_code && (
                 <Fact label="Certification" value={course.certification_code} mono />
               )}

@@ -44,7 +44,7 @@ const TONE_BG_CLASS: Record<Tone, string> = {
 };
 
 // ───────────────────────────────────────────────────────────────
-// Data — a single source of truth for the roadmap page. Keep it
+// Data - a single source of truth for the roadmap page. Keep it
 // terse; each array is designed to fit on-screen without scrolling
 // trauma while still covering every shipped component.
 // ───────────────────────────────────────────────────────────────
@@ -270,7 +270,7 @@ export default function AraRoadmapPage() {
         </div>
       </section>
 
-      {/* ─── Platform map — three roles + shared engine ─── */}
+      {/* ─── Platform map - three roles + shared engine ─── */}
       <section className="ara-hero-subtle py-20 border-y">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-12">
@@ -310,7 +310,7 @@ export default function AraRoadmapPage() {
             </FadeIn>
           </div>
 
-          {/* Shared engine band — visually anchored under the three roles */}
+          {/* Shared engine band - visually anchored under the three roles */}
           <FadeIn delay={360}>
             <div className="rounded-2xl border bg-card p-6 shadow-sm">
               <div className="flex items-center gap-2 mb-4">

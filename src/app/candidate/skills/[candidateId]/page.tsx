@@ -71,7 +71,7 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
   if (candErr || !candidate) return notFound();
 
   // VIFM Fluent English placement bound to this candidate (migration 00044).
-  // Read via the service client — eng_fluent_results RLS is admin-only, and
+  // Read via the service client - eng_fluent_results RLS is admin-only, and
   // the candidate context is already established above. Tolerant: stays null
   // if the table/columns aren't migrated or no placement exists.
   type FluentLite = { id: string; overall_cefr: string; candidate_id: string | null; created_at: string };
@@ -87,7 +87,7 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
       latestFluent = fres.data.find((r) => r.candidate_id === candidateId) ?? null;
     }
   } catch {
-    /* table/columns absent — ignore */
+    /* table/columns absent - ignore */
   }
 
   // Role profile is fetched separately so the page still renders if migration
@@ -117,7 +117,7 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
     profile = (candWithProfile.data?.role_profiles as unknown as RoleProfileRow | null) ?? null;
   }
 
-  // Empty state — no role profile assigned
+  // Empty state - no role profile assigned
   if (!profile) {
     return (
       <div className="space-y-6">
@@ -313,7 +313,7 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
         />
         <StatCard
           label={t("candidateSkills.averageScore")}
-          value={average !== null ? `${average}/5` : "—"}
+          value={average !== null ? `${average}/5` : "-"}
           sub={average === null ? t("candidateSkills.notYetAssessed") : undefined}
         />
       </div>
@@ -377,7 +377,7 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
                           <span className="font-semibold text-foreground">
                             {isAssessed && comp.score !== null
                               ? t("candidateSkills.level", { n: comp.score })
-                              : "—"}
+                              : "-"}
                           </span>
                         </span>
                       </div>

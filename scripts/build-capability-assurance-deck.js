@@ -3,7 +3,7 @@
  *
  * Audience: a GCC bank CHRO + board / regulator-facing stakeholders.
  * Goal: sell Capability Assurance as a continuous capability-intelligence
- * partnership — the assurance layer over VIFM's existing assessment products.
+ * partnership - the assurance layer over VIFM's existing assessment products.
  *
  * Reuses the exact VIFM brand palette + slide idioms from the Reflect 360
  * CHRO deck so the two read as one product family.
@@ -31,11 +31,11 @@ const FOOTER = "VIFM Capability Assurance . Capability intelligence for the GCC 
 const pres = new pptxgen();
 pres.layout = "LAYOUT_16x9";
 pres.author = "VIFM";
-pres.title = "VIFM Capability Assurance — CHRO Pitch";
+pres.title = "VIFM Capability Assurance - CHRO Pitch";
 pres.company = "Virginia Institute of Finance and Management";
 
 // ────────────────────────────────────────────────────────────────
-// 1 — Cover
+// 1 - Cover
 // ────────────────────────────────────────────────────────────────
 {
   const s = pres.addSlide();
@@ -51,7 +51,7 @@ pres.company = "Virginia Institute of Finance and Management";
 
   s.addText("[ CAPABILITY INTELLIGENCE FOR THE GCC ]", { x:0.4, y:0.25, w:7.5, h:0.28, fontSize:9, color:C.accent, fontFace:"Open Sans", charSpacing:3 });
   s.addText("VIFM Capability\nAssurance", { x:0.4, y:1.0, w:7.0, h:1.9, fontSize:50, bold:true, color:C.white, fontFace:"Open Sans", lineSpacingMultiple:0.95 });
-  s.addText("Prove your leadership is capable — to your board, and your regulator.", {
+  s.addText("Prove your leadership is capable - to your board, and your regulator.", {
     x:0.4, y:2.95, w:6.7, h:0.7, fontSize:17, color:C.light, fontFace:"Open Sans", italic:true,
   });
   s.addShape(pres.shapes.RECTANGLE, { x:0.4, y:3.75, w:3.5, h:0.05, fill:{color:C.accent}, line:{color:C.accent} });
@@ -67,20 +67,20 @@ pres.company = "Virginia Institute of Finance and Management";
 }
 
 // ────────────────────────────────────────────────────────────────
-// 2 — The boardroom question (the pain)
+// 2 - The boardroom question (the pain)
 // ────────────────────────────────────────────────────────────────
 {
   const s = pres.addSlide();
   s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:10, h:5.625, fill:{color:C.offWhite}, line:{color:C.offWhite} });
   s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:0.18, h:5.625, fill:{color:C.accent}, line:{color:C.accent} });
   s.addText("[ THE QUESTION YOU CAN'T YET ANSWER ]", { x:0.4, y:0.25, w:6, h:0.28, fontSize:9, color:C.accent, fontFace:"Open Sans", charSpacing:3 });
-  s.addText("\"Is our leadership bench actually capable?\" — what do you hand the board?", {
+  s.addText("\"Is our leadership bench actually capable?\" - what do you hand the board?", {
     x:0.4, y:0.7, w:9.2, h:1.0, fontSize:21, bold:true, color:C.primary, fontFace:"Open Sans",
   });
 
   const pains = [
     { h:"A gut feel", b:"Performance reviews tell you what got done. They don't tell you whether a leader is capable, or ready for the seat above them." },
-    { h:"A stale survey", b:"Last year's engagement or 360 is a photograph — already out of date, scoped to one team, with nothing to compare it against." },
+    { h:"A stale survey", b:"Last year's engagement or 360 is a photograph - already out of date, scoped to one team, with nothing to compare it against." },
     { h:"A manual scramble", b:"When the regulator asks for fit-and-proper evidence, it's assembled by hand, slide by slide, with no benchmark and no audit trail." },
   ];
   pains.forEach((p, i) => {
@@ -98,7 +98,7 @@ pres.company = "Virginia Institute of Finance and Management";
 }
 
 // ────────────────────────────────────────────────────────────────
-// 3 — Why now: capability is a reportable metric
+// 3 - Why now: capability is a reportable metric
 // ────────────────────────────────────────────────────────────────
 {
   const s = pres.addSlide();
@@ -108,15 +108,15 @@ pres.company = "Virginia Institute of Finance and Management";
   s.addText("In the GCC, capability is no longer just an HR question", {
     x:0.4, y:0.7, w:9.2, h:0.5, fontSize:22, bold:true, color:C.primary, fontFace:"Open Sans",
   });
-  s.addText("It is now a board-level and regulator-level metric — and the pressure is only rising.", {
+  s.addText("It is now a board-level and regulator-level metric - and the pressure is only rising.", {
     x:0.4, y:1.20, w:9.2, h:0.30, fontSize:12, italic:true, color:C.textMute, fontFace:"Open Sans",
   });
 
   const cards = [
     { h:"National agenda", b:"Vision 2030 Human Capability Development and parallel UAE programmes make workforce capability a reported national KPI." },
-    { h:"Nationalisation", b:"Saudization and Emiratization need more than headcount — they need proof of capability and a credible succession bench." },
+    { h:"Nationalisation", b:"Saudization and Emiratization need more than headcount - they need proof of capability and a credible succession bench." },
     { h:"Fit-and-proper", b:"Central-bank and market regulators expect demonstrable competence and governance maturity for senior roles." },
-    { h:"AI disruption", b:"Boards now also ask \"are we AI-ready?\" — a capability question that didn't exist three years ago." },
+    { h:"AI disruption", b:"Boards now also ask \"are we AI-ready?\" - a capability question that didn't exist three years ago." },
   ];
   cards.forEach((c, i) => {
     const x = 0.4 + i*2.35;
@@ -130,7 +130,7 @@ pres.company = "Virginia Institute of Finance and Management";
 }
 
 // ────────────────────────────────────────────────────────────────
-// 4 — The gap: today's tools weren't built for this
+// 4 - The gap: today's tools weren't built for this
 // ────────────────────────────────────────────────────────────────
 {
   const s = pres.addSlide();
@@ -146,10 +146,10 @@ pres.company = "Virginia Institute of Finance and Management";
   s.addShape(pres.shapes.RECTANGLE, { x:0.4, y:1.55, w:0.06, h:3.5, fill:{color:C.gold}, line:{color:C.gold} });
   s.addText("WHAT'S ON THE MARKET", { x:0.6, y:1.7, w:4.1, h:0.3, fontSize:10, color:C.gold, fontFace:"Open Sans", charSpacing:2 });
   const today = [
-    "Point solutions — 360 OR assessment OR engagement, never one picture",
-    "Consulting projects — expensive, bespoke, and gone when they leave",
+    "Point solutions - 360 OR assessment OR engagement, never one picture",
+    "Consulting projects - expensive, bespoke, and gone when they leave",
     "Western frameworks with Arabic bolted on afterwards",
-    "Point-in-time — a photograph, not a live feed",
+    "Point-in-time - a photograph, not a live feed",
     "No benchmark tied to GCC or national agendas",
   ];
   today.forEach((tx, i) => {
@@ -163,8 +163,8 @@ pres.company = "Virginia Institute of Finance and Management";
   const need = [
     "One connected capability picture across every assessment",
     "A living platform that stays after the project ends",
-    "Bilingual, GCC-authored frameworks — not translated",
-    "Continuous — reassessed and always current",
+    "Bilingual, GCC-authored frameworks - not translated",
+    "Continuous - reassessed and always current",
     "Benchmarked against your sector and national goals",
   ];
   need.forEach((tx, i) => {
@@ -176,7 +176,7 @@ pres.company = "Virginia Institute of Finance and Management";
 }
 
 // ────────────────────────────────────────────────────────────────
-// 5 — What Capability Assurance is (split panel)
+// 5 - What Capability Assurance is (split panel)
 // ────────────────────────────────────────────────────────────────
 {
   const s = pres.addSlide();
@@ -194,10 +194,10 @@ pres.company = "Virginia Institute of Finance and Management";
     x:4.1, y:0.4, w:5.5, h:0.7, fontSize:15, bold:true, color:C.primary, fontFace:"Open Sans",
   });
   const bullets = [
-    "A single living model of your people's capability — not three disconnected reports.",
+    "A single living model of your people's capability - not three disconnected reports.",
     "Fed automatically by every Assessment Center, Reflect 360 and AI Readiness engagement you run.",
     "Benchmarked against the GCC: see how your bench compares to your sector and national goals.",
-    "Proves the training worked — reassessment deltas link development spend to measurable gain.",
+    "Proves the training worked - reassessment deltas link development spend to measurable gain.",
     "Produces the regulator-ready capability evidence you assemble by hand today.",
   ];
   bullets.forEach((b, i) => {
@@ -208,17 +208,17 @@ pres.company = "Virginia Institute of Finance and Management";
 }
 
 // ────────────────────────────────────────────────────────────────
-// 6 — Pillar 1: The Capability Graph (diagram)
+// 6 - Pillar 1: The Capability Graph (diagram)
 // ────────────────────────────────────────────────────────────────
 {
   const s = pres.addSlide();
   s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:10, h:5.625, fill:{color:C.offWhite}, line:{color:C.offWhite} });
   s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:0.18, h:5.625, fill:{color:C.accent}, line:{color:C.accent} });
-  s.addText("[ PILLAR 1 — THE CAPABILITY GRAPH ]", { x:0.4, y:0.25, w:6, h:0.28, fontSize:9, color:C.accent, fontFace:"Open Sans", charSpacing:3 });
+  s.addText("[ PILLAR 1 - THE CAPABILITY GRAPH ]", { x:0.4, y:0.25, w:6, h:0.28, fontSize:9, color:C.accent, fontFace:"Open Sans", charSpacing:3 });
   s.addText("One living model of your capability", {
     x:0.4, y:0.7, w:9.2, h:0.5, fontSize:22, bold:true, color:C.primary, fontFace:"Open Sans",
   });
-  s.addText("Three assessments stop being three PDFs and become one queryable picture — per person, and per organisation.", {
+  s.addText("Three assessments stop being three PDFs and become one queryable picture - per person, and per organisation.", {
     x:0.4, y:1.20, w:9.2, h:0.30, fontSize:11.5, italic:true, color:C.textMute, fontFace:"Open Sans",
   });
 
@@ -247,27 +247,27 @@ pres.company = "Virginia Institute of Finance and Management";
   const qs = [
     "\"If we win this mandate, do we have the leadership bench?\"",
     "\"Where is our governance-competency gap vs the regulator's bar?\"",
-    "\"Who is ready now for the C-suite — and who needs 18 months?\"",
+    "\"Who is ready now for the C-suite - and who needs 18 months?\"",
   ];
   qs.forEach((q, i) => {
     s.addText(q, { x:6.95, y:2.35 + i*0.78, w:2.5, h:0.75, fontSize:10, italic:true, color:C.white, fontFace:"Open Sans", valign:"top", wrap:true });
   });
 
-  s.addText("Built on data you already generate — Capability Assurance is intelligence, not another survey.", {
+  s.addText("Built on data you already generate - Capability Assurance is intelligence, not another survey.", {
     x:0.4, y:5.0, w:9.2, h:0.3, fontSize:10, italic:true, color:C.accent, fontFace:"Open Sans", align:"center",
   });
   s.addText(FOOTER, { x:0.4, y:5.3, w:9.2, h:0.25, fontSize:8, color:C.textMute, fontFace:"Open Sans" });
 }
 
 // ────────────────────────────────────────────────────────────────
-// 7 — Pillar 2: GCC Benchmarking (the differentiator)
+// 7 - Pillar 2: GCC Benchmarking (the differentiator)
 // ────────────────────────────────────────────────────────────────
 {
   const s = pres.addSlide();
   s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:10, h:5.625, fill:{color:C.primary}, line:{color:C.primary} });
   s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:0.18, h:5.625, fill:{color:C.accent}, line:{color:C.accent} });
-  s.addText("[ PILLAR 2 — THE DIFFERENCE NO ONE ELSE HAS ]", { x:0.4, y:0.25, w:6.5, h:0.28, fontSize:9, color:C.accent, fontFace:"Open Sans", charSpacing:3 });
-  s.addText("See yourself against the GCC — not a US median", {
+  s.addText("[ PILLAR 2 - THE DIFFERENCE NO ONE ELSE HAS ]", { x:0.4, y:0.25, w:6.5, h:0.28, fontSize:9, color:C.accent, fontFace:"Open Sans", charSpacing:3 });
+  s.addText("See yourself against the GCC - not a US median", {
     x:0.4, y:0.7, w:9.2, h:0.5, fontSize:22, bold:true, color:C.white, fontFace:"Open Sans",
   });
   s.addText("VIFM operates region-wide. Anonymised aggregation lets you compare against your sector and national goals.", {
@@ -303,13 +303,13 @@ pres.company = "Virginia Institute of Finance and Management";
 }
 
 // ────────────────────────────────────────────────────────────────
-// 8 — Pillar 3: Closed-loop ROI
+// 8 - Pillar 3: Closed-loop ROI
 // ────────────────────────────────────────────────────────────────
 {
   const s = pres.addSlide();
   s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:10, h:5.625, fill:{color:C.offWhite}, line:{color:C.offWhite} });
   s.addShape(pres.shapes.RECTANGLE, { x:0, y:0, w:0.18, h:5.625, fill:{color:C.accent}, line:{color:C.accent} });
-  s.addText("[ PILLAR 3 — PROOF, NOT PROMISES ]", { x:0.4, y:0.25, w:6, h:0.28, fontSize:9, color:C.accent, fontFace:"Open Sans", charSpacing:3 });
+  s.addText("[ PILLAR 3 - PROOF, NOT PROMISES ]", { x:0.4, y:0.25, w:6, h:0.28, fontSize:9, color:C.accent, fontFace:"Open Sans", charSpacing:3 });
   s.addText("Prove the development actually worked", {
     x:0.4, y:0.7, w:9.2, h:0.5, fontSize:22, bold:true, color:C.primary, fontFace:"Open Sans",
   });
@@ -321,7 +321,7 @@ pres.company = "Virginia Institute of Finance and Management";
     { n:"1", h:"Gap measured", b:"The graph surfaces the cohort's lowest competency this cycle." },
     { n:"2", h:"Training delivered", b:"Matched VIFM programmes target that exact behavioural gap." },
     { n:"3", h:"Reassessed", b:"12 months on, the same cohort is measured again on the same scale." },
-    { n:"4", h:"Delta proven", b:"The movement is attributed to the spend — defensible to the board." },
+    { n:"4", h:"Delta proven", b:"The movement is attributed to the spend - defensible to the board." },
   ];
   flow.forEach((f, i) => {
     const x = 0.4 + i*2.35;
@@ -334,14 +334,14 @@ pres.company = "Virginia Institute of Finance and Management";
   });
 
   s.addShape(pres.shapes.RECTANGLE, { x:0.4, y:4.4, w:9.2, h:0.7, fill:{color:C.good}, line:{color:C.good} });
-  s.addText("\"VIFM programmes moved this cohort's Strategic Mindset +0.6 over twelve months.\"  — the sentence every CHRO wants to say to the board.", {
+  s.addText("\"VIFM programmes moved this cohort's Strategic Mindset +0.6 over twelve months.\"  - the sentence every CHRO wants to say to the board.", {
     x:0.6, y:4.4, w:8.8, h:0.7, fontSize:11.5, bold:true, italic:true, color:C.white, fontFace:"Open Sans", valign:"middle", align:"center",
   });
   s.addText(FOOTER, { x:0.4, y:5.26, w:9.2, h:0.25, fontSize:8, color:C.textMute, fontFace:"Open Sans" });
 }
 
 // ────────────────────────────────────────────────────────────────
-// 9 — What you receive (deliverables)
+// 9 - What you receive (deliverables)
 // ────────────────────────────────────────────────────────────────
 {
   const s = pres.addSlide();
@@ -353,10 +353,10 @@ pres.company = "Virginia Institute of Finance and Management";
   });
 
   const items = [
-    { h:"Capability twin dashboard", b:"A live view of your bench — every leader, every competency, AI readiness, succession readiness — queryable on demand." },
+    { h:"Capability twin dashboard", b:"A live view of your bench - every leader, every competency, AI readiness, succession readiness - queryable on demand." },
     { h:"GCC benchmark report", b:"Where you stand against your sector and national goals, by competency and by leadership tier." },
     { h:"Regulator-ready assurance pack", b:"Bilingual, audit-trailed capability evidence mapped to fit-and-proper and governance expectations." },
-    { h:"Training ROI statement", b:"Reassessment deltas linked to the programmes delivered — the defensible return on development spend." },
+    { h:"Training ROI statement", b:"Reassessment deltas linked to the programmes delivered - the defensible return on development spend." },
   ];
   items.forEach((it, i) => {
     const col = i % 2, row = Math.floor(i / 2);
@@ -372,7 +372,7 @@ pres.company = "Virginia Institute of Finance and Management";
 }
 
 // ────────────────────────────────────────────────────────────────
-// 10 — Your data, your control (governance / trust)
+// 10 - Your data, your control (governance / trust)
 // ────────────────────────────────────────────────────────────────
 {
   const s = pres.addSlide();
@@ -384,10 +384,10 @@ pres.company = "Virginia Institute of Finance and Management";
   });
 
   const items = [
-    { h:"Benchmarks are anonymised", b:"Your raw data is never shared. Benchmarks are computed from aggregated, de-identified pools — you contribute and consume, no one sees you." },
+    { h:"Benchmarks are anonymised", b:"Your raw data is never shared. Benchmarks are computed from aggregated, de-identified pools - you contribute and consume, no one sees you." },
     { h:"Consent + PDPL by design", b:"KSA PDPL + UAE PDPL + GDPR aware. Consent captured up front; aggregation is contractual and opt-in." },
     { h:"Encryption + access control", b:"TLS in transit, AES-256 at rest, row-level access enforced server-side. Your engagements are segregated from every other client." },
-    { h:"Evidence, not certification", b:"Capability Assurance gives you defensible evidence and insight. Regulatory decisions remain yours — we equip the conversation." },
+    { h:"Evidence, not certification", b:"Capability Assurance gives you defensible evidence and insight. Regulatory decisions remain yours - we equip the conversation." },
   ];
   items.forEach((it, i) => {
     const col = i % 2, row = Math.floor(i / 2);
@@ -403,7 +403,7 @@ pres.company = "Virginia Institute of Finance and Management";
 }
 
 // ────────────────────────────────────────────────────────────────
-// 11 — Why VIFM
+// 11 - Why VIFM
 // ────────────────────────────────────────────────────────────────
 {
   const s = pres.addSlide();
@@ -415,12 +415,12 @@ pres.company = "Virginia Institute of Finance and Management";
   });
 
   const reasons = [
-    { h:"A finance institute", b:"VIFM speaks the language of fit-and-proper, governance and assurance — not just HR. The credibility a regulator-facing report needs." },
-    { h:"Bilingual native", b:"Arabic and English are first-class throughout — authored for the GCC, not translated into it." },
+    { h:"A finance institute", b:"VIFM speaks the language of fit-and-proper, governance and assurance - not just HR. The credibility a regulator-facing report needs." },
+    { h:"Bilingual native", b:"Arabic and English are first-class throughout - authored for the GCC, not translated into it." },
     { h:"The full diagnostic suite", b:"Assessment Center, Reflect 360 and AI Readiness already exist and already feed the graph. Day one is not zero." },
-    { h:"An integrated catalogue", b:"127 training programmes turn every diagnosed gap into a prescription — and the ROI loop proves it closed." },
+    { h:"An integrated catalogue", b:"127 training programmes turn every diagnosed gap into a prescription - and the ROI loop proves it closed." },
     { h:"Consultant-led", b:"A named VIFM lead owns the relationship, the framework and the debrief. The platform is the toolkit, not the relationship." },
-    { h:"GCC data network", b:"The benchmark only exists because VIFM works across the region. It compounds with every client — and it cannot be bought." },
+    { h:"GCC data network", b:"The benchmark only exists because VIFM works across the region. It compounds with every client - and it cannot be bought." },
   ];
   reasons.forEach((r, i) => {
     const col = i % 3, row = Math.floor(i / 3);
@@ -436,7 +436,7 @@ pres.company = "Virginia Institute of Finance and Management";
 }
 
 // ────────────────────────────────────────────────────────────────
-// 12 — How we start (founding-partner model)
+// 12 - How we start (founding-partner model)
 // ────────────────────────────────────────────────────────────────
 {
   const s = pres.addSlide();
@@ -446,15 +446,15 @@ pres.company = "Virginia Institute of Finance and Management";
   s.addText("Start with one cohort. Prove it. Then scale.", {
     x:0.4, y:0.7, w:9.2, h:0.5, fontSize:22, bold:true, color:C.primary, fontFace:"Open Sans",
   });
-  s.addText("A founding-partner engagement — your capability graph is live before any platform commitment.", {
+  s.addText("A founding-partner engagement - your capability graph is live before any platform commitment.", {
     x:0.4, y:1.20, w:9.2, h:0.30, fontSize:12, italic:true, color:C.textMute, fontFace:"Open Sans",
   });
 
   const steps = [
-    { n:"1", h:"Pilot cohort", b:"One leadership group — run an assessment + Reflect 360, stand up the first capability graph." },
+    { n:"1", h:"Pilot cohort", b:"One leadership group - run an assessment + Reflect 360, stand up the first capability graph." },
     { n:"2", h:"First assurance pack", b:"Produce the regulator-ready evidence and the initial benchmark from the pilot." },
     { n:"3", h:"Prove + expand", b:"Review with the board, then extend across the leadership population." },
-    { n:"4", h:"Always-on partner", b:"Annual reassessment + continuous benchmarking — the graph lives with you." },
+    { n:"4", h:"Always-on partner", b:"Annual reassessment + continuous benchmarking - the graph lives with you." },
   ];
   steps.forEach((st, i) => {
     const x = 0.4 + i*2.35;
@@ -466,14 +466,14 @@ pres.company = "Virginia Institute of Finance and Management";
     if (i < 3) s.addShape(pres.shapes.RIGHT_TRIANGLE, { x:x+2.18, y:2.95, w:0.22, h:0.25, fill:{color:C.accent}, line:{color:C.accent} });
   });
 
-  s.addText("Low commitment to begin. The value — and the switching cost — compound from cycle one.", {
+  s.addText("Low commitment to begin. The value - and the switching cost - compound from cycle one.", {
     x:0.4, y:4.6, w:9.2, h:0.35, fontSize:11, italic:true, color:C.accent, fontFace:"Open Sans", align:"center",
   });
   s.addText(FOOTER, { x:0.4, y:5.24, w:9.2, h:0.25, fontSize:8, color:C.textMute, fontFace:"Open Sans" });
 }
 
 // ────────────────────────────────────────────────────────────────
-// 13 — Closing CTA
+// 13 - Closing CTA
 // ────────────────────────────────────────────────────────────────
 {
   const s = pres.addSlide();
@@ -485,7 +485,7 @@ pres.company = "Virginia Institute of Finance and Management";
   s.addText("[ THE OPPORTUNITY ]", { x:0.4, y:0.30, w:5, h:0.30, fontSize:9, bold:true, color:C.accent, fontFace:"Open Sans", charSpacing:3 });
   s.addText("Stop reporting\ncapability.\nStart assuring it.", { x:0.4, y:0.95, w:6.2, h:2.3, fontSize:34, bold:true, color:C.white, fontFace:"Open Sans" });
 
-  s.addText("Be the founding GCC partner — and help define the benchmark every peer is measured against.", {
+  s.addText("Be the founding GCC partner - and help define the benchmark every peer is measured against.", {
     x:0.4, y:3.35, w:6.2, h:0.85, fontSize:13, color:C.light, fontFace:"Open Sans", italic:true,
   });
   s.addShape(pres.shapes.RECTANGLE, { x:0.4, y:4.3, w:3.5, h:0.05, fill:{color:C.accent}, line:{color:C.accent} });

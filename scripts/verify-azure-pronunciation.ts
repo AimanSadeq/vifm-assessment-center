@@ -6,7 +6,7 @@
  * It synthesizes a sample sentence with Azure neural TTS, transcodes the MP3
  * to 16 kHz mono PCM WAV via the same ffmpeg call the transcribe route uses,
  * then runs assessPronunciation() on it. Because the input is clean TTS speech,
- * the returned scores should be high — the point is to prove the STT
+ * the returned scores should be high - the point is to prove the STT
  * pronunciation endpoint is reachable and returns accuracy/fluency/prosody,
  * which is exactly the data that drives the Pronunciation row on the result.
  */
@@ -55,7 +55,7 @@ async function main() {
     "I would like to improve my English to advance my career and work confidently with international colleagues.";
   const mp3 = await synthesizeSpeech(sample);
   if (!mp3) {
-    console.log("Neural TTS: ✗ FAILED — cannot produce sample audio (check key/region/connectivity).");
+    console.log("Neural TTS: ✗ FAILED - cannot produce sample audio (check key/region/connectivity).");
     return;
   }
   console.log(`Neural TTS sample: ✓ ${mp3.length} bytes (mp3)`);
@@ -68,7 +68,7 @@ async function main() {
 
     const ok = await transcodeToWav(mp3Path, wavPath);
     if (!ok) {
-      console.log("ffmpeg transcode: ✗ FAILED — is ffmpeg on PATH? (set FFMPEG_BIN to override)");
+      console.log("ffmpeg transcode: ✗ FAILED - is ffmpeg on PATH? (set FFMPEG_BIN to override)");
       return;
     }
     const wav = await readFile(wavPath);
@@ -76,7 +76,7 @@ async function main() {
 
     const pron = await assessPronunciation(wav);
     if (!pron) {
-      console.log("Pronunciation: ✗ FAILED — no score returned (endpoint reset or nothing recognized).");
+      console.log("Pronunciation: ✗ FAILED - no score returned (endpoint reset or nothing recognized).");
       return;
     }
     console.log("Pronunciation: ✓ OK");

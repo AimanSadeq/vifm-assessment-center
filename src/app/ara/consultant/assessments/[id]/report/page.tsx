@@ -129,13 +129,13 @@ export default async function AraReportPage({
     .select("question_score, question:ara_questions(pillar_id, question_number)")
     .eq("assessment_id", assessment.id);
 
-  // Verified validation-evidence for the appendix — surfaces every
+  // Verified validation-evidence for the appendix - surfaces every
   // distinct anchor-instrument citation used by any question in the
   // bank version this assessment locked to. Filtered server-side to
   // only `verified` / `edited` items so AI-proposed-but-not-reviewed
   // anchors never reach the client. (Migration 00028.)
   // Wrapped in try/catch so reports continue to render on databases
-  // that haven't applied 00028 yet — the appendix subsection just
+  // that haven't applied 00028 yet - the appendix subsection just
   // won't appear, instead of erroring the whole report.
   let questionsWithEvidence: Array<{ validation_evidence: unknown }> | null = null;
   if (assessment.question_bank_version_id) {
@@ -147,7 +147,7 @@ export default async function AraReportPage({
         .not("validation_evidence", "is", null);
       if (!error) questionsWithEvidence = (data as Array<{ validation_evidence: unknown }>) ?? null;
     } catch {
-      // column doesn't exist (pre-migration-00028) — leave null.
+      // column doesn't exist (pre-migration-00028) - leave null.
     }
   }
 
@@ -180,7 +180,7 @@ export default async function AraReportPage({
   // question-bank version. The render branch handles all three states.
   const yoyComparison = await computeYoYComparison(assessment.id);
 
-  // Mode C workforce readiness rollup — only when the assessment opted
+  // Mode C workforce readiness rollup - only when the assessment opted
   // into the individual layer. Tolerant of missing data: returns null
   // and the section render branch falls through to nothing.
   const workforceRollup = assessment.include_individual_layer
@@ -190,7 +190,7 @@ export default async function AraReportPage({
       })
     : null;
 
-  // Agentic-AI Readiness rollup — only when the assessment opted into the
+  // Agentic-AI Readiness rollup - only when the assessment opted into the
   // agentic layer. Same tolerant pattern as the workforce rollup.
   const agenticRollup = assessment.include_agentic_layer
     ? await computeAgenticReadiness(assessment.id).catch((e) => {
@@ -433,14 +433,14 @@ export default async function AraReportPage({
           <div className="stat-strip">
             <StatTile
               label="Overall readiness"
-              value={overall != null ? overall.toFixed(2) : "—"}
+              value={overall != null ? overall.toFixed(2) : "-"}
               suffix="/ 5.00"
               accent={overallLabel ?? ""}
               accentColor="#5391D5"
             />
             <StatTile
               label="Maturity band"
-              value={overallLabel ?? "—"}
+              value={overallLabel ?? "-"}
               accent="Weighted aggregate, 8 pillars"
               accentColor="#6b7280"
             />
@@ -470,7 +470,7 @@ export default async function AraReportPage({
               </p>
               <p className="report-body" style={{ marginTop: "6pt" }}>
                 <strong>{assessment.organization?.name ?? "The organization"}</strong> scores{" "}
-                <strong>{overall != null ? overall.toFixed(2) : "—"} / 5.00</strong>
+                <strong>{overall != null ? overall.toFixed(2) : "-"} / 5.00</strong>
                 {overallLabel && <> ({overallLabel})</>}. The profile shows{" "}
                 <strong>{strengths.length}</strong> {strengths.length === 1 ? "pillar" : "pillars"} at
                 or above the AI Ready benchmark and <strong>{gaps.length}</strong>{" "}
@@ -790,21 +790,21 @@ export default async function AraReportPage({
                   <div className="stat-strip" style={{ marginTop: "12pt" }}>
                     <StatTile
                       label={t("yoy_prior_year")}
-                      value={yoyComparison.prior_overall != null ? yoyComparison.prior_overall.toFixed(2) : "—"}
+                      value={yoyComparison.prior_overall != null ? yoyComparison.prior_overall.toFixed(2) : "-"}
                       suffix={`/ 5.00 · ${yoyComparison.prior_year ?? ""}`}
                       accent="Prior baseline"
                       accentColor="#6b7280"
                     />
                     <StatTile
                       label={t("yoy_current_year")}
-                      value={yoyComparison.current_overall != null ? yoyComparison.current_overall.toFixed(2) : "—"}
+                      value={yoyComparison.current_overall != null ? yoyComparison.current_overall.toFixed(2) : "-"}
                       suffix={`/ 5.00 · ${assessment.assessment_year}`}
                       accent="This assessment"
                       accentColor="#5391D5"
                     />
                     <StatTile
                       label={t("yoy_overall_delta")}
-                      value={overallDelta != null ? (overallDelta > 0 ? `+${overallDelta.toFixed(2)}` : overallDelta.toFixed(2)) : "—"}
+                      value={overallDelta != null ? (overallDelta > 0 ? `+${overallDelta.toFixed(2)}` : overallDelta.toFixed(2)) : "-"}
                       suffix="overall"
                       accent={overallTone === "positive" ? "Improving" : overallTone === "negative" ? "Regressing" : "No change"}
                       accentColor={overallTone === "positive" ? "#34D399" : overallTone === "negative" ? "#FB7185" : "#6b7280"}
@@ -831,7 +831,7 @@ export default async function AraReportPage({
                       p.delta < 0 ? "#FB7185" :
                       "#6b7280";
                     const deltaLabel =
-                      p.delta == null ? "—" :
+                      p.delta == null ? "-" :
                       p.delta > 0 ? `+${p.delta.toFixed(2)}` :
                       p.delta.toFixed(2);
                     const pillarName = ARA_PILLARS.find((x) => x.id === p.pillar_id)?.name_en ?? p.pillar_id;
@@ -839,10 +839,10 @@ export default async function AraReportPage({
                       <tr key={p.pillar_id} style={{ borderTop: "1px solid #e5e7eb" }}>
                         <td style={cell}>{pillarName}</td>
                         <td style={cellRight} className="report-muted">
-                          {p.prior_raw != null ? p.prior_raw.toFixed(2) : "—"}
+                          {p.prior_raw != null ? p.prior_raw.toFixed(2) : "-"}
                         </td>
                         <td style={cellRight}>
-                          {p.current_raw != null ? p.current_raw.toFixed(2) : "—"}
+                          {p.current_raw != null ? p.current_raw.toFixed(2) : "-"}
                         </td>
                         <td style={{ ...cellRight, color: deltaColor, fontWeight: 500 }}>
                           {deltaLabel}
@@ -1037,7 +1037,7 @@ export default async function AraReportPage({
           </section>
         )}
 
-        {/* ─── Workforce AI Readiness — Mode C only ─── *
+        {/* ─── Workforce AI Readiness - Mode C only ─── *
          * Renders only when this assessment opted into the individual
          * readiness layer AND respondents have answered four-factor
          * items. Cohort-level rollup with overall + per-factor mean
@@ -1053,10 +1053,10 @@ export default async function AraReportPage({
               respondent{workforceRollup.cohort_size === 1 ? "" : "s"}{" "}
               ({workforceRollup.completed_count} completed) across four VIFM
               individual readiness factors. The factors map to VIFM&apos;s
-              behavioural framework — THINKING, RESULTS, PEOPLE, SELF.
+              behavioural framework - THINKING, RESULTS, PEOPLE, SELF.
               {assessment.assessment_tier === "deep_dive"
-                ? " The deep-dive tier (12 items per factor) was used — research-grade reliability."
-                : " The snapshot tier (6 items per factor) was used — directional reliability."}
+                ? " The deep-dive tier (12 items per factor) was used - research-grade reliability."
+                : " The snapshot tier (6 items per factor) was used - directional reliability."}
             </p>
 
             <h3 className="report-h3">Cohort overall</h3>
@@ -1074,7 +1074,7 @@ export default async function AraReportPage({
                   <td style={{ ...cellRight, fontWeight: 700 }}>
                     {workforceRollup.cohort_overall != null
                       ? workforceRollup.cohort_overall.toFixed(2)
-                      : "—"}
+                      : "-"}
                   </td>
                   <td style={cellRight}>{workforceRollup.completed_count}</td>
                 </tr>
@@ -1090,7 +1090,7 @@ export default async function AraReportPage({
                         </span>
                       </td>
                       <td style={cellRight}>
-                        {avg && avg.respondent_count > 0 ? avg.average.toFixed(2) : "—"}
+                        {avg && avg.respondent_count > 0 ? avg.average.toFixed(2) : "-"}
                       </td>
                       <td style={cellRight}>{avg?.respondent_count ?? 0}</td>
                     </tr>
@@ -1101,9 +1101,9 @@ export default async function AraReportPage({
 
             <h3 className="report-h3">Reading the factor scores</h3>
             <ul className="report-body">
-              <li><strong>4.0 and above</strong> — strong readiness on this factor; the cohort leverages AI well in this area.</li>
-              <li><strong>3.0 to 3.9</strong> — developing; a clear opportunity to lift impact through targeted training or coaching.</li>
-              <li><strong>Below 3.0</strong> — significant opportunity; address this factor first for the largest readiness lift.</li>
+              <li><strong>4.0 and above</strong> - strong readiness on this factor; the cohort leverages AI well in this area.</li>
+              <li><strong>3.0 to 3.9</strong> - developing; a clear opportunity to lift impact through targeted training or coaching.</li>
+              <li><strong>Below 3.0</strong> - significant opportunity; address this factor first for the largest readiness lift.</li>
             </ul>
 
             <p className="report-body report-muted" style={{ fontSize: "9pt", marginTop: "12pt" }}>
@@ -1116,7 +1116,7 @@ export default async function AraReportPage({
           </section>
         )}
 
-        {/* ─── Agentic-AI Readiness — agentic layer only ─── *
+        {/* ─── Agentic-AI Readiness - agentic layer only ─── *
          * Renders only when this assessment opted into the agentic layer
          * AND respondents have answered agentic-dimension items. Cohort
          * overall + per-dimension mean across the six VIFM agentic
@@ -1150,7 +1150,7 @@ export default async function AraReportPage({
                   <td style={{ ...cellRight, fontWeight: 700 }}>
                     {agenticRollup.cohort_overall != null
                       ? agenticRollup.cohort_overall.toFixed(2)
-                      : "—"}
+                      : "-"}
                   </td>
                   <td style={cellRight}>{agenticRollup.completed_count}</td>
                 </tr>
@@ -1163,7 +1163,7 @@ export default async function AraReportPage({
                         <strong>{d.name_en}</strong>
                       </td>
                       <td style={cellRight}>
-                        {avg && avg.respondent_count > 0 ? avg.average.toFixed(2) : "—"}
+                        {avg && avg.respondent_count > 0 ? avg.average.toFixed(2) : "-"}
                       </td>
                       <td style={cellRight}>{avg?.respondent_count ?? 0}</td>
                     </tr>
@@ -1174,9 +1174,9 @@ export default async function AraReportPage({
 
             <h3 className="report-h3">Reading the dimension scores</h3>
             <ul className="report-body">
-              <li><strong>4.0 and above</strong> — mature controls; the organisation can delegate to agents in this area with confidence.</li>
-              <li><strong>3.0 to 3.9</strong> — developing; tighten controls before widening autonomous deployment.</li>
-              <li><strong>Below 3.0</strong> — significant gap; address before granting agents autonomy that touches this area.</li>
+              <li><strong>4.0 and above</strong> - mature controls; the organisation can delegate to agents in this area with confidence.</li>
+              <li><strong>3.0 to 3.9</strong> - developing; tighten controls before widening autonomous deployment.</li>
+              <li><strong>Below 3.0</strong> - significant gap; address before granting agents autonomy that touches this area.</li>
             </ul>
 
             <p className="report-body report-muted" style={{ fontSize: "9pt", marginTop: "12pt" }}>
@@ -1226,7 +1226,7 @@ export default async function AraReportPage({
             with every suggestion reviewed by at least one consultant before
             inclusion; and a bilingual rewrite in Gulf Arabic at source rather
             than back-translation. Every item is tagged at the database level to
-            exactly one construct (a pillar, on the org-side) — the assessment
+            exactly one construct (a pillar, on the org-side) - the assessment
             locks to the question-bank version active at creation, so this
             report is reproducible against the same items even if the bank
             advances. The full methodology brief (item development, content
@@ -1247,7 +1247,7 @@ export default async function AraReportPage({
                 instruments used across the version applied to this
                 assessment is below. Per-item citations are maintained in the
                 admin question bank and verified by VIFM staff before they
-                appear here — AI-suggested-but-unverified anchors are
+                appear here - AI-suggested-but-unverified anchors are
                 deliberately excluded.
               </p>
               <ul className="report-body" style={{ paddingInlineStart: 18 }}>
@@ -1334,13 +1334,13 @@ function PillarPages({
   const selfScore = row?.self_assessment_score != null ? Number(row.self_assessment_score) : null;
   const perceptionGap = row?.perception_gap != null ? Number(row.perception_gap) : null;
 
-  const gapValue = gap != null ? (gap > 0 ? `+${gap.toFixed(2)}` : gap.toFixed(2)) : "—";
+  const gapValue = gap != null ? (gap > 0 ? `+${gap.toFixed(2)}` : gap.toFixed(2)) : "-";
   const gapTone: "positive" | "negative" | "neutral" =
     gap == null ? "neutral" : gap <= 0 ? "positive" : "negative";
   const perceptionTone: "neutral" | "warning" =
     perceptionGap != null && Math.abs(perceptionGap) > 0.5 ? "warning" : "neutral";
   const perceptionValue =
-    perceptionGap != null ? (perceptionGap > 0 ? `+${perceptionGap.toFixed(2)}` : perceptionGap.toFixed(2)) : "—";
+    perceptionGap != null ? (perceptionGap > 0 ? `+${perceptionGap.toFixed(2)}` : perceptionGap.toFixed(2)) : "-";
 
   const recs = recommendationsFor(name, score);
 
@@ -1358,7 +1358,7 @@ function PillarPages({
         <div className="metric-strip">
           <Metric
             label="Raw score"
-            value={score != null ? score.toFixed(2) : "—"}
+            value={score != null ? score.toFixed(2) : "-"}
             suffix="/ 5.00"
             tone={score == null ? "neutral" : score >= 4.0 ? "positive" : score < 3.0 ? "negative" : "warning"}
           />
@@ -1384,7 +1384,7 @@ function PillarPages({
           />
         </div>
 
-        {/* Benchmark bar — slimmer, brand colors */}
+        {/* Benchmark bar - slimmer, brand colors */}
         <div style={{ marginTop: "14pt" }}>
           <p style={{ fontSize: "8.5pt", letterSpacing: "0.08em",
             textTransform: "uppercase", color: TOKENS.mute, margin: "0 0 4pt",

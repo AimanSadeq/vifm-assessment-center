@@ -106,7 +106,7 @@ export default async function QuizResultsPage({ params }: Props) {
         };
 
   const competencyName = a.competencies?.name ?? "Skill";
-  const scoreLabel = a.score_pct !== null ? `${Math.round(a.score_pct)}%` : "—";
+  const scoreLabel = a.score_pct !== null ? `${Math.round(a.score_pct)}%` : "-";
   const scoreFraction = (a.score_pct ?? 0) / 100;
 
   return (
@@ -149,7 +149,7 @@ export default async function QuizResultsPage({ params }: Props) {
         <StatCard
           label={t("quiz.results.timeTaken")}
           value={
-            a.time_taken_seconds !== null ? formatDuration(a.time_taken_seconds) : "—"
+            a.time_taken_seconds !== null ? formatDuration(a.time_taken_seconds) : "-"
           }
           icon={<Clock className="h-4 w-4" />}
         />
@@ -161,7 +161,7 @@ export default async function QuizResultsPage({ params }: Props) {
         <StatCard
           label={t("quiz.results.correctAnswers")}
           value={
-            a.correct_count !== null ? `${a.correct_count}/${a.total_count}` : "—"
+            a.correct_count !== null ? `${a.correct_count}/${a.total_count}` : "-"
           }
           icon={passed ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <XCircle className="h-4 w-4 text-rose-600" />}
         />

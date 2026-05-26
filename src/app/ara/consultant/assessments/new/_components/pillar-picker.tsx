@@ -18,16 +18,16 @@ import type { AraPillarId } from "@/types/ara";
  * affordance for the consultant.
  *
  * Each checked pillar is posted as an `pillars_in_scope` form field
- * — the create action collects them with formData.getAll().
+ * - the create action collects them with formData.getAll().
  *
  * Hidden inputs render so vanilla form submission works without JS.
  * The interactive UI is just for live feedback.
  */
 
 type Props = {
-  /** Pre-checked pillars — comes from ARA_STAGE_MAP[stage].applicable_pillars. */
+  /** Pre-checked pillars - comes from ARA_STAGE_MAP[stage].applicable_pillars. */
   defaultPillars: ReadonlyArray<AraPillarId>;
-  /** Required count — Department=4, Division=6. */
+  /** Required count - Department=4, Division=6. */
   requiredCount: number;
 };
 
@@ -118,7 +118,7 @@ export function PillarPicker({ defaultPillars, requiredCount }: Props) {
       {!valid && (
         <p className="text-[11px] text-amber-700">
           Pick exactly {requiredCount} pillars to continue. Click any tile to
-          add or remove — when you&apos;re at the cap, clicking a new one
+          add or remove - when you&apos;re at the cap, clicking a new one
           swaps in.
         </p>
       )}

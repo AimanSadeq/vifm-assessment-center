@@ -29,7 +29,7 @@ type Props = {
 };
 
 /**
- * Quote-request form. Anonymous submission allowed (no auth needed) —
+ * Quote-request form. Anonymous submission allowed (no auth needed) -
  * the server action validates input and persists to
  * vifm_course_quote_requests with review_status='new'.
  *
@@ -77,7 +77,7 @@ export function QuoteRequestForm({
         <div className="flex items-start gap-3 mb-3">
           <CheckCircle2 className="h-6 w-6 text-emerald-600 mt-0.5 shrink-0" />
           <div>
-            <h2 className="text-xl font-semibold text-emerald-950">Thanks — request received</h2>
+            <h2 className="text-xl font-semibold text-emerald-950">Thanks - request received</h2>
             <p className="text-sm text-emerald-900 mt-1">
               We&apos;ve logged your interest in <strong>{courseTitle}</strong>. A VIFM
               programme designer will reach out within 2 working days with

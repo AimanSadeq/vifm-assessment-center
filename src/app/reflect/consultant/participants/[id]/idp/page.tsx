@@ -36,7 +36,7 @@ async function fetchIdpContext(participantId: string) {
     }>();
   if (!participant) return null;
 
-  // Existing IDP (if any) — UPSERT-keyed by participant_id
+  // Existing IDP (if any) - UPSERT-keyed by participant_id
   const { data: idp } = await sb
     .from("reflect_idps")
     .select("top_priorities, action_plan, success_measures, target_review_date, status, signed_off_at, updated_at")
@@ -51,7 +51,7 @@ async function fetchIdpContext(participantId: string) {
       updated_at: string;
     }>();
 
-  // Framework competencies for the dropdown — same engagement
+  // Framework competencies for the dropdown - same engagement
   const { data: framework } = await sb
     .from("reflect_frameworks")
     .select("id, reflect_competencies(id, name_en, name_ar, display_order)")
@@ -96,7 +96,7 @@ export default async function ReflectIdpPage({ params }: Params) {
                 </h1>
               </div>
               <div className="text-xs text-muted-foreground">
-                {ctx.participant.role_title ?? "—"}
+                {ctx.participant.role_title ?? "-"}
                 {" · "}
                 {ctx.participant.reflect_engagements.ara_organizations?.name ?? ""}
               </div>

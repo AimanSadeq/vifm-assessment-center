@@ -130,7 +130,7 @@ Best regards,
 VIFM Assessment Center`,
   },
   course_quote_request: {
-    subject: "New quote request — {{courseTitle}}",
+    subject: "New quote request - {{courseTitle}}",
     body: `A new course quote request has come in from the public catalogue.
 
 Course:    {{courseTitle}}{{courseCode}}
@@ -146,10 +146,10 @@ Notes:
 
 Manage this request: {{adminUrl}}
 
-— VIFM Assessment Platform`,
+- VIFM Assessment Platform`,
   },
   fluent_result: {
-    subject: "Your VIFM Fluent result — {{level}}",
+    subject: "Your VIFM Fluent result - {{level}}",
     body: `Dear {{takerName}},
 
 Thank you for completing the VIFM Fluent English placement test.
@@ -161,7 +161,7 @@ Your indicative CEFR level: {{level}} ({{levelLabel}})
 View and download your certificate:
 {{certUrl}}
 
-This is an indicative placement for development purposes — not a certified high-stakes language qualification.
+This is an indicative placement for development purposes - not a certified high-stakes language qualification.
 
 Best regards,
 VIFM Assessment Center`,

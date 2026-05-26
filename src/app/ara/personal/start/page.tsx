@@ -4,7 +4,7 @@ import { StartForm } from "./_components/start-form";
 export const dynamic = "force-dynamic";
 
 /**
- * Personal AI Readiness Snapshot — anonymous, self-served entry.
+ * Personal AI Readiness Snapshot - anonymous, self-served entry.
  *
  * The page is intentionally a thin server shell; all the visible
  * surface (header, factor preview cards, form, footnote) lives in

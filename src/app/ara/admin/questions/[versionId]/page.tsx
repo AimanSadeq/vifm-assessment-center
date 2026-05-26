@@ -119,7 +119,7 @@ export default async function AraVersionDetailPage({
         </div>
 
         {/* Pillar quick-jump nav. Each chip is an anchor link to the
-            corresponding pillar card below — saves the admin scrolling
+            corresponding pillar card below - saves the admin scrolling
             through eight cards to find Strategy or Governance questions. */}
         <div className="mb-8 flex flex-wrap gap-2 items-center">
           <span className="text-xs uppercase tracking-widest text-muted-foreground font-semibold me-2">
@@ -175,7 +175,7 @@ export default async function AraVersionDetailPage({
                       <div key={layer}>
                         {layer === 2 && (
                           <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
-                            Layer 2 — consultant guide (never shown to respondents)
+                            Layer 2 - consultant guide (never shown to respondents)
                           </p>
                         )}
                         <DraggableQuestionList

@@ -178,7 +178,7 @@ export async function clearAraSandboxData(formData: FormData) {
 const RETENTION_YEARS = 3;
 
 /**
- * Core retention-purge logic — no auth check inside, so it can be
+ * Core retention-purge logic - no auth check inside, so it can be
  * called from BOTH the admin form action (which gates on
  * requireRole + confirmation string) AND a system-triggered cron
  * route (which gates on a CRON_SECRET bearer header). Always uses
@@ -215,7 +215,7 @@ export async function runRetentionPurge(
     .in("id", ids);
   if (delErr) return { ok: false, error: delErr.message };
 
-  // Audit log — record trigger so admin-triggered vs cron-triggered
+  // Audit log - record trigger so admin-triggered vs cron-triggered
   // runs are distinguishable downstream.
   await sb.from("ara_data_management_log").insert(
     ids.map((id) => ({

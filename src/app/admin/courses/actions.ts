@@ -33,7 +33,7 @@ const PILLAR_IDS = [
   "governance", "operations", "model_management",
 ] as const;
 
-// Block 6 outline — supports both shapes (flat bullets, nested subsections).
+// Block 6 outline - supports both shapes (flat bullets, nested subsections).
 // See VifmCourseOutlineSection in src/types/database.ts for the field
 // semantics. Each section uses ONE shape, never both.
 const outlineBulletSchema = z.object({
@@ -148,7 +148,7 @@ export async function setCourseCompetencyTagsAction(values: z.infer<typeof setCo
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
   const sb = await createClient();
-  // Replace-all semantics — easiest correct shape since the UI is
+  // Replace-all semantics - easiest correct shape since the UI is
   // a multi-select "set of tags" rather than incremental adds. The
   // FK has ON DELETE CASCADE so this is safe.
   const { error: delErr } = await sb

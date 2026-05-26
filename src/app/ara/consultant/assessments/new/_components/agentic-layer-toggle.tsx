@@ -41,7 +41,7 @@ export function AgenticLayerToggle() {
         <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
           As organisations move from using AI to letting autonomous agents take
           actions on their behalf, the question shifts from capability to
-          control. This layer assesses six governance dimensions — agent
+          control. This layer assesses six governance dimensions - agent
           accountability, human oversight, failure-mode awareness, tool/data
           access control, autonomy calibration, and auditability.
         </p>

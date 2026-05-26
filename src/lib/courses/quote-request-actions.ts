@@ -78,7 +78,7 @@ export async function submitCourseQuoteRequest(formData: FormData) {
     return { ok: false as const, error: "Course not found." };
   }
 
-  // Anti-abuse forensics — IP + UA from request headers. We don't show
+  // Anti-abuse forensics - IP + UA from request headers. We don't show
   // these in the admin UI by default; treat as PII.
   const h = headers();
   const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
@@ -144,7 +144,7 @@ export async function submitCourseQuoteRequest(formData: FormData) {
     return { ok: false as const, error: error?.message ?? "Save failed" };
   }
 
-  // Optional email notification to VIFM sales — wired through the
+  // Optional email notification to VIFM sales - wired through the
   // existing AC email integration when configured. Falls back to a
   // console-mock when Microsoft Graph creds are absent, so dev still works.
   await maybeNotifySales({
@@ -254,10 +254,10 @@ async function maybeNotifySales(args: {
       requesterName: args.requesterName,
       requesterEmail: args.requesterEmail,
       requesterCompany: args.requesterCompany,
-      groupSize: args.groupSize?.toString() ?? "—",
-      preferredStart: args.preferredStart ?? "—",
-      deliveryMode: args.deliveryMode ?? "—",
-      preferredLanguage: args.preferredLanguage ?? "—",
+      groupSize: args.groupSize?.toString() ?? "-",
+      preferredStart: args.preferredStart ?? "-",
+      deliveryMode: args.deliveryMode ?? "-",
+      preferredLanguage: args.preferredLanguage ?? "-",
       notes: args.notes ?? "(none)",
       adminUrl: `/admin/courses/quotes/${args.requestId}`,
     },

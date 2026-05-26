@@ -175,7 +175,7 @@
     "englishPlacement": "English placement (VIFM Fluent)",
     "certificate": "Certificate",
     "backToWelcome": "Back to Welcome",
-    "rolePlaceholder": "Hello {{name}} — your skill map will appear here once a role profile has been assigned to you.",
+    "rolePlaceholder": "Hello {{name}} - your skill map will appear here once a role profile has been assigned to you.",
     "noProfileTitle": "No Role Profile Assigned",
     "noProfileBody": "An administrator hasn't linked you to a role profile yet, so there are no target proficiencies to compare your scores against. Check back after the assessment has been set up, or contact your VIFM facilitator if you think this is a mistake.",
     "migrationMissing": "Admin: run npx supabase db push to apply migration 00016 before binding candidates to role profiles.",
@@ -223,7 +223,7 @@
       "hard": "Hard"
     },
     "points": "{{n}} pts",
-    "patternBadge": "Cognitive Challenge — Pattern Recognition",
+    "patternBadge": "Cognitive Challenge - Pattern Recognition",
     "endSession": "End Session",
     "endSessionConfirm": "End this session? Your unanswered questions will count as zero. You can retake at any time.",
     "endSessionFail": "Could not end session",
@@ -269,7 +269,7 @@
     "header": "Notifications",
     "markAllRead": "Mark all read",
     "emptyState": "You're all caught up.",
-    "candidateEmpty": "You're all caught up — no notifications yet.",
+    "candidateEmpty": "You're all caught up - no notifications yet.",
     "markAllReadFail": "Could not mark all read",
     "time": {
       "justNow": "just now",

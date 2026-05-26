@@ -16,7 +16,7 @@
  *     real id from Supabase via SUPABASE_SERVICE_ROLE_KEY; skips if no
  *     matching record exists
  *
- * Re-run any time the UI changes — the file names match the markdown's
+ * Re-run any time the UI changes - the file names match the markdown's
  * image references exactly.
  */
 
@@ -34,24 +34,24 @@ const OUT_ARA = resolve(process.cwd(), "docs/images/ara");
 const OUT_AC = resolve(process.cwd(), "docs/images/ac");
 
 type Shot = {
-  /** Output filename (relative to its module dir) — must match markdown ref */
+  /** Output filename (relative to its module dir) - must match markdown ref */
   file: string;
-  /** Module — picks the output folder */
+  /** Module - picks the output folder */
   module: "ara" | "ac";
-  /** URL path — supports `{assessmentId}`, `{respondentToken}`, `{candidateId}`,
+  /** URL path - supports `{assessmentId}`, `{respondentToken}`, `{candidateId}`,
    *   `{engagementId}`, `{quizAttemptId}` placeholders that get resolved at run-time. */
   path: string;
   /** Optional waitForSelector to ensure the page has rendered before snapping */
   waitFor?: string;
   /** Optional scrollY before snapping */
   scrollY?: number;
-  /** Optional click — element text to find and click after navigation
+  /** Optional click - element text to find and click after navigation
    *   (used to switch Radix Tabs which are client-state, not URL-driven). */
   clickByText?: string;
 };
 
 const SHOTS: Shot[] = [
-  // ── ARA — public ──────────────────────────────────────────
+  // ── ARA - public ──────────────────────────────────────────
   { module: "ara", file: "01-landing.png",                path: "/ara" },
   { module: "ara", file: "10-consultant-dashboard.png",   path: "/ara/consultant" },
   { module: "ara", file: "11-organisations.png",          path: "/ara/admin/organizations" },
@@ -61,12 +61,12 @@ const SHOTS: Shot[] = [
   { module: "ara", file: "40-admin-question-banks.png",   path: "/ara/admin/questions" },
   { module: "ara", file: "41-admin-regulatory.png",       path: "/ara/admin/regulatory" },
 
-  // ── ARA — extra consultant-flow shots ────────────────────
+  // ── ARA - extra consultant-flow shots ────────────────────
   { module: "ara", file: "02-engage.png",                 path: "/ara/engage" },
   { module: "ara", file: "50-new-organization.png",       path: "/ara/admin/organizations/new" },
   { module: "ara", file: "53-personal-deep-dive-form.png", path: "/ara/consultant/personal-deep-dive/new" },
 
-  // ── ARA — data-dependent (try to resolve a real record) ──
+  // ── ARA - data-dependent (try to resolve a real record) ──
   { module: "ara", file: "51-assessment-overview-tab.png", path: "/ara/consultant/assessments/{assessmentId}" },
   { module: "ara", file: "14-respondents-tab.png",        path: "/ara/consultant/assessments/{assessmentId}",                clickByText: "Respondents" },
   { module: "ara", file: "16-phase2-tab.png",             path: "/ara/consultant/assessments/{assessmentId}",                clickByText: "Phase 2 notes" },
@@ -76,7 +76,7 @@ const SHOTS: Shot[] = [
   { module: "ara", file: "22-respondent-question.png",    path: "/ara/respond/{respondentToken}", scrollY: 400 },
   { module: "ara", file: "31-personal-results.png",       path: "/ara/personal/results/{personalResultsToken}" },
 
-  // ── AC — public ───────────────────────────────────────────
+  // ── AC - public ───────────────────────────────────────────
   { module: "ac",  file: "01-admin-home.png",             path: "/admin" },
   { module: "ac",  file: "02-login.png",                  path: "/login" },
   { module: "ac",  file: "03-clients.png",                path: "/admin/clients" },
@@ -86,7 +86,7 @@ const SHOTS: Shot[] = [
   { module: "ac",  file: "53-role-profiles.png",          path: "/admin/role-profiles" },
   { module: "ac",  file: "54-courses-import.png",         path: "/admin/courses/import" },
 
-  // ── AC — data-dependent ──────────────────────────────────
+  // ── AC - data-dependent ──────────────────────────────────
   { module: "ac",  file: "12-engagement-detail.png",      path: "/admin/engagements/{engagementId}" },
   { module: "ac",  file: "50-engagement-assignments-tab.png", path: "/admin/engagements/{engagementId}",                  clickByText: "Assignments" },
   { module: "ac",  file: "51-engagement-matrix-tab.png",  path: "/admin/engagements/{engagementId}",                      clickByText: "Matrix" },
@@ -101,7 +101,7 @@ async function resolvePlaceholders(): Promise<Record<string, string | null>> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
-    console.warn("⚠️  Missing Supabase env — data-dependent shots will be skipped.");
+    console.warn("⚠️  Missing Supabase env - data-dependent shots will be skipped.");
     return {};
   }
   const sb = createClient(url, key);
@@ -179,14 +179,14 @@ async function captureOne(browser: Browser, shot: Shot, placeholders: Record<str
   const outDir = shot.module === "ara" ? OUT_ARA : OUT_AC;
   const outFile = resolve(outDir, shot.file);
 
-  // Fresh page per shot — isolates failures so a hung/crashed page can't
+  // Fresh page per shot - isolates failures so a hung/crashed page can't
   // cascade-detach subsequent shots. Slightly slower but much more robust.
   const page: Page = await browser.newPage();
   try {
     await page.setViewport(VIEWPORT);
     const resp = await page.goto(url, { waitUntil: "networkidle2", timeout: 30_000 });
     if (!resp || !resp.ok()) {
-      console.warn(`  ✗ ${shot.module}/${shot.file} — ${resp?.status() ?? "no response"} for ${url}`);
+      console.warn(`  ✗ ${shot.module}/${shot.file} - ${resp?.status() ?? "no response"} for ${url}`);
       return "fail";
     }
     if (shot.waitFor) {
@@ -195,13 +195,13 @@ async function captureOne(browser: Browser, shot: Shot, placeholders: Record<str
     if (shot.clickByText) {
       // Find the element by text content (typically a Radix TabsTrigger
       // <button role="tab"> with the given label) and click via
-      // Puppeteer's mouse so the pointer events fire — bare HTMLElement
+      // Puppeteer's mouse so the pointer events fire - bare HTMLElement
       // .click() doesn't trigger Radix's internal pointerdown listeners.
       const handle = await page.evaluateHandle((needle: string) => {
         const candidates = Array.from(
           document.querySelectorAll('button, [role="tab"], a')
         ) as HTMLElement[];
-        // Prefer exact match, then startsWith — handles tab labels with
+        // Prefer exact match, then startsWith - handles tab labels with
         // appended counts like "Assignments (9)". Inline trim() rather
         // than a helper because tsx transpilation injects __name() calls
         // into the helper that don't exist in the browser eval context.
@@ -234,7 +234,7 @@ async function captureOne(browser: Browser, shot: Shot, placeholders: Record<str
     console.log(`  ✓ ${shot.module}/${shot.file}`);
     return "ok";
   } catch (e) {
-    console.warn(`  ✗ ${shot.module}/${shot.file} — ${e instanceof Error ? e.message : String(e)}`);
+    console.warn(`  ✗ ${shot.module}/${shot.file} - ${e instanceof Error ? e.message : String(e)}`);
     return "fail";
   } finally {
     await page.close().catch(() => {});
@@ -262,13 +262,13 @@ async function main() {
   // session cookie persists on the browser instance for every later
   // newPage(). The seed admin is admin@viftraining.com / admin123. If
   // that user doesn't exist, sign-in silently fails and detail-page
-  // shots 404 — already-captured pages stay valid either way.
+  // shots 404 - already-captured pages stay valid either way.
   console.log("\nAttempting dev-bypass admin login…");
   const loginPage = await browser.newPage();
   await loginPage.setViewport(VIEWPORT);
   try {
     await loginPage.goto(`${BASE}/login`, { waitUntil: "networkidle2", timeout: 30_000 });
-    // Use the manual email+password form — more deterministic than
+    // Use the manual email+password form - more deterministic than
     // driving the role-dropdown + Quick Login button.
     await loginPage.waitForSelector("input#email", { timeout: 10_000 });
     await loginPage.type("input#email", "admin@viftraining.com");
@@ -289,7 +289,7 @@ async function main() {
     }
     const currentUrl = loginPage.url();
     if (currentUrl.includes("/login")) {
-      console.warn(`  ⚠ Login may have failed — still at ${new URL(currentUrl).pathname}. Detail-page shots will probably 404.`);
+      console.warn(`  ⚠ Login may have failed - still at ${new URL(currentUrl).pathname}. Detail-page shots will probably 404.`);
     } else {
       console.log(`  ✓ Logged in (now at ${new URL(currentUrl).pathname})`);
     }

@@ -2,7 +2,7 @@
  * ============================================================
  * export-active-question-bank.ts
  * -----------------------------------------------------------
- * One-shot exporter — reads the currently active ARA question
+ * One-shot exporter - reads the currently active ARA question
  * bank version + all its questions from Supabase, and emits an
  * idempotent SQL migration at:
  *
@@ -121,10 +121,10 @@ async function main() {
   // 3. Emit SQL.
   const lines: string[] = [];
   lines.push(`-- ============================================================`);
-  lines.push(`-- ARA seed question bank — captured ${new Date().toISOString()}`);
+  lines.push(`-- ARA seed question bank - captured ${new Date().toISOString()}`);
   lines.push(`-- Source: live DB active version v${version.version_number}`);
   lines.push(`-- Idempotent: re-running is safe; existing rows are kept.`);
-  lines.push(`-- Activation is NOT done here — flip is_active manually if needed.`);
+  lines.push(`-- Activation is NOT done here - flip is_active manually if needed.`);
   lines.push(`-- ============================================================`);
   lines.push(``);
   lines.push(`-- Version row`);
@@ -137,7 +137,7 @@ async function main() {
   lines.push(`  false`);
   lines.push(`) ON CONFLICT (version_number) DO NOTHING;`);
   lines.push(``);
-  lines.push(`-- Questions — keyed against the version we just upserted,`);
+  lines.push(`-- Questions - keyed against the version we just upserted,`);
   lines.push(`-- looked up by version_number so a remote env that already`);
   lines.push(`-- has the version row uses its existing id.`);
   lines.push(``);

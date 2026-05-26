@@ -188,7 +188,7 @@ export type AraQuestionValidationEvidence = {
     /** One-sentence rationale shown in the admin lineage card. */
     rationale: string;
   }>;
-  /** Short label of the broader construct this item measures, e.g. "Technology adoption — perceived usefulness". */
+  /** Short label of the broader construct this item measures, e.g. "Technology adoption - perceived usefulness". */
   construct_summary: string;
   /** Gate that decides whether this evidence shows in the client-facing report.
    *  - ai_proposed: do not surface
@@ -200,7 +200,7 @@ export type AraQuestionValidationEvidence = {
   reviewed_by: string | null;
   /** ISO timestamp of last review action. */
   reviewed_at: string | null;
-  /** Model that produced the AI proposal — for audit. */
+  /** Model that produced the AI proposal - for audit. */
   ai_model: string | null;
 };
 

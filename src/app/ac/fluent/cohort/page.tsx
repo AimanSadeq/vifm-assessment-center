@@ -90,7 +90,7 @@ export default async function FluentCohortPage() {
             </span>
           </div>
           <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-            Aggregate placement across everyone who has taken the test — CEFR distribution,
+            Aggregate placement across everyone who has taken the test - CEFR distribution,
             per-skill averages, and individual results with downloadable certificates.
           </p>
         </div>
@@ -101,7 +101,7 @@ export default async function FluentCohortPage() {
           <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             <strong>No results store yet.</strong> Apply migration{" "}
             <code className="text-xs">00042_eng_fluent_results.sql</code> to start persisting
-            completed tests. Until then the test still runs — results just aren&apos;t saved.
+            completed tests. Until then the test still runs - results just aren&apos;t saved.
           </div>
         )}
 
@@ -142,7 +142,7 @@ function CohortBody({ rows }: { rows: Row[] }) {
       {/* Stat cards */}
       <div className="grid gap-4 sm:grid-cols-4">
         <StatCard label="Tests taken" value={String(total)} />
-        <StatCard label="Average level" value={overallAvg ? overallAvg.band : "—"} tone={overallAvg?.band} />
+        <StatCard label="Average level" value={overallAvg ? overallAvg.band : "-"} tone={overallAvg?.band} />
         <StatCard label="AI-scored" value={`${aiScored}/${total}`} />
         <StatCard label="Spoke" value={`${speaking}/${total}`} />
       </div>
@@ -179,7 +179,7 @@ function CohortBody({ rows }: { rows: Row[] }) {
               <s.icon className="mx-auto h-4 w-4 text-[#5391D5]" />
               <p className="mt-1 text-[11px] uppercase tracking-wider text-slate-500">{s.label}</p>
               <p className={`mt-1 inline-block rounded-md border px-2 text-xl font-bold ${s.band ? CEFR_TONE[s.band.band] : "text-slate-400"}`}>
-                {s.band ? s.band.band : "—"}
+                {s.band ? s.band.band : "-"}
               </p>
               <p className="mt-1 text-[10px] text-slate-400">{s.band ? `${s.band.n} assessed` : "no data"}</p>
             </div>
@@ -215,17 +215,17 @@ function CohortBody({ rows }: { rows: Row[] }) {
                   <td className="px-4 py-2.5 font-medium text-[#111232]">{r.taker_name || <span className="text-slate-400">Anonymous</span>}</td>
                   <td className="px-4 py-2.5 text-slate-500">
                     <span className="inline-flex items-center gap-1">
-                      {r.taker_email || "—"}
+                      {r.taker_email || "-"}
                       {r.email_sent_at && <MailCheck className="h-3 w-3 text-emerald-600" />}
                     </span>
                   </td>
                   <td className="px-3 py-2.5 text-center">
                     <span className={`inline-block rounded border px-1.5 py-0.5 text-xs font-bold ${CEFR_TONE[r.overall_cefr] ?? ""}`}>{r.overall_cefr}</span>
                   </td>
-                  <td className="px-3 py-2.5 text-center text-slate-600">{r.reading_cefr ?? "—"}</td>
-                  <td className="px-3 py-2.5 text-center text-slate-600">{r.listening_total > 0 ? r.listening_cefr ?? "—" : "—"}</td>
-                  <td className="px-3 py-2.5 text-center text-slate-600">{r.writing_cefr ?? "—"}</td>
-                  <td className="px-3 py-2.5 text-center text-slate-600">{r.speaking_attempted ? r.speaking_cefr ?? "—" : "—"}</td>
+                  <td className="px-3 py-2.5 text-center text-slate-600">{r.reading_cefr ?? "-"}</td>
+                  <td className="px-3 py-2.5 text-center text-slate-600">{r.listening_total > 0 ? r.listening_cefr ?? "-" : "-"}</td>
+                  <td className="px-3 py-2.5 text-center text-slate-600">{r.writing_cefr ?? "-"}</td>
+                  <td className="px-3 py-2.5 text-center text-slate-600">{r.speaking_attempted ? r.speaking_cefr ?? "-" : "-"}</td>
                   <td className="px-3 py-2.5 text-center">
                     {(() => {
                       const b = r.integrity_flags?.blurCount ?? 0;
@@ -235,7 +235,7 @@ function CohortBody({ rows }: { rows: Row[] }) {
                           <Flag className="h-3 w-3" />{b}t·{p}p
                         </span>
                       ) : (
-                        <span className="text-slate-300">—</span>
+                        <span className="text-slate-300">-</span>
                       );
                     })()}
                   </td>

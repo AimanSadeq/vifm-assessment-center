@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Training catalogue · VIFM",
   description:
-    "Browse VIFM's full training catalogue — finance, AI readiness, leadership, governance and more — and request a tailored quote for any programme.",
+    "Browse VIFM's full training catalogue - finance, AI readiness, leadership, governance and more - and request a tailored quote for any programme.",
 };
 
 /**
@@ -100,7 +100,7 @@ export default async function CoursesCataloguePage({
           </h1>
           <p className="text-lg text-white/75 max-w-2xl leading-relaxed">
             {totalCount} active programme{totalCount === 1 ? "" : "s"} across
-            finance, AI readiness, leadership, governance and more — built for
+            finance, AI readiness, leadership, governance and more - built for
             professional teams in the GCC. Pick any programme to see the full
             outline and request a tailored quote.
           </p>
@@ -179,7 +179,7 @@ export default async function CoursesCataloguePage({
             Don&apos;t see what you need?
           </h2>
           <p className="text-sm text-muted-foreground max-w-xl mx-auto mb-5">
-            VIFM also runs bespoke programmes — custom-built around your team&apos;s
+            VIFM also runs bespoke programmes - custom-built around your team&apos;s
             specific competencies and outcomes. Get in touch for a scoped proposal.
           </p>
           <Link

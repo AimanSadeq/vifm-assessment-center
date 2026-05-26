@@ -47,7 +47,7 @@ const MMDC_CLI = resolve(ROOT, "node_modules/@mermaid-js/mermaid-cli/src/cli.js"
 // Pandoc has to be resolved explicitly so we can call it via execFile
 // without going through a shell. winget on Windows actually installs it
 // under %LOCALAPPDATA%\Pandoc\pandoc.exe (not the WinGet/Links shim
-// path) — surfaced by `Get-Command pandoc` in PowerShell after install.
+// path) - surfaced by `Get-Command pandoc` in PowerShell after install.
 function resolvePandoc(): string {
   if (!isWin) return "pandoc";
   const localApp = process.env.LOCALAPPDATA;
@@ -159,7 +159,7 @@ async function pandocConvert(tmpMd: string, outDocx: string): Promise<void> {
     "--toc-depth=2",
     "--resource-path=" + dirname(tmpMd),
   ];
-  // Use execFile (no shell) — both the binary path and args are
+  // Use execFile (no shell) - both the binary path and args are
   // controlled by us, so there's no injection surface.
   const { stderr } = await execFile(PANDOC, args, { maxBuffer: 50 * 1024 * 1024 });
   if (stderr.trim()) {
@@ -185,7 +185,7 @@ async function buildOne(job: GuideJob): Promise<void> {
 
 async function main() {
   if (!existsSync(MMDC_CLI)) {
-    console.error("mmdc cli.js not found — run: npm install --save-dev --legacy-peer-deps @mermaid-js/mermaid-cli");
+    console.error("mmdc cli.js not found - run: npm install --save-dev --legacy-peer-deps @mermaid-js/mermaid-cli");
     process.exit(1);
   }
   console.log(`Using pandoc: ${PANDOC}`);

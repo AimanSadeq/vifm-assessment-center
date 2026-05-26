@@ -54,7 +54,7 @@ export default async function DuplicateCoursesPage() {
   const tableMissing = error?.code === "42P01";
   const courses = (data ?? []) as unknown as CourseRow[];
 
-  // Build candidate pairs. O(n²) — fine for the realistic catalogue
+  // Build candidate pairs. O(n²) - fine for the realistic catalogue
   // size (a few hundred at most). Skip self-pairs and duplicates of
   // the same pair (a,b) and (b,a).
   const pairs: Pair[] = [];
@@ -94,14 +94,14 @@ export default async function DuplicateCoursesPage() {
           (whitespace + case-insensitive). Pairs at or above{" "}
           {Math.round(SIM_THRESHOLD * 100)}% similarity are listed,
           ranked by confidence. Use the X button on the row you want
-          to drop — the other one stays.
+          to drop - the other one stays.
         </p>
       </div>
 
       {tableMissing && (
         <Card className="border-amber-300 bg-amber-50">
           <CardContent className="py-4 text-sm text-amber-900">
-            Migration 00023 not yet applied — run it to enable the
+            Migration 00023 not yet applied - run it to enable the
             catalogue tables.
           </CardContent>
         </Card>
@@ -110,7 +110,7 @@ export default async function DuplicateCoursesPage() {
       {!tableMissing && courses.length === 0 && (
         <Card>
           <CardContent className="py-6 text-sm text-muted-foreground">
-            No courses in the catalogue yet — nothing to compare. Use
+            No courses in the catalogue yet - nothing to compare. Use
             <Link href="/admin/courses/import" className="ms-1 text-accent hover:underline">
               Import PDFs
             </Link>{" "}or{" "}
@@ -132,7 +132,7 @@ export default async function DuplicateCoursesPage() {
               {Math.round(SIM_THRESHOLD * 100)}%
               {pairs.length > 0 && (
                 <>
-                  {" "}— <span className="text-rose-700">{strongCount} strong</span>,{" "}
+                  {" "}- <span className="text-rose-700">{strongCount} strong</span>,{" "}
                   <span className="text-amber-700">{likelyCount} likely</span>,{" "}
                   <span className="text-muted-foreground">{possibleCount} possible</span>
                 </>

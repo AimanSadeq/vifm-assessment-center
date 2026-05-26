@@ -75,7 +75,7 @@ export default async function NewAraAssessmentPage({
           <p className="text-sm text-muted-foreground mb-8 max-w-2xl">
             Stage drives the pillars in scope, the report length, and whether
             this is a complimentary lead-in or a fee-based engagement. You
-            can&apos;t change it later — start a new assessment if scope grows.
+            can&apos;t change it later - start a new assessment if scope grows.
             Looking for the Personal Snapshot? It has its own self-served flow at{" "}
             <Link href="/ara/personal/start" className="underline hover:text-foreground">
               /ara/personal/start
@@ -176,7 +176,7 @@ export default async function NewAraAssessmentPage({
               <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                 Every Department, Division, or Enterprise assessment can
                 optionally include the four-factor individual layer alongside
-                the org-side pillar items — gives you a per-respondent
+                the org-side pillar items - gives you a per-respondent
                 personal readiness rollup plus a cohort dashboard. You&apos;ll
                 find the toggle on Step 2 once you pick a stage.
               </p>
@@ -261,7 +261,7 @@ export default async function NewAraAssessmentPage({
     ? "e.g. Risk Management, IT, Human Resources"
     : stage.id === "division"
       ? "e.g. Retail Banking, Treasury, Operations Division"
-      : "Optional — leave blank for an organisation-wide assessment.";
+      : "Optional - leave blank for an organisation-wide assessment.";
   const scopeRequired = stage.id !== "enterprise";
 
   const createAssessmentAction = async (fd: FormData) => {
@@ -385,7 +385,7 @@ export default async function NewAraAssessmentPage({
                 </select>
               </div>
 
-              {/* Scope label — required for department & division, optional for enterprise */}
+              {/* Scope label - required for department & division, optional for enterprise */}
               <div className="space-y-2">
                 <Label htmlFor="scope_label">
                   {stage.id === "department" ? "Department name" : stage.id === "division" ? "Division name" : "Scope label (optional)"}
@@ -457,7 +457,7 @@ export default async function NewAraAssessmentPage({
 
               <AgenticLayerToggle />
 
-              {/* Pillar selector — Department picks 4, Division picks 6.
+              {/* Pillar selector - Department picks 4, Division picks 6.
                   Enterprise stays at all 8 (no UI shown). */}
               {(stage.id === "department" || stage.id === "division") && (
                 <div className="rounded-lg border p-4 bg-muted/20">

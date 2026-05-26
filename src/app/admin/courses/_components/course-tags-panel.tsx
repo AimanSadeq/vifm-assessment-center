@@ -74,7 +74,7 @@ type Props = {
  * Read + edit AC competency and ARA pillar tags on a course.
  *
  * Design choices:
- *  - Replace-all save semantics — one click commits the whole set.
+ *  - Replace-all save semantics - one click commits the whole set.
  *    Matches the server action's behaviour (delete then insert) and
  *    avoids per-tag round-trips.
  *  - "source" defaults to manual when the admin adds/edits a tag
@@ -212,7 +212,7 @@ export function CourseTagsPanel({
           </div>
           {compTags.length === 0 && (
             <p className="text-xs text-muted-foreground">
-              No competency tags yet. Add one below — courses without
+              No competency tags yet. Add one below - courses without
               competency tags won&apos;t surface on AC engagement
               recommendations.
             </p>
@@ -397,7 +397,7 @@ function TagRow({
         className="w-full mt-1.5 rounded-md border border-input bg-card px-2 py-1.5 text-[11px]"
       />
       <p className="text-[10px] text-muted-foreground/80 mt-0.5">
-        Weight {weight} ({WEIGHT_LABEL[weight]}) — used in the recommender as <code>gap × {weight}</code>.
+        Weight {weight} ({WEIGHT_LABEL[weight]}) - used in the recommender as <code>gap × {weight}</code>.
       </p>
     </div>
   );

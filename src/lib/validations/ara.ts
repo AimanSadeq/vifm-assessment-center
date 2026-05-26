@@ -27,7 +27,7 @@ export type CreateAraOrganizationValues = z.infer<typeof createAraOrganizationSc
 // 'individual' is the Personal stage (Mode A free snapshot, Mode B paid
 // deep-dive). It uses different create flows (/ara/personal/start and
 // /ara/consultant/personal-deep-dive/new) but is still a valid value
-// for the engagement_stage column — the schema must accept it.
+// for the engagement_stage column - the schema must accept it.
 export const araEngagementStageSchema = z.enum([
   "department", "division", "enterprise", "individual",
 ]);
@@ -42,7 +42,7 @@ export const createAraAssessmentSchema = z.object({
   question_bank_version_id: z.string().uuid().nullable().optional(),
   engagement_stage: araEngagementStageSchema,
   scope_label: z.string().trim().min(1).max(120).nullable().optional(),
-  // Mode C — workforce readiness layer alongside the org pillar items.
+  // Mode C - workforce readiness layer alongside the org pillar items.
   include_individual_layer: z.boolean().default(false),
   // Agentic-AI Readiness layer alongside the org pillar items (migration 00041).
   include_agentic_layer: z.boolean().default(false),

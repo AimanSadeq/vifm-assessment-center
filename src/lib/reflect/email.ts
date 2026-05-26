@@ -2,9 +2,9 @@
  * Reflect email integration.
  *
  * Three bilingual templates:
- *   - reflect_rater_invitation   — sent to a rater with their token URL
- *   - reflect_rater_reminder     — gentle nudge if they haven't completed
- *   - reflect_completion_notice  — consultant notification when a rater completes
+ *   - reflect_rater_invitation   - sent to a rater with their token URL
+ *   - reflect_rater_reminder     - gentle nudge if they haven't completed
+ *   - reflect_completion_notice  - consultant notification when a rater completes
  *
  * Same posture as src/lib/ara/email.ts:
  *   - Microsoft Graph via OUTLOOK_* / AZURE_* env vars; falls back to console
@@ -59,7 +59,7 @@ const TEMPLATES: Record<
   reflect_rater_invitation: {
     en: (d) => ({
       contentType: "Text",
-      subject: `360° feedback invitation — ${d.participantName}`,
+      subject: `360° feedback invitation - ${d.participantName}`,
       body: `Hello ${d.raterName},
 
 ${d.participantName} has nominated you to provide 360° leadership feedback as part of ${d.engagementName} at ${d.organizationName}.
@@ -78,7 +78,7 @@ Virginia Institute of Finance and Management`,
     }),
     ar: (d) => ({
       contentType: "Text",
-      subject: `دعوة للمشاركة في تقييم 360 — ${d.participantName}`,
+      subject: `دعوة للمشاركة في تقييم 360 - ${d.participantName}`,
       body: `مرحبًا ${d.raterName}،
 
 تمت ترشيحك من قِبل ${d.participantName} لتقديم تغذية راجعة قيادية ضمن برنامج ${d.engagementName} في ${d.organizationName}.
@@ -97,18 +97,18 @@ ${d.respondentUrl}
     }),
     bilingual: (d) => ({
       contentType: "HTML",
-      subject: `360° Feedback / تقييم 360 — ${d.participantName}`,
+      subject: `360° Feedback / تقييم 360 - ${d.participantName}`,
       body: `<div style="font-family:'Open Sans',Arial,sans-serif;line-height:1.55;color:#121232;">
   <p>Hello ${d.raterName},</p>
   <p>${d.participantName} has nominated you to provide 360° leadership feedback as part of <strong>${d.engagementName}</strong> at ${d.organizationName}.</p>
   <p>You'll rate ${d.roleLabel} on a short set of observable behaviours (10–15 minutes). Peer and direct-report scores are only revealed once at least ${d.anonymityN} raters in each group have responded.</p>
-  <p><a href="${d.respondentUrl}" style="color:#5391D5;">Open your secure response link</a> — do not share.</p>
+  <p><a href="${d.respondentUrl}" style="color:#5391D5;">Open your secure response link</a> - do not share.</p>
   <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
   <div dir="rtl" style="text-align:right;">
     <p>مرحبًا ${d.raterName}،</p>
     <p>تمت ترشيحك من قِبل ${d.participantName} لتقديم تغذية راجعة قيادية ضمن برنامج <strong>${d.engagementName}</strong> في ${d.organizationName}.</p>
     <p>ستقوم بتقييم ${d.roleLabel} وفق مجموعة موجزة من السلوكيات الملاحظة (10–15 دقيقة). لا تظهر نتائج فئتي الزملاء والتقارير المباشرة إلا بعد إجابة ${d.anonymityN} مقيّمين على الأقل.</p>
-    <p><a href="${d.respondentUrl}" style="color:#5391D5;">افتح رابطك الآمن للإجابة</a> — يُرجى عدم مشاركته.</p>
+    <p><a href="${d.respondentUrl}" style="color:#5391D5;">افتح رابطك الآمن للإجابة</a> - يُرجى عدم مشاركته.</p>
   </div>
 </div>`,
     }),
@@ -127,7 +127,7 @@ ${d.respondentUrl}
 
 Field window closes ${d.fieldWindowEnd}.
 
-— VIFM Reflect 360`,
+- VIFM Reflect 360`,
     }),
     ar: (d) => ({
       contentType: "Text",
@@ -141,11 +141,11 @@ ${d.respondentUrl}
 
 تُغلق نافذة التقييم في ${d.fieldWindowEnd}.
 
-— VIFM Reflect 360`,
+- VIFM Reflect 360`,
     }),
     bilingual: (d) => ({
       contentType: "HTML",
-      subject: `Reminder · تذكير — 360° feedback for ${d.participantName}`,
+      subject: `Reminder · تذكير - 360° feedback for ${d.participantName}`,
       body: `<div style="font-family:'Open Sans',Arial,sans-serif;line-height:1.55;color:#121232;">
   <p>Hello ${d.raterName},</p>
   <p>A gentle reminder that ${d.participantName}'s 360° feedback window is still open. <a href="${d.respondentUrl}" style="color:#5391D5;">Resume your response</a>.</p>
@@ -163,7 +163,7 @@ ${d.respondentUrl}
   reflect_completion_notice: {
     en: (d) => ({
       contentType: "Text",
-      subject: `Rater completed — ${d.raterName} → ${d.participantName}`,
+      subject: `Rater completed - ${d.raterName} → ${d.participantName}`,
       body: `Hi ${d.consultantName ?? "consultant"},
 
 ${d.raterName} (${d.raterRoleLabel}) has completed their 360° feedback for ${d.participantName} on ${d.engagementName}.
@@ -172,11 +172,11 @@ Status: ${d.completedCount} of ${d.totalCount} raters complete for ${d.participa
 
 Open the engagement: ${d.engagementUrl}
 
-— VIFM Reflect 360`,
+- VIFM Reflect 360`,
     }),
     ar: (d) => ({
       contentType: "Text",
-      subject: `إكمال المقيّم — ${d.raterName} → ${d.participantName}`,
+      subject: `إكمال المقيّم - ${d.raterName} → ${d.participantName}`,
       body: `مرحبًا ${d.consultantName ?? "المستشار"}،
 
 أكمل ${d.raterName} (${d.raterRoleLabel}) التغذية الراجعة لـ ${d.participantName} ضمن ${d.engagementName}.
@@ -185,7 +185,7 @@ Open the engagement: ${d.engagementUrl}
 
 افتح المشروع: ${d.engagementUrl}
 
-— VIFM Reflect 360`,
+- VIFM Reflect 360`,
     }),
     bilingual: (d) => ({
       contentType: "HTML",
@@ -243,7 +243,7 @@ export async function sendReflectEmail(
 
   if (!graphClient || !fromAddress) {
     status = "mocked";
-    console.warn("[reflect-email] Graph not configured — falling back to console mock.");
+    console.warn("[reflect-email] Graph not configured - falling back to console mock.");
     console.log(
       `[reflect-email MOCK] type=${input.emailType} lang=${input.language} to=${recipient}${
         isRedirected ? " (sandbox)" : ""

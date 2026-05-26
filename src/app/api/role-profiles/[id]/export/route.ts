@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 /**
- * G6 — JSON export of a role profile + its linked competencies.
+ * G6 - JSON export of a role profile + its linked competencies.
  *
  * Output shape mirrors what an admin needs to review the profile offline
  * or re-import it into another VIFM environment. Adds a metadata wrapper

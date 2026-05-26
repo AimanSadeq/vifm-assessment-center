@@ -24,7 +24,7 @@ export default async function ReflectParticipantReportPage({
   const scoring = await computeParticipantScoring(id);
   if (!scoring) return notFound();
 
-  // Course recommendations — best-effort. If the framework competency names
+  // Course recommendations - best-effort. If the framework competency names
   // don't match the AC catalogue we silently fall back to an empty list and
   // the recommendation page renders a placeholder.
   const recPayload = await recommendCoursesForReflectParticipant({
@@ -32,7 +32,7 @@ export default async function ReflectParticipantReportPage({
     limit: 5,
   });
 
-  // P3.4 — Per-behavior AI development tips for the top-5 dev areas.
+  // P3.4 - Per-behavior AI development tips for the top-5 dev areas.
   // Single Claude call; falls back to a generic tip when no API key.
   const behaviorTips = await generateReflectBehaviorTips(
     scoring.development_areas.map((b) => ({
@@ -105,11 +105,11 @@ function ReportBody({
           </dl>
           <div className="confidentiality">
             {rtl
-              ? "سرّي — للاستخدام التطويري الفردي فقط. لا يُستخدم لأغراض الاختيار أو الترقية."
-              : "Confidential — for personal development use only. Not to be used for selection or promotion decisions."}
+              ? "سرّي - للاستخدام التطويري الفردي فقط. لا يُستخدم لأغراض الاختيار أو الترقية."
+              : "Confidential - for personal development use only. Not to be used for selection or promotion decisions."}
           </div>
 
-          {/* P3.1 Cover wheel — Self vs Others polygons on the competency axes */}
+          {/* P3.1 Cover wheel - Self vs Others polygons on the competency axes */}
           <CoverWheel scoring={scoring} rtl={rtl} />
         </div>
       </section>
@@ -126,10 +126,10 @@ function ReportBody({
         </div>
         <h3>{rtl ? "فئات المقيّمين" : "Rater groups"}</h3>
         <ul className="rater-groups">
-          <li><strong>{rtl ? "أنت" : "Self"}</strong> — {rtl ? "تقييمك الذاتي" : "your own self-assessment"}</li>
-          <li><strong>{rtl ? "المدير المباشر" : "Manager"}</strong> — {rtl ? "تقييم مديرك المباشر" : "your line manager's view"}</li>
-          <li><strong>{rtl ? "الزملاء" : "Peers"}</strong> — {rtl ? "متوسط آراء زملائك" : "the pooled view of your peers"}</li>
-          <li><strong>{rtl ? "التقارير المباشرة" : "Direct reports"}</strong> — {rtl ? "متوسط آراء من يعملون معك مباشرة" : "the pooled view of those who report to you"}</li>
+          <li><strong>{rtl ? "أنت" : "Self"}</strong> - {rtl ? "تقييمك الذاتي" : "your own self-assessment"}</li>
+          <li><strong>{rtl ? "المدير المباشر" : "Manager"}</strong> - {rtl ? "تقييم مديرك المباشر" : "your line manager's view"}</li>
+          <li><strong>{rtl ? "الزملاء" : "Peers"}</strong> - {rtl ? "متوسط آراء زملائك" : "the pooled view of your peers"}</li>
+          <li><strong>{rtl ? "التقارير المباشرة" : "Direct reports"}</strong> - {rtl ? "متوسط آراء من يعملون معك مباشرة" : "the pooled view of those who report to you"}</li>
         </ul>
         <div className="callout">
           {rtl
@@ -169,7 +169,7 @@ function ReportBody({
           />
           <KpiCard
             label={rtl ? "الفجوة" : "Gap"}
-            value={scoring.overall_gap !== null ? (scoring.overall_gap > 0 ? `+${scoring.overall_gap.toFixed(2)}` : scoring.overall_gap.toFixed(2)) : "—"}
+            value={scoring.overall_gap !== null ? (scoring.overall_gap > 0 ? `+${scoring.overall_gap.toFixed(2)}` : scoring.overall_gap.toFixed(2)) : "-"}
             sub={rtl ? "أنت ↔ الآخرون" : "Self ↔ Others"}
           />
         </div>
@@ -221,10 +221,10 @@ function ReportBody({
         tone="strength"
       />
 
-      {/* Development areas — with P3.4 AI coaching tips */}
+      {/* Development areas - with P3.4 AI coaching tips */}
       <BehaviorListPage
         title={rtl ? "مجالات التطوير" : "Development areas"}
-        subtitle={rtl ? "أقل 5 سلوكيات حسب رأي الآخرين — مع نصيحة تطويرية لكل سلوك" : "Bottom 5 behaviours by Others' mean — with a coaching tip for each"}
+        subtitle={rtl ? "أقل 5 سلوكيات حسب رأي الآخرين - مع نصيحة تطويرية لكل سلوك" : "Bottom 5 behaviours by Others' mean - with a coaching tip for each"}
         behaviors={scoring.development_areas}
         rtl={rtl}
         tone="develop"
@@ -236,8 +236,8 @@ function ReportBody({
         title={rtl ? "النقاط العمياء" : "Blind spots"}
         subtitle={
           rtl
-            ? "السلوكيات التي تقيّمها أعلى مما يقيّمها الآخرون — فرصة لزيادة الوعي الذاتي"
-            : "Behaviours where you rate yourself higher than others — an opportunity to raise self-awareness"
+            ? "السلوكيات التي تقيّمها أعلى مما يقيّمها الآخرون - فرصة لزيادة الوعي الذاتي"
+            : "Behaviours where you rate yourself higher than others - an opportunity to raise self-awareness"
         }
         behaviors={scoring.blind_spots}
         rtl={rtl}
@@ -249,8 +249,8 @@ function ReportBody({
         title={rtl ? "نقاط القوة الخفية" : "Hidden strengths"}
         subtitle={
           rtl
-            ? "السلوكيات التي يقيّمها الآخرون أعلى مما تقيّمها بنفسك — لا تقلّل من قدرتك"
-            : "Behaviours where others rate you higher than you rate yourself — don't undersell these"
+            ? "السلوكيات التي يقيّمها الآخرون أعلى مما تقيّمها بنفسك - لا تقلّل من قدرتك"
+            : "Behaviours where others rate you higher than you rate yourself - don't undersell these"
         }
         behaviors={scoring.hidden_strengths}
         rtl={rtl}
@@ -289,7 +289,7 @@ function ReportBody({
               <KpiInline label={rtl ? "الآخرون" : "Others"} value={fmtScore(c.others_mean)} />
               <KpiInline
                 label={rtl ? "الفجوة" : "Gap"}
-                value={c.gap !== null ? (c.gap > 0 ? `+${c.gap.toFixed(2)}` : c.gap.toFixed(2)) : "—"}
+                value={c.gap !== null ? (c.gap > 0 ? `+${c.gap.toFixed(2)}` : c.gap.toFixed(2)) : "-"}
               />
               {c.prior_others_mean !== null && c.others_mean !== null && (
                 <PriorDeltaInline
@@ -312,7 +312,7 @@ function ReportBody({
                       <span className="group-bar-fill" style={{ width: `${((g.mean ?? 0) / 5) * 100}%` }} />
                     )}
                   </span>
-                  <span className="group-bar-value">{g.hidden_by_anonymity ? "—" : fmtScore(g.mean)}</span>
+                  <span className="group-bar-value">{g.hidden_by_anonymity ? "-" : fmtScore(g.mean)}</span>
                 </div>
               ))}
             </div>
@@ -321,7 +321,7 @@ function ReportBody({
         })}
       </section>
 
-      {/* P3.2 Reference Group Comparison — single horizontal-dots view */}
+      {/* P3.2 Reference Group Comparison - single horizontal-dots view */}
       <ReferenceGroupComparisonPage scoring={scoring} rtl={rtl} />
 
       {/* P3.3 Strengths & Development Summary */}
@@ -412,25 +412,25 @@ function ReportBody({
         )}
       </section>
 
-      {/* IDP scaffold — K-S-S frame (KEEP / STOP / START) */}
+      {/* IDP scaffold - K-S-S frame (KEEP / STOP / START) */}
       <section className="page">
         <h2>{rtl ? "خطة التطوير الفردية" : "Your Individual Development Plan"}</h2>
         <p className="lead">
           {rtl
-            ? "هذا الإطار يلتقط ما تريد الاحتفاظ به وما تريد التخلص منه وما تريد البدء به. املأه خلال جلسة الاستخلاص مع مستشار VIFM — مستندًا إلى ما كتبه المقيّمون أعلاه."
-            : "This scaffold captures what to keep doing, what to stop, and what to start. Complete it during your debrief with a VIFM coach — anchored to what your raters wrote above."}
+            ? "هذا الإطار يلتقط ما تريد الاحتفاظ به وما تريد التخلص منه وما تريد البدء به. املأه خلال جلسة الاستخلاص مع مستشار VIFM - مستندًا إلى ما كتبه المقيّمون أعلاه."
+            : "This scaffold captures what to keep doing, what to stop, and what to start. Complete it during your debrief with a VIFM coach - anchored to what your raters wrote above."}
         </p>
         <ol className="idp">
           {(rtl
             ? [
-                { tag: "KSS", title: "احتفظ بـ", caption: "السلوكيات التي تخدمك جيدًا — لا تفقدها أثناء التغيير." },
-                { tag: "KSS", title: "توقّف عن", caption: "السلوكيات التي تكلّفك أكثر مما تعطيك — تخلّص منها أولًا." },
-                { tag: "KSS", title: "ابدأ في", caption: "السلوكيات الجديدة التي ستحدث الفرق الأكبر — جرّب واحدًا في وقت." },
+                { tag: "KSS", title: "احتفظ بـ", caption: "السلوكيات التي تخدمك جيدًا - لا تفقدها أثناء التغيير." },
+                { tag: "KSS", title: "توقّف عن", caption: "السلوكيات التي تكلّفك أكثر مما تعطيك - تخلّص منها أولًا." },
+                { tag: "KSS", title: "ابدأ في", caption: "السلوكيات الجديدة التي ستحدث الفرق الأكبر - جرّب واحدًا في وقت." },
               ]
             : [
-                { tag: "KEEP", title: "KEEP doing", caption: "Behaviours that serve you well — don't lose these as you change." },
-                { tag: "STOP", title: "STOP doing", caption: "Behaviours that cost more than they give — drop these first." },
-                { tag: "START", title: "START doing", caption: "New behaviours that will move the needle most — try one at a time." },
+                { tag: "KEEP", title: "KEEP doing", caption: "Behaviours that serve you well - don't lose these as you change." },
+                { tag: "STOP", title: "STOP doing", caption: "Behaviours that cost more than they give - drop these first." },
+                { tag: "START", title: "START doing", caption: "New behaviours that will move the needle most - try one at a time." },
               ]
           ).map((block, i) => (
             <li key={i}>
@@ -523,7 +523,7 @@ function BehaviorListPage({
                 <div className="behavior-meta">
                   <span><strong>{rtl ? "أنت" : "Self"}:</strong> {fmtScore(b.self_score)}</span>
                   <span><strong>{rtl ? "الآخرون" : "Others"}:</strong> {fmtScore(b.others_mean)}</span>
-                  <span><strong>{rtl ? "الفجوة" : "Gap"}:</strong> {b.gap !== null ? (b.gap > 0 ? `+${b.gap.toFixed(2)}` : b.gap.toFixed(2)) : "—"}</span>
+                  <span><strong>{rtl ? "الفجوة" : "Gap"}:</strong> {b.gap !== null ? (b.gap > 0 ? `+${b.gap.toFixed(2)}` : b.gap.toFixed(2)) : "-"}</span>
                 </div>
                 {tip && (
                   <div className="behavior-tip">
@@ -597,7 +597,7 @@ function CoverWheel({
   return (
     <div className="cover-wheel-wrap">
       <svg viewBox={`0 0 ${size} ${size}`} width="100%" height="auto" className="cover-wheel">
-        {/* Favorable Zone band (3.5–4.25) — annular wedge */}
+        {/* Favorable Zone band (3.5–4.25) - annular wedge */}
         <circle cx={cx} cy={cy} r={(4.25 / 5) * r} fill="rgba(217, 119, 6, 0.10)" />
         <circle cx={cx} cy={cy} r={(3.5 / 5) * r} fill="white" />
 
@@ -751,7 +751,7 @@ function PriorDeltaInline({
 // ──────────────────────────────────────────────────────────────
 // Tenure breakdown. Tiny strip on the Summary page that gives a
 // one-line read on "how much do these raters actually know this
-// person" — competitor reports surface this as small chips next
+// person" - competitor reports surface this as small chips next
 // to each verbatim and we follow the same pattern.
 // ──────────────────────────────────────────────────────────────
 
@@ -763,7 +763,7 @@ function TenureBreakdownCard({
   rtl: boolean;
 }) {
   const tb = scoring.tenure_breakdown;
-  // Don't render the card if nobody answered — the field is optional.
+  // Don't render the card if nobody answered - the field is optional.
   if (tb.answered === 0 && tb.unanswered === 0) return null;
   if (tb.answered === 0) return null;
 
@@ -801,7 +801,7 @@ function TenureBreakdownCard({
 
 // ──────────────────────────────────────────────────────────────
 // Critical-competency alignment card. The single most-quoted
-// coaching anchor from competitor 360s — shows the % overlap
+// coaching anchor from competitor 360s - shows the % overlap
 // between Self's picks and the Manager's picks. When either side
 // hasn't picked yet, we say so explicitly rather than rendering a
 // misleading 0%.
@@ -835,7 +835,7 @@ function CriticalAlignmentCard({
           {rtl ? "التوافق على الكفايات الحرجة" : "Critical-competency alignment"}
         </h3>
         <span className={`critical-card-pct critical-pct-${a.alignment_pct === null || a.alignment_pct >= 67 ? "high" : a.alignment_pct >= 34 ? "mid" : "low"}`}>
-          {a.alignment_pct === null ? "—" : `${a.alignment_pct}%`}
+          {a.alignment_pct === null ? "-" : `${a.alignment_pct}%`}
         </span>
       </div>
       <p className="critical-card-lead">
@@ -1001,7 +1001,7 @@ function ReferenceGroupComparisonPage({
 // by Others-mean and splits into "Strengths" (within/above zone)
 // and "Development areas" (below zone). When a competency is also
 // flagged as role-critical (P1.5), it gets a "Critical Development
-// Area!" tag — the single most impactful coaching signal.
+// Area!" tag - the single most impactful coaching signal.
 // ──────────────────────────────────────────────────────────────
 
 function StrengthsDevSummaryPage({
@@ -1030,8 +1030,8 @@ function StrengthsDevSummaryPage({
       <h2>{rtl ? "ملخّص نقاط القوة والتطوير" : "Strengths & Development Summary"}</h2>
       <p className="lead">
         {rtl
-          ? "كل كفاية مرتّبة حسب رأي الآخرين. النطاق المرجعي يبدأ من 3.5. الكفايات الموسومة بـ «نقطة تطوير حرجة» اخترتموها أنت أو مديرك كحرجة وهي تحت النطاق — أعطها الأولوية في الخطة."
-          : "Every competency ranked by Others' view. The Favorable Zone starts at 3.5. Anything flagged Critical Development Area was picked as role-critical by you or your manager AND is below the zone — prioritise these first in your plan."}
+          ? "كل كفاية مرتّبة حسب رأي الآخرين. النطاق المرجعي يبدأ من 3.5. الكفايات الموسومة بـ «نقطة تطوير حرجة» اخترتموها أنت أو مديرك كحرجة وهي تحت النطاق - أعطها الأولوية في الخطة."
+          : "Every competency ranked by Others' view. The Favorable Zone starts at 3.5. Anything flagged Critical Development Area was picked as role-critical by you or your manager AND is below the zone - prioritise these first in your plan."}
       </p>
 
       <h3 className="sds-strength-h">{rtl ? "نقاط القوة" : "Strengths"}</h3>
@@ -1081,7 +1081,7 @@ function StrengthsDevSummaryPage({
 
 
 // ──────────────────────────────────────────────────────────────
-// Item-level detail — every behaviour with the per-rater-group
+// Item-level detail - every behaviour with the per-rater-group
 // breakdown that competitors put at the back of every report.
 // Pages are chunked at ~12 rows per page so they always render
 // at A4 without orphans.
@@ -1108,8 +1108,8 @@ function ItemLevelDetailPages({
       <h2>{rtl ? "تفصيل السلوكيات" : "Item-level detail"}</h2>
       <p className="lead">
         {rtl
-          ? "كل سلوك في الإطار مع متوسطه عند كل فئة من المقيّمين. الخلايا المخفية تعود إلى عتبة إخفاء الهوية. تشير علامة ⚠ إلى أن المقيّمين في تلك الفئة يختلفون بمقدار 3 درجات أو أكثر — اقرأ المتوسط بحذر."
-          : "Every behaviour in the framework with its mean per rater group. Hidden cells fall under the anonymity threshold. A ⚠ flag means raters within that group disagree by 3+ points — read the mean with care."}
+          ? "كل سلوك في الإطار مع متوسطه عند كل فئة من المقيّمين. الخلايا المخفية تعود إلى عتبة إخفاء الهوية. تشير علامة ⚠ إلى أن المقيّمين في تلك الفئة يختلفون بمقدار 3 درجات أو أكثر - اقرأ المتوسط بحذر."
+          : "Every behaviour in the framework with its mean per rater group. Hidden cells fall under the anonymity threshold. A ⚠ flag means raters within that group disagree by 3+ points - read the mean with care."}
       </p>
       {scoring.competencies.map((c) => {
         const compBehs = scoring.behaviors.filter((b) => b.competency_id === c.competency_id);
@@ -1133,7 +1133,7 @@ function ItemLevelDetailPages({
                 {/* Return an array of <tr> per behavior (one main + one
                     optional comments row) instead of wrapping in a fragment.
                     Fragments inside <tbody> can corrupt table layout under
-                    Puppeteer's strict table-parsing path — flagged by P3 audit. */}
+                    Puppeteer's strict table-parsing path - flagged by P3 audit. */}
                 {compBehs.flatMap((b) => {
                   const rows = [
                     <tr key={b.behavior_id}>
@@ -1143,7 +1143,7 @@ function ItemLevelDetailPages({
                       {RATER_GROUPS_FOR_TABLE.map((g) => {
                         const grp = b.by_group.find((x) => x.rater_role === g.role);
                         if (!grp || grp.rater_count === 0) {
-                          return <td key={g.role} className="item-group dim">—</td>;
+                          return <td key={g.role} className="item-group dim">-</td>;
                         }
                         if (grp.hidden_by_anonymity) {
                           return <td key={g.role} className="item-group dim">·</td>;
@@ -1160,7 +1160,7 @@ function ItemLevelDetailPages({
                       })}
                       <td className="item-group">
                         {b.gap === null
-                          ? "—"
+                          ? "-"
                           : b.gap > 0
                             ? `+${b.gap.toFixed(2)}`
                             : b.gap.toFixed(2)}
@@ -1259,7 +1259,7 @@ function VerbatimPage({
                 const lang = detectVerbatimLanguage(v.text);
                 const reportLang: "en" | "ar" = rtl ? "ar" : "en";
                 // Only show the language chip when the verbatim language
-                // doesn't match the report language — that's the case
+                // doesn't match the report language - that's the case
                 // where the consultant needs to be aware (and consider
                 // translating during debrief).
                 const showLangChip = lang !== "unknown" && lang !== reportLang;
@@ -1302,7 +1302,7 @@ function VerbatimPage({
 // ──────────────────────────────────────────────────────────────
 
 function fmtScore(v: number | null): string {
-  if (v === null) return "—";
+  if (v === null) return "-";
   return v.toFixed(2);
 }
 
@@ -1314,7 +1314,7 @@ function fmtScore(v: number | null): string {
  *
  * The Arabic block range U+0600–U+06FF covers all standard Arabic
  * letters; the Latin range U+0041–U+007A covers A–Z and a–z. We don't
- * try to be exhaustive about CJK / Cyrillic / etc — the only choice the
+ * try to be exhaustive about CJK / Cyrillic / etc - the only choice the
  * consultant is making is "do I need Arabic translation for this?".
  */
 function detectVerbatimLanguage(text: string): "ar" | "en" | "unknown" {
@@ -1371,7 +1371,7 @@ function roleLabelShort(role: string, rtl: boolean): string {
 
 
 // ──────────────────────────────────────────────────────────────
-// Print CSS — single source of truth so Puppeteer renders identically
+// Print CSS - single source of truth so Puppeteer renders identically
 // across light themes. Mirrors VIFM Primary Blue + Accent Blue.
 // ──────────────────────────────────────────────────────────────
 
@@ -1502,7 +1502,7 @@ h4 { color: var(--vifm-primary); font-size: 11pt; font-weight: 700; margin: 3mm 
 .programme-cta-link { color: var(--vifm-accent); font-size: 9.5pt; font-weight: 600; text-decoration: none; }
 .unmapped-detail { margin-top: 2mm; color: var(--vifm-muted); font-size: 9pt; }
 
-/* IDP — K-S-S frame */
+/* IDP - K-S-S frame */
 .idp { padding-left: 5mm; margin: 0; list-style: none; }
 .idp li { padding: 3mm 0 4mm; border-bottom: 0.6pt solid var(--vifm-border); page-break-inside: avoid; }
 .idp li:last-child { border-bottom: 0; }
@@ -1516,7 +1516,7 @@ h4 { color: var(--vifm-primary); font-size: 11pt; font-weight: 700; margin: 3mm 
 .idp-row > span:first-child { color: var(--vifm-muted); font-size: 9pt; min-width: 42mm; }
 .idp-line { flex: 1; border-bottom: 0.6pt solid var(--vifm-border); height: 5mm; }
 
-/* P3.1 Cover wheel — Self vs Others polygons on a polar plot */
+/* P3.1 Cover wheel - Self vs Others polygons on a polar plot */
 .cover-wheel-wrap { margin-top: 12mm; padding: 4mm; background: white; border: 1px solid var(--vifm-border); border-radius: 3mm; max-width: 110mm; }
 .cover-wheel { display: block; }
 .cover-wheel-legend { display: flex; flex-wrap: wrap; gap: 4mm; justify-content: center; margin-top: 2mm; font-size: 8.5pt; color: var(--vifm-muted); }
@@ -1526,7 +1526,7 @@ h4 { color: var(--vifm-primary); font-size: 11pt; font-weight: 700; margin: 3mm 
 .cover-wheel-swatch-others { background: rgba(83, 145, 213, 0.20); border: 0.6pt solid #5391D5; }
 .cover-wheel-swatch-zone { background: rgba(217, 119, 6, 0.20); border: 0.4pt solid rgba(217, 119, 6, 0.5); }
 
-/* P2 reassessment — prior delta card + inline */
+/* P2 reassessment - prior delta card + inline */
 .prior-card { display: flex; flex-direction: column; gap: 2mm; padding: 4mm 5mm; margin: 3mm 0 5mm; border-radius: 2.5mm; border: 1px solid var(--vifm-border); }
 .prior-card-up { background: linear-gradient(180deg, #ECFDF5 0%, #D1FAE5 100%); border-color: #6EE7B7; }
 .prior-card-down { background: linear-gradient(180deg, #FEF2F2 0%, #FEE2E2 100%); border-color: #FCA5A5; }

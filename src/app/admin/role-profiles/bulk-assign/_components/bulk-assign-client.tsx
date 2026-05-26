@@ -33,7 +33,7 @@ const FALLBACK_NONE = "__none__";
 type ParsedRow = {
   email: string;
   roleProfileId: string | null;
-  /** Free-text identifier from the CSV (raw column 2) — kept for debugging */
+  /** Free-text identifier from the CSV (raw column 2) - kept for debugging */
   rawProfile: string;
 };
 
@@ -215,10 +215,10 @@ export function BulkAssignClient({ profiles }: { profiles: ProfileOption[] }) {
             </p>
             <Select value={defaultProfileId} onValueChange={setDefaultProfileId}>
               <SelectTrigger className="w-full sm:w-[320px]">
-                <SelectValue placeholder="None — clear assignment for blank rows" />
+                <SelectValue placeholder="None - clear assignment for blank rows" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={FALLBACK_NONE}>None — clear assignment</SelectItem>
+                <SelectItem value={FALLBACK_NONE}>None - clear assignment</SelectItem>
                 {profiles.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.name_en}
@@ -290,7 +290,7 @@ export function BulkAssignClient({ profiles }: { profiles: ProfileOption[] }) {
                     <TableRow key={i}>
                       <TableCell className="text-sm">{r.email}</TableCell>
                       <TableCell className="text-sm">
-                        {r.candidateName ?? "—"}
+                        {r.candidateName ?? "-"}
                       </TableCell>
                       <TableCell>
                         <span
@@ -301,7 +301,7 @@ export function BulkAssignClient({ profiles }: { profiles: ProfileOption[] }) {
                         </span>
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
-                        {r.message ?? (r.candidateId ? `id: ${r.candidateId.slice(0, 8)}…` : "—")}
+                        {r.message ?? (r.candidateId ? `id: ${r.candidateId.slice(0, 8)}…` : "-")}
                       </TableCell>
                     </TableRow>
                   );

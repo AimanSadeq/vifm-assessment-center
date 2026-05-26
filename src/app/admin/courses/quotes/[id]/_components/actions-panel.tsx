@@ -75,7 +75,7 @@ export function QuoteRequestActionsPanel({
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           disabled={pending}
-          placeholder="e.g. Phoned 2026-04-30 — wants Q3 pricing, group of 18, hybrid delivery, in EN."
+          placeholder="e.g. Phoned 2026-04-30 - wants Q3 pricing, group of 18, hybrid delivery, in EN."
           className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono"
         />
       </div>

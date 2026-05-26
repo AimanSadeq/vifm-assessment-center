@@ -16,7 +16,7 @@ function CefrSelect({ value, onChange, label }: { value: string; onChange: (v: s
         onChange={(e) => onChange(e.target.value)}
         className="rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-[#5391D5] focus:outline-none"
       >
-        <option value="">—</option>
+        <option value="">-</option>
         {CEFR.map((c) => (
           <option key={c} value={c}>
             {c}

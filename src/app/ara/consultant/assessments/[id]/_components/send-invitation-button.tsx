@@ -7,7 +7,7 @@ import { sendAraRespondentInvitation } from "@/lib/ara/actions";
 
 type Props = {
   respondentId: string;
-  /** When true, the button shows a sandbox warning tone — set from is_sandbox on the assessment. */
+  /** When true, the button shows a sandbox warning tone - set from is_sandbox on the assessment. */
   isSandbox?: boolean;
   alreadySent?: boolean;
 };
@@ -35,7 +35,7 @@ export function SendInvitationButton({ respondentId, isSandbox = false, alreadyS
       disabled={pending}
       title={
         isSandbox
-          ? "Send invitation (sandbox — recipient overridden to SANDBOX_EMAIL_REDIRECT)"
+          ? "Send invitation (sandbox - recipient overridden to SANDBOX_EMAIL_REDIRECT)"
           : alreadySent
             ? "Re-send invitation"
             : "Send invitation"

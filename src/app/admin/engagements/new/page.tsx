@@ -44,7 +44,7 @@ async function fetchWizardData() {
       })),
   }));
 
-  // role_profiles is optional — table may not exist yet if migration not pushed.
+  // role_profiles is optional - table may not exist yet if migration not pushed.
   const roleProfiles: RoleProfileSummary[] = profilesResult.error
     ? []
     : ((profilesResult.data ?? []) as unknown as RoleProfileSummary[]);

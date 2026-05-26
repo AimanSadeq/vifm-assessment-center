@@ -13,7 +13,7 @@ export default async function ReflectRespondPage({ params }: Params) {
   const ctx = await loadRaterByToken(token);
   if (!ctx) return notFound();
 
-  // Touch is idempotent — bump first_opened_at + last_active_at.
+  // Touch is idempotent - bump first_opened_at + last_active_at.
   await touchReflectRater(token);
 
   // Once the rater has marked complete, show the thank-you screen and

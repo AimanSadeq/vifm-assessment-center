@@ -65,7 +65,7 @@ export default async function ReflectAdminPage() {
 
       <main className="max-w-6xl mx-auto px-6 py-8">
         <p className="text-sm text-muted-foreground max-w-2xl mb-8">
-          Admin console for VIFM Reflect 360 — curate library templates that
+          Admin console for VIFM Reflect 360 - curate library templates that
           consultants clone into engagements, browse cross-consultant activity,
           and purge sandbox or retention-expired data.
         </p>
@@ -115,7 +115,7 @@ export default async function ReflectAdminPage() {
             title="Sandbox data"
             count={counts.sandbox}
             countLabel={counts.sandbox === 1 ? "sandbox engagement" : "sandbox engagements"}
-            description="Irreversibly delete every is_sandbox engagement and its cascade — frameworks, participants, raters, responses, IDPs, reports, logs."
+            description="Irreversibly delete every is_sandbox engagement and its cascade - frameworks, participants, raters, responses, IDPs, reports, logs."
           >
             <ReflectAdminPurgeButtons
               variant="sandbox"

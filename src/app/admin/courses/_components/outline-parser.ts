@@ -48,11 +48,11 @@ export function parseOutlineText(raw: string): VifmCourseOutlineSection[] {
     const subMatch = line.match(/^##\s+(.+)$/);
     if (subMatch) {
       if (!currentSection) {
-        // Sub-header before any main header — ignore (could also error).
+        // Sub-header before any main header - ignore (could also error).
         continue;
       }
       currentSection.subsections ??= [];
-      // If this section was using flat bullets, stop — Shape A and
+      // If this section was using flat bullets, stop - Shape A and
       // Shape B are mutually exclusive per section. Drop bullets to
       // honour the constraint, since this section is now Shape B.
       delete currentSection.bullets;
@@ -78,7 +78,7 @@ export function parseOutlineText(raw: string): VifmCourseOutlineSection[] {
         continue;
       }
 
-      // Top-level bullet — attach to current subsection (if any) or section.
+      // Top-level bullet - attach to current subsection (if any) or section.
       if (!currentSection) continue;
       const bullet: VifmCourseOutlineBullet = { text };
       if (currentSubsection) {
@@ -92,7 +92,7 @@ export function parseOutlineText(raw: string): VifmCourseOutlineSection[] {
     }
 
     // Anything else: ignore. Free-form text outside the syntax is dropped
-    // rather than guessed at — admins should follow the format.
+    // rather than guessed at - admins should follow the format.
   }
 
   return sections;

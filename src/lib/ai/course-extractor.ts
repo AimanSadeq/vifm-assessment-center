@@ -7,7 +7,7 @@ import type {
   VifmVertical,
 } from "@/types/database";
 
-// One row per PDF processed. Tags are *proposals* — admin reviews and
+// One row per PDF processed. Tags are *proposals* - admin reviews and
 // accepts before they hit vifm_course_competency_tags / pillar_tags.
 export type ExtractedCoursePayload = {
   // Identity
@@ -75,8 +75,8 @@ const SYSTEM_PROMPT =
   `(1) COURSE OVERVIEW, (2) TARGET COMPETENCIES, (3) COURSE OBJECTIVES, ` +
   `(4) TARGET AUDIENCE, (5) COURSE METHODOLOGY, (6) COURSE OUTLINE. ` +
   `On the page, TARGET COMPETENCIES and TARGET AUDIENCE may render side-by-side in two columns, ` +
-  `but the canonical sequence is the one above — extract accordingly. ` +
-  `Your job: extract the structured catalogue record AND propose two sets of tags — ` +
+  `but the canonical sequence is the one above - extract accordingly. ` +
+  `Your job: extract the structured catalogue record AND propose two sets of tags - ` +
   `(a) which AC behavioural competencies the course develops (from a supplied list), and ` +
   `(b) which ARA pillars the course addresses topically. ` +
   `You may receive English or Arabic outlines; preserve both languages in your output where present.`;
@@ -95,11 +95,11 @@ function buildInstructions(competencies: Competency[]): string {
     `  "title_ar": "<course title in Arabic if present, else null>",\n` +
     `  "code": "<short code if present, e.g. 'CAIP', 'PMP', 'CAMS'; null if none>",\n` +
     `  "vertical": "<one of: ${VERTICALS.join(", ")}>",\n` +
-    `  "level": "<foundation | intermediate | advanced — infer from title and objectives>",\n` +
+    `  "level": "<foundation | intermediate | advanced - infer from title and objectives>",\n` +
     `  "certification_code": "<if course preps for an external certification e.g. PMI's PMP, ACAMS CAMS; null otherwise>",\n` +
     `  "default_duration_days": <number, infer from overview if mentioned (e.g. 'intensive 5-day course'); default 5 if unstated>,\n` +
-    `  "min_duration_days": <number; default 2 — VIFM corporate/in-house can compress courses>,\n` +
-    `  "max_duration_days": <number; default 5 — VIFM public delivery>,\n` +
+    `  "min_duration_days": <number; default 2 - VIFM corporate/in-house can compress courses>,\n` +
+    `  "max_duration_days": <number; default 5 - VIFM public delivery>,\n` +
     `  "overview_en": "<Block 1 (COURSE OVERVIEW) verbatim, English>",\n` +
     `  "overview_ar": "<Block 1 verbatim, Arabic if present, else null>",\n` +
     `  "target_competencies_raw_en": ["<each bullet from Block 2 (TARGET COMPETENCIES) verbatim>", ...],\n` +
@@ -110,7 +110,7 @@ function buildInstructions(competencies: Competency[]): string {
     `  "audience_ar": "<null or Arabic>",\n` +
     `  "methodology_en": "<Block 5 (COURSE METHODOLOGY) verbatim>",\n` +
     `  "methodology_ar": null | "...",\n` +
-    `  "outline_en": [<each top-level section from Block 6 (COURSE OUTLINE) — see SHAPE below>, ...],\n` +
+    `  "outline_en": [<each top-level section from Block 6 (COURSE OUTLINE) - see SHAPE below>, ...],\n` +
     `  "outline_ar": null | [...],\n` +
     `  "competency_tags": [\n` +
     `    { "competency_id": "<id from VIFM AC list below>",\n` +
@@ -130,14 +130,14 @@ function buildInstructions(competencies: Competency[]): string {
     `── BLOCK 6 OUTLINE SHAPE ──\n` +
     `Each top-level section in outline_en / outline_ar uses ONE of two shapes:\n` +
     `\n` +
-    `Shape A — flat bullets (no sub-headers, e.g. Cyber Enabled Crime):\n` +
+    `Shape A - flat bullets (no sub-headers, e.g. Cyber Enabled Crime):\n` +
     `{ "main_header": "CYBER THREAT DETECTION",\n` +
     `  "bullets": [\n` +
     `    { "text": "Identifying common cyber threats and attack vectors." },\n` +
     `    { "text": "Analyzing indicators of compromise (IOCs)." }\n` +
     `  ] }\n` +
     `\n` +
-    `Shape B — nested sub-headers + sub-bullets (e.g. AI Strategy Professional):\n` +
+    `Shape B - nested sub-headers + sub-bullets (e.g. AI Strategy Professional):\n` +
     `{ "main_header": "FOUNDATIONS OF AI STRATEGY",\n` +
     `  "subsections": [\n` +
     `    { "sub_header": "Strategic Foresight",\n` +
@@ -154,7 +154,7 @@ function buildInstructions(competencies: Competency[]): string {
     `Use Shape A when the section has bullets directly under the main header. ` +
     `Use Shape B when the section has named sub-headers each containing bullets. ` +
     `Use sub_bullets only when the source PDF has a third indentation level under a bullet (commonly bullets prefixed with "o" in the layout). ` +
-    `Each section picks ONE shape — never mix bullets and subsections in the same section.\n\n` +
+    `Each section picks ONE shape - never mix bullets and subsections in the same section.\n\n` +
     `── COMPETENCY TAGGING (BEHAVIOURAL AXIS) ──\n` +
     `These are VIFM's AC behavioural competencies (how a person works), NOT topical capabilities. ` +
     `Map a course to a competency only when the course materially develops that *behaviour*, not just ` +
@@ -168,8 +168,8 @@ function buildInstructions(competencies: Competency[]): string {
     `* Vertical must be exactly one of the 14 listed values. Use 'artificial_intelligence' for AI-focused courses, ` +
     `'banking' for banking-specific courses (not 'finance'), 'leadership' for leadership/management, etc.\n` +
     `* Preserve Arabic verbatim when present (don't translate).\n` +
-    `* Do NOT invent tags — every competency_id must appear in the supplied list.\n` +
-    `* Return ONLY the JSON object — no markdown fences, no commentary.\n`
+    `* Do NOT invent tags - every competency_id must appear in the supplied list.\n` +
+    `* Return ONLY the JSON object - no markdown fences, no commentary.\n`
   );
 }
 
@@ -244,7 +244,7 @@ function parseExtraction(
         ? parsed.level
         : "intermediate";
 
-    // Filter competency tags against the real list — drops anything Claude
+    // Filter competency tags against the real list - drops anything Claude
     // hallucinated. AC competency IDs are uuids, so an unknown id is a clear
     // signal to discard rather than coerce.
     const validCompIds = new Set(competencies.map((c) => c.id));

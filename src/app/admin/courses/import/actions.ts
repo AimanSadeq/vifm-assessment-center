@@ -37,7 +37,7 @@ export type ExtractRowResult =
 
 /**
  * Reads each uploaded PDF, sends it to Claude, returns a per-file
- * structured proposal. Nothing is written to the catalogue yet —
+ * structured proposal. Nothing is written to the catalogue yet -
  * the admin reviews each row in the UI and clicks "Create N
  * courses" to commit accepted ones via createCoursesFromProposalsAction.
  */
@@ -57,11 +57,11 @@ export async function extractCoursesFromPdfsAction(
   const files = formData.getAll("files").filter((f): f is File => f instanceof File);
   if (files.length === 0) return { ok: false, error: "No files uploaded." };
   if (files.length > 25) {
-    return { ok: false, error: "Up to 25 files per batch — split larger batches across runs." };
+    return { ok: false, error: "Up to 25 files per batch - split larger batches across runs." };
   }
 
   const sb = await createClient();
-  // Only id/name/description are used by the extractor prompt — keep
+  // Only id/name/description are used by the extractor prompt - keep
   // the SELECT minimal so this works on environments where the Arabic
   // competency columns from later migrations haven't been applied.
   const { data: comps, error: compErr } = await sb
@@ -71,7 +71,7 @@ export async function extractCoursesFromPdfsAction(
   if (compErr) return { ok: false, error: `Couldn't load competencies: ${compErr.message}` };
   const competencies = (comps ?? []) as unknown as Competency[];
 
-  // Process in parallel, capped — 25 PDFs at once would hammer the
+  // Process in parallel, capped - 25 PDFs at once would hammer the
   // Anthropic rate limits. 5 concurrent is plenty for this workload
   // and keeps total wall-time reasonable.
   const concurrency = 5;
@@ -91,7 +91,7 @@ export async function extractCoursesFromPdfsAction(
           filename: file.name,
         });
         if (!payload) {
-          results.push({ ok: false, filename: file.name, error: "AI extraction failed — see server logs" });
+          results.push({ ok: false, filename: file.name, error: "AI extraction failed - see server logs" });
         } else {
           results.push({
             ok: true,
@@ -113,7 +113,7 @@ export async function extractCoursesFromPdfsAction(
 
   await Promise.all(Array.from({ length: Math.min(concurrency, files.length) }, () => worker()));
 
-  // Duplicate detection — match each successful extraction against the
+  // Duplicate detection - match each successful extraction against the
   // existing catalogue so the UI can show "Replace existing" per row.
   // Match priority: 1) code (case-insensitive) when the extraction
   // produced one, 2) title_en (case-insensitive). Code wins because a
@@ -180,7 +180,7 @@ export async function createCoursesFromProposalsAction(
     payload: ExtractedCoursePayload;
     filename: string;
     // When set, the action UPDATES the existing course rather than
-    // INSERTing a new one — used for the "Replace existing" path on
+    // INSERTing a new one - used for the "Replace existing" path on
     // re-imports.
     replace_course_id?: string | null;
   }>
@@ -262,7 +262,7 @@ export async function createCoursesFromProposalsAction(
       }
       courseId = updateRes.data.id as string;
       replaced = true;
-      // Wipe the old tag mappings — Day 2's import flow regenerates
+      // Wipe the old tag mappings - Day 2's import flow regenerates
       // them from the freshly-extracted payload below. We don't try
       // to merge old + new because the AI's tag set may legitimately
       // shift between extractions of two different revisions of the
@@ -282,7 +282,7 @@ export async function createCoursesFromProposalsAction(
       courseId = insertRes.data.id as string;
     }
 
-    // Tag rows — best-effort. If they fail we keep the course (the
+    // Tag rows - best-effort. If they fail we keep the course (the
     // catalogue entry is still useful) but report the partial failure.
     if (payload.competency_tags.length > 0) {
       const compTagRows = payload.competency_tags.map((t) => ({

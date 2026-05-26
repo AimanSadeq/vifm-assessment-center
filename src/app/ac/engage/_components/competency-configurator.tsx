@@ -6,7 +6,7 @@ import { Sparkles, ArrowDown } from "lucide-react";
 /**
  * Inline configurator on /ac/engage that replaces the static
  * "tier X = N exercises" framing. The right unit on an Assessment
- * Centre is *competencies the client wants to assess* — exercises
+ * Centre is *competencies the client wants to assess* - exercises
  * follow from that. Reviewer feedback (2026-04-29 voice note):
  *
  *   "The number of exercises is determined by the competencies
@@ -14,7 +14,7 @@ import { Sparkles, ArrowDown } from "lucide-react";
  *    exercises is 3-4', it's always linked to the competencies."
  *
  * The thresholds below are the rules of thumb VIFM consultants
- * use in pre-sales conversations. Edit in one place — the picker
+ * use in pre-sales conversations. Edit in one place - the picker
  * below it animates from this same source of truth.
  */
 
@@ -36,7 +36,7 @@ function recommendForCompetencyCount(n: number): Recommendation {
       exercises: ["1 competency-based interview", "1 short exercise (in-tray or role play)"],
       duration: "Half-day · ~3 hours per candidate",
       rationale:
-        "Two competencies are best served by one interview plus one situational exercise — enough triangulation without over-engineering.",
+        "Two competencies are best served by one interview plus one situational exercise - enough triangulation without over-engineering.",
     };
   }
   if (n <= 4) {

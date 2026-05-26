@@ -7,18 +7,18 @@
  *
  * React-PDF cannot shape Arabic glyphs (no harfbuzz / no font fallback)
  * which is why the EN path stays on it and the AR path goes via a
- * Chromium render — Chrome's text engine has full bidi + Arabic
+ * Chromium render - Chrome's text engine has full bidi + Arabic
  * shaping out of the box, so all we need to do is serve well-formed
  * RTL HTML with a real Arabic font loaded.
  *
  * Layout intentionally mirrors the React-PDF EN three-page layout
  * so the two versions feel like the same report:
  *
- *   Page 1 — score & how to read it
+ *   Page 1 - score & how to read it
  *     Hero, scale legend, first two factor cards
- *   Page 2 — remaining factors
+ *   Page 2 - remaining factors
  *     Last two factor cards
- *   Page 3 — context & next steps
+ *   Page 3 - context & next steps
  *     "What this measures", stage-keyed next-steps panel, course
  *     recommendations (or empty-state), methodology footer
  *
@@ -35,7 +35,7 @@ import {
 import { VIFM_VERTICAL_LABELS, type VifmVertical } from "@/types/database";
 
 // ────────────────────────────────────────────────────────────────
-// Content — Arabic strings for everything the React-PDF template
+// Content - Arabic strings for everything the React-PDF template
 // already renders in English. Written in Modern Standard Arabic
 // with GCC-business register. Polish pass 2026-05-15 added Arabic
 // punctuation (، ؛) where appropriate and tightened a handful of
@@ -46,7 +46,7 @@ import { VIFM_VERTICAL_LABELS, type VifmVertical } from "@/types/database";
 // reviewed: register consistency, idiom freshness, and the
 // terminology around AI-specific concepts (e.g. "hallucination",
 // "prompt"). The CLAUDE.md "Important Notes" section already
-// flags that Arabic competency translations are placeholders —
+// flags that Arabic competency translations are placeholders -
 // that warning extends to this file too.
 // ────────────────────────────────────────────────────────────────
 
@@ -57,7 +57,7 @@ const FACTOR_GUIDANCE_AR: Record<
 > = {
   thinking_sense_check: {
     emerging:
-      "تعامل مع كل مخرجات الذكاء الاصطناعي كمسودة. ضع قائمة شخصية بـ«ما يجب التحقق منه دائماً» — الأرقام والأسماء والمراجع — ومرّ بها قبل تسليم أي عمل.",
+      "تعامل مع كل مخرجات الذكاء الاصطناعي كمسودة. ضع قائمة شخصية بـ«ما يجب التحقق منه دائماً» - الأرقام والأسماء والمراجع - ومرّ بها قبل تسليم أي عمل.",
     practising:
       "تتحقق من عمل الذكاء الاصطناعي، لكن بشكل تفاعلي في الغالب. حدّد محفزات صريحة (ادعاءات عالية المخاطر، مجالات غير مألوفة) تدفعك إلى التحقق تلقائياً؛ حتى لا تعتمد العادة على الشك.",
     embedded:
@@ -65,11 +65,11 @@ const FACTOR_GUIDANCE_AR: Record<
   },
   results_working_practice: {
     emerging:
-      "اختر مهمة متكررة وادمج الذكاء الاصطناعي فيها لمدة أسبوعين، وتتبّع الوقت الموفّر — هذه البيانات تبني الثقة أسرع من التجريب العشوائي.",
+      "اختر مهمة متكررة وادمج الذكاء الاصطناعي فيها لمدة أسبوعين، وتتبّع الوقت الموفّر - هذه البيانات تبني الثقة أسرع من التجريب العشوائي.",
     practising:
       "تستخدم الذكاء الاصطناعي في عمل حقيقي. استثمر الآن في قوالب التعليمات وسير العمل القابلة لإعادة الاستخدام؛ تتراكم الإنتاجية بدلاً من البدء من الصفر في كل مرة.",
     embedded:
-      "الذكاء الاصطناعي جزء من طريقة عملك. دوّن أنماط سير العمل الأقوى لديك ليتبناها زملاؤك دون إعادة اختراع العجلة — يضاعف ذلك أثرك بعيداً عن لوحة مفاتيحك.",
+      "الذكاء الاصطناعي جزء من طريقة عملك. دوّن أنماط سير العمل الأقوى لديك ليتبناها زملاؤك دون إعادة اختراع العجلة - يضاعف ذلك أثرك بعيداً عن لوحة مفاتيحك.",
   },
   people_collaboration: {
     emerging:
@@ -77,13 +77,13 @@ const FACTOR_GUIDANCE_AR: Record<
     practising:
       "تشارك بشكل مفيد. خذها خطوة أبعد: ادع زملاءك لطرح أسئلتهم عن الذكاء الاصطناعي عليك، وحدّد لقاءً منتظماً مدته 15 دقيقة ليقارن الفريق التعليمات والأنماط.",
     embedded:
-      "أنت مضاعِف لتبنّي الذكاء الاصطناعي. ترصّد إشارات الاعتماد المفرط — زملاء يقبلون المخرجات دون تمحيص — وأشِر إليها بشكل بنّاء قبل أن تظهر في تسليم.",
+      "أنت مضاعِف لتبنّي الذكاء الاصطناعي. ترصّد إشارات الاعتماد المفرط - زملاء يقبلون المخرجات دون تمحيص - وأشِر إليها بشكل بنّاء قبل أن تظهر في تسليم.",
   },
   self_adaptive_mindset: {
     emerging:
       "خصّص 30 دقيقة أسبوعياً لتعلّم قدرة جديدة في الذكاء الاصطناعي؛ ليس لاستخدامها، بل لمعرفة وجودها. الفضول هو المؤشر القائد لتحسّن كل عامل آخر.",
     practising:
-      "تحافظ على فضولك. اختبر دورك الآن: اختر مهمة تتقنها واسأل «ماذا يحتاج الذكاء الاصطناعي ليؤديها أفضل؟» — يكشف ذلك أين تنحاز وأين تعمّق خبرتك.",
+      "تحافظ على فضولك. اختبر دورك الآن: اختر مهمة تتقنها واسأل «ماذا يحتاج الذكاء الاصطناعي ليؤديها أفضل؟» - يكشف ذلك أين تنحاز وأين تعمّق خبرتك.",
     embedded:
       "تتكيف بسلاسة. استثمر هذه القدرة في إرشاد شخص في بداية رحلته مع الذكاء الاصطناعي؛ التعليم يرسّخ تكيّفك ويكشف نقاط ضعفك.",
   },
@@ -99,7 +99,7 @@ const STAGE_NEXT_STEPS_AR: Record<
     bullets: [
       "اختر العامل ذا الدرجة الأدنى وطبّق إرشاداته من الصفحة الأولى لمدة أسبوعين. لا تحاول رفع العوامل الأربعة دفعة واحدة.",
       "احجز في تقويمك جلسة أسبوعية ثابتة مدتها 30 دقيقة لممارسة الذكاء الاصطناعي. بدون موعد محدّد، لن تتشكّل العادة.",
-      "ابحث عن زميل في فريقك متقدّم عليك في الذكاء الاصطناعي — زميل لا مدير — واطلب منه أن يشاركك تعليمة (Prompt) يثق بها. الاستعارة أسرع من البدء من الصفر.",
+      "ابحث عن زميل في فريقك متقدّم عليك في الذكاء الاصطناعي - زميل لا مدير - واطلب منه أن يشاركك تعليمة (Prompt) يثق بها. الاستعارة أسرع من البدء من الصفر.",
     ],
   },
   practising: {
@@ -115,7 +115,7 @@ const STAGE_NEXT_STEPS_AR: Record<
     bullets: [
       "إتقانك الفردي راسخ. السقف التالي هو التأثير: اختر معياراً واحداً للفريق (التحقق، مشاركة التعليمات، قواعد التصعيد) واقترحه.",
       "راجع أحد مهامك المعتمدة على الذكاء الاصطناعي من زاويا الإنصاف والسرية ومطابقة السياسات. المستخدمون الراسخون يفاجئهم سوء الحوكمة، لا الأدوات.",
-      "أرشد شخصاً في المرحلة الناشئة — التعليم يكشف ثغرات في نموذجك الخاص ويُصلب حُكمك.",
+      "أرشد شخصاً في المرحلة الناشئة - التعليم يكشف ثغرات في نموذجك الخاص ويُصلب حُكمك.",
     ],
   },
 };
@@ -125,9 +125,9 @@ const HOW_TO_USE_PANELS_AR = {
   read: {
     title: "كيف تقرأ هذه النتائج",
     bullets: [
-      "1.0 - 2.9 — فرصة. منطقة إرساء الأساس؛ الممارسة المتعمَّدة ستحرّك العقرب بسرعة.",
-      "3.0 - 3.9 — متطوّر. العادة قائمة؛ المكسب التالي هو جعلها موثوقة لا ظرفية.",
-      "4.0 - 5.0 — قوي. تعمل بطلاقة؛ التحدّي الآن مشاركة الممارسة واختبارها.",
+      "1.0 - 2.9 - فرصة. منطقة إرساء الأساس؛ الممارسة المتعمَّدة ستحرّك العقرب بسرعة.",
+      "3.0 - 3.9 - متطوّر. العادة قائمة؛ المكسب التالي هو جعلها موثوقة لا ظرفية.",
+      "4.0 - 5.0 - قوي. تعمل بطلاقة؛ التحدّي الآن مشاركة الممارسة واختبارها.",
     ],
   },
   about: {
@@ -159,7 +159,7 @@ const C = {
 };
 
 // ────────────────────────────────────────────────────────────────
-// HTML escape — covers <, >, &, ", '. Used on every dynamic string
+// HTML escape - covers <, >, &, ", '. Used on every dynamic string
 // piped into the template so a respondent name with quotes or
 // angle brackets can't break the PDF.
 // ────────────────────────────────────────────────────────────────
@@ -174,7 +174,7 @@ function esc(s: string | null | undefined): string {
 }
 
 // ────────────────────────────────────────────────────────────────
-// Public entrypoint — produces a complete HTML document string.
+// Public entrypoint - produces a complete HTML document string.
 // Pass into Puppeteer's page.setContent({ waitUntil: 'networkidle0' }).
 // ────────────────────────────────────────────────────────────────
 
@@ -213,7 +213,7 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
           ${score > 0 ? `<span class="factor-tone" style="background:${tone.bg};color:${tone.fg}">${esc(tone.label.toUpperCase())}</span>` : ""}
         </div>
         <h3 class="factor-name">${esc(f.name_ar)}</h3>
-        <p class="factor-score"><span class="factor-score-num">${score > 0 ? score.toFixed(1) : "—"}</span><span class="factor-score-of"> / 5</span></p>
+        <p class="factor-score"><span class="factor-score-num">${score > 0 ? score.toFixed(1) : "-"}</span><span class="factor-score-of"> / 5</span></p>
         <p class="factor-desc">${esc(f.description_ar)}</p>
         ${guidance ? `
           <p class="factor-guidance-label">ركّز هنا تالياً</p>
@@ -525,7 +525,7 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
 </head>
 <body>
 
-  <!-- PAGE 1 — score + per-factor (first two) -->
+  <!-- PAGE 1 - score + per-factor (first two) -->
   <section>
     <div class="hero">
       <p class="hero-eyebrow">بوصلة VIFM للاستعداد للذكاء الاصطناعي · شخصية</p>
@@ -588,7 +588,7 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
 
     <div class="method-box">
       <h4>كيف بنينا هذا التقييم</h4>
-      <p>إطار من أربعة عوامل، 24 بنداً للتقرير الذاتي على مقياس ليكرت من 1 إلى 5، تُحتسب كمتوسط غير مرجّح لكل عامل. ترتبط العوامل بنموذج كفاءات السلوك في مركز تقييم VIFM ليتوافق استعداد الفرد للذكاء الاصطناعي مع العمل التطويري الذي تقوم به أصلاً. هذه لقطة — أما التشخيص المعمّق بقيادة استشاري مدفوع فيضاعف عدد البنود ويضيف مقارنات مع الأقران ومناقشة منظمة للنتائج.</p>
+      <p>إطار من أربعة عوامل، 24 بنداً للتقرير الذاتي على مقياس ليكرت من 1 إلى 5، تُحتسب كمتوسط غير مرجّح لكل عامل. ترتبط العوامل بنموذج كفاءات السلوك في مركز تقييم VIFM ليتوافق استعداد الفرد للذكاء الاصطناعي مع العمل التطويري الذي تقوم به أصلاً. هذه لقطة - أما التشخيص المعمّق بقيادة استشاري مدفوع فيضاعف عدد البنود ويضيف مقارنات مع الأقران ومناقشة منظمة للنتائج.</p>
       <p class="method-link">github.com/AimanSadeq/vifm-assessment-center/blob/master/docs/ARA-Methodology-Brief.md</p>
     </div>
   </section>

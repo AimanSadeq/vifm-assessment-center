@@ -202,7 +202,7 @@ export default async function AraAssessmentDetailPage({
     computeAraDistortion(assessment.id),
   ]);
 
-  // Day 3 — VIFM training recommendations driven by per-pillar maturity
+  // Day 3 - VIFM training recommendations driven by per-pillar maturity
   // gap. Sits in the Phase 2 tab as the consultant's capability-building
   // plan. Tolerant of the recommender catalogue being empty.
   let araRecommendedCourses: Awaited<ReturnType<typeof recommendCoursesForAraAssessment>> = [];
@@ -214,7 +214,7 @@ export default async function AraAssessmentDetailPage({
     console.error("[ara-assessment-detail] recommender failed:", e);
   }
 
-  // Mode C — workforce readiness rollup, only when the org assessment
+  // Mode C - workforce readiness rollup, only when the org assessment
   // opted into the individual layer. Pulls per-respondent factor scores
   // and cohort means; tolerant of empty data with null return.
   const workforceRollup = assessment.include_individual_layer
@@ -224,7 +224,7 @@ export default async function AraAssessmentDetailPage({
       })
     : null;
 
-  // Agentic-AI Readiness rollup — only when the assessment opted into the
+  // Agentic-AI Readiness rollup - only when the assessment opted into the
   // agentic layer. Same tolerant pattern as the workforce rollup.
   const agenticRollup = assessment.include_agentic_layer
     ? await computeAgenticReadiness(assessment.id).catch((e) => {
@@ -824,16 +824,16 @@ export default async function AraAssessmentDetailPage({
 
         {/* ─── Capability-building plan (course recommender) ─── */}
         <RecommendedCoursesPanel
-          title="Capability-building plan — VIFM training programmes"
+          title="Capability-building plan - VIFM training programmes"
           description="Per-pillar maturity gap (target 4) × course relevance. Use during the Phase 2 workshop to anchor the development conversation in concrete VIFM offerings."
-          emptyMessage="No course recommendations yet — either no pillar scores have been computed, the org is at or above target maturity (level 4) on all pillars, or the catalogue doesn't yet cover the relevant pillars."
+          emptyMessage="No course recommendations yet - either no pillar scores have been computed, the org is at or above target maturity (level 4) on all pillars, or the catalogue doesn't yet cover the relevant pillars."
           courses={araRecommendedCourses}
           context="ara"
         />
 
         {/* ─── Upskilling pathway (AI-sequenced plan from the same gaps) ─── */}
         <div className="mb-6">
-          <h3 className="text-lg font-semibold text-foreground">Upskilling pathway — sequenced plan</h3>
+          <h3 className="text-lg font-semibold text-foreground">Upskilling pathway - sequenced plan</h3>
           <p className="mb-3 text-sm text-muted-foreground">
             AI orders the recommended programmes into a foundation-first sequence, with a rationale,
             milestone, and target outcome per stage. Generate on demand for the Phase 2 conversation.
@@ -860,7 +860,7 @@ export default async function AraAssessmentDetailPage({
                   href={`/ara/cohort/${assessment.id}`}
                   target="_blank"
                   className="ms-auto text-[11px] font-medium text-accent hover:underline inline-flex items-center gap-1"
-                  title="Open the read-only cohort dashboard — share this URL with the client sponsor"
+                  title="Open the read-only cohort dashboard - share this URL with the client sponsor"
                 >
                   Open client dashboard ↗
                 </Link>
@@ -892,7 +892,7 @@ export default async function AraAssessmentDetailPage({
                       <p className="text-2xl font-bold tabular-nums mt-1">
                         {workforceRollup.cohort_overall != null
                           ? workforceRollup.cohort_overall.toFixed(2)
-                          : "—"}
+                          : "-"}
                         <span className="text-xs text-muted-foreground font-normal"> / 5</span>
                       </p>
                       <p className="text-[10px] text-muted-foreground mt-1">
@@ -918,7 +918,7 @@ export default async function AraAssessmentDetailPage({
                           </div>
                           <p className="text-xs font-semibold mt-0.5">{factor?.name_en}</p>
                           <p className="text-2xl font-bold tabular-nums mt-1">
-                            {f.respondent_count > 0 ? f.average.toFixed(2) : "—"}
+                            {f.respondent_count > 0 ? f.average.toFixed(2) : "-"}
                             <span className="text-xs text-muted-foreground font-normal"> / 5</span>
                           </p>
                           <p className="text-[10px] text-muted-foreground mt-1">
@@ -929,7 +929,7 @@ export default async function AraAssessmentDetailPage({
                     })}
                   </div>
 
-                  {/* Distribution histogram — % of cohort below target per factor */}
+                  {/* Distribution histogram - % of cohort below target per factor */}
                   <div>
                     <p className="text-xs font-semibold mb-2 text-muted-foreground uppercase tracking-wider">
                       Development demand · % of cohort below target (4)
@@ -998,12 +998,12 @@ export default async function AraAssessmentDetailPage({
                               const v = r.per_factor[fid];
                               return (
                                 <TableCell key={fid} className="text-center text-xs tabular-nums">
-                                  {v != null ? v.toFixed(1) : "—"}
+                                  {v != null ? v.toFixed(1) : "-"}
                                 </TableCell>
                               );
                             })}
                             <TableCell className="text-right font-semibold tabular-nums">
-                              {r.overall != null ? r.overall.toFixed(2) : "—"}
+                              {r.overall != null ? r.overall.toFixed(2) : "-"}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -1016,14 +1016,14 @@ export default async function AraAssessmentDetailPage({
           </Card>
         )}
 
-        {/* Workforce-readiness course recommendations — driven by
+        {/* Workforce-readiness course recommendations - driven by
             cohort gaps on the individual factors. Renders only when
             we have data to compute against. */}
         {assessment.include_individual_layer && workforceRollup && workforceRollup.respondents.length > 0 && (
           <RecommendedCoursesPanel
-            title="Workforce training plan — based on cohort factor gaps"
+            title="Workforce training plan - based on cohort factor gaps"
             description="VIFM courses ranked by where the cohort scores below target across the four individual readiness factors. Driver chips show which factor's gap pulled each course into the list."
-            emptyMessage="No recommendations yet — cohort means are at or above target across all four factors, or the catalogue doesn't yet cover the relevant capabilities."
+            emptyMessage="No recommendations yet - cohort means are at or above target across all four factors, or the catalogue doesn't yet cover the relevant capabilities."
             courses={workforceCourseRecs}
             context="ac"
           />
@@ -1042,7 +1042,7 @@ export default async function AraAssessmentDetailPage({
               </CardTitle>
               <CardDescription>
                 Readiness to safely <span className="font-medium text-foreground">delegate</span> to
-                autonomous AI agents — six governance dimensions that extend the
+                autonomous AI agents - six governance dimensions that extend the
                 Governance and Model Management pillars. Rolled up across every
                 respondent who answered the agentic layer.
               </CardDescription>
@@ -1064,7 +1064,7 @@ export default async function AraAssessmentDetailPage({
                       <p className="text-2xl font-bold tabular-nums mt-1">
                         {agenticRollup.cohort_overall != null
                           ? agenticRollup.cohort_overall.toFixed(2)
-                          : "—"}
+                          : "-"}
                         <span className="text-xs text-muted-foreground font-normal"> / 5</span>
                       </p>
                       <p className="text-[10px] text-muted-foreground mt-1">
@@ -1084,7 +1084,7 @@ export default async function AraAssessmentDetailPage({
                           </div>
                           <p className="text-xs font-semibold mt-0.5 leading-tight">{dim?.name_en}</p>
                           <p className="text-2xl font-bold tabular-nums mt-1">
-                            {d.respondent_count > 0 ? d.average.toFixed(2) : "—"}
+                            {d.respondent_count > 0 ? d.average.toFixed(2) : "-"}
                             <span className="text-xs text-muted-foreground font-normal"> / 5</span>
                           </p>
                           <p className="text-[10px] text-muted-foreground mt-1">
@@ -1095,7 +1095,7 @@ export default async function AraAssessmentDetailPage({
                     })}
                   </div>
 
-                  {/* Development-demand histogram — % below target per dimension */}
+                  {/* Development-demand histogram - % below target per dimension */}
                   <div>
                     <p className="text-xs font-semibold mb-2 text-muted-foreground uppercase tracking-wider">
                       Control gaps · % of cohort below target (4)
@@ -1156,12 +1156,12 @@ export default async function AraAssessmentDetailPage({
                                 const v = r.per_dimension[did];
                                 return (
                                   <TableCell key={did} className="text-center text-xs tabular-nums">
-                                    {v != null ? v.toFixed(1) : "—"}
+                                    {v != null ? v.toFixed(1) : "-"}
                                   </TableCell>
                                 );
                               })}
                               <TableCell className="text-right font-semibold tabular-nums">
-                                {r.overall != null ? r.overall.toFixed(2) : "—"}
+                                {r.overall != null ? r.overall.toFixed(2) : "-"}
                               </TableCell>
                             </TableRow>
                           ))}
@@ -1799,7 +1799,7 @@ export default async function AraAssessmentDetailPage({
                   />
                   <div className="flex-1">
                     <Label htmlFor="individual_only" className="cursor-pointer text-sm font-semibold">
-                      Individual layer only — skip pillar questions
+                      Individual layer only - skip pillar questions
                     </Label>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       For workforce-wide invitees who shouldn&apos;t answer

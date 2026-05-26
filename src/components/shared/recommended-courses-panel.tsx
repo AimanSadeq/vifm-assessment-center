@@ -13,15 +13,15 @@ type Props = {
   emptyMessage?: string;
   courses: RecommendedCourse[];
   /**
-   * "ac" — driver labels are AC behavioural competencies (e.g. Strategic Thinking).
-   * "ara" — driver labels are ARA pillars (e.g. Strategy, Governance).
+   * "ac" - driver labels are AC behavioural competencies (e.g. Strategic Thinking).
+   * "ara" - driver labels are ARA pillars (e.g. Strategy, Governance).
    * Used purely for the chip styling; both shapes render the same.
    */
   context: "ac" | "ara";
 };
 
 /**
- * Server component — renders a ranked list of VIFM training programmes
+ * Server component - renders a ranked list of VIFM training programmes
  * sourced from the recommender. Used both on the AC engagement detail
  * (consultant-facing development plan) and the ARA assessment detail
  * (consultant-facing capability building plan). Same shape, different
@@ -29,8 +29,8 @@ type Props = {
  * recommendation came from a behavioural gap or a pillar gap.
  *
  * Each card shows: title (en + ar), vertical/level/duration badges,
- * total fit score (★ for high-fit), and the drivers — competencies or
- * pillars — that pulled this course into the list, with their gap
+ * total fit score (★ for high-fit), and the drivers - competencies or
+ * pillars - that pulled this course into the list, with their gap
  * size and the AI/admin-authored rationale per tag.
  */
 export function RecommendedCoursesPanel({
@@ -52,7 +52,7 @@ export function RecommendedCoursesPanel({
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            {emptyMessage ?? "No recommendations yet — either no gaps were detected against the catalogue's mappings, or the catalogue doesn't yet cover the relevant competencies / pillars."}
+            {emptyMessage ?? "No recommendations yet - either no gaps were detected against the catalogue's mappings, or the catalogue doesn't yet cover the relevant competencies / pillars."}
           </p>
         </CardContent>
       </Card>
@@ -69,13 +69,13 @@ export function RecommendedCoursesPanel({
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
-        {/* How-fit explainer — without this, "fit score 28" and chips
+        {/* How-fit explainer - without this, "fit score 28" and chips
             like "gap 2 · ×3" are opaque numbers. The math is small
             (gap × relevance, summed), so the cost of a one-line
             caption is cheap and the user trust gain is large. */}
         <div className="rounded-md bg-muted/40 border border-border/60 px-3 py-2 text-[11px] text-muted-foreground leading-relaxed">
           <p>
-            <span className="font-semibold text-foreground">How to read these</span> —
+            <span className="font-semibold text-foreground">How to read these</span> -
             {" "}each chip is one match between a course and a factor where you're
             below the target of 4 / 5. The notation
             {" "}<span className="font-mono text-foreground">gap N · ×R</span>{" "}

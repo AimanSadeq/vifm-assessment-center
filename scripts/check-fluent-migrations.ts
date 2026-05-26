@@ -40,7 +40,7 @@ async function main() {
     const { error } = await sb.from(c.table).select(c.col).limit(1);
     if (error) {
       missing.add(c.migration);
-      console.log(`✗ [${c.migration}] ${c.what} — ${error.message.slice(0, 70)}`);
+      console.log(`✗ [${c.migration}] ${c.what} - ${error.message.slice(0, 70)}`);
     } else {
       console.log(`✓ [${c.migration}] ${c.what}`);
     }

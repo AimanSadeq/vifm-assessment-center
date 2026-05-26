@@ -4,11 +4,11 @@
  * Used by the duplicate-finder to detect near-match course titles
  * the AI extractor produced from variant filenames (e.g. "Cyber-
  * Enabled Crime" vs "Cyber Enabled Crime"). Replace-on-re-import
- * matches by exact title (case-insensitive) only — anything with
+ * matches by exact title (case-insensitive) only - anything with
  * even a hyphen difference becomes a new row, and that's what we
  * want to surface here.
  *
- * Returns the edit distance — number of single-character inserts /
+ * Returns the edit distance - number of single-character inserts /
  * deletes / substitutions to turn a into b. Case-insensitive
  * comparison; both strings are lower-cased + whitespace-collapsed
  * before measurement so "AI - Strategy" and "ai-strategy" come out

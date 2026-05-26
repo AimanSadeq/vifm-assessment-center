@@ -220,7 +220,7 @@ export default async function ReflectEngagementDetailPage({ params }: Params) {
             <Meta label="Anonymity threshold" value={`N = ${engagement.anonymity_min_n}`} />
             <Meta
               label="Target population"
-              value={engagement.participant_target_count ? String(engagement.participant_target_count) : "—"}
+              value={engagement.participant_target_count ? String(engagement.participant_target_count) : "-"}
             />
             <Meta
               label="Field window"
@@ -340,7 +340,7 @@ export default async function ReflectEngagementDetailPage({ params }: Params) {
                         <div className="font-medium text-primary">{p.full_name}</div>
                         <div className="text-[11px] text-muted-foreground">{p.email}</div>
                       </td>
-                      <td className="py-2 pr-3 text-muted-foreground">{p.role_title ?? "—"}</td>
+                      <td className="py-2 pr-3 text-muted-foreground">{p.role_title ?? "-"}</td>
                       <td className="py-2 pr-3 text-muted-foreground">{p.level_tier}</td>
                       <td className="py-2 pr-3">
                         <span className="inline-block text-[10px] uppercase tracking-wide rounded px-1.5 py-0.5 bg-muted text-muted-foreground border">
@@ -364,7 +364,7 @@ export default async function ReflectEngagementDetailPage({ params }: Params) {
                             <FileText className="h-3 w-3" /> PDF
                           </a>
                         ) : (
-                          <span className="text-[11px] text-muted-foreground">—</span>
+                          <span className="text-[11px] text-muted-foreground">-</span>
                         )}
                       </td>
                     </tr>

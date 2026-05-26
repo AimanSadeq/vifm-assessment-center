@@ -1,5 +1,5 @@
 /**
- * AI Conversational Assessor — CBI prototype API.
+ * AI Conversational Assessor - CBI prototype API.
  *
  * POST /api/ac/cbi
  *   { action: "turn",  competencyId, language, history } -> { message, shouldConclude }

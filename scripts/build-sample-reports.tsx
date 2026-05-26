@@ -14,7 +14,7 @@
  * committed alongside the rendered PDFs so prospects don't need a
  * dev environment to see them.
  *
- * Synthetic candidate is "Aisha Al Marri" — the company / role / scoring
+ * Synthetic candidate is "Aisha Al Marri" - the company / role / scoring
  * vary by tier so the three PDFs visibly differ at a glance:
  *
  *   Single      → Risk Manager at Al Noor Bank, 4 competencies
@@ -60,7 +60,7 @@ const CANDIDATE = {
 const TIERS: Record<TierKey, TierConfig> = {
   single: {
     fileName: "VIFM-AC-Sample-Report-Single.pdf",
-    engagementName: "Risk Manager Selection — April 2026",
+    engagementName: "Risk Manager Selection - April 2026",
     organizationName: "Al Noor Bank (sample)",
     targetRole: "Risk Manager",
     candidateName: CANDIDATE.name,
@@ -78,7 +78,7 @@ const TIERS: Record<TierKey, TierConfig> = {
   },
   programme: {
     fileName: "VIFM-AC-Sample-Report-Programme.pdf",
-    engagementName: "Senior Manager Cohort Programme — Q2 2026",
+    engagementName: "Senior Manager Cohort Programme - Q2 2026",
     organizationName: "ADNOC (sample)",
     targetRole: "Senior Manager",
     candidateName: CANDIDATE.name,
@@ -99,7 +99,7 @@ const TIERS: Record<TierKey, TierConfig> = {
   partnership: {
     fileName: "VIFM-AC-Sample-Report-Partnership.pdf",
     engagementName: "Sovereign Fund · Executive Track Q2 2026",
-    organizationName: "Sovereign Fund — name redacted (sample)",
+    organizationName: "Sovereign Fund - name redacted (sample)",
     targetRole: "Chief Operating Officer",
     candidateName: CANDIDATE.name,
     candidateEmail: CANDIDATE.email,
@@ -144,17 +144,17 @@ const STRENGTH_TEMPLATES = [
 ];
 
 const DEVELOPMENT_TEMPLATES = [
-  "Pace of decision-making slowed when faced with conflicting signals — could anchor on a default sooner.",
+  "Pace of decision-making slowed when faced with conflicting signals - could anchor on a default sooner.",
   "Tended to over-explain rationale; tighter framing would land the same conclusion in half the time.",
   "Defaulted to detail-checking rather than delegating; a stronger signal of trust would lift the team.",
-  "Defensiveness emerged when challenged on cost assumptions — separating the idea from the ego will help.",
+  "Defensiveness emerged when challenged on cost assumptions - separating the idea from the ego will help.",
 ];
 
 const TIP_TEMPLATES = [
   "Set a 24-hour decision rule on cross-functional questions: gather inputs, decide, then iterate.",
   "Practise a 90-second framing pattern: situation · option-set · recommendation · ask.",
   "Pair with a delegation coach for one quarter. Pick one workstream to fully transfer.",
-  "Try a weekly retrospective with your direct reports — what would you have decided differently?",
+  "Try a weekly retrospective with your direct reports - what would you have decided differently?",
 ];
 
 function takeFromTemplate<T>(arr: T[], n: number, seed: number): T[] {
@@ -221,7 +221,7 @@ function buildReport(tier: TierKey): ReportData {
       `${cfg.competencyCount}-competency profile and ${developmentAreas.length} ` +
       `development priorities. The overall recommendation reflects the wash-up ` +
       `consensus across ${cfg.assessorNames.length} assessors over ${cfg.exercisesUsed.length} exercises. ` +
-      `(This is a sample — illustrative narrative only.)`,
+      `(This is a sample - illustrative narrative only.)`,
     developmentRecommendations: developmentAreas.slice(0, 3).map((name) => ({
       competencyName: name,
       recommendation: TIP_TEMPLATES[Math.floor(Math.random() * TIP_TEMPLATES.length)],

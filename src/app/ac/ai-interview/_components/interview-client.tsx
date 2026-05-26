@@ -141,7 +141,7 @@ export function CbiInterviewClient({
       setMessages([...next, { role: "interviewer", text: turn.message }]);
       if (turn.shouldConclude) setConcluded(true);
     } catch {
-      setMessages([...next, { role: "interviewer", text: "Connection hiccup — please resend." }]);
+      setMessages([...next, { role: "interviewer", text: "Connection hiccup - please resend." }]);
     } finally {
       setBusy(false); scrollToEnd();
     }
@@ -229,10 +229,10 @@ export function CbiInterviewClient({
               disabled={started}
               className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-[#111232] disabled:opacity-60"
             >
-              <option value="">Demo — no candidate (scoring only, no pipeline write)</option>
+              <option value="">Demo - no candidate (scoring only, no pipeline write)</option>
               {assignments.map((a) => (
                 <option key={a.id} value={a.id}>
-                  {a.candidateName} — {a.exerciseName}{a.engagementName ? ` (${a.engagementName})` : ""}
+                  {a.candidateName} - {a.exerciseName}{a.engagementName ? ` (${a.engagementName})` : ""}
                 </option>
               ))}
             </select>
@@ -324,7 +324,7 @@ export function CbiInterviewClient({
             {concluded ? (
               <div className="flex items-center justify-between gap-3 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
                 <span className="inline-flex items-center gap-2">
-                  <ClipboardCheck className="h-4 w-4" /> Interview complete — ready to score.
+                  <ClipboardCheck className="h-4 w-4" /> Interview complete - ready to score.
                 </span>
                 <button
                   onClick={runScore}
@@ -408,7 +408,7 @@ export function CbiInterviewClient({
               )}
             </div>
 
-            {/* Rating — read-only in demo, editable in production */}
+            {/* Rating - read-only in demo, editable in production */}
             {productionMode ? (
               <div>
                 <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">BARS rating (editable)</div>
@@ -457,7 +457,7 @@ export function CbiInterviewClient({
             {productionMode ? (
               <div>
                 <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Evidence — keep, drop, or re-polarise
+                  Evidence - keep, drop, or re-polarise
                 </div>
                 <div className="space-y-2">
                   {reviewItems.map((r, i) => (

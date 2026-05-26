@@ -106,7 +106,7 @@ export default async function AiInterviewPage() {
           <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
             A Claude agent runs a structured competency-based interview (STAR) in English or
             Arabic, then scores the transcript against the VIFM BARS scale. Pick a real
-            candidate assignment to run it in context — the assessor reviews and approves the
+            candidate assignment to run it in context - the assessor reviews and approves the
             AI&apos;s draft, and on approval the evidence and rating are written into the normal
             observation → wash-up → consensus pipeline. <strong>The AI never writes a score
             without a human approving it.</strong>

@@ -1,5 +1,5 @@
 /**
- * VIFM Fluent — CEFR placement certificate.
+ * VIFM Fluent - CEFR placement certificate.
  *
  * GET /api/ac/fluent/[resultId]/certificate            -> printable HTML
  * GET /api/ac/fluent/[resultId]/certificate?format=pdf -> downloadable PDF
@@ -7,7 +7,7 @@
  * HTML is the default (view + browser "Save as PDF"); ?format=pdf returns
  * a true React-PDF document as an attachment. Reads via the service client
  * (results are anonymous, written by the scoring route). 404s cleanly if
- * the row or table is absent. Indicative placement — not a certified score.
+ * the row or table is absent. Indicative placement - not a certified score.
  */
 
 import { NextResponse } from "next/server";
@@ -84,10 +84,10 @@ export async function GET(req: Request, { params }: { params: { resultId: string
   const level = row.overall_cefr;
   const levelLabel = CEFR_LABEL[row.overall_cefr] ?? "";
   const skills: Array<{ label: string; cefr: string }> = [
-    { label: "Reading", cefr: row.reading_cefr ?? "—" },
-    ...(row.listening_total > 0 ? [{ label: "Listening", cefr: row.listening_cefr ?? "—" }] : []),
-    { label: "Writing", cefr: row.writing_cefr ?? "—" },
-    ...(row.speaking_attempted ? [{ label: "Speaking", cefr: row.speaking_cefr ?? "—" }] : []),
+    { label: "Reading", cefr: row.reading_cefr ?? "-" },
+    ...(row.listening_total > 0 ? [{ label: "Listening", cefr: row.listening_cefr ?? "-" }] : []),
+    { label: "Writing", cefr: row.writing_cefr ?? "-" },
+    ...(row.speaking_attempted ? [{ label: "Speaking", cefr: row.speaking_cefr ?? "-" }] : []),
   ];
   const band = row.result?.reliability;
   const rangeText =
@@ -129,7 +129,7 @@ export async function GET(req: Request, { params }: { params: { resultId: string
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>VIFM Fluent — Certificate of Placement</title>
+<title>VIFM Fluent - Certificate of Placement</title>
 <style>
   :root { --navy:#010131; --accent:#5391D5; --ink:#111232; }
   * { box-sizing: border-box; }
@@ -175,7 +175,7 @@ export async function GET(req: Request, { params }: { params: { resultId: string
   <div class="sheet">
     <div class="frame">
       <div class="brand">Virginia Institute of Finance &amp; Management</div>
-      <div class="title">VIFM&nbsp;Fluent — Certificate of English Placement</div>
+      <div class="title">VIFM&nbsp;Fluent - Certificate of English Placement</div>
       <p class="subtitle">CEFR-aligned indicative placement · Reading · Listening · Writing · Speaking</p>
 
       <div class="awarded">This is to certify that</div>
@@ -184,7 +184,7 @@ export async function GET(req: Request, { params }: { params: { resultId: string
       <div class="level-wrap">
         <div class="level"><span class="lv">${esc(level)}</span><span class="lb">CEFR</span></div>
       </div>
-      <div class="level-desc">Indicative level <strong>${esc(level)}</strong>${levelLabel ? ` — ${esc(levelLabel)}` : ""}</div>
+      <div class="level-desc">Indicative level <strong>${esc(level)}</strong>${levelLabel ? ` - ${esc(levelLabel)}` : ""}</div>
 
       <div class="skills">${skillCells}</div>
 

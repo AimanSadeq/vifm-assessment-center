@@ -71,7 +71,7 @@ export default async function AraRetentionPage() {
           reports are retained as VIFM business records.
         </p>
 
-        {/* Cron status banner — surfaces whether the daily auto-purge is
+        {/* Cron status banner - surfaces whether the daily auto-purge is
             actually wired up. The cron route at /api/ara/admin/retention/cron
             returns 503 unless CRON_SECRET is set in the runtime env, so the
             check below mirrors that gate. Without the env var the manual
@@ -182,7 +182,7 @@ export default async function AraRetentionPage() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Cron status banner — non-destructive UI affordance that surfaces
+// Cron status banner - non-destructive UI affordance that surfaces
 // whether the daily auto-purge is actually wired up. Two states:
 //
 //   CRON_SECRET set  → green banner "Daily auto-purge is active.
@@ -193,7 +193,7 @@ export default async function AraRetentionPage() {
 //                       project hand-off and production launch.
 //
 // Inert in dev because process.env.CRON_SECRET will not be set
-// locally — same as production-without-it. The amber state shows
+// locally - same as production-without-it. The amber state shows
 // in both. That's intentional: the banner is a checklist item.
 // ─────────────────────────────────────────────────────────────
 function CronStatusBanner({ cronSecretConfigured }: { cronSecretConfigured: boolean }) {
@@ -233,7 +233,7 @@ function CronStatusBanner({ cronSecretConfigured }: { cronSecretConfigured: bool
           <code className="font-mono">/api/ara/admin/retention/cron</code> is gated by
           a <code className="font-mono">CRON_SECRET</code> bearer header, and that env
           var is not set in the current runtime. Until it is, the cron route returns
-          503 (intentional kill-switch — prevents accidental purges from a stray
+          503 (intentional kill-switch - prevents accidental purges from a stray
           browser fetch). The manual <em>Purge</em> form below still works.
         </p>
         <details className="mt-2 text-xs text-amber-900">

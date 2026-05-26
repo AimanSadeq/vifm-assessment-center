@@ -55,7 +55,7 @@ export default function AdminLayout({
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // dir/lang management lives in the I18nProvider — it forces ltr/en
+  // dir/lang management lives in the I18nProvider - it forces ltr/en
   // for /admin/* (and other non-locale-aware routes) so the sidebar's
   // start-0 positioning lands on the left even if the user came in
   // from the candidate portal with locale=ar.
@@ -202,7 +202,7 @@ export default function AdminLayout({
           </div>
         </div>
 
-        {/* Desktop top bar — just the bell, right-aligned */}
+        {/* Desktop top bar - just the bell, right-aligned */}
         <div className="hidden lg:flex items-center justify-end border-b bg-card px-6 py-2">
           <NotificationBellClient />
         </div>

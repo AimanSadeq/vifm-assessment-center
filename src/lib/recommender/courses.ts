@@ -1,5 +1,5 @@
 /**
- * Course recommender — bridges the diagnostic side (AC engagement
+ * Course recommender - bridges the diagnostic side (AC engagement
  * gaps, ARA pillar maturity gaps) to VIFM's training catalogue.
  *
  * Two ranking functions live here:
@@ -18,7 +18,7 @@
  * card component can render either side. Each result carries the
  * driving competencies/pillars + their individual gap contributions
  * so the UI can show "covers Strategic Thinking gap (Sig.) +
- * Decision Making gap (Mod.)" — turning the raw rank into a story.
+ * Decision Making gap (Mod.)" - turning the raw rank into a story.
  *
  * RLS: callers run under the admin/consultant client. The catalogue
  * tables grant authenticated read; no service-role escape needed.
@@ -53,7 +53,7 @@ export type RecommendedCourse = {
   // Higher = better fit.
   total_score: number;
   // Per-driver breakdown so the UI can explain why this course was
-  // recommended — e.g. "Strategic Thinking (gap 2 × relevance 3 = 6)".
+  // recommended - e.g. "Strategic Thinking (gap 2 × relevance 3 = 6)".
   drivers: Array<{
     label: string;        // human-readable competency or pillar name
     kind: "competency" | "pillar";
@@ -95,13 +95,13 @@ type ConsensusRow = {
 };
 
 // ──────────────────────────────────────────────────────────────
-// AC — per-candidate
+// AC - per-candidate
 // ──────────────────────────────────────────────────────────────
 
 export async function recommendCoursesForAcCandidate(args: {
   engagementId: string;
   candidateId: string;
-  /** BARS target — defaults to 3 (Competent) if no role profile target is bound. */
+  /** BARS target - defaults to 3 (Competent) if no role profile target is bound. */
   target?: number;
   limit?: number;
 }): Promise<RecommendedCourse[]> {
@@ -117,7 +117,7 @@ export async function recommendCoursesForAcCandidate(args: {
     .eq("candidate_id", args.candidateId);
   const consensus = (consensusRes.data ?? []) as unknown as ConsensusRow[];
 
-  // 2. Compute gaps. Anything ≤ 0 is on-target or stronger — skip.
+  // 2. Compute gaps. Anything ≤ 0 is on-target or stronger - skip.
   type GapEntry = { competency_id: string; name: string; gap: number };
   const gaps: GapEntry[] = consensus
     .map((row) => ({
@@ -146,7 +146,7 @@ export async function recommendCoursesForAcCandidate(args: {
 }
 
 // ──────────────────────────────────────────────────────────────
-// AC — cohort aggregate
+// AC - cohort aggregate
 // ──────────────────────────────────────────────────────────────
 
 export async function recommendCoursesForAcCohort(args: {
@@ -201,7 +201,7 @@ export async function recommendCoursesForAcCohort(args: {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Reflect — per-participant
+// Reflect - per-participant
 //
 // Reflect frameworks are CUSTOM per engagement (the consultant clones
 // a template or builds bespoke), so reflect_competencies.id can't be
@@ -264,7 +264,7 @@ function findAcMatch(
 
 export async function recommendCoursesForReflectParticipant(args: {
   participantId: string;
-  /** Target mean — defaults to 4 (Often). Below this counts as a gap. */
+  /** Target mean - defaults to 4 (Often). Below this counts as a gap. */
   target?: number;
   limit?: number;
 }): Promise<{
@@ -320,7 +320,7 @@ export async function recommendCoursesForReflectParticipant(args: {
     if (m) {
       mappedGaps.push({
         competency_id: m.id,
-        // Use the Reflect name in the label — that's what the participant saw
+        // Use the Reflect name in the label - that's what the participant saw
         // in their report. The driver chip will read e.g. "People Leadership
         // (gap 1.2 × relevance 3)".
         name: g.reflect_name,
@@ -351,7 +351,7 @@ export async function recommendCoursesForReflectParticipant(args: {
 
 
 // ──────────────────────────────────────────────────────────────
-// Reflect — cohort (every participant in an engagement). Sums
+// Reflect - cohort (every participant in an engagement). Sums
 // each competency's gap across the cohort: a wider cohort gap
 // makes the course more valuable to run as a programme. Mirrors
 // the per-participant function's name-matching layer 1:1.
@@ -375,7 +375,7 @@ export async function recommendCoursesForReflectCohort(args: {
 
   // Sum gap × participants-counted per competency. Using a sum (not a
   // mean) so that a competency where 8 of 10 participants are below
-  // target outranks one where only 3 of 10 are — same logic as the AC
+  // target outranks one where only 3 of 10 are - same logic as the AC
   // cohort recommender.
   type RawGap = { reflect_name: string; gap: number };
   const rawGaps: RawGap[] = [];
@@ -433,7 +433,7 @@ export async function recommendCoursesForReflectCohort(args: {
 
 
 // ──────────────────────────────────────────────────────────────
-// ARA — per-assessment
+// ARA - per-assessment
 // ──────────────────────────────────────────────────────────────
 
 type AraPillarScoreRow = {
@@ -455,7 +455,7 @@ const PILLAR_LABELS: Record<string, string> = {
 
 export async function recommendCoursesForAraAssessment(args: {
   assessmentId: string;
-  /** Target maturity — defaults to 4 (Managed) which is "best practice" per most AI maturity frameworks. */
+  /** Target maturity - defaults to 4 (Managed) which is "best practice" per most AI maturity frameworks. */
   target?: number;
   limit?: number;
 }): Promise<RecommendedCourse[]> {
@@ -501,7 +501,7 @@ export async function recommendCoursesForAraAssessment(args: {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Internal — ranking aggregator (shared between AC and ARA)
+// Internal - ranking aggregator (shared between AC and ARA)
 // ──────────────────────────────────────────────────────────────
 
 function rankFromCompetencyTags(
@@ -629,7 +629,7 @@ function finaliseRanking(
 }
 
 // ──────────────────────────────────────────────────────────────
-// Personal — per-individual-snapshot recommender
+// Personal - per-individual-snapshot recommender
 // ──────────────────────────────────────────────────────────────
 
 /**
@@ -642,7 +642,7 @@ function finaliseRanking(
  * For each factor below target, look up its mapped AC competency
  * names, find courses tagged to those competencies (case-sensitive
  * name lookup on the competencies table), and rank by
- * sum(gap × relevance_weight). Default target is 4 (Agree) — a
+ * sum(gap × relevance_weight). Default target is 4 (Agree) - a
  * personal score of 5 is "Strongly Agree" and ≤3 is the actionable
  * range.
  */
@@ -653,7 +653,7 @@ export async function recommendCoursesForIndividualSnapshot(args: {
 }): Promise<RecommendedCourse[]> {
   const limit = args.limit ?? TAG_LIMIT_DEFAULT;
   const target = args.target ?? 4;
-  // Personal snapshot is anonymous — the respondent is not logged in.
+  // Personal snapshot is anonymous - the respondent is not logged in.
   // The regular `createClient()` returns an anon-role client and RLS
   // blocks reads on competencies / vifm_courses / vifm_course_competency_tags,
   // which silently empties the recommendation list regardless of gap size.
@@ -692,7 +692,7 @@ export async function recommendCoursesForIndividualSnapshot(args: {
   for (const fg of factorGaps) {
     for (const name of fg.competencyNames) {
       const compId = nameToId.get(name);
-      if (!compId) continue; // competency name not in catalogue — skip
+      if (!compId) continue; // competency name not in catalogue - skip
       pairs.push({
         factorLabel: fg.factorLabel,
         competency_id: compId,
@@ -714,7 +714,7 @@ export async function recommendCoursesForIndividualSnapshot(args: {
     .in("competency_id", competencyIds);
   const tags = (tagsRes.data ?? []) as unknown as CompetencyTagJoin[];
 
-  // 4. Aggregate. A course can be pulled in by multiple factors —
+  // 4. Aggregate. A course can be pulled in by multiple factors -
   // each contributes (gap × relevance) to the total score, with the
   // factor surfacing as a driver chip on the card.
   const accumulator = new Map<string, RecommendedCourse>();

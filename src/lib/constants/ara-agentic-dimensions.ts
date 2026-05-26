@@ -1,8 +1,8 @@
 /**
- * VIFM ARC — Agentic-AI Readiness dimensions.
+ * VIFM ARC - Agentic-AI Readiness dimensions.
  *
  * Six dimensions measuring an organisation's readiness to DELEGATE work
- * to autonomous AI agents — distinct from the 8 ARC pillars, which
+ * to autonomous AI agents - distinct from the 8 ARC pillars, which
  * measure readiness to USE AI. Seeded as an opt-in tier on the question
  * bank (migration 00041) via the `agentic_dimension_id` discriminator on
  * ara_questions; an assessment opts in with `include_agentic_layer`.
@@ -36,9 +36,9 @@ export const ARA_AGENTIC_DIMENSIONS: AraAgenticDimension[] = [
     name_en: "Agent Governance & Accountability",
     name_ar: "حوكمة الوكلاء والمساءلة",
     description_en:
-      "Clear ownership and accountability for every autonomous agent — who approves it, who can pause it, and who answers for what it does.",
+      "Clear ownership and accountability for every autonomous agent - who approves it, who can pause it, and who answers for what it does.",
     description_ar:
-      "ملكية ومساءلة واضحة لكل وكيل مستقل — من يعتمده، ومن يستطيع إيقافه، ومن يتحمّل مسؤولية ما يفعله.",
+      "ملكية ومساءلة واضحة لكل وكيل مستقل - من يعتمده، ومن يستطيع إيقافه، ومن يتحمّل مسؤولية ما يفعله.",
     anchor_pillar: "governance",
     color: "#5391D5",
   },
@@ -58,9 +58,9 @@ export const ARA_AGENTIC_DIMENSIONS: AraAgenticDimension[] = [
     name_en: "Failure-Mode & Risk Awareness",
     name_ar: "الوعي بأنماط الفشل والمخاطر",
     description_en:
-      "Knowing how agents fail before they do — assessed failure modes, documented fallback plans, and testing against adversarial and edge cases.",
+      "Knowing how agents fail before they do - assessed failure modes, documented fallback plans, and testing against adversarial and edge cases.",
     description_ar:
-      "معرفة كيف تفشل الوكلاء قبل حدوث ذلك — تقييم أنماط الفشل، وخطط بديلة موثّقة، واختبار في مواجهة الحالات العدائية والحدّية.",
+      "معرفة كيف تفشل الوكلاء قبل حدوث ذلك - تقييم أنماط الفشل، وخطط بديلة موثّقة، واختبار في مواجهة الحالات العدائية والحدّية.",
     anchor_pillar: "model_management",
     color: "#9F1239",
   },
@@ -80,9 +80,9 @@ export const ARA_AGENTIC_DIMENSIONS: AraAgenticDimension[] = [
     name_en: "Autonomy Calibration",
     name_ar: "معايرة الاستقلالية",
     description_en:
-      "Matching the leash to the risk — low-risk tasks delegated, high-risk decisions kept with people, and autonomy adjusted by each agent's track record.",
+      "Matching the leash to the risk - low-risk tasks delegated, high-risk decisions kept with people, and autonomy adjusted by each agent's track record.",
     description_ar:
-      "مواءمة مدى الاستقلالية مع المخاطر — تفويض المهام منخفضة المخاطر، وإبقاء القرارات عالية المخاطر بيد البشر، وتعديل الاستقلالية بحسب سجل أداء كل وكيل.",
+      "مواءمة مدى الاستقلالية مع المخاطر - تفويض المهام منخفضة المخاطر، وإبقاء القرارات عالية المخاطر بيد البشر، وتعديل الاستقلالية بحسب سجل أداء كل وكيل.",
     anchor_pillar: "model_management",
     color: "#6D28D9",
   },

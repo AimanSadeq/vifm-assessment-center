@@ -15,22 +15,22 @@ const TIERS: { value: ReflectLevelTier; label: string; description: string }[] =
   {
     value: "exec",
     label: "Executive / C-suite",
-    description: "CEO, CXOs, EVPs — the strategic-leadership cohort.",
+    description: "CEO, CXOs, EVPs - the strategic-leadership cohort.",
   },
   {
     value: "senior_mgr",
     label: "Senior manager",
-    description: "Department heads, VPs, directors — people-leadership cohort.",
+    description: "Department heads, VPs, directors - people-leadership cohort.",
   },
   {
     value: "manager",
     label: "Manager / Team lead",
-    description: "Section heads, line managers, team leads — operational-leadership cohort.",
+    description: "Section heads, line managers, team leads - operational-leadership cohort.",
   },
   {
     value: "individual_contributor",
     label: "Senior individual contributor",
-    description: "Senior engineers, principal specialists — optional, for matrix orgs.",
+    description: "Senior engineers, principal specialists - optional, for matrix orgs.",
   },
 ];
 

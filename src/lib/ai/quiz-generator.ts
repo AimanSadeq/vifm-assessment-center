@@ -8,13 +8,13 @@ import type { Competency, QuizQuestion, BehavioralIndicator } from "@/types/data
  *   - 5 knowledge / scenario questions (true/false + multiple choice)
  *     grounded in the competency's behavioural indicators and dev tips.
  *   - 1 pattern-recognition / cognitive item that targets the same broad
- *     ability the competency assesses — anchors the deck in a way that
+ *     ability the competency assesses - anchors the deck in a way that
  *     matches the cognitive-insert pattern seen in industry assessments.
- *   - 1 application MCQ tied to the candidate's gap level — harder when
+ *   - 1 application MCQ tied to the candidate's gap level - harder when
  *     the gap is significant, easier when they're already on target.
  *
  * Difficulty distribution: roughly 2 easy / 3 medium / 2 hard. The
- * exact counts are guidance, not enforced — Claude can rebalance if
+ * exact counts are guidance, not enforced - Claude can rebalance if
  * the source material doesn't support a hard question.
  */
 
@@ -24,7 +24,7 @@ export type QuizGeneratorInput = {
   indicators: Pick<BehavioralIndicator, "indicator_type" | "description">[];
   /** Three development tips for this competency */
   developmentTips?: string[];
-  /** Candidate's current BARS score (1–5) — drives difficulty bias */
+  /** Candidate's current BARS score (1–5) - drives difficulty bias */
   currentScore: number | null;
   /** Target proficiency for this candidate's role */
   targetScore: number;
@@ -35,10 +35,10 @@ export type QuizGeneratorInput = {
 const SYSTEM_PROMPT = (
   `You are a learning-and-development question author for VIFM. ` +
   `You write short, sharp quizzes that probe whether a learner UNDERSTANDS ` +
-  `a behavioural competency well enough to apply it on the job — not just ` +
+  `a behavioural competency well enough to apply it on the job - not just ` +
   `whether they can recall a definition. You write in clear professional English. ` +
   `When asked to provide Arabic, you use Modern Standard Arabic suitable for ` +
-  `GCC banking and government professionals — never machine-translation tone.`
+  `GCC banking and government professionals - never machine-translation tone.`
 );
 
 function buildInstructions(input: QuizGeneratorInput) {
@@ -58,14 +58,14 @@ function buildInstructions(input: QuizGeneratorInput) {
 
   const gap =
     input.currentScore == null
-      ? "(unknown — bias toward medium difficulty)"
+      ? "(unknown - bias toward medium difficulty)"
       : (() => {
           const g = input.targetScore - input.currentScore;
-          if (g >= 3) return "significant gap — bias toward easy/medium";
-          if (g === 2) return "moderate gap — balanced mix";
-          if (g === 1) return "minor gap — balanced mix, lean medium";
-          if (g === 0) return "on target — lean medium/hard";
-          return "above target — lean hard";
+          if (g >= 3) return "significant gap - bias toward easy/medium";
+          if (g === 2) return "moderate gap - balanced mix";
+          if (g === 1) return "minor gap - balanced mix, lean medium";
+          if (g === 0) return "on target - lean medium/hard";
+          return "above target - lean hard";
         })();
 
   return [
@@ -83,7 +83,7 @@ function buildInstructions(input: QuizGeneratorInput) {
     `  - 4 multiple_choice (4 options each, exactly one correct)`,
     `  - 2 true_false`,
     `  - 1 pattern_recognition (a numeric or logical sequence with one`,
-    `    placeholder cell shown as "?" — 4 options for what fills the "?")`,
+    `    placeholder cell shown as "?" - 4 options for what fills the "?")`,
     `Difficulty mix: ~2 easy, ~3 medium, ~2 hard.`,
     `Points by difficulty: easy=10, medium=15, hard=20.`,
     "",
@@ -93,7 +93,7 @@ function buildInstructions(input: QuizGeneratorInput) {
     `professional could solve in under 30 seconds.`,
     "",
     `Every question must include an Explanation that a learner can read AFTER`,
-    `submitting an answer to understand the right answer — 2–3 sentences,`,
+    `submitting an answer to understand the right answer - 2–3 sentences,`,
     `concrete, references the competency by name when natural.`,
     "",
     `Return ONE JSON array with exactly 7 elements. No markdown fences. Each`,

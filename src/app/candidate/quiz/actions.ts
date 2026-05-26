@@ -17,7 +17,7 @@ import type { BehavioralIndicator, QuizAnswer, QuizQuestion } from "@/types/data
 
 /**
  * Kicks off an AI-generated quiz attempt for a single competency. Returns the
- * new attempt id on success — caller redirects to /candidate/quiz/[id].
+ * new attempt id on success - caller redirects to /candidate/quiz/[id].
  *
  * The AI call is the slow step (15–30 s); the page shows a "Preparing your
  * quiz" loading state during that window.
@@ -37,7 +37,7 @@ export async function startQuizAttemptAction(values: StartQuizValues) {
   const { candidateId, competencyId } = parsed.data;
 
   // Pull the competency, behavioural indicators, dev tips, and the candidate's
-  // current consensus rating + role-profile target — everything the AI needs
+  // current consensus rating + role-profile target - everything the AI needs
   // to ground a competency-specific deck.
   const [compRes, indRes, consRes, candRes] = await Promise.all([
     supabase
@@ -103,7 +103,7 @@ export async function startQuizAttemptAction(values: StartQuizValues) {
   if (!questions || questions.length === 0) {
     return {
       error:
-        "AI extraction failed — no valid questions returned. Check the server logs and try again.",
+        "AI extraction failed - no valid questions returned. Check the server logs and try again.",
     };
   }
 
@@ -129,7 +129,7 @@ export async function startQuizAttemptAction(values: StartQuizValues) {
 
   if (insertErr || !attempt) {
     return {
-      error: insertErr?.message ?? "Could not create the quiz attempt — RLS may have blocked it.",
+      error: insertErr?.message ?? "Could not create the quiz attempt - RLS may have blocked it.",
     };
   }
 
@@ -138,7 +138,7 @@ export async function startQuizAttemptAction(values: StartQuizValues) {
 
 /**
  * Saves the candidate's pick on a single question. Updates the answers JSONB
- * in place by index. Idempotent — re-saving the same answer is a no-op.
+ * in place by index. Idempotent - re-saving the same answer is a no-op.
  */
 export async function saveQuizAnswerAction(values: SaveQuizAnswerValues) {
   const parsed = saveQuizAnswerSchema.safeParse(values);
@@ -250,7 +250,7 @@ export async function completeQuizAttemptAction(values: CompleteQuizValues) {
 
   if (updateErr) return { error: updateErr.message };
 
-  // H3: notify admins when a quiz completes — useful signal that a learner
+  // H3: notify admins when a quiz completes - useful signal that a learner
   // is engaging with self-serve content between assessor-led sessions.
   // Pull candidate + competency labels for a meaningful body.
   const { data: candNamed } = await supabase
@@ -268,7 +268,7 @@ export async function completeQuizAttemptAction(values: CompleteQuizValues) {
   // Dedupe retake-spam: a candidate finishing the same competency's
   // quiz multiple times in 24h produces one admin notification, not N.
   // The latest score isn't reflected in the surviving notification, but
-  // the admin still sees the candidate is engaging — which is the
+  // the admin still sees the candidate is engaging - which is the
   // signal the notification is for.
   const competencyIdValue = (competencyId?.competency_id as string | undefined) ?? "unknown";
   // MM:SS so admins can spot speed-runs (suspicious) and slow-thoughtful
@@ -320,7 +320,7 @@ export async function abandonQuizAttemptAction(values: CompleteQuizValues) {
     Math.round((completedAt.getTime() - startedAt.getTime()) / 1000)
   );
 
-  // Service-role write — same reason as completeQuizAttemptAction:
+  // Service-role write - same reason as completeQuizAttemptAction:
   // the candidate_quiz_attempts_immutable_check trigger refuses
   // candidate-context updates to status/completed_at.
   const service = createServiceClient();

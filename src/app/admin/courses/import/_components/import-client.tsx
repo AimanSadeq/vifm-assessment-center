@@ -22,10 +22,10 @@ export function CoursesImportClient() {
   const [results, setResults] = useState<ExtractRowResult[]>([]);
   const [accepted, setAccepted] = useState<Record<string, boolean>>({});
   // Per-row replace toggle. Defaults to true when an existing match
-  // was found — overwriting is the more common intent on re-import,
+  // was found - overwriting is the more common intent on re-import,
   // but admin can opt out per-row to import as a separate course.
   const [replaceMatched, setReplaceMatched] = useState<Record<string, boolean>>({});
-  // Drag-state for the drop zone — drives the highlighted style
+  // Drag-state for the drop zone - drives the highlighted style
   // when files are being dragged over.
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -67,7 +67,7 @@ export function CoursesImportClient() {
   const handleExtract = () => {
     if (files.length === 0) return;
     if (files.length > 25) {
-      toast.error("Up to 25 PDFs per batch — split larger uploads");
+      toast.error("Up to 25 PDFs per batch - split larger uploads");
       return;
     }
     startExtract(async () => {
@@ -85,7 +85,7 @@ export function CoursesImportClient() {
       for (const row of r.results) {
         if (row.ok) {
           initAccepted[row.filename] = true;
-          // Default to replace when a match was found — re-uploading
+          // Default to replace when a match was found - re-uploading
           // a PDF with the same code/title almost always means
           // "update", not "create a duplicate".
           initReplace[row.filename] = !!row.existing_course_id;
@@ -149,7 +149,7 @@ export function CoursesImportClient() {
 
   return (
     <div className="space-y-4">
-      {/* Drop zone — both click-to-browse and drag-and-drop work */}
+      {/* Drop zone - both click-to-browse and drag-and-drop work */}
       <label
         htmlFor="course-pdf-upload"
         onDragOver={onDropZoneDragOver}
@@ -248,7 +248,7 @@ export function CoursesImportClient() {
                   {failedRows.map((r) => (
                     <li key={r.filename}>
                       <span className="font-mono">{r.filename}</span>
-                      <span className="text-muted-foreground"> — {r.error}</span>
+                      <span className="text-muted-foreground"> - {r.error}</span>
                     </li>
                   ))}
                 </ul>
@@ -313,7 +313,7 @@ export function CoursesImportClient() {
                           <span>
                             {replaceMatched[row.filename]
                               ? "Replace existing course"
-                              : "Existing course found — uncheck to import as new"}
+                              : "Existing course found - uncheck to import as new"}
                           </span>
                         </label>
                         <span className="text-muted-foreground/80 truncate">

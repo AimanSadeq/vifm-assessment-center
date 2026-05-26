@@ -69,7 +69,7 @@ export default function AraRootPage() {
             </p>
             <p className="text-lg text-white/75 max-w-2xl leading-relaxed">
               Eight pillars, sixteen regulatory frameworks, and a bilingual branded
-              report — delivered in English, Arabic, or side-by-side landscape.
+              report - delivered in English, Arabic, or side-by-side landscape.
               Plus a complimentary, self-served Personal Snapshot for individuals. Built
               for consultant-led engagements across UAE and Saudi Arabia.
             </p>
@@ -148,13 +148,13 @@ export default function AraRootPage() {
               tone="teal"
               title="Personal snapshot"
               subtitle="Self-served, complimentary"
-              description="A short bilingual self-assessment for individuals — 5-7 minutes, four VIFM factors, plus personalised VIFM training recommendations to act on the gaps."
+              description="A short bilingual self-assessment for individuals - 5-7 minutes, four VIFM factors, plus personalised VIFM training recommendations to act on the gaps."
               cta="Take the snapshot"
             />
           </FadeIn>
         </div>
 
-        {/* Subtle separate row for the org-side respondent flow note —
+        {/* Subtle separate row for the org-side respondent flow note -
             kept in the layout so consultants who land here remember the
             token URL exists, but visually demoted vs the three primary
             entry cards. */}
@@ -162,7 +162,7 @@ export default function AraRootPage() {
           <Link2 className="h-3 w-3" />
           <span>
             Org respondents arrive via a consultant-issued token URL{" "}
-            <code className="text-[10px]">/ara/respond/[token]</code> — no
+            <code className="text-[10px]">/ara/respond/[token]</code> - no
             account or self-service required.
           </span>
         </div>

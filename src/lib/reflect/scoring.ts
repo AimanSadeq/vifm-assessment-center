@@ -13,7 +13,7 @@ export type RaterGroupScore = {
   /** True when the rater group has fewer raters than the anonymity threshold. */
   hidden_by_anonymity: boolean;
   /**
-   * Within-group spread (max - min). Used by the P1 consensus flag — when
+   * Within-group spread (max - min). Used by the P1 consensus flag - when
    * this is >= 3 on a 5-point scale, the raters meaningfully disagree and
    * the reader should treat the mean with care. null when fewer than 2
    * responses contributed (a single response can't disagree with itself).
@@ -48,7 +48,7 @@ export type BehaviorScore = {
   others_count: number;
   gap: number | null;
   /**
-   * Per-rater-group means for this behaviour — surfaces the item-level
+   * Per-rater-group means for this behaviour - surfaces the item-level
    * detail page (P0 parity pass). Anonymity is applied identically to
    * CompetencyScore.by_group: peer/direct_report/skip_level/other are
    * nulled out when rater_count < anonymity_min_n.
@@ -164,14 +164,14 @@ export type CohortScoring = {
     name_ar: string | null;
     display_order: number;
     mean: number | null;
-    /** Per-participant means in display_order — used to render the heatmap. */
+    /** Per-participant means in display_order - used to render the heatmap. */
     per_participant_means: Array<{ participant_id: string; mean: number | null }>;
     /**
      * P1 cohort distribution: counts of participants whose Others-mean for
      * THIS competency falls below the favorable zone (<3.5), within it
      * (3.5–4.25 inclusive), or above (>4.25). Participants with no others
      * data are excluded from all three. Used by the "% below / within /
-     * above" stacked-bar on the cohort PDF — the exec-summary slide every
+     * above" stacked-bar on the cohort PDF - the exec-summary slide every
      * competitor uses to anchor org-level training decisions.
      */
     distribution: {
@@ -306,7 +306,7 @@ export async function computeParticipantScoring(
 
   // Raters for this participant. open_* and critical_competency_ids columns
   // power the verbatim section + critical-competency alignment respectively.
-  // Both are added by P0/P1 migrations (00036/00037) — until those run in
+  // Both are added by P0/P1 migrations (00036/00037) - until those run in
   // prod, fall back to the older shape and the relevant features render empty.
   type RaterMiniRow = {
     id: string;
@@ -327,7 +327,7 @@ export async function computeParticipantScoring(
       )
       .eq("participant_id", participantId);
     if (full.error) {
-      // Columns probably missing — re-query without them so the rest of the
+      // Columns probably missing - re-query without them so the rest of the
       // pipeline still works.
       const fallback = await sb
         .from("reflect_raters")
@@ -385,7 +385,7 @@ export async function computeParticipantScoring(
 
   // Index responses by rater + behavior. Drop is_na (excluded from means).
   const responsesByRater = new Map<string, Map<string, number>>();
-  // Separate comment map — comments are independent of score: a rater can
+  // Separate comment map - comments are independent of score: a rater can
   // mark N/A and still leave a comment about why.
   const commentsByBehavior = new Map<string, Array<{ raterId: string; text: string }>>();
   for (const r of responses ?? []) {
@@ -597,7 +597,7 @@ export async function computeParticipantScoring(
     };
   });
 
-  // Rankings — only behaviors that have a meaningful Others view (>=2 responses)
+  // Rankings - only behaviors that have a meaningful Others view (>=2 responses)
   // qualify for strength / development / blind-spot / hidden-strength lists.
   const ranked = behaviors.filter((b) => b.others_mean !== null && b.others_count >= 2);
 
@@ -625,7 +625,7 @@ export async function computeParticipantScoring(
   // anonymity threshold as the numeric scores: when a group has fewer
   // raters than anonymity_min_n, drop EVERY verbatim from that group
   // entirely. We don't try to mask individual contributors within an
-  // above-threshold group — the consultant + participant know how many
+  // above-threshold group - the consultant + participant know how many
   // people contributed; trying to randomise speaker order while keeping
   // the count "anonymous enough" creates more risk than value.
   const groupRaterCount = (role: ReflectRaterRole): number =>
@@ -669,7 +669,7 @@ export async function computeParticipantScoring(
   // ── P1 critical-competency alignment ──
   // Picks come from the FIRST Self / Manager rater respectively. If
   // multiple Self/Manager raters somehow exist (data quirk), we still
-  // pick one — the unique-self DB constraint already guarantees this
+  // pick one - the unique-self DB constraint already guarantees this
   // for self, and a participant typically only ever has one manager.
   const selfRater = raters.find((r) => r.rater_role === "self");
   const managerRater = raters.find((r) => r.rater_role === "manager");
@@ -758,7 +758,7 @@ export async function computeParticipantScoring(
 
 
 // ──────────────────────────────────────────────────────────────
-// Cohort scoring — overlay every participant's mean per competency
+// Cohort scoring - overlay every participant's mean per competency
 // for the heatmap, plus aggregate strengths and development areas.
 // ──────────────────────────────────────────────────────────────
 
@@ -844,7 +844,7 @@ export async function computeCohortScoring(
       }
       const entry = compMap.get(c.competency_id)!;
       // P4.1 anonymity: cohort heatmap uses Others-mean ONLY. We
-      // deliberately do NOT fall back to self_mean — surfacing a
+      // deliberately do NOT fall back to self_mean - surfacing a
       // self-only score in the cohort view would let the CHRO infer
       // who hasn't yet gathered a real 360 dataset, which leaks the
       // wrong signal (rater turnout) into the cohort capability view.

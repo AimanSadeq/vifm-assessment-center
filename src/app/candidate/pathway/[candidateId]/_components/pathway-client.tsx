@@ -3,7 +3,7 @@
 import { UpskillingPathwayView } from "@/components/shared/upskilling-pathway-view";
 
 /**
- * AC candidate Upskilling Pathway — thin wrapper over the shared view,
+ * AC candidate Upskilling Pathway - thin wrapper over the shared view,
  * pointed at the candidate generation endpoint.
  */
 export function PathwayClient({

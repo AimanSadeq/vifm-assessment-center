@@ -23,7 +23,7 @@ import { extractBehaviorsFromValues } from "@/lib/ai/reflect-behavior-extractor"
 import { sendReflectEmail, roleLabel } from "./email";
 
 // ──────────────────────────────────────────────────────────────
-// Inline org creation — used by the wizard's "Add new" affordance.
+// Inline org creation - used by the wizard's "Add new" affordance.
 // Inserts into ara_organizations (Reflect reuses the AR Compass
 // client list) and returns the newly created row so the wizard can
 // merge it into the picker without a refetch.
@@ -247,7 +247,7 @@ export async function createReflectEngagement(
       return { ok: false, error: fwErr?.message ?? "Could not create framework" };
     }
 
-    // Run Claude — best-effort. If the AI call fails or returns
+    // Run Claude - best-effort. If the AI call fails or returns
     // nothing, we leave the framework empty so the consultant can
     // populate it manually rather than blocking the wizard.
     const proposals = await extractBehaviorsFromValues({
@@ -525,7 +525,7 @@ export async function bulkUpsertReflectParticipants(input: {
 
   const sb = createServiceClient();
   // Naive insert. If we wanted upsert-on-email we'd add a unique
-  // (engagement_id, email) constraint first — not in M2 scope. For now,
+  // (engagement_id, email) constraint first - not in M2 scope. For now,
   // if the email already exists in this engagement we let the second
   // insert succeed too; cleanup of duplicates is a consultant chore.
   const rows = parsed.data.rows.map((r) => ({
@@ -605,7 +605,7 @@ export async function bulkUpsertReflectRaters(input: {
     const sample = unmatched.slice(0, 5).join(", ");
     const hint =
       participants && participants.length === 0
-        ? " Tip: import participants first — raters reference participants by email."
+        ? " Tip: import participants first - raters reference participants by email."
         : ` Tip: each rater's participant_email must exactly match an imported participant. Unmatched: ${sample}`;
     return { ok: false, error: `No raters matched a known participant.${hint}` };
   }
@@ -627,7 +627,7 @@ export async function bulkUpsertReflectRaters(input: {
 
 // ──────────────────────────────────────────────────────────────
 // Launch engagement: flip status draft -> live, then send rater
-// invitation emails (best-effort — failures don't roll back the
+// invitation emails (best-effort - failures don't roll back the
 // status flip).
 // ──────────────────────────────────────────────────────────────
 
@@ -650,7 +650,7 @@ export async function launchReflectEngagement(engagementId: string) {
     .maybeSingle<{ status: string }>();
   if (!eng) return { ok: false, error: "Engagement not found" };
   if (eng.status !== "draft") {
-    return { ok: false, error: `Engagement is already '${eng.status}' — cannot relaunch` };
+    return { ok: false, error: `Engagement is already '${eng.status}' - cannot relaunch` };
   }
 
   const { error: updErr } = await sb
@@ -680,7 +680,7 @@ export async function launchReflectEngagement(engagementId: string) {
 
 // ──────────────────────────────────────────────────────────────
 // Send pending-rater invitations for an engagement. Idempotent
-// in spirit — only raters with invited_at IS NULL get emailed.
+// in spirit - only raters with invited_at IS NULL get emailed.
 // Also exposed as a standalone resend action.
 // ──────────────────────────────────────────────────────────────
 
@@ -889,19 +889,19 @@ export async function loadReflectFrameworkForEngagement(
 
 
 // ────────────────────────────────────────────────────────────────────
-// Reassessment workflow — clones the design + (optionally) the
+// Reassessment workflow - clones the design + (optionally) the
 // participant list into a fresh draft engagement.
 //
 // Mirrors the ARA / AC pattern (00020 in the AC schema). What's copied:
 //   - Engagement metadata (name suffixed with "(reassessment YYYY)")
-//   - Framework — competencies + behaviours
-//   - Participants — if carryParticipants=true. Each new participant
+//   - Framework - competencies + behaviours
+//   - Participants - if carryParticipants=true. Each new participant
 //     row stores its prior_participant_id so the report can render
 //     "↑ +0.4 vs prior" deltas after the new run scores.
 //
 // What's NOT copied:
 //   - Raters (each participant invites fresh raters)
-//   - Responses, IDPs, reports — these are participant-level artefacts
+//   - Responses, IDPs, reports - these are participant-level artefacts
 //     for the prior run only.
 // ────────────────────────────────────────────────────────────────────
 
@@ -937,7 +937,7 @@ export async function createReflectReassessmentFromPrior(input: {
   if (!["completed", "live", "archived"].includes(prior.status)) {
     return {
       ok: false,
-      error: `Engagement status "${prior.status}" can't be reassessed yet — wait until it's at least live.`,
+      error: `Engagement status "${prior.status}" can't be reassessed yet - wait until it's at least live.`,
     };
   }
 

@@ -7,7 +7,7 @@
  * (proportion correct), estimates a Rasch difficulty (irt_b) via
  * raschDifficultyFromPValue, writes back irt_b/irt_se/n_responses, and promotes
  * items with enough responses (FLUENT_CALIBRATE_MIN, default 30) to status
- * 'live' — at which point a future adaptive flow (irt.ts selectNextItem) can
+ * 'live' - at which point a future adaptive flow (irt.ts selectNextItem) can
  * serve them. Run periodically as response data accumulates.
  */
 import { createClient } from "@supabase/supabase-js";
@@ -35,7 +35,7 @@ async function main() {
   }
   const bank = (items ?? []) as Item[];
   if (bank.length === 0) {
-    console.log("No items yet — take some tests to populate the bank, then re-run.");
+    console.log("No items yet - take some tests to populate the bank, then re-run.");
     return;
   }
 

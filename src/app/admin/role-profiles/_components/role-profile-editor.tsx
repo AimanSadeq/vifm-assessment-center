@@ -340,7 +340,7 @@ export function RoleProfileEditor({ initial, competencyTree, mode }: Props) {
                           }
                         >
                           <SelectTrigger className="h-8">
-                            <SelectValue placeholder="—">
+                            <SelectValue placeholder="-">
                               {c.priority && (
                                 <Badge variant="secondary" className={priorityTone[c.priority]}>
                                   {c.priority}

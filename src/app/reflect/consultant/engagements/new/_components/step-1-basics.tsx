@@ -65,7 +65,7 @@ export function StepBasics({ state, update, orgs, onOrgCreated }: Props) {
           <Label htmlFor="rf-name">Engagement name</Label>
           <Input
             id="rf-name"
-            placeholder="e.g. Leadership 360 — Cohort 1"
+            placeholder="e.g. Leadership 360 - Cohort 1"
             value={state.name}
             onChange={(e) => update({ name: e.target.value })}
           />
@@ -105,7 +105,7 @@ export function StepBasics({ state, update, orgs, onOrgCreated }: Props) {
           </select>
           {orgs.length === 0 && (
             <p className="text-xs text-muted-foreground mt-1">
-              No organisations yet — click <strong>Add new</strong> above to create one.
+              No organisations yet - click <strong>Add new</strong> above to create one.
             </p>
           )}
         </div>
@@ -169,7 +169,7 @@ export function StepBasics({ state, update, orgs, onOrgCreated }: Props) {
             }}
           />
           <p className="text-xs text-muted-foreground mt-1">
-            Minimum 3 — anything lower can&apos;t be conducted anonymously. Peer and direct-report scores stay hidden until this many raters in the group have responded.
+            Minimum 3 - anything lower can&apos;t be conducted anonymously. Peer and direct-report scores stay hidden until this many raters in the group have responded.
           </p>
         </div>
 
@@ -200,7 +200,7 @@ export function StepBasics({ state, update, orgs, onOrgCreated }: Props) {
             onCheckedChange={(v) => update({ is_sandbox: Boolean(v) })}
           />
           <Label htmlFor="rf-sandbox" className="text-sm font-normal cursor-pointer">
-            Sandbox engagement — invitations + reminders are redirected to the sandbox inbox
+            Sandbox engagement - invitations + reminders are redirected to the sandbox inbox
             and do not reach real raters. Use this for client demos and internal testing.
           </Label>
         </div>
@@ -213,7 +213,7 @@ export function StepBasics({ state, update, orgs, onOrgCreated }: Props) {
             <div>
               <h3 className="text-base font-semibold text-primary">Add a new organisation</h3>
               <p className="text-xs text-muted-foreground mt-1">
-                Stored in the shared client list — also available to AI Readiness engagements.
+                Stored in the shared client list - also available to AI Readiness engagements.
               </p>
             </div>
 

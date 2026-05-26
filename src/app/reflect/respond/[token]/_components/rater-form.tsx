@@ -73,31 +73,31 @@ const UI = {
     of: "of",
     saving: "Saving…",
     saved: "All saved",
-    failed: "Save failed — will retry",
+    failed: "Save failed - will retry",
     submit: "Submit responses",
     submitting: "Saving and submitting…",
     submitDisabled: "Rate every behaviour or mark N/A to submit",
     commentPlaceholder: "Add a short comment (optional)",
     showComment: "Add comment",
     hideComment: "Hide comment",
-    offline: "You are offline — your changes will save when you reconnect",
+    offline: "You are offline - your changes will save when you reconnect",
     submitConfirmTitle: "Ready to submit?",
     submitConfirmBody: "Once submitted, you can't change your responses.",
     submitConfirmCta: "Yes, submit",
     submitConfirmCancel: "Keep editing",
     openHeading: "In your own words",
     openLead:
-      "These three questions are the most useful part of any 360. Answers are shared with your colleague exactly as written — no edits, no aggregation. Skip any you'd rather not answer.",
+      "These three questions are the most useful part of any 360. Answers are shared with your colleague exactly as written - no edits, no aggregation. Skip any you'd rather not answer.",
     openLeadSelf:
-      "These three questions are the most useful part of any 360. Use them to capture what you want to keep, change, or start — they'll appear in your own report exactly as written.",
+      "These three questions are the most useful part of any 360. Use them to capture what you want to keep, change, or start - they'll appear in your own report exactly as written.",
     openStartLabel: "What should this person START doing to be more effective?",
     openStopLabel: "What should this person STOP doing to be more effective?",
     openContinueLabel: "What should this person CONTINUE doing?",
     openStartLabelSelf: "What do you want to START doing to be more effective?",
     openStopLabelSelf: "What do you want to STOP doing to be more effective?",
     openContinueLabelSelf: "What do you want to CONTINUE doing?",
-    openPlaceholder: "Optional — write as much or as little as you like.",
-    tenureHeading: "Before you start — how long have you worked with this person?",
+    openPlaceholder: "Optional - write as much or as little as you like.",
+    tenureHeading: "Before you start - how long have you worked with this person?",
     tenureLead: "Optional. Helps the report show the depth of experience behind each piece of feedback.",
     tenureChoices: {
       less_than_6mo: "Less than 6 months",
@@ -107,9 +107,9 @@ const UI = {
     },
     criticalHeading: "Which competencies are most critical for this role?",
     criticalLeadSelf:
-      "Pick the competencies you consider most critical for your role. Your manager picks independently — the alignment between your picks (and theirs) is itself a coaching moment.",
+      "Pick the competencies you consider most critical for your role. Your manager picks independently - the alignment between your picks (and theirs) is itself a coaching moment.",
     criticalLeadManager:
-      "Pick the competencies you consider most critical for this person's role. They've picked independently — the alignment between your picks and theirs is itself a coaching moment.",
+      "Pick the competencies you consider most critical for this person's role. They've picked independently - the alignment between your picks and theirs is itself a coaching moment.",
     criticalPickedCount: "picked",
   },
   ar: {
@@ -117,31 +117,31 @@ const UI = {
     of: "من",
     saving: "جارٍ الحفظ…",
     saved: "تم حفظ الكل",
-    failed: "تعذّر الحفظ — ستتم إعادة المحاولة",
+    failed: "تعذّر الحفظ - ستتم إعادة المحاولة",
     submit: "إرسال الإجابات",
     submitting: "جارٍ الحفظ والإرسال…",
     submitDisabled: "قيّم كل سلوك أو حدّد \"غير قابل للملاحظة\" قبل الإرسال",
     commentPlaceholder: "أضف تعليقًا قصيرًا (اختياري)",
     showComment: "إضافة تعليق",
     hideComment: "إخفاء التعليق",
-    offline: "أنت غير متصل بالإنترنت — ستُحفظ تغييراتك عند عودة الاتصال",
+    offline: "أنت غير متصل بالإنترنت - ستُحفظ تغييراتك عند عودة الاتصال",
     submitConfirmTitle: "هل أنت جاهز للإرسال؟",
     submitConfirmBody: "بعد الإرسال، لن تتمكن من تعديل إجاباتك.",
     submitConfirmCta: "نعم، أرسل",
     submitConfirmCancel: "متابعة التعديل",
     openHeading: "بكلماتك الخاصة",
     openLead:
-      "هذه الأسئلة الثلاثة من أهم ما يخرج به أي تقييم 360. تُشارَك إجاباتك مع زميلك كما هي بالضبط — دون تعديل أو دمج. يمكنك تجاوز أي منها إن لم ترغب في الإجابة.",
+      "هذه الأسئلة الثلاثة من أهم ما يخرج به أي تقييم 360. تُشارَك إجاباتك مع زميلك كما هي بالضبط - دون تعديل أو دمج. يمكنك تجاوز أي منها إن لم ترغب في الإجابة.",
     openLeadSelf:
-      "هذه الأسئلة الثلاثة من أهم ما يخرج به أي تقييم 360. استخدمها لتسجيل ما تريد الاستمرار فيه وتغييره والبدء به — وستظهر في تقريرك كما كتبتها تمامًا.",
+      "هذه الأسئلة الثلاثة من أهم ما يخرج به أي تقييم 360. استخدمها لتسجيل ما تريد الاستمرار فيه وتغييره والبدء به - وستظهر في تقريرك كما كتبتها تمامًا.",
     openStartLabel: "ما الذي ينبغي على هذا الشخص أن يبدأ بفعله ليصبح أكثر فاعلية؟",
     openStopLabel: "ما الذي ينبغي على هذا الشخص أن يتوقّف عن فعله ليصبح أكثر فاعلية؟",
     openContinueLabel: "ما الذي ينبغي على هذا الشخص الاستمرار في فعله؟",
     openStartLabelSelf: "ما الذي تريد أن تبدأ بفعله لتصبح أكثر فاعلية؟",
     openStopLabelSelf: "ما الذي تريد أن تتوقّف عن فعله لتصبح أكثر فاعلية؟",
     openContinueLabelSelf: "ما الذي تريد الاستمرار في فعله؟",
-    openPlaceholder: "اختياري — اكتب بقدر ما تشاء.",
-    tenureHeading: "قبل أن تبدأ — منذ متى تعمل مع هذا الشخص؟",
+    openPlaceholder: "اختياري - اكتب بقدر ما تشاء.",
+    tenureHeading: "قبل أن تبدأ - منذ متى تعمل مع هذا الشخص؟",
     tenureLead: "اختياري. يساعد في أن يُظهر التقرير عمق الخبرة وراء كل رأي.",
     tenureChoices: {
       less_than_6mo: "أقل من 6 أشهر",
@@ -151,9 +151,9 @@ const UI = {
     },
     criticalHeading: "ما الكفايات الأكثر أهمية لهذا الدور؟",
     criticalLeadSelf:
-      "اختر الكفايات التي تعتبرها الأكثر أهمية لدورك. سيختار مديرك بشكل مستقل — والتوافق بين اختياراتك (واختياراته) يُعدّ في حدّ ذاته فرصةً للتعلّم.",
+      "اختر الكفايات التي تعتبرها الأكثر أهمية لدورك. سيختار مديرك بشكل مستقل - والتوافق بين اختياراتك (واختياراته) يُعدّ في حدّ ذاته فرصةً للتعلّم.",
     criticalLeadManager:
-      "اختر الكفايات التي تعتبرها الأكثر أهمية لدور هذا الشخص. لقد اختار/ت بشكل مستقل — والتوافق بين اختياراتك واختياراته يُعدّ في حدّ ذاته فرصةً للتعلّم.",
+      "اختر الكفايات التي تعتبرها الأكثر أهمية لدور هذا الشخص. لقد اختار/ت بشكل مستقل - والتوافق بين اختياراتك واختياراته يُعدّ في حدّ ذاته فرصةً للتعلّم.",
     criticalPickedCount: "تم اختيارها",
   },
 } as const;
@@ -202,7 +202,7 @@ export function RaterForm({ ctx }: Props) {
   const showCriticalPicker =
     ctx.rater.rater_role === "self" || ctx.rater.rater_role === "manager";
 
-  // P2: tenure — "how long have you known this person?" Self raters skip
+  // P2: tenure - "how long have you known this person?" Self raters skip
   // this since they're rating themselves.
   const [tenure, setTenureState] = useState<ReflectRaterTenure | null>(ctx.tenure);
   const showTenurePicker = ctx.rater.rater_role !== "self";
@@ -248,13 +248,13 @@ export function RaterForm({ ctx }: Props) {
   // Track every in-flight save by a unique counter id so the submit-flush
   // gate can await every one of them before calling markComplete. Keying
   // by behavior_id would lose entries when the same behaviour is updated
-  // twice in quick succession — the first save's cleanup would delete the
+  // twice in quick succession - the first save's cleanup would delete the
   // second save's promise. Counter ids guarantee each save is tracked
   // until it actually resolves. Same race-fix posture as ARA commit b0e32ee.
   const inflightRef = useRef<Map<number, Promise<void>>>(new Map());
   const saveIdRef = useRef(0);
 
-  // Debounced comment saves — comments are typed character by character
+  // Debounced comment saves - comments are typed character by character
   // so we debounce 700ms before firing the network request.
   const commentTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
@@ -291,7 +291,7 @@ export function RaterForm({ ctx }: Props) {
     return p;
   };
 
-  // P1: critical-competency toggle. No debounce needed — each click is a
+  // P1: critical-competency toggle. No debounce needed - each click is a
   // discrete user intent, same as a score click. The save goes through the
   // same inflight-tracking Map as everything else so the submit-flush gate
   // covers it without extra work.
@@ -301,7 +301,7 @@ export function RaterForm({ ctx }: Props) {
       if (next.has(competencyId)) next.delete(competencyId);
       else next.add(competencyId);
       // Fire save with the NEXT snapshot. setState is async, so we can't
-      // read it back synchronously — but `next` is the value we just built.
+      // read it back synchronously - but `next` is the value we just built.
       setSaveState("saving");
       const myId = ++saveIdRef.current;
       const p = (async () => {
@@ -397,7 +397,7 @@ export function RaterForm({ ctx }: Props) {
   };
 
   // ──────────────────────────────────────────────────────────
-  // Score change handler — immediate save (no debounce for scores
+  // Score change handler - immediate save (no debounce for scores
   // since these are discrete clicks)
   // ──────────────────────────────────────────────────────────
   const setScore = (behaviorId: string, score: number) => {
@@ -448,7 +448,7 @@ export function RaterForm({ ctx }: Props) {
   };
 
   // ──────────────────────────────────────────────────────────
-  // Submit — flush all in-flight saves + any pending comment
+  // Submit - flush all in-flight saves + any pending comment
   // debounces, THEN call markReflectRaterComplete. This is the
   // race-safe pattern: never finalize before the last keystroke
   // has reached the DB.

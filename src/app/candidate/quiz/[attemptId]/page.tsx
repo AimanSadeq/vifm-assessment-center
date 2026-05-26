@@ -21,7 +21,7 @@ export default async function QuizAttemptPage({ params }: Props) {
 
   if (error || !attempt) return notFound();
 
-  // Already finalised — straight to results page.
+  // Already finalised - straight to results page.
   if (attempt.status !== "in_progress") {
     redirect(`/candidate/quiz/${attemptId}/results`);
   }

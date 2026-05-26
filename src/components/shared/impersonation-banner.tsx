@@ -5,23 +5,23 @@ import { useTranslation } from "react-i18next";
 import { Eye, ArrowLeft } from "lucide-react";
 
 /**
- * H4 — admin "view as candidate" banner.
+ * H4 - admin "view as candidate" banner.
  *
  * Rendered at the top of any /candidate/* page when ?asAdmin=1 is in the URL.
- * Designed to be visually loud without overwhelming — the candidate-portal
+ * Designed to be visually loud without overwhelming - the candidate-portal
  * shell underneath stays the same, so admins see exactly what the candidate
  * sees with a clear "you're impersonating" reminder.
  *
  * Marked "use client" because it's imported by both server pages (welcome,
  * skills, assessments, report) AND a client page (consent). React Server
  * Components and "use client" components compose freely in app router, but a
- * client page can't import an async server component — Render's production
+ * client page can't import an async server component - Render's production
  * build flags this as an RSC/pages mismatch. Using useTranslation() instead
  * of getServerT() keeps the banner usable from either context.
  *
  * Auth note: in production this should also check the session role to refuse
  * the asAdmin query when the caller isn't actually an admin. With
- * AUTH_ENABLED=false in dev, we render unconditionally on the query alone —
+ * AUTH_ENABLED=false in dev, we render unconditionally on the query alone -
  * the auth gate goes in when src/middleware.ts flips. The banner itself is
  * purely visual; nothing about it expands a candidate's actual access.
  */

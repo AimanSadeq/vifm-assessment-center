@@ -38,7 +38,7 @@ export type BulkJdExtractItem =
     };
 
 /**
- * G4 — Process N JDs in one server roundtrip and return one row per file
+ * G4 - Process N JDs in one server roundtrip and return one row per file
  * with the extracted recommendations + a suggested name. The client then
  * lets the admin tweak names + decide which to actually create as role
  * profiles.
@@ -78,7 +78,7 @@ export async function bulkExtractJdsAction(
 
   if (compErr || !competencies || competencies.length === 0) {
     return {
-      error: compErr?.message ?? "No competencies seeded — run the seed migrations first.",
+      error: compErr?.message ?? "No competencies seeded - run the seed migrations first.",
     };
   }
 

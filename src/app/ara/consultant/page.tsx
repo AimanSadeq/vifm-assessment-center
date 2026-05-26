@@ -58,7 +58,7 @@ const statusVariant: Record<AraAssessment["status"], "default" | "secondary" | "
 export default async function AraConsultantPage() {
   const sb = createServiceClient();
 
-  // Org-side assessments only — personal snapshots have a separate
+  // Org-side assessments only - personal snapshots have a separate
   // panel below so they don't inflate the consultant's pipeline.
   const { data: rows } = await sb
     .from("ara_assessments")
@@ -67,7 +67,7 @@ export default async function AraConsultantPage() {
     .order("created_at", { ascending: false })
     .returns<AssessmentRow[]>();
 
-  // Personal snapshots in the last 30 days — fire-and-forget panel.
+  // Personal snapshots in the last 30 days - fire-and-forget panel.
   // We use service-role here because consultant RLS doesn't grant
   // visibility on individual-stage rows (no consultant_id), and the
   // intel value of seeing self-served activity is high.

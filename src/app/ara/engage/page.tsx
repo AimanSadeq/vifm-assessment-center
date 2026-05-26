@@ -27,7 +27,7 @@ const STAGE_ICONS: Record<AraEngagementStage, typeof Building2> = {
  * not depend on Tailwind's JIT for arbitrary value classes.
  *
  * Four stage tones: Personal reuses the teal palette since both
- * Personal and Department are entry-level / complimentary tier — but
+ * Personal and Department are entry-level / complimentary tier - but
  * the comparison-matrix Cell tone keeps `teal` reserved for Personal
  * and re-tags Department's column with the same palette to keep the
  * card-tone agreement on screen.
@@ -39,7 +39,7 @@ const TONE_MAP = {
 } as const;
 
 /**
- * Personal stage label override — `stage.number` is 1 for both
+ * Personal stage label override - `stage.number` is 1 for both
  * Department and Personal, so we show "Personal" instead of "Stage 1"
  * for the individual stage to keep the badge readable across the page.
  */
@@ -48,7 +48,7 @@ function stageBadge(stage: { id: string; number: number }): string {
 }
 
 /**
- * Display order on this page — Personal first (lowest tier / free),
+ * Display order on this page - Personal first (lowest tier / free),
  * then ascending Department / Division / Enterprise. We don't reorder
  * the ARA_STAGE_DEFINITIONS export itself so other consumers (eg. the
  * consultant wizard, which filters Personal out) see the original order.
@@ -149,7 +149,7 @@ export default function AraEngagePage() {
                     {stage.tagline_en}
                   </p>
 
-                  {/* At-a-glance facts — Personal uses 4 factors not pillars,
+                  {/* At-a-glance facts - Personal uses 4 factors not pillars,
                        and a 1-page report rather than the multi-page formats. */}
                   <ul className="text-xs text-muted-foreground space-y-2 mb-6 flex-1">
                     <li className="flex justify-between border-b pb-2">
@@ -174,7 +174,7 @@ export default function AraEngagePage() {
                     </li>
                   </ul>
 
-                  {/* Workforce-layer cross-reference — only on the org tiers.
+                  {/* Workforce-layer cross-reference - only on the org tiers.
                        Pillar maturity alone misses adoption: the org can build
                        great Data + Strategy infrastructure while the workforce
                        doesn't actually use it. Surfacing the optional Mode-C
@@ -186,7 +186,7 @@ export default function AraEngagePage() {
                       <span className="font-semibold text-accent">
                         + Workforce readiness layer (optional)
                       </span>{" "}
-                      — each respondent also answers the four personal
+                      - each respondent also answers the four personal
                       factor items, so the report measures{" "}
                       <span className="italic">adoption</span> alongside{" "}
                       <span className="italic">capability</span>. People are
@@ -235,7 +235,7 @@ export default function AraEngagePage() {
             <p className="text-sm text-muted-foreground mt-3">
               Personal is a complimentary self-assessment for one individual.
               Department, Division, and Enterprise are cumulative engagements
-              for organisations — everything in Department is also in
+              for organisations - everything in Department is also in
               Division, and everything in Division is also in Enterprise.
             </p>
           </div>
@@ -279,7 +279,7 @@ export default function AraEngagePage() {
         </div>
       </section>
 
-      {/* Training catalogue bridge — the diagnostic surfaces gap-driven
+      {/* Training catalogue bridge - the diagnostic surfaces gap-driven
            course recommendations on every report, but a visitor on this
            marketing page may want to explore the broader VIFM curriculum
            independently. Linked from the homepage header and surfaced
@@ -291,7 +291,7 @@ export default function AraEngagePage() {
           </h2>
           <p className="text-sm text-muted-foreground max-w-xl mx-auto mb-6">
             Over a hundred programmes across finance, AI, leadership, and
-            governance — request a tailored quote for any of them. The
+            governance - request a tailored quote for any of them. The
             diagnostic narrows the field; the catalogue shows the field.
           </p>
           <Link
@@ -317,7 +317,7 @@ export default function AraEngagePage() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Comparison matrix — the structured table users can scan in
+// Comparison matrix - the structured table users can scan in
 // 30 seconds to see what's in / out at each stage.
 // ─────────────────────────────────────────────────────────────
 

@@ -377,7 +377,7 @@ export function JdExtractor({ onApply, triggerLabel }: JdExtractorProps = {}) {
   );
 }
 
-// VIFM domain ordering — matches `competency_domains.sort_order` in the seed.
+// VIFM domain ordering - matches `competency_domains.sort_order` in the seed.
 // Industry vendors typically split competencies along Functional / Digital /
 // Leadership / Behavioural lines. VIFM uses its own native 4-domain framework
 // (THINKING / RESULTS / PEOPLE / SELF) so admins recognise the buckets used

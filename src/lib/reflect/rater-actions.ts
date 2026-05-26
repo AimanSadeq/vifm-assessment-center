@@ -7,7 +7,7 @@ import { sendReflectEmail, roleLabel } from "./email";
 
 // ──────────────────────────────────────────────────────────────
 // Internal: validate token + return the rater row. Never trust
-// the client to send rater_id — always derive from the token.
+// the client to send rater_id - always derive from the token.
 // Also enforces that the engagement is in 'live' status, so we
 // can't accept new responses once the field window has closed.
 // ──────────────────────────────────────────────────────────────
@@ -33,7 +33,7 @@ async function requireRater(token: string) {
     .maybeSingle<{ id: string; status: string }>();
   if (!engagement) throw new Error("Engagement missing");
   if (!["draft", "live"].includes(engagement.status)) {
-    throw new Error(`Engagement is ${engagement.status} — cannot accept new responses`);
+    throw new Error(`Engagement is ${engagement.status} - cannot accept new responses`);
   }
 
   return { rater, participantId: participant.id, engagementId: engagement.id };
@@ -138,7 +138,7 @@ export async function saveReflectResponse(
     );
   if (error) return { ok: false, error: error.message };
 
-  // Bump last_active_at only. Do NOT write `status` here — touchReflectRater
+  // Bump last_active_at only. Do NOT write `status` here - touchReflectRater
   // owns the pending → started transition, and markReflectRaterComplete owns
   // the started → completed transition. Writing status from every save can
   // race with markComplete and silently revert a completed rater back to
@@ -210,7 +210,7 @@ export async function saveReflectOpenResponse(
 
 // ──────────────────────────────────────────────────────────────
 // Save the rater's tenure (P2 parity pass). "How long have you
-// worked with this person?" — one of four buckets. NULL clears
+// worked with this person?" - one of four buckets. NULL clears
 // the value if the rater changes their mind.
 // ──────────────────────────────────────────────────────────────
 
@@ -255,7 +255,7 @@ export async function saveReflectRaterTenure(
 // Save the Self/Manager rater's critical-competency picks (P1
 // parity pass). Validates every pick is a real competency_id from
 // THIS engagement's framework. Refuses the call when the rater is
-// not self or manager — those are the only two roles a 360
+// not self or manager - those are the only two roles a 360
 // typically asks "what's role-critical?".
 // ──────────────────────────────────────────────────────────────
 
@@ -322,7 +322,7 @@ export async function saveReflectCriticalPicks(
 
 
 // ──────────────────────────────────────────────────────────────
-// Mark the rater as complete. Idempotent — calling twice on an
+// Mark the rater as complete. Idempotent - calling twice on an
 // already-completed rater is a no-op success.
 // ──────────────────────────────────────────────────────────────
 
@@ -333,7 +333,7 @@ export async function markReflectRaterComplete(
   try {
     ctx = await requireRater(token);
   } catch (err) {
-    // If already-completed, treat as success — common race when the
+    // If already-completed, treat as success - common race when the
     // submit-flush gate fires after a slow autosave.
     if (err instanceof Error && err.message.includes("already been submitted")) {
       return { ok: true };
@@ -415,7 +415,7 @@ async function sendCompletionNoticeForRater(raterId: string): Promise<void> {
     if (!eng) return;
 
     // Resolve the consultant's email. In dev (AUTH_ENABLED=false) the
-    // engagement.consultant_id is NULL — nothing to send.
+    // engagement.consultant_id is NULL - nothing to send.
     if (!eng.consultant_id) return;
     const { data: profile } = await sb
       .from("profiles")

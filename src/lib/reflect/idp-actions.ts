@@ -10,7 +10,7 @@ import {
 } from "@/lib/ara/auth-guards";
 
 // ──────────────────────────────────────────────────────────────
-// IDP shape — stored as jsonb on reflect_idps.top_priorities +
+// IDP shape - stored as jsonb on reflect_idps.top_priorities +
 // action_plan so the schema doesn't need to change as we iterate
 // the UI.
 // ──────────────────────────────────────────────────────────────
@@ -88,7 +88,7 @@ async function requireParticipantOwner(participantId: string) {
 
 
 // ──────────────────────────────────────────────────────────────
-// Upsert IDP — one row per participant. Status defaults to 'draft';
+// Upsert IDP - one row per participant. Status defaults to 'draft';
 // signing off flips it to 'agreed' via a separate action so the
 // audit trail captures the moment.
 // ──────────────────────────────────────────────────────────────
@@ -169,7 +169,7 @@ export async function signOffReflectIdp(participantId: string) {
 
 
 // ──────────────────────────────────────────────────────────────
-// Debrief ops — assign coach, set scheduled date, set status.
+// Debrief ops - assign coach, set scheduled date, set status.
 // All three on the participant row, no separate table.
 // ──────────────────────────────────────────────────────────────
 

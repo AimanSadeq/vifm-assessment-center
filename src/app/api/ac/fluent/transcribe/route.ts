@@ -1,5 +1,5 @@
 /**
- * VIFM Fluent — speaking-audio transcription (Whisper).
+ * VIFM Fluent - speaking-audio transcription (Whisper).
  *
  * POST multipart/form-data with field `audio` (a recorded blob from the
  * browser MediaRecorder, typically audio/webm;codecs=opus).
@@ -129,7 +129,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Acoustic pronunciation scoring (Azure) — best-effort; transcript-only
+    // Acoustic pronunciation scoring (Azure) - best-effort; transcript-only
     // when Azure isn't configured or the assessment fails.
     let pronunciation: PronunciationScore | null = null;
     if (isAzureSpeechConfigured()) {

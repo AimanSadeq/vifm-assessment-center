@@ -10,7 +10,7 @@ import type { AraQuestionValidationEvidence } from "@/types/ara";
  * the prompt as a closed menu so Claude has to pick from known,
  * spot-checkable citations rather than fabricate paper-level details.
  *
- * The output is always set to `review_status: 'ai_proposed'` — the
+ * The output is always set to `review_status: 'ai_proposed'` - the
  * admin must verify before it appears in any client-facing surface.
  *
  * Returns null when ANTHROPIC_API_KEY isn't set (graceful fallback)
@@ -27,7 +27,7 @@ export type ValidationSuggesterInput = {
   construct_description: string;
 };
 
-// Closed menu — every entry mirrors a citation in
+// Closed menu - every entry mirrors a citation in
 // docs/ARA-Methodology-Brief.md §6. Edit there first, then mirror here
 // (and rerun any AI suggestions). Keeping these in sync is a manual
 // discipline; long-term a shared TS export would be cleaner.
@@ -43,7 +43,7 @@ const ANCHOR_MENU = [
     citation: "Venkatesh, V., Morris, M. G., Davis, G. B., & Davis, F. D. (2003). User acceptance of information technology: Toward a unified view. MIS Quarterly, 27(3), 425–478." },
   { construct: "AI Working Practice", name: "Generative AI productivity outcomes (Brynjolfsson et al.)",
     citation: "Brynjolfsson, E., Li, D., & Raymond, L. R. (2025). Generative AI at work. Quarterly Journal of Economics." },
-  { construct: "AI Collaboration", name: "UTAUT2 — social influence",
+  { construct: "AI Collaboration", name: "UTAUT2 - social influence",
     citation: "Venkatesh, V., Thong, J. Y. L., & Xu, X. (2012). Consumer acceptance and use of information technology: Extending UTAUT (UTAUT2). MIS Quarterly, 36(1), 157–178." },
   { construct: "AI Collaboration", name: "Communities of Practice (Wenger)",
     citation: "Wenger, E. (1998). Communities of practice: Learning, meaning, and identity. Cambridge University Press." },
@@ -79,7 +79,7 @@ const ANCHOR_MENU = [
   { construct: "Governance, Ethics & Compliance", name: "NIST AI RMF 1.0",
     citation: "National Institute of Standards and Technology (2023). AI Risk Management Framework 1.0 (AI RMF 1.0). NIST AI 100-1." },
   { construct: "Governance, Ethics & Compliance", name: "ISO/IEC 42001:2023",
-    citation: "ISO/IEC 42001:2023. Information technology — Artificial intelligence — Management system. ISO." },
+    citation: "ISO/IEC 42001:2023. Information technology - Artificial intelligence - Management system. ISO." },
   { construct: "Operations & Use Case Portfolio", name: "CMMI for Services",
     citation: "Software Engineering Institute, Carnegie Mellon (2010). CMMI for Services, Version 1.3." },
   { construct: "Operations & Use Case Portfolio", name: "Accelerate / DORA metrics",
@@ -97,13 +97,13 @@ const SYSTEM_PROMPT =
   `\n\n` +
   `Hard rules:\n` +
   `1. Pick ONLY from the supplied menu. Do NOT invent citations or paraphrase a citation ` +
-  `   you don't see in the menu — even if you know the work — because every citation ` +
+  `   you don't see in the menu - even if you know the work - because every citation ` +
   `   shipping to clients is spot-checked, and a hallucinated DOI breaks credibility.\n` +
-  `2. Return 1 to 3 instruments — usually 1 or 2 is right. Don't pad.\n` +
+  `2. Return 1 to 3 instruments - usually 1 or 2 is right. Don't pad.\n` +
   `3. Confidence:\n` +
   `   - 'direct_adaptation': item is a close paraphrase of a published scale item\n` +
   `   - 'construct_aligned': item measures the same construct, different wording\n` +
-  `   - 'novel': no good anchor in the menu — return [] for anchor_instruments and confidence='novel' on a placeholder entry with name='No close anchor in curated menu'\n` +
+  `   - 'novel': no good anchor in the menu - return [] for anchor_instruments and confidence='novel' on a placeholder entry with name='No close anchor in curated menu'\n` +
   `4. Reply ONLY with raw JSON. No prose, no markdown fence.`;
 
 function buildPrompt(input: ValidationSuggesterInput): string {
@@ -138,7 +138,7 @@ function buildPrompt(input: ValidationSuggesterInput): string {
 
 /**
  * Suggest validation evidence for a single question. Returns null when
- * AI isn't configured or Claude's reply can't be parsed — the caller
+ * AI isn't configured or Claude's reply can't be parsed - the caller
  * should treat null as "leave validation_evidence unchanged".
  */
 export async function suggestValidationEvidence(

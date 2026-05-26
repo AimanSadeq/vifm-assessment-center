@@ -78,7 +78,7 @@ export type BilingualReportProps = {
   currentYear?: number;
   /** Pillars in scope (migration 00029). Honours the per-assessment
    *  pillars_in_scope override when set, falls back to the stage default
-   *  when null. Caller resolves via getPillarsForAssessment. Optional —
+   *  when null. Caller resolves via getPillarsForAssessment. Optional -
    *  defaults to stage default when omitted (back-compat). */
   pillarsInScope?: ReadonlyArray<AraPillarId>;
 };
@@ -179,7 +179,7 @@ export function BilingualReport(p: BilingualReportProps) {
             </h2>
           </div>
 
-          {/* KPI strip — split into two language-locked halves so the
+          {/* KPI strip - split into two language-locked halves so the
               left column reads English LTR and the right column reads
               Arabic RTL. The two halves share a single grid row to stay
               visually aligned. */}
@@ -193,14 +193,14 @@ export function BilingualReport(p: BilingualReportProps) {
             }}>
               <StatTile
                 label={tr("en", "overall_readiness")}
-                value={p.overall != null ? p.overall.toFixed(2) : "—"}
+                value={p.overall != null ? p.overall.toFixed(2) : "-"}
                 suffix="/ 5.00"
                 accent={p.overallLabelEn ?? ""}
                 accentColor={TOKENS.accent}
               />
               <StatTile
                 label={tr("en", "maturity_band")}
-                value={p.overallLabelEn ?? "—"}
+                value={p.overallLabelEn ?? "-"}
                 accent={tr("en", "weighted_aggregate")}
                 accentColor={TOKENS.mute}
               />
@@ -219,20 +219,20 @@ export function BilingualReport(p: BilingualReportProps) {
                 accentColor={TOKENS.rose}
               />
             </div>
-            {/* Arabic KPI strip — RTL */}
+            {/* Arabic KPI strip - RTL */}
             <div dir="rtl" style={{
               display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6pt",
             }}>
               <StatTile
                 label={tr("ar", "overall_readiness")}
-                value={p.overall != null ? p.overall.toFixed(2) : "—"}
+                value={p.overall != null ? p.overall.toFixed(2) : "-"}
                 suffix="/ ٥٫٠٠"
                 accent={p.overallLabelAr ?? ""}
                 accentColor={TOKENS.accent}
               />
               <StatTile
                 label={tr("ar", "maturity_band")}
-                value={p.overallLabelAr ?? "—"}
+                value={p.overallLabelAr ?? "-"}
                 accent={tr("ar", "weighted_aggregate")}
                 accentColor={TOKENS.mute}
               />
@@ -467,13 +467,13 @@ export function BilingualReport(p: BilingualReportProps) {
           const perceptionGap = row?.perception_gap != null ? Number(row.perception_gap) : null;
           const actions = actionKeys(score);
 
-          const gapValue = gap != null ? (gap > 0 ? `+${gap.toFixed(2)}` : gap.toFixed(2)) : "—";
+          const gapValue = gap != null ? (gap > 0 ? `+${gap.toFixed(2)}` : gap.toFixed(2)) : "-";
           const gapTone: "positive" | "negative" | "neutral" =
             gap == null ? "neutral" : gap <= 0 ? "positive" : "negative";
           const perceptionTone: "neutral" | "warning" =
             perceptionGap != null && Math.abs(perceptionGap) > 0.5 ? "warning" : "neutral";
           const perceptionValue =
-            perceptionGap != null ? (perceptionGap > 0 ? `+${perceptionGap.toFixed(2)}` : perceptionGap.toFixed(2)) : "—";
+            perceptionGap != null ? (perceptionGap > 0 ? `+${perceptionGap.toFixed(2)}` : perceptionGap.toFixed(2)) : "-";
 
           return (
             <section key={pillar.id} className="report-page-bilingual">
@@ -502,7 +502,7 @@ export function BilingualReport(p: BilingualReportProps) {
                 </div>
               </div>
 
-              {/* Metric strip — split into language-locked halves so the
+              {/* Metric strip - split into language-locked halves so the
                   English column reads LTR and the Arabic column reads RTL.
                   Sits in the EN/AR columns of the parent grid. */}
               <div className="col-en" style={{ gridRow: "2", marginBottom: "8pt" }}>
@@ -511,7 +511,7 @@ export function BilingualReport(p: BilingualReportProps) {
                 }}>
                   <Metric
                     label={tr("en", "raw_score")}
-                    value={score != null ? score.toFixed(2) : "—"}
+                    value={score != null ? score.toFixed(2) : "-"}
                     suffix="/ 5.00"
                     tone={score == null ? "neutral" : score >= 4.0 ? "positive" : score < 3.0 ? "negative" : "warning"}
                   />
@@ -543,7 +543,7 @@ export function BilingualReport(p: BilingualReportProps) {
                 }}>
                   <Metric
                     label={tr("ar", "raw_score")}
-                    value={score != null ? score.toFixed(2) : "—"}
+                    value={score != null ? score.toFixed(2) : "-"}
                     suffix="/ ٥٫٠٠"
                     tone={score == null ? "neutral" : score >= 4.0 ? "positive" : score < 3.0 ? "negative" : "warning"}
                   />
@@ -705,13 +705,13 @@ export function BilingualReport(p: BilingualReportProps) {
                     <tbody>
                       {yoy.pillars.map((pi) => {
                         const dColor = pi.delta == null ? "#6b7280" : pi.delta > 0 ? "#34D399" : pi.delta < 0 ? "#FB7185" : "#6b7280";
-                        const dLabel = pi.delta == null ? "—" : pi.delta > 0 ? `+${pi.delta.toFixed(2)}` : pi.delta.toFixed(2);
+                        const dLabel = pi.delta == null ? "-" : pi.delta > 0 ? `+${pi.delta.toFixed(2)}` : pi.delta.toFixed(2);
                         const name = ARA_PILLARS.find((x) => x.id === pi.pillar_id)?.name_en ?? pi.pillar_id;
                         return (
                           <tr key={pi.pillar_id} style={{ borderTop: "1px solid #e5e7eb" }}>
                             <td style={biCell}>{name}</td>
-                            <td style={biCellRight} className="report-muted">{pi.prior_raw != null ? pi.prior_raw.toFixed(2) : "—"}</td>
-                            <td style={biCellRight}>{pi.current_raw != null ? pi.current_raw.toFixed(2) : "—"}</td>
+                            <td style={biCellRight} className="report-muted">{pi.prior_raw != null ? pi.prior_raw.toFixed(2) : "-"}</td>
+                            <td style={biCellRight}>{pi.current_raw != null ? pi.current_raw.toFixed(2) : "-"}</td>
                             <td style={{ ...biCellRight, color: dColor, fontWeight: 500 }}>{dLabel}</td>
                           </tr>
                         );
@@ -752,13 +752,13 @@ export function BilingualReport(p: BilingualReportProps) {
                     <tbody>
                       {yoy.pillars.map((pi) => {
                         const dColor = pi.delta == null ? "#6b7280" : pi.delta > 0 ? "#34D399" : pi.delta < 0 ? "#FB7185" : "#6b7280";
-                        const dLabel = pi.delta == null ? "—" : pi.delta > 0 ? `+${pi.delta.toFixed(2)}` : pi.delta.toFixed(2);
+                        const dLabel = pi.delta == null ? "-" : pi.delta > 0 ? `+${pi.delta.toFixed(2)}` : pi.delta.toFixed(2);
                         const name = ARA_PILLARS.find((x) => x.id === pi.pillar_id)?.name_ar ?? pi.pillar_id;
                         return (
                           <tr key={pi.pillar_id} style={{ borderTop: "1px solid #e5e7eb" }}>
                             <td style={biCell}>{name}</td>
-                            <td style={biCellRight} className="report-muted">{pi.prior_raw != null ? pi.prior_raw.toFixed(2) : "—"}</td>
-                            <td style={biCellRight}>{pi.current_raw != null ? pi.current_raw.toFixed(2) : "—"}</td>
+                            <td style={biCellRight} className="report-muted">{pi.prior_raw != null ? pi.prior_raw.toFixed(2) : "-"}</td>
+                            <td style={biCellRight}>{pi.current_raw != null ? pi.current_raw.toFixed(2) : "-"}</td>
                             <td style={{ ...biCellRight, color: dColor, fontWeight: 500 }}>{dLabel}</td>
                           </tr>
                         );

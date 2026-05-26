@@ -68,7 +68,7 @@ export function IdpEditor({ participantId, competencies, initial }: Props) {
   const save = (newStatus?: ReflectIdpStatus) => {
     setSaveMessage(null);
     startTransition(async () => {
-      // Strip empty priorities — anything where competency_name + why are both blank
+      // Strip empty priorities - anything where competency_name + why are both blank
       const cleanedPriorities = priorities
         .filter((p) => p.competency_name.trim() || p.why.trim())
         .map((p) => ({
@@ -190,7 +190,7 @@ export function IdpEditor({ participantId, competencies, initial }: Props) {
                     updatePriority(i, { competency_id: id, competency_name: name });
                   }}
                 >
-                  <option value="">— or type free text below —</option>
+                  <option value="">- or type free text below -</option>
                   {competencies.map((c) => (
                     <option key={c.id} value={c.id}>{c.name_en}</option>
                   ))}

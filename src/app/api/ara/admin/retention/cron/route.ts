@@ -5,7 +5,7 @@ import { runRetentionPurge } from "@/lib/ara/admin-actions";
  * Daily retention-purge cron endpoint.
  *
  * Scheduled by `.github/workflows/ara-retention-purge.yml` (GitHub
- * Actions cron) — the workflow fires daily and sends an
+ * Actions cron) - the workflow fires daily and sends an
  * `Authorization: Bearer <CRON_SECRET>` header pulled from the repo's
  * Actions secrets. The same CRON_SECRET must be set as a Render env
  * var on the vifm-assessment-center service for the route to verify
@@ -32,7 +32,7 @@ export async function GET(request: Request) {
       {
         ok: false,
         error:
-          "CRON_SECRET env var is not set. The cron endpoint is intentionally locked down until you set this in your Vercel project — set it to a long random string and rotate it as you would any secret.",
+          "CRON_SECRET env var is not set. The cron endpoint is intentionally locked down until you set this in your Vercel project - set it to a long random string and rotate it as you would any secret.",
       },
       { status: 503 }
     );

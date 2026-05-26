@@ -29,7 +29,7 @@ export const runtime = "nodejs";
 // Without these, Next.js production builds cache fetches inside route
 // handlers and reuse the stale "not complete yet" 400 from a request
 // that hit the endpoint before the respondent finished. `force-dynamic`
-// alone is not enough — it opts the route out of static rendering but
+// alone is not enough - it opts the route out of static rendering but
 // doesn't disable fetch-level caching for libraries (the Supabase client
 // here) that go through Next.js's patched global fetch. `fetchCache =
 // "force-no-store"` plugs that hole, and `revalidate = 0` is explicit
@@ -42,7 +42,7 @@ export const revalidate = 0;
 const TARGET = 4;
 
 /**
- * Personal AI Readiness Snapshot — bilingual mini-report PDF.
+ * Personal AI Readiness Snapshot - bilingual mini-report PDF.
  *
  * Auth model: respondent's access token gates the PDF, same as the
  * /ara/respond/[token] page. No user account required.
@@ -60,7 +60,7 @@ export async function GET(
     if (!ctx) {
       return NextResponse.json({ error: "Token not found" }, { status: 404 });
     }
-    // Same eligibility rule as the results page — Mode A/B individual-stage
+    // Same eligibility rule as the results page - Mode A/B individual-stage
     // OR Mode C org-stage with include_individual_layer=true.
     const isPersonalEligible =
       ctx.assessment.engagement_stage === "individual" ||
@@ -73,7 +73,7 @@ export async function GET(
     }
     if (!ctx.respondent.completed_at) {
       return NextResponse.json(
-        { error: "Snapshot is not complete yet — finish the assessment first." },
+        { error: "Snapshot is not complete yet - finish the assessment first." },
         { status: 400 }
       );
     }
@@ -85,7 +85,7 @@ export async function GET(
       .select("question_id, answer_value")
       .eq("respondent_id", ctx.respondent.id);
 
-    // Compute per-factor average — mirrors the results-page logic.
+    // Compute per-factor average - mirrors the results-page logic.
     const factorTotals: Record<AraIndividualFactorId, { sum: number; count: number }> = {
       thinking_sense_check: { sum: 0, count: 0 },
       results_working_practice: { sum: 0, count: 0 },
@@ -205,7 +205,7 @@ export async function GET(
 
 /**
  * Launch Chromium, render the HTML to PDF, and clean up. Mirrors the
- * pattern in /api/ara/reports/[id]/pdf — bundled puppeteer Chromium
+ * pattern in /api/ara/reports/[id]/pdf - bundled puppeteer Chromium
  * (not @sparticuz/chromium) because Render runs in full Linux
  * containers and the bundled build has the Arabic font fallbacks
  * the stripped Lambda build lacks. waitUntil:'networkidle0' lets

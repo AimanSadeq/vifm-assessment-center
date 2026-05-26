@@ -350,7 +350,7 @@ export function EngagementDetail({
               Creates a new draft engagement seeded from this one. The role
               profile, competencies, exercises, and matrix carry over so you
               don&apos;t have to rebuild the design. Prior assessor assignments,
-              ratings, and reports are not copied — the new run earns its
+              ratings, and reports are not copied - the new run earns its
               own scores.
             </p>
             <label className="flex items-start gap-2 cursor-pointer">
@@ -450,7 +450,7 @@ export function EngagementDetail({
                                 <SelectItem key={rp.id} value={rp.id}>
                                   {rp.name_en}
                                   {rp.target_role && rp.target_role !== rp.name_en
-                                    ? ` — ${rp.target_role}`
+                                    ? ` - ${rp.target_role}`
                                     : ""}
                                 </SelectItem>
                               ))

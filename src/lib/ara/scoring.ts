@@ -82,7 +82,7 @@ export async function recalculateAssessmentScores(assessmentId: string): Promise
   const typed = (rows ?? []) as unknown as RowShape[];
 
   // Group scored responses by pillar. Pillar scores must reflect ONLY
-  // pillar questions — exclude personal-layer (individual_factor_id) and
+  // pillar questions - exclude personal-layer (individual_factor_id) and
   // Agentic-AI Readiness (agentic_dimension_id) items. Those reuse a
   // pillar_id for storage but are scored as separate constructs, so
   // counting them here would pollute the eight pillar means.

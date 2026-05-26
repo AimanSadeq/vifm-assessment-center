@@ -63,7 +63,7 @@ export async function loadRespondentByToken(
  * Three deployment modes:
  *
  *   A) Individual stage (engagement_stage === 'individual')
- *      Personal AI Readiness only — no pillar assignments needed.
+ *      Personal AI Readiness only - no pillar assignments needed.
  *      Filter by individual_factor_id IS NOT NULL.
  *      assessment_tier='snapshot' → only tier='snapshot' (24 items)
  *      assessment_tier='deep_dive' → all individual items (48 items)
@@ -71,7 +71,7 @@ export async function loadRespondentByToken(
  *   B) Org stage with include_individual_layer=true
  *      Respondent answers their assigned pillar questions PLUS the
  *      individual-factor items (24 or 48 depending on assessment_tier).
- *      Unless respondent.individual_only=true — then they skip pillar
+ *      Unless respondent.individual_only=true - then they skip pillar
  *      questions and only do the individual layer.
  *
  *   C) Org stage with include_individual_layer=false (the original behaviour)
@@ -91,7 +91,7 @@ export async function loadQuestionsForRespondent(
 
   const wantsPillar = !isIndividualStage && !respondentIndividualOnly;
   const wantsIndividual = isIndividualStage || includeIndividualLayer;
-  // Agentic-AI Readiness is an org-level construct — served to org
+  // Agentic-AI Readiness is an org-level construct - served to org
   // respondents (never the personal-only ones, never on a personal
   // individual-stage assessment).
   const wantsAgentic = !isIndividualStage && includeAgenticLayer && !respondentIndividualOnly;

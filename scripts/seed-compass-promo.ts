@@ -798,7 +798,7 @@ async function main() {
   }
 
   // ────────────────────────────────────────────────────────
-  // 2. Promo question bank version — find-or-create a dedicated
+  // 2. Promo question bank version - find-or-create a dedicated
   //    demo version so we don't pollute the real "1.0" bank.
   //    The promo version stays is_active=false; admins never see it
   //    in their dropdown. The assessment links directly to it.
@@ -1088,7 +1088,7 @@ async function main() {
     }));
     let { error } = await sb.from("ara_consultant_notes").insert(rowsBilingual);
     if (error && /note_text_ar/.test(error.message)) {
-      log("  ! note_text_ar column missing — apply migration 00013 to enable bilingual notes");
+      log("  ! note_text_ar column missing - apply migration 00013 to enable bilingual notes");
       const rowsLegacy = NOTES.map((n) => ({
         assessment_id: assessmentId,
         pillar_id: n.pillar_id,
@@ -1103,7 +1103,7 @@ async function main() {
   }
 
   // ────────────────────────────────────────────────────────
-  // 10. Layer 1 responses — the consultancy simulation.
+  // 10. Layer 1 responses - the consultancy simulation.
   //
   // For each pillar, the designated respondent "answered" all 5
   // questions with ratings that average to the pillar's target

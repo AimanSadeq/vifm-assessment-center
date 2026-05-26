@@ -72,7 +72,7 @@ export function ReflectReassessButton({ engagementId }: Props) {
                 <strong className="text-primary">Carry participants over</strong>
                 <span className="block text-xs text-muted-foreground">
                   Copy the prior cohort into the new draft. Raters are NOT
-                  carried — each participant invites fresh raters.
+                  carried - each participant invites fresh raters.
                 </span>
               </span>
             </label>

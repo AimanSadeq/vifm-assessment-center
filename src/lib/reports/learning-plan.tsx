@@ -244,7 +244,7 @@ const s = StyleSheet.create({
 const PHASE_LABELS = {
   high: { weeks: "First 30 days", subtitle: "Mission-critical gaps. Start immediately.", color: C.phase30 },
   medium: { weeks: "Days 30–60", subtitle: "Build momentum on broader development.", color: C.phase60 },
-  low: { weeks: "Days 60–90", subtitle: "Sustain growth — round out the profile.", color: C.phase90 },
+  low: { weeks: "Days 60–90", subtitle: "Sustain growth - round out the profile.", color: C.phase90 },
 };
 
 function GapPill({
@@ -359,7 +359,7 @@ function RoadmapPage({ d }: { d: ReportData }) {
       <Text style={s.bodyText}>
         Below is your development roadmap, sequenced from the most pressing
         gaps to longer-term opportunities. Treat the first 30 days as
-        non-negotiable — that&apos;s where the highest-impact behaviour change
+        non-negotiable - that&apos;s where the highest-impact behaviour change
         lives.
       </Text>
 
@@ -374,7 +374,7 @@ function RoadmapPage({ d }: { d: ReportData }) {
           <Text style={s.closingHeading}>No recommendations yet</Text>
           <Text style={[s.bodyText, { marginBottom: 0 }]}>
             Your assessor team is still finalising the development plan. The
-            per-competency tips on the next pages still apply — start there.
+            per-competency tips on the next pages still apply - start there.
           </Text>
         </View>
       )}
@@ -385,7 +385,7 @@ function RoadmapPage({ d }: { d: ReportData }) {
 }
 
 function CompetencyDevelopmentPage({ d }: { d: ReportData }) {
-  // Only competencies where there is a measurable gap — score < target.
+  // Only competencies where there is a measurable gap - score < target.
   // Use default target 3; competencies missing a score are skipped.
   const focus = d.competencies.filter((c) => {
     if (c.consensusScore == null) return false;
@@ -462,7 +462,7 @@ function CompetencyDevelopmentPage({ d }: { d: ReportData }) {
           · Who can give me feedback on these specific behaviours over the next 90 days?
         </Text>
         <Text style={[s.tipText, { marginBottom: 0 }]}>
-          · How will I know I&apos;ve made progress — what does &quot;good&quot; look like?
+          · How will I know I&apos;ve made progress - what does &quot;good&quot; look like?
         </Text>
       </View>
 
@@ -483,7 +483,7 @@ function CoursesPage({ d }: { d: ReportData }) {
 
       <Text style={s.bodyText}>
         These VIFM training courses map to the competencies where your
-        scores fell below target. They&apos;re ordered by fit — calculated
+        scores fell below target. They&apos;re ordered by fit - calculated
         as the sum of (gap size × course relevance) across the
         competencies the course develops. Discuss with your manager or
         VIFM consultant which course best fits your current development

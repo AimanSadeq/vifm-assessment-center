@@ -11,6 +11,6 @@ async function main() {
     .limit(5);
   console.log("Mode C assessments:");
   for (const a of data ?? []) console.log(`  ${a.id} stage=${a.engagement_stage} status=${a.status}`);
-  if ((data ?? []).length === 0) console.log("  (none — cohort dashboard will show 404 for now)");
+  if ((data ?? []).length === 0) console.log("  (none - cohort dashboard will show 404 for now)");
 }
 main().catch(console.error);

@@ -55,7 +55,7 @@ export function RoleProfilePicker({ profiles }: Props) {
         weight: c.weight,
       })),
     });
-    toast.success(`Loaded "${p.name_en}" — ${comps.length} competencies applied`);
+    toast.success(`Loaded "${p.name_en}" - ${comps.length} competencies applied`);
     setOpen(false);
   };
 

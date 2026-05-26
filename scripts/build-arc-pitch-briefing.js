@@ -34,7 +34,7 @@ const C = {
 };
 
 // ────────────────────────────────────────────────────────────────
-// Helpers — keep the body of the doc focused on content
+// Helpers - keep the body of the doc focused on content
 // ────────────────────────────────────────────────────────────────
 const para = (text, opts = {}) => new Paragraph({
   alignment: opts.align,
@@ -99,7 +99,7 @@ const tCell = (text, opts = {}) => new TableCell({
 // Document content
 // ────────────────────────────────────────────────────────────────
 
-// Page 1 — cover
+// Page 1 - cover
 const cover = [
   new Paragraph({ spacing: { before: 1200 }, children: [] }),
   eyebrow("Pitch briefing · prepared for Dr. Ahmad", C.accent),
@@ -150,29 +150,29 @@ const cover = [
   pageBreak(),
 ];
 
-// Section 1 — Executive summary
+// Section 1 - Executive summary
 const execSummary = [
   eyebrow("Section 1"),
   h1("Executive summary"),
-  para("VIFM AI Readiness Compass (ARC) is a bilingual, GCC-calibrated diagnostic platform that measures how ready an organisation — and the people inside it — are to put AI into productive use. It is not an AI tool itself. It is the instrument an executive team or government agency uses to find out where they actually stand before they invest in tools."),
+  para("VIFM AI Readiness Compass (ARC) is a bilingual, GCC-calibrated diagnostic platform that measures how ready an organisation - and the people inside it - are to put AI into productive use. It is not an AI tool itself. It is the instrument an executive team or government agency uses to find out where they actually stand before they invest in tools."),
   para("ARC is built on three things that competing readiness instruments do not have together:"),
-  bullet("Eight organisational pillars that cover the full surface of AI capability — Strategy, Data, Technology, Talent, Culture, Governance, Operations, Model Management — and sixteen UAE and Saudi regulatory frameworks pre-mapped to those pillars, so the diagnostic produces compliance evidence the agency can use directly."),
-  bullet("Four personal AI-readiness factors that measure how individuals actually behave with AI — AI Sense-Check, AI Working Practice, AI Collaboration, AI Adaptive Mindset — so the report can say not only \"the organisation has built the conditions\" but also \"the people are or are not using them.\""),
+  bullet("Eight organisational pillars that cover the full surface of AI capability - Strategy, Data, Technology, Talent, Culture, Governance, Operations, Model Management - and sixteen UAE and Saudi regulatory frameworks pre-mapped to those pillars, so the diagnostic produces compliance evidence the agency can use directly."),
+  bullet("Four personal AI-readiness factors that measure how individuals actually behave with AI - AI Sense-Check, AI Working Practice, AI Collaboration, AI Adaptive Mindset - so the report can say not only \"the organisation has built the conditions\" but also \"the people are or are not using them.\""),
   bullet("Fully bilingual English and Arabic with proper RTL shaping in every screen and in the final PDF report, so the same instrument can run for an Arabic-speaking ministry team and an English-speaking secretariat without two separate workstreams."),
-  para("The engagement is staged in four tiers — Personal, Department, Division, Enterprise — and the first two tiers are complimentary by design. The agency can have the experience and see a real report before any procurement conversation begins."),
+  para("The engagement is staged in four tiers - Personal, Department, Division, Enterprise - and the first two tiers are complimentary by design. The agency can have the experience and see a real report before any procurement conversation begins."),
   pageBreak(),
 ];
 
-// Section 2 — The Compass model
+// Section 2 - The Compass model
 const compass = [
   eyebrow("Section 2"),
   h1("The Compass model"),
-  para("ARC measures readiness on two complementary axes. The eight pillars measure organisational capability — what the institution has built. The four personal factors measure individual behaviour — how its people work with AI day to day. A government agency's realised readiness is the intersection of both."),
+  para("ARC measures readiness on two complementary axes. The eight pillars measure organisational capability - what the institution has built. The four personal factors measure individual behaviour - how its people work with AI day to day. A government agency's realised readiness is the intersection of both."),
   h2("Eight organisational pillars"),
   para("Every pillar is scored on a 1-5 maturity scale from multiple stakeholders. Department engagements assess four of the eight; Division engagements assess six; Enterprise covers all eight."),
 ];
 
-// Pillars table — 4 cols x 3 rows (8 pillars + headers)
+// Pillars table - 4 cols x 3 rows (8 pillars + headers)
 const pillarsTable = new Table({
   width: { size: 9360, type: WidthType.DXA },
   columnWidths: [2340, 2340, 2340, 2340],
@@ -208,7 +208,7 @@ const compass2 = [
   pillarsTable,
   para(" ", { spacing: { after: 120 } }),
   h2("Four personal AI-readiness factors"),
-  para("Each factor is measured by a self-assessment of behaviour, not opinion. Items ask the respondent what they actually do — for example, \"I check AI-generated content for factual errors before relying on it for important work\" — rather than what they believe about AI."),
+  para("Each factor is measured by a self-assessment of behaviour, not opinion. Items ask the respondent what they actually do - for example, \"I check AI-generated content for factual errors before relying on it for important work\" - rather than what they believe about AI."),
 ];
 
 const factorsTable = new Table({
@@ -228,7 +228,7 @@ const factorsTable = new Table({
     new TableRow({ children: [
       tCell("RESULTS", { width: 1900, bold: true, color: "047857" }),
       tCell("AI Working Practice", { width: 2500, bold: true, color: C.primary }),
-      tCell("Builds AI into the way you already work — writes clear prompts, iterates when the first answer misses, and folds the tool into recurring tasks. Measures success by faster, better deliverables, not by how often the tool is opened.", { width: 4960, color: C.text }),
+      tCell("Builds AI into the way you already work - writes clear prompts, iterates when the first answer misses, and folds the tool into recurring tasks. Measures success by faster, better deliverables, not by how often the tool is opened.", { width: 4960, color: C.text }),
     ]}),
     new TableRow({ children: [
       tCell("PEOPLE", { width: 1900, bold: true, color: "C2410C" }),
@@ -238,7 +238,7 @@ const factorsTable = new Table({
     new TableRow({ children: [
       tCell("SELF", { width: 1900, bold: true, color: "6D28D9" }),
       tCell("AI Adaptive Mindset", { width: 2500, bold: true, color: C.primary }),
-      tCell("Stays open as AI changes how the work gets done — relearns familiar workflows when something better appears, asks where models can fail you, and keeps confidentiality, fairness, and policy in view when deciding what to feed into a system.", { width: 4960, color: C.text }),
+      tCell("Stays open as AI changes how the work gets done - relearns familiar workflows when something better appears, asks where models can fail you, and keeps confidentiality, fairness, and policy in view when deciding what to feed into a system.", { width: 4960, color: C.text }),
     ]}),
   ],
 });
@@ -247,15 +247,15 @@ const compass3 = [
   factorsTable,
   para(" ", { spacing: { after: 120 } }),
   h2("Sixteen regulatory frameworks pre-mapped"),
-  para("Seven UAE frameworks and nine Saudi frameworks are seeded into ARC and mapped to the pillars. The diagnostic does not produce abstract maturity scores — it produces compliance evidence against the specific regulators the agency answers to. For UAE-based work, this includes the National AI Strategy 2031 alignment, the Federal Data Office's policy stack, and Federal Decree-Law 45 of 2021 on personal data protection. For Saudi work, it covers the National Strategy for Data and AI, the SDAIA AI Ethics Principles, and the Personal Data Protection Law."),
+  para("Seven UAE frameworks and nine Saudi frameworks are seeded into ARC and mapped to the pillars. The diagnostic does not produce abstract maturity scores - it produces compliance evidence against the specific regulators the agency answers to. For UAE-based work, this includes the National AI Strategy 2031 alignment, the Federal Data Office's policy stack, and Federal Decree-Law 45 of 2021 on personal data protection. For Saudi work, it covers the National Strategy for Data and AI, the SDAIA AI Ethics Principles, and the Personal Data Protection Law."),
   pageBreak(),
 ];
 
-// Section 3 — Engagement roadmap
+// Section 3 - Engagement roadmap
 const roadmap = [
   eyebrow("Section 3"),
   h1("Engagement roadmap"),
-  para("ARC is delivered as a staged engagement. Each tier is a self-contained diagnostic that builds on the previous one. The agency can stop at any tier and still hold a complete report. The first two tiers are complimentary — designed to prove value before any procurement conversation starts."),
+  para("ARC is delivered as a staged engagement. Each tier is a self-contained diagnostic that builds on the previous one. The agency can stop at any tier and still hold a complete report. The first two tiers are complimentary - designed to prove value before any procurement conversation starts."),
 ];
 
 const roadmapTable = new Table({
@@ -314,7 +314,7 @@ const roadmap2 = [
   pageBreak(),
 ];
 
-// Section 4 — How the consultant delivers it
+// Section 4 - How the consultant delivers it
 const delivery = [
   eyebrow("Section 4"),
   h1("How a single engagement is delivered"),
@@ -338,7 +338,7 @@ const deliveryTable = new Table({
     new TableRow({ children: [
       tCell("2. Invite", { width: 1500, bold: true, color: C.primary }),
       tCell("Stakeholders receive token URLs", { width: 2200 }),
-      tCell("Each respondent gets a unique link — no login, no account, no friction. Bilingual invitation email goes out automatically. Responses are tracked end-to-end.", { width: 5660 }),
+      tCell("Each respondent gets a unique link - no login, no account, no friction. Bilingual invitation email goes out automatically. Responses are tracked end-to-end.", { width: 5660 }),
     ]}),
     new TableRow({ children: [
       tCell("3. Gather", { width: 1500, bold: true, color: C.primary }),
@@ -358,7 +358,7 @@ const deliveryTable = new Table({
     new TableRow({ children: [
       tCell("6. Report", { width: 1500, bold: true, color: C.primary }),
       tCell("Client-grade PDF delivered", { width: 2200 }),
-      tCell("English, Arabic, or side-by-side landscape — consultant chooses. 8-60 pages depending on tier. Heatmaps, charts, regulatory crosswalk, use-case portfolio, next-steps roadmap. Re-assessable annually with built-in YoY view.", { width: 5660 }),
+      tCell("English, Arabic, or side-by-side landscape - consultant chooses. 8-60 pages depending on tier. Heatmaps, charts, regulatory crosswalk, use-case portfolio, next-steps roadmap. Re-assessable annually with built-in YoY view.", { width: 5660 }),
     ]}),
   ],
 });
@@ -368,20 +368,20 @@ const delivery2 = [
   pageBreak(),
 ];
 
-// Section 5 — Workforce layer
+// Section 5 - Workforce layer
 const workforce = [
   eyebrow("Section 5"),
   h1("The workforce-readiness layer · the differentiator that closes the strategy-to-adoption gap"),
-  para("Every readiness diagnostic in the market scores the organisation. ARC is the only one that also scores the people inside it — using the same engagement, the same report, the same conversation. This matters because a government agency can score 5 out of 5 on Data and Strategy and still fail to land AI in practice if the workforce does not actually use what has been built."),
+  para("Every readiness diagnostic in the market scores the organisation. ARC is the only one that also scores the people inside it - using the same engagement, the same report, the same conversation. This matters because a government agency can score 5 out of 5 on Data and Strategy and still fail to land AI in practice if the workforce does not actually use what has been built."),
   para("When the consultant enables the workforce layer on a Department, Division, or Enterprise engagement, every respondent answers the four personal factor items (24 in snapshot tier, 48 in deep-dive tier) alongside their pillar questions. The platform then produces, in addition to the standard pillar maturity heatmap:"),
-  bullet("A cohort-level workforce readiness rollup — overall score and per-factor scores aggregated across the respondents."),
-  bullet("Per-respondent personal results pages — each person can see their own snapshot after submitting, with stage-keyed coaching and recommended VIFM training programmes."),
+  bullet("A cohort-level workforce readiness rollup - overall score and per-factor scores aggregated across the respondents."),
+  bullet("Per-respondent personal results pages - each person can see their own snapshot after submitting, with stage-keyed coaching and recommended VIFM training programmes."),
   bullet("A Workforce AI Readiness section in the client PDF that sits next to the pillar maturity section, so the board sees both signals on facing pages."),
   para("The pitch line for the agency: \"Your strategy might be solid. Your data might be ready. But until you measure whether the people actually use what you've built, you do not know if AI has landed. We measure both, in one engagement.\""),
   pageBreak(),
 ];
 
-// Section 6 — Differentiators
+// Section 6 - Differentiators
 const differentiators = [
   eyebrow("Section 6"),
   h1("Why ARC, not a generic readiness scan"),
@@ -405,7 +405,7 @@ const diffTable = new Table({
     ]}),
     new TableRow({ children: [
       tCell("Regulatory crosswalk pre-built", { width: 3120, bold: true, color: C.primary, fill: "F5F8FC" }),
-      tCell("Sixteen UAE and Saudi frameworks already mapped to the pillars. The report does not produce abstract maturity scores — it produces compliance evidence against the regulators the agency answers to.", { width: 6240 }),
+      tCell("Sixteen UAE and Saudi frameworks already mapped to the pillars. The report does not produce abstract maturity scores - it produces compliance evidence against the regulators the agency answers to.", { width: 6240 }),
     ]}),
     new TableRow({ children: [
       tCell("Training catalogue integration", { width: 3120, bold: true, color: C.primary, fill: "F5F8FC" }),
@@ -413,7 +413,7 @@ const diffTable = new Table({
     ]}),
     new TableRow({ children: [
       tCell("Built for annual reassessment", { width: 3120, bold: true, color: C.primary, fill: "F5F8FC" }),
-      tCell("Year-on-year comparison is wired in. The agency can take the same diagnostic again a year later and the platform automatically renders a delta view alongside the current report — quantified progress for the board.", { width: 6240 }),
+      tCell("Year-on-year comparison is wired in. The agency can take the same diagnostic again a year later and the platform automatically renders a delta view alongside the current report - quantified progress for the board.", { width: 6240 }),
     ]}),
   ],
 });
@@ -423,19 +423,19 @@ const differentiators2 = [
   pageBreak(),
 ];
 
-// Section 7 — Demo flow
+// Section 7 - Demo flow
 const demoFlow = [
   eyebrow("Section 7"),
   h1("Suggested demo flow for tomorrow · 15-20 minutes"),
   para("This is a sequence that takes the agency from product narrative to live demonstration to commercial framing without losing the thread. Time markers are guides; lengthen the sections that match the questions in the room."),
   h2("1. Open with the compass narrative · 2 minutes"),
-  para("URL: caliber.viftraining.com · Show the homepage. Land on \"Know where you stand. Know where to go with AI.\" Explain that ARC is a diagnostic, not a tool — the instrument that tells the agency where they actually sit before they invest in AI tooling."),
+  para("URL: caliber.viftraining.com · Show the homepage. Land on \"Know where you stand. Know where to go with AI.\" Explain that ARC is a diagnostic, not a tool - the instrument that tells the agency where they actually sit before they invest in AI tooling."),
   h2("2. Show the four-tier model · 2 minutes"),
-  para("Click into Engage (/ara/engage). Walk the four tier cards left to right. Make the point that Personal and Department are complimentary — they can have the experience tomorrow, free, before any commercial conversation begins."),
+  para("Click into Engage (/ara/engage). Walk the four tier cards left to right. Make the point that Personal and Department are complimentary - they can have the experience tomorrow, free, before any commercial conversation begins."),
   h2("3. Run the Personal Snapshot live · 3 minutes"),
   para("Click into the Personal Snapshot. Fill it on screen with a couple of factors at 3 and a couple at 4. Submit. Land on the results page. Show the EMBEDDED / PRACTISING / EMERGING stage pill. Click Download PDF and open the three-page report. This is the experience every member of the agency's staff would have, free, today."),
   h2("4. Show the consultant-side engagement · 4 minutes"),
-  para("Switch to the consultant dashboard. Open the new-engagement wizard. Walk through stage selection, region selection, pillar picker. Stop on the workforce-readiness layer toggle and read its panel out loud — \"Pillars measure what the organisation has built. Factors measure how its people behave.\" This is the pitch in one sentence."),
+  para("Switch to the consultant dashboard. Open the new-engagement wizard. Walk through stage selection, region selection, pillar picker. Stop on the workforce-readiness layer toggle and read its panel out loud - \"Pillars measure what the organisation has built. Factors measure how its people behave.\" This is the pitch in one sentence."),
   h2("5. Open a representative assessment report · 4 minutes"),
   para("Open the Phase 1 maturity report PDF in landscape bilingual mode. Walk the pillar heatmap, the regulatory crosswalk, the gap detector. Mention that the same report can come out in English-only, Arabic-only, or side-by-side."),
   h2("6. Close on commercial framing · 2-3 minutes"),
@@ -443,7 +443,7 @@ const demoFlow = [
   pageBreak(),
 ];
 
-// Section 8 — Anticipated Q&A
+// Section 8 - Anticipated Q&A
 const qa = [
   eyebrow("Section 8"),
   h1("Anticipated questions · prepared answers"),
@@ -479,7 +479,7 @@ const qaTable = new Table({
     ]}),
     new TableRow({ children: [
       tCell("What does an Enterprise engagement actually cost?", { width: 3120, bold: true }),
-      tCell("Priced per active stakeholder and depth of consultant facilitation. A 15-respondent Enterprise engagement with the workforce layer and the full bilingual board-grade PDF is in the [insert] range. Department-tier complimentary engagement is the recommended entry point — costs nothing and gives the agency a real artifact to evaluate.", { width: 6240 }),
+      tCell("Priced per active stakeholder and depth of consultant facilitation. A 15-respondent Enterprise engagement with the workforce layer and the full bilingual board-grade PDF is in the [insert] range. Department-tier complimentary engagement is the recommended entry point - costs nothing and gives the agency a real artifact to evaluate.", { width: 6240 }),
     ]}),
     new TableRow({ children: [
       tCell("Can we integrate with our LMS or HRIS?", { width: 3120, bold: true }),
@@ -490,7 +490,7 @@ const qaTable = new Table({
       tCell("The Personal Snapshot returns results in five minutes. A Department engagement runs four to six weeks end-to-end. An Enterprise engagement runs eight to twelve weeks. The platform's auto-save and token-based access mean stakeholders complete the questionnaire on their own time without consultant babysitting.", { width: 6240 }),
     ]}),
     new TableRow({ children: [
-      tCell("What happens after the report — do you just leave us with a PDF?", { width: 3120, bold: true }),
+      tCell("What happens after the report - do you just leave us with a PDF?", { width: 3120, bold: true }),
       tCell("No. Every gap surfaces VIFM training programmes that close it, ranked by fit. The diagnostic is the start of the development path, not the end of it. The agency can engage VIFM directly for the training, or apply the gaps to their existing development providers.", { width: 6240 }),
     ]}),
   ],
@@ -501,7 +501,7 @@ const qa2 = [
   pageBreak(),
 ];
 
-// Section 9 — One-page summary for the room
+// Section 9 - One-page summary for the room
 const onePager = [
   eyebrow("Section 9"),
   h1("One-page summary · for screen-share or hand-out"),
@@ -543,8 +543,8 @@ const onePager = [
 
 const doc = new Document({
   creator: "VIFM",
-  title: "VIFM AI Readiness Compass — Pitch Briefing",
-  description: "Pitch briefing for Dr. Ahmad — AI government agency engagement",
+  title: "VIFM AI Readiness Compass - Pitch Briefing",
+  description: "Pitch briefing for Dr. Ahmad - AI government agency engagement",
   styles: {
     default: { document: { run: { font: "Arial", size: 22 /* 11pt */, color: C.text } } },
     paragraphStyles: [

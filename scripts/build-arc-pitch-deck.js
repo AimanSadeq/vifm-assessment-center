@@ -27,11 +27,11 @@ const FOOTER = "ARC . Pitch briefing . (c) VIFM";
 const pres = new pptxgen();
 pres.layout = "LAYOUT_16x9";
 pres.author = "VIFM";
-pres.title = "VIFM AI Readiness Compass — Pitch Deck for Dr. Ahmad";
+pres.title = "VIFM AI Readiness Compass - Pitch Deck for Dr. Ahmad";
 pres.company = "Virginia Institute of Finance and Management";
 
 // ────────────────────────────────────────────────────────────────
-// Slide 1 — Hero / Cover (T1 Hero Statement)
+// Slide 1 - Hero / Cover (T1 Hero Statement)
 // ────────────────────────────────────────────────────────────────
 {
   const slide = pres.addSlide();
@@ -55,7 +55,7 @@ pres.company = "Virginia Institute of Finance and Management";
 }
 
 // ────────────────────────────────────────────────────────────────
-// Slide 2 — What is ARC (T2 Split Panel)
+// Slide 2 - What is ARC (T2 Split Panel)
 // ────────────────────────────────────────────────────────────────
 {
   const slide = pres.addSlide();
@@ -91,7 +91,7 @@ pres.company = "Virginia Institute of Finance and Management";
 }
 
 // ────────────────────────────────────────────────────────────────
-// Slide 3 — The two-axis model (custom — pillars + factors)
+// Slide 3 - The two-axis model (custom - pillars + factors)
 // ────────────────────────────────────────────────────────────────
 {
   const slide = pres.addSlide();
@@ -128,7 +128,7 @@ pres.company = "Virginia Institute of Finance and Management";
 }
 
 // ────────────────────────────────────────────────────────────────
-// Slide 4 — Eight pillars (custom 4x2 grid)
+// Slide 4 - Eight pillars (custom 4x2 grid)
 // ────────────────────────────────────────────────────────────────
 {
   const slide = pres.addSlide();
@@ -165,7 +165,7 @@ pres.company = "Virginia Institute of Finance and Management";
 }
 
 // ────────────────────────────────────────────────────────────────
-// Slide 5 — Four personal factors (custom 2x2 with domain colors)
+// Slide 5 - Four personal factors (custom 2x2 with domain colors)
 // ────────────────────────────────────────────────────────────────
 {
   const slide = pres.addSlide();
@@ -198,7 +198,7 @@ pres.company = "Virginia Institute of Finance and Management";
 }
 
 // ────────────────────────────────────────────────────────────────
-// Slide 6 — The workforce layer (THE pitch line) — T22 style
+// Slide 6 - The workforce layer (THE pitch line) - T22 style
 // ────────────────────────────────────────────────────────────────
 {
   const slide = pres.addSlide();
@@ -209,14 +209,14 @@ pres.company = "Virginia Institute of Finance and Management";
 
   // Two stacked highlight rows
   const stripsY=1.20, stripH=1.65;
-  // Strip 1 — Pillars
+  // Strip 1 - Pillars
   slide.addShape(pres.shapes.ROUNDED_RECTANGLE, { x:0.30, y:stripsY, w:9.40, h:stripH, rectRadius:0.10, fill:{color:C.primary}, line:{color:C.primary}, shadow:{type:"outer",color:"000000",blur:4,offset:1,angle:135,opacity:0.10} });
   slide.addShape(pres.shapes.RECTANGLE, { x:0.30, y:stripsY, w:0.10, h:stripH, fill:{color:C.light}, line:{color:C.light} });
   slide.addText("01", { x:0.55, y:stripsY+0.20, w:1.0, h:1.25, fontSize:52, bold:true, color:C.accent, fontFace:"Open Sans", align:"center" });
   slide.addText("Pillars measure what the organisation has built", { x:1.75, y:stripsY+0.20, w:7.6, h:0.50, fontSize:16, bold:true, color:C.white, fontFace:"Open Sans" });
   slide.addText("Strategy, Data, Technology, Governance -- the structural side. Most readiness diagnostics stop here.", { x:1.75, y:stripsY+0.75, w:7.6, h:0.80, fontSize:13, color:C.light, fontFace:"Open Sans", wrap:true });
 
-  // Strip 2 — Factors
+  // Strip 2 - Factors
   const strip2Y = stripsY + stripH + 0.20;
   slide.addShape(pres.shapes.ROUNDED_RECTANGLE, { x:0.30, y:strip2Y, w:9.40, h:stripH, rectRadius:0.10, fill:{color:C.accent}, line:{color:C.accent}, shadow:{type:"outer",color:"000000",blur:4,offset:1,angle:135,opacity:0.10} });
   slide.addShape(pres.shapes.RECTANGLE, { x:0.30, y:strip2Y, w:0.10, h:stripH, fill:{color:C.light}, line:{color:C.light} });
@@ -231,7 +231,7 @@ pres.company = "Virginia Institute of Finance and Management";
 }
 
 // ────────────────────────────────────────────────────────────────
-// Slide 7 — Four-tier engagement roadmap (T5 Horizontal Timeline)
+// Slide 7 - Four-tier engagement roadmap (T5 Horizontal Timeline)
 // ────────────────────────────────────────────────────────────────
 {
   const slide = pres.addSlide();
@@ -262,7 +262,7 @@ pres.company = "Virginia Institute of Finance and Management";
 }
 
 // ────────────────────────────────────────────────────────────────
-// Slide 8 — What you get at each tier (T11 Stacked Highlight Rows)
+// Slide 8 - What you get at each tier (T11 Stacked Highlight Rows)
 // ────────────────────────────────────────────────────────────────
 {
   const slide = pres.addSlide();
@@ -292,7 +292,7 @@ pres.company = "Virginia Institute of Finance and Management";
 }
 
 // ────────────────────────────────────────────────────────────────
-// Slide 9 — Six-stage delivery (T5 horizontal timeline with 6 nodes)
+// Slide 9 - Six-stage delivery (T5 horizontal timeline with 6 nodes)
 // ────────────────────────────────────────────────────────────────
 {
   const slide = pres.addSlide();
@@ -331,7 +331,7 @@ pres.company = "Virginia Institute of Finance and Management";
 }
 
 // ────────────────────────────────────────────────────────────────
-// Slide 10 — Sixteen regulatory frameworks (T13-style icon grid)
+// Slide 10 - Sixteen regulatory frameworks (T13-style icon grid)
 // ────────────────────────────────────────────────────────────────
 {
   const slide = pres.addSlide();
@@ -387,7 +387,7 @@ pres.company = "Virginia Institute of Finance and Management";
 }
 
 // ────────────────────────────────────────────────────────────────
-// Slide 11 — Differentiators (T13 Icon Grid 2x3)
+// Slide 11 - Differentiators (T13 Icon Grid 2x3)
 // ────────────────────────────────────────────────────────────────
 {
   const slide = pres.addSlide();
@@ -421,7 +421,7 @@ pres.company = "Virginia Institute of Finance and Management";
 }
 
 // ────────────────────────────────────────────────────────────────
-// Slide 12 — Suggested demo flow (T17 Vertical Step Flow style — 6 condensed)
+// Slide 12 - Suggested demo flow (T17 Vertical Step Flow style - 6 condensed)
 // ────────────────────────────────────────────────────────────────
 {
   const slide = pres.addSlide();
@@ -452,7 +452,7 @@ pres.company = "Virginia Institute of Finance and Management";
 }
 
 // ────────────────────────────────────────────────────────────────
-// Slide 13 — Likely questions (T11 Stacked Highlight Rows — 4 of the 9)
+// Slide 13 - Likely questions (T11 Stacked Highlight Rows - 4 of the 9)
 // ────────────────────────────────────────────────────────────────
 {
   const slide = pres.addSlide();
@@ -484,7 +484,7 @@ pres.company = "Virginia Institute of Finance and Management";
 }
 
 // ────────────────────────────────────────────────────────────────
-// Slide 14 — Closing CTA (T25-style)
+// Slide 14 - Closing CTA (T25-style)
 // ────────────────────────────────────────────────────────────────
 {
   const slide = pres.addSlide();

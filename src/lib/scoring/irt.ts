@@ -11,7 +11,7 @@
  * - estimateThetaRasch(): grid MLE of a taker's ability from responses to
  *   items with known difficulties.
  * - selectNextItem()/itemInformation()/thetaStandardError(): maximum-
- *   information adaptive selection — ready for a future CAT flow, dark until
+ *   information adaptive selection - ready for a future CAT flow, dark until
  *   items are calibrated to status='live'.
  *
  * Pure + dependency-free, so it's unit-testable without a DB or model.

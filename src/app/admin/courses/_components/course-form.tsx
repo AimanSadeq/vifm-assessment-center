@@ -60,7 +60,7 @@ export function CourseForm(props: Props) {
     e.preventDefault();
     start(async () => {
       // Both target competencies (block 2) and objectives (block 3)
-      // are textareas where each line is one bullet — matches how
+      // are textareas where each line is one bullet - matches how
       // the PDFs render those blocks (one phrase / one bullet per line).
       const lineToArray = (text: string) => text
         .split("\n")
@@ -96,7 +96,7 @@ export function CourseForm(props: Props) {
       if ("error" in result && result.error) {
         const msg = typeof result.error === "string"
           ? result.error
-          : "Validation failed — check your inputs.";
+          : "Validation failed - check your inputs.";
         toast.error(msg);
         return;
       }
@@ -191,7 +191,7 @@ export function CourseForm(props: Props) {
           value={overviewEn ?? ""}
           onChange={(e) => setOverviewEn(e.target.value)}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-          placeholder="Block 1 — paste the course overview paragraph."
+          placeholder="Block 1 - paste the course overview paragraph."
         />
       </div>
 
@@ -203,7 +203,7 @@ export function CourseForm(props: Props) {
           value={targetCompsEnText}
           onChange={(e) => setTargetCompsEnText(e.target.value)}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-          placeholder={"Block 2 — one competency phrase per line. e.g.\nDetection Capabilities\nIncident Response\nDigital Forensics\nRisk Mitigation"}
+          placeholder={"Block 2 - one competency phrase per line. e.g.\nDetection Capabilities\nIncident Response\nDigital Forensics\nRisk Mitigation"}
         />
         <p className="text-[11px] text-muted-foreground">
           These are the PDF&apos;s own topical &quot;Target Competencies&quot;
@@ -221,7 +221,7 @@ export function CourseForm(props: Props) {
           value={objectivesEnText}
           onChange={(e) => setObjectivesEnText(e.target.value)}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-          placeholder={"Block 3 — one objective per line. e.g.\nApply prompt engineering techniques\nCreate content using AI tools\nAnalyse business data with AI"}
+          placeholder={"Block 3 - one objective per line. e.g.\nApply prompt engineering techniques\nCreate content using AI tools\nAnalyse business data with AI"}
         />
       </div>
 
@@ -233,7 +233,7 @@ export function CourseForm(props: Props) {
           value={audienceEn ?? ""}
           onChange={(e) => setAudienceEn(e.target.value)}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-          placeholder="Block 4 — who should attend."
+          placeholder="Block 4 - who should attend."
         />
       </div>
 
@@ -245,7 +245,7 @@ export function CourseForm(props: Props) {
           value={methodologyEn ?? ""}
           onChange={(e) => setMethodologyEn(e.target.value)}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-          placeholder="Block 5 — how the course is delivered (lectures, case studies, hands-on, etc.)."
+          placeholder="Block 5 - how the course is delivered (lectures, case studies, hands-on, etc.)."
         />
       </div>
 
@@ -259,7 +259,7 @@ export function CourseForm(props: Props) {
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono"
           placeholder={[
             "# MAIN HEADER (use # at the start of the line)",
-            "## Sub-header (use ## — optional, only when the section has named sub-headers)",
+            "## Sub-header (use ## - optional, only when the section has named sub-headers)",
             "- Bullet (use - or • or *)",
             "  - Sub-bullet (indent 2+ spaces, then dash)",
             "",
@@ -268,7 +268,7 @@ export function CourseForm(props: Props) {
           ].join("\n")}
         />
         <p className="text-[11px] text-muted-foreground">
-          Markdown-style format — <code>#</code> starts a main header,{" "}
+          Markdown-style format - <code>#</code> starts a main header,{" "}
           <code>##</code> starts a sub-header, <code>-</code> is a bullet,
           and indented <code>-</code> is a sub-bullet. Each section uses
           either flat bullets <em>or</em> sub-headers, never both. Saved
@@ -284,7 +284,7 @@ export function CourseForm(props: Props) {
           value={noteEn}
           onChange={(e) => setNoteEn(e.target.value)}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-          placeholder="Internal note — not from the PDF, not shown to clients. e.g. 'Run only with senior cohort', 'Pricing reviewed Q1 2026'."
+          placeholder="Internal note - not from the PDF, not shown to clients. e.g. 'Run only with senior cohort', 'Pricing reviewed Q1 2026'."
         />
         <p className="text-[11px] text-muted-foreground">
           Free-text admin annotation. Not part of the source PDF, not
@@ -305,7 +305,7 @@ export function CourseForm(props: Props) {
 
       <p className="text-[11px] text-muted-foreground">
         Six-block order: 1 Overview · 2 Target competencies · 3 Objectives ·
-        4 Target audience · 5 Methodology · 6 Detailed outline — all
+        4 Target audience · 5 Methodology · 6 Detailed outline - all
         editable here. Day 3 adds the AC competency / ARA pillar mapping
         panel and an Arabic-side editor.
       </p>

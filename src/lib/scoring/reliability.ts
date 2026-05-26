@@ -4,7 +4,7 @@ import { CEFR_ORDER, type CefrLevel, type FluentResult } from "@/lib/ai/fluent-e
  * Reliability + confidence band for a VIFM Fluent result.
  *
  * A single CEFR level reads as point-certain, but the estimate carries real
- * uncertainty — especially from a short receptive section (research wants
+ * uncertainty - especially from a short receptive section (research wants
  * ~40 items; Fluent currently has ~10) and from disagreement across the four
  * skills. We surface an indicative RANGE (e.g. "B1–B2") plus an underpowered
  * flag rather than implying false precision. A proper item bank + IRT

@@ -65,7 +65,7 @@ export function PersonalStatistics({
   }, []);
   const total = assessed + notAssessed;
   // `kind` is a locale-stable discriminator so the Cell fill below picks
-  // the right colour under both en and ar — comparing the localized
+  // the right colour under both en and ar - comparing the localized
   // `name` directly miscolours the donut in Arabic (both slices grey).
   const progressData: Array<{
     name: string;
@@ -83,7 +83,7 @@ export function PersonalStatistics({
   // in this role profile (some profiles intentionally skip domains).
   const categoryData = byDomain.filter((d) => d.count > 0);
 
-  // Bar chart data — null avgScore means "no data yet"; we render the bar at
+  // Bar chart data - null avgScore means "no data yet"; we render the bar at
   // 0 with a tooltip note. Keeping all 4 bars on the X-axis lets the user
   // see at a glance that "Average Score" exists for every domain in the role.
   const barData = byDomain.map((d) => ({
@@ -106,7 +106,7 @@ export function PersonalStatistics({
       </div>
 
       <div className="grid gap-3 md:grid-cols-3">
-        {/* Donut 1 — Assessment Progress */}
+        {/* Donut 1 - Assessment Progress */}
         <div className="rounded-md border bg-card p-3">
           <p className="text-sm font-semibold mb-1">{t("candidateSkills.stats.progressTitle")}</p>
           <p className="text-[11px] text-muted-foreground mb-2">
@@ -158,7 +158,7 @@ export function PersonalStatistics({
           </div>
         </div>
 
-        {/* Donut 2 — Skills by Category */}
+        {/* Donut 2 - Skills by Category */}
         <div className="rounded-md border bg-card p-3">
           <p className="text-sm font-semibold mb-1">{t("candidateSkills.stats.byDomainTitle")}</p>
           <p className="text-[11px] text-muted-foreground mb-2">
@@ -208,7 +208,7 @@ export function PersonalStatistics({
           </div>
         </div>
 
-        {/* Bar — Average Score by Domain */}
+        {/* Bar - Average Score by Domain */}
         <div className="rounded-md border bg-card p-3">
           <p className="text-sm font-semibold mb-1">{t("candidateSkills.stats.avgByDomainTitle")}</p>
           <p className="text-[11px] text-muted-foreground mb-2">

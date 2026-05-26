@@ -9,7 +9,7 @@ import type { Notification, NotificationKind } from "@/types/database";
  * caller's RLS would block writes for other users (e.g. when the
  * assessor finalises a wash-up, they're notifying the *candidate*).
  *
- * Failures are logged but never thrown — a notification is a nicety,
+ * Failures are logged but never thrown - a notification is a nicety,
  * never block the actual save flow if publishing fails.
  */
 export async function publishNotification(input: {
@@ -40,7 +40,7 @@ export async function publishNotification(input: {
 
 /**
  * Fan-out to every admin profile. Used when a candidate completes a
- * quiz, a role profile is auto-extracted, etc — events the whole admin
+ * quiz, a role profile is auto-extracted, etc - events the whole admin
  * team probably wants to see.
  *
  * Optional `dedupeKey` + `dedupeWindowHours` skips the publish if a
@@ -77,7 +77,7 @@ export async function publishToAllAdmins(input: {
         .limit(1);
       if (dupErr) {
         console.error("[notifications.publishToAllAdmins] dedupe check failed:", dupErr);
-        // Fall through and publish anyway — better to over-notify than to
+        // Fall through and publish anyway - better to over-notify than to
         // silently drop a notification because of a transient query error.
       } else if (existing && existing.length > 0) {
         return;
@@ -148,7 +148,7 @@ export async function loadMyNotificationsAction(): Promise<
 }
 
 export async function markNotificationReadAction(notificationId: string) {
-  // Uses the caller's RLS-aware client — the policy ensures a user can
+  // Uses the caller's RLS-aware client - the policy ensures a user can
   // only mark their own notifications read.
   const { createClient } = await import("@/lib/supabase/server");
   const supabase = await createClient();

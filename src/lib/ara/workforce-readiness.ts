@@ -12,7 +12,7 @@ import {
  * pulling the average up or down.
  *
  * Returns null when there are no completed individual answers yet
- * — caller should render an empty-state placeholder rather than
+ * - caller should render an empty-state placeholder rather than
  * misleading zero-bars.
  */
 export type WorkforceFactorAverage = {
@@ -141,7 +141,7 @@ export async function computeWorkforceReadiness(
         const avg = b && b.count > 0 ? b.sum / b.count : null;
         acc[id] = avg;
         // Roll into the cohort accumulator only when the respondent has
-        // answered at least one item in that factor — otherwise a
+        // answered at least one item in that factor - otherwise a
         // not-started respondent would drag the cohort mean to zero.
         if (avg != null) {
           cohortAcc[id].sum += avg;
@@ -167,7 +167,7 @@ export async function computeWorkforceReadiness(
     };
   });
 
-  // Below-target tally per factor — counts respondents whose factor
+  // Below-target tally per factor - counts respondents whose factor
   // score is below 4 (the same target the recommender uses). Powers
   // the "% below target" distribution histogram on the workforce card.
   const TARGET = 4;
@@ -200,7 +200,7 @@ export async function computeWorkforceReadiness(
       ? cohortMeansForOverall.reduce((a, b) => a + b, 0) / cohortMeansForOverall.length
       : null;
 
-  // For the recommender — pass cohort means; factors with no responses
+  // For the recommender - pass cohort means; factors with no responses
   // fall back to target so they don't dominate the rank with zero gaps.
   const factor_scores_for_recommender = ARA_INDIVIDUAL_FACTOR_IDS.reduce<Record<AraIndividualFactorId, number>>(
     (acc, id) => {

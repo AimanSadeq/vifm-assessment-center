@@ -150,7 +150,7 @@ export function StepLaunch({ state, engagementId, onLaunched }: Props) {
         {frameworkOpen && framework && (
           <div className="border-t bg-muted/20 p-4 space-y-4 max-h-[28rem] overflow-y-auto">
             {framework.competencies.length === 0 ? (
-              <p className="text-sm text-muted-foreground italic">No competencies yet — the framework is empty.</p>
+              <p className="text-sm text-muted-foreground italic">No competencies yet - the framework is empty.</p>
             ) : (
               framework.competencies.map((c) => (
                 <div key={c.id} className="rounded-md border bg-card p-3">
@@ -246,7 +246,7 @@ function Summary({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border bg-card p-3">
       <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="text-sm text-primary mt-1 break-words">{value || "—"}</div>
+      <div className="text-sm text-primary mt-1 break-words">{value || "-"}</div>
     </div>
   );
 }

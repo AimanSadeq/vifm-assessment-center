@@ -9,13 +9,13 @@
  *    dimension a Whisper transcript can't capture.
  *
  * Both no-op (return null) when AZURE_SPEECH_KEY / AZURE_SPEECH_REGION are
- * absent, so the module is safe to deploy before keys are provisioned — the
+ * absent, so the module is safe to deploy before keys are provisioned - the
  * caller falls back to browser TTS / transcript-only scoring.
  *
  * Env:
- *   AZURE_SPEECH_KEY     — Speech resource key
- *   AZURE_SPEECH_REGION  — e.g. "uaenorth", "westeurope"
- *   AZURE_SPEECH_VOICE   — optional, default "en-US-JennyNeural"
+ *   AZURE_SPEECH_KEY     - Speech resource key
+ *   AZURE_SPEECH_REGION  - e.g. "uaenorth", "westeurope"
+ *   AZURE_SPEECH_VOICE   - optional, default "en-US-JennyNeural"
  */
 
 const key = () => process.env.AZURE_SPEECH_KEY;

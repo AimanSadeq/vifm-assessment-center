@@ -39,7 +39,7 @@ export default async function AssessorDashboardPage() {
             Assessor Mission Board
           </h1>
           <p className="text-sm text-white/75 max-w-2xl">
-            Your assessment journey — observe, rate, integrate, and reach consensus
+            Your assessment journey - observe, rate, integrate, and reach consensus
             on every candidate you cover.
           </p>
           <div className="flex flex-wrap items-center gap-2.5 mt-5">

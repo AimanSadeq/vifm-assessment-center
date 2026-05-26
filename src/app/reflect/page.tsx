@@ -14,7 +14,7 @@ import { VifmLogo } from "@/components/shared/vifm-logo";
 export const metadata = {
   title: "VIFM Reflect 360 · Leadership feedback",
   description:
-    "VIFM Reflect 360 — a bilingual leadership feedback platform that turns Corporate Values and Leadership Competencies into actionable insight for the GCC.",
+    "VIFM Reflect 360 - a bilingual leadership feedback platform that turns Corporate Values and Leadership Competencies into actionable insight for the GCC.",
 };
 
 export default function ReflectRootPage() {
@@ -60,13 +60,13 @@ export default function ReflectRootPage() {
               <span className="ara-accent-sweep">from every angle.</span>
             </h1>
             <p className="text-base text-white/70 mb-6 italic">
-              VIFM Reflect 360 — bilingual leadership feedback, calibrated to your
+              VIFM Reflect 360 - bilingual leadership feedback, calibrated to your
               own values and leadership competencies.
             </p>
             <p className="text-lg text-white/75 max-w-2xl leading-relaxed">
               Bring your Corporate Values and Leadership Competencies. We turn them
               into behavioural items, gather feedback from peers, managers, and direct
-              reports, and deliver two layers of insight — a development-grade report
+              reports, and deliver two layers of insight - a development-grade report
               and Individual Development Plan for each leader, plus an organisation-wide
               cohort view that surfaces the gaps shaping your culture. In English,
               Arabic, or both.
@@ -118,7 +118,7 @@ export default function ReflectRootPage() {
           <CircleDot className="h-3 w-3" />
           <span>
             Raters arrive via a consultant-issued token URL{" "}
-            <code className="text-[10px]">/reflect/respond/[token]</code> — no
+            <code className="text-[10px]">/reflect/respond/[token]</code> - no
             account or self-service required.
           </span>
         </div>
@@ -129,7 +129,7 @@ export default function ReflectRootPage() {
         <div className="max-w-6xl mx-auto px-6">
           <span className="ara-eyebrow">Inside the platform</span>
           <h2 className="text-3xl font-semibold text-primary mt-3 mb-12 max-w-2xl">
-            Development-grade 360°, built on your competency model — not ours.
+            Development-grade 360°, built on your competency model - not ours.
           </h2>
 
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
@@ -144,25 +144,25 @@ export default function ReflectRootPage() {
                 icon: Users,
                 tone: "violet" as const,
                 title: "Multi-rater, anonymised",
-                body: "Self, Manager, Peer, Direct Report — minimum 3 raters per group before peer and direct-report scores are revealed.",
+                body: "Self, Manager, Peer, Direct Report - minimum 3 raters per group before peer and direct-report scores are revealed.",
               },
               {
                 icon: BarChart3,
                 tone: "rose" as const,
                 title: "Organisational insights",
-                body: "Beyond individual reports — a cohort heatmap of every leader × every competency, top-3 strengths and development areas across the org, and an exportable culture view for the CHRO office.",
+                body: "Beyond individual reports - a cohort heatmap of every leader × every competency, top-3 strengths and development areas across the org, and an exportable culture view for the CHRO office.",
               },
               {
                 icon: Globe,
                 tone: "emerald" as const,
                 title: "Bilingual EN + AR",
-                body: "Full Arabic / English toggle for raters and reports — branded participant PDF with both languages side by side when needed.",
+                body: "Full Arabic / English toggle for raters and reports - branded participant PDF with both languages side by side when needed.",
               },
               {
                 icon: GraduationCap,
                 tone: "gold" as const,
                 title: "Linked to training",
-                body: "Each report ends with the VIFM courses that close the participant's biggest behaviour gaps — ready to debrief and act on.",
+                body: "Each report ends with the VIFM courses that close the participant's biggest behaviour gaps - ready to debrief and act on.",
               },
             ].map((c) => (
               <CapabilityItem key={c.title} icon={c.icon} tone={c.tone} title={c.title} body={c.body} />
@@ -178,7 +178,7 @@ export default function ReflectRootPage() {
             <div className="font-medium text-foreground mb-0.5">
               Virginia Institute of Finance and Management
             </div>
-            Confidential — for VIFM and engaged clients only.
+            Confidential - for VIFM and engaged clients only.
           </div>
           <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-4">
             <Link href="/admin" className="hover:text-foreground">Assessment Center</Link>

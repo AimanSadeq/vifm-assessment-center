@@ -6,7 +6,7 @@
  * reports, client dashboards, and the wash-up view.
  *
  * Default target is 3. Senior-role engagements can pass target=4 or 5 to
- * raise the bar — gap = target - score, so a higher target produces more
+ * raise the bar - gap = target - score, so a higher target produces more
  * "Gap" badges and fewer "Strength" badges.
  */
 

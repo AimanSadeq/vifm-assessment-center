@@ -132,7 +132,7 @@ export function ReflectWizard({ orgs: initialOrgs, templates }: Props) {
         return null;
       case 4:
         // Participants + raters are committed via their own server
-        // actions inside step 4. We don't block here — consultant can
+        // actions inside step 4. We don't block here - consultant can
         // launch with zero participants in sandbox mode but we warn.
         return null;
       case 5:
@@ -206,7 +206,7 @@ export function ReflectWizard({ orgs: initialOrgs, templates }: Props) {
     setError(null);
     if (step === 1) return;
     // Once the engagement is created (step 3+), we don't let the user
-    // go back to step 1/2 — the framework branch can't be changed
+    // go back to step 1/2 - the framework branch can't be changed
     // once data has been seeded. Allow within 3-5.
     if (state.engagement_id && step <= 3) return;
     setStep((s) => ((s - 1) as 1 | 2 | 3 | 4 | 5));
@@ -289,7 +289,7 @@ export function ReflectWizard({ orgs: initialOrgs, templates }: Props) {
         </div>
       )}
 
-      {/* Nav rail (hidden on step 5 — launch button is in StepLaunch itself) */}
+      {/* Nav rail (hidden on step 5 - launch button is in StepLaunch itself) */}
       {step !== 5 && (
         <div className="flex items-center justify-between">
           <Button

@@ -20,7 +20,7 @@ export default async function ReflectCohortReportPage({
   const scoring = await computeCohortScoring(id);
   if (!scoring) return notFound();
 
-  // Cohort training plan — best-effort. Empty list is fine; the page
+  // Cohort training plan - best-effort. Empty list is fine; the page
   // hides the section entirely when nothing matched.
   const courses = await recommendCoursesForReflectCohort({
     engagementId: id,
@@ -81,7 +81,7 @@ function CohortReport({
           <div className="confidentiality">
             {rtl
               ? "سري وللاستخدام الداخلي لمكتب الموارد البشرية / كبير مسؤولي الموارد البشرية. لا يجوز توزيعه على المشاركين الأفراد."
-              : "Confidential — for the HR / CHRO office's internal use. Not for distribution to individual participants."}
+              : "Confidential - for the HR / CHRO office's internal use. Not for distribution to individual participants."}
           </div>
         </div>
       </section>
@@ -106,7 +106,7 @@ function CohortReport({
                   <span className="ranked-value">{fmtScore(s.mean)}</span>
                 </li>
               ))}
-              {scoring.top_strengths.length === 0 && <li className="empty">—</li>}
+              {scoring.top_strengths.length === 0 && <li className="empty">-</li>}
             </ol>
           </div>
           <div>
@@ -118,7 +118,7 @@ function CohortReport({
                   <span className="ranked-value">{fmtScore(s.mean)}</span>
                 </li>
               ))}
-              {scoring.top_development_areas.length === 0 && <li className="empty">—</li>}
+              {scoring.top_development_areas.length === 0 && <li className="empty">-</li>}
             </ol>
           </div>
         </div>
@@ -153,7 +153,7 @@ function CohortReport({
                     const v = cell?.mean ?? null;
                     return (
                       <td key={c.competency_id} className={`hm-cell ${heatClass(v)}`}>
-                        {v === null ? "—" : v.toFixed(1)}
+                        {v === null ? "-" : v.toFixed(1)}
                       </td>
                     );
                   })}
@@ -164,7 +164,7 @@ function CohortReport({
         </div>
       </section>
 
-      {/* Distribution stacked-bars — % below/within/above Favorable Zone */}
+      {/* Distribution stacked-bars - % below/within/above Favorable Zone */}
       <section className="page">
         <h2>{rtl ? "توزيع القادة حول النطاق المرجعي" : "Where the cohort sits vs the Favorable Zone"}</h2>
         <p className="lead">
@@ -218,7 +218,7 @@ function CohortReport({
         </div>
       </section>
 
-      {/* P4.3 Cohort prior-delta — visible only when this is a reassessment */}
+      {/* P4.3 Cohort prior-delta - visible only when this is a reassessment */}
       {scoring.prior_overall_mean !== null && (
         <section className="page">
           <h2>{rtl ? "مقارنة بالتقييم السابق على مستوى المجموعة" : "Cohort delta vs prior assessment"}</h2>
@@ -251,14 +251,14 @@ function CohortReport({
         </section>
       )}
 
-      {/* Cohort training plan — VIFM programmes ranked by aggregated gap */}
+      {/* Cohort training plan - VIFM programmes ranked by aggregated gap */}
       {recommendations.length > 0 && (
         <section className="page">
           <h2>{rtl ? "خطة تطوير الكفايات على مستوى المجموعة" : "Cohort training plan"}</h2>
           <p className="lead">
             {rtl
               ? "برامج VIFM المُرشّحة بناءً على مجموع الفجوات في كل كفاية على مستوى المشاركين كلهم. هذه الترتيبات تجعل البرامج التي تخدم أكبر عدد من القادة في المقدّمة."
-              : "VIFM programmes ranked by the aggregated gap across every participant — the programmes that serve the largest slice of the cohort sit at the top."}
+              : "VIFM programmes ranked by the aggregated gap across every participant - the programmes that serve the largest slice of the cohort sit at the top."}
           </p>
           <ol className="programme-list">
             {recommendations.map((p, i) => {
@@ -397,7 +397,7 @@ function KpiCard({ label, value, sub }: { label: string; value: string; sub: str
 }
 
 function fmtScore(v: number | null): string {
-  if (v === null) return "—";
+  if (v === null) return "-";
   return v.toFixed(2);
 }
 
@@ -504,7 +504,7 @@ h3 { color: var(--vifm-primary); font-size: 12pt; font-weight: 700; margin: 4mm 
 .cd-empty { color: var(--vifm-muted); font-style: italic; }
 .cd-missing { grid-column: 2 / -1; text-align: right; font-size: 9pt; }
 
-/* Cohort training plan — programme cards mirror the per-participant report */
+/* Cohort training plan - programme cards mirror the per-participant report */
 .programme-list { padding: 0; margin: 0; list-style: none; }
 .programme-list > li { padding: 4mm 0; border-bottom: 0.6pt solid var(--vifm-border); page-break-inside: avoid; }
 .programme-list > li:last-child { border-bottom: 0; }

@@ -12,7 +12,7 @@ import type { AraEngagementStage, AraPillarId } from "@/types/ara";
  * generator, the assessment detail page, and the seed script. Keep
  * this file as the single source of truth for what each stage covers.
  *
- * Note on Personal: it doesn't use the org-side pillar model — the
+ * Note on Personal: it doesn't use the org-side pillar model - the
  * applicable_pillars array stays empty because the respondent flow
  * keys off individual_factor_id instead. The entry exists so the
  * Record<AraEngagementStage, ...> type is exhaustive.
@@ -108,7 +108,7 @@ export const ARA_STAGE_DEFINITIONS: ReadonlyArray<{
     number: 1,
     label_en: "Personal",
     label_ar: "شخصي",
-    scope_en: "One person — self-assessment of AI behaviours",
+    scope_en: "One person - self-assessment of AI behaviours",
     scope_ar: "شخص واحد - تقييم ذاتي لسلوكيات الذكاء الاصطناعي",
     tagline_en: "How AI-ready are you, personally?",
     tagline_ar: "ما مدى جاهزيتك الشخصية للذكاء الاصطناعي؟",
@@ -156,7 +156,7 @@ export function isPillarApplicableForStage(
  * non-pillar string into the rendering.
  *
  * Use this everywhere the renderer / scorer / respondent loader needs
- * to know "which pillars matter for THIS assessment" — instead of
+ * to know "which pillars matter for THIS assessment" - instead of
  * looking up ARA_STAGE_MAP[stage].applicable_pillars directly.
  */
 export function getPillarsForAssessment(args: {
@@ -164,7 +164,7 @@ export function getPillarsForAssessment(args: {
   pillars_in_scope: AraPillarId[] | null;
 }): ReadonlyArray<AraPillarId> {
   const stageDefault = ARA_STAGE_MAP[args.engagement_stage].applicable_pillars;
-  // Enterprise is always all 8 — ignore any stored override.
+  // Enterprise is always all 8 - ignore any stored override.
   if (args.engagement_stage === "enterprise") return stageDefault;
   if (!args.pillars_in_scope || args.pillars_in_scope.length === 0) return stageDefault;
   // Sanity-filter against the canonical pillar ids so a stale value
@@ -176,7 +176,7 @@ export function getPillarsForAssessment(args: {
 }
 
 /**
- * Stage cardinality — how many pillars the consultant must select.
+ * Stage cardinality - how many pillars the consultant must select.
  * Enterprise is fixed at all 8 (no UI shown); Department and Division
  * use this number as the must-equal constraint on the picker.
  */
@@ -184,7 +184,7 @@ export const PILLAR_PICK_COUNT: Record<AraEngagementStage, number | null> = {
   department: 4,
   division: 6,
   enterprise: 8,
-  individual: null, // n/a — individual stage doesn't use pillars
+  individual: null, // n/a - individual stage doesn't use pillars
 };
 
 /**

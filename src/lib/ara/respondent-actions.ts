@@ -169,7 +169,7 @@ export async function markAraRespondentComplete(token: string): Promise<void> {
   revalidatePath(`/ara/respond/${token}`);
 
   // Look up the assessment to decide which downstream notifications fire.
-  // All branches are fire-and-forget — a Graph outage can't block the
+  // All branches are fire-and-forget - a Graph outage can't block the
   // respondent's completion.
   const { data: a } = await sb
     .from("ara_assessments")
@@ -182,7 +182,7 @@ export async function markAraRespondentComplete(token: string): Promise<void> {
       include_individual_layer: boolean;
     }>();
 
-  // Personal results email — fires for any respondent whose assessment
+  // Personal results email - fires for any respondent whose assessment
   // produced individual-factor answers worth surfacing back to them:
   //   - engagement_stage='individual' (Modes A + B), OR
   //   - org stage with include_individual_layer=true (Mode C)
@@ -218,7 +218,7 @@ export async function markAraRespondentComplete(token: string): Promise<void> {
     }
   }
 
-  // Consultant notification — fires for org-stage assessments. Mode C
+  // Consultant notification - fires for org-stage assessments. Mode C
   // assessments still get this on top of the personal email above
   // because the consultant cares about completion progress regardless
   // of whether the respondent also did the individual layer.

@@ -1,5 +1,5 @@
 /**
- * AI Upskilling Pathways — generation endpoint (ARA assessment context).
+ * AI Upskilling Pathways - generation endpoint (ARA assessment context).
  *
  * POST /api/ara/pathway  { assessmentId, language }
  *   -> UpskillingPathway (AI-sequenced stages from the assessment's pillar

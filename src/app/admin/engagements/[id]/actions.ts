@@ -80,7 +80,7 @@ export async function setCandidateRoleProfileAction(values: SetCandidateRoleProf
   // H3: notify the candidate when their role profile gets bound. Use the
   // service client through publishNotification so the admin's session can
   // write to a row owned by another profile. Failures are logged but never
-  // thrown — never block the assignment save on a notification glitch.
+  // thrown - never block the assignment save on a notification glitch.
   if (parsed.data.roleProfileId) {
     const service = createServiceClient();
     const { data: cand } = await service

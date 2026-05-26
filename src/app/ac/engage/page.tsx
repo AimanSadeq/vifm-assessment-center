@@ -49,7 +49,7 @@ const TIERS: Array<{
   icon: typeof Users;
   /** Tier-card facts. We deliberately don't sell on page count
    *  ("8 pages / 27 pages") because the reviewer (2026-04-29 voice
-   *  note) flagged that as a turn-off — clients care about content,
+   *  note) flagged that as a turn-off - clients care about content,
    *  not length. So `Report` describes what's *in* the report. */
   facts: Array<{ label: string; value: string }>;
 }> = [
@@ -193,7 +193,7 @@ export default function AcEngagePage() {
             <p className="text-lg text-white/75 max-w-2xl leading-relaxed">
               Whether you&apos;re running a single hiring decision, a multi-role
               promotion cycle, or operating talent assessment as a continuous
-              capability — the same VIFM-AC framework, assessor discipline, and
+              capability - the same VIFM-AC framework, assessor discipline, and
               report quality scales with you.
             </p>
           </div>
@@ -298,7 +298,7 @@ export default function AcEngagePage() {
               What is included at each tier
             </h2>
             <p className="text-sm text-muted-foreground mt-3">
-              Tiers are cumulative — everything in Single Engagement is also in
+              Tiers are cumulative - everything in Single Engagement is also in
               Programme. Everything in Programme is also in Strategic Talent
               Partnership.
             </p>

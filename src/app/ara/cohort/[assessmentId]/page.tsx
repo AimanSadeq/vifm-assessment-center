@@ -20,17 +20,17 @@ export const dynamic = "force-dynamic";
  * The consultant's workforce-readiness rollup card already shows
  * cohort overall + per-factor + per-respondent breakdown. This route
  * surfaces a *subset* of that data at a public URL keyed by the
- * assessment's UUID — clients with the link can see the cohort view
+ * assessment's UUID - clients with the link can see the cohort view
  * (overall, per-factor with development-demand, maturity-stage
  * narrative) without needing a portal account.
  *
  * Privacy posture for v1:
- *  - Per-respondent names + emails are NOT shown — only counts and
+ *  - Per-respondent names + emails are NOT shown - only counts and
  *    cohort aggregates.
  *  - Only renders for assessments with `include_individual_layer=true`
  *    (Mode C). Other assessments 404.
  *  - The URL is keyed by assessment.id (UUIDv4). Treat it as a
- *    share-by-link credential — anyone with the link can view.
+ *    share-by-link credential - anyone with the link can view.
  *  - No PDFs, no respondent-level scores, no editing.
  *
  * Future v2: add an explicit `cohort_share_token` column on
@@ -87,13 +87,13 @@ export default async function PublicCohortDashboardPage({
   return (
     <CohortShell orgName={assessment.organization?.name ?? ""}>
       <div className="space-y-6">
-        {/* Hero card — cohort overall */}
+        {/* Hero card - cohort overall */}
         <Card className="bg-gradient-to-br from-primary to-navy-blue text-primary-foreground border-0">
           <CardContent className="p-6 md:p-8 grid md:grid-cols-[auto_1fr] gap-6 items-center">
             <div>
               <p className="text-xs uppercase tracking-widest opacity-70">Cohort overall</p>
               <p className="text-5xl font-bold tabular-nums mt-1">
-                {rollup.cohort_overall != null ? rollup.cohort_overall.toFixed(2) : "—"}
+                {rollup.cohort_overall != null ? rollup.cohort_overall.toFixed(2) : "-"}
                 <span className="text-lg opacity-60 font-normal"> / 5</span>
               </p>
               {cohortStage && (
@@ -142,7 +142,7 @@ export default async function PublicCohortDashboardPage({
                   </div>
                   <p className="text-sm font-semibold leading-tight">{factor?.name_en}</p>
                   <p className="text-2xl font-bold tabular-nums mt-1">
-                    {f.respondent_count > 0 ? f.average.toFixed(2) : "—"}
+                    {f.respondent_count > 0 ? f.average.toFixed(2) : "-"}
                     <span className="text-xs text-muted-foreground font-normal"> / 5</span>
                   </p>
                   <p className="text-[10px] text-muted-foreground mt-1">
@@ -154,7 +154,7 @@ export default async function PublicCohortDashboardPage({
           </CardContent>
         </Card>
 
-        {/* Development-demand histogram — % below target per factor */}
+        {/* Development-demand histogram - % below target per factor */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Development demand</CardTitle>
@@ -217,7 +217,7 @@ export default async function PublicCohortDashboardPage({
 
         <p className="text-[11px] text-muted-foreground text-center pt-4">
           This dashboard is a read-only summary intended for engagement
-          sponsors. Per-respondent scores and identity are not surfaced here —
+          sponsors. Per-respondent scores and identity are not surfaced here -
           ask your VIFM consultant for the consultant-side view if needed.
         </p>
       </div>
@@ -251,6 +251,6 @@ function CohortShell({ orgName, children }: { orgName: string; children: React.R
   );
 }
 
-// Suppress unused-import warning for AraIndividualFactorId — included
+// Suppress unused-import warning for AraIndividualFactorId - included
 // for downstream typing of any future per-factor drilldown.
 type _UsedTypes = AraIndividualFactorId;

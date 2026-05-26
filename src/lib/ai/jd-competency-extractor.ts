@@ -27,9 +27,9 @@ const VALID_PRIORITIES = new Set(["high", "medium", "low"]);
 const SYSTEM_PROMPT =
   `You are an assessment center designer for VIFM (Virginia Institute of Finance and Management). ` +
   `Given a job description, you select which competencies from VIFM's framework should be assessed. ` +
-  `You ONLY pick from the supplied list — do not invent competencies. ` +
+  `You ONLY pick from the supplied list - do not invent competencies. ` +
   `You may receive English or Arabic job descriptions; respond in English regardless. ` +
-  `Aim for 6 to 10 competencies — never fewer than 4, never more than 12. ` +
+  `Aim for 6 to 10 competencies - never fewer than 4, never more than 12. ` +
   `Prioritise behaviours genuinely critical to success in the role over generic ones.`;
 
 function buildInstructions(
@@ -42,7 +42,7 @@ function buildInstructions(
     .join("\n");
 
   return (
-    `Target role: ${targetRole?.trim() || "(not specified — infer from JD)"}\n\n` +
+    `Target role: ${targetRole?.trim() || "(not specified - infer from JD)"}\n\n` +
     (jdInline
       ? `Job description:\n"""\n${jdInline.trim()}\n"""\n\n`
       : `The job description is provided as the attached PDF document. Read it in full before deciding.\n\n`) +
@@ -55,7 +55,7 @@ function buildInstructions(
     `  "priority": "high" | "medium" | "low",\n` +
     `  "reasoning": "<1 sentence: which JD requirement maps to this competency>"\n` +
     `}\n\n` +
-    `Distribute weights so total roughly sums to 30 across all picks (not enforced — guideline). ` +
+    `Distribute weights so total roughly sums to 30 across all picks (not enforced - guideline). ` +
     `Use "high" priority for 2-4 mission-critical competencies, "medium" for the rest, "low" sparingly.`
   );
 }

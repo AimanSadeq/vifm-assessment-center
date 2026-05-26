@@ -185,7 +185,7 @@ export default function AcRoadmapPage() {
               <span className="ara-accent-sweep">on one page.</span>
             </h1>
             <p className="text-lg text-white/75 max-w-2xl leading-relaxed">
-              From a client brief to a released candidate report — the full
+              From a client brief to a released candidate report - the full
               nine-step journey, every component that powers it, and the
               standards it&apos;s anchored to.
             </p>

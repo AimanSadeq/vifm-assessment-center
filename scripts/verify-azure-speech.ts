@@ -19,9 +19,9 @@ async function main() {
     return;
   }
   const audio = await synthesizeSpeech("This is a VIFM Fluent listening check.");
-  console.log("Neural TTS:", audio ? `✓ OK — ${audio.length} bytes (mp3)` : "✗ FAILED (check key/region)");
+  console.log("Neural TTS:", audio ? `✓ OK - ${audio.length} bytes (mp3)` : "✗ FAILED (check key/region)");
   console.log(
-    "Pronunciation: record a speaking answer at /ac/fluent — the result should show a Pronunciation row + Azure accuracy/fluency/prosody."
+    "Pronunciation: record a speaking answer at /ac/fluent - the result should show a Pronunciation row + Azure accuracy/fluency/prosody."
   );
 }
 

@@ -26,7 +26,7 @@ export default function PersonalDeepDiveNewPage() {
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
             48-item, research-grade individual AI readiness assessment for a
             paying HR client&apos;s named employee. ~10 minutes for the
-            respondent. Each of the four VIFM factors gets 12 items —
+            respondent. Each of the four VIFM factors gets 12 items -
             roughly double the reliability of the free 24-item snapshot.
           </p>
         </div>

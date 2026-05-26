@@ -18,7 +18,7 @@ const KINDS: { value: FrameworkKind; icon: typeof Layers; title: string; descrip
     value: "clone",
     icon: Layers,
     title: "Clone a library template",
-    description: "Start from a vetted VIFM framework — fastest path when the client has no documented model.",
+    description: "Start from a vetted VIFM framework - fastest path when the client has no documented model.",
   },
   {
     value: "ai",
@@ -162,7 +162,7 @@ export function StepFramework({ state, update, templates }: Props) {
               <Label htmlFor="rf-src">Paste the client&apos;s values + leadership competencies</Label>
               <Textarea
                 id="rf-src"
-                placeholder={"Paste the source text here. Can be English, Arabic, or both — Claude reads both.\n\nExample:\nValues: Integrity, Excellence, Collaboration, Innovation.\nLeadership competencies: Strategic vision, Drives execution, Develops people, Communicates with influence."}
+                placeholder={"Paste the source text here. Can be English, Arabic, or both - Claude reads both.\n\nExample:\nValues: Integrity, Excellence, Collaboration, Innovation.\nLeadership competencies: Strategic vision, Drives execution, Develops people, Communicates with influence."}
                 rows={10}
                 value={state.framework_source_text}
                 onChange={(e) => update({ framework_source_text: e.target.value })}

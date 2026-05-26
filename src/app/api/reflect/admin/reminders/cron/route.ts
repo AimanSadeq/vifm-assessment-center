@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
  *
  * Sweeps every Reflect engagement in 'live' status and fires reminders to
  * raters who haven't responded recently. Designed to be called by a
- * GitHub Actions cron (or any HTTPS scheduler) — auth is via a shared
+ * GitHub Actions cron (or any HTTPS scheduler) - auth is via a shared
  * CRON_SECRET header, identical to the ARA retention purge pattern.
  *
  * Header:  Authorization: Bearer <CRON_SECRET>
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Audit row at the engagement-agnostic level — uses zero-uuid as target so
+  // Audit row at the engagement-agnostic level - uses zero-uuid as target so
   // the audit log doesn't violate the not-null constraint on target_id.
   await sb.from("reflect_audit_log").insert({
     action: "cron.reminders_sent",

@@ -39,7 +39,7 @@ export default async function AraRespondPage({
   const rtl = language === "ar";
   const completed = !!refreshed?.completed_at;
 
-  // Personal / individual stage gets its own results layout — redirect
+  // Personal / individual stage gets its own results layout - redirect
   // straight there once they've completed. The org-side respondent flow
   // continues to render its own thank-you state.
   if (completed && ctx.assessment.engagement_stage === "individual") {
@@ -154,7 +154,7 @@ export default async function AraRespondPage({
           language={language}
         />
 
-        {/* AI Use Case Portfolio (optional) — org-side only. Personal /
+        {/* AI Use Case Portfolio (optional) - org-side only. Personal /
              individual-stage respondents (Mode A snapshot, Mode B deep-dive)
              are answering about their own behaviours, not their org's
              portfolio, so the section is suppressed and the "your
@@ -167,7 +167,7 @@ export default async function AraRespondPage({
           />
         )}
 
-        {/* Supporting Materials (optional) — org-side only. Personal /
+        {/* Supporting Materials (optional) - org-side only. Personal /
              individual-stage respondents are submitting a self-assessment,
              not org-level evidence, so the regulatory-docs upload affordance
              is suppressed. */}

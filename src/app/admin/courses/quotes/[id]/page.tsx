@@ -110,11 +110,11 @@ export default async function QuoteRequestDetailPage({
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-3 sm:grid-cols-2 text-sm">
-                <Row icon={Users} label="Group size">{q.estimated_group_size ?? "—"}</Row>
-                <Row icon={Calendar} label="Preferred start">{q.preferred_start_date ?? "—"}</Row>
-                <Row icon={Globe2} label="Language">{q.preferred_language ?? "—"}</Row>
+                <Row icon={Users} label="Group size">{q.estimated_group_size ?? "-"}</Row>
+                <Row icon={Calendar} label="Preferred start">{q.preferred_start_date ?? "-"}</Row>
+                <Row icon={Globe2} label="Language">{q.preferred_language ?? "-"}</Row>
                 <Row label="Delivery mode">
-                  {q.delivery_mode ? q.delivery_mode.replace("_", " ") : "—"}
+                  {q.delivery_mode ? q.delivery_mode.replace("_", " ") : "-"}
                 </Row>
               </CardContent>
             </Card>
@@ -131,7 +131,7 @@ export default async function QuoteRequestDetailPage({
               </Card>
             )}
 
-            {/* Internal notes (sales-only) — editable */}
+            {/* Internal notes (sales-only) - editable */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Internal notes</CardTitle>
@@ -149,7 +149,7 @@ export default async function QuoteRequestDetailPage({
             </Card>
           </div>
 
-          {/* Sidebar — pipeline timeline */}
+          {/* Sidebar - pipeline timeline */}
           <aside className="lg:sticky lg:top-6 self-start">
             <Card>
               <CardHeader>

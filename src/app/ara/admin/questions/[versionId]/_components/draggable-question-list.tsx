@@ -29,10 +29,10 @@ type DraggableQuestionListProps = {
 };
 
 const EVIDENCE_TONE: Record<NonNullable<Item["evidence_status"]>, { label: string; cls: string; title: string }> = {
-  ai_proposed: { label: "AI proposed", cls: "bg-amber-100 text-amber-900 border-amber-200", title: "AI suggestion saved — admin review required before clients see it" },
-  verified:    { label: "Verified",    cls: "bg-emerald-100 text-emerald-900 border-emerald-200", title: "Citation verified by admin — surfaces in the report appendix" },
-  edited:      { label: "Edited",      cls: "bg-sky-100 text-sky-900 border-sky-200", title: "Admin edited the AI proposal — surfaces in the report appendix" },
-  rejected:    { label: "Rejected",    cls: "bg-rose-100 text-rose-900 border-rose-200", title: "Admin rejected the proposal — does not surface in the report" },
+  ai_proposed: { label: "AI proposed", cls: "bg-amber-100 text-amber-900 border-amber-200", title: "AI suggestion saved - admin review required before clients see it" },
+  verified:    { label: "Verified",    cls: "bg-emerald-100 text-emerald-900 border-emerald-200", title: "Citation verified by admin - surfaces in the report appendix" },
+  edited:      { label: "Edited",      cls: "bg-sky-100 text-sky-900 border-sky-200", title: "Admin edited the AI proposal - surfaces in the report appendix" },
+  rejected:    { label: "Rejected",    cls: "bg-rose-100 text-rose-900 border-rose-200", title: "Admin rejected the proposal - does not surface in the report" },
 };
 
 /**

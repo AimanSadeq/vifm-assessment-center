@@ -57,7 +57,7 @@ export default async function EditCoursePage({ params }: Props) {
           <CardTitle>{course.title_en}</CardTitle>
           <CardDescription>
             Edit the catalogue entry. The mapping panel below shows the
-            AC competency + ARA pillar tags that drive the recommender —
+            AC competency + ARA pillar tags that drive the recommender -
             edit them when you spot an over- or under-tag from the AI
             extraction.
           </CardDescription>

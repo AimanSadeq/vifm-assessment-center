@@ -29,7 +29,7 @@ export default async function PersonalResultsPage({ params }: Props) {
   // Personal results page is valid for:
   //   - Mode A/B individual-stage assessments (the primary case), AND
   //   - Mode C respondents on an org assessment that has the individual
-  //     layer enabled — those respondents have answered the four-factor
+  //     layer enabled - those respondents have answered the four-factor
   //     items and are entitled to see their personal breakdown.
   // Anyone else (org respondent on a no-layer assessment) gets a 404.
   const isPersonalEligible =
@@ -90,7 +90,7 @@ export default async function PersonalResultsPage({ params }: Props) {
     limit: 5,
   });
 
-  // Mode C only — individual-vs-cohort means on each factor card.
+  // Mode C only - individual-vs-cohort means on each factor card.
   // We deliberately exclude the current respondent from the cohort
   // mean so the delta isn't self-referential when the cohort is small.
   // Suppress the pill entirely when there are no other respondents
@@ -197,7 +197,7 @@ export default async function PersonalResultsPage({ params }: Props) {
               score >= 4 ? "bg-emerald-100 text-emerald-900 border-emerald-200"
               : score >= 3 ? "bg-amber-100 text-amber-900 border-amber-200"
               : "bg-rose-100 text-rose-900 border-rose-200";
-            // Mode C only — show delta vs cohort peers (excluding self).
+            // Mode C only - show delta vs cohort peers (excluding self).
             const peerMean = cohortMeans[f.id];
             const showDelta = isModeC && cohortPeerCount > 0 && peerMean != null && score > 0;
             const delta = showDelta ? score - (peerMean as number) : 0;
@@ -223,7 +223,7 @@ export default async function PersonalResultsPage({ params }: Props) {
                 <p className="text-sm font-semibold">{isAr ? f.name_ar : f.name_en}</p>
                 <div className="flex items-baseline gap-2 mt-1">
                   <p className="text-2xl font-bold tabular-nums">
-                    {score > 0 ? score.toFixed(1) : "—"}
+                    {score > 0 ? score.toFixed(1) : "-"}
                     <span className="text-xs text-muted-foreground font-normal"> / 5</span>
                   </p>
                   {showDelta && (
@@ -258,14 +258,14 @@ export default async function PersonalResultsPage({ params }: Props) {
           }
           emptyMessage={
             isAr
-              ? "لا توجد توصيات حالياً — جميع عواملك قريبة من المستوى المستهدف، أو الكتالوج الحالي لا يغطي بعد العوامل ذات الدرجات الأقل."
-              : "No recommendations yet — either all your factors are near target, or the catalogue doesn't yet cover the relevant capabilities."
+              ? "لا توجد توصيات حالياً - جميع عواملك قريبة من المستوى المستهدف، أو الكتالوج الحالي لا يغطي بعد العوامل ذات الدرجات الأقل."
+              : "No recommendations yet - either all your factors are near target, or the catalogue doesn't yet cover the relevant capabilities."
           }
           courses={recommendations}
           context="ac"
         />
 
-        {/* Browse-the-full-catalogue CTA — the recommender shows up to
+        {/* Browse-the-full-catalogue CTA - the recommender shows up to
              five gap-driven programmes; people with strong scores see
              the empty-state. Either way, a respondent who wants to
              explore VIFM's broader curriculum should have one click to
@@ -282,8 +282,8 @@ export default async function PersonalResultsPage({ params }: Props) {
               </p>
               <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
                 {isAr
-                  ? "أكثر من مئة برنامج في المالية والذكاء الاصطناعي والقيادة والحوكمة — احصل على عرض سعر مخصّص لأي برنامج."
-                  : "Over a hundred programmes across finance, AI, leadership and governance — request a tailored quote for any of them."}
+                  ? "أكثر من مئة برنامج في المالية والذكاء الاصطناعي والقيادة والحوكمة - احصل على عرض سعر مخصّص لأي برنامج."
+                  : "Over a hundred programmes across finance, AI, leadership and governance - request a tailored quote for any of them."}
               </p>
             </div>
           </div>
@@ -296,7 +296,7 @@ export default async function PersonalResultsPage({ params }: Props) {
           </Link>
         </div>
 
-        {/* Methodology trust badge — first asked-for concern from any
+        {/* Methodology trust badge - first asked-for concern from any
              stakeholder reviewing the platform: "where did the questions
              come from?". Links out to the methodology brief which
              answers item development, content validity, reliability
@@ -311,8 +311,8 @@ export default async function PersonalResultsPage({ params }: Props) {
             </p>
             <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
               {isAr
-                ? "تطوير البنود، صدق المحتوى، خطة الثبات، الأطر المرجعية، والحدود الصريحة — موثقة في موجز المنهجية."
-                : "Item development, content validity, reliability plan, reference frameworks, and explicit limitations — documented in the methodology brief."}
+                ? "تطوير البنود، صدق المحتوى، خطة الثبات، الأطر المرجعية، والحدود الصريحة - موثقة في موجز المنهجية."
+                : "Item development, content validity, reliability plan, reference frameworks, and explicit limitations - documented in the methodology brief."}
             </p>
             <a
               href="https://github.com/AimanSadeq/vifm-assessment-center/blob/master/docs/ARA-Methodology-Brief.md"

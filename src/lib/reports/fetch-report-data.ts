@@ -152,7 +152,7 @@ export async function fetchReportData(
   const startDate = formatDate(eng.start_date);
   const endDate = formatDate(eng.end_date);
 
-  // Day 3f — VIFM training-course recommendations. Catches and swallows
+  // Day 3f - VIFM training-course recommendations. Catches and swallows
   // errors so the rest of the report still generates if the recommender
   // tables don't exist on a given env or if the catalogue is empty.
   let recommendedCourses: ReportRecommendedCourse[] = [];

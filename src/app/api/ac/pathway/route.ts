@@ -1,5 +1,5 @@
 /**
- * AI Upskilling Pathways — generation endpoint (AC candidate context).
+ * AI Upskilling Pathways - generation endpoint (AC candidate context).
  *
  * POST /api/ac/pathway  { candidateId, language }
  *   -> UpskillingPathway (AI-sequenced stages from the candidate's
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "candidate not found" }, { status: 404 });
   }
 
-  // Role-profile target (tolerant of an absent migration/column — defaults to 3).
+  // Role-profile target (tolerant of an absent migration/column - defaults to 3).
   let target = 3;
   try {
     const { data: rp } = await sb

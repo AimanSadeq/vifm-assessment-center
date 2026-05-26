@@ -49,7 +49,7 @@ export function DeleteRoleProfileButton({ id, name }: { id: string; name: string
           <AlertDialogDescription>
             This deletes the &quot;{name}&quot; profile and all its competency mappings.
             Engagements that previously copied from this profile keep their
-            competencies — only the template is removed.
+            competencies - only the template is removed.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

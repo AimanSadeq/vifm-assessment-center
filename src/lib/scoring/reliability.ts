@@ -1,7 +1,7 @@
 import { CEFR_ORDER, type CefrLevel, type FluentResult } from "@/lib/ai/fluent-english";
 
 /**
- * Reliability + confidence band for a VIFM Fluent result.
+ * Reliability + confidence band for a Fluent result.
  *
  * A single CEFR level reads as point-certain, but the estimate carries real
  * uncertainty - especially from a short receptive section (research wants

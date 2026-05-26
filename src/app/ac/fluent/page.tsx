@@ -11,7 +11,7 @@ import { FluentClient } from "./_components/fluent-client";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "VIFM Fluent · English placement (prototype)",
+  title: "Fluent · English placement (prototype)",
 };
 
 type Props = {
@@ -89,7 +89,7 @@ export default async function FluentPage({ searchParams }: Props) {
           {/* Headline block */}
           <div className="max-w-3xl">
             <span className="ara-eyebrow text-[#9CC4EC]">
-              <Languages className="h-3 w-3" /> VIFM Fluent · AI English placement
+              <Languages className="h-3 w-3" /> Fluent · AI English placement
             </span>
             <h1 className="ara-numeral mt-4 mb-4 text-4xl font-semibold leading-[1.07] text-white sm:text-5xl">
               Four skills, one CEFR level -{" "}

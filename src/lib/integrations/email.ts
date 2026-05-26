@@ -149,10 +149,10 @@ Manage this request: {{adminUrl}}
 - VIFM Assessment Platform`,
   },
   fluent_result: {
-    subject: "Your VIFM Fluent result - {{level}}",
+    subject: "Your Fluent result - {{level}}",
     body: `Dear {{takerName}},
 
-Thank you for completing the VIFM Fluent English placement test.
+Thank you for completing the Fluent English placement test.
 
 Your indicative CEFR level: {{level}} ({{levelLabel}})
   Reading: {{reading}}    Listening: {{listening}}

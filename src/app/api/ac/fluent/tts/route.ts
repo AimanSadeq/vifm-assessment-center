@@ -1,5 +1,5 @@
 /**
- * VIFM Fluent - listening audio (Azure neural TTS).
+ * Fluent - listening audio (Azure neural TTS).
  *
  * GET /api/ac/fluent/tts?session=<id>&item=<listeningItemId>
  *   -> audio/mpeg of the listening item's script, synthesised on demand.

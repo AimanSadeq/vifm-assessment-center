@@ -8,7 +8,7 @@ import { CEFR_ORDER, type CefrLevel } from "@/lib/ai/fluent-english";
 import { quadraticWeightedKappa, QWK_ACCEPTABLE } from "@/lib/scoring/qwk";
 import { RatingForm } from "./_components/rating-form";
 
-export const metadata = { title: "VIFM Fluent · Scoring calibration" };
+export const metadata = { title: "Fluent · Scoring calibration" };
 
 type SkillScore = { cefr?: string; transcript?: string; attempted?: boolean };
 type ResultRow = {
@@ -62,7 +62,7 @@ export default async function FluentCalibrationPage() {
       <header className="border-b bg-white">
         <div className="mx-auto max-w-4xl px-6 py-5">
           <Link href="/ac/fluent" className="mb-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-3 w-3" /> VIFM Fluent
+            <ArrowLeft className="h-3 w-3" /> Fluent
           </Link>
           <div className="flex items-center gap-2">
             <ClipboardCheck className="h-5 w-5 text-[#5391D5]" />

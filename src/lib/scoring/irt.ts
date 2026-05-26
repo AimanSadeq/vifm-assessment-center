@@ -1,5 +1,5 @@
 /**
- * Rasch (1PL) IRT helpers for VIFM Fluent's item bank (Phase 3 groundwork).
+ * Rasch (1PL) IRT helpers for Fluent's item bank (Phase 3 groundwork).
  *
  * Rasch model: P(correct | θ, b) = 1 / (1 + exp(-(θ − b)))
  *   θ = person ability, b = item difficulty (both on the logit scale).

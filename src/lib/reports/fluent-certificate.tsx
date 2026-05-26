@@ -1,7 +1,7 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 
 /**
- * VIFM Fluent - CEFR placement certificate (React-PDF).
+ * Fluent - CEFR placement certificate (React-PDF).
  *
  * A true single-page PDF (A4 landscape) the taker can download directly,
  * alongside the printable HTML version. English-only (the HTML cert is
@@ -96,7 +96,7 @@ export function FluentCertificate({ data }: { data: FluentCertificateData }) {
       <Page size="A4" orientation="landscape" style={s.page}>
         <View style={s.frame}>
           <Text style={s.brand}>VIRGINIA INSTITUTE OF FINANCE &amp; MANAGEMENT</Text>
-          <Text style={s.title}>VIFM Fluent - Certificate of English Placement</Text>
+          <Text style={s.title}>Fluent - Certificate of English Placement</Text>
           <Text style={s.subtitle}>
             CEFR-aligned indicative placement · Reading · Listening · Writing · Speaking
           </Text>

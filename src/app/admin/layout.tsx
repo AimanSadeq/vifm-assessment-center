@@ -42,7 +42,7 @@ const sidebarLinks: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/ara", label: "AI Readiness", icon: Sparkles },
   { href: "/reflect", label: "VIFM Reflect 360", icon: Aperture },
-  { href: "/ac/fluent", label: "VIFM Fluent", icon: Languages },
+  { href: "/ac/fluent", label: "Fluent", icon: Languages },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 

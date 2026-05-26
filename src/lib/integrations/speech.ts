@@ -1,5 +1,5 @@
 /**
- * Azure AI Speech integration for VIFM Fluent (REST, no SDK dependency).
+ * Azure AI Speech integration for Fluent (REST, no SDK dependency).
  *
  *  - synthesizeSpeech(): neural text-to-speech → MP3 bytes, used to voice
  *    listening items (replaces robotic browser SpeechSynthesis; the script

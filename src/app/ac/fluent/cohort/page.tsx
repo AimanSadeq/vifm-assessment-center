@@ -6,7 +6,7 @@ import { CEFR_ORDER, type CefrLevel } from "@/lib/ai/fluent-english";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "VIFM Fluent · Cohort report (prototype)",
+  title: "Fluent · Cohort report (prototype)",
 };
 
 type Row = {
@@ -80,7 +80,7 @@ export default async function FluentCohortPage() {
             href="/ac/fluent"
             className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-1"
           >
-            <ArrowLeft className="h-3 w-3" /> VIFM Fluent
+            <ArrowLeft className="h-3 w-3" /> Fluent
           </Link>
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5 text-[#5391D5]" />

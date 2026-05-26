@@ -1,5 +1,5 @@
 /**
- * VIFM Fluent - English placement API.
+ * Fluent - English placement API.
  *
  * POST /api/ac/fluent
  *   { action: "start", language }

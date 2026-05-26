@@ -1,5 +1,5 @@
 /**
- * VIFM Fluent - speaking-audio transcription (Whisper).
+ * Fluent - speaking-audio transcription (Whisper).
  *
  * POST multipart/form-data with field `audio` (a recorded blob from the
  * browser MediaRecorder, typically audio/webm;codecs=opus).

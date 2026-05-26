@@ -70,7 +70,7 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
 
   if (candErr || !candidate) return notFound();
 
-  // VIFM Fluent English placement bound to this candidate (migration 00044).
+  // Fluent English placement bound to this candidate (migration 00044).
   // Read via the service client - eng_fluent_results RLS is admin-only, and
   // the candidate context is already established above. Tolerant: stays null
   // if the table/columns aren't migrated or no placement exists.
@@ -277,7 +277,7 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
         <Route className="h-4 w-4" /> {t("candidateSkills.buildPathway")}
       </Link>
 
-      {/* VIFM Fluent English placement (when bound to this candidate) */}
+      {/* Fluent English placement (when bound to this candidate) */}
       {latestFluent && (
         <div className="flex items-center gap-3 rounded-md border bg-card p-4">
           <Languages className="h-5 w-5 text-[#5391D5]" />

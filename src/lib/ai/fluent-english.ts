@@ -2,7 +2,7 @@ import { getAIClient, AI_MODEL } from "./client";
 import type { PronunciationScore } from "@/lib/integrations/speech";
 
 /**
- * VIFM Fluent - English-language assessment engine (prototype).
+ * Fluent - English-language assessment engine (prototype).
  *
  * Four CEFR-aligned skills, two auto-scored + two Claude-scored:
  *   1. generateFluentTest() - authors a placement test in one call:

@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table";
 import { EXERCISE_TYPE_LABELS } from "@/lib/constants/exercise-types";
 import { ImpersonationBanner } from "@/components/shared/impersonation-banner";
+import { getServerT } from "@/lib/i18n/server";
 
 type Props = {
   params: { candidateId: string };
@@ -24,6 +25,7 @@ type Props = {
 
 export default async function CandidateAssessmentsPage({ params, searchParams }: Props) {
   const supabase = await createClient();
+  const t = await getServerT();
   const { candidateId } = params;
   const asAdmin = searchParams?.asAdmin === "1";
 
@@ -80,20 +82,20 @@ export default async function CandidateAssessmentsPage({ params, searchParams }:
         />
       )}
       <div>
-        <BackLink href={`/candidate/welcome/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`} label="Back to Welcome" />
-        <h1 className="mt-2 text-2xl font-bold">Your Assessments</h1>
+        <BackLink href={`/candidate/welcome/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`} label={t("candidateAssessments.backToWelcome")} />
+        <h1 className="mt-2 text-2xl font-bold">{t("candidateAssessments.title")}</h1>
         <p className="text-sm text-muted-foreground">
-          {eng.name} - {eng.start_date ?? "TBD"} to {eng.end_date ?? "TBD"}
+          {eng.name} - {eng.start_date ?? t("candidateWelcome.tbd")} to {eng.end_date ?? t("candidateWelcome.tbd")}
         </p>
       </div>
 
       {/* Assessment Journey Tiles */}
       <div>
-        <h2 className="text-lg font-semibold mb-3">Your Assessment Journey</h2>
+        <h2 className="text-lg font-semibold mb-3">{t("candidateAssessments.journeyTitle")}</h2>
         {exercises.length === 0 ? (
           <div className="rounded-lg border border-dashed p-8 text-center">
             <p className="text-sm text-muted-foreground">
-              No exercises scheduled yet. Check back closer to your assessment date.
+              {t("candidateAssessments.noExercises")}
             </p>
           </div>
         ) : (
@@ -124,7 +126,9 @@ export default async function CandidateAssessmentsPage({ params, searchParams }:
                   <CardHeader className="pb-2 pr-12">
                     <CardTitle className="text-base">{ex.name}</CardTitle>
                     <Badge variant="outline" className="w-fit text-xs">
-                      {EXERCISE_TYPE_LABELS[ex.exercise_type] ?? ex.exercise_type}
+                      {t(`exercise.types.${ex.exercise_type}`) !== `exercise.types.${ex.exercise_type}`
+                        ? t(`exercise.types.${ex.exercise_type}`)
+                        : EXERCISE_TYPE_LABELS[ex.exercise_type] ?? ex.exercise_type}
                     </Badge>
                   </CardHeader>
                   <CardContent className="space-y-2">
@@ -135,7 +139,7 @@ export default async function CandidateAssessmentsPage({ params, searchParams }:
                     )}
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       {ex.duration_minutes && (
-                        <span>{ex.duration_minutes} min</span>
+                        <span>{t("candidateAssessments.minShort", { n: ex.duration_minutes })}</span>
                       )}
                       {ex.scheduled_date && (
                         <span>{ex.scheduled_date}</span>
@@ -145,10 +149,10 @@ export default async function CandidateAssessmentsPage({ params, searchParams }:
                     {/* Status indicator */}
                     <div className="pt-1">
                       {isAvailable ? (
-                        <Badge variant="default" className="text-xs">Available</Badge>
+                        <Badge variant="default" className="text-xs">{t("candidateAssessments.available")}</Badge>
                       ) : (
                         <Badge variant="secondary" className="text-xs">
-                          Locked - Complete previous assessment first
+                          {t("candidateAssessments.locked")}
                         </Badge>
                       )}
                     </div>
@@ -162,28 +166,18 @@ export default async function CandidateAssessmentsPage({ params, searchParams }:
 
       <Card>
         <CardHeader>
-          <CardTitle>Important Information</CardTitle>
+          <CardTitle>{t("candidateAssessments.importantTitle")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-muted-foreground">
-          <p>
-            Each exercise is designed to assess specific competencies relevant to
-            the target role. Please arrive prepared and on time for each session.
-          </p>
-          <p>
-            During the exercises, trained assessors will observe your behavior and
-            record observations. There are no right or wrong answers - the
-            assessment evaluates how you approach situations naturally.
-          </p>
-          <p>
-            Your results will be compiled into a confidential assessment report,
-            which will be shared with you once finalized.
-          </p>
+          <p>{t("candidateAssessments.important1")}</p>
+          <p>{t("candidateAssessments.important2")}</p>
+          <p>{t("candidateAssessments.important3")}</p>
         </CardContent>
       </Card>
 
       <div className="flex gap-3">
         <Link href={`/candidate/report/${candidateId}`}>
-          <Button variant="outline">View Report</Button>
+          <Button variant="outline">{t("candidateAssessments.viewReport")}</Button>
         </Link>
       </div>
     </div>

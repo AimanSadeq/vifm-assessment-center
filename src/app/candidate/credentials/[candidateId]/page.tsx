@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, Award, ShieldCheck, ShieldX, Download } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getServerT, getServerLocale } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -17,22 +18,18 @@ type Credential = {
   revoked_at: string | null;
 };
 
-const TYPE_LABEL: Record<string, string> = {
-  academy_completion: "Course Completion",
-  ac_ready_now: "Assessment - Ready Now",
-  fluent_cefr: "English Placement",
-};
-
-function fmt(iso: string | null): string {
+function fmt(iso: string | null, locale: string): string {
   if (!iso) return "";
   try {
-    return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+    return new Date(iso).toLocaleDateString(locale === "ar" ? "ar" : "en-GB", { day: "numeric", month: "long", year: "numeric" });
   } catch {
     return "";
   }
 }
 
 export default async function CandidateCredentialsPage({ params }: { params: { candidateId: string } }) {
+  const t = await getServerT();
+  const locale = await getServerLocale();
   let creds: Credential[] = [];
   try {
     const sb = createServiceClient();
@@ -52,19 +49,19 @@ export default async function CandidateCredentialsPage({ params }: { params: { c
         href={`/candidate/welcome/${params.candidateId}`}
         className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="h-3 w-3" /> Back
+        <ArrowLeft className="h-3 w-3" /> {t("credentials.back")}
       </Link>
       <div className="mt-2 flex items-center gap-2">
         <Award className="h-6 w-6 text-[#5391D5]" />
-        <h1 className="text-2xl font-semibold text-[#010131]">My Credentials</h1>
+        <h1 className="text-2xl font-semibold text-[#010131]">{t("credentials.title")}</h1>
       </div>
       <p className="mt-1 text-sm text-muted-foreground">
-        Verifiable credentials issued by VIFM. Share the verification link or download the certificate.
+        {t("credentials.subtitle")}
       </p>
 
       {creds.length === 0 ? (
         <div className="mt-8 rounded-xl border bg-white p-8 text-center text-sm text-muted-foreground">
-          You have no credentials yet. Complete a course or assessment to earn one.
+          {t("credentials.empty")}
         </div>
       ) : (
         <div className="mt-6 space-y-4">
@@ -76,13 +73,15 @@ export default async function CandidateCredentialsPage({ params }: { params: { c
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <div className="text-[11px] font-medium uppercase tracking-wide text-[#5391D5]">
-                      {TYPE_LABEL[c.credential_type] ?? "Credential"}
+                      {t(`credentials.types.${c.credential_type}`) !== `credentials.types.${c.credential_type}`
+                        ? t(`credentials.types.${c.credential_type}`)
+                        : t("credentials.types.fallback")}
                     </div>
                     <h2 className="mt-0.5 font-semibold text-[#010131]">{c.title_en}</h2>
                     {c.subtitle_en && <p className="mt-1 text-sm text-slate-500">{c.subtitle_en}</p>}
                     <p className="mt-2 text-xs text-slate-400">
-                      Issued {fmt(c.issued_at)}
-                      {c.expires_at ? ` · ${expired ? "expired" : "valid until"} ${fmt(c.expires_at)}` : ""}
+                      {t("credentials.issued", { date: fmt(c.issued_at, locale) })}
+                      {c.expires_at ? ` · ${expired ? t("credentials.expiredOn") : t("credentials.validUntil")} ${fmt(c.expires_at, locale)}` : ""}
                     </p>
                   </div>
                   <span
@@ -92,15 +91,15 @@ export default async function CandidateCredentialsPage({ params }: { params: { c
                   >
                     {revoked ? (
                       <>
-                        <ShieldX className="h-3 w-3" /> Revoked
+                        <ShieldX className="h-3 w-3" /> {t("credentials.revoked")}
                       </>
                     ) : expired ? (
                       <>
-                        <ShieldX className="h-3 w-3" /> Expired
+                        <ShieldX className="h-3 w-3" /> {t("credentials.expired")}
                       </>
                     ) : (
                       <>
-                        <ShieldCheck className="h-3 w-3" /> Valid
+                        <ShieldCheck className="h-3 w-3" /> {t("credentials.valid")}
                       </>
                     )}
                   </span>
@@ -110,7 +109,7 @@ export default async function CandidateCredentialsPage({ params }: { params: { c
                     href={`/verify/${c.verification_code}`}
                     className="inline-flex items-center gap-1.5 font-medium text-[#5391D5] hover:underline"
                   >
-                    <ShieldCheck className="h-3.5 w-3.5" /> Verify
+                    <ShieldCheck className="h-3.5 w-3.5" /> {t("credentials.verify")}
                   </Link>
                   <a
                     href={`/api/credentials/${c.id}/pdf`}
@@ -118,7 +117,7 @@ export default async function CandidateCredentialsPage({ params }: { params: { c
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 font-medium text-[#010131] hover:underline"
                   >
-                    <Download className="h-3.5 w-3.5" /> Download certificate
+                    <Download className="h-3.5 w-3.5" /> {t("credentials.downloadCertificate")}
                   </a>
                 </div>
               </div>

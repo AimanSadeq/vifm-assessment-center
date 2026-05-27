@@ -25,6 +25,7 @@ import type {
 } from "@/types/database";
 import { LessonKnowledgeCheck } from "./_components/lesson-knowledge-check";
 import { StartCheckButton } from "./_components/start-check-button";
+import { getServerT, type ServerT } from "@/lib/i18n/server";
 
 type Props = { params: { enrollmentId: string; lessonKey: string } };
 
@@ -57,6 +58,7 @@ type AttemptRow = {
 
 export default async function AcademyLessonPage({ params }: Props) {
   const { enrollmentId, lessonKey } = params;
+  const t = await getServerT();
 
   let enrollment: EnrollmentRow | null = null;
   let course: CourseRow | null = null;
@@ -107,7 +109,7 @@ export default async function AcademyLessonPage({ params }: Props) {
   const section = hasOutline && idx >= 0 && idx < outline.length ? outline[idx] : null;
   if (hasOutline && !section) return notFound();
 
-  const lessonTitle = section?.main_header ?? "Overview";
+  const lessonTitle = section?.main_header ?? t("academy.lesson.overview");
   const lessonCount = Math.max(1, outline.length);
   const lessonNumber = hasOutline ? idx + 1 : 1;
   const isLast = lessonNumber >= lessonCount;
@@ -128,11 +130,11 @@ export default async function AcademyLessonPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <BackLink href={`/candidate/academy/${enrollmentId}`} label="Back to course" />
+      <BackLink href={`/candidate/academy/${enrollmentId}`} label={t("academy.lesson.backToCourse")} />
 
       <div>
         <p className="text-xs uppercase tracking-wide text-muted-foreground">
-          {course.title_en} · Lesson {lessonNumber} of {lessonCount}
+          {course.title_en} · {t("academy.lesson.lessonOf", { n: lessonNumber, total: lessonCount })}
         </p>
         <h1 className="mt-1 text-2xl font-bold text-[#010131]">{lessonTitle}</h1>
         {section ? null : course.overview_ar ? (
@@ -147,12 +149,12 @@ export default async function AcademyLessonPage({ params }: Props) {
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <BookOpen className="h-4 w-4 text-[#5391D5]" />
-            Lesson content
+            {t("academy.lesson.lessonContent")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {section ? (
-            <OutlineSectionBody section={section} />
+            <OutlineSectionBody section={section} t={t} />
           ) : (
             <div className="space-y-3">
               {course.overview_en && (
@@ -172,8 +174,7 @@ export default async function AcademyLessonPage({ params }: Props) {
               )}
               {!course.overview_en && (course.objectives_en ?? []).length === 0 && (
                 <p className="text-sm text-muted-foreground">
-                  This lesson has no detailed content yet. Complete the knowledge
-                  check below to progress.
+                  {t("academy.lesson.noContent")}
                 </p>
               )}
             </div>
@@ -183,14 +184,13 @@ export default async function AcademyLessonPage({ params }: Props) {
 
       {/* Knowledge check */}
       <div>
-        <h2 className="text-lg font-semibold text-[#010131] mb-3">Knowledge check</h2>
+        <h2 className="text-lg font-semibold text-[#010131] mb-3">{t("academy.lesson.knowledgeCheck")}</h2>
 
         {!attempt && (
           <Card>
             <CardContent className="p-6 flex flex-col items-start gap-3">
               <p className="text-sm text-muted-foreground max-w-xl">
-                Take a short check to confirm you have absorbed this lesson. You
-                need {Math.round(70)}% to pass. You can retake it any time.
+                {t("academy.lesson.checkIntro", { pct: Math.round(70) })}
               </p>
               <StartCheckButton enrollmentId={enrollmentId} lessonKey={lessonKey} />
             </CardContent>
@@ -229,15 +229,18 @@ export default async function AcademyLessonPage({ params }: Props) {
                     className="text-lg font-bold"
                     style={{ color: passed ? "#047857" : "#b91c1c" }}
                   >
-                    {passed ? "Lesson passed" : "Not passed yet"}
+                    {passed ? t("academy.lesson.lessonPassed") : t("academy.lesson.notPassedYet")}
                   </p>
                   <p
                     className="text-sm"
                     style={{ color: passed ? "#047857" : "#b91c1c", opacity: 0.85 }}
                   >
-                    You scored {Math.round(attempt.score_pct ?? 0)}% (
-                    {attempt.correct_count ?? 0}/{attempt.total_count}). Passing is{" "}
-                    {Math.round(attempt.passing_score_pct)}%.
+                    {t("academy.lesson.scoreLine", {
+                      pct: Math.round(attempt.score_pct ?? 0),
+                      correct: attempt.correct_count ?? 0,
+                      total: attempt.total_count,
+                      passing: Math.round(attempt.passing_score_pct),
+                    })}
                   </p>
                 </div>
               </div>
@@ -275,7 +278,7 @@ export default async function AcademyLessonPage({ params }: Props) {
                   >
                     <Button variant="ghost" className="gap-1.5">
                       <ArrowLeft className="h-4 w-4" />
-                      Previous lesson
+                      {t("academy.lesson.previousLesson")}
                     </Button>
                   </Link>
                 )}
@@ -285,7 +288,7 @@ export default async function AcademyLessonPage({ params }: Props) {
                     className="ms-auto"
                   >
                     <Button className="gap-1.5 bg-[#5391D5] hover:bg-[#4380c4]">
-                      Next lesson
+                      {t("academy.lesson.nextLesson")}
                       <ArrowRight className="h-4 w-4" />
                     </Button>
                   </Link>
@@ -293,7 +296,7 @@ export default async function AcademyLessonPage({ params }: Props) {
                   <Link href={`/candidate/academy/${enrollmentId}`} className="ms-auto">
                     <Button className="gap-1.5 bg-[#010131] hover:bg-[#111232]">
                       <Award className="h-4 w-4" />
-                      Finish course
+                      {t("academy.lesson.finishCourse")}
                     </Button>
                   </Link>
                 )}
@@ -304,9 +307,9 @@ export default async function AcademyLessonPage({ params }: Props) {
 
         {attempt && attempt.status !== "in_progress" && (
           <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Badge variant="outline">Tip</Badge>
+            <Badge variant="outline">{t("academy.lesson.tip")}</Badge>
             <span>
-              Retake the check to improve your score - your latest attempt counts.
+              {t("academy.lesson.retakeTip")}
             </span>
           </div>
         )}
@@ -316,14 +319,14 @@ export default async function AcademyLessonPage({ params }: Props) {
 }
 
 /** Renders one outline section's body, recursing into nested bullets. */
-function OutlineSectionBody({ section }: { section: VifmCourseOutlineSection }) {
+function OutlineSectionBody({ section, t }: { section: VifmCourseOutlineSection; t: ServerT }) {
   const flatBullets = section.bullets ?? [];
   const subsections = section.subsections ?? [];
 
   if (flatBullets.length === 0 && subsections.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        Review this topic, then complete the knowledge check below.
+        {t("academy.lesson.reviewTopic")}
       </p>
     );
   }

@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getServerLocale } from "@/lib/i18n/server";
+import { getServerLocale, getServerT } from "@/lib/i18n/server";
 import { BackLink } from "@/components/shared/back-link";
 import { ImpersonationBanner } from "@/components/shared/impersonation-banner";
 import { PathwayClient } from "./_components/pathway-client";
@@ -15,6 +15,7 @@ type Props = {
 export default async function CandidatePathwayPage({ params, searchParams }: Props) {
   const sb = await createClient();
   const locale = await getServerLocale();
+  const t = await getServerT();
   const { candidateId } = params;
   const asAdmin = searchParams?.asAdmin === "1";
 
@@ -24,19 +25,6 @@ export default async function CandidatePathwayPage({ params, searchParams }: Pro
     .eq("id", candidateId)
     .single();
   if (error || !candidate) return notFound();
-
-  const tt =
-    locale === "ar"
-      ? {
-          back: "العودة إلى مهاراتي",
-          title: "مسار تطوير مهاراتي",
-          sub: "يحوّل الذكاء الاصطناعي فجواتك المُقيّمة إلى خطة تعلّم متسلسلة، دورة تلو الأخرى.",
-        }
-      : {
-          back: "Back to my skills",
-          title: "My learning pathway",
-          sub: "AI turns your assessed gaps into a sequenced, course-by-course development plan.",
-        };
 
   return (
     <div className="space-y-6">
@@ -49,11 +37,11 @@ export default async function CandidatePathwayPage({ params, searchParams }: Pro
       )}
       <BackLink
         href={`/candidate/skills/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`}
-        label={tt.back}
+        label={t("candidatePathway.back")}
       />
       <div>
-        <h1 className="mt-2 text-2xl font-bold">{tt.title}</h1>
-        <p className="text-sm text-muted-foreground">{tt.sub}</p>
+        <h1 className="mt-2 text-2xl font-bold">{t("candidatePathway.title")}</h1>
+        <p className="text-sm text-muted-foreground">{t("candidatePathway.subtitle")}</p>
       </div>
       <PathwayClient candidateId={candidateId} lang={locale} candidateName={candidate.full_name} />
     </div>

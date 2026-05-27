@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { GraduationCap, Loader2, CheckCircle2, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
@@ -25,9 +26,10 @@ export function EnrollButton({
   candidateId,
   courseId,
   source = "recommender",
-  label = "Start learning",
+  label,
 }: Props) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [pending, startTransition] = useTransition();
   const [enrolling, setEnrolling] = useState(false);
   const [enrolled, setEnrolled] = useState(false);
@@ -44,14 +46,14 @@ export function EnrollButton({
         const data = (await res.json()) as { enrollment_id?: string; error?: string };
         if (!res.ok || !data.enrollment_id) {
           setEnrolling(false);
-          toast.error(data.error ?? "Could not enroll. Please try again.");
+          toast.error(data.error ?? t("academy.enroll.enrollFail"));
           return;
         }
         setEnrolled(true);
         router.push(`/candidate/academy/${data.enrollment_id}`);
       } catch {
         setEnrolling(false);
-        toast.error("Could not enroll. Please try again.");
+        toast.error(t("academy.enroll.enrollFail"));
       }
     });
   };
@@ -63,17 +65,17 @@ export function EnrollButton({
       {enrolled ? (
         <>
           <CheckCircle2 className="h-3.5 w-3.5" />
-          Enrolled
+          {t("academy.enroll.enrolled")}
         </>
       ) : enrolling ? (
         <>
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          Enrolling...
+          {t("academy.enroll.enrolling")}
         </>
       ) : (
         <>
           <GraduationCap className="h-3.5 w-3.5" />
-          {label}
+          {label ?? t("academy.enroll.startLearning")}
           <ArrowRight className="h-3.5 w-3.5 ms-auto" />
         </>
       )}

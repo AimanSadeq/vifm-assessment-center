@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { CandidateDemographicsForm } from "./_components/candidate-demographics-form";
 import { ImpersonationBanner } from "@/components/shared/impersonation-banner";
+import { getServerT } from "@/lib/i18n/server";
 
 type Props = {
   params: { candidateId: string };
@@ -16,6 +17,7 @@ type Props = {
 
 export default async function CandidateWelcomePage({ params, searchParams }: Props) {
   const supabase = await createClient();
+  const t = await getServerT();
   const { candidateId } = params;
 
   const { data: candidate, error } = await supabase
@@ -57,37 +59,34 @@ export default async function CandidateWelcomePage({ params, searchParams }: Pro
       <Card>
         <CardHeader>
           <CardTitle className="text-xl">
-            Welcome, {candidate.full_name}
+            {t("candidateWelcome.welcomeTitle", { name: candidate.full_name })}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-muted-foreground">
-            Welcome to the VIFM Assessment Center. You have been selected to
-            participate in an assessment for the role outlined below. This
-            process is designed to evaluate your competencies through a series of
-            structured exercises.
+            {t("candidateWelcome.intro")}
           </p>
 
           <Separator />
 
           <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="text-muted-foreground">Assessment</div>
+            <div className="text-muted-foreground">{t("candidateWelcome.assessment")}</div>
             <div className="font-medium">{eng.name}</div>
-            <div className="text-muted-foreground">Organization</div>
+            <div className="text-muted-foreground">{t("candidateWelcome.organization")}</div>
             <div className="font-medium">{eng.organizations?.name ?? "-"}</div>
             {eng.target_role && (
               <>
-                <div className="text-muted-foreground">Target Role</div>
+                <div className="text-muted-foreground">{t("candidateWelcome.targetRole")}</div>
                 <div className="font-medium">{eng.target_role}</div>
               </>
             )}
-            <div className="text-muted-foreground">Dates</div>
+            <div className="text-muted-foreground">{t("candidateWelcome.dates")}</div>
             <div className="font-medium">
-              {eng.start_date ?? "TBD"} - {eng.end_date ?? "TBD"}
+              {eng.start_date ?? t("candidateWelcome.tbd")} - {eng.end_date ?? t("candidateWelcome.tbd")}
             </div>
-            <div className="text-muted-foreground">Status</div>
+            <div className="text-muted-foreground">{t("candidateWelcome.status")}</div>
             <div>
-              <Badge variant="outline">{candidate.status}</Badge>
+              <Badge variant="outline">{t(`candidate.status.${candidate.status}`)}</Badge>
             </div>
           </div>
 
@@ -109,24 +108,24 @@ export default async function CandidateWelcomePage({ params, searchParams }: Pro
           <div className="flex flex-wrap gap-3">
             {!hasConsented ? (
               <Link href={`/candidate/consent/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`}>
-                <Button>Proceed to Consent Form</Button>
+                <Button>{t("candidateWelcome.proceedToConsent")}</Button>
               </Link>
             ) : (
               <>
                 <Link href={`/candidate/assessments/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`}>
-                  <Button>View Assessments</Button>
+                  <Button>{t("candidateWelcome.viewAssessments")}</Button>
                 </Link>
                 <Link href={`/candidate/skills/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`}>
-                  <Button variant="outline">My Skills</Button>
+                  <Button variant="outline">{t("candidateWelcome.mySkills")}</Button>
                 </Link>
                 <Link href={`/candidate/academy?candidateId=${candidateId}${asAdmin ? "&asAdmin=1" : ""}`}>
-                  <Button variant="outline">My Learning</Button>
+                  <Button variant="outline">{t("candidateWelcome.myLearning")}</Button>
                 </Link>
                 <Link href={`/candidate/credentials/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`}>
-                  <Button variant="outline">My Credentials</Button>
+                  <Button variant="outline">{t("candidateWelcome.myCredentials")}</Button>
                 </Link>
                 <Link href={`/candidate/report/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`}>
-                  <Button variant="outline">View Report</Button>
+                  <Button variant="outline">{t("candidateWelcome.viewReport")}</Button>
                 </Link>
               </>
             )}

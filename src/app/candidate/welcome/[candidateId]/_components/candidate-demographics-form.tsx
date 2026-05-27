@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +22,7 @@ type Props = {
 };
 
 export function CandidateDemographicsForm({ candidateId, initialData }: Props) {
+  const { t } = useTranslation();
   const [department, setDepartment] = useState(initialData.department);
   const [gender, setGender] = useState(initialData.gender);
   const [functionRole, setFunctionRole] = useState(initialData.functionRole);
@@ -43,57 +45,57 @@ export function CandidateDemographicsForm({ candidateId, initialData }: Props) {
 
     setSaving(false);
     if (error) {
-      toast.error("Failed to save profile");
+      toast.error(t("candidateWelcome.form.saveFail"));
     } else {
       setSaved(true);
-      toast.success("Profile updated");
+      toast.success(t("candidateWelcome.form.saveSuccess"));
     }
   };
 
   return (
     <div className="rounded-md border p-4 space-y-3">
-      <p className="text-sm font-medium">Your Profile Details</p>
+      <p className="text-sm font-medium">{t("candidateWelcome.form.title")}</p>
       <p className="text-xs text-muted-foreground">
-        Please provide the following information for tracking and identification purposes.
+        {t("candidateWelcome.form.subtitle")}
       </p>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <Label className="text-xs">ID / Employee Number</Label>
+          <Label className="text-xs">{t("candidateWelcome.form.idLabel")}</Label>
           <Input
             value={nationalId}
             onChange={(e) => { setNationalId(e.target.value); setSaved(false); }}
-            placeholder="e.g., EMP-12345"
+            placeholder={t("candidateWelcome.form.idPlaceholder")}
             className="h-8 text-sm"
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-xs">Department / Function</Label>
+          <Label className="text-xs">{t("candidateWelcome.form.departmentLabel")}</Label>
           <Input
             value={department}
             onChange={(e) => { setDepartment(e.target.value); setSaved(false); }}
-            placeholder="e.g., Finance"
+            placeholder={t("candidateWelcome.form.departmentPlaceholder")}
             className="h-8 text-sm"
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-xs">Gender</Label>
+          <Label className="text-xs">{t("candidateWelcome.form.genderLabel")}</Label>
           <Select value={gender} onValueChange={(v) => { setGender(v); setSaved(false); }}>
             <SelectTrigger className="h-8 text-sm">
-              <SelectValue placeholder="Select..." />
+              <SelectValue placeholder={t("candidateWelcome.form.genderPlaceholder")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="male">Male</SelectItem>
-              <SelectItem value="female">Female</SelectItem>
-              <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem>
+              <SelectItem value="male">{t("candidateWelcome.form.genderMale")}</SelectItem>
+              <SelectItem value="female">{t("candidateWelcome.form.genderFemale")}</SelectItem>
+              <SelectItem value="prefer_not_to_say">{t("candidateWelcome.form.genderPreferNot")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-1">
-          <Label className="text-xs">Role / Job Title</Label>
+          <Label className="text-xs">{t("candidateWelcome.form.roleLabel")}</Label>
           <Input
             value={functionRole}
             onChange={(e) => { setFunctionRole(e.target.value); setSaved(false); }}
-            placeholder="e.g., Senior Analyst"
+            placeholder={t("candidateWelcome.form.rolePlaceholder")}
             className="h-8 text-sm"
           />
         </div>
@@ -104,7 +106,7 @@ export function CandidateDemographicsForm({ candidateId, initialData }: Props) {
         disabled={saving || saved}
         variant={saved ? "outline" : "default"}
       >
-        {saving ? "Saving..." : saved ? "Saved" : "Save Profile"}
+        {saving ? t("candidateWelcome.form.saving") : saved ? t("candidateWelcome.form.saved") : t("candidateWelcome.form.save")}
       </Button>
     </div>
   );

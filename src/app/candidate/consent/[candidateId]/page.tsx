@@ -4,6 +4,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,6 +19,7 @@ type Props = { params: { candidateId: string } };
 export default function ConsentPage({ params }: Props) {
   const { candidateId } = params;
   const router = useRouter();
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const asAdmin = searchParams?.get("asAdmin") === "1";
   const [readConfirm, setReadConfirm] = useState(false);
@@ -51,15 +53,15 @@ export default function ConsentPage({ params }: Props) {
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error ?? "Failed to submit consent");
+        setError(data.error ?? t("candidateConsent.submitFail"));
         setSubmitting(false);
         return;
       }
 
-      toast.success("Consent submitted successfully");
+      toast.success(t("candidateConsent.submitSuccess"));
       router.push(`/candidate/assessments/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`);
     } catch {
-      setError("Network error. Please try again.");
+      setError(t("candidateConsent.networkError"));
     } finally {
       setSubmitting(false);
     }
@@ -73,38 +75,24 @@ export default function ConsentPage({ params }: Props) {
           exitHref="/admin/engagements"
         />
       )}
-      <BackLink href={`/candidate/welcome/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`} label="Back to Welcome" />
+      <BackLink href={`/candidate/welcome/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`} label={t("candidateConsent.backToWelcome")} />
       <Card>
         <CardHeader>
-          <CardTitle>Consent & Data Protection</CardTitle>
+          <CardTitle>{t("candidateConsent.title")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="rounded-md bg-muted p-4 text-sm space-y-3">
-            <p className="font-semibold">Data Processing Notice</p>
-            <p>
-              In accordance with the UAE Federal Decree-Law No. 45 of 2021 on
-              Personal Data Protection, the Saudi Arabia Personal Data Protection
-              Law (PDPL), and the EU General Data Protection Regulation (GDPR),
-              we are required to obtain your explicit consent before collecting
-              and processing your personal data.
-            </p>
-            <p>
-              Virginia Institute of Finance and Management (VIFM) will collect
-              and process the following data during the assessment:
-            </p>
+            <p className="font-semibold">{t("candidateConsent.noticeTitle")}</p>
+            <p>{t("candidateConsent.noticeIntro")}</p>
+            <p>{t("candidateConsent.noticeCollect")}</p>
             <ul className="list-disc pl-5 space-y-1">
-              <li>Personal identification information (name, email)</li>
-              <li>Behavioral observations during assessment exercises</li>
-              <li>Competency ratings and assessment scores</li>
-              <li>Audio/video recordings (if applicable for virtual sessions)</li>
-              <li>Assessment reports and development recommendations</li>
+              <li>{t("candidateConsent.collectItem1")}</li>
+              <li>{t("candidateConsent.collectItem2")}</li>
+              <li>{t("candidateConsent.collectItem3")}</li>
+              <li>{t("candidateConsent.collectItem4")}</li>
+              <li>{t("candidateConsent.collectItem5")}</li>
             </ul>
-            <p>
-              Your data will be retained for a maximum of 2 years from the
-              assessment date unless otherwise agreed contractually. You have the
-              right to access, correct, or request deletion of your data at any
-              time.
-            </p>
+            <p>{t("candidateConsent.noticeRetention")}</p>
           </div>
 
           <Separator />
@@ -118,7 +106,7 @@ export default function ConsentPage({ params }: Props) {
                 onCheckedChange={(checked) => setReadConfirm(checked === true)}
               />
               <Label htmlFor="read-confirm" className="text-sm leading-relaxed">
-                <span className="font-medium">I confirm I have read and understood the notice above.</span> *
+                <span className="font-medium">{t("candidateConsent.readConfirm")}</span> *
               </Label>
             </div>
 
@@ -130,10 +118,7 @@ export default function ConsentPage({ params }: Props) {
                 onCheckedChange={(checked) => setDataConsent(checked === true)}
               />
               <Label htmlFor="data-consent" className="text-sm leading-relaxed">
-                I consent to the collection and processing of my personal data as
-                described above for the purpose of the assessment center
-                evaluation. I understand my rights under applicable data
-                protection laws. *
+                {t("candidateConsent.dataConsent")} *
               </Label>
             </div>
 
@@ -145,15 +130,12 @@ export default function ConsentPage({ params }: Props) {
                 onCheckedChange={(checked) => setAssessmentConsent(checked === true)}
               />
               <Label htmlFor="assessment-consent" className="text-sm leading-relaxed">
-                I voluntarily agree to participate in the assessment center and
-                understand that the results will be shared with the sponsoring
-                organization for the purpose of talent evaluation and
-                development. *
+                {t("candidateConsent.assessmentConsent")} *
               </Label>
             </div>
 
             <Separator />
-            <p className="text-xs text-muted-foreground">Optional</p>
+            <p className="text-xs text-muted-foreground">{t("candidateConsent.optional")}</p>
 
             {/* Optional: Future contact */}
             <div className="flex items-start gap-3">
@@ -163,9 +145,7 @@ export default function ConsentPage({ params }: Props) {
                 onCheckedChange={(checked) => setContactConsent(checked === true)}
               />
               <Label htmlFor="contact-consent" className="text-sm leading-relaxed text-muted-foreground">
-                I agree that VIFM can contact me, including by email, in order to
-                participate in future test trials, surveys, and to provide further
-                information relating to the assessment.
+                {t("candidateConsent.contactConsent")}
               </Label>
             </div>
 
@@ -177,9 +157,7 @@ export default function ConsentPage({ params }: Props) {
                 onCheckedChange={(checked) => setClientFormsAccepted(checked === true)}
               />
               <Label htmlFor="client-forms" className="text-sm leading-relaxed text-muted-foreground">
-                I agree to complete any additional forms provided by the sponsoring
-                organization before the start of the assessment (e.g., application
-                forms, surveys).
+                {t("candidateConsent.clientForms")}
               </Label>
             </div>
           </div>
@@ -196,7 +174,7 @@ export default function ConsentPage({ params }: Props) {
             className="w-full"
             size="lg"
           >
-            {submitting ? "Submitting..." : "I Agree - Proceed to Assessment"}
+            {submitting ? t("candidateConsent.submitting") : t("candidateConsent.agreeProceed")}
           </Button>
         </CardContent>
       </Card>

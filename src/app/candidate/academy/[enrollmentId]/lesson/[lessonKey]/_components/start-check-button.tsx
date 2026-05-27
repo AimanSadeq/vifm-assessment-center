@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2 } from "lucide-react";
@@ -20,6 +21,7 @@ type Props = {
  */
 export function StartCheckButton({ enrollmentId, lessonKey }: Props) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [pending, startTransition] = useTransition();
 
   const onClick = () => {
@@ -32,12 +34,12 @@ export function StartCheckButton({ enrollmentId, lessonKey }: Props) {
         });
         const data = (await res.json()) as { attemptId?: string; error?: string };
         if (!res.ok || !data.attemptId) {
-          toast.error(data.error ?? "Could not start the knowledge check.");
+          toast.error(data.error ?? t("academy.lesson.startCheckFail"));
           return;
         }
         router.refresh();
       } catch {
-        toast.error("Could not start the knowledge check.");
+        toast.error(t("academy.lesson.startCheckFail"));
       }
     });
   };
@@ -51,12 +53,12 @@ export function StartCheckButton({ enrollmentId, lessonKey }: Props) {
       {pending ? (
         <>
           <Loader2 className="h-4 w-4 animate-spin" />
-          Preparing your check...
+          {t("academy.lesson.preparingCheck")}
         </>
       ) : (
         <>
           <Sparkles className="h-4 w-4" />
-          Start knowledge check
+          {t("academy.lesson.startCheck")}
         </>
       )}
     </Button>

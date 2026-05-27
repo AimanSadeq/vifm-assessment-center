@@ -18,6 +18,7 @@ import { VIFM_VERTICAL_LABELS } from "@/types/database";
 import type { VifmVertical, VifmCourseOutlineSection } from "@/types/database";
 import { recommendCoursesForAcCandidate } from "@/lib/recommender/courses";
 import { EnrollButton } from "./_components/enroll-button";
+import { getServerT, type ServerT } from "@/lib/i18n/server";
 
 type Props = { searchParams: { candidateId?: string } };
 
@@ -54,6 +55,7 @@ function lessonCountOf(course: CourseLite): number {
 }
 
 export default async function MyLearningPage({ searchParams }: Props) {
+  const t = await getServerT();
   const candidateId = searchParams.candidateId?.trim() ?? "";
 
   let candidateName = "";
@@ -153,7 +155,7 @@ export default async function MyLearningPage({ searchParams }: Props) {
 
   return (
     <div className="space-y-6">
-      <BackLink href={skillsHref} label="My Skills" />
+      <BackLink href={skillsHref} label={t("academy.mySkills")} />
 
       {/* Header */}
       <div className="rounded-md border bg-gradient-to-r from-[#010131] to-[#121140] text-white p-5">
@@ -161,9 +163,9 @@ export default async function MyLearningPage({ searchParams }: Props) {
           <GraduationCap className="h-8 w-8 text-[#5391D5] shrink-0" />
           <div className="min-w-0">
             <p className="text-xs uppercase tracking-wide text-white/70">
-              VIFM Academy
+              {t("academy.vifmAcademy")}
             </p>
-            <h1 className="text-2xl font-bold leading-tight">My Learning</h1>
+            <h1 className="text-2xl font-bold leading-tight">{t("academy.myLearning")}</h1>
             {candidateName && (
               <p className="text-sm text-white/80 mt-0.5">{candidateName}</p>
             )}
@@ -173,7 +175,7 @@ export default async function MyLearningPage({ searchParams }: Props) {
             className="ms-auto inline-flex items-center gap-2 rounded-md bg-white/10 px-3 py-2 text-sm font-medium text-white hover:bg-white/20"
           >
             <Library className="h-4 w-4" />
-            Browse catalogue
+            {t("academy.browseCatalogue")}
           </Link>
         </div>
       </div>
@@ -183,11 +185,11 @@ export default async function MyLearningPage({ searchParams }: Props) {
         <section className="space-y-3">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             <BookOpen className="h-4 w-4 text-[#5391D5]" />
-            In progress
+            {t("academy.inProgress")}
           </h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {inProgress.map((e) => (
-              <EnrollmentCard key={e.enrollmentId} view={e} />
+              <EnrollmentCard key={e.enrollmentId} view={e} t={t} />
             ))}
           </div>
         </section>
@@ -198,11 +200,11 @@ export default async function MyLearningPage({ searchParams }: Props) {
         <section className="space-y-3">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-            Completed
+            {t("academy.completed")}
           </h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {completed.map((e) => (
-              <EnrollmentCard key={e.enrollmentId} view={e} />
+              <EnrollmentCard key={e.enrollmentId} view={e} t={t} />
             ))}
           </div>
         </section>
@@ -213,11 +215,10 @@ export default async function MyLearningPage({ searchParams }: Props) {
         <section className="space-y-3">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             <Sparkles className="h-4 w-4 text-[#5391D5]" />
-            Recommended for you
+            {t("academy.recommendedForYou")}
           </h2>
           <p className="text-xs text-muted-foreground -mt-1">
-            Chosen from your assessment to close your highest-priority skill
-            gaps.
+            {t("academy.recommendedBlurb")}
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             {recommendations.map((r) => (
@@ -252,7 +253,7 @@ export default async function MyLearningPage({ searchParams }: Props) {
                     <EnrollButton
                       candidateId={candidateId}
                       courseId={r.course_id}
-                      label="Enroll & start"
+                      label={t("academy.enrollAndStart")}
                     />
                   </div>
                 </CardContent>
@@ -271,11 +272,10 @@ export default async function MyLearningPage({ searchParams }: Props) {
             </span>
             <div>
               <p className="font-semibold text-[#010131]">
-                You are not enrolled in any courses yet
+                {t("academy.notEnrolledTitle")}
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Explore the VIFM catalogue to find a programme that fits your
-                goals.
+                {t("academy.notEnrolledBody")}
               </p>
             </div>
             <Link
@@ -283,7 +283,7 @@ export default async function MyLearningPage({ searchParams }: Props) {
               className="inline-flex items-center gap-2 rounded-md bg-[#010131] px-4 py-2 text-sm font-medium text-white hover:bg-[#121140]"
             >
               <Library className="h-4 w-4" />
-              Browse the catalogue
+              {t("academy.browseTheCatalogue")}
             </Link>
           </CardContent>
         </Card>
@@ -293,7 +293,7 @@ export default async function MyLearningPage({ searchParams }: Props) {
 }
 
 /** A single enrolled-course card with a progress bar and a resume link. */
-function EnrollmentCard({ view }: { view: EnrollmentView }) {
+function EnrollmentCard({ view, t }: { view: EnrollmentView; t: ServerT }) {
   const { course, lessonCount, doneCount, status } = view;
   const pct =
     lessonCount > 0 ? Math.round((doneCount / lessonCount) * 100) : 0;
@@ -326,7 +326,7 @@ function EnrollmentCard({ view }: { view: EnrollmentView }) {
             {isDone ? (
               <Badge className="shrink-0 gap-1 bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
                 <CheckCircle2 className="h-3 w-3" />
-                Done
+                {t("academy.done")}
               </Badge>
             ) : (
               <Badge variant="secondary" className="shrink-0 gap-1">
@@ -340,10 +340,10 @@ function EnrollmentCard({ view }: { view: EnrollmentView }) {
           <div className="mt-auto space-y-1.5">
             <div className="flex items-center justify-between text-[11px] text-muted-foreground">
               <span>
-                {doneCount} of {lessonCount} lessons
+                {t("academy.lessonsCount", { done: doneCount, total: lessonCount })}
               </span>
               <span className="inline-flex items-center gap-1 font-medium text-[#5391D5] group-hover:underline">
-                {isDone ? "Review" : doneCount === 0 ? "Start" : "Continue"}
+                {isDone ? t("academy.review") : doneCount === 0 ? t("academy.start") : t("academy.continue")}
                 <ArrowRight className="h-3 w-3" />
               </span>
             </div>

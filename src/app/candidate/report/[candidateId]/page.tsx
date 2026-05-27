@@ -9,12 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { BARS_LABELS } from "@/lib/validations/assessor";
 import { ImpersonationBanner } from "@/components/shared/impersonation-banner";
-
-const OAR_LABELS: Record<string, string> = {
-  ready_now: "Ready Now",
-  ready_with_development: "Ready with Development",
-  not_ready: "Not Ready",
-};
+import { getServerT } from "@/lib/i18n/server";
 
 type Props = {
   params: { candidateId: string };
@@ -23,6 +18,7 @@ type Props = {
 
 export default async function CandidateReportPage({ params, searchParams }: Props) {
   const supabase = await createClient();
+  const t = await getServerT();
   const { candidateId } = params;
   const asAdmin = searchParams?.asAdmin === "1";
 
@@ -80,8 +76,8 @@ export default async function CandidateReportPage({ params, searchParams }: Prop
         />
       )}
       <div>
-        <BackLink href={`/candidate/welcome/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`} label="Back to Welcome" />
-        <h1 className="mt-2 text-2xl font-bold">Your Assessment Report</h1>
+        <BackLink href={`/candidate/welcome/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`} label={t("candidateReport.backToWelcome")} />
+        <h1 className="mt-2 text-2xl font-bold">{t("candidateReport.title")}</h1>
         <p className="text-sm text-muted-foreground">
           {eng.name} - {eng.organizations?.name ?? ""}
         </p>
@@ -91,11 +87,10 @@ export default async function CandidateReportPage({ params, searchParams }: Prop
         <Card>
           <CardContent className="py-12 text-center">
             <p className="text-lg font-medium text-muted-foreground">
-              Your report is not yet available.
+              {t("candidateReport.notAvailableTitle")}
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
-              Assessment results are currently being processed. You will be
-              notified when your report is ready for viewing.
+              {t("candidateReport.notAvailableBody")}
             </p>
           </CardContent>
         </Card>
@@ -105,7 +100,7 @@ export default async function CandidateReportPage({ params, searchParams }: Prop
           {hasOar && (
             <Card>
               <CardHeader>
-                <CardTitle>Overall Assessment Rating</CardTitle>
+                <CardTitle>{t("candidateReport.oarTitle")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-4">
@@ -114,11 +109,15 @@ export default async function CandidateReportPage({ params, searchParams }: Prop
                   </div>
                   <div>
                     <p className="text-lg font-semibold">
-                      {BARS_LABELS[oar.overall_score] ?? ""}
+                      {t(`rating.bars.${oar.overall_score}`) !== `rating.bars.${oar.overall_score}`
+                        ? t(`rating.bars.${oar.overall_score}`)
+                        : BARS_LABELS[oar.overall_score] ?? ""}
                     </p>
                     {oar.recommendation && (
                       <Badge variant="outline" className="mt-1">
-                        {OAR_LABELS[oar.recommendation] ?? oar.recommendation}
+                        {t(`candidateReport.oar.${oar.recommendation}`) !== `candidateReport.oar.${oar.recommendation}`
+                          ? t(`candidateReport.oar.${oar.recommendation}`)
+                          : oar.recommendation}
                       </Badge>
                     )}
                   </div>
@@ -127,7 +126,7 @@ export default async function CandidateReportPage({ params, searchParams }: Prop
                   <>
                     <Separator />
                     <div>
-                      <p className="text-sm font-medium mb-1">Executive Summary</p>
+                      <p className="text-sm font-medium mb-1">{t("candidateReport.executiveSummary")}</p>
                       <p className="text-sm text-muted-foreground">{oar.summary}</p>
                     </div>
                   </>
@@ -140,7 +139,7 @@ export default async function CandidateReportPage({ params, searchParams }: Prop
           {hasConsensus && (
             <Card>
               <CardHeader>
-                <CardTitle>Competency Scores</CardTitle>
+                <CardTitle>{t("candidateReport.competencyScores")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {consensusRatings.map((cr) => {
@@ -148,7 +147,7 @@ export default async function CandidateReportPage({ params, searchParams }: Prop
                   return (
                     <div key={cr.competency_id} className="flex items-center gap-3">
                       <span className="text-sm min-w-[180px]">
-                        {comp?.name ?? "Unknown"}
+                        {comp?.name ?? t("candidateReport.unknownCompetency")}
                       </span>
                       <div className="flex-1 h-3 rounded-full bg-muted overflow-hidden">
                         <div
@@ -169,14 +168,14 @@ export default async function CandidateReportPage({ params, searchParams }: Prop
           {/* Downloads */}
           <Card>
             <CardHeader>
-              <CardTitle>Your PDFs</CardTitle>
+              <CardTitle>{t("candidateReport.pdfsTitle")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center justify-between gap-4 rounded-md border p-4">
                 <div>
-                  <p className="font-medium">Full Assessment Report</p>
+                  <p className="font-medium">{t("candidateReport.fullReportTitle")}</p>
                   <p className="text-sm text-muted-foreground">
-                    Detailed behavioral evidence, scores, and competency findings (~6 pages).
+                    {t("candidateReport.fullReportBody")}
                   </p>
                 </div>
                 <a
@@ -184,14 +183,14 @@ export default async function CandidateReportPage({ params, searchParams }: Prop
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <Button>Download Report</Button>
+                  <Button>{t("candidateReport.downloadReport")}</Button>
                 </a>
               </div>
               <div className="flex items-center justify-between gap-4 rounded-md border p-4 bg-accent/5">
                 <div>
-                  <p className="font-medium">Personalized Learning Plan</p>
+                  <p className="font-medium">{t("candidateReport.learningPlanTitle")}</p>
                   <p className="text-sm text-muted-foreground">
-                    Your 30 / 60 / 90 day development roadmap with targeted actions per competency.
+                    {t("candidateReport.learningPlanBody")}
                   </p>
                 </div>
                 <a
@@ -199,7 +198,7 @@ export default async function CandidateReportPage({ params, searchParams }: Prop
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <Button variant="secondary">Download Learning Plan</Button>
+                  <Button variant="secondary">{t("candidateReport.downloadLearningPlan")}</Button>
                 </a>
               </div>
             </CardContent>

@@ -18,6 +18,7 @@ import { lessonKeyFor } from "@/lib/academy/lesson-key";
 import { VIFM_VERTICAL_LABELS } from "@/types/database";
 import type { VifmCourse, VifmCourseOutlineSection } from "@/types/database";
 import { CompleteCourseButton } from "../_components/complete-course-button";
+import { getServerT, type ServerT } from "@/lib/i18n/server";
 
 type Props = { params: { enrollmentId: string } };
 
@@ -30,6 +31,7 @@ type EnrollmentRow = {
 
 export default async function AcademyCoursePage({ params }: Props) {
   const { enrollmentId } = params;
+  const t = await getServerT();
 
   let enrollment: EnrollmentRow | null = null;
   let course: VifmCourse | null = null;
@@ -101,7 +103,7 @@ export default async function AcademyCoursePage({ params }: Props) {
     : [
         {
           key: lessonKeyFor("Overview", 0),
-          title: "Overview",
+          title: t("academy.lesson.overview"),
           titleAr: null,
           index: 0,
           done: completedKeys.has(lessonKeyFor("Overview", 0)),
@@ -115,7 +117,7 @@ export default async function AcademyCoursePage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <BackLink href={`/candidate/academy?candidateId=${enrollment.candidate_id}`} label="My Learning" />
+      <BackLink href={`/candidate/academy?candidateId=${enrollment.candidate_id}`} label={t("academy.course.backToLearning")} />
 
       {/* Header */}
       <div className="rounded-md border bg-gradient-to-r from-[#010131] to-[#121140] text-white p-5">
@@ -135,7 +137,7 @@ export default async function AcademyCoursePage({ params }: Props) {
           {enrollment.status === "completed" && (
             <Badge className="bg-emerald-500/20 text-emerald-100 border-emerald-300/30 gap-1 ms-auto">
               <CheckCircle2 className="h-3 w-3" />
-              Completed
+              {t("academy.course.completed")}
             </Badge>
           )}
         </div>
@@ -144,7 +146,7 @@ export default async function AcademyCoursePage({ params }: Props) {
         <div className="mt-4">
           <div className="flex items-center justify-between text-xs text-white/80 mb-1">
             <span>
-              {doneCount} of {lessons.length} lessons complete
+              {t("academy.course.lessonsComplete", { done: doneCount, total: lessons.length })}
             </span>
             <span className="tabular-nums">{pct}%</span>
           </div>
@@ -161,7 +163,7 @@ export default async function AcademyCoursePage({ params }: Props) {
         {/* Course content blocks */}
         <div className="lg:col-span-2 space-y-5">
           {course.overview_en && (
-            <ContentBlock title="Course overview">
+            <ContentBlock title={t("academy.course.courseOverview")}>
               <p className="text-sm leading-relaxed text-foreground/90">
                 {course.overview_en}
               </p>
@@ -174,7 +176,7 @@ export default async function AcademyCoursePage({ params }: Props) {
           )}
 
           {(course.objectives_en ?? []).length > 0 && (
-            <ContentBlock title="Course objectives">
+            <ContentBlock title={t("academy.course.courseObjectives")}>
               <ul className="space-y-1.5">
                 {(course.objectives_en ?? []).map((o, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm">
@@ -187,7 +189,7 @@ export default async function AcademyCoursePage({ params }: Props) {
           )}
 
           {course.audience_en && (
-            <ContentBlock title="Who this is for">
+            <ContentBlock title={t("academy.course.whoThisIsFor")}>
               <p className="text-sm leading-relaxed text-foreground/90">
                 {course.audience_en}
               </p>
@@ -200,7 +202,7 @@ export default async function AcademyCoursePage({ params }: Props) {
           )}
 
           {course.methodology_en && (
-            <ContentBlock title="How you will learn">
+            <ContentBlock title={t("academy.course.howYouWillLearn")}>
               <p className="text-sm leading-relaxed text-foreground/90">
                 {course.methodology_en}
               </p>
@@ -208,14 +210,14 @@ export default async function AcademyCoursePage({ params }: Props) {
           )}
 
           {hasOutline && (
-            <ContentBlock title="Course outline">
+            <ContentBlock title={t("academy.course.courseOutline")}>
               <ol className="space-y-3">
                 {outline.map((s, i) => (
                   <li key={i} className="rounded-md border p-3">
                     <p className="text-sm font-semibold text-[#010131]">
                       {i + 1}. {s.main_header}
                     </p>
-                    <OutlinePreview section={s} />
+                    <OutlinePreview section={s} t={t} />
                   </li>
                 ))}
               </ol>
@@ -229,7 +231,7 @@ export default async function AcademyCoursePage({ params }: Props) {
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <BookOpen className="h-4 w-4 text-[#5391D5]" />
-                Course progress
+                {t("academy.course.courseProgress")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
@@ -276,7 +278,7 @@ export default async function AcademyCoursePage({ params }: Props) {
                     className="block"
                   >
                     <div className="flex items-center justify-center gap-2 rounded-md bg-[#5391D5] px-4 py-2 text-sm font-medium text-white hover:bg-[#4380c4]">
-                      {doneCount === 0 ? "Start first lesson" : "Continue learning"}
+                      {doneCount === 0 ? t("academy.course.startFirstLesson") : t("academy.course.continueLearning")}
                       <ArrowRight className="h-4 w-4" />
                     </div>
                   </Link>
@@ -286,13 +288,13 @@ export default async function AcademyCoursePage({ params }: Props) {
               {!allComplete && (
                 <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground pt-1">
                   <Lock className="h-3 w-3" />
-                  Complete every lesson to earn your credential.
+                  {t("academy.course.completeEveryLesson")}
                 </p>
               )}
               {allComplete && enrollment.status !== "completed" && (
                 <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground pt-1">
                   <Award className="h-3 w-3 text-[#5391D5]" />
-                  All lessons done - claim your credential.
+                  {t("academy.course.allLessonsDone")}
                 </p>
               )}
             </CardContent>
@@ -321,7 +323,7 @@ function ContentBlock({
 }
 
 /** Compact preview of an outline section's first few bullets. */
-function OutlinePreview({ section }: { section: VifmCourseOutlineSection }) {
+function OutlinePreview({ section, t }: { section: VifmCourseOutlineSection; t: ServerT }) {
   const texts: string[] = [];
   for (const b of section.bullets ?? []) {
     if (b.text) texts.push(b.text);
@@ -333,15 +335,15 @@ function OutlinePreview({ section }: { section: VifmCourseOutlineSection }) {
   if (shown.length === 0) return null;
   return (
     <ul className="mt-1.5 space-y-1">
-      {shown.map((t, i) => (
+      {shown.map((text, i) => (
         <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
           <span className="mt-1.5 h-1 w-1 rounded-full bg-muted-foreground/50 shrink-0" />
-          <span>{t}</span>
+          <span>{text}</span>
         </li>
       ))}
       {texts.length > shown.length && (
         <li className="text-[11px] text-muted-foreground/70 ps-3">
-          + {texts.length - shown.length} more
+          {t("academy.course.moreItems", { n: texts.length - shown.length })}
         </li>
       )}
     </ul>

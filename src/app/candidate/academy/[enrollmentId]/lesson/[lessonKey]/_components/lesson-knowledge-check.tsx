@@ -18,6 +18,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -71,6 +72,7 @@ export function LessonKnowledgeCheck({
   nextLessonKey,
 }: Props) {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const [picks, setPicks] = useState<(number | null)[]>(
     questions.map((_, i) => initialAnswers[i]?.picked_index ?? null)
@@ -102,18 +104,18 @@ export function LessonKnowledgeCheck({
         setSavingPick(false);
         if (!res.ok) {
           const data = (await res.json().catch(() => ({}))) as { error?: string };
-          toast.error(data.error ?? "Could not save your answer.");
+          toast.error(data.error ?? t("academy.lesson.saveAnswerFail"));
         }
       })
       .catch(() => {
         setSavingPick(false);
-        toast.error("Could not save your answer.");
+        toast.error(t("academy.lesson.saveAnswerFail"));
       });
   };
 
   const handleNext = () => {
     if (picks[currentIdx] === null) {
-      toast.error("Pick an answer to continue.");
+      toast.error(t("academy.lesson.pickAnswer"));
       return;
     }
     if (isFinal) {
@@ -133,13 +135,13 @@ export function LessonKnowledgeCheck({
         });
         const data = (await res.json()) as CompleteResponse;
         if (!res.ok) {
-          toast.error(data.error ?? "Could not submit the knowledge check.");
+          toast.error(data.error ?? t("academy.lesson.submitCheckFail"));
           return;
         }
         setResult(data);
         router.refresh();
       } catch {
-        toast.error("Could not submit the knowledge check.");
+        toast.error(t("academy.lesson.submitCheckFail"));
       }
     });
   };
@@ -164,11 +166,15 @@ export function LessonKnowledgeCheck({
             )}
             <div>
               <p className="text-lg font-bold" style={{ color: tone.fg }}>
-                {passed ? "Lesson passed" : "Keep going"}
+                {passed ? t("academy.lesson.lessonPassed") : t("academy.lesson.keepGoing")}
               </p>
               <p className="text-sm" style={{ color: tone.fg, opacity: 0.85 }}>
-                You scored {Math.round(result.scorePct ?? 0)}% ({result.correctCount ?? 0}/
-                {result.totalCount ?? questions.length}). Passing is {Math.round(passingScorePct)}%.
+                {t("academy.lesson.scoreLine", {
+                  pct: Math.round(result.scorePct ?? 0),
+                  correct: result.correctCount ?? 0,
+                  total: result.totalCount ?? questions.length,
+                  passing: Math.round(passingScorePct),
+                })}
               </p>
             </div>
           </div>
@@ -204,14 +210,14 @@ export function LessonKnowledgeCheck({
                 <div className="flex items-center gap-2 text-sm font-medium text-[#010131]">
                   <Award className="h-4 w-4 text-[#5391D5]" />
                   {result.verificationCode
-                    ? "Course complete - credential issued."
-                    : "Course complete."}
+                    ? t("academy.lesson.courseCompleteCredential")
+                    : t("academy.lesson.courseComplete")}
                 </div>
                 <Button
                   className="ms-auto gap-1.5 bg-[#010131] hover:bg-[#111232]"
                   onClick={() => router.push(`/candidate/academy/${enrollmentId}`)}
                 >
-                  Back to course
+                  {t("academy.lesson.backToCourseBtn")}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </>
@@ -224,7 +230,7 @@ export function LessonKnowledgeCheck({
                   )
                 }
               >
-                Next lesson
+                {t("academy.lesson.nextLesson")}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             ) : (
@@ -233,7 +239,7 @@ export function LessonKnowledgeCheck({
                 className="ms-auto gap-1.5"
                 onClick={() => router.push(`/candidate/academy/${enrollmentId}`)}
               >
-                Back to course
+                {t("academy.lesson.backToCourseBtn")}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             )}
@@ -250,7 +256,7 @@ export function LessonKnowledgeCheck({
       <div className="rounded-md border bg-gradient-to-r from-[#010131] to-[#121140] text-white p-4 flex flex-wrap items-center gap-3">
         <Badge className="bg-white/15 text-white border-white/20 gap-1">
           <BookOpen className="h-3 w-3" />
-          Knowledge check
+          {t("academy.lesson.knowledgeCheck")}
         </Badge>
         <p className="text-sm font-medium truncate me-auto">{lessonTitle}</p>
         <span className="text-xs text-white/80 tabular-nums">
@@ -262,16 +268,16 @@ export function LessonKnowledgeCheck({
         <CardContent className="p-6 space-y-5">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Question {currentIdx + 1} of {questions.length}
+              {t("academy.lesson.questionOf", { n: currentIdx + 1, total: questions.length })}
             </p>
             <span
               className="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold capitalize"
               style={{ backgroundColor: tone.bg, color: tone.fg, borderColor: tone.border }}
             >
-              {q.difficulty}
+              {t(`quiz.difficulty.${q.difficulty}`)}
             </span>
             <Badge variant="secondary" className="text-[11px]">
-              {q.points} pts
+              {t("academy.lesson.pointsShort", { n: q.points })}
             </Badge>
           </div>
 
@@ -347,7 +353,7 @@ export function LessonKnowledgeCheck({
       <div className="flex items-center gap-2">
         {currentIdx > 0 && (
           <Button variant="ghost" onClick={handlePrev} disabled={submitting}>
-            Previous
+            {t("academy.lesson.previous")}
           </Button>
         )}
         <div className="ms-auto">
@@ -357,7 +363,7 @@ export function LessonKnowledgeCheck({
             className="gap-2 bg-[#010131] hover:bg-[#111232]"
           >
             {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-            {isFinal ? (allAnswered ? "Submit" : "Submit (skipping unanswered)") : "Next"}
+            {isFinal ? (allAnswered ? t("academy.lesson.submit") : t("academy.lesson.submitSkipping")) : t("academy.lesson.next")}
           </Button>
         </div>
       </div>

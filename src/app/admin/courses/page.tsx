@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getServerT } from "@/lib/i18n/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,7 @@ type CourseRow = Pick<
 
 export default async function CoursesListPage() {
   const sb = await createClient();
+  const t = await getServerT();
   const { data, error } = await sb
     .from("vifm_courses")
     .select(
@@ -52,37 +54,35 @@ export default async function CoursesListPage() {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <GraduationCap className="h-6 w-6 text-accent" />
-            Training Courses
+            {t("adminCourses.list.title")}
           </h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            VIFM&apos;s course catalogue. Each course maps to AC behavioural
-            competencies and ARA pillars so the recommender can surface the
-            right development path for each diagnostic.
+            {t("adminCourses.list.subtitle")}
           </p>
         </div>
         <div className="flex gap-2">
           <Link href="/admin/courses/quotes">
             <Button variant="outline" className="gap-2">
               <Inbox className="h-4 w-4" />
-              Quote requests
+              {t("adminCourses.list.quoteRequests")}
             </Button>
           </Link>
           <Link href="/admin/courses/duplicates">
             <Button variant="outline" className="gap-2">
               <Copy className="h-4 w-4" />
-              Find duplicates
+              {t("adminCourses.list.findDuplicates")}
             </Button>
           </Link>
           <Link href="/admin/courses/import">
             <Button variant="outline" className="gap-2">
               <Sparkles className="h-4 w-4" />
-              Import PDFs
+              {t("adminCourses.list.importPdfs")}
             </Button>
           </Link>
           <Link href="/admin/courses/new">
             <Button className="gap-2">
               <Plus className="h-4 w-4" />
-              New course
+              {t("adminCourses.list.newCourse")}
             </Button>
           </Link>
         </div>
@@ -91,16 +91,16 @@ export default async function CoursesListPage() {
       {tableMissing && (
         <Card className="border-amber-300 bg-amber-50">
           <CardContent className="py-4 text-sm text-amber-900">
-            <strong>Migration 00023 not yet applied.</strong> Run{" "}
+            <strong>{t("adminCourses.list.migrationTitle")}</strong>{" "}
+            {t("adminCourses.list.migrationRun")}{" "}
             <code className="bg-amber-100 px-1 py-0.5 rounded text-xs">
               supabase db push
             </code>{" "}
-            (or paste{" "}
+            {t("adminCourses.list.migrationOrPaste")}{" "}
             <code className="bg-amber-100 px-1 py-0.5 rounded text-xs">
               supabase/migrations/00023_vifm_courses.sql
             </code>{" "}
-            into the SQL editor) to create the catalogue tables. The page will
-            populate once the migration is in place.
+            {t("adminCourses.list.migrationAfter")}
           </CardContent>
         </Card>
       )}
@@ -109,21 +109,25 @@ export default async function CoursesListPage() {
       {!tableMissing && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Catalogue at a glance</CardTitle>
+            <CardTitle className="text-base">{t("adminCourses.list.glanceTitle")}</CardTitle>
           </CardHeader>
           <CardContent>
             {courses.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                No courses yet. Use <strong>Import PDFs</strong> to ingest
-                course outlines in bulk via AI extraction, or <strong>New
-                course</strong> to add one manually.
+                {t("adminCourses.list.glanceEmptyPre")}{" "}
+                <strong>{t("adminCourses.list.importPdfs")}</strong>{" "}
+                {t("adminCourses.list.glanceEmptyMid")}{" "}
+                <strong>{t("adminCourses.list.newCourse")}</strong>{" "}
+                {t("adminCourses.list.glanceEmptyPost")}
               </p>
             ) : (
               <div className="flex flex-wrap items-baseline gap-3 text-sm">
                 <span className="text-2xl font-bold tabular-nums">{courses.length}</span>
                 <span className="text-muted-foreground">
-                  course{courses.length === 1 ? "" : "s"} across {verticalsCovered} of 14
-                  verticals
+                  {t("adminCourses.list.glanceTally", {
+                    count: courses.length,
+                    covered: verticalsCovered,
+                  })}
                 </span>
                 <div className="flex flex-wrap gap-1.5 ms-2">
                   {(Object.keys(VIFM_VERTICAL_LABELS) as VifmVertical[]).map((v) => {
@@ -149,11 +153,11 @@ export default async function CoursesListPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Vertical</TableHead>
-                  <TableHead>Level</TableHead>
-                  <TableHead>Duration</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>{t("adminCourses.list.colTitle")}</TableHead>
+                  <TableHead>{t("adminCourses.list.colVertical")}</TableHead>
+                  <TableHead>{t("adminCourses.list.colLevel")}</TableHead>
+                  <TableHead>{t("adminCourses.list.colDuration")}</TableHead>
+                  <TableHead>{t("adminCourses.list.colStatus")}</TableHead>
                   <TableHead className="w-12"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -194,11 +198,11 @@ export default async function CoursesListPage() {
                     <TableCell>
                       {c.is_active ? (
                         <Badge className="bg-emerald-600 hover:bg-emerald-600 text-[11px]">
-                          Active
+                          {t("adminCourses.list.statusActive")}
                         </Badge>
                       ) : (
                         <Badge variant="secondary" className="text-[11px]">
-                          Hidden
+                          {t("adminCourses.list.statusHidden")}
                         </Badge>
                       )}
                     </TableCell>

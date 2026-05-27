@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ExternalLink, Mail, Phone, Building2, Calendar, Globe2, Users } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getServerT } from "@/lib/i18n/server";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type {
@@ -25,6 +26,7 @@ export default async function QuoteRequestDetailPage({
   params: { id: string };
 }) {
   const sb = createServiceClient();
+  const t = await getServerT();
   const { data: q } = await sb
     .from("vifm_course_quote_requests")
     .select("*")
@@ -39,7 +41,7 @@ export default async function QuoteRequestDetailPage({
           href="/admin/courses/quotes"
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
         >
-          <ArrowLeft className="h-3 w-3" /> Back to inbox
+          <ArrowLeft className="h-3 w-3" /> {t("adminCourses.quoteDetail.backToInbox")}
         </Link>
 
         <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
@@ -49,7 +51,7 @@ export default async function QuoteRequestDetailPage({
                 {q.status}
               </span>
               <span className="text-xs text-muted-foreground">
-                Submitted {new Date(q.created_at).toLocaleString("en-GB", {
+                {t("adminCourses.quoteDetail.submitted")} {new Date(q.created_at).toLocaleString("en-GB", {
                   day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
                 })}
               </span>
@@ -58,8 +60,8 @@ export default async function QuoteRequestDetailPage({
               {q.requester_name} · {q.requester_company}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              Quote request for{" "}
-              <strong className="text-foreground">{q.course_title_snapshot ?? "(course removed)"}</strong>
+              {t("adminCourses.quoteDetail.quoteRequestFor")}{" "}
+              <strong className="text-foreground">{q.course_title_snapshot ?? t("adminCourses.quotes.courseRemoved")}</strong>
               {q.course_code_snapshot && (
                 <span className="font-mono text-[11px] ms-1.5">({q.course_code_snapshot})</span>
               )}
@@ -70,7 +72,7 @@ export default async function QuoteRequestDetailPage({
               href={`/admin/courses/${q.course_id}`}
               className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline"
             >
-              Open course in admin <ExternalLink className="h-3.5 w-3.5" />
+              {t("adminCourses.quoteDetail.openCourseInAdmin")} <ExternalLink className="h-3.5 w-3.5" />
             </Link>
           )}
         </div>
@@ -81,18 +83,18 @@ export default async function QuoteRequestDetailPage({
             {/* Requester */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Requester</CardTitle>
+                <CardTitle className="text-base">{t("adminCourses.quoteDetail.requester")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
-                <Row icon={Mail} label="Email">
+                <Row icon={Mail} label={t("adminCourses.quoteDetail.email")}>
                   <a href={`mailto:${q.requester_email}`} className="text-accent hover:underline">
                     {q.requester_email}
                   </a>
                 </Row>
-                <Row icon={Building2} label="Company">{q.requester_company}</Row>
-                {q.requester_role && <Row label="Role">{q.requester_role}</Row>}
+                <Row icon={Building2} label={t("adminCourses.quoteDetail.company")}>{q.requester_company}</Row>
+                {q.requester_role && <Row label={t("adminCourses.quoteDetail.role")}>{q.requester_role}</Row>}
                 {q.requester_phone && (
-                  <Row icon={Phone} label="Phone">
+                  <Row icon={Phone} label={t("adminCourses.quoteDetail.phone")}>
                     <a href={`tel:${q.requester_phone}`} className="text-accent hover:underline">
                       {q.requester_phone}
                     </a>
@@ -104,16 +106,16 @@ export default async function QuoteRequestDetailPage({
             {/* Programme details */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Programme details requested</CardTitle>
+                <CardTitle className="text-base">{t("adminCourses.quoteDetail.programmeDetails")}</CardTitle>
                 <CardDescription>
-                  What the requester captured at submission. Use this when scoping the quote.
+                  {t("adminCourses.quoteDetail.programmeDetailsDesc")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-3 sm:grid-cols-2 text-sm">
-                <Row icon={Users} label="Group size">{q.estimated_group_size ?? "-"}</Row>
-                <Row icon={Calendar} label="Preferred start">{q.preferred_start_date ?? "-"}</Row>
-                <Row icon={Globe2} label="Language">{q.preferred_language ?? "-"}</Row>
-                <Row label="Delivery mode">
+                <Row icon={Users} label={t("adminCourses.quoteDetail.groupSize")}>{q.estimated_group_size ?? "-"}</Row>
+                <Row icon={Calendar} label={t("adminCourses.quoteDetail.preferredStart")}>{q.preferred_start_date ?? "-"}</Row>
+                <Row icon={Globe2} label={t("adminCourses.quoteDetail.language")}>{q.preferred_language ?? "-"}</Row>
+                <Row label={t("adminCourses.quoteDetail.deliveryMode")}>
                   {q.delivery_mode ? q.delivery_mode.replace("_", " ") : "-"}
                 </Row>
               </CardContent>
@@ -123,7 +125,7 @@ export default async function QuoteRequestDetailPage({
             {q.notes && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Notes from the requester</CardTitle>
+                  <CardTitle className="text-base">{t("adminCourses.quoteDetail.notesFromRequester")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm leading-relaxed whitespace-pre-line">{q.notes}</p>
@@ -134,9 +136,9 @@ export default async function QuoteRequestDetailPage({
             {/* Internal notes (sales-only) - editable */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Internal notes</CardTitle>
+                <CardTitle className="text-base">{t("adminCourses.quoteDetail.internalNotes")}</CardTitle>
                 <CardDescription>
-                  Sales notes for VIFM use only. Not visible to the requester.
+                  {t("adminCourses.quoteDetail.internalNotesDesc")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -153,22 +155,22 @@ export default async function QuoteRequestDetailPage({
           <aside className="lg:sticky lg:top-6 self-start">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Pipeline timeline</CardTitle>
+                <CardTitle className="text-base">{t("adminCourses.quoteDetail.pipelineTimeline")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <ol className="space-y-3 text-xs">
-                  <Step active label="Submitted" timestamp={q.created_at} />
-                  <Step active={!!q.contacted_at} label="Contacted" timestamp={q.contacted_at} />
-                  <Step active={!!q.quoted_at} label="Quoted" timestamp={q.quoted_at} />
+                  <Step active label={t("adminCourses.quoteDetail.stepSubmitted")} timestamp={q.created_at} />
+                  <Step active={!!q.contacted_at} label={t("adminCourses.quoteDetail.stepContacted")} timestamp={q.contacted_at} />
+                  <Step active={!!q.quoted_at} label={t("adminCourses.quoteDetail.stepQuoted")} timestamp={q.quoted_at} />
                   <Step
                     active={!!q.closed_at}
-                    label={q.status === "won" ? "Won" : q.status === "lost" ? "Lost" : "Closed"}
+                    label={q.status === "won" ? t("adminCourses.quoteDetail.stepWon") : q.status === "lost" ? t("adminCourses.quoteDetail.stepLost") : t("adminCourses.quoteDetail.stepClosed")}
                     timestamp={q.closed_at}
                   />
                 </ol>
                 {q.updated_at !== q.created_at && (
                   <p className="text-[11px] text-muted-foreground mt-4 pt-3 border-t">
-                    Last updated{" "}
+                    {t("adminCourses.quoteDetail.lastUpdated")}{" "}
                     {new Date(q.updated_at).toLocaleString("en-GB", {
                       day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
                     })}

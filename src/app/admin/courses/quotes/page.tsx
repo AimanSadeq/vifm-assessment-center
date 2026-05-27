@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, Inbox, Mail, Building2, Calendar } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getServerT } from "@/lib/i18n/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -50,6 +51,7 @@ export default async function QuoteRequestsListPage({
   searchParams?: { status?: string };
 }) {
   const sb = createServiceClient();
+  const t = await getServerT();
   const filter = (searchParams?.status ?? "").toLowerCase();
 
   let query = sb
@@ -90,29 +92,29 @@ export default async function QuoteRequestsListPage({
           href="/admin/courses"
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
         >
-          <ArrowLeft className="h-3 w-3" /> Back to courses
+          <ArrowLeft className="h-3 w-3" /> {t("adminCourses.backToCourses")}
         </Link>
 
         <div className="flex items-start justify-between mb-6 gap-4">
           <div>
             <h1 className="text-2xl font-semibold text-primary">
-              Quote requests
+              {t("adminCourses.quotes.title")}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              Inbound leads from the public training catalogue at <code className="text-[11px]">/courses</code>.
-              Total {total} request{total === 1 ? "" : "s"}.
+              {t("adminCourses.quotes.subtitlePre")} <code className="text-[11px]">/courses</code>.{" "}
+              {t("adminCourses.quotes.subtitleTotal", { total })}
             </p>
           </div>
         </div>
 
         {/* Status filter chips */}
         <div className="flex flex-wrap gap-2 mb-6">
-          <FilterChip href="/admin/courses/quotes" label={`All (${total})`} active={!filter} />
+          <FilterChip href="/admin/courses/quotes" label={`${t("adminCourses.quotes.filterAll")} (${total})`} active={!filter} />
           {STATUS_ORDER.map((s) => (
             <FilterChip
               key={s}
               href={`/admin/courses/quotes?status=${s}`}
-              label={`${s.charAt(0).toUpperCase() + s.slice(1)} (${counts[s]})`}
+              label={`${t(`adminCourses.quotes.status.${s}`)} (${counts[s]})`}
               active={filter === s}
               tone={STATUS_TONE[s]}
             />
@@ -122,7 +124,7 @@ export default async function QuoteRequestsListPage({
         {error ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <p className="text-sm text-rose-700">Failed to load quote requests: {error.message}</p>
+              <p className="text-sm text-rose-700">{t("adminCourses.quotes.loadFailed", { error: error.message })}</p>
             </CardContent>
           </Card>
         ) : !data || data.length === 0 ? (
@@ -131,8 +133,8 @@ export default async function QuoteRequestsListPage({
               <Inbox className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
               <p className="text-sm text-muted-foreground">
                 {filter
-                  ? `No requests in the "${filter}" pipeline today.`
-                  : "No quote requests yet. As prospects submit forms from /courses they'll appear here."}
+                  ? t("adminCourses.quotes.emptyFiltered", { status: filter })
+                  : t("adminCourses.quotes.emptyAll")}
               </p>
             </CardContent>
           </Card>
@@ -140,18 +142,18 @@ export default async function QuoteRequestsListPage({
           <Card>
             <CardHeader>
               <CardTitle className="text-base">
-                Inbox · {data.length} request{data.length === 1 ? "" : "s"}
+                {t("adminCourses.quotes.inboxCount", { n: data.length })}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Requester</TableHead>
-                    <TableHead>Programme</TableHead>
-                    <TableHead className="text-center">Status</TableHead>
-                    <TableHead>Group</TableHead>
-                    <TableHead className="text-right">Received</TableHead>
+                    <TableHead>{t("adminCourses.quotes.colRequester")}</TableHead>
+                    <TableHead>{t("adminCourses.quotes.colProgramme")}</TableHead>
+                    <TableHead className="text-center">{t("adminCourses.quotes.colStatus")}</TableHead>
+                    <TableHead>{t("adminCourses.quotes.colGroup")}</TableHead>
+                    <TableHead className="text-right">{t("adminCourses.quotes.colReceived")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -172,7 +174,7 @@ export default async function QuoteRequestsListPage({
                         </Link>
                       </TableCell>
                       <TableCell className="align-top">
-                        <div className="text-sm">{r.course_title_snapshot ?? "(course removed)"}</div>
+                        <div className="text-sm">{r.course_title_snapshot ?? t("adminCourses.quotes.courseRemoved")}</div>
                         {r.course_code_snapshot && (
                           <div className="text-[10px] font-mono text-muted-foreground">{r.course_code_snapshot}</div>
                         )}
@@ -189,9 +191,9 @@ export default async function QuoteRequestsListPage({
                               <Link
                                 href={`/reflect/consultant/engagements/${r.reflect_engagement_id}`}
                                 className="text-[10px] text-accent hover:underline"
-                                title="Open the source Reflect 360 engagement"
+                                title={t("adminCourses.quotes.openReflectSource")}
                               >
-                                source ↗
+                                {t("adminCourses.quotes.source")} ↗
                               </Link>
                             )}
                           </div>

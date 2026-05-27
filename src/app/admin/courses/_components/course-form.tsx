@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,14 +24,15 @@ type Props =
   | { mode: "create" }
   | { mode: "edit"; course: VifmCourse };
 
-const LEVELS: { value: VifmCourseLevel; label: string }[] = [
-  { value: "foundation", label: "Foundation" },
-  { value: "intermediate", label: "Intermediate" },
-  { value: "advanced", label: "Advanced" },
+const LEVELS: { value: VifmCourseLevel; labelKey: string }[] = [
+  { value: "foundation", labelKey: "adminCourses.form.levelFoundation" },
+  { value: "intermediate", labelKey: "adminCourses.form.levelIntermediate" },
+  { value: "advanced", labelKey: "adminCourses.form.levelAdvanced" },
 ];
 
 export function CourseForm(props: Props) {
   const router = useRouter();
+  const { t } = useTranslation();
   const initial = props.mode === "edit" ? props.course : null;
 
   const [titleEn, setTitleEn] = useState(initial?.title_en ?? "");
@@ -96,12 +98,12 @@ export function CourseForm(props: Props) {
       if ("error" in result && result.error) {
         const msg = typeof result.error === "string"
           ? result.error
-          : "Validation failed - check your inputs.";
+          : t("adminCourses.form.validationFailed");
         toast.error(msg);
         return;
       }
       if ("data" in result && result.data) {
-        toast.success(props.mode === "create" ? "Course created" : "Course saved");
+        toast.success(props.mode === "create" ? t("adminCourses.form.courseCreated") : t("adminCourses.form.courseSaved"));
         router.push(`/admin/courses/${result.data.id}`);
       }
     });
@@ -111,25 +113,25 @@ export function CourseForm(props: Props) {
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="title_en">Title (English) *</Label>
+          <Label htmlFor="title_en">{t("adminCourses.form.titleEn")}</Label>
           <Input id="title_en" required value={titleEn} onChange={(e) => setTitleEn(e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="title_ar">Title (Arabic)</Label>
+          <Label htmlFor="title_ar">{t("adminCourses.form.titleAr")}</Label>
           <Input id="title_ar" dir="rtl" value={titleAr ?? ""} onChange={(e) => setTitleAr(e.target.value)} />
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="code">Code (e.g. CAIP, PMP)</Label>
+          <Label htmlFor="code">{t("adminCourses.form.code")}</Label>
           <Input id="code" value={code ?? ""} onChange={(e) => setCode(e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="certification_code">Certification code</Label>
+          <Label htmlFor="certification_code">{t("adminCourses.form.certificationCode")}</Label>
           <Input id="certification_code" value={certificationCode ?? ""} onChange={(e) => setCertificationCode(e.target.value)} />
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="vertical">Vertical *</Label>
+          <Label htmlFor="vertical">{t("adminCourses.form.vertical")}</Label>
           <Select value={vertical} onValueChange={(v) => setVertical(v as VifmVertical)}>
             <SelectTrigger id="vertical">
               <SelectValue />
@@ -144,21 +146,21 @@ export function CourseForm(props: Props) {
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="level">Level</Label>
+          <Label htmlFor="level">{t("adminCourses.form.level")}</Label>
           <Select value={level} onValueChange={(v) => setLevel(v as VifmCourseLevel)}>
             <SelectTrigger id="level">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {LEVELS.map((l) => (
-                <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>
+                <SelectItem key={l.value} value={l.value}>{t(l.labelKey)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="min_duration">Min duration (days)</Label>
+          <Label htmlFor="min_duration">{t("adminCourses.form.minDuration")}</Label>
           <Input
             id="min_duration" type="number" step="0.5" min="0.5" max="20"
             value={minDuration}
@@ -166,7 +168,7 @@ export function CourseForm(props: Props) {
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="default_duration">Default duration (days)</Label>
+          <Label htmlFor="default_duration">{t("adminCourses.form.defaultDuration")}</Label>
           <Input
             id="default_duration" type="number" step="0.5" min="0.5" max="20"
             value={defaultDuration}
@@ -174,7 +176,7 @@ export function CourseForm(props: Props) {
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="max_duration">Max duration (days)</Label>
+          <Label htmlFor="max_duration">{t("adminCourses.form.maxDuration")}</Label>
           <Input
             id="max_duration" type="number" step="0.5" min="0.5" max="20"
             value={maxDuration}
@@ -184,73 +186,70 @@ export function CourseForm(props: Props) {
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="overview_en">1 · Course overview</Label>
+        <Label htmlFor="overview_en">{t("adminCourses.form.block1Label")}</Label>
         <textarea
           id="overview_en"
           rows={4}
           value={overviewEn ?? ""}
           onChange={(e) => setOverviewEn(e.target.value)}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-          placeholder="Block 1 - paste the course overview paragraph."
+          placeholder={t("adminCourses.form.block1Placeholder")}
         />
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="target_competencies_en">2 · Target competencies</Label>
+        <Label htmlFor="target_competencies_en">{t("adminCourses.form.block2Label")}</Label>
         <textarea
           id="target_competencies_en"
           rows={5}
           value={targetCompsEnText}
           onChange={(e) => setTargetCompsEnText(e.target.value)}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-          placeholder={"Block 2 - one competency phrase per line. e.g.\nDetection Capabilities\nIncident Response\nDigital Forensics\nRisk Mitigation"}
+          placeholder={t("adminCourses.form.block2Placeholder")}
         />
         <p className="text-[11px] text-muted-foreground">
-          These are the PDF&apos;s own topical &quot;Target Competencies&quot;
-          list (e.g., &quot;Bookkeeping Automation&quot;), kept verbatim
-          for audit. The mapping to AC&apos;s 38 behavioural competencies
-          and ARA&apos;s 8 pillars is a separate step (Day 3).
+          {t("adminCourses.form.block2Help")}
         </p>
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="objectives_en">3 · Course objectives</Label>
+        <Label htmlFor="objectives_en">{t("adminCourses.form.block3Label")}</Label>
         <textarea
           id="objectives_en"
           rows={4}
           value={objectivesEnText}
           onChange={(e) => setObjectivesEnText(e.target.value)}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-          placeholder={"Block 3 - one objective per line. e.g.\nApply prompt engineering techniques\nCreate content using AI tools\nAnalyse business data with AI"}
+          placeholder={t("adminCourses.form.block3Placeholder")}
         />
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="audience_en">4 · Target audience</Label>
+        <Label htmlFor="audience_en">{t("adminCourses.form.block4Label")}</Label>
         <textarea
           id="audience_en"
           rows={3}
           value={audienceEn ?? ""}
           onChange={(e) => setAudienceEn(e.target.value)}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-          placeholder="Block 4 - who should attend."
+          placeholder={t("adminCourses.form.block4Placeholder")}
         />
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="methodology_en">5 · Course methodology</Label>
+        <Label htmlFor="methodology_en">{t("adminCourses.form.block5Label")}</Label>
         <textarea
           id="methodology_en"
           rows={3}
           value={methodologyEn ?? ""}
           onChange={(e) => setMethodologyEn(e.target.value)}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-          placeholder="Block 5 - how the course is delivered (lectures, case studies, hands-on, etc.)."
+          placeholder={t("adminCourses.form.block5Placeholder")}
         />
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="outline_en">6 · Detailed course outline</Label>
+        <Label htmlFor="outline_en">{t("adminCourses.form.block6Label")}</Label>
         <textarea
           id="outline_en"
           rows={14}
@@ -258,56 +257,49 @@ export function CourseForm(props: Props) {
           onChange={(e) => setOutlineEnText(e.target.value)}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono"
           placeholder={[
-            "# MAIN HEADER (use # at the start of the line)",
-            "## Sub-header (use ## - optional, only when the section has named sub-headers)",
-            "- Bullet (use - or • or *)",
-            "  - Sub-bullet (indent 2+ spaces, then dash)",
+            t("adminCourses.form.block6PlaceholderL1"),
+            t("adminCourses.form.block6PlaceholderL2"),
+            t("adminCourses.form.block6PlaceholderL3"),
+            t("adminCourses.form.block6PlaceholderL4"),
             "",
-            "# ANOTHER MAIN HEADER",
-            "- Bullet without any sub-header above it works too",
+            t("adminCourses.form.block6PlaceholderL5"),
+            t("adminCourses.form.block6PlaceholderL6"),
           ].join("\n")}
         />
         <p className="text-[11px] text-muted-foreground">
-          Markdown-style format - <code>#</code> starts a main header,{" "}
-          <code>##</code> starts a sub-header, <code>-</code> is a bullet,
-          and indented <code>-</code> is a sub-bullet. Each section uses
-          either flat bullets <em>or</em> sub-headers, never both. Saved
-          structure round-trips back into this textarea on edit.
+          {t("adminCourses.form.block6HelpA")} <code>#</code> {t("adminCourses.form.block6HelpB")}{" "}
+          <code>##</code> {t("adminCourses.form.block6HelpC")} <code>-</code> {t("adminCourses.form.block6HelpD")}
+          {" "}<code>-</code> {t("adminCourses.form.block6HelpE")} <em>{t("adminCourses.form.block6HelpOr")}</em> {t("adminCourses.form.block6HelpF")}
         </p>
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="note_en">7 · Note</Label>
+        <Label htmlFor="note_en">{t("adminCourses.form.block7Label")}</Label>
         <textarea
           id="note_en"
           rows={3}
           value={noteEn}
           onChange={(e) => setNoteEn(e.target.value)}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-          placeholder="Internal note - not from the PDF, not shown to clients. e.g. 'Run only with senior cohort', 'Pricing reviewed Q1 2026'."
+          placeholder={t("adminCourses.form.block7Placeholder")}
         />
         <p className="text-[11px] text-muted-foreground">
-          Free-text admin annotation. Not part of the source PDF, not
-          surfaced on client-facing reports. Shown only here and on the
-          recommender&apos;s internal panel.
+          {t("adminCourses.form.block7Help")}
         </p>
       </div>
 
       <div className="flex items-center gap-2">
         <Button type="submit" disabled={pending || !titleEn.trim()}>
           {pending && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
-          {props.mode === "create" ? "Create course" : "Save changes"}
+          {props.mode === "create" ? t("adminCourses.form.createBtn") : t("adminCourses.form.saveBtn")}
         </Button>
         <Button type="button" variant="ghost" onClick={() => router.push("/admin/courses")}>
-          Cancel
+          {t("adminCourses.cancel")}
         </Button>
       </div>
 
       <p className="text-[11px] text-muted-foreground">
-        Six-block order: 1 Overview · 2 Target competencies · 3 Objectives ·
-        4 Target audience · 5 Methodology · 6 Detailed outline - all
-        editable here. Day 3 adds the AC competency / ARA pillar mapping
-        panel and an Arabic-side editor.
+        {t("adminCourses.form.blockOrderFootnote")}
       </p>
     </form>
   );

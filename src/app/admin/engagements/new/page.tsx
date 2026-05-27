@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getServerT } from "@/lib/i18n/server";
 import type {
   CompetencyTree,
   Organization,
@@ -54,13 +55,14 @@ async function fetchWizardData() {
 
 export default async function NewEngagementPage() {
   const { organizations, competencyTree, exercises, roleProfiles } = await fetchWizardData();
+  const t = await getServerT();
 
   return (
     <div>
-      <BackLink href="/admin/engagements" label="Back to Engagements" />
-      <h1 className="mt-2 text-2xl font-bold">New Engagement</h1>
+      <BackLink href="/admin/engagements" label={t("adminWizard.page.back")} />
+      <h1 className="mt-2 text-2xl font-bold">{t("adminWizard.page.title")}</h1>
       <p className="mt-1 text-muted-foreground">
-        Create a new assessment center engagement in 5 steps.
+        {t("adminWizard.page.subtitle")}
       </p>
       <div className="mt-6">
         <EngagementWizard

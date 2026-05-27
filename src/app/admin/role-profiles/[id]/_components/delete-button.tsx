@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import { deleteRoleProfileAction } from "../../actions";
 
 export function DeleteRoleProfileButton({ id, name }: { id: string; name: string }) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
 
   const onDelete = async () => {
@@ -30,7 +32,7 @@ export function DeleteRoleProfileButton({ id, name }: { id: string; name: string
       toast.error(result.error);
       return;
     }
-    toast.success("Role profile deleted");
+    toast.success(t("adminRoleProfiles.delete.toastDeleted"));
     router.push("/admin/role-profiles");
     router.refresh();
   };
@@ -40,22 +42,20 @@ export function DeleteRoleProfileButton({ id, name }: { id: string; name: string
       <AlertDialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2 text-destructive hover:text-destructive">
           <Trash2 className="h-4 w-4" />
-          Delete
+          {t("adminRoleProfiles.delete.button")}
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete role profile?</AlertDialogTitle>
+          <AlertDialogTitle>{t("adminRoleProfiles.delete.dialogTitle")}</AlertDialogTitle>
           <AlertDialogDescription>
-            This deletes the &quot;{name}&quot; profile and all its competency mappings.
-            Engagements that previously copied from this profile keep their
-            competencies - only the template is removed.
+            {t("adminRoleProfiles.delete.dialogDescription", { name })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={busy}>{t("adminRoleProfiles.delete.cancel")}</AlertDialogCancel>
           <AlertDialogAction onClick={onDelete} disabled={busy}>
-            {busy ? "Deleting..." : "Delete"}
+            {busy ? t("adminRoleProfiles.delete.deleting") : t("adminRoleProfiles.delete.button")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

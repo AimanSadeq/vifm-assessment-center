@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { Loader2, X } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -18,6 +19,7 @@ type Props = {
 
 export function DeleteCourseButton({ courseId, title }: Props) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
 
@@ -25,10 +27,10 @@ export function DeleteCourseButton({ courseId, title }: Props) {
     start(async () => {
       const r = await deleteCourseAction(courseId);
       if ("error" in r && r.error) {
-        toast.error(typeof r.error === "string" ? r.error : "Delete failed");
+        toast.error(typeof r.error === "string" ? r.error : t("adminCourses.delete.failed"));
         return;
       }
-      toast.success("Course deleted");
+      toast.success(t("adminCourses.delete.deleted"));
       setOpen(false);
       router.refresh();
     });
@@ -39,8 +41,8 @@ export function DeleteCourseButton({ courseId, title }: Props) {
       <AlertDialogTrigger asChild>
         <button
           type="button"
-          aria-label={`Delete ${title}`}
-          title="Delete course"
+          aria-label={t("adminCourses.delete.deleteAria", { title })}
+          title={t("adminCourses.delete.deleteCourse")}
           className="inline-flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
         >
           <X className="h-4 w-4" />
@@ -48,23 +50,21 @@ export function DeleteCourseButton({ courseId, title }: Props) {
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete this course?</AlertDialogTitle>
+          <AlertDialogTitle>{t("adminCourses.delete.confirmTitle")}</AlertDialogTitle>
           <AlertDialogDescription>
-            <strong>{title}</strong> will be removed from the catalogue,
-            along with its AC competency and ARA pillar tag mappings. This
-            does not affect any past assessments or candidate reports.
-            This action cannot be undone.
+            {t("adminCourses.delete.confirmBodyPre")}{" "}
+            <strong>{title}</strong>{t("adminCourses.delete.confirmBodyPost")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={pending}>{t("adminCourses.cancel")}</AlertDialogCancel>
           <AlertDialogAction
             onClick={(e) => { e.preventDefault(); handleConfirm(); }}
             disabled={pending}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
             {pending && <Loader2 className="h-3 w-3 animate-spin me-1" />}
-            Delete
+            {t("adminCourses.delete.deleteBtn")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

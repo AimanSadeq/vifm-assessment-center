@@ -13,15 +13,22 @@ function readCookie(name: string): string | null {
 }
 
 /**
- * Routes that opt INTO the user's locale cookie. Everything else
- * (admin, login, etc.) stays English/LTR regardless of cookie because
- * those surfaces aren't translated yet - applying RTL there breaks
- * the layout (e.g. the admin sidebar's `start-0` logical-property
- * positioning lands on the wrong side).
+ * Routes that opt INTO the user's locale cookie (rtl when ar). Everything
+ * else (login, the public marketing/landing surfaces) stays English/LTR.
+ * The admin/consultant portal is being migrated to bilingual Arabic/RTL
+ * phase by phase; /admin is enabled here. The /ara and /reflect consoles
+ * join as their translation phases land.
  */
 function localeAwareRoute(pathname: string | null): boolean {
   if (!pathname) return false;
-  return pathname.startsWith("/candidate") || pathname.startsWith("/ara/respond");
+  return (
+    pathname.startsWith("/candidate") ||
+    pathname.startsWith("/ara/respond") ||
+    pathname.startsWith("/ara/consultant") ||
+    pathname.startsWith("/ara/admin") ||
+    pathname.startsWith("/ara/cohort") ||
+    pathname.startsWith("/admin")
+  );
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getServerT } from "@/lib/i18n/server";
 import type { CompetencyTree } from "@/types/database";
 import { BackLink } from "@/components/shared/back-link";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,7 @@ export default async function RoleProfileDetailPage({ params }: Props) {
   if (profileResult.error || !profileResult.data) return notFound();
   const p = profileResult.data;
   const compRows = compsResult.data ?? [];
+  const t = await getServerT();
 
   const initial: RoleProfileEditorInitial = {
     id: p.id,
@@ -72,7 +74,7 @@ export default async function RoleProfileDetailPage({ params }: Props) {
 
   return (
     <div className="space-y-4">
-      <BackLink href="/admin/role-profiles" label="Back to Role Profiles" />
+      <BackLink href="/admin/role-profiles" label={t("adminRoleProfiles.backToList")} />
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">{p.name_en}</h1>
@@ -91,7 +93,7 @@ export default async function RoleProfileDetailPage({ params }: Props) {
           >
             <Button variant="outline" size="sm" className="gap-1.5">
               <Download className="h-3.5 w-3.5" />
-              Export JSON
+              {t("adminRoleProfiles.detail.exportJson")}
             </Button>
           </a>
           <DeleteRoleProfileButton id={p.id} name={p.name_en} />

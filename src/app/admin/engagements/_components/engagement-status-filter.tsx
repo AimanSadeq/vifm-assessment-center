@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -10,13 +11,14 @@ type Props = {
 };
 
 const FILTERS = [
-  { key: "all", label: "All", variant: "outline" as const },
-  { key: "draft", label: "Draft", variant: "secondary" as const },
-  { key: "active", label: "Active", variant: "default" as const },
-  { key: "completed", label: "Completed", variant: "outline" as const },
+  { key: "all", labelKey: "adminEngagements.filter.all", variant: "outline" as const },
+  { key: "draft", labelKey: "adminEngagements.filter.draft", variant: "secondary" as const },
+  { key: "active", labelKey: "adminEngagements.filter.active", variant: "default" as const },
+  { key: "completed", labelKey: "adminEngagements.filter.completed", variant: "outline" as const },
 ];
 
 export function EngagementStatusFilter({ counts, activeFilter }: Props) {
+  const { t } = useTranslation();
   return (
     <div className="mt-4 flex gap-2">
       {FILTERS.map((f) => (
@@ -31,7 +33,7 @@ export function EngagementStatusFilter({ counts, activeFilter }: Props) {
               activeFilter === f.key ? "ring-2 ring-primary/30" : "opacity-60 hover:opacity-100"
             )}
           >
-            {f.label} ({counts[f.key as keyof typeof counts]})
+            {t(f.labelKey)} ({counts[f.key as keyof typeof counts]})
           </Badge>
         </Link>
       ))}

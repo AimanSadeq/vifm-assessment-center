@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { Sparkles, Loader2, Upload, FileText, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -59,6 +60,7 @@ type JdExtractorProps = {
 export function JdExtractor({ onApply, triggerLabel }: JdExtractorProps = {}) {
   const wizard = useWizard();
   const dispatch = useWizardDispatch();
+  const { t } = useTranslation();
 
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState<Phase>("input");
@@ -100,7 +102,7 @@ export function JdExtractor({ onApply, triggerLabel }: JdExtractorProps = {}) {
       });
     } else {
       if (!file) {
-        toast.error("Choose a file first.");
+        toast.error(t("adminWizard.jd.chooseFileFirstToast"));
         setPhase("input");
         return;
       }
@@ -119,7 +121,7 @@ export function JdExtractor({ onApply, triggerLabel }: JdExtractorProps = {}) {
     setDomains(result.domains ?? {});
     setPicked(new Set(result.recommendations.map((r) => r.competencyId)));
     setPhase("preview");
-    toast.success(`Found ${result.recommendations.length} competencies`);
+    toast.success(t("adminWizard.jd.foundToast", { count: result.recommendations.length }));
   };
 
   const togglePick = (id: string) => {
@@ -135,25 +137,25 @@ export function JdExtractor({ onApply, triggerLabel }: JdExtractorProps = {}) {
     const selectedFull = recs.filter((r) => picked.has(r.competencyId));
 
     if (selectedFull.length === 0) {
-      toast.error("Pick at least one competency to apply.");
+      toast.error(t("adminWizard.jd.pickAtLeastOneToast"));
       return;
     }
 
     if (onApply) {
       onApply(selectedFull);
-      toast.success(`Applied ${selectedFull.length} competencies`);
+      toast.success(t("adminWizard.jd.appliedToast", { count: selectedFull.length }));
       setOpen(false);
       reset();
       return;
     }
 
     if (selectedFull.length > 15) {
-      toast.error(`Step 2 allows max 15 competencies; you've picked ${selectedFull.length}.`);
+      toast.error(t("adminWizard.jd.maxExceededToast", { count: selectedFull.length }));
       return;
     }
     const compact = selectedFull.map((r) => ({ competencyId: r.competencyId, weight: r.weight }));
     dispatch({ type: "SET_COMPETENCIES", competencies: compact });
-    toast.success(`Applied ${selectedFull.length} competencies to your engagement`);
+    toast.success(t("adminWizard.jd.appliedToEngagementToast", { count: selectedFull.length }));
     setOpen(false);
     reset();
   };
@@ -169,19 +171,17 @@ export function JdExtractor({ onApply, triggerLabel }: JdExtractorProps = {}) {
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
           <Sparkles className="h-4 w-4 text-primary" />
-          {triggerLabel ?? "Suggest from Job Description"}
+          {triggerLabel ?? t("adminWizard.jd.trigger")}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
-            Suggest Competencies from Job Description
+            {t("adminWizard.jd.dialogTitle")}
           </DialogTitle>
           <DialogDescription>
-            Paste a job description (English or Arabic). Claude maps it to
-            VIFM&apos;s 38-competency framework with suggested weights and
-            priorities. You can then refine before applying.
+            {t("adminWizard.jd.dialogDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -189,13 +189,13 @@ export function JdExtractor({ onApply, triggerLabel }: JdExtractorProps = {}) {
           <div className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="jd-target-role">
-                Target role <span className="text-muted-foreground">(optional)</span>
+                {t("adminWizard.jd.targetRole")} <span className="text-muted-foreground">{t("adminWizard.jd.optional")}</span>
               </Label>
               <Input
                 id="jd-target-role"
                 value={targetRole}
                 onChange={(e) => setTargetRole(e.target.value)}
-                placeholder="e.g. Branch Manager, Compliance Officer"
+                placeholder={t("adminWizard.jd.targetRolePlaceholder")}
               />
             </div>
 
@@ -203,31 +203,31 @@ export function JdExtractor({ onApply, triggerLabel }: JdExtractorProps = {}) {
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="paste" className="gap-2">
                   <FileText className="h-4 w-4" />
-                  Paste text
+                  {t("adminWizard.jd.tabPaste")}
                 </TabsTrigger>
                 <TabsTrigger value="upload" className="gap-2">
                   <Upload className="h-4 w-4" />
-                  Upload file
+                  {t("adminWizard.jd.tabUpload")}
                 </TabsTrigger>
               </TabsList>
 
               <TabsContent value="paste" className="space-y-1.5">
-                <Label htmlFor="jd-text">Job description *</Label>
+                <Label htmlFor="jd-text">{t("adminWizard.jd.jobDescription")}</Label>
                 <Textarea
                   id="jd-text"
                   value={jd}
                   onChange={(e) => setJd(e.target.value)}
-                  placeholder="Paste the full job description here. Both English and Arabic are supported."
+                  placeholder={t("adminWizard.jd.pastePlaceholder")}
                   rows={14}
                   className="font-mono text-sm"
                 />
                 <p className="text-xs text-muted-foreground">
-                  {jd.length} characters · minimum 50
+                  {t("adminWizard.jd.charCount", { count: jd.length })}
                 </p>
               </TabsContent>
 
               <TabsContent value="upload" className="space-y-2">
-                <Label htmlFor="jd-file">Job description file *</Label>
+                <Label htmlFor="jd-file">{t("adminWizard.jd.jobDescriptionFile")}</Label>
                 {file ? (
                   <div className="flex items-center justify-between gap-3 rounded-md border bg-muted/40 px-3 py-3">
                     <div className="flex items-center gap-3 min-w-0">
@@ -235,7 +235,7 @@ export function JdExtractor({ onApply, triggerLabel }: JdExtractorProps = {}) {
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate">{file.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {formatBytes(file.size)} · {file.type || "unknown type"}
+                          {t("adminWizard.jd.fileMeta", { size: formatBytes(file.size), type: file.type || t("adminWizard.jd.unknownType") })}
                         </p>
                       </div>
                     </div>
@@ -243,7 +243,7 @@ export function JdExtractor({ onApply, triggerLabel }: JdExtractorProps = {}) {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleFileChange(null)}
-                      aria-label="Remove file"
+                      aria-label={t("adminWizard.jd.removeFile")}
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -254,9 +254,9 @@ export function JdExtractor({ onApply, triggerLabel }: JdExtractorProps = {}) {
                     className="flex flex-col items-center justify-center gap-2 rounded-md border border-dashed bg-muted/30 px-4 py-10 cursor-pointer hover:bg-muted/50 transition-colors"
                   >
                     <Upload className="h-8 w-8 text-muted-foreground" />
-                    <p className="text-sm font-medium">Click to upload a JD file</p>
+                    <p className="text-sm font-medium">{t("adminWizard.jd.uploadPrompt")}</p>
                     <p className="text-xs text-muted-foreground">
-                      PDF or TXT · max 10MB · English or Arabic
+                      {t("adminWizard.jd.uploadHint")}
                     </p>
                   </label>
                 )}
@@ -277,10 +277,9 @@ export function JdExtractor({ onApply, triggerLabel }: JdExtractorProps = {}) {
           <div className="flex flex-col items-center justify-center py-16 gap-4">
             <Loader2 className="h-10 w-10 text-primary animate-spin" />
             <div className="text-center">
-              <p className="font-semibold">Analyzing job description...</p>
+              <p className="font-semibold">{t("adminWizard.jd.analyzingTitle")}</p>
               <p className="text-sm text-muted-foreground mt-1">
-                Claude is mapping the JD to VIFM&apos;s competency framework. This
-                usually takes 15–30 seconds.
+                {t("adminWizard.jd.analyzingBody")}
               </p>
             </div>
           </div>
@@ -291,7 +290,7 @@ export function JdExtractor({ onApply, triggerLabel }: JdExtractorProps = {}) {
             <DomainTallyCard recs={recs} domains={domains} />
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
-                {picked.size} of {recs.length} competencies selected
+                {t("adminWizard.jd.selectedCount", { picked: picked.size, total: recs.length })}
               </p>
               <Button
                 variant="ghost"
@@ -301,7 +300,7 @@ export function JdExtractor({ onApply, triggerLabel }: JdExtractorProps = {}) {
                   else setPicked(new Set(recs.map((r) => r.competencyId)));
                 }}
               >
-                {picked.size === recs.length ? "Clear all" : "Select all"}
+                {picked.size === recs.length ? t("adminWizard.jd.clearAll") : t("adminWizard.jd.selectAll")}
               </Button>
             </div>
             <div className="space-y-2 max-h-[55vh] overflow-y-auto pr-1">
@@ -328,9 +327,9 @@ export function JdExtractor({ onApply, triggerLabel }: JdExtractorProps = {}) {
                           variant="secondary"
                           className={priorityStyles[r.priority]}
                         >
-                          {r.priority}
+                          {t(`adminWizard.jd.priority.${r.priority}`)}
                         </Badge>
-                        <Badge variant="outline">weight {r.weight}</Badge>
+                        <Badge variant="outline">{t("adminWizard.jd.weightLabel", { weight: r.weight })}</Badge>
                       </div>
                       {r.reasoning && (
                         <p className="text-xs text-muted-foreground mt-1.5">
@@ -349,25 +348,26 @@ export function JdExtractor({ onApply, triggerLabel }: JdExtractorProps = {}) {
           {phase === "input" && (
             <>
               <Button variant="ghost" onClick={() => setOpen(false)}>
-                Cancel
+                {t("adminWizard.jd.cancel")}
               </Button>
               <Button onClick={onExtract} disabled={!canExtract}>
                 <Sparkles className="h-4 w-4 me-2" />
-                Extract competencies
+                {t("adminWizard.jd.extract")}
               </Button>
             </>
           )}
           {phase === "preview" && (
             <>
               <Button variant="ghost" onClick={reset}>
-                Back
+                {t("adminWizard.jd.back")}
               </Button>
               <Button
                 onClick={handleApply}
                 disabled={picked.size === 0 || (!onApply && picked.size > 15)}
               >
-                Apply {picked.size}
-                {onApply ? "" : " to engagement"}
+                {onApply
+                  ? t("adminWizard.jd.apply", { count: picked.size })
+                  : t("adminWizard.jd.applyToEngagement", { count: picked.size })}
               </Button>
             </>
           )}
@@ -399,6 +399,8 @@ function DomainTallyCard({
   recs: ExtractedCompetencyRecommendation[];
   domains: CompetencyDomainMap;
 }) {
+  const { t } = useTranslation();
+
   // If the join didn't return data (e.g. domain seed missing), skip the card
   // rather than render an empty grid.
   if (Object.keys(domains).length === 0) return null;
@@ -418,11 +420,11 @@ function DomainTallyCard({
     <div className="rounded-md border bg-muted/30 p-3">
       <div className="flex items-center justify-between gap-3 mb-2">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          AI Mapping Summary
+          {t("adminWizard.jd.tally.title")}
         </p>
         <p className="text-[11px] text-muted-foreground">
-          {recs.length} total
-          {unmapped > 0 ? ` · ${unmapped} unclassified` : ""}
+          {t("adminWizard.jd.tally.total", { count: recs.length })}
+          {unmapped > 0 ? t("adminWizard.jd.tally.unclassified", { count: unmapped }) : ""}
         </p>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">

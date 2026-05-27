@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
@@ -31,19 +32,19 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-const sidebarLinks: { href: string; label: string; icon: LucideIcon }[] = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/clients", label: "Clients", icon: Building2 },
-  { href: "/admin/engagements", label: "Projects", icon: ClipboardList },
-  { href: "/admin/role-profiles", label: "Role Profiles", icon: Briefcase },
-  { href: "/admin/courses", label: "Training Courses", icon: GraduationCap },
-  { href: "/admin/exercises", label: "Exercises", icon: Target },
-  { href: "/admin/assessors", label: "Assessors", icon: Users },
-  { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/ara", label: "AI Readiness", icon: Sparkles },
-  { href: "/reflect", label: "Reflect 360", icon: Aperture },
-  { href: "/ac/fluent", label: "Fluent", icon: Languages },
-  { href: "/admin/settings", label: "Settings", icon: Settings },
+const sidebarLinks: { href: string; labelKey: string; icon: LucideIcon }[] = [
+  { href: "/admin", labelKey: "adminNav.dashboard", icon: LayoutDashboard },
+  { href: "/admin/clients", labelKey: "adminNav.clients", icon: Building2 },
+  { href: "/admin/engagements", labelKey: "adminNav.projects", icon: ClipboardList },
+  { href: "/admin/role-profiles", labelKey: "adminNav.roleProfiles", icon: Briefcase },
+  { href: "/admin/courses", labelKey: "adminNav.trainingCourses", icon: GraduationCap },
+  { href: "/admin/exercises", labelKey: "adminNav.exercises", icon: Target },
+  { href: "/admin/assessors", labelKey: "adminNav.assessors", icon: Users },
+  { href: "/admin/analytics", labelKey: "adminNav.analytics", icon: BarChart3 },
+  { href: "/ara", labelKey: "adminNav.aiReadiness", icon: Sparkles },
+  { href: "/reflect", labelKey: "adminNav.reflect360", icon: Aperture },
+  { href: "/ac/fluent", labelKey: "adminNav.fluent", icon: Languages },
+  { href: "/admin/settings", labelKey: "adminNav.settings", icon: Settings },
 ];
 
 export default function AdminLayout({
@@ -52,13 +53,13 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // dir/lang management lives in the I18nProvider - it forces ltr/en
-  // for /admin/* (and other non-locale-aware routes) so the sidebar's
-  // start-0 positioning lands on the left even if the user came in
-  // from the candidate portal with locale=ar.
+  // /admin is locale-aware (see I18nProvider): the LanguageSwitcher in the
+  // footer flips the whole portal to Arabic/RTL. The sidebar uses logical
+  // properties (border-e, start-0, ms-auto) so it mirrors cleanly in RTL.
 
   const isActive = (href: string) => {
     if (href === "/admin") return pathname === "/admin";
@@ -96,10 +97,10 @@ export default function AdminLayout({
                   ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                   : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
               )}
-              title={collapsed ? link.label : undefined}
+              title={collapsed ? t(link.labelKey) : undefined}
             >
               <Icon className="h-4 w-4 shrink-0" />
-              {!collapsed && <span>{link.label}</span>}
+              {!collapsed && <span>{t(link.labelKey)}</span>}
             </Link>
           );
         })}
@@ -122,7 +123,7 @@ export default function AdminLayout({
           {!collapsed && (
             <div className="flex-1 min-w-0">
               {/* TODO: Replace with authenticated user name */}
-              <p className="text-xs font-medium text-sidebar-foreground/80 truncate">Administrator</p>
+              <p className="text-xs font-medium text-sidebar-foreground/80 truncate">{t("adminNav.administrator")}</p>
               <p className="text-[10px] text-sidebar-foreground/40 truncate">admin@vifm.ae</p>
             </div>
           )}

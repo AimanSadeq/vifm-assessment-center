@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter, usePathname } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -26,6 +27,7 @@ const COHORT = "__cohort__";
 export function CandidateFilterBar({ engagementId, candidates, focused }: Props) {
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useTranslation();
 
   const handleChange = (value: string) => {
     if (value === COHORT) {
@@ -41,7 +43,7 @@ export function CandidateFilterBar({ engagementId, candidates, focused }: Props)
     <div className="flex items-center gap-3 rounded-md border bg-card px-3 py-2">
       <Users className="h-4 w-4 text-muted-foreground shrink-0" />
       <span className="text-xs text-muted-foreground shrink-0">
-        Recommendations for:
+        {t("adminEngagements.detail.recommendationsFor")}
       </span>
       <Select
         value={focused ?? COHORT}
@@ -51,7 +53,7 @@ export function CandidateFilterBar({ engagementId, candidates, focused }: Props)
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={COHORT}>Whole cohort (aggregated)</SelectItem>
+          <SelectItem value={COHORT}>{t("adminEngagements.detail.wholeCohort")}</SelectItem>
           {candidates
             .slice()
             .sort((a, b) => a.full_name.localeCompare(b.full_name))

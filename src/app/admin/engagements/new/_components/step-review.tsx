@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import type { Organization, Exercise, CompetencyTree } from "@/types/database";
 import { useWizard, useWizardDispatch } from "./wizard-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +27,7 @@ export function StepReview({
   const state = useWizard();
   const dispatch = useWizardDispatch();
   const router = useRouter();
+  const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
 
   const org = organizations.find((o) => o.id === state.organizationId);
@@ -76,7 +78,7 @@ export function StepReview({
     }
 
     // Redirect to the newly created engagement detail page
-    toast.success("Engagement created successfully");
+    toast.success(t("adminWizard.step5.successToast"));
     const engId = "data" in result && result.data ? (result.data as { id: string }).id : null;
     router.push(engId ? `/admin/engagements/${engId}` : "/admin/engagements");
   };
@@ -84,31 +86,31 @@ export function StepReview({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Step 5: Review & Save</CardTitle>
+        <CardTitle>{t("adminWizard.step5.title")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Basic Info */}
         <div>
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold">Basic Information</h3>
+            <h3 className="font-semibold">{t("adminWizard.step5.basicInformation")}</h3>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => dispatch({ type: "SET_STEP", step: 1 })}
             >
-              Edit
+              {t("adminWizard.step5.edit")}
             </Button>
           </div>
           <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
-            <div className="text-muted-foreground">Organization</div>
+            <div className="text-muted-foreground">{t("adminWizard.step5.organization")}</div>
             <div>{org?.name ?? "-"}</div>
-            <div className="text-muted-foreground">Engagement</div>
+            <div className="text-muted-foreground">{t("adminWizard.step5.engagement")}</div>
             <div>{state.engagementName}</div>
-            <div className="text-muted-foreground">Target Role</div>
+            <div className="text-muted-foreground">{t("adminWizard.step5.targetRole")}</div>
             <div>{state.targetRole || "-"}</div>
-            <div className="text-muted-foreground">Dates</div>
+            <div className="text-muted-foreground">{t("adminWizard.step5.dates")}</div>
             <div>
-              {state.startDate || "-"} to {state.endDate || "-"}
+              {t("adminWizard.step5.datesRange", { start: state.startDate || "-", end: state.endDate || "-" })}
             </div>
           </div>
         </div>
@@ -119,14 +121,14 @@ export function StepReview({
         <div>
           <div className="flex items-center justify-between">
             <h3 className="font-semibold">
-              Competencies ({state.selectedCompetencies.length})
+              {t("adminWizard.step5.competenciesHeading", { count: state.selectedCompetencies.length })}
             </h3>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => dispatch({ type: "SET_STEP", step: 2 })}
             >
-              Edit
+              {t("adminWizard.step5.edit")}
             </Button>
           </div>
           <div className="mt-2 flex flex-wrap gap-1">
@@ -149,14 +151,14 @@ export function StepReview({
         <div>
           <div className="flex items-center justify-between">
             <h3 className="font-semibold">
-              Exercises ({selectedExercises.length})
+              {t("adminWizard.step5.exercisesHeading", { count: selectedExercises.length })}
             </h3>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => dispatch({ type: "SET_STEP", step: 3 })}
             >
-              Edit
+              {t("adminWizard.step5.edit")}
             </Button>
           </div>
           <div className="mt-2 flex flex-wrap gap-1">
@@ -175,18 +177,18 @@ export function StepReview({
         <div>
           <div className="flex items-center justify-between">
             <h3 className="font-semibold">
-              Matrix Mappings ({state.matrix.length})
+              {t("adminWizard.step5.matrixHeading", { count: state.matrix.length })}
             </h3>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => dispatch({ type: "SET_STEP", step: 4 })}
             >
-              Edit
+              {t("adminWizard.step5.edit")}
             </Button>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            {state.matrix.length} competency-exercise mappings configured.
+            {t("adminWizard.step5.matrixSummary", { count: state.matrix.length })}
           </p>
         </div>
 
@@ -205,7 +207,7 @@ export function StepReview({
           className="w-full"
           size="lg"
         >
-          {state.isSubmitting ? "Creating Engagement..." : "Create Engagement"}
+          {state.isSubmitting ? t("adminWizard.step5.creating") : t("adminWizard.step5.createEngagement")}
         </Button>
       </CardContent>
     </Card>

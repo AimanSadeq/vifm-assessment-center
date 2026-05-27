@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getServerT } from "@/lib/i18n/server";
 import { BackLink } from "@/components/shared/back-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -75,6 +76,7 @@ type Placed = {
 
 export default async function TalentMapPage({ params }: Props) {
   const engagementId = params.id;
+  const t = await getServerT();
 
   let engName = "";
   let orgName = "-";
@@ -231,19 +233,19 @@ export default async function TalentMapPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <BackLink href={`/admin/engagements/${engagementId}`} label="Back to engagement" />
+      <BackLink href={`/admin/engagements/${engagementId}`} label={t("adminEngagements.talentMap.backToEngagement")} />
 
       {/* Header */}
       <div className="rounded-md border bg-gradient-to-r from-[#010131] to-[#121140] text-white p-5">
         <div className="flex flex-wrap items-center gap-3">
           <Grid3x3 className="h-8 w-8 text-[#5391D5] shrink-0" />
           <div className="min-w-0">
-            <p className="text-xs uppercase tracking-wide text-white/70">Talent Map</p>
+            <p className="text-xs uppercase tracking-wide text-white/70">{t("adminEngagements.talentMap.title")}</p>
             <h1 className="text-2xl font-bold leading-tight">{engName}</h1>
             <p className="text-sm text-white/80 mt-0.5">
               {orgName}
-              {targetRole ? ` · Target role: ${targetRole}` : ""} ·{" "}
-              <span className="capitalize">{status}</span>
+              {targetRole ? ` · ${t("adminEngagements.talentMap.targetRoleLabel")}: ${targetRole}` : ""} ·{" "}
+              <span>{t(`adminEngagements.status.${status}`)}</span>
             </p>
           </div>
         </div>
@@ -251,12 +253,12 @@ export default async function TalentMapPage({ params }: Props) {
 
       {/* Summary cards */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard icon={<Users className="h-4 w-4" />} label="Candidates" value={String(candidates.length)} />
-        <StatCard icon={<Award className="h-4 w-4" />} label="Ready Now" value={String(readyNow)} tone="emerald" />
-        <StatCard icon={<TrendingUp className="h-4 w-4" />} label="Stars (high/high)" value={String(stars)} tone="sky" />
+        <StatCard icon={<Users className="h-4 w-4" />} label={t("adminEngagements.talentMap.statCandidates")} value={String(candidates.length)} />
+        <StatCard icon={<Award className="h-4 w-4" />} label={t("adminEngagements.talentMap.statReadyNow")} value={String(readyNow)} tone="emerald" />
+        <StatCard icon={<TrendingUp className="h-4 w-4" />} label={t("adminEngagements.talentMap.statStars")} value={String(stars)} tone="sky" />
         <StatCard
           icon={<Layers className="h-4 w-4" />}
-          label="Avg OAR"
+          label={t("adminEngagements.talentMap.statAvgOar")}
           value={avgOar !== null ? `${avgOar.toFixed(1)}/5` : "-"}
         />
       </div>
@@ -266,21 +268,21 @@ export default async function TalentMapPage({ params }: Props) {
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Grid3x3 className="h-4 w-4 text-[#5391D5]" />
-            Nine-box: performance vs potential
+            {t("adminEngagements.talentMap.nineBoxTitle")}
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Performance = RESULTS + PEOPLE scores. Potential = THINKING + SELF scores. Both on the 1-5 consensus scale.
+            {t("adminEngagements.talentMap.nineBoxDesc")}
           </p>
         </CardHeader>
         <CardContent>
           {!hasScores ? (
-            <EmptyNote text="No consensus scores recorded yet - the grid populates once wash-up ratings are finalised." />
+            <EmptyNote text={t("adminEngagements.talentMap.nineBoxEmpty")} />
           ) : (
             <div className="flex gap-2">
               {/* Y axis label */}
               <div className="flex items-center">
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground [writing-mode:vertical-rl] rotate-180">
-                  Potential &rarr;
+                  {t("adminEngagements.talentMap.axisPotential")} &rarr;
                 </span>
               </div>
               <div className="flex-1">
@@ -288,20 +290,20 @@ export default async function TalentMapPage({ params }: Props) {
                   {(["high", "med", "low"] as TalentBand[]).map((pot) =>
                     (["low", "med", "high"] as TalentBand[]).map((perf) => {
                       const cell = nineBoxCell(pot, perf);
-                      const t = TONE_CLASSES[cell.tone];
+                      const tone = TONE_CLASSES[cell.tone];
                       const people = grid[pot][perf];
                       return (
                         <div
                           key={`${pot}-${perf}`}
-                          className={`rounded-md border ${t.border} ${t.bg} p-3 min-h-[120px] flex flex-col`}
+                          className={`rounded-md border ${tone.border} ${tone.bg} p-3 min-h-[120px] flex flex-col`}
                         >
-                          <p className={`text-xs font-bold ${t.label}`}>{cell.label}</p>
+                          <p className={`text-xs font-bold ${tone.label}`}>{cell.label}</p>
                           <p className="text-[10px] text-muted-foreground mb-2 leading-snug">{cell.action}</p>
                           <div className="mt-auto flex flex-wrap gap-1">
                             {people.map((p) => (
                               <span
                                 key={p.id}
-                                title={`${p.name} - performance ${p.performance.toFixed(1)}, potential ${p.potential.toFixed(1)}`}
+                                title={t("adminEngagements.talentMap.personTooltip", { name: p.name, performance: p.performance.toFixed(1), potential: p.potential.toFixed(1) })}
                                 className="rounded-full bg-white/80 border px-2 py-0.5 text-[11px] font-medium text-[#010131]"
                               >
                                 {p.name}
@@ -315,14 +317,14 @@ export default async function TalentMapPage({ params }: Props) {
                 </div>
                 {/* X axis label */}
                 <p className="mt-1.5 text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  Performance &rarr;
+                  {t("adminEngagements.talentMap.axisPerformance")} &rarr;
                 </p>
               </div>
             </div>
           )}
           {unscored.length > 0 && (
             <p className="mt-3 text-[11px] text-muted-foreground">
-              Not plotted (no scores yet): {unscored.map((c) => c.full_name).join(", ")}
+              {t("adminEngagements.talentMap.notPlotted", { names: unscored.map((c) => c.full_name).join("، ") })}
             </p>
           )}
         </CardContent>
@@ -333,10 +335,12 @@ export default async function TalentMapPage({ params }: Props) {
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Award className="h-4 w-4 text-[#5391D5]" />
-            Succession readiness
+            {t("adminEngagements.talentMap.successionTitle")}
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Pipeline for {targetRole ? `the ${targetRole} role` : "the target role"}, by overall assessment recommendation.
+            {targetRole
+              ? t("adminEngagements.talentMap.successionDescRole", { role: targetRole })
+              : t("adminEngagements.talentMap.successionDescGeneric")}
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -393,15 +397,15 @@ export default async function TalentMapPage({ params }: Props) {
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Layers className="h-4 w-4 text-[#5391D5]" />
-            Cohort skills heatmap
+            {t("adminEngagements.talentMap.heatmapTitle")}
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Consensus competency scores across the cohort. Greener is stronger; redder needs development.
+            {t("adminEngagements.talentMap.heatmapDesc")}
           </p>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           {orderedComps.length === 0 || candidates.length === 0 ? (
-            <EmptyNote text="No competency scores to chart yet." />
+            <EmptyNote text={t("adminEngagements.talentMap.heatmapEmpty")} />
           ) : (
             <table className="w-full border-separate border-spacing-0.5 text-sm">
               <thead>
@@ -410,7 +414,7 @@ export default async function TalentMapPage({ params }: Props) {
                     rowSpan={2}
                     className="sticky left-0 z-10 bg-card text-left text-xs font-semibold align-bottom pe-2 min-w-[140px]"
                   >
-                    Candidate
+                    {t("adminEngagements.talentMap.colCandidate")}
                   </th>
                   {domainGroups.map((g, i) => (
                     <th
@@ -467,7 +471,7 @@ export default async function TalentMapPage({ params }: Props) {
                 ))}
                 {/* Cohort average */}
                 <tr>
-                  <td className="sticky left-0 z-10 bg-card pe-2 pt-1 text-xs font-semibold">Cohort avg</td>
+                  <td className="sticky left-0 z-10 bg-card pe-2 pt-1 text-xs font-semibold">{t("adminEngagements.talentMap.cohortAvg")}</td>
                   {orderedComps.map((comp) => {
                     const m = compAvg.get(comp.id);
                     if (m === undefined) {
@@ -483,7 +487,7 @@ export default async function TalentMapPage({ params }: Props) {
                         <div
                           className="grid h-7 w-full min-w-[40px] place-items-center rounded text-[11px] font-bold"
                           style={{ backgroundColor: tone.bg, color: tone.fg }}
-                          title={`Cohort average: ${m.toFixed(1)}`}
+                          title={t("adminEngagements.talentMap.cohortAvgTooltip", { value: m.toFixed(1) })}
                         >
                           {m.toFixed(1)}
                         </div>

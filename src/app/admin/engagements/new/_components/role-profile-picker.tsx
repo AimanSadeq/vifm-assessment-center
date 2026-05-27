@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { Briefcase, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,16 +37,17 @@ type Props = {
 
 export function RoleProfilePicker({ profiles }: Props) {
   const dispatch = useWizardDispatch();
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
   const apply = (p: RoleProfileSummary) => {
     const comps = p.role_profile_competencies ?? [];
     if (comps.length === 0) {
-      toast.error("This role profile has no competencies yet.");
+      toast.error(t("adminWizard.roleProfile.noCompetenciesToast"));
       return;
     }
     if (comps.length > 15) {
-      toast.error(`Profile has ${comps.length} competencies; Step 2 allows max 15.`);
+      toast.error(t("adminWizard.roleProfile.tooManyToast", { count: comps.length }));
       return;
     }
     dispatch({
@@ -55,7 +57,7 @@ export function RoleProfilePicker({ profiles }: Props) {
         weight: c.weight,
       })),
     });
-    toast.success(`Loaded "${p.name_en}" - ${comps.length} competencies applied`);
+    toast.success(t("adminWizard.roleProfile.loadedToast", { name: p.name_en, count: comps.length }));
     setOpen(false);
   };
 
@@ -66,18 +68,17 @@ export function RoleProfilePicker({ profiles }: Props) {
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
           <Briefcase className="h-4 w-4 text-primary" />
-          Pick from Role Profile
+          {t("adminWizard.roleProfile.trigger")}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Briefcase className="h-5 w-5 text-primary" />
-            Choose a Role Profile
+            {t("adminWizard.roleProfile.dialogTitle")}
           </DialogTitle>
           <DialogDescription>
-            Pick a pre-built competency pack. Applying a profile replaces your
-            current Step&nbsp;2 selection. You can refine afterwards.
+            {t("adminWizard.roleProfile.dialogDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -105,7 +106,7 @@ export function RoleProfilePicker({ profiles }: Props) {
                         </Badge>
                       )}
                       <Badge variant="secondary" className="text-xs">
-                        {compCount} competencies
+                        {t("adminWizard.roleProfile.competenciesCount", { count: compCount })}
                       </Badge>
                     </div>
                     {p.name_ar && (
@@ -115,7 +116,7 @@ export function RoleProfilePicker({ profiles }: Props) {
                     )}
                     {p.target_role && p.target_role !== p.name_en && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        Target: {p.target_role}
+                        {t("adminWizard.roleProfile.target", { role: p.target_role })}
                       </p>
                     )}
                   </div>

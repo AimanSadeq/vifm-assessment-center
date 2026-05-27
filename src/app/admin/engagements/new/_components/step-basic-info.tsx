@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import type { Organization } from "@/types/database";
 import { useWizard, useWizardDispatch } from "./wizard-context";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,7 @@ type Props = {
 export function StepBasicInfo({ organizations: initialOrgs }: Props) {
   const state = useWizard();
   const dispatch = useWizardDispatch();
+  const { t } = useTranslation();
   const [orgs, setOrgs] = useState(initialOrgs);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newOrgName, setNewOrgName] = useState("");
@@ -68,21 +70,21 @@ export function StepBasicInfo({ organizations: initialOrgs }: Props) {
       setNewOrgName("");
       setNewOrgIndustry("");
       setNewOrgCountry("");
-      toast.success("Organization created");
+      toast.success(t("adminWizard.step1.orgCreatedToast"));
     } else if ("error" in result) {
-      toast.error(typeof result.error === "string" ? result.error : "Failed to create organization");
+      toast.error(typeof result.error === "string" ? result.error : t("adminWizard.step1.orgCreateFailedToast"));
     }
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Step 1: Basic Information</CardTitle>
+        <CardTitle>{t("adminWizard.step1.title")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Organization */}
         <div className="space-y-2">
-          <Label>Client Organization *</Label>
+          <Label>{t("adminWizard.step1.clientOrganization")}</Label>
           <div className="flex gap-2">
             <Select
               value={state.organizationId}
@@ -95,7 +97,7 @@ export function StepBasicInfo({ organizations: initialOrgs }: Props) {
               }
             >
               <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Select an organization..." />
+                <SelectValue placeholder={t("adminWizard.step1.selectOrganization")} />
               </SelectTrigger>
               <SelectContent>
                 {orgs.map((org) => (
@@ -108,35 +110,35 @@ export function StepBasicInfo({ organizations: initialOrgs }: Props) {
 
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline">+ New</Button>
+                <Button variant="outline">{t("adminWizard.step1.newButton")}</Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Create Organization</DialogTitle>
+                  <DialogTitle>{t("adminWizard.step1.createOrganization")}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-3">
                   <div className="space-y-1">
-                    <Label>Name *</Label>
+                    <Label>{t("adminWizard.step1.name")}</Label>
                     <Input
                       value={newOrgName}
                       onChange={(e) => setNewOrgName(e.target.value)}
-                      placeholder="Organization name"
+                      placeholder={t("adminWizard.step1.organizationNamePlaceholder")}
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label>Industry</Label>
+                    <Label>{t("adminWizard.step1.industry")}</Label>
                     <Input
                       value={newOrgIndustry}
                       onChange={(e) => setNewOrgIndustry(e.target.value)}
-                      placeholder="e.g., Banking, Government"
+                      placeholder={t("adminWizard.step1.industryPlaceholder")}
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label>Country</Label>
+                    <Label>{t("adminWizard.step1.country")}</Label>
                     <Input
                       value={newOrgCountry}
                       onChange={(e) => setNewOrgCountry(e.target.value)}
-                      placeholder="e.g., UAE, Saudi Arabia"
+                      placeholder={t("adminWizard.step1.countryPlaceholder")}
                     />
                   </div>
                   <Button
@@ -144,7 +146,7 @@ export function StepBasicInfo({ organizations: initialOrgs }: Props) {
                     disabled={!newOrgName.trim() || creating}
                     className="w-full"
                   >
-                    {creating ? "Creating..." : "Create Organization"}
+                    {creating ? t("adminWizard.step1.creating") : t("adminWizard.step1.createOrganization")}
                   </Button>
                 </div>
               </DialogContent>
@@ -154,7 +156,7 @@ export function StepBasicInfo({ organizations: initialOrgs }: Props) {
 
         {/* Project Name */}
         <div className="space-y-2">
-          <Label>Project Name *</Label>
+          <Label>{t("adminWizard.step1.projectName")}</Label>
           <Input
             value={state.engagementName}
             onChange={(e) =>
@@ -164,13 +166,13 @@ export function StepBasicInfo({ organizations: initialOrgs }: Props) {
                 value: e.target.value,
               })
             }
-            placeholder="e.g., ADNOC Senior Manager AC - April 2026"
+            placeholder={t("adminWizard.step1.projectNamePlaceholder")}
           />
         </div>
 
         {/* Target Role */}
         <div className="space-y-2">
-          <Label>Target Role</Label>
+          <Label>{t("adminWizard.step1.targetRole")}</Label>
           <Input
             value={state.targetRole}
             onChange={(e) =>
@@ -180,14 +182,14 @@ export function StepBasicInfo({ organizations: initialOrgs }: Props) {
                 value: e.target.value,
               })
             }
-            placeholder="e.g., Senior Manager, Director"
+            placeholder={t("adminWizard.step1.targetRolePlaceholder")}
           />
         </div>
 
         {/* Assessment Type & Norm Group */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>Assessment Type</Label>
+            <Label>{t("adminWizard.step1.assessmentType")}</Label>
             <Select
               value={state.assessmentType}
               onValueChange={(value) =>
@@ -195,18 +197,18 @@ export function StepBasicInfo({ organizations: initialOrgs }: Props) {
               }
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select type..." />
+                <SelectValue placeholder={t("adminWizard.step1.selectType")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="professional">Professional</SelectItem>
-                <SelectItem value="graduate">Graduate</SelectItem>
-                <SelectItem value="leadership">Leadership</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
+                <SelectItem value="professional">{t("adminWizard.step1.assessmentTypes.professional")}</SelectItem>
+                <SelectItem value="graduate">{t("adminWizard.step1.assessmentTypes.graduate")}</SelectItem>
+                <SelectItem value="leadership">{t("adminWizard.step1.assessmentTypes.leadership")}</SelectItem>
+                <SelectItem value="other">{t("adminWizard.step1.assessmentTypes.other")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Norm / Comparison Group</Label>
+            <Label>{t("adminWizard.step1.normGroup")}</Label>
             <Select
               value={state.normGroup}
               onValueChange={(value) =>
@@ -214,15 +216,15 @@ export function StepBasicInfo({ organizations: initialOrgs }: Props) {
               }
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select norm group..." />
+                <SelectValue placeholder={t("adminWizard.step1.selectNormGroup")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="gcc_banking">GCC Banking</SelectItem>
-                <SelectItem value="gcc_government">GCC Government</SelectItem>
-                <SelectItem value="mena_corporate">MENA Corporate</SelectItem>
-                <SelectItem value="global_corporate">Global Corporate</SelectItem>
-                <SelectItem value="graduate_program">Graduate Program</SelectItem>
-                <SelectItem value="custom">Custom</SelectItem>
+                <SelectItem value="gcc_banking">{t("adminWizard.step1.normGroups.gccBanking")}</SelectItem>
+                <SelectItem value="gcc_government">{t("adminWizard.step1.normGroups.gccGovernment")}</SelectItem>
+                <SelectItem value="mena_corporate">{t("adminWizard.step1.normGroups.menaCorporate")}</SelectItem>
+                <SelectItem value="global_corporate">{t("adminWizard.step1.normGroups.globalCorporate")}</SelectItem>
+                <SelectItem value="graduate_program">{t("adminWizard.step1.normGroups.graduateProgram")}</SelectItem>
+                <SelectItem value="custom">{t("adminWizard.step1.normGroups.custom")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -231,7 +233,7 @@ export function StepBasicInfo({ organizations: initialOrgs }: Props) {
         {/* Dates */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>Start Date</Label>
+            <Label>{t("adminWizard.step1.startDate")}</Label>
             <Input
               type="date"
               value={state.startDate}
@@ -245,7 +247,7 @@ export function StepBasicInfo({ organizations: initialOrgs }: Props) {
             />
           </div>
           <div className="space-y-2">
-            <Label>End Date</Label>
+            <Label>{t("adminWizard.step1.endDate")}</Label>
             <Input
               type="date"
               value={state.endDate}
@@ -259,7 +261,7 @@ export function StepBasicInfo({ organizations: initialOrgs }: Props) {
               }
             />
             {state.startDate && state.endDate && state.endDate < state.startDate && (
-              <p className="text-xs text-destructive">End date must be after start date</p>
+              <p className="text-xs text-destructive">{t("adminWizard.step1.endDateError")}</p>
             )}
           </div>
         </div>

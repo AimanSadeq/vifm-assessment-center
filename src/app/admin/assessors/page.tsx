@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getServerT } from "@/lib/i18n/server";
 import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -7,6 +8,7 @@ import {
 
 export default async function AssessorsPage() {
   const supabase = await createClient();
+  const t = await getServerT();
 
   const { data: assessors } = await supabase
     .from("profiles")
@@ -36,34 +38,34 @@ export default async function AssessorsPage() {
   });
 
   const ROLE_LABELS: Record<string, string> = {
-    lead_assessor: "Lead Assessor",
-    associate_assessor: "Associate Assessor",
+    lead_assessor: t("adminAssessors.roles.lead_assessor"),
+    associate_assessor: t("adminAssessors.roles.associate_assessor"),
   };
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">Assessors</h1>
+      <h1 className="text-2xl font-bold">{t("adminAssessors.title")}</h1>
       <p className="mt-1 text-muted-foreground">
-        Manage assessor pool, certifications, and assignments.
+        {t("adminAssessors.subtitle")}
       </p>
 
       <div className="mt-6">
         {(!assessors || assessors.length === 0) ? (
           <div className="rounded-lg border border-dashed p-12 text-center">
-            <p className="text-muted-foreground">No assessors registered yet.</p>
+            <p className="text-muted-foreground">{t("adminAssessors.emptyTitle")}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Assessors are created when assigning them to engagements.
+              {t("adminAssessors.emptyBody")}
             </p>
           </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Assignments</TableHead>
-                <TableHead>Ratings</TableHead>
+                <TableHead>{t("adminAssessors.table.name")}</TableHead>
+                <TableHead>{t("adminAssessors.table.email")}</TableHead>
+                <TableHead>{t("adminAssessors.table.role")}</TableHead>
+                <TableHead>{t("adminAssessors.table.assignments")}</TableHead>
+                <TableHead>{t("adminAssessors.table.ratings")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

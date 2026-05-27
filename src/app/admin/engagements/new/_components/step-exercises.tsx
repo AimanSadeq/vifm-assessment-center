@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import type { Exercise } from "@/types/database";
 import { useWizard, useWizardDispatch } from "./wizard-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,6 +44,7 @@ type Props = {
 export function StepExercises({ exercises: initialExercises }: Props) {
   const state = useWizard();
   const dispatch = useWizardDispatch();
+  const { t } = useTranslation();
   const [exercises, setExercises] = useState(initialExercises);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -72,9 +74,9 @@ export function StepExercises({ exercises: initialExercises }: Props) {
       setNewType("");
       setNewDuration("");
       setNewDescription("");
-      toast.success("Exercise created");
+      toast.success(t("adminWizard.step3.exerciseCreatedToast"));
     } else if ("error" in result) {
-      toast.error(typeof result.error === "string" ? result.error : "Failed to create exercise");
+      toast.error(typeof result.error === "string" ? result.error : t("adminWizard.step3.exerciseCreateFailedToast"));
     }
   };
 
@@ -82,39 +84,39 @@ export function StepExercises({ exercises: initialExercises }: Props) {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Step 3: Select Exercises</CardTitle>
+          <CardTitle>{t("adminWizard.step3.title")}</CardTitle>
           <div className="flex items-center gap-2">
             <Badge
               variant={
                 state.selectedExerciseIds.length >= 1 ? "default" : "destructive"
               }
             >
-              {state.selectedExerciseIds.length} selected
+              {t("adminWizard.step3.selectedBadge", { count: state.selectedExerciseIds.length })}
             </Badge>
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
-                  + Add Exercise
+                  {t("adminWizard.step3.addExercise")}
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Create Exercise</DialogTitle>
+                  <DialogTitle>{t("adminWizard.step3.createExercise")}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-3">
                   <div className="space-y-1">
-                    <Label>Name *</Label>
+                    <Label>{t("adminWizard.step3.name")}</Label>
                     <Input
                       value={newName}
                       onChange={(e) => setNewName(e.target.value)}
-                      placeholder="Exercise name"
+                      placeholder={t("adminWizard.step3.exerciseNamePlaceholder")}
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label>Type *</Label>
+                    <Label>{t("adminWizard.step3.type")}</Label>
                     <Select value={newType} onValueChange={setNewType}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select exercise type..." />
+                        <SelectValue placeholder={t("adminWizard.step3.selectType")} />
                       </SelectTrigger>
                       <SelectContent>
                         {EXERCISE_TYPES.map((type) => (
@@ -126,20 +128,20 @@ export function StepExercises({ exercises: initialExercises }: Props) {
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label>Duration (minutes)</Label>
+                    <Label>{t("adminWizard.step3.duration")}</Label>
                     <Input
                       type="number"
                       value={newDuration}
                       onChange={(e) => setNewDuration(e.target.value)}
-                      placeholder="e.g., 60"
+                      placeholder={t("adminWizard.step3.durationPlaceholder")}
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label>Description</Label>
+                    <Label>{t("adminWizard.step3.description")}</Label>
                     <Textarea
                       value={newDescription}
                       onChange={(e) => setNewDescription(e.target.value)}
-                      placeholder="Brief description..."
+                      placeholder={t("adminWizard.step3.descriptionPlaceholder")}
                       rows={3}
                     />
                   </div>
@@ -148,7 +150,7 @@ export function StepExercises({ exercises: initialExercises }: Props) {
                     disabled={!newName.trim() || !newType || creating}
                     className="w-full"
                   >
-                    {creating ? "Creating..." : "Create Exercise"}
+                    {creating ? t("adminWizard.step3.creating") : t("adminWizard.step3.createExercise")}
                   </Button>
                 </div>
               </DialogContent>
@@ -159,16 +161,16 @@ export function StepExercises({ exercises: initialExercises }: Props) {
       <CardContent>
         {exercises.length === 0 ? (
           <p className="text-sm text-muted-foreground py-8 text-center">
-            No exercises in the library yet. Create one using the button above.
+            {t("adminWizard.step3.emptyLibrary")}
           </p>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-10"></TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead className="w-24">Duration</TableHead>
+                <TableHead>{t("adminWizard.step3.colName")}</TableHead>
+                <TableHead>{t("adminWizard.step3.colType")}</TableHead>
+                <TableHead className="w-24">{t("adminWizard.step3.colDuration")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -196,7 +198,7 @@ export function StepExercises({ exercises: initialExercises }: Props) {
                   </TableCell>
                   <TableCell>
                     {exercise.duration_minutes
-                      ? `${exercise.duration_minutes} min`
+                      ? t("adminWizard.step3.minutesSuffix", { n: exercise.duration_minutes })
                       : "-"}
                   </TableCell>
                 </TableRow>

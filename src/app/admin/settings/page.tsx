@@ -5,54 +5,56 @@ import { Shield, Database, Globe, Mail, Video, Brain, Clock } from "lucide-react
 import { isAIConfigured } from "@/lib/ai/client";
 import { isEmailConfigured } from "@/lib/integrations/email";
 import { isVideoConfigured } from "@/lib/integrations/video";
+import { getServerT } from "@/lib/i18n/server";
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const t = await getServerT();
   const aiConfigured = isAIConfigured();
   const emailConfigured = isEmailConfigured();
   const videoConfigured = isVideoConfigured();
 
   const integrations = [
     {
-      name: "Supabase Database",
+      name: t("adminSettings.integrationItems.database.name"),
       icon: Database,
       status: "connected",
-      description: "PostgreSQL database with Row-Level Security",
+      description: t("adminSettings.integrationItems.database.description"),
     },
     {
-      name: "Supabase Auth",
+      name: t("adminSettings.integrationItems.auth.name"),
       icon: Shield,
       status: "pending",
-      description: "Authentication and role-based access control - not yet enabled",
+      description: t("adminSettings.integrationItems.auth.description"),
     },
     {
-      name: "AI Features (Anthropic Claude)",
+      name: t("adminSettings.integrationItems.ai.name"),
       icon: Brain,
       status: aiConfigured ? "connected" : "not configured",
       description: aiConfigured
-        ? "AI observation classifier, report writer, development recommender, bias detector"
-        : "Set ANTHROPIC_API_KEY in environment to enable AI features",
+        ? t("adminSettings.integrationItems.ai.descriptionOn")
+        : t("adminSettings.integrationItems.ai.descriptionOff"),
     },
     {
-      name: "Email (SendGrid / Resend)",
+      name: t("adminSettings.integrationItems.email.name"),
       icon: Mail,
       status: emailConfigured ? "connected" : "not configured",
       description: emailConfigured
-        ? "Transactional email delivery active"
-        : "Set EMAIL_PROVIDER and EMAIL_API_KEY to enable email notifications",
+        ? t("adminSettings.integrationItems.email.descriptionOn")
+        : t("adminSettings.integrationItems.email.descriptionOff"),
     },
     {
-      name: "Video (Daily.co)",
+      name: t("adminSettings.integrationItems.video.name"),
       icon: Video,
       status: videoConfigured ? "connected" : "not configured",
       description: videoConfigured
-        ? "Virtual assessment center sessions active"
-        : "Set DAILY_API_KEY to enable video conferencing",
+        ? t("adminSettings.integrationItems.video.descriptionOn")
+        : t("adminSettings.integrationItems.video.descriptionOff"),
     },
     {
-      name: "i18n / Arabic RTL",
+      name: t("adminSettings.integrationItems.i18n.name"),
       icon: Globe,
       status: "connected",
-      description: "English and Arabic translations with RTL support",
+      description: t("adminSettings.integrationItems.i18n.description"),
     },
   ];
 
@@ -62,19 +64,25 @@ export default function SettingsPage() {
     return "outline" as const;
   };
 
+  const statusLabel = (s: string) => {
+    if (s === "connected") return t("adminSettings.status.connected");
+    if (s === "pending") return t("adminSettings.status.pending");
+    return t("adminSettings.status.notConfigured");
+  };
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Settings</h1>
+        <h1 className="text-2xl font-bold">{t("adminSettings.title")}</h1>
         <p className="mt-1 text-muted-foreground">
-          System configuration, integrations, and compliance settings.
+          {t("adminSettings.subtitle")}
         </p>
       </div>
 
       {/* Integration Status */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Integrations</CardTitle>
+          <CardTitle className="text-base">{t("adminSettings.integrations")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {integrations.map((integration) => {
@@ -88,7 +96,7 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-medium">{integration.name}</p>
                     <Badge variant={statusColor(integration.status)} className="text-[10px]">
-                      {integration.status}
+                      {statusLabel(integration.status)}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">{integration.description}</p>
@@ -102,33 +110,33 @@ export default function SettingsPage() {
       {/* Compliance */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Compliance & Data Protection</CardTitle>
+          <CardTitle className="text-base">{t("adminSettings.complianceTitle")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           <div className="flex items-center gap-2">
             <Shield className="h-4 w-4 text-accent" />
-            <span>UAE Federal Decree-Law No. 45 of 2021 (Data Protection)</span>
+            <span>{t("adminSettings.compliance.uaeLaw")}</span>
           </div>
           <div className="flex items-center gap-2">
             <Shield className="h-4 w-4 text-accent" />
-            <span>Saudi Arabia Personal Data Protection Law (PDPL)</span>
+            <span>{t("adminSettings.compliance.pdpl")}</span>
           </div>
           <div className="flex items-center gap-2">
             <Shield className="h-4 w-4 text-accent" />
-            <span>GDPR for EU/UK operations</span>
+            <span>{t("adminSettings.compliance.gdpr")}</span>
           </div>
           <div className="flex items-center gap-2">
             <Shield className="h-4 w-4 text-accent" />
-            <span>ISO 10667 alignment</span>
+            <span>{t("adminSettings.compliance.iso")}</span>
           </div>
           <div className="flex items-center gap-2">
             <Shield className="h-4 w-4 text-accent" />
-            <span>International Taskforce on Assessment Center Guidelines (6th Edition)</span>
+            <span>{t("adminSettings.compliance.acGuidelines")}</span>
           </div>
           <Separator />
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">Data retention: maximum 2 years unless contractually extended</span>
+            <span className="text-muted-foreground">{t("adminSettings.compliance.retention")}</span>
           </div>
         </CardContent>
       </Card>
@@ -136,28 +144,28 @@ export default function SettingsPage() {
       {/* Environment */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Environment</CardTitle>
+          <CardTitle className="text-base">{t("adminSettings.environmentTitle")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Framework</span>
+            <span className="text-muted-foreground">{t("adminSettings.env.framework")}</span>
             <span>Next.js 14 (App Router)</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">UI</span>
+            <span className="text-muted-foreground">{t("adminSettings.env.ui")}</span>
             <span>Tailwind CSS + Shadcn/UI</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Database</span>
+            <span className="text-muted-foreground">{t("adminSettings.env.database")}</span>
             <span>Supabase (PostgreSQL)</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Font</span>
+            <span className="text-muted-foreground">{t("adminSettings.env.font")}</span>
             <span>Open Sans (VIFM Brand Kit)</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Languages</span>
-            <span>English, Arabic (RTL)</span>
+            <span className="text-muted-foreground">{t("adminSettings.env.languages")}</span>
+            <span>{t("adminSettings.env.languagesValue")}</span>
           </div>
         </CardContent>
       </Card>

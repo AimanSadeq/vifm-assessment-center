@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ const PRIORITY_TONE: Record<"high" | "medium" | "low", string> = {
 
 export function BulkImportClient() {
   const router = useRouter();
+  const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [items, setItems] = useState<BulkJdExtractItem[]>([]);
@@ -56,7 +58,7 @@ export function BulkImportClient() {
 
   const handleExtract = () => {
     if (files.length === 0) {
-      toast.error("Pick one or more PDF/TXT files first.");
+      toast.error(t("adminRoleProfiles.bulkImport.errPickFiles"));
       return;
     }
     setItems([]);
@@ -86,7 +88,9 @@ export function BulkImportClient() {
       const okCount = result.items.filter((i) => i.status === "ok").length;
       const errCount = result.items.length - okCount;
       toast.success(
-        `${okCount} extracted${errCount > 0 ? ` · ${errCount} failed` : ""}`
+        errCount > 0
+          ? t("adminRoleProfiles.bulkImport.toastExtractedWithFailures", { ok: okCount, failed: errCount })
+          : t("adminRoleProfiles.bulkImport.toastExtracted", { ok: okCount })
       );
     });
   };
@@ -105,7 +109,7 @@ export function BulkImportClient() {
       .filter((p) => p.name.length > 0);
 
     if (profiles.length === 0) {
-      toast.error("Pick at least one row with a non-empty name.");
+      toast.error(t("adminRoleProfiles.bulkImport.errPickRow"));
       return;
     }
 
@@ -119,7 +123,10 @@ export function BulkImportClient() {
       }
       setCreateSummary(result);
       const tone = result.failed.length > 0 ? toast.warning : toast.success;
-      tone(`${result.created.length} created · ${result.failed.length} failed`);
+      tone(t("adminRoleProfiles.bulkImport.toastCreateSummary", {
+        created: result.created.length,
+        failed: result.failed.length,
+      }));
       router.refresh();
     });
   };
@@ -132,7 +139,7 @@ export function BulkImportClient() {
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Choose JD files</CardTitle>
+          <CardTitle className="text-base">{t("adminRoleProfiles.bulkImport.chooseFiles")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div
@@ -140,9 +147,9 @@ export function BulkImportClient() {
             onClick={() => fileInputRef.current?.click()}
           >
             <Upload className="h-6 w-6 mx-auto text-muted-foreground" />
-            <p className="text-sm font-medium mt-2">Click to select PDF/TXT files</p>
+            <p className="text-sm font-medium mt-2">{t("adminRoleProfiles.bulkImport.dropzoneTitle")}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Up to 25 files · 10 MB each
+              {t("adminRoleProfiles.bulkImport.dropzoneHint")}
             </p>
           </div>
           <input
@@ -156,9 +163,9 @@ export function BulkImportClient() {
           {files.length > 0 && (
             <div className="space-y-1">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {files.length} file{files.length === 1 ? "" : "s"} selected
+                {t("adminRoleProfiles.bulkImport.filesSelected", { count: files.length })}
               </p>
-              <ul className="text-xs text-muted-foreground max-h-32 overflow-y-auto pl-4 list-disc">
+              <ul className="text-xs text-muted-foreground max-h-32 overflow-y-auto ps-4 list-disc">
                 {files.map((f) => (
                   <li key={f.name}>{f.name}</li>
                 ))}
@@ -168,11 +175,13 @@ export function BulkImportClient() {
           <div className="flex items-center gap-2">
             <Button onClick={handleExtract} disabled={extracting || files.length === 0} className="gap-2">
               {extracting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              {extracting ? `Analyzing ${files.length} file(s)...` : `Extract competencies from ${files.length || ""} file(s)`}
+              {extracting
+                ? t("adminRoleProfiles.bulkImport.analyzing", { count: files.length })
+                : t("adminRoleProfiles.bulkImport.extractButton", { count: files.length || "" })}
             </Button>
             {extracting && (
               <p className="text-xs text-muted-foreground">
-                Each file takes ~15–30s. The whole batch is one server call.
+                {t("adminRoleProfiles.bulkImport.extractingNote")}
               </p>
             )}
           </div>
@@ -184,13 +193,17 @@ export function BulkImportClient() {
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2 flex-wrap">
               <FileText className="h-4 w-4" />
-              Extraction Results
+              {t("adminRoleProfiles.bulkImport.resultsTitle")}
               <Badge variant="default">
-                {items.filter((i) => i.status === "ok").length} succeeded
+                {t("adminRoleProfiles.bulkImport.badgeSucceeded", {
+                  count: items.filter((i) => i.status === "ok").length,
+                })}
               </Badge>
               {items.some((i) => i.status === "error") && (
                 <Badge variant="destructive">
-                  {items.filter((i) => i.status === "error").length} failed
+                  {t("adminRoleProfiles.bulkImport.badgeFailed", {
+                    count: items.filter((i) => i.status === "error").length,
+                  })}
                 </Badge>
               )}
             </CardTitle>
@@ -237,7 +250,7 @@ export function BulkImportClient() {
                         onChange={(e) =>
                           setNames((prev) => ({ ...prev, [item.fileName]: e.target.value }))
                         }
-                        placeholder="Profile name"
+                        placeholder={t("adminRoleProfiles.bulkImport.profileNamePlaceholder")}
                         className="text-sm font-medium"
                         disabled={!isAccepted}
                       />
@@ -256,7 +269,9 @@ export function BulkImportClient() {
                           ))}
                         {extractRecommendations(item).length > 8 && (
                           <span className="text-[11px] text-muted-foreground self-center">
-                            +{extractRecommendations(item).length - 8} more
+                            {t("adminRoleProfiles.bulkImport.moreChips", {
+                              count: extractRecommendations(item).length - 8,
+                            })}
                           </span>
                         )}
                       </div>
@@ -273,10 +288,10 @@ export function BulkImportClient() {
                 className="gap-2"
               >
                 {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                Create {acceptedCount} role profile{acceptedCount === 1 ? "" : "s"}
+                {t("adminRoleProfiles.bulkImport.createButton", { count: acceptedCount })}
               </Button>
               <p className="text-xs text-muted-foreground">
-                Names default to the file name; edit before saving.
+                {t("adminRoleProfiles.bulkImport.namesNote")}
               </p>
             </div>
           </CardContent>
@@ -286,11 +301,11 @@ export function BulkImportClient() {
       {createSummary && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Created profiles</CardTitle>
+            <CardTitle className="text-base">{t("adminRoleProfiles.bulkImport.createdTitle")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {createSummary.created.length === 0 && createSummary.failed.length === 0 && (
-              <p className="text-sm text-muted-foreground">Nothing was saved.</p>
+              <p className="text-sm text-muted-foreground">{t("adminRoleProfiles.bulkImport.nothingSaved")}</p>
             )}
             {createSummary.created.map((c) => (
               <div
@@ -305,7 +320,7 @@ export function BulkImportClient() {
                   href={`/admin/role-profiles/${c.id}`}
                   className="inline-flex items-center gap-1 text-xs font-medium text-emerald-800 hover:underline"
                 >
-                  Open
+                  {t("adminRoleProfiles.bulkImport.open")}
                   <ExternalLink className="h-3 w-3" />
                 </Link>
               </div>

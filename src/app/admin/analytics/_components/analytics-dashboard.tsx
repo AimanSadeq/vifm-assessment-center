@@ -24,6 +24,7 @@ import {
   PolarRadiusAxis,
   Radar,
 } from "recharts";
+import { useTranslation } from "react-i18next";
 import type { BiasMetric } from "@/lib/scoring/bias-detection";
 
 type CandidateComparison = {
@@ -67,12 +68,13 @@ export function AnalyticsDashboard({
   candidateComparisons,
   departmentAverages,
 }: Props) {
+  const { t } = useTranslation();
   const distributionData = [
-    { score: "1 - Sig. Dev. Needed", count: scoreDistribution[0] },
-    { score: "2 - Dev. Needed", count: scoreDistribution[1] },
-    { score: "3 - Competent", count: scoreDistribution[2] },
-    { score: "4 - Strength", count: scoreDistribution[3] },
-    { score: "5 - Sig. Strength", count: scoreDistribution[4] },
+    { score: t("adminAnalytics.bars.1"), count: scoreDistribution[0] },
+    { score: t("adminAnalytics.bars.2"), count: scoreDistribution[1] },
+    { score: t("adminAnalytics.bars.3"), count: scoreDistribution[2] },
+    { score: t("adminAnalytics.bars.4"), count: scoreDistribution[3] },
+    { score: t("adminAnalytics.bars.5"), count: scoreDistribution[4] },
   ];
 
   const radarData = competencyAverages.map((c) => ({
@@ -84,9 +86,9 @@ export function AnalyticsDashboard({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Analytics</h1>
+        <h1 className="text-2xl font-bold">{t("adminAnalytics.title")}</h1>
         <p className="mt-1 text-muted-foreground">
-          System-wide analytics: ICC scores, bias detection, engagement metrics.
+          {t("adminAnalytics.subtitle")}
         </p>
       </div>
 
@@ -95,19 +97,19 @@ export function AnalyticsDashboard({
         <Card>
           <CardContent className="pt-6">
             <p className="text-2xl font-bold">{engagementCount}</p>
-            <p className="text-sm text-muted-foreground">Projects</p>
+            <p className="text-sm text-muted-foreground">{t("adminAnalytics.kpi.projects")}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <p className="text-2xl font-bold">{candidateCount}</p>
-            <p className="text-sm text-muted-foreground">Candidates</p>
+            <p className="text-sm text-muted-foreground">{t("adminAnalytics.kpi.candidates")}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <p className="text-2xl font-bold">{totalRatings}</p>
-            <p className="text-sm text-muted-foreground">Total Ratings</p>
+            <p className="text-sm text-muted-foreground">{t("adminAnalytics.kpi.totalRatings")}</p>
           </CardContent>
         </Card>
         <Card>
@@ -126,7 +128,7 @@ export function AnalyticsDashboard({
               )}
             </div>
             <p className="text-sm text-muted-foreground">
-              ICC (Inter-Rater Reliability)
+              {t("adminAnalytics.kpi.icc")}
             </p>
           </CardContent>
         </Card>
@@ -136,7 +138,7 @@ export function AnalyticsDashboard({
         {/* Score Distribution */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">BARS Score Distribution</CardTitle>
+            <CardTitle className="text-base">{t("adminAnalytics.scoreDistributionTitle")}</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
@@ -155,7 +157,7 @@ export function AnalyticsDashboard({
         <Card>
           <CardHeader>
             <CardTitle className="text-base">
-              Competency Average Scores
+              {t("adminAnalytics.competencyAveragesTitle")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -170,7 +172,7 @@ export function AnalyticsDashboard({
                     fontSize={9}
                   />
                   <Radar
-                    name="Average"
+                    name={t("adminAnalytics.seriesAverage")}
                     dataKey="average"
                     stroke="#5391D5"
                     fill="#5391D5"
@@ -180,7 +182,7 @@ export function AnalyticsDashboard({
               </ResponsiveContainer>
             ) : (
               <p className="text-sm text-muted-foreground py-8 text-center">
-                No rating data available yet.
+                {t("adminAnalytics.noRatingData")}
               </p>
             )}
           </CardContent>
@@ -191,9 +193,9 @@ export function AnalyticsDashboard({
       {candidateComparisons.filter((c) => c.oarScore !== null).length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Candidate Comparison (OAR Scores)</CardTitle>
+            <CardTitle className="text-base">{t("adminAnalytics.candidateComparisonTitle")}</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Compare candidates by their Overall Assessment Rating.
+              {t("adminAnalytics.candidateComparisonSubtitle")}
             </p>
           </CardHeader>
           <CardContent>
@@ -207,11 +209,11 @@ export function AnalyticsDashboard({
                 <YAxis domain={[0, 5]} fontSize={10} />
                 <Tooltip
                   contentStyle={{ fontSize: 12, borderRadius: 8 }}
-                  formatter={(value) => [Number(value).toFixed(1), "OAR"] as [string, string]}
+                  formatter={(value) => [Number(value).toFixed(1), t("adminAnalytics.oarAbbrev")] as [string, string]}
                 />
-                <Bar dataKey="oarScore" fill="#010131" radius={[4, 4, 0, 0]} name="OAR Score" />
+                <Bar dataKey="oarScore" fill="#010131" radius={[4, 4, 0, 0]} name={t("adminAnalytics.seriesOarScore")} />
                 {candidateComparisons.some((c) => c.avgCompetencyScore !== null) && (
-                  <Bar dataKey="avgCompetencyScore" fill="#5391D5" radius={[4, 4, 0, 0]} name="Avg Competency" />
+                  <Bar dataKey="avgCompetencyScore" fill="#5391D5" radius={[4, 4, 0, 0]} name={t("adminAnalytics.seriesAvgCompetency")} />
                 )}
               </BarChart>
             </ResponsiveContainer>
@@ -224,8 +226,8 @@ export function AnalyticsDashboard({
         {departmentAverages.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Department Comparison</CardTitle>
-              <p className="text-sm text-muted-foreground">Average OAR scores by department.</p>
+              <CardTitle className="text-base">{t("adminAnalytics.departmentComparisonTitle")}</CardTitle>
+              <p className="text-sm text-muted-foreground">{t("adminAnalytics.departmentComparisonSubtitle")}</p>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={250}>
@@ -234,7 +236,7 @@ export function AnalyticsDashboard({
                   <XAxis dataKey="department" fontSize={10} />
                   <YAxis domain={[0, 5]} fontSize={10} />
                   <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                  <Bar dataKey="averageOAR" fill="#5391D5" radius={[4, 4, 0, 0]} name="Avg OAR" />
+                  <Bar dataKey="averageOAR" fill="#5391D5" radius={[4, 4, 0, 0]} name={t("adminAnalytics.seriesAvgOar")} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -244,13 +246,13 @@ export function AnalyticsDashboard({
         {/* Industry Benchmark Placeholder */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Industry Benchmarks</CardTitle>
-            <p className="text-sm text-muted-foreground">Compare against industry norm groups.</p>
+            <CardTitle className="text-base">{t("adminAnalytics.benchmarksTitle")}</CardTitle>
+            <p className="text-sm text-muted-foreground">{t("adminAnalytics.benchmarksSubtitle")}</p>
           </CardHeader>
           <CardContent className="flex items-center justify-center py-12">
             <div className="text-center text-muted-foreground">
-              <p className="text-sm">Benchmark data will populate as more assessments are completed.</p>
-              <p className="text-xs mt-1">Norm groups: GCC Banking, MENA Corporate, Global Corporate</p>
+              <p className="text-sm">{t("adminAnalytics.benchmarksEmpty")}</p>
+              <p className="text-xs mt-1">{t("adminAnalytics.benchmarksNormGroups")}</p>
             </div>
           </CardContent>
         </Card>
@@ -259,30 +261,29 @@ export function AnalyticsDashboard({
       {/* Assessor Bias Detection */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Assessor Bias Detection</CardTitle>
+          <CardTitle className="text-base">{t("adminAnalytics.biasTitle")}</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Identifies potential rating biases across assessors. Values outside
-            normal ranges are flagged.
+            {t("adminAnalytics.biasSubtitle")}
           </p>
         </CardHeader>
         <CardContent>
           {biasMetrics.length === 0 ? (
             <p className="text-sm text-muted-foreground py-4 text-center">
-              No assessor data available.
+              {t("adminAnalytics.biasEmpty")}
             </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Assessor</TableHead>
-                  <TableHead className="text-center">Ratings</TableHead>
-                  <TableHead className="text-center">Mean</TableHead>
-                  <TableHead className="text-center">SD</TableHead>
-                  <TableHead className="text-center">Leniency</TableHead>
+                  <TableHead>{t("adminAnalytics.biasTable.assessor")}</TableHead>
+                  <TableHead className="text-center">{t("adminAnalytics.biasTable.ratings")}</TableHead>
+                  <TableHead className="text-center">{t("adminAnalytics.biasTable.mean")}</TableHead>
+                  <TableHead className="text-center">{t("adminAnalytics.biasTable.sd")}</TableHead>
+                  <TableHead className="text-center">{t("adminAnalytics.biasTable.leniency")}</TableHead>
                   <TableHead className="text-center">
-                    Central Tendency
+                    {t("adminAnalytics.biasTable.centralTendency")}
                   </TableHead>
-                  <TableHead className="text-center">Halo Effect</TableHead>
+                  <TableHead className="text-center">{t("adminAnalytics.biasTable.haloEffect")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

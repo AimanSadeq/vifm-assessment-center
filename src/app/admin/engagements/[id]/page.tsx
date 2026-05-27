@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getServerT } from "@/lib/i18n/server";
 import { notFound } from "next/navigation";
 import { BackLink } from "@/components/shared/back-link";
 import { EngagementDetail } from "./_components/engagement-detail";
@@ -16,6 +17,7 @@ type Props = {
 
 export default async function EngagementDetailPage({ params, searchParams }: Props) {
   const supabase = await createClient();
+  const t = await getServerT();
   const { id } = params;
   const focusedCandidateId = searchParams.candidate ?? null;
 
@@ -123,7 +125,7 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
 
   return (
     <div className="space-y-6">
-      <BackLink href="/admin/engagements" label="Back to Projects" />
+      <BackLink href="/admin/engagements" label={t("adminEngagements.detail.backToProjects")} />
       <EngagementDetail
         engagement={engagement}
         candidates={candidates}
@@ -147,18 +149,18 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
       <RecommendedCoursesPanel
         title={
           focusedCandidate
-            ? `Recommended VIFM training - ${focusedCandidate.full_name as string}`
-            : "Recommended VIFM training programmes"
+            ? t("adminEngagements.detail.coursesTitleCandidate", { name: focusedCandidate.full_name as string })
+            : t("adminEngagements.detail.coursesTitleCohort")
         }
         description={
           focusedCandidate
-            ? "Per-candidate - courses ranked by this candidate's competency gaps × course relevance. Use this view to anchor a 1:1 development conversation."
-            : "Cohort-aggregated - courses ranked by total gap severity × course relevance across every candidate in the engagement. Higher fit score = larger development impact across the group."
+            ? t("adminEngagements.detail.coursesDescCandidate")
+            : t("adminEngagements.detail.coursesDescCohort")
         }
         emptyMessage={
           focusedCandidate
-            ? `No course recommendations for ${focusedCandidate.full_name} - either no consensus ratings have been finalised, this candidate is on or above target across all competencies, or the catalogue doesn't yet cover the relevant competencies.`
-            : "No course recommendations yet - either no consensus ratings have been finalised, the cohort is on or above target across all competencies, or the catalogue doesn't yet cover the relevant competencies."
+            ? t("adminEngagements.detail.coursesEmptyCandidate", { name: focusedCandidate.full_name as string })
+            : t("adminEngagements.detail.coursesEmptyCohort")
         }
         courses={recommendedCourses}
         context="ac"

@@ -1,10 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
+import { getServerT } from "@/lib/i18n/server";
 import { calculateICC, getICCInterpretation } from "@/lib/scoring/icc";
 import { calculateBiasMetrics } from "@/lib/scoring/bias-detection";
 import { AnalyticsDashboard } from "./_components/analytics-dashboard";
 
 export default async function AnalyticsPage() {
   const supabase = await createClient();
+  const t = await getServerT();
 
   // Fetch all ratings with assessor and competency info
   const { data: ratings } = await supabase
@@ -96,7 +98,7 @@ export default async function AnalyticsPage() {
 
     if (!assessorRatingsMap.has(assignment.assessor_id)) {
       assessorRatingsMap.set(assignment.assessor_id, {
-        name: assignment.profiles?.full_name ?? "Unknown",
+        name: assignment.profiles?.full_name ?? t("adminAnalytics.unknown"),
         ratings: [],
       });
     }
@@ -123,7 +125,7 @@ export default async function AnalyticsPage() {
   const compScoreMap = new Map<string, { name: string; total: number; count: number }>();
   for (const r of ratings ?? []) {
     const comp = r.competencies as unknown as { name: string } | null;
-    const name = comp?.name ?? "Unknown";
+    const name = comp?.name ?? t("adminAnalytics.unknown");
     if (!compScoreMap.has(r.competency_id)) {
       compScoreMap.set(r.competency_id, { name, total: 0, count: 0 });
     }
@@ -148,8 +150,8 @@ export default async function AnalyticsPage() {
     return {
       id: c.id,
       name: c.full_name,
-      department: c.department ?? "Unassigned",
-      seniority: c.seniority_level ?? "Unknown",
+      department: c.department ?? t("adminAnalytics.unassigned"),
+      seniority: c.seniority_level ?? t("adminAnalytics.unknown"),
       oarScore: oar?.overall_score ?? null,
       recommendation: oar?.recommendation ?? null,
       avgCompetencyScore: avgConsensus ? Math.round(avgConsensus * 100) / 100 : null,

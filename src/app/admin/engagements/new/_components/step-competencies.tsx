@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { CompetencyTree } from "@/types/database";
 import { useWizard, useWizardDispatch } from "./wizard-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +20,7 @@ type Props = {
 export function StepCompetencies({ competencyTree, roleProfiles }: Props) {
   const state = useWizard();
   const dispatch = useWizardDispatch();
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
 
   const selectedIds = new Set(
@@ -60,19 +62,20 @@ export function StepCompetencies({ competencyTree, roleProfiles }: Props) {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between gap-3">
-          <CardTitle>Step 2: Select Competencies</CardTitle>
+          <CardTitle>{t("adminWizard.step2.title")}</CardTitle>
           <div className="flex items-center gap-2 flex-wrap justify-end">
             <RoleProfilePicker profiles={roleProfiles} />
             <JdExtractor />
             <Badge variant={selectedIds.size >= 4 && selectedIds.size <= 15 ? "default" : "destructive"}>
-              {selectedIds.size}/15 selected {selectedIds.size < 4 ? "(min 4)" : selectedIds.size > 15 ? "(max 15)" : ""}
+              {t("adminWizard.step2.selectedBadge", { count: selectedIds.size })}{" "}
+              {selectedIds.size < 4 ? t("adminWizard.step2.minHint") : selectedIds.size > 15 ? t("adminWizard.step2.maxHint") : ""}
             </Badge>
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <Input
-          placeholder="Search competencies..."
+          placeholder={t("adminWizard.step2.searchPlaceholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -120,7 +123,7 @@ export function StepCompetencies({ competencyTree, roleProfiles }: Props) {
                           {isSelected(comp.id) && (
                             <div className="flex items-center gap-1">
                               <Label className="text-xs text-muted-foreground">
-                                Weight
+                                {t("adminWizard.step2.weight")}
                               </Label>
                               <Input
                                 type="number"

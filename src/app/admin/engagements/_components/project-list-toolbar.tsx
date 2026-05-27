@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import {
   Select,
   SelectContent,
@@ -18,14 +19,15 @@ type Props = {
 };
 
 const SORT_OPTIONS = [
-  { value: "created_at", label: "Date Created" },
-  { value: "name", label: "Name" },
-  { value: "start_date", label: "Start Date" },
-  { value: "client", label: "Client" },
+  { value: "created_at", labelKey: "adminEngagements.toolbar.sortDateCreated" },
+  { value: "name", labelKey: "adminEngagements.toolbar.sortName" },
+  { value: "start_date", labelKey: "adminEngagements.toolbar.sortStartDate" },
+  { value: "client", labelKey: "adminEngagements.toolbar.sortClient" },
 ];
 
 export function ProjectListToolbar({ organizations, currentSort, currentDir, currentClient, currentStatus }: Props) {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const buildUrl = (overrides: Record<string, string>) => {
     const params = new URLSearchParams();
@@ -52,11 +54,11 @@ export function ProjectListToolbar({ organizations, currentSort, currentDir, cur
         onValueChange={(val) => router.push(buildUrl({ sort: val }))}
       >
         <SelectTrigger className="w-[150px] h-8 text-xs">
-          <SelectValue placeholder="Sort by..." />
+          <SelectValue placeholder={t("adminEngagements.toolbar.sortPlaceholder")} />
         </SelectTrigger>
         <SelectContent>
           {SORT_OPTIONS.map((o) => (
-            <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+            <SelectItem key={o.value} value={o.value}>{t(o.labelKey)}</SelectItem>
           ))}
         </SelectContent>
       </Select>
@@ -69,8 +71,8 @@ export function ProjectListToolbar({ organizations, currentSort, currentDir, cur
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="desc">Newest</SelectItem>
-          <SelectItem value="asc">Oldest</SelectItem>
+          <SelectItem value="desc">{t("adminEngagements.toolbar.dirNewest")}</SelectItem>
+          <SelectItem value="asc">{t("adminEngagements.toolbar.dirOldest")}</SelectItem>
         </SelectContent>
       </Select>
 
@@ -80,10 +82,10 @@ export function ProjectListToolbar({ organizations, currentSort, currentDir, cur
           onValueChange={(val) => router.push(buildUrl({ client: val }))}
         >
           <SelectTrigger className="w-[180px] h-8 text-xs">
-            <SelectValue placeholder="All Clients" />
+            <SelectValue placeholder={t("adminEngagements.toolbar.allClients")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Clients</SelectItem>
+            <SelectItem value="all">{t("adminEngagements.toolbar.allClients")}</SelectItem>
             {organizations.map((org) => (
               <SelectItem key={org.id} value={org.id}>{org.name}</SelectItem>
             ))}

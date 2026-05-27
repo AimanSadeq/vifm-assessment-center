@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Trash2, Save } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -82,6 +83,7 @@ type Props = {
 
 export function RoleProfileEditor({ initial, competencyTree, mode }: Props) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [profile, setProfile] = useState(initial.profile);
   const [comps, setComps] = useState(initial.competencies);
   const [saving, setSaving] = useState(false);
@@ -110,11 +112,11 @@ export function RoleProfileEditor({ initial, competencyTree, mode }: Props) {
 
   const onSave = async () => {
     if (!profile.name_en.trim()) {
-      toast.error("Role name (English) is required.");
+      toast.error(t("adminRoleProfiles.editor.errNameRequired"));
       return;
     }
     if (comps.length < 4) {
-      toast.error("Pick at least 4 competencies before saving.");
+      toast.error(t("adminRoleProfiles.editor.errMinComps"));
       return;
     }
 
@@ -149,7 +151,7 @@ export function RoleProfileEditor({ initial, competencyTree, mode }: Props) {
       toast.error(result.error);
       return;
     }
-    toast.success(mode === "edit" ? "Role profile updated" : "Role profile created");
+    toast.success(mode === "edit" ? t("adminRoleProfiles.editor.toastUpdated") : t("adminRoleProfiles.editor.toastCreated"));
     router.push(`/admin/role-profiles/${result.data?.id ?? initial.id}`);
     router.refresh();
   };
@@ -158,65 +160,65 @@ export function RoleProfileEditor({ initial, competencyTree, mode }: Props) {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Role details</CardTitle>
+          <CardTitle>{t("adminRoleProfiles.editor.roleDetails")}</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-1 space-y-1.5">
-            <Label htmlFor="rp-name-en">Role name (English) *</Label>
+            <Label htmlFor="rp-name-en">{t("adminRoleProfiles.editor.nameEnLabel")}</Label>
             <Input
               id="rp-name-en"
               value={profile.name_en}
               onChange={(e) => updateProfile("name_en", e.target.value)}
-              placeholder="e.g. Branch Manager"
+              placeholder={t("adminRoleProfiles.editor.nameEnPlaceholder")}
             />
           </div>
           <div className="md:col-span-1 space-y-1.5">
-            <Label htmlFor="rp-name-ar">Role name (Arabic)</Label>
+            <Label htmlFor="rp-name-ar">{t("adminRoleProfiles.editor.nameArLabel")}</Label>
             <Input
               id="rp-name-ar"
               value={profile.name_ar}
               onChange={(e) => updateProfile("name_ar", e.target.value)}
-              placeholder="مدير فرع"
+              placeholder={t("adminRoleProfiles.editor.nameArPlaceholder")}
               dir="rtl"
             />
           </div>
           <div className="md:col-span-1 space-y-1.5">
-            <Label htmlFor="rp-target-role">Target role label</Label>
+            <Label htmlFor="rp-target-role">{t("adminRoleProfiles.editor.targetRoleLabel")}</Label>
             <Input
               id="rp-target-role"
               value={profile.target_role}
               onChange={(e) => updateProfile("target_role", e.target.value)}
-              placeholder="e.g. Branch Manager"
+              placeholder={t("adminRoleProfiles.editor.targetRolePlaceholder")}
             />
           </div>
           <div className="md:col-span-1 space-y-1.5">
-            <Label htmlFor="rp-industry">Industry</Label>
+            <Label htmlFor="rp-industry">{t("adminRoleProfiles.editor.industryLabel")}</Label>
             <Input
               id="rp-industry"
               value={profile.industry}
               onChange={(e) => updateProfile("industry", e.target.value)}
-              placeholder="Banking, Government, Insurance..."
+              placeholder={t("adminRoleProfiles.editor.industryPlaceholder")}
             />
           </div>
           <div className="md:col-span-1 space-y-1.5">
-            <Label htmlFor="rp-region">Region</Label>
+            <Label htmlFor="rp-region">{t("adminRoleProfiles.editor.regionLabel")}</Label>
             <Select
               value={profile.region || undefined}
               onValueChange={(v) => updateProfile("region", v as typeof profile.region)}
             >
               <SelectTrigger id="rp-region">
-                <SelectValue placeholder="Select region..." />
+                <SelectValue placeholder={t("adminRoleProfiles.editor.regionPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="uae">UAE</SelectItem>
-                <SelectItem value="saudi">Saudi Arabia</SelectItem>
-                <SelectItem value="gcc">GCC (general)</SelectItem>
-                <SelectItem value="global">Global</SelectItem>
+                <SelectItem value="uae">{t("adminRoleProfiles.editor.regionUae")}</SelectItem>
+                <SelectItem value="saudi">{t("adminRoleProfiles.editor.regionSaudi")}</SelectItem>
+                <SelectItem value="gcc">{t("adminRoleProfiles.editor.regionGcc")}</SelectItem>
+                <SelectItem value="global">{t("adminRoleProfiles.editor.regionGlobal")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="md:col-span-1 space-y-1.5">
-            <Label htmlFor="rp-target">Default target proficiency</Label>
+            <Label htmlFor="rp-target">{t("adminRoleProfiles.editor.targetProficiencyLabel")}</Label>
             <Input
               id="rp-target"
               type="number"
@@ -232,16 +234,16 @@ export function RoleProfileEditor({ initial, competencyTree, mode }: Props) {
               }
             />
             <p className="text-xs text-muted-foreground">
-              BARS level expected for the role (1–5). Drives gap badges in reports.
+              {t("adminRoleProfiles.editor.targetProficiencyHint")}
             </p>
           </div>
           <div className="md:col-span-2 space-y-1.5">
-            <Label htmlFor="rp-description">Description</Label>
+            <Label htmlFor="rp-description">{t("adminRoleProfiles.editor.descriptionLabel")}</Label>
             <Textarea
               id="rp-description"
               value={profile.description}
               onChange={(e) => updateProfile("description", e.target.value)}
-              placeholder="Short description of the role and what makes it distinctive."
+              placeholder={t("adminRoleProfiles.editor.descriptionPlaceholder")}
               rows={3}
             />
           </div>
@@ -252,14 +254,14 @@ export function RoleProfileEditor({ initial, competencyTree, mode }: Props) {
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <CardTitle>Competencies</CardTitle>
+              <CardTitle>{t("adminRoleProfiles.editor.competenciesTitle")}</CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                {comps.length} selected · minimum 4
+                {t("adminRoleProfiles.editor.competenciesCount", { count: comps.length })}
               </p>
             </div>
             <div className="flex items-center gap-2">
               <JdExtractor
-                triggerLabel="Build from JD"
+                triggerLabel={t("adminRoleProfiles.editor.buildFromJd")}
                 onApply={(recs) => {
                   const merged = new Map(comps.map((c) => [c.competency_id, c]));
                   for (const r of recs) {
@@ -284,17 +286,16 @@ export function RoleProfileEditor({ initial, competencyTree, mode }: Props) {
         <CardContent>
           {comps.length === 0 ? (
             <p className="text-sm text-muted-foreground py-8 text-center">
-              No competencies yet. Use &quot;Build from JD&quot; for an AI suggestion or
-              add them manually.
+              {t("adminRoleProfiles.editor.competenciesEmpty")}
             </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Competency</TableHead>
-                  <TableHead className="w-[110px]">Weight</TableHead>
-                  <TableHead className="w-[130px]">Priority</TableHead>
-                  <TableHead>Why this matters</TableHead>
+                  <TableHead>{t("adminRoleProfiles.editor.colCompetency")}</TableHead>
+                  <TableHead className="w-[110px]">{t("adminRoleProfiles.editor.colWeight")}</TableHead>
+                  <TableHead className="w-[130px]">{t("adminRoleProfiles.editor.colPriority")}</TableHead>
+                  <TableHead>{t("adminRoleProfiles.editor.colWhyMatters")}</TableHead>
                   <TableHead className="w-[40px]"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -306,7 +307,7 @@ export function RoleProfileEditor({ initial, competencyTree, mode }: Props) {
                       <TableCell>
                         <div>
                           <span className="font-medium text-sm">
-                            {meta?.comp.name ?? "(unknown competency)"}
+                            {meta?.comp.name ?? t("adminRoleProfiles.editor.unknownCompetency")}
                           </span>
                           {meta && (
                             <p className="text-xs text-muted-foreground mt-0.5">
@@ -343,7 +344,7 @@ export function RoleProfileEditor({ initial, competencyTree, mode }: Props) {
                             <SelectValue placeholder="-">
                               {c.priority && (
                                 <Badge variant="secondary" className={priorityTone[c.priority]}>
-                                  {c.priority}
+                                  {t(`adminRoleProfiles.editor.priority.${c.priority}`)}
                                 </Badge>
                               )}
                             </SelectValue>
@@ -351,7 +352,7 @@ export function RoleProfileEditor({ initial, competencyTree, mode }: Props) {
                           <SelectContent>
                             {PRIORITY_OPTIONS.map((p) => (
                               <SelectItem key={p} value={p}>
-                                {p}
+                                {t(`adminRoleProfiles.editor.priority.${p}`)}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -363,7 +364,7 @@ export function RoleProfileEditor({ initial, competencyTree, mode }: Props) {
                           onChange={(e) =>
                             updateComp(c.competency_id, { reasoning: e.target.value })
                           }
-                          placeholder="One sentence on why this competency matters here."
+                          placeholder={t("adminRoleProfiles.editor.reasoningPlaceholder")}
                           className="h-8"
                         />
                       </TableCell>
@@ -372,7 +373,7 @@ export function RoleProfileEditor({ initial, competencyTree, mode }: Props) {
                           variant="ghost"
                           size="sm"
                           onClick={() => removeComp(c.competency_id)}
-                          aria-label="Remove competency"
+                          aria-label={t("adminRoleProfiles.editor.removeCompetency")}
                         >
                           <Trash2 className="h-4 w-4 text-muted-foreground" />
                         </Button>
@@ -388,11 +389,15 @@ export function RoleProfileEditor({ initial, competencyTree, mode }: Props) {
 
       <div className="flex justify-end gap-2">
         <Button variant="ghost" onClick={() => router.back()}>
-          Cancel
+          {t("adminRoleProfiles.editor.cancel")}
         </Button>
         <Button onClick={onSave} disabled={saving || comps.length < 4}>
           <Save className="h-4 w-4 me-2" />
-          {saving ? "Saving..." : mode === "edit" ? "Save changes" : "Create role profile"}
+          {saving
+            ? t("adminRoleProfiles.editor.saving")
+            : mode === "edit"
+              ? t("adminRoleProfiles.editor.saveChanges")
+              : t("adminRoleProfiles.editor.createRoleProfile")}
         </Button>
       </div>
     </div>
@@ -408,6 +413,7 @@ function CompetencyAddDropdown({
   excludedIds: Set<string>;
   onPick: (c: Competency) => void;
 }) {
+  const { t } = useTranslation();
   const flat = tree.flatMap((d) =>
     d.clusters.flatMap((c) =>
       c.competencies
@@ -425,12 +431,12 @@ function CompetencyAddDropdown({
       }}
     >
       <SelectTrigger className="h-9 w-[230px]">
-        <SelectValue placeholder="+ Add competency manually" />
+        <SelectValue placeholder={t("adminRoleProfiles.editor.addCompetencyManually")} />
       </SelectTrigger>
       <SelectContent className="max-h-[400px]">
         {flat.length === 0 ? (
           <div className="px-2 py-3 text-xs text-muted-foreground">
-            All competencies already added
+            {t("adminRoleProfiles.editor.allCompetenciesAdded")}
           </div>
         ) : (
           flat.map((f) => (

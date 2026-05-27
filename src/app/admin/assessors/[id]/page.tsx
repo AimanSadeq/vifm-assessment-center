@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getServerT } from "@/lib/i18n/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -8,17 +9,18 @@ import {
 import { BackLink } from "@/components/shared/back-link";
 import { AssessorUtilizationChart } from "./_components/assessor-utilization-chart";
 
-const ROLE_LABELS: Record<string, string> = {
-  lead_assessor: "Lead Assessor",
-  associate_assessor: "Associate Assessor",
-};
-
 export default async function AssessorDetailPage({
   params,
 }: {
   params: { id: string };
 }) {
   const supabase = await createClient();
+  const t = await getServerT();
+
+  const ROLE_LABELS: Record<string, string> = {
+    lead_assessor: t("adminAssessors.roles.lead_assessor"),
+    associate_assessor: t("adminAssessors.roles.associate_assessor"),
+  };
 
   const { data: assessor } = await supabase
     .from("profiles")
@@ -67,7 +69,7 @@ export default async function AssessorDetailPage({
 
   return (
     <div className="space-y-6">
-      <BackLink href="/admin/assessors" label="Back to Assessors" />
+      <BackLink href="/admin/assessors" label={t("adminAssessors.backToAssessors")} />
 
       {/* Profile header */}
       <div>
@@ -83,7 +85,7 @@ export default async function AssessorDetailPage({
       <div className="grid grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Assignments</CardTitle>
+            <CardTitle className="text-sm text-muted-foreground">{t("adminAssessors.kpi.assignments")}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{assignments?.length ?? 0}</p>
@@ -91,7 +93,7 @@ export default async function AssessorDetailPage({
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Observations</CardTitle>
+            <CardTitle className="text-sm text-muted-foreground">{t("adminAssessors.kpi.observations")}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{observations?.length ?? 0}</p>
@@ -99,7 +101,7 @@ export default async function AssessorDetailPage({
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Ratings</CardTitle>
+            <CardTitle className="text-sm text-muted-foreground">{t("adminAssessors.kpi.ratings")}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{ratings?.length ?? 0}</p>
@@ -111,7 +113,7 @@ export default async function AssessorDetailPage({
       {utilizationData.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Resource Utilization by Project</CardTitle>
+            <CardTitle>{t("adminAssessors.utilizationByProject")}</CardTitle>
           </CardHeader>
           <CardContent>
             <AssessorUtilizationChart data={utilizationData} />
@@ -122,19 +124,19 @@ export default async function AssessorDetailPage({
       {/* Assignment history */}
       <Card>
         <CardHeader>
-          <CardTitle>Assignment History</CardTitle>
+          <CardTitle>{t("adminAssessors.assignmentHistory")}</CardTitle>
         </CardHeader>
         <CardContent>
           {(!assignments || assignments.length === 0) ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">No assignments yet.</p>
+            <p className="text-sm text-muted-foreground py-4 text-center">{t("adminAssessors.noAssignments")}</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Project</TableHead>
-                  <TableHead>Candidate</TableHead>
-                  <TableHead>Exercise</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>{t("adminAssessors.table.project")}</TableHead>
+                  <TableHead>{t("adminAssessors.table.candidate")}</TableHead>
+                  <TableHead>{t("adminAssessors.table.exercise")}</TableHead>
+                  <TableHead>{t("adminAssessors.table.status")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

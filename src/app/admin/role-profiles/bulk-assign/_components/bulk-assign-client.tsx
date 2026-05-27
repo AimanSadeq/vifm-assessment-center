@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,7 +47,8 @@ type ParsedRow = {
  */
 function parseCsv(
   text: string,
-  profileLookup: Map<string, string>
+  profileLookup: Map<string, string>,
+  tr: (key: string, vars?: Record<string, string | number>) => string
 ): { rows: ParsedRow[]; warnings: string[] } {
   const warnings: string[] = [];
   const lines = text
@@ -64,12 +66,12 @@ function parseCsv(
     const line = lines[i];
     const cells = line.split(",").map((c: string) => c.trim().replace(/^"|"$/g, ""));
     if (cells.length < 2) {
-      warnings.push(`Line ${i + 1}: expected 2 columns, got ${cells.length}.`);
+      warnings.push(tr("adminRoleProfiles.bulkAssign.warnColumns", { line: i + 1, got: cells.length }));
       continue;
     }
     const [email, raw] = cells;
     if (!email) {
-      warnings.push(`Line ${i + 1}: missing email.`);
+      warnings.push(tr("adminRoleProfiles.bulkAssign.warnMissingEmail", { line: i + 1 }));
       continue;
     }
     let roleProfileId: string | null = null;
@@ -83,7 +85,7 @@ function parseCsv(
         const matched = profileLookup.get(raw.toLowerCase());
         if (!matched) {
           warnings.push(
-            `Line ${i + 1}: profile "${raw}" did not match any role profile by id or name.`
+            tr("adminRoleProfiles.bulkAssign.warnNoMatch", { line: i + 1, raw })
           );
           continue;
         }
@@ -97,15 +99,16 @@ function parseCsv(
 
 const STATUS_TONE: Record<
   BulkAssignRowResult["status"],
-  { bg: string; fg: string; border: string; label: string }
+  { bg: string; fg: string; border: string }
 > = {
-  updated: { bg: "#ecfdf5", fg: "#047857", border: "#a7f3d0", label: "Updated" },
-  no_candidate: { bg: "#fffbeb", fg: "#a16207", border: "#fde68a", label: "No match" },
-  no_change: { bg: "#eff6ff", fg: "#1d4ed8", border: "#bfdbfe", label: "No change" },
-  error: { bg: "#fef2f2", fg: "#b91c1c", border: "#fecaca", label: "Error" },
+  updated: { bg: "#ecfdf5", fg: "#047857", border: "#a7f3d0" },
+  no_candidate: { bg: "#fffbeb", fg: "#a16207", border: "#fde68a" },
+  no_change: { bg: "#eff6ff", fg: "#1d4ed8", border: "#bfdbfe" },
+  error: { bg: "#fef2f2", fg: "#b91c1c", border: "#fecaca" },
 };
 
 export function BulkAssignClient({ profiles }: { profiles: ProfileOption[] }) {
+  const { t } = useTranslation();
   const profileLookup = useMemo(() => {
     const m = new Map<string, string>();
     for (const p of profiles) m.set(p.name_en.toLowerCase(), p.id);
@@ -132,11 +135,11 @@ export function BulkAssignClient({ profiles }: { profiles: ProfileOption[] }) {
     setSummary(null);
     setWarnings([]);
 
-    const parsed = parseCsv(csvText, profileLookup);
+    const parsed = parseCsv(csvText, profileLookup, t);
     setWarnings(parsed.warnings);
 
     if (parsed.rows.length === 0) {
-      toast.error("No valid rows found in the CSV.");
+      toast.error(t("adminRoleProfiles.bulkAssign.errNoRows"));
       return;
     }
 
@@ -152,7 +155,7 @@ export function BulkAssignClient({ profiles }: { profiles: ProfileOption[] }) {
     startTransition(async () => {
       const result = await bulkAssignRoleProfilesAction({ rows });
       if ("error" in result) {
-        toast.error("Validation failed. Check the CSV format.");
+        toast.error(t("adminRoleProfiles.bulkAssign.errValidation"));
         return;
       }
       setResults(result.results);
@@ -164,7 +167,11 @@ export function BulkAssignClient({ profiles }: { profiles: ProfileOption[] }) {
             ? toast.warning
             : toast.success;
       tone(
-        `${result.summary.updated} updated · ${result.summary.noCandidate} unmatched · ${result.summary.errors} errors`
+        t("adminRoleProfiles.bulkAssign.toastSummary", {
+          updated: result.summary.updated,
+          unmatched: result.summary.noCandidate,
+          errors: result.summary.errors,
+        })
       );
     });
   };
@@ -177,7 +184,7 @@ export function BulkAssignClient({ profiles }: { profiles: ProfileOption[] }) {
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">CSV input</CardTitle>
+          <CardTitle className="text-base">{t("adminRoleProfiles.bulkAssign.csvInput")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid sm:grid-cols-[1fr,auto] gap-3 items-start">
@@ -194,7 +201,7 @@ export function BulkAssignClient({ profiles }: { profiles: ProfileOption[] }) {
                 className="inline-flex items-center justify-center gap-2 rounded-md border border-dashed bg-muted/30 px-3 py-2 text-sm cursor-pointer hover:bg-muted/50"
               >
                 <Upload className="h-4 w-4" />
-                Upload CSV file
+                {t("adminRoleProfiles.bulkAssign.uploadCsv")}
               </label>
               <input
                 id="csv-file"
@@ -204,21 +211,21 @@ export function BulkAssignClient({ profiles }: { profiles: ProfileOption[] }) {
                 onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
               />
               <p className="text-[11px] text-muted-foreground">
-                Or paste rows directly. Header optional.
+                {t("adminRoleProfiles.bulkAssign.pasteHint")}
               </p>
             </div>
           </div>
 
           <div className="space-y-1.5">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Default role profile (used when CSV column is blank)
+              {t("adminRoleProfiles.bulkAssign.defaultProfileLabel")}
             </p>
             <Select value={defaultProfileId} onValueChange={setDefaultProfileId}>
               <SelectTrigger className="w-full sm:w-[320px]">
-                <SelectValue placeholder="None - clear assignment for blank rows" />
+                <SelectValue placeholder={t("adminRoleProfiles.bulkAssign.defaultProfilePlaceholder")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={FALLBACK_NONE}>None - clear assignment</SelectItem>
+                <SelectItem value={FALLBACK_NONE}>{t("adminRoleProfiles.bulkAssign.defaultProfileNone")}</SelectItem>
                 {profiles.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.name_en}
@@ -235,10 +242,12 @@ export function BulkAssignClient({ profiles }: { profiles: ProfileOption[] }) {
               className="gap-2"
             >
               <Sparkles className="h-4 w-4" />
-              {pending ? "Applying..." : "Apply assignments"}
+              {pending ? t("adminRoleProfiles.bulkAssign.applying") : t("adminRoleProfiles.bulkAssign.applyAssignments")}
             </Button>
             <p className="text-[11px] text-muted-foreground">
-              {csvText.split(/\r?\n/).filter((l) => l.trim()).length} non-blank lines
+              {t("adminRoleProfiles.bulkAssign.nonBlankLines", {
+                count: csvText.split(/\r?\n/).filter((l) => l.trim()).length,
+              })}
             </p>
           </div>
 
@@ -246,13 +255,13 @@ export function BulkAssignClient({ profiles }: { profiles: ProfileOption[] }) {
             <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900 text-xs space-y-0.5">
               <p className="font-semibold flex items-center gap-1">
                 <AlertCircle className="h-3.5 w-3.5" />
-                {warnings.length} parse warning{warnings.length === 1 ? "" : "s"}:
+                {t("adminRoleProfiles.bulkAssign.parseWarnings", { count: warnings.length })}
               </p>
               {warnings.slice(0, 6).map((w, i) => (
                 <p key={i}>{w}</p>
               ))}
               {warnings.length > 6 && (
-                <p>… and {warnings.length - 6} more.</p>
+                <p>{t("adminRoleProfiles.bulkAssign.andMore", { count: warnings.length - 6 })}</p>
               )}
             </div>
           )}
@@ -264,12 +273,12 @@ export function BulkAssignClient({ profiles }: { profiles: ProfileOption[] }) {
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2 flex-wrap">
               <FileText className="h-4 w-4" />
-              Results
-              <Badge variant="default" className="bg-emerald-600">{summary.updated} updated</Badge>
-              <Badge variant="secondary">{summary.noChange} no change</Badge>
-              <Badge variant="outline" className="border-amber-300 text-amber-800">{summary.noCandidate} unmatched</Badge>
+              {t("adminRoleProfiles.bulkAssign.resultsTitle")}
+              <Badge variant="default" className="bg-emerald-600">{t("adminRoleProfiles.bulkAssign.badgeUpdated", { count: summary.updated })}</Badge>
+              <Badge variant="secondary">{t("adminRoleProfiles.bulkAssign.badgeNoChange", { count: summary.noChange })}</Badge>
+              <Badge variant="outline" className="border-amber-300 text-amber-800">{t("adminRoleProfiles.bulkAssign.badgeUnmatched", { count: summary.noCandidate })}</Badge>
               {summary.errors > 0 && (
-                <Badge variant="destructive">{summary.errors} errors</Badge>
+                <Badge variant="destructive">{t("adminRoleProfiles.bulkAssign.badgeErrors", { count: summary.errors })}</Badge>
               )}
             </CardTitle>
           </CardHeader>
@@ -277,10 +286,10 @@ export function BulkAssignClient({ profiles }: { profiles: ProfileOption[] }) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Candidate</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Detail</TableHead>
+                  <TableHead>{t("adminRoleProfiles.bulkAssign.colEmail")}</TableHead>
+                  <TableHead>{t("adminRoleProfiles.bulkAssign.colCandidate")}</TableHead>
+                  <TableHead>{t("adminRoleProfiles.bulkAssign.colStatus")}</TableHead>
+                  <TableHead>{t("adminRoleProfiles.bulkAssign.colDetail")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -297,7 +306,7 @@ export function BulkAssignClient({ profiles }: { profiles: ProfileOption[] }) {
                           className="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold"
                           style={{ backgroundColor: tone.bg, color: tone.fg, borderColor: tone.border }}
                         >
-                          {tone.label}
+                          {t(`adminRoleProfiles.bulkAssign.statusLabel.${r.status}`)}
                         </span>
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">

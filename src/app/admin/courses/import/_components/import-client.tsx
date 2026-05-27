@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,6 +17,7 @@ import { VIFM_VERTICAL_LABELS } from "@/types/database";
 
 export function CoursesImportClient() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [files, setFiles] = useState<File[]>([]);
   const [extracting, startExtract] = useTransition();
   const [committing, startCommit] = useTransition();
@@ -33,7 +35,7 @@ export function CoursesImportClient() {
     if (!selected) return;
     const arr = Array.from(selected).filter((f) => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"));
     if (arr.length !== selected.length) {
-      toast.error("Only PDF files are accepted");
+      toast.error(t("adminCourses.import.onlyPdf"));
     }
     setFiles((prev) => {
       // de-dupe by name
@@ -67,7 +69,7 @@ export function CoursesImportClient() {
   const handleExtract = () => {
     if (files.length === 0) return;
     if (files.length > 25) {
-      toast.error("Up to 25 PDFs per batch - split larger uploads");
+      toast.error(t("adminCourses.import.maxBatch"));
       return;
     }
     startExtract(async () => {
@@ -97,8 +99,15 @@ export function CoursesImportClient() {
       const matchedCount = r.results.filter((x) => x.ok && x.existing_course_id).length;
       toast.success(
         matchedCount > 0
-          ? `Extracted ${okCount} of ${r.results.length} PDFs · ${matchedCount} match existing course${matchedCount === 1 ? "" : "s"}`
-          : `Extracted ${okCount} of ${r.results.length} PDFs`
+          ? t("adminCourses.import.extractedWithMatches", {
+              ok: okCount,
+              total: r.results.length,
+              matched: matchedCount,
+            })
+          : t("adminCourses.import.extracted", {
+              ok: okCount,
+              total: r.results.length,
+            })
       );
     });
   };
@@ -127,7 +136,7 @@ export function CoursesImportClient() {
             : null,
       }));
     if (proposals.length === 0) {
-      toast.error("Nothing accepted to create");
+      toast.error(t("adminCourses.import.nothingAccepted"));
       return;
     }
     startCommit(async () => {
@@ -139,10 +148,10 @@ export function CoursesImportClient() {
       const replacedCount = r.created.filter((c) => c.replaced).length;
       const newCount = r.created.length - replacedCount;
       const parts: string[] = [];
-      if (newCount > 0) parts.push(`${newCount} created`);
-      if (replacedCount > 0) parts.push(`${replacedCount} replaced`);
-      if (r.failed.length > 0) parts.push(`${r.failed.length} failed`);
-      toast.success(parts.join(" · ") || "Done");
+      if (newCount > 0) parts.push(t("adminCourses.import.partCreated", { n: newCount }));
+      if (replacedCount > 0) parts.push(t("adminCourses.import.partReplaced", { n: replacedCount }));
+      if (r.failed.length > 0) parts.push(t("adminCourses.import.partFailed", { n: r.failed.length }));
+      toast.success(parts.join(" · ") || t("adminCourses.import.done"));
       router.push("/admin/courses");
     });
   };
@@ -164,10 +173,10 @@ export function CoursesImportClient() {
       >
         <Upload className={`h-8 w-8 mx-auto ${isDragOver ? "text-accent" : "text-muted-foreground"}`} />
         <p className="text-sm font-medium mt-2">
-          {isDragOver ? "Drop to upload" : "Drop PDFs here or click to browse"}
+          {isDragOver ? t("adminCourses.import.dropToUpload") : t("adminCourses.import.dropHint")}
         </p>
         <p className="text-[11px] text-muted-foreground mt-1">
-          Up to 25 PDFs per batch · processed 5 in parallel · ~10-30s per file
+          {t("adminCourses.import.dropSubhint")}
         </p>
         <input
           id="course-pdf-upload"
@@ -183,9 +192,9 @@ export function CoursesImportClient() {
       {files.length > 0 && results.length === 0 && (
         <div className="rounded-md border bg-card p-3">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-sm font-medium">{files.length} file{files.length === 1 ? "" : "s"} ready</p>
+            <p className="text-sm font-medium">{t("adminCourses.import.filesReady", { n: files.length })}</p>
             <Button size="sm" variant="ghost" onClick={() => setFiles([])} disabled={extracting}>
-              Clear
+              {t("adminCourses.import.clear")}
             </Button>
           </div>
           <ul className="space-y-1 text-xs text-muted-foreground max-h-40 overflow-auto">
@@ -196,7 +205,7 @@ export function CoursesImportClient() {
           <div className="mt-3 flex justify-end">
             <Button onClick={handleExtract} disabled={extracting} className="gap-2">
               {extracting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              {extracting ? "Extracting…" : `Extract ${files.length} PDF${files.length === 1 ? "" : "s"}`}
+              {extracting ? t("adminCourses.import.extracting") : t("adminCourses.import.extractBtn", { n: files.length })}
             </Button>
           </div>
         </div>
@@ -207,8 +216,8 @@ export function CoursesImportClient() {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-sm">
-              <strong>{successRows.length}</strong> extracted · <strong>{acceptedCount}</strong> accepted
-              {failedRows.length > 0 && <> · <strong className="text-destructive">{failedRows.length}</strong> failed</>}
+              <strong>{successRows.length}</strong> {t("adminCourses.import.summaryExtracted")} · <strong>{acceptedCount}</strong> {t("adminCourses.import.summaryAccepted")}
+              {failedRows.length > 0 && <> · <strong className="text-destructive">{failedRows.length}</strong> {t("adminCourses.import.summaryFailed")}</>}
             </p>
             <div className="flex gap-2">
               <Button
@@ -221,7 +230,7 @@ export function CoursesImportClient() {
                 }}
                 disabled={committing}
               >
-                Start over
+                {t("adminCourses.import.startOver")}
               </Button>
               <Button
                 onClick={handleCommit}
@@ -230,10 +239,14 @@ export function CoursesImportClient() {
               >
                 {committing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
                 {willReplaceCount > 0 && willCreateCount > 0
-                  ? `Save ${acceptedCount} (${willCreateCount} new · ${willReplaceCount} replaced)`
+                  ? t("adminCourses.import.commitMixed", {
+                      total: acceptedCount,
+                      created: willCreateCount,
+                      replaced: willReplaceCount,
+                    })
                   : willReplaceCount > 0
-                    ? `Replace ${willReplaceCount} course${willReplaceCount === 1 ? "" : "s"}`
-                    : `Create ${acceptedCount} course${acceptedCount === 1 ? "" : "s"}`}
+                    ? t("adminCourses.import.commitReplace", { n: willReplaceCount })
+                    : t("adminCourses.import.commitCreate", { n: acceptedCount })}
               </Button>
             </div>
           </div>
@@ -242,7 +255,7 @@ export function CoursesImportClient() {
             <Card className="border-destructive/50 bg-destructive/5">
               <CardContent className="py-3">
                 <p className="text-xs font-medium text-destructive flex items-center gap-1.5 mb-2">
-                  <AlertTriangle className="h-3.5 w-3.5" /> Failed extractions
+                  <AlertTriangle className="h-3.5 w-3.5" /> {t("adminCourses.import.failedExtractions")}
                 </p>
                 <ul className="text-xs space-y-0.5">
                   {failedRows.map((r) => (
@@ -312,8 +325,8 @@ export function CoursesImportClient() {
                           />
                           <span>
                             {replaceMatched[row.filename]
-                              ? "Replace existing course"
-                              : "Existing course found - uncheck to import as new"}
+                              ? t("adminCourses.import.replaceExisting")
+                              : t("adminCourses.import.existingFound")}
                           </span>
                         </label>
                         <span className="text-muted-foreground/80 truncate">
@@ -324,28 +337,28 @@ export function CoursesImportClient() {
 
                     {p.competency_tags.length > 0 && (
                       <div className="text-[11px] text-muted-foreground">
-                        <strong>AC competencies:</strong>{" "}
-                        {p.competency_tags.map((t) => (
-                          <span key={t.competency_id} className="inline-block me-1.5">
-                            {t.competency_name}
-                            <span className="text-[10px] text-muted-foreground/70"> ·{t.relevance_weight}</span>
+                        <strong>{t("adminCourses.import.acCompetencies")}</strong>{" "}
+                        {p.competency_tags.map((ct) => (
+                          <span key={ct.competency_id} className="inline-block me-1.5">
+                            {ct.competency_name}
+                            <span className="text-[10px] text-muted-foreground/70"> ·{ct.relevance_weight}</span>
                           </span>
                         ))}
                       </div>
                     )}
                     {p.pillar_tags.length > 0 && (
                       <div className="text-[11px] text-muted-foreground">
-                        <strong>ARA pillars:</strong>{" "}
-                        {p.pillar_tags.map((t) => (
-                          <span key={t.pillar_id} className="inline-block me-1.5 capitalize">
-                            {t.pillar_id.replace(/_/g, " ")}
-                            <span className="text-[10px] text-muted-foreground/70"> ·{t.relevance_weight}</span>
+                        <strong>{t("adminCourses.import.araPillars")}</strong>{" "}
+                        {p.pillar_tags.map((pt) => (
+                          <span key={pt.pillar_id} className="inline-block me-1.5 capitalize">
+                            {pt.pillar_id.replace(/_/g, " ")}
+                            <span className="text-[10px] text-muted-foreground/70"> ·{pt.relevance_weight}</span>
                           </span>
                         ))}
                       </div>
                     )}
                     <p className="text-[10px] text-muted-foreground/70">
-                      Confidence {Math.round(p.extraction_confidence * 100)}%
+                      {t("adminCourses.import.confidence", { pct: Math.round(p.extraction_confidence * 100) })}
                     </p>
                   </CardContent>
                 </Card>

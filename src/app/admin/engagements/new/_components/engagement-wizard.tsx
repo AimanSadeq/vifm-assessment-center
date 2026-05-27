@@ -12,13 +12,14 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const STEPS = [
-  { number: 1, label: "Basic Info" },
-  { number: 2, label: "Competencies" },
-  { number: 3, label: "Exercises" },
-  { number: 4, label: "Matrix" },
-  { number: 5, label: "Review" },
+  { number: 1, labelKey: "adminWizard.steps.basicInfo" },
+  { number: 2, labelKey: "adminWizard.steps.competencies" },
+  { number: 3, labelKey: "adminWizard.steps.exercises" },
+  { number: 4, labelKey: "adminWizard.steps.matrix" },
+  { number: 5, labelKey: "adminWizard.steps.review" },
 ];
 
 type Props = {
@@ -31,6 +32,7 @@ type Props = {
 function WizardInner({ organizations, competencyTree, exercises, roleProfiles }: Props) {
   const state = useWizard();
   const dispatch = useWizardDispatch();
+  const { t } = useTranslation();
 
   const canGoNext = () => {
     switch (state.currentStep) {
@@ -88,7 +90,7 @@ function WizardInner({ organizations, competencyTree, exercises, roleProfiles }:
             >
               {step.number < state.currentStep ? <Check className="h-3 w-3" /> : step.number}
             </span>
-            {step.label}
+            {t(step.labelKey)}
           </button>
         ))}
       </nav>
@@ -121,7 +123,7 @@ function WizardInner({ organizations, competencyTree, exercises, roleProfiles }:
         <div className="flex gap-2">
           {state.currentStep === 1 ? (
             <Link href="/admin/engagements">
-              <Button variant="ghost">Cancel</Button>
+              <Button variant="ghost">{t("adminWizard.nav.cancel")}</Button>
             </Link>
           ) : (
             <Button
@@ -131,7 +133,7 @@ function WizardInner({ organizations, competencyTree, exercises, roleProfiles }:
               }
             >
               <ChevronLeft className="h-4 w-4 me-1" />
-              Back
+              {t("adminWizard.nav.back")}
             </Button>
           )}
         </div>
@@ -143,7 +145,7 @@ function WizardInner({ organizations, competencyTree, exercises, roleProfiles }:
             }
             disabled={!canGoNext()}
           >
-            Next
+            {t("adminWizard.nav.next")}
             <ChevronRight className="h-4 w-4 ms-1" />
           </Button>
         ) : null}

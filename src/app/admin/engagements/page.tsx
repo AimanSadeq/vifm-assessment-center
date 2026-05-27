@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getServerT } from "@/lib/i18n/server";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -21,6 +22,7 @@ export default async function EngagementsPage({
   searchParams: { status?: string; sort?: string; dir?: string; client?: string };
 }) {
   const supabase = await createClient();
+  const t = await getServerT();
   const filterStatus = searchParams.status || "all";
   const sortField = searchParams.sort || "created_at";
   const sortDir = searchParams.dir === "asc";
@@ -72,13 +74,13 @@ export default async function EngagementsPage({
     <div>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Projects</h1>
+          <h1 className="text-2xl font-bold">{t("adminEngagements.list.title")}</h1>
           <p className="mt-1 text-muted-foreground">
-            Create and manage assessment center projects.
+            {t("adminEngagements.list.subtitle")}
           </p>
         </div>
         <Link href="/admin/engagements/new">
-          <Button>+ New Project</Button>
+          <Button>{t("adminEngagements.list.newProject")}</Button>
         </Link>
       </div>
 
@@ -97,10 +99,10 @@ export default async function EngagementsPage({
       <div className="mt-4">
         {sorted.length === 0 ? (
           <div className="rounded-lg border border-dashed p-12 text-center">
-            <p className="text-muted-foreground">No projects yet.</p>
+            <p className="text-muted-foreground">{t("adminEngagements.list.empty")}</p>
             <Link href="/admin/engagements/new">
               <Button variant="outline" className="mt-4">
-                Create your first project
+                {t("adminEngagements.list.createFirst")}
               </Button>
             </Link>
           </div>
@@ -108,11 +110,11 @@ export default async function EngagementsPage({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Client</TableHead>
-                <TableHead>Target Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Dates</TableHead>
+                <TableHead>{t("adminEngagements.list.colName")}</TableHead>
+                <TableHead>{t("adminEngagements.list.colClient")}</TableHead>
+                <TableHead>{t("adminEngagements.list.colTargetRole")}</TableHead>
+                <TableHead>{t("adminEngagements.list.colStatus")}</TableHead>
+                <TableHead>{t("adminEngagements.list.colDates")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -134,7 +136,7 @@ export default async function EngagementsPage({
                     <TableCell>{eng.target_role ?? "-"}</TableCell>
                     <TableCell>
                       <Badge variant={STATUS_COLORS[eng.status] ?? "secondary"}>
-                        {eng.status}
+                        {t(`adminEngagements.status.${eng.status}`)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">

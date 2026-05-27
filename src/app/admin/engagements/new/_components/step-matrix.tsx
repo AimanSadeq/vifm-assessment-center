@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslation } from "react-i18next";
 import type { CompetencyTree, Exercise } from "@/types/database";
 import { useWizard, useWizardDispatch } from "./wizard-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +18,7 @@ type Props = {
 export function StepMatrix({ competencyTree, exercises }: Props) {
   const state = useWizard();
   const dispatch = useWizardDispatch();
+  const { t } = useTranslation();
 
   // Only show selected competencies and exercises
   const selectedCompIds = new Set(
@@ -66,11 +68,11 @@ export function StepMatrix({ competencyTree, exercises }: Props) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Step 4: Exercise-Competency Matrix</CardTitle>
+          <CardTitle>{t("adminWizard.step4.title")}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground py-8 text-center">
-            Select at least 1 exercise and 4 competencies in the previous steps.
+            {t("adminWizard.step4.emptyState")}
           </p>
         </CardContent>
       </Card>
@@ -83,15 +85,13 @@ export function StepMatrix({ competencyTree, exercises }: Props) {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Step 4: Exercise-Competency Matrix</CardTitle>
+          <CardTitle>{t("adminWizard.step4.title")}</CardTitle>
           <Badge variant={allValid ? "default" : "destructive"}>
-            {validCount}/{competencyRows.length} competencies meet 2-exercise
-            minimum
+            {t("adminWizard.step4.metBadge", { valid: validCount, total: competencyRows.length })}
           </Badge>
         </div>
         <p className="text-sm text-muted-foreground">
-          Each competency must be observed in at least 2 exercises (International
-          Taskforce Guidelines).
+          {t("adminWizard.step4.guideline")}
         </p>
       </CardHeader>
       <CardContent>
@@ -100,7 +100,7 @@ export function StepMatrix({ competencyTree, exercises }: Props) {
             <thead>
               <tr className="border-b">
                 <th className="text-left py-2 pr-4 min-w-[200px] sticky left-0 bg-card">
-                  Competency
+                  {t("adminWizard.step4.colCompetency")}
                 </th>
                 {selectedExercises.map((ex) => (
                   <th
@@ -112,7 +112,7 @@ export function StepMatrix({ competencyTree, exercises }: Props) {
                     </div>
                   </th>
                 ))}
-                <th className="text-center py-2 px-2 min-w-[60px]">Status</th>
+                <th className="text-center py-2 px-2 min-w-[60px]">{t("adminWizard.step4.colStatus")}</th>
               </tr>
             </thead>
             <tbody>
@@ -162,7 +162,7 @@ export function StepMatrix({ competencyTree, exercises }: Props) {
                                 : "text-red-500"
                           )}
                         >
-                          {count >= 2 ? "OK" : `${count}/2`}
+                          {count >= 2 ? t("adminWizard.step4.statusOk") : t("adminWizard.step4.statusProgress", { count })}
                         </span>
                       </td>
                     </tr>

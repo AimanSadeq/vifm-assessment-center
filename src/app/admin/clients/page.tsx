@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getServerT } from "@/lib/i18n/server";
 import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -6,6 +7,7 @@ import {
 
 export default async function ClientsPage() {
   const supabase = await createClient();
+  const t = await getServerT();
 
   const { data: organizations } = await supabase
     .from("organizations")
@@ -24,28 +26,28 @@ export default async function ClientsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">Clients</h1>
+      <h1 className="text-2xl font-bold">{t("adminClients.title")}</h1>
       <p className="mt-1 text-muted-foreground">
-        Manage client organizations and contacts.
+        {t("adminClients.subtitle")}
       </p>
 
       <div className="mt-6">
         {(!organizations || organizations.length === 0) ? (
           <div className="rounded-lg border border-dashed p-12 text-center">
-            <p className="text-muted-foreground">No client organizations yet.</p>
+            <p className="text-muted-foreground">{t("adminClients.emptyTitle")}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Organizations are created when setting up engagements.
+              {t("adminClients.emptyBody")}
             </p>
           </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Organization</TableHead>
-                <TableHead>Industry</TableHead>
-                <TableHead>Country</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>Engagements</TableHead>
+                <TableHead>{t("adminClients.colOrganization")}</TableHead>
+                <TableHead>{t("adminClients.colIndustry")}</TableHead>
+                <TableHead>{t("adminClients.colCountry")}</TableHead>
+                <TableHead>{t("adminClients.colContact")}</TableHead>
+                <TableHead>{t("adminClients.colEngagements")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -63,7 +65,7 @@ export default async function ClientsPage() {
                         )}
                       </div>
                     ) : (
-                      <span className="text-xs text-muted-foreground">Not set</span>
+                      <span className="text-xs text-muted-foreground">{t("adminClients.notSet")}</span>
                     )}
                   </TableCell>
                   <TableCell>

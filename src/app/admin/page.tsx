@@ -2,10 +2,12 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { ArrowRight, Sparkles, Compass, Map } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getServerT } from "@/lib/i18n/server";
 import { ProcessMap, type ProcessStep } from "@/components/shared/process-map";
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
+  const t = await getServerT();
 
   const [engR, candR, assignR, obsR, ratR, conR, oarR, repR, wsR] = await Promise.all([
     supabase.from("engagements").select("id"),
@@ -30,13 +32,13 @@ export default async function AdminDashboardPage() {
     : "/admin/engagements";
 
   const steps: ProcessStep[] = [
-    { id: "engagements", number: 1, title: "Create Projects", href: "/admin/engagements", iconName: "ClipboardList", metric: e, metricLabel: "projects", isComplete: e > 0, isActive: e === 0 },
-    { id: "candidates", number: 2, title: "Add Candidates", href: engDetailHref, iconName: "Users", metric: c, metricLabel: "candidates", isComplete: c > 0, isActive: e > 0 && c === 0 },
-    { id: "assessors", number: 3, title: "Assign Assessors", href: engDetailHref, iconName: "UserCheck", metric: a, metricLabel: "assignments", isComplete: a > 0, isActive: c > 0 && a === 0 },
-    { id: "observations", number: 4, title: "Project Analytics", href: "/admin/analytics", iconName: "BarChart3", metric: o, metricLabel: "observations", isComplete: o > 0, isActive: a > 0 && o === 0 },
-    { id: "integration", number: 5, title: "Integration & Wash-Up", href: "/admin/analytics", iconName: "GitMerge", metric: ws, metricLabel: "worksheets", isComplete: con > 0, isActive: r > 0 && con === 0 },
-    { id: "oar", number: 6, title: "Finalize OAR", href: "/admin/analytics", iconName: "Award", metric: oar, metricLabel: "OARs", isComplete: oar > 0, isActive: con > 0 && oar === 0 },
-    { id: "reports", number: 7, title: "Release Reports", href: "/admin/engagements", iconName: "FileText", metric: rep, metricLabel: "reports", isComplete: rel > 0, isActive: oar > 0 && rel === 0 },
+    { id: "engagements", number: 1, title: t("adminDashboard.steps.createProjects"), href: "/admin/engagements", iconName: "ClipboardList", metric: e, metricLabel: t("adminDashboard.metrics.projects"), isComplete: e > 0, isActive: e === 0 },
+    { id: "candidates", number: 2, title: t("adminDashboard.steps.addCandidates"), href: engDetailHref, iconName: "Users", metric: c, metricLabel: t("adminDashboard.metrics.candidates"), isComplete: c > 0, isActive: e > 0 && c === 0 },
+    { id: "assessors", number: 3, title: t("adminDashboard.steps.assignAssessors"), href: engDetailHref, iconName: "UserCheck", metric: a, metricLabel: t("adminDashboard.metrics.assignments"), isComplete: a > 0, isActive: c > 0 && a === 0 },
+    { id: "observations", number: 4, title: t("adminDashboard.steps.projectAnalytics"), href: "/admin/analytics", iconName: "BarChart3", metric: o, metricLabel: t("adminDashboard.metrics.observations"), isComplete: o > 0, isActive: a > 0 && o === 0 },
+    { id: "integration", number: 5, title: t("adminDashboard.steps.integrationWashup"), href: "/admin/analytics", iconName: "GitMerge", metric: ws, metricLabel: t("adminDashboard.metrics.worksheets"), isComplete: con > 0, isActive: r > 0 && con === 0 },
+    { id: "oar", number: 6, title: t("adminDashboard.steps.finalizeOar"), href: "/admin/analytics", iconName: "Award", metric: oar, metricLabel: t("adminDashboard.metrics.oars"), isComplete: oar > 0, isActive: con > 0 && oar === 0 },
+    { id: "reports", number: 7, title: t("adminDashboard.steps.releaseReports"), href: "/admin/engagements", iconName: "FileText", metric: rep, metricLabel: t("adminDashboard.metrics.reports"), isComplete: rel > 0, isActive: oar > 0 && rel === 0 },
   ];
 
   return (
@@ -50,14 +52,13 @@ export default async function AdminDashboardPage() {
         <div className="px-6 py-8 sm:px-8 sm:py-10 relative z-10">
           <span className="ara-eyebrow text-accent">
             <Sparkles className="h-3 w-3" />
-            VIFM Assessment Center
+            {t("adminDashboard.eyebrow")}
           </span>
           <h1 className="ara-numeral text-2xl sm:text-3xl font-semibold text-white leading-[1.1] mt-3 mb-3 max-w-2xl">
-            Assessment Center Command
+            {t("adminDashboard.title")}
           </h1>
           <p className="text-sm text-white/75 max-w-2xl">
-            Track candidate, assessor, and report progress across every stage of
-            every engagement - from brief to released report.
+            {t("adminDashboard.intro")}
           </p>
           <div className="flex flex-wrap items-center gap-2.5 mt-5">
             <Link
@@ -65,28 +66,28 @@ export default async function AdminDashboardPage() {
               className="inline-flex items-center gap-1.5 text-xs font-medium text-white px-3.5 py-1.5 rounded-full border border-white/25 bg-white/10 hover:bg-white/15 hover:border-white/40 backdrop-blur transition-colors"
             >
               <Compass className="h-3.5 w-3.5" />
-              Engagement tiers
+              {t("adminDashboard.chips.engagementTiers")}
             </Link>
             <Link
               href="/ac/roadmap"
               className="inline-flex items-center gap-1.5 text-xs font-medium text-white/85 px-3.5 py-1.5 rounded-full border border-white/15 bg-white/0 hover:bg-white/10 hover:border-white/30 backdrop-blur transition-colors"
             >
               <Map className="h-3.5 w-3.5" />
-              Platform roadmap
+              {t("adminDashboard.chips.platformRoadmap")}
             </Link>
             <Link
               href="/ara"
               className="hidden sm:inline-flex items-center gap-1 text-xs text-white/70 hover:text-white transition-colors ms-2"
             >
-              AI Readiness Compass <ArrowRight className="h-3 w-3" />
+              {t("adminDashboard.chips.aiReadinessCompass")} <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
         </div>
       </section>
 
       <ProcessMap
-        title="Assessment Center Command"
-        subtitle="Continuous assessment cycle - track progress across all stages."
+        title={t("adminDashboard.title")}
+        subtitle={t("adminDashboard.mapSubtitle")}
         steps={steps}
         completedCount={steps.filter((s) => s.isComplete).length}
         totalSteps={steps.length}

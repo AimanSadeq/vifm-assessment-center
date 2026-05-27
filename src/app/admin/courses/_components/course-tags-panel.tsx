@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import {
   setCourseCompetencyTagsAction,
   setCoursePillarTagsAction,
@@ -40,27 +41,33 @@ type PillarTag = {
 
 type CompetencyOption = { id: string; name: string };
 
-const PILLAR_OPTIONS: Array<{ id: PillarId; label: string }> = [
-  { id: "strategy", label: "Strategy" },
-  { id: "data", label: "Data" },
-  { id: "technology", label: "Technology" },
-  { id: "talent", label: "Talent" },
-  { id: "culture", label: "Culture" },
-  { id: "governance", label: "Governance" },
-  { id: "operations", label: "Operations" },
-  { id: "model_management", label: "Model Management" },
+const PILLAR_OPTIONS: Array<{ id: PillarId; labelKey: string }> = [
+  { id: "strategy", labelKey: "adminCourses.tags.pillarStrategy" },
+  { id: "data", labelKey: "adminCourses.tags.pillarData" },
+  { id: "technology", labelKey: "adminCourses.tags.pillarTechnology" },
+  { id: "talent", labelKey: "adminCourses.tags.pillarTalent" },
+  { id: "culture", labelKey: "adminCourses.tags.pillarCulture" },
+  { id: "governance", labelKey: "adminCourses.tags.pillarGovernance" },
+  { id: "operations", labelKey: "adminCourses.tags.pillarOperations" },
+  { id: "model_management", labelKey: "adminCourses.tags.pillarModelManagement" },
 ];
 
-const SOURCE_LABEL: Record<TagSource, { label: string; tone: string }> = {
-  manual: { label: "Manual", tone: "bg-muted text-muted-foreground" },
-  ai_proposed: { label: "AI proposed", tone: "bg-violet-100 text-violet-900" },
-  ai_accepted: { label: "AI accepted", tone: "bg-emerald-100 text-emerald-900" },
+const SOURCE_TONE: Record<TagSource, string> = {
+  manual: "bg-muted text-muted-foreground",
+  ai_proposed: "bg-violet-100 text-violet-900",
+  ai_accepted: "bg-emerald-100 text-emerald-900",
 };
 
-const WEIGHT_LABEL: Record<Weight, string> = {
-  1: "Tangential",
-  2: "Related",
-  3: "Core",
+const SOURCE_LABEL_KEY: Record<TagSource, string> = {
+  manual: "adminCourses.tags.sourceManual",
+  ai_proposed: "adminCourses.tags.sourceAiProposed",
+  ai_accepted: "adminCourses.tags.sourceAiAccepted",
+};
+
+const WEIGHT_LABEL_KEY: Record<Weight, string> = {
+  1: "adminCourses.tags.weightTangential",
+  2: "adminCourses.tags.weightRelated",
+  3: "adminCourses.tags.weightCore",
 };
 
 type Props = {
@@ -91,6 +98,7 @@ export function CourseTagsPanel({
   allCompetencies,
 }: Props) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [compTags, setCompTags] = useState<CompetencyTag[]>(initialCompetencyTags);
   const [pillarTags, setPillarTags] = useState<PillarTag[]>(initialPillarTags);
   const [pending, start] = useTransition();
@@ -105,8 +113,8 @@ export function CourseTagsPanel({
 
   const handleAddCompetency = () => {
     if (!addCompId) return;
-    if (compTags.some((t) => t.competency_id === addCompId)) {
-      toast.message("Already tagged with that competency");
+    if (compTags.some((tag) => tag.competency_id === addCompId)) {
+      toast.message(t("adminCourses.tags.alreadyTaggedCompetency"));
       setAddCompId("");
       return;
     }
@@ -125,8 +133,8 @@ export function CourseTagsPanel({
 
   const handleAddPillar = () => {
     if (!addPillarId) return;
-    if (pillarTags.some((t) => t.pillar_id === addPillarId)) {
-      toast.message("Already tagged with that pillar");
+    if (pillarTags.some((tag) => tag.pillar_id === addPillarId)) {
+      toast.message(t("adminCourses.tags.alreadyTaggedPillar"));
       setAddPillarId("");
       return;
     }
@@ -150,33 +158,33 @@ export function CourseTagsPanel({
       // them in parallel would race against shared state.
       const compRes = await setCourseCompetencyTagsAction({
         course_id: courseId,
-        tags: compTags.map((t) => ({
-          competency_id: t.competency_id,
-          relevance_weight: t.relevance_weight,
-          rationale: t.rationale,
-          source: t.source === "ai_proposed" ? "ai_accepted" : t.source,
+        tags: compTags.map((tag) => ({
+          competency_id: tag.competency_id,
+          relevance_weight: tag.relevance_weight,
+          rationale: tag.rationale,
+          source: tag.source === "ai_proposed" ? "ai_accepted" : tag.source,
         })),
       });
       if ("error" in compRes && compRes.error) {
-        const msg = typeof compRes.error === "string" ? compRes.error : "Save failed";
-        toast.error(`Competency tags: ${msg}`);
+        const msg = typeof compRes.error === "string" ? compRes.error : t("adminCourses.tags.saveFailed");
+        toast.error(t("adminCourses.tags.competencyTagsError", { msg }));
         return;
       }
       const pillarRes = await setCoursePillarTagsAction({
         course_id: courseId,
-        tags: pillarTags.map((t) => ({
-          pillar_id: t.pillar_id,
-          relevance_weight: t.relevance_weight,
-          rationale: t.rationale,
-          source: t.source === "ai_proposed" ? "ai_accepted" : t.source,
+        tags: pillarTags.map((tag) => ({
+          pillar_id: tag.pillar_id,
+          relevance_weight: tag.relevance_weight,
+          rationale: tag.rationale,
+          source: tag.source === "ai_proposed" ? "ai_accepted" : tag.source,
         })),
       });
       if ("error" in pillarRes && pillarRes.error) {
-        const msg = typeof pillarRes.error === "string" ? pillarRes.error : "Save failed";
-        toast.error(`Pillar tags: ${msg}`);
+        const msg = typeof pillarRes.error === "string" ? pillarRes.error : t("adminCourses.tags.saveFailed");
+        toast.error(t("adminCourses.tags.pillarTagsError", { msg }));
         return;
       }
-      toast.success("Mappings saved");
+      toast.success(t("adminCourses.tags.mappingsSaved"));
       router.refresh();
     });
   };
@@ -191,13 +199,11 @@ export function CourseTagsPanel({
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-accent" />
-          Recommender mappings
+          {t("adminCourses.tags.title")}
         </CardTitle>
         <CardDescription>
-          Two-axis tagging that drives both AC and ARA recommendations.
-          Hover the AI rationale text under each tag to see the
-          extractor&apos;s reasoning. Edit weights or remove tags below;
-          changes are local until you click <strong>Save mappings</strong>.
+          {t("adminCourses.tags.descPre")}{" "}
+          <strong>{t("adminCourses.tags.saveMappings")}</strong>{t("adminCourses.tags.descPost")}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -205,16 +211,14 @@ export function CourseTagsPanel({
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <UserCog className="h-3.5 w-3.5 text-blue-700" />
-            <p className="text-sm font-semibold">AC behavioural competencies</p>
+            <p className="text-sm font-semibold">{t("adminCourses.tags.acCompetencies")}</p>
             <Badge variant="outline" className="text-[10px]">
               {compTags.length}
             </Badge>
           </div>
           {compTags.length === 0 && (
             <p className="text-xs text-muted-foreground">
-              No competency tags yet. Add one below - courses without
-              competency tags won&apos;t surface on AC engagement
-              recommendations.
+              {t("adminCourses.tags.noCompetencyTags")}
             </p>
           )}
           {compTags.map((tag) => (
@@ -225,29 +229,30 @@ export function CourseTagsPanel({
               source={tag.source}
               rationale={tag.rationale}
               onWeightChange={(w) =>
-                setCompTags((prev) => prev.map((t) =>
-                  t.id === tag.id ? { ...t, relevance_weight: w, source: t.source === "ai_proposed" ? "ai_accepted" : t.source } : t
+                setCompTags((prev) => prev.map((row) =>
+                  row.id === tag.id ? { ...row, relevance_weight: w, source: row.source === "ai_proposed" ? "ai_accepted" : row.source } : row
                 ))
               }
               onRationaleChange={(r) =>
-                setCompTags((prev) => prev.map((t) =>
-                  t.id === tag.id ? { ...t, rationale: r, source: "manual" } : t
+                setCompTags((prev) => prev.map((row) =>
+                  row.id === tag.id ? { ...row, rationale: r, source: "manual" } : row
                 ))
               }
               onRemove={() =>
-                setCompTags((prev) => prev.filter((t) => t.id !== tag.id))
+                setCompTags((prev) => prev.filter((row) => row.id !== tag.id))
               }
               tone="bg-blue-50 border-blue-200 text-blue-900"
+              t={t}
             />
           ))}
           <div className="flex items-center gap-2 pt-1">
             <Select value={addCompId} onValueChange={setAddCompId}>
               <SelectTrigger className="h-8 text-xs flex-1 min-w-0">
-                <SelectValue placeholder="Add a competency…" />
+                <SelectValue placeholder={t("adminCourses.tags.addCompetencyPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 {allCompetencies
-                  .filter((c) => !compTags.some((t) => t.competency_id === c.id))
+                  .filter((c) => !compTags.some((row) => row.competency_id === c.id))
                   .map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.name}
@@ -259,7 +264,7 @@ export function CourseTagsPanel({
               type="button" size="sm" variant="outline" onClick={handleAddCompetency}
               disabled={!addCompId} className="gap-1"
             >
-              <Plus className="h-3.5 w-3.5" /> Add
+              <Plus className="h-3.5 w-3.5" /> {t("adminCourses.add")}
             </Button>
           </div>
         </div>
@@ -268,51 +273,54 @@ export function CourseTagsPanel({
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <Sparkles className="h-3.5 w-3.5 text-violet-700" />
-            <p className="text-sm font-semibold">ARA pillars</p>
+            <p className="text-sm font-semibold">{t("adminCourses.tags.araPillars")}</p>
             <Badge variant="outline" className="text-[10px]">
               {pillarTags.length}
             </Badge>
           </div>
           {pillarTags.length === 0 && (
             <p className="text-xs text-muted-foreground">
-              No pillar tags yet. Courses without pillar tags won&apos;t
-              surface on ARA capability-building plans.
+              {t("adminCourses.tags.noPillarTags")}
             </p>
           )}
-          {pillarTags.map((tag) => (
+          {pillarTags.map((tag) => {
+            const pillarOpt = PILLAR_OPTIONS.find((p) => p.id === tag.pillar_id);
+            return (
             <TagRow
               key={tag.id}
-              label={PILLAR_OPTIONS.find((p) => p.id === tag.pillar_id)?.label ?? tag.pillar_id}
+              label={pillarOpt ? t(pillarOpt.labelKey) : tag.pillar_id}
               weight={tag.relevance_weight}
               source={tag.source}
               rationale={tag.rationale}
               onWeightChange={(w) =>
-                setPillarTags((prev) => prev.map((t) =>
-                  t.id === tag.id ? { ...t, relevance_weight: w, source: t.source === "ai_proposed" ? "ai_accepted" : t.source } : t
+                setPillarTags((prev) => prev.map((row) =>
+                  row.id === tag.id ? { ...row, relevance_weight: w, source: row.source === "ai_proposed" ? "ai_accepted" : row.source } : row
                 ))
               }
               onRationaleChange={(r) =>
-                setPillarTags((prev) => prev.map((t) =>
-                  t.id === tag.id ? { ...t, rationale: r, source: "manual" } : t
+                setPillarTags((prev) => prev.map((row) =>
+                  row.id === tag.id ? { ...row, rationale: r, source: "manual" } : row
                 ))
               }
               onRemove={() =>
-                setPillarTags((prev) => prev.filter((t) => t.id !== tag.id))
+                setPillarTags((prev) => prev.filter((row) => row.id !== tag.id))
               }
               tone="bg-violet-50 border-violet-200 text-violet-900"
+              t={t}
             />
-          ))}
+            );
+          })}
           <div className="flex items-center gap-2 pt-1">
             <Select value={addPillarId} onValueChange={setAddPillarId}>
               <SelectTrigger className="h-8 text-xs flex-1 min-w-0">
-                <SelectValue placeholder="Add a pillar…" />
+                <SelectValue placeholder={t("adminCourses.tags.addPillarPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 {PILLAR_OPTIONS
-                  .filter((p) => !pillarTags.some((t) => t.pillar_id === p.id))
+                  .filter((p) => !pillarTags.some((row) => row.pillar_id === p.id))
                   .map((p) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.label}
+                      {t(p.labelKey)}
                     </SelectItem>
                   ))}
               </SelectContent>
@@ -321,7 +329,7 @@ export function CourseTagsPanel({
               type="button" size="sm" variant="outline" onClick={handleAddPillar}
               disabled={!addPillarId} className="gap-1"
             >
-              <Plus className="h-3.5 w-3.5" /> Add
+              <Plus className="h-3.5 w-3.5" /> {t("adminCourses.add")}
             </Button>
           </div>
         </div>
@@ -329,11 +337,11 @@ export function CourseTagsPanel({
         {/* Save / reset */}
         <div className="flex items-center justify-end gap-2 border-t pt-3">
           <Button type="button" variant="ghost" onClick={handleReset} disabled={!dirty || pending}>
-            Reset
+            {t("adminCourses.tags.reset")}
           </Button>
           <Button type="button" onClick={handleSave} disabled={!dirty || pending} className="gap-2">
             {pending && <Loader2 className="h-4 w-4 animate-spin" />}
-            Save mappings
+            {t("adminCourses.tags.saveMappings")}
           </Button>
         </div>
       </CardContent>
@@ -347,7 +355,7 @@ function stripId<T extends { id: string }>(t: T): Omit<T, "id"> {
 }
 
 function TagRow({
-  label, weight, source, rationale, onWeightChange, onRationaleChange, onRemove, tone,
+  label, weight, source, rationale, onWeightChange, onRationaleChange, onRemove, tone, t,
 }: {
   label: string;
   weight: Weight;
@@ -357,6 +365,7 @@ function TagRow({
   onRationaleChange: (r: string | null) => void;
   onRemove: () => void;
   tone: string;
+  t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
   return (
     <div className={`rounded-md border px-3 py-2 ${tone}`}>
@@ -370,19 +379,19 @@ function TagRow({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="1">1 · Tangential</SelectItem>
-            <SelectItem value="2">2 · Related</SelectItem>
-            <SelectItem value="3">3 · Core</SelectItem>
+            <SelectItem value="1">{t("adminCourses.tags.weightOption1")}</SelectItem>
+            <SelectItem value="2">{t("adminCourses.tags.weightOption2")}</SelectItem>
+            <SelectItem value="3">{t("adminCourses.tags.weightOption3")}</SelectItem>
           </SelectContent>
         </Select>
         <span
-          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${SOURCE_LABEL[source].tone}`}
+          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${SOURCE_TONE[source]}`}
         >
-          {SOURCE_LABEL[source].label}
+          {t(SOURCE_LABEL_KEY[source])}
         </span>
         <button
           type="button"
-          aria-label={`Remove ${label}`}
+          aria-label={t("adminCourses.tags.removeAria", { label })}
           onClick={onRemove}
           className="inline-flex items-center justify-center h-6 w-6 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10"
         >
@@ -391,13 +400,13 @@ function TagRow({
       </div>
       <textarea
         rows={2}
-        placeholder="Rationale (why does this course develop this competency / pillar?)"
+        placeholder={t("adminCourses.tags.rationalePlaceholder")}
         value={rationale ?? ""}
         onChange={(e) => onRationaleChange(e.target.value || null)}
         className="w-full mt-1.5 rounded-md border border-input bg-card px-2 py-1.5 text-[11px]"
       />
       <p className="text-[10px] text-muted-foreground/80 mt-0.5">
-        Weight {weight} ({WEIGHT_LABEL[weight]}) - used in the recommender as <code>gap × {weight}</code>.
+        {t("adminCourses.tags.weightFootnotePre", { weight, label: t(WEIGHT_LABEL_KEY[weight]) })} <code>gap × {weight}</code>.
       </p>
     </div>
   );

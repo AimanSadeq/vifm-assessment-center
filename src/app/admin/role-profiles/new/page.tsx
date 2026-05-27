@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getServerT } from "@/lib/i18n/server";
 import type { CompetencyTree } from "@/types/database";
 import { BackLink } from "@/components/shared/back-link";
 import {
@@ -31,16 +32,15 @@ export const dynamic = "force-dynamic";
 
 export default async function NewRoleProfilePage() {
   const tree = await loadCompetencyTree();
+  const t = await getServerT();
 
   return (
     <div className="space-y-4">
-      <BackLink href="/admin/role-profiles" label="Back to Role Profiles" />
+      <BackLink href="/admin/role-profiles" label={t("adminRoleProfiles.backToList")} />
       <div>
-        <h1 className="text-2xl font-bold">New Role Profile</h1>
+        <h1 className="text-2xl font-bold">{t("adminRoleProfiles.new.title")}</h1>
         <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-          Create a reusable competency pack. Use &quot;Build from JD&quot; to let
-          Claude pre-populate competencies from a job description, or add them
-          manually.
+          {t("adminRoleProfiles.new.subtitle")}
         </p>
       </div>
       <RoleProfileEditor initial={EMPTY_PROFILE_INITIAL} competencyTree={tree} mode="create" />

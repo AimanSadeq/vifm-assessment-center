@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -63,10 +64,10 @@ type Props = {
 const ROLE_NONE = "__none__";
 
 const REPORT_TYPES = [
-  { id: "oar_summary", label: "OAR Summary Report" },
-  { id: "full_competency", label: "Full Competency Report" },
-  { id: "development_plan", label: "Development Plan" },
-  { id: "executive_summary", label: "Executive Summary" },
+  { id: "oar_summary", labelKey: "adminEngagements.detail.reportTypeOarSummary" },
+  { id: "full_competency", labelKey: "adminEngagements.detail.reportTypeFullCompetency" },
+  { id: "development_plan", labelKey: "adminEngagements.detail.reportTypeDevelopmentPlan" },
+  { id: "executive_summary", labelKey: "adminEngagements.detail.reportTypeExecutiveSummary" },
 ];
 
 export function EngagementDetail({
@@ -82,6 +83,7 @@ export function EngagementDetail({
   currentOarMap = {},
 }: Props) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [candidates, setCandidates] = useState(initCandidates);
   const [assignments, setAssignments] = useState(initAssignments);
   const [assessors, setAssessors] = useState(initAssessors);
@@ -130,12 +132,12 @@ export function EngagementDetail({
     });
     setReengaging(false);
     if ("error" in result && result.error) {
-      toast.error(typeof result.error === "string" ? result.error : "Failed to create re-engagement");
+      toast.error(typeof result.error === "string" ? result.error : t("adminEngagements.detail.toastReengageFailed"));
       return;
     }
     if ("data" in result && result.data) {
       setReengageOpen(false);
-      toast.success("Re-engagement created");
+      toast.success(t("adminEngagements.detail.toastReengageCreated"));
       router.push(`/admin/engagements/${result.data.id}`);
     }
   };
@@ -146,33 +148,33 @@ export function EngagementDetail({
     setStatusUpdating(false);
     setStatusConfirm({ open: false, status: "", label: "" });
     if ("error" in result && result.error) {
-      toast.error(typeof result.error === "string" ? result.error : "Failed to update status");
+      toast.error(typeof result.error === "string" ? result.error : t("adminEngagements.detail.toastStatusFailed"));
     } else {
-      toast.success(`Engagement ${statusConfirm.label.toLowerCase()}d`);
+      toast.success(t(`adminEngagements.detail.toastStatusChanged.${statusConfirm.status}`));
       router.refresh();
     }
   };
 
   const handleRemoveCandidate = async (candidateId: string, name: string) => {
-    if (!confirm(`Remove candidate "${name}"? This will also delete their assignments.`)) return;
+    if (!confirm(t("adminEngagements.detail.confirmRemoveCandidate", { name }))) return;
     const result = await removeCandidateAction(candidateId);
     if ("error" in result && result.error) {
-      toast.error(typeof result.error === "string" ? result.error : "Failed to remove candidate");
+      toast.error(typeof result.error === "string" ? result.error : t("adminEngagements.detail.toastRemoveCandidateFailed"));
     } else {
       setCandidates((prev) => prev.filter((c) => (c.id as string) !== candidateId));
-      toast.success("Candidate removed");
+      toast.success(t("adminEngagements.detail.toastCandidateRemoved"));
       router.refresh();
     }
   };
 
   const handleDeleteAssignment = async (assignmentId: string) => {
-    if (!confirm("Delete this assignment?")) return;
+    if (!confirm(t("adminEngagements.detail.confirmDeleteAssignment"))) return;
     const result = await deleteAssignmentAction(assignmentId);
     if ("error" in result && result.error) {
-      toast.error(typeof result.error === "string" ? result.error : "Failed to delete assignment");
+      toast.error(typeof result.error === "string" ? result.error : t("adminEngagements.detail.toastDeleteAssignmentFailed"));
     } else {
       setAssignments((prev) => prev.filter((a) => (a.id as string) !== assignmentId));
-      toast.success("Assignment deleted");
+      toast.success(t("adminEngagements.detail.toastAssignmentDeleted"));
     }
   };
 
@@ -213,9 +215,9 @@ export function EngagementDetail({
       setCandAgeRange("");
       setCandSeniority("");
       setCandRoleProfileId("");
-      toast.success("Candidate added");
+      toast.success(t("adminEngagements.detail.toastCandidateAdded"));
     } else if ("error" in result) {
-      toast.error(typeof result.error === "string" ? result.error : "Failed to add candidate");
+      toast.error(typeof result.error === "string" ? result.error : t("adminEngagements.detail.toastAddCandidateFailed"));
     }
   };
 
@@ -223,7 +225,7 @@ export function EngagementDetail({
     const roleProfileId = value === ROLE_NONE ? null : value;
     const result = await setCandidateRoleProfileAction({ candidateId, roleProfileId });
     if ("error" in result && result.error) {
-      toast.error(typeof result.error === "string" ? result.error : "Failed to update role");
+      toast.error(typeof result.error === "string" ? result.error : t("adminEngagements.detail.toastUpdateRoleFailed"));
       return;
     }
     const matched = roleProfileId
@@ -236,7 +238,7 @@ export function EngagementDetail({
           : c
       )
     );
-    toast.success(roleProfileId ? "Role profile assigned" : "Role profile cleared");
+    toast.success(roleProfileId ? t("adminEngagements.detail.toastRoleProfileAssigned") : t("adminEngagements.detail.toastRoleProfileCleared"));
   };
 
   const handleAddAssessor = async () => {
@@ -252,9 +254,9 @@ export function EngagementDetail({
       setAssessorDialogOpen(false);
       setAssessorName("");
       setAssessorEmail("");
-      toast.success("Assessor created");
+      toast.success(t("adminEngagements.detail.toastAssessorCreated"));
     } else if ("error" in result) {
-      toast.error(typeof result.error === "string" ? result.error : "Failed to create assessor");
+      toast.error(typeof result.error === "string" ? result.error : t("adminEngagements.detail.toastCreateAssessorFailed"));
     }
   };
 
@@ -273,13 +275,13 @@ export function EngagementDetail({
       setAssignAssessorId("");
       setAssignCandidateId("");
       setAssignExerciseId("");
-      toast.success("Assignment created");
+      toast.success(t("adminEngagements.detail.toastAssignmentCreated"));
       router.refresh();
     } else if ("error" in result) {
-      const msg = typeof result.error === "string" ? result.error : "Failed to create assignment";
+      const msg = typeof result.error === "string" ? result.error : t("adminEngagements.detail.toastCreateAssignmentFailed");
       // Friendlier message for duplicate constraint
       if (msg.includes("duplicate") || msg.includes("unique")) {
-        toast.error("This assignment already exists");
+        toast.error(t("adminEngagements.detail.toastAssignmentExists"));
       } else {
         toast.error(msg);
       }
@@ -295,16 +297,16 @@ export function EngagementDetail({
         <h1 className="text-2xl font-bold">{engagement.name as string}</h1>
         <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
           <span>{orgName}</span>
-          <Badge variant="secondary">{engagement.status as string}</Badge>
-          {engagement.target_role ? <span>Target: {engagement.target_role as string}</span> : null}
+          <Badge variant="secondary">{t(`adminEngagements.status.${engagement.status as string}`)}</Badge>
+          {engagement.target_role ? <span>{t("adminEngagements.detail.targetPrefix")} {engagement.target_role as string}</span> : null}
           {priorEngagementId && (
             <Link
               href={`/admin/engagements/${priorEngagementId}`}
               className="inline-flex items-center gap-1 text-xs text-accent hover:underline"
-              title="View the prior engagement this one was seeded from"
+              title={t("adminEngagements.detail.priorLinkTitle")}
             >
               <History className="h-3 w-3" />
-              Re-engagement of prior cohort
+              {t("adminEngagements.detail.priorLinkLabel")}
             </Link>
           )}
           {/* Status transitions */}
@@ -312,22 +314,22 @@ export function EngagementDetail({
             <Link href={`/admin/engagements/${engagement.id as string}/talent-map`}>
               <Button size="sm" variant="outline" className="gap-1">
                 <Grid3x3 className="h-3 w-3" />
-                Talent Map
+                {t("adminEngagements.detail.talentMap")}
               </Button>
             </Link>
             {engagement.status === "draft" && (
               <Button size="sm" variant="default" onClick={() => setStatusConfirm({ open: true, status: "active", label: "Activate" })}>
-                Activate
+                {t("adminEngagements.detail.activate")}
               </Button>
             )}
             {engagement.status === "active" && (
               <Button size="sm" variant="outline" onClick={() => setStatusConfirm({ open: true, status: "completed", label: "Complete" })}>
-                Mark Complete
+                {t("adminEngagements.detail.markComplete")}
               </Button>
             )}
             {engagement.status === "completed" && (
               <Button size="sm" variant="ghost" onClick={() => setStatusConfirm({ open: true, status: "archived", label: "Archive" })}>
-                Archive
+                {t("adminEngagements.detail.archive")}
               </Button>
             )}
             {(engagement.status === "completed" || engagement.status === "archived") && (
@@ -338,7 +340,7 @@ export function EngagementDetail({
                 onClick={() => setReengageOpen(true)}
               >
                 <Repeat2 className="h-3 w-3" />
-                Re-engage cohort
+                {t("adminEngagements.detail.reengageCohort")}
               </Button>
             )}
           </div>
@@ -349,15 +351,11 @@ export function EngagementDetail({
       <Dialog open={reengageOpen} onOpenChange={setReengageOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Re-engage this cohort</DialogTitle>
+            <DialogTitle>{t("adminEngagements.detail.reengageDialogTitle")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 text-sm">
             <p className="text-muted-foreground">
-              Creates a new draft engagement seeded from this one. The role
-              profile, competencies, exercises, and matrix carry over so you
-              don&apos;t have to rebuild the design. Prior assessor assignments,
-              ratings, and reports are not copied - the new run earns its
-              own scores.
+              {t("adminEngagements.detail.reengageDialogBody")}
             </p>
             <label className="flex items-start gap-2 cursor-pointer">
               <input
@@ -367,9 +365,7 @@ export function EngagementDetail({
                 className="mt-0.5 h-4 w-4 rounded border-input"
               />
               <span>
-                Carry over the candidates from this engagement (each new
-                candidate row is linked to its prior so deltas can show on
-                the report).
+                {t("adminEngagements.detail.reengageCarryCandidates")}
               </span>
             </label>
             <div className="flex justify-end gap-2 pt-2">
@@ -378,11 +374,11 @@ export function EngagementDetail({
                 onClick={() => setReengageOpen(false)}
                 disabled={reengaging}
               >
-                Cancel
+                {t("adminEngagements.detail.cancel")}
               </Button>
               <Button onClick={handleReengage} disabled={reengaging}>
                 {reengaging && <Loader2 className="h-3 w-3 me-1 animate-spin" />}
-                Create re-engagement
+                {t("adminEngagements.detail.createReengagement")}
               </Button>
             </div>
           </div>
@@ -392,19 +388,19 @@ export function EngagementDetail({
       <Tabs defaultValue="candidates">
         <TabsList>
           <TabsTrigger value="candidates">
-            Candidates ({candidates.length})
+            {t("adminEngagements.detail.tabCandidates", { n: candidates.length })}
           </TabsTrigger>
           <TabsTrigger value="assignments">
-            Assignments ({assignments.length})
+            {t("adminEngagements.detail.tabAssignments", { n: assignments.length })}
           </TabsTrigger>
           <TabsTrigger value="matrix">
-            Matrix ({matrix.length})
+            {t("adminEngagements.detail.tabMatrix", { n: matrix.length })}
           </TabsTrigger>
           <TabsTrigger value="integration">
-            Integration
+            {t("adminEngagements.detail.tabIntegration")}
           </TabsTrigger>
           <TabsTrigger value="reports">
-            Reports
+            {t("adminEngagements.detail.tabReports")}
           </TabsTrigger>
         </TabsList>
 
@@ -413,26 +409,26 @@ export function EngagementDetail({
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Candidates</CardTitle>
+                <CardTitle>{t("adminEngagements.detail.candidatesTitle")}</CardTitle>
                 <Dialog open={candDialogOpen} onOpenChange={setCandDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button size="sm">+ Add Candidate</Button>
+                    <Button size="sm">{t("adminEngagements.detail.addCandidate")}</Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Add Candidate</DialogTitle>
+                      <DialogTitle>{t("adminEngagements.detail.addCandidateTitle")}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-3">
                       <div className="space-y-1">
-                        <Label>Full Name *</Label>
+                        <Label>{t("adminEngagements.detail.fullNameRequired")}</Label>
                         <Input
                           value={candName}
                           onChange={(e) => setCandName(e.target.value)}
-                          placeholder="Candidate full name"
+                          placeholder={t("adminEngagements.detail.candNamePlaceholder")}
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label>Email *</Label>
+                        <Label>{t("adminEngagements.detail.emailRequired")}</Label>
                         <Input
                           type="email"
                           value={candEmail}
@@ -441,15 +437,15 @@ export function EngagementDetail({
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label>Role Profile (optional)</Label>
+                        <Label>{t("adminEngagements.detail.roleProfileOptional")}</Label>
                         <Select value={candRoleProfileId} onValueChange={setCandRoleProfileId}>
                           <SelectTrigger>
-                            <SelectValue placeholder="Unassigned (set later)" />
+                            <SelectValue placeholder={t("adminEngagements.detail.unassignedSetLater")} />
                           </SelectTrigger>
                           <SelectContent>
                             {roleProfiles.length === 0 ? (
                               <SelectItem value="__empty__" disabled>
-                                No profiles in library yet
+                                {t("adminEngagements.detail.noProfilesYet")}
                               </SelectItem>
                             ) : (
                               roleProfiles.map((rp) => (
@@ -464,42 +460,42 @@ export function EngagementDetail({
                           </SelectContent>
                         </Select>
                         <p className="text-[11px] text-muted-foreground">
-                          Defines target proficiencies the candidate&apos;s scores will be compared against.
+                          {t("adminEngagements.detail.roleProfileHelp")}
                         </p>
                       </div>
                       <Separator />
-                      <p className="text-xs text-muted-foreground font-medium">Demographics (optional)</p>
+                      <p className="text-xs text-muted-foreground font-medium">{t("adminEngagements.detail.demographicsOptional")}</p>
                       <div className="grid grid-cols-2 gap-2">
                         <div className="space-y-1">
-                          <Label className="text-xs">Department</Label>
+                          <Label className="text-xs">{t("adminEngagements.detail.department")}</Label>
                           <Input
                             value={candDepartment}
                             onChange={(e) => setCandDepartment(e.target.value)}
-                            placeholder="e.g., Finance"
+                            placeholder={t("adminEngagements.detail.departmentPlaceholder")}
                             className="h-8 text-sm"
                           />
                         </div>
                         <div className="space-y-1">
-                          <Label className="text-xs">Gender</Label>
+                          <Label className="text-xs">{t("adminEngagements.detail.gender")}</Label>
                           <Select value={candGender} onValueChange={setCandGender}>
                             <SelectTrigger className="h-8 text-sm">
-                              <SelectValue placeholder="Select..." />
+                              <SelectValue placeholder={t("adminEngagements.detail.selectPlaceholder")} />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="male">Male</SelectItem>
-                              <SelectItem value="female">Female</SelectItem>
-                              <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem>
+                              <SelectItem value="male">{t("adminEngagements.detail.genderMale")}</SelectItem>
+                              <SelectItem value="female">{t("adminEngagements.detail.genderFemale")}</SelectItem>
+                              <SelectItem value="prefer_not_to_say">{t("adminEngagements.detail.genderPreferNot")}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                         <div className="space-y-1">
-                          <Label className="text-xs">Age Range</Label>
+                          <Label className="text-xs">{t("adminEngagements.detail.ageRange")}</Label>
                           <Select value={candAgeRange} onValueChange={setCandAgeRange}>
                             <SelectTrigger className="h-8 text-sm">
-                              <SelectValue placeholder="Select..." />
+                              <SelectValue placeholder={t("adminEngagements.detail.selectPlaceholder")} />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="under_25">Under 25</SelectItem>
+                              <SelectItem value="under_25">{t("adminEngagements.detail.ageUnder25")}</SelectItem>
                               <SelectItem value="25_34">25-34</SelectItem>
                               <SelectItem value="35_44">35-44</SelectItem>
                               <SelectItem value="45_54">45-54</SelectItem>
@@ -508,17 +504,17 @@ export function EngagementDetail({
                           </Select>
                         </div>
                         <div className="space-y-1">
-                          <Label className="text-xs">Seniority</Label>
+                          <Label className="text-xs">{t("adminEngagements.detail.seniority")}</Label>
                           <Select value={candSeniority} onValueChange={setCandSeniority}>
                             <SelectTrigger className="h-8 text-sm">
-                              <SelectValue placeholder="Select..." />
+                              <SelectValue placeholder={t("adminEngagements.detail.selectPlaceholder")} />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="entry">Entry Level</SelectItem>
-                              <SelectItem value="mid">Mid Level</SelectItem>
-                              <SelectItem value="senior">Senior</SelectItem>
-                              <SelectItem value="executive">Executive</SelectItem>
-                              <SelectItem value="c_suite">C-Suite</SelectItem>
+                              <SelectItem value="entry">{t("adminEngagements.detail.seniorityEntry")}</SelectItem>
+                              <SelectItem value="mid">{t("adminEngagements.detail.seniorityMid")}</SelectItem>
+                              <SelectItem value="senior">{t("adminEngagements.detail.senioritySenior")}</SelectItem>
+                              <SelectItem value="executive">{t("adminEngagements.detail.seniorityExecutive")}</SelectItem>
+                              <SelectItem value="c_suite">{t("adminEngagements.detail.seniorityCSuite")}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -528,7 +524,7 @@ export function EngagementDetail({
                         disabled={!candName.trim() || !candEmail.trim() || candCreating}
                         className="w-full"
                       >
-                        {candCreating ? "Adding..." : "Add Candidate"}
+                        {candCreating ? t("adminEngagements.detail.adding") : t("adminEngagements.detail.addCandidateTitle")}
                       </Button>
                     </div>
                   </DialogContent>
@@ -538,19 +534,19 @@ export function EngagementDetail({
             <CardContent>
               {candidates.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-4 text-center">
-                  No candidates yet.
+                  {t("adminEngagements.detail.noCandidates")}
                 </p>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Role Profile</TableHead>
-                      <TableHead>Department</TableHead>
-                      <TableHead>Assigned Assessments</TableHead>
-                      {priorEngagementId && <TableHead>vs Prior</TableHead>}
-                      <TableHead>Status</TableHead>
+                      <TableHead>{t("adminEngagements.detail.colName")}</TableHead>
+                      <TableHead>{t("adminEngagements.detail.colEmail")}</TableHead>
+                      <TableHead>{t("adminEngagements.detail.colRoleProfile")}</TableHead>
+                      <TableHead>{t("adminEngagements.detail.colDepartment")}</TableHead>
+                      <TableHead>{t("adminEngagements.detail.colAssignedAssessments")}</TableHead>
+                      {priorEngagementId && <TableHead>{t("adminEngagements.detail.colVsPrior")}</TableHead>}
+                      <TableHead>{t("adminEngagements.detail.colStatus")}</TableHead>
                       <TableHead className="w-12"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -575,10 +571,10 @@ export function EngagementDetail({
                               onValueChange={(v) => handleSetRoleProfile(c.id as string, v)}
                             >
                               <SelectTrigger className="h-8 text-xs min-w-[180px] max-w-[240px]">
-                                <SelectValue placeholder="Unassigned" />
+                                <SelectValue placeholder={t("adminEngagements.detail.unassigned")} />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value={ROLE_NONE}>Unassigned</SelectItem>
+                                <SelectItem value={ROLE_NONE}>{t("adminEngagements.detail.unassigned")}</SelectItem>
                                 {roleProfiles.map((rp) => (
                                   <SelectItem key={rp.id} value={rp.id}>
                                     {rp.name_en}
@@ -603,7 +599,7 @@ export function EngagementDetail({
                                 })}
                               </div>
                             ) : (
-                              <span className="text-xs text-muted-foreground">None</span>
+                              <span className="text-xs text-muted-foreground">{t("adminEngagements.detail.none")}</span>
                             )}
                           </TableCell>
                           {priorEngagementId && (
@@ -618,7 +614,7 @@ export function EngagementDetail({
                                 if (currOar == null) {
                                   return (
                                     <Badge variant="secondary" className="text-[11px] gap-1">
-                                      <History className="h-3 w-3" /> Prior {priorOar}
+                                      <History className="h-3 w-3" /> {t("adminEngagements.detail.priorScore", { score: priorOar })}
                                     </Badge>
                                   );
                                 }
@@ -633,16 +629,16 @@ export function EngagementDetail({
                                 return (
                                   <span
                                     className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] tabular-nums ${tone}`}
-                                    title={`Prior OAR ${priorOar} → ${currOar}`}
+                                    title={t("adminEngagements.detail.priorOarTooltip", { prior: priorOar, current: currOar })}
                                   >
-                                    {arrow} {delta > 0 ? `+${delta}` : delta} vs prior
+                                    {arrow} {delta > 0 ? `+${delta}` : delta} {t("adminEngagements.detail.vsPrior")}
                                   </span>
                                 );
                               })()}
                             </TableCell>
                           )}
                           <TableCell>
-                            <Badge variant="outline">{c.status as string}</Badge>
+                            <Badge variant="outline">{t(`adminEngagements.candStatus.${c.status as string}`)}</Badge>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center justify-end gap-0.5">
@@ -650,7 +646,7 @@ export function EngagementDetail({
                                 href={`/candidate/welcome/${c.id as string}?asAdmin=1`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                title="View as candidate (opens in new tab)"
+                                title={t("adminEngagements.detail.viewAsCandidate")}
                               >
                                 <Button
                                   variant="ghost"
@@ -685,27 +681,27 @@ export function EngagementDetail({
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Assessor Assignments</CardTitle>
+                <CardTitle>{t("adminEngagements.detail.assessorAssignmentsTitle")}</CardTitle>
                 <div className="flex gap-2">
                   <Dialog open={assessorDialogOpen} onOpenChange={setAssessorDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button variant="outline" size="sm">+ New Assessor</Button>
+                      <Button variant="outline" size="sm">{t("adminEngagements.detail.newAssessor")}</Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Create Demo Assessor</DialogTitle>
+                        <DialogTitle>{t("adminEngagements.detail.createDemoAssessor")}</DialogTitle>
                       </DialogHeader>
                       <div className="space-y-3">
                         <div className="space-y-1">
-                          <Label>Full Name *</Label>
+                          <Label>{t("adminEngagements.detail.fullNameRequired")}</Label>
                           <Input
                             value={assessorName}
                             onChange={(e) => setAssessorName(e.target.value)}
-                            placeholder="Assessor name"
+                            placeholder={t("adminEngagements.detail.assessorNamePlaceholder")}
                           />
                         </div>
                         <div className="space-y-1">
-                          <Label>Email *</Label>
+                          <Label>{t("adminEngagements.detail.emailRequired")}</Label>
                           <Input
                             type="email"
                             value={assessorEmail}
@@ -718,7 +714,7 @@ export function EngagementDetail({
                           disabled={!assessorName.trim() || !assessorEmail.trim() || assessorCreating}
                           className="w-full"
                         >
-                          {assessorCreating ? "Creating..." : "Create Assessor"}
+                          {assessorCreating ? t("adminEngagements.detail.creating") : t("adminEngagements.detail.createAssessor")}
                         </Button>
                       </div>
                     </DialogContent>
@@ -726,18 +722,18 @@ export function EngagementDetail({
 
                   <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button size="sm">+ Assign</Button>
+                      <Button size="sm">{t("adminEngagements.detail.assign")}</Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Create Assignment</DialogTitle>
+                        <DialogTitle>{t("adminEngagements.detail.createAssignmentTitle")}</DialogTitle>
                       </DialogHeader>
                       <div className="space-y-3">
                         <div className="space-y-1">
-                          <Label>Assessor *</Label>
+                          <Label>{t("adminEngagements.detail.assessorRequired")}</Label>
                           <Select value={assignAssessorId} onValueChange={setAssignAssessorId}>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select assessor..." />
+                              <SelectValue placeholder={t("adminEngagements.detail.selectAssessor")} />
                             </SelectTrigger>
                             <SelectContent>
                               {assessors.map((a) => (
@@ -749,10 +745,10 @@ export function EngagementDetail({
                           </Select>
                         </div>
                         <div className="space-y-1">
-                          <Label>Candidate *</Label>
+                          <Label>{t("adminEngagements.detail.candidateRequired")}</Label>
                           <Select value={assignCandidateId} onValueChange={setAssignCandidateId}>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select candidate..." />
+                              <SelectValue placeholder={t("adminEngagements.detail.selectCandidate")} />
                             </SelectTrigger>
                             <SelectContent>
                               {candidates.map((c) => (
@@ -764,10 +760,10 @@ export function EngagementDetail({
                           </Select>
                         </div>
                         <div className="space-y-1">
-                          <Label>Exercise *</Label>
+                          <Label>{t("adminEngagements.detail.exerciseRequired")}</Label>
                           <Select value={assignExerciseId} onValueChange={setAssignExerciseId}>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select exercise..." />
+                              <SelectValue placeholder={t("adminEngagements.detail.selectExercise")} />
                             </SelectTrigger>
                             <SelectContent>
                               {exercises.map((e) => (
@@ -783,7 +779,7 @@ export function EngagementDetail({
                           disabled={!assignAssessorId || !assignCandidateId || !assignExerciseId || assigning}
                           className="w-full"
                         >
-                          {assigning ? "Assigning..." : "Create Assignment"}
+                          {assigning ? t("adminEngagements.detail.assigning") : t("adminEngagements.detail.createAssignmentTitle")}
                         </Button>
                       </div>
                     </DialogContent>
@@ -794,15 +790,15 @@ export function EngagementDetail({
             <CardContent>
               {assignments.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-4 text-center">
-                  No assignments yet. Add candidates and assessors, then create assignments.
+                  {t("adminEngagements.detail.noAssignments")}
                 </p>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Assessor</TableHead>
-                      <TableHead>Candidate</TableHead>
-                      <TableHead>Exercise</TableHead>
+                      <TableHead>{t("adminEngagements.detail.colAssessor")}</TableHead>
+                      <TableHead>{t("adminEngagements.detail.colCandidate")}</TableHead>
+                      <TableHead>{t("adminEngagements.detail.colExercise")}</TableHead>
                       <TableHead className="w-12"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -842,12 +838,12 @@ export function EngagementDetail({
         <TabsContent value="matrix">
           <Card>
             <CardHeader>
-              <CardTitle>Exercise-Competency Matrix</CardTitle>
+              <CardTitle>{t("adminEngagements.detail.matrixTitle")}</CardTitle>
             </CardHeader>
             <CardContent>
               {matrix.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-4 text-center">
-                  No matrix mappings configured.
+                  {t("adminEngagements.detail.noMatrix")}
                 </p>
               ) : (
                 <div className="space-y-1 text-sm">
@@ -858,7 +854,7 @@ export function EngagementDetail({
                       .filter((m) => m.exercise_id === exId)
                       .map((m) => {
                         const c = m.competencies as Record<string, unknown> | null;
-                        return c?.name as string ?? "Unknown";
+                        return c?.name as string ?? t("adminEngagements.detail.unknown");
                       });
                     return (
                       <div key={exId} className="flex gap-2 items-start py-2 border-b last:border-0">
@@ -883,15 +879,15 @@ export function EngagementDetail({
         <TabsContent value="integration">
           <Card>
             <CardHeader>
-              <CardTitle>Integration Summary</CardTitle>
+              <CardTitle>{t("adminEngagements.detail.integrationTitle")}</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Consolidated view of all assessors&apos; preliminary ratings and notes.
+                {t("adminEngagements.detail.integrationDesc")}
               </p>
             </CardHeader>
             <CardContent>
               {integrationWorksheets.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-4 text-center">
-                  No integration worksheets submitted yet. Assessors complete these before the wash-up session.
+                  {t("adminEngagements.detail.noIntegration")}
                 </p>
               ) : (
                 <div className="space-y-4">
@@ -907,10 +903,10 @@ export function EngagementDetail({
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead>Competency</TableHead>
-                              <TableHead>Assessor</TableHead>
-                              <TableHead className="text-center">Rating</TableHead>
-                              <TableHead>Notes</TableHead>
+                              <TableHead>{t("adminEngagements.detail.colCompetency")}</TableHead>
+                              <TableHead>{t("adminEngagements.detail.colAssessor")}</TableHead>
+                              <TableHead className="text-center">{t("adminEngagements.detail.colRating")}</TableHead>
+                              <TableHead>{t("adminEngagements.detail.colNotes")}</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -955,9 +951,9 @@ export function EngagementDetail({
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Candidate Reports</CardTitle>
+                  <CardTitle>{t("adminEngagements.detail.candidateReportsTitle")}</CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Select report types and generate or share reports with candidates.
+                    {t("adminEngagements.detail.candidateReportsDesc")}
                   </p>
                 </div>
               </div>
@@ -965,7 +961,7 @@ export function EngagementDetail({
             <CardContent className="space-y-4">
               {/* Report type selector */}
               <div className="border rounded-lg p-3">
-                <p className="text-xs font-medium text-muted-foreground mb-2">Report Types to Include</p>
+                <p className="text-xs font-medium text-muted-foreground mb-2">{t("adminEngagements.detail.reportTypesToInclude")}</p>
                 <div className="flex flex-wrap gap-3">
                   {REPORT_TYPES.map((rt) => (
                     <label key={rt.id} className="flex items-center gap-2 text-sm cursor-pointer">
@@ -979,7 +975,7 @@ export function EngagementDetail({
                           );
                         }}
                       />
-                      {rt.label}
+                      {t(rt.labelKey)}
                     </label>
                   ))}
                 </div>
@@ -987,16 +983,16 @@ export function EngagementDetail({
 
               {candidates.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-4 text-center">
-                  No candidates yet.
+                  {t("adminEngagements.detail.noCandidates")}
                 </p>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Candidate</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Reports</TableHead>
-                      <TableHead className="w-40">Actions</TableHead>
+                      <TableHead>{t("adminEngagements.detail.colCandidate")}</TableHead>
+                      <TableHead>{t("adminEngagements.detail.colStatus")}</TableHead>
+                      <TableHead>{t("adminEngagements.detail.colReports")}</TableHead>
+                      <TableHead className="w-40">{t("adminEngagements.detail.colActions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1006,15 +1002,18 @@ export function EngagementDetail({
                           {c.full_name as string}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{c.status as string}</Badge>
+                          <Badge variant="outline">{t(`adminEngagements.candStatus.${c.status as string}`)}</Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
-                            {selectedReportTypes.map((rt) => (
-                              <Badge key={rt} variant="secondary" className="text-xs">
-                                {REPORT_TYPES.find((r) => r.id === rt)?.label ?? rt}
-                              </Badge>
-                            ))}
+                            {selectedReportTypes.map((rt) => {
+                              const found = REPORT_TYPES.find((r) => r.id === rt);
+                              return (
+                                <Badge key={rt} variant="secondary" className="text-xs">
+                                  {found ? t(found.labelKey) : rt}
+                                </Badge>
+                              );
+                            })}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -1026,7 +1025,7 @@ export function EngagementDetail({
                             >
                               <Button size="sm" variant="outline" className="gap-1">
                                 <FileText className="h-3 w-3" />
-                                PDF
+                                {t("adminEngagements.detail.pdf")}
                               </Button>
                             </a>
                             <Button
@@ -1034,11 +1033,11 @@ export function EngagementDetail({
                               variant="outline"
                               className="gap-1"
                               onClick={() => {
-                                toast.success(`Reports shared with ${c.full_name as string}`);
+                                toast.success(t("adminEngagements.detail.toastReportsShared", { name: c.full_name as string }));
                               }}
                             >
                               <Send className="h-3 w-3" />
-                              Share
+                              {t("adminEngagements.detail.share")}
                             </Button>
                           </div>
                         </TableCell>
@@ -1055,11 +1054,11 @@ export function EngagementDetail({
                     variant="default"
                     className="gap-2"
                     onClick={() => {
-                      toast.success(`Reports auto-shared with ${candidates.length} candidate(s)`);
+                      toast.success(t("adminEngagements.detail.toastReportsAutoShared", { n: candidates.length }));
                     }}
                   >
                     <Send className="h-4 w-4" />
-                    Auto-Share All Reports
+                    {t("adminEngagements.detail.autoShareAll")}
                   </Button>
                 </div>
               )}
@@ -1072,17 +1071,20 @@ export function EngagementDetail({
       <Dialog open={statusConfirm.open} onOpenChange={(open) => !open && setStatusConfirm({ open: false, status: "", label: "" })}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirm Status Change</DialogTitle>
+            <DialogTitle>{t("adminEngagements.detail.confirmStatusTitle")}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Are you sure you want to {statusConfirm.label.toLowerCase()} this engagement? This action changes the engagement status to <strong>{statusConfirm.status}</strong>.
+            {statusConfirm.status
+              ? t("adminEngagements.detail.confirmStatusBody", { action: t(`adminEngagements.detail.confirmAction.${statusConfirm.status}`) })
+              : null}{" "}
+            <strong>{statusConfirm.status ? t(`adminEngagements.status.${statusConfirm.status}`) : ""}</strong>.
           </p>
           <div className="flex justify-end gap-2 mt-4">
             <Button variant="outline" onClick={() => setStatusConfirm({ open: false, status: "", label: "" })}>
-              Cancel
+              {t("adminEngagements.detail.cancel")}
             </Button>
             <Button onClick={handleStatusChange} disabled={statusUpdating}>
-              {statusUpdating ? "Updating..." : statusConfirm.label}
+              {statusUpdating ? t("adminEngagements.detail.updating") : (statusConfirm.status ? t(`adminEngagements.detail.confirmButton.${statusConfirm.status}`) : "")}
             </Button>
           </div>
         </DialogContent>

@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getServerT } from "@/lib/i18n/server";
 import { BackLink } from "@/components/shared/back-link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { CourseForm } from "../_components/course-form";
@@ -12,6 +13,7 @@ type Props = { params: { id: string } };
 
 export default async function EditCoursePage({ params }: Props) {
   const sb = await createClient();
+  const t = await getServerT();
 
   const [courseRes, compTagsRes, pillarTagsRes, allCompsRes] = await Promise.all([
     sb.from("vifm_courses").select("*").eq("id", params.id).maybeSingle(),
@@ -51,15 +53,12 @@ export default async function EditCoursePage({ params }: Props) {
 
   return (
     <div className="space-y-4">
-      <BackLink href="/admin/courses" label="Back to courses" />
+      <BackLink href="/admin/courses" label={t("adminCourses.backToCourses")} />
       <Card>
         <CardHeader>
           <CardTitle>{course.title_en}</CardTitle>
           <CardDescription>
-            Edit the catalogue entry. The mapping panel below shows the
-            AC competency + ARA pillar tags that drive the recommender -
-            edit them when you spot an over- or under-tag from the AI
-            extraction.
+            {t("adminCourses.edit.desc")}
           </CardDescription>
         </CardHeader>
         <CardContent>

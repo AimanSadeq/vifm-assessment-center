@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getServerT } from "@/lib/i18n/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +30,7 @@ type ProfileRow = {
 
 export default async function RoleProfilesListPage() {
   const supabase = await createClient();
+  const t = await getServerT();
   const { data, error } = await supabase
     .from("role_profiles")
     .select(
@@ -42,30 +44,28 @@ export default async function RoleProfilesListPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Role Profiles</h1>
+          <h1 className="text-2xl font-bold">{t("adminRoleProfiles.list.title")}</h1>
           <p className="mt-1 text-muted-foreground text-sm max-w-2xl">
-            Reusable competency packs tied to common roles. Pick a profile when
-            creating a new engagement to pre-fill Step&nbsp;2 with the right
-            competencies, weights, and priorities.
+            {t("adminRoleProfiles.list.subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Link href="/admin/role-profiles/bulk-import">
             <Button variant="outline" size="sm" className="gap-1.5">
               <FileUp className="h-3.5 w-3.5" />
-              Bulk JD import
+              {t("adminRoleProfiles.list.bulkJdImport")}
             </Button>
           </Link>
           <Link href="/admin/role-profiles/bulk-assign">
             <Button variant="outline" size="sm" className="gap-1.5">
               <Users className="h-3.5 w-3.5" />
-              Bulk-Link candidates
+              {t("adminRoleProfiles.list.bulkLinkCandidates")}
             </Button>
           </Link>
           <Link href="/admin/role-profiles/new">
             <Button>
               <Plus className="h-4 w-4 me-1.5" />
-              New role profile
+              {t("adminRoleProfiles.list.newRoleProfile")}
             </Button>
           </Link>
         </div>
@@ -75,11 +75,13 @@ export default async function RoleProfilesListPage() {
         <Card>
           <CardContent className="py-6">
             <p className="text-sm text-destructive">
-              Could not load role profiles: {error.message}
+              {t("adminRoleProfiles.list.loadError", { message: error.message })}
             </p>
             <p className="text-xs text-muted-foreground mt-2">
-              Did you run <code className="font-mono">npx supabase db push</code> after
-              adding migrations <code>00014</code> and <code>00015</code>?
+              {t("adminRoleProfiles.list.loadErrorHintBefore")}{" "}
+              <code className="font-mono">npx supabase db push</code>{" "}
+              {t("adminRoleProfiles.list.loadErrorHintAfter")} <code>00014</code>{" "}
+              {t("adminRoleProfiles.list.and")} <code>00015</code>?
             </p>
           </CardContent>
         </Card>
@@ -89,15 +91,14 @@ export default async function RoleProfilesListPage() {
         <Card>
           <CardContent className="py-12 flex flex-col items-center gap-3 text-center">
             <Sparkles className="h-8 w-8 text-muted-foreground" />
-            <p className="font-medium">No role profiles yet</p>
+            <p className="font-medium">{t("adminRoleProfiles.list.emptyTitle")}</p>
             <p className="text-sm text-muted-foreground max-w-sm">
-              The seed migration ships 6 GCC banking + government profiles. Run the
-              migrations or create one from a job description.
+              {t("adminRoleProfiles.list.emptyBody")}
             </p>
             <Link href="/admin/role-profiles/new">
               <Button className="mt-2">
                 <Plus className="h-4 w-4 me-1.5" />
-                Create from JD
+                {t("adminRoleProfiles.list.createFromJd")}
               </Button>
             </Link>
           </CardContent>
@@ -107,16 +108,16 @@ export default async function RoleProfilesListPage() {
       {!error && profiles.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Library ({profiles.length})</CardTitle>
+            <CardTitle>{t("adminRoleProfiles.list.libraryTitle", { count: profiles.length })}</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Scope</TableHead>
-                  <TableHead>Industry / Region</TableHead>
-                  <TableHead className="text-center">Competencies</TableHead>
+                  <TableHead>{t("adminRoleProfiles.list.colRole")}</TableHead>
+                  <TableHead>{t("adminRoleProfiles.list.colScope")}</TableHead>
+                  <TableHead>{t("adminRoleProfiles.list.colIndustryRegion")}</TableHead>
+                  <TableHead className="text-center">{t("adminRoleProfiles.list.colCompetencies")}</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -149,12 +150,12 @@ export default async function RoleProfilesListPage() {
                         {p.organization_id ? (
                           <Badge variant="outline" className="gap-1">
                             <Building2 className="h-3 w-3" />
-                            {p.organizations?.name ?? "Org-scoped"}
+                            {p.organizations?.name ?? t("adminRoleProfiles.list.orgScoped")}
                           </Badge>
                         ) : (
                           <Badge variant="secondary" className="gap-1">
                             <Globe className="h-3 w-3" />
-                            VIFM library
+                            {t("adminRoleProfiles.list.vifmLibrary")}
                           </Badge>
                         )}
                       </TableCell>
@@ -177,10 +178,10 @@ export default async function RoleProfilesListPage() {
                           {compCount}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-end">
                         <Link href={`/admin/role-profiles/${p.id}`}>
                           <Button variant="ghost" size="sm">
-                            View
+                            {t("adminRoleProfiles.list.view")}
                           </Button>
                         </Link>
                       </TableCell>

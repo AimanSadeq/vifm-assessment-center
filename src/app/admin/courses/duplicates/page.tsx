@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getServerT, type ServerT } from "@/lib/i18n/server";
 import { BackLink } from "@/components/shared/back-link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +43,7 @@ type Pair = {
 
 export default async function DuplicateCoursesPage() {
   const sb = await createClient();
+  const t = await getServerT();
 
   const { data, error } = await sb
     .from("vifm_courses")
@@ -83,26 +85,23 @@ export default async function DuplicateCoursesPage() {
 
   return (
     <div className="space-y-6">
-      <BackLink href="/admin/courses" label="Back to courses" />
+      <BackLink href="/admin/courses" label={t("adminCourses.backToCourses")} />
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <GraduationCap className="h-6 w-6 text-accent" />
-          Duplicate-finder
+          {t("adminCourses.duplicates.title")}
         </h1>
         <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-          Near-match courses by Levenshtein similarity on title
-          (whitespace + case-insensitive). Pairs at or above{" "}
-          {Math.round(SIM_THRESHOLD * 100)}% similarity are listed,
-          ranked by confidence. Use the X button on the row you want
-          to drop - the other one stays.
+          {t("adminCourses.duplicates.subtitle", {
+            pct: Math.round(SIM_THRESHOLD * 100),
+          })}
         </p>
       </div>
 
       {tableMissing && (
         <Card className="border-amber-300 bg-amber-50">
           <CardContent className="py-4 text-sm text-amber-900">
-            Migration 00023 not yet applied - run it to enable the
-            catalogue tables.
+            {t("adminCourses.duplicates.migrationMissing")}
           </CardContent>
         </Card>
       )}
@@ -110,14 +109,14 @@ export default async function DuplicateCoursesPage() {
       {!tableMissing && courses.length === 0 && (
         <Card>
           <CardContent className="py-6 text-sm text-muted-foreground">
-            No courses in the catalogue yet - nothing to compare. Use
+            {t("adminCourses.duplicates.emptyPre")}
             <Link href="/admin/courses/import" className="ms-1 text-accent hover:underline">
-              Import PDFs
-            </Link>{" "}or{" "}
+              {t("adminCourses.list.importPdfs")}
+            </Link>{" "}{t("adminCourses.duplicates.emptyOr")}{" "}
             <Link href="/admin/courses/new" className="text-accent hover:underline">
-              New course
+              {t("adminCourses.list.newCourse")}
             </Link>{" "}
-            to populate, then come back here.
+            {t("adminCourses.duplicates.emptyPost")}
           </CardContent>
         </Card>
       )}
@@ -125,16 +124,18 @@ export default async function DuplicateCoursesPage() {
       {!tableMissing && courses.length > 0 && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Catalogue scan</CardTitle>
+            <CardTitle className="text-base">{t("adminCourses.duplicates.scanTitle")}</CardTitle>
             <CardDescription>
-              {courses.length} course{courses.length === 1 ? "" : "s"} compared ·{" "}
-              {pairs.length} candidate pair{pairs.length === 1 ? "" : "s"} above{" "}
-              {Math.round(SIM_THRESHOLD * 100)}%
+              {t("adminCourses.duplicates.scanSummary", {
+                courses: courses.length,
+                pairs: pairs.length,
+                pct: Math.round(SIM_THRESHOLD * 100),
+              })}
               {pairs.length > 0 && (
                 <>
-                  {" "}- <span className="text-rose-700">{strongCount} strong</span>,{" "}
-                  <span className="text-amber-700">{likelyCount} likely</span>,{" "}
-                  <span className="text-muted-foreground">{possibleCount} possible</span>
+                  {" "}- <span className="text-rose-700">{t("adminCourses.duplicates.countStrong", { n: strongCount })}</span>,{" "}
+                  <span className="text-amber-700">{t("adminCourses.duplicates.countLikely", { n: likelyCount })}</span>,{" "}
+                  <span className="text-muted-foreground">{t("adminCourses.duplicates.countPossible", { n: possibleCount })}</span>
                 </>
               )}.
             </CardDescription>
@@ -142,13 +143,14 @@ export default async function DuplicateCoursesPage() {
           <CardContent>
             {pairs.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                No near-match pairs found. The catalogue is clean of
-                title duplicates above the {Math.round(SIM_THRESHOLD * 100)}% threshold.
+                {t("adminCourses.duplicates.noPairs", {
+                  pct: Math.round(SIM_THRESHOLD * 100),
+                })}
               </p>
             ) : (
               <div className="space-y-3">
                 {pairs.map((p, i) => (
-                  <PairCard key={`${p.a.id}-${p.b.id}-${i}`} pair={p} />
+                  <PairCard key={`${p.a.id}-${p.b.id}-${i}`} pair={p} t={t} />
                 ))}
               </div>
             )}
@@ -159,7 +161,7 @@ export default async function DuplicateCoursesPage() {
   );
 }
 
-function PairCard({ pair }: { pair: Pair }) {
+function PairCard({ pair, t }: { pair: Pair; t: ServerT }) {
   const tone =
     pair.rank === "strong"
       ? "border-rose-300 bg-rose-50"
@@ -167,7 +169,11 @@ function PairCard({ pair }: { pair: Pair }) {
         ? "border-amber-300 bg-amber-50"
         : "border-muted bg-muted/20";
   const rankLabel =
-    pair.rank === "strong" ? "Strong" : pair.rank === "likely" ? "Likely" : "Possible";
+    pair.rank === "strong"
+      ? t("adminCourses.duplicates.rankStrong")
+      : pair.rank === "likely"
+        ? t("adminCourses.duplicates.rankLikely")
+        : t("adminCourses.duplicates.rankPossible");
   const rankToneBadge =
     pair.rank === "strong"
       ? "bg-rose-200 text-rose-900"
@@ -183,18 +189,24 @@ function PairCard({ pair }: { pair: Pair }) {
           {rankLabel}
         </span>
         <span className="text-[11px] text-muted-foreground tabular-nums">
-          {Math.round(pair.similarity * 100)}% similar · {pair.sameVertical ? "same vertical" : "different vertical"} · Δduration {pair.durationDiff}d
+          {t("adminCourses.duplicates.pairMeta", {
+            pct: Math.round(pair.similarity * 100),
+            vertical: pair.sameVertical
+              ? t("adminCourses.duplicates.sameVertical")
+              : t("adminCourses.duplicates.differentVertical"),
+            days: pair.durationDiff,
+          })}
         </span>
       </div>
       <div className="grid gap-2 sm:grid-cols-2">
-        <CourseSlot course={pair.a} />
-        <CourseSlot course={pair.b} />
+        <CourseSlot course={pair.a} t={t} />
+        <CourseSlot course={pair.b} t={t} />
       </div>
     </div>
   );
 }
 
-function CourseSlot({ course }: { course: CourseRow }) {
+function CourseSlot({ course, t }: { course: CourseRow; t: ServerT }) {
   return (
     <div className="rounded-md border bg-card p-2.5 flex items-start justify-between gap-2">
       <div className="min-w-0 flex-1">
@@ -224,7 +236,7 @@ function CourseSlot({ course }: { course: CourseRow }) {
       <div className="flex items-center gap-1 shrink-0">
         <Link
           href={`/admin/courses/${course.id}`}
-          aria-label="Open course"
+          aria-label={t("adminCourses.duplicates.openCourse")}
           className="inline-flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/40"
         >
           <ArrowRight className="h-3.5 w-3.5" />

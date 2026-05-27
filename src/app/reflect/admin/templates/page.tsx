@@ -5,7 +5,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "VIFM Reflect 360 · Library templates",
+  title: "Reflect 360 · Library templates",
 };
 
 type TemplateRow = {
@@ -88,7 +88,7 @@ export default async function ReflectAdminTemplatesPage() {
             href="/reflect/admin"
             className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-1"
           >
-            <ArrowLeft className="h-3 w-3" /> VIFM Reflect 360 · Admin
+            <ArrowLeft className="h-3 w-3" /> Reflect 360 · Admin
           </Link>
           <div className="flex items-center gap-2">
             <Aperture className="h-5 w-5 text-accent" />

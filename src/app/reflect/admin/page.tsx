@@ -14,7 +14,7 @@ import { ReflectAdminPurgeButtons } from "./_components/purge-buttons";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "VIFM Reflect 360 · Admin",
+  title: "Reflect 360 · Admin",
 };
 
 async function fetchCounts() {
@@ -50,11 +50,11 @@ export default async function ReflectAdminPage() {
               href="/reflect"
               className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-1"
             >
-              <ArrowLeft className="h-3 w-3" /> VIFM Reflect 360
+              <ArrowLeft className="h-3 w-3" /> Reflect 360
             </Link>
             <div className="flex items-center gap-2">
               <Aperture className="h-5 w-5 text-accent" />
-              <h1 className="text-xl font-semibold text-primary">VIFM Reflect 360 · Admin</h1>
+              <h1 className="text-xl font-semibold text-primary">Reflect 360 · Admin</h1>
             </div>
           </div>
           <div className="text-xs text-muted-foreground">
@@ -65,7 +65,7 @@ export default async function ReflectAdminPage() {
 
       <main className="max-w-6xl mx-auto px-6 py-8">
         <p className="text-sm text-muted-foreground max-w-2xl mb-8">
-          Admin console for VIFM Reflect 360 - curate library templates that
+          Admin console for Reflect 360 - curate library templates that
           consultants clone into engagements, browse cross-consultant activity,
           and purge sandbox or retention-expired data.
         </p>
@@ -95,7 +95,7 @@ export default async function ReflectAdminPage() {
             title="Active engagements"
             count={counts.active}
             countLabel="active"
-            description="Cross-consultant view of every VIFM Reflect 360 engagement currently in draft, live, or scoring."
+            description="Cross-consultant view of every Reflect 360 engagement currently in draft, live, or scoring."
           >
             <Link
               href="/reflect/consultant"

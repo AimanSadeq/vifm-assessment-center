@@ -4,7 +4,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { ReflectWizard, type WizardOrg, type WizardTemplate } from "./_components/wizard";
 
 export const metadata = {
-  title: "New VIFM Reflect 360 engagement",
+  title: "New Reflect 360 engagement",
 };
 
 async function fetchWizardData(): Promise<{ orgs: WizardOrg[]; templates: WizardTemplate[] }> {
@@ -41,7 +41,7 @@ export default async function NewReflectEngagementPage() {
             <div className="flex items-center gap-2">
               <Aperture className="h-5 w-5 text-accent" />
               <h1 className="text-xl font-semibold text-primary">
-                New VIFM Reflect 360 engagement
+                New Reflect 360 engagement
               </h1>
             </div>
           </div>

@@ -36,7 +36,7 @@ export default async function ReflectRespondPage({ params }: Params) {
           </p>
           <div className="mt-6 inline-flex items-center gap-2 text-xs text-muted-foreground">
             <Aperture className="h-3.5 w-3.5" />
-            VIFM Reflect 360 · Leadership feedback
+            Reflect 360 · Leadership feedback
           </div>
         </div>
       </div>

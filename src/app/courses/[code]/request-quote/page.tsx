@@ -113,7 +113,7 @@ export default async function QuoteRequestPage({
         {reflectContext && (
           <div className="mb-6 rounded-lg border border-accent/30 bg-accent/5 p-4 text-sm">
             <div className="font-medium text-primary mb-1">
-              Quote-request from your VIFM Reflect 360 report
+              Quote-request from your Reflect 360 report
             </div>
             <div className="text-muted-foreground">
               We&apos;ve pre-filled your name, email, and organisation. Edit anything

@@ -11,6 +11,7 @@ import {
 } from "@/lib/validations/assessor";
 import { publishNotification, publishToAllAdmins } from "@/lib/notifications/publish";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
+import { issueReadyNowForEngagement } from "@/lib/credentials/ac-ready-now";
 
 // Defence-in-depth: every admin-only mutating action runs through this.
 // Under AUTH_ENABLED=false the helper returns a synthetic admin so dev
@@ -190,6 +191,14 @@ export async function updateEngagementStatusAction(engagementId: string, status:
     .eq("id", engagementId);
 
   if (error) return { error: error.message };
+
+  // Closing out the engagement is the deliberate "assessment is final" gate:
+  // issue an ac_ready_now credential for every ready_now candidate. Idempotent
+  // and best-effort - never block the status change on credential issuance.
+  if (status === "completed") {
+    await issueReadyNowForEngagement(engagementId);
+  }
+
   return { success: true };
 }
 

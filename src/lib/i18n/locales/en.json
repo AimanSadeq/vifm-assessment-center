@@ -1,4 +1,29 @@
 {
+  "candidateHome": {
+    "eyebrow": "VIFM Assessment Center",
+    "title": "Your Assessment Journey",
+    "intro": "A structured experience designed to help you demonstrate your strengths. Follow each step at your own pace.",
+    "stepsComplete": "{{done}} of {{total}} steps complete",
+    "mapSubtitle": "Follow the steps below to complete your assessment center experience.",
+    "selectProfile": "Select Your Profile",
+    "steps": {
+      "welcome": "Welcome & Profile",
+      "consent": "Consent & Privacy",
+      "assessments": "Complete Assessments",
+      "report": "View Report"
+    },
+    "metrics": {
+      "candidates": "candidates",
+      "consents": "consents",
+      "exercises": "exercises",
+      "reports": "reports"
+    }
+  },
+  "processMap": {
+    "complete": "Complete",
+    "progressTracker": "Progress tracker",
+    "done": "DONE"
+  },
   "common": {
     "appName": "VIFM Assessment Center",
     "vifm": "Virginia Institute of Finance and Management",

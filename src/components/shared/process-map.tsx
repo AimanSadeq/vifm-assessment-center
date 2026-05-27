@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import {
   Check, Trophy,
@@ -44,6 +45,7 @@ function getIcon(name: string): LucideIcon {
 
 /* ── Mobile ── */
 function MobileView({ steps, completedCount, totalSteps }: Omit<Props, "title" | "subtitle">) {
+  const { t } = useTranslation();
   const pct = Math.round((completedCount / totalSteps) * 100);
   return (
     <div className="space-y-5">
@@ -57,8 +59,8 @@ function MobileView({ steps, completedCount, totalSteps }: Omit<Props, "title" |
           <span className="absolute inset-0 flex items-center justify-center text-xs font-bold">{pct}%</span>
         </div>
         <div>
-          <p className="text-sm font-semibold">{completedCount}/{totalSteps} Complete</p>
-          <p className="text-xs text-muted-foreground">Progress tracker</p>
+          <p className="text-sm font-semibold">{completedCount}/{totalSteps} {t("processMap.complete")}</p>
+          <p className="text-xs text-muted-foreground">{t("processMap.progressTracker")}</p>
         </div>
       </div>
       <div className="relative">
@@ -100,6 +102,7 @@ function MobileView({ steps, completedCount, totalSteps }: Omit<Props, "title" |
 
 /* ── Desktop ── */
 function DesktopView({ steps, completedCount, totalSteps }: Omit<Props, "title" | "subtitle">) {
+  const { t } = useTranslation();
   const pct = Math.round((completedCount / totalSteps) * 100);
   const allComplete = completedCount === totalSteps;
   const N = steps.length;
@@ -162,7 +165,7 @@ function DesktopView({ steps, completedCount, totalSteps }: Omit<Props, "title" 
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-4xl font-bold leading-none">{pct}%</span>
-          <span className="text-[9px] text-muted-foreground font-semibold tracking-widest mt-1">{completedCount}/{totalSteps} DONE</span>
+          <span className="text-[9px] text-muted-foreground font-semibold tracking-widest mt-1">{completedCount}/{totalSteps} {t("processMap.done")}</span>
           {allComplete && <Trophy className="h-4 w-4 text-green-500 mt-1" />}
         </div>
       </div>

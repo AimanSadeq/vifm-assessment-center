@@ -1,4 +1,29 @@
 {
+  "candidateHome": {
+    "eyebrow": "مركز تقييم VIFM",
+    "title": "رحلة التقييم الخاصة بك",
+    "intro": "تجربة منظَّمة مصمَّمة لمساعدتك على إبراز نقاط قوّتك. اتبع كل خطوة وفق وتيرتك الخاصة.",
+    "stepsComplete": "{{done}} من {{total}} خطوات مكتملة",
+    "mapSubtitle": "اتبع الخطوات أدناه لإكمال تجربتك في مركز التقييم.",
+    "selectProfile": "اختر ملفك الشخصي",
+    "steps": {
+      "welcome": "الترحيب والملف الشخصي",
+      "consent": "الموافقة والخصوصية",
+      "assessments": "إكمال التقييمات",
+      "report": "عرض التقرير"
+    },
+    "metrics": {
+      "candidates": "مرشحون",
+      "consents": "موافقات",
+      "exercises": "تمارين",
+      "reports": "تقارير"
+    }
+  },
+  "processMap": {
+    "complete": "مكتمل",
+    "progressTracker": "متتبّع التقدّم",
+    "done": "مكتمل"
+  },
   "common": {
     "appName": "مركز تقييم VIFM",
     "vifm": "معهد فرجينيا للتمويل والإدارة",

@@ -119,6 +119,12 @@ export default async function CandidateWelcomePage({ params, searchParams }: Pro
                 <Link href={`/candidate/skills/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`}>
                   <Button variant="outline">My Skills</Button>
                 </Link>
+                <Link href={`/candidate/academy?candidateId=${candidateId}${asAdmin ? "&asAdmin=1" : ""}`}>
+                  <Button variant="outline">My Learning</Button>
+                </Link>
+                <Link href={`/candidate/credentials/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`}>
+                  <Button variant="outline">My Credentials</Button>
+                </Link>
                 <Link href={`/candidate/report/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`}>
                   <Button variant="outline">View Report</Button>
                 </Link>

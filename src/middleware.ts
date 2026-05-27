@@ -20,11 +20,20 @@ const isReflectRaterRoute = (pathname: string) =>
 const isPublicCoursesRoute = (pathname: string) =>
   pathname === "/courses" || pathname.startsWith("/courses/");
 
+// Public credential verification - anyone can verify a credential by its
+// code, no account needed. The /verify page and its API read only
+// non-sensitive fields via a service-role helper.
+const isPublicVerifyRoute = (pathname: string) =>
+  pathname === "/verify" ||
+  pathname.startsWith("/verify/") ||
+  pathname.startsWith("/api/credentials/verify/");
+
 export async function middleware(request: NextRequest) {
   if (
     isAraRespondentRoute(request.nextUrl.pathname) ||
     isReflectRaterRoute(request.nextUrl.pathname) ||
-    isPublicCoursesRoute(request.nextUrl.pathname)
+    isPublicCoursesRoute(request.nextUrl.pathname) ||
+    isPublicVerifyRoute(request.nextUrl.pathname)
   ) {
     return NextResponse.next();
   }

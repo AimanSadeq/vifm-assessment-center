@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { BackLink } from "@/components/shared/back-link";
 import { GapBadge } from "@/components/shared/gap-badge";
 import { getCompetencyGap } from "@/lib/scoring/competency-gap";
-import { Target, AlertTriangle, CheckCircle2, BookOpen, Route, Languages, Award } from "lucide-react";
+import { Target, AlertTriangle, CheckCircle2, BookOpen, Route, Languages, Award, GraduationCap } from "lucide-react";
 import { PersonalStatistics, type DomainRollup } from "./_components/personal-statistics";
 import { StartQuizButton } from "./_components/start-quiz-button";
 import { ImpersonationBanner } from "@/components/shared/impersonation-banner";
@@ -270,12 +270,20 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
         </div>
       </div>
 
-      <Link
-        href={`/candidate/pathway/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`}
-        className="inline-flex items-center gap-2 rounded-md bg-[#5391D5] px-4 py-2 text-sm font-medium text-white hover:bg-[#4380c4]"
-      >
-        <Route className="h-4 w-4" /> {t("candidateSkills.buildPathway")}
-      </Link>
+      <div className="flex flex-wrap gap-2">
+        <Link
+          href={`/candidate/pathway/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`}
+          className="inline-flex items-center gap-2 rounded-md bg-[#5391D5] px-4 py-2 text-sm font-medium text-white hover:bg-[#4380c4]"
+        >
+          <Route className="h-4 w-4" /> {t("candidateSkills.buildPathway")}
+        </Link>
+        <Link
+          href={`/candidate/academy?candidateId=${candidateId}${asAdmin ? "&asAdmin=1" : ""}`}
+          className="inline-flex items-center gap-2 rounded-md border border-[#5391D5] px-4 py-2 text-sm font-medium text-[#010131] hover:bg-[#5391D5]/10"
+        >
+          <GraduationCap className="h-4 w-4 text-[#5391D5]" /> {t("candidateSkills.myLearning")}
+        </Link>
+      </div>
 
       {/* Fluent English placement (when bound to this candidate) */}
       {latestFluent && (

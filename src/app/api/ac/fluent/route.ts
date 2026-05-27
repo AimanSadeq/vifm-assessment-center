@@ -40,6 +40,7 @@ import {
 import { AI_MODEL } from "@/lib/ai/client";
 import { overallConfidenceBand, type ConfidenceBand } from "@/lib/scoring/reliability";
 import { isAzureSpeechConfigured, type PronunciationScore } from "@/lib/integrations/speech";
+import { issueCredential } from "@/lib/credentials/issue";
 import { createHash } from "node:crypto";
 
 export const dynamic = "force-dynamic";
@@ -476,6 +477,20 @@ export async function POST(req: Request) {
     // Email the taker their result + certificate link (best-effort).
     if (result_id && takerEmail) {
       await emailFluentResult(result_id, takerEmail, takerName, result);
+    }
+
+    // Issue a verifiable CEFR credential (best-effort; VIFM Verify).
+    if (result_id) {
+      await issueCredential({
+        candidateId: body.candidateId?.trim() ? body.candidateId.trim() : null,
+        issuedToName: takerName || "Candidate",
+        issuedToEmail: takerEmail,
+        type: "fluent_cefr",
+        titleEn: `English Placement - CEFR ${result.overall_cefr}`,
+        subtitleEn: `Indicative ${result.overall_cefr} placement across reading, listening, writing and speaking`,
+        sourceId: result_id,
+        metadata: { cefr: result.overall_cefr, language },
+      });
     }
 
     return NextResponse.json({ ...result, reliability, result_id });

@@ -34,7 +34,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { EXERCISE_TYPE_LABELS } from "@/lib/constants/exercise-types";
 import { addCandidateAction, createAssignmentAction, addDemoAssessorAction, updateEngagementStatusAction, removeCandidateAction, deleteAssignmentAction, setCandidateRoleProfileAction, createReengagementAction } from "../actions";
-import { Trash2, Send, FileText, CheckCircle, Eye, Repeat2, Loader2, History } from "lucide-react";
+import { Trash2, Send, FileText, CheckCircle, Eye, Repeat2, Loader2, History, Grid3x3 } from "lucide-react";
 import Link from "next/link";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -309,6 +309,12 @@ export function EngagementDetail({
           )}
           {/* Status transitions */}
           <div className="flex gap-1 ms-auto">
+            <Link href={`/admin/engagements/${engagement.id as string}/talent-map`}>
+              <Button size="sm" variant="outline" className="gap-1">
+                <Grid3x3 className="h-3 w-3" />
+                Talent Map
+              </Button>
+            </Link>
             {engagement.status === "draft" && (
               <Button size="sm" variant="default" onClick={() => setStatusConfirm({ open: true, status: "active", label: "Activate" })}>
                 Activate

@@ -15,6 +15,12 @@ import {
 import { recommendCoursesForIndividualSnapshot } from "@/lib/recommender/courses";
 import { RecommendedCoursesPanel } from "@/components/shared/recommended-courses-panel";
 import { computeWorkforceReadiness } from "@/lib/ara/workforce-readiness";
+import {
+  computePersonalNorms,
+  percentileRank,
+  ordinal,
+  MIN_NORM_SAMPLE,
+} from "@/lib/ara/personal-norms";
 
 export const dynamic = "force-dynamic";
 
@@ -89,6 +95,23 @@ export default async function PersonalResultsPage({ params }: Props) {
     target: TARGET,
     limit: 5,
   });
+
+  // Percentile ranking vs the completed-snapshot norm group. Withheld until
+  // the pool reaches MIN_NORM_SAMPLE (computePersonalNorms gates `ready`), so
+  // until then the card shows an honest "accruing" note instead of a rank.
+  const norms = await computePersonalNorms();
+  const overallPct =
+    norms.ready && overallScore > 0 ? percentileRank(overallScore, norms.overall) : null;
+  const factorPct: Partial<Record<AraIndividualFactorId, number>> = {};
+  if (norms.ready) {
+    for (const id of ARA_INDIVIDUAL_FACTOR_IDS) {
+      const v = factorScores[id];
+      if (v > 0) {
+        const p = percentileRank(v, norms.perFactor[id]);
+        if (p != null) factorPct[id] = p;
+      }
+    }
+  }
 
   // Mode C only - individual-vs-cohort means on each factor card.
   // We deliberately exclude the current respondent from the cohort
@@ -177,6 +200,20 @@ export default async function PersonalResultsPage({ params }: Props) {
                       {isAr ? stage.name_ar : stage.name_en}
                     </span>
                   )}
+                  {overallScore > 0 &&
+                    (overallPct != null ? (
+                      <p className="text-[11px] mt-2 opacity-80">
+                        {isAr
+                          ? `أعلى من ${overallPct}٪ من ${norms.sampleSize} مشاركًا`
+                          : `${ordinal(overallPct)} percentile of ${norms.sampleSize} respondents`}
+                      </p>
+                    ) : (
+                      <p className="text-[11px] mt-2 opacity-60">
+                        {isAr
+                          ? `تُفتح المقارنة المئوية بعد ${MIN_NORM_SAMPLE} مشاركًا (${norms.sampleSize} حتى الآن)`
+                          : `Percentile unlocks at ${MIN_NORM_SAMPLE} respondents (${norms.sampleSize} so far)`}
+                      </p>
+                    ))}
                 </div>
                 <div className="text-sm opacity-90 max-w-md">
                   {overallScore > 0
@@ -226,6 +263,11 @@ export default async function PersonalResultsPage({ params }: Props) {
                     {score > 0 ? score.toFixed(1) : "-"}
                     <span className="text-xs text-muted-foreground font-normal"> / 5</span>
                   </p>
+                  {factorPct[f.id] != null && (
+                    <span className="text-[10px] text-muted-foreground tabular-nums">
+                      {isAr ? `النسبة ${factorPct[f.id]}٪` : `${ordinal(factorPct[f.id]!)} pct`}
+                    </span>
+                  )}
                   {showDelta && (
                     <span
                       className={`text-[10px] font-semibold tabular-nums px-1.5 py-0.5 rounded-md border ${deltaTone}`}

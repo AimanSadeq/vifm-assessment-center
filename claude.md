@@ -4,7 +4,9 @@
 Custom-built Assessment Center management platform for Virginia Institute of Finance and Management (VIFM). The portal operationalizes the VIFM-AC Framework across four user interfaces: Admin, Assessor, Candidate, and Client. Target market: GCC and MENA region (banking, government, corporate).
 
 ## Current Status
-All 5 development phases are **complete**. The portal is functionally ready with auth disabled for development. To go to production, flip `AUTH_ENABLED = true` in `src/middleware.ts` and follow `src/lib/auth/README.md`.
+All 5 development phases are **complete**. The portal is functionally ready with auth disabled for development. To go to production, flip `AUTH_ENABLED = true` in `src/lib/auth/config.ts` (consumed by `src/middleware.ts` + `src/lib/ara/auth-guards.ts`) and follow `src/lib/auth/README.md`.
+
+**Undocumented modules (this file trails the codebase):** modules present in the code but not yet described below — Reflect 360 feedback (`/reflect/*`, `src/lib/reflect/`), Fluent English (`/ac/fluent`, `src/lib/ai/fluent-english.ts`), AI Interview / CBI (`/ac/ai-interview`, `/ac/cbi`, `src/lib/ai/cbi-interviewer.ts`), Academy (`/api/academy/*`), and credential issuance + public verification (`/verify`, `/api/credentials/verify`). Explore the routes before relying on assumptions about them.
 
 **ARA module status:** VIFM ARA (AI Readiness Assessment) is built out and merged into master. M1–M6 complete (respondent flow, scoring, distortion, peer benchmarks, year-on-year, bilingual consultant notes, EN/AR/bilingual Puppeteer PDF report, Phase 2 consultant guide, regulatory doc upload with Claude extraction, **annual reassessment workflow shipped 2026-04-28 via `createReassessmentFromPrior` in `src/lib/ara/consultant-actions.ts` with copy-and-create of org/stage/scope/weights + opt-in respondent carry-over + new active question-bank pin + `ara_assessments.prior_assessment_id` audit link**). M2.1 (respondent invitation email) and M3.3 (consultant completion notification) shipped 2026-04-28 via `src/lib/ara/email.ts` with bilingual templates + sandbox redirect + ara_email_log writes. Retention purge + sandbox cleanup admin pages shipped at `/ara/admin/retention` + `/ara/admin/sandbox`; scheduled cron for those is the only ARA item still open. See "ARA Module" section below for the current deferred-items list.
 
@@ -20,7 +22,7 @@ All 5 development phases are **complete**. The portal is functionally ready with
 - **Framework:** Next.js 14 with App Router and TypeScript (strict mode)
 - **Styling:** Tailwind CSS with Shadcn/UI component library (New York style)
 - **Database:** Supabase (PostgreSQL + Auth + Storage + Realtime)
-- **Auth:** Supabase Auth with Row-Level Security (RLS) per role - toggle in middleware.ts
+- **Auth:** Supabase Auth with Row-Level Security (RLS) per role - toggle `AUTH_ENABLED` in src/lib/auth/config.ts
 - **Real-Time:** Supabase Realtime (live wash-up collaboration)
 - **Reporting:** React-PDF for candidate reports (6-page professional format), Recharts for analytics
 - **AI:** Anthropic Claude API (observation classifier, report writer, development recommender, bias detector)
@@ -164,7 +166,7 @@ scripts/
 - **Role player prompts:** character_name, character_role, character_attitude, meeting_objectives
 
 ## Auth Status
-- Middleware toggle: `AUTH_ENABLED` in `src/middleware.ts` (currently `false`)
+- Auth toggle: `AUTH_ENABLED` in `src/lib/auth/config.ts` (currently `false`); consumed by `src/middleware.ts` + `src/lib/ara/auth-guards.ts`
 - Login form: email/password + magic link (implemented)
 - Dev bypass: 4 role buttons on login page
 - Production guide: `src/lib/auth/README.md`
@@ -277,7 +279,7 @@ New module being built alongside the existing AC portal. Full spec in `VIFM_ARA_
 
 ### ARA deferred items (from earlier milestones)
 Track here - pick up as scope allows. Do NOT delete without user confirmation. Items in this list are confirmed un-shipped; items previously listed and now shipped have been removed.
-- **AUTH_ENABLED flip:** still `false` in `src/middleware.ts`. Production switch on requires real Supabase Auth wiring per `src/lib/auth/README.md`. User-paused; pickup plan in `docs/post-parity-roadmap.md`.
+- **AUTH_ENABLED flip:** still `false` in `src/lib/auth/config.ts` (imported by `src/middleware.ts`). Production switch on requires real Supabase Auth wiring per `src/lib/auth/README.md`. User-paused; pickup plan in `docs/post-parity-roadmap.md`.
 - **Mode A norm group accumulation:** percentile claims like "you scored at the X% percentile of GCC respondents" require ~200-500 completed Personal AI Readiness Snapshots in the DB. Passive — accumulates as people take the free snapshot. No action needed until the volume's there.
 
 ### Recently shipped (2026-05-15)

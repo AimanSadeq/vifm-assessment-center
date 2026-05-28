@@ -8,24 +8,34 @@ Source recommendation conversation: chat session 2026-04-28.
 
 ---
 
-## 1. Verify the AI paths actually work — 15 min · status: in progress
+## 1. Verify the AI paths actually work — 15 min · status: ✅ verified 2026-05-28
 
-Quiz generator (G3), bulk JD import (G4), and the original JD extractor (P0.1)
-were only smoke-tested via the "AI is not configured" error path because
-`ANTHROPIC_API_KEY` isn't set on this dev box.
+`ANTHROPIC_API_KEY` is now set in `.env.local` (108-char key) and the live dev
+server reports **AI Features: connected** on `/admin/settings`. Verified via a
+throwaway `scripts/smoke-ai.ts` (since removed) that called Claude for real:
+- JD extractor (P0.1) → returned sensible competency picks with priority + weight + reasoning.
+- Quiz generator (G3) → 7 questions, correct 4 MC / 2 T-F / 1 pattern mix, valid pattern sequence; **bilingual path produced Arabic for all 7** when invoked with `bilingual: true`.
 
-**Steps:**
-- [ ] Add `ANTHROPIC_API_KEY=...` to `.env.local`
-- [ ] Restart `npm run dev` so Next.js picks up the env var
-- [ ] Click "Start AI Quiz" on `/candidate/skills/<a candidate with a role profile>` — confirm 7 questions render, complete one, confirm results page shows AI explanations
-- [ ] Visit `/admin/role-profiles/bulk-import`, upload one JD, confirm the recommendations table renders, click Create — confirm the new role profile appears in `/admin/role-profiles`
-- [ ] If anything fails, fix before moving on
+**Gotcha discovered:** the Claude Code harness injects an *empty* `ANTHROPIC_API_KEY`
+into subprocesses it spawns (Bash / tsx). dotenv and Next.js both refuse to
+override an already-set var, so a standalone script silently sees no key unless
+it passes `dotenv.config({ override: true })`. The Next.js dev server started via
+the preview tool runs in a clean env, so it correctly reads the `.env.local`
+value — hence "connected".
 
-**Why this is first:** if the AI path is broken we shipped a placebo.
+**Still worth a manual click-through** (needs seeded data): "Start AI Quiz" on a
+candidate with a bound role profile, and a real upload on `/admin/role-profiles/bulk-import`.
+
+**Why this mattered:** if the AI path were broken we'd have shipped a placebo. It isn't.
 
 ---
 
-## 2. Auth + RLS audit on the new tables — ½ day · status: pending
+## 2. Auth + RLS audit on the new tables — ½ day · status: ✅ shipped (migration 00019)
+
+**Shipped 2026-04-28** as `supabase/migrations/00019_ac_auth_hardening.sql` —
+`notifications` split into per-op policies + a read-only-recipient trigger;
+`candidate_quiz_attempts` immutable-fields trigger + initial-state CHECK. The
+audit checklist below is retained for historical context.
 
 Five new tables / extensions added in the parity sweep. ARA already had a
 dedicated [auth-hardening commit](https://github.com/AimanSadeq/vifm-assessment-center/commit/4012054)
@@ -56,7 +66,13 @@ fixes, plus a checklist commit message similar to `4012054`.
 
 ---
 
-## 3. Bilingual EN/AR translations for the new UI — ~1 week · status: pending
+## 3. Bilingual EN/AR translations for the new UI — ~1 week · status: ✅ shipped
+
+**Shipped** — the Arabic/RTL sweep went well beyond the G/H parity surfaces:
+candidate AC, admin portal, assessor portal, client portal, AI Readiness
+console, Reflect 360 console, and the public AC/courses pages are all translated
+(git log `4a74df9`…`e24fa21`). AI-generated quiz output is bilingual via
+`bilingual: true`. The surface list below is retained for historical context.
 
 CLAUDE.md: "All user-facing text should use i18n keys from Phase 4 onward."
 The 14 parity surfaces shipped this week are English-only.
@@ -112,7 +128,7 @@ without explicit go-ahead.
 
 When picking this back up, the simplified plan (per the chat session
 that paused this):
-- [ ] Flip `AUTH_ENABLED = true` in [src/middleware.ts](../src/middleware.ts)
+- [ ] Flip `AUTH_ENABLED = true` in [src/lib/auth/config.ts](../src/lib/auth/config.ts) (consumed by `src/middleware.ts` + `src/lib/ara/auth-guards.ts`)
 - [ ] Hide the 4 quick-login role buttons on `/login` in production
       builds (gate to `process.env.NODE_ENV === "development"`)
 - [ ] Create 4 test user accounts in Supabase Auth (admin, lead_assessor,

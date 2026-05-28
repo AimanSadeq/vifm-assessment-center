@@ -114,7 +114,11 @@ export function PlatformLanding() {
   const [lang, setLang] = useState<Lang>("en");
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      // Prefer the shared `vifm-locale` cookie (set by any portal's language
+      // switcher) so the launcher reflects a choice made elsewhere; fall back
+      // to the launcher's own remembered choice.
+      const cookie = document.cookie.match(/(?:^|;\s*)vifm-locale=(ar|en)/)?.[1];
+      const saved = cookie ?? localStorage.getItem(STORAGE_KEY);
       if (saved === "ar" || saved === "en") setLang(saved);
     } catch {
       /* localStorage unavailable - stay on English */
@@ -124,6 +128,9 @@ export function PlatformLanding() {
     setLang(l);
     try {
       localStorage.setItem(STORAGE_KEY, l);
+      // Carry the choice into the portals + public pages, which read the
+      // shared `vifm-locale` cookie via the i18n locale gate.
+      document.cookie = `vifm-locale=${l}; max-age=${60 * 60 * 24 * 365}; path=/; SameSite=Lax`;
     } catch {
       /* ignore persistence failure */
     }

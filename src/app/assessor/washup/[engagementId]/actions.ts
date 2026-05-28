@@ -1,6 +1,7 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import {
   saveConsensusRatingSchema,
   type SaveConsensusRatingValues,
@@ -8,11 +9,28 @@ import {
   type SaveOarValues,
 } from "@/lib/validations/washup";
 
+// Wash-up writes go through the service client (consensus_ratings /
+// overall_assessment_ratings RLS only permit the owning assessor); requireRole
+// still gates the caller - synthetic admin in dev, real assessor/admin check
+// under auth=on.
+async function gateAssessor(): Promise<{ error: string } | null> {
+  try {
+    await requireRole(["lead_assessor", "associate_assessor", "admin"]);
+    return null;
+  } catch (e) {
+    if (isAuthorizationError(e)) return { error: e.message };
+    throw e;
+  }
+}
+
 export async function saveConsensusRatingAction(values: SaveConsensusRatingValues) {
+  const gate = await gateAssessor();
+  if (gate) return gate;
+
   const parsed = saveConsensusRatingSchema.safeParse(values);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   // Upsert: one consensus rating per (engagement, candidate, competency)
   const { data, error } = await supabase
@@ -36,10 +54,13 @@ export async function saveConsensusRatingAction(values: SaveConsensusRatingValue
 }
 
 export async function saveOarAction(values: SaveOarValues) {
+  const gate = await gateAssessor();
+  if (gate) return gate;
+
   const parsed = saveOarSchema.safeParse(values);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   // Upsert: one OAR per (engagement, candidate)
   const { data, error } = await supabase

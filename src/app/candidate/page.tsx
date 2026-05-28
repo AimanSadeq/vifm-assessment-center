@@ -1,28 +1,22 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { Sparkles, HandHeart } from "lucide-react";
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { getServerT } from "@/lib/i18n/server";
 import { ProcessMap, type ProcessStep } from "@/components/shared/process-map";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 export default async function CandidateDashboardPage() {
+  const supabase = await createClient();
   const t = await getServerT();
 
-  // Auth is disabled in dev, so the cookie-based anon client carries no session
-  // and RLS returns nothing (which leaves firstId empty and every journey link
-  // falling back to "/candidate"). This page is an overview keyed to the first
-  // candidate, so read through the service client. TODO(auth): when AUTH_ENABLED
-  // flips, scope these reads to the authenticated candidate instead of "first".
-  const svc = createServiceClient();
-
   const [candR, consentR, exR, reportR, enrollR] = await Promise.all([
-    svc.from("candidates").select("id, full_name, status, engagement_id, engagements(name, organizations(name))").order("full_name"),
-    svc.from("consent_records").select("id"),
-    svc.from("engagement_exercises").select("id"),
-    svc.from("candidate_reports").select("id, status"),
-    svc.from("vifm_enrollments").select("id").neq("status", "withdrawn"),
+    supabase.from("candidates").select("id, full_name, status, engagement_id, engagements(name, organizations(name))").order("full_name"),
+    supabase.from("consent_records").select("id"),
+    supabase.from("engagement_exercises").select("id"),
+    supabase.from("candidate_reports").select("id, status"),
+    supabase.from("vifm_enrollments").select("id").neq("status", "withdrawn"),
   ]);
 
   const candidates = candR.data ?? [];

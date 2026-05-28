@@ -32,13 +32,15 @@
       "welcome": "Welcome & Profile",
       "consent": "Consent & Privacy",
       "assessments": "Complete Assessments",
-      "report": "View Report"
+      "report": "View Report",
+      "myLearning": "My Learning"
     },
     "metrics": {
       "candidates": "candidates",
       "consents": "consents",
       "exercises": "exercises",
-      "reports": "reports"
+      "reports": "reports",
+      "courses": "courses"
     }
   },
   "processMap": {

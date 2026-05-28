@@ -113,9 +113,15 @@ function DesktopView({ steps, completedCount, totalSteps }: Omit<Props, "title" 
   const cx = W / 2;
   const cy = H / 2;
 
+  // Round node coordinates to a fixed precision so the absolutely-positioned
+  // cards produce byte-identical inline styles on server and client. Math.cos/
+  // Math.sin can differ by 1 ULP between Node and the browser when the angles
+  // are non-trivial (e.g. 5 or 7 steps), which React reports as a `style`
+  // hydration mismatch. (The arc paths below are rounded for the same reason.)
+  const snap = (n: number) => Number(n.toFixed(3));
   const nodes = steps.map((_, i) => {
     const a = (-90 + (i / N) * 360) * (Math.PI / 180);
-    return { x: cx + R * Math.cos(a), y: cy + R * Math.sin(a) };
+    return { x: snap(cx + R * Math.cos(a)), y: snap(cy + R * Math.sin(a)) };
   });
 
   return (

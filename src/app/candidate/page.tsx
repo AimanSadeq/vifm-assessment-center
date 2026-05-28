@@ -1,27 +1,35 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { Sparkles, HandHeart } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
 import { getServerT } from "@/lib/i18n/server";
 import { ProcessMap, type ProcessStep } from "@/components/shared/process-map";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 export default async function CandidateDashboardPage() {
-  const supabase = await createClient();
   const t = await getServerT();
 
-  const [candR, consentR, exR, reportR] = await Promise.all([
-    supabase.from("candidates").select("id, full_name, status, engagement_id, engagements(name, organizations(name))").order("full_name"),
-    supabase.from("consent_records").select("id"),
-    supabase.from("engagement_exercises").select("id"),
-    supabase.from("candidate_reports").select("id, status"),
+  // Auth is disabled in dev, so the cookie-based anon client carries no session
+  // and RLS returns nothing (which leaves firstId empty and every journey link
+  // falling back to "/candidate"). This page is an overview keyed to the first
+  // candidate, so read through the service client. TODO(auth): when AUTH_ENABLED
+  // flips, scope these reads to the authenticated candidate instead of "first".
+  const svc = createServiceClient();
+
+  const [candR, consentR, exR, reportR, enrollR] = await Promise.all([
+    svc.from("candidates").select("id, full_name, status, engagement_id, engagements(name, organizations(name))").order("full_name"),
+    svc.from("consent_records").select("id"),
+    svc.from("engagement_exercises").select("id"),
+    svc.from("candidate_reports").select("id, status"),
+    svc.from("vifm_enrollments").select("id").neq("status", "withdrawn"),
   ]);
 
   const candidates = candR.data ?? [];
   const consents = consentR.data?.length ?? 0;
   const exercises = exR.data?.length ?? 0;
   const released = reportR.data?.filter((r) => r.status === "released").length ?? 0;
+  const enrollments = enrollR.data?.length ?? 0;
 
   // If there are candidates, show the process map with first candidate's links
   // Plus a candidate selector below
@@ -32,6 +40,7 @@ export default async function CandidateDashboardPage() {
     { id: "consent", number: 2, title: t("candidateHome.steps.consent"), href: firstId ? `/candidate/consent/${firstId}` : "/candidate", iconName: "ShieldCheck", metric: consents, metricLabel: t("candidateHome.metrics.consents"), isComplete: consents > 0, isActive: candidates.length > 0 && consents === 0 },
     { id: "assessments", number: 3, title: t("candidateHome.steps.assessments"), href: firstId ? `/candidate/assessments/${firstId}` : "/candidate", iconName: "ClipboardList", metric: exercises, metricLabel: t("candidateHome.metrics.exercises"), isComplete: exercises > 0, isActive: consents > 0 && exercises === 0 },
     { id: "report", number: 4, title: t("candidateHome.steps.report"), href: firstId ? `/candidate/report/${firstId}` : "/candidate", iconName: "FileText", metric: released, metricLabel: t("candidateHome.metrics.reports"), isComplete: released > 0, isActive: exercises > 0 && released === 0 },
+    { id: "myLearning", number: 5, title: t("candidateHome.steps.myLearning"), href: firstId ? `/candidate/academy?candidateId=${firstId}` : "/candidate", iconName: "BookOpen", metric: enrollments, metricLabel: t("candidateHome.metrics.courses"), isComplete: enrollments > 0, isActive: released > 0 && enrollments === 0 },
   ];
 
   return (

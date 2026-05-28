@@ -32,13 +32,15 @@
       "welcome": "الترحيب والملف الشخصي",
       "consent": "الموافقة والخصوصية",
       "assessments": "إكمال التقييمات",
-      "report": "عرض التقرير"
+      "report": "عرض التقرير",
+      "myLearning": "تعلّمي"
     },
     "metrics": {
       "candidates": "مرشحون",
       "consents": "موافقات",
       "exercises": "تمارين",
-      "reports": "تقارير"
+      "reports": "تقارير",
+      "courses": "دورات"
     }
   },
   "processMap": {

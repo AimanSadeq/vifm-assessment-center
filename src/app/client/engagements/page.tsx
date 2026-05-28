@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getClientOrgId } from "@/lib/auth/get-org-id";
+import { getServerT } from "@/lib/i18n/server";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -14,6 +15,7 @@ import {
 
 export default async function ClientEngagementsPage() {
   const supabase = await createClient();
+  const t = await getServerT();
 
   const orgId = await getClientOrgId();
   let query = supabase
@@ -42,25 +44,25 @@ export default async function ClientEngagementsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">Projects</h1>
+      <h1 className="text-2xl font-bold">{t("clientPortal.engagements.title")}</h1>
       <p className="mt-1 text-muted-foreground">
-        View your assessment center projects and timelines.
+        {t("clientPortal.engagements.subtitle")}
       </p>
 
       <div className="mt-6">
         {(!engagements || engagements.length === 0) ? (
           <p className="text-sm text-muted-foreground py-8 text-center">
-            No engagements available.
+            {t("clientPortal.engagements.empty")}
           </p>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Target Role</TableHead>
-                <TableHead>Candidates</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Dates</TableHead>
+                <TableHead>{t("clientPortal.engagements.colName")}</TableHead>
+                <TableHead>{t("clientPortal.engagements.colTargetRole")}</TableHead>
+                <TableHead>{t("clientPortal.engagements.colCandidates")}</TableHead>
+                <TableHead>{t("clientPortal.engagements.colStatus")}</TableHead>
+                <TableHead>{t("clientPortal.engagements.colDates")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

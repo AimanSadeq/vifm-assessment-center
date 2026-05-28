@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import { CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,7 @@ export function QuoteRequestForm({
   prefillEmail,
   prefillCompany,
 }: Props) {
+  const { t } = useTranslation();
   const [state, setState] = useState<"form" | "success">("form");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -77,11 +79,9 @@ export function QuoteRequestForm({
         <div className="flex items-start gap-3 mb-3">
           <CheckCircle2 className="h-6 w-6 text-emerald-600 mt-0.5 shrink-0" />
           <div>
-            <h2 className="text-xl font-semibold text-emerald-950">Thanks - request received</h2>
+            <h2 className="text-xl font-semibold text-emerald-950">{t("coursesPublic.successHeading")}</h2>
             <p className="text-sm text-emerald-900 mt-1">
-              We&apos;ve logged your interest in <strong>{courseTitle}</strong>. A VIFM
-              programme designer will reach out within 2 working days with
-              tailored options for your team.
+              {t("coursesPublic.successBody", { course: courseTitle })}
             </p>
           </div>
         </div>
@@ -90,14 +90,14 @@ export function QuoteRequestForm({
             href="/courses"
             className="inline-flex items-center gap-2 rounded-lg border border-emerald-300 bg-white px-5 py-2.5 text-sm font-medium text-emerald-950 hover:bg-emerald-50 transition-colors"
           >
-            Back to catalogue
+            {t("coursesPublic.backToCatalogue")}
           </Link>
           <button
             type="button"
             onClick={() => setState("form")}
             className="inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium text-emerald-700 hover:underline"
           >
-            Submit another request
+            {t("coursesPublic.submitAnother")}
           </button>
         </div>
       </div>
@@ -113,52 +113,52 @@ export function QuoteRequestForm({
         </div>
       )}
 
-      <Section title="Your details">
-        <Field label="Full name" name="requester_name" required defaultValue={prefillName} />
-        <Field label="Work email" name="requester_email" type="email" required defaultValue={prefillEmail} />
+      <Section title={t("coursesPublic.sectionYourDetails")}>
+        <Field label={t("coursesPublic.fieldFullName")} name="requester_name" required defaultValue={prefillName} />
+        <Field label={t("coursesPublic.fieldWorkEmail")} name="requester_email" type="email" required defaultValue={prefillEmail} />
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Company" name="requester_company" required defaultValue={prefillCompany} />
-          <Field label="Your role" name="requester_role" placeholder="e.g. L&D Manager" />
+          <Field label={t("coursesPublic.fieldCompany")} name="requester_company" required defaultValue={prefillCompany} />
+          <Field label={t("coursesPublic.fieldYourRole")} name="requester_role" placeholder={t("coursesPublic.fieldYourRolePlaceholder")} />
         </div>
-        <Field label="Phone (optional)" name="requester_phone" type="tel" placeholder="+971 ..." />
+        <Field label={t("coursesPublic.fieldPhone")} name="requester_phone" type="tel" placeholder={t("coursesPublic.fieldPhonePlaceholder")} />
       </Section>
 
-      <Section title="Programme details">
+      <Section title={t("coursesPublic.sectionProgrammeDetails")}>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Estimated group size" name="estimated_group_size" type="number" min={1} placeholder="e.g. 12" />
-          <Field label="Preferred start date" name="preferred_start_date" type="date" />
+          <Field label={t("coursesPublic.fieldGroupSize")} name="estimated_group_size" type="number" min={1} placeholder={t("coursesPublic.fieldGroupSizePlaceholder")} />
+          <Field label={t("coursesPublic.fieldStartDate")} name="preferred_start_date" type="date" />
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <SelectField
-            label="Preferred language"
+            label={t("coursesPublic.fieldPreferredLanguage")}
             name="preferred_language"
             options={[
-              { value: "", label: "No preference" },
-              ...(courseLanguages.includes("en") ? [{ value: "en", label: "English" }] : []),
-              ...(courseLanguages.includes("ar") ? [{ value: "ar", label: "Arabic" }] : []),
-              ...(courseLanguages.length >= 2 ? [{ value: "bilingual", label: "Bilingual EN / AR" }] : []),
+              { value: "", label: t("coursesPublic.optNoPreference") },
+              ...(courseLanguages.includes("en") ? [{ value: "en", label: t("coursesPublic.optEnglish") }] : []),
+              ...(courseLanguages.includes("ar") ? [{ value: "ar", label: t("coursesPublic.optArabic") }] : []),
+              ...(courseLanguages.length >= 2 ? [{ value: "bilingual", label: t("coursesPublic.optBilingual") }] : []),
             ]}
           />
           <SelectField
-            label="Delivery preference"
+            label={t("coursesPublic.fieldDeliveryPreference")}
             name="delivery_mode"
             options={[
-              { value: "", label: "No preference" },
-              ...(courseDeliveryModes.includes("in_person") ? [{ value: "in_person", label: "In-person" }] : []),
-              ...(courseDeliveryModes.includes("virtual") ? [{ value: "virtual", label: "Virtual" }] : []),
-              ...(courseDeliveryModes.includes("hybrid") ? [{ value: "hybrid", label: "Hybrid" }] : []),
+              { value: "", label: t("coursesPublic.optNoPreference") },
+              ...(courseDeliveryModes.includes("in_person") ? [{ value: "in_person", label: t("coursesPublic.optInPerson") }] : []),
+              ...(courseDeliveryModes.includes("virtual") ? [{ value: "virtual", label: t("coursesPublic.optVirtual") }] : []),
+              ...(courseDeliveryModes.includes("hybrid") ? [{ value: "hybrid", label: t("coursesPublic.optHybrid") }] : []),
             ]}
           />
         </div>
         <div>
           <Label htmlFor="notes" className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">
-            Notes (optional)
+            {t("coursesPublic.fieldNotes")}
           </Label>
           <textarea
             id="notes"
             name="notes"
             rows={4}
-            placeholder="Specific outcomes, audience seniority, dates to avoid, etc."
+            placeholder={t("coursesPublic.fieldNotesPlaceholder")}
             className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
           />
         </div>
@@ -166,11 +166,11 @@ export function QuoteRequestForm({
 
       <div className="flex items-center justify-between gap-3 pt-2">
         <p className="text-[11px] text-muted-foreground">
-          By submitting you agree to be contacted by VIFM about this enquiry.
+          {t("coursesPublic.consentNote")}
         </p>
         <Button type="submit" disabled={pending}>
           {pending && <Loader2 className="h-3.5 w-3.5 animate-spin me-1.5" />}
-          {pending ? "Sending…" : "Send quote request"}
+          {pending ? t("coursesPublic.sending") : t("coursesPublic.sendQuoteRequest")}
         </Button>
       </div>
     </form>

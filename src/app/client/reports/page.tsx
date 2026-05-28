@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getClientOrgId } from "@/lib/auth/get-org-id";
+import { getServerT } from "@/lib/i18n/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,18 +12,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { BARS_LABELS } from "@/lib/validations/assessor";
-
-const OAR_LABELS: Record<string, string> = {
-  ready_now: "Ready Now",
-  ready_with_development: "Ready with Development",
-  not_ready: "Not Ready",
-};
 
 export const dynamic = "force-dynamic";
 
 export default async function ClientReportsPage() {
   const supabase = await createClient();
+  const t = await getServerT();
 
   const orgId = await getClientOrgId();
 
@@ -51,29 +46,29 @@ export default async function ClientReportsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">Reports</h1>
+      <h1 className="text-2xl font-bold">{t("clientPortal.reports.title")}</h1>
       <p className="mt-1 text-muted-foreground">
-        Access candidate assessment reports once released by VIFM.
+        {t("clientPortal.reports.subtitle")}
       </p>
 
       <div className="mt-6">
         <Card>
           <CardHeader>
-            <CardTitle>Candidate Reports</CardTitle>
+            <CardTitle>{t("clientPortal.reports.cardTitle")}</CardTitle>
           </CardHeader>
           <CardContent>
             {(!allCandidates || allCandidates.length === 0) ? (
               <p className="text-sm text-muted-foreground py-8 text-center">
-                No candidate reports available yet.
+                {t("clientPortal.reports.empty")}
               </p>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Candidate</TableHead>
-                    <TableHead>Engagement</TableHead>
-                    <TableHead>OAR</TableHead>
-                    <TableHead>Recommendation</TableHead>
+                    <TableHead>{t("clientPortal.reports.colCandidate")}</TableHead>
+                    <TableHead>{t("clientPortal.reports.colEngagement")}</TableHead>
+                    <TableHead>{t("clientPortal.reports.colOar")}</TableHead>
+                    <TableHead>{t("clientPortal.reports.colRecommendation")}</TableHead>
                     <TableHead className="w-32"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -100,7 +95,7 @@ export default async function ClientReportsPage() {
                               {oar.overall_score}/5
                             </Badge>
                           ) : (
-                            <span className="text-xs text-muted-foreground">Pending</span>
+                            <span className="text-xs text-muted-foreground">{t("clientPortal.reports.pending")}</span>
                           )}
                         </TableCell>
                         <TableCell>
@@ -114,7 +109,7 @@ export default async function ClientReportsPage() {
                                     : "secondary"
                               }
                             >
-                              {OAR_LABELS[oar.recommendation] ?? oar.recommendation}
+                              {t(`clientPortal.oar.${oar.recommendation}`)}
                             </Badge>
                           ) : (
                             <span className="text-xs text-muted-foreground">-</span>
@@ -128,11 +123,11 @@ export default async function ClientReportsPage() {
                               rel="noopener noreferrer"
                             >
                               <Button size="sm" variant="outline">
-                                Download PDF
+                                {t("clientPortal.reports.downloadPdf")}
                               </Button>
                             </a>
                           ) : (
-                            <span className="text-xs text-muted-foreground">Not released</span>
+                            <span className="text-xs text-muted-foreground">{t("clientPortal.reports.notReleased")}</span>
                           )}
                         </TableCell>
                       </TableRow>

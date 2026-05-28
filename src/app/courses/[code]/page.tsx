@@ -5,6 +5,7 @@ import {
   Users, Target, Compass, BookOpen, Award, FileText,
 } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getServerT } from "@/lib/i18n/server";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { Badge } from "@/components/ui/badge";
 import { VIFM_VERTICAL_LABELS, type VifmCourse, type VifmVertical } from "@/types/database";
@@ -40,6 +41,7 @@ export default async function CourseDetailPage({
 }: {
   params: { code: string };
 }) {
+  const t = await getServerT();
   const sb = createServiceClient();
   const lookup = UUID_RE.test(params.code)
     ? sb.from("vifm_courses").select("*").eq("id", params.code).maybeSingle<CourseDetailRow>()
@@ -49,8 +51,16 @@ export default async function CourseDetailPage({
 
   const durationLabel =
     course.min_duration_days === course.max_duration_days
-      ? `${course.default_duration_days} day${course.default_duration_days === 1 ? "" : "s"}`
-      : `${course.min_duration_days}–${course.max_duration_days} days`;
+      ? t(
+          course.default_duration_days === 1
+            ? "coursesPublic.durationDays_one"
+            : "coursesPublic.durationDays_other",
+          { count: course.default_duration_days }
+        )
+      : t("coursesPublic.durationRange", {
+          min: course.min_duration_days,
+          max: course.max_duration_days,
+        });
 
   const requestQuoteHref = `/courses/${course.code ?? course.id}/request-quote`;
 
@@ -63,14 +73,14 @@ export default async function CourseDetailPage({
             <VifmLogo variant="color" size="sm" />
             <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.15em] text-muted-foreground font-medium border-l ps-3 ms-1">
               <GraduationCap className="h-3 w-3 text-accent" />
-              Training catalogue
+              {t("coursesPublic.navTrainingCatalogue")}
             </span>
           </Link>
           <Link
             href="/courses"
             className="text-xs text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
           >
-            <ArrowLeft className="h-3 w-3" /> Back to catalogue
+            <ArrowLeft className="h-3 w-3" /> {t("coursesPublic.backToCatalogue")}
           </Link>
         </div>
       </header>
@@ -83,7 +93,7 @@ export default async function CourseDetailPage({
               {VIFM_VERTICAL_LABELS[course.vertical as VifmVertical] ?? course.vertical}
             </Badge>
             <Badge variant="outline" className="text-[10px] uppercase tracking-widest text-white/70 border-white/20">
-              {course.level}
+              {t(`coursesPublic.level.${course.level}`)}
             </Badge>
             {course.certification_code && (
               <Badge variant="outline" className="text-[10px] font-mono text-white/70 border-white/20">
@@ -122,7 +132,7 @@ export default async function CourseDetailPage({
         <article className="space-y-8 order-2 lg:order-1">
           {/* Block 1 - Course Overview */}
           {course.overview_en && (
-            <Block icon={Compass} title="Course overview">
+            <Block icon={Compass} title={t("coursesPublic.blockOverview")}>
               <p className="leading-relaxed">{course.overview_en}</p>
               {course.overview_ar && (
                 <p className="mt-3 leading-relaxed text-muted-foreground" dir="rtl">{course.overview_ar}</p>
@@ -132,14 +142,14 @@ export default async function CourseDetailPage({
 
           {/* Block 4 - Target audience */}
           {course.audience_en && (
-            <Block icon={Users} title="Target audience">
+            <Block icon={Users} title={t("coursesPublic.blockAudience")}>
               <p className="leading-relaxed">{course.audience_en}</p>
             </Block>
           )}
 
           {/* Block 3 - Objectives */}
           {course.objectives_en && course.objectives_en.length > 0 && (
-            <Block icon={Target} title="Course objectives">
+            <Block icon={Target} title={t("coursesPublic.blockObjectives")}>
               <ul className="list-disc ms-5 space-y-1.5">
                 {course.objectives_en.map((o, i) => (
                   <li key={i}>{o}</li>
@@ -150,7 +160,7 @@ export default async function CourseDetailPage({
 
           {/* Block 2 - Target competencies */}
           {course.target_competencies_raw_en && course.target_competencies_raw_en.length > 0 && (
-            <Block icon={Award} title="Target competencies">
+            <Block icon={Award} title={t("coursesPublic.blockCompetencies")}>
               <div className="flex flex-wrap gap-1.5">
                 {course.target_competencies_raw_en.map((c, i) => (
                   <Badge key={i} variant="outline">
@@ -163,7 +173,7 @@ export default async function CourseDetailPage({
 
           {/* Block 5 - Methodology */}
           {course.methodology_en && (
-            <Block icon={BookOpen} title="Course methodology">
+            <Block icon={BookOpen} title={t("coursesPublic.blockMethodology")}>
               <p className="leading-relaxed whitespace-pre-line">{course.methodology_en}</p>
             </Block>
           )}
@@ -172,7 +182,7 @@ export default async function CourseDetailPage({
                VifmCourseOutlineSection: flat bullets, or nested
                sub-sections each with their own bullets. */}
           {course.outline_en && course.outline_en.length > 0 && (
-            <Block icon={FileText} title="Course outline">
+            <Block icon={FileText} title={t("coursesPublic.blockOutline")}>
               <div className="space-y-4">
                 {course.outline_en.map((section, i) => (
                   <div key={i} className="rounded-md border bg-card p-4">
@@ -226,7 +236,7 @@ export default async function CourseDetailPage({
 
           {/* Block 7 - Note */}
           {course.note_en && (
-            <Block icon={Sparkles} title="Note">
+            <Block icon={Sparkles} title={t("coursesPublic.blockNote")}>
               <p className="leading-relaxed text-muted-foreground italic">{course.note_en}</p>
             </Block>
           )}
@@ -234,17 +244,16 @@ export default async function CourseDetailPage({
           {/* Bottom CTA */}
           <div className="rounded-xl border bg-gradient-to-br from-accent/5 to-accent/10 p-6 sm:p-8 text-center">
             <h2 className="text-2xl font-semibold text-primary mb-2">
-              Want to run this for your team?
+              {t("coursesPublic.detailBottomCtaHeading")}
             </h2>
             <p className="text-sm text-muted-foreground max-w-md mx-auto mb-5">
-              Request a tailored quote - we&apos;ll come back with delivery options,
-              language preferences, group-size pricing, and dates that work for you.
+              {t("coursesPublic.detailBottomCtaBlurb")}
             </p>
             <Link
               href={requestQuoteHref}
               className="inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-3 text-sm font-medium text-white hover:bg-accent/90 transition-colors"
             >
-              Request a quote <ArrowRight className="h-4 w-4" />
+              {t("coursesPublic.requestQuote")} <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </article>
@@ -256,20 +265,20 @@ export default async function CourseDetailPage({
               href={requestQuoteHref}
               className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-5 py-3 text-sm font-medium text-white hover:bg-accent/90 transition-colors"
             >
-              Request a quote <ArrowRight className="h-4 w-4" />
+              {t("coursesPublic.requestQuote")} <ArrowRight className="h-4 w-4" />
             </Link>
             <p className="text-[11px] text-muted-foreground text-center">
-              Typically scoped within 2 working days.
+              {t("coursesPublic.scopedWithin")}
             </p>
             <div className="border-t pt-4 space-y-3 text-xs">
-              <Fact label="Programme code" value={course.code ?? "-"} mono />
-              <Fact label="Vertical" value={VIFM_VERTICAL_LABELS[course.vertical as VifmVertical] ?? course.vertical} />
-              <Fact label="Level" value={course.level.charAt(0).toUpperCase() + course.level.slice(1)} />
-              <Fact label="Duration" value={durationLabel} />
-              <Fact label="Languages" value={course.languages?.map((l) => l.toUpperCase()).join(" · ") ?? "-"} />
-              <Fact label="Delivery" value={course.delivery_modes?.join(" · ") ?? "-"} />
+              <Fact label={t("coursesPublic.factProgrammeCode")} value={course.code ?? "-"} mono />
+              <Fact label={t("coursesPublic.factVertical")} value={VIFM_VERTICAL_LABELS[course.vertical as VifmVertical] ?? course.vertical} />
+              <Fact label={t("coursesPublic.factLevel")} value={t(`coursesPublic.level.${course.level}`)} />
+              <Fact label={t("coursesPublic.factDuration")} value={durationLabel} />
+              <Fact label={t("coursesPublic.factLanguages")} value={course.languages?.map((l) => l.toUpperCase()).join(" · ") ?? "-"} />
+              <Fact label={t("coursesPublic.factDelivery")} value={course.delivery_modes?.join(" · ") ?? "-"} />
               {course.certification_code && (
-                <Fact label="Certification" value={course.certification_code} mono />
+                <Fact label={t("coursesPublic.factCertification")} value={course.certification_code} mono />
               )}
             </div>
           </div>

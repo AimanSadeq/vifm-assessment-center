@@ -1,20 +1,24 @@
 import { ShieldCheck, ShieldAlert, ShieldX } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { getCredentialForVerification } from "@/lib/credentials/issue";
+import { getServerT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-  title: "Verify credential · VIFM",
-  description: "Verify a credential issued by the Virginia Institute of Finance and Management.",
-};
+export async function generateMetadata() {
+  const t = await getServerT();
+  return {
+    title: t("authPublic.verify.metaTitle"),
+    description: t("authPublic.verify.metaDescription"),
+  };
+}
 
-// Public, English-only. A revoked or expired credential still resolves, but
+// Public, bilingual. A revoked or expired credential still resolves, but
 // is shown as not currently valid.
-const TYPE_LABEL: Record<string, string> = {
-  academy_completion: "Course Completion",
-  ac_ready_now: "Assessment - Ready Now",
-  fluent_cefr: "English Placement",
+const TYPE_LABEL_KEY: Record<string, string> = {
+  academy_completion: "authPublic.verify.typeAcademyCompletion",
+  ac_ready_now: "authPublic.verify.typeAcReadyNow",
+  fluent_cefr: "authPublic.verify.typeFluentCefr",
 };
 
 function fmtDate(iso: string | null): string | null {
@@ -31,6 +35,7 @@ function fmtDate(iso: string | null): string | null {
 }
 
 export default async function VerifyCredentialPage({ params }: { params: { code: string } }) {
+  const t = await getServerT();
   const cred = await getCredentialForVerification(params.code);
   const revoked = !!cred?.revokedAt;
   const expired = cred?.expiresAt ? new Date(cred.expiresAt) < new Date() : false;
@@ -48,9 +53,9 @@ export default async function VerifyCredentialPage({ params }: { params: { code:
         {!cred ? (
           <div className="rounded-2xl border bg-white p-8 text-center shadow-sm">
             <ShieldX className="mx-auto h-10 w-10 text-slate-400" />
-            <h1 className="mt-3 text-xl font-semibold text-[#010131]">Credential not found</h1>
+            <h1 className="mt-3 text-xl font-semibold text-[#010131]">{t("authPublic.verify.notFoundTitle")}</h1>
             <p className="mt-2 text-sm text-slate-500">
-              We could not find a credential with this verification code. Check the code and try again.
+              {t("authPublic.verify.notFoundBody")}
             </p>
           </div>
         ) : (
@@ -65,15 +70,15 @@ export default async function VerifyCredentialPage({ params }: { params: { code:
               )}
               <div>
                 <div className="text-sm font-semibold uppercase tracking-wide text-slate-600">
-                  {valid ? "Credential verified" : revoked ? "Credential revoked" : "Credential expired"}
+                  {valid ? t("authPublic.verify.statusVerified") : revoked ? t("authPublic.verify.statusRevoked") : t("authPublic.verify.statusExpired")}
                 </div>
-                <div className="text-xs text-slate-400">Issued by {cred.issuer}</div>
+                <div className="text-xs text-slate-400">{t("authPublic.verify.issuedBy", { issuer: cred.issuer })}</div>
               </div>
             </div>
 
             <div className="mt-6 border-t pt-6">
               <div className="text-xs font-medium uppercase tracking-wide text-[#5391D5]">
-                {TYPE_LABEL[cred.credentialType] ?? "Credential"}
+                {TYPE_LABEL_KEY[cred.credentialType] ? t(TYPE_LABEL_KEY[cred.credentialType]) : t("authPublic.verify.credentialFallback")}
               </div>
               <h1 className="mt-1 text-2xl font-semibold text-[#010131]">{cred.titleEn}</h1>
               {cred.titleAr && (
@@ -84,12 +89,12 @@ export default async function VerifyCredentialPage({ params }: { params: { code:
               {cred.subtitleEn && <p className="mt-2 text-sm text-slate-500">{cred.subtitleEn}</p>}
 
               <dl className="mt-6 grid gap-4 text-sm sm:grid-cols-2">
-                <Field label="Awarded to" value={cred.issuedToName} />
-                {cred.scorePct != null && <Field label="Score" value={`${cred.scorePct}%`} />}
-                <Field label="Issued" value={fmtDate(cred.issuedAt) ?? "-"} />
+                <Field label={t("authPublic.verify.awardedTo")} value={cred.issuedToName} />
+                {cred.scorePct != null && <Field label={t("authPublic.verify.score")} value={`${cred.scorePct}%`} />}
+                <Field label={t("authPublic.verify.issued")} value={fmtDate(cred.issuedAt) ?? "-"} />
                 {cred.expiresAt && (
                   <Field
-                    label={expired ? "Expired" : "Valid until"}
+                    label={expired ? t("authPublic.verify.expired") : t("authPublic.verify.validUntil")}
                     value={fmtDate(cred.expiresAt) ?? "-"}
                   />
                 )}
@@ -99,7 +104,7 @@ export default async function VerifyCredentialPage({ params }: { params: { code:
         )}
 
         <p className="mt-6 text-center text-xs text-slate-400">
-          Credential verification · caliber.viftraining.com
+          {t("authPublic.verify.footer")}
         </p>
       </main>
     </div>

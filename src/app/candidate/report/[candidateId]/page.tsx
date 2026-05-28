@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { BARS_LABELS } from "@/lib/validations/assessor";
 import { ImpersonationBanner } from "@/components/shared/impersonation-banner";
 import { getServerT } from "@/lib/i18n/server";
 
@@ -111,7 +110,7 @@ export default async function CandidateReportPage({ params, searchParams }: Prop
                     <p className="text-lg font-semibold">
                       {t(`rating.bars.${oar.overall_score}`) !== `rating.bars.${oar.overall_score}`
                         ? t(`rating.bars.${oar.overall_score}`)
-                        : BARS_LABELS[oar.overall_score] ?? ""}
+                        : t(`ratings.bars.${oar.overall_score}`) ?? ""}
                     </p>
                     {oar.recommendation && (
                       <Badge variant="outline" className="mt-1">

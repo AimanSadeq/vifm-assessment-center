@@ -3,6 +3,7 @@ import {
   ArrowRight, Check, Minus, Sparkles, Users, Building2, Crown, FileDown,
 } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
+import { getServerT, type ServerT } from "@/lib/i18n/server";
 import { CompetencyConfigurator } from "./_components/competency-configurator";
 
 export const metadata = {
@@ -32,14 +33,15 @@ const TIER_TONES = {
 
 type TierKey = "single" | "programme" | "partnership";
 
+// User-facing strings carry i18n key suffixes resolved against
+// acTools.engage.* in the component body (where the server `tr` binding
+// is available — named `tr` because `t` is used as the .map() iterator
+// variable throughout this file). Non-text fields (href, tone, icon) stay.
 const TIERS: Array<{
   key: TierKey;
   number: 1 | 2 | 3;
-  label: string;
-  scope: string;
-  tagline: string;
-  price: string;
-  cta: string;
+  /** key suffix into acTools.engage.tiers.* for label/scope/tagline/price/cta */
+  k: string;
   ctaHref: string;
   /** Static sample-report PDF served from /public/samples/. Generated
    *  via scripts/build-sample-reports.ts so prospects see exactly the
@@ -50,114 +52,107 @@ const TIERS: Array<{
   /** Tier-card facts. We deliberately don't sell on page count
    *  ("8 pages / 27 pages") because the reviewer (2026-04-29 voice
    *  note) flagged that as a turn-off - clients care about content,
-   *  not length. So `Report` describes what's *in* the report. */
-  facts: Array<{ label: string; value: string }>;
+   *  not length. So `Report` describes what's *in* the report.
+   *  `labelKey` -> acTools.engage.fact*, `valueKey` -> acTools.engage.tiers.* */
+  facts: Array<{ labelKey: string; valueKey: string }>;
 }> = [
   {
     key: "single",
     number: 1,
-    label: "Single Engagement",
-    scope: "One Assessment Centre, one role, ≤ 6 candidates",
-    tagline: "Start with a discrete hiring or promotion decision.",
-    price: "Fee-based engagement",
-    cta: "Talk to a consultant",
+    k: "single",
     ctaHref: "mailto:contact@viftraining.com?subject=AC%20Single%20Engagement%20Enquiry",
     sampleHref: "/samples/VIFM-AC-Sample-Report-Single.pdf",
     tone: "blue",
     icon: Users,
     facts: [
-      { label: "Candidates",   value: "Up to 6" },
-      { label: "Driven by",    value: "Competency count" },
-      { label: "Assessor pool", value: "2–3 lead assessors" },
-      { label: "Report",       value: "9-box grid · OAR + recommendation · per-competency development tips" },
+      { labelKey: "factCandidates",   valueKey: "singleCandidates" },
+      { labelKey: "factDrivenBy",     valueKey: "singleDrivenBy" },
+      { labelKey: "factAssessorPool", valueKey: "singleAssessorPool" },
+      { labelKey: "factReport",       valueKey: "singleReport" },
     ],
   },
   {
     key: "programme",
     number: 2,
-    label: "Programme",
-    scope: "Multiple Assessment Centres in a hiring or promotion cycle",
-    tagline: "Cohort-based talent decisions across roles or functions.",
-    price: "Fee-based · volume-discounted",
-    cta: "Discuss a programme",
+    k: "programme",
     ctaHref: "mailto:contact@viftraining.com?subject=AC%20Programme%20Enquiry",
     sampleHref: "/samples/VIFM-AC-Sample-Report-Programme.pdf",
     tone: "violet",
     icon: Building2,
     facts: [
-      { label: "Candidates",   value: "20–60" },
-      { label: "Driven by",    value: "Competency count × cohort size" },
-      { label: "Assessor pool", value: "Lead + Associate" },
-      { label: "Report",       value: "Individual report · cohort analytics dashboard · ICC + bias detection" },
+      { labelKey: "factCandidates",   valueKey: "programmeCandidates" },
+      { labelKey: "factDrivenBy",     valueKey: "programmeDrivenBy" },
+      { labelKey: "factAssessorPool", valueKey: "programmeAssessorPool" },
+      { labelKey: "factReport",       valueKey: "programmeReport" },
     ],
   },
   {
     key: "partnership",
     number: 3,
-    label: "Strategic Talent Partnership",
-    scope: "12-month embedded engagement with a custom competency framework",
-    tagline: "Make assessment a continuous capability, not a project.",
-    price: "Premium retainer",
-    cta: "Explore partnership",
+    k: "partnership",
     ctaHref: "mailto:contact@viftraining.com?subject=AC%20Strategic%20Talent%20Partnership%20Enquiry",
     sampleHref: "/samples/VIFM-AC-Sample-Report-Partnership.pdf",
     tone: "gold",
     icon: Crown,
     facts: [
-      { label: "Candidates",   value: "Unlimited" },
-      { label: "Driven by",    value: "Custom framework + bespoke exercises" },
-      { label: "Assessor pool", value: "Dedicated team" },
-      { label: "Report",       value: "Branded individual + quarterly board review · year-on-year talent trajectory" },
+      { labelKey: "factCandidates",   valueKey: "partnershipCandidates" },
+      { labelKey: "factDrivenBy",     valueKey: "partnershipDrivenBy" },
+      { labelKey: "factAssessorPool", valueKey: "partnershipAssessorPool" },
+      { labelKey: "factReport",       valueKey: "partnershipReport" },
     ],
   },
 ];
 
+// `groupKey` -> acTools.engage.groups.*, `featureKey` -> acTools.engage.features.*.
+// Boolean cells render a tick/dash; string cells carry a value key into
+// acTools.engage.values.* (resolved in <Cell> via the `tr` passed down).
 const CAPABILITIES: Array<{
-  group: string;
-  feature: string;
+  groupKey: string;
+  featureKey: string;
   single: boolean | string;
   programme: boolean | string;
   partnership: boolean | string;
 }> = [
   // Scope
-  { group: "Scope",          feature: "Scoped to a single role / decision", single: true, programme: true, partnership: true },
-  { group: "Scope",          feature: "Multi-cohort across roles",          single: false, programme: true, partnership: true },
-  { group: "Scope",          feature: "Custom competency framework",        single: false, programme: false, partnership: true },
-  { group: "Scope",          feature: "Bilingual EN / AR materials",        single: true, programme: true, partnership: true },
+  { groupKey: "scope",          featureKey: "scopedSingleRole",   single: true, programme: true, partnership: true },
+  { groupKey: "scope",          featureKey: "multiCohort",        single: false, programme: true, partnership: true },
+  { groupKey: "scope",          featureKey: "customFramework",    single: false, programme: false, partnership: true },
+  { groupKey: "scope",          featureKey: "bilingualMaterials", single: true, programme: true, partnership: true },
 
   // Methodology
-  { group: "Methodology",    feature: "VIFM 38-competency framework",       single: true, programme: true, partnership: true },
-  { group: "Methodology",    feature: "Trained assessor pool",              single: "2–3", programme: "Lead + Associate", partnership: "Dedicated" },
-  { group: "Methodology",    feature: "Behavioural observation + BARS rating", single: true, programme: true, partnership: true },
-  { group: "Methodology",    feature: "Wash-up consensus engine",           single: true, programme: true, partnership: true },
-  { group: "Methodology",    feature: "Inter-rater reliability (ICC) reporting", single: false, programme: true, partnership: true },
-  { group: "Methodology",    feature: "Bias detection across assessor pool", single: false, programme: true, partnership: true },
+  { groupKey: "methodology",    featureKey: "frameworkCompetency",     single: true, programme: true, partnership: true },
+  { groupKey: "methodology",    featureKey: "trainedPool",             single: "leadAssessors", programme: "leadAssociate", partnership: "dedicated" },
+  { groupKey: "methodology",    featureKey: "behaviouralObservation",  single: true, programme: true, partnership: true },
+  { groupKey: "methodology",    featureKey: "washupEngine",            single: true, programme: true, partnership: true },
+  { groupKey: "methodology",    featureKey: "iccReporting",            single: false, programme: true, partnership: true },
+  { groupKey: "methodology",    featureKey: "biasDetection",           single: false, programme: true, partnership: true },
 
   // Exercises
-  { group: "Exercises",      feature: "In-Basket / E-Tray",                 single: true, programme: true, partnership: true },
-  { group: "Exercises",      feature: "Role Play",                          single: true, programme: true, partnership: true },
-  { group: "Exercises",      feature: "Group Exercise",                     single: false, programme: true, partnership: true },
-  { group: "Exercises",      feature: "Case Study",                         single: false, programme: true, partnership: true },
-  { group: "Exercises",      feature: "Oral Presentation",                  single: false, programme: true, partnership: true },
-  { group: "Exercises",      feature: "Competency-Based Interview",         single: true, programme: true, partnership: true },
-  { group: "Exercises",      feature: "Bespoke exercises commissioned for the client", single: false, programme: false, partnership: true },
+  { groupKey: "exercises",      featureKey: "inBasket",          single: true, programme: true, partnership: true },
+  { groupKey: "exercises",      featureKey: "rolePlay",          single: true, programme: true, partnership: true },
+  { groupKey: "exercises",      featureKey: "groupExercise",     single: false, programme: true, partnership: true },
+  { groupKey: "exercises",      featureKey: "caseStudy",         single: false, programme: true, partnership: true },
+  { groupKey: "exercises",      featureKey: "oralPresentation",  single: false, programme: true, partnership: true },
+  { groupKey: "exercises",      featureKey: "cbi",               single: true, programme: true, partnership: true },
+  { groupKey: "exercises",      featureKey: "bespokeExercises",  single: false, programme: false, partnership: true },
 
   // Outputs
-  { group: "Outputs",        feature: "Individual candidate report (6 pages)", single: true, programme: true, partnership: true },
-  { group: "Outputs",        feature: "OAR + recommendation",               single: true, programme: true, partnership: true },
-  { group: "Outputs",        feature: "Development tips per competency",    single: true, programme: true, partnership: true },
-  { group: "Outputs",        feature: "Cohort analytics dashboard",         single: false, programme: true, partnership: true },
-  { group: "Outputs",        feature: "Quarterly cohort review with the C-suite", single: false, programme: false, partnership: true },
-  { group: "Outputs",        feature: "Year-on-year talent trajectory",     single: false, programme: false, partnership: true },
+  { groupKey: "outputs",        featureKey: "individualReport",  single: true, programme: true, partnership: true },
+  { groupKey: "outputs",        featureKey: "oarRecommendation", single: true, programme: true, partnership: true },
+  { groupKey: "outputs",        featureKey: "developmentTips",   single: true, programme: true, partnership: true },
+  { groupKey: "outputs",        featureKey: "cohortDashboard",   single: false, programme: true, partnership: true },
+  { groupKey: "outputs",        featureKey: "quarterlyReview",   single: false, programme: false, partnership: true },
+  { groupKey: "outputs",        featureKey: "yoyTrajectory",     single: false, programme: false, partnership: true },
 
   // Compliance
-  { group: "Compliance",     feature: "ISO 10667 alignment",                single: true, programme: true, partnership: true },
-  { group: "Compliance",     feature: "GCC Taskforce on AC Guidelines (6th ed.)", single: true, programme: true, partnership: true },
-  { group: "Compliance",     feature: "GDPR / UAE PDPL / Saudi PDPL data handling", single: true, programme: true, partnership: true },
-  { group: "Compliance",     feature: "Audit trail on all rating decisions",  single: true, programme: true, partnership: true },
+  { groupKey: "compliance",     featureKey: "iso10667",            single: true, programme: true, partnership: true },
+  { groupKey: "compliance",     featureKey: "taskforceGuidelines", single: true, programme: true, partnership: true },
+  { groupKey: "compliance",     featureKey: "dataHandling",        single: true, programme: true, partnership: true },
+  { groupKey: "compliance",     featureKey: "auditTrail",          single: true, programme: true, partnership: true },
 ];
 
-export default function AcEngagePage() {
+export default async function AcEngagePage() {
+  const tr = await getServerT();
   return (
     <div className="min-h-screen bg-background">
       {/* ─── Top bar ─── */}
@@ -167,14 +162,14 @@ export default function AcEngagePage() {
             <VifmLogo variant="color" size="sm" />
             <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.15em] text-muted-foreground font-medium border-l ps-3 ms-1">
               <Sparkles className="h-3 w-3 text-accent" />
-              Assessment Center
+              {tr("acTools.engage.navAcLabel")}
             </span>
           </Link>
           <Link
             href="/ara"
             className="text-xs text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
           >
-            AI Readiness Compass <ArrowRight className="h-3 w-3" />
+            {tr("acTools.engage.navCompass")} <ArrowRight className="h-3 w-3" />
           </Link>
         </div>
       </header>
@@ -185,16 +180,13 @@ export default function AcEngagePage() {
           <div className="max-w-3xl relative z-10">
             <span className="ara-eyebrow text-accent">
               <Sparkles className="h-3 w-3" />
-              How to engage
+              {tr("acTools.engage.heroEyebrow")}
             </span>
             <h1 className="ara-numeral text-4xl sm:text-5xl font-semibold text-white leading-[1.05] mt-4 mb-5">
-              Three engagement shapes. <span className="ara-accent-sweep">One framework.</span>
+              {tr("acTools.engage.heroTitlePart1")} <span className="ara-accent-sweep">{tr("acTools.engage.heroTitlePart2")}</span>
             </h1>
             <p className="text-lg text-white/75 max-w-2xl leading-relaxed">
-              Whether you&apos;re running a single hiring decision, a multi-role
-              promotion cycle, or operating talent assessment as a continuous
-              capability - the same VIFM-AC framework, assessor discipline, and
-              report quality scales with you.
+              {tr("acTools.engage.heroBody")}
             </p>
           </div>
         </div>
@@ -226,14 +218,14 @@ export default function AcEngagePage() {
                     className="text-[10px] font-semibold uppercase tracking-widest"
                     style={{ color: tone.fg }}
                   >
-                    Tier {t.number}
+                    {tr("acTools.engage.tierBadge", { number: t.number })}
                   </span>
                 </div>
 
                 <h3 className="text-2xl font-semibold text-primary mb-1">
-                  {t.label}
+                  {tr(`acTools.engage.tiers.${t.k}Label`)}
                 </h3>
-                <p className="text-sm text-muted-foreground mb-3">{t.scope}</p>
+                <p className="text-sm text-muted-foreground mb-3">{tr(`acTools.engage.tiers.${t.k}Scope`)}</p>
 
                 <div className="mb-5">
                   <span
@@ -244,22 +236,22 @@ export default function AcEngagePage() {
                       border: `1px solid ${tone.border}`,
                     }}
                   >
-                    {t.price}
+                    {tr(`acTools.engage.tiers.${t.k}Price`)}
                   </span>
                 </div>
 
                 <p className="text-sm text-foreground italic mb-5 leading-relaxed">
-                  {t.tagline}
+                  {tr(`acTools.engage.tiers.${t.k}Tagline`)}
                 </p>
 
                 <ul className="text-xs text-muted-foreground space-y-2 mb-6 flex-1">
                   {t.facts.map((f, i) => (
                     <li
-                      key={f.label}
+                      key={f.labelKey}
                       className={`flex justify-between ${i < t.facts.length - 1 ? "border-b pb-2" : ""}`}
                     >
-                      <span>{f.label}</span>
-                      <span className="font-semibold text-primary">{f.value}</span>
+                      <span>{tr(`acTools.engage.${f.labelKey}`)}</span>
+                      <span className="font-semibold text-primary">{tr(`acTools.engage.tiers.${f.valueKey}`)}</span>
                     </li>
                   ))}
                 </ul>
@@ -273,7 +265,7 @@ export default function AcEngagePage() {
                     border: `1px solid ${tone.border}`,
                   }}
                 >
-                  {t.cta} <ArrowRight className="h-4 w-4" />
+                  {tr(`acTools.engage.tiers.${t.k}Cta`)} <ArrowRight className="h-4 w-4" />
                 </Link>
                 <a
                   href={t.sampleHref}
@@ -281,7 +273,7 @@ export default function AcEngagePage() {
                   className="mt-2 inline-flex items-center justify-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <FileDown className="h-3.5 w-3.5" />
-                  Download sample report (PDF)
+                  {tr("acTools.engage.downloadSample")}
                 </a>
               </article>
             );
@@ -293,42 +285,38 @@ export default function AcEngagePage() {
       <section className="ara-hero-subtle py-16 border-y">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-10 max-w-2xl mx-auto">
-            <span className="ara-eyebrow">Side-by-side</span>
+            <span className="ara-eyebrow">{tr("acTools.engage.matrixEyebrow")}</span>
             <h2 className="text-3xl font-semibold text-primary mt-3">
-              What is included at each tier
+              {tr("acTools.engage.matrixTitle")}
             </h2>
             <p className="text-sm text-muted-foreground mt-3">
-              Tiers are cumulative - everything in Single Engagement is also in
-              Programme. Everything in Programme is also in Strategic Talent
-              Partnership.
+              {tr("acTools.engage.matrixIntro")}
             </p>
           </div>
-          <CapabilityMatrix />
+          <CapabilityMatrix tr={tr} />
         </div>
       </section>
 
       {/* ─── CTA ─── */}
       <section className="max-w-4xl mx-auto px-6 py-16 text-center">
         <h2 className="text-3xl font-semibold text-primary mb-3">
-          Built on a 38-competency framework. Run by trained assessors.
+          {tr("acTools.engage.ctaTitle")}
         </h2>
         <p className="text-base text-muted-foreground max-w-xl mx-auto mb-8">
-          VIFM has been delivering Assessment Centres across the GCC since 2008.
-          Every engagement is anchored to the VIFM-AC framework, ISO 10667, and
-          the International Taskforce on AC Guidelines.
+          {tr("acTools.engage.ctaBody")}
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Link
             href="mailto:contact@viftraining.com?subject=AC%20Engagement%20Enquiry"
             className="ara-pulse inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-3 text-sm font-medium text-white hover:bg-accent/90 transition-colors"
           >
-            Talk to a VIFM consultant <ArrowRight className="h-4 w-4" />
+            {tr("acTools.engage.ctaPrimary")} <ArrowRight className="h-4 w-4" />
           </Link>
           <Link
             href="/ara/engage"
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-5 py-3 text-sm font-medium text-foreground hover:bg-muted transition-colors"
           >
-            Or explore the AI Readiness Compass
+            {tr("acTools.engage.ctaSecondary")}
           </Link>
         </div>
       </section>
@@ -337,9 +325,9 @@ export default function AcEngagePage() {
       <footer className="border-t bg-card/50">
         <div className="max-w-6xl mx-auto px-6 py-8 text-center text-xs text-muted-foreground">
           <div className="font-medium text-foreground mb-1">
-            VIFM Assessment Center
+            {tr("acTools.engage.footerName")}
           </div>
-          The Big-4-calibre talent decision platform for the GCC.
+          {tr("acTools.engage.footerTagline")}
         </div>
       </footer>
     </div>
@@ -348,13 +336,13 @@ export default function AcEngagePage() {
 
 // ─────────────────────────────────────────────────────────────
 
-function CapabilityMatrix() {
+function CapabilityMatrix({ tr }: { tr: ServerT }) {
   type Row = (typeof CAPABILITIES)[number];
-  const grouped: Array<{ group: string; rows: Row[] }> = [];
+  const grouped: Array<{ groupKey: string; rows: Row[] }> = [];
   for (const row of CAPABILITIES) {
     const last = grouped[grouped.length - 1];
-    if (last && last.group === row.group) last.rows.push(row);
-    else grouped.push({ group: row.group, rows: [row] });
+    if (last && last.groupKey === row.groupKey) last.rows.push(row);
+    else grouped.push({ groupKey: row.groupKey, rows: [row] });
   }
 
   return (
@@ -365,12 +353,14 @@ function CapabilityMatrix() {
       >
         <div className="p-4">
           <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">
-            Capability
+            {tr("acTools.engage.capabilityCol")}
           </p>
         </div>
         {TIERS.map((t) => {
           const tone = TIER_TONES[t.tone];
           const Icon = t.icon;
+          // Take the part before the first "·" separator for the compact label.
+          const priceShort = tr(`acTools.engage.tiers.${t.k}Price`).split("·")[0].trim();
           return (
             <div
               key={t.key}
@@ -383,33 +373,33 @@ function CapabilityMatrix() {
                   className="text-[10px] font-semibold uppercase tracking-widest"
                   style={{ color: tone.fg }}
                 >
-                  Tier {t.number}
+                  {tr("acTools.engage.tierBadge", { number: t.number })}
                 </span>
               </div>
-              <p className="text-sm font-semibold text-primary">{t.label}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">{t.price.split("·")[0].trim()}</p>
+              <p className="text-sm font-semibold text-primary">{tr(`acTools.engage.tiers.${t.k}Label`)}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{priceShort}</p>
             </div>
           );
         })}
       </div>
 
       {grouped.map((g) => (
-        <div key={g.group}>
+        <div key={g.groupKey}>
           <div className="px-4 py-2 bg-muted/30 border-b">
             <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold">
-              {g.group}
+              {tr(`acTools.engage.groups.${g.groupKey}`)}
             </p>
           </div>
           {g.rows.map((row, idx) => (
             <div
-              key={`${g.group}-${row.feature}`}
+              key={`${g.groupKey}-${row.featureKey}`}
               className={`grid items-center ${idx > 0 ? "border-t" : ""}`}
               style={{ gridTemplateColumns: "minmax(220px, 2fr) repeat(3, 1fr)" }}
             >
-              <div className="p-4 text-sm text-foreground">{row.feature}</div>
-              <Cell value={row.single}      tone="blue" />
-              <Cell value={row.programme}   tone="violet" />
-              <Cell value={row.partnership} tone="gold" />
+              <div className="p-4 text-sm text-foreground">{tr(`acTools.engage.features.${row.featureKey}`)}</div>
+              <Cell value={row.single}      tone="blue"   tr={tr} />
+              <Cell value={row.programme}   tone="violet" tr={tr} />
+              <Cell value={row.partnership} tone="gold"   tr={tr} />
             </div>
           ))}
         </div>
@@ -418,7 +408,7 @@ function CapabilityMatrix() {
   );
 }
 
-function Cell({ value, tone }: { value: boolean | string; tone: keyof typeof TIER_TONES }) {
+function Cell({ value, tone, tr }: { value: boolean | string; tone: keyof typeof TIER_TONES; tr: ServerT }) {
   const t = TIER_TONES[tone];
   if (value === true) {
     return (
@@ -451,7 +441,7 @@ function Cell({ value, tone }: { value: boolean | string; tone: keyof typeof TIE
           border: `1px solid ${t.border}`,
         }}
       >
-        {value}
+        {tr(`acTools.engage.values.${value}`)}
       </span>
     </div>
   );

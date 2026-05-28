@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { ArrowLeft, ClipboardCheck, PenLine, Mic } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getServerT, type ServerT } from "@/lib/i18n/server";
 import { CEFR_ORDER, type CefrLevel } from "@/lib/ai/fluent-english";
 import { quadraticWeightedKappa, QWK_ACCEPTABLE } from "@/lib/scoring/qwk";
 import { RatingForm } from "./_components/rating-form";
@@ -55,6 +56,7 @@ async function load() {
 }
 
 export default async function FluentCalibrationPage() {
+  const t = await getServerT();
   const data = await load();
 
   return (
@@ -62,16 +64,15 @@ export default async function FluentCalibrationPage() {
       <header className="border-b bg-white">
         <div className="mx-auto max-w-4xl px-6 py-5">
           <Link href="/ac/fluent" className="mb-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-3 w-3" /> Fluent
+            <ArrowLeft className="h-3 w-3" /> {t("acFluent.backToFluent")}
           </Link>
           <div className="flex items-center gap-2">
             <ClipboardCheck className="h-5 w-5 text-[#5391D5]" />
-            <h1 className="text-xl font-semibold text-[#010131]">Scoring calibration</h1>
+            <h1 className="text-xl font-semibold text-[#010131]">{t("acFluent.calibrationTitle")}</h1>
           </div>
           <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-            Re-rate AI-scored writing &amp; speaking by hand to measure agreement. The metric is{" "}
-            <strong>Quadratic Weighted Kappa</strong> (QWK); ≥ {QWK_ACCEPTABLE.toFixed(2)} vs human raters is the
-            accepted threshold for automated scoring.
+            {t("acFluent.calibrationIntroPrefix")}{" "}
+            <strong>{t("acFluent.calibrationQwkName")}</strong> {t("acFluent.calibrationIntroSuffix", { threshold: QWK_ACCEPTABLE.toFixed(2) })}
           </p>
         </div>
       </header>
@@ -79,19 +80,18 @@ export default async function FluentCalibrationPage() {
       <main className="mx-auto max-w-4xl space-y-6 px-6 py-8">
         {!data && (
           <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            <strong>Calibration store not available.</strong> Apply migrations{" "}
-            <code className="text-xs">00042</code> + <code className="text-xs">00046</code> and take a test (so an
-            AI score exists to re-rate).
+            <strong>{t("acFluent.calibrationNoStoreTitle")}</strong> {t("acFluent.calibrationNoStoreBodyPrefix")}{" "}
+            <code className="text-xs">00042</code> + <code className="text-xs">00046</code> {t("acFluent.calibrationNoStoreBodySuffix")}
           </div>
         )}
 
-        {data && <CalibrationBody {...data} />}
+        {data && <CalibrationBody {...data} t={t} />}
       </main>
     </div>
   );
 }
 
-function CalibrationBody({ results, runs, humans }: { results: ResultRow[]; runs: Run[]; humans: Human[] }) {
+function CalibrationBody({ results, runs, humans, t }: { results: ResultRow[]; runs: Run[]; humans: Human[]; t: ServerT }) {
   const responseByResult = new Map<string, string>();
   for (const run of runs) {
     if (run.skill === "writing" && run.raw?.response) responseByResult.set(run.result_id, run.raw.response);
@@ -117,14 +117,14 @@ function CalibrationBody({ results, runs, humans }: { results: ResultRow[]; runs
   return (
     <>
       <div className="grid gap-4 sm:grid-cols-2">
-        <QwkCard label="Writing" icon={<PenLine className="h-4 w-4" />} q={wQ.q} n={wQ.n} />
-        <QwkCard label="Speaking" icon={<Mic className="h-4 w-4" />} q={sQ.q} n={sQ.n} />
+        <QwkCard label={t("acFluent.skillWriting")} icon={<PenLine className="h-4 w-4" />} q={wQ.q} n={wQ.n} t={t} />
+        <QwkCard label={t("acFluent.skillSpeaking")} icon={<Mic className="h-4 w-4" />} q={sQ.q} n={sQ.n} t={t} />
       </div>
 
       <section className="space-y-4">
         {results.length === 0 && (
           <div className="rounded-xl border bg-white p-6 text-center text-sm text-muted-foreground shadow-sm">
-            No results yet - take a test at <Link href="/ac/fluent" className="text-[#5391D5] underline">/ac/fluent</Link>.
+            {t("acFluent.calibrationNoResultsPrefix")} <Link href="/ac/fluent" className="text-[#5391D5] underline">/ac/fluent</Link>{t("acFluent.calibrationNoResultsSuffix")}
           </div>
         )}
         {results.map((res) => {
@@ -136,14 +136,14 @@ function CalibrationBody({ results, runs, humans }: { results: ResultRow[]; runs
           return (
             <div key={res.id} className="rounded-xl border bg-white p-5 shadow-sm">
               <div className="mb-3 flex items-center justify-between gap-2 text-xs text-slate-500">
-                <span className="font-medium text-[#010131]">{res.taker_name || "Anonymous"}</span>
+                <span className="font-medium text-[#010131]">{res.taker_name || t("acFluent.anonymous")}</span>
                 <span>{new Date(res.created_at).toLocaleString("en-GB")}</span>
               </div>
 
               <div className="space-y-3">
-                <Block icon={<PenLine className="h-4 w-4 text-[#5391D5]" />} title="Writing" aiCefr={w?.cefr} text={response} />
+                <Block icon={<PenLine className="h-4 w-4 text-[#5391D5]" />} title={t("acFluent.skillWriting")} aiCefr={w?.cefr} text={response} t={t} />
                 {hasSpeaking && (
-                  <Block icon={<Mic className="h-4 w-4 text-[#5391D5]" />} title="Speaking (transcript)" aiCefr={s?.cefr} text={transcript} />
+                  <Block icon={<Mic className="h-4 w-4 text-[#5391D5]" />} title={t("acFluent.calibrationSpeakingTranscript")} aiCefr={s?.cefr} text={transcript} t={t} />
                 )}
               </div>
 
@@ -161,34 +161,38 @@ function CalibrationBody({ results, runs, humans }: { results: ResultRow[]; runs
   );
 }
 
-function QwkCard({ label, icon, q, n }: { label: string; icon: ReactNode; q: number; n: number }) {
+function QwkCard({ label, icon, q, n, t }: { label: string; icon: ReactNode; q: number; n: number; t: ServerT }) {
   const ok = !Number.isNaN(q) && q >= QWK_ACCEPTABLE;
   return (
     <div className="rounded-xl border bg-white p-4 shadow-sm">
-      <p className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-slate-500">{icon} {label} QWK</p>
+      <p className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-slate-500">{icon} {label} {t("acFluent.qwkSuffix")}</p>
       <p className={`mt-1 text-2xl font-bold ${Number.isNaN(q) ? "text-slate-400" : ok ? "text-emerald-600" : "text-amber-600"}`}>
         {Number.isNaN(q) ? "-" : q.toFixed(2)}
       </p>
       <p className="text-[11px] text-slate-500">
-        {n === 0 ? "no human ratings yet" : `${n} rated · ${ok ? "acceptable (≥0.70)" : "below 0.70"}`}
+        {n === 0
+          ? t("acFluent.qwkNoRatings")
+          : ok
+          ? t("acFluent.qwkRatedAcceptable", { count: n })
+          : t("acFluent.qwkRatedBelow", { count: n })}
       </p>
     </div>
   );
 }
 
-function Block({ icon, title, aiCefr, text }: { icon: ReactNode; title: string; aiCefr?: string; text: string }) {
+function Block({ icon, title, aiCefr, text, t }: { icon: ReactNode; title: string; aiCefr?: string; text: string; t: ServerT }) {
   return (
     <div className="rounded-lg border border-slate-200 p-3">
       <div className="mb-1 flex items-center gap-2">
         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#010131]">{icon} {title}</span>
         {aiCefr && (
           <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${CEFR_TONE[aiCefr] ?? "bg-slate-100 text-slate-700"}`}>
-            AI: {aiCefr}
+            {t("acFluent.aiPrefix")} {aiCefr}
           </span>
         )}
       </div>
       <p dir="ltr" className="max-h-32 overflow-y-auto whitespace-pre-wrap text-xs leading-relaxed text-slate-700">
-        {text || <span className="text-slate-400">(no text captured - re-take a test after migration 00046 to capture responses)</span>}
+        {text || <span className="text-slate-400">{t("acFluent.calibrationNoTextCaptured")}</span>}
       </p>
     </div>
   );

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { Separator } from "@/components/ui/separator";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
 import { cn } from "@/lib/utils";
@@ -18,13 +19,13 @@ import {
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { LogoutButton } from "@/components/shared/logout-button";
 
-const navLinks: { href: string; label: string; icon: LucideIcon; exact: boolean }[] = [
-  { href: "/client", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { href: "/client/engagements", label: "Projects", icon: ClipboardList, exact: false },
-  { href: "/client/reports", label: "Review", icon: FileText, exact: false },
-  { href: "/client/analytics", label: "Analytics", icon: TrendingUp, exact: false },
-  { href: "/client/templates", label: "Templates", icon: Star, exact: false },
-  { href: "/client/solutions", label: "Solutions", icon: Lightbulb, exact: false },
+const navLinks: { href: string; labelKey: string; icon: LucideIcon; exact: boolean }[] = [
+  { href: "/client", labelKey: "clientPortal.nav.dashboard", icon: LayoutDashboard, exact: true },
+  { href: "/client/engagements", labelKey: "clientPortal.nav.projects", icon: ClipboardList, exact: false },
+  { href: "/client/reports", labelKey: "clientPortal.nav.review", icon: FileText, exact: false },
+  { href: "/client/analytics", labelKey: "clientPortal.nav.analytics", icon: TrendingUp, exact: false },
+  { href: "/client/templates", labelKey: "clientPortal.nav.templates", icon: Star, exact: false },
+  { href: "/client/solutions", labelKey: "clientPortal.nav.solutions", icon: Lightbulb, exact: false },
 ];
 
 export default function ClientLayout({
@@ -33,6 +34,7 @@ export default function ClientLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { t } = useTranslation();
 
   const isActive = (href: string, exact: boolean) => {
     if (exact) return pathname === href;
@@ -45,7 +47,7 @@ export default function ClientLayout({
         <div className="flex h-16 items-center px-4 sm:px-6 overflow-x-auto">
           <Link href="/client" className="flex items-center gap-2 shrink-0">
             <VifmLogo variant="color" size="sm" />
-            <p className="text-xs text-muted-foreground hidden sm:block">Client Portal</p>
+            <p className="text-xs text-muted-foreground hidden sm:block">{t("clientPortal.nav.portalLabel")}</p>
           </Link>
           <Separator orientation="vertical" className="mx-3 sm:mx-5 h-6 shrink-0" />
           <nav className="flex gap-1 shrink-0">
@@ -63,7 +65,7 @@ export default function ClientLayout({
                   )}
                 >
                   <Icon className="h-4 w-4" />
-                  <span className="hidden sm:inline">{link.label}</span>
+                  <span className="hidden sm:inline">{t(link.labelKey)}</span>
                 </Link>
               );
             })}
@@ -75,7 +77,7 @@ export default function ClientLayout({
               <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center">
                 <Building2 className="h-4 w-4 text-accent-foreground" />
               </div>
-              <span className="text-sm text-muted-foreground">Client</span>
+              <span className="text-sm text-muted-foreground">{t("clientPortal.nav.clientRole")}</span>
             </div>
             <LogoutButton />
           </div>

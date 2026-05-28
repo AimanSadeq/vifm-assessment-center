@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, Users, BookOpen, Headphones, PenLine, Mic, Award, Sparkles, Flag, MailCheck } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getServerT, type ServerT } from "@/lib/i18n/server";
 import { CEFR_ORDER, type CefrLevel } from "@/lib/ai/fluent-english";
 
 export const dynamic = "force-dynamic";
@@ -70,6 +71,7 @@ async function loadRows(): Promise<Row[] | null> {
 }
 
 export default async function FluentCohortPage() {
+  const t = await getServerT();
   const rows = await loadRows();
 
   return (
@@ -80,18 +82,17 @@ export default async function FluentCohortPage() {
             href="/ac/fluent"
             className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-1"
           >
-            <ArrowLeft className="h-3 w-3" /> Fluent
+            <ArrowLeft className="h-3 w-3" /> {t("acFluent.backToFluent")}
           </Link>
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5 text-[#5391D5]" />
-            <h1 className="text-xl font-semibold text-[#010131]">Fluent cohort report</h1>
+            <h1 className="text-xl font-semibold text-[#010131]">{t("acFluent.cohortTitle")}</h1>
             <span className="ml-2 rounded-full bg-[#5391D5]/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[#5391D5]">
-              Prototype
+              {t("acFluent.prototypeBadge")}
             </span>
           </div>
           <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-            Aggregate placement across everyone who has taken the test - CEFR distribution,
-            per-skill averages, and individual results with downloadable certificates.
+            {t("acFluent.cohortSubtitle")}
           </p>
         </div>
       </header>
@@ -99,29 +100,28 @@ export default async function FluentCohortPage() {
       <main className="max-w-5xl mx-auto px-6 py-8 space-y-6">
         {rows === null && (
           <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            <strong>No results store yet.</strong> Apply migration{" "}
-            <code className="text-xs">00042_eng_fluent_results.sql</code> to start persisting
-            completed tests. Until then the test still runs - results just aren&apos;t saved.
+            <strong>{t("acFluent.cohortNoStoreTitle")}</strong> {t("acFluent.cohortNoStoreBodyPrefix")}{" "}
+            <code className="text-xs">00042_eng_fluent_results.sql</code> {t("acFluent.cohortNoStoreBodySuffix")}
           </div>
         )}
 
         {rows !== null && rows.length === 0 && (
           <div className="rounded-lg border bg-white px-4 py-10 text-center text-sm text-muted-foreground shadow-sm">
-            No tests completed yet. Take the{" "}
+            {t("acFluent.cohortEmptyPrefix")}{" "}
             <Link href="/ac/fluent" className="text-[#5391D5] underline">
-              placement test
+              {t("acFluent.cohortEmptyLink")}
             </Link>{" "}
-            and the result will appear here.
+            {t("acFluent.cohortEmptySuffix")}
           </div>
         )}
 
-        {rows !== null && rows.length > 0 && <CohortBody rows={rows} />}
+        {rows !== null && rows.length > 0 && <CohortBody rows={rows} t={t} />}
       </main>
     </div>
   );
 }
 
-function CohortBody({ rows }: { rows: Row[] }) {
+function CohortBody({ rows, t }: { rows: Row[]; t: ServerT }) {
   const total = rows.length;
   const aiScored = rows.filter((r) => r.ai_scored).length;
   const speaking = rows.filter((r) => r.speaking_attempted).length;
@@ -131,26 +131,26 @@ function CohortBody({ rows }: { rows: Row[] }) {
   const maxN = Math.max(1, ...dist.map((d) => d.n));
 
   const skillAverages = [
-    { label: "Reading", icon: BookOpen, band: avgBand(rows.map((r) => r.reading_cefr)) },
-    { label: "Listening", icon: Headphones, band: avgBand(rows.filter((r) => r.listening_total > 0).map((r) => r.listening_cefr)) },
-    { label: "Writing", icon: PenLine, band: avgBand(rows.map((r) => r.writing_cefr)) },
-    { label: "Speaking", icon: Mic, band: avgBand(rows.filter((r) => r.speaking_attempted).map((r) => r.speaking_cefr)) },
+    { label: t("acFluent.skillReading"), icon: BookOpen, band: avgBand(rows.map((r) => r.reading_cefr)) },
+    { label: t("acFluent.skillListening"), icon: Headphones, band: avgBand(rows.filter((r) => r.listening_total > 0).map((r) => r.listening_cefr)) },
+    { label: t("acFluent.skillWriting"), icon: PenLine, band: avgBand(rows.map((r) => r.writing_cefr)) },
+    { label: t("acFluent.skillSpeaking"), icon: Mic, band: avgBand(rows.filter((r) => r.speaking_attempted).map((r) => r.speaking_cefr)) },
   ];
 
   return (
     <>
       {/* Stat cards */}
       <div className="grid gap-4 sm:grid-cols-4">
-        <StatCard label="Tests taken" value={String(total)} />
-        <StatCard label="Average level" value={overallAvg ? overallAvg.band : "-"} tone={overallAvg?.band} />
-        <StatCard label="AI-scored" value={`${aiScored}/${total}`} />
-        <StatCard label="Spoke" value={`${speaking}/${total}`} />
+        <StatCard label={t("acFluent.statTestsTaken")} value={String(total)} />
+        <StatCard label={t("acFluent.statAverageLevel")} value={overallAvg ? overallAvg.band : "-"} tone={overallAvg?.band} />
+        <StatCard label={t("acFluent.statAiScored")} value={`${aiScored}/${total}`} />
+        <StatCard label={t("acFluent.statSpoke")} value={`${speaking}/${total}`} />
       </div>
 
       {/* CEFR distribution */}
       <section className="rounded-xl border bg-white p-6 shadow-sm">
         <h2 className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-[#010131]">
-          <Sparkles className="h-4 w-4 text-[#5391D5]" /> Overall CEFR distribution
+          <Sparkles className="h-4 w-4 text-[#5391D5]" /> {t("acFluent.cohortDistributionTitle")}
         </h2>
         <div className="space-y-2">
           {dist.map((d) => (
@@ -172,7 +172,7 @@ function CohortBody({ rows }: { rows: Row[] }) {
 
       {/* Per-skill averages */}
       <section className="rounded-xl border bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-sm font-semibold text-[#010131]">Average by skill</h2>
+        <h2 className="mb-4 text-sm font-semibold text-[#010131]">{t("acFluent.cohortAverageBySkill")}</h2>
         <div className="grid gap-4 sm:grid-cols-4">
           {skillAverages.map((s) => (
             <div key={s.label} className="rounded-lg border border-slate-200 p-4 text-center">
@@ -181,7 +181,7 @@ function CohortBody({ rows }: { rows: Row[] }) {
               <p className={`mt-1 inline-block rounded-md border px-2 text-xl font-bold ${s.band ? CEFR_TONE[s.band.band] : "text-slate-400"}`}>
                 {s.band ? s.band.band : "-"}
               </p>
-              <p className="mt-1 text-[10px] text-slate-400">{s.band ? `${s.band.n} assessed` : "no data"}</p>
+              <p className="mt-1 text-[10px] text-slate-400">{s.band ? t("acFluent.cohortAssessedCount", { count: s.band.n }) : t("acFluent.cohortNoData")}</p>
             </div>
           ))}
         </div>
@@ -189,21 +189,21 @@ function CohortBody({ rows }: { rows: Row[] }) {
 
       {/* Recent results */}
       <section className="rounded-xl border bg-white shadow-sm">
-        <h2 className="border-b px-6 py-4 text-sm font-semibold text-[#010131]">Individual results</h2>
+        <h2 className="border-b px-6 py-4 text-sm font-semibold text-[#010131]">{t("acFluent.cohortIndividualResults")}</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-left text-[11px] uppercase tracking-wider text-slate-500">
-                <th className="px-4 py-2.5 font-medium">Date</th>
-                <th className="px-4 py-2.5 font-medium">Name</th>
-                <th className="px-4 py-2.5 font-medium">Email</th>
-                <th className="px-3 py-2.5 text-center font-medium">Overall</th>
-                <th className="px-3 py-2.5 text-center font-medium">R</th>
-                <th className="px-3 py-2.5 text-center font-medium">L</th>
-                <th className="px-3 py-2.5 text-center font-medium">W</th>
-                <th className="px-3 py-2.5 text-center font-medium">S</th>
-                <th className="px-3 py-2.5 text-center font-medium">Integrity</th>
-                <th className="px-4 py-2.5 font-medium">Certificate</th>
+                <th className="px-4 py-2.5 font-medium">{t("acFluent.colDate")}</th>
+                <th className="px-4 py-2.5 font-medium">{t("acFluent.colName")}</th>
+                <th className="px-4 py-2.5 font-medium">{t("acFluent.colEmail")}</th>
+                <th className="px-3 py-2.5 text-center font-medium">{t("acFluent.colOverall")}</th>
+                <th className="px-3 py-2.5 text-center font-medium">{t("acFluent.colReadingShort")}</th>
+                <th className="px-3 py-2.5 text-center font-medium">{t("acFluent.colListeningShort")}</th>
+                <th className="px-3 py-2.5 text-center font-medium">{t("acFluent.colWritingShort")}</th>
+                <th className="px-3 py-2.5 text-center font-medium">{t("acFluent.colSpeakingShort")}</th>
+                <th className="px-3 py-2.5 text-center font-medium">{t("acFluent.colIntegrity")}</th>
+                <th className="px-4 py-2.5 font-medium">{t("acFluent.colCertificate")}</th>
               </tr>
             </thead>
             <tbody>
@@ -212,7 +212,7 @@ function CohortBody({ rows }: { rows: Row[] }) {
                   <td className="whitespace-nowrap px-4 py-2.5 text-slate-500">
                     {new Date(r.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" })}
                   </td>
-                  <td className="px-4 py-2.5 font-medium text-[#111232]">{r.taker_name || <span className="text-slate-400">Anonymous</span>}</td>
+                  <td className="px-4 py-2.5 font-medium text-[#111232]">{r.taker_name || <span className="text-slate-400">{t("acFluent.anonymous")}</span>}</td>
                   <td className="px-4 py-2.5 text-slate-500">
                     <span className="inline-flex items-center gap-1">
                       {r.taker_email || "-"}
@@ -231,7 +231,7 @@ function CohortBody({ rows }: { rows: Row[] }) {
                       const b = r.integrity_flags?.blurCount ?? 0;
                       const p = r.integrity_flags?.pasteCount ?? 0;
                       return b > 0 || p > 0 ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700" title={`${b} tab switch(es), ${p} paste(s)`}>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700" title={t("acFluent.integrityTooltip", { tabs: b, pastes: p })}>
                           <Flag className="h-3 w-3" />{b}t·{p}p
                         </span>
                       ) : (
@@ -246,7 +246,7 @@ function CohortBody({ rows }: { rows: Row[] }) {
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 text-xs font-medium text-[#5391D5] hover:underline"
                     >
-                      <Award className="h-3.5 w-3.5" /> Open
+                      <Award className="h-3.5 w-3.5" /> {t("acFluent.openCertificate")}
                     </a>
                   </td>
                 </tr>

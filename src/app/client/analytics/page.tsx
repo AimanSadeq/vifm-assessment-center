@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getClientOrgId } from "@/lib/auth/get-org-id";
+import { getServerT } from "@/lib/i18n/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -7,16 +8,11 @@ import {
 } from "@/components/ui/table";
 import { NineBoxGrid } from "./_components/nine-box-grid";
 
-const OAR_LABELS: Record<string, string> = {
-  ready_now: "Ready Now",
-  ready_with_development: "Ready with Development",
-  not_ready: "Not Ready",
-};
-
 export const dynamic = "force-dynamic";
 
 export default async function ClientAnalyticsPage() {
   const supabase = await createClient();
+  const t = await getServerT();
 
   const orgId = await getClientOrgId();
 
@@ -71,7 +67,7 @@ export default async function ClientAnalyticsPage() {
   const compMap = new Map<string, { name: string; total: number; count: number }>();
   for (const cr of consensusData ?? []) {
     const comp = cr.competencies as unknown as { name: string } | null;
-    const name = comp?.name ?? "Unknown";
+    const name = comp?.name ?? t("clientAnalytics.unknownCompetency");
     if (!compMap.has(cr.competency_id)) {
       compMap.set(cr.competency_id, { name, total: 0, count: 0 });
     }
@@ -90,9 +86,9 @@ export default async function ClientAnalyticsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Analytics</h1>
+        <h1 className="text-2xl font-bold">{t("clientAnalytics.title")}</h1>
         <p className="mt-1 text-muted-foreground">
-          Aggregate insights across your engagements and candidate cohorts.
+          {t("clientAnalytics.subtitle")}
         </p>
       </div>
 
@@ -101,31 +97,31 @@ export default async function ClientAnalyticsPage() {
         <Card>
           <CardContent className="pt-6">
             <p className="text-2xl font-bold">{totalAssessed}</p>
-            <p className="text-sm text-muted-foreground">Candidates Assessed</p>
+            <p className="text-sm text-muted-foreground">{t("clientAnalytics.summaryCandidatesAssessed")}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <p className="text-2xl font-bold">{avgOar}</p>
-            <p className="text-sm text-muted-foreground">Average OAR Score</p>
+            <p className="text-sm text-muted-foreground">{t("clientAnalytics.summaryAverageOarScore")}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <p className="text-2xl font-bold text-accent">{readyNow}</p>
-            <p className="text-sm text-muted-foreground">Ready Now</p>
+            <p className="text-sm text-muted-foreground">{t("clientAnalytics.summaryReadyNow")}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <p className="text-2xl font-bold text-amber-600">{readyDev}</p>
-            <p className="text-sm text-muted-foreground">Ready with Dev.</p>
+            <p className="text-sm text-muted-foreground">{t("clientAnalytics.summaryReadyWithDev")}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <p className="text-2xl font-bold text-destructive">{notReady}</p>
-            <p className="text-sm text-muted-foreground">Not Ready</p>
+            <p className="text-sm text-muted-foreground">{t("clientAnalytics.summaryNotReady")}</p>
           </CardContent>
         </Card>
       </div>
@@ -134,15 +130,15 @@ export default async function ClientAnalyticsPage() {
         {/* Strengths */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Cohort Strengths</CardTitle>
+            <CardTitle className="text-base">{t("clientAnalytics.strengthsTitle")}</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Top-scoring competencies across all candidates.
+              {t("clientAnalytics.strengthsSubtitle")}
             </p>
           </CardHeader>
           <CardContent>
             {strengths.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center">
-                No consensus data available yet.
+                {t("clientAnalytics.strengthsEmpty")}
               </p>
             ) : (
               <div className="space-y-3">
@@ -166,15 +162,15 @@ export default async function ClientAnalyticsPage() {
         {/* Development Areas */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Development Areas</CardTitle>
+            <CardTitle className="text-base">{t("clientAnalytics.developmentTitle")}</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Competencies where the cohort scored below 3.5.
+              {t("clientAnalytics.developmentSubtitle")}
             </p>
           </CardHeader>
           <CardContent>
             {developmentAreas.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center">
-                No development areas identified or no data yet.
+                {t("clientAnalytics.developmentEmpty")}
               </p>
             ) : (
               <div className="space-y-3">
@@ -200,9 +196,9 @@ export default async function ClientAnalyticsPage() {
       {nineBoxData.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">9-Box Talent Grid</CardTitle>
+            <CardTitle className="text-base">{t("clientAnalytics.nineBoxTitle")}</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Performance (OAR) vs Potential (avg competency score). High-potential talent appears in the top-right quadrant.
+              {t("clientAnalytics.nineBoxSubtitle")}
             </p>
           </CardHeader>
           <CardContent>
@@ -215,23 +211,23 @@ export default async function ClientAnalyticsPage() {
         {/* HiPo Identification */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">High-Potential (HiPo) Candidates</CardTitle>
+            <CardTitle className="text-base">{t("clientAnalytics.hipoTitle")}</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Candidates scoring 4+ on performance and 3.5+ on potential.
+              {t("clientAnalytics.hipoSubtitle")}
             </p>
           </CardHeader>
           <CardContent>
             {hipos.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center">
-                No HiPo candidates identified yet.
+                {t("clientAnalytics.hipoEmpty")}
               </p>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead className="text-center">Performance</TableHead>
-                    <TableHead className="text-center">Potential</TableHead>
+                    <TableHead>{t("clientAnalytics.colName")}</TableHead>
+                    <TableHead className="text-center">{t("clientAnalytics.colPerformance")}</TableHead>
+                    <TableHead className="text-center">{t("clientAnalytics.colPotential")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -255,15 +251,15 @@ export default async function ClientAnalyticsPage() {
         {/* Succession Planning */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Succession Pipeline</CardTitle>
+            <CardTitle className="text-base">{t("clientAnalytics.successionTitle")}</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Readiness distribution for succession and leadership development planning.
+              {t("clientAnalytics.successionSubtitle")}
             </p>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="w-32 text-sm font-medium">Ready Now</div>
+                <div className="w-32 text-sm font-medium">{t("clientAnalytics.successionReadyNow")}</div>
                 <div className="flex-1 h-6 bg-muted rounded-full overflow-hidden">
                   <div
                     className="h-full bg-accent rounded-full flex items-center justify-center text-xs text-white font-medium"
@@ -274,7 +270,7 @@ export default async function ClientAnalyticsPage() {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="w-32 text-sm font-medium">Ready w/ Dev</div>
+                <div className="w-32 text-sm font-medium">{t("clientAnalytics.successionReadyWithDev")}</div>
                 <div className="flex-1 h-6 bg-muted rounded-full overflow-hidden">
                   <div
                     className="h-full bg-amber-500 rounded-full flex items-center justify-center text-xs text-white font-medium"
@@ -285,7 +281,7 @@ export default async function ClientAnalyticsPage() {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="w-32 text-sm font-medium">Not Ready</div>
+                <div className="w-32 text-sm font-medium">{t("clientAnalytics.successionNotReady")}</div>
                 <div className="flex-1 h-6 bg-muted rounded-full overflow-hidden">
                   <div
                     className="h-full bg-destructive rounded-full flex items-center justify-center text-xs text-white font-medium"
@@ -303,26 +299,26 @@ export default async function ClientAnalyticsPage() {
       {/* Leadership Development Priorities */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Leadership Development Priorities</CardTitle>
+          <CardTitle className="text-base">{t("clientAnalytics.prioritiesTitle")}</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Based on cohort-wide competency gaps. Focus development investments on these areas.
+            {t("clientAnalytics.prioritiesSubtitle")}
           </p>
         </CardHeader>
         <CardContent>
           {developmentAreas.length === 0 ? (
             <p className="text-sm text-muted-foreground py-4 text-center">
-              No development gaps identified yet.
+              {t("clientAnalytics.prioritiesEmpty")}
             </p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {developmentAreas.map((c, i) => (
                 <div key={c.name} className="border rounded-lg p-3">
                   <div className="flex items-center gap-2 mb-1">
-                    <Badge variant="outline" className="text-xs">Priority {i + 1}</Badge>
+                    <Badge variant="outline" className="text-xs">{t("clientAnalytics.priorityBadge", { n: i + 1 })}</Badge>
                   </div>
                   <p className="text-sm font-medium">{c.name}</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Cohort avg: {c.avg.toFixed(1)}/5 - Target: 3.5+
+                    {t("clientAnalytics.cohortAvgTarget", { score: c.avg.toFixed(1) })}
                   </p>
                 </div>
               ))}

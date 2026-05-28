@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getClientOrgId } from "@/lib/auth/get-org-id";
+import { getServerT } from "@/lib/i18n/server";
 import { BackLink } from "@/components/shared/back-link";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,14 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { BARS_LABELS } from "@/lib/validations/assessor";
 import { GapBadge } from "@/components/shared/gap-badge";
-
-const OAR_LABELS: Record<string, string> = {
-  ready_now: "Ready Now",
-  ready_with_development: "Ready with Development",
-  not_ready: "Not Ready",
-};
 
 type Props = { params: { id: string } };
 
@@ -31,6 +25,7 @@ export const dynamic = "force-dynamic";
 export default async function ClientEngagementDetailPage({ params }: Props) {
   const supabase = await createClient();
   const orgId = await getClientOrgId();
+  const t = await getServerT();
 
   // Build engagement query with org-scoping
   let engQuery = supabase
@@ -92,37 +87,37 @@ export default async function ClientEngagementDetailPage({ params }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <BackLink href="/client/engagements" label="Back to Projects" />
+        <BackLink href="/client/engagements" label={t("clientPortal.detail.back")} />
         <h1 className="mt-2 text-2xl font-bold">{eng.name}</h1>
         <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
           <span>{orgName}</span>
           <Badge variant="secondary">{eng.status}</Badge>
-          {eng.target_role ? <span>Target: {eng.target_role}</span> : null}
+          {eng.target_role ? <span>{t("clientPortal.detail.target", { role: eng.target_role })}</span> : null}
           <span>{eng.start_date ?? "-"} - {eng.end_date ?? "-"}</span>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Candidate Results</CardTitle>
+          <CardTitle>{t("clientPortal.detail.resultsTitle")}</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Overall assessment ratings and report status for each candidate.
+            {t("clientPortal.detail.resultsSubtitle")}
           </p>
         </CardHeader>
         <CardContent>
           {candidates.length === 0 ? (
             <p className="text-sm text-muted-foreground py-8 text-center">
-              No candidates in this engagement.
+              {t("clientPortal.detail.noCandidates")}
             </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Candidate</TableHead>
-                  <TableHead>Assessment Status</TableHead>
-                  <TableHead>OAR Score</TableHead>
-                  <TableHead>Recommendation</TableHead>
-                  <TableHead>Report</TableHead>
+                  <TableHead>{t("clientPortal.detail.colCandidate")}</TableHead>
+                  <TableHead>{t("clientPortal.detail.colAssessmentStatus")}</TableHead>
+                  <TableHead>{t("clientPortal.detail.colOarScore")}</TableHead>
+                  <TableHead>{t("clientPortal.detail.colRecommendation")}</TableHead>
+                  <TableHead>{t("clientPortal.detail.colReport")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -150,7 +145,7 @@ export default async function ClientEngagementDetailPage({ params }: Props) {
                             <GapBadge score={oar.overall_score} variant="short" />
                           </div>
                         ) : (
-                          <span className="text-xs text-muted-foreground">Pending</span>
+                          <span className="text-xs text-muted-foreground">{t("clientPortal.detail.pending")}</span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -164,7 +159,7 @@ export default async function ClientEngagementDetailPage({ params }: Props) {
                                   : "secondary"
                             }
                           >
-                            {OAR_LABELS[oar.recommendation] ?? oar.recommendation}
+                            {t(`clientPortal.oar.${oar.recommendation}`)}
                           </Badge>
                         ) : (
                           <span className="text-xs text-muted-foreground">-</span>
@@ -179,7 +174,7 @@ export default async function ClientEngagementDetailPage({ params }: Props) {
                               rel="noopener noreferrer"
                             >
                               <Button size="sm" variant="outline" className="w-full">
-                                Report PDF
+                                {t("clientPortal.detail.reportPdf")}
                               </Button>
                             </a>
                             <a
@@ -188,13 +183,13 @@ export default async function ClientEngagementDetailPage({ params }: Props) {
                               rel="noopener noreferrer"
                             >
                               <Button size="sm" variant="outline" className="w-full">
-                                Learning Plan
+                                {t("clientPortal.detail.learningPlan")}
                               </Button>
                             </a>
                           </div>
                         ) : (
                           <span className="text-xs text-muted-foreground">
-                            Not released
+                            {t("clientPortal.detail.notReleased")}
                           </span>
                         )}
                       </TableCell>
@@ -210,16 +205,16 @@ export default async function ClientEngagementDetailPage({ params }: Props) {
       {compIds.length > 0 && candidates.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Competency Score Matrix</CardTitle>
+            <CardTitle>{t("clientPortal.detail.matrixTitle")}</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Consensus scores per candidate per competency.
+              {t("clientPortal.detail.matrixSubtitle")}
             </p>
           </CardHeader>
           <CardContent className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="sticky left-0 bg-card z-10 min-w-[150px]">Candidate</TableHead>
+                  <TableHead className="sticky left-0 bg-card z-10 min-w-[150px]">{t("clientPortal.detail.colCandidate")}</TableHead>
                   {compIds.map((cid) => (
                     <TableHead key={cid} className="text-center text-xs min-w-[80px]">
                       {(competencyNames.get(cid) ?? "").length > 15

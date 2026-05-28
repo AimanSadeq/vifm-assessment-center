@@ -28,10 +28,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import {
-  BARS_LABELS,
 } from "@/lib/validations/assessor";
 import {
-  OAR_RECOMMENDATION_LABELS,
   OAR_RECOMMENDATION_COLORS,
 } from "@/lib/validations/washup";
 import { saveConsensusRatingAction, saveOarAction } from "../../actions";
@@ -496,7 +494,7 @@ export function WashupForm({
                   ))}
                 </div>
                 <p className="text-xs text-center text-muted-foreground mt-1">
-                  {c.score > 0 ? BARS_LABELS[c.score] : t("assessorWashup.form.agreeOnRating")}
+                  {c.score > 0 ? t(`ratings.bars.${c.score}`) : t("assessorWashup.form.agreeOnRating")}
                 </p>
               </div>
 
@@ -553,7 +551,7 @@ export function WashupForm({
               ))}
             </div>
             <p className="text-sm text-center text-muted-foreground mt-1">
-              {oarScore > 0 ? BARS_LABELS[oarScore] : t("assessorWashup.form.selectOverallScore")}
+              {oarScore > 0 ? t(`ratings.bars.${oarScore}`) : t("assessorWashup.form.selectOverallScore")}
             </p>
           </div>
 
@@ -573,7 +571,7 @@ export function WashupForm({
                     )}
                     onClick={() => setOarRec(rec)}
                   >
-                    {OAR_RECOMMENDATION_LABELS[rec]}
+                    {t(`ratings.oar.${rec}`)}
                   </Button>
                 )
               )}

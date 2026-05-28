@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ type Template = {
 };
 
 export default function ClientTemplatesPage() {
+  const { t: tr } = useTranslation();
   const [templates, setTemplates] = useState<Template[]>(() => {
     if (typeof window === "undefined") return [];
     try {
@@ -57,66 +59,66 @@ export default function ClientTemplatesPage() {
     setName("");
     setAssessmentType("");
     setNormGroup("");
-    toast.success("Template saved");
+    toast.success(tr("clientAnalytics.templates.toastSaved"));
   };
 
   const handleDelete = (id: string) => {
     saveTemplates(templates.filter((t) => t.id !== id));
-    toast.success("Template removed");
+    toast.success(tr("clientAnalytics.templates.toastRemoved"));
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Favorite Project Templates</h1>
+          <h1 className="text-2xl font-bold">{tr("clientAnalytics.templates.title")}</h1>
           <p className="mt-1 text-muted-foreground">
-            Save project configurations as templates for quick reuse.
+            {tr("clientAnalytics.templates.subtitle")}
           </p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Star className="h-4 w-4" />
-              New Template
+              {tr("clientAnalytics.templates.newTemplate")}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Save Project Template</DialogTitle>
+              <DialogTitle>{tr("clientAnalytics.templates.saveDialogTitle")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-3">
               <div className="space-y-1">
-                <Label>Template Name *</Label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Graduate Assessment - Banking" />
+                <Label>{tr("clientAnalytics.templates.labelTemplateName")}</Label>
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={tr("clientAnalytics.templates.placeholderTemplateName")} />
               </div>
               <div className="space-y-1">
-                <Label>Assessment Type</Label>
+                <Label>{tr("clientAnalytics.templates.labelAssessmentType")}</Label>
                 <Select value={assessmentType} onValueChange={setAssessmentType}>
-                  <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={tr("clientAnalytics.templates.selectPlaceholder")} /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="professional">Professional</SelectItem>
-                    <SelectItem value="graduate">Graduate</SelectItem>
-                    <SelectItem value="leadership">Leadership</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="professional">{tr("clientAnalytics.templates.typeProfessional")}</SelectItem>
+                    <SelectItem value="graduate">{tr("clientAnalytics.templates.typeGraduate")}</SelectItem>
+                    <SelectItem value="leadership">{tr("clientAnalytics.templates.typeLeadership")}</SelectItem>
+                    <SelectItem value="other">{tr("clientAnalytics.templates.typeOther")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1">
-                <Label>Norm Group</Label>
+                <Label>{tr("clientAnalytics.templates.labelNormGroup")}</Label>
                 <Select value={normGroup} onValueChange={setNormGroup}>
-                  <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={tr("clientAnalytics.templates.selectPlaceholder")} /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="gcc_banking">GCC Banking</SelectItem>
-                    <SelectItem value="gcc_government">GCC Government</SelectItem>
-                    <SelectItem value="mena_corporate">MENA Corporate</SelectItem>
-                    <SelectItem value="global_corporate">Global Corporate</SelectItem>
-                    <SelectItem value="graduate_program">Graduate Program</SelectItem>
+                    <SelectItem value="gcc_banking">{tr("clientAnalytics.templates.normGccBanking")}</SelectItem>
+                    <SelectItem value="gcc_government">{tr("clientAnalytics.templates.normGccGovernment")}</SelectItem>
+                    <SelectItem value="mena_corporate">{tr("clientAnalytics.templates.normMenaCorporate")}</SelectItem>
+                    <SelectItem value="global_corporate">{tr("clientAnalytics.templates.normGlobalCorporate")}</SelectItem>
+                    <SelectItem value="graduate_program">{tr("clientAnalytics.templates.normGraduateProgram")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <Button onClick={handleCreate} disabled={!name.trim()} className="w-full">
-                Save Template
+                {tr("clientAnalytics.templates.saveTemplate")}
               </Button>
             </div>
           </DialogContent>
@@ -126,9 +128,9 @@ export default function ClientTemplatesPage() {
       {templates.length === 0 ? (
         <div className="rounded-lg border border-dashed p-12 text-center">
           <Star className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground">No templates saved yet.</p>
+          <p className="text-muted-foreground">{tr("clientAnalytics.templates.emptyTitle")}</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Create a template to save your favorite project configurations for reuse.
+            {tr("clientAnalytics.templates.emptyBody")}
           </p>
         </div>
       ) : (
@@ -159,7 +161,7 @@ export default function ClientTemplatesPage() {
                 </div>
                 <Button variant="outline" size="sm" className="gap-1 w-full">
                   <Copy className="h-3 w-3" />
-                  Use Template
+                  {tr("clientAnalytics.templates.useTemplate")}
                 </Button>
               </CardContent>
             </Card>

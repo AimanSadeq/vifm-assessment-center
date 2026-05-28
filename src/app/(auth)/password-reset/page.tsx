@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -16,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Mail } from "lucide-react";
 
 export default function PasswordResetPage() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -44,9 +46,9 @@ export default function PasswordResetPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Reset Password</CardTitle>
+        <CardTitle>{t("authPublic.reset.title")}</CardTitle>
         <CardDescription>
-          Enter your email to receive a password reset link.
+          {t("authPublic.reset.description")}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -56,22 +58,22 @@ export default function PasswordResetPage() {
               <Mail className="h-6 w-6 text-green-600" />
             </div>
             <p className="text-sm text-muted-foreground">
-              If an account exists with that email, you will receive a password reset link shortly.
+              {t("authPublic.reset.sentMessage")}
             </p>
             <Link href="/login">
               <Button variant="outline" className="gap-2">
-                <ArrowLeft className="h-4 w-4" /> Back to Login
+                <ArrowLeft className="h-4 w-4" /> {t("authPublic.reset.backToLoginButton")}
               </Button>
             </Link>
           </div>
         ) : (
           <form onSubmit={handleReset} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("authPublic.reset.emailLabel")}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="you@vifm.ae"
+                placeholder={t("authPublic.reset.emailPlaceholder")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -85,12 +87,12 @@ export default function PasswordResetPage() {
             )}
 
             <Button type="submit" disabled={loading} className="w-full" size="lg">
-              {loading ? "Sending..." : "Send Reset Link"}
+              {loading ? t("authPublic.reset.sending") : t("authPublic.reset.sendResetLink")}
             </Button>
 
             <div className="text-center">
               <Link href="/login" className="text-xs text-muted-foreground hover:underline">
-                Back to login
+                {t("authPublic.reset.backToLogin")}
               </Link>
             </div>
           </form>

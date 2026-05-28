@@ -14,7 +14,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { OAR_RECOMMENDATION_LABELS } from "@/lib/validations/washup";
 
 type Props = {
   params: { engagementId: string };
@@ -129,7 +128,7 @@ export default async function WashupEngagementPage({ params }: Props) {
                       <TableCell>
                         {oar ? (
                           <Badge variant="outline">
-                            {oar.overall_score}/5 - {OAR_RECOMMENDATION_LABELS[oar.recommendation] ?? oar.recommendation}
+                            {oar.overall_score}/5 - {t(`ratings.oar.${oar.recommendation}`) ?? oar.recommendation}
                           </Badge>
                         ) : (
                           <span className="text-xs text-muted-foreground">{t("assessorWashup.engagement.notSet")}</span>

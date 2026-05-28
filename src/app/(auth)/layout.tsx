@@ -1,10 +1,12 @@
 import { VifmLogo } from "@/components/shared/vifm-logo";
+import { getServerT } from "@/lib/i18n/server";
 
-export default function AuthLayout({
+export default async function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const t = await getServerT();
   return (
     <div className="flex min-h-screen">
       {/* Brand panel */}
@@ -17,12 +19,10 @@ export default function AuthLayout({
             <VifmLogo variant="white" size="lg" />
           </div>
           <h1 className="text-2xl font-bold text-primary-foreground mb-3">
-            Assessment Center
+            {t("authPublic.brand.title")}
           </h1>
           <p className="text-primary-foreground/70 text-sm leading-relaxed">
-            Virginia Institute of Finance and Management - Professional
-            assessment center platform for leadership evaluation and talent
-            development across the GCC and MENA region.
+            {t("authPublic.brand.tagline")}
           </p>
         </div>
       </div>

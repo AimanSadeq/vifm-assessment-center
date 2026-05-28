@@ -7,6 +7,7 @@ import {
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { FadeIn } from "@/components/shared/ara/fade-in";
 import { CountUp } from "@/components/shared/ara/count-up";
+import { getServerT, type ServerT } from "@/lib/i18n/server";
 
 export const metadata = {
   title: "Roadmap · VIFM Assessment Center",
@@ -50,110 +51,79 @@ const TONE_BG_CLASS: Record<Tone, string> = {
   rose: "bg-[#E11D48]/5 border-[#E11D48]/20",
 };
 
+// Data arrays carry i18n key suffixes (resolved against acTools.roadmap.*
+// in the component body where the server `t` is available) instead of
+// literal English, so the page renders in EN or AR per the locale cookie.
 const JOURNEY: Array<{
   icon: typeof Target;
   tone: Tone;
-  title: string;
-  subtitle: string;
-  body: string;
+  key: string;
 }> = [
-  {
-    icon: Briefcase, tone: "blue",
-    title: "Discover", subtitle: "Brief from the client",
-    body: "Define target role, hiring or development objective, candidate population, success criteria, and timeline. Capture the competency profile up front.",
-  },
-  {
-    icon: Target, tone: "violet",
-    title: "Calibrate", subtitle: "Competency × exercise matrix",
-    body: "Map each in-scope competency to the exercises that will measure it. Every competency lands in at least two exercises - cross-validation by design.",
-  },
-  {
-    icon: BookOpen, tone: "teal",
-    title: "Design", subtitle: "Exercises + briefing materials",
-    body: "Build or adapt the in-basket, role play, group exercise, case study, oral presentation, and CBI guides. Bilingual EN / AR materials for GCC clients.",
-  },
-  {
-    icon: Users, tone: "gold",
-    title: "Recruit & invite", subtitle: "Candidates + assessors",
-    body: "Add candidates to the engagement (bulk CSV or one-by-one), assign trained assessors, send branded invite emails with consent, schedule the AC dates.",
-  },
-  {
-    icon: Eye, tone: "emerald",
-    title: "Observe", subtitle: "Behavioural evidence capture",
-    body: "Assessors run the AC and capture observations against the BARS rubric. Each observation tagged to a competency with positive/negative indicators.",
-  },
-  {
-    icon: GitMerge, tone: "rose",
-    title: "Integrate & wash-up", subtitle: "Consensus engine",
-    body: "Each assessor consolidates their evidence in the integration worksheet, then the wash-up engine drives multi-rater consensus with live Realtime collaboration.",
-  },
-  {
-    icon: Award, tone: "blue",
-    title: "Decide", subtitle: "Overall Assessment Rating",
-    body: "Wash-up produces an OAR (1-5) and a recommendation: Ready Now / Ready with Development / Not Ready. ICC computed across the assessor pool.",
-  },
-  {
-    icon: FileText, tone: "violet",
-    title: "Report", subtitle: "Branded 6-page deliverable",
-    body: "Per-candidate report with cover, executive summary, competency detail (strengths + development areas), and tiered development recommendations.",
-  },
-  {
-    icon: Recycle, tone: "gold",
-    title: "Follow-up", subtitle: "Development plans + cohort review",
-    body: "Reports released to candidates, cohort analytics shared with the client, and (for Programme / Partnership tiers) a quarterly cohort review with the C-suite.",
-  },
+  { icon: Briefcase, tone: "blue",    key: "discover" },
+  { icon: Target,    tone: "violet",  key: "calibrate" },
+  { icon: BookOpen,  tone: "teal",    key: "design" },
+  { icon: Users,     tone: "gold",    key: "recruit" },
+  { icon: Eye,       tone: "emerald", key: "observe" },
+  { icon: GitMerge,  tone: "rose",    key: "integrate" },
+  { icon: Award,     tone: "blue",    key: "decide" },
+  { icon: FileText,  tone: "violet",  key: "report" },
+  { icon: Recycle,   tone: "gold",    key: "followup" },
 ];
 
 const ADMIN_ITEMS = [
-  { icon: Briefcase,    text: "Engagements (5-step wizard)" },
-  { icon: BookOpen,     text: "Exercise library" },
-  { icon: Target,       text: "Competency-to-exercise matrix" },
-  { icon: Users,        text: "Assessor pool management" },
-  { icon: BarChart3,    text: "Engagement analytics" },
+  { icon: Briefcase,    key: "engagements" },
+  { icon: BookOpen,     key: "exerciseLibrary" },
+  { icon: Target,       key: "matrix" },
+  { icon: Users,        key: "assessorPool" },
+  { icon: BarChart3,    key: "analytics" },
 ];
 
 const ASSESSOR_ITEMS = [
-  { icon: Eye,           text: "Observation form (4 tabs)" },
-  { icon: ClipboardCheck,text: "Integration worksheets" },
-  { icon: GitMerge,      text: "Wash-up consensus (Realtime)" },
-  { icon: Award,         text: "OAR finalisation" },
+  { icon: Eye,           key: "observationForm" },
+  { icon: ClipboardCheck,key: "integrationWorksheets" },
+  { icon: GitMerge,      key: "washup" },
+  { icon: Award,         key: "oar" },
 ];
 
 const CANDIDATE_ITEMS = [
-  { icon: Globe,         text: "Welcome + bilingual consent" },
-  { icon: ClipboardCheck,text: "Personalised AC schedule" },
-  { icon: FileText,      text: "Released individual report" },
+  { icon: Globe,         key: "welcome" },
+  { icon: ClipboardCheck,key: "schedule" },
+  { icon: FileText,      key: "report" },
 ];
 
-const NUMBERS: Array<{ value: number; label: string; tone: Tone }> = [
-  { value: 38, label: "Competencies",          tone: "blue" },
-  { value: 4,  label: "Domains",               tone: "violet" },
-  { value: 8,  label: "Clusters",              tone: "teal" },
-  { value: 249,label: "Behavioural indicators",tone: "gold" },
-  { value: 114,label: "Development tips",      tone: "emerald" },
-  { value: 6,  label: "Exercise types",        tone: "rose" },
-  { value: 5,  label: "BARS rating points",    tone: "blue" },
-  { value: 6,  label: "Report pages",          tone: "violet" },
+const NUMBERS: Array<{ value: number; labelKey: string; tone: Tone }> = [
+  { value: 38, labelKey: "competencies",   tone: "blue" },
+  { value: 4,  labelKey: "domains",        tone: "violet" },
+  { value: 8,  labelKey: "clusters",       tone: "teal" },
+  { value: 249,labelKey: "indicators",     tone: "gold" },
+  { value: 114,labelKey: "devTips",        tone: "emerald" },
+  { value: 6,  labelKey: "exerciseTypes",  tone: "rose" },
+  { value: 5,  labelKey: "barsPoints",     tone: "blue" },
+  { value: 6,  labelKey: "reportPages",    tone: "violet" },
 ];
 
-const EXERCISES: Array<{ name: string; nameAr: string; minutes: string; purpose: string }> = [
-  { name: "In-Basket / E-Tray",         nameAr: "صندوق الوارد",       minutes: "60–90", purpose: "Prioritisation, decision-making, written communication, delegation" },
-  { name: "Role Play",                  nameAr: "تمثيل الأدوار",       minutes: "30–45", purpose: "Interpersonal influence, coaching, conflict handling, customer focus" },
-  { name: "Group Exercise",             nameAr: "تمرين جماعي",        minutes: "45–60", purpose: "Teamwork, leadership, collaboration, persuasion under peer dynamics" },
-  { name: "Case Study",                 nameAr: "دراسة حالة",          minutes: "60–90", purpose: "Strategic thinking, analysis, business judgement, structured reasoning" },
-  { name: "Oral Presentation",          nameAr: "عرض شفهي",            minutes: "20–30", purpose: "Verbal communication, executive presence, narrative structure" },
-  { name: "Competency-Based Interview", nameAr: "مقابلة قائمة على الجدارات", minutes: "45–60", purpose: "Behavioural evidence at depth, biographical pattern, motivation fit" },
+// `name` and `nameAr` are intentional bilingual labels shown together
+// regardless of locale, so they stay literal. Only `purposeKey` is translated.
+const EXERCISES: Array<{ name: string; nameAr: string; minutes: string; purposeKey: string }> = [
+  { name: "In-Basket / E-Tray",         nameAr: "صندوق الوارد",       minutes: "60–90", purposeKey: "inBasketPurpose" },
+  { name: "Role Play",                  nameAr: "تمثيل الأدوار",       minutes: "30–45", purposeKey: "rolePlayPurpose" },
+  { name: "Group Exercise",             nameAr: "تمرين جماعي",        minutes: "45–60", purposeKey: "groupPurpose" },
+  { name: "Case Study",                 nameAr: "دراسة حالة",          minutes: "60–90", purposeKey: "casePurpose" },
+  { name: "Oral Presentation",          nameAr: "عرض شفهي",            minutes: "20–30", purposeKey: "oralPurpose" },
+  { name: "Competency-Based Interview", nameAr: "مقابلة قائمة على الجدارات", minutes: "45–60", purposeKey: "cbiPurpose" },
 ];
 
+// `label` values are standards/legal names kept verbatim; only `bodyKey` translates.
 const COMPLIANCE = [
-  { label: "ISO 10667",        body: "Assessment of People in Work and Organizational Settings" },
-  { label: "International AC Taskforce", body: "6th Edition Guidelines (2014, with 2024 supplement)" },
-  { label: "UAE PDPL",         body: "Federal Decree-Law 45 of 2021" },
-  { label: "Saudi PDPL",       body: "Royal Decree M/19, M/148" },
-  { label: "GDPR",             body: "EU/UK candidate data" },
+  { label: "ISO 10667",                  bodyKey: "iso10667Body" },
+  { label: "International AC Taskforce", bodyKey: "taskforceBody" },
+  { label: "UAE PDPL",                   bodyKey: "uaePdplBody" },
+  { label: "Saudi PDPL",                 bodyKey: "saudiPdplBody" },
+  { label: "GDPR",                       bodyKey: "gdprBody" },
 ];
 
-export default function AcRoadmapPage() {
+export default async function AcRoadmapPage() {
+  const t = await getServerT();
   return (
     <div className="min-h-screen bg-background">
       {/* ─── Top bar ─── */}
@@ -163,11 +133,11 @@ export default function AcRoadmapPage() {
             <VifmLogo variant="color" size="sm" />
             <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.15em] text-muted-foreground font-medium border-l ps-3 ms-1">
               <Sparkles className="h-3 w-3 text-accent" />
-              Assessment Center
+              {t("acTools.roadmap.navAcLabel")}
             </span>
           </Link>
           <Link href="/ac/engage" className="text-xs text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1">
-            How to engage <ArrowRight className="h-3 w-3" />
+            {t("acTools.roadmap.navEngage")} <ArrowRight className="h-3 w-3" />
           </Link>
         </div>
       </header>
@@ -178,16 +148,14 @@ export default function AcRoadmapPage() {
           <div className="max-w-3xl relative z-10">
             <span className="ara-eyebrow text-accent">
               <Sparkles className="h-3 w-3" />
-              Roadmap
+              {t("acTools.roadmap.heroEyebrow")}
             </span>
             <h1 className="ara-numeral text-4xl sm:text-5xl font-semibold text-white leading-[1.05] mt-4 mb-5">
-              The VIFM Assessment Center{" "}
-              <span className="ara-accent-sweep">on one page.</span>
+              {t("acTools.roadmap.heroTitlePart1")}{" "}
+              <span className="ara-accent-sweep">{t("acTools.roadmap.heroTitlePart2")}</span>
             </h1>
             <p className="text-lg text-white/75 max-w-2xl leading-relaxed">
-              From a client brief to a released candidate report - the full
-              nine-step journey, every component that powers it, and the
-              standards it&apos;s anchored to.
+              {t("acTools.roadmap.heroBody")}
             </p>
           </div>
         </div>
@@ -196,20 +164,26 @@ export default function AcRoadmapPage() {
       {/* ─── Journey ─── */}
       <section className="max-w-6xl mx-auto px-6 py-16">
         <div className="text-center mb-12">
-          <span className="ara-eyebrow">The journey</span>
+          <span className="ara-eyebrow">{t("acTools.roadmap.journeyEyebrow")}</span>
           <h2 className="text-3xl font-semibold text-primary mt-3">
-            Nine steps, brief to follow-up
+            {t("acTools.roadmap.journeyTitle")}
           </h2>
           <p className="text-sm text-muted-foreground mt-3 max-w-2xl mx-auto">
-            Every Assessment Centre engagement follows the same arc. Each step
-            maps to a concrete portal screen, a defined role, and a documented
-            artefact.
+            {t("acTools.roadmap.journeyIntro")}
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {JOURNEY.map((s, i) => (
-            <FadeIn key={s.title} delay={i * 60}>
-              <JourneyCard step={i + 1} total={JOURNEY.length} {...s} />
+            <FadeIn key={s.key} delay={i * 60}>
+              <JourneyCard
+                step={i + 1}
+                total={JOURNEY.length}
+                icon={s.icon}
+                tone={s.tone}
+                title={t(`acTools.roadmap.journey.${s.key}Title`)}
+                subtitle={t(`acTools.roadmap.journey.${s.key}Subtitle`)}
+                body={t(`acTools.roadmap.journey.${s.key}Body`)}
+              />
             </FadeIn>
           ))}
         </div>
@@ -219,20 +193,20 @@ export default function AcRoadmapPage() {
       <section className="ara-hero-subtle py-20 border-y">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-12">
-            <span className="ara-eyebrow">Platform map</span>
+            <span className="ara-eyebrow">{t("acTools.roadmap.platformEyebrow")}</span>
             <h2 className="text-3xl font-semibold text-primary mt-3">
-              Three roles, one shared engagement
+              {t("acTools.roadmap.platformTitle")}
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
             <FadeIn delay={0}>
-              <RoleColumn tone="violet" roleIcon={Briefcase} title="VIFM Admin" subtitle="Run the engagement" items={ADMIN_ITEMS} />
+              <RoleColumn t={t} tone="violet" roleIcon={Briefcase} title={t("acTools.roadmap.roles.adminTitle")} subtitle={t("acTools.roadmap.roles.adminSubtitle")} items={ADMIN_ITEMS} group="adminItems" />
             </FadeIn>
             <FadeIn delay={120}>
-              <RoleColumn tone="blue"   roleIcon={Eye}        title="Assessor"   subtitle="Observe + integrate"   items={ASSESSOR_ITEMS} />
+              <RoleColumn t={t} tone="blue"   roleIcon={Eye}        title={t("acTools.roadmap.roles.assessorTitle")}   subtitle={t("acTools.roadmap.roles.assessorSubtitle")}   items={ASSESSOR_ITEMS} group="assessorItems" />
             </FadeIn>
             <FadeIn delay={240}>
-              <RoleColumn tone="teal"   roleIcon={Users}      title="Candidate"  subtitle="Demonstrate competence"items={CANDIDATE_ITEMS} />
+              <RoleColumn t={t} tone="teal"   roleIcon={Users}      title={t("acTools.roadmap.roles.candidateTitle")}  subtitle={t("acTools.roadmap.roles.candidateSubtitle")} items={CANDIDATE_ITEMS} group="candidateItems" />
             </FadeIn>
           </div>
 
@@ -240,15 +214,15 @@ export default function AcRoadmapPage() {
           <FadeIn delay={360}>
             <div className="rounded-2xl border bg-card p-6 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
-                <span className="ara-eyebrow">Shared engine</span>
+                <span className="ara-eyebrow">{t("acTools.roadmap.sharedEngine")}</span>
                 <div className="flex-1 h-px bg-border" />
-                <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Behind every screen</span>
+                <span className="text-[10px] uppercase tracking-widest text-muted-foreground">{t("acTools.roadmap.behindEveryScreen")}</span>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <EngineItem icon={GitMerge}    tone="blue"    title="Wash-up engine"   body="Realtime multi-rater consensus" />
-                <EngineItem icon={Cpu}         tone="violet"  title="ICC computation"  body="Inter-rater reliability" />
-                <EngineItem icon={ShieldCheck} tone="emerald" title="Bias detection"   body="Across the assessor pool" />
-                <EngineItem icon={FileText}    tone="gold"    title="Report generator" body="React-PDF · 6 pages · brand-styled" />
+                <EngineItem icon={GitMerge}    tone="blue"    title={t("acTools.roadmap.engine.washupTitle")}   body={t("acTools.roadmap.engine.washupBody")} />
+                <EngineItem icon={Cpu}         tone="violet"  title={t("acTools.roadmap.engine.iccTitle")}  body={t("acTools.roadmap.engine.iccBody")} />
+                <EngineItem icon={ShieldCheck} tone="emerald" title={t("acTools.roadmap.engine.biasTitle")}   body={t("acTools.roadmap.engine.biasBody")} />
+                <EngineItem icon={FileText}    tone="gold"    title={t("acTools.roadmap.engine.reportTitle")} body={t("acTools.roadmap.engine.reportBody")} />
               </div>
             </div>
           </FadeIn>
@@ -258,20 +232,20 @@ export default function AcRoadmapPage() {
       {/* ─── By the numbers ─── */}
       <section className="max-w-6xl mx-auto px-6 py-16">
         <div className="text-center mb-10">
-          <span className="ara-eyebrow">At a glance</span>
+          <span className="ara-eyebrow">{t("acTools.roadmap.glanceEyebrow")}</span>
           <h2 className="text-3xl font-semibold text-primary mt-3">
-            By the numbers
+            {t("acTools.roadmap.glanceTitle")}
           </h2>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
           {NUMBERS.map((n, i) => (
-            <FadeIn key={n.label} delay={i * 50}>
+            <FadeIn key={n.labelKey} delay={i * 50}>
               <div className={`rounded-xl border p-4 text-center ${TONE_BG_CLASS[n.tone]}`}>
                 <div className={`ara-numeral text-3xl font-semibold ${TONE_TEXT_CLASS[n.tone]}`}>
                   <CountUp value={n.value} />
                 </div>
                 <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1.5">
-                  {n.label}
+                  {t(`acTools.roadmap.numbers.${n.labelKey}`)}
                 </div>
               </div>
             </FadeIn>
@@ -283,12 +257,12 @@ export default function AcRoadmapPage() {
       <section className="ara-hero-subtle py-16 border-y">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-10">
-            <span className="ara-eyebrow">Exercise library</span>
+            <span className="ara-eyebrow">{t("acTools.roadmap.exerciseEyebrow")}</span>
             <h2 className="text-3xl font-semibold text-primary mt-3">
-              Six exercise types, behaviourally validated
+              {t("acTools.roadmap.exerciseTitle")}
             </h2>
             <p className="text-sm text-muted-foreground mt-3 max-w-2xl mx-auto">
-              Every exercise has a defined timing structure (instructions / preparation / meeting), a participant briefing, an assessor guide, and a competency-to-exercise matrix slot.
+              {t("acTools.roadmap.exerciseIntro")}
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -296,11 +270,11 @@ export default function AcRoadmapPage() {
               <FadeIn key={e.name} delay={i * 50}>
                 <article className="rounded-xl border bg-card p-5">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-accent">{e.minutes} min</span>
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-accent">{t("acTools.roadmap.minutesSuffix", { range: e.minutes })}</span>
                   </div>
                   <h3 className="text-base font-semibold text-primary">{e.name}</h3>
                   <p dir="rtl" className="text-xs text-muted-foreground mt-0.5 mb-3">{e.nameAr}</p>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{e.purpose}</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{t(`acTools.roadmap.exercisesLib.${e.purposeKey}`)}</p>
                 </article>
               </FadeIn>
             ))}
@@ -311,12 +285,12 @@ export default function AcRoadmapPage() {
       {/* ─── Compliance ─── */}
       <section className="max-w-6xl mx-auto px-6 py-16">
         <div className="text-center mb-10">
-          <span className="ara-eyebrow">Standards anchored</span>
+          <span className="ara-eyebrow">{t("acTools.roadmap.complianceEyebrow")}</span>
           <h2 className="text-3xl font-semibold text-primary mt-3">
-            Compliant by design
+            {t("acTools.roadmap.complianceTitle")}
           </h2>
           <p className="text-sm text-muted-foreground mt-3 max-w-2xl mx-auto">
-            Every Assessment Centre engagement runs against five published standards. Audit trail on every rating decision, immutable observation log, candidate consent captured before any data collection.
+            {t("acTools.roadmap.complianceIntro")}
           </p>
         </div>
         <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -326,7 +300,7 @@ export default function AcRoadmapPage() {
                 <p className="text-[10px] uppercase tracking-widest text-accent font-semibold mb-1.5">
                   {c.label}
                 </p>
-                <p className="text-xs text-muted-foreground leading-snug">{c.body}</p>
+                <p className="text-xs text-muted-foreground leading-snug">{t(`acTools.roadmap.compliance.${c.bodyKey}`)}</p>
               </div>
             </FadeIn>
           ))}
@@ -336,23 +310,23 @@ export default function AcRoadmapPage() {
       {/* ─── CTA ─── */}
       <section className="ara-hero py-14 relative overflow-hidden">
         <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
-          <span className="ara-eyebrow text-accent">Ready when you are</span>
+          <span className="ara-eyebrow text-accent">{t("acTools.roadmap.ctaEyebrow")}</span>
           <h2 className="ara-numeral text-3xl font-semibold text-white mt-3 mb-4">
-            The framework is ready. <br className="hidden sm:block" />
-            <span className="ara-accent-sweep">Bring your first cohort.</span>
+            {t("acTools.roadmap.ctaTitlePart1")} <br className="hidden sm:block" />
+            <span className="ara-accent-sweep">{t("acTools.roadmap.ctaTitlePart2")}</span>
           </h2>
           <div className="flex flex-wrap justify-center gap-3 mt-6">
             <Link
               href="/ac/engage"
               className="ara-pulse inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-3 text-sm font-medium text-white hover:bg-accent/90 transition-colors"
             >
-              See engagement tiers <ArrowRight className="h-4 w-4" />
+              {t("acTools.roadmap.ctaSeeTiers")} <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
               href="/admin"
               className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-5 py-3 text-sm font-medium text-white hover:bg-white/10 transition-colors backdrop-blur"
             >
-              Open admin
+              {t("acTools.roadmap.ctaOpenAdmin")}
             </Link>
           </div>
         </div>
@@ -360,8 +334,8 @@ export default function AcRoadmapPage() {
 
       <footer className="border-t bg-card/50">
         <div className="max-w-6xl mx-auto px-6 py-8 text-center text-xs text-muted-foreground">
-          <div className="font-medium text-foreground mb-1">VIFM Assessment Center</div>
-          The Big-4-calibre talent decision platform for the GCC.
+          <div className="font-medium text-foreground mb-1">{t("acTools.roadmap.footerName")}</div>
+          {t("acTools.roadmap.footerTagline")}
         </div>
       </footer>
     </div>
@@ -401,13 +375,15 @@ function JourneyCard({
 }
 
 function RoleColumn({
-  tone, roleIcon: RoleIcon, title, subtitle, items,
+  t, tone, roleIcon: RoleIcon, title, subtitle, items, group,
 }: {
+  t: ServerT;
   tone: Tone;
   roleIcon: typeof Briefcase;
   title: string;
   subtitle: string;
-  items: Array<{ icon: typeof Briefcase; text: string }>;
+  items: Array<{ icon: typeof Briefcase; key: string }>;
+  group: string;
 }) {
   return (
     <div className="ara-tile p-6 h-full flex flex-col">
@@ -420,9 +396,9 @@ function RoleColumn({
         {items.map((item) => {
           const ItemIcon = item.icon;
           return (
-            <li key={item.text} className="flex items-center gap-2.5 text-sm text-muted-foreground">
+            <li key={item.key} className="flex items-center gap-2.5 text-sm text-muted-foreground">
               <ItemIcon className="h-3.5 w-3.5 text-muted-foreground/70 flex-shrink-0" />
-              {item.text}
+              {t(`acTools.roadmap.${group}.${item.key}`)}
             </li>
           );
         })}

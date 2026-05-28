@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,44 +15,46 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 
-const STEPS = [
-  "Assessment Workflow",
-  "Participant Experience",
-  "Review & Publish",
-  "Add People",
+const STEP_KEYS = [
+  "clientAnalytics.newProject.stepWorkflow",
+  "clientAnalytics.newProject.stepExperience",
+  "clientAnalytics.newProject.stepReview",
+  "clientAnalytics.newProject.stepPeople",
 ];
 
 const PROJECT_TYPES = [
-  { value: "professional", label: "Professional" },
-  { value: "graduate", label: "Graduate" },
-  { value: "leadership", label: "Leadership" },
-  { value: "other", label: "Other Solution" },
+  { value: "professional", labelKey: "clientAnalytics.newProject.typeProfessional" },
+  { value: "graduate", labelKey: "clientAnalytics.newProject.typeGraduate" },
+  { value: "leadership", labelKey: "clientAnalytics.newProject.typeLeadership" },
+  { value: "other", labelKey: "clientAnalytics.newProject.typeOther" },
 ];
 
+// value is a stable identifier persisted in state/review; the visible label is translated at render time
 const ASSESSMENT_PRODUCTS = [
-  "In-Basket Exercise",
-  "Role Play",
-  "Group Exercise",
-  "Case Study",
-  "Oral Presentation",
-  "Competency-Based Interview",
+  { value: "In-Basket Exercise", labelKey: "clientAnalytics.newProject.productInBasket" },
+  { value: "Role Play", labelKey: "clientAnalytics.newProject.productRolePlay" },
+  { value: "Group Exercise", labelKey: "clientAnalytics.newProject.productGroupExercise" },
+  { value: "Case Study", labelKey: "clientAnalytics.newProject.productCaseStudy" },
+  { value: "Oral Presentation", labelKey: "clientAnalytics.newProject.productOralPresentation" },
+  { value: "Competency-Based Interview", labelKey: "clientAnalytics.newProject.productCbi" },
 ];
 
 const NORM_GROUPS = [
-  { value: "gcc_banking", label: "GCC Banking" },
-  { value: "gcc_government", label: "GCC Government" },
-  { value: "mena_corporate", label: "MENA Corporate" },
-  { value: "global_corporate", label: "Global Corporate" },
-  { value: "graduate_program", label: "Graduate Program" },
+  { value: "gcc_banking", labelKey: "clientAnalytics.newProject.normGccBanking" },
+  { value: "gcc_government", labelKey: "clientAnalytics.newProject.normGccGovernment" },
+  { value: "mena_corporate", labelKey: "clientAnalytics.newProject.normMenaCorporate" },
+  { value: "global_corporate", labelKey: "clientAnalytics.newProject.normGlobalCorporate" },
+  { value: "graduate_program", labelKey: "clientAnalytics.newProject.normGraduateProgram" },
 ];
 
 const DEVICES = [
-  { value: "desktop", label: "Desktop" },
-  { value: "tablet", label: "Tablet" },
-  { value: "mobile", label: "Mobile" },
+  { value: "desktop", labelKey: "clientAnalytics.newProject.deviceDesktop" },
+  { value: "tablet", labelKey: "clientAnalytics.newProject.deviceTablet" },
+  { value: "mobile", labelKey: "clientAnalytics.newProject.deviceMobile" },
 ];
 
 export default function ClientNewProjectPage() {
+  const { t } = useTranslation();
   const [step, setStep] = useState(0);
   const [projectName, setProjectName] = useState("");
   const [projectType, setProjectType] = useState("");
@@ -77,21 +80,31 @@ export default function ClientNewProjectPage() {
   };
 
   const handlePublish = () => {
-    toast.success("Project created successfully! Redirecting to project management.");
+    toast.success(t("clientAnalytics.newProject.toastCreated"));
   };
+
+  const productLabel = (value: string) =>
+    ASSESSMENT_PRODUCTS.find((p) => p.value === value)?.labelKey
+      ? t(ASSESSMENT_PRODUCTS.find((p) => p.value === value)!.labelKey)
+      : value;
+
+  const deviceLabel = (value: string) =>
+    DEVICES.find((d) => d.value === value)?.labelKey
+      ? t(DEVICES.find((d) => d.value === value)!.labelKey)
+      : value;
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Create New Project</h1>
+        <h1 className="text-2xl font-bold">{t("clientAnalytics.newProject.title")}</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Set up your assessment project in 4 steps.
+          {t("clientAnalytics.newProject.subtitle")}
         </p>
       </div>
 
       {/* Step indicators */}
       <div className="flex gap-1">
-        {STEPS.map((s, i) => (
+        {STEP_KEYS.map((s, i) => (
           <button
             key={s}
             onClick={() => i <= step && setStep(i)}
@@ -103,8 +116,8 @@ export default function ClientNewProjectPage() {
                   : "bg-muted text-muted-foreground"
             }`}
           >
-            {i < step ? <Check className="h-3 w-3 inline mr-1" /> : null}
-            {s}
+            {i < step ? <Check className="h-3 w-3 inline me-1" /> : null}
+            {t(s)}
           </button>
         ))}
       </div>
@@ -113,32 +126,32 @@ export default function ClientNewProjectPage() {
       {step === 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Assessment Workflow</CardTitle>
+            <CardTitle>{t("clientAnalytics.newProject.stepWorkflow")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>Project Name *</Label>
-              <Input value={projectName} onChange={(e) => setProjectName(e.target.value)} placeholder="e.g., Q2 Leadership Assessment" />
+              <Label>{t("clientAnalytics.newProject.labelProjectName")}</Label>
+              <Input value={projectName} onChange={(e) => setProjectName(e.target.value)} placeholder={t("clientAnalytics.newProject.placeholderProjectName")} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Project Type *</Label>
+                <Label>{t("clientAnalytics.newProject.labelProjectType")}</Label>
                 <Select value={projectType} onValueChange={setProjectType}>
-                  <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={t("clientAnalytics.newProject.selectPlaceholder")} /></SelectTrigger>
                   <SelectContent>
                     {PROJECT_TYPES.map((pt) => (
-                      <SelectItem key={pt.value} value={pt.value}>{pt.label}</SelectItem>
+                      <SelectItem key={pt.value} value={pt.value}>{t(pt.labelKey)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Norm Group</Label>
+                <Label>{t("clientAnalytics.newProject.labelNormGroup")}</Label>
                 <Select value={normGroup} onValueChange={setNormGroup}>
-                  <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={t("clientAnalytics.newProject.selectPlaceholder")} /></SelectTrigger>
                   <SelectContent>
                     {NORM_GROUPS.map((ng) => (
-                      <SelectItem key={ng.value} value={ng.value}>{ng.label}</SelectItem>
+                      <SelectItem key={ng.value} value={ng.value}>{t(ng.labelKey)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -146,33 +159,33 @@ export default function ClientNewProjectPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Start Date</Label>
+                <Label>{t("clientAnalytics.newProject.labelStartDate")}</Label>
                 <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>End Date</Label>
+                <Label>{t("clientAnalytics.newProject.labelEndDate")}</Label>
                 <Input type="date" value={endDate} min={startDate || undefined} onChange={(e) => setEndDate(e.target.value)} />
               </div>
             </div>
             <Separator />
             <div className="space-y-2">
-              <Label>Select Assessments / Products</Label>
+              <Label>{t("clientAnalytics.newProject.labelSelectProducts")}</Label>
               <div className="grid grid-cols-2 gap-2">
                 {ASSESSMENT_PRODUCTS.map((p) => (
-                  <label key={p} className="flex items-center gap-2 border rounded-lg p-2 cursor-pointer hover:bg-muted/50">
+                  <label key={p.value} className="flex items-center gap-2 border rounded-lg p-2 cursor-pointer hover:bg-muted/50">
                     <Checkbox
-                      checked={selectedProducts.includes(p)}
-                      onCheckedChange={() => toggleProduct(p)}
+                      checked={selectedProducts.includes(p.value)}
+                      onCheckedChange={() => toggleProduct(p.value)}
                     />
-                    <span className="text-sm">{p}</span>
+                    <span className="text-sm">{t(p.labelKey)}</span>
                   </label>
                 ))}
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Cutoff Score (1-5)</Label>
+              <Label>{t("clientAnalytics.newProject.labelCutoffScore")}</Label>
               <Input type="number" min={1} max={5} step={0.5} value={cutoffScore} onChange={(e) => setCutoffScore(e.target.value)} className="w-24" />
-              <p className="text-xs text-muted-foreground">Minimum passing score for each assessment</p>
+              <p className="text-xs text-muted-foreground">{t("clientAnalytics.newProject.cutoffHelp")}</p>
             </div>
           </CardContent>
         </Card>
@@ -182,11 +195,11 @@ export default function ClientNewProjectPage() {
       {step === 1 && (
         <Card>
           <CardHeader>
-            <CardTitle>Participant Experience</CardTitle>
+            <CardTitle>{t("clientAnalytics.newProject.stepExperience")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>Allowed Devices</Label>
+              <Label>{t("clientAnalytics.newProject.labelAllowedDevices")}</Label>
               <div className="flex gap-3">
                 {DEVICES.map((d) => (
                   <label key={d.value} className="flex items-center gap-2 border rounded-lg px-3 py-2 cursor-pointer hover:bg-muted/50">
@@ -194,7 +207,7 @@ export default function ClientNewProjectPage() {
                       checked={devices.includes(d.value)}
                       onCheckedChange={() => toggleDevice(d.value)}
                     />
-                    <span className="text-sm">{d.label}</span>
+                    <span className="text-sm">{t(d.labelKey)}</span>
                   </label>
                 ))}
               </div>
@@ -202,17 +215,17 @@ export default function ClientNewProjectPage() {
             <div className="space-y-2">
               <label className="flex items-center gap-2 cursor-pointer">
                 <Checkbox checked={proctoring} onCheckedChange={(v) => setProctoring(!!v)} />
-                <span className="text-sm font-medium">Enable Proctoring</span>
+                <span className="text-sm font-medium">{t("clientAnalytics.newProject.enableProctoring")}</span>
               </label>
-              <p className="text-xs text-muted-foreground ml-6">
-                Enables live or AI-based monitoring during assessments for security.
+              <p className="text-xs text-muted-foreground ms-6">
+                {t("clientAnalytics.newProject.proctoringHelp")}
               </p>
             </div>
             <Separator />
             <div className="border rounded-lg p-4 bg-muted/30">
-              <p className="text-sm font-medium mb-2">Assessment Completion Mode</p>
+              <p className="text-sm font-medium mb-2">{t("clientAnalytics.newProject.completionModeTitle")}</p>
               <p className="text-xs text-muted-foreground">
-                Assessments will be completed sequentially. Candidates must finish one assessment before the next unlocks.
+                {t("clientAnalytics.newProject.completionModeBody")}
               </p>
             </div>
           </CardContent>
@@ -223,49 +236,57 @@ export default function ClientNewProjectPage() {
       {step === 2 && (
         <Card>
           <CardHeader>
-            <CardTitle>Review & Publish</CardTitle>
+            <CardTitle>{t("clientAnalytics.newProject.stepReview")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="text-muted-foreground">Project Name</p>
+                <p className="text-muted-foreground">{t("clientAnalytics.newProject.reviewProjectName")}</p>
                 <p className="font-medium">{projectName || "-"}</p>
               </div>
               <div>
-                <p className="text-muted-foreground">Project Type</p>
-                <p className="font-medium capitalize">{projectType || "-"}</p>
+                <p className="text-muted-foreground">{t("clientAnalytics.newProject.reviewProjectType")}</p>
+                <p className="font-medium">
+                  {projectType
+                    ? t(PROJECT_TYPES.find((pt) => pt.value === projectType)?.labelKey ?? "")
+                    : "-"}
+                </p>
               </div>
               <div>
-                <p className="text-muted-foreground">Norm Group</p>
-                <p className="font-medium">{normGroup ? normGroup.replace(/_/g, " ") : "-"}</p>
+                <p className="text-muted-foreground">{t("clientAnalytics.newProject.reviewNormGroup")}</p>
+                <p className="font-medium">
+                  {normGroup
+                    ? t(NORM_GROUPS.find((ng) => ng.value === normGroup)?.labelKey ?? "")
+                    : "-"}
+                </p>
               </div>
               <div>
-                <p className="text-muted-foreground">Dates</p>
+                <p className="text-muted-foreground">{t("clientAnalytics.newProject.reviewDates")}</p>
                 <p className="font-medium">{startDate || "-"} - {endDate || "-"}</p>
               </div>
               <div>
-                <p className="text-muted-foreground">Cutoff Score</p>
+                <p className="text-muted-foreground">{t("clientAnalytics.newProject.reviewCutoffScore")}</p>
                 <p className="font-medium">{cutoffScore}/5</p>
               </div>
               <div>
-                <p className="text-muted-foreground">Proctoring</p>
-                <p className="font-medium">{proctoring ? "Enabled" : "Disabled"}</p>
+                <p className="text-muted-foreground">{t("clientAnalytics.newProject.reviewProctoring")}</p>
+                <p className="font-medium">{proctoring ? t("clientAnalytics.newProject.proctoringEnabled") : t("clientAnalytics.newProject.proctoringDisabled")}</p>
               </div>
             </div>
             <Separator />
             <div>
-              <p className="text-sm text-muted-foreground mb-1">Assessments</p>
+              <p className="text-sm text-muted-foreground mb-1">{t("clientAnalytics.newProject.reviewAssessments")}</p>
               <div className="flex flex-wrap gap-1">
                 {selectedProducts.length > 0 ? selectedProducts.map((p) => (
-                  <Badge key={p} variant="secondary">{p}</Badge>
-                )) : <span className="text-xs text-muted-foreground">None selected</span>}
+                  <Badge key={p} variant="secondary">{productLabel(p)}</Badge>
+                )) : <span className="text-xs text-muted-foreground">{t("clientAnalytics.newProject.noneSelected")}</span>}
               </div>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground mb-1">Devices</p>
+              <p className="text-sm text-muted-foreground mb-1">{t("clientAnalytics.newProject.reviewDevices")}</p>
               <div className="flex gap-1">
                 {devices.map((d) => (
-                  <Badge key={d} variant="outline" className="capitalize">{d}</Badge>
+                  <Badge key={d} variant="outline">{deviceLabel(d)}</Badge>
                 ))}
               </div>
             </div>
@@ -277,19 +298,19 @@ export default function ClientNewProjectPage() {
       {step === 3 && (
         <Card>
           <CardHeader>
-            <CardTitle>Add People</CardTitle>
+            <CardTitle>{t("clientAnalytics.newProject.stepPeople")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>Participant Emails</Label>
+              <Label>{t("clientAnalytics.newProject.labelParticipantEmails")}</Label>
               <textarea
                 className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm"
                 value={participants}
                 onChange={(e) => setParticipants(e.target.value)}
-                placeholder="Enter email addresses, one per line"
+                placeholder={t("clientAnalytics.newProject.placeholderParticipantEmails")}
               />
               <p className="text-xs text-muted-foreground">
-                {participants.split("\n").filter((l) => l.trim()).length} participant(s) entered
+                {t("clientAnalytics.newProject.participantsEntered", { n: participants.split("\n").filter((l) => l.trim()).length })}
               </p>
             </div>
           </CardContent>
@@ -305,17 +326,17 @@ export default function ClientNewProjectPage() {
           className="gap-1"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back
+          {t("clientAnalytics.newProject.back")}
         </Button>
-        {step < STEPS.length - 1 ? (
+        {step < STEP_KEYS.length - 1 ? (
           <Button onClick={() => setStep(step + 1)} className="gap-1">
-            Next
+            {t("clientAnalytics.newProject.next")}
             <ArrowRight className="h-4 w-4" />
           </Button>
         ) : (
           <Button onClick={handlePublish} className="gap-1">
             <Check className="h-4 w-4" />
-            Publish Project
+            {t("clientAnalytics.newProject.publish")}
           </Button>
         )}
       </div>

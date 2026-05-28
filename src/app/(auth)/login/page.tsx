@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -19,14 +20,15 @@ import { LogIn, Mail, ChevronDown } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 const DEMO_ROLES = [
-  { label: "Admin", email: "admin@viftraining.com", password: "admin123", redirect: "/admin" },
-  { label: "Assessor", email: "assessor@viftraining.com", password: "admin123", redirect: "/assessor" },
-  { label: "Candidate", email: "candidate@viftraining.com", password: "admin123", redirect: "/candidate" },
-  { label: "Client", email: "client@viftraining.com", password: "admin123", redirect: "/client" },
+  { id: "Admin", labelKey: "authPublic.login.roleAdmin", email: "admin@viftraining.com", password: "admin123", redirect: "/admin" },
+  { id: "Assessor", labelKey: "authPublic.login.roleAssessor", email: "assessor@viftraining.com", password: "admin123", redirect: "/assessor" },
+  { id: "Candidate", labelKey: "authPublic.login.roleCandidate", email: "candidate@viftraining.com", password: "admin123", redirect: "/candidate" },
+  { id: "Client", labelKey: "authPublic.login.roleClient", email: "client@viftraining.com", password: "admin123", redirect: "/client" },
 ] as const;
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -86,7 +88,7 @@ export default function LoginPage() {
   };
 
   const handleMagicLink = async () => {
-    if (!email) { setError("Enter your email address first"); return; }
+    if (!email) { setError(t("authPublic.login.enterEmailFirst")); return; }
     setLoading(true);
     setError(null);
 
@@ -98,16 +100,16 @@ export default function LoginPage() {
 
     setLoading(false);
     if (authError) { setError(authError.message); }
-    else { alert("Check your email for a login link."); }
+    else { alert(t("authPublic.login.checkEmailLink")); }
   };
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl">Sign In</CardTitle>
+          <CardTitle className="text-xl">{t("authPublic.login.title")}</CardTitle>
           <CardDescription>
-            Welcome to the VIFM Assessment Center Portal. Enter your credentials to continue.
+            {t("authPublic.login.description")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -120,9 +122,9 @@ export default function LoginPage() {
                 disabled={loading}
                 className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring appearance-none pr-8"
               >
-                <option value="">Select role...</option>
+                <option value="">{t("authPublic.login.selectRole")}</option>
                 {DEMO_ROLES.map((r) => (
-                  <option key={r.label} value={r.label}>{r.label}</option>
+                  <option key={r.id} value={r.id}>{t(r.labelKey)}</option>
                 ))}
               </select>
               <ChevronDown className="absolute right-2 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -130,12 +132,12 @@ export default function LoginPage() {
             <Button
               disabled={loading || !selectedRole}
               onClick={() => {
-                const role = DEMO_ROLES.find((r) => r.label === selectedRole);
+                const role = DEMO_ROLES.find((r) => r.id === selectedRole);
                 if (role) quickLogin(role.email, role.password, role.redirect);
               }}
               className="shrink-0"
             >
-              {loading ? "Signing in..." : "Quick Login"}
+              {loading ? t("authPublic.login.signingIn") : t("authPublic.login.quickLogin")}
             </Button>
           </div>
 
@@ -145,22 +147,22 @@ export default function LoginPage() {
           {(
             <form onSubmit={handleLogin} className="space-y-3 pt-2">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("authPublic.login.emailLabel")}</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="you@vifm.ae"
+                  placeholder={t("authPublic.login.emailPlaceholder")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t("authPublic.login.passwordLabel")}</Label>
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Your password"
+                  placeholder={t("authPublic.login.passwordPlaceholder")}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -175,7 +177,7 @@ export default function LoginPage() {
 
               <Button type="submit" disabled={loading} className="w-full gap-2">
                 <LogIn className="h-4 w-4" />
-                {loading ? "Signing in..." : "Sign In"}
+                {loading ? t("authPublic.login.signingIn") : t("authPublic.login.signIn")}
               </Button>
 
               <Button
@@ -186,12 +188,12 @@ export default function LoginPage() {
                 className="w-full gap-2"
               >
                 <Mail className="h-4 w-4" />
-                Sign in with Magic Link
+                {t("authPublic.login.magicLink")}
               </Button>
 
               <div className="text-center">
                 <Link href="/password-reset" className="text-xs text-muted-foreground hover:underline">
-                  Forgot password?
+                  {t("authPublic.login.forgotPassword")}
                 </Link>
               </div>
             </form>

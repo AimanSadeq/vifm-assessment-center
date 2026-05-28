@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { isAIConfigured } from "@/lib/ai/client";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getServerT } from "@/lib/i18n/server";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { FluentClient } from "./_components/fluent-client";
 
@@ -21,16 +22,24 @@ type Props = {
 // Hero skill chips. The note on each names *how* the skill is scored, which
 // is Fluent's differentiator - receptive skills auto-score, productive skills
 // are graded against the CEFR rubric. Deliberately vendor-neutral (capability,
-// not implementation) so the copy outlives any model/provider swap.
-const SKILLS = [
-  { icon: BookOpen, label: "Reading", note: "Auto-scored" },
-  { icon: Headphones, label: "Listening", note: "Audio · auto-scored" },
-  { icon: PenLine, label: "Writing", note: "CEFR rubric-scored" },
-  { icon: Mic, label: "Speaking", note: "Spoken · CEFR + pronunciation" },
+// not implementation) so the copy outlives any model/provider swap. Label + note
+// are resolved from i18n inside the component (see SKILLS map below).
+const SKILL_ICONS = [
+  { icon: BookOpen, key: "reading" },
+  { icon: Headphones, key: "listening" },
+  { icon: PenLine, key: "writing" },
+  { icon: Mic, key: "speaking" },
 ] as const;
 
 export default async function FluentPage({ searchParams }: Props) {
+  const t = await getServerT();
   const aiConfigured = isAIConfigured();
+
+  const SKILLS = SKILL_ICONS.map((s) => ({
+    icon: s.icon,
+    label: t(`acFluent.skill_${s.key}_label`),
+    note: t(`acFluent.skill_${s.key}_note`),
+  }));
 
   // Optional candidate binding: launch /ac/fluent?candidateId=… to attach the
   // result to a candidate record. Tolerant - anonymous self-serve if absent.
@@ -69,19 +78,19 @@ export default async function FluentPage({ searchParams }: Props) {
                 href="/ac/fluent/cohort"
                 className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/85 backdrop-blur transition-colors hover:border-white/35 hover:bg-white/15"
               >
-                <Users className="h-3.5 w-3.5" /> Cohort report
+                <Users className="h-3.5 w-3.5" /> {t("acFluent.navCohortReport")}
               </Link>
               <Link
                 href="/ac/fluent/calibration"
                 className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/85 backdrop-blur transition-colors hover:border-white/35 hover:bg-white/15"
               >
-                <ClipboardCheck className="h-3.5 w-3.5" /> Scoring calibration
+                <ClipboardCheck className="h-3.5 w-3.5" /> {t("acFluent.navScoringCalibration")}
               </Link>
               <Link
                 href="/admin"
                 className="ms-1 hidden items-center gap-1 text-xs text-white/70 transition-colors hover:text-white sm:inline-flex"
               >
-                <ArrowLeft className="h-3 w-3" /> Assessment Center
+                <ArrowLeft className="h-3 w-3" /> {t("acFluent.navAssessmentCenter")}
               </Link>
             </nav>
           </div>
@@ -89,18 +98,15 @@ export default async function FluentPage({ searchParams }: Props) {
           {/* Headline block */}
           <div className="max-w-3xl">
             <span className="ara-eyebrow text-[#9CC4EC]">
-              <Languages className="h-3 w-3" /> Fluent · AI English placement
+              <Languages className="h-3 w-3" /> {t("acFluent.heroEyebrow")}
             </span>
             <h1 className="ara-numeral mt-4 mb-4 text-4xl font-semibold leading-[1.07] text-white sm:text-5xl">
-              Four skills, one CEFR level -{" "}
-              <span className="fluent-sweep">in minutes</span>.
+              {t("acFluent.heroHeadlinePrefix")}{" "}
+              <span className="fluent-sweep">{t("acFluent.heroHeadlineHighlight")}</span>
+              {t("acFluent.heroHeadlineSuffix")}
             </h1>
             <p className="max-w-2xl text-base leading-relaxed text-white/75 sm:text-lg">
-              Reading and Listening are AI-generated and auto-scored; Writing and
-              Speaking are scored live against the CEFR criteria by our AI examiner -
-              the part IELTS and TOEFL pay human examiners for. Speech is transcribed
-              and scored for pronunciation. Bilingual English / Arabic, an indicative
-              A1–C2 level, and feedback in minutes.
+              {t("acFluent.heroDescription")}
             </p>
 
             {/* Skill chips */}
@@ -120,23 +126,21 @@ export default async function FluentPage({ searchParams }: Props) {
             {/* Trust strip */}
             <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-white/55">
               <span className="inline-flex items-center gap-1">
-                <CheckCircle2 className="h-3 w-3 text-[#9CC4EC]" /> CEFR certificate
+                <CheckCircle2 className="h-3 w-3 text-[#9CC4EC]" /> {t("acFluent.trustCefrCertificate")}
               </span>
               <span className="h-3 w-px bg-white/20" />
-              <span>AI-assisted scoring</span>
+              <span>{t("acFluent.trustAiAssistedScoring")}</span>
               <span className="h-3 w-px bg-white/20" />
-              <span>Indicative confidence band</span>
+              <span>{t("acFluent.trustConfidenceBand")}</span>
               <span className="h-3 w-px bg-white/20" />
-              <span>Cohort reporting &amp; emailed result</span>
+              <span>{t("acFluent.trustCohortReporting")}</span>
               <span className="h-3 w-px bg-white/20" />
-              <span>Indicative placement - not a certified high-stakes score</span>
+              <span>{t("acFluent.trustIndicativePlacement")}</span>
             </div>
 
             {/* CEFR reference — spell out the acronym used throughout */}
             <p className="mt-4 max-w-2xl text-[11px] leading-relaxed text-white/45">
-              <span className="font-medium text-white/70">CEFR</span> is the Common European Framework of
-              Reference for Languages, the international scale for language ability: A1 / A2 (basic user),
-              B1 / B2 (independent user), C1 / C2 (proficient user).
+              <span className="font-medium text-white/70">CEFR</span> {t("acFluent.cefrReference")}
             </p>
           </div>
         </div>
@@ -148,17 +152,15 @@ export default async function FluentPage({ searchParams }: Props) {
           <div className="mb-5 flex items-center gap-2 rounded-xl border border-[#5391D5]/40 bg-[#5391D5]/5 px-4 py-3 text-sm text-[#010131] shadow-sm">
             <UserCheck className="h-4 w-4 shrink-0 text-[#5391D5]" />
             <span>
-              This placement will be linked to candidate record{" "}
-              <strong>{candidateName}</strong>.
+              {t("acFluent.candidateBindingPrefix")}{" "}
+              <strong>{candidateName}</strong>{t("acFluent.candidateBindingSuffix")}
             </span>
           </div>
         )}
         {!aiConfigured && (
           <div className="mb-5 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
-            <strong>AI key not set.</strong> The test runs in fallback mode (a small
-            static test + placeholder score) so you can see the flow. Set{" "}
-            <code className="text-xs">ANTHROPIC_API_KEY</code> for live AI-generated
-            items and real CEFR writing assessment.
+            <strong>{t("acFluent.aiKeyNotSetTitle")}</strong> {t("acFluent.aiKeyNotSetBodyPrefix")}{" "}
+            <code className="text-xs">ANTHROPIC_API_KEY</code> {t("acFluent.aiKeyNotSetBodySuffix")}
           </div>
         )}
         <FluentClient

@@ -10,7 +10,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { BARS_LABELS } from "@/lib/validations/assessor";
 import { saveIntegrationAction } from "../actions";
 import { cn } from "@/lib/utils";
 
@@ -108,7 +107,7 @@ export function IntegrationForm({
                 <CardTitle className="text-base">{comp.name}</CardTitle>
                 {w.rating > 0 && (
                   <Badge variant={w.rating >= 3 ? "default" : "destructive"}>
-                    {w.rating} - {BARS_LABELS[w.rating]}
+                    {w.rating} - {t(`ratings.bars.${w.rating}`)}
                   </Badge>
                 )}
               </div>
@@ -186,7 +185,7 @@ export function IntegrationForm({
                   ))}
                 </div>
                 <p className="text-xs text-center text-muted-foreground mt-1">
-                  {w.rating > 0 ? BARS_LABELS[w.rating] : t("assessorWashup.integration.selectScore")}
+                  {w.rating > 0 ? t(`ratings.bars.${w.rating}`) : t("assessorWashup.integration.selectScore")}
                 </p>
               </div>
 

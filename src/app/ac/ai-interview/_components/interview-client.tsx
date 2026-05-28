@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Bot, User, Send, Loader2, RotateCcw, ClipboardCheck, Sparkles,
   ShieldCheck, CheckCircle2, X,
@@ -64,6 +65,7 @@ export function CbiInterviewClient({
   competencies: CompetencyOption[];
   assignments: CbiAssignmentContext[];
 }) {
+  const { t } = useTranslation();
   const [assignmentId, setAssignmentId] = useState<string>(""); // "" = demo
   const activeAssignment = assignments.find((a) => a.id === assignmentId) ?? null;
   const compOptions: { id: string; name: string }[] = activeAssignment
@@ -125,7 +127,7 @@ export function CbiInterviewClient({
       const turn = (await callApi("turn", [])) as { message: string; shouldConclude: boolean };
       setMessages([{ role: "interviewer", text: turn.message }]);
     } catch {
-      setMessages([{ role: "interviewer", text: "Could not start the interview. Please try again." }]);
+      setMessages([{ role: "interviewer", text: t("acTools.interview.couldNotStart") }]);
     } finally {
       setBusy(false); scrollToEnd();
     }
@@ -141,7 +143,7 @@ export function CbiInterviewClient({
       setMessages([...next, { role: "interviewer", text: turn.message }]);
       if (turn.shouldConclude) setConcluded(true);
     } catch {
-      setMessages([...next, { role: "interviewer", text: "Connection hiccup - please resend." }]);
+      setMessages([...next, { role: "interviewer", text: t("acTools.interview.connectionHiccup") }]);
     } finally {
       setBusy(false); scrollToEnd();
     }
@@ -173,7 +175,7 @@ export function CbiInterviewClient({
         if ("id" in res) setSessionId(res.id);
       }
     } catch {
-      setError("Scoring failed. Please try again.");
+      setError(t("acTools.interview.scoringFailed"));
     } finally {
       setScoring(false);
     }
@@ -200,7 +202,7 @@ export function CbiInterviewClient({
       if ("error" in res) setError(res.error);
       else setApproved(res);
     } catch {
-      setError("Could not write to the pipeline.");
+      setError(t("acTools.interview.couldNotWrite"));
     } finally {
       setApproving(false);
     }
@@ -221,7 +223,7 @@ export function CbiInterviewClient({
         <div className="space-y-3 border-b p-4">
           <div>
             <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500">
-              Context
+              {t("acTools.interview.contextLabel")}
             </label>
             <select
               value={assignmentId}
@@ -229,7 +231,7 @@ export function CbiInterviewClient({
               disabled={started}
               className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-[#111232] disabled:opacity-60"
             >
-              <option value="">Demo - no candidate (scoring only, no pipeline write)</option>
+              <option value="">{t("acTools.interview.contextDemoOption")}</option>
               {assignments.map((a) => (
                 <option key={a.id} value={a.id}>
                   {a.candidateName} - {a.exerciseName}{a.engagementName ? ` (${a.engagementName})` : ""}
@@ -238,8 +240,8 @@ export function CbiInterviewClient({
             </select>
             {productionMode && (
               <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-emerald-700">
-                <ShieldCheck className="h-3 w-3" /> Production: approved results write to{" "}
-                {activeAssignment?.candidateName}&apos;s observation record.
+                <ShieldCheck className="h-3 w-3" />{" "}
+                {t("acTools.interview.productionPrefix", { name: activeAssignment?.candidateName ?? "" })}
               </p>
             )}
           </div>
@@ -250,7 +252,7 @@ export function CbiInterviewClient({
               disabled={started}
               className="min-w-[220px] flex-1 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-[#111232] disabled:opacity-60"
             >
-              {compOptions.length === 0 && <option value="">No competencies mapped</option>}
+              {compOptions.length === 0 && <option value="">{t("acTools.interview.noCompetenciesMapped")}</option>}
               {compOptions.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
@@ -276,14 +278,14 @@ export function CbiInterviewClient({
                 className="inline-flex items-center gap-2 rounded-md bg-[#010131] px-4 py-2 text-sm font-medium text-white hover:bg-[#121140] disabled:opacity-50"
               >
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                Start interview
+                {t("acTools.interview.startInterview")}
               </button>
             ) : (
               <button
                 onClick={reset}
                 className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
               >
-                <RotateCcw className="h-4 w-4" /> Start over
+                <RotateCcw className="h-4 w-4" /> {t("acTools.interview.startOver")}
               </button>
             )}
           </div>
@@ -294,7 +296,7 @@ export function CbiInterviewClient({
           {!started && (
             <div className="flex h-full flex-col items-center justify-center text-center text-sm text-slate-400">
               <Bot className="mb-2 h-8 w-8 text-slate-300" />
-              Choose a context + competency, then Start interview.
+              {t("acTools.interview.emptyTranscript")}
             </div>
           )}
           {messages.map((m, i) => (
@@ -313,7 +315,7 @@ export function CbiInterviewClient({
           ))}
           {busy && started && (
             <div className="flex items-center gap-2 text-xs text-slate-400">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Interviewer is thinking…
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> {t("acTools.interview.interviewerThinking")}
             </div>
           )}
         </div>
@@ -324,7 +326,7 @@ export function CbiInterviewClient({
             {concluded ? (
               <div className="flex items-center justify-between gap-3 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
                 <span className="inline-flex items-center gap-2">
-                  <ClipboardCheck className="h-4 w-4" /> Interview complete - ready to score.
+                  <ClipboardCheck className="h-4 w-4" /> {t("acTools.interview.interviewComplete")}
                 </span>
                 <button
                   onClick={runScore}
@@ -332,7 +334,7 @@ export function CbiInterviewClient({
                   className="inline-flex items-center gap-2 rounded-md bg-[#047857] px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-800 disabled:opacity-50"
                 >
                   {scoring ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ClipboardCheck className="h-3.5 w-3.5" />}
-                  {scoring ? "Scoring…" : "Score this interview"}
+                  {scoring ? t("acTools.interview.scoring") : t("acTools.interview.scoreThisInterview")}
                 </button>
               </div>
             ) : (
@@ -344,7 +346,7 @@ export function CbiInterviewClient({
                     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); }
                   }}
                   rows={2}
-                  placeholder="Type your answer…"
+                  placeholder={t("acTools.interview.answerPlaceholder")}
                   disabled={busy}
                   className="flex-1 resize-none rounded-md border border-slate-300 px-3 py-2 text-sm text-[#111232] focus:border-[#5391D5] focus:outline-none"
                 />
@@ -353,13 +355,13 @@ export function CbiInterviewClient({
                   disabled={busy || !draft.trim()}
                   className="inline-flex h-10 items-center gap-2 rounded-md bg-[#5391D5] px-4 text-sm font-medium text-white hover:bg-[#5391D5]/90 disabled:opacity-50"
                 >
-                  <Send className="h-4 w-4" /> Send
+                  <Send className="h-4 w-4" /> {t("acTools.interview.send")}
                 </button>
               </div>
             )}
             {!concluded && answersGiven > 0 && (
               <button onClick={runScore} disabled={scoring} className="mt-2 text-xs text-slate-400 underline hover:text-slate-600">
-                {scoring ? "Scoring…" : "Score now →"}
+                {scoring ? t("acTools.interview.scoring") : t("acTools.interview.scoreNow")}
               </button>
             )}
           </div>
@@ -370,7 +372,7 @@ export function CbiInterviewClient({
       <div className="rounded-xl border bg-white p-5 shadow-sm">
         <h2 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-[#5391D5]">
           {productionMode ? <ShieldCheck className="h-4 w-4" /> : null}
-          {productionMode ? "Review & approve" : "Scored evidence"}
+          {productionMode ? t("acTools.interview.reviewApprove") : t("acTools.interview.scoredEvidence")}
         </h2>
 
         {error && <div className="mb-3 rounded-md bg-rose-50 px-3 py-2 text-xs text-rose-700">{error}</div>}
@@ -378,25 +380,32 @@ export function CbiInterviewClient({
         {!score ? (
           <p className="text-sm text-slate-400">
             {started
-              ? "Finish the interview (or score early) to see Claude extract behavioural evidence and assign a BARS rating."
-              : "Scored evidence will appear here after an interview."}
+              ? t("acTools.interview.scoreHintStarted")
+              : t("acTools.interview.scoreHintIdle")}
           </p>
         ) : approved ? (
           <div className="space-y-3">
             <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">
-              <CheckCircle2 className="h-5 w-5" /> Written to the pipeline
+              <CheckCircle2 className="h-5 w-5" /> {t("acTools.interview.writtenToPipeline")}
             </div>
             <p className="text-sm text-[#111232]">
-              {approved.observationsWritten} observation{approved.observationsWritten === 1 ? "" : "s"} and a
-              rating of <strong>{approved.rating}/5</strong> saved to{" "}
-              <strong>{activeAssignment?.candidateName}</strong>&apos;s record for{" "}
-              <strong>{score.competency_name}</strong>.
+              {t(
+                approved.observationsWritten === 1
+                  ? "acTools.interview.savedSummary_one"
+                  : "acTools.interview.savedSummary_other",
+                {
+                  count: approved.observationsWritten,
+                  rating: approved.rating,
+                  name: activeAssignment?.candidateName ?? "",
+                  competency: score.competency_name,
+                }
+              )}
             </p>
             <a
               href={`/assessor/observation/${activeAssignment?.id}`}
               className="inline-block text-xs text-[#5391D5] underline hover:text-[#5391D5]/80"
             >
-              Open the assessor observation page →
+              {t("acTools.interview.openObservationPage")}
             </a>
           </div>
         ) : (
@@ -404,14 +413,14 @@ export function CbiInterviewClient({
             <div>
               <div className="text-xs text-slate-500">{score.competency_name}</div>
               {!score.ai_generated && (
-                <div className="mt-1 text-[10px] text-amber-600">AI draft is a fallback (no AI key)</div>
+                <div className="mt-1 text-[10px] text-amber-600">{t("acTools.interview.aiDraftFallback")}</div>
               )}
             </div>
 
             {/* Rating - read-only in demo, editable in production */}
             {productionMode ? (
               <div>
-                <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">BARS rating (editable)</div>
+                <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">{t("acTools.interview.barsRatingEditable")}</div>
                 <div className="flex gap-1.5">
                   {[1, 2, 3, 4, 5].map((n) => (
                     <button
@@ -426,20 +435,20 @@ export function CbiInterviewClient({
                   ))}
                 </div>
                 <div className="mt-1 text-[11px] text-slate-500">
-                  AI suggested {score.bars_rating}/5 · {score.rating_label}
+                  {t("acTools.interview.aiSuggested", { rating: score.bars_rating, label: score.rating_label })}
                 </div>
               </div>
             ) : (
               <div className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-semibold ${RATING_TONE[score.bars_rating]}`}>
                 <span className="text-lg">{score.bars_rating}</span>
-                <span>/ 5 · {score.rating_label}</span>
+                <span>{t("acTools.interview.ratingSuffix", { label: score.rating_label })}</span>
               </div>
             )}
 
             {/* Rationale / reviewer notes */}
             <div>
               <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                {productionMode ? "Justification (editable)" : "Rationale"}
+                {productionMode ? t("acTools.interview.justificationEditable") : t("acTools.interview.rationale")}
               </div>
               {productionMode ? (
                 <textarea
@@ -457,7 +466,7 @@ export function CbiInterviewClient({
             {productionMode ? (
               <div>
                 <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Evidence - keep, drop, or re-polarise
+                  {t("acTools.interview.evidenceLabel")}
                 </div>
                 <div className="space-y-2">
                   {reviewItems.map((r, i) => (
@@ -467,7 +476,7 @@ export function CbiInterviewClient({
                         <button
                           onClick={() => setReviewItems((items) => items.map((it, j) => j === i ? { ...it, keep: !it.keep } : it))}
                           className="shrink-0 text-slate-400 hover:text-rose-600"
-                          title={r.keep ? "Drop" : "Restore"}
+                          title={r.keep ? t("acTools.interview.drop") : t("acTools.interview.restore")}
                         >
                           {r.keep ? <X className="h-3.5 w-3.5" /> : <RotateCcw className="h-3.5 w-3.5" />}
                         </button>
@@ -476,13 +485,13 @@ export function CbiInterviewClient({
                         onClick={() => setReviewItems((items) => items.map((it, j) => j === i ? { ...it, polarity: NEXT_POLARITY[it.polarity] } : it))}
                         disabled={!r.keep}
                         className={`mt-1.5 rounded border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${POLARITY_TONE[r.polarity]} disabled:opacity-40`}
-                        title="Click to change polarity"
+                        title={t("acTools.interview.changePolarity")}
                       >
                         {r.polarity}
                       </button>
                     </div>
                   ))}
-                  {reviewItems.length === 0 && <p className="text-xs text-slate-400">No evidence extracted.</p>}
+                  {reviewItems.length === 0 && <p className="text-xs text-slate-400">{t("acTools.interview.noEvidenceExtracted")}</p>}
                 </div>
                 <button
                   onClick={approve}
@@ -490,10 +499,15 @@ export function CbiInterviewClient({
                   className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md bg-[#047857] px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
                 >
                   {approving ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                  {approving ? "Writing…" : "Approve & write to pipeline"}
+                  {approving ? t("acTools.interview.writing") : t("acTools.interview.approveWrite")}
                 </button>
                 <p className="mt-1 text-center text-[10px] text-slate-400">
-                  Writes {reviewItems.filter((r) => r.keep).length} observation(s) + a {reviewRating}/5 rating.
+                  {t(
+                    reviewItems.filter((r) => r.keep).length === 1
+                      ? "acTools.interview.writesSummary_one"
+                      : "acTools.interview.writesSummary_other",
+                    { count: reviewItems.filter((r) => r.keep).length, rating: reviewRating }
+                  )}
                 </p>
               </div>
             ) : (
@@ -504,7 +518,7 @@ export function CbiInterviewClient({
                       <div className="leading-snug">{e.behavior}</div>
                       <div className="mt-1 flex items-center justify-between text-[10px] opacity-70">
                         <span className="uppercase tracking-wide">{e.indicator_type}</span>
-                        <span>{Math.round(e.confidence * 100)}% confidence</span>
+                        <span>{t("acTools.interview.confidenceSuffix", { pct: Math.round(e.confidence * 100) })}</span>
                       </div>
                     </div>
                   ))}

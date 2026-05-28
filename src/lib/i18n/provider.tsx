@@ -31,7 +31,13 @@ function localeAwareRoute(pathname: string | null): boolean {
     pathname.startsWith("/reflect/admin") ||
     pathname.startsWith("/admin") ||
     pathname.startsWith("/assessor") ||
-    pathname.startsWith("/client")
+    pathname.startsWith("/client") ||
+    pathname.startsWith("/ac") ||
+    pathname.startsWith("/courses") ||
+    pathname.startsWith("/verify") ||
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/register") ||
+    pathname.startsWith("/password-reset")
   );
 }
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 
 type Candidate = {
@@ -12,12 +13,6 @@ type Candidate = {
 type Props = {
   data: Candidate[];
 };
-
-const GRID_LABELS = [
-  ["Enigma", "Growth Employee", "Future Star"],
-  ["Under Performer", "Core Employee", "High Performer"],
-  ["Risk", "Average Performer", "Trusted Professional"],
-];
 
 const GRID_COLORS = [
   ["bg-amber-50 border-amber-200", "bg-blue-50 border-blue-200", "bg-emerald-50 border-emerald-200"],
@@ -32,6 +27,26 @@ function getBox(performance: number, potential: number): [number, number] {
 }
 
 export function NineBoxGrid({ data }: Props) {
+  const { t } = useTranslation();
+
+  const gridLabels = [
+    [
+      t("clientAnalytics.nineBox.cellEnigma"),
+      t("clientAnalytics.nineBox.cellGrowthEmployee"),
+      t("clientAnalytics.nineBox.cellFutureStar"),
+    ],
+    [
+      t("clientAnalytics.nineBox.cellUnderPerformer"),
+      t("clientAnalytics.nineBox.cellCoreEmployee"),
+      t("clientAnalytics.nineBox.cellHighPerformer"),
+    ],
+    [
+      t("clientAnalytics.nineBox.cellRisk"),
+      t("clientAnalytics.nineBox.cellAveragePerformer"),
+      t("clientAnalytics.nineBox.cellTrustedProfessional"),
+    ],
+  ];
+
   // Bucket candidates into 3x3 grid
   const grid: Candidate[][][] = Array.from({ length: 3 }, () =>
     Array.from({ length: 3 }, () => [])
@@ -46,16 +61,16 @@ export function NineBoxGrid({ data }: Props) {
     <div className="space-y-2">
       {/* Axis labels */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-        <span className="w-20 text-right font-medium">Performance</span>
+        <span className="w-20 text-right font-medium">{t("clientAnalytics.nineBox.axisPerformance")}</span>
         <div className="flex-1" />
       </div>
 
       <div className="flex gap-2">
         {/* Y-axis labels */}
         <div className="flex flex-col justify-between w-20 text-xs text-right text-muted-foreground py-1">
-          <span>High (4-5)</span>
-          <span>Medium (2.5-4)</span>
-          <span>Low (1-2.5)</span>
+          <span>{t("clientAnalytics.nineBox.high")}</span>
+          <span>{t("clientAnalytics.nineBox.medium")}</span>
+          <span>{t("clientAnalytics.nineBox.low")}</span>
         </div>
 
         {/* Grid */}
@@ -68,7 +83,7 @@ export function NineBoxGrid({ data }: Props) {
                   className={`border rounded-lg p-2 min-h-[80px] ${GRID_COLORS[ri][ci]}`}
                 >
                   <p className="text-[10px] font-medium text-muted-foreground mb-1">
-                    {GRID_LABELS[ri][ci]}
+                    {gridLabels[ri][ci]}
                   </p>
                   <div className="flex flex-wrap gap-1">
                     {cell.map((c) => (
@@ -92,12 +107,12 @@ export function NineBoxGrid({ data }: Props) {
       <div className="flex gap-2">
         <div className="w-20" />
         <div className="flex-1 grid grid-cols-3 text-xs text-center text-muted-foreground">
-          <span>Low (1-2.5)</span>
-          <span>Medium (2.5-4)</span>
-          <span>High (4-5)</span>
+          <span>{t("clientAnalytics.nineBox.low")}</span>
+          <span>{t("clientAnalytics.nineBox.medium")}</span>
+          <span>{t("clientAnalytics.nineBox.high")}</span>
         </div>
       </div>
-      <div className="text-center text-xs text-muted-foreground font-medium">Potential</div>
+      <div className="text-center text-xs text-muted-foreground font-medium">{t("clientAnalytics.nineBox.axisPotential")}</div>
     </div>
   );
 }

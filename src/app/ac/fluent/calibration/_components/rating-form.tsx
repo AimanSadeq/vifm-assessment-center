@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { Loader2, Check, AlertCircle } from "lucide-react";
 import { submitHumanRating } from "../actions";
 
@@ -39,6 +40,7 @@ export function RatingForm({
   hasSpeaking: boolean;
 }) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [rater, setRater] = useState("");
   const [w, setW] = useState(writingHuman ?? "");
   const [s, setS] = useState(speakingHuman ?? "");
@@ -75,7 +77,7 @@ export function RatingForm({
       }
       router.refresh();
     } else {
-      setErr(res.error ?? "save failed");
+      setErr(res.error ?? t("acFluent.ratingSaveFailed"));
     }
   }
 
@@ -84,21 +86,21 @@ export function RatingForm({
       <input
         value={rater}
         onChange={(e) => setRater(e.target.value)}
-        placeholder="Rater (your name)"
+        placeholder={t("acFluent.ratingRaterPlaceholder")}
         className="w-40 rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-[#5391D5] focus:outline-none"
       />
-      <span className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Human CEFR:</span>
-      <CefrSelect value={w} onChange={setW} label="Writing" />
-      {hasSpeaking && <CefrSelect value={s} onChange={setS} label="Speaking" />}
+      <span className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{t("acFluent.ratingHumanCefr")}</span>
+      <CefrSelect value={w} onChange={setW} label={t("acFluent.skillWriting")} />
+      {hasSpeaking && <CefrSelect value={s} onChange={setS} label={t("acFluent.skillSpeaking")} />}
       <button
         onClick={save}
         disabled={busy || !rater.trim() || (!w && !s)}
         className="inline-flex items-center gap-1.5 rounded-md bg-[#010131] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#121140] disabled:opacity-50"
       >
         {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-        Save rating
+        {t("acFluent.ratingSaveButton")}
       </button>
-      {saved && <span className="text-xs text-emerald-600">saved ✓</span>}
+      {saved && <span className="text-xs text-emerald-600">{t("acFluent.ratingSaved")}</span>}
       {err && (
         <span className="inline-flex items-center gap-1 text-xs text-rose-600">
           <AlertCircle className="h-3.5 w-3.5" /> {err}

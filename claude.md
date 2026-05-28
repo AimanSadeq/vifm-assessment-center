@@ -6,8 +6,6 @@ Custom-built Assessment Center management platform for Virginia Institute of Fin
 ## Current Status
 All 5 development phases are **complete**. The portal is functionally ready with auth disabled for development. To go to production, flip `AUTH_ENABLED = true` in `src/lib/auth/config.ts` (consumed by `src/middleware.ts` + `src/lib/ara/auth-guards.ts`) and follow `src/lib/auth/README.md`.
 
-**Undocumented modules (this file trails the codebase):** modules present in the code but not yet described below — Reflect 360 feedback (`/reflect/*`, `src/lib/reflect/`), Fluent English (`/ac/fluent`, `src/lib/ai/fluent-english.ts`), AI Interview / CBI (`/ac/ai-interview`, `/ac/cbi`, `src/lib/ai/cbi-interviewer.ts`), Academy (`/api/academy/*`), and credential issuance + public verification (`/verify`, `/api/credentials/verify`). Explore the routes before relying on assumptions about them.
-
 **ARA module status:** VIFM ARA (AI Readiness Assessment) is built out and merged into master. M1–M6 complete (respondent flow, scoring, distortion, peer benchmarks, year-on-year, bilingual consultant notes, EN/AR/bilingual Puppeteer PDF report, Phase 2 consultant guide, regulatory doc upload with Claude extraction, **annual reassessment workflow shipped 2026-04-28 via `createReassessmentFromPrior` in `src/lib/ara/consultant-actions.ts` with copy-and-create of org/stage/scope/weights + opt-in respondent carry-over + new active question-bank pin + `ara_assessments.prior_assessment_id` audit link**). M2.1 (respondent invitation email) and M3.3 (consultant completion notification) shipped 2026-04-28 via `src/lib/ara/email.ts` with bilingual templates + sandbox redirect + ara_email_log writes. Retention purge + sandbox cleanup admin pages shipped at `/ara/admin/retention` + `/ara/admin/sandbox`; scheduled cron for those is the only ARA item still open. See "ARA Module" section below for the current deferred-items list.
 
 **AC competitor-parity status:** Fifteen features inspired by a competitor walkthrough are shipped on `master` (P0.1 JD-to-competency extractor, P0.2 role profile library, P0.3 gap-severity badges, Learning Plan PDF, G1 candidate→role-profile binding, G2 learner skill dashboard, G3 self-serve AI quiz flow with MCQ + cognitive items + per-question AI explanations, G4 bulk JD import, G5 bulk CSV user-to-persona linking, G6 JSON export, **G7 admin re-engagement workflow shipped 2026-04-28 — "Re-engage cohort" button on completed/archived engagement detail copies design + candidates with `prior_engagement_id` + `prior_candidate_id` links and renders an OAR delta pill ("↑+1 vs prior") on each candidate row once the new run scores**, H1 JD-extractor domain tally card, H2 personal-statistics donut + bar charts on /candidate/skills, H3 in-app notification bell, H4 admin "view as candidate" banner). Full second-pass analysis (158-frame video sweep) lives in `.tmp/parity-gap-analysis.md`; see "AC competitor-parity upgrades" section below.
@@ -73,6 +71,9 @@ src/
       quiz/[attemptId]/   # Self-serve AI quiz interface (timer, MCQ + T/F + pattern, End Session) (G3)
       quiz/[attemptId]/results/  # Score + per-question review with AI explanations (G3.d)
       report/[id]/        # Report viewer (gated behind release status)
+      academy/            # VIFM Academy — My Learning list + course page + Complete Course
+      academy/[enrollmentId]/lesson/[lessonKey]/  # Per-lesson AI knowledge-check (reuses the G3 quiz engine)
+      credentials/[candidateId]/  # Candidate credential wallet (Academy / AC Ready Now / Fluent CEFR)
     ara/
       personal/start/                  # Free Personal AI Readiness Snapshot entry (Mode A, anonymous)
       personal/results/[token]/        # Bilingual results page — factor scores + course recommendations + PDF download
@@ -80,6 +81,14 @@ src/
       consultant/                      # Consultant dashboard with personal-snapshot-activity panel (last 30d, snapshot vs deep-dive)
       consultant/assessments/[id]/     # Org assessment detail — adds Workforce Readiness rollup card on Phase 2 tab when Mode C
       respond/[token]/                 # Stage-aware respondent form — pillar questions + four-factor items based on assessment.engagement_stage / include_individual_layer / individual_only
+    ac/                   # Standalone AC AI tools
+      fluent/             # Fluent English placement — runner + cohort + calibration (admin "Fluent" nav link)
+      ai-interview/       # AI Conversational Assessor (CBI prototype) — direct-URL, no nav link
+    reflect/              # Reflect 360 leadership feedback (own reflect_* tables, ARA-style)
+      admin/              # Console + library templates + retention/sandbox purge
+      consultant/         # Dashboard, 5-step engagement wizard, participant report + IDP, cohort report
+      respond/[token]/    # Token-gated rater form (auth-bypassed in middleware)
+    verify/[code]/        # Public credential verification page (auth-bypassed)
     client/               # Client portal (top nav, process map)
       engagements/        # Org-scoped engagement list
         [id]/             # Candidate results with OAR and PDF download
@@ -92,21 +101,31 @@ src/
       consent/[candId]/                        # Consent submission endpoint
       ara/reports/[assessmentId]/pdf/          # Bilingual EN/AR/side-by-side ARA PDF (Puppeteer) — includes Workforce Readiness section when Mode C
       ara/personal/[token]/pdf/                # Personal AI Readiness Snapshot PDF (React-PDF) — token-gated
+      ac/cbi/                                  # CBI agent — {action: "turn" | "score"}
+      ac/fluent/                               # Fluent start/score (+ /transcribe Whisper, /tts, /[resultId]/certificate PDF)
+      academy/                                 # enroll, lesson/start, lesson/[attemptId]/(save|complete), complete
+      reflect/reports/...                      # Participant + cohort PDFs (Puppeteer) + framework.pdf + needs-scheduling.csv
+      reflect/admin/reminders/cron/            # Rater-reminder sweep (Bearer CRON_SECRET; GitHub Actions)
+      credentials/verify/[code]/               # Public verification (service-role; auth-bypassed)
+      credentials/[credentialId]/pdf/          # Credential PDF
   components/
     ui/                   # 17 Shadcn/UI components
     shared/               # Process map, BackLink, LanguageSwitcher, VifmLogo, EngagementPicker, LogoutButton
   lib/
     supabase/             # Server client, browser client, middleware, service client
     auth/                 # getClientOrgId helper, README migration guide
-    ai/                   # AI client, observation assistant, report writer, dev recommender, bias detector, JD competency extractor (P0.1), quiz generator (G3), course extractor (Day 2 of courses)
+    ai/                   # AI client, observation assistant, report writer, dev recommender, bias detector, JD competency extractor (P0.1), quiz generator (G3), course extractor; reflect-behavior-extractor + reflect-behavior-tips (Reflect), cbi-interviewer (CBI), fluent-english (Fluent)
     notifications/        # Publish + load + mark-read helpers (H3)
     constants/            # Exercise type labels, ARA pillars, ARA stages, ARA individual factors (the 4 VIFM personal factors)
     i18n/                 # Config, provider (route-aware), cookie + locale constants, server-side getServerT helper, EN + AR locale files
-    integrations/         # Email (6 AC templates), Video (Daily.co placeholder)
+    integrations/         # Email (6 AC templates), Video (Daily.co placeholder), Speech (Azure pronunciation; Whisper via scripts/)
     ara/                  # ARA-specific helpers — auth-guards, email (3 ARA templates), respondent-access, scoring, distortion, year-on-year, peer-benchmarks, regulatory engine, workforce-readiness rollup (Mode C)
+    reflect/              # Reflect 360 — actions, admin-actions, idp-actions, rater-access, rater-actions, scoring, validations, email
+    academy/              # Academy completion (markEnrollmentComplete → academy_completion credential) + lesson-key helpers
+    credentials/          # Shared issuer + public verification reader (issue.ts) + AC Ready-Now issuance (ac-ready-now.ts)
     recommender/          # Course recommender (AC candidate / AC cohort / ARA pillar / Personal snapshot)
     reports/              # Candidate report PDF (6 pages) + Learning Plan PDF (4 pages incl. recommended training) + Personal Snapshot PDF (1 page bilingual), data fetcher, report types
-    scoring/              # ICC calculation, bias detection, gap-severity computation (P0.3)
+    scoring/              # ICC calculation, bias detection, gap-severity computation (P0.3), reliability/confidence band + IRT/Rasch CAT (Fluent)
     validations/          # Zod schemas for engagement, assessor, washup, ARA assessments + respondents (now incl. include_individual_layer + assessment_tier + individual_only)
   types/                  # TypeScript types for all database tables
   hooks/                  # Custom React hooks (placeholder)
@@ -133,9 +152,32 @@ supabase/
     00025_ara_individual_stage.sql            # engagement_stage += 'individual' + ara_questions.individual_factor_id (4 VIFM factors)
     00026_ara_individual_seed.sql             # 16 self-assessment items on v1.1 (4 per factor) — Mode A snapshot baseline
     00027_ara_individual_tiers.sql            # tier discriminator on questions + assessments + 32 more items → 24 (snapshot) / 48 (deep-dive) per factor; include_individual_layer + individual_only flags
+    00028_ara_question_validation_evidence.sql # ARA per-question validation_evidence JSONB (anchor instruments + human-review status)
+    00029_assessment_pillars_in_scope.sql      # Per-assessment pillars_in_scope override (decouples pillar set from engagement_stage)
+    00030_vifm_course_quote_requests.sql       # Public /courses lead-capture: vifm_course_quote_requests (new→contacted→quoted→won/lost)
+    00031_reflect_enums.sql                    # Reflect 360 enums (engagement / rater / level / scale / participant / idp lifecycles)
+    00032_reflect_core_schema.sql              # Reflect 360 core: 11 reflect_* tables + owner helpers + RLS
+    00033_reflect_seed_template_framework.sql  # Seed "VIFM Leadership Essentials" template (5 competencies × 4 behaviours, bilingual)
+    00034_reflect_template_align_ac_names.sql  # Aligns the Reflect template's names to AC competency names
+    00035_quote_request_engagement_type.sql    # Quote requests gain engagement_type ('direct'/'ac'/'ara'/'reflect') + Reflect FKs
+    00036_reflect_open_responses.sql           # reflect_raters Start / Stop / Continue open-text columns
+    00037_reflect_critical_picks.sql           # reflect_raters.critical_competency_ids (Self + Manager role-critical picks)
+    00038_reflect_rater_tenure.sql             # reflect_rater_tenure enum + column ("how long have you known this person")
+    00039_reflect_reassessment_links.sql       # reflect_engagements.prior_engagement_id + reflect_participants.prior_participant_id
+    00040_ac_cbi_sessions.sql                  # AI Conversational Assessor: cbi_sessions audit (AI draft vs human-approved)
+    00041_ara_agentic_tier.sql                 # ARA agentic-AI readiness tier (agentic_dimension_id + include_agentic_layer + 18 items)
+    00042_eng_fluent_results.sql               # Fluent: eng_fluent_results (one row per completed placement test)
+    00043_eng_fluent_depth.sql                 # Fluent: integrity_flags + email_sent_at on results
+    00044_eng_fluent_candidate_binding.sql     # Fluent: candidate_id + engagement_id on results (admin-run-for-candidate)
+    00045_eng_fluent_sessions.sql              # Fluent: eng_fluent_sessions (full test held server-side; answer key never sent)
+    00046_eng_fluent_calibration.sql           # Fluent: eng_fluent_human_ratings + eng_fluent_score_runs (QWK calibration)
+    00048_eng_fluent_item_bank.sql             # Fluent: eng_fluent_items + eng_fluent_item_responses (IRT/Rasch CAT groundwork; no 00047)
+    00049_academy_credentials.sql              # vifm_enrollments + academy_lesson_attempts + vifm_credentials (deliver + certify)
 scripts/
   seed-test-data.ts       # Creates full test dataset (engagement + candidates + assessor + observations)
   seed-tags-qa.py         # Populates tags and Q&A questions for competencies
+  whisper-transcribe.py   # Fluent speaking transcription (faster-whisper + ffmpeg)
+  fluent-calibrate-items.ts  # Computes Rasch difficulty for the Fluent item bank
 ```
 
 ## Four User Roles (with RLS policies)
@@ -288,6 +330,18 @@ Track here - pick up as scope allows. Do NOT delete without user confirmation. I
 - **Retention purge cron:** scheduled via `.github/workflows/ara-retention-purge.yml` (daily 03:00 UTC). Replaces the no-op `vercel.json` cron from the original Vercel deployment. Bearer auth via `CRON_SECRET` set in BOTH Render env and GitHub Actions secrets. Sandbox cleanup stays manual (typed "DELETE SANDBOX DATA" confirmation required by design).
 - **Respondent submit-flush:** Submit button now awaits any in-flight auto-saves before firing `markAraRespondentComplete`. Closes a race the audit demonstrated where 24 fast-clicked answers + a quick Submit could land with only N-of-24 responses persisted. Form-save gate registers via a module-level `Map<token, FormSaveGate>`; CompleteButton shows a distinct "Saving your answers…" label during the flush.
 
+### Per-assessment pillar scope override
+By default the pillars an assessment scores are derived from its `engagement_stage` (Department = 4: data/talent/culture/operations; Division = 6: adds strategy/governance; Enterprise = all 8). Migration 00029 adds `ara_assessments.pillars_in_scope text[]` (GIN-indexed) so a consultant can pick a *different* combination at the same tier — same price + question count, different *which* (e.g. a bank at Stage 1 choosing Data + Governance + Talent + Model Management).
+- **Resolution:** `getPillarsForAssessment({ engagement_stage, pillars_in_scope })` in [src/lib/constants/ara-stages.ts](src/lib/constants/ara-stages.ts) is the single source of truth — honours the override, ignores it for Enterprise (always all 8), validates the stored array, and falls back to the stage default (`ARA_STAGE_MAP[stage].applicable_pillars`) for legacy NULL rows. Use it everywhere the renderer / scorer / respondent loader needs "which pillars matter for THIS assessment" instead of reading the stage map directly.
+- **Wizard:** `pillar-picker.tsx` on `/ara/consultant/assessments/new`, constrained by `PILLAR_PICK_COUNT` (department = exactly 4, division = exactly 6, enterprise = all 8 with no picker shown). Treated as locked once respondent answers exist (UI discipline — no DB-level lock). Consumed by the report (`bilingual-report.tsx`), the assessment detail page, the respondent loader, and aggregate scoring.
+
+### Agentic-AI Readiness tier (opt-in)
+A separate readiness construct on the question bank measuring readiness to **delegate** work to autonomous AI agents — distinct from the 8 pillars, which measure readiness to **use** AI. Off by default; an assessment opts in via `ara_assessments.include_agentic_layer` (a toggle on the create wizard, `agentic-layer-toggle.tsx`).
+- **Six dimensions** ([src/lib/constants/ara-agentic-dimensions.ts](src/lib/constants/ara-agentic-dimensions.ts), bilingual + tone colour, each anchored to the `governance` or `model_management` pillar): Agent Governance & Accountability, Human-in-the-Loop & Oversight, Failure-Mode & Risk Awareness, Tool & Data Access Control, Autonomy Calibration, Auditability & Traceability.
+- **Schema (migration 00041):** `ara_questions.agentic_dimension_id` (CHECK-constrained to the six ids) + `ara_assessments.include_agentic_layer`. 18 seed items (3 per dimension, question numbers 201–218, Layer 2) live on the active v1.1 bank, so existing assessments inherit them the moment they opt in. The items carry a real `pillar_id` for storage compatibility but are always filtered by `agentic_dimension_id`, so they never pollute the 8-pillar scoring.
+- **Respondent flow** ([src/lib/ara/respondent-access.ts](src/lib/ara/respondent-access.ts)): served to org respondents only — `wantsAgentic = !isIndividualStage && include_agentic_layer && !individual_only`. The pillar query explicitly excludes agentic + individual items (`.is("agentic_dimension_id", null)`), so the three layers (pillar / individual-factor / agentic) never bleed into each other.
+- **Rollup + deliverables:** `computeAgenticReadiness(assessmentId)` ([src/lib/ara/agentic-readiness.ts](src/lib/ara/agentic-readiness.ts)) returns cohort mean per dimension + per-respondent breakdown + cohort overall (target = 4; null when no agentic answers yet) — mirrors the Mode C workforce rollup. Surfaces as a rollup card on the consultant assessment detail and an "Agentic-AI Readiness" section in the bilingual PDF report (cohort overall + six per-dimension rows; renders only when the layer is on and respondents have answered).
+
 ### Critical ARA business rules
 - Reports are **never** auto-sent to clients - consultant controls delivery
 - No file size limits on supporting material uploads
@@ -356,6 +410,12 @@ VIFM is fundamentally a training company; the AC and ARA modules are *diagnostic
 - **Candidate Learning Plan PDF**: 4th page (after Cover, Roadmap, Per-Competency cards) showing top-5 recommended VIFM programmes with ★ HIGH FIT badging when `total_score >= 4`, per-driver chips, and the AI rationale for the top driver as a soft caption.
 - **ARA Personal Snapshot PDF + results page**: courses ranked by personal factor gaps (target=4), surfaced inline below the factor breakdown.
 
+### Public catalogue + quote requests (lead capture)
+The public, no-account half of the courses workstream. Anyone can browse `/courses` (vertical + level filters), open `/courses/[code]`, and submit a quote request at `/courses/[code]/request-quote` (`quote-request-form.tsx`); middleware treats `/courses/*` as public (auth-bypassed). VIFM staff work the queue at `/admin/courses/quotes` + `/admin/courses/quotes/[id]` (`actions-panel.tsx`: assign, status, internal notes).
+- **Server actions:** [src/lib/courses/quote-request-actions.ts](src/lib/courses/quote-request-actions.ts) — the form posts through a server action using the service-role client.
+- **Schema (migrations 00030 + 00035):** `vifm_course_quote_requests` — requester name/email/company (required) + phone/role, optional scope (`estimated_group_size`, `preferred_start_date`, `preferred_language` en/ar/bilingual, `delivery_mode` in_person/virtual/hybrid, notes), `course_code_snapshot`/`course_title_snapshot` (survive a later course delete), pipeline `status` (new → contacted → quoted → won/lost) + `assigned_to` + timestamps, and `ip_address`/`user_agent` (forensic-only, never surfaced in the admin UI). `engagement_type` (00035: `direct`/`ac`/`ara`/`reflect`) distinguishes a cold `/courses` lead from one clicked off a diagnostic report, with nullable `reflect_engagement_id`/`reflect_participant_id` FKs so a Reflect-report quote traces back to its source.
+- **RLS:** public INSERT (`WITH CHECK (true)`), admin-only SELECT + UPDATE, no DELETE (commercial record-keeping; purge via service-role only).
+
 ## ARA Personal / Individual readiness
 
 ### The four VIFM-native factors
@@ -385,3 +445,122 @@ All three modes share infrastructure: same `ara_questions` table (distinguished 
 
 ### Consultant dashboard
 `/ara/consultant` filters out `engagement_stage='individual'` from the org-side pipeline view and renders a "Personal snapshots · last 30 days" panel showing snapshot vs deep-dive distinction (violet badge for deep-dive). Header copy reads e.g. `5 started · 2 completed · 1 deep-dive`.
+
+## Reflect 360 Module (360° leadership feedback)
+
+A standalone multi-rater leadership-feedback module, built alongside AC/ARA the same way ARA was — its own `reflect_*` tables, its own `/reflect/*` route namespace, and reuse of ARA primitives (`ara_organizations`, `ara_region`/`ara_sector`/`ara_language`/`ara_report_language`, the `update_updated_at()` trigger and `auth_role()` helper). Bilingual EN + Gulf Arabic with RTL. The consultant brings the client's Corporate Values / Leadership Competencies; Claude decomposes them into observable behaviours; Self + Manager + Peer + Direct Report raters score them on a 5-point frequency scale; the module produces a development-grade participant report + Individual Development Plan (IDP) and an organisation-wide cohort view.
+
+### Roles
+- **admin** — curates library templates, monitors active engagements, runs retention/sandbox purge, audits email + scoring activity.
+- **consultant** — owns their own engagements and all children; scoped RLS via `reflect_is_engagement_owner()` / `reflect_participant_owner_engagement()`.
+- **rater** — no account. Accesses the form via `reflect_raters.access_token`; identity is always derived server-side from the token, never trusted from the client.
+
+### Route namespace (`/reflect/*`, API `/api/reflect/*`)
+- `/reflect` — module landing. (Its footer still reads "Module status: Scaffolding (M1)" — stale copy; the module is actually built out through several P0–P4 parity passes.)
+- `/reflect/admin` + `/reflect/admin/templates` + `/reflect/admin/templates/[id]` — admin console, library-template curation, retention/sandbox purge buttons.
+- `/reflect/consultant` — consultant dashboard.
+- `/reflect/consultant/engagements/new` — 5-step wizard (basics → framework → levels → people → launch).
+- `/reflect/consultant/engagements/[id]` — engagement detail (debrief row actions, "start reassessment" button) + `/cohort-report` + `/framework-preview`.
+- `/reflect/consultant/participants/[id]/report` + `/idp` (IDP editor).
+- `/reflect/respond/[token]` — token-gated rater form (auth bypassed in middleware).
+- API: `/api/reflect/reports/[participantId]/pdf`, `/api/reflect/reports/cohort/[engagementId]/pdf`, `/api/reflect/engagements/[id]/framework.pdf`, `/api/reflect/engagements/[id]/needs-scheduling.csv`, `/api/reflect/admin/reminders/cron`.
+- Admin sidebar link "Reflect 360" (`adminNav.reflect360`, Aperture icon) → `/reflect`.
+
+### Key files
+- `src/lib/reflect/` — `actions.ts` (consultant CRUD), `admin-actions.ts`, `idp-actions.ts`, `rater-access.ts` (`findRaterByToken`), `rater-actions.ts` (token-gated save / open-response / tenure / critical-picks / complete / reminder server actions), `scoring.ts` (group means, anonymity filtering, self-vs-others gap, prior-run deltas), `validations.ts` (Zod), `email.ts`.
+- `src/lib/ai/reflect-behavior-extractor.ts` — values/competencies (EN/AR/mixed) → 3–5 observable bilingual behaviours per item (wizard step 2).
+- `src/lib/ai/reflect-behavior-tips.ts` — per-behaviour bilingual coaching tips for top development-area behaviours (report/debrief).
+
+### DB tables (migrations 00031–00039)
+- `00031` enums; `00032` core schema (11 tables + helper functions + RLS); `00033` seed "VIFM Leadership Essentials" template (5 competencies × 4 behaviours); `00034` aligns template names to AC competency names; `00036` Start/Stop/Continue open-text columns on `reflect_raters`; `00037` Self+Manager `critical_competency_ids`; `00038` `reflect_rater_tenure` enum + column; `00039` reassessment self-FKs (`prior_engagement_id`, `prior_participant_id`).
+- Tables: `reflect_engagements`, `reflect_frameworks` (a library template when `engagement_id IS NULL AND is_template`), `reflect_competencies`, `reflect_behaviors`, `reflect_participants`, `reflect_raters`, `reflect_responses`, `reflect_idps`, `reflect_reports`, `reflect_email_log`, `reflect_audit_log`.
+
+### Auth/RLS + delivery notes
+- Every table is RLS-enabled: admin full; consultant scoped to owned engagements; library templates readable by all consultants. Rater writes go through `"use server"` actions using the **service-role client** (bypassing RLS) after `requireRater()` validates the token, refuses already-completed raters, and requires the engagement to be `draft`/`live`. Middleware bypasses `/reflect/respond/` + `/api/reflect/respond/`.
+- **Anonymity:** `reflect_engagements.anonymity_min_n` (default 3) hides peer/direct-report group means + verbatims until a group reaches the threshold.
+- **PDF:** Puppeteer (participant report, cohort report, framework) — same engine as ARA, not React-PDF.
+- **Email:** 3 templates (`reflect_rater_invitation`, `reflect_rater_reminder`, `reflect_completion_notice`) logged to `reflect_email_log`; sandbox redirect honoured.
+- **Reminder cron:** `/api/reflect/admin/reminders/cron` (Bearer `CRON_SECRET`) sweeps `live` engagements and nags raters silent > 72h; scheduled by `.github/workflows/reflect-rater-reminders.yml`.
+- **Reassessment:** mirrors AC/ARA — `scoring.ts` resolves a competency's `prior_others_mean` by name match so reports render year-on-year deltas.
+
+## Fluent (English placement)
+
+VIFM Fluent is a self-served English-language placement test, positioned as **indicative placement, not a certified high-stakes score**. Four CEFR-aligned skills (A1–C2): reading + listening are auto-scored MCQs; writing + speaking are Claude-scored against a CEFR rubric. The test content is always English; the UI/instruction language can be EN or AR. Anonymous by default (the taker optionally enters a name/email); an admin can also run it *for* a candidate via `?candidateId=…` so the placement lands on that candidate's record alongside their AC scores.
+
+### Route namespace (`/ac/fluent`, API `/api/ac/fluent/*`)
+- `/ac/fluent` — test runner (`FluentClient`); `/ac/fluent/cohort` — admin cohort report; `/ac/fluent/calibration` — human re-rating console for AI-score calibration.
+- `/api/ac/fluent` — `{action:"start"}` returns an answer-key-stripped test + `session_id`; `{action:"score"}` reloads the stored test server-side and grades it.
+- `/api/ac/fluent/transcribe` — speaking audio → transcript (Whisper); `/api/ac/fluent/tts` — listening-item audio; `/api/ac/fluent/[resultId]/certificate` — CEFR certificate PDF.
+- Admin sidebar link "Fluent" (`adminNav.fluent`, Languages icon) → `/ac/fluent`.
+
+### Key files
+- `src/lib/ai/fluent-english.ts` — `generateFluentTest()`, `scoreFluentWriting/Speaking` (+ ensemble variants), `computeFluentResult()`, `stripAnswerKey()`, `blendPronunciation()`. Falls back to a static deck + placeholder scores when `ANTHROPIC_API_KEY` is absent.
+- `src/lib/integrations/speech.ts` — Azure pronunciation (`isAzureSpeechConfigured`, `assessPronunciation`); optional, blended into the speaking score.
+- `src/lib/scoring/reliability.ts` — overall confidence band; `src/lib/scoring/irt.ts` — `selectNextItem` (Rasch/CAT groundwork, dark until items reach `status='live'`).
+- `scripts/whisper-transcribe.py` (faster-whisper + ffmpeg; no audio persisted); `scripts/fluent-calibrate-items.ts`.
+
+### DB tables (migrations 00042–00048)
+- `eng_fluent_results` (`00042`; + `integrity_flags`/`email_sent_at` in `00043`; + `candidate_id`/`engagement_id` in `00044`) — one row per completed test; `result` jsonb holds the full per-criterion detail for the certificate + detail view.
+- `eng_fluent_sessions` (`00045`) — the full test (with answer key) held server-side so the key never reaches the browser; ~3h TTL.
+- `eng_fluent_human_ratings` + `eng_fluent_score_runs` (`00046`) — calibration substrate; a human re-rates writing/speaking and QWK (Claude vs human, target ≥ 0.70) is computed per skill.
+- `eng_fluent_items` + `eng_fluent_item_responses` (`00048`) — calibrated item bank (IRT/Rasch difficulty) + response log for a future computer-adaptive flow.
+
+### Auth/RLS + integrity notes
+- All `eng_fluent_*` tables are RLS **admin-SELECT only**; every write goes through the service-role API route (mirrors the ARA respondent model — no client-side writes, no candidate/profile FK required on the anonymous path).
+- **Integrity:** the answer key is stripped from the start payload and grading happens server-side; if `eng_fluent_sessions` isn't migrated yet the route falls back to the legacy client-graded path (non-breaking). Client-side proctoring (`integrity_flags`: tab-blur + paste counts) is advisory only — surfaced to admins, never auto-fails.
+- On completion the route issues a `fluent_cefr` credential (see Credentials) and best-effort emails the taker their results + certificate.
+- **Env:** `ANTHROPIC_API_KEY` (test authoring + writing/speaking scoring), `AZURE_SPEECH_KEY` (optional pronunciation), `PYTHON_BIN`/`FFMPEG_BIN` (Whisper).
+
+## AI Conversational Assessor (CBI)
+
+A prototype AI competency-based-interview agent. It runs a structured STAR behavioural interview on **one competency at a time** (one question per turn, bilingual EN/AR), then scores the full transcript into competency evidence + a BARS 1–5 rating with rationale. Positioned as a screening/sifting aid that runs **before** a human assessor — the human reviews and validates; the AI never makes the final decision.
+
+### Route namespace
+- Page: `/ac/ai-interview` (titled "AI Conversational Assessor"). API: `/api/ac/cbi` with `{action:"turn"}` (next interviewer question) and `{action:"score"}` (transcript → `CbiScore`). **Note:** there is no `/ac/cbi` *page* — `cbi` is only the API namespace. No static nav link; the page is reached by direct URL.
+- The page loads CBI context from real `assessor_assignments` whose exercise is `exercise_type='competency_based_interview'`, with the mapped competencies pulled from `exercise_competency_matrix` (or runs standalone/demo).
+
+### Key files
+- `src/lib/ai/cbi-interviewer.ts` — `nextInterviewerTurn()`, `scoreCbiInterview()` (`MAX_CANDIDATE_ANSWERS = 4`; candidate text is sanitized as a prompt-injection defence; falls back to placeholders without an API key).
+- `src/app/ac/ai-interview/actions.ts` — `persistCbiDraftAction` (save transcript + AI draft), `approveCbiToPipelineAction` (**the human-review gate**), `discardCbiSessionAction`.
+- `src/app/ac/ai-interview/_components/interview-client.tsx`.
+
+### The human-review gate (why this matters)
+`approveCbiToPipelineAction` takes the assessor's reviewed evidence + rating and writes them into the **same `observations` + `ratings` tables the manual assessor flow uses** (`ratings` upsert on `assessor_assignment_id,competency_id`). AI-assisted evidence therefore flows through the normal integration → wash-up → consensus → OAR pipeline. Approval requires an `assessor_assignment_id`; `cbi_sessions` is the audit record of what the AI proposed vs. what the human approved.
+
+### DB tables (migration 00040)
+- `cbi_sessions` — `transcript` jsonb, `ai_rating`/`ai_rationale`/`ai_evidence`, `status` (`draft`/`approved`/`discarded`), `reviewed_rating`, `reviewer_notes`, `approved_at`; FKs to `assessor_assignments`, `engagements`, `candidates`, `competencies`.
+- RLS: admin all; assessors (`lead_assessor`/`associate_assessor`) all (scoped further by assignment in app). Writes use the service client; auth is bypassed in dev (prototype surface).
+
+## VIFM Academy (course delivery)
+
+The **deliver** step of the diagnose → recommend → deliver → certify loop (Courses recommends, Academy delivers, Credentials certifies). It turns a VIFM course into a self-paced learning experience for a candidate, with a per-lesson AI knowledge-check, course completion, and an automatic completion credential. It **reuses the G3 quiz engine verbatim** (`quiz-generator` + `QuizInterface`); a "lesson" maps to one outline section of the course.
+
+### Route namespace
+- Candidate UI: `/candidate/academy` (My Learning list), `/candidate/academy/[enrollmentId]` (course page — lesson list + Complete Course), `/candidate/academy/[enrollmentId]/lesson/[lessonKey]` (knowledge-check). Components: `enroll-button`, `complete-course-button`, `start-check-button`, `lesson-knowledge-check`.
+- API: `/api/academy/enroll` (idempotent on candidate×course), `/api/academy/lesson/start` (resolves the outline section → `generateQuizQuestions` ~5 grounded Qs → inserts an attempt; idempotent on enrollment×lesson; deterministic fallback without an AI key), `/api/academy/lesson/[attemptId]/save`, `/api/academy/lesson/[attemptId]/complete`, `/api/academy/complete` (course-level).
+
+### Key files
+- `src/lib/academy/complete.ts` — `markEnrollmentComplete()` (idempotent completion + `academy_completion` credential issue; never double-issues, keyed on `source_id = enrollment id`).
+- `src/lib/academy/lesson-key.ts` — `lessonKeyFor` / `indexFromLessonKey` (outline section ↔ lesson key).
+
+### DB tables (migration 00049)
+- `vifm_enrollments` — one row per (candidate, course); `source` (`self`/`admin_assigned`/`recommender`), `status` (`enrolled`/`in_progress`/`completed`/`withdrawn`), `visible_at` (hides admin-assigned until ready). Unique (candidate_id, course_id).
+- `academy_lesson_attempts` — mirrors `candidate_quiz_attempts` (reuses the `candidate_quiz_status` enum); `questions`/`answers` jsonb, `score_pct`, `passing_score_pct` default 70. Unique (enrollment_id, lesson_key).
+- RLS: admin all; candidate owns rows (`candidate_id → candidates.profile_id = auth.uid()`); clients SELECT their org's enrollments. Writes via service-role API routes (dev trusts `candidateId` from the body; under auth=on gate via `profile_id`). All paths are best-effort/tolerant if 00049 isn't applied.
+
+## VIFM Credentials + Verify (certification)
+
+The **certify** step. A verifiable credential is issued for any certified outcome and is publicly checkable by an unguessable `verification_code`. Three credential types: `academy_completion` (3-year default validity), `ac_ready_now` (1 year), `fluent_cefr` (1 year); each is renewable by issuing a fresh row.
+
+### Issuance (all best-effort — never throws, so it can't block the primary operation; an admin can re-issue)
+- `src/lib/credentials/issue.ts` — shared `issueCredential()` + `getCredentialForVerification()` (the public reader; returns non-sensitive fields only, validates UUID shape).
+- `src/lib/credentials/ac-ready-now.ts` — `issueReadyNowForEngagement()`, called from `src/app/admin/engagements/[id]/actions.ts` when an engagement is marked **completed**; issues one credential per candidate whose finalised OAR recommendation is `ready_now`. Idempotent via `source_id = overall_assessment_ratings.id`; no auto-revoke on a later downgrade (an admin revokes manually).
+- Academy completion → from `src/lib/academy/complete.ts`; Fluent CEFR → from the Fluent score route.
+
+### Verification + delivery surfaces
+- Public: `/verify/[code]` page (bilingual; a revoked/expired credential still resolves but renders as not-currently-valid) and `/api/credentials/verify/[code]` (returns `{verified, revoked, expired, credential}`). Both read **only** through the service-role reader — there is no public table SELECT policy.
+- Candidate wallet: `/candidate/credentials/[candidateId]`. Credential PDF: `/api/credentials/[credentialId]/pdf`.
+
+### DB table (migration 00049)
+- `vifm_credentials` — `verification_code` (uuid, unique, the public lookup key), `candidate_id` (nullable — anonymous Fluent), denormalized `issued_to_name`/`issued_to_email`, `credential_type`, bilingual `title_*`/`subtitle_*`, `issuer` (default "Virginia Institute of Finance and Management"), `score_pct`, `source_id` (untyped, app-checked), `issued_at`/`expires_at`/`revoked_at`/`revocation_reason`.
+- RLS: admin all; candidate SELECT own rows; public verification via the service-role API only. Middleware bypasses `/verify`, `/verify/`, and `/api/credentials/verify/`.

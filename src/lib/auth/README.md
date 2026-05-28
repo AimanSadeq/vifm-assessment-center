@@ -1,28 +1,46 @@
 # Authentication & Authorization - Implementation Guide
 
 ## Current State (Development)
-- Auth middleware is **disabled** in `src/middleware.ts`
-- Login page uses **bypass buttons** (no real authentication)
-- All pages use `createServiceClient()` which **bypasses RLS**
-- API routes have **no auth checks** (TODO comments in place)
+
+Auth is gated by one flag: `AUTH_ENABLED` in `src/lib/auth/config.ts` (currently
+`false`), consumed by `src/middleware.ts` and `src/lib/ara/auth-guards.ts`.
+
+- **Middleware:** while `AUTH_ENABLED` is `false`, `src/middleware.ts` lets every
+  request through without a session; when `true`, it enforces auth via
+  `updateSession(request)`. (Token-gated routes — ARA respondents, Reflect raters,
+  public `/courses` and `/verify` — are always bypassed by design.)
+- **Login is real, not a stub.** `src/app/(auth)/login/page.tsx` calls
+  `supabase.auth.signInWithPassword()` for both the quick-role dropdown and the
+  email/password form. Demo accounts (all password `admin123`):
+  `admin@viftraining.com`, `assessor@viftraining.com`,
+  `candidate@viftraining.com`, `client@viftraining.com`.
+- **Page reads are RLS-aware.** Pages read through `createClient()`
+  (session-scoped). `createServiceClient()` (bypasses RLS) is reserved for server
+  actions needing elevated rights, token-gated flows (ARA/Reflect), API routes,
+  and seed scripts.
+
+### You must log in to see data in dev
+Because reads are RLS-scoped, a portal opened **without a session shows empty
+data** even though `AUTH_ENABLED=false` lets you reach the page. RLS policies
+(`supabase/migrations/00001_*`) require `auth.uid() IS NOT NULL` or a specific
+`auth_role()` (which resolves the role from `profiles` by `auth.uid()`). No
+session → `anon` → every read denied. Log in via a demo account to get a session.
 
 ## Production Checklist
 
-### Step 1: Enable Supabase Auth
-1. Uncomment `updateSession(request)` in `src/middleware.ts`
-2. Implement real login form in `src/app/(auth)/login/page.tsx` using `supabase.auth.signInWithPassword()`
-3. Create user registration flow or admin user creation
+### Step 1: Flip the auth gate
+1. Set `AUTH_ENABLED = true` in `src/lib/auth/config.ts`. Middleware already
+   enforces via `updateSession(request)` and the login form already uses
+   `signInWithPassword()`, so no other code change is needed for the switch.
+2. Provision **real** users + matching `profiles` rows (demo accounts are dev-only).
+3. Gate or remove the quick-login demo dropdown in production builds
+   (e.g. `process.env.NODE_ENV === "development"`).
 
-### Step 2: Switch to RLS-Aware Client
-Replace `createServiceClient()` with `createClient()` in all page.tsx files:
-- `src/app/admin/*.tsx` - requires user with `admin` role
-- `src/app/assessor/*.tsx` - requires user with `lead_assessor` or `associate_assessor` role
-- `src/app/candidate/*.tsx` - requires user with `candidate` role
-- `src/app/client/*.tsx` - requires user with `client` role
-
-Keep `createServiceClient()` ONLY for:
-- Server actions that need elevated privileges
-- Seed scripts and admin operations
+### Step 2: Audit data-access clients (largely done)
+Page reads already use the RLS-aware `createClient()`. The remaining work is an
+audit, not a sweep: confirm every `createServiceClient()` reachable from a page
+render is justified — an elevated server action, a token-gated flow (ARA/Reflect),
+or an admin-only operation — and is not sidestepping RLS on user-facing data.
 
 ### Step 3: Add Auth Guards to API Routes
 - `src/app/api/reports/*/route.tsx` - verify user is admin, client (own org), or candidate (own report, released)

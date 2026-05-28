@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Check } from "lucide-react";
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
 import type { AraPillarId } from "@/types/ara";
@@ -32,6 +33,7 @@ type Props = {
 };
 
 export function PillarPicker({ defaultPillars, requiredCount }: Props) {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<Set<AraPillarId>>(
     new Set(defaultPillars)
   );
@@ -60,8 +62,7 @@ export function PillarPicker({ defaultPillars, requiredCount }: Props) {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Pick the {requiredCount} pillars this assessment will score. Defaults
-          to the recommended set; swap any pillar to match the client&apos;s focus.
+          {t("araConsultant.pillar_picker_intro", { n: requiredCount })}
         </p>
         <span
           className={`text-[11px] font-bold uppercase tracking-wider px-2 py-1 rounded-full border tabular-nums ${
@@ -70,7 +71,7 @@ export function PillarPicker({ defaultPillars, requiredCount }: Props) {
               : "bg-amber-100 text-amber-900 border-amber-200"
           }`}
         >
-          {selected.size} / {requiredCount} selected
+          {t("araConsultant.pillar_picker_counter", { selected: selected.size, required: requiredCount })}
         </span>
       </div>
 
@@ -117,9 +118,7 @@ export function PillarPicker({ defaultPillars, requiredCount }: Props) {
 
       {!valid && (
         <p className="text-[11px] text-amber-700">
-          Pick exactly {requiredCount} pillars to continue. Click any tile to
-          add or remove - when you&apos;re at the cap, clicking a new one
-          swaps in.
+          {t("araConsultant.pillar_picker_warning", { n: requiredCount })}
         </p>
       )}
     </div>

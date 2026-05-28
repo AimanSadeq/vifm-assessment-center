@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getServerT } from "@/lib/i18n/server";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -9,6 +10,7 @@ import { ArrowLeft, Plus } from "lucide-react";
 import type { AraOrganization } from "@/types/ara";
 
 export default async function AraOrganizationsPage() {
+  const t = await getServerT();
   const sb = createServiceClient();
   const { data: orgs } = await sb
     .from("ara_organizations")
@@ -20,39 +22,39 @@ export default async function AraOrganizationsPage() {
     <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto px-6 py-10">
         <Link href="/ara/admin" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6">
-          <ArrowLeft className="h-3 w-3" /> Back to ARA Admin
+          <ArrowLeft className="h-3 w-3" /> {t("araAdmin.orgsBackToAdmin")}
         </Link>
 
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-semibold text-primary">Client Organizations</h1>
+            <h1 className="text-2xl font-semibold text-primary">{t("araAdmin.orgsTitle")}</h1>
             <p className="text-muted-foreground">
-              GCC client organizations using the ARA platform.
+              {t("araAdmin.orgsSubtitle")}
             </p>
           </div>
           <Link href="/ara/admin/organizations/new">
             <Button className="gap-2">
-              <Plus className="h-4 w-4" /> New organization
+              <Plus className="h-4 w-4" /> {t("araAdmin.orgsNewButton")}
             </Button>
           </Link>
         </div>
 
         {!orgs || orgs.length === 0 ? (
           <div className="rounded-lg border border-dashed p-12 text-center">
-            <p className="text-muted-foreground">No organizations yet.</p>
+            <p className="text-muted-foreground">{t("araAdmin.orgsEmptyTitle")}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Add a client organization to start assessments.
+              {t("araAdmin.orgsEmptyBody")}
             </p>
           </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Name (Arabic)</TableHead>
-                <TableHead>Region</TableHead>
-                <TableHead>Sector</TableHead>
-                <TableHead>Created</TableHead>
+                <TableHead>{t("araAdmin.orgsColName")}</TableHead>
+                <TableHead>{t("araAdmin.orgsColNameAr")}</TableHead>
+                <TableHead>{t("araAdmin.orgsColRegion")}</TableHead>
+                <TableHead>{t("araAdmin.orgsColSector")}</TableHead>
+                <TableHead>{t("araAdmin.orgsColCreated")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -68,7 +70,7 @@ export default async function AraOrganizationsPage() {
                   </TableCell>
                   <TableCell>
                     <Badge variant={org.region === "uae" ? "default" : "secondary"}>
-                      {org.region === "uae" ? "UAE" : "Saudi Arabia"}
+                      {org.region === "uae" ? t("araAdmin.regionUae") : t("araAdmin.regionSaudi")}
                     </Badge>
                   </TableCell>
                   <TableCell>

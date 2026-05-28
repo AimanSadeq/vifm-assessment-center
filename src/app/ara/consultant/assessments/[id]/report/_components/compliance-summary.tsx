@@ -1,5 +1,6 @@
 import type { FrameworkComplianceSummary } from "@/lib/ara/compliance";
 import { Circle } from "lucide-react";
+import { getServerT } from "@/lib/i18n/server";
 
 const TOKENS = {
   navy: "#010131",
@@ -20,12 +21,6 @@ const percentColor = (percent: number | null) => {
   return TOKENS.rose;
 };
 
-const TIER_LABEL: Record<number, string> = {
-  1: "Tier 1 · Mandatory",
-  2: "Tier 2 · Strategic",
-  3: "Tier 3 · Advisory",
-};
-
 /**
  * Regulatory Compliance Summary - one card per framework, grouped by
  * tier. Each card shows the overall percent (large numeral on the right),
@@ -33,15 +28,23 @@ const TIER_LABEL: Record<number, string> = {
  * and a 4-way breakdown legend. All inline styles so it renders
  * identically on-screen and in Puppeteer PDF output.
  */
-export function ComplianceSummary({
+export async function ComplianceSummary({
   frameworks,
 }: {
   frameworks: FrameworkComplianceSummary[];
 }) {
+  const t = await getServerT();
+
+  const tierLabel: Record<number, string> = {
+    1: t("araReport.compliance_tier_1"),
+    2: t("araReport.compliance_tier_2"),
+    3: t("araReport.compliance_tier_3"),
+  };
+
   if (frameworks.length === 0) {
     return (
       <p style={{ fontSize: "10pt", color: TOKENS.mute, fontStyle: "italic" }}>
-        No applicable regulatory frameworks for this region/sector.
+        {t("araReport.compliance_none")}
       </p>
     );
   }
@@ -60,10 +63,12 @@ export function ComplianceSummary({
               color: TOKENS.mute, textTransform: "uppercase",
               fontWeight: 700, margin: "0 0 8pt",
             }}>
-              {TIER_LABEL[tier]} · {rows.length} framework{rows.length === 1 ? "" : "s"}
+              {tierLabel[tier]} · {rows.length === 1
+                ? t("araReport.compliance_framework_count_one", { count: rows.length })
+                : t("araReport.compliance_framework_count_other", { count: rows.length })}
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: "8pt" }}>
-              {rows.map((f) => <FrameworkCard key={f.framework_id} f={f} />)}
+              {rows.map((f) => <FrameworkCard key={f.framework_id} f={f} t={t} />)}
             </div>
           </div>
         );
@@ -72,7 +77,9 @@ export function ComplianceSummary({
   );
 }
 
-function FrameworkCard({ f }: { f: FrameworkComplianceSummary }) {
+type TFn = Awaited<ReturnType<typeof getServerT>>;
+
+function FrameworkCard({ f, t }: { f: FrameworkComplianceSummary; t: TFn }) {
   const total = Math.max(1, f.met + f.partial + f.not_met + f.unknown);
   const pct = (n: number) => (n / total) * 100;
 
@@ -102,7 +109,9 @@ function FrameworkCard({ f }: { f: FrameworkComplianceSummary }) {
             fontSize: "8pt", color: TOKENS.mute, letterSpacing: "0.05em",
             textTransform: "uppercase", margin: "4pt 0 0", fontWeight: 500,
           }}>
-            {f.total} requirement{f.total === 1 ? "" : "s"}
+            {f.total === 1
+              ? t("araReport.compliance_requirement_count_one", { count: f.total })
+              : t("araReport.compliance_requirement_count_other", { count: f.total })}
           </p>
         </div>
         <div style={{ textAlign: "right", flexShrink: 0 }}>
@@ -118,7 +127,7 @@ function FrameworkCard({ f }: { f: FrameworkComplianceSummary }) {
             letterSpacing: "0.08em", textTransform: "uppercase",
             margin: "2pt 0 0", fontWeight: 600,
           }}>
-            Compliant
+            {t("araReport.compliance_compliant")}
           </p>
         </div>
       </div>
@@ -147,11 +156,11 @@ function FrameworkCard({ f }: { f: FrameworkComplianceSummary }) {
         display: "flex", flexWrap: "wrap", gap: "12pt",
         fontSize: "9pt", color: TOKENS.ink2,
       }}>
-        <Breakdown label="Met" value={f.met} color={TOKENS.emerald} />
-        <Breakdown label="Partial" value={f.partial} color={TOKENS.amber} />
-        <Breakdown label="Action" value={f.not_met} color={TOKENS.rose} />
+        <Breakdown label={t("araReport.compliance_met")} value={f.met} color={TOKENS.emerald} />
+        <Breakdown label={t("araReport.compliance_partial")} value={f.partial} color={TOKENS.amber} />
+        <Breakdown label={t("araReport.compliance_action")} value={f.not_met} color={TOKENS.rose} />
         {f.unknown > 0 && (
-          <Breakdown label="Unknown" value={f.unknown} color={TOKENS.muteGrey} />
+          <Breakdown label={t("araReport.compliance_unknown")} value={f.unknown} color={TOKENS.muteGrey} />
         )}
       </div>
     </article>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +23,7 @@ type Props = {
  * to clipboard or follow it in a new tab.
  */
 export function DeepDiveForm({ action }: Props) {
+  const { t } = useTranslation();
   const [pending, start] = useTransition();
   const [language, setLanguage] = useState<"en" | "ar">("en");
   const [region, setRegion] = useState<"uae" | "saudi">("uae");
@@ -46,7 +48,7 @@ export function DeepDiveForm({ action }: Props) {
         respondentUrl: result.respondentUrl,
         name,
       });
-      toast.success("Deep-dive issued - copy the link below");
+      toast.success(t("araAssessmentDetail.dd_toast_issued"));
     });
   };
 
@@ -58,9 +60,9 @@ export function DeepDiveForm({ action }: Props) {
     if (!fullUrl) return;
     try {
       await navigator.clipboard.writeText(fullUrl);
-      toast.success("Link copied to clipboard");
+      toast.success(t("araAssessmentDetail.dd_toast_copied"));
     } catch {
-      toast.error("Couldn't copy - please select and copy manually");
+      toast.error(t("araAssessmentDetail.dd_toast_copy_failed"));
     }
   };
 
@@ -71,13 +73,11 @@ export function DeepDiveForm({ action }: Props) {
           <div className="flex items-center gap-2 mb-2">
             <CheckCircle2 className="h-5 w-5 text-emerald-700" />
             <p className="text-sm font-semibold text-emerald-900">
-              Deep-dive issued for {issued.name}
+              {t("araAssessmentDetail.dd_issued_for", { name: issued.name })}
             </p>
           </div>
           <p className="text-xs text-emerald-900/80 mb-3">
-            Send this magic link to the employee. They&apos;ll land directly
-            in the respondent flow with the 48 individual-factor items.
-            On completion, the system emails them the results URL + PDF.
+            {t("araAssessmentDetail.dd_issued_help")}
           </p>
           <div className="flex items-stretch gap-2">
             <Input
@@ -88,7 +88,7 @@ export function DeepDiveForm({ action }: Props) {
             />
             <Button type="button" onClick={copy} variant="outline" size="sm" className="gap-1.5 shrink-0">
               <Copy className="h-3.5 w-3.5" />
-              Copy
+              {t("araAssessmentDetail.dd_copy")}
             </Button>
             <a
               href={issued.respondentUrl}
@@ -97,12 +97,12 @@ export function DeepDiveForm({ action }: Props) {
               className="inline-flex items-center gap-1.5 rounded-md border border-input bg-card hover:bg-muted/50 px-3 py-1.5 text-xs font-medium shrink-0"
             >
               <ArrowRight className="h-3.5 w-3.5" />
-              Open
+              {t("araAssessmentDetail.dd_open")}
             </a>
           </div>
         </div>
         <Button type="button" variant="ghost" onClick={() => setIssued(null)}>
-          Issue another deep-dive
+          {t("araAssessmentDetail.dd_issue_another")}
         </Button>
       </div>
     );
@@ -112,41 +112,41 @@ export function DeepDiveForm({ action }: Props) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="full_name">Employee name *</Label>
+          <Label htmlFor="full_name">{t("araAssessmentDetail.dd_employee_name")}</Label>
           <Input id="full_name" name="full_name" required minLength={2} maxLength={200} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="email">Employee email *</Label>
+          <Label htmlFor="email">{t("araAssessmentDetail.dd_employee_email")}</Label>
           <Input id="email" name="email" type="email" required maxLength={200} />
         </div>
         <div className="space-y-1.5 sm:col-span-2">
-          <Label htmlFor="organization_name">Client organisation name (optional)</Label>
+          <Label htmlFor="organization_name">{t("araAssessmentDetail.dd_org_name")}</Label>
           <Input
             id="organization_name"
             name="organization_name"
             maxLength={300}
-            placeholder="e.g. ACME Bank - keeps deep-dives associated with the paying client"
+            placeholder={t("araAssessmentDetail.dd_org_name_placeholder")}
           />
         </div>
         <div className="space-y-1.5">
-          <Label>Language</Label>
+          <Label>{t("araAssessmentDetail.dd_language")}</Label>
           <div className="flex gap-2">
             <Button type="button" variant={language === "en" ? "default" : "outline"} size="sm" onClick={() => setLanguage("en")} className="flex-1">English</Button>
             <Button type="button" variant={language === "ar" ? "default" : "outline"} size="sm" onClick={() => setLanguage("ar")} className="flex-1">العربية</Button>
           </div>
         </div>
         <div className="space-y-1.5">
-          <Label>Region</Label>
+          <Label>{t("araAssessmentDetail.dd_region")}</Label>
           <div className="flex gap-2">
-            <Button type="button" variant={region === "uae" ? "default" : "outline"} size="sm" onClick={() => setRegion("uae")} className="flex-1">UAE</Button>
-            <Button type="button" variant={region === "saudi" ? "default" : "outline"} size="sm" onClick={() => setRegion("saudi")} className="flex-1">Saudi</Button>
+            <Button type="button" variant={region === "uae" ? "default" : "outline"} size="sm" onClick={() => setRegion("uae")} className="flex-1">{t("araAssessmentDetail.region_uae")}</Button>
+            <Button type="button" variant={region === "saudi" ? "default" : "outline"} size="sm" onClick={() => setRegion("saudi")} className="flex-1">{t("araAssessmentDetail.region_saudi")}</Button>
           </div>
         </div>
       </div>
 
       <Button type="submit" disabled={pending} className="w-full gap-2">
         {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-        {pending ? "Issuing…" : "Issue deep-dive access link"}
+        {pending ? t("araAssessmentDetail.dd_issuing") : t("araAssessmentDetail.dd_issue_link")}
       </Button>
     </form>
   );

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Sparkles, Loader2 } from "lucide-react";
 import {
@@ -30,6 +31,7 @@ type Props = {
  * review the carried-forward respondents and send invitations.
  */
 export function StartReassessmentButton({ priorAssessmentId, priorYear }: Props) {
+  const { t } = useTranslation();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [carryRespondents, setCarryRespondents] = useState(true);
@@ -41,10 +43,10 @@ export function StartReassessmentButton({ priorAssessmentId, priorYear }: Props)
         carryRespondents,
       });
       if (!result.ok || !result.assessmentId) {
-        toast.error(result.error ?? "Failed to start reassessment");
+        toast.error(result.error ?? t("araAssessmentDetail.reassess_failed"));
         return;
       }
-      toast.success("Reassessment created");
+      toast.success(t("araAssessmentDetail.reassess_created"));
       setOpen(false);
       router.push(`/ara/consultant/assessments/${result.assessmentId}`);
     });
@@ -54,20 +56,18 @@ export function StartReassessmentButton({ priorAssessmentId, priorYear }: Props)
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
         <Button size="sm" variant="default" className="gap-1">
-          <Sparkles className="h-3 w-3" /> Start reassessment
+          <Sparkles className="h-3 w-3" /> {t("araAssessmentDetail.reassess_start")}
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Start an annual reassessment</AlertDialogTitle>
+          <AlertDialogTitle>{t("araAssessmentDetail.reassess_dialog_title")}</AlertDialogTitle>
           <AlertDialogDescription asChild>
             <div className="space-y-3">
               <p>
-                Creates a new draft assessment for next year, seeded from this
-                {priorYear ? ` ${priorYear}` : ""} baseline. Region, sector,
-                stage, scope, default language, and pillar weights carry over.
-                The new assessment will use the currently active question bank
-                version.
+                {priorYear
+                  ? t("araAssessmentDetail.reassess_dialog_body_year", { year: priorYear })
+                  : t("araAssessmentDetail.reassess_dialog_body")}
               </p>
               <label className="flex items-start gap-2 cursor-pointer text-sm">
                 <input
@@ -77,15 +77,14 @@ export function StartReassessmentButton({ priorAssessmentId, priorYear }: Props)
                   className="mt-0.5 h-4 w-4 rounded border-input"
                 />
                 <span>
-                  Carry respondents over (each gets a fresh access link;
-                  invitations are not auto-sent).
+                  {t("araAssessmentDetail.reassess_carry_respondents")}
                 </span>
               </label>
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={pending}>{t("araAssessmentDetail.cancel")}</AlertDialogCancel>
           <AlertDialogAction
             onClick={(e) => {
               e.preventDefault();
@@ -96,10 +95,10 @@ export function StartReassessmentButton({ priorAssessmentId, priorYear }: Props)
             {pending ? (
               <>
                 <Loader2 className="h-3 w-3 animate-spin me-1" />
-                Creating
+                {t("araAssessmentDetail.reassess_creating")}
               </>
             ) : (
-              "Create reassessment"
+              t("araAssessmentDetail.reassess_confirm")
             )}
           </AlertDialogAction>
         </AlertDialogFooter>

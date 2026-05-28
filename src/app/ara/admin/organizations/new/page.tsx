@@ -5,8 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createAraOrganization } from "@/lib/ara/actions";
+import { getServerT } from "@/lib/i18n/server";
 
-export default function NewAraOrganizationPage() {
+export default async function NewAraOrganizationPage() {
+  const t = await getServerT();
   const createAction = async (fd: FormData) => {
     "use server";
     await createAraOrganization(fd);
@@ -15,32 +17,32 @@ export default function NewAraOrganizationPage() {
     <div className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-6 py-10">
         <Link href="/ara/admin/organizations" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6">
-          <ArrowLeft className="h-3 w-3" /> Back to organizations
+          <ArrowLeft className="h-3 w-3" /> {t("araAdmin.orgFormBackToOrgs")}
         </Link>
 
-        <h1 className="text-2xl font-semibold text-primary mb-1">New Organization</h1>
+        <h1 className="text-2xl font-semibold text-primary mb-1">{t("araAdmin.orgNewTitle")}</h1>
         <p className="text-muted-foreground mb-8">
-          Add a GCC client organization. Region and sector drive regulatory framework selection.
+          {t("araAdmin.orgNewSubtitle")}
         </p>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Organization details</CardTitle>
+            <CardTitle className="text-base">{t("araAdmin.orgFormCardTitle")}</CardTitle>
           </CardHeader>
           <CardContent>
             <form action={createAction} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="name">Name (English) *</Label>
+                <Label htmlFor="name">{t("araAdmin.orgFieldNameEn")} *</Label>
                 <Input id="name" name="name" required maxLength={200} />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="name_ar">Name (Arabic)</Label>
+                <Label htmlFor="name_ar">{t("araAdmin.orgFieldNameAr")}</Label>
                 <Input id="name_ar" name="name_ar" maxLength={200} dir="rtl" />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="region">Region *</Label>
+                <Label htmlFor="region">{t("araAdmin.orgFieldRegion")} *</Label>
                 <select
                   id="region"
                   name="region"
@@ -48,17 +50,17 @@ export default function NewAraOrganizationPage() {
                   className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
                   defaultValue=""
                 >
-                  <option value="" disabled>Select region…</option>
-                  <option value="uae">United Arab Emirates</option>
-                  <option value="saudi">Saudi Arabia</option>
+                  <option value="" disabled>{t("araAdmin.orgRegionPlaceholder")}</option>
+                  <option value="uae">{t("araAdmin.regionUaeFull")}</option>
+                  <option value="saudi">{t("araAdmin.regionSaudi")}</option>
                 </select>
                 <p className="text-xs text-muted-foreground">
-                  UAE clients see UAE frameworks only. Saudi clients see Saudi frameworks only.
+                  {t("araAdmin.orgRegionHint")}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="sector">Sector *</Label>
+                <Label htmlFor="sector">{t("araAdmin.orgFieldSector")} *</Label>
                 <select
                   id="sector"
                   name="sector"
@@ -66,17 +68,17 @@ export default function NewAraOrganizationPage() {
                   className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
                   defaultValue=""
                 >
-                  <option value="" disabled>Select sector…</option>
-                  <option value="government">Government &amp; Semi-Government</option>
-                  <option value="banking">Banking &amp; Financial Services</option>
-                  <option value="general">General / Other</option>
+                  <option value="" disabled>{t("araAdmin.orgSectorPlaceholder")}</option>
+                  <option value="government">{t("araAdmin.sectorGovernment")}</option>
+                  <option value="banking">{t("araAdmin.sectorBanking")}</option>
+                  <option value="general">{t("araAdmin.sectorGeneral")}</option>
                 </select>
               </div>
 
               <div className="flex gap-3 pt-2">
-                <Button type="submit">Create organization</Button>
+                <Button type="submit">{t("araAdmin.orgCreateButton")}</Button>
                 <Link href="/ara/admin/organizations">
-                  <Button type="button" variant="outline">Cancel</Button>
+                  <Button type="button" variant="outline">{t("araAdmin.cancel")}</Button>
                 </Link>
               </div>
             </form>

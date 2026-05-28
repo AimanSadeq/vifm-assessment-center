@@ -2,12 +2,14 @@ import Link from "next/link";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ARA_INDIVIDUAL_FACTORS } from "@/lib/constants/ara-individual-factors";
+import { getServerT } from "@/lib/i18n/server";
 import { createDeepDivePersonalAssessment } from "./actions";
 import { DeepDiveForm } from "./_components/deep-dive-form";
 
 export const dynamic = "force-dynamic";
 
-export default function PersonalDeepDiveNewPage() {
+export default async function PersonalDeepDiveNewPage() {
+  const t = await getServerT();
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-3xl mx-auto px-6 py-10">
@@ -15,30 +17,24 @@ export default function PersonalDeepDiveNewPage() {
           href="/ara/consultant"
           className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-4"
         >
-          <ArrowLeft className="h-3 w-3" /> Back to consultant dashboard
+          <ArrowLeft className="h-3 w-3" /> {t("araAssessmentDetail.dd_back")}
         </Link>
 
         <div className="mb-6">
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Sparkles className="h-6 w-6 text-accent" />
-            Issue a Personal Deep-Dive
+            {t("araAssessmentDetail.dd_page_title")}
           </h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            48-item, research-grade individual AI readiness assessment for a
-            paying HR client&apos;s named employee. ~10 minutes for the
-            respondent. Each of the four VIFM factors gets 12 items -
-            roughly double the reliability of the free 24-item snapshot.
+            {t("araAssessmentDetail.dd_page_subtitle")}
           </p>
         </div>
 
         <Card className="mb-6">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">What gets measured</CardTitle>
+            <CardTitle className="text-base">{t("araAssessmentDetail.dd_measured_title")}</CardTitle>
             <CardDescription>
-              Four VIFM factors mapped to the AC behavioural framework.
-              The deep-dive includes the snapshot items plus 6 additional
-              items per factor that probe sub-facets the snapshot can&apos;t
-              sample.
+              {t("araAssessmentDetail.dd_measured_desc")}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-2 sm:grid-cols-2">
@@ -50,7 +46,7 @@ export default function PersonalDeepDiveNewPage() {
                     {f.domain}
                   </span>
                   <span className="ms-auto text-[10px] text-muted-foreground tabular-nums">
-                    12 items
+                    {t("araAssessmentDetail.dd_items_count", { count: 12 })}
                   </span>
                 </div>
                 <p className="text-sm font-semibold">{f.name_en}</p>
@@ -61,14 +57,9 @@ export default function PersonalDeepDiveNewPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Issue access link</CardTitle>
+            <CardTitle className="text-base">{t("araAssessmentDetail.dd_issue_card_title")}</CardTitle>
             <CardDescription>
-              On submit, we create the assessment, generate a respondent
-              access URL, and return the magic link so you can copy it
-              into the email or invite that fits your client&apos;s workflow.
-              The 16-min reminder cadence and other respondent
-              affordances (auto-save, language toggle) are inherited from
-              the standard respondent flow.
+              {t("araAssessmentDetail.dd_issue_card_desc")}
             </CardDescription>
           </CardHeader>
           <CardContent>

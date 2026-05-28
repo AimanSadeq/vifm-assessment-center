@@ -12,6 +12,7 @@ import { isAIConfigured } from "@/lib/ai/client";
 import {
   uploadAraRegulatoryDocument, deleteAraRegulatoryDocument,
 } from "@/lib/ara/admin-actions";
+import { getServerT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,7 @@ type DocumentRow = {
 
 export default async function AraRegulatoryAdminPage() {
   const sb = createServiceClient();
+  const t = await getServerT();
 
   const [{ data: frameworks }, { data: documents }, { data: requirementCounts }] = await Promise.all([
     sb
@@ -75,38 +77,36 @@ export default async function AraRegulatoryAdminPage() {
         <Breadcrumbs
           items={[
             { label: "ARA", href: "/ara" },
-            { label: "Admin", href: "/ara/admin" },
-            { label: "Regulatory Docs" },
+            { label: t("araAdminData.eq_bc_admin"), href: "/ara/admin" },
+            { label: t("araAdminData.reg_bc_regulatory") },
           ]}
         />
         <Link href="/ara/admin" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6">
-          <ArrowLeft className="h-3 w-3" /> Back to admin
+          <ArrowLeft className="h-3 w-3" /> {t("araAdminData.back_to_admin")}
         </Link>
 
-        <h1 className="text-2xl font-semibold text-primary mb-1">Regulatory documents</h1>
+        <h1 className="text-2xl font-semibold text-primary mb-1">{t("araAdminData.reg_title")}</h1>
         <p className="text-muted-foreground mb-8">
-          Upload a UAE or Saudi policy PDF. Claude reads the document and extracts structured
-          requirements that get added to the chosen framework. Review and approve afterwards on
-          this page.
+          {t("araAdminData.reg_subtitle")}
         </p>
 
         {/* Upload form */}
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Upload className="h-4 w-4" /> Upload + extract
+              <Upload className="h-4 w-4" /> {t("araAdminData.reg_upload_title")}
             </CardTitle>
             <CardDescription>
               {aiReady
-                ? "Choose the framework this document populates, give it a friendly name, and pick a PDF (32MB max)."
-                : "AI extraction requires ANTHROPIC_API_KEY in .env.local. The form below will reject submissions until that is set."}
+                ? t("araAdminData.reg_upload_desc_ready")
+                : t("araAdminData.reg_upload_desc_disabled")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form action={uploadAction} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="framework_id">Framework *</Label>
+                  <Label htmlFor="framework_id">{t("araAdminData.reg_framework_label")}</Label>
                   <select
                     id="framework_id"
                     name="framework_id"
@@ -114,7 +114,7 @@ export default async function AraRegulatoryAdminPage() {
                     defaultValue=""
                     className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
                   >
-                    <option value="" disabled>Select…</option>
+                    <option value="" disabled>{t("araAdminData.reg_select")}</option>
                     {(frameworks ?? []).map((f) => (
                       <option key={f.id} value={f.id}>
                         [{f.region.toUpperCase()} · T{f.tier}] {f.framework_code} - {f.framework_name_en}
@@ -123,18 +123,18 @@ export default async function AraRegulatoryAdminPage() {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="document_name">Document name *</Label>
+                  <Label htmlFor="document_name">{t("araAdminData.reg_document_name_label")}</Label>
                   <Input
                     id="document_name"
                     name="document_name"
                     type="text"
                     required
-                    placeholder="e.g. UAE National AI Charter (2024)"
+                    placeholder={t("araAdminData.reg_document_name_placeholder")}
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="file" className="text-xs">PDF file (32MB max) *</Label>
+                <Label htmlFor="file" className="text-xs">{t("araAdminData.reg_file_label")}</Label>
                 <input
                   id="file"
                   type="file"
@@ -146,10 +146,10 @@ export default async function AraRegulatoryAdminPage() {
               </div>
               <div className="flex items-center gap-3">
                 <Button type="submit" disabled={!aiReady}>
-                  <Upload className="h-4 w-4 me-1.5" /> Upload + extract
+                  <Upload className="h-4 w-4 me-1.5" /> {t("araAdminData.reg_upload_button")}
                 </Button>
                 <p className="text-xs text-muted-foreground">
-                  Extraction takes 20–60 seconds depending on document length.
+                  {t("araAdminData.reg_upload_hint")}
                 </p>
               </div>
             </form>
@@ -159,9 +159,9 @@ export default async function AraRegulatoryAdminPage() {
         {/* Frameworks summary */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle className="text-lg">Frameworks ({(frameworks ?? []).length})</CardTitle>
+            <CardTitle className="text-lg">{t("araAdminData.reg_frameworks_title", { count: (frameworks ?? []).length })}</CardTitle>
             <CardDescription>
-              Seeded UAE and Saudi frameworks. Requirement counts grow as documents get extracted.
+              {t("araAdminData.reg_frameworks_desc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -170,15 +170,15 @@ export default async function AraRegulatoryAdminPage() {
                 <div key={f.id} className="flex items-center justify-between gap-3 px-3 py-2 rounded-md border bg-card text-sm">
                   <div className="flex items-center gap-2 flex-wrap">
                     <Badge variant="outline" className="text-[10px] uppercase">{f.region}</Badge>
-                    <Badge variant="secondary" className="text-[10px]">Tier {f.tier}</Badge>
+                    <Badge variant="secondary" className="text-[10px]">{t("araAdminData.reg_tier", { tier: f.tier })}</Badge>
                     <span className="font-medium">{f.framework_code}</span>
                     <span className="text-muted-foreground">{f.framework_name_en}</span>
                   </div>
-                  <Badge>{requirementsByFramework.get(f.id) ?? 0} reqs</Badge>
+                  <Badge>{t("araAdminData.reg_reqs", { count: requirementsByFramework.get(f.id) ?? 0 })}</Badge>
                 </div>
               ))}
               {(frameworks ?? []).length === 0 && (
-                <p className="text-xs text-muted-foreground">No frameworks seeded.</p>
+                <p className="text-xs text-muted-foreground">{t("araAdminData.reg_no_frameworks")}</p>
               )}
             </div>
           </CardContent>
@@ -188,16 +188,15 @@ export default async function AraRegulatoryAdminPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <FileText className="h-4 w-4" /> Uploaded documents ({(documents ?? []).length})
+              <FileText className="h-4 w-4" /> {t("araAdminData.reg_documents_title", { count: (documents ?? []).length })}
             </CardTitle>
             <CardDescription>
-              Status flips from <em>processing</em> to <em>review</em> on a successful extraction,
-              or <em>rejected</em> if Claude could not parse the document.
+              {t("araAdminData.reg_documents_desc_prefix")} <em>{t("araAdminData.reg_documents_desc_processing")}</em> {t("araAdminData.reg_documents_desc_to")} <em>{t("araAdminData.reg_documents_desc_review")}</em> {t("araAdminData.reg_documents_desc_on")} <em>{t("araAdminData.reg_documents_desc_rejected")}</em> {t("araAdminData.reg_documents_desc_suffix")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {(documents ?? []).length === 0 ? (
-              <p className="text-xs text-muted-foreground">No documents uploaded yet.</p>
+              <p className="text-xs text-muted-foreground">{t("araAdminData.reg_no_documents")}</p>
             ) : (
               <div className="space-y-2">
                 {(documents ?? []).map((d) => {
@@ -236,7 +235,7 @@ export default async function AraRegulatoryAdminPage() {
                             <p className="text-xs mt-1 text-muted-foreground italic">{d.notes}</p>
                           )}
                           <p className="text-xs text-muted-foreground mt-1">
-                            Uploaded {new Date(d.uploaded_at).toLocaleString()}
+                            {t("araAdminData.reg_uploaded_at", { when: new Date(d.uploaded_at).toLocaleString() })}
                           </p>
                         </div>
                         <ConfirmAction
@@ -244,16 +243,14 @@ export default async function AraRegulatoryAdminPage() {
                           variant="ghost"
                           size="sm"
                           className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-transparent"
-                          title="Delete this document?"
+                          title={t("araAdminData.reg_delete_title")}
                           description={
                             <>
-                              The document record is removed. <strong>Extracted requirements stay
-                              in place</strong> - delete those individually from the framework if you
-                              want to undo the extraction.
+                              {t("araAdminData.reg_delete_desc_prefix")} <strong>{t("araAdminData.reg_delete_desc_bold")}</strong> {t("araAdminData.reg_delete_desc_suffix")}
                             </>
                           }
-                          confirmLabel="Delete"
-                          successMessage="Document deleted"
+                          confirmLabel={t("araAdminData.reg_delete_confirm")}
+                          successMessage={t("araAdminData.reg_delete_success")}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </ConfirmAction>

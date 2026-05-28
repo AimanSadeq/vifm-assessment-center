@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus, FlaskConical, ClipboardList, CheckCircle2, Snowflake, User, ArrowRight } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getServerT } from "@/lib/i18n/server";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -57,6 +58,7 @@ const statusVariant: Record<AraAssessment["status"], "default" | "secondary" | "
 
 export default async function AraConsultantPage() {
   const sb = createServiceClient();
+  const tr = await getServerT();
 
   // Org-side assessments only - personal snapshots have a separate
   // panel below so they don't inflate the consultant's pipeline.
@@ -96,7 +98,7 @@ export default async function AraConsultantPage() {
       id: row.id,
       created_at: row.created_at,
       tier: row.assessment_tier ?? "snapshot",
-      name: r?.name ?? row.scope_label ?? "Anonymous",
+      name: r?.name ?? row.scope_label ?? tr("araConsultant.list_anonymous"),
       email: r?.email ?? null,
       completed_at: r?.completed_at ?? null,
       access_token: r?.access_token ?? null,
@@ -111,11 +113,11 @@ export default async function AraConsultantPage() {
   const completed = all.filter((r) => r.status === "completed" || r.status === "frozen").length;
   const frozen = all.filter((r) => r.status === "frozen").length;
   const pipeline: Array<{ key: AraAssessment["status"]; label: string; count: number; color: string }> = [
-    { key: "draft",     label: "Draft",     count: all.filter((r) => r.status === "draft").length,     color: "#9ca3af" },
-    { key: "active",    label: "Active",    count: all.filter((r) => r.status === "active").length,    color: "#5391D5" },
-    { key: "completed", label: "Completed", count: all.filter((r) => r.status === "completed").length, color: "#FBBF24" },
-    { key: "frozen",    label: "Frozen",    count: all.filter((r) => r.status === "frozen").length,    color: "#34D399" },
-    { key: "archived",  label: "Archived",  count: all.filter((r) => r.status === "archived").length,  color: "#6b7280" },
+    { key: "draft",     label: tr("araConsultant.list_status_draft"),     count: all.filter((r) => r.status === "draft").length,     color: "#9ca3af" },
+    { key: "active",    label: tr("araConsultant.list_status_active"),    count: all.filter((r) => r.status === "active").length,    color: "#5391D5" },
+    { key: "completed", label: tr("araConsultant.list_status_completed"), count: all.filter((r) => r.status === "completed").length, color: "#FBBF24" },
+    { key: "frozen",    label: tr("araConsultant.list_status_frozen"),    count: all.filter((r) => r.status === "frozen").length,    color: "#34D399" },
+    { key: "archived",  label: tr("araConsultant.list_status_archived"),  count: all.filter((r) => r.status === "archived").length,  color: "#6b7280" },
   ];
   const pipelineMax = Math.max(1, ...pipeline.map((p) => p.count));
 
@@ -127,24 +129,24 @@ export default async function AraConsultantPage() {
       <section className="border-b bg-card">
         <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <span className="ara-eyebrow">Consultant · AI Readiness Compass</span>
-            <h1 className="ara-numeral text-3xl font-semibold text-primary mt-2">Assessments</h1>
+            <span className="ara-eyebrow">{tr("araConsultant.list_eyebrow")}</span>
+            <h1 className="ara-numeral text-3xl font-semibold text-primary mt-2">{tr("araConsultant.list_title")}</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Your Compass engagements across GCC clients.
+              {tr("araConsultant.list_subtitle")}
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <StatChip icon={ClipboardList} label="Total"     value={total}     tone="blue" />
-            <StatChip icon={CheckCircle2}  label="Completed" value={completed} tone="emerald" />
-            <StatChip icon={Snowflake}     label="Frozen"    value={frozen}    tone="teal" />
+            <StatChip icon={ClipboardList} label={tr("araConsultant.list_stat_total")}     value={total}     tone="blue" />
+            <StatChip icon={CheckCircle2}  label={tr("araConsultant.list_stat_completed")} value={completed} tone="emerald" />
+            <StatChip icon={Snowflake}     label={tr("araConsultant.list_stat_frozen")}    value={frozen}    tone="teal" />
             <Link href="/ara/consultant/personal-deep-dive/new" className="ms-2">
               <Button variant="outline" className="gap-2">
-                <User className="h-4 w-4" /> New deep-dive
+                <User className="h-4 w-4" /> {tr("araConsultant.list_new_deep_dive")}
               </Button>
             </Link>
             <Link href="/ara/consultant/assessments/new">
               <Button className="gap-2">
-                <Plus className="h-4 w-4" /> New assessment
+                <Plus className="h-4 w-4" /> {tr("araConsultant.list_new_assessment")}
               </Button>
             </Link>
           </div>
@@ -159,9 +161,9 @@ export default async function AraConsultantPage() {
         {rows && rows.length > 0 && (
           <div className="mb-8 rounded-2xl border bg-card p-5 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <span className="ara-eyebrow">Pipeline</span>
+              <span className="ara-eyebrow">{tr("araConsultant.list_pipeline")}</span>
               <span className="text-xs text-muted-foreground">
-                {total} assessment{total === 1 ? "" : "s"} · {completed} progressed past Active
+                {tr("araConsultant.list_pipeline_summary", { count: total, progressed: completed })}
               </span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
@@ -202,11 +204,11 @@ export default async function AraConsultantPage() {
               <div className="flex items-center gap-2">
                 <span className="ara-eyebrow flex items-center gap-1.5">
                   <User className="h-3 w-3" />
-                  Personal snapshots · last 30 days
+                  {tr("araConsultant.list_personal_heading")}
                 </span>
                 <Badge variant="secondary" className="text-[10px]">
-                  {personalSnapshots.length} started · {personalCompletedCount} completed
-                  {personalDeepDiveCount > 0 && ` · ${personalDeepDiveCount} deep-dive`}
+                  {tr("araConsultant.list_personal_badge", { started: personalSnapshots.length, completed: personalCompletedCount })}
+                  {personalDeepDiveCount > 0 && tr("araConsultant.list_personal_badge_deep_dive", { count: personalDeepDiveCount })}
                 </Badge>
               </div>
               <Link
@@ -215,17 +217,17 @@ export default async function AraConsultantPage() {
                 rel="noopener noreferrer"
                 className="text-[11px] text-accent hover:underline inline-flex items-center gap-1"
               >
-                Open public start page <ArrowRight className="h-3 w-3" />
+                {tr("araConsultant.list_personal_open_public")} <ArrowRight className="h-3 w-3" />
               </Link>
             </div>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Tier</TableHead>
-                  <TableHead>Started</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>{tr("araConsultant.list_col_name")}</TableHead>
+                  <TableHead>{tr("araConsultant.list_col_email")}</TableHead>
+                  <TableHead>{tr("araConsultant.list_col_tier")}</TableHead>
+                  <TableHead>{tr("araConsultant.list_col_started")}</TableHead>
+                  <TableHead>{tr("araConsultant.list_col_status")}</TableHead>
                   <TableHead className="w-12"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -237,11 +239,11 @@ export default async function AraConsultantPage() {
                     <TableCell>
                       {p.tier === "deep_dive" ? (
                         <Badge className="bg-violet-600 hover:bg-violet-600 text-[10px]">
-                          Deep-dive · 48 items
+                          {tr("araConsultant.list_tier_deep_dive")}
                         </Badge>
                       ) : (
                         <Badge variant="outline" className="text-[10px]">
-                          Snapshot · 24 items
+                          {tr("araConsultant.list_tier_snapshot")}
                         </Badge>
                       )}
                     </TableCell>
@@ -253,11 +255,11 @@ export default async function AraConsultantPage() {
                     <TableCell>
                       {p.completed_at ? (
                         <Badge className="bg-emerald-600 hover:bg-emerald-600 text-[10px]">
-                          Completed
+                          {tr("araConsultant.list_personal_status_completed")}
                         </Badge>
                       ) : (
                         <Badge variant="outline" className="text-[10px]">
-                          In progress
+                          {tr("araConsultant.list_personal_status_in_progress")}
                         </Badge>
                       )}
                     </TableCell>
@@ -267,7 +269,7 @@ export default async function AraConsultantPage() {
                           href={`/ara/personal/results/${p.access_token}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          aria-label="View snapshot"
+                          aria-label={tr("araConsultant.list_view_snapshot")}
                           className="inline-flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/40"
                         >
                           <ArrowRight className="h-3.5 w-3.5" />
@@ -284,13 +286,13 @@ export default async function AraConsultantPage() {
         {!rows || rows.length === 0 ? (
           <div className="rounded-2xl border border-dashed p-16 text-center bg-card">
             <ClipboardList className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
-            <p className="font-medium text-foreground">No assessments yet</p>
+            <p className="font-medium text-foreground">{tr("araConsultant.list_empty_title")}</p>
             <p className="text-sm text-muted-foreground mt-1 mb-6 max-w-sm mx-auto">
-              Create your first engagement to invite respondents, gather evidence, and begin Phase 1 discovery.
+              {tr("araConsultant.list_empty_body")}
             </p>
             <Link href="/ara/consultant/assessments/new">
               <Button className="gap-2">
-                <Plus className="h-4 w-4" /> Create first assessment
+                <Plus className="h-4 w-4" /> {tr("araConsultant.list_empty_cta")}
               </Button>
             </Link>
           </div>
@@ -298,14 +300,14 @@ export default async function AraConsultantPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Organization</TableHead>
-                <TableHead>Stage</TableHead>
-                <TableHead>Region</TableHead>
-                <TableHead>Sector</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Phase</TableHead>
-                <TableHead>Sandbox</TableHead>
-                <TableHead>Created</TableHead>
+                <TableHead>{tr("araConsultant.list_col_organization")}</TableHead>
+                <TableHead>{tr("araConsultant.list_col_stage")}</TableHead>
+                <TableHead>{tr("araConsultant.list_col_region")}</TableHead>
+                <TableHead>{tr("araConsultant.list_col_sector")}</TableHead>
+                <TableHead>{tr("araConsultant.list_col_status")}</TableHead>
+                <TableHead>{tr("araConsultant.list_col_phase")}</TableHead>
+                <TableHead>{tr("araConsultant.list_col_sandbox")}</TableHead>
+                <TableHead>{tr("araConsultant.list_col_created")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -320,7 +322,7 @@ export default async function AraConsultantPage() {
                   <TableRow key={row.id}>
                     <TableCell>
                       <Link href={`/ara/consultant/assessments/${row.id}`} className="font-medium hover:underline">
-                        {row.organization?.name ?? "(no organization)"}
+                        {row.organization?.name ?? tr("araConsultant.list_no_organization")}
                       </Link>
                       {row.scope_label && (
                         <div className="text-xs text-muted-foreground">{row.scope_label}</div>
@@ -340,7 +342,7 @@ export default async function AraConsultantPage() {
                     </TableCell>
                     <TableCell>
                       <Badge variant={row.region === "uae" ? "default" : "secondary"}>
-                        {row.region === "uae" ? "UAE" : "Saudi"}
+                        {row.region === "uae" ? tr("araConsultant.list_region_uae") : tr("araConsultant.list_region_saudi")}
                       </Badge>
                     </TableCell>
                     <TableCell className="capitalize">{row.sector}</TableCell>
@@ -349,10 +351,10 @@ export default async function AraConsultantPage() {
                         {row.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="capitalize">{row.phase.replace("phase", "Phase ")}</TableCell>
+                    <TableCell className="capitalize">{tr("araConsultant.list_phase_label", { n: row.phase.replace("phase", "") })}</TableCell>
                     <TableCell>
                       {row.is_sandbox ? (
-                        <span title="Sandbox assessment" className="inline-flex items-center gap-1 text-amber-600">
+                        <span title={tr("araConsultant.list_sandbox_title")} className="inline-flex items-center gap-1 text-amber-600">
                           <FlaskConical className="h-3.5 w-3.5" />
                         </span>
                       ) : (

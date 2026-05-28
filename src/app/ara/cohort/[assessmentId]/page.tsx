@@ -10,6 +10,7 @@ import {
   getIndividualMaturityStage,
   type AraIndividualFactorId,
 } from "@/lib/constants/ara-individual-factors";
+import { getServerT } from "@/lib/i18n/server";
 import type { AraAssessment, AraOrganization } from "@/types/ara";
 
 export const dynamic = "force-dynamic";
@@ -42,6 +43,7 @@ export default async function PublicCohortDashboardPage({
 }: {
   params: { assessmentId: string };
 }) {
+  const t = await getServerT();
   const sb = createServiceClient();
 
   const { data: assessment } = await sb
@@ -69,8 +71,7 @@ export default async function PublicCohortDashboardPage({
         <div className="rounded-md border border-dashed p-12 text-center">
           <Users className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
           <p className="text-sm text-muted-foreground">
-            No respondents have completed the individual readiness layer yet.
-            This dashboard will populate as the cohort responds.
+            {t("araReport.cohort_empty_state")}
           </p>
         </div>
       </CohortShell>
@@ -91,7 +92,7 @@ export default async function PublicCohortDashboardPage({
         <Card className="bg-gradient-to-br from-primary to-navy-blue text-primary-foreground border-0">
           <CardContent className="p-6 md:p-8 grid md:grid-cols-[auto_1fr] gap-6 items-center">
             <div>
-              <p className="text-xs uppercase tracking-widest opacity-70">Cohort overall</p>
+              <p className="text-xs uppercase tracking-widest opacity-70">{t("araReport.cohort_overall")}</p>
               <p className="text-5xl font-bold tabular-nums mt-1">
                 {rollup.cohort_overall != null ? rollup.cohort_overall.toFixed(2) : "-"}
                 <span className="text-lg opacity-60 font-normal"> / 5</span>
@@ -103,10 +104,16 @@ export default async function PublicCohortDashboardPage({
               )}
             </div>
             <div className="text-sm opacity-90 leading-relaxed">
-              {cohortStage?.blurb_en ?? "Cohort score will appear here once respondents complete the assessment."}
+              {cohortStage?.blurb_en ?? t("araReport.cohort_score_placeholder")}
               <p className="text-[11px] opacity-70 mt-3">
-                {rollup.completed_count} of {rollup.cohort_size} completed ({completionPct}%) ·
-                {" "}{rollup.cohort_size} respondent{rollup.cohort_size === 1 ? "" : "s"} invited.
+                {t("araReport.cohort_completion_line", {
+                  completed: rollup.completed_count,
+                  size: rollup.cohort_size,
+                  pct: completionPct,
+                })}{" "}
+                {rollup.cohort_size === 1
+                  ? t("araReport.cohort_invited_one", { size: rollup.cohort_size })
+                  : t("araReport.cohort_invited_other", { size: rollup.cohort_size })}
               </p>
             </div>
           </CardContent>
@@ -116,15 +123,15 @@ export default async function PublicCohortDashboardPage({
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              Cohort readiness by factor
+              {t("araReport.cohort_readiness_by_factor")}
               <Badge variant="secondary" className="text-[10px]">
-                {assessment.assessment_tier === "deep_dive" ? "Deep-dive · 48 items" : "Snapshot · 24 items"}
+                {assessment.assessment_tier === "deep_dive"
+                  ? t("araReport.cohort_tier_deep_dive")
+                  : t("araReport.cohort_tier_snapshot")}
               </Badge>
             </CardTitle>
             <CardDescription>
-              The cohort&apos;s aggregate score on each of the four VIFM personal
-              AI-readiness factors. Tones reflect how far the average sits from
-              target (4 / 5).
+              {t("araReport.cohort_readiness_by_factor_desc")}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -146,7 +153,9 @@ export default async function PublicCohortDashboardPage({
                     <span className="text-xs text-muted-foreground font-normal"> / 5</span>
                   </p>
                   <p className="text-[10px] text-muted-foreground mt-1">
-                    {f.respondent_count} respondent{f.respondent_count === 1 ? "" : "s"}
+                    {f.respondent_count === 1
+                      ? t("araReport.cohort_respondent_count_one", { count: f.respondent_count })
+                      : t("araReport.cohort_respondent_count_other", { count: f.respondent_count })}
                   </p>
                 </div>
               );
@@ -157,11 +166,9 @@ export default async function PublicCohortDashboardPage({
         {/* Development-demand histogram - % below target per factor */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Development demand</CardTitle>
+            <CardTitle className="text-lg">{t("araReport.cohort_development_demand")}</CardTitle>
             <CardDescription>
-              Percentage of respondents currently scoring below the target of 4
-              on each factor. The longer the bar, the more candidates would
-              benefit from development on that factor.
+              {t("araReport.cohort_development_demand_desc")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -183,8 +190,12 @@ export default async function PublicCohortDashboardPage({
                   <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
                     <div className={`h-full ${barTone} transition-[width]`} style={{ width: `${Math.max(pct, 2)}%` }} />
                   </div>
-                  <span className="w-32 shrink-0 text-right text-muted-foreground tabular-nums">
-                    {f.below_target_count} of {f.respondent_count} ({pct}%)
+                  <span className="w-32 shrink-0 text-end text-muted-foreground tabular-nums">
+                    {t("araReport.cohort_below_target_line", {
+                      below: f.below_target_count,
+                      count: f.respondent_count,
+                      pct,
+                    })}
                   </span>
                 </div>
               );
@@ -196,53 +207,48 @@ export default async function PublicCohortDashboardPage({
         <div className="rounded-md border bg-muted/20 p-4 flex items-start gap-3">
           <FileText className="h-4 w-4 text-accent mt-0.5 shrink-0" />
           <div className="flex-1 text-xs leading-relaxed">
-            <p className="font-semibold text-foreground">How this score was produced</p>
+            <p className="font-semibold text-foreground">{t("araReport.cohort_methodology_title")}</p>
             <p className="text-muted-foreground mt-1">
-              The cohort score is the mean of every respondent&apos;s factor
-              average. Respondents who haven&apos;t answered a factor are
-              excluded from that factor&apos;s mean (rather than counted as 0).
-              Item development, content validity, reliability planning, and
-              limitations are documented in the {" "}
+              {t("araReport.cohort_methodology_body")}{" "}
               <a
                 href="https://github.com/AimanSadeq/vifm-assessment-center/blob/master/docs/ARA-Methodology-Brief.md"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-accent hover:underline"
               >
-                methodology brief
+                {t("araReport.cohort_methodology_link")}
               </a>.
             </p>
           </div>
         </div>
 
         <p className="text-[11px] text-muted-foreground text-center pt-4">
-          This dashboard is a read-only summary intended for engagement
-          sponsors. Per-respondent scores and identity are not surfaced here -
-          ask your VIFM consultant for the consultant-side view if needed.
+          {t("araReport.cohort_footer_note")}
         </p>
       </div>
     </CohortShell>
   );
 }
 
-function CohortShell({ orgName, children }: { orgName: string; children: React.ReactNode }) {
+async function CohortShell({ orgName, children }: { orgName: string; children: React.ReactNode }) {
+  const t = await getServerT();
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-5xl mx-auto px-6 py-10">
         <div className="flex items-center justify-between mb-6">
           <Link href="/ara" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
             <Compass className="h-4 w-4" />
-            VIFM AI Readiness Compass
+            {t("araReport.cohort_brand")}
           </Link>
           <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-muted-foreground">
             <Sparkles className="h-3 w-3" />
-            Cohort dashboard
+            {t("araReport.cohort_dashboard_eyebrow")}
           </span>
         </div>
         <div className="mb-8">
-          <h1 className="text-2xl font-bold tracking-tight">{orgName || "Cohort readiness"}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{orgName || t("araReport.cohort_readiness_title")}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Aggregate AI-readiness across the cohort. Read-only view.
+            {t("araReport.cohort_subtitle")}
           </p>
         </div>
         {children}

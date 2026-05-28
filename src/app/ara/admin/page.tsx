@@ -1,47 +1,49 @@
 import Link from "next/link";
 import { Building2, Database, FileText, FlaskConical, FileClock, ArrowRight } from "lucide-react";
 import { AraTopBar } from "@/components/shared/ara-top-bar";
+import { getServerT } from "@/lib/i18n/server";
 
-export default function AraAdminPage() {
+export default async function AraAdminPage() {
+  const t = await getServerT();
   const tiles = [
     {
       href: "/ara/admin/organizations",
       icon: Building2,
       tone: "blue",
-      title: "Organizations",
-      description: "Manage client organizations by region and sector.",
+      title: t("araAdmin.tileOrganizationsTitle"),
+      description: t("araAdmin.tileOrganizationsDesc"),
       status: "Ready",
     },
     {
       href: "/ara/admin/questions",
       icon: Database,
       tone: "violet",
-      title: "Question Bank",
-      description: "Author, version, and publish Layer 1 + Layer 2 questions.",
+      title: t("araAdmin.tileQuestionBankTitle"),
+      description: t("araAdmin.tileQuestionBankDesc"),
       status: "Ready",
     },
     {
       href: "/ara/admin/regulatory",
       icon: FileText,
       tone: "gold",
-      title: "Regulatory Docs",
-      description: "Upload regulatory documents; AI-extract requirements.",
+      title: t("araAdmin.tileRegulatoryTitle"),
+      description: t("araAdmin.tileRegulatoryDesc"),
       status: "Ready",
     },
     {
       href: "/ara/admin/sandbox",
       icon: FlaskConical,
       tone: "teal",
-      title: "Sandbox Data",
-      description: "Clear all sandbox assessments with confirmation.",
+      title: t("araAdmin.tileSandboxTitle"),
+      description: t("araAdmin.tileSandboxDesc"),
       status: "Ready",
     },
     {
       href: "/ara/admin/retention",
       icon: FileClock,
       tone: "rose",
-      title: "Data Retention",
-      description: "Purge archived assessments older than 3 years.",
+      title: t("araAdmin.tileRetentionTitle"),
+      description: t("araAdmin.tileRetentionDesc"),
       status: "Ready",
     },
   ] as const;
@@ -70,11 +72,10 @@ export default function AraAdminPage() {
       {/* Hero strip */}
       <section className="border-b bg-card">
         <div className="max-w-6xl mx-auto px-6 py-8">
-          <span className="ara-eyebrow">Admin · AI Readiness Compass</span>
-          <h1 className="ara-numeral text-3xl font-semibold text-primary mt-2">Admin Console</h1>
+          <span className="ara-eyebrow">{t("araAdmin.heroEyebrow")}</span>
+          <h1 className="ara-numeral text-3xl font-semibold text-primary mt-2">{t("araAdmin.heroTitle")}</h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            VIFM staff - curate the Compass question bank, seed regulatory content,
-            manage sandbox data, and oversee data retention.
+            {t("araAdmin.heroSubtitle")}
           </p>
         </div>
       </section>
@@ -95,7 +96,7 @@ export default function AraAdminPage() {
                 <p className="text-sm text-muted-foreground flex-1">{tile.description}</p>
                 <div className={`mt-4 inline-flex items-center gap-1 text-xs font-medium ${arrowClass}`}>
                   {ready ? (
-                    <>Open <ArrowRight className="h-3 w-3" /></>
+                    <>{t("araAdmin.tileOpen")} <ArrowRight className="h-3 w-3" /></>
                   ) : (
                     tile.status
                   )}

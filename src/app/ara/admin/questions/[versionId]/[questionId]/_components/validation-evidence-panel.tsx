@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslation } from "react-i18next";
 import { Sparkles, CheckCircle2, X, Loader2, AlertTriangle, Trash2, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,7 @@ const STATUS_TONE: Record<AraQuestionValidationEvidence["review_status"], string
 };
 
 export function ValidationEvidencePanel({ questionId, reviewerEmail, initialEvidence }: Props) {
+  const { t } = useTranslation();
   const [evidence, setEvidence] = useState<AraQuestionValidationEvidence | null>(initialEvidence);
   const [draft, setDraft] = useState<AraQuestionValidationEvidence | null>(initialEvidence);
   const [editing, setEditing] = useState(false);
@@ -88,16 +90,12 @@ export function ValidationEvidencePanel({ questionId, reviewerEmail, initialEvid
     return (
       <PanelShell>
         <p className="text-sm text-muted-foreground">
-          No validation evidence captured for this question yet. Click below
-          to ask Claude for an AI-suggested anchor against the curated
-          bibliography in the methodology brief. Suggestions are saved as{" "}
-          <em>ai_proposed</em> and require admin review before they appear in
-          any client report.
+          {t("araAdminData.ve_empty_body")}
         </p>
         <div className="mt-4">
           <Button onClick={generate} disabled={pending}>
             {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin me-1.5" /> : <Sparkles className="h-3.5 w-3.5 me-1.5" />}
-            Generate AI suggestion
+            {t("araAdminData.ve_generate_button")}
           </Button>
         </div>
         {error && <ErrorMsg>{error}</ErrorMsg>}
@@ -116,12 +114,12 @@ export function ValidationEvidencePanel({ questionId, reviewerEmail, initialEvid
         </span>
         {evidence.reviewed_by && (
           <span className="text-[11px] text-muted-foreground">
-            reviewed by {evidence.reviewed_by} · {evidence.reviewed_at?.slice(0, 10)}
+            {t("araAdminData.ve_reviewed_by", { name: evidence.reviewed_by, date: evidence.reviewed_at?.slice(0, 10) ?? "" })}
           </span>
         )}
         {evidence.ai_model && (
           <span className="text-[10px] text-muted-foreground ms-auto">
-            AI-proposed via {evidence.ai_model}
+            {t("araAdminData.ve_ai_proposed_via", { model: evidence.ai_model })}
           </span>
         )}
       </div>
@@ -130,29 +128,25 @@ export function ValidationEvidencePanel({ questionId, reviewerEmail, initialEvid
         <div className="rounded-md border border-amber-300 bg-amber-50 p-3 mb-4 text-xs text-amber-900 flex items-start gap-2">
           <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
           <div>
-            <p className="font-semibold">Not yet surfaced to clients</p>
+            <p className="font-semibold">{t("araAdminData.ve_banner_title")}</p>
             <p className="mt-0.5 leading-snug">
-              This is an AI-suggested anchor. LLM citations can subtly
-              hallucinate paper-level details. Verify the citations are
-              accurate before clicking <em>Accept</em>; only then will they
-              appear in the consultant report appendix.
+              {t("araAdminData.ve_banner_body")}
             </p>
           </div>
         </div>
       )}
 
       <div className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-1">
-        Construct summary
+        {t("araAdminData.ve_construct_summary")}
       </div>
       <p className="text-sm mb-4">{evidence.construct_summary}</p>
 
       <div className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-2">
-        Anchor instruments ({evidence.anchor_instruments.length})
+        {t("araAdminData.ve_anchor_instruments", { count: evidence.anchor_instruments.length })}
       </div>
       {evidence.anchor_instruments.length === 0 ? (
         <p className="text-sm text-muted-foreground italic">
-          No anchor instruments captured. The suggester returned a 'novel'
-          confidence - this item may need a custom citation or item revision.
+          {t("araAdminData.ve_no_anchors")}
         </p>
       ) : (
         <ul className="space-y-3">
@@ -169,7 +163,7 @@ export function ValidationEvidencePanel({ questionId, reviewerEmail, initialEvid
               </p>
               {a.rationale && (
                 <p className="text-[11px] text-foreground/80 mt-2 italic leading-snug">
-                  Rationale: {a.rationale}
+                  {t("araAdminData.ve_rationale_prefix", { text: a.rationale })}
                 </p>
               )}
             </li>
@@ -188,7 +182,7 @@ export function ValidationEvidencePanel({ questionId, reviewerEmail, initialEvid
               onClick={() => persist({ ...evidence, review_status: "verified" })}
             >
               <CheckCircle2 className="h-3.5 w-3.5 me-1.5" />
-              Accept as verified
+              {t("araAdminData.ve_accept_verified")}
             </Button>
             <Button
               size="sm"
@@ -196,7 +190,7 @@ export function ValidationEvidencePanel({ questionId, reviewerEmail, initialEvid
               disabled={pending}
               onClick={() => { setDraft(evidence); setEditing(true); }}
             >
-              Edit
+              {t("araAdminData.ve_edit")}
             </Button>
             <Button
               size="sm"
@@ -205,7 +199,7 @@ export function ValidationEvidencePanel({ questionId, reviewerEmail, initialEvid
               onClick={() => persist({ ...evidence, review_status: "rejected" })}
             >
               <X className="h-3.5 w-3.5 me-1.5" />
-              Reject
+              {t("araAdminData.ve_reject")}
             </Button>
           </>
         )}
@@ -217,7 +211,7 @@ export function ValidationEvidencePanel({ questionId, reviewerEmail, initialEvid
               disabled={pending}
               onClick={() => { setDraft(evidence); setEditing(true); }}
             >
-              Edit
+              {t("araAdminData.ve_edit")}
             </Button>
             <Button
               size="sm"
@@ -226,11 +220,11 @@ export function ValidationEvidencePanel({ questionId, reviewerEmail, initialEvid
               onClick={() => persist({ ...evidence, review_status: "rejected" })}
             >
               <X className="h-3.5 w-3.5 me-1.5" />
-              Reject
+              {t("araAdminData.ve_reject")}
             </Button>
             <Button size="sm" variant="ghost" disabled={pending} onClick={generate}>
               <Sparkles className="h-3.5 w-3.5 me-1.5" />
-              Re-generate
+              {t("araAdminData.ve_regenerate")}
             </Button>
           </>
         )}
@@ -242,11 +236,11 @@ export function ValidationEvidencePanel({ questionId, reviewerEmail, initialEvid
               disabled={pending}
               onClick={() => persist({ ...evidence, review_status: "verified" })}
             >
-              Restore as verified
+              {t("araAdminData.ve_restore_verified")}
             </Button>
             <Button size="sm" variant="ghost" disabled={pending} onClick={generate}>
               <Sparkles className="h-3.5 w-3.5 me-1.5" />
-              Re-generate
+              {t("araAdminData.ve_regenerate")}
             </Button>
           </>
         )}
@@ -270,11 +264,12 @@ export function ValidationEvidencePanel({ questionId, reviewerEmail, initialEvid
 }
 
 function PanelShell({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   return (
     <div className="rounded-lg border bg-card mb-6 p-5">
       <div className="flex items-center gap-2 mb-3">
-        <Badge variant="outline" className="text-[10px]">Validation evidence</Badge>
-        <h2 className="text-base font-semibold">Per-item content-validity trail</h2>
+        <Badge variant="outline" className="text-[10px]">{t("araAdminData.ve_badge")}</Badge>
+        <h2 className="text-base font-semibold">{t("araAdminData.ve_panel_heading")}</h2>
       </div>
       {children}
     </div>
@@ -298,12 +293,13 @@ function EditorForm({
   onSave: () => void;
   pending: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="mt-5 rounded-md border border-sky-300 bg-sky-50/60 p-4 space-y-3">
-      <p className="text-xs font-semibold text-sky-900">Editing evidence</p>
+      <p className="text-xs font-semibold text-sky-900">{t("araAdminData.ve_editing_title")}</p>
       <div>
         <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
-          Construct summary
+          {t("araAdminData.ve_construct_summary_label")}
         </label>
         <input
           type="text"
@@ -315,7 +311,7 @@ function EditorForm({
       <div>
         <div className="flex items-center justify-between mb-1">
           <label className="text-[11px] font-semibold text-muted-foreground">
-            Anchor instruments ({draft.anchor_instruments.length})
+            {t("araAdminData.ve_anchor_instruments_label", { count: draft.anchor_instruments.length })}
           </label>
           <button
             type="button"
@@ -330,7 +326,7 @@ function EditorForm({
             }
             className="inline-flex items-center gap-1 text-[11px] font-medium text-accent hover:underline"
           >
-            <Plus className="h-3 w-3" /> Add anchor
+            <Plus className="h-3 w-3" /> {t("araAdminData.ve_add_anchor")}
           </button>
         </div>
         <div className="space-y-2">
@@ -338,7 +334,7 @@ function EditorForm({
             <div key={idx} className="rounded-md border bg-card p-3 space-y-2">
               <input
                 type="text"
-                placeholder="Name (e.g. Technology Acceptance Model)"
+                placeholder={t("araAdminData.ve_name_placeholder")}
                 className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs"
                 value={a.name}
                 onChange={(e) =>
@@ -352,7 +348,7 @@ function EditorForm({
               />
               <textarea
                 rows={2}
-                placeholder="Citation (full bibliographic, APA-style preferred)"
+                placeholder={t("araAdminData.ve_citation_placeholder")}
                 className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs"
                 value={a.citation}
                 onChange={(e) =>
@@ -390,14 +386,14 @@ function EditorForm({
                     })
                   }
                   className="inline-flex items-center gap-1 text-[11px] text-rose-700 hover:underline px-2"
-                  title="Remove this anchor"
+                  title={t("araAdminData.ve_remove_anchor_title")}
                 >
                   <Trash2 className="h-3 w-3" />
                 </button>
               </div>
               <input
                 type="text"
-                placeholder="One-sentence rationale"
+                placeholder={t("araAdminData.ve_rationale_placeholder")}
                 className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs"
                 value={a.rationale}
                 onChange={(e) =>
@@ -414,8 +410,8 @@ function EditorForm({
         </div>
       </div>
       <div className="flex gap-2 pt-2">
-        <Button size="sm" onClick={onSave} disabled={pending}>Save as edited</Button>
-        <Button size="sm" variant="outline" onClick={onCancel} disabled={pending}>Cancel</Button>
+        <Button size="sm" onClick={onSave} disabled={pending}>{t("araAdminData.ve_save_edited")}</Button>
+        <Button size="sm" variant="outline" onClick={onCancel} disabled={pending}>{t("araAdminData.ve_cancel")}</Button>
       </div>
     </div>
   );

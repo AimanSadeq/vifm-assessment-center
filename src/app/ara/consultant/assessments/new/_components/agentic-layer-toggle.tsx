@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Bot, ShieldCheck } from "lucide-react";
 
 /**
@@ -17,6 +18,7 @@ import { Bot, ShieldCheck } from "lucide-react";
  * control, autonomy calibration, auditability).
  */
 export function AgenticLayerToggle() {
+  const { t } = useTranslation();
   const [enabled, setEnabled] = useState(false);
 
   return (
@@ -31,19 +33,14 @@ export function AgenticLayerToggle() {
         <div className="inline-flex items-center gap-1.5 mb-2">
           <ShieldCheck className="h-3.5 w-3.5 text-accent" />
           <span className="text-[10px] font-bold uppercase tracking-widest text-accent">
-            Frontier add-on
+            {t("araConsultant.agentic_eyebrow")}
           </span>
         </div>
         <p className="text-sm font-semibold text-primary leading-snug">
-          The pillars measure readiness to <span className="text-accent">use</span> AI.
-          {" "}This measures readiness to <span className="text-accent">delegate</span> to it.
+          {t("araConsultant.agentic_headline_before")}<span className="text-accent">{t("araConsultant.agentic_headline_use")}</span>{t("araConsultant.agentic_headline_mid")}<span className="text-accent">{t("araConsultant.agentic_headline_delegate")}</span>{t("araConsultant.agentic_headline_after")}
         </p>
         <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-          As organisations move from using AI to letting autonomous agents take
-          actions on their behalf, the question shifts from capability to
-          control. This layer assesses six governance dimensions - agent
-          accountability, human oversight, failure-mode awareness, tool/data
-          access control, autonomy calibration, and auditability.
+          {t("araConsultant.agentic_body")}
         </p>
       </div>
 
@@ -59,14 +56,11 @@ export function AgenticLayerToggle() {
           <div className="flex items-center gap-1.5">
             <Bot className="h-3.5 w-3.5 text-accent" />
             <span className="text-sm font-semibold">
-              Add the Agentic-AI Readiness layer to this engagement
+              {t("araConsultant.agentic_toggle_label")}
             </span>
           </div>
           <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-            Every respondent will also answer 18 agentic-readiness items
-            (~4–6 min) alongside their pillar questions, and the client PDF
-            gains an Agentic-AI Readiness section with a cohort score per
-            dimension.
+            {t("araConsultant.agentic_toggle_help")}
           </p>
         </div>
       </label>

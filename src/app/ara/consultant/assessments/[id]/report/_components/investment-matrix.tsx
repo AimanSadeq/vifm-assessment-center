@@ -1,4 +1,5 @@
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
+import { getServerT } from "@/lib/i18n/server";
 import type { AraPillarId } from "@/types/ara";
 
 /**
@@ -21,7 +22,7 @@ import type { AraPillarId } from "@/types/ara";
  * maps numbers to pillar names - avoids the label overlap that plagues
  * a naive scatter.
  */
-export function InvestmentMatrix({
+export async function InvestmentMatrix({
   pillarData,
 }: {
   pillarData: Array<{
@@ -30,6 +31,7 @@ export function InvestmentMatrix({
     pillar_weight: number;
   }>;
 }) {
+  const t = await getServerT();
   const PAD = 60;
   const LEGEND_W = 200;
   const W = 540;
@@ -96,30 +98,30 @@ export function InvestmentMatrix({
       {/* Quadrant labels - clean uppercase, no emoji */}
       <text x={PAD + plotW / 4} y={PAD + 18} textAnchor="middle" fontSize="10" fontWeight="700"
         fill="#115e59" letterSpacing="0.08em">
-        QUICK WINS
+        {t("araReport.matrix_quick_wins")}
       </text>
       <text x={midX + plotW / 4} y={PAD + 18} textAnchor="middle" fontSize="10" fontWeight="700"
         fill="#92400e" letterSpacing="0.08em">
-        STRATEGIC BETS
+        {t("araReport.matrix_strategic_bets")}
       </text>
       <text x={PAD + plotW / 4} y={H - PAD - 10} textAnchor="middle" fontSize="10" fontWeight="700"
         fill="#4b5563" letterSpacing="0.08em">
-        FILL-INS
+        {t("araReport.matrix_fill_ins")}
       </text>
       <text x={midX + plotW / 4} y={H - PAD - 10} textAnchor="middle" fontSize="10" fontWeight="700"
         fill="#9f1239" letterSpacing="0.08em">
-        RECONSIDER
+        {t("araReport.matrix_reconsider")}
       </text>
 
       {/* Axis labels */}
       <text x={W / 2} y={H - 16} textAnchor="middle" fontSize="9" fill="#374151"
         letterSpacing="0.05em">
-        EFFORT REQUIRED
+        {t("araReport.matrix_effort_required")}
       </text>
       <text x={18} y={H / 2} textAnchor="middle" fontSize="9" fill="#374151"
         letterSpacing="0.05em"
         transform={`rotate(-90 18 ${H / 2})`}>
-        BUSINESS VALUE
+        {t("araReport.matrix_business_value")}
       </text>
 
       {/* Points - numbered, jittered */}
@@ -137,7 +139,7 @@ export function InvestmentMatrix({
       <g transform={`translate(${W + 12}, ${PAD - 4})`}>
         <text x="0" y="0" fontSize="9" fontWeight="700" fill="#010131"
           letterSpacing="0.08em">
-          PILLARS
+          {t("araReport.matrix_pillars")}
         </text>
         {pts.map((p, i) => (
           <g key={p.pillar_id} transform={`translate(0, ${14 + i * 20})`}>

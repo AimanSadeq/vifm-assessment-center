@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Label } from "@/components/ui/label";
 import { Users, Sparkles } from "lucide-react";
 
@@ -22,6 +23,7 @@ import { Users, Sparkles } from "lucide-react";
  * org-pillar diagnostic - original behaviour.
  */
 export function IndividualLayerToggle() {
+  const { t } = useTranslation();
   const [enabled, setEnabled] = useState(false);
   const [tier, setTier] = useState<"snapshot" | "deep_dive">("snapshot");
 
@@ -39,20 +41,14 @@ export function IndividualLayerToggle() {
         <div className="inline-flex items-center gap-1.5 mb-2">
           <Sparkles className="h-3.5 w-3.5 text-accent" />
           <span className="text-[10px] font-bold uppercase tracking-widest text-accent">
-            Recommended for this engagement
+            {t("araConsultant.individual_eyebrow")}
           </span>
         </div>
         <p className="text-sm font-semibold text-primary leading-snug">
-          Pillars measure what the organisation has built.
-          {" "}<span className="text-accent">Factors measure how its people behave.</span>
+          {t("araConsultant.individual_headline_before")}<span className="text-accent">{t("araConsultant.individual_headline_accent")}</span>
         </p>
         <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-          A department&apos;s realised AI readiness is the intersection of both -
-          the org can score 5 / 5 on Data and Strategy, but if the workforce
-          scores 2 / 5 on AI Working Practice the value still doesn&apos;t land.
-          Adding the individual layer is the one place the consultant report
-          can say <span className="italic">&ldquo;your strategy is solid; the gap is adoption&rdquo;</span>{" "}
-          with evidence on both sides.
+          {t("araConsultant.individual_body_before")}<span className="italic">{t("araConsultant.individual_body_quote")}</span>{t("araConsultant.individual_body_after")}
         </p>
       </div>
 
@@ -68,17 +64,11 @@ export function IndividualLayerToggle() {
           <div className="flex items-center gap-1.5">
             <Users className="h-3.5 w-3.5 text-accent" />
             <span className="text-sm font-semibold">
-              Add the workforce readiness layer to this engagement
+              {t("araConsultant.individual_toggle_label")}
             </span>
           </div>
           <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-            Every respondent will also answer the four-factor personal AI
-            readiness items (AI Sense-Check · AI Working Practice ·
-            AI Collaboration · AI Adaptive Mindset) alongside their pillar
-            questions. The consultant assessment dashboard gains a
-            cohort-rollup card, the client PDF gains a Workforce AI
-            Readiness section, and each respondent gets their own
-            personal results page after submitting.
+            {t("araConsultant.individual_toggle_help")}
           </p>
         </div>
       </label>
@@ -86,7 +76,7 @@ export function IndividualLayerToggle() {
       {enabled && (
         <div className="border-t bg-background px-4 py-3 space-y-2">
           <Label htmlFor="assessment_tier" className="text-xs">
-            Tier of the individual layer
+            {t("araConsultant.individual_tier_label")}
           </Label>
           <select
             id="assessment_tier"
@@ -96,16 +86,14 @@ export function IndividualLayerToggle() {
             className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs"
           >
             <option value="snapshot">
-              Snapshot · 24 items (~5–8 min per respondent)
+              {t("araConsultant.individual_tier_snapshot")}
             </option>
             <option value="deep_dive">
-              Deep-dive · 48 items (~10–14 min per respondent)
+              {t("araConsultant.individual_tier_deep_dive")}
             </option>
           </select>
           <p className="text-[11px] text-muted-foreground">
-            Snapshot is reliable for directional reads (per-factor α ≈ 0.78).
-            Deep-dive is research-grade (α ≈ 0.85+) and recommended when
-            individual-level decisions follow the report.
+            {t("araConsultant.individual_tier_help")}
           </p>
         </div>
       )}

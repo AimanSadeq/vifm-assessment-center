@@ -1,3 +1,5 @@
+import { getServerT } from "@/lib/i18n/server";
+
 /**
  * Gantt-style 12-month roadmap across three horizons.
  * Horizons from handover §12.2 (pages 23–24):
@@ -5,7 +7,7 @@
  *   Build      : 3–9 months  (Accent Blue)
  *   Transform  : 9–12 months (Navy)
  */
-export function GanttRoadmap({
+export async function GanttRoadmap({
   initiatives,
 }: {
   initiatives: Array<{
@@ -14,17 +16,18 @@ export function GanttRoadmap({
     pillar: string;
   }>;
 }) {
+  const t = await getServerT();
   const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
   const horizonSpec = {
-    quick: { start: 1, end: 3, color: "#00b4ff", label: "Quick Wins", labelColor: "#075985" },
-    build: { start: 4, end: 9, color: "#5391D5", label: "Build", labelColor: "#1e3a8a" },
-    transform: { start: 10, end: 12, color: "#010131", label: "Transform", labelColor: "white" },
+    quick: { start: 1, end: 3, color: "#00b4ff", label: t("araReport.gantt_quick_wins"), labelColor: "#075985" },
+    build: { start: 4, end: 9, color: "#5391D5", label: t("araReport.gantt_build"), labelColor: "#1e3a8a" },
+    transform: { start: 10, end: 12, color: "#010131", label: t("araReport.gantt_transform"), labelColor: "white" },
   } as const;
 
   if (initiatives.length === 0) {
     return (
       <p className="report-body report-muted">
-        No recommendations to plot - populate Phase 2 consultant notes per pillar to generate a roadmap.
+        {t("araReport.gantt_empty")}
       </p>
     );
   }

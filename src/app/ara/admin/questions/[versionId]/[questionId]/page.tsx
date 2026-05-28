@@ -13,6 +13,7 @@ import {
   ARA_INDIVIDUAL_FACTOR_MAP, type AraIndividualFactorId,
 } from "@/lib/constants/ara-individual-factors";
 import { updateAraQuestion } from "@/lib/ara/actions";
+import { getServerT, type ServerT } from "@/lib/i18n/server";
 import type { AraQuestion, AraQuestionBankVersion } from "@/types/ara";
 import { ValidationEvidencePanel } from "./_components/validation-evidence-panel";
 
@@ -24,6 +25,7 @@ export default async function EditAraQuestionPage({
   params: { versionId: string; questionId: string };
 }) {
   const sb = createServiceClient();
+  const t = await getServerT();
   const [{ data: version }, { data: question }] = await Promise.all([
     sb
       .from("ara_question_bank_versions")
@@ -50,9 +52,9 @@ export default async function EditAraQuestionPage({
       <div className="max-w-3xl mx-auto px-6 py-10">
         <Breadcrumbs
           items={[
-            { label: "ARA", href: "/ara" },
-            { label: "Admin", href: "/ara/admin" },
-            { label: "Question Bank", href: "/ara/admin/questions" },
+            { label: t("araAdminData.eq_bc_ara"), href: "/ara" },
+            { label: t("araAdminData.eq_bc_admin"), href: "/ara/admin" },
+            { label: t("araAdminData.eq_bc_question_bank"), href: "/ara/admin/questions" },
             { label: `v${version.version_number}`, href: `/ara/admin/questions/${version.id}` },
             { label: `Q${question.question_number}` },
           ]}
@@ -61,15 +63,14 @@ export default async function EditAraQuestionPage({
           href={`/ara/admin/questions/${version.id}`}
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6"
         >
-          <ArrowLeft className="h-3 w-3" /> Back to v{version.version_number}
+          <ArrowLeft className="h-3 w-3" /> {t("araAdminData.back_to_version", { version: version.version_number })}
         </Link>
 
         <h1 className="text-2xl font-semibold text-primary mb-1">
-          Edit question Q{question.question_number}
+          {t("araAdminData.eq_title", { number: question.question_number })}
         </h1>
         <p className="text-muted-foreground mb-8">
-          Changes apply to all in-flight assessments. Historical completed
-          assessments keep their original question text via version snapshots.
+          {t("araAdminData.eq_subtitle")}
         </p>
 
         {/* ─── Lineage card ─────────────────────────────────────
@@ -78,7 +79,7 @@ export default async function EditAraQuestionPage({
             flagged that consultants and clients ask "where did the
             questions come from? what are they measuring?" - this card
             makes every question's lineage explicit and copyable. */}
-        <QuestionLineageCard question={question} />
+        <QuestionLineageCard question={question} t={t} />
 
         {/* ─── Validation-evidence panel (migration 00028) ──────
             Per-item content-validity trail. AI-suggested anchors get
@@ -93,9 +94,9 @@ export default async function EditAraQuestionPage({
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Question details</CardTitle>
+            <CardTitle className="text-base">{t("araAdminData.eq_details_title")}</CardTitle>
             <CardDescription>
-              For multiple choice / yes-no, enter options and score_map as JSON.
+              {t("araAdminData.eq_details_desc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -105,7 +106,7 @@ export default async function EditAraQuestionPage({
 
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="space-y-2">
-                  <Label htmlFor="pillar_id">Pillar *</Label>
+                  <Label htmlFor="pillar_id">{t("araAdminData.vd_pillar_label")}</Label>
                   <select
                     id="pillar_id"
                     name="pillar_id"
@@ -120,7 +121,7 @@ export default async function EditAraQuestionPage({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="question_number">Number *</Label>
+                  <Label htmlFor="question_number">{t("araAdminData.vd_number_label")}</Label>
                   <Input
                     id="question_number"
                     name="question_number"
@@ -132,20 +133,20 @@ export default async function EditAraQuestionPage({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="layer">Layer *</Label>
+                  <Label htmlFor="layer">{t("araAdminData.vd_layer_label")}</Label>
                   <select
                     id="layer"
                     name="layer"
                     defaultValue={String(question.layer)}
                     className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
                   >
-                    <option value="1">Layer 1 - client</option>
-                    <option value="2">Layer 2 - consultant guide</option>
+                    <option value="1">{t("araAdminData.vd_layer1_option")}</option>
+                    <option value="2">{t("araAdminData.vd_layer2_option")}</option>
                   </select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="question_type">Type *</Label>
+                  <Label htmlFor="question_type">{t("araAdminData.vd_type_label")}</Label>
                   <select
                     id="question_type"
                     name="question_type"
@@ -153,16 +154,16 @@ export default async function EditAraQuestionPage({
                     defaultValue={question.question_type}
                     className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
                   >
-                    <option value="rating">Rating (1–5)</option>
-                    <option value="multiple_choice">Multiple choice</option>
-                    <option value="yes_no">Yes / No</option>
-                    <option value="open_text">Open text</option>
+                    <option value="rating">{t("araAdminData.vd_type_rating")}</option>
+                    <option value="multiple_choice">{t("araAdminData.vd_type_multiple_choice")}</option>
+                    <option value="yes_no">{t("araAdminData.vd_type_yes_no")}</option>
+                    <option value="open_text">{t("araAdminData.vd_type_open_text")}</option>
                   </select>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="question_text_en">Question text (English) *</Label>
+                <Label htmlFor="question_text_en">{t("araAdminData.vd_question_text_en_label")}</Label>
                 <textarea
                   id="question_text_en"
                   name="question_text_en"
@@ -174,7 +175,7 @@ export default async function EditAraQuestionPage({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="question_text_ar">Question text (Arabic) *</Label>
+                <Label htmlFor="question_text_ar">{t("araAdminData.vd_question_text_ar_label")}</Label>
                 <textarea
                   id="question_text_ar"
                   name="question_text_ar"
@@ -188,7 +189,7 @@ export default async function EditAraQuestionPage({
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="options_en">Options (English) - JSON</Label>
+                  <Label htmlFor="options_en">{t("araAdminData.eq_options_en_label")}</Label>
                   <textarea
                     id="options_en"
                     name="options_en"
@@ -198,7 +199,7 @@ export default async function EditAraQuestionPage({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="options_ar">Options (Arabic) - JSON</Label>
+                  <Label htmlFor="options_ar">{t("araAdminData.eq_options_ar_label")}</Label>
                   <textarea
                     id="options_ar"
                     name="options_ar"
@@ -211,7 +212,7 @@ export default async function EditAraQuestionPage({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="score_map">Score map - JSON</Label>
+                <Label htmlFor="score_map">{t("araAdminData.eq_score_map_label")}</Label>
                 <textarea
                   id="score_map"
                   name="score_map"
@@ -223,36 +224,36 @@ export default async function EditAraQuestionPage({
 
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
-                  <Label htmlFor="region">Region filter</Label>
+                  <Label htmlFor="region">{t("araAdminData.vd_region_label")}</Label>
                   <select
                     id="region"
                     name="region"
                     defaultValue={question.region}
                     className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
                   >
-                    <option value="both">Both UAE &amp; Saudi</option>
-                    <option value="uae">UAE only</option>
-                    <option value="saudi">Saudi only</option>
+                    <option value="both">{t("araAdminData.vd_region_both")}</option>
+                    <option value="uae">{t("araAdminData.vd_region_uae")}</option>
+                    <option value="saudi">{t("araAdminData.vd_region_saudi")}</option>
                   </select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="sector">Sector filter</Label>
+                  <Label htmlFor="sector">{t("araAdminData.vd_sector_label")}</Label>
                   <select
                     id="sector"
                     name="sector"
                     defaultValue={question.sector}
                     className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
                   >
-                    <option value="all">All sectors</option>
-                    <option value="government">Government only</option>
-                    <option value="banking">Banking only</option>
-                    <option value="general">General only</option>
+                    <option value="all">{t("araAdminData.vd_sector_all")}</option>
+                    <option value="government">{t("araAdminData.vd_sector_government")}</option>
+                    <option value="banking">{t("araAdminData.vd_sector_banking")}</option>
+                    <option value="general">{t("araAdminData.vd_sector_general")}</option>
                   </select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="display_order">Display order</Label>
+                  <Label htmlFor="display_order">{t("araAdminData.vd_display_order_label")}</Label>
                   <Input
                     id="display_order"
                     name="display_order"
@@ -264,9 +265,9 @@ export default async function EditAraQuestionPage({
               </div>
 
               <div className="flex gap-3 pt-2">
-                <Button type="submit">Save changes</Button>
+                <Button type="submit">{t("araAdminData.eq_save_button")}</Button>
                 <Link href={`/ara/admin/questions/${version.id}`}>
-                  <Button type="button" variant="outline">Cancel</Button>
+                  <Button type="button" variant="outline">{t("araAdminData.eq_cancel_button")}</Button>
                 </Link>
               </div>
             </form>
@@ -280,7 +281,7 @@ export default async function EditAraQuestionPage({
 // ─────────────────────────────────────────────────────────────
 // Lineage card - explicit item → construct → AC competencies → score map
 // ─────────────────────────────────────────────────────────────
-function QuestionLineageCard({ question }: { question: AraQuestion }) {
+function QuestionLineageCard({ question, t }: { question: AraQuestion; t: ServerT }) {
   const pillar = ARA_PILLARS.find((p) => p.id === question.pillar_id);
   const factorId = question.individual_factor_id as AraIndividualFactorId | null;
   const factor = factorId ? ARA_INDIVIDUAL_FACTOR_MAP[factorId] : null;
@@ -294,27 +295,25 @@ function QuestionLineageCard({ question }: { question: AraQuestion }) {
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
           <GitBranch className="h-4 w-4 text-accent" />
-          <CardTitle className="text-base">Lineage</CardTitle>
+          <CardTitle className="text-base">{t("araAdminData.lin_title")}</CardTitle>
           {isIndividual ? (
-            <Badge variant="secondary" className="text-[10px]">Individual layer</Badge>
+            <Badge variant="secondary" className="text-[10px]">{t("araAdminData.lin_individual_badge")}</Badge>
           ) : (
-            <Badge variant="secondary" className="text-[10px]">Org pillar layer</Badge>
+            <Badge variant="secondary" className="text-[10px]">{t("araAdminData.lin_org_badge")}</Badge>
           )}
           <Badge variant="outline" className="text-[10px] ms-auto">
-            Layer {question.layer} · {question.question_type}
+            {t("araAdminData.lin_layer_type", { layer: question.layer, type: question.question_type })}
           </Badge>
         </div>
         <CardDescription>
-          Every question is tagged at the database level to exactly one
-          construct. This is the chain a consultant or client can show the
-          stakeholder asking <em>&ldquo;where did this question come from?&rdquo;</em>
+          {t("araAdminData.lin_desc_prefix")} <em>{t("araAdminData.lin_desc_question")}</em>
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Item text */}
         <div>
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">
-            1 · Item
+            {t("araAdminData.lin_step1_item")}
           </p>
           <p className="text-sm">{question.question_text_en}</p>
           <p className="text-xs text-muted-foreground mt-1" dir="rtl">{question.question_text_ar}</p>
@@ -323,7 +322,7 @@ function QuestionLineageCard({ question }: { question: AraQuestion }) {
         {/* Construct mapping */}
         <div>
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">
-            2 · {isIndividual ? "Individual factor" : "Pillar"}
+            {isIndividual ? t("araAdminData.lin_step2_factor") : t("araAdminData.lin_step2_pillar")}
           </p>
           {isIndividual && factor ? (
             <div className="rounded-md border bg-card p-3">
@@ -347,7 +346,7 @@ function QuestionLineageCard({ question }: { question: AraQuestion }) {
             </div>
           ) : (
             <p className="text-xs text-muted-foreground italic">
-              No construct mapping found - investigate before publishing.
+              {t("araAdminData.lin_no_construct")}
             </p>
           )}
         </div>
@@ -356,7 +355,7 @@ function QuestionLineageCard({ question }: { question: AraQuestion }) {
         {isIndividual && factor && factor.ac_competency_names.length > 0 && (
           <div>
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">
-              3 · Mapped AC competencies (drives course recommender + Learning Plan)
+              {t("araAdminData.lin_step3_competencies")}
             </p>
             <div className="flex flex-wrap gap-1.5">
               {factor.ac_competency_names.map((name) => (
@@ -371,14 +370,14 @@ function QuestionLineageCard({ question }: { question: AraQuestion }) {
         {/* Score map */}
         <div>
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">
-            {isIndividual ? "4" : "3"} · Score map
+            {t("araAdminData.lin_score_map_step", { step: isIndividual ? "4" : "3" })}
           </p>
           {scoreMap && Object.keys(scoreMap).length > 0 ? (
             <table className="w-full text-xs border-collapse">
               <thead>
                 <tr className="border-b">
-                  <th className="text-start py-1.5 font-semibold text-muted-foreground">Option</th>
-                  <th className="text-end py-1.5 font-semibold text-muted-foreground w-24">Score (1–5)</th>
+                  <th className="text-start py-1.5 font-semibold text-muted-foreground">{t("araAdminData.lin_col_option")}</th>
+                  <th className="text-end py-1.5 font-semibold text-muted-foreground w-24">{t("araAdminData.lin_col_score")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -394,20 +393,20 @@ function QuestionLineageCard({ question }: { question: AraQuestion }) {
             </table>
           ) : (
             <p className="text-xs text-muted-foreground italic">
-              No score map (open-text or unscored item).
+              {t("araAdminData.lin_no_score_map")}
             </p>
           )}
         </div>
 
         {/* Region / sector filters */}
         <div className="flex items-center gap-2 text-[11px] text-muted-foreground pt-1 border-t">
-          <span>Region: <strong className="text-foreground">{question.region}</strong></span>
+          <span>{t("araAdminData.lin_region")} <strong className="text-foreground">{question.region}</strong></span>
           <span>·</span>
-          <span>Sector: <strong className="text-foreground">{question.sector}</strong></span>
+          <span>{t("araAdminData.lin_sector")} <strong className="text-foreground">{question.sector}</strong></span>
           <span>·</span>
-          <span>Display order: <strong className="text-foreground">{question.display_order}</strong></span>
+          <span>{t("araAdminData.lin_display_order")} <strong className="text-foreground">{question.display_order}</strong></span>
           <span>·</span>
-          <span>{question.is_active ? "Active" : "Inactive"}</span>
+          <span>{question.is_active ? t("araAdminData.lin_active") : t("araAdminData.lin_inactive")}</span>
         </div>
       </CardContent>
     </Card>

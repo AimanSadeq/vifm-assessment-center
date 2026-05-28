@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function POST(
@@ -37,8 +37,14 @@ export async function POST(
       );
     }
 
+    // Writes go through the service client. The consent_records INSERT policy
+    // only permits the candidate themselves, but this endpoint also serves the
+    // admin "view as candidate" flow; the getUser() guard above still requires
+    // an authenticated caller. (Matches the Academy/ARA service-role write path.)
+    const svc = createServiceClient();
+
     // Validate candidate exists
-    const { data: candidate } = await supabase
+    const { data: candidate } = await svc
       .from("candidates")
       .select("id")
       .eq("id", params.candidateId)
@@ -52,7 +58,7 @@ export async function POST(
     }
 
     // Idempotency: check if consent already exists for this candidate
-    const { data: existing } = await supabase
+    const { data: existing } = await svc
       .from("consent_records")
       .select("id")
       .eq("candidate_id", params.candidateId)
@@ -80,14 +86,14 @@ export async function POST(
       ip_address: ipAddress,
     }));
 
-    const { error } = await supabase.from("consent_records").insert(rows);
+    const { error } = await svc.from("consent_records").insert(rows);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     // Update candidate status to registered
-    await supabase
+    await svc
       .from("candidates")
       .update({ status: "registered" })
       .eq("id", params.candidateId);

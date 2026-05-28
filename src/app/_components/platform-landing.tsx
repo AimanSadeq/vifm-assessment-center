@@ -6,6 +6,7 @@ import {
   ArrowRight, ArrowLeft, ClipboardCheck, Compass, Aperture, Languages, GraduationCap, Sparkles,
 } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 
 type Lang = "en" | "ar";
 type Tone = "blue" | "violet" | "teal" | "gold";
@@ -43,24 +44,28 @@ const T = {
         name: "Assessment Center",
         description:
           "Design assessment centers, run exercises and observations, reach scoring consensus in the live wash-up engine, and issue competency reports and learning plans.",
+        tooltip: "Best for hiring and promotion decisions grounded in observed behaviour.",
       },
       ara: {
         tagline: "AR Compass diagnostic",
         name: "AI Readiness",
         description:
           "An eight-pillar organisational AI-readiness diagnostic, calibrated to UAE and Saudi frameworks, with bilingual board-ready reports and a complimentary personal snapshot.",
+        tooltip: "Best for sizing up your organisation's AI readiness before you invest.",
       },
       reflect: {
         tagline: "Leadership feedback",
         name: "Reflect 360",
         description:
           "360-degree leadership feedback built from your own values and competencies, with a development plan per leader and an organisation-wide cohort culture view.",
+        tooltip: "Best for developing leaders with candid, multi-rater feedback.",
       },
       fluent: {
         tagline: "AI English placement",
         name: "Fluent",
         description:
           "A four-skill, CEFR-aligned English placement: AI-generated reading and listening, rubric-scored writing and speaking, with an indicative level and feedback in minutes.",
+        tooltip: "Best for fast, defensible English placement at any scale.",
       },
     },
   },
@@ -85,24 +90,28 @@ const T = {
         name: "مركز التقييم",
         description:
           "صمّم مراكز التقييم، ونفّذ التمارين والملاحظات، وتوصّل إلى توافق في التقييم عبر محرّك المراجعة المباشر، وأصدر تقارير الكفاءات وخطط التطوير.",
+        tooltip: "الأنسب لقرارات التوظيف والترقية المبنية على سلوك مُلاحَظ.",
       },
       ara: {
         tagline: "تشخيص بوصلة الجاهزية",
         name: "الجاهزية للذكاء الاصطناعي",
         description:
           "تشخيص لجاهزية المؤسسة للذكاء الاصطناعي عبر ثماني ركائز، مُعايَر وفق أُطُر الإمارات والسعودية، مع تقارير ثنائية اللغة جاهزة للعرض على مجلس الإدارة، ولمحة شخصية مجانية.",
+        tooltip: "الأنسب لقياس جاهزية مؤسستك للذكاء الاصطناعي قبل الاستثمار.",
       },
       reflect: {
         tagline: "تغذية راجعة قيادية",
         name: "ريفلكت 360",
         description:
           "تغذية راجعة قيادية بزاوية 360 درجة مبنية على قيمكم وكفاءاتكم، مع خطة تطوير لكل قائد وعرض شامل لثقافة المؤسسة بأكملها.",
+        tooltip: "الأنسب لتطوير القادة عبر تغذية راجعة صريحة ومتعددة المصادر.",
       },
       fluent: {
         tagline: "تحديد مستوى الإنجليزية بالذكاء الاصطناعي",
         name: "فلوينت",
         description:
           "اختبار لتحديد مستوى الإنجليزية عبر أربع مهارات وفق إطار CEFR: قراءة واستماع مُولّدان بالذكاء الاصطناعي، وكتابة وتحدّث يُقيّمان وفق معايير محدّدة، مع مستوى تقريبي وملاحظات خلال دقائق.",
+        tooltip: "الأنسب لتحديد مستوى الإنجليزية بسرعة وموثوقية وعلى نطاق واسع.",
       },
     },
   },
@@ -194,31 +203,40 @@ export function PlatformLanding() {
 
       {/* ─── Service launcher (overlaps the hero) ─── */}
       <main className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center -mt-10 px-6 pb-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          {SERVICES.map(({ key, href, icon: Icon, tone }) => {
-            const svc = t.services[key];
-            return (
-              <Link key={key} href={href} className="block h-full">
-                <div className={`launcher-card tone-${tone} h-full p-4`}>
-                  <Icon className="launcher-card-glyph h-16 w-16" strokeWidth={1} aria-hidden />
-                  <div className="relative z-10 flex h-full flex-col">
-                    <div className="launcher-card-icon mb-2 flex h-10 w-10 items-center justify-center rounded-xl">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <div className="ara-eyebrow mb-1">{svc.tagline}</div>
-                    <h2 className="text-lg font-semibold text-primary">{svc.name}</h2>
-                    <p className="mt-1 flex-1 text-xs leading-snug text-muted-foreground">
-                      {svc.description}
-                    </p>
-                    <div className="launcher-card-cta mt-3 inline-flex items-center gap-1.5 text-sm font-semibold">
-                      {t.enter} <Arrow className="h-4 w-4" />
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+        <TooltipProvider delayDuration={200}>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {SERVICES.map(({ key, href, icon: Icon, tone }) => {
+              const svc = t.services[key];
+              return (
+                <Tooltip key={key}>
+                  <TooltipTrigger asChild>
+                    <Link href={href} className="block h-full">
+                      <div className={`launcher-card tone-${tone} h-full p-4`}>
+                        <Icon className="launcher-card-glyph h-16 w-16" strokeWidth={1} aria-hidden />
+                        <div className="relative z-10 flex h-full flex-col">
+                          <div className="launcher-card-icon mb-2 flex h-10 w-10 items-center justify-center rounded-xl">
+                            <Icon className="h-5 w-5" />
+                          </div>
+                          <div className="ara-eyebrow mb-1">{svc.tagline}</div>
+                          <h2 className="text-lg font-semibold text-primary">{svc.name}</h2>
+                          <p className="mt-1 flex-1 text-xs leading-snug text-muted-foreground">
+                            {svc.description}
+                          </p>
+                          <div className="launcher-card-cta mt-3 inline-flex items-center gap-1.5 text-sm font-semibold">
+                            {t.enter} <Arrow className="h-4 w-4" />
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs text-center leading-snug">
+                    {svc.tooltip}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </div>
+        </TooltipProvider>
       </main>
 
       {/* ─── Footer ─── */}

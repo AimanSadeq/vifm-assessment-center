@@ -14,6 +14,12 @@ import { NextResponse } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { createServiceClient } from "@/lib/supabase/server";
 import { FluentCertificate, type FluentCertificateData } from "@/lib/reports/fluent-certificate";
+import {
+  renderFluentCertificateHtmlAr,
+  type FluentCertificateArData,
+} from "@/lib/reports/fluent-certificate-ar-html";
+import { renderHtmlToPdfBuffer } from "@/lib/reports/html-to-pdf";
+import { getServerLocale } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -25,6 +31,25 @@ const CEFR_LABEL: Record<string, string> = {
   B2: "Upper-intermediate",
   C1: "Advanced",
   C2: "Proficient / Mastery",
+};
+
+// Arabic CEFR band labels — parallel to CEFR_LABEL. Level codes stay
+// verbatim (A1…C2); only the descriptive band is translated.
+const CEFR_LABEL_AR: Record<string, string> = {
+  A1: "مبتدئ",
+  A2: "أساسي",
+  B1: "متوسط",
+  B2: "فوق المتوسط",
+  C1: "متقدّم",
+  C2: "إتقان / تمكّن",
+};
+
+// Arabic skill labels, keyed by the English label used internally.
+const SKILL_LABEL_AR: Record<string, string> = {
+  Reading: "القراءة",
+  Listening: "الاستماع",
+  Writing: "الكتابة",
+  Speaking: "التحدّث",
 };
 
 const esc = (s: unknown): string =>
@@ -93,8 +118,51 @@ export async function GET(req: Request, { params }: { params: { resultId: string
   const rangeText =
     band?.low && band?.high ? (band.low === band.high ? band.low : `${band.low}–${band.high}`) : null;
 
+  // Language for the PDF: explicit ?lang= wins, else the vifm-locale
+  // cookie. Anything other than "ar" falls back to English.
+  const url = new URL(req.url);
+  const lang =
+    ((url.searchParams.get("lang") ?? (await getServerLocale())) === "ar"
+      ? "ar"
+      : "en");
+
   // ── PDF branch ──
-  if (new URL(req.url).searchParams.get("format") === "pdf") {
+  if (url.searchParams.get("format") === "pdf") {
+    const safeName = name.replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "candidate";
+
+    // ── Arabic path: Puppeteer renders RTL HTML so Chromium can shape
+    //    the Arabic glyphs React-PDF cannot. Same data shape; layout
+    //    mirrors the EN landscape certificate. ──
+    if (lang === "ar") {
+      const arDate = new Date(row.created_at).toLocaleDateString("ar-AE", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+      const arData: FluentCertificateArData = {
+        id: row.id,
+        name,
+        date: arDate,
+        overall_cefr: level,
+        level_label: CEFR_LABEL_AR[row.overall_cefr] ?? "",
+        range: rangeText,
+        skills: skills.map((sk) => ({
+          label: SKILL_LABEL_AR[sk.label] ?? sk.label,
+          cefr: sk.cefr,
+        })),
+      };
+      const html = renderFluentCertificateHtmlAr(arData);
+      const buffer = await renderHtmlToPdfBuffer(html, { landscape: true });
+      return new NextResponse(new Uint8Array(buffer), {
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `attachment; filename="VIFM-Fluent-Certificate-${safeName}-ar.pdf"`,
+          "Cache-Control": "no-store",
+        },
+      });
+    }
+
+    // ── English path: existing React-PDF renderer. Unchanged. ──
     const data: FluentCertificateData = {
       id: row.id,
       name,
@@ -105,7 +173,6 @@ export async function GET(req: Request, { params }: { params: { resultId: string
       skills,
     };
     const buffer = await renderToBuffer(<FluentCertificate data={data} />);
-    const safeName = name.replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "candidate";
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/pdf",

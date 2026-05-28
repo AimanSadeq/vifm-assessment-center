@@ -7,6 +7,9 @@
 import { renderToBuffer } from "@react-pdf/renderer";
 import { createServiceClient } from "@/lib/supabase/server";
 import { CredentialCertificate } from "@/lib/reports/credential-certificate";
+import { renderCredentialCertificateHtmlAr } from "@/lib/reports/credential-certificate-ar-html";
+import { renderHtmlToPdfBuffer } from "@/lib/reports/html-to-pdf";
+import { getServerLocale } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -17,26 +20,67 @@ const TYPE_LABEL: Record<string, string> = {
   fluent_cefr: "English Placement",
 };
 
-function fmt(iso?: string | null): string {
+// Arabic type labels, keyed by credential_type. Falls back to a generic
+// "شهادة" (certificate) for any unmapped type.
+const TYPE_LABEL_AR: Record<string, string> = {
+  academy_completion: "إتمام دورة",
+  ac_ready_now: "تقييم - جاهز الآن",
+  fluent_cefr: "تحديد مستوى الإنجليزية",
+};
+
+function fmt(iso?: string | null, locale: "en-GB" | "ar-AE" = "en-GB"): string {
   if (!iso) return "";
   try {
-    return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+    return new Date(iso).toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" });
   } catch {
     return "";
   }
 }
 
-export async function GET(_req: Request, { params }: { params: { credentialId: string } }) {
+export async function GET(req: Request, { params }: { params: { credentialId: string } }) {
   try {
     const sb = createServiceClient();
     const { data, error } = await sb
       .from("vifm_credentials")
-      .select("id, verification_code, issued_to_name, credential_type, title_en, subtitle_en, score_pct, issued_at, expires_at")
+      .select("id, verification_code, issued_to_name, credential_type, title_en, title_ar, subtitle_en, subtitle_ar, score_pct, issued_at, expires_at")
       .eq("id", params.credentialId)
       .maybeSingle();
     if (error || !data) return new Response("Credential not found", { status: 404 });
 
     const base = process.env.NEXT_PUBLIC_SITE_URL || "https://caliber.viftraining.com";
+    const verifyUrl = `${base}/verify/${data.verification_code}`;
+
+    // Language: explicit ?lang= wins, else the server locale cookie. Only
+    // "ar" routes to the Puppeteer path; everything else stays on React-PDF.
+    const lang =
+      ((new URL(req.url).searchParams.get("lang") ?? (await getServerLocale())) === "ar"
+        ? "ar"
+        : "en");
+
+    // ── Arabic path: Puppeteer renders RTL HTML so Chromium can shape the
+    //    Arabic glyphs React-PDF cannot. Mirrors the EN landscape layout.
+    if (lang === "ar") {
+      const html = renderCredentialCertificateHtmlAr({
+        verificationCode: data.verification_code,
+        name: data.issued_to_name,
+        typeLabel: TYPE_LABEL_AR[data.credential_type] ?? "شهادة",
+        titleAr: data.title_ar ?? data.title_en,
+        subtitleAr: data.subtitle_ar ?? data.subtitle_en,
+        scorePct: data.score_pct,
+        issuedAt: fmt(data.issued_at, "ar-AE"),
+        expiresAt: fmt(data.expires_at, "ar-AE"),
+        verifyUrl,
+      });
+      const buffer = await renderHtmlToPdfBuffer(html, { landscape: true });
+      return new Response(new Uint8Array(buffer), {
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `inline; filename="vifm-credential-${data.id}.pdf"`,
+        },
+      });
+    }
+
+    // ── English path: existing React-PDF renderer. Unchanged.
     const buffer = await renderToBuffer(
       <CredentialCertificate
         data={{
@@ -48,7 +92,7 @@ export async function GET(_req: Request, { params }: { params: { credentialId: s
           scorePct: data.score_pct,
           issuedAt: fmt(data.issued_at),
           expiresAt: fmt(data.expires_at),
-          verifyUrl: `${base}/verify/${data.verification_code}`,
+          verifyUrl,
         }}
       />
     );

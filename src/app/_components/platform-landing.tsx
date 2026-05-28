@@ -141,12 +141,12 @@ export function PlatformLanding() {
   const Arrow = rtl ? ArrowLeft : ArrowRight;
 
   return (
-    <div dir={rtl ? "rtl" : "ltr"} className="min-h-screen bg-background">
+    <div dir={rtl ? "rtl" : "ltr"} className="flex h-screen flex-col overflow-hidden bg-background">
       {/* ─── Platform hero ─── */}
-      <header className="ara-hero relative overflow-hidden">
-        <div className="mx-auto max-w-6xl px-6 pt-8 pb-28">
+      <header className="ara-hero relative shrink-0 overflow-hidden">
+        <div className="mx-auto max-w-6xl px-6 pt-3 pb-16">
           {/* Top bar */}
-          <div className="mb-16 flex items-center justify-between gap-4">
+          <div className="mb-6 flex items-center justify-between gap-4">
             <VifmLogo variant="white" size="md" />
             <div className="flex items-center gap-2">
               <Link
@@ -176,11 +176,11 @@ export function PlatformLanding() {
             <span className="ara-eyebrow text-accent">
               <Sparkles className="h-3 w-3" /> {t.eyebrow}
             </span>
-            <h1 className="ara-numeral mt-4 mb-5 text-4xl font-semibold leading-[1.12] text-white sm:text-5xl lg:text-6xl">
+            <h1 className="ara-numeral mt-2 mb-2.5 text-2xl font-semibold leading-[1.1] text-white sm:text-3xl lg:text-4xl">
               {t.h1a} <span className="ara-accent-sweep">{t.h1b}</span>
             </h1>
-            <p className="max-w-2xl text-lg leading-relaxed text-white/75">{t.sub}</p>
-            <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-white/55">
+            <p className="max-w-2xl text-sm leading-relaxed text-white/75">{t.sub}</p>
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-white/55">
               {t.trust.map((item, i) => (
                 <span key={item} className="inline-flex items-center gap-4">
                   {i > 0 && <span className="h-3 w-px bg-white/20" />}
@@ -193,24 +193,24 @@ export function PlatformLanding() {
       </header>
 
       {/* ─── Service launcher (overlaps the hero) ─── */}
-      <main className="relative z-10 mx-auto -mt-16 max-w-6xl px-6 pb-16">
-        <div className="grid gap-6 sm:grid-cols-2">
+      <main className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center -mt-10 px-6 pb-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           {SERVICES.map(({ key, href, icon: Icon, tone }) => {
             const svc = t.services[key];
             return (
               <Link key={key} href={href} className="block h-full">
-                <div className={`launcher-card tone-${tone} h-full p-7`}>
-                  <Icon className="launcher-card-glyph h-28 w-28" strokeWidth={1} aria-hidden />
+                <div className={`launcher-card tone-${tone} h-full p-4`}>
+                  <Icon className="launcher-card-glyph h-16 w-16" strokeWidth={1} aria-hidden />
                   <div className="relative z-10 flex h-full flex-col">
-                    <div className="launcher-card-icon mb-4 flex h-12 w-12 items-center justify-center rounded-xl">
-                      <Icon className="h-6 w-6" />
+                    <div className="launcher-card-icon mb-2 flex h-10 w-10 items-center justify-center rounded-xl">
+                      <Icon className="h-5 w-5" />
                     </div>
-                    <div className="ara-eyebrow mb-1.5">{svc.tagline}</div>
-                    <h2 className="text-2xl font-semibold text-primary">{svc.name}</h2>
-                    <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">
+                    <div className="ara-eyebrow mb-1">{svc.tagline}</div>
+                    <h2 className="text-lg font-semibold text-primary">{svc.name}</h2>
+                    <p className="mt-1 flex-1 text-xs leading-snug text-muted-foreground">
                       {svc.description}
                     </p>
-                    <div className="launcher-card-cta mt-5 inline-flex items-center gap-1.5 text-sm font-semibold">
+                    <div className="launcher-card-cta mt-3 inline-flex items-center gap-1.5 text-sm font-semibold">
                       {t.enter} <Arrow className="h-4 w-4" />
                     </div>
                   </div>
@@ -222,8 +222,8 @@ export function PlatformLanding() {
       </main>
 
       {/* ─── Footer ─── */}
-      <footer className="border-t bg-card/50">
-        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-4 px-6 py-8 sm:flex-row sm:items-center">
+      <footer className="shrink-0 border-t bg-card/50">
+        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-2 px-6 py-2.5 sm:flex-row sm:items-center">
           <div className="text-xs text-muted-foreground">
             <div className="mb-0.5 font-medium text-foreground">{t.footerOrg}</div>
             {t.footerConfidential}

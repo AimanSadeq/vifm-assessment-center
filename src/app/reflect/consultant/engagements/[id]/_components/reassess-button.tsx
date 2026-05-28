@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { Repeat, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createReflectReassessmentFromPrior } from "@/lib/reflect/actions";
@@ -11,6 +12,7 @@ type Props = {
 };
 
 export function ReflectReassessButton({ engagementId }: Props) {
+  const { t } = useTranslation();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [carry, setCarry] = useState(true);
@@ -44,7 +46,7 @@ export function ReflectReassessButton({ engagementId }: Props) {
         className="text-xs"
       >
         <Repeat className="h-3.5 w-3.5 me-1.5" />
-        Re-engage cohort
+        {t("reflectConsultant.reassessButton")}
       </Button>
 
       {open && (
@@ -52,12 +54,10 @@ export function ReflectReassessButton({ engagementId }: Props) {
           <div className="bg-card rounded-xl border p-6 max-w-md w-full space-y-4">
             <div>
               <h3 className="text-base font-semibold text-primary">
-                Start a reassessment
+                {t("reflectConsultant.reassessTitle")}
               </h3>
               <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                Creates a new draft engagement with the same framework. Each
-                new participant carries a link to their prior record so the
-                report can show year-on-year deltas once the new run scores.
+                {t("reflectConsultant.reassessDescription")}
               </p>
             </div>
 
@@ -69,10 +69,9 @@ export function ReflectReassessButton({ engagementId }: Props) {
                 className="mt-0.5"
               />
               <span>
-                <strong className="text-primary">Carry participants over</strong>
+                <strong className="text-primary">{t("reflectConsultant.reassessCarryTitle")}</strong>
                 <span className="block text-xs text-muted-foreground">
-                  Copy the prior cohort into the new draft. Raters are NOT
-                  carried - each participant invites fresh raters.
+                  {t("reflectConsultant.reassessCarryBody")}
                 </span>
               </span>
             </label>
@@ -88,7 +87,7 @@ export function ReflectReassessButton({ engagementId }: Props) {
                 disabled={pending}
                 className="rounded-md border px-3 py-2 text-sm text-foreground hover:bg-muted"
               >
-                Cancel
+                {t("reflectConsultant.cancel")}
               </button>
               <Button
                 type="button"
@@ -96,7 +95,7 @@ export function ReflectReassessButton({ engagementId }: Props) {
                 disabled={pending}
               >
                 {pending && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
-                Create reassessment
+                {t("reflectConsultant.reassessCreate")}
               </Button>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, Aperture } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getServerT } from "@/lib/i18n/server";
 import { ReflectWizard, type WizardOrg, type WizardTemplate } from "./_components/wizard";
 
 export const metadata = {
@@ -26,6 +27,7 @@ async function fetchWizardData(): Promise<{ orgs: WizardOrg[]; templates: Wizard
 
 export default async function NewReflectEngagementPage() {
   const { orgs, templates } = await fetchWizardData();
+  const t = await getServerT();
 
   return (
     <div className="min-h-screen bg-background">
@@ -36,16 +38,16 @@ export default async function NewReflectEngagementPage() {
               href="/reflect/consultant"
               className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-1"
             >
-              <ArrowLeft className="h-3 w-3" /> Consultant dashboard
+              <ArrowLeft className="h-3 w-3" /> {t("reflectWizard.page.backToDashboard")}
             </Link>
             <div className="flex items-center gap-2">
               <Aperture className="h-5 w-5 text-accent" />
               <h1 className="text-xl font-semibold text-primary">
-                New Reflect 360 engagement
+                {t("reflectWizard.page.title")}
               </h1>
             </div>
           </div>
-          <span className="text-xs text-muted-foreground">M2 · wizard</span>
+          <span className="text-xs text-muted-foreground">{t("reflectWizard.page.badge")}</span>
         </div>
       </header>
 

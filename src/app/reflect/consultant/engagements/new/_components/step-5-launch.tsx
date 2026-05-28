@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Rocket,
   Loader2,
@@ -26,6 +27,7 @@ type Props = {
 };
 
 export function StepLaunch({ state, engagementId, onLaunched }: Props) {
+  const { t } = useTranslation();
   const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -47,14 +49,14 @@ export function StepLaunch({ state, engagementId, onLaunched }: Props) {
 
   const launch = () => {
     if (!confirmed) {
-      setError("Tick the confirmation to launch.");
+      setError(t("reflectWizard.step5.confirmError"));
       return;
     }
     setError(null);
     startTransition(async () => {
       const res = await launchReflectEngagement(engagementId);
       if (!res.ok) {
-        setError(res.error ?? "Launch failed");
+        setError(res.error ?? t("reflectWizard.step5.launchFailed"));
         return;
       }
       onLaunched();
@@ -64,53 +66,53 @@ export function StepLaunch({ state, engagementId, onLaunched }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-primary">Launch</h2>
+        <h2 className="text-lg font-semibold text-primary">{t("reflectWizard.step5.heading")}</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Confirm the engagement summary and launch. Status flips from <code className="text-xs">draft</code> to <code className="text-xs">live</code> and the engagement appears on your dashboard. Invitation emails to raters land with milestone M3.
+          {t("reflectWizard.step5.introPrefix")} <code className="text-xs">{t("reflectWizard.step5.statusDraft")}</code> {t("reflectWizard.step5.introMid1")} <code className="text-xs">{t("reflectWizard.step5.statusLive")}</code> {t("reflectWizard.step5.introSuffix")}
         </p>
       </div>
 
       <div className="grid gap-3 md:grid-cols-2 text-sm">
-        <Summary label="Engagement" value={state.name} />
-        <Summary label="Sandbox" value={state.is_sandbox ? "Yes" : "No"} />
-        <Summary label="Default language" value={state.default_language === "en" ? "English" : "Arabic"} />
+        <Summary label={t("reflectWizard.step5.summary.engagement")} value={state.name} />
+        <Summary label={t("reflectWizard.step5.summary.sandbox")} value={state.is_sandbox ? t("reflectWizard.step5.summary.yes") : t("reflectWizard.step5.summary.no")} />
+        <Summary label={t("reflectWizard.step5.summary.defaultLanguage")} value={state.default_language === "en" ? t("reflectWizard.step5.summary.english") : t("reflectWizard.step5.summary.arabic")} />
         <Summary
-          label="Report language"
+          label={t("reflectWizard.step5.summary.reportLanguage")}
           value={
             state.report_language === "bilingual"
-              ? "Bilingual (EN + AR)"
+              ? t("reflectWizard.step5.summary.reportBilingual")
               : state.report_language === "en"
-                ? "English only"
-                : "Arabic only"
+                ? t("reflectWizard.step5.summary.reportEnOnly")
+                : t("reflectWizard.step5.summary.reportArOnly")
           }
         />
-        <Summary label="Anonymity threshold" value={`N = ${state.anonymity_min_n}`} />
+        <Summary label={t("reflectWizard.step5.summary.anonymityThreshold")} value={t("reflectWizard.step5.summary.anonymityValue", { count: state.anonymity_min_n })} />
         <Summary
-          label="Field window"
+          label={t("reflectWizard.step5.summary.fieldWindow")}
           value={
             state.field_window_start && state.field_window_end
               ? `${state.field_window_start} → ${state.field_window_end}`
               : state.field_window_start
-                ? `Opens ${state.field_window_start}`
-                : "Not set"
+                ? t("reflectWizard.step5.summary.opens", { date: state.field_window_start })
+                : t("reflectWizard.step5.summary.notSet")
           }
         />
         <Summary
-          label="Target population"
-          value={state.participant_target_count ? `${state.participant_target_count}` : "Not set"}
+          label={t("reflectWizard.step5.summary.targetPopulation")}
+          value={state.participant_target_count ? `${state.participant_target_count}` : t("reflectWizard.step5.summary.notSet")}
         />
         <Summary
-          label="Levels in scope"
-          value={state.levels_in_scope.length === 0 ? "None" : state.levels_in_scope.join(", ")}
+          label={t("reflectWizard.step5.summary.levelsInScope")}
+          value={state.levels_in_scope.length === 0 ? t("reflectWizard.step5.summary.none") : state.levels_in_scope.join(", ")}
         />
         <Summary
-          label="Framework"
+          label={t("reflectWizard.step5.summary.framework")}
           value={
             state.framework_kind === "clone"
-              ? "Cloned from library template"
+              ? t("reflectWizard.step5.summary.frameworkClone")
               : state.framework_kind === "ai"
-                ? "Built via AI extraction (review on detail page)"
-                : "Built manually (add competencies on detail page)"
+                ? t("reflectWizard.step5.summary.frameworkAi")
+                : t("reflectWizard.step5.summary.frameworkManual")
           }
         />
       </div>
@@ -125,12 +127,12 @@ export function StepLaunch({ state, engagementId, onLaunched }: Props) {
           <div>
             <div className="text-sm font-semibold text-primary inline-flex items-center gap-2">
               {frameworkOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRightIcon className="h-4 w-4" />}
-              Review the framework before launching
+              {t("reflectWizard.step5.reviewToggle")}
             </div>
             <div className="text-xs text-muted-foreground mt-0.5">
               {framework
-                ? `${framework.competencies.length} competencies · ${totalBehaviours} behaviours`
-                : "Loading…"}
+                ? t("reflectWizard.step5.reviewCount", { competencies: framework.competencies.length, behaviours: totalBehaviours })
+                : t("reflectWizard.step5.loading")}
             </div>
           </div>
           {framework && (
@@ -142,7 +144,7 @@ export function StepLaunch({ state, engagementId, onLaunched }: Props) {
               className="inline-flex items-center gap-1.5 rounded-md border bg-card px-2.5 py-1.5 text-xs text-foreground hover:bg-muted transition-colors"
             >
               <FileDown className="h-3.5 w-3.5" />
-              Download PDF
+              {t("reflectWizard.step5.downloadPdf")}
             </a>
           )}
         </button>
@@ -150,7 +152,7 @@ export function StepLaunch({ state, engagementId, onLaunched }: Props) {
         {frameworkOpen && framework && (
           <div className="border-t bg-muted/20 p-4 space-y-4 max-h-[28rem] overflow-y-auto">
             {framework.competencies.length === 0 ? (
-              <p className="text-sm text-muted-foreground italic">No competencies yet - the framework is empty.</p>
+              <p className="text-sm text-muted-foreground italic">{t("reflectWizard.step5.emptyFramework")}</p>
             ) : (
               framework.competencies.map((c) => (
                 <div key={c.id} className="rounded-md border bg-card p-3">
@@ -171,7 +173,7 @@ export function StepLaunch({ state, engagementId, onLaunched }: Props) {
                             {b.source === "ai_proposed" && (
                               <span className="ms-2 inline-flex items-center gap-0.5 text-[10px] uppercase tracking-wide rounded px-1.5 py-0.5 bg-violet-50 text-violet-700 border border-violet-200">
                                 <Sparkles className="h-2.5 w-2.5" />
-                                AI-proposed
+                                {t("reflectWizard.step5.aiProposed")}
                               </span>
                             )}
                             {b.text_ar && (
@@ -188,7 +190,7 @@ export function StepLaunch({ state, engagementId, onLaunched }: Props) {
               ))
             )}
             <p className="text-[11px] text-muted-foreground">
-              To edit individual behaviours, exit the wizard and use the engagement detail page&apos;s framework section once it ships.
+              {t("reflectWizard.step5.editNote")}
             </p>
           </div>
         )}
@@ -197,11 +199,9 @@ export function StepLaunch({ state, engagementId, onLaunched }: Props) {
       <div className="rounded-lg border bg-amber-50 border-amber-200 p-4 flex items-start gap-3">
         <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
         <div className="text-sm text-amber-900">
-          <div className="font-medium">Launching is recoverable</div>
+          <div className="font-medium">{t("reflectWizard.step5.recoverableTitle")}</div>
           <div className="text-amber-800 mt-1">
-            Launching flips the engagement to <code className="text-xs">live</code>, sends rater invitations
-            via Microsoft Graph (or the sandbox redirect when this is a sandbox engagement), and unlocks the
-            participant + cohort reports. You can pause or close the engagement later from the detail page.
+            {t("reflectWizard.step5.recoverableBodyPrefix")} <code className="text-xs">{t("reflectWizard.step5.statusLive")}</code>{t("reflectWizard.step5.recoverableBodySuffix")}
           </div>
         </div>
       </div>
@@ -213,7 +213,7 @@ export function StepLaunch({ state, engagementId, onLaunched }: Props) {
           onCheckedChange={(v) => setConfirmed(Boolean(v))}
         />
         <label htmlFor="rf-launch-confirm" className="text-sm cursor-pointer">
-          I&apos;ve reviewed the engagement design and I&apos;m ready to flip it live.
+          {t("reflectWizard.step5.confirmLabel")}
         </label>
       </div>
 
@@ -228,12 +228,12 @@ export function StepLaunch({ state, engagementId, onLaunched }: Props) {
           {pending ? (
             <>
               <Loader2 className="h-4 w-4 me-2 animate-spin" />
-              Launching…
+              {t("reflectWizard.step5.launching")}
             </>
           ) : (
             <>
               <Rocket className="h-4 w-4 me-2" />
-              Launch engagement
+              {t("reflectWizard.step5.launchEngagement")}
             </>
           )}
         </Button>

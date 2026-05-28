@@ -15,6 +15,7 @@ import {
   FileText,
 } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getServerT, type ServerT } from "@/lib/i18n/server";
 import { cn } from "@/lib/utils";
 import { DebriefRowActions } from "./_components/debrief-row-actions";
 import { ReflectReassessButton } from "./_components/reassess-button";
@@ -57,12 +58,12 @@ type FrameworkRow = {
   }>;
 };
 
-const STATUS_STYLE: Record<string, { label: string; icon: typeof Clock; className: string }> = {
-  draft: { label: "Draft", icon: Clock, className: "bg-amber-50 text-amber-700 border-amber-200" },
-  live: { label: "Live", icon: Sparkles, className: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  scoring: { label: "Scoring", icon: ClipboardList, className: "bg-violet-50 text-violet-700 border-violet-200" },
-  complete: { label: "Complete", icon: CheckCircle2, className: "bg-sky-50 text-sky-700 border-sky-200" },
-  archived: { label: "Archived", icon: Archive, className: "bg-muted text-muted-foreground border-border" },
+const STATUS_STYLE: Record<string, { labelKey: string; icon: typeof Clock; className: string }> = {
+  draft: { labelKey: "reflectConsultant.statusDraft", icon: Clock, className: "bg-amber-50 text-amber-700 border-amber-200" },
+  live: { labelKey: "reflectConsultant.statusLive", icon: Sparkles, className: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  scoring: { labelKey: "reflectConsultant.statusScoring", icon: ClipboardList, className: "bg-violet-50 text-violet-700 border-violet-200" },
+  complete: { labelKey: "reflectConsultant.statusComplete", icon: CheckCircle2, className: "bg-sky-50 text-sky-700 border-sky-200" },
+  archived: { labelKey: "reflectConsultant.statusArchived", icon: Archive, className: "bg-muted text-muted-foreground border-border" },
 };
 
 async function fetchEngagement(id: string) {
@@ -121,6 +122,7 @@ export default async function ReflectEngagementDetailPage({ params }: Params) {
   const { id } = await params;
   const data = await fetchEngagement(id);
   if (!data) notFound();
+  const t = await getServerT();
 
   const { engagement, framework, participants, participantCount, raterCount } = data;
   const status = STATUS_STYLE[engagement.status] ?? STATUS_STYLE.draft;
@@ -140,7 +142,7 @@ export default async function ReflectEngagementDetailPage({ params }: Params) {
             href="/reflect/consultant"
             className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-2"
           >
-            <ArrowLeft className="h-3 w-3" /> Consultant dashboard
+            <ArrowLeft className="h-3 w-3" /> {t("reflectConsultant.backToDashboard")}
           </Link>
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -149,12 +151,12 @@ export default async function ReflectEngagementDetailPage({ params }: Params) {
                 <h1 className="text-xl font-semibold text-primary">{engagement.name}</h1>
                 {engagement.is_sandbox && (
                   <span className="text-[10px] uppercase tracking-wide rounded-full px-2 py-0.5 bg-muted text-muted-foreground border">
-                    Sandbox
+                    {t("reflectConsultant.sandbox")}
                   </span>
                 )}
               </div>
               <div className="text-xs text-muted-foreground">
-                {engagement.ara_organizations?.name ?? "No organisation"}
+                {engagement.ara_organizations?.name ?? t("reflectConsultant.noOrganisation")}
                 {engagement.ara_organizations && (
                   <>
                     {" · "}<span className="uppercase">{engagement.ara_organizations.region}</span>
@@ -168,10 +170,10 @@ export default async function ReflectEngagementDetailPage({ params }: Params) {
                 <a
                   href={`/api/reflect/reports/cohort/${engagement.id}/pdf?language=${engagement.report_language}`}
                   className="inline-flex items-center gap-1.5 rounded-md border bg-card px-2.5 py-1.5 text-xs text-foreground hover:bg-muted transition-colors"
-                  title="Download cohort report PDF"
+                  title={t("reflectConsultant.cohortReportTitle")}
                 >
                   <FileDown className="h-3.5 w-3.5" />
-                  Cohort report
+                  {t("reflectConsultant.cohortReport")}
                 </a>
               )}
               {(engagement.status === "complete" || engagement.status === "archived" || engagement.status === "live") && (
@@ -179,7 +181,7 @@ export default async function ReflectEngagementDetailPage({ params }: Params) {
               )}
               <div className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs", status.className)}>
                 <StatusIcon className="h-3 w-3" />
-                {status.label}
+                {t(status.labelKey)}
               </div>
             </div>
           </div>
@@ -192,48 +194,51 @@ export default async function ReflectEngagementDetailPage({ params }: Params) {
           <Stat
             icon={Layers}
             tone="violet"
-            label="Competencies"
+            label={t("reflectConsultant.statCompetencies")}
             value={framework?.reflect_competencies.length ?? 0}
           />
-          <Stat icon={Sparkles} tone="blue" label="Behaviours" value={behaviorCount} />
-          <Stat icon={Users} tone="emerald" label="Participants" value={participantCount} />
-          <Stat icon={UserCheck} tone="gold" label="Raters" value={raterCount} />
+          <Stat icon={Sparkles} tone="blue" label={t("reflectConsultant.statBehaviours")} value={behaviorCount} />
+          <Stat icon={Users} tone="emerald" label={t("reflectConsultant.statParticipants")} value={participantCount} />
+          <Stat icon={UserCheck} tone="gold" label={t("reflectConsultant.statRaters")} value={raterCount} />
         </div>
 
         {/* Engagement metadata */}
         <section className="rounded-lg border bg-card p-5">
           <h2 className="text-sm font-semibold text-primary uppercase tracking-wide mb-3">
-            Configuration
+            {t("reflectConsultant.configuration")}
           </h2>
           <dl className="grid gap-3 md:grid-cols-3 text-sm">
-            <Meta label="Default language" value={engagement.default_language === "en" ? "English" : "Arabic"} />
             <Meta
-              label="Report language"
+              label={t("reflectConsultant.metaDefaultLanguage")}
+              value={engagement.default_language === "en" ? t("reflectConsultant.langEnglish") : t("reflectConsultant.langArabic")}
+            />
+            <Meta
+              label={t("reflectConsultant.metaReportLanguage")}
               value={
                 engagement.report_language === "bilingual"
-                  ? "Bilingual (EN + AR)"
+                  ? t("reflectConsultant.reportLangBilingual")
                   : engagement.report_language === "en"
-                    ? "English only"
-                    : "Arabic only"
+                    ? t("reflectConsultant.reportLangEnglishOnly")
+                    : t("reflectConsultant.reportLangArabicOnly")
               }
             />
-            <Meta label="Anonymity threshold" value={`N = ${engagement.anonymity_min_n}`} />
+            <Meta label={t("reflectConsultant.metaAnonymityThreshold")} value={t("reflectConsultant.anonymityValue", { n: engagement.anonymity_min_n })} />
             <Meta
-              label="Target population"
+              label={t("reflectConsultant.metaTargetPopulation")}
               value={engagement.participant_target_count ? String(engagement.participant_target_count) : "-"}
             />
             <Meta
-              label="Field window"
+              label={t("reflectConsultant.metaFieldWindow")}
               value={
                 engagement.field_window_start && engagement.field_window_end
-                  ? `${engagement.field_window_start} → ${engagement.field_window_end}`
+                  ? t("reflectConsultant.fieldWindowMetaRange", { start: engagement.field_window_start, end: engagement.field_window_end })
                   : engagement.field_window_start
-                    ? `Opens ${engagement.field_window_start}`
-                    : "Not set"
+                    ? t("reflectConsultant.fieldWindowMetaOpens", { start: engagement.field_window_start })
+                    : t("reflectConsultant.notSet")
               }
             />
             <Meta
-              label="Created"
+              label={t("reflectConsultant.metaCreated")}
               value={new Date(engagement.created_at).toLocaleString()}
             />
           </dl>
@@ -244,18 +249,20 @@ export default async function ReflectEngagementDetailPage({ params }: Params) {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-sm font-semibold text-primary uppercase tracking-wide">
-                Framework
+                {t("reflectConsultant.framework")}
               </h2>
               <p className="text-xs text-muted-foreground mt-1">
                 {framework
-                  ? `${framework.name_en}${framework.name_ar ? ` · ${framework.name_ar}` : ""} · source: ${framework.source}`
-                  : "No framework attached"}
+                  ? framework.name_ar
+                    ? t("reflectConsultant.frameworkMetaBilingual", { nameEn: framework.name_en, nameAr: framework.name_ar, source: framework.source })
+                    : t("reflectConsultant.frameworkMeta", { name: framework.name_en, source: framework.source })
+                  : t("reflectConsultant.noFrameworkAttached")}
               </p>
             </div>
           </div>
           {!framework || framework.reflect_competencies.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No competencies yet. {framework?.source === "custom" ? "Add them from the framework editor (M3)." : "Re-run the wizard or pick a different path."}
+              {framework?.source === "custom" ? t("reflectConsultant.noCompetenciesCustom") : t("reflectConsultant.noCompetenciesOther")}
             </p>
           ) : (
             <ul className="space-y-3">
@@ -283,7 +290,7 @@ export default async function ReflectEngagementDetailPage({ params }: Params) {
                                 {b.text_en}
                                 {b.source !== "manual" && (
                                   <span className="ms-2 inline-block text-[10px] uppercase tracking-wide rounded px-1.5 py-0.5 bg-violet-50 text-violet-700 border border-violet-200">
-                                    {b.source === "ai_proposed" ? "AI-proposed" : "AI-accepted"}
+                                    {b.source === "ai_proposed" ? t("reflectConsultant.aiProposed") : t("reflectConsultant.aiAccepted")}
                                   </span>
                                 )}
                                 {b.text_ar && (
@@ -306,31 +313,31 @@ export default async function ReflectEngagementDetailPage({ params }: Params) {
         <section className="rounded-lg border bg-card p-5">
           <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
             <h2 className="text-sm font-semibold text-primary uppercase tracking-wide">
-              Participants ({participantCount})
+              {t("reflectConsultant.participantsHeading", { count: participantCount })}
             </h2>
             {participants.length > 0 && (
               <a
                 href={`/api/reflect/engagements/${engagement.id}/needs-scheduling.csv`}
                 className="text-[11px] text-accent hover:underline"
-                title="CSV of participants whose debrief still needs scheduling"
+                title={t("reflectConsultant.needsSchedulingCsvTitle")}
               >
-                Download needs-scheduling CSV
+                {t("reflectConsultant.needsSchedulingCsv")}
               </a>
             )}
           </div>
           {participants.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No participants added.</p>
+            <p className="text-sm text-muted-foreground">{t("reflectConsultant.noParticipants")}</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-[11px] uppercase tracking-wide text-muted-foreground border-b">
-                    <th className="py-2 pr-3">Name</th>
-                    <th className="py-2 pr-3">Role</th>
-                    <th className="py-2 pr-3">Level</th>
-                    <th className="py-2 pr-3">Status</th>
-                    <th className="py-2 pr-3">Debrief</th>
-                    <th className="py-2 pr-3 text-right">Report</th>
+                    <th className="py-2 pr-3">{t("reflectConsultant.colName")}</th>
+                    <th className="py-2 pr-3">{t("reflectConsultant.colRole")}</th>
+                    <th className="py-2 pr-3">{t("reflectConsultant.colLevel")}</th>
+                    <th className="py-2 pr-3">{t("reflectConsultant.colStatus")}</th>
+                    <th className="py-2 pr-3">{t("reflectConsultant.colDebrief")}</th>
+                    <th className="py-2 pr-3 text-right">{t("reflectConsultant.colReport")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -359,9 +366,9 @@ export default async function ReflectEngagementDetailPage({ params }: Params) {
                           <a
                             href={`/api/reflect/reports/${p.id}/pdf?language=${engagement.report_language}`}
                             className="inline-flex items-center gap-1 text-[11px] text-accent hover:underline"
-                            title="Download participant report PDF"
+                            title={t("reflectConsultant.reportPdfTitle")}
                           >
-                            <FileText className="h-3 w-3" /> PDF
+                            <FileText className="h-3 w-3" /> {t("reflectConsultant.reportPdf")}
                           </a>
                         ) : (
                           <span className="text-[11px] text-muted-foreground">-</span>

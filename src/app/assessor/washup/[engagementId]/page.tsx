@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getServerT } from "@/lib/i18n/server";
 import { BackLink } from "@/components/shared/back-link";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +22,7 @@ type Props = {
 
 export default async function WashupEngagementPage({ params }: Props) {
   const supabase = await createClient();
+  const t = await getServerT();
   const { engagementId } = params;
 
   const [engResult, candsResult, compsResult, consensusResult, oarResult] =
@@ -71,30 +73,30 @@ export default async function WashupEngagementPage({ params }: Props) {
   return (
     <div>
       <div className="mb-6">
-        <BackLink href="/assessor/washup" label="Back to Wash-Up Sessions" />
-        <h1 className="mt-2 text-2xl font-bold">Wash-Up: {engagement.name}</h1>
+        <BackLink href="/assessor/washup" label={t("assessorWashup.engagement.backToSessions")} />
+        <h1 className="mt-2 text-2xl font-bold">{t("assessorWashup.engagement.title", { name: engagement.name })}</h1>
         <p className="text-sm text-muted-foreground">{orgName}</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Candidates</CardTitle>
+          <CardTitle>{t("assessorWashup.engagement.candidates")}</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Select a candidate to begin the competency-by-competency consensus discussion.
+            {t("assessorWashup.engagement.subtitle")}
           </p>
         </CardHeader>
         <CardContent>
           {candidates.length === 0 ? (
             <p className="text-sm text-muted-foreground py-8 text-center">
-              No candidates in this engagement.
+              {t("assessorWashup.engagement.empty")}
             </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Candidate</TableHead>
-                  <TableHead>Consensus Progress</TableHead>
-                  <TableHead>OAR</TableHead>
+                  <TableHead>{t("assessorWashup.engagement.colCandidate")}</TableHead>
+                  <TableHead>{t("assessorWashup.engagement.colConsensusProgress")}</TableHead>
+                  <TableHead>{t("assessorWashup.engagement.colOar")}</TableHead>
                   <TableHead className="w-28"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -130,13 +132,13 @@ export default async function WashupEngagementPage({ params }: Props) {
                             {oar.overall_score}/5 - {OAR_RECOMMENDATION_LABELS[oar.recommendation] ?? oar.recommendation}
                           </Badge>
                         ) : (
-                          <span className="text-xs text-muted-foreground">Not set</span>
+                          <span className="text-xs text-muted-foreground">{t("assessorWashup.engagement.notSet")}</span>
                         )}
                       </TableCell>
                       <TableCell>
                         <Link href={`/assessor/washup/${engagementId}/${c.id}`}>
                           <Button size="sm" variant={isComplete ? "outline" : "default"}>
-                            {isComplete ? "Review" : "Discuss"}
+                            {isComplete ? t("assessorWashup.engagement.review") : t("assessorWashup.engagement.discuss")}
                           </Button>
                         </Link>
                       </TableCell>

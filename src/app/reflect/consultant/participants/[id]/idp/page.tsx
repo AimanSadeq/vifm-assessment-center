@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Aperture, FileText } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getServerT } from "@/lib/i18n/server";
 import { IdpEditor } from "./_components/idp-editor";
 import type { IdpAction, IdpPriority, ReflectIdpStatus } from "@/lib/reflect/idp-actions";
 
@@ -76,6 +77,7 @@ export default async function ReflectIdpPage({ params }: Params) {
   const { id } = await params;
   const ctx = await fetchIdpContext(id);
   if (!ctx) return notFound();
+  const t = await getServerT();
 
   return (
     <div className="min-h-screen bg-background">
@@ -92,7 +94,7 @@ export default async function ReflectIdpPage({ params }: Params) {
               <div className="flex items-center gap-2 mb-1">
                 <Aperture className="h-5 w-5 text-accent" />
                 <h1 className="text-xl font-semibold text-primary">
-                  IDP · {ctx.participant.full_name}
+                  {t("reflectAdmin.idp.pageTitle", { name: ctx.participant.full_name })}
                 </h1>
               </div>
               <div className="text-xs text-muted-foreground">
@@ -104,10 +106,10 @@ export default async function ReflectIdpPage({ params }: Params) {
             <a
               href={`/reflect/consultant/participants/${ctx.participant.id}/report?lang=en`}
               className="inline-flex items-center gap-1.5 rounded-md border bg-card px-2.5 py-1.5 text-xs text-foreground hover:bg-muted"
-              title="Open the participant's 360 report"
+              title={t("reflectAdmin.idp.viewReportTitle")}
             >
               <FileText className="h-3.5 w-3.5" />
-              View 360 report
+              {t("reflectAdmin.idp.viewReport")}
             </a>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getServerT } from "@/lib/i18n/server";
 import { BackLink } from "@/components/shared/back-link";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +22,7 @@ type Props = {
 
 export default async function AssessorAssignmentGridPage({ params }: Props) {
   const supabase = await createClient();
+  const t = await getServerT();
   const { engagementId } = params;
 
   const [engResult, assignResult, oarResult] = await Promise.all([
@@ -78,12 +80,12 @@ export default async function AssessorAssignmentGridPage({ params }: Props) {
   return (
     <div>
       <div className="mb-6">
-        <BackLink href="/assessor/assignments" label="Back to Projects" />
+        <BackLink href="/assessor/assignments" label={t("assessorPortal.grid.backToProjects")} />
         <h1 className="mt-2 text-2xl font-bold">{engagement.name}</h1>
         <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
           <span>{orgName}</span>
           <Badge variant="secondary">{engagement.status}</Badge>
-          {engagement.target_role && <span>Role: {engagement.target_role}</span>}
+          {engagement.target_role && <span>{t("assessorPortal.grid.role", { role: engagement.target_role })}</span>}
           {engagement.assessment_type && (
             <Badge variant="outline" className="text-xs capitalize">{engagement.assessment_type}</Badge>
           )}
@@ -95,7 +97,7 @@ export default async function AssessorAssignmentGridPage({ params }: Props) {
 
       {candidateMap.size === 0 ? (
         <div className="rounded-lg border border-dashed p-12 text-center">
-          <p className="text-muted-foreground">No assignments for this engagement yet.</p>
+          <p className="text-muted-foreground">{t("assessorPortal.grid.noAssignments")}</p>
         </div>
       ) : (
         <div className="space-y-6">
@@ -107,13 +109,13 @@ export default async function AssessorAssignmentGridPage({ params }: Props) {
                     <CardTitle className="text-lg">{group.candidateName}</CardTitle>
                     {oarMap.has(group.candidateId) && (
                       <Badge variant={oarMap.get(group.candidateId)!.score >= 3 ? "default" : "destructive"}>
-                        OAR: {oarMap.get(group.candidateId)!.score}/5
+                        {t("assessorPortal.grid.oarBadge", { score: oarMap.get(group.candidateId)!.score })}
                       </Badge>
                     )}
                   </div>
                   <Link href={`/assessor/integration/${engagementId}/${group.candidateId}`}>
                     <Button variant="outline" size="sm">
-                      Integration Worksheet
+                      {t("assessorPortal.grid.integrationWorksheet")}
                     </Button>
                   </Link>
                 </div>
@@ -122,9 +124,9 @@ export default async function AssessorAssignmentGridPage({ params }: Props) {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Exercise</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Assessor</TableHead>
+                      <TableHead>{t("assessorPortal.grid.colExercise")}</TableHead>
+                      <TableHead>{t("assessorPortal.grid.colType")}</TableHead>
+                      <TableHead>{t("assessorPortal.grid.colAssessor")}</TableHead>
                       <TableHead className="w-28"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -147,7 +149,7 @@ export default async function AssessorAssignmentGridPage({ params }: Props) {
                           </TableCell>
                           <TableCell>
                             <Link href={`/assessor/observation/${a.id}`}>
-                              <Button size="sm">Observe</Button>
+                              <Button size="sm">{t("assessorPortal.grid.observe")}</Button>
                             </Link>
                           </TableCell>
                         </TableRow>

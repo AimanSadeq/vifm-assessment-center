@@ -9,6 +9,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getServerT } from "@/lib/i18n/server";
 import { ReflectAdminPurgeButtons } from "./_components/purge-buttons";
 
 export const dynamic = "force-dynamic";
@@ -40,6 +41,7 @@ async function fetchCounts() {
 
 export default async function ReflectAdminPage() {
   const counts = await fetchCounts();
+  const t = await getServerT();
 
   return (
     <div className="min-h-screen bg-background">
@@ -54,20 +56,23 @@ export default async function ReflectAdminPage() {
             </Link>
             <div className="flex items-center gap-2">
               <Aperture className="h-5 w-5 text-accent" />
-              <h1 className="text-xl font-semibold text-primary">Reflect 360 · Admin</h1>
+              <h1 className="text-xl font-semibold text-primary">{t("reflectAdmin.home.headerTitle")}</h1>
             </div>
           </div>
           <div className="text-xs text-muted-foreground">
-            {counts.totalEngagements} total engagement{counts.totalEngagements === 1 ? "" : "s"}
+            {t(
+              counts.totalEngagements === 1
+                ? "reflectAdmin.home.totalEngagements_one"
+                : "reflectAdmin.home.totalEngagements_other",
+              { count: counts.totalEngagements }
+            )}
           </div>
         </div>
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-8">
         <p className="text-sm text-muted-foreground max-w-2xl mb-8">
-          Admin console for Reflect 360 - curate library templates that
-          consultants clone into engagements, browse cross-consultant activity,
-          and purge sandbox or retention-expired data.
+          {t("reflectAdmin.home.intro")}
         </p>
 
         <div className="grid gap-4 md:grid-cols-2">
@@ -75,16 +80,20 @@ export default async function ReflectAdminPage() {
           <Card
             icon={Layers}
             tone="blue"
-            title="Library templates"
+            title={t("reflectAdmin.home.templates.title")}
             count={counts.templates}
-            countLabel={counts.templates === 1 ? "template" : "templates"}
-            description="Starter competency frameworks that consultants can clone when a client doesn't bring their own model."
+            countLabel={t(
+              counts.templates === 1
+                ? "reflectAdmin.home.templates.countLabel_one"
+                : "reflectAdmin.home.templates.countLabel_other"
+            )}
+            description={t("reflectAdmin.home.templates.description")}
           >
             <Link
               href="/reflect/admin/templates"
               className="inline-flex items-center gap-1 text-xs text-accent hover:underline"
             >
-              Browse templates <ArrowRight className="h-3 w-3" />
+              {t("reflectAdmin.home.templates.cta")} <ArrowRight className="h-3 w-3" />
             </Link>
           </Card>
 
@@ -92,19 +101,19 @@ export default async function ReflectAdminPage() {
           <Card
             icon={ListChecks}
             tone="violet"
-            title="Active engagements"
+            title={t("reflectAdmin.home.active.title")}
             count={counts.active}
-            countLabel="active"
-            description="Cross-consultant view of every Reflect 360 engagement currently in draft, live, or scoring."
+            countLabel={t("reflectAdmin.home.active.countLabel")}
+            description={t("reflectAdmin.home.active.description")}
           >
             <Link
               href="/reflect/consultant"
               className="inline-flex items-center gap-1 text-xs text-accent hover:underline"
             >
-              Open consultant dashboard <ArrowRight className="h-3 w-3" />
+              {t("reflectAdmin.home.active.cta")} <ArrowRight className="h-3 w-3" />
             </Link>
             <p className="text-[11px] text-muted-foreground mt-1.5">
-              Admin role sees every engagement via RLS.
+              {t("reflectAdmin.home.active.note")}
             </p>
           </Card>
 
@@ -112,10 +121,14 @@ export default async function ReflectAdminPage() {
           <Card
             icon={FlaskConical}
             tone="teal"
-            title="Sandbox data"
+            title={t("reflectAdmin.home.sandbox.title")}
             count={counts.sandbox}
-            countLabel={counts.sandbox === 1 ? "sandbox engagement" : "sandbox engagements"}
-            description="Irreversibly delete every is_sandbox engagement and its cascade - frameworks, participants, raters, responses, IDPs, reports, logs."
+            countLabel={t(
+              counts.sandbox === 1
+                ? "reflectAdmin.home.sandbox.countLabel_one"
+                : "reflectAdmin.home.sandbox.countLabel_other"
+            )}
+            description={t("reflectAdmin.home.sandbox.description")}
           >
             <ReflectAdminPurgeButtons
               variant="sandbox"
@@ -127,10 +140,10 @@ export default async function ReflectAdminPage() {
           <Card
             icon={FileClock}
             tone="rose"
-            title="Data retention"
+            title={t("reflectAdmin.home.retention.title")}
             count={counts.archivedEligible}
-            countLabel="archived > 2y old"
-            description="Irreversibly delete archived engagements whose archived_at is more than 2 years ago. Matches the project-wide PDPL retention posture."
+            countLabel={t("reflectAdmin.home.retention.countLabel")}
+            description={t("reflectAdmin.home.retention.description")}
           >
             <ReflectAdminPurgeButtons
               variant="retention"

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Aperture, Layers } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getServerT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +52,7 @@ export default async function ReflectTemplateDetailPage({ params }: Params) {
   const { id } = await params;
   const framework = await fetchTemplate(id);
   if (!framework) return notFound();
+  const t = await getServerT();
 
   const competencies = framework.reflect_competencies
     .slice()
@@ -66,7 +68,7 @@ export default async function ReflectTemplateDetailPage({ params }: Params) {
             href="/reflect/admin/templates"
             className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-1"
           >
-            <ArrowLeft className="h-3 w-3" /> Library templates
+            <ArrowLeft className="h-3 w-3" /> {t("reflectAdmin.templates.title")}
           </Link>
           <div className="flex items-center gap-2 mb-1">
             <Aperture className="h-5 w-5 text-accent" />
@@ -83,15 +85,15 @@ export default async function ReflectTemplateDetailPage({ params }: Params) {
             </p>
           )}
           <div className="mt-3 inline-flex items-center gap-4 text-xs text-muted-foreground">
-            <span><strong className="text-primary">{competencies.length}</strong> competencies</span>
-            <span><strong className="text-primary">{totalBehaviors}</strong> behaviours</span>
+            <span><strong className="text-primary">{competencies.length}</strong> {t("reflectAdmin.templates.competencies")}</span>
+            <span><strong className="text-primary">{totalBehaviors}</strong> {t("reflectAdmin.templates.behaviours")}</span>
           </div>
         </div>
       </header>
 
       <main className="max-w-5xl mx-auto px-6 py-8 space-y-4">
         {competencies.length === 0 ? (
-          <p className="text-sm text-muted-foreground italic">No competencies in this template.</p>
+          <p className="text-sm text-muted-foreground italic">{t("reflectAdmin.templateDetail.noCompetencies")}</p>
         ) : (
           competencies.map((c) => (
             <section key={c.id} className="rounded-lg border bg-card p-5">
@@ -134,7 +136,7 @@ export default async function ReflectTemplateDetailPage({ params }: Params) {
         )}
 
         <p className="text-[11px] text-muted-foreground pt-2">
-          Templates are clone-only from the wizard. To edit the seed itself, write a follow-up migration that updates the rows under <code className="text-[10px]">reflect_frameworks WHERE is_template = true</code>.
+          {t("reflectAdmin.templateDetail.footerNoteBefore")} <code className="text-[10px]">reflect_frameworks WHERE is_template = true</code>{t("reflectAdmin.templateDetail.footerNoteAfter")}
         </p>
       </main>
     </div>

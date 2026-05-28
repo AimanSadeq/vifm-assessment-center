@@ -27,7 +27,11 @@ function localeAwareRoute(pathname: string | null): boolean {
     pathname.startsWith("/ara/consultant") ||
     pathname.startsWith("/ara/admin") ||
     pathname.startsWith("/ara/cohort") ||
-    pathname.startsWith("/admin")
+    pathname.startsWith("/reflect/consultant") ||
+    pathname.startsWith("/reflect/admin") ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/assessor") ||
+    pathname.startsWith("/client")
   );
 }
 

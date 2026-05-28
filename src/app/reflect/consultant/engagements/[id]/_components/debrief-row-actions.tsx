@@ -2,17 +2,18 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 import { Calendar, Loader2, CheckCircle2, AlertCircle, FileText } from "lucide-react";
 import { updateReflectDebrief } from "@/lib/reflect/idp-actions";
 import { cn } from "@/lib/utils";
 
 type DebriefStatus = "not_scheduled" | "scheduled" | "completed" | "no_show";
 
-const STATUS_LABEL: Record<DebriefStatus, string> = {
-  not_scheduled: "Not scheduled",
-  scheduled: "Scheduled",
-  completed: "Completed",
-  no_show: "No-show",
+const STATUS_LABEL_KEY: Record<DebriefStatus, string> = {
+  not_scheduled: "reflectConsultant.debriefNotScheduled",
+  scheduled: "reflectConsultant.debriefScheduled",
+  completed: "reflectConsultant.debriefCompleted",
+  no_show: "reflectConsultant.debriefNoShow",
 };
 
 const STATUS_TONE: Record<DebriefStatus, string> = {
@@ -33,6 +34,7 @@ export function DebriefRowActions({
   initialStatus,
   initialScheduledAt,
 }: Props) {
+  const { t } = useTranslation();
   const [status, setStatus] = useState<DebriefStatus>(initialStatus);
   // ISO timestamp → YYYY-MM-DD for the date input
   const initialDate = initialScheduledAt ? initialScheduledAt.slice(0, 10) : "";
@@ -56,7 +58,7 @@ export function DebriefRowActions({
       });
       if (!res.ok) {
         setFeedback("err");
-        setErrMsg(res.error ?? "Update failed");
+        setErrMsg(res.error ?? t("reflectConsultant.updateFailed"));
         return;
       }
       setFeedback("saved");
@@ -79,8 +81,8 @@ export function DebriefRowActions({
           STATUS_TONE[status]
         )}
       >
-        {(Object.keys(STATUS_LABEL) as DebriefStatus[]).map((s) => (
-          <option key={s} value={s}>{STATUS_LABEL[s]}</option>
+        {(Object.keys(STATUS_LABEL_KEY) as DebriefStatus[]).map((s) => (
+          <option key={s} value={s}>{t(STATUS_LABEL_KEY[s])}</option>
         ))}
       </select>
 
@@ -102,9 +104,9 @@ export function DebriefRowActions({
       <Link
         href={`/reflect/consultant/participants/${participantId}/idp`}
         className="inline-flex items-center gap-1 text-[11px] text-accent hover:underline"
-        title="Open IDP editor"
+        title={t("reflectConsultant.idpTitle")}
       >
-        <FileText className="h-3 w-3" /> IDP
+        <FileText className="h-3 w-3" /> {t("reflectConsultant.idp")}
       </Link>
 
       {feedback === "saving" && (
@@ -116,7 +118,7 @@ export function DebriefRowActions({
       {feedback === "err" && (
         <span className="inline-flex items-center gap-1 text-[11px] text-rose-700" title={errMsg ?? ""}>
           <AlertCircle className="h-3 w-3" />
-          err
+          {t("reflectConsultant.errShort")}
         </span>
       )}
     </div>

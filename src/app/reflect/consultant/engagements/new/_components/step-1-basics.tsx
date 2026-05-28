@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslation } from "react-i18next";
 import { Plus, Loader2 } from "lucide-react";
 import type { WizardOrg, WizardState } from "./wizard";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,7 @@ type Props = {
 };
 
 export function StepBasics({ state, update, orgs, onOrgCreated }: Props) {
+  const { t } = useTranslation();
   const [addOpen, setAddOpen] = useState(false);
   const [newOrgName, setNewOrgName] = useState("");
   const [newOrgNameAr, setNewOrgNameAr] = useState("");
@@ -54,18 +56,18 @@ export function StepBasics({ state, update, orgs, onOrgCreated }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-primary">Engagement basics</h2>
+        <h2 className="text-lg font-semibold text-primary">{t("reflectWizard.step1.heading")}</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Identify the client, name the engagement, and set field-work defaults. You can change most of these later from the engagement detail page.
+          {t("reflectWizard.step1.intro")}
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="md:col-span-2">
-          <Label htmlFor="rf-name">Engagement name</Label>
+          <Label htmlFor="rf-name">{t("reflectWizard.step1.nameLabel")}</Label>
           <Input
             id="rf-name"
-            placeholder="e.g. Leadership 360 - Cohort 1"
+            placeholder={t("reflectWizard.step1.namePlaceholder")}
             value={state.name}
             onChange={(e) => update({ name: e.target.value })}
           />
@@ -73,13 +75,13 @@ export function StepBasics({ state, update, orgs, onOrgCreated }: Props) {
 
         <div>
           <div className="flex items-center justify-between">
-            <Label htmlFor="rf-org">Client organisation</Label>
+            <Label htmlFor="rf-org">{t("reflectWizard.step1.orgLabel")}</Label>
             <button
               type="button"
               onClick={() => setAddOpen(true)}
               className="text-[11px] text-accent hover:underline inline-flex items-center gap-0.5"
             >
-              <Plus className="h-3 w-3" /> Add new
+              <Plus className="h-3 w-3" /> {t("reflectWizard.step1.addNew")}
             </button>
           </div>
           <select
@@ -96,7 +98,7 @@ export function StepBasics({ state, update, orgs, onOrgCreated }: Props) {
               });
             }}
           >
-            <option value="">Select an organisation…</option>
+            <option value="">{t("reflectWizard.step1.selectOrg")}</option>
             {orgs.map((o) => (
               <option key={o.id} value={o.id}>
                 {o.name} · {o.region.toUpperCase()} · {o.sector}
@@ -105,13 +107,13 @@ export function StepBasics({ state, update, orgs, onOrgCreated }: Props) {
           </select>
           {orgs.length === 0 && (
             <p className="text-xs text-muted-foreground mt-1">
-              No organisations yet - click <strong>Add new</strong> above to create one.
+              {t("reflectWizard.step1.noOrgsPrefix")} <strong>{t("reflectWizard.step1.addNew")}</strong> {t("reflectWizard.step1.noOrgsSuffix")}
             </p>
           )}
         </div>
 
         <div>
-          <Label htmlFor="rf-target">Target participant count <span className="text-muted-foreground">(optional)</span></Label>
+          <Label htmlFor="rf-target">{t("reflectWizard.step1.targetLabel")} <span className="text-muted-foreground">{t("reflectWizard.step1.optional")}</span></Label>
           <Input
             id="rf-target"
             type="number"
@@ -127,20 +129,20 @@ export function StepBasics({ state, update, orgs, onOrgCreated }: Props) {
         </div>
 
         <div>
-          <Label htmlFor="rf-default-lang">Default language for raters</Label>
+          <Label htmlFor="rf-default-lang">{t("reflectWizard.step1.defaultLangLabel")}</Label>
           <select
             id="rf-default-lang"
             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
             value={state.default_language}
             onChange={(e) => update({ default_language: e.target.value as "en" | "ar" })}
           >
-            <option value="en">English</option>
-            <option value="ar">العربية</option>
+            <option value="en">{t("reflectWizard.step1.langEnglish")}</option>
+            <option value="ar">{t("reflectWizard.step1.langArabic")}</option>
           </select>
         </div>
 
         <div>
-          <Label htmlFor="rf-report-lang">Report language</Label>
+          <Label htmlFor="rf-report-lang">{t("reflectWizard.step1.reportLangLabel")}</Label>
           <select
             id="rf-report-lang"
             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
@@ -149,14 +151,14 @@ export function StepBasics({ state, update, orgs, onOrgCreated }: Props) {
               update({ report_language: e.target.value as "en" | "ar" | "bilingual" })
             }
           >
-            <option value="bilingual">Bilingual (EN + AR)</option>
-            <option value="en">English only</option>
-            <option value="ar">Arabic only</option>
+            <option value="bilingual">{t("reflectWizard.step1.reportBilingual")}</option>
+            <option value="en">{t("reflectWizard.step1.reportEnOnly")}</option>
+            <option value="ar">{t("reflectWizard.step1.reportArOnly")}</option>
           </select>
         </div>
 
         <div>
-          <Label htmlFor="rf-anon">Anonymity threshold N</Label>
+          <Label htmlFor="rf-anon">{t("reflectWizard.step1.anonLabel")}</Label>
           <Input
             id="rf-anon"
             type="number"
@@ -169,12 +171,12 @@ export function StepBasics({ state, update, orgs, onOrgCreated }: Props) {
             }}
           />
           <p className="text-xs text-muted-foreground mt-1">
-            Minimum 3 - anything lower can&apos;t be conducted anonymously. Peer and direct-report scores stay hidden until this many raters in the group have responded.
+            {t("reflectWizard.step1.anonHelp")}
           </p>
         </div>
 
         <div>
-          <Label htmlFor="rf-field-start">Field window start <span className="text-muted-foreground">(optional)</span></Label>
+          <Label htmlFor="rf-field-start">{t("reflectWizard.step1.fieldStartLabel")} <span className="text-muted-foreground">{t("reflectWizard.step1.optional")}</span></Label>
           <Input
             id="rf-field-start"
             type="date"
@@ -184,7 +186,7 @@ export function StepBasics({ state, update, orgs, onOrgCreated }: Props) {
         </div>
 
         <div>
-          <Label htmlFor="rf-field-end">Field window end <span className="text-muted-foreground">(optional)</span></Label>
+          <Label htmlFor="rf-field-end">{t("reflectWizard.step1.fieldEndLabel")} <span className="text-muted-foreground">{t("reflectWizard.step1.optional")}</span></Label>
           <Input
             id="rf-field-end"
             type="date"
@@ -200,8 +202,7 @@ export function StepBasics({ state, update, orgs, onOrgCreated }: Props) {
             onCheckedChange={(v) => update({ is_sandbox: Boolean(v) })}
           />
           <Label htmlFor="rf-sandbox" className="text-sm font-normal cursor-pointer">
-            Sandbox engagement - invitations + reminders are redirected to the sandbox inbox
-            and do not reach real raters. Use this for client demos and internal testing.
+            {t("reflectWizard.step1.sandboxLabel")}
           </Label>
         </div>
       </div>
@@ -211,24 +212,24 @@ export function StepBasics({ state, update, orgs, onOrgCreated }: Props) {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center px-6 z-50">
           <div className="bg-card rounded-xl border p-6 max-w-md w-full space-y-4">
             <div>
-              <h3 className="text-base font-semibold text-primary">Add a new organisation</h3>
+              <h3 className="text-base font-semibold text-primary">{t("reflectWizard.step1.modal.title")}</h3>
               <p className="text-xs text-muted-foreground mt-1">
-                Stored in the shared client list - also available to AI Readiness engagements.
+                {t("reflectWizard.step1.modal.subtitle")}
               </p>
             </div>
 
             <div>
-              <Label htmlFor="rf-new-org-name">Name <span className="text-rose-700">*</span></Label>
+              <Label htmlFor="rf-new-org-name">{t("reflectWizard.step1.modal.nameLabel")} <span className="text-rose-700">*</span></Label>
               <Input
                 id="rf-new-org-name"
                 value={newOrgName}
                 onChange={(e) => setNewOrgName(e.target.value)}
-                placeholder="e.g. Acme Bank"
+                placeholder={t("reflectWizard.step1.modal.namePlaceholder")}
               />
             </div>
 
             <div>
-              <Label htmlFor="rf-new-org-name-ar">Name (Arabic) <span className="text-muted-foreground">(optional)</span></Label>
+              <Label htmlFor="rf-new-org-name-ar">{t("reflectWizard.step1.modal.nameArLabel")} <span className="text-muted-foreground">{t("reflectWizard.step1.optional")}</span></Label>
               <Input
                 id="rf-new-org-name-ar"
                 value={newOrgNameAr}
@@ -240,28 +241,28 @@ export function StepBasics({ state, update, orgs, onOrgCreated }: Props) {
 
             <div className="grid gap-3 grid-cols-2">
               <div>
-                <Label htmlFor="rf-new-org-region">Region</Label>
+                <Label htmlFor="rf-new-org-region">{t("reflectWizard.step1.modal.regionLabel")}</Label>
                 <select
                   id="rf-new-org-region"
                   value={newOrgRegion}
                   onChange={(e) => setNewOrgRegion(e.target.value as "uae" | "saudi")}
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                 >
-                  <option value="uae">UAE</option>
-                  <option value="saudi">Saudi Arabia</option>
+                  <option value="uae">{t("reflectWizard.step1.modal.regionUae")}</option>
+                  <option value="saudi">{t("reflectWizard.step1.modal.regionSaudi")}</option>
                 </select>
               </div>
               <div>
-                <Label htmlFor="rf-new-org-sector">Sector</Label>
+                <Label htmlFor="rf-new-org-sector">{t("reflectWizard.step1.modal.sectorLabel")}</Label>
                 <select
                   id="rf-new-org-sector"
                   value={newOrgSector}
                   onChange={(e) => setNewOrgSector(e.target.value as "government" | "banking" | "general")}
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                 >
-                  <option value="banking">Banking</option>
-                  <option value="government">Government</option>
-                  <option value="general">General</option>
+                  <option value="banking">{t("reflectWizard.step1.modal.sectorBanking")}</option>
+                  <option value="government">{t("reflectWizard.step1.modal.sectorGovernment")}</option>
+                  <option value="general">{t("reflectWizard.step1.modal.sectorGeneral")}</option>
                 </select>
               </div>
             </div>
@@ -279,11 +280,11 @@ export function StepBasics({ state, update, orgs, onOrgCreated }: Props) {
                 disabled={addPending}
                 className="rounded-md border px-3 py-2 text-sm text-foreground hover:bg-muted"
               >
-                Cancel
+                {t("reflectWizard.step1.modal.cancel")}
               </button>
               <Button type="button" onClick={submitNewOrg} disabled={addPending || !newOrgName.trim()}>
                 {addPending && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
-                Add organisation
+                {t("reflectWizard.step1.modal.add")}
               </Button>
             </div>
           </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslation } from "react-i18next";
 import { AlertTriangle, Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,23 +15,18 @@ type Props = {
   count: number;
 };
 
-const CONFIG = {
-  sandbox: {
-    actionLabel: "Purge sandbox data",
-    confirmPhrase: "DELETE SANDBOX DATA",
-    successPrefix: "Sandbox engagements deleted",
-    disabledReason: "No sandbox engagements to purge",
-  },
-  retention: {
-    actionLabel: "Purge archived > 2y",
-    confirmPhrase: "DELETE OLD ENGAGEMENTS",
-    successPrefix: "Archived engagements deleted",
-    disabledReason: "No archived engagements older than 2 years",
-  },
+// The confirmation phrases are typed verbatim by the user, so they are NOT
+// translated. Translatable labels are resolved per-variant via i18n below.
+const CONFIRM_PHRASE = {
+  sandbox: "DELETE SANDBOX DATA",
+  retention: "DELETE OLD ENGAGEMENTS",
 } as const;
 
 export function ReflectAdminPurgeButtons({ variant, count }: Props) {
-  const cfg = CONFIG[variant];
+  const { t } = useTranslation();
+  const confirmPhrase = CONFIRM_PHRASE[variant];
+  const actionLabel = t(`reflectAdmin.purge.${variant}.actionLabel`);
+  const disabledReason = t(`reflectAdmin.purge.${variant}.disabledReason`);
   const [open, setOpen] = useState(false);
   const [confirmation, setConfirmation] = useState("");
   const [feedback, setFeedback] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
@@ -47,7 +43,10 @@ export function ReflectAdminPurgeButtons({ variant, count }: Props) {
         setFeedback({ kind: "err", text: res.error });
         return;
       }
-      setFeedback({ kind: "ok", text: `${cfg.successPrefix}: ${res.deleted}` });
+      setFeedback({
+        kind: "ok",
+        text: t(`reflectAdmin.purge.${variant}.success`, { count: res.deleted }),
+      });
       setOpen(false);
       setConfirmation("");
     });
@@ -62,10 +61,10 @@ export function ReflectAdminPurgeButtons({ variant, count }: Props) {
         disabled={count === 0}
         onClick={() => setOpen(true)}
         className="text-xs"
-        title={count === 0 ? cfg.disabledReason : cfg.actionLabel}
+        title={count === 0 ? disabledReason : actionLabel}
       >
         <AlertTriangle className="h-3.5 w-3.5 me-1.5 text-rose-600" />
-        {cfg.actionLabel}
+        {actionLabel}
       </Button>
 
       {feedback?.kind === "ok" && (
@@ -84,21 +83,26 @@ export function ReflectAdminPurgeButtons({ variant, count }: Props) {
           <div className="bg-card rounded-xl border p-6 max-w-md w-full space-y-4">
             <div>
               <h3 className="text-base font-semibold text-primary">
-                {cfg.actionLabel}
+                {actionLabel}
               </h3>
               <p className="text-sm text-muted-foreground mt-1">
-                This will permanently delete <strong>{count}</strong> engagement{count === 1 ? "" : "s"} and every associated framework, participant, rater, response, IDP, and report. There is no undo.
+                {t(
+                  count === 1
+                    ? "reflectAdmin.purge.modalBody_one"
+                    : "reflectAdmin.purge.modalBody_other",
+                  { count }
+                )}
               </p>
             </div>
 
             <div>
               <label className="text-xs text-muted-foreground">
-                Type <code className="text-[11px] bg-muted px-1 py-0.5 rounded">{cfg.confirmPhrase}</code> to confirm
+                {t("reflectAdmin.purge.confirmLabelBefore")} <code className="text-[11px] bg-muted px-1 py-0.5 rounded">{confirmPhrase}</code> {t("reflectAdmin.purge.confirmLabelAfter")}
               </label>
               <Input
                 value={confirmation}
                 onChange={(e) => setConfirmation(e.target.value)}
-                placeholder={cfg.confirmPhrase}
+                placeholder={confirmPhrase}
                 className="mt-1 font-mono text-sm"
               />
             </div>
@@ -110,16 +114,16 @@ export function ReflectAdminPurgeButtons({ variant, count }: Props) {
                 disabled={pending}
                 className="rounded-md border px-3 py-2 text-sm text-foreground hover:bg-muted"
               >
-                Cancel
+                {t("reflectAdmin.purge.cancel")}
               </button>
               <Button
                 type="button"
                 variant="destructive"
                 onClick={run}
-                disabled={pending || confirmation !== cfg.confirmPhrase}
+                disabled={pending || confirmation !== confirmPhrase}
               >
                 {pending && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
-                Confirm purge
+                {t("reflectAdmin.purge.confirm")}
               </Button>
             </div>
           </div>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { Separator } from "@/components/ui/separator";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
 import { cn } from "@/lib/utils";
@@ -14,9 +15,9 @@ import {
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { LogoutButton } from "@/components/shared/logout-button";
 
-const navLinks: { href: string; label: string; icon: LucideIcon; exact: boolean }[] = [
-  { href: "/assessor", label: "Mission Board", icon: ClipboardCheck, exact: true },
-  { href: "/assessor/washup", label: "Wash-Up", icon: Users2, exact: false },
+const navLinks: { href: string; labelKey: string; icon: LucideIcon; exact: boolean }[] = [
+  { href: "/assessor", labelKey: "assessorPortal.nav.missionBoard", icon: ClipboardCheck, exact: true },
+  { href: "/assessor/washup", labelKey: "assessorPortal.nav.washUp", icon: Users2, exact: false },
 ];
 
 export default function AssessorLayout({
@@ -25,6 +26,7 @@ export default function AssessorLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { t } = useTranslation();
 
   const isActive = (href: string, exact: boolean) => {
     if (exact) return pathname === href;
@@ -37,7 +39,7 @@ export default function AssessorLayout({
         <div className="flex h-16 items-center px-4 sm:px-6 overflow-x-auto">
           <Link href="/assessor" className="flex items-center gap-2 shrink-0">
             <VifmLogo variant="color" size="sm" />
-            <p className="text-xs text-muted-foreground hidden sm:block">Assessor Portal</p>
+            <p className="text-xs text-muted-foreground hidden sm:block">{t("assessorPortal.portalName")}</p>
           </Link>
           <Separator orientation="vertical" className="mx-3 sm:mx-5 h-6 shrink-0" />
           <nav className="flex gap-1 shrink-0">
@@ -55,7 +57,7 @@ export default function AssessorLayout({
                   )}
                 >
                   <Icon className="h-4 w-4" />
-                  {link.label}
+                  {t(link.labelKey)}
                 </Link>
               );
             })}
@@ -67,7 +69,7 @@ export default function AssessorLayout({
               <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
                 <UserCircle className="h-5 w-5 text-primary" />
               </div>
-              <span className="text-sm text-muted-foreground">Assessor</span>
+              <span className="text-sm text-muted-foreground">{t("assessorPortal.roleLabel")}</span>
             </div>
             <LogoutButton />
           </div>

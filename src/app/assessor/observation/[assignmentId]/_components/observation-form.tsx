@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { X, Plus, HelpCircle, ChevronDown, ChevronUp } from "lucide-react";
@@ -18,7 +19,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EXERCISE_TYPE_LABELS } from "@/lib/constants/exercise-types";
 import { BackLink } from "@/components/shared/back-link";
-import { BARS_LABELS } from "@/lib/validations/assessor";
 import { saveObservationAction, deleteObservationAction, saveRatingAction, deleteRatingAction } from "../actions";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -79,6 +79,8 @@ export function ObservationForm({
   existingObservations,
   existingRatings,
 }: Props) {
+  const { t } = useTranslation();
+  const barsLabel = (score: number) => t(`assessorPortal.observation.bars.${score}`);
   const [observations, setObservations] = useState(existingObservations);
   const [ratings, setRatings] = useState<Record<string, { score: number; justification: string }>>(
     Object.fromEntries(
@@ -115,16 +117,16 @@ export function ObservationForm({
     if ("data" in result && result.data) {
       setObservations((prev) => [result.data, ...prev]);
       setNewObsText("");
-      toast.success("Observation saved");
+      toast.success(t("assessorPortal.observation.toast.observationSaved"));
     } else if ("error" in result) {
-      toast.error(typeof result.error === "string" ? result.error : "Failed to save observation");
+      toast.error(typeof result.error === "string" ? result.error : t("assessorPortal.observation.toast.observationSaveFailed"));
     }
   };
 
   const handleDeleteObservation = async (obsId: string) => {
     const result = await deleteObservationAction(obsId);
     if ("error" in result) {
-      toast.error("Failed to delete observation");
+      toast.error(t("assessorPortal.observation.toast.observationDeleteFailed"));
       return;
     }
     setObservations((prev) => prev.filter((o) => o.id !== obsId));
@@ -143,9 +145,9 @@ export function ObservationForm({
     });
     setSavingRating(null);
     if ("error" in result) {
-      toast.error("Failed to save rating");
+      toast.error(t("assessorPortal.observation.toast.ratingSaveFailed"));
     } else {
-      toast.success(`Rating saved: ${score}/5`);
+      toast.success(t("assessorPortal.observation.toast.ratingSaved", { score }));
     }
   };
 
@@ -166,7 +168,7 @@ export function ObservationForm({
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <BackLink href={`/assessor/assignments/${engagementId}`} label="Back to Assignments" />
+        <BackLink href={`/assessor/assignments/${engagementId}`} label={t("assessorPortal.observation.backToAssignments")} />
         <h1 className="mt-2 text-2xl font-bold">{candidateName}</h1>
         <div className="flex items-center gap-2 mt-1">
           <Badge>{exerciseName}</Badge>
@@ -175,12 +177,12 @@ export function ObservationForm({
           </Badge>
           {(prepMinutes || meetingMinutes) ? (
             <span className="text-xs text-muted-foreground">
-              {prepMinutes ? `Prep: ${prepMinutes}min` : ""}
+              {prepMinutes ? t("assessorPortal.observation.prep", { minutes: prepMinutes }) : ""}
               {prepMinutes && meetingMinutes ? " · " : ""}
-              {meetingMinutes ? `Meeting: ${meetingMinutes}min` : ""}
+              {meetingMinutes ? t("assessorPortal.observation.meeting", { minutes: meetingMinutes }) : ""}
             </span>
           ) : durationMinutes ? (
-            <span className="text-sm text-muted-foreground">{durationMinutes} min</span>
+            <span className="text-sm text-muted-foreground">{t("assessorPortal.observation.durationMin", { minutes: durationMinutes })}</span>
           ) : null}
         </div>
       </div>
@@ -193,57 +195,57 @@ export function ObservationForm({
         >
           <div className="flex items-center gap-2">
             <HelpCircle className="h-4 w-4 text-accent" />
-            Assessor Guide
+            {t("assessorPortal.observation.guide.title")}
           </div>
           {showGuide ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </button>
         {showGuide && (
           <div className="px-4 pb-4 space-y-3 text-sm text-muted-foreground border-t pt-3">
             <div>
-              <p className="font-semibold text-foreground mb-1">Before Observing</p>
+              <p className="font-semibold text-foreground mb-1">{t("assessorPortal.observation.guide.beforeTitle")}</p>
               <ul className="space-y-1 text-xs">
-                <li>• Review the competencies and behavioral indicators for this exercise</li>
-                <li>• Familiarize yourself with the positive and negative indicators in the <strong>Observe</strong> tab</li>
-                <li>• Check the <strong>Q&A</strong> tab for follow-up questions you can ask during the debrief</li>
+                <li>• {t("assessorPortal.observation.guide.before1")}</li>
+                <li>• {t("assessorPortal.observation.guide.before2Pre")} <strong>{t("assessorPortal.observation.guide.before2Tab")}</strong> {t("assessorPortal.observation.guide.before2Post")}</li>
+                <li>• {t("assessorPortal.observation.guide.before3Pre")} <strong>{t("assessorPortal.observation.guide.before3Tab")}</strong> {t("assessorPortal.observation.guide.before3Post")}</li>
               </ul>
             </div>
             <div>
-              <p className="font-semibold text-foreground mb-1">During the Exercise</p>
+              <p className="font-semibold text-foreground mb-1">{t("assessorPortal.observation.guide.duringTitle")}</p>
               <ul className="space-y-1 text-xs">
-                <li>• Record specific behaviors as they occur - use the <strong>Observe</strong> tab</li>
-                <li>• Note whether each behavior is a positive (+) or negative (−) indicator</li>
-                <li>• Focus on observable actions, not interpretations or assumptions</li>
-                <li>• Aim to record at least 2-3 observations per competency</li>
+                <li>• {t("assessorPortal.observation.guide.during1Pre")} <strong>{t("assessorPortal.observation.guide.during1Tab")}</strong> {t("assessorPortal.observation.guide.during1Post")}</li>
+                <li>• {t("assessorPortal.observation.guide.during2")}</li>
+                <li>• {t("assessorPortal.observation.guide.during3")}</li>
+                <li>• {t("assessorPortal.observation.guide.during4")}</li>
               </ul>
             </div>
             <div>
-              <p className="font-semibold text-foreground mb-1">After the Exercise</p>
+              <p className="font-semibold text-foreground mb-1">{t("assessorPortal.observation.guide.afterTitle")}</p>
               <ul className="space-y-1 text-xs">
-                <li>• Use the <strong>Overview</strong> tab to quickly score all competencies at a glance</li>
-                <li>• Use the <strong>Rate</strong> tab to provide detailed justifications for each score</li>
-                <li>• Select <strong>NE</strong> (No Evidence) if you were unable to observe a competency</li>
-                <li>• Write up notes while they are fresh - do not evaluate during the exercise</li>
+                <li>• {t("assessorPortal.observation.guide.after1Pre")} <strong>{t("assessorPortal.observation.guide.after1Tab")}</strong> {t("assessorPortal.observation.guide.after1Post")}</li>
+                <li>• {t("assessorPortal.observation.guide.after2Pre")} <strong>{t("assessorPortal.observation.guide.after2Tab")}</strong> {t("assessorPortal.observation.guide.after2Post")}</li>
+                <li>• {t("assessorPortal.observation.guide.after3Pre")} <strong>{t("assessorPortal.observation.guide.after3Tab")}</strong> {t("assessorPortal.observation.guide.after3Post")}</li>
+                <li>• {t("assessorPortal.observation.guide.after4")}</li>
               </ul>
             </div>
             <div>
-              <p className="font-semibold text-foreground mb-1">Rating Scale (BARS)</p>
+              <p className="font-semibold text-foreground mb-1">{t("assessorPortal.observation.guide.barsTitle")}</p>
               <div className="grid grid-cols-5 gap-1 text-[10px] text-center">
-                <div className="rounded bg-red-50 p-1.5"><span className="font-bold text-red-600">1</span><br/>Significant Development Needed</div>
-                <div className="rounded bg-orange-50 p-1.5"><span className="font-bold text-orange-600">2</span><br/>Development Needed</div>
-                <div className="rounded bg-accent/10 p-1.5"><span className="font-bold text-accent">3</span><br/>Competent</div>
-                <div className="rounded bg-green-50 p-1.5"><span className="font-bold text-green-600">4</span><br/>Strength</div>
-                <div className="rounded bg-green-100 p-1.5"><span className="font-bold text-green-700">5</span><br/>Significant Strength</div>
+                <div className="rounded bg-red-50 p-1.5"><span className="font-bold text-red-600">1</span><br/>{barsLabel(1)}</div>
+                <div className="rounded bg-orange-50 p-1.5"><span className="font-bold text-orange-600">2</span><br/>{barsLabel(2)}</div>
+                <div className="rounded bg-accent/10 p-1.5"><span className="font-bold text-accent">3</span><br/>{barsLabel(3)}</div>
+                <div className="rounded bg-green-50 p-1.5"><span className="font-bold text-green-600">4</span><br/>{barsLabel(4)}</div>
+                <div className="rounded bg-green-100 p-1.5"><span className="font-bold text-green-700">5</span><br/>{barsLabel(5)}</div>
               </div>
             </div>
             {scenarioContext && (
               <div>
-                <p className="font-semibold text-foreground mb-1">Scenario Context</p>
+                <p className="font-semibold text-foreground mb-1">{t("assessorPortal.observation.guide.scenarioContext")}</p>
                 <p className="text-xs">{scenarioContext}</p>
               </div>
             )}
             {assessorNotes && (
               <div>
-                <p className="font-semibold text-foreground mb-1">Assessor Notes for This Exercise</p>
+                <p className="font-semibold text-foreground mb-1">{t("assessorPortal.observation.guide.assessorNotes")}</p>
                 <p className="text-xs">{assessorNotes}</p>
               </div>
             )}
@@ -253,17 +255,17 @@ export function ObservationForm({
 
       <Tabs defaultValue="overview">
         <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="observe">Observe</TabsTrigger>
-          <TabsTrigger value="rate">Rate ({Object.values(ratings).filter((r) => r.score > 0).length}/{competencies.length})</TabsTrigger>
-          <TabsTrigger value="questions">Q&A</TabsTrigger>
+          <TabsTrigger value="overview">{t("assessorPortal.observation.tabs.overview")}</TabsTrigger>
+          <TabsTrigger value="observe">{t("assessorPortal.observation.tabs.observe")}</TabsTrigger>
+          <TabsTrigger value="rate">{t("assessorPortal.observation.tabs.rate", { rated: Object.values(ratings).filter((r) => r.score > 0).length, total: competencies.length })}</TabsTrigger>
+          <TabsTrigger value="questions">{t("assessorPortal.observation.tabs.questions")}</TabsTrigger>
         </TabsList>
 
         {/* OVERVIEW TAB - Quick Score Grid */}
         <TabsContent value="overview" className="space-y-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">Quick Score Summary</CardTitle>
+              <CardTitle className="text-base">{t("assessorPortal.observation.overview.title")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -286,7 +288,7 @@ export function ObservationForm({
                         )}
                       </div>
                       <span className="text-xs text-muted-foreground shrink-0">
-                        {compObs.length} obs
+                        {t("assessorPortal.observation.overview.obs", { count: compObs.length })}
                       </span>
                       <div className="flex gap-0.5 shrink-0">
                         {[1, 2, 3, 4, 5].map((s) => (
@@ -316,7 +318,7 @@ export function ObservationForm({
                           size="sm"
                           className="h-7 px-1.5 text-[9px] text-muted-foreground"
                           onClick={() => handleMarkNE(comp.id)}
-                          title="No Evidence"
+                          title={t("assessorPortal.observation.overview.noEvidence")}
                         >
                           NE
                         </Button>
@@ -334,12 +336,12 @@ export function ObservationForm({
           {/* Quick add form */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Record Observation</CardTitle>
+              <CardTitle className="text-base">{t("assessorPortal.observation.observe.recordTitle")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label>Competency</Label>
+                  <Label>{t("assessorPortal.observation.observe.competency")}</Label>
                   <Select value={newObsCompId} onValueChange={setNewObsCompId}>
                     <SelectTrigger>
                       <SelectValue />
@@ -354,15 +356,15 @@ export function ObservationForm({
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <Label>Indicator</Label>
+                  <Label>{t("assessorPortal.observation.observe.indicator")}</Label>
                   <Select value={newObsPositive} onValueChange={setNewObsPositive}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="null">Neutral</SelectItem>
-                      <SelectItem value="true">Positive (+)</SelectItem>
-                      <SelectItem value="false">Negative (-)</SelectItem>
+                      <SelectItem value="null">{t("assessorPortal.observation.observe.neutral")}</SelectItem>
+                      <SelectItem value="true">{t("assessorPortal.observation.observe.positive")}</SelectItem>
+                      <SelectItem value="false">{t("assessorPortal.observation.observe.negative")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -370,10 +372,10 @@ export function ObservationForm({
               {/* Behavioral indicators reference */}
               {newObsCompId && getIndicators(newObsCompId).length > 0 && (
                 <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
-                  <p className="text-xs font-semibold text-muted-foreground">Look for these behaviors:</p>
+                  <p className="text-xs font-semibold text-muted-foreground">{t("assessorPortal.observation.observe.lookForBehaviors")}</p>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <p className="text-[10px] font-medium text-green-700 mb-1">Positive Indicators</p>
+                      <p className="text-[10px] font-medium text-green-700 mb-1">{t("assessorPortal.observation.observe.positiveIndicators")}</p>
                       {getIndicators(newObsCompId, "positive").map((bi) => (
                         <button
                           key={bi.id}
@@ -389,7 +391,7 @@ export function ObservationForm({
                       ))}
                     </div>
                     <div>
-                      <p className="text-[10px] font-medium text-red-700 mb-1">Negative Indicators</p>
+                      <p className="text-[10px] font-medium text-red-700 mb-1">{t("assessorPortal.observation.observe.negativeIndicators")}</p>
                       {getIndicators(newObsCompId, "negative").map((bi) => (
                         <button
                           key={bi.id}
@@ -409,11 +411,11 @@ export function ObservationForm({
               )}
 
               <div className="space-y-1">
-                <Label>Behavioral Observation</Label>
+                <Label>{t("assessorPortal.observation.observe.behavioralObservation")}</Label>
                 <Textarea
                   value={newObsText}
                   onChange={(e) => setNewObsText(e.target.value)}
-                  placeholder="Describe the specific behavior you observed..."
+                  placeholder={t("assessorPortal.observation.observe.placeholder")}
                   rows={3}
                 />
               </div>
@@ -422,7 +424,7 @@ export function ObservationForm({
                 disabled={!newObsText.trim() || saving}
                 className="w-full"
               >
-                {saving ? "Saving..." : <><Plus className="h-4 w-4 me-1" />Add Observation</>}
+                {saving ? t("assessorPortal.observation.observe.saving") : <><Plus className="h-4 w-4 me-1" />{t("assessorPortal.observation.observe.addObservation")}</>}
               </Button>
             </CardContent>
           </Card>
@@ -472,7 +474,7 @@ export function ObservationForm({
 
           {observations.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-8">
-              No observations recorded yet. Use the form above to start.
+              {t("assessorPortal.observation.observe.noObservations")}
             </p>
           )}
         </TabsContent>
@@ -490,7 +492,7 @@ export function ObservationForm({
                     <CardTitle className="text-sm font-medium">{comp.name}</CardTitle>
                     {r.score > 0 && (
                       <Badge variant={r.score >= 3 ? "default" : "destructive"}>
-                        {r.score} - {BARS_LABELS[r.score]}
+                        {r.score} - {barsLabel(r.score)}
                       </Badge>
                     )}
                   </div>
@@ -502,7 +504,7 @@ export function ObservationForm({
                   {/* Behavioral indicators reference */}
                   {getIndicators(comp.id).length > 0 && (
                     <div className="rounded-md bg-muted/40 p-2.5 space-y-1">
-                      <p className="text-[10px] font-semibold text-muted-foreground">Behavioral Indicators</p>
+                      <p className="text-[10px] font-semibold text-muted-foreground">{t("assessorPortal.observation.rate.behavioralIndicators")}</p>
                       <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
                         {getIndicators(comp.id, "positive").slice(0, 4).map((bi) => (
                           <p key={bi.id} className="text-[10px] text-green-700">+ {bi.description}</p>
@@ -516,7 +518,7 @@ export function ObservationForm({
 
                   {/* Show observation count */}
                   <p className="text-xs text-muted-foreground">
-                    {compObs.length} observation{compObs.length !== 1 ? "s" : ""} recorded
+                    {t(compObs.length === 1 ? "assessorPortal.observation.rate.observationsRecorded_one" : "assessorPortal.observation.rate.observationsRecorded_other", { count: compObs.length })}
                     {compObs.length > 0 && (
                       <>
                         {" "}({compObs.filter((o) => o.is_positive === true).length}+
@@ -549,18 +551,18 @@ export function ObservationForm({
                       size="sm"
                       className="text-xs text-muted-foreground"
                       onClick={() => handleMarkNE(comp.id)}
-                      title="No Evidence - unable to observe this competency in this exercise"
+                      title={t("assessorPortal.observation.rate.noEvidenceTitle")}
                     >
                       NE
                     </Button>
                   </div>
                   <p className="text-xs text-center text-muted-foreground">
-                    {r.score > 0 ? BARS_LABELS[r.score] : !ratings[comp.id] ? "NE - No Evidence" : "Select a rating (1-5)"}
+                    {r.score > 0 ? barsLabel(r.score) : !ratings[comp.id] ? t("assessorPortal.observation.rate.neNoEvidence") : t("assessorPortal.observation.rate.selectRating")}
                   </p>
 
                   {/* Justification */}
                   <Textarea
-                    placeholder="Justification / evidence summary..."
+                    placeholder={t("assessorPortal.observation.rate.justificationPlaceholder")}
                     rows={2}
                     value={r.justification}
                     onChange={(e) =>
@@ -578,7 +580,7 @@ export function ObservationForm({
                     disabled={!r.score || savingRating === comp.id}
                     className="w-full"
                   >
-                    {savingRating === comp.id ? "Saving..." : "Save Rating"}
+                    {savingRating === comp.id ? t("assessorPortal.observation.rate.saving") : t("assessorPortal.observation.rate.saveRating")}
                   </Button>
                 </CardContent>
               </Card>
@@ -605,7 +607,7 @@ export function ObservationForm({
                   )}
                 </CardHeader>
                 <CardContent>
-                  <p className="text-[10px] text-muted-foreground mb-2 font-medium">Suggested follow-up questions:</p>
+                  <p className="text-[10px] text-muted-foreground mb-2 font-medium">{t("assessorPortal.observation.questions.suggested")}</p>
                   <div className="space-y-2">
                     {comp.qa_questions.map((q, i) => (
                       <div key={i} className="flex gap-2 text-sm">
@@ -620,7 +622,7 @@ export function ObservationForm({
           })}
           {competencies.every((c) => !c.qa_questions || c.qa_questions.length === 0) && (
             <p className="text-sm text-muted-foreground py-8 text-center">
-              No Q&A questions available for these competencies.
+              {t("assessorPortal.observation.questions.none")}
             </p>
           )}
         </TabsContent>

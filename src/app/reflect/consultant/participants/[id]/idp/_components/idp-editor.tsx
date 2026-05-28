@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslation } from "react-i18next";
 import { Plus, Trash2, Save, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,13 +36,13 @@ type Props = {
   };
 };
 
-const STATUS_LABEL: Record<ReflectIdpStatus, string> = {
-  draft: "Draft",
-  agreed: "Agreed",
-  in_progress: "In progress",
-  reviewed: "Reviewed",
-  closed: "Closed",
-};
+const STATUS_ORDER: ReflectIdpStatus[] = [
+  "draft",
+  "agreed",
+  "in_progress",
+  "reviewed",
+  "closed",
+];
 
 const STATUS_TONE: Record<ReflectIdpStatus, string> = {
   draft: "bg-amber-50 text-amber-700 border-amber-200",
@@ -52,6 +53,8 @@ const STATUS_TONE: Record<ReflectIdpStatus, string> = {
 };
 
 export function IdpEditor({ participantId, competencies, initial }: Props) {
+  const { t } = useTranslation();
+  const statusLabel = (s: ReflectIdpStatus): string => t(`reflectAdmin.idp.status.${s}`);
   const [priorities, setPriorities] = useState<IdpPriority[]>(
     initial.top_priorities.length > 0
       ? initial.top_priorities
@@ -86,11 +89,11 @@ export function IdpEditor({ participantId, competencies, initial }: Props) {
         status: newStatus ?? status,
       });
       if (!res.ok) {
-        setSaveMessage({ kind: "err", text: res.error ?? "Save failed" });
+        setSaveMessage({ kind: "err", text: res.error ?? t("reflectAdmin.idp.saveFailed") });
         return;
       }
       if (newStatus) setStatus(newStatus);
-      setSaveMessage({ kind: "ok", text: "Saved" });
+      setSaveMessage({ kind: "ok", text: t("reflectAdmin.idp.saved") });
     });
   };
 
@@ -101,12 +104,12 @@ export function IdpEditor({ participantId, competencies, initial }: Props) {
       await save();
       const res = await signOffReflectIdp(participantId);
       if (!res.ok) {
-        setSaveMessage({ kind: "err", text: res.error ?? "Sign-off failed" });
+        setSaveMessage({ kind: "err", text: res.error ?? t("reflectAdmin.idp.signOffFailed") });
         return;
       }
       setStatus("agreed");
       setSignedOffAt(new Date().toISOString());
-      setSaveMessage({ kind: "ok", text: "IDP signed off" });
+      setSaveMessage({ kind: "ok", text: t("reflectAdmin.idp.signedOff") });
     });
   };
 
@@ -130,10 +133,10 @@ export function IdpEditor({ participantId, competencies, initial }: Props) {
       <section className="rounded-lg border bg-card p-5 flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-sm font-semibold text-primary uppercase tracking-wide">
-            Individual Development Plan
+            {t("reflectAdmin.idp.heading")}
           </h2>
           <p className="text-xs text-muted-foreground mt-1">
-            Captured during the post-360 debrief session. Saves anonymously to the audit trail.
+            {t("reflectAdmin.idp.headingCaption")}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -143,7 +146,7 @@ export function IdpEditor({ participantId, competencies, initial }: Props) {
               STATUS_TONE[status]
             )}
           >
-            {STATUS_LABEL[status]}
+            {statusLabel(status)}
             {signedOffAt && status === "agreed" && (
               <span className="text-[10px] opacity-80">
                 · {new Date(signedOffAt).toLocaleDateString()}
@@ -156,29 +159,29 @@ export function IdpEditor({ participantId, competencies, initial }: Props) {
       {/* Top priorities */}
       <section className="rounded-lg border bg-card p-5 space-y-4">
         <div>
-          <h3 className="text-base font-semibold text-primary">Top development priorities</h3>
+          <h3 className="text-base font-semibold text-primary">{t("reflectAdmin.idp.priorities.heading")}</h3>
           <p className="text-xs text-muted-foreground mt-1">
-            Lock in the 2–3 priorities the participant will work on between now and the review date. Keep it tight: focus beats breadth.
+            {t("reflectAdmin.idp.priorities.caption")}
           </p>
         </div>
         {priorities.map((p, i) => (
           <div key={i} className="rounded-md border bg-muted/20 p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">
-                Priority {i + 1}
+                {t("reflectAdmin.idp.priorities.itemLabel", { n: i + 1 })}
               </span>
               <button
                 type="button"
                 onClick={() => removePriority(i)}
                 className="text-muted-foreground hover:text-rose-700 transition-colors"
-                title="Remove priority"
+                title={t("reflectAdmin.idp.priorities.remove")}
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               <div>
-                <Label>Competency</Label>
+                <Label>{t("reflectAdmin.idp.priorities.competency")}</Label>
                 <select
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                   value={p.competency_id ?? ""}
@@ -190,37 +193,37 @@ export function IdpEditor({ participantId, competencies, initial }: Props) {
                     updatePriority(i, { competency_id: id, competency_name: name });
                   }}
                 >
-                  <option value="">- or type free text below -</option>
+                  <option value="">{t("reflectAdmin.idp.priorities.freeTextOption")}</option>
                   {competencies.map((c) => (
                     <option key={c.id} value={c.id}>{c.name_en}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <Label>Custom competency name (free text)</Label>
+                <Label>{t("reflectAdmin.idp.priorities.customName")}</Label>
                 <Input
                   value={p.competency_name}
                   onChange={(e) =>
                     updatePriority(i, { competency_name: e.target.value, competency_id: null })
                   }
-                  placeholder="e.g. Strategic Thinking"
+                  placeholder={t("reflectAdmin.idp.priorities.customNamePlaceholder")}
                 />
               </div>
             </div>
             <div>
-              <Label>Why this priority?</Label>
+              <Label>{t("reflectAdmin.idp.priorities.why")}</Label>
               <Textarea
                 rows={2}
-                placeholder="What does the 360 say? What changes if this is closed?"
+                placeholder={t("reflectAdmin.idp.priorities.whyPlaceholder")}
                 value={p.why}
                 onChange={(e) => updatePriority(i, { why: e.target.value })}
               />
             </div>
             <div>
-              <Label>Target behaviours <span className="text-muted-foreground">(one per line)</span></Label>
+              <Label>{t("reflectAdmin.idp.priorities.targetBehaviours")} <span className="text-muted-foreground">{t("reflectAdmin.idp.priorities.onePerLine")}</span></Label>
               <Textarea
                 rows={3}
-                placeholder={"Behaviour to start doing more / better\nAnother behaviour …"}
+                placeholder={t("reflectAdmin.idp.priorities.targetBehavioursPlaceholder")}
                 value={p.target_behaviors.join("\n")}
                 onChange={(e) =>
                   updatePriority(i, {
@@ -235,26 +238,26 @@ export function IdpEditor({ participantId, competencies, initial }: Props) {
           </div>
         ))}
         <Button type="button" variant="outline" onClick={addPriority} className="text-xs">
-          <Plus className="h-3.5 w-3.5 me-1" /> Add priority
+          <Plus className="h-3.5 w-3.5 me-1" /> {t("reflectAdmin.idp.priorities.add")}
         </Button>
       </section>
 
       {/* Action plan */}
       <section className="rounded-lg border bg-card p-5 space-y-4">
         <div>
-          <h3 className="text-base font-semibold text-primary">Action plan</h3>
+          <h3 className="text-base font-semibold text-primary">{t("reflectAdmin.idp.actions.heading")}</h3>
           <p className="text-xs text-muted-foreground mt-1">
-            Specific actions that lead toward the priorities above. Each gets an owner, a deadline, and the support needed.
+            {t("reflectAdmin.idp.actions.caption")}
           </p>
         </div>
         {actions.length === 0 && (
-          <p className="text-xs text-muted-foreground italic">No actions yet.</p>
+          <p className="text-xs text-muted-foreground italic">{t("reflectAdmin.idp.actions.empty")}</p>
         )}
         {actions.map((a, i) => (
           <div key={i} className="rounded-md border bg-muted/20 p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">
-                Action {i + 1}
+                {t("reflectAdmin.idp.actions.itemLabel", { n: i + 1 })}
               </span>
               <button
                 type="button"
@@ -265,25 +268,25 @@ export function IdpEditor({ participantId, competencies, initial }: Props) {
               </button>
             </div>
             <div>
-              <Label>Action</Label>
+              <Label>{t("reflectAdmin.idp.actions.action")}</Label>
               <Textarea
                 rows={2}
-                placeholder="e.g. Shadow the Head of Strategy on the Q3 planning cycle"
+                placeholder={t("reflectAdmin.idp.actions.actionPlaceholder")}
                 value={a.action}
                 onChange={(e) => updateAction(i, { action: e.target.value })}
               />
             </div>
             <div className="grid gap-3 md:grid-cols-3">
               <div>
-                <Label>Owner</Label>
+                <Label>{t("reflectAdmin.idp.actions.owner")}</Label>
                 <Input
                   value={a.owner}
-                  placeholder="Self / Manager / VIFM coach"
+                  placeholder={t("reflectAdmin.idp.actions.ownerPlaceholder")}
                   onChange={(e) => updateAction(i, { owner: e.target.value })}
                 />
               </div>
               <div>
-                <Label>Deadline</Label>
+                <Label>{t("reflectAdmin.idp.actions.deadline")}</Label>
                 <Input
                   type="date"
                   value={a.deadline ?? ""}
@@ -291,10 +294,10 @@ export function IdpEditor({ participantId, competencies, initial }: Props) {
                 />
               </div>
               <div>
-                <Label>Support needed</Label>
+                <Label>{t("reflectAdmin.idp.actions.support")}</Label>
                 <Input
                   value={a.support}
-                  placeholder="e.g. Calendar access · stretch budget"
+                  placeholder={t("reflectAdmin.idp.actions.supportPlaceholder")}
                   onChange={(e) => updateAction(i, { support: e.target.value })}
                 />
               </div>
@@ -302,27 +305,27 @@ export function IdpEditor({ participantId, competencies, initial }: Props) {
           </div>
         ))}
         <Button type="button" variant="outline" onClick={addAction} className="text-xs">
-          <Plus className="h-3.5 w-3.5 me-1" /> Add action
+          <Plus className="h-3.5 w-3.5 me-1" /> {t("reflectAdmin.idp.actions.add")}
         </Button>
       </section>
 
       {/* Success measures + review */}
       <section className="rounded-lg border bg-card p-5 space-y-4">
         <div>
-          <h3 className="text-base font-semibold text-primary">Success measures &amp; review</h3>
+          <h3 className="text-base font-semibold text-primary">{t("reflectAdmin.idp.review.heading")}</h3>
         </div>
         <div>
-          <Label>How will success be measured?</Label>
+          <Label>{t("reflectAdmin.idp.review.successQuestion")}</Label>
           <Textarea
             rows={3}
-            placeholder="Observable changes · stakeholder feedback · KPIs · the next 360 cycle …"
+            placeholder={t("reflectAdmin.idp.review.successPlaceholder")}
             value={successMeasures}
             onChange={(e) => setSuccessMeasures(e.target.value)}
           />
         </div>
         <div className="grid gap-3 md:grid-cols-2">
           <div>
-            <Label>Target review date</Label>
+            <Label>{t("reflectAdmin.idp.review.targetReviewDate")}</Label>
             <Input
               type="date"
               value={targetReview}
@@ -330,17 +333,15 @@ export function IdpEditor({ participantId, competencies, initial }: Props) {
             />
           </div>
           <div>
-            <Label>Status</Label>
+            <Label>{t("reflectAdmin.idp.review.statusLabel")}</Label>
             <select
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
               value={status}
               onChange={(e) => setStatus(e.target.value as ReflectIdpStatus)}
             >
-              {(["draft", "agreed", "in_progress", "reviewed", "closed"] as ReflectIdpStatus[]).map(
-                (s) => (
-                  <option key={s} value={s}>{STATUS_LABEL[s]}</option>
-                )
-              )}
+              {STATUS_ORDER.map((s) => (
+                <option key={s} value={s}>{statusLabel(s)}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -365,16 +366,16 @@ export function IdpEditor({ participantId, competencies, initial }: Props) {
         <div className="flex items-center gap-2">
           <Button type="button" variant="outline" onClick={() => save()} disabled={pending}>
             {pending ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <Save className="h-4 w-4 me-2" />}
-            Save draft
+            {t("reflectAdmin.idp.saveDraft")}
           </Button>
           <Button
             type="button"
             onClick={signOff}
             disabled={pending || status === "agreed" || status === "closed"}
-            title={status === "agreed" ? "Already signed off" : "Sign off as agreed"}
+            title={status === "agreed" ? t("reflectAdmin.idp.alreadySignedOff") : t("reflectAdmin.idp.signOffAgreed")}
           >
             <CheckCircle2 className="h-4 w-4 me-2" />
-            Sign off as agreed
+            {t("reflectAdmin.idp.signOffAgreed")}
           </Button>
         </div>
       </div>

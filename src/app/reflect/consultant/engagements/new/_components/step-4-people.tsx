@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import { useTranslation } from "react-i18next";
 import { Users, Loader2, CheckCircle2, AlertTriangle, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -72,6 +73,7 @@ function normaliseLanguage(raw: string | undefined | null): string {
 }
 
 export function StepPeople({ engagementId }: Props) {
+  const { t } = useTranslation();
   const [pCsv, setPCsv] = useState("");
   const [pResult, setPResult] = useState<ParticipantResult>(null);
   const [pPending, startPTransition] = useTransition();
@@ -104,7 +106,7 @@ export function StepPeople({ engagementId }: Props) {
     const raw = parseCsvOrTsv(pCsv);
     const rows = maybeDropHeader(raw, PARTICIPANT_HEADERS);
     if (rows.length === 0) {
-      setPResult({ inserted: 0, errors: ["No rows detected. Paste at least one participant row."] });
+      setPResult({ inserted: 0, errors: [t("reflectWizard.step4.participantsNoRows")] });
       return;
     }
     const parsed = rows.map((r) => ({
@@ -124,7 +126,7 @@ export function StepPeople({ engagementId }: Props) {
         rows: parsed,
       });
       if (!res.ok) {
-        setPResult({ inserted: 0, errors: [res.error ?? "Import failed"] });
+        setPResult({ inserted: 0, errors: [res.error ?? t("reflectWizard.step4.importFailed")] });
         return;
       }
       setPResult({ inserted: res.inserted ?? 0, errors: [] });
@@ -136,7 +138,7 @@ export function StepPeople({ engagementId }: Props) {
     const raw = parseCsvOrTsv(rCsv);
     const rows = maybeDropHeader(raw, RATER_HEADERS);
     if (rows.length === 0) {
-      setRResult({ inserted: 0, unmatched: 0, unmatched_emails: [], errors: ["No rows detected."] });
+      setRResult({ inserted: 0, unmatched: 0, unmatched_emails: [], errors: [t("reflectWizard.step4.ratersNoRows")] });
       return;
     }
     const parsed = rows.map((r) => ({
@@ -153,7 +155,7 @@ export function StepPeople({ engagementId }: Props) {
         rows: parsed,
       });
       if (!res.ok) {
-        setRResult({ inserted: 0, unmatched: 0, unmatched_emails: [], errors: [res.error ?? "Import failed"] });
+        setRResult({ inserted: 0, unmatched: 0, unmatched_emails: [], errors: [res.error ?? t("reflectWizard.step4.importFailed")] });
         return;
       }
       setRResult({
@@ -170,10 +172,10 @@ export function StepPeople({ engagementId }: Props) {
       <div>
         <h2 className="text-lg font-semibold text-primary flex items-center gap-2">
           <Users className="h-5 w-5 text-accent" />
-          Participants &amp; raters
+          {t("reflectWizard.step4.heading")}
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Bulk-paste participants first, then raters. Both accept comma-separated or tab-separated values (paste directly from Excel works).
+          {t("reflectWizard.step4.intro")}
         </p>
       </div>
 
@@ -181,8 +183,8 @@ export function StepPeople({ engagementId }: Props) {
       <section className="rounded-lg border bg-card p-5 space-y-3">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
-            <h3 className="text-sm font-semibold text-primary">1. Participants</h3>
-            <p className="text-xs text-muted-foreground">The people being assessed.</p>
+            <h3 className="text-sm font-semibold text-primary">{t("reflectWizard.step4.participantsTitle")}</h3>
+            <p className="text-xs text-muted-foreground">{t("reflectWizard.step4.participantsSubtitle")}</p>
           </div>
           <div className="flex items-center gap-2">
             <input
@@ -204,7 +206,7 @@ export function StepPeople({ engagementId }: Props) {
               className="text-xs"
             >
               <Upload className="h-3.5 w-3.5 me-1.5" />
-              Upload CSV file
+              {t("reflectWizard.step4.uploadCsv")}
             </Button>
           </div>
         </div>
@@ -222,16 +224,16 @@ export function StepPeople({ engagementId }: Props) {
           <Button onClick={submitParticipants} disabled={pPending || !pCsv.trim()}>
             {pPending ? (
               <>
-                <Loader2 className="h-4 w-4 me-2 animate-spin" /> Importing…
+                <Loader2 className="h-4 w-4 me-2 animate-spin" /> {t("reflectWizard.step4.importing")}
               </>
             ) : (
-              "Import participants"
+              t("reflectWizard.step4.importParticipants")
             )}
           </Button>
           {pResult && pResult.errors.length === 0 && pResult.inserted > 0 && (
             <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700">
               <CheckCircle2 className="h-3.5 w-3.5" />
-              {pResult.inserted} added
+              {t("reflectWizard.step4.added", { count: pResult.inserted })}
             </span>
           )}
           {pResult && pResult.errors.length > 0 && (
@@ -242,7 +244,7 @@ export function StepPeople({ engagementId }: Props) {
           )}
         </div>
         <p className="text-[11px] text-muted-foreground">
-          Valid <code className="text-[10px]">level_tier</code>: exec, senior_mgr, manager, individual_contributor, all. Valid <code className="text-[10px]">language_preference</code>: en, ar.
+          {t("reflectWizard.step4.participantsValidHelp")}
         </p>
       </section>
 
@@ -250,8 +252,8 @@ export function StepPeople({ engagementId }: Props) {
       <section className="rounded-lg border bg-card p-5 space-y-3">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
-            <h3 className="text-sm font-semibold text-primary">2. Raters</h3>
-            <p className="text-xs text-muted-foreground">The people giving 360° feedback to each participant.</p>
+            <h3 className="text-sm font-semibold text-primary">{t("reflectWizard.step4.ratersTitle")}</h3>
+            <p className="text-xs text-muted-foreground">{t("reflectWizard.step4.ratersSubtitle")}</p>
           </div>
           <div className="flex items-center gap-2">
             <input
@@ -273,7 +275,7 @@ export function StepPeople({ engagementId }: Props) {
               className="text-xs"
             >
               <Upload className="h-3.5 w-3.5 me-1.5" />
-              Upload CSV file
+              {t("reflectWizard.step4.uploadCsv")}
             </Button>
           </div>
         </div>
@@ -291,22 +293,22 @@ export function StepPeople({ engagementId }: Props) {
           <Button onClick={submitRaters} disabled={rPending || !rCsv.trim()}>
             {rPending ? (
               <>
-                <Loader2 className="h-4 w-4 me-2 animate-spin" /> Importing…
+                <Loader2 className="h-4 w-4 me-2 animate-spin" /> {t("reflectWizard.step4.importing")}
               </>
             ) : (
-              "Import raters"
+              t("reflectWizard.step4.importRaters")
             )}
           </Button>
           {rResult && rResult.errors.length === 0 && rResult.inserted > 0 && (
             <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700">
               <CheckCircle2 className="h-3.5 w-3.5" />
-              {rResult.inserted} added
+              {t("reflectWizard.step4.added", { count: rResult.inserted })}
             </span>
           )}
           {rResult && rResult.unmatched > 0 && (
             <span className="inline-flex items-center gap-1.5 text-xs text-amber-700">
               <AlertTriangle className="h-3.5 w-3.5" />
-              {rResult.unmatched} unmatched (participant email not found)
+              {t("reflectWizard.step4.unmatched", { count: rResult.unmatched })}
             </span>
           )}
           {rResult && rResult.errors.length > 0 && (
@@ -317,7 +319,7 @@ export function StepPeople({ engagementId }: Props) {
           )}
         </div>
         <p className="text-[11px] text-muted-foreground">
-          Valid <code className="text-[10px]">rater_role</code>: self, manager, peer, direct_report, skip_level, other. The <code className="text-[10px]">participant_email</code> must match an email you imported above.
+          {t("reflectWizard.step4.ratersValidHelpPrefix")} <code className="text-[10px]">participant_email</code> {t("reflectWizard.step4.ratersValidHelpSuffix")}
         </p>
       </section>
     </div>

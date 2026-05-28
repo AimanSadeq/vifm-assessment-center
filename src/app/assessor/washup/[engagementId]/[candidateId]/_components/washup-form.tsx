@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 import { createClient } from "@/lib/supabase/client";
 import { BackLink } from "@/components/shared/back-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,6 +67,7 @@ export function WashupForm({
   existingOar,
 }: Props) {
   const router = useRouter();
+  const { t } = useTranslation();
 
   // Consensus ratings state
   const [consensus, setConsensus] = useState<
@@ -135,7 +137,7 @@ export function WashupForm({
           setLastExternalUpdate(new Date().toLocaleTimeString());
           // Only show notification if this wasn't our own save
           if (lastSavedByMe.current !== compId) {
-            toast.info("A colleague updated a consensus rating");
+            toast.info(t("assessorWashup.form.toastColleagueUpdated"));
           }
           lastSavedByMe.current = null;
         }
@@ -156,7 +158,7 @@ export function WashupForm({
           setOarRec(record.recommendation as string);
           setOarSummary((record.summary as string) ?? "");
           setLastExternalUpdate(new Date().toLocaleTimeString());
-          toast.info("Overall Assessment Rating updated by a colleague");
+          toast.info(t("assessorWashup.form.toastOarUpdatedByColleague"));
         }
       )
       .subscribe((status) => {
@@ -183,11 +185,11 @@ export function WashupForm({
     });
     setSavingId(null);
     if ("error" in result && result.error) {
-      const msg = typeof result.error === "string" ? result.error : "Failed to save";
+      const msg = typeof result.error === "string" ? result.error : t("assessorWashup.form.toastFailedToSave");
       setSaveError(msg);
       toast.error(msg);
     } else {
-      toast.success("Consensus rating saved");
+      toast.success(t("assessorWashup.form.toastConsensusSaved"));
     }
   };
 
@@ -203,9 +205,9 @@ export function WashupForm({
     });
     setSavingOar(false);
     if ("error" in result && result.error) {
-      toast.error(typeof result.error === "string" ? result.error : "Failed to save OAR");
+      toast.error(typeof result.error === "string" ? result.error : t("assessorWashup.form.toastFailedToSaveOar"));
     } else {
-      toast.success("Overall Assessment Rating saved");
+      toast.success(t("assessorWashup.form.toastOarSaved"));
       router.refresh();
     }
   };
@@ -216,14 +218,14 @@ export function WashupForm({
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <BackLink href={`/assessor/washup/${engagementId}`} label="Back to Candidate List" />
-        <h1 className="mt-2 text-2xl font-bold">Wash-Up: {candidateName}</h1>
+        <BackLink href={`/assessor/washup/${engagementId}`} label={t("assessorWashup.form.backToCandidateList")} />
+        <h1 className="mt-2 text-2xl font-bold">{t("assessorWashup.form.title", { name: candidateName })}</h1>
         <p className="text-sm text-muted-foreground">{engagementName}</p>
         <Badge
           variant={completedCount === competencies.length ? "default" : "secondary"}
           className="mt-2"
         >
-          {completedCount}/{competencies.length} consensus ratings agreed
+          {t("assessorWashup.form.consensusRatingsAgreed", { done: completedCount, total: competencies.length })}
         </Badge>
         {/* Realtime status indicator */}
         <div className="flex items-center gap-2">
@@ -237,11 +239,11 @@ export function WashupForm({
               "h-1.5 w-1.5 rounded-full",
               realtimeActive ? "bg-green-500 animate-pulse" : "bg-muted-foreground"
             )} />
-            {realtimeActive ? "Live" : "Connecting..."}
+            {realtimeActive ? t("assessorWashup.form.live") : t("assessorWashup.form.connecting")}
           </span>
           {lastExternalUpdate && (
             <span className="text-[10px] text-muted-foreground">
-              Last sync: {lastExternalUpdate}
+              {t("assessorWashup.form.lastSync", { time: lastExternalUpdate })}
             </span>
           )}
         </div>
@@ -252,7 +254,7 @@ export function WashupForm({
         {/* Radar Chart */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Competency Profile</CardTitle>
+            <CardTitle className="text-base">{t("assessorWashup.form.competencyProfile")}</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={280}>
@@ -279,11 +281,11 @@ export function WashupForm({
             <div className="flex justify-center gap-6 text-xs text-muted-foreground">
               <div className="flex items-center gap-1.5">
                 <div className="h-2 w-4 rounded-sm border border-muted-foreground/30 bg-muted-foreground/15" />
-                Preliminary
+                {t("assessorWashup.form.legendPreliminary")}
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="h-2 w-4 rounded-sm bg-accent/30 border border-accent" />
-                Consensus
+                {t("assessorWashup.form.legendConsensus")}
               </div>
             </div>
           </CardContent>
@@ -292,7 +294,7 @@ export function WashupForm({
         {/* Score Summary Table */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Ratings Overview</CardTitle>
+            <CardTitle className="text-base">{t("assessorWashup.form.ratingsOverview")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-1.5">
@@ -354,9 +356,9 @@ export function WashupForm({
             </div>
             {/* Legend */}
             <div className="flex gap-4 mt-3 pt-2 border-t text-[10px] text-muted-foreground">
-              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-green-600" /> ≥4 Strength</span>
-              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-accent" /> 3 Competent</span>
-              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500" /> ≤2 Development</span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-green-600" /> {t("assessorWashup.form.legendStrength")}</span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-accent" /> {t("assessorWashup.form.legendCompetent")}</span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500" /> {t("assessorWashup.form.legendDevelopment")}</span>
             </div>
           </CardContent>
         </Card>
@@ -402,12 +404,12 @@ export function WashupForm({
                 <div className="flex items-center gap-2">
                   {comp.weight != null && (
                     <Badge variant="outline" className="text-xs">
-                      Weight: {comp.weight}
+                      {t("assessorWashup.form.weight", { weight: comp.weight })}
                     </Badge>
                   )}
                   {c.score > 0 && (
                     <Badge variant="default">
-                      Consensus: {c.score}
+                      {t("assessorWashup.form.consensusBadge", { score: c.score })}
                     </Badge>
                   )}
                 </div>
@@ -417,13 +419,13 @@ export function WashupForm({
               {/* Assessor preliminary ratings comparison */}
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-2">
-                  Assessor Preliminary Ratings
+                  {t("assessorWashup.form.assessorPreliminaryRatings")}
                   {avgRating && (
-                    <span className="ml-2">
-                      (Avg: {avgRating}
+                    <span className="ms-2">
+                      {t("assessorWashup.form.average", { avg: avgRating })}
                       {ratingSpread > 1 && (
-                        <span className="text-yellow-600 ml-1">
-                          ⚠ Spread: {ratingSpread}
+                        <span className="text-yellow-600 ms-1">
+                          {t("assessorWashup.form.spread", { spread: ratingSpread })}
                         </span>
                       )}
                       )
@@ -432,7 +434,7 @@ export function WashupForm({
                 </p>
                 {assessorWorksheets.length === 0 ? (
                   <p className="text-xs text-muted-foreground italic">
-                    No preliminary ratings submitted yet.
+                    {t("assessorWashup.form.noPreliminaryRatings")}
                   </p>
                 ) : (
                   <div className="space-y-2">
@@ -446,7 +448,7 @@ export function WashupForm({
                         >
                           <div className="flex items-center gap-2 min-w-[140px]">
                             <span className="font-medium">
-                              {(profile?.full_name as string) ?? "Assessor"}
+                              {(profile?.full_name as string) ?? t("assessorWashup.form.assessorFallback")}
                             </span>
                             <Badge
                               variant={rating >= 3 ? "default" : "destructive"}
@@ -456,7 +458,7 @@ export function WashupForm({
                             </Badge>
                           </div>
                           <span className="text-xs text-muted-foreground flex-1">
-                            {(w.notes as string) || "No notes"}
+                            {(w.notes as string) || t("assessorWashup.form.noNotes")}
                           </span>
                         </div>
                       );
@@ -469,7 +471,7 @@ export function WashupForm({
 
               {/* Consensus rating */}
               <div>
-                <p className="text-xs font-medium mb-2">Consensus Rating</p>
+                <p className="text-xs font-medium mb-2">{t("assessorWashup.form.consensusRating")}</p>
                 <div className="flex gap-1">
                   {[1, 2, 3, 4, 5].map((score) => (
                     <Button
@@ -494,13 +496,13 @@ export function WashupForm({
                   ))}
                 </div>
                 <p className="text-xs text-center text-muted-foreground mt-1">
-                  {c.score > 0 ? BARS_LABELS[c.score] : "Agree on a rating (1-5)"}
+                  {c.score > 0 ? BARS_LABELS[c.score] : t("assessorWashup.form.agreeOnRating")}
                 </p>
               </div>
 
               {/* Discussion notes */}
               <Textarea
-                placeholder="Discussion notes - key evidence, points of agreement/disagreement..."
+                placeholder={t("assessorWashup.form.discussionNotesPlaceholder")}
                 rows={2}
                 value={c.notes}
                 onChange={(e) =>
@@ -518,7 +520,7 @@ export function WashupForm({
                 disabled={!c.score || savingId === comp.id}
                 className="w-full"
               >
-                {savingId === comp.id ? "Saving..." : "Save Consensus Rating"}
+                {savingId === comp.id ? t("assessorWashup.form.saving") : t("assessorWashup.form.saveConsensusRating")}
               </Button>
             </CardContent>
           </Card>
@@ -528,15 +530,15 @@ export function WashupForm({
       {/* OAR Section */}
       <Card className="border-2">
         <CardHeader>
-          <CardTitle>Overall Assessment Rating (OAR)</CardTitle>
+          <CardTitle>{t("assessorWashup.form.oarTitle")}</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Final overall rating and recommendation for {candidateName}.
+            {t("assessorWashup.form.oarSubtitle", { name: candidateName })}
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Overall Score */}
           <div>
-            <Label className="text-sm font-medium">Overall Score (1-5)</Label>
+            <Label className="text-sm font-medium">{t("assessorWashup.form.overallScore")}</Label>
             <div className="flex gap-1 mt-2">
               {[1, 2, 3, 4, 5].map((score) => (
                 <Button
@@ -551,13 +553,13 @@ export function WashupForm({
               ))}
             </div>
             <p className="text-sm text-center text-muted-foreground mt-1">
-              {oarScore > 0 ? BARS_LABELS[oarScore] : "Select overall score"}
+              {oarScore > 0 ? BARS_LABELS[oarScore] : t("assessorWashup.form.selectOverallScore")}
             </p>
           </div>
 
           {/* Recommendation */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Recommendation</Label>
+            <Label className="text-sm font-medium">{t("assessorWashup.form.recommendation")}</Label>
             <div className="grid grid-cols-3 gap-2">
               {(["ready_now", "ready_with_development", "not_ready"] as const).map(
                 (rec) => (
@@ -580,9 +582,9 @@ export function WashupForm({
 
           {/* Summary */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Executive Summary</Label>
+            <Label className="text-sm font-medium">{t("assessorWashup.form.executiveSummary")}</Label>
             <Textarea
-              placeholder="Summary of candidate's overall performance, key strengths, and development areas..."
+              placeholder={t("assessorWashup.form.summaryPlaceholder")}
               rows={4}
               value={oarSummary}
               onChange={(e) => setOarSummary(e.target.value)}
@@ -596,10 +598,10 @@ export function WashupForm({
             size="lg"
           >
             {savingOar
-              ? "Saving..."
+              ? t("assessorWashup.form.saving")
               : existingOar
-                ? "Update Overall Assessment Rating"
-                : "Save Overall Assessment Rating"}
+                ? t("assessorWashup.form.updateOar")
+                : t("assessorWashup.form.saveOar")}
           </Button>
         </CardContent>
       </Card>

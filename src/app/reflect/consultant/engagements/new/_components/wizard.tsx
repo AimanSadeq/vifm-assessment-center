@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { Check, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -62,11 +63,11 @@ export type WizardState = {
 };
 
 const STEPS = [
-  { number: 1, label: "Organisation" },
-  { number: 2, label: "Framework" },
-  { number: 3, label: "Levels" },
-  { number: 4, label: "Participants & raters" },
-  { number: 5, label: "Launch" },
+  { number: 1, labelKey: "reflectWizard.steps.organisation" },
+  { number: 2, labelKey: "reflectWizard.steps.framework" },
+  { number: 3, labelKey: "reflectWizard.steps.levels" },
+  { number: 4, labelKey: "reflectWizard.steps.people" },
+  { number: 5, labelKey: "reflectWizard.steps.launch" },
 ] as const;
 
 type Props = {
@@ -76,6 +77,7 @@ type Props = {
 
 export function ReflectWizard({ orgs: initialOrgs, templates }: Props) {
   const router = useRouter();
+  const { t } = useTranslation();
   // Local copy so inline org creation (Step 1) can append without a refetch.
   const [orgs, setOrgs] = useState<WizardOrg[]>(initialOrgs);
   const [state, setState] = useState<WizardState>({
@@ -111,24 +113,24 @@ export function ReflectWizard({ orgs: initialOrgs, templates }: Props) {
   const validateStep = (n: 1 | 2 | 3 | 4 | 5): string | null => {
     switch (n) {
       case 1:
-        if (!state.name.trim()) return "Engagement name is required.";
-        if (!state.organization_id) return "Pick a client organisation.";
-        if (state.anonymity_min_n < 3) return "Anonymity threshold must be at least 3.";
+        if (!state.name.trim()) return t("reflectWizard.errors.nameRequired");
+        if (!state.organization_id) return t("reflectWizard.errors.pickOrganisation");
+        if (state.anonymity_min_n < 3) return t("reflectWizard.errors.anonymityMin");
         return null;
       case 2:
         if (state.framework_kind === "clone") {
-          if (!state.framework_template_id) return "Pick a library template to clone.";
+          if (!state.framework_template_id) return t("reflectWizard.errors.pickTemplate");
         } else if (state.framework_kind === "manual") {
-          if (!state.framework_name_en.trim()) return "Give the framework an English name.";
+          if (!state.framework_name_en.trim()) return t("reflectWizard.errors.frameworkNameEn");
         } else if (state.framework_kind === "ai") {
-          if (!state.framework_name_en.trim()) return "Give the framework an English name.";
+          if (!state.framework_name_en.trim()) return t("reflectWizard.errors.frameworkNameEn");
           if (state.framework_source_text.trim().length < 50) {
-            return "Paste at least a short paragraph describing the client's values and competencies.";
+            return t("reflectWizard.errors.pasteSource");
           }
         }
         return null;
       case 3:
-        if (state.levels_in_scope.length === 0) return "Pick at least one level tier.";
+        if (state.levels_in_scope.length === 0) return t("reflectWizard.errors.pickLevel");
         return null;
       case 4:
         // Participants + raters are committed via their own server
@@ -248,7 +250,7 @@ export function ReflectWizard({ orgs: initialOrgs, templates }: Props) {
               >
                 {isDone ? <Check className="h-3 w-3" /> : s.number}
               </span>
-              <span>{s.label}</span>
+              <span>{t(s.labelKey)}</span>
             </div>
           );
         })}
@@ -298,17 +300,17 @@ export function ReflectWizard({ orgs: initialOrgs, templates }: Props) {
             disabled={step === 1 || pending || (!!state.engagement_id && step <= 3)}
           >
             <ChevronLeft className="h-4 w-4 me-1" />
-            Back
+            {t("reflectWizard.nav.back")}
           </Button>
           <Button onClick={onNext} disabled={pending}>
             {pending ? (
               <>
                 <Loader2 className="h-4 w-4 me-2 animate-spin" />
-                {step === 2 ? "Creating engagement…" : "Loading…"}
+                {step === 2 ? t("reflectWizard.nav.creatingEngagement") : t("reflectWizard.nav.loading")}
               </>
             ) : (
               <>
-                {step === 2 ? "Create engagement & continue" : "Next"}
+                {step === 2 ? t("reflectWizard.nav.createAndContinue") : t("reflectWizard.nav.next")}
                 <ChevronRight className="h-4 w-4 ms-1" />
               </>
             )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { Layers, Sparkles, PencilRuler } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { FrameworkKind, WizardState, WizardTemplate } from "./wizard";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,34 +14,35 @@ type Props = {
   templates: WizardTemplate[];
 };
 
-const KINDS: { value: FrameworkKind; icon: typeof Layers; title: string; description: string }[] = [
+const KINDS: { value: FrameworkKind; icon: typeof Layers; titleKey: string; descriptionKey: string }[] = [
   {
     value: "clone",
     icon: Layers,
-    title: "Clone a library template",
-    description: "Start from a vetted VIFM framework - fastest path when the client has no documented model.",
+    titleKey: "reflectWizard.step2.kinds.cloneTitle",
+    descriptionKey: "reflectWizard.step2.kinds.cloneDesc",
   },
   {
     value: "ai",
     icon: Sparkles,
-    title: "AI-extract from the client's documents",
-    description: "Paste the client's Corporate Values and Leadership Competencies. Claude proposes 3–5 observable behaviours per competency in EN + AR. You approve before launch.",
+    titleKey: "reflectWizard.step2.kinds.aiTitle",
+    descriptionKey: "reflectWizard.step2.kinds.aiDesc",
   },
   {
     value: "manual",
     icon: PencilRuler,
-    title: "Build manually",
-    description: "Create an empty framework and add competencies + behaviours by hand on the engagement detail page.",
+    titleKey: "reflectWizard.step2.kinds.manualTitle",
+    descriptionKey: "reflectWizard.step2.kinds.manualDesc",
   },
 ];
 
 export function StepFramework({ state, update, templates }: Props) {
+  const { t: tr } = useTranslation();
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-primary">Competency framework</h2>
+        <h2 className="text-lg font-semibold text-primary">{tr("reflectWizard.step2.heading")}</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Reflect 360 builds every engagement on the client&apos;s own values and competencies. Choose how you&apos;d like to populate this framework.
+          {tr("reflectWizard.step2.intro")}
         </p>
       </div>
 
@@ -68,8 +70,8 @@ export function StepFramework({ state, update, templates }: Props) {
               >
                 <Icon className="h-4 w-4" />
               </div>
-              <h3 className="text-sm font-semibold text-primary mb-1">{k.title}</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">{k.description}</p>
+              <h3 className="text-sm font-semibold text-primary mb-1">{tr(k.titleKey)}</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">{tr(k.descriptionKey)}</p>
             </button>
           );
         })}
@@ -79,14 +81,14 @@ export function StepFramework({ state, update, templates }: Props) {
       <div className="rounded-lg border bg-muted/20 p-4">
         {state.framework_kind === "clone" && (
           <div>
-            <Label htmlFor="rf-tpl">Pick a library template</Label>
+            <Label htmlFor="rf-tpl">{tr("reflectWizard.step2.pickTemplateLabel")}</Label>
             <select
               id="rf-tpl"
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
               value={state.framework_template_id}
               onChange={(e) => update({ framework_template_id: e.target.value })}
             >
-              <option value="">Choose a template…</option>
+              <option value="">{tr("reflectWizard.step2.chooseTemplate")}</option>
               {templates.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name_en}{t.name_ar ? ` · ${t.name_ar}` : ""}
@@ -95,7 +97,7 @@ export function StepFramework({ state, update, templates }: Props) {
             </select>
             {templates.length === 0 && (
               <p className="text-xs text-muted-foreground mt-2">
-                No templates seeded yet. Run migration 00033 or pick a different framework path.
+                {tr("reflectWizard.step2.noTemplates")}
               </p>
             )}
             {state.framework_template_id && (() => {
@@ -110,16 +112,16 @@ export function StepFramework({ state, update, templates }: Props) {
         {state.framework_kind === "manual" && (
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <Label htmlFor="rf-fw-name-en">Framework name (English)</Label>
+              <Label htmlFor="rf-fw-name-en">{tr("reflectWizard.step2.fwNameEnLabel")}</Label>
               <Input
                 id="rf-fw-name-en"
-                placeholder="e.g. Acme Bank Leadership Model"
+                placeholder={tr("reflectWizard.step2.fwNameEnPlaceholder")}
                 value={state.framework_name_en}
                 onChange={(e) => update({ framework_name_en: e.target.value })}
               />
             </div>
             <div>
-              <Label htmlFor="rf-fw-name-ar">Framework name (Arabic) <span className="text-muted-foreground">(optional)</span></Label>
+              <Label htmlFor="rf-fw-name-ar">{tr("reflectWizard.step2.fwNameArLabel")} <span className="text-muted-foreground">{tr("reflectWizard.step2.optional")}</span></Label>
               <Input
                 id="rf-fw-name-ar"
                 placeholder="نموذج القيادة"
@@ -129,7 +131,7 @@ export function StepFramework({ state, update, templates }: Props) {
               />
             </div>
             <p className="md:col-span-2 text-xs text-muted-foreground">
-              You&apos;ll add competencies and behaviours from the engagement detail page after this wizard completes.
+              {tr("reflectWizard.step2.manualNote")}
             </p>
           </div>
         )}
@@ -138,16 +140,16 @@ export function StepFramework({ state, update, templates }: Props) {
           <div className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <Label htmlFor="rf-fw-name-en">Framework name (English)</Label>
+                <Label htmlFor="rf-fw-name-en">{tr("reflectWizard.step2.fwNameEnLabel")}</Label>
                 <Input
                   id="rf-fw-name-en"
-                  placeholder="e.g. Acme Bank Leadership Model"
+                  placeholder={tr("reflectWizard.step2.fwNameEnPlaceholder")}
                   value={state.framework_name_en}
                   onChange={(e) => update({ framework_name_en: e.target.value })}
                 />
               </div>
               <div>
-                <Label htmlFor="rf-fw-name-ar">Framework name (Arabic) <span className="text-muted-foreground">(optional)</span></Label>
+                <Label htmlFor="rf-fw-name-ar">{tr("reflectWizard.step2.fwNameArLabel")} <span className="text-muted-foreground">{tr("reflectWizard.step2.optional")}</span></Label>
                 <Input
                   id="rf-fw-name-ar"
                   placeholder="نموذج القيادة"
@@ -159,17 +161,17 @@ export function StepFramework({ state, update, templates }: Props) {
             </div>
 
             <div>
-              <Label htmlFor="rf-src">Paste the client&apos;s values + leadership competencies</Label>
+              <Label htmlFor="rf-src">{tr("reflectWizard.step2.sourceLabel")}</Label>
               <Textarea
                 id="rf-src"
-                placeholder={"Paste the source text here. Can be English, Arabic, or both - Claude reads both.\n\nExample:\nValues: Integrity, Excellence, Collaboration, Innovation.\nLeadership competencies: Strategic vision, Drives execution, Develops people, Communicates with influence."}
+                placeholder={tr("reflectWizard.step2.sourcePlaceholder")}
                 rows={10}
                 value={state.framework_source_text}
                 onChange={(e) => update({ framework_source_text: e.target.value })}
                 className="font-mono text-xs"
               />
               <p className="text-xs text-muted-foreground mt-2">
-                When you click <strong>Create engagement &amp; continue</strong>, Claude will propose 3–5 behaviours per competency in both languages. You&apos;ll be able to edit them on the next step before launching.
+                {tr("reflectWizard.step2.sourceNotePrefix")} <strong>{tr("reflectWizard.step2.sourceNoteBtn")}</strong>{tr("reflectWizard.step2.sourceNoteSuffix")}
               </p>
             </div>
           </div>

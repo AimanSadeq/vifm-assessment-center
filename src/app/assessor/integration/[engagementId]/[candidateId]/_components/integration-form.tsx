@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { BackLink } from "@/components/shared/back-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +39,7 @@ export function IntegrationForm({
   ratings,
   existingWorksheets,
 }: Props) {
+  const { t } = useTranslation();
   // Build worksheet state from existing data
   const [worksheets, setWorksheets] = useState<
     Record<string, { rating: number; notes: string }>
@@ -71,9 +73,9 @@ export function IntegrationForm({
     });
     setSavingId(null);
     if ("error" in result) {
-      toast.error("Failed to save worksheet");
+      toast.error(t("assessorWashup.integration.toastSaveError"));
     } else {
-      toast.success("Worksheet saved");
+      toast.success(t("assessorWashup.integration.toastSaveSuccess"));
     }
   };
 
@@ -83,13 +85,13 @@ export function IntegrationForm({
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <BackLink href={`/assessor/assignments/${engagementId}`} label="Back to Assignments" />
-        <h1 className="mt-2 text-2xl font-bold">Integration Worksheet</h1>
+        <BackLink href={`/assessor/assignments/${engagementId}`} label={t("assessorWashup.integration.backToAssignments")} />
+        <h1 className="mt-2 text-2xl font-bold">{t("assessorWashup.integration.title")}</h1>
         <p className="text-sm text-muted-foreground">
           {candidateName} - {engagementName}
         </p>
         <Badge variant={completedCount === competencies.length ? "default" : "secondary"} className="mt-2">
-          {completedCount}/{competencies.length} competencies rated
+          {t("assessorWashup.integration.competenciesRated", { done: completedCount, total: competencies.length })}
         </Badge>
       </div>
 
@@ -118,7 +120,7 @@ export function IntegrationForm({
               {/* Evidence summary */}
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-1">
-                  Evidence ({compObs.length} observations, {compRatings.length} exercise ratings)
+                  {t("assessorWashup.integration.evidence", { obs: compObs.length, ratings: compRatings.length })}
                 </p>
 
                 {/* Exercise ratings */}
@@ -129,7 +131,7 @@ export function IntegrationForm({
                       const exercise = assignment?.exercises as { name: string } | null;
                       return (
                         <Badge key={i} variant="outline" className="text-xs">
-                          {exercise?.name ?? "Exercise"}: {r.score as number}/5
+                          {exercise?.name ?? t("assessorWashup.integration.exerciseFallback")}: {r.score as number}/5
                         </Badge>
                       );
                     })}
@@ -156,7 +158,7 @@ export function IntegrationForm({
                 )}
 
                 {compObs.length === 0 && compRatings.length === 0 && (
-                  <p className="text-xs text-muted-foreground italic">No evidence recorded yet.</p>
+                  <p className="text-xs text-muted-foreground italic">{t("assessorWashup.integration.noEvidence")}</p>
                 )}
               </div>
 
@@ -164,7 +166,7 @@ export function IntegrationForm({
 
               {/* Preliminary rating */}
               <div>
-                <p className="text-xs font-medium mb-2">Preliminary Rating</p>
+                <p className="text-xs font-medium mb-2">{t("assessorWashup.integration.preliminaryRating")}</p>
                 <div className="flex gap-1">
                   {[1, 2, 3, 4, 5].map((score) => (
                     <Button
@@ -184,13 +186,13 @@ export function IntegrationForm({
                   ))}
                 </div>
                 <p className="text-xs text-center text-muted-foreground mt-1">
-                  {w.rating > 0 ? BARS_LABELS[w.rating] : "Select 1-5"}
+                  {w.rating > 0 ? BARS_LABELS[w.rating] : t("assessorWashup.integration.selectScore")}
                 </p>
               </div>
 
               {/* Notes */}
               <Textarea
-                placeholder="Integration notes - summarize evidence and rationale..."
+                placeholder={t("assessorWashup.integration.notesPlaceholder")}
                 rows={2}
                 value={w.notes}
                 onChange={(e) =>
@@ -208,7 +210,7 @@ export function IntegrationForm({
                 disabled={!w.rating || savingId === comp.id}
                 className="w-full"
               >
-                {savingId === comp.id ? "Saving..." : "Save"}
+                {savingId === comp.id ? t("assessorWashup.integration.saving") : t("assessorWashup.integration.save")}
               </Button>
             </CardContent>
           </Card>

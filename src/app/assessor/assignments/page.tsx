@@ -1,8 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
+import { getServerT } from "@/lib/i18n/server";
 import { EngagementPicker } from "@/components/shared/engagement-picker";
 
 export default async function AssessorAssignmentsListPage() {
   const supabase = await createClient();
+  const t = await getServerT();
 
   const { data: engagements } = await supabase
     .from("engagements")
@@ -30,10 +32,10 @@ export default async function AssessorAssignmentsListPage() {
 
   return (
     <EngagementPicker
-      title="Review Assignments"
-      description="Select an engagement to view your candidate-exercise assignments."
+      title={t("assessorPortal.assignmentsList.title")}
+      description={t("assessorPortal.assignmentsList.description")}
       backHref="/assessor"
-      backLabel="Back to Mission Board"
+      backLabel={t("assessorPortal.assignmentsList.backToMissionBoard")}
       engagements={mapped}
       buildHref={(id) => `/assessor/assignments/${id}`}
     />

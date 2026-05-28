@@ -13,6 +13,7 @@ import { NotificationBellClient } from "@/components/shared/notification-bell-cl
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
+  LayoutGrid,
   Building2,
   ClipboardList,
   Target,
@@ -33,6 +34,7 @@ import {
 } from "lucide-react";
 
 const sidebarLinks: { href: string; labelKey: string; icon: LucideIcon }[] = [
+  { href: "/", labelKey: "adminNav.allServices", icon: LayoutGrid },
   { href: "/admin", labelKey: "adminNav.dashboard", icon: LayoutDashboard },
   { href: "/admin/clients", labelKey: "adminNav.clients", icon: Building2 },
   { href: "/admin/engagements", labelKey: "adminNav.projects", icon: ClipboardList },
@@ -62,6 +64,7 @@ export default function AdminLayout({
   // properties (border-e, start-0, ms-auto) so it mirrors cleanly in RTL.
 
   const isActive = (href: string) => {
+    if (href === "/") return pathname === "/";
     if (href === "/admin") return pathname === "/admin";
     return pathname.startsWith(href);
   };

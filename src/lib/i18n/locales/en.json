@@ -47,6 +47,7 @@
     "done": "DONE"
   },
   "adminNav": {
+    "allServices": "All Services",
     "dashboard": "Dashboard",
     "clients": "Clients",
     "projects": "Projects",

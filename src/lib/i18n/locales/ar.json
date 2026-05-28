@@ -47,6 +47,7 @@
     "done": "مكتمل"
   },
   "adminNav": {
+    "allServices": "كل الخدمات",
     "dashboard": "لوحة التحكم",
     "clients": "العملاء",
     "projects": "المشاريع",

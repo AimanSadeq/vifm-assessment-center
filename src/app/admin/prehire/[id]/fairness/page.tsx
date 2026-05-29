@@ -113,7 +113,7 @@ export default async function FairnessPage({ params }: { params: { id: string } 
   } catch (e) {
     if (isAuthorizationError(e)) {
       return (
-        <div className="space-y-6">
+        <div className="mx-auto max-w-6xl space-y-6 px-6 py-8">
           <BackLink href={`/admin/prehire/${params.id}`} label="Back to requisition" />
           <Card><CardContent className="py-6"><p className="text-sm text-destructive">{e.message}</p></CardContent></Card>
         </div>
@@ -141,7 +141,7 @@ export default async function FairnessPage({ params }: { params: { id: string } 
   const audit = await getPrehireAudit(params.id, 100);
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6 px-6 py-8">
       <BackLink href={`/admin/prehire/${params.id}`} label="Back to requisition" />
 
       <div>

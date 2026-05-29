@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { LogoutButton } from "@/components/shared/logout-button";
+import { AllServicesLink } from "@/components/shared/all-services-link";
 
 const navLinks: { href: string; labelKey: string; icon: LucideIcon; exact: boolean }[] = [
   { href: "/client", labelKey: "clientPortal.nav.dashboard", icon: LayoutDashboard, exact: true },
@@ -71,6 +72,7 @@ export default function ClientLayout({
             })}
           </nav>
           <div className="ms-auto flex items-center gap-2 sm:gap-3 shrink-0">
+            <AllServicesLink />
             <div className="hidden sm:block"><LanguageSwitcher /></div>
             <Separator orientation="vertical" className="h-6 hidden sm:block" />
             <div className="hidden md:flex items-center gap-2">

@@ -183,6 +183,40 @@
     z-index: 1;
   }
 
+  /* ─── Pre-Hire visual language ───
+     Same deep-navy platform base so Pre-Hire reads as part of the suite, but
+     carries a rose "screening" signature (distinct from ARA's aurora and
+     Fluent's blue→teal) so the pre-employment service stands on its own.
+     Reuses the ara-aurora keyframes + dot-grid treatment. */
+  .prehire-hero {
+    background:
+      radial-gradient(circle at 14% 18%, rgba(225, 29, 72, 0.32), transparent 46%),
+      radial-gradient(circle at 86% 14%, rgba(251, 113, 133, 0.22), transparent 50%),
+      radial-gradient(circle at 78% 86%, rgba(124, 58, 237, 0.14), transparent 52%),
+      linear-gradient(135deg, #010131 0%, #121140 52%, #111232 100%);
+    background-size: 200% 200%, 200% 200%, 200% 200%, 100% 100%;
+    animation: ara-aurora 25s ease-in-out infinite;
+    color: #fefff9;
+    position: relative;
+    isolation: isolate;
+  }
+  .prehire-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.10) 1px, transparent 1px);
+    background-size: 26px 26px;
+    -webkit-mask-image: radial-gradient(ellipse at 50% 30%, black 0%, transparent 78%);
+            mask-image: radial-gradient(ellipse at 50% 30%, black 0%, transparent 78%);
+    opacity: 0.5;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .prehire-hero > * {
+    position: relative;
+    z-index: 1;
+  }
+
   /* ─── Platform launcher cards (root front door) ───
      Fancier service tiles. Hue is supplied per card via --tone (an "R G B"
      triple) so one rule set dresses all four services: a hue-tinted surface,

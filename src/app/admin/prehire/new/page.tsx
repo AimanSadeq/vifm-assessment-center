@@ -12,7 +12,7 @@ export default async function NewRequisitionPage() {
   ]);
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="mx-auto max-w-2xl space-y-6 px-6 py-8">
       <BackLink href="/admin/prehire" label="Back to requisitions" />
       <div>
         <h1 className="text-2xl font-bold">New requisition</h1>

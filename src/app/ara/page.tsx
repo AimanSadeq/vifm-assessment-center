@@ -3,6 +3,7 @@ import {
   ArrowRight, Shield, Users, Link2, Sparkles, CheckCircle2, BarChart3, Globe, Route, User, GraduationCap,
 } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
+import { AllServicesLink } from "@/components/shared/all-services-link";
 import { AnimatedCompass } from "@/components/shared/ara/animated-compass";
 import { CountUp } from "@/components/shared/ara/count-up";
 import { FadeIn } from "@/components/shared/ara/fade-in";
@@ -25,6 +26,7 @@ export default function AraRootPage() {
           <div className="flex items-center justify-between mb-20 relative z-10">
             <VifmLogo variant="white" size="sm" />
             <div className="flex items-center gap-3">
+              <AllServicesLink variant="onDark" />
               <Link
                 href="/ara/engage"
                 className="inline-flex items-center gap-1.5 text-xs font-medium text-white px-3.5 py-1.5 rounded-full border border-white/25 bg-white/5 hover:bg-white/15 hover:border-white/40 backdrop-blur transition-colors"

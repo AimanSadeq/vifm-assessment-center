@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { NotificationBellClient } from "@/components/shared/notification-bell-client";
 import { PortalSidebar, SidebarBody } from "@/components/shared/portal-sidebar";
+import { AllServicesLink } from "@/components/shared/all-services-link";
 import { cn } from "@/lib/utils";
 import { Menu, X } from "lucide-react";
 
@@ -13,6 +15,13 @@ import { Menu, X } from "lucide-react";
 // layout owns only the mobile drawer state + top bar.
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Pre-Hire is a standalone service with its own immersive shell — step the
+  // admin chrome aside for its subtree (see src/app/admin/prehire/layout.tsx).
+  if (pathname?.startsWith("/admin/prehire")) {
+    return <>{children}</>;
+  }
 
   return (
     <div className="flex min-h-screen">
@@ -57,8 +66,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </div>
 
-        {/* Desktop top bar - just the bell, right-aligned */}
-        <div className="hidden lg:flex items-center justify-end border-b bg-card px-6 py-2">
+        {/* Desktop top bar - All services + bell, right-aligned */}
+        <div className="hidden lg:flex items-center justify-end gap-2 border-b bg-card px-6 py-2">
+          <AllServicesLink />
           <NotificationBellClient />
         </div>
 

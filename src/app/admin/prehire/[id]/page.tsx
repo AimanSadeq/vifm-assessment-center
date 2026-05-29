@@ -56,7 +56,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
 
   if (error) {
     return (
-      <div className="space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6 px-6 py-8">
         <BackLink href="/admin/prehire" label="Back to requisitions" />
         <Card>
           <CardContent className="py-6">
@@ -99,7 +99,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
   const ranked = rankByComposite(scored);
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6 px-6 py-8">
       <BackLink href="/admin/prehire" label="Back to requisitions" />
 
       <div className="flex items-start justify-between gap-4">

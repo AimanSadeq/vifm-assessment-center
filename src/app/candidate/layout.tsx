@@ -4,6 +4,7 @@ import { VifmLogo } from "@/components/shared/vifm-logo";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
 import { NotificationBellClient } from "@/components/shared/notification-bell-client";
+import { AllServicesLink } from "@/components/shared/all-services-link";
 import { getServerT } from "@/lib/i18n/server";
 
 export default async function CandidateLayout({
@@ -21,6 +22,7 @@ export default async function CandidateLayout({
             <p className="text-xs text-muted-foreground hidden sm:block">{t("common.candidatePortal")}</p>
           </Link>
           <div className="flex items-center gap-2">
+            <AllServicesLink />
             <NotificationBellClient />
             <LanguageSwitcher />
             <LogoutButton />

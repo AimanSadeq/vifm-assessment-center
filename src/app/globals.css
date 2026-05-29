@@ -206,6 +206,7 @@
   .launcher-card.tone-violet { --tone: 124 58 237; }
   .launcher-card.tone-teal   { --tone: 13 148 136; }
   .launcher-card.tone-gold   { --tone: 217 119 6; }
+  .launcher-card.tone-rose   { --tone: 225 29 72; }
 
   .launcher-card::before {
     content: "";

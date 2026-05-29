@@ -3,23 +3,24 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  ArrowRight, ArrowLeft, ClipboardCheck, Compass, Aperture, Languages, GraduationCap, Sparkles,
+  ArrowRight, ArrowLeft, ClipboardCheck, Compass, Aperture, Languages, UserSearch, GraduationCap, Sparkles,
 } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 
 type Lang = "en" | "ar";
-type Tone = "blue" | "violet" | "teal" | "gold";
-type ServiceKey = "ac" | "ara" | "reflect" | "fluent";
+type Tone = "blue" | "violet" | "teal" | "gold" | "rose";
+type ServiceKey = "ac" | "ara" | "reflect" | "fluent" | "prehire";
 
 const STORAGE_KEY = "vifm-landing-locale";
 
 // Icon / hue / route are language-independent; copy comes from T[lang].services.
 const SERVICES: ReadonlyArray<{ key: ServiceKey; href: string; icon: typeof Compass; tone: Tone }> = [
-  { key: "ac", href: "/admin", icon: ClipboardCheck, tone: "blue" },
-  { key: "ara", href: "/ara", icon: Compass, tone: "violet" },
-  { key: "reflect", href: "/reflect", icon: Aperture, tone: "teal" },
+  { key: "prehire", href: "/admin/prehire", icon: UserSearch, tone: "rose" },
   { key: "fluent", href: "/ac/fluent", icon: Languages, tone: "gold" },
+  { key: "ac", href: "/admin", icon: ClipboardCheck, tone: "blue" },
+  { key: "reflect", href: "/reflect", icon: Aperture, tone: "teal" },
+  { key: "ara", href: "/ara", icon: Compass, tone: "violet" },
 ];
 
 const T = {
@@ -27,7 +28,7 @@ const T = {
     eyebrow: "VIFM Talent & Readiness Platform",
     h1a: "Measure capability.",
     h1b: "Build readiness.",
-    sub: "Four bilingual services for the GCC, in one place: competency assessment centers, organisational AI readiness, 360 leadership feedback, and AI English placement. Choose where to begin.",
+    sub: "Five bilingual services for the GCC, in one place: AI-assisted pre-employment screening, AI English placement, competency assessment centers, 360 leadership feedback, and organisational AI readiness. Choose where to begin.",
     trust: [
       "Bilingual English / Arabic",
       "Calibrated for UAE & Saudi Arabia",
@@ -67,13 +68,20 @@ const T = {
           "A four-skill, CEFR-aligned English placement: AI-generated reading and listening, rubric-scored writing and speaking, with an indicative level and feedback in minutes.",
         tooltip: "Best for fast, defensible English placement at any scale.",
       },
+      prehire: {
+        tagline: "Pre-employment screening",
+        name: "Pre-Hire",
+        description:
+          "Screen and shortlist applicants before you hire: a configurable funnel of competency quiz, English placement and an AI behavioural interview, with a weighted composite, adverse-impact monitoring and an audit trail. The score is a signal — a person always decides.",
+        tooltip: "Best for shortlisting applicants at scale, defensibly.",
+      },
     },
   },
   ar: {
     eyebrow: "منصة VIFM للكفاءات والجاهزية",
     h1a: "قِس القدرات.",
     h1b: "ابنِ الجاهزية.",
-    sub: "أربع خدمات ثنائية اللغة لمنطقة الخليج في مكان واحد: مراكز تقييم الكفاءات، وجاهزية المؤسسات للذكاء الاصطناعي، والتغذية الراجعة القيادية بزاوية 360 درجة، وتحديد مستوى اللغة الإنجليزية بالذكاء الاصطناعي. اختر من أين تبدأ.",
+    sub: "خمس خدمات ثنائية اللغة لمنطقة الخليج في مكان واحد: فرز المرشّحين قبل التوظيف بمساعدة الذكاء الاصطناعي، وتحديد مستوى اللغة الإنجليزية بالذكاء الاصطناعي، ومراكز تقييم الكفاءات، والتغذية الراجعة القيادية بزاوية 360 درجة، وجاهزية المؤسسات للذكاء الاصطناعي. اختر من أين تبدأ.",
     trust: [
       "ثنائية اللغة: الإنجليزية / العربية",
       "مُعايَرة للإمارات والسعودية",
@@ -112,6 +120,13 @@ const T = {
         description:
           "اختبار لتحديد مستوى الإنجليزية عبر أربع مهارات وفق إطار CEFR: قراءة واستماع مُولّدان بالذكاء الاصطناعي، وكتابة وتحدّث يُقيّمان وفق معايير محدّدة، مع مستوى تقريبي وملاحظات خلال دقائق.",
         tooltip: "الأنسب لتحديد مستوى الإنجليزية بسرعة وموثوقية وعلى نطاق واسع.",
+      },
+      prehire: {
+        tagline: "الفرز قبل التوظيف",
+        name: "ما قبل التوظيف",
+        description:
+          "افرز المرشّحين وأعدّ القائمة المختصرة قبل التوظيف: مسار قابل للتخصيص يجمع اختبار الكفاءات وتحديد مستوى الإنجليزية ومقابلة سلوكية بالذكاء الاصطناعي، مع درجة مركّبة مرجّحة، ومراقبة الأثر التمييزي، وسجل تدقيق كامل. الدرجة إشارة استرشادية — والقرار النهائي لإنسان دائمًا.",
+        tooltip: "الأنسب لإعداد القائمة المختصرة للمتقدّمين على نطاق واسع وبموثوقية.",
       },
     },
   },
@@ -204,7 +219,7 @@ export function PlatformLanding() {
       {/* ─── Service launcher (overlaps the hero) ─── */}
       <main className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center -mt-10 px-6 pb-4">
         <TooltipProvider delayDuration={200}>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {SERVICES.map(({ key, href, icon: Icon, tone }) => {
               const svc = t.services[key];
               return (

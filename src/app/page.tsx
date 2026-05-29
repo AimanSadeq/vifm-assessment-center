@@ -2,20 +2,20 @@ import { PlatformLanding } from "./_components/platform-landing";
 import { PortalSidebar } from "@/components/shared/portal-sidebar";
 
 export const metadata = {
-  title: "VIFM · Assessment, readiness & development",
+  title: "VIFM Academy · Learning, assessment & readiness",
   description:
-    "VIFM's bilingual talent platform for the GCC: AI-assisted pre-employment screening, AI English placement, competency assessment centers, 360 leadership feedback, and organisational AI readiness.",
+    "The VIFM Academy turns assessment insight into self-paced finance & management programmes for the GCC — with AI knowledge-checks, verifiable credentials, and five bilingual diagnostic services that personalise each learning path.",
 };
 
 export default function Home() {
-  // The landing page carries the same left panel as the portals (shared
-  // PortalSidebar) so it reads as the platform home, not a detached splash.
+  // Academy-led front screen: the left panel for navigation, with the Academy
+  // landing as the scrolling content beside it.
   return (
     <div className="flex h-screen overflow-hidden">
       <PortalSidebar />
-      <div className="min-w-0 flex-1 overflow-hidden">
+      <main className="min-w-0 flex-1 overflow-y-auto">
         <PlatformLanding />
-      </div>
+      </main>
     </div>
   );
 }

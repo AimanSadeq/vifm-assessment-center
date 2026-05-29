@@ -49,6 +49,9 @@ src/
         [id]/             # Course detail + AC competency / ARA pillar mapping panel
         import/           # AI PDF extraction (drag-and-drop, 25/batch, replace-on-re-import)
         duplicates/       # Levenshtein near-match finder for catalogue cleanup
+      prehire/            # Pre-Hire screening — requisition list + 1-step create wizard
+        [id]/             # Requisition detail: ranked shortlist, invite (email/link), human-decision capture, JSON/CSV export
+        [id]/fairness/    # Defensibility hub — adverse-impact (4/5ths) tables + immutable audit trail
       assessors/          # Assessor pool management
       analytics/          # ICC, bias detection, Recharts charts
       settings/           # Integration status, compliance, environment info
@@ -88,6 +91,7 @@ src/
       admin/              # Console + library templates + retention/sandbox purge
       consultant/         # Dashboard, 5-step engagement wizard, participant report + IDP, cohort report
       respond/[token]/    # Token-gated rater form (auth-bypassed in middleware)
+    prehire/apply/[token]/ # Pre-Hire candidate flow (token-gated, no account) — consent → quiz + Fluent + CBI → optional voluntary self-ID
     verify/[code]/        # Public credential verification page (auth-bypassed)
     client/               # Client portal (top nav, process map)
       engagements/        # Org-scoped engagement list
@@ -108,6 +112,8 @@ src/
       reflect/admin/reminders/cron/            # Rater-reminder sweep (Bearer CRON_SECRET; GitHub Actions)
       credentials/verify/[code]/               # Public verification (service-role; auth-bypassed)
       credentials/[credentialId]/pdf/          # Credential PDF
+      prehire/[token]/                         # Pre-Hire candidate token routes — consent, quiz (start/submit), fluent (start/submit/transcribe/tts), cbi (turn/submit), demographics
+      admin/prehire/[id]/export/               # Admin-gated ATS export (JSON/CSV) — deliberately OUTSIDE the /api/prehire/ auth-bypass
   components/
     ui/                   # 17 Shadcn/UI components
     shared/               # Process map, BackLink, LanguageSwitcher, VifmLogo, EngagementPicker, LogoutButton
@@ -118,11 +124,12 @@ src/
     notifications/        # Publish + load + mark-read helpers (H3)
     constants/            # Exercise type labels, ARA pillars, ARA stages, ARA individual factors (the 4 VIFM personal factors)
     i18n/                 # Config, provider (route-aware), cookie + locale constants, server-side getServerT helper, EN + AR locale files
-    integrations/         # Email (6 AC templates), Video (Daily.co placeholder), Speech (Azure pronunciation; Whisper via scripts/)
+    integrations/         # Email (7 AC templates incl. prehire_invitation), Video (Daily.co placeholder), Speech (Azure pronunciation; Whisper via scripts/), Transcription (shared Whisper+Azure helper for Fluent speaking)
     ara/                  # ARA-specific helpers — auth-guards, email (3 ARA templates), respondent-access, scoring, distortion, year-on-year, peer-benchmarks, regulatory engine, workforce-readiness rollup (Mode C)
     reflect/              # Reflect 360 — actions, admin-actions, idp-actions, rater-access, rater-actions, scoring, validations, email
     academy/              # Academy completion (markEnrollmentComplete → academy_completion credential) + lesson-key helpers
     credentials/          # Shared issuer + public verification reader (issue.ts) + AC Ready-Now issuance (ac-ready-now.ts)
+    prehire/              # Pre-Hire — candidate-access (token), composite scoring/ranking, adverse-impact (4/5ths), audit-log helper
     recommender/          # Course recommender (AC candidate / AC cohort / ARA pillar / Personal snapshot)
     reports/              # Candidate report PDF (6 pages) + Learning Plan PDF (4 pages incl. recommended training) + Personal Snapshot PDF (1 page bilingual), data fetcher, report types
     scoring/              # ICC calculation, bias detection, gap-severity computation (P0.3), reliability/confidence band + IRT/Rasch CAT (Fluent)
@@ -173,6 +180,8 @@ supabase/
     00046_eng_fluent_calibration.sql           # Fluent: eng_fluent_human_ratings + eng_fluent_score_runs (QWK calibration)
     00048_eng_fluent_item_bank.sql             # Fluent: eng_fluent_items + eng_fluent_item_responses (IRT/Rasch CAT groundwork; no 00047)
     00049_academy_credentials.sql              # vifm_enrollments + academy_lesson_attempts + vifm_credentials (deliver + certify)
+    00050_prehire_pipeline.sql                 # Pre-Hire: prehire_requisitions + prehire_candidates + prehire_stage_results (commercial screening funnel)
+    00051_prehire_defensibility.sql            # Pre-Hire: voluntary demographics + human-decision capture + immutable prehire_audit_log (adverse-impact + audit)
 scripts/
   seed-test-data.ts       # Creates full test dataset (engagement + candidates + assessor + observations)
   seed-tags-qa.py         # Populates tags and Q&A questions for competencies
@@ -564,3 +573,50 @@ The **certify** step. A verifiable credential is issued for any certified outcom
 ### DB table (migration 00049)
 - `vifm_credentials` — `verification_code` (uuid, unique, the public lookup key), `candidate_id` (nullable — anonymous Fluent), denormalized `issued_to_name`/`issued_to_email`, `credential_type`, bilingual `title_*`/`subtitle_*`, `issuer` (default "Virginia Institute of Finance and Management"), `score_pct`, `source_id` (untyped, app-checked), `issued_at`/`expires_at`/`revoked_at`/`revocation_reason`.
 - RLS: admin all; candidate SELECT own rows; public verification via the service-role API only. Middleware bypasses `/verify`, `/verify/`, and `/api/credentials/verify/`.
+
+## VIFM Pre-Hire (commercial pre-employment screening)
+
+A purely **additive** module that lets VIFM sell the Assessment Center + Fluent as a pre-employment **screening service to client organizations** (shortlisting professionals at all levels). It is an orchestration layer over the existing instruments — it never duplicates them; each stage soft-links to the instrument's own record. The existing four portals (Admin/Assessor/Candidate/Client) keep working exactly as before; nothing in their behaviour was modified.
+
+### Positioning + the core guardrail
+The composite is a **screening signal, never an auto-reject.** A human always makes the hiring decision — the scoring code deliberately has no "reject" path; a failed *required* stage only caps the advisory band at "review"/"hold". This is the linchpin of the module's defensibility.
+
+### Non-breaking integration (mirrors ARA/Reflect/Fluent)
+- Own `prehire_*` tables; own `/prehire/*` + `/api/prehire/*` namespace; own `/admin/prehire/*` recruiter UI.
+- Middleware auth-bypasses the candidate flow: `pathname.startsWith("/prehire/apply/") || pathname.startsWith("/api/prehire/")` (token-based, no account). **Because that bypass is a broad prefix match, any non-token route must NOT live under `/api/prehire/`** — the ATS export is therefore at `/api/admin/prehire/[id]/export` (admin-gated) so it can't leak PII.
+
+### Roles + access model
+- **admin** (VIFM) — full access; runs requisitions, invites, records the human decision, exports, views the fairness/audit hub.
+- **client** — SELECT only, scoped to their own organization (RLS).
+- **candidate** — no account; reaches their flow via `prehire_candidates.access_token`, validated server-side by service-role routes only (`findCandidateByToken`, TOKEN_RE = `/^[0-9a-fA-F-]{36}$/`).
+
+### Recruiter surface (`/admin/prehire`)
+- List + 1-step requisition wizard (`createRequisitionAction`): pick client org, title, role profile, and an ordered **stage plan** (`[{kind, weight, cut_score, required}]`). Default plan: quiz 0.4 (cut 60) / fluent 0.3 (cut 50) / cbi 0.3 (cut 60).
+- Detail page (`/admin/prehire/[id]`): ranked shortlist (per-stage normalized scores + composite + AI signal), Add Candidate (auto-emails the invite), per-row **Invite link / Email** resend, **human-decision capture** (`DecisionCell` → advance/reject/hold/withdraw + job-related reason), and JSON/CSV **ATS export**.
+- Fairness & audit hub (`/admin/prehire/[id]/fairness`): guardrail statement, adverse-impact (4/5ths) tables per demographic dimension, and the immutable audit trail.
+
+### Candidate flow (`/prehire/apply/[token]`, no account)
+`ApplyFlow` runs the requisition's interactive stages in configured order: **consent gate → quiz → Fluent (full 4-skill) → CBI → optional voluntary self-ID** (shown on the completion screen, after scoring, so it's visibly decoupled). Each stage component is `{ token, onDone }`; `onDone()` advances. Stages reuse the existing engines verbatim:
+- **quiz** — `generateQuizQuestions` (bilingual), answer key stripped from the client payload; normalized = round(100·correct/total).
+- **fluent** — full 4-skill placement: reading + listening (Azure TTS audio, or browser-TTS / script fallback) + writing + speaking (MediaRecorder → Whisper transcription → Claude CEFR scoring, blended with Azure pronunciation). Answer key + listening scripts held server-side in `detail.fullTest`; CEFR → 0–100 (A1→0 … C2→100).
+- **cbi** — `nextInterviewerTurn` / `scoreCbiInterview` (`MAX_CANDIDATE_ANSWERS = 4`); BARS 1–5 → 0–100 = round(((bars−1)/4)·100).
+
+### Composite scoring ([src/lib/prehire/scoring.ts](src/lib/prehire/scoring.ts), pure/unit-testable)
+`computeComposite(plan, results)` → weighted 0–100 composite (null until every weighted stage is scored) + per-stage pass/fail vs cut-score + advisory recommendation (`advance` / `review` / `hold` / `incomplete`, **never** reject). `rescoreCandidate(candidateId)` recomputes + persists composite/recommendation/status after each stage. `rankByComposite` orders the shortlist.
+
+### Defensibility layer (migration 00051)
+- **Human decision** — `setPrehireDecisionAction` (admin-gated) records the real decision + reason + actor + timestamp, distinct from the AI `recommendation`; maps to candidate status (advanced→shortlisted, etc.).
+- **Immutable audit trail** — `prehire_audit_log` (append-only; UPDATE trigger raises). `logPrehireEvent` ([src/lib/prehire/audit.ts](src/lib/prehire/audit.ts)) is best-effort + tolerant, wired into 8 events: requisition_created, candidate_added, invitation_sent, consent_given, stage_completed, demographics_submitted, decision_recorded, export_taken. Detail never contains demographic values (the trail is client-readable).
+- **Adverse-impact (4/5ths rule)** — `computeAdverseImpact` ([src/lib/prehire/adverse-impact.ts](src/lib/prehire/adverse-impact.ts)): per-dimension selection rates (gender / age band / national-vs-expatriate), reference = highest-selected group, flags any group below 0.8 of it. Auto-picks the human-decision basis, falls back to the AI signal; small-sample/underpowered caveats; demographics never imputed. Monitoring signal only — a flag warrants reviewing job-relatedness, not an automatic change.
+- **Voluntary demographics** — self-ID is optional, GCC-appropriate, decoupled from scoring, `prefer_not_to_say` first-class. Individual demographics never appear in the audit log, the ATS export, or any client surface — only the admin-only aggregate 4/5ths view.
+
+### Invitation email + ATS export
+- `prehire_invitation` template in [src/lib/integrations/email.ts](src/lib/integrations/email.ts) (Microsoft Graph; console-mock when unconfigured). Auto-sent on add (best-effort, never blocks) + per-row resend. `addCandidateAction` returns `emailed` so the UI distinguishes a real send from the copy-link fallback.
+- Export at `/api/admin/prehire/[id]/export?format=json|csv` — admin-gated (`requireRole(["admin"])`) + service client; recomputes the composite (not a stale column); CSV carries a UTF-8 BOM for Excel/Arabic. JSON is self-describing (`vifm-prehire-export@v1`). No demographics in the export.
+
+### DB tables
+- **00050** — `prehire_requisitions` (stage_config jsonb), `prehire_candidates` (access_token, composite_score, recommendation, consent_at), `prehire_stage_results` (one row per stage; `source_id` soft-links the instrument's native record; `detail`/`flags` jsonb). RLS: admin all; client SELECT own org; candidates have NO table access (service-role routes only).
+- **00051** — voluntary demographic columns + human-decision columns on `prehire_candidates`; `prehire_audit_log` (immutable, admin-all + client-scoped RLS).
+
+### Tolerance
+Every defensibility path is best-effort and tolerant of 00051 not being applied (audit no-ops, demographics route returns ok, fairness page shows an "apply 00051" hint, the shortlist's decision read is a separate query so a missing column can't empty the table) — mirrors the Fluent/Academy pattern. Verified end-to-end on the live DB (full pipeline + audit rows + demographics/decision persistence + export + adverse-impact on a real cohort + fairness page render).

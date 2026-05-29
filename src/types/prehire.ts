@@ -13,6 +13,18 @@ export type PrehireCandidateStatus =
 export type PrehireStageKind = "fluent" | "quiz" | "cbi" | "assessment_center";
 export type PrehireStageStatus = "pending" | "in_progress" | "completed" | "skipped";
 
+// ── Defensibility (migration 00051) ──────────────────────────────
+// Voluntary self-ID, collected only for aggregate adverse-impact monitoring;
+// never used in scoring, never shown to assessors. "prefer_not_to_say" is a
+// first-class value so declining is explicit rather than indistinguishable
+// from "not yet asked".
+export type PrehireGender = "male" | "female" | "prefer_not_to_say";
+export type PrehireAgeBand = "under_25" | "25_34" | "35_44" | "45_54" | "55_plus" | "prefer_not_to_say";
+export type PrehireNationalityGroup = "national" | "expatriate" | "prefer_not_to_say";
+
+/** The human decision (distinct from the AI `recommendation` signal). */
+export type PrehireDecision = "advanced" | "rejected" | "hold" | "withdrawn";
+
 /** One entry in a requisition's ordered stage plan (stored as jsonb). */
 export type PrehireStagePlanEntry = {
   kind: PrehireStageKind;
@@ -52,8 +64,28 @@ export type PrehireCandidate = {
   consent_at: string | null;
   invited_at: string | null;
   completed_at: string | null;
+  // Defensibility (00051) — voluntary self-ID + human decision.
+  gender: PrehireGender | null;
+  age_band: PrehireAgeBand | null;
+  nationality_group: PrehireNationalityGroup | null;
+  demographics_submitted_at: string | null;
+  decision: PrehireDecision | null;
+  decision_reason: string | null;
+  decided_by: string | null;
+  decided_at: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type PrehireAuditEntry = {
+  id: string;
+  requisition_id: string | null;
+  candidate_id: string | null;
+  actor_id: string | null;
+  actor_label: string | null;
+  action: string;
+  detail: Record<string, unknown> | null;
+  created_at: string;
 };
 
 export type PrehireStageResult = {

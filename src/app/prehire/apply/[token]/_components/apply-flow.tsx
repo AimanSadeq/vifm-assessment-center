@@ -10,11 +10,13 @@ import type { PrehireCandidateContext } from "@/lib/prehire/candidate-access";
 import type { PrehireStageKind } from "@/types/prehire";
 import { QuizStage } from "./quiz-stage";
 import { CbiStage } from "./cbi-stage";
+import { FluentStage } from "./fluent-stage";
+import { DemographicsCard } from "./demographics-card";
 
 // Stages with an interactive candidate-facing UI in this flow, rendered in the
-// order the requisition configures them. (fluent + assessment_center are run
-// elsewhere and are not part of the self-served apply flow yet.)
-const INTERACTIVE: PrehireStageKind[] = ["quiz", "cbi"];
+// order the requisition configures them. (assessment_center is run elsewhere and
+// is not part of the self-served apply flow yet.)
+const INTERACTIVE: PrehireStageKind[] = ["quiz", "cbi", "fluent"];
 
 export function ApplyFlow({ token, ctx }: { token: string; ctx: PrehireCandidateContext }) {
   // The interactive stages this requisition asks for, in configured order.
@@ -31,6 +33,7 @@ export function ApplyFlow({ token, ctx }: { token: string; ctx: PrehireCandidate
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<Set<PrehireStageKind>>(completedInit);
+  const [demoDone, setDemoDone] = useState(false);
 
   const consent = async () => {
     setBusy(true);
@@ -107,19 +110,27 @@ export function ApplyFlow({ token, ctx }: { token: string; ctx: PrehireCandidate
         {agreed && current === "cbi" && (
           <CbiStage key="cbi" token={token} onDone={() => markDone("cbi")} />
         )}
+        {agreed && current === "fluent" && (
+          <FluentStage key="fluent" token={token} onDone={() => markDone("fluent")} />
+        )}
 
         {/* All stages complete */}
         {allDone && (
-          <Card>
-            <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-              <CheckCircle2 className="h-10 w-10 text-[#00843D]" />
-              <h2 className="text-lg font-semibold text-[#010131]">Thank you</h2>
-              <p className="max-w-sm text-sm text-muted-foreground">
-                Your responses have been submitted. The hiring team will review them and be in
-                touch.
-              </p>
-            </CardContent>
-          </Card>
+          <>
+            <Card>
+              <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+                <CheckCircle2 className="h-10 w-10 text-[#00843D]" />
+                <h2 className="text-lg font-semibold text-[#010131]">Thank you</h2>
+                <p className="max-w-sm text-sm text-muted-foreground">
+                  Your responses have been submitted. The hiring team will review them and be in
+                  touch.
+                </p>
+              </CardContent>
+            </Card>
+            {!ctx.candidate.demographics_submitted_at && !demoDone && (
+              <DemographicsCard token={token} onDone={() => setDemoDone(true)} />
+            )}
+          </>
         )}
       </main>
     </div>

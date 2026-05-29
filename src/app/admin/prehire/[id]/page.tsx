@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
+import { Download, ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { BackLink } from "@/components/shared/back-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,8 +16,10 @@ import {
 import { computeComposite, rankByComposite, RECOMMENDATION_LABELS } from "@/lib/prehire/scoring";
 import { PREHIRE_STAGE_LABELS } from "@/types/prehire";
 import type { PrehireStagePlanEntry, PrehireStageKind } from "@/types/prehire";
+import type { PrehireDecision } from "@/types/prehire";
 import { AddCandidateForm } from "./_components/add-candidate-form";
 import { InviteLink } from "./_components/invite-link";
+import { DecisionCell } from "./_components/decision-cell";
 
 export const dynamic = "force-dynamic";
 
@@ -77,6 +81,17 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
 
   const candidates = (candData ?? []) as unknown as CandidateRow[];
 
+  // Tolerant: the `decision` column exists only after migration 00051. Fetch it
+  // separately so a pre-migration DB still renders the shortlist (a missing
+  // column on the main select would empty the table).
+  const { data: decisionRows } = await supabase
+    .from("prehire_candidates")
+    .select("id, decision")
+    .eq("requisition_id", params.id);
+  const decisionById = new Map<string, PrehireDecision | null>(
+    (decisionRows ?? []).map((r) => [r.id as string, (r.decision as PrehireDecision | null) ?? null])
+  );
+
   const scored = candidates.map((c) => {
     const result = computeComposite(plan, c.prehire_stage_results ?? []);
     return { ...c, composite: result.composite, recommendation: result.recommendation, perStage: result.perStage };
@@ -99,6 +114,31 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
           <p className="mt-2 text-xs text-muted-foreground">
             Stages: {plan.map((s) => PREHIRE_STAGE_LABELS[s.kind]).join(" · ") || "none"}
           </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <Link
+            href={`/admin/prehire/${req.id}/fairness`}
+            className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-accent"
+            title="Adverse-impact (4/5ths) analysis + audit trail"
+          >
+            <ShieldCheck className="h-3.5 w-3.5" /> Fairness &amp; audit
+          </Link>
+          <a
+            href={`/api/admin/prehire/${req.id}/export?format=csv`}
+            download
+            className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-accent"
+            title="Export the shortlist as CSV for an ATS / spreadsheet"
+          >
+            <Download className="h-3.5 w-3.5" /> CSV
+          </a>
+          <a
+            href={`/api/admin/prehire/${req.id}/export?format=json`}
+            download
+            className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-accent"
+            title="Export the requisition + shortlist as JSON"
+          >
+            <Download className="h-3.5 w-3.5" /> JSON
+          </a>
         </div>
       </div>
 
@@ -124,7 +164,8 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                     </TableHead>
                   ))}
                   <TableHead className="text-center">Composite</TableHead>
-                  <TableHead>Signal</TableHead>
+                  <TableHead>AI signal</TableHead>
+                  <TableHead className="w-44">Decision</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -161,8 +202,11 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                         {RECOMMENDATION_LABELS[c.recommendation]}
                       </span>
                     </TableCell>
+                    <TableCell>
+                      <DecisionCell candidateId={c.id} decision={decisionById.get(c.id) ?? null} />
+                    </TableCell>
                     <TableCell className="text-end">
-                      <InviteLink token={c.access_token} />
+                      <InviteLink token={c.access_token} candidateId={c.id} />
                     </TableCell>
                   </TableRow>
                 ))}

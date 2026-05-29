@@ -22,6 +22,8 @@ export type PrehireCandidateContext = {
     email: string;
     status: string;
     consent_at: string | null;
+    /** When the candidate completed (or explicitly skipped) voluntary self-ID; null = not yet asked. */
+    demographics_submitted_at: string | null;
   };
   requisition: {
     id: string;
@@ -55,6 +57,19 @@ export async function findCandidateByToken(
     .maybeSingle();
   if (!req) return null;
 
+  // Tolerant: the demographics column exists only after migration 00051. Query
+  // it separately so a pre-migration DB doesn't break the whole apply flow
+  // (a missing column would error the main select and make valid links look dead).
+  let demographicsSubmittedAt: string | null = null;
+  const { data: demo } = await svc
+    .from("prehire_candidates")
+    .select("demographics_submitted_at")
+    .eq("id", cand.id)
+    .maybeSingle();
+  if (demo && "demographics_submitted_at" in demo) {
+    demographicsSubmittedAt = (demo.demographics_submitted_at as string | null) ?? null;
+  }
+
   return {
     candidate: {
       id: cand.id as string,
@@ -62,6 +77,7 @@ export async function findCandidateByToken(
       email: cand.email as string,
       status: cand.status as string,
       consent_at: cand.consent_at as string | null,
+      demographics_submitted_at: demographicsSubmittedAt,
     },
     requisition: {
       id: req.id as string,

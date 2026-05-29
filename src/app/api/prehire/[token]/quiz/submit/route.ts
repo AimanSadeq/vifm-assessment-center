@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { findCandidateByToken, rescoreCandidate } from "@/lib/prehire/candidate-access";
+import { logPrehireEvent } from "@/lib/prehire/audit";
 import type { QuizQuestion } from "@/types/database";
 
 type StoredDetail = { questions?: QuizQuestion[] } | null;
@@ -56,6 +57,14 @@ export async function POST(req: Request, { params }: { params: { token: string }
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   await rescoreCandidate(ctx.candidate.id);
+
+  await logPrehireEvent({
+    action: "stage_completed",
+    requisitionId: ctx.requisition.id,
+    candidateId: ctx.candidate.id,
+    actorLabel: "candidate",
+    detail: { kind: "quiz", normalized, passed },
+  });
 
   return NextResponse.json({ normalized, correct, total, passed });
 }

@@ -31,7 +31,13 @@ export function AddCandidateForm({ requisitionId }: { requisitionId: string }) {
       return;
     }
     const link = `${window.location.origin}/prehire/apply/${res.data.access_token}`;
-    toast.success("Candidate added. Invite link copied below.", { duration: 6000 });
+    if (res.data.emailed) {
+      toast.success(`Candidate added and invitation emailed to ${email}.`, { duration: 6000 });
+    } else {
+      toast.success("Candidate added. Invite link copied — email isn't configured, so share it directly.", {
+        duration: 7000,
+      });
+    }
     try {
       await navigator.clipboard.writeText(link);
     } catch {

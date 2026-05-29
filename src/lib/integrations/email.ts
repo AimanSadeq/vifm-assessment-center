@@ -29,7 +29,8 @@ export type EmailTemplate =
   | "washup_scheduled"
   | "engagement_created"
   | "course_quote_request"
-  | "fluent_result";
+  | "fluent_result"
+  | "prehire_invitation";
 
 export type EmailPayload = {
   to: string;
@@ -147,6 +148,22 @@ Notes:
 Manage this request: {{adminUrl}}
 
 - VIFM Assessment Platform`,
+  },
+  prehire_invitation: {
+    subject: "You're invited to apply: {{roleTitle}}",
+    body: `Dear {{candidateName}},
+
+You've been invited to complete a short pre-employment screening for the {{roleTitle}} role{{orgClause}}.
+
+It takes about {{duration}} and may include a brief competency check, an English placement, and a short behavioural interview. Your answers are saved as you go — you can pause and resume using the same link.
+
+Start your screening here (please don't share this link, it's unique to you):
+{{applyUrl}}
+
+Your responses are processed by VIFM on behalf of {{orgName}} for the sole purpose of evaluating your application, in line with applicable data-protection law. A person reviews the results — no decision is made automatically.
+
+Best regards,
+Virginia Institute of Finance and Management`,
   },
   fluent_result: {
     subject: "Your Fluent result - {{level}}",

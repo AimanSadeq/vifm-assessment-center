@@ -1,24 +1,23 @@
 /**
- * Fluent - speaking-audio transcription (Whisper).
+ * Pre-Hire Fluent — speaking-audio transcription (Whisper + optional Azure
+ * pronunciation). Token-gated sibling of /api/ac/fluent/transcribe; both share
+ * the same engine in @/lib/integrations/transcription. No audio is persisted.
  *
- * POST multipart/form-data with field `audio` (a recorded blob from the
- * browser MediaRecorder, typically audio/webm;codecs=opus).
- *   -> { transcript, pronunciation }       on success
- *   -> { error }                            on failure (HTTP 4xx/5xx)
- *
- * The heavy lifting (Whisper subprocess + optional Azure pronunciation) lives
- * in @/lib/integrations/transcription so the Pre-Hire English screen shares the
- * exact same code path. No audio is persisted.
+ * POST multipart/form-data with field `audio` -> { transcript, pronunciation }.
  */
 
 import { NextResponse } from "next/server";
+import { findCandidateByToken } from "@/lib/prehire/candidate-access";
 import { transcribeSpeechFile } from "@/lib/integrations/transcription";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-export async function POST(req: Request) {
+export async function POST(req: Request, { params }: { params: { token: string } }) {
+  const ctx = await findCandidateByToken(params.token);
+  if (!ctx) return NextResponse.json({ error: "Invalid link" }, { status: 404 });
+
   let form: FormData;
   try {
     form = await req.formData();

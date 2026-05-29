@@ -165,7 +165,7 @@ export function PlatformLanding() {
   const Arrow = rtl ? ArrowLeft : ArrowRight;
 
   return (
-    <div dir={rtl ? "rtl" : "ltr"} className="flex h-screen flex-col overflow-hidden bg-background">
+    <div dir={rtl ? "rtl" : "ltr"} className="flex h-full flex-col overflow-hidden bg-background">
       {/* ─── Platform hero ─── */}
       <header className="ara-hero relative shrink-0 overflow-hidden">
         <div className="mx-auto max-w-6xl px-6 pt-3 pb-16">

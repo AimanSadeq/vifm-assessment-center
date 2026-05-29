@@ -15,6 +15,7 @@ import { computeComposite, rankByComposite, RECOMMENDATION_LABELS } from "@/lib/
 import { PREHIRE_STAGE_LABELS } from "@/types/prehire";
 import type { PrehireStagePlanEntry, PrehireStageKind } from "@/types/prehire";
 import { AddCandidateForm } from "./_components/add-candidate-form";
+import { InviteLink } from "./_components/invite-link";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,7 @@ type CandidateRow = {
   full_name: string;
   email: string;
   status: string;
+  access_token: string;
   prehire_stage_results: StageResult[];
 };
 
@@ -70,7 +72,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
 
   const { data: candData } = await supabase
     .from("prehire_candidates")
-    .select("id, full_name, email, status, prehire_stage_results(kind, status, normalized_score, passed)")
+    .select("id, full_name, email, status, access_token, prehire_stage_results(kind, status, normalized_score, passed)")
     .eq("requisition_id", params.id);
 
   const candidates = (candData ?? []) as unknown as CandidateRow[];
@@ -123,6 +125,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                   ))}
                   <TableHead className="text-center">Composite</TableHead>
                   <TableHead>Signal</TableHead>
+                  <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -157,6 +160,9 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                       >
                         {RECOMMENDATION_LABELS[c.recommendation]}
                       </span>
+                    </TableCell>
+                    <TableCell className="text-end">
+                      <InviteLink token={c.access_token} />
                     </TableCell>
                   </TableRow>
                 ))}

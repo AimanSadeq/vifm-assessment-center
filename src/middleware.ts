@@ -28,12 +28,19 @@ const isPublicVerifyRoute = (pathname: string) =>
   pathname.startsWith("/verify/") ||
   pathname.startsWith("/api/credentials/verify/");
 
+// Pre-Hire candidate flow - external job applicants reach their screening via
+// prehire_candidates.access_token (no account). Identity is always derived
+// server-side from the token. Bypass auth in dev and prod, like ARA respondents.
+const isPreHireApplyRoute = (pathname: string) =>
+  pathname.startsWith("/prehire/apply/") || pathname.startsWith("/api/prehire/");
+
 export async function middleware(request: NextRequest) {
   if (
     isAraRespondentRoute(request.nextUrl.pathname) ||
     isReflectRaterRoute(request.nextUrl.pathname) ||
     isPublicCoursesRoute(request.nextUrl.pathname) ||
-    isPublicVerifyRoute(request.nextUrl.pathname)
+    isPublicVerifyRoute(request.nextUrl.pathname) ||
+    isPreHireApplyRoute(request.nextUrl.pathname)
   ) {
     return NextResponse.next();
   }

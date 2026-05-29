@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { BackLink } from "@/components/shared/back-link";
 import { GapBadge } from "@/components/shared/gap-badge";
 import { getCompetencyGap } from "@/lib/scoring/competency-gap";
+import { buildUnifiedProfile, signalToneClass, type CompetencySignal } from "@/lib/competencies/unified-profile";
 import { Target, AlertTriangle, CheckCircle2, BookOpen, Route, Languages, Award, GraduationCap } from "lucide-react";
 import { PersonalStatistics, type DomainRollup } from "./_components/personal-statistics";
 import { StartQuizButton } from "./_components/start-quiz-button";
@@ -89,6 +90,10 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
   } catch {
     /* table/columns absent - ignore */
   }
+
+  // Unified competency profile: Fluent's Language Skills framework + the
+  // "enables" bridge onto behavioural competencies (Reflect/ARA/Pre-Hire next).
+  const unified = await buildUnifiedProfile({ candidateId, email: candidate.email });
 
   // Role profile is fetched separately so the page still renders if migration
   // 00016 hasn't been pushed (the join would otherwise 500). Falls through to
@@ -285,24 +290,41 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
         </Link>
       </div>
 
-      {/* Fluent English placement (when bound to this candidate) */}
-      {latestFluent && (
-        <div className="flex items-center gap-3 rounded-md border bg-card p-4">
-          <Languages className="h-5 w-5 text-[#5391D5]" />
-          <div>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              {t("candidateSkills.englishPlacement")}
-            </p>
-            <p className="text-lg font-bold">{latestFluent.overall_cefr}</p>
+      {/* Language Skills (Fluent) — a framework of its own; each skill enables
+          specific behavioural competencies (shown as ↳ chips on the cards below). */}
+      {(latestFluent || unified.languageSkills.length > 0) && (
+        <div className="space-y-3 rounded-md border bg-card p-4">
+          <div className="flex items-center gap-3">
+            <Languages className="h-5 w-5 text-[#5391D5]" />
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                {t("candidateSkills.englishPlacement")}
+              </p>
+              {latestFluent && <p className="text-lg font-bold">{latestFluent.overall_cefr}</p>}
+            </div>
+            {latestFluent && (
+              <a
+                href={`/api/ac/fluent/${latestFluent.id}/certificate?format=pdf`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ms-auto inline-flex items-center gap-1 text-xs font-medium text-[#5391D5] hover:underline"
+              >
+                <Award className="h-3.5 w-3.5" /> {t("candidateSkills.certificate")}
+              </a>
+            )}
           </div>
-          <a
-            href={`/api/ac/fluent/${latestFluent.id}/certificate?format=pdf`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ms-auto inline-flex items-center gap-1 text-xs font-medium text-[#5391D5] hover:underline"
-          >
-            <Award className="h-3.5 w-3.5" /> {t("candidateSkills.certificate")}
-          </a>
+          {unified.languageSkills.length > 0 && (
+            <div className="flex flex-wrap gap-2 border-t pt-3">
+              {unified.languageSkills.map((s) => (
+                <span
+                  key={s.key}
+                  className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium ${signalToneClass("language")}`}
+                >
+                  {s.label} · {s.cefr}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -389,6 +411,29 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
                           </span>
                         </span>
                       </div>
+
+                      {/* Unified signals — behavioural rating (AC) + cross-framework enablers (↳) */}
+                      {(comp.score != null || (unified.competencySignals.get(comp.name.toLowerCase())?.length ?? 0) > 0) && (
+                        <div className="flex flex-wrap gap-1">
+                          {comp.score != null && (
+                            <span
+                              title="Assessment Center (behavioural)"
+                              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${signalToneClass("behavioural")}`}
+                            >
+                              AC · {comp.score}/5
+                            </span>
+                          )}
+                          {(unified.competencySignals.get(comp.name.toLowerCase()) ?? []).map((s: CompetencySignal, i: number) => (
+                            <span
+                              key={i}
+                              title={s.relation === "enables" ? `${s.sourceLabel} — enables this competency` : s.sourceLabel}
+                              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${signalToneClass(s.kind)}`}
+                            >
+                              {s.relation === "enables" ? "↳ " : ""}{s.sourceLabel} · {s.display}
+                            </span>
+                          ))}
+                        </div>
+                      )}
 
                       <div className="mt-auto">
                         {isAssessed && gap ? (

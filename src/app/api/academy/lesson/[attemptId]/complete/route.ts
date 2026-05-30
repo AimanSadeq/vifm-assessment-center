@@ -4,12 +4,13 @@
  * Scores the attempt against the stored questions (points-weighted, like the
  * candidate quiz), writes status='completed' + score_pct + correct_count +
  * completed_at, then checks whether every lesson of the enrollment's course
- * is now complete. If so, finalises the enrollment and issues the Academy
+ * is now PASSED. If so, finalises the enrollment and issues the Academy
  * credential via the shared markEnrollmentComplete() helper (kept DRY).
  *
- * "All lessons complete" = count of completed attempts >= outline section
- * count, with the empty-outline-counts-as-one-lesson rule. Pass = score_pct
- * >= passing_score_pct (fixed 70). Uses createServiceClient throughout.
+ * "All lessons complete" = count of PASSED lessons (score_pct >=
+ * passing_score_pct, default 70) >= outline section count, with the
+ * empty-outline-counts-as-one-lesson rule. A merely-attempted-but-failed
+ * lesson does not count toward completion. Uses createServiceClient throughout.
  */
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
@@ -109,16 +110,23 @@ export async function POST(
     const outlineLen = course?.outline_en?.length ?? 0;
     const lessonCount = Math.max(1, outlineLen); // empty outline = one virtual lesson
 
-    // How many distinct lessons are completed for this enrollment?
+    // How many distinct lessons are PASSED for this enrollment? "All complete"
+    // means every lesson's knowledge-check was passed (best score >= its
+    // threshold), not merely attempted - the same gate markEnrollmentComplete
+    // enforces before issuing the credential. Keeping the three call sites in
+    // lock-step avoids a "course complete" claim with no credential behind it.
     const { data: completedRows } = await sb
       .from("academy_lesson_attempts")
-      .select("lesson_key")
+      .select("lesson_key, score_pct, passing_score_pct")
       .eq("enrollment_id", attempt.enrollment_id)
       .eq("status", "completed");
-    const completedKeys = new Set(
-      ((completedRows as { lesson_key: string }[] | null) ?? []).map((r) => r.lesson_key)
-    );
-    const allComplete = completedKeys.size >= lessonCount;
+    const passedKeys = new Set<string>();
+    for (const r of (completedRows as { lesson_key: string; score_pct: number | null; passing_score_pct: number | null }[] | null) ?? []) {
+      const score = Number(r.score_pct ?? 0);
+      const pass = Number(r.passing_score_pct ?? 70);
+      if (score >= pass) passedKeys.add(r.lesson_key);
+    }
+    const allComplete = passedKeys.size >= lessonCount;
 
     let verificationCode: string | null = null;
     if (allComplete) {

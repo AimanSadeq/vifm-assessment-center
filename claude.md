@@ -182,6 +182,8 @@ supabase/
     00049_academy_credentials.sql              # vifm_enrollments + academy_lesson_attempts + vifm_credentials (deliver + certify)
     00050_prehire_pipeline.sql                 # Pre-Hire: prehire_requisitions + prehire_candidates + prehire_stage_results (commercial screening funnel)
     00051_prehire_defensibility.sql            # Pre-Hire: voluntary demographics + human-decision capture + immutable prehire_audit_log (adverse-impact + audit)
+    00052_tech_assessment.sql                  # Technical: tech_assessment_sessions (server-held key) + tech_assessment_results (indicative 1–5 per domain)
+    00053_tech_assessment_item_bank.sql        # Technical Tier 2: SME-reviewed tech_assessment_items + tech_assessment_cut_scores + widened vifm_credentials type CHECK (adds technical_proficiency)
 scripts/
   seed-test-data.ts       # Creates full test dataset (engagement + candidates + assessor + observations)
   seed-tags-qa.py         # Populates tags and Q&A questions for competencies
@@ -552,6 +554,9 @@ The **deliver** step of the diagnose → recommend → deliver → certify loop 
 - `src/lib/academy/complete.ts` — `markEnrollmentComplete()` (idempotent completion + `academy_completion` credential issue; never double-issues, keyed on `source_id = enrollment id`).
 - `src/lib/academy/lesson-key.ts` — `lessonKeyFor` / `indexFromLessonKey` (outline section ↔ lesson key).
 
+### Pass-gate (Tier 1 — makes the completion certificate sellable)
+A course only completes + certifies when the learner **passed** every lesson's knowledge-check (best `score_pct >= passing_score_pct`, default 70), not merely attempted it. `markEnrollmentComplete` counts lessons from the course outline (empty outline → 1 "Overview"), computes distinct *passed* lessons + their best-score average, and gates: below the bar it returns `reason: "not_passed"` (the route maps that to HTTP 400 with `passedLessons`/`totalLessons`) and does **not** mark complete or issue. The credential now carries the average score, which renders as `Score: N%` on the branded certificate. The same passed-not-attempted rule is enforced in lock-step at three sites so a "course complete" claim can never appear without a credential behind it: the course page's Complete button, `/api/academy/complete`, and the per-lesson `/api/academy/lesson/[attemptId]/complete` "finish course" path.
+
 ### DB tables (migration 00049)
 - `vifm_enrollments` — one row per (candidate, course); `source` (`self`/`admin_assigned`/`recommender`), `status` (`enrolled`/`in_progress`/`completed`/`withdrawn`), `visible_at` (hides admin-assigned until ready). Unique (candidate_id, course_id).
 - `academy_lesson_attempts` — mirrors `candidate_quiz_attempts` (reuses the `candidate_quiz_status` enum); `questions`/`answers` jsonb, `score_pct`, `passing_score_pct` default 70. Unique (enrollment_id, lesson_key).
@@ -559,7 +564,7 @@ The **deliver** step of the diagnose → recommend → deliver → certify loop 
 
 ## VIFM Credentials + Verify (certification)
 
-The **certify** step. A verifiable credential is issued for any certified outcome and is publicly checkable by an unguessable `verification_code`. Three credential types: `academy_completion` (3-year default validity), `ac_ready_now` (1 year), `fluent_cefr` (1 year); each is renewable by issuing a fresh row.
+The **certify** step. A verifiable credential is issued for any certified outcome and is publicly checkable by an unguessable `verification_code`. Four credential types: `academy_completion` (3-year default validity), `ac_ready_now` (1 year), `fluent_cefr` (1 year), `technical_proficiency` (1 year — see Technical Certification below); each is renewable by issuing a fresh row. The `vifm_credentials.credential_type` CHECK is the DB-level whitelist of these four (widened in 00053 to admit `technical_proficiency`) — adding a fifth type means a migration to re-create that constraint, or issuance is silently rejected.
 
 ### Issuance (all best-effort — never throws, so it can't block the primary operation; an admin can re-issue)
 - `src/lib/credentials/issue.ts` — shared `issueCredential()` + `getCredentialForVerification()` (the public reader; returns non-sensitive fields only, validates UUID shape).
@@ -573,6 +578,20 @@ The **certify** step. A verifiable credential is issued for any certified outcom
 ### DB table (migration 00049)
 - `vifm_credentials` — `verification_code` (uuid, unique, the public lookup key), `candidate_id` (nullable — anonymous Fluent), denormalized `issued_to_name`/`issued_to_email`, `credential_type`, bilingual `title_*`/`subtitle_*`, `issuer` (default "Virginia Institute of Finance and Management"), `score_pct`, `source_id` (untyped, app-checked), `issued_at`/`expires_at`/`revoked_at`/`revocation_reason`.
 - RLS: admin all; candidate SELECT own rows; public verification via the service-role API only. Middleware bypasses `/verify`, `/verify/`, and `/api/credentials/verify/`.
+
+## VIFM Technical Certification (the third capability pillar)
+
+Measures **technical** proficiency per finance domain — the third pillar alongside the AC behavioural 38 and Fluent's language skills. The taxonomy is a fixed, code-only 2-level framework (Domain → Skill) in [src/lib/competencies/technical-framework.ts](src/lib/competencies/technical-framework.ts): 10 domains (finance / investment / treasury / accounting / banking / analytics / business_intelligence / artificial_intelligence / business_reporting / real_estate — Tax excluded; leadership/strategy/PM stay behavioural), 5 skills each, with `proficiencyFromPercent()` → indicative 1–5 band (Awareness/Foundational/Working/Proficient/Expert). Runner at `/ac/tech-assessment`; API `/api/ac/tech-assessment` (`{action:"start"|"score"}`). Integrity mirrors Fluent: the full test (with answer key) is held server-side in `tech_assessment_sessions`, the browser gets a key-stripped copy, grading is server-side, option positions are re-randomised per administration (defeats LLM option-A bias + position memorisation), and sessions are **single-use** (a consumed session can't be re-scored → no credential replay).
+
+### Two modes — the honest line between indicative and certified
+- **INDICATIVE** — live AI-authored items, no human review. Renders the 1–5 band but issues **no credential**. The honest fallback when a domain's approved bank is too thin to certify (or no `ANTHROPIC_API_KEY`).
+- **CERTIFIED (Tier 2)** — the test is assembled **entirely from SME-approved bank items**; when the score clears the domain's documented cut-score, a `technical_proficiency` credential is issued and is publicly verifiable. This is the defensible, sellable path. `TechTest.certified` threads through scoring → the result row's `certified`/`passed_cut`/`cut_pct`/`credential_code` columns → the result UI (credential panel vs "below the cut-score" panel).
+
+### Item bank + cut-scores (migration 00053; [src/lib/competencies/technical-item-bank.ts](src/lib/competencies/technical-item-bank.ts))
+- `tech_assessment_items` — AI-**drafted** (`status='draft'`) then human-**approved** review workflow (`draft`/`in_review`/`approved`/`rejected`/`retired`), bilingual EN+AR, with a rationale + light psychometrics (`times_administered`/`times_correct` p-value substrate — **no IRT calibration yet**). `buildCertifiedTest()` assembles only from `approved` items, returning null (→ indicative) below the cut-score's `min_items` floor.
+- `tech_assessment_cut_scores` — one row per domain: `pass_pct` (default 70), `min_items` floor (default 8), plus `method`/`rationale` for the audit file. `getCutScore()` falls back to defaults when unset.
+- **SME review console** at `/admin/tech-assessment` (admin sidebar "Technical", `BadgeCheck`): bank-readiness grid (per-domain approved-count vs min → "Certifiable"/"Indicative"), AI-draft-into-bank, per-item approve/reject/retire/edit, cut-score editor. Server actions in `actions.ts` (all `requireRole(["admin"])`).
+- All paths best-effort/tolerant of 00053 not being applied (certified path stays dark; indicative results still persist via a legacy-column insert fallback). **Honest limits:** AI-drafted but human-approved items; light psychometrics only (no IRT); secure delivery, not invigilation.
 
 ## VIFM Pre-Hire (commercial pre-employment screening)
 

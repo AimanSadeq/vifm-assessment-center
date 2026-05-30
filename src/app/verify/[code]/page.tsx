@@ -19,6 +19,7 @@ const TYPE_LABEL_KEY: Record<string, string> = {
   academy_completion: "authPublic.verify.typeAcademyCompletion",
   ac_ready_now: "authPublic.verify.typeAcReadyNow",
   fluent_cefr: "authPublic.verify.typeFluentCefr",
+  technical_proficiency: "authPublic.verify.typeTechnicalProficiency",
 };
 
 function fmtDate(iso: string | null): string | null {

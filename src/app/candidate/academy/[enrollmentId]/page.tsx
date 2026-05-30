@@ -56,14 +56,22 @@ export default async function AcademyCoursePage({ params }: Props) {
         .maybeSingle()) as { data: VifmCourse | null };
       course = courseRes.data;
 
+      // A lesson is "done" only when its knowledge-check was PASSED
+      // (best score >= passing threshold), not merely attempted. This is the
+      // same gate the completion credential enforces server-side, so the
+      // Complete Course button can't appear for a learner who failed a lesson.
       const attemptsRes = (await sb
         .from("academy_lesson_attempts")
-        .select("lesson_key, status")
+        .select("lesson_key, score_pct, passing_score_pct")
         .eq("enrollment_id", enrollmentId)
         .eq("status", "completed")) as {
-        data: { lesson_key: string; status: string }[] | null;
+        data: { lesson_key: string; score_pct: number | null; passing_score_pct: number | null }[] | null;
       };
-      completedKeys = new Set((attemptsRes.data ?? []).map((r) => r.lesson_key));
+      for (const a of attemptsRes.data ?? []) {
+        const score = Number(a.score_pct ?? 0);
+        const pass = Number(a.passing_score_pct ?? 70);
+        if (score >= pass) completedKeys.add(a.lesson_key);
+      }
 
       // Surface an already-issued credential, if any.
       const credRes = await sb

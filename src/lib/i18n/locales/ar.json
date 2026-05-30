@@ -62,6 +62,7 @@
     "aiReadiness": "الجاهزية للذكاء الاصطناعي",
     "reflect360": "ريفلكت 360",
     "fluent": "فلوينت",
+    "techCertification": "التقني",
     "settings": "الإعدادات",
     "administrator": "المدير"
   },
@@ -523,8 +524,8 @@
       "courseProgress": "تقدّم الدورة",
       "startFirstLesson": "ابدأ الدرس الأول",
       "continueLearning": "متابعة التعلّم",
-      "completeEveryLesson": "أكمل كل درس للحصول على اعتمادك.",
-      "allLessonsDone": "اكتملت جميع الدروس - احصل على اعتمادك.",
+      "completeEveryLesson": "اجتَز اختبار كل درس للحصول على اعتمادك.",
+      "allLessonsDone": "تم اجتياز جميع الدروس - احصل على اعتمادك.",
       "moreItems": "+ {{n}} المزيد"
     },
     "lesson": {
@@ -572,7 +573,8 @@
       "issuing": "جاري الإصدار...",
       "getCredential": "احصل على اعتمادك",
       "claimCredential": "اطلب اعتمادك",
-      "issueFail": "تعذّر إصدار اعتمادك. يرجى المحاولة مرة أخرى."
+      "issueFail": "تعذّر إصدار اعتمادك. يرجى المحاولة مرة أخرى.",
+      "notPassedGate": "اجتَز اختبار كل درس أولاً ({{passed}}/{{total}} مجتاز)."
     }
   },
   "credentials": {
@@ -583,6 +585,7 @@
       "academy_completion": "إتمام الدورة",
       "ac_ready_now": "التقييم - جاهز الآن",
       "fluent_cefr": "تحديد مستوى الإنجليزية",
+      "technical_proficiency": "الكفاءة التقنية",
       "fallback": "اعتماد"
     },
     "empty": "ليس لديك أي اعتمادات بعد. أكمل دورة أو تقييمًا للحصول على واحد.",
@@ -3186,6 +3189,7 @@
       "typeAcademyCompletion": "إتمام الدورة",
       "typeAcReadyNow": "التقييم - جاهز الآن",
       "typeFluentCefr": "تحديد المستوى في اللغة الإنجليزية",
+      "typeTechnicalProficiency": "الكفاءة التقنية",
       "credentialFallback": "الاعتماد",
       "notFoundTitle": "الاعتماد غير موجود",
       "notFoundBody": "لم نتمكّن من العثور على اعتماد بهذا الرمز التحققي. تحقّق من الرمز وحاول مرة أخرى.",

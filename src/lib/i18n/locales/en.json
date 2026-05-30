@@ -62,6 +62,7 @@
     "aiReadiness": "AI Readiness",
     "reflect360": "Reflect 360",
     "fluent": "Fluent",
+    "techCertification": "Technical",
     "settings": "Settings",
     "administrator": "Administrator"
   },
@@ -523,8 +524,8 @@
       "courseProgress": "Course progress",
       "startFirstLesson": "Start first lesson",
       "continueLearning": "Continue learning",
-      "completeEveryLesson": "Complete every lesson to earn your credential.",
-      "allLessonsDone": "All lessons done - claim your credential.",
+      "completeEveryLesson": "Pass every lesson's knowledge-check to earn your credential.",
+      "allLessonsDone": "All lessons passed - claim your credential.",
       "moreItems": "+ {{n}} more"
     },
     "lesson": {
@@ -572,7 +573,8 @@
       "issuing": "Issuing...",
       "getCredential": "Get your credential",
       "claimCredential": "Claim your credential",
-      "issueFail": "Could not issue your credential. Please try again."
+      "issueFail": "Could not issue your credential. Please try again.",
+      "notPassedGate": "Pass every lesson's knowledge-check first ({{passed}}/{{total}} passed)."
     }
   },
   "credentials": {
@@ -583,6 +585,7 @@
       "academy_completion": "Course Completion",
       "ac_ready_now": "Assessment - Ready Now",
       "fluent_cefr": "English Placement",
+      "technical_proficiency": "Technical Proficiency",
       "fallback": "Credential"
     },
     "empty": "You have no credentials yet. Complete a course or assessment to earn one.",
@@ -3186,6 +3189,7 @@
       "typeAcademyCompletion": "Course Completion",
       "typeAcReadyNow": "Assessment - Ready Now",
       "typeFluentCefr": "English Placement",
+      "typeTechnicalProficiency": "Technical Proficiency",
       "credentialFallback": "Credential",
       "notFoundTitle": "Credential not found",
       "notFoundBody": "We could not find a credential with this verification code. Check the code and try again.",

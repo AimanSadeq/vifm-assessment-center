@@ -37,6 +37,9 @@ export type TechTest = {
   domain_name: string;
   items: TechItem[];
   ai_generated: boolean;
+  /** True when assembled entirely from SME-approved bank items (Tier 2) — the
+   *  only path eligible to issue a technical_proficiency credential. */
+  certified?: boolean;
 };
 
 // Answer-key-stripped shape for the browser.
@@ -46,6 +49,7 @@ export type PublicTechTest = {
   domain_name: string;
   items: PublicTechItem[];
   ai_generated: boolean;
+  certified?: boolean;
 };
 
 export function stripAnswerKey(test: TechTest): PublicTechTest {
@@ -53,6 +57,7 @@ export function stripAnswerKey(test: TechTest): PublicTechTest {
     domain_key: test.domain_key,
     domain_name: test.domain_name,
     ai_generated: test.ai_generated,
+    certified: test.certified ?? false,
     items: test.items.map(({ id, skill, question, options, difficulty }) => ({
       id,
       skill,
@@ -73,6 +78,7 @@ export type TechResult = {
   proficiency: TechProficiency; // level 1–5 + label + normalized
   perSkill: TechSkillBreakdown[];
   ai_generated: boolean;
+  certified: boolean; // assembled from SME-approved items (credential-eligible)
 };
 
 const ITEM_COUNT = 8;
@@ -209,5 +215,6 @@ export function scoreTechnicalAssessment(input: {
     proficiency: proficiencyFromPercent(pct),
     perSkill: Array.from(bySkill.entries()).map(([skill, v]) => ({ skill, correct: v.correct, total: v.total })),
     ai_generated: test.ai_generated,
+    certified: test.certified ?? false,
   };
 }

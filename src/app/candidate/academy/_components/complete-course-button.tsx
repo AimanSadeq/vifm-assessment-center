@@ -38,6 +38,13 @@ export function CompleteCourseButton({
       if (res.ok) {
         if (data.verificationCode) setCode(data.verificationCode);
         router.refresh();
+      } else if (data?.reason === "not_passed") {
+        setError(
+          t("academy.complete.notPassedGate", {
+            passed: data.passedLessons ?? 0,
+            total: data.totalLessons ?? 0,
+          })
+        );
       } else {
         setError(t("academy.complete.issueFail"));
       }

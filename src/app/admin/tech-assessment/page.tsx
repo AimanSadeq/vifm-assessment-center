@@ -1,0 +1,110 @@
+export const dynamic = "force-dynamic";
+
+import Link from "next/link";
+import { BadgeCheck, ShieldCheck, FlaskConical } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { TECH_DOMAINS, techDomainByKey, type TechDomainKey } from "@/lib/competencies/technical-framework";
+import {
+  bankReadiness,
+  listBankItems,
+  getCutScore,
+} from "@/lib/competencies/technical-item-bank";
+import { ReviewConsole } from "./_components/review-console";
+
+type Props = { searchParams: { domain?: string } };
+
+export default async function TechAssessmentReviewPage({ searchParams }: Props) {
+  const selected: TechDomainKey =
+    (techDomainByKey(searchParams.domain ?? "")?.key as TechDomainKey | undefined) ?? TECH_DOMAINS[0].key;
+
+  const [readiness, items, cut] = await Promise.all([
+    bankReadiness(),
+    listBankItems(selected),
+    getCutScore(selected),
+  ]);
+
+  const domain = techDomainByKey(selected)!;
+  const approvedHere = items.filter((i) => i.status === "approved").length;
+  const certifiableHere = approvedHere >= cut.minItems;
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="rounded-md border bg-gradient-to-r from-[#4c0519] to-[#881337] text-white p-5">
+        <div className="flex items-start gap-3">
+          <BadgeCheck className="h-8 w-8 text-rose-200 shrink-0" />
+          <div className="min-w-0">
+            <p className="text-xs uppercase tracking-wide text-rose-100/80">Technical Certification</p>
+            <h1 className="text-2xl font-bold leading-tight">SME item-review console</h1>
+            <p className="text-sm text-rose-50/90 mt-1 max-w-2xl">
+              A <strong>technical_proficiency</strong> credential is only issued from items reviewed and
+              approved here, scored against a documented cut-score. AI drafts the items; a subject-matter
+              expert approves them. Below the bar, the assessment still runs — but stays indicative, with no
+              credential.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Bank readiness grid (all domains) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-[#5391D5]" />
+            Bank readiness
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+            {readiness.map((r) => {
+              const d = techDomainByKey(r.domainKey)!;
+              const active = r.domainKey === selected;
+              return (
+                <Link
+                  key={r.domainKey}
+                  href={`/admin/tech-assessment?domain=${r.domainKey}`}
+                  className={`rounded-md border p-3 transition-colors ${
+                    active ? "border-rose-400 bg-rose-50/60 ring-1 ring-rose-300" : "hover:bg-muted/40"
+                  }`}
+                >
+                  <p className="text-sm font-semibold text-[#010131] truncate">{d.name}</p>
+                  <div className="mt-1.5 flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {r.approved}/{r.minItems} approved
+                    </span>
+                    {r.certifiable ? (
+                      <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[10px]">
+                        Certifiable
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="text-[10px]">
+                        Indicative
+                      </Badge>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+          <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <FlaskConical className="h-3 w-3" />
+            A domain becomes <span className="font-medium">certifiable</span> once its approved-item count
+            reaches the cut-score&apos;s minimum. Until then, takers get an honest indicative band only.
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Selected domain: cut-score + items */}
+      <ReviewConsole
+        domainKey={selected}
+        domainName={domain.name}
+        skills={domain.skills}
+        items={items}
+        cut={cut}
+        approvedHere={approvedHere}
+        certifiableHere={certifiableHere}
+      />
+    </div>
+  );
+}

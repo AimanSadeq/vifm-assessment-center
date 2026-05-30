@@ -1,11 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, CheckCircle2, RotateCcw, GraduationCap, AlertCircle } from "lucide-react";
+import { Loader2, CheckCircle2, RotateCcw, GraduationCap, AlertCircle, ShieldCheck, ExternalLink } from "lucide-react";
 import { TECH_DOMAINS, TECH_LEVELS } from "@/lib/competencies/technical-framework";
 import type { PublicTechTest, TechResult } from "@/lib/ai/technical-assessment";
 
 type Phase = "intro" | "test" | "result";
+
+// The score response augments TechResult with the certification outcome.
+type ScoredResult = TechResult & {
+  passedCut?: boolean | null;
+  cutPct?: number | null;
+  credentialCode?: string | null;
+};
 
 const LEVEL_TONE: Record<number, string> = {
   1: "bg-rose-100 text-rose-800 border-rose-300",
@@ -21,7 +28,7 @@ export function TechAssessmentClient() {
   const [test, setTest] = useState<PublicTechTest | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, number>>({});
-  const [result, setResult] = useState<TechResult | null>(null);
+  const [result, setResult] = useState<ScoredResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -61,7 +68,7 @@ export function TechAssessmentClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = (await res.json()) as TechResult;
+      const data = (await res.json()) as ScoredResult;
       setResult(data);
       setPhase("result");
     } catch {
@@ -169,7 +176,9 @@ export function TechAssessmentClient() {
         <div className="space-y-5 rounded-xl border bg-white p-6 shadow-sm">
           <div className="flex flex-wrap items-center gap-4">
             <div>
-              <p className="text-[11px] uppercase tracking-wider text-slate-500">Indicative proficiency · {result.domain_name}</p>
+              <p className="text-[11px] uppercase tracking-wider text-slate-500">
+                {result.certified ? "Certified proficiency" : "Indicative proficiency"} · {result.domain_name}
+              </p>
               <div className={`mt-1 inline-flex items-center justify-center rounded-xl border-2 px-5 py-3 text-2xl font-bold ${LEVEL_TONE[result.proficiency.level]}`}>
                 {result.proficiency.level}/5 · {result.proficiency.label}
               </div>
@@ -180,6 +189,38 @@ export function TechAssessmentClient() {
               <p className="text-[10px] text-slate-500">{result.pct}%</p>
             </div>
           </div>
+
+          {/* Certified outcome: credential issued, or below the cut-score. */}
+          {result.certified && result.passedCut && result.credentialCode && (
+            <div className="rounded-md border border-emerald-300 bg-emerald-50 p-4">
+              <p className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-800">
+                <ShieldCheck className="h-4 w-4" /> Technical Proficiency credential issued
+              </p>
+              <p className="mt-1 text-xs text-emerald-700">
+                You scored {result.pct}%, at or above the {result.cutPct}% cut-score for this domain. Your
+                credential is verifiable below.
+              </p>
+              <a
+                href={`/verify/${result.credentialCode}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-800"
+              >
+                <ExternalLink className="h-3.5 w-3.5" /> View &amp; verify credential
+              </a>
+            </div>
+          )}
+          {result.certified && result.passedCut === false && (
+            <div className="rounded-md border border-rose-200 bg-rose-50 p-4">
+              <p className="inline-flex items-center gap-2 text-sm font-semibold text-rose-800">
+                <AlertCircle className="h-4 w-4" /> Below the certification cut-score
+              </p>
+              <p className="mt-1 text-xs text-rose-700">
+                You scored {result.pct}%. This domain certifies at {result.cutPct}%. Keep developing and
+                re-take the certified assessment — no credential is issued below the standard.
+              </p>
+            </div>
+          )}
 
           {/* Per-skill breakdown */}
           <div>
@@ -199,14 +240,25 @@ export function TechAssessmentClient() {
             </div>
           </div>
 
-          <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-[11px] text-amber-800">
-            <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            <span>
-              Indicative only. This short, {result.ai_generated ? "AI-authored" : "placeholder"} assessment signals technical
-              proficiency for development — it is not a certified qualification. Items should be human-reviewed and calibrated
-              before any high-stakes use. Levels: {TECH_LEVELS.join(" · ")}.
-            </span>
-          </div>
+          {result.certified ? (
+            <div className="flex items-start gap-2 rounded-md border border-slate-200 bg-slate-50 p-3 text-[11px] text-slate-600">
+              <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
+              <span>
+                Certified assessment. Every item was reviewed and approved by a subject-matter expert and scored
+                against a documented cut-score, server-side. A credential is issued only at or above the standard.
+                Levels: {TECH_LEVELS.join(" · ")}.
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-[11px] text-amber-800">
+              <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span>
+                Indicative only. This short, {result.ai_generated ? "AI-authored" : "placeholder"} assessment signals technical
+                proficiency for development — it is not a certified qualification and issues no credential. Items should be
+                human-reviewed and calibrated before any high-stakes use. Levels: {TECH_LEVELS.join(" · ")}.
+              </span>
+            </div>
+          )}
 
           <button
             onClick={reset}

@@ -18,6 +18,7 @@ const TYPE_LABEL: Record<string, string> = {
   academy_completion: "Course Completion",
   ac_ready_now: "Assessment - Ready Now",
   fluent_cefr: "English Placement",
+  technical_proficiency: "Technical Proficiency",
 };
 
 // Arabic type labels, keyed by credential_type. Falls back to a generic
@@ -26,6 +27,7 @@ const TYPE_LABEL_AR: Record<string, string> = {
   academy_completion: "إتمام دورة",
   ac_ready_now: "تقييم - جاهز الآن",
   fluent_cefr: "تحديد مستوى الإنجليزية",
+  technical_proficiency: "الكفاءة التقنية",
 };
 
 function fmt(iso?: string | null, locale: "en-GB" | "ar-AE" = "en-GB"): string {

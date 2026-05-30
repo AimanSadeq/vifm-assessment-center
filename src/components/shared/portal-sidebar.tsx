@@ -30,6 +30,7 @@ import {
   Sparkles,
   Aperture,
   Languages,
+  BadgeCheck,
   type LucideIcon,
 } from "lucide-react";
 
@@ -63,6 +64,7 @@ const NAV: NavEntry[] = [
   { kind: "link", link: { href: "/ara", labelKey: "adminNav.aiReadiness", icon: Sparkles } },
   { kind: "link", link: { href: "/reflect", labelKey: "adminNav.reflect360", icon: Aperture } },
   { kind: "link", link: { href: "/ac/fluent", labelKey: "adminNav.fluent", icon: Languages } },
+  { kind: "link", link: { href: "/admin/tech-assessment", labelKey: "adminNav.techCertification", icon: BadgeCheck } },
   {
     kind: "group",
     group: {

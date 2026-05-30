@@ -32,11 +32,26 @@ export async function POST(req: Request) {
   try {
     const result = await markEnrollmentComplete(enrollmentId);
     if (!result.ok) {
+      if (result.reason === "not_passed") {
+        // Knowledge-check gate not cleared -> no completion, no credential.
+        return NextResponse.json(
+          {
+            error: "Pass every lesson's knowledge-check before completing the course.",
+            reason: "not_passed",
+            passedLessons: result.passedLessons,
+            totalLessons: result.totalLessons,
+          },
+          { status: 400 }
+        );
+      }
       return NextResponse.json({ error: "enrollment not found" }, { status: 404 });
     }
     return NextResponse.json({
       verificationCode: result.verificationCode,
       alreadyComplete: result.alreadyComplete,
+      scorePct: result.scorePct,
+      passedLessons: result.passedLessons,
+      totalLessons: result.totalLessons,
     });
   } catch (e) {
     console.error("[academy] complete error:", e);

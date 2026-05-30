@@ -17,13 +17,21 @@
  */
 import { createServiceClient } from "@/lib/supabase/server";
 
-export type CredentialType = "academy_completion" | "ac_ready_now" | "fluent_cefr";
+export type CredentialType =
+  | "academy_completion"
+  | "ac_ready_now"
+  | "fluent_cefr"
+  | "technical_proficiency";
 
 // Default validity per credential type (renewable by issuing a fresh row).
+// technical_proficiency is a measured competence claim, so it carries the
+// shortest validity (1yr) - the holder re-certifies against the current
+// SME-reviewed item bank to keep the claim current.
 const EXPIRY_YEARS: Record<CredentialType, number> = {
   academy_completion: 3,
   ac_ready_now: 1,
   fluent_cefr: 1,
+  technical_proficiency: 1,
 };
 
 function defaultExpiry(type: CredentialType): string {

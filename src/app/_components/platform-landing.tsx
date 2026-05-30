@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight, ArrowLeft, ClipboardCheck, Compass, Aperture, Languages, UserSearch,
-  GraduationCap, Sparkles, BookOpen, Award, Target,
+  GraduationCap,
 } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
@@ -22,14 +22,6 @@ const SERVICES: ReadonlyArray<{ key: ServiceKey; href: string; icon: typeof Comp
   { key: "ac", href: "/admin", icon: ClipboardCheck, tone: "blue" },
   { key: "reflect", href: "/reflect", icon: Aperture, tone: "teal" },
   { key: "ara", href: "/ara", icon: Compass, tone: "violet" },
-];
-
-// Academy value cards (the four pillars of the learning experience).
-const FEATURES: ReadonlyArray<{ key: "catalogue" | "checks" | "credentials" | "mapped"; icon: typeof BookOpen; iconClass: string }> = [
-  { key: "catalogue", icon: BookOpen, iconClass: "ara-icon-blue" },
-  { key: "checks", icon: Sparkles, iconClass: "ara-icon-violet" },
-  { key: "credentials", icon: Award, iconClass: "ara-icon-gold" },
-  { key: "mapped", icon: Target, iconClass: "ara-icon-teal" },
 ];
 
 const T = {
@@ -148,10 +140,10 @@ export function PlatformLanding() {
     <div dir={rtl ? "rtl" : "ltr"} className="flex min-h-full flex-col bg-background">
       {/* ─── Academy hero ─── */}
       <header className="ara-hero relative overflow-hidden">
-        <div className="mx-auto max-w-6xl px-6 pt-4 pb-24">
+        <div className="mx-auto max-w-6xl px-6 pt-3 pb-6">
           {/* Top bar */}
-          <div className="mb-10 flex items-center justify-between gap-4">
-            <VifmLogo variant="white" size="md" />
+          <div className="mb-5 flex items-center justify-between gap-4">
+            <VifmLogo variant="white" size="sm" />
             <div className="flex items-center gap-2">
               <Link
                 href="/courses"
@@ -180,12 +172,12 @@ export function PlatformLanding() {
             <span className="ara-eyebrow text-accent">
               <GraduationCap className="h-3 w-3" /> {t.eyebrow}
             </span>
-            <h1 className="ara-numeral mt-3 mb-4 text-3xl font-semibold leading-[1.08] text-white sm:text-4xl lg:text-5xl">
+            <h1 className="ara-numeral mt-2 mb-3 text-2xl font-semibold leading-[1.1] text-white sm:text-3xl lg:text-4xl">
               {t.h1a} <span className="ara-accent-sweep">{t.h1b}</span>
             </h1>
-            <p className="max-w-2xl text-base leading-relaxed text-white/75">{t.sub}</p>
+            <p className="max-w-2xl text-sm leading-relaxed text-white/75">{t.sub}</p>
 
-            <div className="mt-7 flex flex-wrap items-center gap-3">
+            <div className="mt-5 flex flex-wrap items-center gap-3">
               <Link
                 href="/courses"
                 className="ara-pulse inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent/90"
@@ -200,7 +192,7 @@ export function PlatformLanding() {
               </Link>
             </div>
 
-            <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-white/55">
+            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-white/55">
               {t.trust.map((item, i) => (
                 <span key={item} className="inline-flex items-center gap-4">
                   {i > 0 && <span className="h-3 w-px bg-white/20" />}
@@ -212,30 +204,14 @@ export function PlatformLanding() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-6">
-        {/* ─── Academy value cards (overlap the hero) ─── */}
-        <section className="-mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {FEATURES.map(({ key, icon: Icon, iconClass }) => {
-            const f = t.features[key];
-            return (
-              <div key={key} className="rounded-2xl border bg-card p-5 shadow-[0_16px_48px_-12px_rgba(1,1,49,0.12)]">
-                <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl ${iconClass}`}>
-                  <Icon className="h-5 w-5" />
-                </div>
-                <h3 className="text-sm font-semibold text-[#010131]">{f.title}</h3>
-                <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{f.body}</p>
-              </div>
-            );
-          })}
-        </section>
-
-        {/* ─── Diagnostic services (secondary) ─── */}
-        <section className="mt-16">
-          <h2 className="text-xl font-semibold text-[#010131]">{t.servicesHeading}</h2>
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-6 py-2">
+        {/* ─── Diagnostic services (the launcher) ─── */}
+        <section>
+          <h2 className="text-lg font-semibold text-[#010131]">{t.servicesHeading}</h2>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{t.servicesSub}</p>
 
           <TooltipProvider delayDuration={200}>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {SERVICES.map(({ key, href, icon: Icon, tone }) => {
                 const svc = t.services[key];
                 return (
@@ -250,7 +226,7 @@ export function PlatformLanding() {
                             </div>
                             <div className="ara-eyebrow mb-1">{svc.tagline}</div>
                             <h3 className="text-lg font-semibold text-primary">{svc.name}</h3>
-                            <p className="mt-1 flex-1 text-xs leading-snug text-muted-foreground">{svc.description}</p>
+                            <p className="mt-1 line-clamp-2 flex-1 text-xs leading-snug text-muted-foreground">{svc.description}</p>
                             <div className="launcher-card-cta mt-3 inline-flex items-center gap-1.5 text-sm font-semibold">
                               {t.enter} <Arrow className="h-4 w-4" />
                             </div>
@@ -270,8 +246,8 @@ export function PlatformLanding() {
       </main>
 
       {/* ─── Footer ─── */}
-      <footer className="mt-16 border-t bg-card/50">
-        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-2 px-6 py-4 sm:flex-row sm:items-center">
+      <footer className="border-t bg-card/50">
+        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-2 px-6 py-3 sm:flex-row sm:items-center">
           <div className="text-xs text-muted-foreground">
             <div className="mb-0.5 font-medium text-foreground">{t.footerOrg}</div>
             {t.footerConfidential}

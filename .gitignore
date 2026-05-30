@@ -38,6 +38,9 @@ next-env.d.ts
 # Local scratch (frame extraction, audio, temp work)
 .tmp/
 
+# PPTX manual generators (build tooling for docs/manuals/*.pptx — not app code)
+.pptx-build/
+
 # Claude Code local-only state — should never be committed.
 # (.claude/settings.json is the shared, committed config.)
 .claude/settings.local.json

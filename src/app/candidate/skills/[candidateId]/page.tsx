@@ -9,7 +9,7 @@ import { BackLink } from "@/components/shared/back-link";
 import { GapBadge } from "@/components/shared/gap-badge";
 import { getCompetencyGap } from "@/lib/scoring/competency-gap";
 import { buildUnifiedProfile, signalToneClass, type CompetencySignal } from "@/lib/competencies/unified-profile";
-import { Target, AlertTriangle, CheckCircle2, BookOpen, Route, Languages, Award, GraduationCap } from "lucide-react";
+import { Target, AlertTriangle, CheckCircle2, BookOpen, Route, Languages, Award, GraduationCap, Layers } from "lucide-react";
 import { PersonalStatistics, type DomainRollup } from "./_components/personal-statistics";
 import { StartQuizButton } from "./_components/start-quiz-button";
 import { ImpersonationBanner } from "@/components/shared/impersonation-banner";
@@ -325,6 +325,30 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Technical Capabilities — the third framework (assessment + Academy evidence) */}
+      {unified.technical.length > 0 && (
+        <div className="space-y-2 rounded-md border bg-card p-4">
+          <div className="flex items-center gap-2">
+            <Layers className="h-5 w-5 text-[#5391D5]" />
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Technical capabilities</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {unified.technical.map((tech) => (
+              <span
+                key={tech.domainKey}
+                title={tech.source === "assessment" ? "Technical assessment" : "Academy completion (evidence)"}
+                className="inline-flex items-center gap-1 rounded-full border border-indigo-300 bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-800"
+              >
+                {tech.domainName} · {tech.display}
+              </span>
+            ))}
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Indicative technical proficiency — measured by the technical assessment, with Academy completions as evidence.
+          </p>
         </div>
       )}
 

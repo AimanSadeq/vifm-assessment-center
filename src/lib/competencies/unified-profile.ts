@@ -17,6 +17,7 @@
 // Best-effort + tolerant: a missing table/column/record yields no signal.
 
 import { createServiceClient } from "@/lib/supabase/server";
+import { techDomainByKey, normalizedFromLevel } from "@/lib/competencies/technical-framework";
 
 export type CompetencySource = "ac" | "fluent" | "reflect" | "ara" | "prehire";
 export type CompetencySignalKind = "behavioural" | "language" | "360" | "self" | "screening";
@@ -57,9 +58,23 @@ export function cefrSignal(cefr: string): { value: number; display: string } {
   return { value: Math.round((idx / (CEFR_ORDER.length - 1)) * 100), display: cefr };
 }
 
+/** A technical-domain proficiency (the third framework): a measured assessment
+ *  level, or an Academy completion as softer evidence (level null). */
+export type TechnicalSignal = {
+  domainKey: string;
+  domainName: string;
+  level: number | null; // 1–5 from an assessment; null = evidence only
+  label: string;
+  normalized: number | null;
+  source: "assessment" | "academy";
+  display: string;
+};
+
 export type UnifiedProfile = {
   /** Fluent's own competency family (only the skills that were assessed). */
   languageSkills: LanguageSkillScore[];
+  /** Technical Competency framework — domain proficiency from assessments + Academy evidence. */
+  technical: TechnicalSignal[];
   /** Enabler/contributor signals, keyed by behavioural competency name (lowercased). */
   competencySignals: Map<string, CompetencySignal[]>;
 };
@@ -69,6 +84,7 @@ export async function buildUnifiedProfile(input: {
   email: string | null;
 }): Promise<UnifiedProfile> {
   const languageSkills: LanguageSkillScore[] = [];
+  const technical: TechnicalSignal[] = [];
   const competencySignals = new Map<string, CompetencySignal[]>();
   const add = (competencyName: string, sig: CompetencySignal) => {
     const k = competencyName.toLowerCase();
@@ -113,10 +129,75 @@ export async function buildUnifiedProfile(input: {
     /* eng_fluent_results not migrated / no placement — tolerant */
   }
 
+  // ── Technical Competency framework: assessment results (leveled 1–5) +
+  //    Academy completions (softer evidence), keyed by domain. ──
+  const techByDomain = new Map<string, TechnicalSignal>();
+  try {
+    const svc = createServiceClient();
+    const { data } = await svc
+      .from("tech_assessment_results")
+      .select("domain_key, level, level_label, candidate_id, taker_email, created_at")
+      .order("created_at", { ascending: false })
+      .limit(300);
+    const rows = (data ?? []) as Array<{
+      domain_key: string;
+      level: number;
+      level_label: string | null;
+      candidate_id: string | null;
+      taker_email: string | null;
+    }>;
+    for (const r of rows) {
+      const mineRow = r.candidate_id === input.candidateId || (!!input.email && r.taker_email === input.email);
+      if (!mineRow || techByDomain.has(r.domain_key)) continue; // latest wins (desc order)
+      const d = techDomainByKey(r.domain_key);
+      if (!d) continue;
+      techByDomain.set(r.domain_key, {
+        domainKey: r.domain_key,
+        domainName: d.name,
+        level: r.level,
+        label: r.level_label ?? "",
+        normalized: normalizedFromLevel(r.level),
+        source: "assessment",
+        display: `${r.level_label ?? ""} (${r.level}/5)`.trim(),
+      });
+    }
+  } catch {
+    /* tech_assessment_results not migrated — tolerant */
+  }
+  // Academy completions = softer evidence (only where no assessment yet).
+  try {
+    const svc = createServiceClient();
+    const { data } = await svc
+      .from("vifm_enrollments")
+      .select("status, vifm_courses(vertical)")
+      .eq("candidate_id", input.candidateId)
+      .eq("status", "completed");
+    const rows = (data ?? []) as unknown as Array<{
+      vifm_courses: { vertical: string } | { vertical: string }[] | null;
+    }>;
+    for (const r of rows) {
+      const vc = Array.isArray(r.vifm_courses) ? r.vifm_courses[0] : r.vifm_courses;
+      const d = techDomainByKey(vc?.vertical ?? "");
+      if (!d || techByDomain.has(d.key)) continue;
+      techByDomain.set(d.key, {
+        domainKey: d.key,
+        domainName: d.name,
+        level: null,
+        label: "Academy evidence",
+        normalized: null,
+        source: "academy",
+        display: "Academy · completed",
+      });
+    }
+  } catch {
+    /* vifm_enrollments not migrated — tolerant */
+  }
+  technical.push(...Array.from(techByDomain.values()));
+
   // ── Reflect / ARA / Pre-Hire: own frameworks aligning to the spine — next
   // increment; they fold in here by email.
 
-  return { languageSkills, competencySignals };
+  return { languageSkills, technical, competencySignals };
 }
 
 const KIND_TONE: Record<CompetencySignalKind, string> = {

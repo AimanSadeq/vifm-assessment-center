@@ -19,8 +19,8 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { techDomainByKey, normalizedFromLevel } from "@/lib/competencies/technical-framework";
 
-export type CompetencySource = "ac" | "fluent" | "reflect" | "ara" | "prehire";
-export type CompetencySignalKind = "behavioural" | "language" | "360" | "self" | "screening";
+export type CompetencySource = "ac" | "fluent" | "reflect" | "ara" | "prehire" | "technical";
+export type CompetencySignalKind = "behavioural" | "language" | "360" | "self" | "screening" | "technical";
 
 export type CompetencySignal = {
   source: CompetencySource;
@@ -194,6 +194,38 @@ export async function buildUnifiedProfile(input: {
   }
   technical.push(...Array.from(techByDomain.values()));
 
+  // ── Bridge: a MEASURED technical domain ENABLES specific behavioural
+  //    competencies (migration 00054's technical_domain_competencies), mirroring
+  //    Fluent's language→behavioural map. Surfaces the technical result as an
+  //    "enables" signal on each competency it contributes to. Academy-evidence
+  //    domains (no measured level) are too soft to enable, so they're skipped.
+  try {
+    const svc = createServiceClient();
+    const { data } = await svc
+      .from("technical_domain_competencies")
+      .select("domain_key, competencies(name)");
+    const rows = (data ?? []) as unknown as Array<{
+      domain_key: string;
+      competencies: { name: string } | { name: string }[] | null;
+    }>;
+    for (const r of rows) {
+      const sig = techByDomain.get(r.domain_key);
+      if (!sig || sig.normalized == null || sig.level == null) continue; // measured only
+      const comp = Array.isArray(r.competencies) ? r.competencies[0] : r.competencies;
+      if (!comp?.name) continue;
+      add(comp.name, {
+        source: "technical",
+        sourceLabel: sig.domainName,
+        kind: "technical",
+        relation: "enables",
+        value: sig.normalized,
+        display: `${sig.level}/5`,
+      });
+    }
+  } catch {
+    /* technical_domain_competencies not migrated (00054) — tolerant */
+  }
+
   // ── Reflect / ARA / Pre-Hire: own frameworks aligning to the spine — next
   // increment; they fold in here by email.
 
@@ -206,6 +238,7 @@ const KIND_TONE: Record<CompetencySignalKind, string> = {
   "360": "border-teal-300 bg-teal-50 text-teal-800",
   self: "border-amber-300 bg-amber-50 text-amber-800",
   screening: "border-rose-300 bg-rose-50 text-rose-800",
+  technical: "border-indigo-300 bg-indigo-50 text-indigo-800",
 };
 
 /** Tailwind classes for a source chip, by signal kind. */

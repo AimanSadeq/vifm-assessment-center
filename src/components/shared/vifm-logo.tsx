@@ -53,7 +53,7 @@ export function VifmLogo({
         style={style}
       />
       {showTagline && (
-        <p className="text-[10px] opacity-60 mt-0.5">Assessment Center</p>
+        <p className="text-[10px] opacity-60 mt-0.5">Talent Intelligence Platform</p>
       )}
     </div>
   );

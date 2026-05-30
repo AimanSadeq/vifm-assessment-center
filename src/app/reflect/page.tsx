@@ -42,12 +42,6 @@ export default function ReflectRootPage() {
               >
                 AI Readiness
               </Link>
-              <Link
-                href="/admin"
-                className="hidden sm:inline-flex items-center gap-1 text-xs text-white/70 hover:text-white transition-colors ms-2"
-              >
-                Assessment Center <ArrowRight className="h-3 w-3" />
-              </Link>
             </div>
           </div>
 
@@ -181,11 +175,6 @@ export default function ReflectRootPage() {
               Virginia Institute of Finance and Management
             </div>
             Confidential - for VIFM and engaged clients only.
-          </div>
-          <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-4">
-            <Link href="/admin" className="hover:text-foreground">Assessment Center</Link>
-            <span className="h-3 w-px bg-border" />
-            <span>Module status: Scaffolding (M1)</span>
           </div>
         </div>
       </footer>

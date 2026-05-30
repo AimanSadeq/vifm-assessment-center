@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, GraduationCap, Layers } from "lucide-react";
+import { GraduationCap, Layers } from "lucide-react";
 import { isAIConfigured } from "@/lib/ai/client";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { TechAssessmentClient } from "./_components/tech-assessment-client";
@@ -25,12 +25,6 @@ export default function TechAssessmentPage() {
                 className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/85 backdrop-blur transition-colors hover:border-white/35 hover:bg-white/15"
               >
                 <Layers className="h-3.5 w-3.5" /> All services
-              </Link>
-              <Link
-                href="/admin"
-                className="ms-1 hidden items-center gap-1 text-xs text-white/70 transition-colors hover:text-white sm:inline-flex"
-              >
-                <ArrowLeft className="h-3 w-3" /> Assessment Center
               </Link>
             </nav>
           </div>

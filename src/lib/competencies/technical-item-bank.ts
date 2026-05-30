@@ -254,6 +254,83 @@ export async function listBehaviouralCompetencies(): Promise<CompetencyLite[]> {
   }
 }
 
+// ── Certification pipeline stats (for the Technical Assessment Command dashboard) ──
+
+export type TechDomainPipeline = {
+  domainKey: string;
+  domainName: string;
+  approved: number;
+  minItems: number;
+  certifiable: boolean;
+  assessed: number;
+  credentials: number;
+};
+
+export type TechPipelineStats = {
+  itemsTotal: number;
+  itemsApproved: number;
+  domainsWithCutScore: number;
+  domainsCertifiable: number;
+  totalDomains: number;
+  resultsTotal: number;
+  credentialsIssued: number;
+  perDomain: TechDomainPipeline[];
+};
+
+/** Roll up the whole certification pipeline: bank → approved → cut-scores →
+ *  certifiable → assessed → credentialed, plus a per-domain breakdown. */
+export async function getTechPipelineStats(): Promise<TechPipelineStats> {
+  const readiness = await bankReadiness();
+  const stats: TechPipelineStats = {
+    itemsTotal: 0,
+    itemsApproved: 0,
+    domainsWithCutScore: 0,
+    domainsCertifiable: readiness.filter((r) => r.certifiable).length,
+    totalDomains: readiness.length || TECH_DOMAINS.length,
+    resultsTotal: 0,
+    credentialsIssued: 0,
+    perDomain: readiness.map((r) => ({
+      domainKey: r.domainKey,
+      domainName: techDomainByKey(r.domainKey)?.name ?? r.domainKey,
+      approved: r.approved,
+      minItems: r.minItems,
+      certifiable: r.certifiable,
+      assessed: 0,
+      credentials: 0,
+    })),
+  };
+  try {
+    const sb = createServiceClient();
+    const [itemsRes, cutRes, resRes] = await Promise.all([
+      sb.from("tech_assessment_items").select("status"),
+      sb.from("tech_assessment_cut_scores").select("domain_key"),
+      sb.from("tech_assessment_results").select("domain_key, credential_code"),
+    ]);
+    const items = (itemsRes.data ?? []) as { status: string }[];
+    stats.itemsTotal = items.length;
+    stats.itemsApproved = items.filter((i) => i.status === "approved").length;
+    stats.domainsWithCutScore = (cutRes.data ?? []).length;
+
+    const results = (resRes.data ?? []) as { domain_key: string; credential_code: string | null }[];
+    stats.resultsTotal = results.length;
+    const assessedBy = new Map<string, number>();
+    const credsBy = new Map<string, number>();
+    for (const r of results) {
+      assessedBy.set(r.domain_key, (assessedBy.get(r.domain_key) ?? 0) + 1);
+      if (r.credential_code) credsBy.set(r.domain_key, (credsBy.get(r.domain_key) ?? 0) + 1);
+    }
+    stats.credentialsIssued = Array.from(credsBy.values()).reduce((a, b) => a + b, 0);
+    stats.perDomain = stats.perDomain.map((d) => ({
+      ...d,
+      assessed: assessedBy.get(d.domainKey) ?? 0,
+      credentials: credsBy.get(d.domainKey) ?? 0,
+    }));
+  } catch {
+    /* tables not migrated — readiness-only base */
+  }
+  return stats;
+}
+
 export type CertifiedAssembly = { test: TechTest; itemIds: string[] };
 
 /**

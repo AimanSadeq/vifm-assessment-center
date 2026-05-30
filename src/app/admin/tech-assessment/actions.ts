@@ -39,7 +39,7 @@ export async function generateDraftItemsAction(domainKey: string, count: number)
     return { error: "Set ANTHROPIC_API_KEY to draft items with AI." };
   }
   if (res.error) return { error: `Could not draft items (${res.error}).` };
-  revalidatePath("/admin/tech-assessment");
+  revalidatePath("/admin/tech-assessment/items");
   return { ok: true, inserted: res.inserted };
 }
 
@@ -69,7 +69,7 @@ export async function setItemStatusAction(
   } catch (e) {
     return { error: e instanceof Error ? e.message : "update failed" };
   }
-  revalidatePath("/admin/tech-assessment");
+  revalidatePath("/admin/tech-assessment/items");
   return { ok: true };
 }
 
@@ -112,7 +112,7 @@ export async function updateItemAction(itemId: string, fields: EditItemFields) {
   } catch (e) {
     return { error: e instanceof Error ? e.message : "update failed" };
   }
-  revalidatePath("/admin/tech-assessment");
+  revalidatePath("/admin/tech-assessment/items");
   return { ok: true };
 }
 
@@ -150,7 +150,7 @@ export async function setCutScoreAction(input: {
   } catch (e) {
     return { error: e instanceof Error ? e.message : "save failed" };
   }
-  revalidatePath("/admin/tech-assessment");
+  revalidatePath("/admin/tech-assessment/items");
   return { ok: true };
 }
 
@@ -176,7 +176,7 @@ export async function updateDomainMetaAction(input: { domainKey: string; nameEn:
   } catch (e) {
     return { error: e instanceof Error ? e.message : "save failed" };
   }
-  revalidatePath("/admin/tech-assessment");
+  revalidatePath("/admin/tech-assessment/items");
   return { ok: true };
 }
 
@@ -199,7 +199,7 @@ export async function addBridgeAction(input: { domainKey: string; competencyId: 
   } catch (e) {
     return { error: e instanceof Error ? e.message : "save failed" };
   }
-  revalidatePath("/admin/tech-assessment");
+  revalidatePath("/admin/tech-assessment/items");
   return { ok: true };
 }
 
@@ -217,7 +217,7 @@ export async function setBridgeWeightAction(input: { id: string; weight: number 
   } catch (e) {
     return { error: e instanceof Error ? e.message : "save failed" };
   }
-  revalidatePath("/admin/tech-assessment");
+  revalidatePath("/admin/tech-assessment/items");
   return { ok: true };
 }
 
@@ -234,6 +234,6 @@ export async function removeBridgeAction(input: { id: string }) {
   } catch (e) {
     return { error: e instanceof Error ? e.message : "delete failed" };
   }
-  revalidatePath("/admin/tech-assessment");
+  revalidatePath("/admin/tech-assessment/items");
   return { ok: true };
 }

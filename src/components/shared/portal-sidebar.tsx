@@ -31,6 +31,8 @@ import {
   Aperture,
   Languages,
   BadgeCheck,
+  SquarePen,
+  ListChecks,
   type LucideIcon,
 } from "lucide-react";
 
@@ -40,9 +42,11 @@ type NavEntry = { kind: "link"; link: NavLeaf } | { kind: "group"; group: NavGro
 
 // The portal navigation, organised as services + grouped sections so the panel
 // mirrors the launcher: each top-level entry is a service (Assessment Center,
-// Pre-Hire, AR Compass, Reflect, Fluent). The Assessment Center's own sections
-// nest under it; cross-cutting admin areas live under "Platform". Shared by the
-// admin chrome, the mobile drawer, and the landing page's left panel.
+// Technical Assessment, Pre-Hire, AR Compass, Reflect, Fluent). The two
+// measurement modules that own multiple admin pages — the behavioural
+// Assessment Center and the Technical Assessment — nest their sections as
+// parallel groups; cross-cutting admin areas live under "Platform". Shared by
+// the admin chrome, the mobile drawer, and the landing page's left panel.
 const NAV: NavEntry[] = [
   { kind: "link", link: { href: "/", labelKey: "adminNav.allServices", icon: LayoutGrid } },
   {
@@ -60,11 +64,23 @@ const NAV: NavEntry[] = [
       ],
     },
   },
+  {
+    kind: "group",
+    group: {
+      key: "technical",
+      label: "Technical Assessment",
+      icon: BadgeCheck,
+      items: [
+        { href: "/admin/tech-assessment", labelKey: "adminNav.techOverview", icon: LayoutDashboard, exact: true },
+        { href: "/ac/tech-assessment", labelKey: "adminNav.techTakeAssessment", icon: SquarePen },
+        { href: "/admin/tech-assessment/items", labelKey: "adminNav.techConsole", icon: ListChecks },
+      ],
+    },
+  },
   { kind: "link", link: { href: "/admin/prehire", labelKey: "adminNav.preHire", icon: UserSearch } },
   { kind: "link", link: { href: "/ara", labelKey: "adminNav.aiReadiness", icon: Sparkles } },
   { kind: "link", link: { href: "/reflect", labelKey: "adminNav.reflect360", icon: Aperture } },
   { kind: "link", link: { href: "/ac/fluent", labelKey: "adminNav.fluent", icon: Languages } },
-  { kind: "link", link: { href: "/admin/tech-assessment", labelKey: "adminNav.techCertification", icon: BadgeCheck } },
   {
     kind: "group",
     group: {
@@ -95,7 +111,7 @@ export function SidebarBody({
 }) {
   const pathname = usePathname();
   const { t } = useTranslation();
-  const [open, setOpen] = useState<Record<string, boolean>>({ ac: true, platform: true });
+  const [open, setOpen] = useState<Record<string, boolean>>({ ac: true, technical: true, platform: true });
 
   const isActive = (href: string, exact?: boolean) =>
     exact ? pathname === href : pathname.startsWith(href);

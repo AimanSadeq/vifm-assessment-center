@@ -96,7 +96,7 @@ export function ReviewConsole({
     <div className="space-y-5">
       <div className="grid gap-5 lg:grid-cols-2">
         {/* Cut-score editor */}
-        <Card>
+        <Card id="cutscores" className="scroll-mt-24">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <Target className="h-4 w-4 text-rose-600" />
@@ -167,7 +167,7 @@ export function ReviewConsole({
         </Card>
 
         {/* AI draft + readiness */}
-        <Card>
+        <Card id="draft" className="scroll-mt-24">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-[#5391D5]" />
@@ -223,7 +223,7 @@ export function ReviewConsole({
       </div>
 
       {/* Item list */}
-      <Card>
+      <Card id="items" className="scroll-mt-24">
         <CardHeader>
           <CardTitle className="text-base">
             Items — {domainName}{" "}

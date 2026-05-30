@@ -153,3 +153,87 @@ export async function setCutScoreAction(input: {
   revalidatePath("/admin/tech-assessment");
   return { ok: true };
 }
+
+// ════════════ Taxonomy + behavioural-bridge editor (migration 00054) ════════════
+
+const UUID_RE = /^[0-9a-fA-F-]{36}$/;
+
+/** Edit a domain's display names (the FK `key` is immutable). */
+export async function updateDomainMetaAction(input: { domainKey: string; nameEn: string; nameAr?: string | null }) {
+  const g = await guard();
+  if ("error" in g) return g;
+  if (!techDomainByKey(input.domainKey)) return { error: "unknown domain" };
+  const nameEn = input.nameEn.trim();
+  if (!nameEn) return { error: "name required" };
+
+  try {
+    const sb = createServiceClient();
+    const { error } = await sb
+      .from("technical_domains")
+      .update({ name_en: nameEn, name_ar: input.nameAr?.trim() || null })
+      .eq("key", input.domainKey);
+    if (error) return { error: error.message };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "save failed" };
+  }
+  revalidatePath("/admin/tech-assessment");
+  return { ok: true };
+}
+
+/** Map a behavioural competency to a domain (the domain ENABLES it). Idempotent
+ *  on (domain_key, competency_id) — re-adding just updates the weight. */
+export async function addBridgeAction(input: { domainKey: string; competencyId: string; weight: number }) {
+  const g = await guard();
+  if ("error" in g) return g;
+  if (!techDomainByKey(input.domainKey)) return { error: "unknown domain" };
+  if (!UUID_RE.test(input.competencyId)) return { error: "invalid competency" };
+  const weight = Math.max(1, Math.min(3, Math.round(Number(input.weight)) || 1));
+
+  try {
+    const sb = createServiceClient();
+    const { error } = await sb.from("technical_domain_competencies").upsert(
+      { domain_key: input.domainKey, competency_id: input.competencyId, relation: "enables", weight },
+      { onConflict: "domain_key,competency_id" }
+    );
+    if (error) return { error: error.message };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "save failed" };
+  }
+  revalidatePath("/admin/tech-assessment");
+  return { ok: true };
+}
+
+/** Change the contribution weight (1–3) of an existing bridge row. */
+export async function setBridgeWeightAction(input: { id: string; weight: number }) {
+  const g = await guard();
+  if ("error" in g) return g;
+  if (!UUID_RE.test(input.id)) return { error: "invalid id" };
+  const weight = Math.max(1, Math.min(3, Math.round(Number(input.weight)) || 1));
+
+  try {
+    const sb = createServiceClient();
+    const { error } = await sb.from("technical_domain_competencies").update({ weight }).eq("id", input.id);
+    if (error) return { error: error.message };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "save failed" };
+  }
+  revalidatePath("/admin/tech-assessment");
+  return { ok: true };
+}
+
+/** Remove a domain→competency mapping. */
+export async function removeBridgeAction(input: { id: string }) {
+  const g = await guard();
+  if ("error" in g) return g;
+  if (!UUID_RE.test(input.id)) return { error: "invalid id" };
+
+  try {
+    const sb = createServiceClient();
+    const { error } = await sb.from("technical_domain_competencies").delete().eq("id", input.id);
+    if (error) return { error: error.message };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "delete failed" };
+  }
+  revalidatePath("/admin/tech-assessment");
+  return { ok: true };
+}

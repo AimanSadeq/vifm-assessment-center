@@ -184,6 +184,7 @@ supabase/
     00051_prehire_defensibility.sql            # Pre-Hire: voluntary demographics + human-decision capture + immutable prehire_audit_log (adverse-impact + audit)
     00052_tech_assessment.sql                  # Technical: tech_assessment_sessions (server-held key) + tech_assessment_results (indicative 1–5 per domain)
     00053_tech_assessment_item_bank.sql        # Technical Tier 2: SME-reviewed tech_assessment_items + tech_assessment_cut_scores + widened vifm_credentials type CHECK (adds technical_proficiency)
+    00054_technical_taxonomy_bridge.sql        # Technical taxonomy → DB: technical_domains + technical_skills + technical_domain_competencies (the technical→behavioural "enables" bridge) + FK tech_assessment_*.domain_key → technical_domains
 scripts/
   seed-test-data.ts       # Creates full test dataset (engagement + candidates + assessor + observations)
   seed-tags-qa.py         # Populates tags and Q&A questions for competencies
@@ -592,6 +593,12 @@ Measures **technical** proficiency per finance domain — the third pillar along
 - `tech_assessment_cut_scores` — one row per domain: `pass_pct` (default 70), `min_items` floor (default 8), plus `method`/`rationale` for the audit file. `getCutScore()` falls back to defaults when unset.
 - **SME review console** at `/admin/tech-assessment` (admin sidebar "Technical", `BadgeCheck`): bank-readiness grid (per-domain approved-count vs min → "Certifiable"/"Indicative"), AI-draft-into-bank, per-item approve/reject/retire/edit, cut-score editor. Server actions in `actions.ts` (all `requireRole(["admin"])`).
 - All paths best-effort/tolerant of 00053 not being applied (certified path stays dark; indicative results still persist via a legacy-column insert fallback). **Honest limits:** AI-drafted but human-approved items; light psychometrics only (no IRT); secure delivery, not invigilation.
+
+### Taxonomy in the DB + the technical→behavioural bridge (migration 00054)
+Two structural upgrades to the third pillar:
+- **Taxonomy promoted to tables** — `technical_domains` (key PK, bilingual) + `technical_skills` (per-domain) now exist in the DB, seeded to mirror the code framework, and the `tech_assessment_*` tables' `domain_key` is now a real FK to `technical_domains(key)` (added `NOT VALID` so the migration can't fail on legacy rows). The code framework ([technical-framework.ts](src/lib/competencies/technical-framework.ts)) **stays** as the typed/synchronous source for the assessment engine + SME console; the tables own FK integrity + admin-editability (single seed, no drift at install).
+- **technical→behavioural bridge** — `technical_domain_competencies` (domain_key FK → technical_domains, competency_id FK → competencies, `relation` default 'enables', `weight` 1–3) declares which of the behavioural 38 each technical domain *enables*, seeded by competency name (e.g. Finance → Financial Acumen/Analytical Reasoning/Decision Quality; AI → Digital Fluency/Cultivates Innovation/Manages Complexity). [unified-profile.ts](src/lib/competencies/unified-profile.ts) reads it and, for a **measured** domain (assessment level, not Academy evidence), adds an "enables" `CompetencySignal` (`source:"technical"`, `kind:"technical"`, indigo tone) onto each mapped competency — so a technical result surfaces as an indigo `↳ Finance · 4/5` chip on those competencies on the candidate skills page, exactly like Fluent's language→behavioural enablers. Tolerant of 00054 not being applied.
+- **Admin editor** — the `/admin/tech-assessment` console (per selected domain) carries a "Behavioural bridge" card ([bridge-editor.tsx](src/app/admin/tech-assessment/_components/bridge-editor.tsx)): add/remove competency mappings, set each weight (1 Supporting / 2 Strong / 3 Primary), and edit the domain display names (the FK `key` is immutable). Server actions in [actions.ts](src/app/admin/tech-assessment/actions.ts) (`addBridgeAction` upserts on `domain_key,competency_id`; `setBridgeWeightAction`; `removeBridgeAction`; `updateDomainMetaAction`), all `requireRole(["admin"])`.
 
 ## VIFM Pre-Hire (commercial pre-employment screening)
 

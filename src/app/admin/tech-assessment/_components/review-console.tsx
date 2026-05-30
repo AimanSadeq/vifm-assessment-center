@@ -175,13 +175,13 @@ export function ReviewConsole({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <p className="text-sm text-muted-foreground">
+            <div className="text-sm text-muted-foreground">
               Generate candidate items for <strong>{domainName}</strong>. They land as{" "}
               <Badge variant="secondary" className="text-[10px]">
                 draft
               </Badge>{" "}
               for your review — nothing is administered until you approve it.
-            </p>
+            </div>
             <div className="flex items-end gap-3">
               <div>
                 <Label className="text-xs">How many</Label>

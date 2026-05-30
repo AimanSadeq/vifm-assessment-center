@@ -172,6 +172,88 @@ export async function listBankItems(domainKey: TechDomainKey): Promise<BankItem[
   }
 }
 
+// ── Taxonomy + bridge data access (migration 00054) — for the admin editor ──
+
+export type DomainMeta = { key: string; nameEn: string; nameAr: string | null };
+
+/** Editable display meta for a domain (the FK key never changes). */
+export async function getDomainMeta(domainKey: string): Promise<DomainMeta | null> {
+  try {
+    const sb = createServiceClient();
+    const { data } = await sb
+      .from("technical_domains")
+      .select("key, name_en, name_ar")
+      .eq("key", domainKey)
+      .maybeSingle();
+    if (!data) return null;
+    return { key: data.key as string, nameEn: data.name_en as string, nameAr: (data.name_ar as string | null) ?? null };
+  } catch {
+    return null;
+  }
+}
+
+export type BridgeRow = { id: string; competencyId: string; competencyName: string; weight: number };
+
+/** The behavioural competencies a domain ENABLES (bridge rows), with names. */
+export async function listDomainBridge(domainKey: string): Promise<BridgeRow[]> {
+  try {
+    const sb = createServiceClient();
+    const { data } = await sb
+      .from("technical_domain_competencies")
+      .select("id, competency_id, weight, competencies(name)")
+      .eq("domain_key", domainKey)
+      .order("weight", { ascending: false });
+    const rows = (data ?? []) as unknown as Array<{
+      id: string;
+      competency_id: string;
+      weight: number;
+      competencies: { name: string } | { name: string }[] | null;
+    }>;
+    return rows.map((r) => {
+      const c = Array.isArray(r.competencies) ? r.competencies[0] : r.competencies;
+      return { id: r.id, competencyId: r.competency_id, competencyName: c?.name ?? "—", weight: Number(r.weight) };
+    });
+  } catch {
+    return [];
+  }
+}
+
+export type CompetencyLite = { id: string; name: string; domain: string };
+
+/** All 38 behavioural competencies (id + name + AC domain), for the bridge picker. */
+export async function listBehaviouralCompetencies(): Promise<CompetencyLite[]> {
+  try {
+    const sb = createServiceClient();
+    const { data } = await sb
+      .from("competencies")
+      .select("id, name, sort_order, competency_clusters(sort_order, competency_domains(name, sort_order))");
+    type Row = {
+      id: string;
+      name: string;
+      sort_order: number;
+      competency_clusters: { sort_order: number; competency_domains: { name: string; sort_order: number } | { name: string; sort_order: number }[] | null } | { sort_order: number; competency_domains: unknown }[] | null;
+    };
+    const rows = (data ?? []) as unknown as Row[];
+    const flat = rows.map((r) => {
+      const cl = Array.isArray(r.competency_clusters) ? r.competency_clusters[0] : r.competency_clusters;
+      const dm = cl ? (Array.isArray(cl.competency_domains) ? cl.competency_domains[0] : cl.competency_domains) : null;
+      const domainObj = dm as { name: string; sort_order: number } | null;
+      return {
+        id: r.id,
+        name: r.name,
+        domain: domainObj?.name ?? "",
+        domainOrder: domainObj?.sort_order ?? 99,
+        clusterOrder: cl?.sort_order ?? 99,
+        compOrder: r.sort_order ?? 99,
+      };
+    });
+    flat.sort((a, b) => a.domainOrder - b.domainOrder || a.clusterOrder - b.clusterOrder || a.compOrder - b.compOrder);
+    return flat.map((f) => ({ id: f.id, name: f.name, domain: f.domain }));
+  } catch {
+    return [];
+  }
+}
+
 export type CertifiedAssembly = { test: TechTest; itemIds: string[] };
 
 /**

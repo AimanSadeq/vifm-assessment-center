@@ -9,8 +9,12 @@ import {
   bankReadiness,
   listBankItems,
   getCutScore,
+  getDomainMeta,
+  listDomainBridge,
+  listBehaviouralCompetencies,
 } from "@/lib/competencies/technical-item-bank";
 import { ReviewConsole } from "./_components/review-console";
+import { BridgeEditor } from "./_components/bridge-editor";
 
 type Props = { searchParams: { domain?: string } };
 
@@ -18,10 +22,13 @@ export default async function TechAssessmentReviewPage({ searchParams }: Props) 
   const selected: TechDomainKey =
     (techDomainByKey(searchParams.domain ?? "")?.key as TechDomainKey | undefined) ?? TECH_DOMAINS[0].key;
 
-  const [readiness, items, cut] = await Promise.all([
+  const [readiness, items, cut, domainMeta, bridge, competencies] = await Promise.all([
     bankReadiness(),
     listBankItems(selected),
     getCutScore(selected),
+    getDomainMeta(selected),
+    listDomainBridge(selected),
+    listBehaviouralCompetencies(),
   ]);
 
   const domain = techDomainByKey(selected)!;
@@ -94,6 +101,15 @@ export default async function TechAssessmentReviewPage({ searchParams }: Props) 
           </p>
         </CardContent>
       </Card>
+
+      {/* Selected domain: behavioural bridge (technical → AC 38) */}
+      <BridgeEditor
+        domainKey={selected}
+        domainName={domain.name}
+        meta={domainMeta}
+        bridge={bridge}
+        competencies={competencies}
+      />
 
       {/* Selected domain: cut-score + items */}
       <ReviewConsole

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Loader2, CheckCircle2, RotateCcw, GraduationCap, AlertCircle, ShieldCheck, ExternalLink } from "lucide-react";
-import { TECH_DOMAINS } from "@/lib/competencies/technical-framework";
+import type { LocalizedTechDomain } from "@/lib/competencies/technical-taxonomy";
 import type { PublicTechTest, TechResult } from "@/lib/ai/technical-assessment";
 
 type Phase = "intro" | "test" | "result";
@@ -23,8 +23,15 @@ const LEVEL_TONE: Record<number, string> = {
   5: "bg-emerald-100 text-emerald-800 border-emerald-300",
 };
 
-export function TechAssessmentClient() {
+export function TechAssessmentClient({
+  domains,
+  skillLabels,
+}: {
+  domains: LocalizedTechDomain[];
+  skillLabels: Record<string, string>;
+}) {
   const { t } = useTranslation();
+  const skillLabel = (s: string) => skillLabels[s] ?? s;
   const [phase, setPhase] = useState<Phase>("intro");
   const [domainKey, setDomainKey] = useState<string>("");
   const [test, setTest] = useState<PublicTechTest | null>(null);
@@ -110,7 +117,7 @@ export function TechAssessmentClient() {
           <h2 className="text-lg font-semibold text-[#010131]">{t("tech.take.chooseTitle")}</h2>
           <p className="mt-1 text-sm text-muted-foreground">{t("tech.take.chooseIntro")}</p>
           <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {TECH_DOMAINS.map((d) => (
+            {domains.map((d) => (
               <button
                 key={d.key}
                 onClick={() => start(d.key)}
@@ -142,7 +149,7 @@ export function TechAssessmentClient() {
             <section key={item.id} className="rounded-xl border bg-white p-5 shadow-sm">
               <div className="mb-2 flex items-center gap-2">
                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">
-                  {item.skill}
+                  {skillLabel(item.skill)}
                 </span>
                 <span className="text-[10px] uppercase tracking-wide text-slate-400">{t(`tech.sme.diff.${item.difficulty}`)}</span>
               </div>
@@ -229,7 +236,7 @@ export function TechAssessmentClient() {
             <div className="space-y-1.5">
               {result.perSkill.map((s) => (
                 <div key={s.skill} className="flex items-center gap-3 text-xs">
-                  <span className="w-56 shrink-0 truncate">{s.skill}</span>
+                  <span className="w-56 shrink-0 truncate">{skillLabel(s.skill)}</span>
                   <div className="flex flex-1 gap-1">
                     {Array.from({ length: s.total }).map((_, n) => (
                       <span key={n} className={`h-2 flex-1 rounded-full ${n < s.correct ? "bg-[#5391D5]" : "bg-slate-200"}`} />

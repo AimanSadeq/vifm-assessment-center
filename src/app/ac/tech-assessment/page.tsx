@@ -3,7 +3,8 @@ import { GraduationCap, Layers } from "lucide-react";
 import { isAIConfigured } from "@/lib/ai/client";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { TechAssessmentClient } from "./_components/tech-assessment-client";
-import { getServerT } from "@/lib/i18n/server";
+import { getServerT, getServerLocale } from "@/lib/i18n/server";
+import { getLocalizedTechTaxonomy } from "@/lib/competencies/technical-taxonomy";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,7 @@ export const metadata = {
 export default async function TechAssessmentPage() {
   const aiConfigured = isAIConfigured();
   const t = await getServerT();
+  const { domains, skillLabels } = await getLocalizedTechTaxonomy(await getServerLocale());
 
   return (
     <div className="min-h-screen bg-background">
@@ -49,7 +51,7 @@ export default async function TechAssessmentPage() {
             <strong>{t("tech.runner.aiWarnTitle")}</strong> {t("tech.runner.aiWarnBody")}
           </div>
         )}
-        <TechAssessmentClient />
+        <TechAssessmentClient domains={domains} skillLabels={skillLabels} />
       </main>
     </div>
   );

@@ -56,8 +56,15 @@ function lookup(tree: Record<string, unknown>, path: string): string | null {
 
 export type ServerT = (key: string, vars?: Record<string, string | number>) => string;
 
-export async function getServerT(): Promise<ServerT> {
-  const locale = await getServerLocale();
+/**
+ * Server-side translator. Reads the `vifm-locale` cookie by default, mirroring
+ * the client provider. Pass `localeOverride` to pin a locale regardless of the
+ * cookie — used by Fluent, the English-language placement, whose server-rendered
+ * chrome must stay English even when the rest of the portal is Arabic (the client
+ * provider already forces /ac/fluent to en/ltr; this keeps SSR consistent).
+ */
+export async function getServerT(localeOverride?: LanguageCode): Promise<ServerT> {
+  const locale = localeOverride ?? (await getServerLocale());
   const tree = LOCALES[locale] ?? LOCALES.en;
   return (key, vars) => {
     const found = lookup(tree, key) ?? lookup(LOCALES.en, key) ?? key;

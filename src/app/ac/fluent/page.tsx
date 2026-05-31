@@ -33,7 +33,7 @@ const SKILL_ICONS = [
 ] as const;
 
 export default async function FluentPage({ searchParams }: Props) {
-  const t = await getServerT();
+  const t = await getServerT("en"); // Fluent stays English regardless of locale cookie
   const aiConfigured = isAIConfigured();
 
   const SKILLS = SKILL_ICONS.map((s) => ({

@@ -71,7 +71,7 @@ async function loadRows(): Promise<Row[] | null> {
 }
 
 export default async function FluentCohortPage() {
-  const t = await getServerT();
+  const t = await getServerT("en"); // Fluent stays English regardless of locale cookie
   const rows = await loadRows();
 
   return (

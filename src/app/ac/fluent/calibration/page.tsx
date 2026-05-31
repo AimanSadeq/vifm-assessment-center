@@ -56,7 +56,7 @@ async function load() {
 }
 
 export default async function FluentCalibrationPage() {
-  const t = await getServerT();
+  const t = await getServerT("en"); // Fluent stays English regardless of locale cookie
   const data = await load();
 
   return (

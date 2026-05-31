@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,7 @@ export function ReviewConsole({
   certifiableHere: boolean;
 }) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [pending, startTransition] = useTransition();
   const [draftCount, setDraftCount] = useState(6);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -100,13 +102,13 @@ export function ReviewConsole({
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <Target className="h-4 w-4 text-rose-600" />
-              Cut-score — {domainName}
+              {t("tech.sme.cutTitle", { domain: domainName })}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs">Pass mark (%)</Label>
+                <Label className="text-xs">{t("tech.sme.passMark")}</Label>
                 <Input
                   type="number"
                   min={1}
@@ -116,7 +118,7 @@ export function ReviewConsole({
                 />
               </div>
               <div>
-                <Label className="text-xs">Min approved items</Label>
+                <Label className="text-xs">{t("tech.sme.minItems")}</Label>
                 <Input
                   type="number"
                   min={1}
@@ -127,18 +129,18 @@ export function ReviewConsole({
               </div>
             </div>
             <div>
-              <Label className="text-xs">Standard-setting method</Label>
+              <Label className="text-xs">{t("tech.sme.method")}</Label>
               <Input
-                placeholder="e.g. Modified Angoff, 3-SME panel"
+                placeholder={t("tech.sme.methodPh")}
                 value={method}
                 onChange={(e) => setMethod(e.target.value)}
               />
             </div>
             <div>
-              <Label className="text-xs">Rationale (for the audit file)</Label>
+              <Label className="text-xs">{t("tech.sme.rationale")}</Label>
               <Textarea
                 rows={2}
-                placeholder="Why this standard is defensible for this domain…"
+                placeholder={t("tech.sme.rationalePh")}
                 value={rationale}
                 onChange={(e) => setRationale(e.target.value)}
               />
@@ -156,12 +158,12 @@ export function ReviewConsole({
                       method: method.trim() || null,
                       rationale: rationale.trim() || null,
                     }),
-                  "Cut-score saved"
+                  t("tech.sme.tCutSaved")
                 )
               }
             >
               {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-              Save cut-score
+              {t("tech.sme.saveCut")}
             </Button>
           </CardContent>
         </Card>
@@ -171,20 +173,14 @@ export function ReviewConsole({
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-[#5391D5]" />
-              Draft items with AI
+              {t("tech.sme.draftTitle")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="text-sm text-muted-foreground">
-              Generate candidate items for <strong>{domainName}</strong>. They land as{" "}
-              <Badge variant="secondary" className="text-[10px]">
-                draft
-              </Badge>{" "}
-              for your review — nothing is administered until you approve it.
-            </div>
+            <div className="text-sm text-muted-foreground">{t("tech.sme.draftBlurb", { domain: domainName })}</div>
             <div className="flex items-end gap-3">
               <div>
-                <Label className="text-xs">How many</Label>
+                <Label className="text-xs">{t("tech.sme.howMany")}</Label>
                 <Input
                   type="number"
                   min={1}
@@ -197,25 +193,25 @@ export function ReviewConsole({
               <Button
                 size="sm"
                 disabled={pending}
-                onClick={() => run(() => generateDraftItemsAction(domainKey, draftCount), "items drafted")}
+                onClick={() => run(() => generateDraftItemsAction(domainKey, draftCount), t("tech.sme.tDrafted"))}
               >
                 {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                Generate drafts
+                {t("tech.sme.generate")}
               </Button>
             </div>
             <div className="rounded-md border p-3 bg-muted/30">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-[#010131]">Certification status</span>
+                <span className="text-sm font-medium text-[#010131]">{t("tech.sme.certStatus")}</span>
                 {certifiableHere ? (
                   <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 gap-1">
-                    <CheckCircle2 className="h-3 w-3" /> Certifiable
+                    <CheckCircle2 className="h-3 w-3" /> {t("tech.cmd.certifiable")}
                   </Badge>
                 ) : (
-                  <Badge variant="secondary">Indicative only</Badge>
+                  <Badge variant="secondary">{t("tech.sme.indicativeOnly")}</Badge>
                 )}
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                {approvedHere} approved · needs {cut.minItems} to certify ({cut.passPct}% to pass).
+                {t("tech.sme.certNote", { approved: approvedHere, min: cut.minItems, pct: cut.passPct })}
               </p>
             </div>
           </CardContent>
@@ -226,14 +222,14 @@ export function ReviewConsole({
       <Card id="items" className="scroll-mt-24">
         <CardHeader>
           <CardTitle className="text-base">
-            Items — {domainName}{" "}
+            {t("tech.sme.itemsTitle", { domain: domainName })}{" "}
             <span className="text-sm font-normal text-muted-foreground">({items.length})</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {sorted.length === 0 && (
             <p className="text-sm text-muted-foreground py-6 text-center">
-              No items yet. Use “Generate drafts” above to seed the bank, then review each one.
+              {t("tech.sme.noItems")}
             </p>
           )}
           {sorted.map((item) =>
@@ -249,7 +245,7 @@ export function ReviewConsole({
                     const res = await updateItemAction(item.id, fields);
                     if (!("error" in res)) setEditingId(null);
                     return res;
-                  }, "Item updated")
+                  }, t("tech.sme.tUpdated"))
                 }
               />
             ) : (
@@ -258,7 +254,7 @@ export function ReviewConsole({
                 item={item}
                 pending={pending}
                 onEdit={() => setEditingId(item.id)}
-                onStatus={(status) => run(() => setItemStatusAction(item.id, status), `Item ${status}`)}
+                onStatus={(status) => run(() => setItemStatusAction(item.id, status), t("tech.sme.tStatusChanged"))}
               />
             )
           )}
@@ -279,21 +275,22 @@ function ItemRow({
   onEdit: () => void;
   onStatus: (status: string) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="rounded-md border p-3">
       <div className="flex flex-wrap items-center gap-2 mb-1.5">
         <Badge variant="outline" className={STATUS_TONE[item.status]}>
-          {item.status.replace("_", " ")}
+          {t(`tech.sme.status.${item.status}`)}
         </Badge>
         <Badge variant="outline" className={DIFF_TONE[item.difficulty]}>
-          {item.difficulty}
+          {t(`tech.sme.diff.${item.difficulty}`)}
         </Badge>
         <span className="text-xs text-muted-foreground">{item.skill}</span>
         {item.source === "ai_generated" && (
-          <span className="text-[10px] text-muted-foreground/70">· AI draft</span>
+          <span className="text-[10px] text-muted-foreground/70">· {t("tech.sme.aiDraft")}</span>
         )}
         {item.reviewer_name && (
-          <span className="text-[10px] text-muted-foreground/70">· reviewed by {item.reviewer_name}</span>
+          <span className="text-[10px] text-muted-foreground/70">· {t("tech.sme.reviewedBy", { name: item.reviewer_name })}</span>
         )}
       </div>
 
@@ -316,27 +313,27 @@ function ItemRow({
         ))}
       </ul>
       {item.explanation_en && (
-        <p className="mt-1.5 text-[11px] text-muted-foreground italic">Rationale: {item.explanation_en}</p>
+        <p className="mt-1.5 text-[11px] text-muted-foreground italic">{t("tech.sme.rationaleLabel")} {item.explanation_en}</p>
       )}
 
       <div className="mt-2.5 flex flex-wrap gap-2">
         {item.status !== "approved" && (
           <Button size="sm" variant="outline" className="h-7 text-xs gap-1 text-emerald-700 border-emerald-200" disabled={pending} onClick={() => onStatus("approved")}>
-            <Check className="h-3.5 w-3.5" /> Approve
+            <Check className="h-3.5 w-3.5" /> {t("tech.sme.approve")}
           </Button>
         )}
         {item.status !== "rejected" && (
           <Button size="sm" variant="outline" className="h-7 text-xs gap-1 text-rose-700 border-rose-200" disabled={pending} onClick={() => onStatus("rejected")}>
-            <X className="h-3.5 w-3.5" /> Reject
+            <X className="h-3.5 w-3.5" /> {t("tech.sme.reject")}
           </Button>
         )}
         {item.status === "approved" && (
           <Button size="sm" variant="outline" className="h-7 text-xs gap-1 text-slate-600" disabled={pending} onClick={() => onStatus("retired")}>
-            <Archive className="h-3.5 w-3.5" /> Retire
+            <Archive className="h-3.5 w-3.5" /> {t("tech.sme.retire")}
           </Button>
         )}
         <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" disabled={pending} onClick={onEdit}>
-          <Pencil className="h-3.5 w-3.5" /> Edit
+          <Pencil className="h-3.5 w-3.5" /> {t("tech.sme.edit")}
         </Button>
       </div>
     </div>
@@ -364,15 +361,16 @@ function ItemEditor({
   const [skill, setSkill] = useState(item.skill);
   const [difficulty, setDifficulty] = useState(item.difficulty);
   const [explanation, setExplanation] = useState(item.explanation_en ?? "");
+  const { t } = useTranslation();
 
   return (
     <div className="rounded-md border border-rose-200 bg-rose-50/30 p-3 space-y-3">
       <div>
-        <Label className="text-xs">Question</Label>
+        <Label className="text-xs">{t("tech.sme.question")}</Label>
         <Textarea rows={2} value={question} onChange={(e) => setQuestion(e.target.value)} />
       </div>
       <div className="space-y-2">
-        <Label className="text-xs">Options (select the correct one)</Label>
+        <Label className="text-xs">{t("tech.sme.optionsLabel")}</Label>
         {options.map((o, i) => (
           <div key={i} className="flex items-center gap-2">
             <button
@@ -381,7 +379,7 @@ function ItemEditor({
               className={`h-4 w-4 shrink-0 rounded-full border-2 ${
                 i === correct ? "border-emerald-600 bg-emerald-500" : "border-muted-foreground/40"
               }`}
-              aria-label={`Mark option ${i + 1} correct`}
+              aria-label={t("tech.sme.markCorrect", { n: i + 1 })}
             />
             <Input
               value={o}
@@ -392,7 +390,7 @@ function ItemEditor({
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <Label className="text-xs">Skill</Label>
+          <Label className="text-xs">{t("tech.sme.skill")}</Label>
           <Select value={skill} onValueChange={setSkill}>
             <SelectTrigger>
               <SelectValue />
@@ -407,21 +405,21 @@ function ItemEditor({
           </Select>
         </div>
         <div>
-          <Label className="text-xs">Difficulty</Label>
+          <Label className="text-xs">{t("tech.sme.difficulty")}</Label>
           <Select value={difficulty} onValueChange={(v) => setDifficulty(v as "easy" | "medium" | "hard")}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="easy">easy</SelectItem>
-              <SelectItem value="medium">medium</SelectItem>
-              <SelectItem value="hard">hard</SelectItem>
+              <SelectItem value="easy">{t("tech.sme.diff.easy")}</SelectItem>
+              <SelectItem value="medium">{t("tech.sme.diff.medium")}</SelectItem>
+              <SelectItem value="hard">{t("tech.sme.diff.hard")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
       <div>
-        <Label className="text-xs">Rationale</Label>
+        <Label className="text-xs">{t("tech.sme.rationaleLabel")}</Label>
         <Textarea rows={2} value={explanation} onChange={(e) => setExplanation(e.target.value)} />
       </div>
       <div className="flex gap-2">
@@ -440,10 +438,10 @@ function ItemEditor({
           }
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-          Save
+          {t("tech.bridge.save")}
         </Button>
         <Button size="sm" variant="ghost" disabled={pending} onClick={onCancel}>
-          Cancel
+          {t("tech.bridge.cancel")}
         </Button>
       </div>
     </div>

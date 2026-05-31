@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Loader2, CheckCircle2, RotateCcw, GraduationCap, AlertCircle, ShieldCheck, ExternalLink } from "lucide-react";
-import { TECH_DOMAINS, TECH_LEVELS } from "@/lib/competencies/technical-framework";
+import { TECH_DOMAINS } from "@/lib/competencies/technical-framework";
 import type { PublicTechTest, TechResult } from "@/lib/ai/technical-assessment";
 
 type Phase = "intro" | "test" | "result";
@@ -23,6 +24,7 @@ const LEVEL_TONE: Record<number, string> = {
 };
 
 export function TechAssessmentClient() {
+  const { t } = useTranslation();
   const [phase, setPhase] = useState<Phase>("intro");
   const [domainKey, setDomainKey] = useState<string>("");
   const [test, setTest] = useState<PublicTechTest | null>(null);
@@ -49,7 +51,7 @@ export function TechAssessmentClient() {
       setResult(null);
       setPhase("test");
     } catch {
-      setError("Couldn't build the assessment. Please try again.");
+      setError(t("tech.take.errBuild"));
     } finally {
       setBusy(false);
     }
@@ -72,7 +74,7 @@ export function TechAssessmentClient() {
       setResult(data);
       setPhase("result");
     } catch {
-      setError("Scoring failed. Please try again.");
+      setError(t("tech.take.errScore"));
     } finally {
       setBusy(false);
     }
@@ -96,10 +98,8 @@ export function TechAssessmentClient() {
 
       {phase === "intro" && (
         <div className="rounded-2xl border bg-card p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-[#010131]">Choose a technical domain</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            A short, indicative assessment of your technical proficiency in one domain. About 8 questions.
-          </p>
+          <h2 className="text-lg font-semibold text-[#010131]">{t("tech.take.chooseTitle")}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t("tech.take.chooseIntro")}</p>
           <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {TECH_DOMAINS.map((d) => (
               <button
@@ -115,7 +115,7 @@ export function TechAssessmentClient() {
           </div>
           {busy && (
             <p className="mt-4 inline-flex items-center gap-2 text-sm text-slate-500">
-              <Loader2 className="h-4 w-4 animate-spin" /> Building your assessment…
+              <Loader2 className="h-4 w-4 animate-spin" /> {t("tech.take.building")}
             </p>
           )}
         </div>
@@ -127,9 +127,7 @@ export function TechAssessmentClient() {
             <h2 className="inline-flex items-center gap-2 text-lg font-semibold text-[#010131]">
               <GraduationCap className="h-5 w-5 text-[#5391D5]" /> {test.domain_name}
             </h2>
-            <p className="mt-1 text-xs text-slate-500">
-              Answer all {test.items.length} questions. Your answer key is graded on the server.
-            </p>
+            <p className="mt-1 text-xs text-slate-500">{t("tech.take.answerAll", { n: test.items.length })}</p>
           </div>
           {test.items.map((item, i) => (
             <section key={item.id} className="rounded-xl border bg-white p-5 shadow-sm">
@@ -137,7 +135,7 @@ export function TechAssessmentClient() {
                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">
                   {item.skill}
                 </span>
-                <span className="text-[10px] uppercase tracking-wide text-slate-400">{item.difficulty}</span>
+                <span className="text-[10px] uppercase tracking-wide text-slate-400">{t(`tech.sme.diff.${item.difficulty}`)}</span>
               </div>
               <p className="text-sm font-semibold text-[#010131]">{i + 1}. {item.question}</p>
               <div className="mt-2 grid gap-2 sm:grid-cols-2">
@@ -167,7 +165,7 @@ export function TechAssessmentClient() {
             className="inline-flex items-center gap-2 rounded-md bg-[#047857] px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-            {busy ? "Scoring…" : "Submit for scoring"}
+            {busy ? t("tech.take.scoring") : t("tech.take.submit")}
           </button>
         </>
       )}
@@ -177,14 +175,14 @@ export function TechAssessmentClient() {
           <div className="flex flex-wrap items-center gap-4">
             <div>
               <p className="text-[11px] uppercase tracking-wider text-slate-500">
-                {result.certified ? "Certified proficiency" : "Indicative proficiency"} · {result.domain_name}
+                {result.certified ? t("tech.take.certifiedProf") : t("tech.take.indicativeProf")} · {result.domain_name}
               </p>
               <div className={`mt-1 inline-flex items-center justify-center rounded-xl border-2 px-5 py-3 text-2xl font-bold ${LEVEL_TONE[result.proficiency.level]}`}>
-                {result.proficiency.level}/5 · {result.proficiency.label}
+                {result.proficiency.level}/5 · {t(`tech.take.levels.${result.proficiency.label}`)}
               </div>
             </div>
             <div className="rounded-md border bg-muted/20 p-3 text-center">
-              <p className="text-[10px] uppercase tracking-wider text-slate-500">Score</p>
+              <p className="text-[10px] uppercase tracking-wider text-slate-500">{t("tech.take.score")}</p>
               <p className="mt-1 text-lg font-bold tabular-nums">{result.correct}/{result.total}</p>
               <p className="text-[10px] text-slate-500">{result.pct}%</p>
             </div>
@@ -194,37 +192,31 @@ export function TechAssessmentClient() {
           {result.certified && result.passedCut && result.credentialCode && (
             <div className="rounded-md border border-emerald-300 bg-emerald-50 p-4">
               <p className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-800">
-                <ShieldCheck className="h-4 w-4" /> Technical Proficiency credential issued
+                <ShieldCheck className="h-4 w-4" /> {t("tech.take.credIssued")}
               </p>
-              <p className="mt-1 text-xs text-emerald-700">
-                You scored {result.pct}%, at or above the {result.cutPct}% cut-score for this domain. Your
-                credential is verifiable below.
-              </p>
+              <p className="mt-1 text-xs text-emerald-700">{t("tech.take.credNote", { pct: result.pct, cut: result.cutPct })}</p>
               <a
                 href={`/verify/${result.credentialCode}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-800"
               >
-                <ExternalLink className="h-3.5 w-3.5" /> View &amp; verify credential
+                <ExternalLink className="h-3.5 w-3.5" /> {t("tech.take.viewCred")}
               </a>
             </div>
           )}
           {result.certified && result.passedCut === false && (
             <div className="rounded-md border border-rose-200 bg-rose-50 p-4">
               <p className="inline-flex items-center gap-2 text-sm font-semibold text-rose-800">
-                <AlertCircle className="h-4 w-4" /> Below the certification cut-score
+                <AlertCircle className="h-4 w-4" /> {t("tech.take.belowCut")}
               </p>
-              <p className="mt-1 text-xs text-rose-700">
-                You scored {result.pct}%. This domain certifies at {result.cutPct}%. Keep developing and
-                re-take the certified assessment — no credential is issued below the standard.
-              </p>
+              <p className="mt-1 text-xs text-rose-700">{t("tech.take.belowNote", { pct: result.pct, cut: result.cutPct })}</p>
             </div>
           )}
 
           {/* Per-skill breakdown */}
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">By skill</p>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{t("tech.take.bySkill")}</p>
             <div className="space-y-1.5">
               {result.perSkill.map((s) => (
                 <div key={s.skill} className="flex items-center gap-3 text-xs">
@@ -243,19 +235,16 @@ export function TechAssessmentClient() {
           {result.certified ? (
             <div className="flex items-start gap-2 rounded-md border border-slate-200 bg-slate-50 p-3 text-[11px] text-slate-600">
               <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
-              <span>
-                Certified assessment. Every item was reviewed and approved by a subject-matter expert and scored
-                against a documented cut-score, server-side. A credential is issued only at or above the standard.
-                Levels: {TECH_LEVELS.join(" · ")}.
-              </span>
+              <span>{t("tech.take.discCertified", { levels: t("tech.take.levelsLine") })}</span>
             </div>
           ) : (
             <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-[11px] text-amber-800">
               <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span>
-                Indicative only. This short, {result.ai_generated ? "AI-authored" : "placeholder"} assessment signals technical
-                proficiency for development — it is not a certified qualification and issues no credential. Items should be
-                human-reviewed and calibrated before any high-stakes use. Levels: {TECH_LEVELS.join(" · ")}.
+                {t("tech.take.discIndicative", {
+                  kind: result.ai_generated ? t("tech.take.aiAuthored") : t("tech.take.placeholder"),
+                  levels: t("tech.take.levelsLine"),
+                })}
               </span>
             </div>
           )}
@@ -264,7 +253,7 @@ export function TechAssessmentClient() {
             onClick={reset}
             className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
           >
-            <RotateCcw className="h-4 w-4" /> Assess another domain
+            <RotateCcw className="h-4 w-4" /> {t("tech.take.another")}
           </button>
         </div>
       )}

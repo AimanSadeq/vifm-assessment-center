@@ -17,10 +17,12 @@ import {
 import { ReviewConsole } from "../_components/review-console";
 import { BridgeEditor } from "../_components/bridge-editor";
 import { HashScroll } from "../_components/hash-scroll";
+import { getServerT } from "@/lib/i18n/server";
 
 type Props = { searchParams: { domain?: string } };
 
 export default async function TechAssessmentReviewPage({ searchParams }: Props) {
+  const t = await getServerT();
   const selected: TechDomainKey =
     (techDomainByKey(searchParams.domain ?? "")?.key as TechDomainKey | undefined) ?? TECH_DOMAINS[0].key;
 
@@ -40,21 +42,16 @@ export default async function TechAssessmentReviewPage({ searchParams }: Props) 
   return (
     <div className="space-y-6">
       <HashScroll />
-      <BackLink href="/admin/tech-assessment" label="Technical Assessment Command" />
+      <BackLink href="/admin/tech-assessment" label={t("tech.cmd.title")} />
 
       {/* Header */}
       <div className="rounded-md border bg-gradient-to-r from-[#4c0519] to-[#881337] text-white p-5">
         <div className="flex items-start gap-3">
           <BadgeCheck className="h-8 w-8 text-rose-200 shrink-0" />
           <div className="min-w-0">
-            <p className="text-xs uppercase tracking-wide text-rose-100/80">Technical Certification</p>
-            <h1 className="text-2xl font-bold leading-tight">SME item-review console</h1>
-            <p className="text-sm text-rose-50/90 mt-1 max-w-2xl">
-              A <strong>technical_proficiency</strong> credential is only issued from items reviewed and
-              approved here, scored against a documented cut-score. AI drafts the items; a subject-matter
-              expert approves them. Below the bar, the assessment still runs — but stays indicative, with no
-              credential.
-            </p>
+            <p className="text-xs uppercase tracking-wide text-rose-100/80">{t("tech.cert")}</p>
+            <h1 className="text-2xl font-bold leading-tight">{t("tech.console.title")}</h1>
+            <p className="text-sm text-rose-50/90 mt-1 max-w-2xl">{t("tech.console.intro")}</p>
           </div>
         </div>
       </div>
@@ -64,7 +61,7 @@ export default async function TechAssessmentReviewPage({ searchParams }: Props) 
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-[#5391D5]" />
-            Bank readiness
+            {t("tech.console.readiness")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -83,15 +80,15 @@ export default async function TechAssessmentReviewPage({ searchParams }: Props) 
                   <p className="text-sm font-semibold text-[#010131] truncate">{d.name}</p>
                   <div className="mt-1.5 flex items-center justify-between">
                     <span className="text-xs text-muted-foreground tabular-nums">
-                      {r.approved}/{r.minItems} approved
+                      {r.approved}/{r.minItems} {t("tech.console.approvedSuffix")}
                     </span>
                     {r.certifiable ? (
                       <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[10px]">
-                        Certifiable
+                        {t("tech.cmd.certifiable")}
                       </Badge>
                     ) : (
                       <Badge variant="secondary" className="text-[10px]">
-                        Indicative
+                        {t("tech.cmd.indicative")}
                       </Badge>
                     )}
                   </div>
@@ -101,8 +98,7 @@ export default async function TechAssessmentReviewPage({ searchParams }: Props) 
           </div>
           <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
             <FlaskConical className="h-3 w-3" />
-            A domain becomes <span className="font-medium">certifiable</span> once its approved-item count
-            reaches the cut-score&apos;s minimum. Until then, takers get an honest indicative band only.
+            {t("tech.console.readinessNote")}
           </p>
         </CardContent>
       </Card>

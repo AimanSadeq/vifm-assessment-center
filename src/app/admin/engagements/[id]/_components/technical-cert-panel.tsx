@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { GraduationCap, ShieldCheck, AlertCircle, Link2, Check, ExternalLink, Loader2, Plus, X } from "lucide-react";
+import { GraduationCap, ShieldCheck, AlertCircle, Link2, Check, ExternalLink, Loader2, Plus, X, Download } from "lucide-react";
 import type { EngagementTechProgram } from "@/lib/competencies/engagement-tech-program";
 import { setEngagementTechDomainAction } from "../technical-actions";
 
@@ -18,10 +18,11 @@ export function TechnicalCertPanel({
   engagementId: string;
   program: EngagementTechProgram;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [copied, setCopied] = useState<string>("");
+  const pdfLang = i18n.language === "ar" ? "ar" : "en";
 
   const inScopeKeys = new Set(program.inScope.map((d) => d.key));
   const levelLabel = (label: string | null) => {
@@ -54,10 +55,24 @@ export function TechnicalCertPanel({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <GraduationCap className="h-4 w-4 text-[#5391D5]" /> {t("engTech.title")}
-        </CardTitle>
-        <p className="text-sm text-muted-foreground">{t("engTech.intro")}</p>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <GraduationCap className="h-4 w-4 text-[#5391D5]" /> {t("engTech.title")}
+            </CardTitle>
+            <p className="mt-1 text-sm text-muted-foreground">{t("engTech.intro")}</p>
+          </div>
+          {program.inScope.length > 0 && (
+            <a
+              href={`/api/admin/engagements/${engagementId}/technical-cohort/pdf?lang=${pdfLang}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-accent"
+            >
+              <Download className="h-3.5 w-3.5" /> {t("engTech.downloadPdf")}
+            </a>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-5">
         {/* Domain scope picker */}

@@ -599,7 +599,8 @@
     "belowCut": "Below cut",
     "copyLink": "Copy link",
     "copied": "Copied",
-    "saving": "Saving…"
+    "saving": "Saving…",
+    "downloadPdf": "Cohort PDF"
   },
   "observation": {
     "title": "Observation",

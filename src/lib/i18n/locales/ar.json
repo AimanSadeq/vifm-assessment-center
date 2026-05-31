@@ -599,7 +599,8 @@
     "belowCut": "دون درجة القطع",
     "copyLink": "نسخ الرابط",
     "copied": "تم النسخ",
-    "saving": "جارٍ الحفظ…"
+    "saving": "جارٍ الحفظ…",
+    "downloadPdf": "تقرير PDF"
   },
   "observation": {
     "title": "الملاحظة",

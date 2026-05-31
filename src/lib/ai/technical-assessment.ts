@@ -83,7 +83,7 @@ export type TechResult = {
 
 const ITEM_COUNT = 8;
 
-function fallbackTest(domainKey: TechDomainKey): TechTest {
+function fallbackTest(domainKey: TechDomainKey, language: "en" | "ar" = "en"): TechTest {
   const domain = techDomainByKey(domainKey);
   const name = domain?.name ?? domainKey;
   const skill = domain?.skills[0] ?? "Fundamentals";
@@ -97,8 +97,14 @@ function fallbackTest(domainKey: TechDomainKey): TechTest {
       {
         id: "f1",
         skill,
-        question: `Placeholder item for ${name}. Wire ANTHROPIC_API_KEY for a real, domain-specific assessment. Which option is marked correct here?`,
-        options: ["Option A (correct)", "Option B", "Option C", "Option D"],
+        question:
+          language === "ar"
+            ? `بند نموذجي لمجال ${name}. اربط ANTHROPIC_API_KEY للحصول على تقييم حقيقي خاص بالمجال. أي خيار هو الصحيح هنا؟`
+            : `Placeholder item for ${name}. Wire ANTHROPIC_API_KEY for a real, domain-specific assessment. Which option is marked correct here?`,
+        options:
+          language === "ar"
+            ? ["الخيار أ (صحيح)", "الخيار ب", "الخيار ج", "الخيار د"]
+            : ["Option A (correct)", "Option B", "Option C", "Option D"],
         correct_index: 0,
         difficulty: "easy",
       },
@@ -115,12 +121,14 @@ const cleanMcq = (r: { options?: string[]; correct_index?: number }): boolean =>
 
 export async function generateTechnicalAssessment(input: {
   domainKey: TechDomainKey;
+  language?: "en" | "ar";
 }): Promise<TechTest> {
+  const language = input.language === "ar" ? "ar" : "en";
   const domain = techDomainByKey(input.domainKey);
-  if (!domain) return fallbackTest(input.domainKey);
+  if (!domain) return fallbackTest(input.domainKey, language);
 
   const client = getAIClient();
-  if (!client) return fallbackTest(input.domainKey);
+  if (!client) return fallbackTest(input.domainKey, language);
 
   const system =
     `You are a subject-matter assessment item writer for VIFM, a GCC finance & ` +
@@ -129,7 +137,19 @@ export async function generateTechnicalAssessment(input: {
     `each with exactly one defensible correct answer and three plausible distractors. ` +
     `You calibrate a difficulty ramp and never write trick questions.`;
 
+  const langLine =
+    language === "ar"
+      ? [
+          `LANGUAGE: Write every "question" and all four "options" in clear Modern Standard`,
+          `Arabic suitable for GCC finance professionals. Keep standard finance acronyms`,
+          `(IFRS, WACC, CAPM, DCF, EBITDA, REIT) and numeric/currency values as commonly`,
+          `written. Keep each "skill" value as the EXACT English skill name listed below.`,
+          ``,
+        ]
+      : [];
+
   const user = [
+    ...langLine,
     `Write exactly ${ITEM_COUNT} multiple-choice items assessing technical competence in:`,
     `DOMAIN: ${domain.name}`,
     `SKILLS (spread items across these): ${domain.skills.join("; ")}.`,
@@ -180,11 +200,11 @@ export async function generateTechnicalAssessment(input: {
         };
       });
 
-    if (items.length < 4) return fallbackTest(input.domainKey);
+    if (items.length < 4) return fallbackTest(input.domainKey, language);
     return { domain_key: input.domainKey, domain_name: domain.name, items, ai_generated: true };
   } catch (err) {
     console.error("[technical-assessment] generate failed:", err);
-    return fallbackTest(input.domainKey);
+    return fallbackTest(input.domainKey, language);
   }
 }
 

@@ -57,13 +57,14 @@ type Body = {
   takerEmail?: string | null;
   candidateId?: string | null;
   engagementId?: string | null;
+  language?: "en" | "ar";
 };
 
 const SESSION_TTL_MS = 1000 * 60 * 60 * 3;
 
 async function createSession(
   test: StoredTest,
-  meta: { candidateId: string | null; engagementId: string | null }
+  meta: { candidateId: string | null; engagementId: string | null; language: "en" | "ar" }
 ): Promise<string | null> {
   try {
     const sb = createServiceClient();
@@ -71,7 +72,7 @@ async function createSession(
       .from("tech_assessment_sessions")
       .insert({
         domain_key: test.domain_key,
-        ui_language: "en",
+        ui_language: meta.language,
         test,
         candidate_id: meta.candidateId,
         engagement_id: meta.engagementId,
@@ -118,6 +119,7 @@ export async function POST(req: Request) {
   }
 
   const domainKey = body.domainKey as TechDomainKey | undefined;
+  const language: "en" | "ar" = body.language === "ar" ? "ar" : "en";
 
   if (body.action === "start") {
     if (!domainKey || !techDomainByKey(domainKey)) {
@@ -127,12 +129,12 @@ export async function POST(req: Request) {
     const engagementId = body.engagementId?.trim() || null;
 
     // Prefer the certified path (SME-approved bank). Fall back to indicative AI.
-    const certified = await buildCertifiedTest(domainKey);
+    const certified = await buildCertifiedTest(domainKey, undefined, language);
     const stored: StoredTest = certified
       ? { ...certified.test, item_ids: certified.itemIds }
-      : await generateTechnicalAssessment({ domainKey });
+      : await generateTechnicalAssessment({ domainKey, language });
 
-    const session_id = await createSession(stored, { candidateId, engagementId });
+    const session_id = await createSession(stored, { candidateId, engagementId, language });
     if (session_id) {
       return NextResponse.json({ session_id, test: stripAnswerKey(stored) });
     }
@@ -198,7 +200,7 @@ export async function POST(req: Request) {
         taker_name: takerName,
         taker_email: takerEmail,
         domain_key: result.domain_key,
-        ui_language: "en",
+        ui_language: language,
         score_correct: result.correct,
         score_total: result.total,
         score_pct: result.pct,

@@ -20,7 +20,8 @@ type Props = {
 export default async function TechAssessmentPage({ searchParams }: Props) {
   const aiConfigured = isAIConfigured();
   const t = await getServerT();
-  const { domains, skillLabels } = await getLocalizedTechTaxonomy(await getServerLocale());
+  const locale = await getServerLocale();
+  const { domains, skillLabels } = await getLocalizedTechTaxonomy(locale);
 
   // Optional org-assigned run: bind the sitting to a candidate (+ engagement) and
   // optionally lock it to one domain. Tolerant — anonymous self-serve if absent.
@@ -89,6 +90,7 @@ export default async function TechAssessmentPage({ searchParams }: Props) {
         <TechAssessmentClient
           domains={domains}
           skillLabels={skillLabels}
+          language={locale}
           candidateId={candidateId}
           engagementId={engagementId}
           lockedDomain={lockedDomain}

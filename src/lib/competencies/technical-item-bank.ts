@@ -341,7 +341,8 @@ export type CertifiedAssembly = { test: TechTest; itemIds: string[] };
  */
 export async function buildCertifiedTest(
   domainKey: TechDomainKey,
-  size: number = CERTIFIED_TEST_SIZE
+  size: number = CERTIFIED_TEST_SIZE,
+  language: "en" | "ar" = "en"
 ): Promise<CertifiedAssembly | null> {
   const domain = techDomainByKey(domainKey);
   if (!domain) return null;
@@ -352,7 +353,7 @@ export async function buildCertifiedTest(
     const sb = createServiceClient();
     const { data } = await sb
       .from("tech_assessment_items")
-      .select("id, skill, question_en, options_en, correct_index, difficulty")
+      .select("id, skill, question_en, question_ar, options_en, options_ar, correct_index, difficulty")
       .eq("domain_key", domainKey)
       .eq("status", "approved");
     rows = (data as BankItem[] | null) ?? [];
@@ -370,11 +371,17 @@ export async function buildCertifiedTest(
   const items: TechItem[] = picked.map((r, i): TechItem => {
     itemIds.push(r.id);
     const order = shuffledOrder();
+    // Serve Arabic for this item only when BOTH the question and four options are
+    // translated — avoids a mixed-language item. Falls back to English otherwise.
+    const useAr =
+      language === "ar" && !!r.question_ar && Array.isArray(r.options_ar) && r.options_ar.length === 4;
+    const baseQuestion = useAr ? (r.question_ar as string) : r.question_en;
+    const baseOptions = useAr ? (r.options_ar as string[]) : r.options_en;
     return {
       id: r.id || `c${i + 1}`,
       skill: r.skill,
-      question: r.question_en,
-      options: order.map((idx) => r.options_en[idx]),
+      question: baseQuestion,
+      options: order.map((idx) => baseOptions[idx]),
       correct_index: order.indexOf(r.correct_index),
       difficulty: r.difficulty,
     };

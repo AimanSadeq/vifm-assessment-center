@@ -26,12 +26,15 @@ const LEVEL_TONE: Record<number, string> = {
 export function TechAssessmentClient({
   domains,
   skillLabels,
+  language = "en",
   candidateId = null,
   engagementId = null,
   lockedDomain = null,
 }: {
   domains: LocalizedTechDomain[];
   skillLabels: Record<string, string>;
+  /** UI language — also the language the test content is served/generated in. */
+  language?: "en" | "ar";
   /** When set, the sitting binds to this candidate (org-assigned run). */
   candidateId?: string | null;
   engagementId?: string | null;
@@ -40,6 +43,7 @@ export function TechAssessmentClient({
 }) {
   const { t } = useTranslation();
   const skillLabel = (s: string) => skillLabels[s] ?? s;
+  const domainName = (key: string) => domains.find((d) => d.key === key)?.name ?? key;
   const [phase, setPhase] = useState<Phase>("intro");
   const [domainKey, setDomainKey] = useState<string>("");
   const [test, setTest] = useState<PublicTechTest | null>(null);
@@ -57,7 +61,7 @@ export function TechAssessmentClient({
       const res = await fetch("/api/ac/tech-assessment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "start", domainKey: key, candidateId, engagementId }),
+        body: JSON.stringify({ action: "start", domainKey: key, candidateId, engagementId, language }),
       });
       const raw = (await res.json()) as PublicTechTest & { session_id?: string; test?: PublicTechTest };
       // The session path nests the test under `test`; the legacy (un-migrated)
@@ -86,8 +90,8 @@ export function TechAssessmentClient({
     setError("");
     try {
       const payload = sessionId
-        ? { action: "score", sessionId, answers, candidateId, engagementId }
-        : { action: "score", domainKey: test.domain_key, domainName: test.domain_name, items: test.items, aiGenerated: test.ai_generated, answers, candidateId, engagementId };
+        ? { action: "score", sessionId, answers, candidateId, engagementId, language }
+        : { action: "score", domainKey: test.domain_key, domainName: test.domain_name, items: test.items, aiGenerated: test.ai_generated, answers, candidateId, engagementId, language };
       const res = await fetch("/api/ac/tech-assessment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -170,7 +174,7 @@ export function TechAssessmentClient({
         <>
           <div className="rounded-xl border bg-white p-5 shadow-sm">
             <h2 className="inline-flex items-center gap-2 text-lg font-semibold text-[#010131]">
-              <GraduationCap className="h-5 w-5 text-[#5391D5]" /> {test.domain_name}
+              <GraduationCap className="h-5 w-5 text-[#5391D5]" /> {domainName(test.domain_key)}
             </h2>
             <p className="mt-1 text-xs text-slate-500">{t("tech.take.answerAll", { n: test.items.length })}</p>
           </div>
@@ -220,7 +224,7 @@ export function TechAssessmentClient({
           <div className="flex flex-wrap items-center gap-4">
             <div>
               <p className="text-[11px] uppercase tracking-wider text-slate-500">
-                {result.certified ? t("tech.take.certifiedProf") : t("tech.take.indicativeProf")} · {result.domain_name}
+                {result.certified ? t("tech.take.certifiedProf") : t("tech.take.indicativeProf")} · {domainName(result.domain_key)}
               </p>
               <div className={`mt-1 inline-flex items-center justify-center rounded-xl border-2 px-5 py-3 text-2xl font-bold ${LEVEL_TONE[result.proficiency.level]}`}>
                 {result.proficiency.level}/5 · {t(`tech.take.levels.${result.proficiency.label}`)}

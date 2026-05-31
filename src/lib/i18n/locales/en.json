@@ -580,6 +580,24 @@
     "project_management": "Project Management",
     "real_estate": "Real Estate"
   },
+  "engTech": {
+    "title": "Technical Certification",
+    "intro": "Assign technical domains to certify this cohort. Each candidate takes the assigned test; a passing certified sitting issues a verifiable credential.",
+    "inScopeLabel": "Domains in scope",
+    "pickHint": "Tap a domain to add or remove it from this engagement's program. The shield marks domains whose bank is deep enough to certify.",
+    "certifiable": "Certifiable",
+    "indicativeOnly": "Indicative only",
+    "noScope": "No domains in scope yet. Add one above to start the certification program.",
+    "noCandidates": "No candidates on this engagement yet.",
+    "certifiedCount": "{{n}} of {{total}} certified",
+    "indicativeCaption": "Bank below cut ({{approved}}/{{min}} approved) — runs indicative; no credential is issued.",
+    "notStarted": "Not started",
+    "certified": "Certified",
+    "belowCut": "Below cut",
+    "copyLink": "Copy link",
+    "copied": "Copied",
+    "saving": "Saving…"
+  },
   "observation": {
     "title": "Observation",
     "recordObservation": "Record Observation",

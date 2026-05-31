@@ -186,6 +186,7 @@ supabase/
     00053_tech_assessment_item_bank.sql        # Technical Tier 2: SME-reviewed tech_assessment_items + tech_assessment_cut_scores + widened vifm_credentials type CHECK (adds technical_proficiency)
     00054_technical_taxonomy_bridge.sql        # Technical taxonomy → DB: technical_domains + technical_skills + technical_domain_competencies (the technical→behavioural "enables" bridge) + FK tech_assessment_*.domain_key → technical_domains
     00055_technical_skills_arabic.sql          # technical_skills.name_ar (50 Arabic skill names) — the runner reads bilingual domains+skills from the DB so the picker, item skill badges, and per-skill result localize
+    00056_engagement_technical_domains.sql     # engagement → technical certification program: which domains are in scope per AC engagement (the paid org-certify layer; results/credentials already bind via candidate_id+engagement_id)
 scripts/
   seed-test-data.ts       # Creates full test dataset (engagement + candidates + assessor + observations)
   seed-tags-qa.py         # Populates tags and Q&A questions for competencies

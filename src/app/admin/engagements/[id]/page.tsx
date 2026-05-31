@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getServerT } from "@/lib/i18n/server";
+import { getServerT, getServerLocale } from "@/lib/i18n/server";
 import { notFound } from "next/navigation";
 import { BackLink } from "@/components/shared/back-link";
 import { EngagementDetail } from "./_components/engagement-detail";
@@ -8,6 +8,8 @@ import {
   recommendCoursesForAcCohort,
   recommendCoursesForAcCandidate,
 } from "@/lib/recommender/courses";
+import { getEngagementTechProgram } from "@/lib/competencies/engagement-tech-program";
+import { TechnicalCertPanel } from "./_components/technical-cert-panel";
 import { CandidateFilterBar } from "./_components/candidate-filter-bar";
 
 type Props = {
@@ -123,6 +125,9 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
     ? candidates.find((c) => c.id === focusedCandidateId)
     : null;
 
+  // Technical certification program for this engagement (paid org layer).
+  const techProgram = await getEngagementTechProgram(id, await getServerLocale());
+
   return (
     <div className="space-y-6">
       <BackLink href="/admin/engagements" label={t("adminEngagements.detail.backToProjects")} />
@@ -165,6 +170,7 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
         courses={recommendedCourses}
         context="ac"
       />
+      <TechnicalCertPanel engagementId={id} program={techProgram} />
     </div>
   );
 }

@@ -44,9 +44,17 @@ export function TechAssessmentClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "start", domainKey: key }),
       });
-      const raw = (await res.json()) as PublicTechTest & { session_id?: string };
+      const raw = (await res.json()) as PublicTechTest & { session_id?: string; test?: PublicTechTest };
+      // The session path nests the test under `test`; the legacy (un-migrated)
+      // path returns the test fields flat. Normalize, and refuse to enter the
+      // test phase with a malformed or empty deck.
+      const built = raw.test ?? raw;
+      if (!res.ok || !built || !Array.isArray(built.items) || built.items.length === 0) {
+        setError(t("tech.take.errBuild"));
+        return;
+      }
       setSessionId(raw.session_id ?? null);
-      setTest(raw);
+      setTest(built);
       setAnswers({});
       setResult(null);
       setPhase("test");
@@ -90,7 +98,8 @@ export function TechAssessmentClient() {
     setError("");
   }
 
-  const allAnswered = !!test && test.items.length > 0 && test.items.every((i) => answers[i.id] != null);
+  const allAnswered =
+    !!test && Array.isArray(test.items) && test.items.length > 0 && test.items.every((i) => answers[i.id] != null);
 
   return (
     <div className="space-y-5">

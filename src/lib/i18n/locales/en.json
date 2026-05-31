@@ -112,7 +112,8 @@
       "h1highlight": "actually do",
       "intro": "An indicative assessment of technical proficiency across VIFM's finance & management domains — finance, treasury, accounting, banking, analytics and more. The third capability pillar, beside behavioural competencies and English. For development, not certification.",
       "aiWarnTitle": "AI key not set.",
-      "aiWarnBody": "Set ANTHROPIC_API_KEY for real, domain-specific items — a placeholder set is shown otherwise."
+      "aiWarnBody": "Set ANTHROPIC_API_KEY for real, domain-specific items — a placeholder set is shown otherwise.",
+      "forCandidate": "Technical assessment for {{name}}"
     },
     "bridge": {
       "title": "Behavioural bridge — {{domain}}",

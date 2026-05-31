@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Loader2, CheckCircle2, RotateCcw, GraduationCap, AlertCircle, ShieldCheck, ExternalLink } from "lucide-react";
 import type { LocalizedTechDomain } from "@/lib/competencies/technical-taxonomy";
@@ -26,9 +26,17 @@ const LEVEL_TONE: Record<number, string> = {
 export function TechAssessmentClient({
   domains,
   skillLabels,
+  candidateId = null,
+  engagementId = null,
+  lockedDomain = null,
 }: {
   domains: LocalizedTechDomain[];
   skillLabels: Record<string, string>;
+  /** When set, the sitting binds to this candidate (org-assigned run). */
+  candidateId?: string | null;
+  engagementId?: string | null;
+  /** When set, the runner starts this domain immediately and hides the picker. */
+  lockedDomain?: string | null;
 }) {
   const { t } = useTranslation();
   const skillLabel = (s: string) => skillLabels[s] ?? s;
@@ -49,7 +57,7 @@ export function TechAssessmentClient({
       const res = await fetch("/api/ac/tech-assessment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "start", domainKey: key }),
+        body: JSON.stringify({ action: "start", domainKey: key, candidateId, engagementId }),
       });
       const raw = (await res.json()) as PublicTechTest & { session_id?: string; test?: PublicTechTest };
       // The session path nests the test under `test`; the legacy (un-migrated)
@@ -78,8 +86,8 @@ export function TechAssessmentClient({
     setError("");
     try {
       const payload = sessionId
-        ? { action: "score", sessionId, answers }
-        : { action: "score", domainKey: test.domain_key, domainName: test.domain_name, items: test.items, aiGenerated: test.ai_generated, answers };
+        ? { action: "score", sessionId, answers, candidateId, engagementId }
+        : { action: "score", domainKey: test.domain_key, domainName: test.domain_name, items: test.items, aiGenerated: test.ai_generated, answers, candidateId, engagementId };
       const res = await fetch("/api/ac/tech-assessment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -105,6 +113,19 @@ export function TechAssessmentClient({
     setError("");
   }
 
+  // Org-assigned run: when a domain is locked in via the URL, start it once on
+  // mount and skip the picker entirely.
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (lockedDomain && !autoStarted.current) {
+      autoStarted.current = true;
+      void start(lockedDomain);
+    }
+    // start is intentionally not a dependency (it's recreated each render and the
+    // ref guard ensures a single run).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lockedDomain]);
+
   const allAnswered =
     !!test && Array.isArray(test.items) && test.items.length > 0 && test.items.every((i) => answers[i.id] != null);
 
@@ -112,7 +133,15 @@ export function TechAssessmentClient({
     <div className="space-y-5">
       {error && <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
 
-      {phase === "intro" && (
+      {phase === "intro" && lockedDomain && (
+        <div className="rounded-2xl border bg-card p-8 text-center shadow-sm">
+          <p className="inline-flex items-center gap-2 text-sm text-slate-600">
+            <Loader2 className="h-4 w-4 animate-spin" /> {t("tech.take.building")}
+          </p>
+        </div>
+      )}
+
+      {phase === "intro" && !lockedDomain && (
         <div className="rounded-2xl border bg-card p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-[#010131]">{t("tech.take.chooseTitle")}</h2>
           <p className="mt-1 text-sm text-muted-foreground">{t("tech.take.chooseIntro")}</p>
@@ -265,12 +294,14 @@ export function TechAssessmentClient({
             </div>
           )}
 
-          <button
-            onClick={reset}
-            className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
-          >
-            <RotateCcw className="h-4 w-4" /> {t("tech.take.another")}
-          </button>
+          {!lockedDomain && (
+            <button
+              onClick={reset}
+              className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+            >
+              <RotateCcw className="h-4 w-4" /> {t("tech.take.another")}
+            </button>
+          )}
         </div>
       )}
     </div>

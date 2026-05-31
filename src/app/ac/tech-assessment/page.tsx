@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { GraduationCap, Layers } from "lucide-react";
+import { GraduationCap, Layers, UserCheck } from "lucide-react";
 import { isAIConfigured } from "@/lib/ai/client";
+import { createServiceClient } from "@/lib/supabase/server";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { TechAssessmentClient } from "./_components/tech-assessment-client";
 import { getServerT, getServerLocale } from "@/lib/i18n/server";
@@ -12,10 +13,38 @@ export const metadata = {
   title: "Technical Assessment · VIFM",
 };
 
-export default async function TechAssessmentPage() {
+type Props = {
+  searchParams?: { candidateId?: string; engagementId?: string; domainKey?: string };
+};
+
+export default async function TechAssessmentPage({ searchParams }: Props) {
   const aiConfigured = isAIConfigured();
   const t = await getServerT();
   const { domains, skillLabels } = await getLocalizedTechTaxonomy(await getServerLocale());
+
+  // Optional org-assigned run: bind the sitting to a candidate (+ engagement) and
+  // optionally lock it to one domain. Tolerant — anonymous self-serve if absent.
+  const candidateId = searchParams?.candidateId?.trim() || null;
+  let engagementId = searchParams?.engagementId?.trim() || null;
+  let candidateName: string | null = null;
+  if (candidateId) {
+    try {
+      const sb = createServiceClient();
+      const { data } = await sb
+        .from("candidates")
+        .select("full_name, engagement_id")
+        .eq("id", candidateId)
+        .maybeSingle();
+      if (data) {
+        candidateName = (data.full_name as string) ?? null;
+        engagementId = engagementId ?? ((data.engagement_id as string) ?? null);
+      }
+    } catch {
+      /* candidate lookup failed — fall back to anonymous mode */
+    }
+  }
+  const reqDomain = searchParams?.domainKey?.trim() || null;
+  const lockedDomain = reqDomain && domains.some((d) => d.key === reqDomain) ? reqDomain : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -46,12 +75,24 @@ export default async function TechAssessmentPage() {
       </header>
 
       <main className="relative z-10 mx-auto -mt-12 max-w-5xl px-6 pb-16">
+        {candidateName && (
+          <div className="mb-5 flex items-center gap-2 rounded-xl border border-[#5391D5]/40 bg-[#5391D5]/5 px-4 py-3 text-sm text-[#010131] shadow-sm">
+            <UserCheck className="h-4 w-4 shrink-0 text-[#5391D5]" />
+            <span>{t("tech.runner.forCandidate", { name: candidateName })}</span>
+          </div>
+        )}
         {!aiConfigured && (
           <div className="mb-5 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
             <strong>{t("tech.runner.aiWarnTitle")}</strong> {t("tech.runner.aiWarnBody")}
           </div>
         )}
-        <TechAssessmentClient domains={domains} skillLabels={skillLabels} />
+        <TechAssessmentClient
+          domains={domains}
+          skillLabels={skillLabels}
+          candidateId={candidateId}
+          engagementId={engagementId}
+          lockedDomain={lockedDomain}
+        />
       </main>
     </div>
   );

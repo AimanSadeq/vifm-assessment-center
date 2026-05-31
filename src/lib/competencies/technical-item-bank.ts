@@ -535,6 +535,24 @@ export async function draftAiItemsToBank(
 
   if (drafted.length === 0) return { inserted: 0, error: "no_items" };
 
+  // Guarantee bilingual: repair any item the model left without valid Arabic so
+  // the bank is never seeded English-only (keeps the certified path Arabic).
+  const repairIdx = drafted
+    .map((d, i) => (!d.question_ar || !d.options_ar ? i : -1))
+    .filter((i) => i >= 0);
+  if (repairIdx.length > 0) {
+    const trs = await translateItemsToArabic(
+      repairIdx.map((i) => ({ question_en: drafted[i].question_en, options_en: drafted[i].options_en }))
+    );
+    repairIdx.forEach((idx, k) => {
+      const tr = trs[k];
+      if (tr) {
+        drafted[idx].question_ar = tr.question_ar;
+        drafted[idx].options_ar = tr.options_ar;
+      }
+    });
+  }
+
   try {
     const sb = createServiceClient();
     const { error } = await sb.from("tech_assessment_items").insert(
@@ -558,4 +576,104 @@ export async function draftAiItemsToBank(
     console.error("[tech-item-bank] insert failed:", e);
     return { inserted: 0, error: "insert_error" };
   }
+}
+
+/**
+ * Translate a batch of items (question + four options) into Modern Standard
+ * Arabic, preserving option ORDER. Returns one entry per input (null when the
+ * model didn't return a usable translation). Used to repair draft items and to
+ * backfill the bank. No-ops (all null) without an API key.
+ */
+async function translateItemsToArabic(
+  items: { question_en: string; options_en: string[] }[]
+): Promise<({ question_ar: string; options_ar: string[] } | null)[]> {
+  const client = getAIClient();
+  if (!client || items.length === 0) return items.map(() => null);
+
+  const system =
+    `You are a professional Arabic translator for VIFM, a GCC finance & management ` +
+    `training institute. Translate finance assessment items into clear Modern Standard ` +
+    `Arabic. Keep standard finance acronyms (IFRS, WACC, CAPM, DCF, EBITDA, REIT) and ` +
+    `numeric/currency values as commonly written. Preserve the option order exactly.`;
+  const user = [
+    `Translate each item's question and four options into Arabic, same option order.`,
+    `Return JSON ONLY (no fences): { "items": [ { "question_ar":"...", "options_ar":["..","..","..",".."] } ] }`,
+    `Items (index-aligned):`,
+    JSON.stringify(items.map((it, i) => ({ i, question_en: it.question_en, options_en: it.options_en }))),
+  ].join("\n");
+
+  try {
+    const res = await client.messages.create({
+      model: AI_MODEL,
+      max_tokens: 4000,
+      system,
+      messages: [{ role: "user", content: user }],
+    });
+    const block = res.content.find((b) => b.type === "text");
+    if (!block || block.type !== "text") return items.map(() => null);
+    const match = block.text.match(/\{[\s\S]*\}/);
+    if (!match) return items.map(() => null);
+    const parsed = JSON.parse(match[0]) as { items?: Array<{ question_ar?: unknown; options_ar?: unknown }> };
+    const out = parsed.items ?? [];
+    return items.map((_, i) => {
+      const r = out[i];
+      if (!r) return null;
+      const qa = typeof r.question_ar === "string" && r.question_ar.trim() ? r.question_ar : null;
+      const oa =
+        Array.isArray(r.options_ar) && r.options_ar.length === 4
+          ? (r.options_ar as unknown[]).map((o) => String(o))
+          : null;
+      return qa && oa ? { question_ar: qa, options_ar: oa } : null;
+    });
+  } catch (e) {
+    console.error("[tech-item-bank] translate failed:", e);
+    return items.map(() => null);
+  }
+}
+
+/**
+ * Fill missing Arabic on existing bank items (any status) — translates
+ * question_en/options_en for rows whose question_ar/options_ar are absent and
+ * writes them back. Idempotent (only touches rows missing Arabic). Closes the
+ * gap for any legacy / manually-authored / import English-only items so the
+ * certified path is fully Arabic. Optionally scoped to one domain.
+ */
+export async function backfillBankArabic(
+  domainKey?: TechDomainKey
+): Promise<{ updated: number; missing: number; error?: string }> {
+  if (!getAIClient()) return { updated: 0, missing: 0, error: "no_api_key" };
+  type Row = {
+    id: string;
+    question_en: string;
+    question_ar: string | null;
+    options_en: string[];
+    options_ar: string[] | null;
+  };
+  let rows: Row[] = [];
+  try {
+    const sb = createServiceClient();
+    const base = sb.from("tech_assessment_items").select("id, question_en, question_ar, options_en, options_ar");
+    const { data, error } = domainKey ? await base.eq("domain_key", domainKey) : await base;
+    if (error) return { updated: 0, missing: 0, error: error.message };
+    rows = (data as Row[] | null) ?? [];
+  } catch {
+    return { updated: 0, missing: 0, error: "table_absent" };
+  }
+
+  const missing = rows.filter((r) => !r.question_ar || !Array.isArray(r.options_ar) || r.options_ar.length !== 4);
+  if (missing.length === 0) return { updated: 0, missing: 0 };
+
+  const trs = await translateItemsToArabic(missing.map((m) => ({ question_en: m.question_en, options_en: m.options_en })));
+  const sb = createServiceClient();
+  let updated = 0;
+  for (let i = 0; i < missing.length; i++) {
+    const tr = trs[i];
+    if (!tr) continue;
+    const { error } = await sb
+      .from("tech_assessment_items")
+      .update({ question_ar: tr.question_ar, options_ar: tr.options_ar })
+      .eq("id", missing[i].id);
+    if (!error) updated++;
+  }
+  return { updated, missing: missing.length };
 }

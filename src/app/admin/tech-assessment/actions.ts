@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
 import { requireRole, isAuthorizationError, type AraCaller } from "@/lib/ara/auth-guards";
-import { draftAiItemsToBank } from "@/lib/competencies/technical-item-bank";
+import { draftAiItemsToBank, backfillBankArabic } from "@/lib/competencies/technical-item-bank";
 import { techDomainByKey, type TechDomainKey } from "@/lib/competencies/technical-framework";
 import type { BankItemStatus } from "@/lib/competencies/technical-item-bank";
 
@@ -41,6 +41,20 @@ export async function generateDraftItemsAction(domainKey: string, count: number)
   if (res.error) return { error: `Could not draft items (${res.error}).` };
   revalidatePath("/admin/tech-assessment/items");
   return { ok: true, inserted: res.inserted };
+}
+
+/** Fill missing Arabic on bank items (translate question/options for any row
+ *  lacking Arabic) so the certified path renders Arabic. Optionally per-domain. */
+export async function backfillArabicAction(domainKey?: string) {
+  const g = await guard();
+  if ("error" in g) return g;
+  if (domainKey && !techDomainByKey(domainKey)) return { error: "unknown domain" };
+
+  const res = await backfillBankArabic(domainKey as TechDomainKey | undefined);
+  if (res.error === "no_api_key") return { error: "Set ANTHROPIC_API_KEY to translate items." };
+  if (res.error) return { error: `Could not translate (${res.error}).` };
+  revalidatePath("/admin/tech-assessment/items");
+  return { ok: true, updated: res.updated, missing: res.missing };
 }
 
 /** Move an item through the review workflow (approve / reject / retire / …). */

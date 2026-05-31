@@ -26,10 +26,12 @@ import {
   CheckCircle2,
   Loader2,
   Target,
+  Languages,
 } from "lucide-react";
 import type { BankItem, CutScore } from "@/lib/competencies/technical-item-bank";
 import {
   generateDraftItemsAction,
+  backfillArabicAction,
   setItemStatusAction,
   updateItemAction,
   setCutScoreAction,
@@ -197,6 +199,16 @@ export function ReviewConsole({
               >
                 {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                 {t("tech.sme.generate")}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={pending}
+                onClick={() => run(() => backfillArabicAction(domainKey), t("tech.sme.tBackfilled"))}
+                title={t("tech.sme.fillArabicHint")}
+              >
+                {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Languages className="h-4 w-4" />}
+                {t("tech.sme.fillArabic")}
               </Button>
             </div>
             <div className="rounded-md border p-3 bg-muted/30">

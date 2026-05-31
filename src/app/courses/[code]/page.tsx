@@ -8,7 +8,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getServerT } from "@/lib/i18n/server";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { Badge } from "@/components/ui/badge";
-import { type VifmCourse, type VifmVertical } from "@/types/database";
+import { type VifmCourse } from "@/types/database";
 import { verticalLabel } from "@/lib/constants/verticals";
 
 export const dynamic = "force-dynamic";

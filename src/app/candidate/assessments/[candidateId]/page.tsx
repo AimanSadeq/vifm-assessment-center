@@ -14,7 +14,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { EXERCISE_TYPE_LABELS } from "@/lib/constants/exercise-types";
 import { ImpersonationBanner } from "@/components/shared/impersonation-banner";
 import { getServerT } from "@/lib/i18n/server";
 
@@ -26,6 +25,10 @@ type Props = {
 export default async function CandidateAssessmentsPage({ params, searchParams }: Props) {
   const supabase = await createClient();
   const t = await getServerT();
+  const typeLabel = (k: string) => {
+    const v = t(`exercise.types.${k}`);
+    return v.startsWith("exercise.types.") ? k : v;
+  };
   const { candidateId } = params;
   const asAdmin = searchParams?.asAdmin === "1";
 
@@ -126,9 +129,7 @@ export default async function CandidateAssessmentsPage({ params, searchParams }:
                   <CardHeader className="pb-2 pr-12">
                     <CardTitle className="text-base">{ex.name}</CardTitle>
                     <Badge variant="outline" className="w-fit text-xs">
-                      {t(`exercise.types.${ex.exercise_type}`) !== `exercise.types.${ex.exercise_type}`
-                        ? t(`exercise.types.${ex.exercise_type}`)
-                        : EXERCISE_TYPE_LABELS[ex.exercise_type] ?? ex.exercise_type}
+                      {ex.exercise_type ? typeLabel(ex.exercise_type) : "-"}
                     </Badge>
                   </CardHeader>
                   <CardContent className="space-y-2">

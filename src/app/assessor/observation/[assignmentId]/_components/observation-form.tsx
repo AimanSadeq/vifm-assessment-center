@@ -17,7 +17,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { EXERCISE_TYPE_LABELS } from "@/lib/constants/exercise-types";
 import { BackLink } from "@/components/shared/back-link";
 import { saveObservationAction, deleteObservationAction, saveRatingAction, deleteRatingAction } from "../actions";
 import { cn } from "@/lib/utils";
@@ -81,6 +80,10 @@ export function ObservationForm({
 }: Props) {
   const { t } = useTranslation();
   const barsLabel = (score: number) => t(`assessorPortal.observation.bars.${score}`);
+  const typeLabel = (k: string) => {
+    const v = t(`exercise.types.${k}`);
+    return v.startsWith("exercise.types.") ? k : v;
+  };
   const [observations, setObservations] = useState(existingObservations);
   const [ratings, setRatings] = useState<Record<string, { score: number; justification: string }>>(
     Object.fromEntries(
@@ -173,7 +176,7 @@ export function ObservationForm({
         <div className="flex items-center gap-2 mt-1">
           <Badge>{exerciseName}</Badge>
           <Badge variant="outline">
-            {EXERCISE_TYPE_LABELS[exerciseType] ?? exerciseType}
+            {typeLabel(exerciseType)}
           </Badge>
           {(prepMinutes || meetingMinutes) ? (
             <span className="text-xs text-muted-foreground">

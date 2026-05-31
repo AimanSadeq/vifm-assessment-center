@@ -10,7 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { EXERCISE_TYPE_LABELS } from "@/lib/constants/exercise-types";
 import { createEngagementAction } from "../actions";
 
 type Props = {
@@ -28,6 +27,10 @@ export function StepReview({
   const dispatch = useWizardDispatch();
   const router = useRouter();
   const { t } = useTranslation();
+  const typeLabel = (k: string) => {
+    const v = t(`exercise.types.${k}`);
+    return v.startsWith("exercise.types.") ? k : v;
+  };
   const [error, setError] = useState<string | null>(null);
 
   const org = organizations.find((o) => o.id === state.organizationId);
@@ -165,7 +168,7 @@ export function StepReview({
             {selectedExercises.map((ex) => (
               <Badge key={ex.id} variant="outline">
                 {ex.name} (
-                {EXERCISE_TYPE_LABELS[ex.exercise_type] ?? ex.exercise_type})
+                {typeLabel(ex.exercise_type)})
               </Badge>
             ))}
           </div>

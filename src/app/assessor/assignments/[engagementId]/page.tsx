@@ -14,7 +14,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { EXERCISE_TYPE_LABELS } from "@/lib/constants/exercise-types";
 
 type Props = {
   params: { engagementId: string };
@@ -23,6 +22,10 @@ type Props = {
 export default async function AssessorAssignmentGridPage({ params }: Props) {
   const supabase = await createClient();
   const t = await getServerT();
+  const typeLabel = (k: string) => {
+    const v = t(`exercise.types.${k}`);
+    return v.startsWith("exercise.types.") ? k : v;
+  };
   const { engagementId } = params;
 
   const [engResult, assignResult, oarResult] = await Promise.all([
@@ -141,7 +144,7 @@ export default async function AssessorAssignmentGridPage({ params }: Props) {
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline">
-                              {EXERCISE_TYPE_LABELS[ex?.exercise_type ?? ""] ?? ex?.exercise_type}
+                              {ex?.exercise_type ? typeLabel(ex.exercise_type) : "-"}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-muted-foreground">

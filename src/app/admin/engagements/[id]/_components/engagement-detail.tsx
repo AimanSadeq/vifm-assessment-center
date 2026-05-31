@@ -33,7 +33,6 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { EXERCISE_TYPE_LABELS } from "@/lib/constants/exercise-types";
 import { addCandidateAction, createAssignmentAction, addDemoAssessorAction, updateEngagementStatusAction, removeCandidateAction, deleteAssignmentAction, setCandidateRoleProfileAction, createReengagementAction } from "../actions";
 import { Trash2, Send, FileText, CheckCircle, Eye, Repeat2, Loader2, History, Grid3x3 } from "lucide-react";
 import Link from "next/link";

@@ -34,7 +34,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { EXERCISE_TYPE_LABELS, EXERCISE_TYPES } from "@/lib/constants/exercise-types";
+import { EXERCISE_TYPES } from "@/lib/constants/exercise-types";
 import { createExerciseAction } from "../actions";
 
 type Props = {
@@ -45,6 +45,10 @@ export function StepExercises({ exercises: initialExercises }: Props) {
   const state = useWizard();
   const dispatch = useWizardDispatch();
   const { t } = useTranslation();
+  const typeLabel = (k: string) => {
+    const v = t(`exercise.types.${k}`);
+    return v.startsWith("exercise.types.") ? k : v;
+  };
   const [exercises, setExercises] = useState(initialExercises);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -121,7 +125,7 @@ export function StepExercises({ exercises: initialExercises }: Props) {
                       <SelectContent>
                         {EXERCISE_TYPES.map((type) => (
                           <SelectItem key={type} value={type}>
-                            {EXERCISE_TYPE_LABELS[type]}
+                            {typeLabel(type)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -192,8 +196,7 @@ export function StepExercises({ exercises: initialExercises }: Props) {
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline">
-                      {EXERCISE_TYPE_LABELS[exercise.exercise_type] ??
-                        exercise.exercise_type}
+                      {typeLabel(exercise.exercise_type)}
                     </Badge>
                   </TableCell>
                   <TableCell>

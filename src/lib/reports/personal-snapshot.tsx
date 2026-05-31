@@ -502,7 +502,7 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
               you scored below the target of 4 / 5. The notation{" "}
               <Text style={s.fitExplainerMono}>gap N x xR</Text>{" "}means your gap
               to target (N) multiplied by how strongly the course is tagged to
-              that factor's competencies (relevance{" "}
+              that factor&apos;s competencies (relevance{" "}
               <Text style={s.fitExplainerMono}>x1</Text> light,{" "}
               <Text style={s.fitExplainerMono}>x2</Text> medium,{" "}
               <Text style={s.fitExplainerMono}>x3</Text> strong). The{" "}
@@ -553,10 +553,10 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
           <View style={s.emptyCourses}>
             <Text style={s.emptyCoursesTitle}>No targeted recommendations this run</Text>
             <Text style={s.emptyCoursesBody}>
-              You're at or near target across all four factors, or the gaps that
+              You&apos;re at or near target across all four factors, or the gaps that
               do exist sit outside the current VIFM training catalogue. Browse
               the full programme list at caliber.viftraining.com to pick
-              development areas that aren't tied to a measured gap, or come back
+              development areas that aren&apos;t tied to a measured gap, or come back
               to this snapshot after focused practice to see recommendations
               shift.
             </Text>
@@ -570,7 +570,7 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
             Four-factor framework, 24 self-report items rated on a 1-5 Likert
             scale, scored as the unweighted mean per factor. Factors map to the
             VIFM AC behavioural competency model so personal AI readiness lines
-            up with the development work you're already doing. This is a
+            up with the development work you&apos;re already doing. This is a
             snapshot - a paid consultant-led deep-dive doubles the items and
             adds peer benchmarking and a structured conversation about
             findings.

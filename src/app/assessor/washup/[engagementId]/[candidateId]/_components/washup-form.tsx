@@ -166,6 +166,10 @@ export function WashupForm({
     return () => {
       supabase.removeChannel(channel);
     };
+    // `t` is intentionally omitted: including it would tear down and re-subscribe
+    // the Realtime channel on every locale change. Colleague-update toasts use the
+    // translator captured when the subscription mounts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [engagementId, candidateId]);
 
   const handleSaveConsensus = async (competencyId: string) => {

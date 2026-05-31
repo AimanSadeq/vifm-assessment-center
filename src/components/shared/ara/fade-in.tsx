@@ -51,7 +51,9 @@ export function FadeIn({
 
   const combined = `ara-reveal ${shown ? "is-visible" : ""} ${className}`.trim();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Polymorphic tag: a union of intrinsic elements can't share one ref type, so
+  // `any` here is deliberate (mirrors the standard `as`-prop pattern). The
+  // no-explicit-any rule isn't enabled in next/core-web-vitals, so no directive.
   const Component: any = Tag;
   return (
     <Component ref={ref} className={combined}>

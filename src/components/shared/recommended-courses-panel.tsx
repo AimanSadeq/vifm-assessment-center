@@ -78,11 +78,11 @@ export async function RecommendedCoursesPanel({
         <div className="rounded-md bg-muted/40 border border-border/60 px-3 py-2 text-[11px] text-muted-foreground leading-relaxed">
           <p>
             <span className="font-semibold text-foreground">How to read these</span> -
-            {" "}each chip is one match between a course and a factor where you're
+            {" "}each chip is one match between a course and a factor where you&apos;re
             below the target of 4 / 5. The notation
             {" "}<span className="font-mono text-foreground">gap N · ×R</span>{" "}
             means your gap to target ({" "}<span className="font-mono">N</span>{" "})
-            multiplied by how strongly the course is tagged to that factor's
+            multiplied by how strongly the course is tagged to that factor&apos;s
             competencies (relevance {" "}<span className="font-mono">×1</span>{" "}light,
             {" "}<span className="font-mono">×2</span>{" "}medium,
             {" "}<span className="font-mono">×3</span>{" "}strong). The

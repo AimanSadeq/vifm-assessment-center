@@ -125,7 +125,7 @@ export default async function AraRespondPage({
                 </>
               ) : (
                 <>
-                  You're contributing to the AI readiness assessment for{" "}
+                  You&apos;re contributing to the AI readiness assessment for{" "}
                   <span className="text-white font-medium">{orgName}</span>.
                 </>
               )

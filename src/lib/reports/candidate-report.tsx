@@ -285,7 +285,7 @@ function AboutPage({ d }: { d: ReportData }) {
         The overall competency rating is not necessarily an average of the scores from the exercises - some activities are rated more heavily than others based on the competency-to-exercise matrix.
       </Text>
       <Text style={s.bodyText}>
-        This report provides information around the participant's strengths and development areas in relation to skills and behaviours important for the target role. You may regard this report as being particularly relevant for the next 24 months.
+        This report provides information around the participant&apos;s strengths and development areas in relation to skills and behaviours important for the target role. You may regard this report as being particularly relevant for the next 24 months.
       </Text>
       <Footer name={d.candidateName} />
     </Page>

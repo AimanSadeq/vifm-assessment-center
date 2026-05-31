@@ -17,6 +17,7 @@ import {
   type VifmCourseLevel,
   type VifmVertical,
 } from "@/types/database";
+import { verticalLabel } from "@/lib/constants/verticals";
 import { upsertCourseAction } from "../actions";
 import { parseOutlineText, outlineToText } from "./outline-parser";
 
@@ -139,7 +140,7 @@ export function CourseForm(props: Props) {
             <SelectContent>
               {(Object.keys(VIFM_VERTICAL_LABELS) as VifmVertical[]).map((v) => (
                 <SelectItem key={v} value={v}>
-                  {VIFM_VERTICAL_LABELS[v]}
+                  {verticalLabel(t, v)}
                 </SelectItem>
               ))}
             </SelectContent>

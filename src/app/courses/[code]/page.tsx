@@ -8,7 +8,8 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getServerT } from "@/lib/i18n/server";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { Badge } from "@/components/ui/badge";
-import { VIFM_VERTICAL_LABELS, type VifmCourse, type VifmVertical } from "@/types/database";
+import { type VifmCourse, type VifmVertical } from "@/types/database";
+import { verticalLabel } from "@/lib/constants/verticals";
 
 export const dynamic = "force-dynamic";
 
@@ -90,7 +91,7 @@ export default async function CourseDetailPage({
         <div className="max-w-6xl mx-auto px-6 pt-12 pb-14">
           <div className="flex flex-wrap items-center gap-2 mb-3">
             <Badge variant="secondary" className="text-[10px] uppercase tracking-widest">
-              {VIFM_VERTICAL_LABELS[course.vertical as VifmVertical] ?? course.vertical}
+              {verticalLabel(t, course.vertical)}
             </Badge>
             <Badge variant="outline" className="text-[10px] uppercase tracking-widest text-white/70 border-white/20">
               {t(`coursesPublic.level.${course.level}`)}
@@ -272,7 +273,7 @@ export default async function CourseDetailPage({
             </p>
             <div className="border-t pt-4 space-y-3 text-xs">
               <Fact label={t("coursesPublic.factProgrammeCode")} value={course.code ?? "-"} mono />
-              <Fact label={t("coursesPublic.factVertical")} value={VIFM_VERTICAL_LABELS[course.vertical as VifmVertical] ?? course.vertical} />
+              <Fact label={t("coursesPublic.factVertical")} value={verticalLabel(t, course.vertical)} />
               <Fact label={t("coursesPublic.factLevel")} value={t(`coursesPublic.level.${course.level}`)} />
               <Fact label={t("coursesPublic.factDuration")} value={durationLabel} />
               <Fact label={t("coursesPublic.factLanguages")} value={course.languages?.map((l) => l.toUpperCase()).join(" · ") ?? "-"} />

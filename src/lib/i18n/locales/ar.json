@@ -563,6 +563,22 @@
     "phAssessorNotes": "ملاحظات للمُقيّمين:\n\n• القضايا الرئيسية التي ينبغي أن يحددها المشاركون\n• الأخطاء الشائعة التي يجب مراقبتها\n• نصائح لجلسة الأسئلة والأجوبة\n• المؤشرات السلوكية الخاصة بالتمرين التي يجب التركيز عليها...",
     "saveNotes": "حفظ الملاحظات"
   },
+  "verticals": {
+    "finance": "المالية",
+    "investment": "الاستثمار",
+    "treasury": "الخزينة",
+    "accounting": "المحاسبة",
+    "banking": "الأعمال المصرفية",
+    "tax": "الضرائب",
+    "analytics": "التحليلات",
+    "business_intelligence": "ذكاء الأعمال",
+    "artificial_intelligence": "الذكاء الاصطناعي",
+    "business_reporting": "تقارير الأعمال",
+    "leadership": "القيادة",
+    "strategy": "الاستراتيجية",
+    "project_management": "إدارة المشاريع",
+    "real_estate": "العقارات"
+  },
   "observation": {
     "title": "الملاحظة",
     "recordObservation": "تسجيل ملاحظة",

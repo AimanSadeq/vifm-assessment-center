@@ -15,7 +15,7 @@ import {
   Lock,
 } from "lucide-react";
 import { lessonKeyFor } from "@/lib/academy/lesson-key";
-import { VIFM_VERTICAL_LABELS } from "@/types/database";
+import { verticalLabel } from "@/lib/constants/verticals";
 import type { VifmCourse, VifmCourseOutlineSection } from "@/types/database";
 import { CompleteCourseButton } from "../_components/complete-course-button";
 import { getServerT, type ServerT } from "@/lib/i18n/server";
@@ -133,7 +133,7 @@ export default async function AcademyCoursePage({ params }: Props) {
           <GraduationCap className="h-8 w-8 text-[#5391D5] shrink-0" />
           <div className="min-w-0">
             <p className="text-xs uppercase tracking-wide text-white/70">
-              {VIFM_VERTICAL_LABELS[course.vertical]} · {course.level}
+              {verticalLabel(t, course.vertical)} · {t(`coursesPublic.level.${course.level}`)}
             </p>
             <h1 className="text-2xl font-bold leading-tight">{course.title_en}</h1>
             {course.title_ar && (

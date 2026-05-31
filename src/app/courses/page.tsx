@@ -5,11 +5,11 @@ import { getServerT, type ServerT } from "@/lib/i18n/server";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { Badge } from "@/components/ui/badge";
 import {
-  VIFM_VERTICAL_LABELS,
   type VifmCourse,
   type VifmVertical,
   type VifmCourseLevel,
 } from "@/types/database";
+import { verticalLabel } from "@/lib/constants/verticals";
 
 export const dynamic = "force-dynamic";
 
@@ -129,7 +129,7 @@ export default async function CoursesCataloguePage({
             <FilterChip
               key={v}
               href={withParams(searchParams, { vertical: v, level: filterLevel || undefined })}
-              label={VIFM_VERTICAL_LABELS[v as VifmVertical] ?? v}
+              label={verticalLabel(t, v)}
               active={filterVertical === v}
             />
           ))}
@@ -163,7 +163,7 @@ export default async function CoursesCataloguePage({
           Array.from(byVertical.entries()).map(([vertical, list]) => (
             <div key={vertical} className="mb-12">
               <h2 className="text-2xl font-semibold text-primary mb-1">
-                {VIFM_VERTICAL_LABELS[vertical] ?? vertical}
+                {verticalLabel(t, vertical)}
               </h2>
               <p className="text-xs text-muted-foreground mb-5">
                 {t(

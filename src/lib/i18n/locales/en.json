@@ -563,6 +563,22 @@
     "phAssessorNotes": "Notes for assessors:\n\n• Key issues participants should identify\n• Common mistakes to watch for\n• Tips for the Q&A session\n• Exercise-specific behavioral indicators to focus on...",
     "saveNotes": "Save Notes"
   },
+  "verticals": {
+    "finance": "Finance",
+    "investment": "Investment",
+    "treasury": "Treasury",
+    "accounting": "Accounting",
+    "banking": "Banking",
+    "tax": "Tax",
+    "analytics": "Analytics",
+    "business_intelligence": "Business Intelligence",
+    "artificial_intelligence": "Artificial Intelligence",
+    "business_reporting": "Business Reporting",
+    "leadership": "Leadership",
+    "strategy": "Strategy",
+    "project_management": "Project Management",
+    "real_estate": "Real Estate"
+  },
   "observation": {
     "title": "Observation",
     "recordObservation": "Record Observation",

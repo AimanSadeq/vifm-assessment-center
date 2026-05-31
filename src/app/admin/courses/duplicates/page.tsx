@@ -7,7 +7,8 @@ import { BackLink } from "@/components/shared/back-link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, ArrowRight, GraduationCap } from "lucide-react";
-import { VIFM_VERTICAL_LABELS, type VifmVertical } from "@/types/database";
+import type { VifmVertical } from "@/types/database";
+import { verticalLabel } from "@/lib/constants/verticals";
 import { DeleteCourseButton } from "../_components/delete-course-button";
 import { similarity } from "./_components/levenshtein";
 
@@ -221,7 +222,7 @@ function CourseSlot({ course, t }: { course: CourseRow; t: ServerT }) {
         )}
         <div className="flex flex-wrap gap-1 mt-1.5">
           <Badge variant="outline" className="text-[10px]">
-            {VIFM_VERTICAL_LABELS[course.vertical] ?? course.vertical}
+            {verticalLabel(t, course.vertical)}
           </Badge>
           <Badge variant="secondary" className="text-[10px] capitalize">
             {course.level}

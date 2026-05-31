@@ -13,7 +13,7 @@ import {
   createCoursesFromProposalsAction,
   type ExtractRowResult,
 } from "../actions";
-import { VIFM_VERTICAL_LABELS } from "@/types/database";
+import { verticalLabel } from "@/lib/constants/verticals";
 
 export function CoursesImportClient() {
   const router = useRouter();
@@ -291,7 +291,7 @@ export function CoursesImportClient() {
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-1 justify-end">
-                        <Badge variant="outline" className="text-[10px]">{VIFM_VERTICAL_LABELS[p.vertical]}</Badge>
+                        <Badge variant="outline" className="text-[10px]">{verticalLabel(t, p.vertical)}</Badge>
                         <Badge variant="secondary" className="text-[10px] capitalize">{p.level}</Badge>
                         <Badge variant="outline" className="text-[10px] tabular-nums">
                           {p.min_duration_days === p.max_duration_days

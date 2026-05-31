@@ -15,6 +15,7 @@ import {
   type VifmCourse,
   type VifmVertical,
 } from "@/types/database";
+import { verticalLabel } from "@/lib/constants/verticals";
 import { DeleteCourseButton } from "./_components/delete-course-button";
 
 type CourseRow = Pick<
@@ -135,7 +136,7 @@ export default async function CoursesListPage() {
                     if (count === 0) return null;
                     return (
                       <Badge key={v} variant="secondary" className="text-[11px] tabular-nums">
-                        {VIFM_VERTICAL_LABELS[v]} · {count}
+                        {verticalLabel(t, v)} · {count}
                       </Badge>
                     );
                   })}
@@ -184,7 +185,7 @@ export default async function CoursesListPage() {
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="text-[11px]">
-                        {VIFM_VERTICAL_LABELS[c.vertical] ?? c.vertical}
+                        {verticalLabel(t, c.vertical)}
                       </Badge>
                     </TableCell>
                     <TableCell>

@@ -2,7 +2,8 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { GraduationCap, ArrowRight } from "lucide-react";
-import { VIFM_VERTICAL_LABELS, type VifmVertical } from "@/types/database";
+import { verticalLabel } from "@/lib/constants/verticals";
+import { getServerT } from "@/lib/i18n/server";
 import type { RecommendedCourse } from "@/lib/recommender/courses";
 import { HIGH_FIT_THRESHOLD } from "@/lib/recommender/courses";
 import { formatFitScore } from "@/lib/recommender/format";
@@ -33,13 +34,14 @@ type Props = {
  * pillars - that pulled this course into the list, with their gap
  * size and the AI/admin-authored rationale per tag.
  */
-export function RecommendedCoursesPanel({
+export async function RecommendedCoursesPanel({
   title,
   description,
   emptyMessage,
   courses,
   context,
 }: Props) {
+  const t = await getServerT();
   if (courses.length === 0) {
     return (
       <Card>
@@ -153,7 +155,7 @@ export function RecommendedCoursesPanel({
               <div className="mt-2 flex items-center justify-between gap-3">
                 <div className="flex flex-wrap gap-1">
                   <Badge variant="outline" className="text-[10px]">
-                    {VIFM_VERTICAL_LABELS[c.vertical as VifmVertical] ?? c.vertical}
+                    {verticalLabel(t, c.vertical)}
                   </Badge>
                   <Badge variant="secondary" className="text-[10px] capitalize">
                     {c.level}

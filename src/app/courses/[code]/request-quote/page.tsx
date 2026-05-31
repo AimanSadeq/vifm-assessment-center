@@ -5,7 +5,8 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getServerT } from "@/lib/i18n/server";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { QuoteRequestForm } from "./_components/quote-request-form";
-import { VIFM_VERTICAL_LABELS, type VifmCourse, type VifmVertical } from "@/types/database";
+import { type VifmCourse } from "@/types/database";
+import { verticalLabel } from "@/lib/constants/verticals";
 
 export const dynamic = "force-dynamic";
 
@@ -105,7 +106,7 @@ export default async function QuoteRequestPage({
           {course.title_en}
         </h1>
         <p className="text-sm text-muted-foreground mb-8">
-          {VIFM_VERTICAL_LABELS[course.vertical as VifmVertical] ?? course.vertical} ·{" "}
+          {verticalLabel(t, course.vertical)} ·{" "}
           {t(`coursesPublic.level.${course.level}`)} ·{" "}
           {course.min_duration_days === course.max_duration_days
             ? t(

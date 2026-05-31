@@ -14,7 +14,7 @@ import {
   Sparkles,
   Library,
 } from "lucide-react";
-import { VIFM_VERTICAL_LABELS } from "@/types/database";
+import { verticalLabel } from "@/lib/constants/verticals";
 import type { VifmVertical, VifmCourseOutlineSection } from "@/types/database";
 import { recommendCoursesForAcCandidate } from "@/lib/recommender/courses";
 import { EnrollButton } from "./_components/enroll-button";
@@ -233,7 +233,7 @@ export default async function MyLearningPage({ searchParams }: Props) {
                         {r.title_en}
                       </p>
                       <p className="text-[11px] text-muted-foreground mt-0.5">
-                        {VIFM_VERTICAL_LABELS[r.vertical]} · {r.level}
+                        {verticalLabel(t, r.vertical)} · {t(`coursesPublic.level.${r.level}`)}
                       </p>
                     </div>
                   </div>
@@ -320,7 +320,7 @@ function EnrollmentCard({ view, t }: { view: EnrollmentView; t: ServerT }) {
                 </p>
               )}
               <p className="text-[11px] text-muted-foreground mt-1">
-                {VIFM_VERTICAL_LABELS[course.vertical]} · {course.level}
+                {verticalLabel(t, course.vertical)} · {t(`coursesPublic.level.${course.level}`)}
               </p>
             </div>
             {isDone ? (

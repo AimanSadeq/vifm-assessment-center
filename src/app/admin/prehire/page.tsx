@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getServerT } from "@/lib/i18n/server";
 import { Badge } from "@/components/ui/badge";
 import { Plus, UserSearch, Building2, Users, ArrowRight, Briefcase } from "lucide-react";
 
@@ -17,6 +18,11 @@ type ReqRow = {
 
 export default async function PreHireListPage() {
   const supabase = await createClient();
+  const t = await getServerT();
+  const statusLabel = (s: string) => {
+    const v = t(`prehire.status.${s}`);
+    return v.startsWith("prehire.status.") ? s : v;
+  };
   const { data, error } = await supabase
     .from("prehire_requisitions")
     .select(
@@ -35,15 +41,13 @@ export default async function PreHireListPage() {
       <section className="prehire-hero">
         <div className="mx-auto max-w-6xl px-6 pt-10 pb-20">
           <span className="ara-eyebrow text-[#FDA4AF]">
-            <UserSearch className="h-3 w-3" /> Pre-employment screening
+            <UserSearch className="h-3 w-3" /> {t("prehire.eyebrow")}
           </span>
           <h1 className="ara-numeral mt-3 text-3xl font-semibold leading-[1.1] text-white sm:text-4xl">
-            Screen smarter. <span className="ara-accent-sweep">Shortlist with confidence.</span>
+            {t("prehire.h1a")} <span className="ara-accent-sweep">{t("prehire.h1b")}</span>
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/75">
-            Configurable screening funnels — competency quiz, English placement, and an AI
-            behavioural interview — with a weighted composite, adverse-impact monitoring, and an
-            audit trail. The score is a signal; a person always decides.
+            {t("prehire.lead")}
           </p>
 
           <div className="mt-7 flex flex-wrap items-center gap-x-4 gap-y-3">
@@ -51,14 +55,14 @@ export default async function PreHireListPage() {
               href="/admin/prehire/new"
               className="ara-pulse inline-flex items-center gap-2 rounded-lg bg-[#E11D48] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#be123c]"
             >
-              <Plus className="h-4 w-4" /> New requisition
+              <Plus className="h-4 w-4" /> {t("prehire.newReq")}
             </Link>
 
             {/* Stat strip */}
             <div className="flex flex-wrap items-stretch gap-3">
-              <Stat value={reqs.length} label="Requisitions" />
-              <Stat value={openCount} label="Open" />
-              <Stat value={totalCandidates} label="Candidates" />
+              <Stat value={reqs.length} label={t("prehire.statRequisitions")} />
+              <Stat value={openCount} label={t("prehire.statOpen")} />
+              <Stat value={totalCandidates} label={t("prehire.statCandidates")} />
             </div>
           </div>
         </div>
@@ -68,9 +72,9 @@ export default async function PreHireListPage() {
       <section className="mx-auto -mt-10 max-w-6xl px-6 pb-16">
         {error ? (
           <div className="rounded-2xl border bg-card p-6 shadow-sm">
-            <p className="text-sm text-destructive">Couldn&apos;t load requisitions: {error.message}</p>
+            <p className="text-sm text-destructive">{t("prehire.loadError", { msg: error.message })}</p>
             <p className="mt-2 text-xs text-muted-foreground">
-              Apply migration <code className="font-mono">00050</code> with{" "}
+              {t("prehire.applyMigrationA")} <code className="font-mono">00050</code> {t("prehire.applyMigrationWith")}{" "}
               <code className="font-mono">npx supabase db push</code>.
             </p>
           </div>
@@ -79,15 +83,15 @@ export default async function PreHireListPage() {
             <div className="ara-icon-rose flex h-12 w-12 items-center justify-center rounded-xl">
               <UserSearch className="h-6 w-6" />
             </div>
-            <p className="font-medium text-[#010131]">No requisitions yet</p>
+            <p className="font-medium text-[#010131]">{t("prehire.noneTitle")}</p>
             <p className="max-w-sm text-sm text-muted-foreground">
-              Create a requisition to start screening candidates for a client role.
+              {t("prehire.noneBody")}
             </p>
             <Link
               href="/admin/prehire/new"
               className="mt-2 inline-flex items-center gap-2 rounded-lg bg-[#E11D48] px-4 py-2 text-sm font-semibold text-white hover:bg-[#be123c]"
             >
-              <Plus className="h-4 w-4" /> New requisition
+              <Plus className="h-4 w-4" /> {t("prehire.newReq")}
             </Link>
           </div>
         ) : (
@@ -99,7 +103,7 @@ export default async function PreHireListPage() {
                     <div className="ara-icon-rose flex h-10 w-10 items-center justify-center rounded-xl">
                       <Briefcase className="h-5 w-5" />
                     </div>
-                    <Badge variant="outline" className="capitalize">{r.status}</Badge>
+                    <Badge variant="outline">{statusLabel(r.status)}</Badge>
                   </div>
                   <h3 className="font-semibold text-[#010131]">{r.title}</h3>
                   <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
@@ -112,10 +116,10 @@ export default async function PreHireListPage() {
                     <span className="inline-flex items-center gap-1.5 text-sm text-[#010131]">
                       <Users className="h-4 w-4 text-[#E11D48]" />
                       <span className="font-semibold tabular-nums">{candCount(r)}</span>
-                      <span className="text-muted-foreground">candidate{candCount(r) === 1 ? "" : "s"}</span>
+                      <span className="text-muted-foreground">{candCount(r) === 1 ? t("prehire.candidateWord") : t("prehire.candidatesWord")}</span>
                     </span>
                     <span className="inline-flex items-center gap-1 text-sm font-semibold text-[#E11D48]">
-                      Open <ArrowRight className="h-3.5 w-3.5" />
+                      {t("prehire.openCta")} <ArrowRight className="h-3.5 w-3.5" />
                     </span>
                   </div>
                 </div>

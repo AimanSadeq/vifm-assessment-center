@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { addCandidateAction } from "../../actions";
 
 export function AddCandidateForm({ requisitionId }: { requisitionId: string }) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -32,9 +34,9 @@ export function AddCandidateForm({ requisitionId }: { requisitionId: string }) {
     }
     const link = `${window.location.origin}/prehire/apply/${res.data.access_token}`;
     if (res.data.emailed) {
-      toast.success(`Candidate added and invitation emailed to ${email}.`, { duration: 6000 });
+      toast.success(t("prehire.addedEmailed", { email }), { duration: 6000 });
     } else {
-      toast.success("Candidate added. Invite link copied — email isn't configured, so share it directly.", {
+      toast.success(t("prehire.addedCopied"), {
         duration: 7000,
       });
     }
@@ -54,20 +56,20 @@ export function AddCandidateForm({ requisitionId }: { requisitionId: string }) {
       <CardContent className="pt-6">
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex-1 min-w-[10rem] space-y-1.5">
-            <Label htmlFor="cand-name">Candidate name</Label>
-            <Input id="cand-name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Full name" />
+            <Label htmlFor="cand-name">{t("prehire.candNameLabel")}</Label>
+            <Input id="cand-name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={t("prehire.candNamePh")} />
           </div>
           <div className="flex-1 min-w-[12rem] space-y-1.5">
-            <Label htmlFor="cand-email">Email</Label>
+            <Label htmlFor="cand-email">{t("prehire.emailLabel")}</Label>
             <Input id="cand-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" />
           </div>
           <div className="w-36 space-y-1.5">
-            <Label htmlFor="cand-phone">Phone</Label>
-            <Input id="cand-phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="optional" />
+            <Label htmlFor="cand-phone">{t("prehire.phoneLabel")}</Label>
+            <Input id="cand-phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t("prehire.phonePh")} />
           </div>
           <Button onClick={handleSubmit} disabled={submitting || !fullName || !email} className="gap-1.5">
             <UserPlus className="h-4 w-4" />
-            {submitting ? "Adding…" : "Add candidate"}
+            {submitting ? t("prehire.adding") : t("prehire.addCandidate")}
           </Button>
         </div>
       </CardContent>

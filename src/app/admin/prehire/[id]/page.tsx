@@ -13,8 +13,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { computeComposite, rankByComposite, RECOMMENDATION_LABELS } from "@/lib/prehire/scoring";
-import { PREHIRE_STAGE_LABELS } from "@/types/prehire";
+import { computeComposite, rankByComposite } from "@/lib/prehire/scoring";
+import { getServerT } from "@/lib/i18n/server";
 import type { PrehireStagePlanEntry, PrehireStageKind } from "@/types/prehire";
 import type { PrehireDecision } from "@/types/prehire";
 import { AddCandidateForm } from "./_components/add-candidate-form";
@@ -47,6 +47,11 @@ const RECO_TONE: Record<string, string> = {
 
 export default async function RequisitionDetailPage({ params }: { params: { id: string } }) {
   const supabase = await createClient();
+  const t = await getServerT();
+  const statusLabel = (s: string) => {
+    const v = t(`prehire.status.${s}`);
+    return v.startsWith("prehire.status.") ? s : v;
+  };
 
   const { data: req, error } = await supabase
     .from("prehire_requisitions")
@@ -57,12 +62,12 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
   if (error) {
     return (
       <div className="mx-auto max-w-6xl space-y-6 px-6 py-8">
-        <BackLink href="/admin/prehire" label="Back to requisitions" />
+        <BackLink href="/admin/prehire" label={t("prehire.backToReqs")} />
         <Card>
           <CardContent className="py-6">
-            <p className="text-sm text-destructive">Couldn&apos;t load this requisition: {error.message}</p>
+            <p className="text-sm text-destructive">{t("prehire.loadErrorOne", { msg: error.message })}</p>
             <p className="text-xs text-muted-foreground mt-2">
-              Apply migration <code>00050</code> with <code className="font-mono">npx supabase db push</code>.
+              {t("prehire.applyMigrationA")} <code>00050</code> {t("prehire.applyMigrationWith")} <code className="font-mono">npx supabase db push</code>.
             </p>
           </CardContent>
         </Card>
@@ -100,7 +105,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-6 py-8">
-      <BackLink href="/admin/prehire" label="Back to requisitions" />
+      <BackLink href="/admin/prehire" label={t("prehire.backToReqs")} />
 
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -108,26 +113,26 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
           <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             {orgName && <Badge variant="outline">{orgName}</Badge>}
             {req.level && <Badge variant="outline">{req.level}</Badge>}
-            <Badge variant="outline" className="capitalize">{req.status}</Badge>
-            {req.english_required && <Badge variant="secondary">English job-relevant</Badge>}
+            <Badge variant="outline">{statusLabel(req.status)}</Badge>
+            {req.english_required && <Badge variant="secondary">{t("prehire.englishBadge")}</Badge>}
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            Stages: {plan.map((s) => PREHIRE_STAGE_LABELS[s.kind]).join(" · ") || "none"}
+            {t("prehire.stagesPrefix")} {plan.map((s) => t(`prehire.stageLabels.${s.kind}`)).join(" · ") || t("prehire.stagesNone")}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <Link
             href={`/admin/prehire/${req.id}/fairness`}
             className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-accent"
-            title="Adverse-impact (4/5ths) analysis + audit trail"
+            title={t("prehire.ttFairness")}
           >
-            <ShieldCheck className="h-3.5 w-3.5" /> Fairness &amp; audit
+            <ShieldCheck className="h-3.5 w-3.5" /> {t("prehire.fairnessAudit")}
           </Link>
           <a
             href={`/api/admin/prehire/${req.id}/export?format=csv`}
             download
             className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-accent"
-            title="Export the shortlist as CSV for an ATS / spreadsheet"
+            title={t("prehire.ttCsv")}
           >
             <Download className="h-3.5 w-3.5" /> CSV
           </a>
@@ -135,7 +140,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
             href={`/api/admin/prehire/${req.id}/export?format=json`}
             download
             className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-accent"
-            title="Export the requisition + shortlist as JSON"
+            title={t("prehire.ttJson")}
           >
             <Download className="h-3.5 w-3.5" /> JSON
           </a>
@@ -146,26 +151,26 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
 
       <Card>
         <CardHeader>
-          <CardTitle>Shortlist ({ranked.length})</CardTitle>
+          <CardTitle>{t("prehire.shortlist", { n: ranked.length })}</CardTitle>
         </CardHeader>
         <CardContent>
           {ranked.length === 0 ? (
             <p className="py-6 text-sm text-muted-foreground text-center">
-              No candidates yet. Add one above to send them through the screening pipeline.
+              {t("prehire.noCandidates")}
             </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Candidate</TableHead>
+                  <TableHead>{t("prehire.thCandidate")}</TableHead>
                   {plan.map((s) => (
                     <TableHead key={s.kind} className="text-center">
-                      {PREHIRE_STAGE_LABELS[s.kind]}
+                      {t(`prehire.stageLabels.${s.kind}`)}
                     </TableHead>
                   ))}
-                  <TableHead className="text-center">Composite</TableHead>
-                  <TableHead>AI signal</TableHead>
-                  <TableHead className="w-44">Decision</TableHead>
+                  <TableHead className="text-center">{t("prehire.thComposite")}</TableHead>
+                  <TableHead>{t("prehire.thAiSignal")}</TableHead>
+                  <TableHead className="w-44">{t("prehire.thDecision")}</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -199,7 +204,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                           RECO_TONE[c.recommendation] ?? RECO_TONE.incomplete
                         }`}
                       >
-                        {RECOMMENDATION_LABELS[c.recommendation]}
+                        {t(`prehire.reco.${c.recommendation}`)}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -214,8 +219,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
             </Table>
           )}
           <p className="mt-4 text-xs text-muted-foreground">
-            Scores are a screening signal. A human reviews and makes the hiring decision —
-            the pipeline never auto-rejects.
+            {t("prehire.signalNote")}
           </p>
         </CardContent>
       </Card>

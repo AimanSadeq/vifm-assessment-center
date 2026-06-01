@@ -58,6 +58,17 @@ export type ReportData = {
   // candidate's competency gaps. Optional - renders an extra Learning
   // Plan PDF page when populated, omitted gracefully when empty.
   recommendedCourses?: ReportRecommendedCourse[];
+  // Certified technical domains earned by this candidate on the engagement's
+  // technical certification programme. Optional - the section is omitted when
+  // the candidate holds no technical credentials.
+  technicalCertifications?: TechnicalCertLine[];
+};
+
+export type TechnicalCertLine = {
+  domainNameEn: string;
+  domainNameAr: string | null;
+  level: number | null;
+  credentialCode: string | null;
 };
 
 export type ReportRecommendedCourse = {

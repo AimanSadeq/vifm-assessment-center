@@ -394,6 +394,20 @@ function SummaryPage({ d }: { d: ReportData }) {
           </View>
         </>
       )}
+      {(d.technicalCertifications?.length ?? 0) > 0 && (
+        <>
+          <Text style={[s.subSection, { color: "#4338ca" }]}>Technical Certifications</Text>
+          <View style={s.summaryRow}>
+            {d.technicalCertifications!.map((c) => (
+              <View key={c.domainNameEn} style={[s.summaryBadge, { backgroundColor: "#eef2ff", borderColor: "#6366f1" }]}>
+                <Text style={[s.summaryBadgeText, { color: "#3730a3" }]}>
+                  {c.domainNameEn}{c.level != null ? ` · Level ${c.level}/5` : ""}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </>
+      )}
       <Footer name={d.candidateName} />
     </Page>
   );

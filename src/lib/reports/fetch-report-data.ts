@@ -1,10 +1,11 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { recommendCoursesForAcCandidate } from "@/lib/recommender/courses";
 import { VIFM_VERTICAL_LABELS } from "@/types/database";
 import type {
   ReportData,
   ReportCompetencyData,
   ReportRecommendedCourse,
+  TechnicalCertLine,
 } from "./report-types";
 import type { VifmVertical } from "@/types/database";
 
@@ -185,6 +186,49 @@ export async function fetchReportData(
     console.error("[fetch-report-data] recommender failed (non-fatal):", e);
   }
 
+  // Certified technical domains for this candidate on the engagement. Admin-only
+  // data → service client. Non-fatal: the rest of the report still renders.
+  let technicalCertifications: TechnicalCertLine[] = [];
+  try {
+    const svc = createServiceClient();
+    const { data: techRows } = await svc
+      .from("tech_assessment_results")
+      .select("domain_key, level, credential_code, created_at")
+      .eq("engagement_id", engagementId)
+      .eq("candidate_id", candidateId)
+      .eq("certified", true)
+      .eq("passed_cut", true)
+      .order("created_at", { ascending: false });
+    const rows = (techRows ?? []) as {
+      domain_key: string;
+      level: number | null;
+      credential_code: string | null;
+    }[];
+    if (rows.length > 0) {
+      const { data: domRows } = await svc.from("technical_domains").select("key, name_en, name_ar");
+      const nameByKey = new Map(
+        ((domRows ?? []) as { key: string; name_en: string; name_ar: string | null }[]).map((d) => [
+          d.key,
+          { en: d.name_en, ar: d.name_ar },
+        ])
+      );
+      const seen = new Set<string>();
+      for (const r of rows) {
+        if (seen.has(r.domain_key)) continue; // latest per domain (rows are newest-first)
+        seen.add(r.domain_key);
+        const nm = nameByKey.get(r.domain_key);
+        technicalCertifications.push({
+          domainNameEn: nm?.en ?? r.domain_key,
+          domainNameAr: nm?.ar ?? null,
+          level: r.level,
+          credentialCode: r.credential_code,
+        });
+      }
+    }
+  } catch (e) {
+    console.error("[fetch-report-data] tech certs failed (non-fatal):", e);
+  }
+
   return {
     engagementName: eng.name,
     organizationName: orgName,
@@ -203,5 +247,6 @@ export async function fetchReportData(
     generatedAt: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }),
     assessorNames: Array.from(assessorNameSet),
     recommendedCourses,
+    technicalCertifications,
   };
 }

@@ -296,6 +296,22 @@ export function renderCandidateReportHtmlAr(data: ReportData): string {
       </div>`
       : "";
 
+  const techCertChipsHtml =
+    (d.technicalCertifications?.length ?? 0) > 0
+      ? `
+      <h3 class="sub-section" style="color:#4338ca">الاعتمادات التقنية</h3>
+      <div class="chip-row">
+        ${d
+          .technicalCertifications!.map(
+            (c) =>
+              `<span class="summary-chip" style="background:#eef2ff;border-color:#6366f1;color:#3730a3">${esc(
+                c.domainNameAr ?? c.domainNameEn
+              )}${c.level != null ? ` · المستوى ${c.level}/5` : ""}</span>`
+          )
+          .join("")}
+      </div>`
+      : "";
+
   // ── Competency detail cards ──
   const competencyCardsHtml = d.competencies
     .map((c) => {
@@ -752,6 +768,7 @@ export function renderCandidateReportHtmlAr(data: ReportData): string {
     ${competencyBarsHtml}
     ${strengthChipsHtml}
     ${devChipsHtml}
+    ${techCertChipsHtml}
     ${pageFooter(d.candidateName)}
   </section>
 

@@ -505,14 +505,15 @@ VIFM Fluent is a self-served English-language placement test, positioned as **in
 ### Route namespace (`/ac/fluent`, API `/api/ac/fluent/*`)
 - `/ac/fluent` — test runner (`FluentClient`); `/ac/fluent/cohort` — admin cohort report; `/ac/fluent/calibration` — human re-rating console for AI-score calibration.
 - `/api/ac/fluent` — `{action:"start"}` returns an answer-key-stripped test + `session_id`; `{action:"score"}` reloads the stored test server-side and grades it.
-- `/api/ac/fluent/transcribe` — speaking audio → transcript (Whisper); `/api/ac/fluent/tts` — listening-item audio; `/api/ac/fluent/[resultId]/certificate` — CEFR certificate PDF.
+- `/api/ac/fluent/transcribe` — **fallback** server transcription only. By default speaking is transcribed **in the browser** via the free Web Speech API (`src/lib/speech/browser-stt.ts`), so it works on Render with no server STT and no paid API. This route runs only for browsers without Web Speech (e.g. Firefox): OpenAI Whisper API when `OPENAI_API_KEY` is set, else local faster-whisper in dev. `/api/ac/fluent/tts` — listening-item audio; `/api/ac/fluent/[resultId]/certificate` — CEFR certificate PDF.
 - Admin sidebar link "Fluent" (`adminNav.fluent`, Languages icon) → `/ac/fluent`.
 
 ### Key files
 - `src/lib/ai/fluent-english.ts` — `generateFluentTest()`, `scoreFluentWriting/Speaking` (+ ensemble variants), `computeFluentResult()`, `stripAnswerKey()`, `blendPronunciation()`. Falls back to a static deck + placeholder scores when `ANTHROPIC_API_KEY` is absent.
 - `src/lib/integrations/speech.ts` — Azure pronunciation (`isAzureSpeechConfigured`, `assessPronunciation`); optional, blended into the speaking score.
 - `src/lib/scoring/reliability.ts` — overall confidence band; `src/lib/scoring/irt.ts` — `selectNextItem` (Rasch/CAT groundwork, dark until items reach `status='live'`).
-- `scripts/whisper-transcribe.py` (faster-whisper + ffmpeg; no audio persisted); `scripts/fluent-calibrate-items.ts`.
+- `src/lib/speech/browser-stt.ts` — **browser-native speech-to-text** (Web Speech API), the primary free speaking-transcription path (no server, no API key); falls back to the server `/transcribe` route on unsupported browsers.
+- `scripts/whisper-transcribe.py` (faster-whisper + ffmpeg; no audio persisted; dev-only fallback); `scripts/fluent-calibrate-items.ts`.
 
 ### DB tables (migrations 00042–00048)
 - `eng_fluent_results` (`00042`; + `integrity_flags`/`email_sent_at` in `00043`; + `candidate_id`/`engagement_id` in `00044`) — one row per completed test; `result` jsonb holds the full per-criterion detail for the certificate + detail view.
@@ -524,7 +525,7 @@ VIFM Fluent is a self-served English-language placement test, positioned as **in
 - All `eng_fluent_*` tables are RLS **admin-SELECT only**; every write goes through the service-role API route (mirrors the ARA respondent model — no client-side writes, no candidate/profile FK required on the anonymous path).
 - **Integrity:** the answer key is stripped from the start payload and grading happens server-side; if `eng_fluent_sessions` isn't migrated yet the route falls back to the legacy client-graded path (non-breaking). Client-side proctoring (`integrity_flags`: tab-blur + paste counts) is advisory only — surfaced to admins, never auto-fails.
 - On completion the route issues a `fluent_cefr` credential (see Credentials) and best-effort emails the taker their results + certificate.
-- **Env:** `ANTHROPIC_API_KEY` (test authoring + writing/speaking scoring), `AZURE_SPEECH_KEY` (optional pronunciation), `PYTHON_BIN`/`FFMPEG_BIN` (Whisper).
+- **Env:** `ANTHROPIC_API_KEY` (test authoring + writing/speaking scoring), `AZURE_SPEECH_KEY` (optional pronunciation). Speaking transcription needs **no env** by default (browser Web Speech API); `OPENAI_API_KEY` (optional OpenAI Whisper API) or `PYTHON_BIN`/`FFMPEG_BIN` (local Whisper, dev) only power the server fallback for browsers without Web Speech.
 
 ## AI Conversational Assessor (CBI)
 
@@ -628,7 +629,7 @@ The composite is a **screening signal, never an auto-reject.** A human always ma
 ### Candidate flow (`/prehire/apply/[token]`, no account)
 `ApplyFlow` runs the requisition's interactive stages in configured order: **consent gate → quiz → Fluent (full 4-skill) → CBI → optional voluntary self-ID** (shown on the completion screen, after scoring, so it's visibly decoupled). Each stage component is `{ token, onDone }`; `onDone()` advances. Stages reuse the existing engines verbatim:
 - **quiz** — `generateQuizQuestions` (bilingual), answer key stripped from the client payload; normalized = round(100·correct/total).
-- **fluent** — full 4-skill placement: reading + listening (Azure TTS audio, or browser-TTS / script fallback) + writing + speaking (MediaRecorder → Whisper transcription → Claude CEFR scoring, blended with Azure pronunciation). Answer key + listening scripts held server-side in `detail.fullTest`; CEFR → 0–100 (A1→0 … C2→100).
+- **fluent** — full 4-skill placement: reading + listening (Azure TTS audio, or browser-TTS / script fallback) + writing + speaking (browser Web Speech API transcription by default — free, no server; MediaRecorder → server Whisper only as the no-Web-Speech fallback → Claude CEFR scoring, optionally blended with Azure pronunciation). Answer key + listening scripts held server-side in `detail.fullTest`; CEFR → 0–100 (A1→0 … C2→100).
 - **cbi** — `nextInterviewerTurn` / `scoreCbiInterview` (`MAX_CANDIDATE_ANSWERS = 4`); BARS 1–5 → 0–100 = round(((bars−1)/4)·100).
 
 ### Composite scoring ([src/lib/prehire/scoring.ts](src/lib/prehire/scoring.ts), pure/unit-testable)

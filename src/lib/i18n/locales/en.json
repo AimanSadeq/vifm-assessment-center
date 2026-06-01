@@ -322,6 +322,7 @@
     "invitingAll": "Sending invites…",
     "invitedAllResult": "Sent {{sent}} of {{total}} invitations.",
     "invitedNone": "No uninvited candidates to send.",
+    "notInvited": "Not invited",
     "candNameLabel": "Candidate name",
     "candNamePh": "Full name",
     "emailLabel": "Email",

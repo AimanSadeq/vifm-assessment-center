@@ -35,6 +35,7 @@ type CandidateRow = {
   email: string;
   status: string;
   access_token: string;
+  invited_at: string | null;
   prehire_stage_results: StageResult[];
 };
 
@@ -82,7 +83,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
 
   const { data: candData } = await supabase
     .from("prehire_candidates")
-    .select("id, full_name, email, status, access_token, prehire_stage_results(kind, status, normalized_score, passed)")
+    .select("id, full_name, email, status, access_token, invited_at, prehire_stage_results(kind, status, normalized_score, passed)")
     .eq("requisition_id", params.id);
 
   const candidates = (candData ?? []) as unknown as CandidateRow[];
@@ -203,7 +204,14 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                 {ranked.map((c) => (
                   <TableRow key={c.id}>
                     <TableCell>
-                      <div className="font-medium">{c.full_name}</div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{c.full_name}</span>
+                        {!c.invited_at && (
+                          <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+                            {t("prehire.notInvited")}
+                          </span>
+                        )}
+                      </div>
                       <div className="text-xs text-muted-foreground">{c.email}</div>
                       {customById.get(c.id)?.employee_id && (
                         <div className="text-xs text-muted-foreground">

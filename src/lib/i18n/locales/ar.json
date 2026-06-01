@@ -322,6 +322,7 @@
     "invitingAll": "جارٍ إرسال الدعوات…",
     "invitedAllResult": "أُرسلت {{sent}} من {{total}} دعوة.",
     "invitedNone": "لا يوجد مرشّحون بانتظار الدعوة.",
+    "notInvited": "لم تتم الدعوة",
     "candNameLabel": "اسم المرشح",
     "candNamePh": "الاسم الكامل",
     "emailLabel": "البريد الإلكتروني",

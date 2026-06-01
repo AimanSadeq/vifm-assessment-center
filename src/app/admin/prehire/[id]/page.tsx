@@ -18,6 +18,8 @@ import { getServerT, getServerLocale } from "@/lib/i18n/server";
 import type { PrehireStagePlanEntry, PrehireStageKind } from "@/types/prehire";
 import { AddCandidateForm } from "./_components/add-candidate-form";
 import { InviteLink } from "./_components/invite-link";
+import { ClientReportCell } from "./_components/client-report-cell";
+import { ClientReportControls } from "./_components/client-report-controls";
 
 export const dynamic = "force-dynamic";
 
@@ -96,6 +98,24 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
     if (r.custom_fields && typeof r.custom_fields === "object") customById.set(r.id, r.custom_fields);
   }
 
+  // Report delivery (00063) — separate best-effort reads (tolerant pre-migration,
+  // like custom_fields) so a missing column can't break the page or shortlist.
+  const reportSentById = new Map<string, string>();
+  const { data: sentData } = await supabase
+    .from("prehire_candidates")
+    .select("id, report_sent_at")
+    .eq("requisition_id", params.id);
+  for (const r of (sentData ?? []) as { id: string; report_sent_at: string | null }[]) {
+    if (r.report_sent_at) reportSentById.set(r.id, r.report_sent_at);
+  }
+  let clientEmail: string | null = null;
+  const { data: reqEmail } = await supabase
+    .from("prehire_requisitions")
+    .select("client_recipient_email")
+    .eq("id", params.id)
+    .maybeSingle();
+  clientEmail = (reqEmail?.client_recipient_email as string | null) ?? null;
+
   const scored = candidates.map((c) => {
     const result = computeComposite(plan, c.prehire_stage_results ?? []);
     return { ...c, composite: result.composite, recommendation: result.recommendation, perStage: result.perStage };
@@ -148,6 +168,12 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
 
       <AddCandidateForm requisitionId={req.id as string} />
 
+      <ClientReportControls
+        requisitionId={req.id as string}
+        currentEmail={clientEmail}
+        lang={locale === "ar" ? "ar" : "en"}
+      />
+
       <Card>
         <CardHeader>
           <CardTitle>{t("prehire.shortlist", { n: ranked.length })}</CardTitle>
@@ -169,6 +195,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                   ))}
                   <TableHead className="text-center">{t("prehire.thComposite")}</TableHead>
                   <TableHead>{t("prehire.thAiSignal")}</TableHead>
+                  <TableHead>{t("prehire.thClientReport")}</TableHead>
                   <TableHead className="text-end">{t("prehire.thActions")}</TableHead>
                 </TableRow>
               </TableHeader>
@@ -209,6 +236,14 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                       >
                         {t(`prehire.reco.${c.recommendation}`)}
                       </span>
+                    </TableCell>
+                    <TableCell>
+                      <ClientReportCell
+                        candidateId={c.id}
+                        sentAt={reportSentById.get(c.id) ?? null}
+                        recipientSet={!!clientEmail}
+                        lang={locale === "ar" ? "ar" : "en"}
+                      />
                     </TableCell>
                     <TableCell className="text-end">
                       <div className="inline-flex items-center gap-1">

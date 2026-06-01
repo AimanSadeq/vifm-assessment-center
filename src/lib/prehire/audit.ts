@@ -18,6 +18,7 @@ export type PrehireAuditAction =
   | "stage_completed"
   | "demographics_submitted"
   | "decision_recorded"
+  | "report_shared"
   | "export_taken";
 
 export type LogPrehireEvent = {

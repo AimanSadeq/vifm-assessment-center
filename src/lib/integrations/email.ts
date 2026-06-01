@@ -30,12 +30,22 @@ export type EmailTemplate =
   | "engagement_created"
   | "course_quote_request"
   | "fluent_result"
-  | "prehire_invitation";
+  | "prehire_invitation"
+  | "prehire_client_report";
+
+/** Optional file attachment (e.g. a generated PDF report). */
+export type EmailAttachment = {
+  filename: string;
+  /** Base64-encoded file contents. */
+  contentBase64: string;
+  contentType?: string;
+};
 
 export type EmailPayload = {
   to: string;
   template: EmailTemplate;
   data: Record<string, string>;
+  attachments?: EmailAttachment[];
 };
 
 function getGraphClient(): Client | null {
@@ -165,6 +175,19 @@ Your responses are processed by VIFM on behalf of {{orgName}} for the sole purpo
 Best regards,
 Virginia Institute of Finance and Management`,
   },
+  prehire_client_report: {
+    subject: "Pre-Hire screening report — {{candidateName}} ({{roleTitle}})",
+    body: `Dear {{clientName}},
+
+Please find attached the pre-hire screening report for {{candidateName}}{{empClause}}, who completed the screening for the {{roleTitle}} role.
+
+The report summarises the advisory composite and the per-stage results. As always, this is a screening signal to support your process — VIFM does not make the hiring decision; your team does.
+
+Please treat the attached report as confidential.
+
+Best regards,
+Virginia Institute of Finance and Management`,
+  },
   fluent_result: {
     subject: "Your Fluent result - {{level}}",
     body: `Dear {{takerName}},
@@ -210,10 +233,20 @@ export async function sendEmail(payload: EmailPayload): Promise<boolean> {
     console.log(`[EMAIL MOCK] To: ${payload.to}`);
     console.log(`[EMAIL MOCK] Subject: ${subject}`);
     console.log(`[EMAIL MOCK] Body:\n${body}\n`);
+    for (const a of payload.attachments ?? []) {
+      console.log(`[EMAIL MOCK] Attachment: ${a.filename} (${a.contentType ?? "application/pdf"}, ${Math.round((a.contentBase64.length * 3) / 4 / 1024)} KB)`);
+    }
     return true;
   }
 
   try {
+    const attachments = (payload.attachments ?? []).map((a) => ({
+      "@odata.type": "#microsoft.graph.fileAttachment",
+      name: a.filename,
+      contentType: a.contentType ?? "application/pdf",
+      contentBytes: a.contentBase64,
+    }));
+
     await graphClient.api(`/users/${fromAddress}/sendMail`).post({
       message: {
         subject,
@@ -228,6 +261,7 @@ export async function sendEmail(payload: EmailPayload): Promise<boolean> {
             },
           },
         ],
+        ...(attachments.length > 0 ? { attachments } : {}),
       },
       saveToSentItems: true,
     });

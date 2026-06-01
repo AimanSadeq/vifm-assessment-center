@@ -2,10 +2,13 @@ import type { PrehireRecommendation } from "@/lib/prehire/scoring";
 
 /**
  * Per-candidate Pre-Hire screening report (HTML → Puppeteer PDF). VIFM is the
- * assessor, not the client, so this is the deliverable an admin downloads per
- * candidate — replacing the in-app hiring "decision" capture. It surfaces the
- * advisory composite + per-stage scores, with an explicit "screening signal,
- * not a hiring decision" line (the module's core guardrail). Bilingual EN/AR.
+ * assessor, not the client, so this is the deliverable VIFM downloads or emails
+ * to the client per candidate. It surfaces the advisory composite + per-stage
+ * scores, a "How this score is calculated" methodology section (the composite
+ * formula + the four advisory bands and their triggers — since the signal is
+ * derived automatically, the client is told exactly how), and an explicit
+ * "screening signal, not a hiring decision" line (the module's core guardrail).
+ * Bilingual EN/AR.
  */
 
 export type PrehireReportStage = {
@@ -60,6 +63,20 @@ const L: Record<Lang, Record<string, string>> = {
     reco_review: "Review",
     reco_hold: "Hold for review",
     reco_incomplete: "In progress",
+    howTitle: "How this score is calculated",
+    howComposite:
+      "The Composite is a weighted average (0–100) of the stage scores above — each stage counts in proportion to its Weight — shown only once the candidate has completed every weighted stage. The Advisory signal is then derived automatically from the Composite; it is a screening signal, not a hiring decision:",
+    thBand: "Signal",
+    thWhen: "When",
+    thMeaning: "What it means",
+    when_advance: "Composite 70+ and every required stage at or above its cut-score",
+    when_review: "Composite 50–69, or a required stage below its cut-score (which caps the signal here)",
+    when_hold: "Composite below 50",
+    when_incomplete: "The candidate hasn't completed every stage yet",
+    mean_advance: "Strong screening signal",
+    mean_review: "Middling — worth a closer look",
+    mean_hold: "Low signal — a person should review",
+    mean_incomplete: "No composite is available yet",
   },
   ar: {
     brand: "معهد فرجينيا للتمويل والإدارة",
@@ -88,6 +105,20 @@ const L: Record<Lang, Record<string, string>> = {
     reco_review: "مراجعة",
     reco_hold: "إيقاف للمراجعة",
     reco_incomplete: "قيد التنفيذ",
+    howTitle: "كيف تُحتسب هذه الدرجة",
+    howComposite:
+      "الدرجة الكلية هي متوسط مرجّح (0–100) لدرجات المراحل أعلاه — تُسهم كل مرحلة بحسب وزنها — وتظهر فقط بعد أن يُكمل المرشّح جميع المراحل المرجّحة. ثم تُشتق الإشارة الاسترشادية تلقائيًا من الدرجة الكلية؛ وهي إشارة فرز وليست قرار توظيف:",
+    thBand: "الإشارة",
+    thWhen: "متى",
+    thMeaning: "ماذا تعني",
+    when_advance: "الدرجة الكلية 70 فأعلى وكل مرحلة إلزامية عند حد القطع أو أعلى",
+    when_review: "الدرجة الكلية 50–69، أو مرحلة إلزامية دون حد القطع (ما يحدّ الإشارة هنا)",
+    when_hold: "الدرجة الكلية دون 50",
+    when_incomplete: "لم يُكمل المرشّح جميع المراحل بعد",
+    mean_advance: "إشارة فرز قوية",
+    mean_review: "متوسطة — تستحق نظرة أدق",
+    mean_hold: "إشارة منخفضة — ينبغي أن يراجعها شخص",
+    mean_incomplete: "لا تتوفر درجة كلية بعد",
   },
 };
 
@@ -127,6 +158,20 @@ export function renderPrehireCandidateHtml(data: PrehireReportData, lang: Lang):
         <td class="num">${s.normalized == null ? "—" : Math.round(s.normalized)}</td>
         <td class="num">${s.cutScore == null ? "—" : s.cutScore}</td>
         <td>${outcome}</td>
+      </tr>`;
+    })
+    .join("");
+
+  // "How this score is calculated" — the band methodology, so the client
+  // understands the automatically-derived advisory signal.
+  const bandOrder: PrehireRecommendation[] = ["advance", "review", "hold", "incomplete"];
+  const bandRows = bandOrder
+    .map((b) => {
+      const bt = TONE[b];
+      return `<tr>
+        <td><span class="reco" style="background:${bt.bg};color:${bt.fg};font-size:10px;padding:2px 9px">${t[`reco_${b}`]}</span></td>
+        <td>${t[`when_${b}`]}</td>
+        <td class="muted">${t[`mean_${b}`]}</td>
       </tr>`;
     })
     .join("");
@@ -195,6 +240,13 @@ export function renderPrehireCandidateHtml(data: PrehireReportData, lang: Lang):
       <th class="num">${t.thCut}</th><th>${t.thOutcome}</th>
     </tr></thead>
     <tbody>${stageRows}</tbody>
+  </table>
+
+  <h2>${t.howTitle}</h2>
+  <p class="muted" style="margin:0 0 8px; color:#555; font-size:11px">${t.howComposite}</p>
+  <table>
+    <thead><tr><th>${t.thBand}</th><th>${t.thWhen}</th><th>${t.thMeaning}</th></tr></thead>
+    <tbody>${bandRows}</tbody>
   </table>
 
   <div class="disclaimer">${t.disclaimer}</div>

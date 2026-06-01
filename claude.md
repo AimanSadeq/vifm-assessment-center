@@ -50,7 +50,7 @@ src/
         import/           # AI PDF extraction (drag-and-drop, 25/batch, replace-on-re-import)
         duplicates/       # Levenshtein near-match finder for catalogue cleanup
       prehire/            # Pre-Hire screening — requisition list + 1-step create wizard
-        [id]/             # Requisition detail: ranked shortlist, invite (email/link), human-decision capture, JSON/CSV export
+        [id]/             # Requisition detail: ranked shortlist, invite (email/link), per-candidate report, email-report-to-client (no hiring decision), JSON/CSV export
         [id]/fairness/    # Defensibility hub — adverse-impact (4/5ths) tables + immutable audit trail
       assessors/          # Assessor pool management
       analytics/          # ICC, bias detection, Recharts charts
@@ -623,7 +623,7 @@ The composite is a **screening signal, never an auto-reject.** A human always ma
 
 ### Recruiter surface (`/admin/prehire`)
 - List + 1-step requisition wizard (`createRequisitionAction`): pick client org, title, role profile, and an ordered **stage plan** (`[{kind, weight, cut_score, required}]`). Default plan: quiz 0.4 (cut 60) / fluent 0.3 (cut 50) / cbi 0.3 (cut 60).
-- Detail page (`/admin/prehire/[id]`): ranked shortlist (per-stage normalized scores + composite + AI signal), Add Candidate (auto-emails the invite), per-row **Invite link / Email** resend, **human-decision capture** (`DecisionCell` → advance/reject/hold/withdraw + job-related reason), and JSON/CSV **ATS export**.
+- Detail page (`/admin/prehire/[id]`): ranked shortlist (per-stage normalized scores + composite + AI signal), Add Candidate (with optional Employee ID; does NOT auto-email — the admin invites per-row or "Invite all uninvited"), per-row **Invite link / Email** resend, per-candidate **screening report** (PDF download), **email-report-to-client** (`ClientReportCell` per row + `ClientReportControls` header: set the client recipient once, then "Send to client" / "Send all reports"; shows "Sent <date>"), and JSON/CSV **ATS export**. (VIFM is the assessor, not the decider: there is NO in-app hiring decision or handoff workflow — VIFM just delivers the report and the client decides.)
 - Fairness & audit hub (`/admin/prehire/[id]/fairness`): guardrail statement, adverse-impact (4/5ths) tables per demographic dimension, and the immutable audit trail.
 
 ### Candidate flow (`/prehire/apply/[token]`, no account)
@@ -636,18 +636,22 @@ The composite is a **screening signal, never an auto-reject.** A human always ma
 `computeComposite(plan, results)` → weighted 0–100 composite (null until every weighted stage is scored) + per-stage pass/fail vs cut-score + advisory recommendation (`advance` / `review` / `hold` / `incomplete`, **never** reject). `rescoreCandidate(candidateId)` recomputes + persists composite/recommendation/status after each stage. `rankByComposite` orders the shortlist.
 
 ### Defensibility layer (migration 00051)
-- **Human decision** — `setPrehireDecisionAction` (admin-gated) records the real decision + reason + actor + timestamp, distinct from the AI `recommendation`; maps to candidate status (advanced→shortlisted, etc.).
-- **Immutable audit trail** — `prehire_audit_log` (append-only; UPDATE trigger raises). `logPrehireEvent` ([src/lib/prehire/audit.ts](src/lib/prehire/audit.ts)) is best-effort + tolerant, wired into 8 events: requisition_created, candidate_added, invitation_sent, consent_given, stage_completed, demographics_submitted, decision_recorded, export_taken. Detail never contains demographic values (the trail is client-readable).
+- **Report delivery, not a decision** — the in-app hiring decision was removed (VIFM is the assessor, not the decider); a brief handoff-tracker experiment (00062) was also removed. The real action is **delivering the report to the client**: `setRequisitionClientEmailAction` stores the client recipient on the requisition; `sendReportToClientAction` / `sendAllReportsToClientAction` (admin-gated, migration 00063) email the per-candidate PDF (built by the shared `buildPrehireCandidatePdf`, attached via the `prehire_client_report` template) and stamp `report_sent_at`/`report_sent_to`. The client always makes the actual hiring call from the report. (The legacy `decision` columns from 00051 remain in the DB but are unused.)
+- **Immutable audit trail** — `prehire_audit_log` (append-only; UPDATE trigger raises). `logPrehireEvent` ([src/lib/prehire/audit.ts](src/lib/prehire/audit.ts)) is best-effort + tolerant, wired into 9 events: requisition_created, candidate_added, invitation_sent, consent_given, stage_completed, demographics_submitted, report_shared, decision_recorded (legacy), export_taken. Detail never contains demographic values or the recipient address (the trail is client-readable).
 - **Adverse-impact (4/5ths rule)** — `computeAdverseImpact` ([src/lib/prehire/adverse-impact.ts](src/lib/prehire/adverse-impact.ts)): per-dimension selection rates (gender / age band / national-vs-expatriate), reference = highest-selected group, flags any group below 0.8 of it. Auto-picks the human-decision basis, falls back to the AI signal; small-sample/underpowered caveats; demographics never imputed. Monitoring signal only — a flag warrants reviewing job-relatedness, not an automatic change.
 - **Voluntary demographics** — self-ID is optional, GCC-appropriate, decoupled from scoring, `prefer_not_to_say` first-class. Individual demographics never appear in the audit log, the ATS export, or any client surface — only the admin-only aggregate 4/5ths view.
 
-### Invitation email + ATS export
-- `prehire_invitation` template in [src/lib/integrations/email.ts](src/lib/integrations/email.ts) (Microsoft Graph; console-mock when unconfigured). Auto-sent on add (best-effort, never blocks) + per-row resend. `addCandidateAction` returns `emailed` so the UI distinguishes a real send from the copy-link fallback.
+### Invitation email + client report + ATS export
+- `prehire_invitation` template in [src/lib/integrations/email.ts](src/lib/integrations/email.ts) (Microsoft Graph; console-mock when unconfigured). NOT auto-sent on add (the admin invites explicitly — per-row "Email" or "Invite all uninvited"; `invited_at` stays null until sent). `addCandidateAction` returns `emailed: false`; the per-row + bulk invite actions do the send.
+- `prehire_client_report` template (same email module, now supports PDF **attachments** via `EmailAttachment`): emails the candidate's screening report straight to the client recipient (no public/token route — the PDF goes to the inbox, keeping PII out of any URL).
 - Export at `/api/admin/prehire/[id]/export?format=json|csv` — admin-gated (`requireRole(["admin"])`) + service client; recomputes the composite (not a stale column); CSV carries a UTF-8 BOM for Excel/Arabic. JSON is self-describing (`vifm-prehire-export@v1`). No demographics in the export.
 
 ### DB tables
 - **00050** — `prehire_requisitions` (stage_config jsonb), `prehire_candidates` (access_token, composite_score, recommendation, consent_at), `prehire_stage_results` (one row per stage; `source_id` soft-links the instrument's native record; `detail`/`flags` jsonb). RLS: admin all; client SELECT own org; candidates have NO table access (service-role routes only).
-- **00051** — voluntary demographic columns + human-decision columns on `prehire_candidates`; `prehire_audit_log` (immutable, admin-all + client-scoped RLS).
+- **00051** — voluntary demographic columns + (legacy, now-unused) human-decision columns on `prehire_candidates`; `prehire_audit_log` (immutable, admin-all + client-scoped RLS).
+- **00061** — `prehire_candidates.custom_fields` jsonb (recruiter metadata, e.g. `{employee_id}`; not scored, not candidate-visible).
+- **00062** — (superseded) added handoff_* columns; the handoff tracker was dropped in 00063.
+- **00063** — drops the 00062 handoff_* columns; adds `prehire_requisitions.client_recipient_email` + `prehire_candidates.report_sent_at`/`report_sent_to` (deliver-report-to-client).
 
 ### Tolerance
 Every defensibility path is best-effort and tolerant of 00051 not being applied (audit no-ops, demographics route returns ok, fairness page shows an "apply 00051" hint, the shortlist's decision read is a separate query so a missing column can't empty the table) — mirrors the Fluent/Academy pattern. Verified end-to-end on the live DB (full pipeline + audit rows + demographics/decision persistence + export + adverse-impact on a real cohort + fairness page render).

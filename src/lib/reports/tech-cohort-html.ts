@@ -1,4 +1,5 @@
 import type { EngagementTechProgram } from "@/lib/competencies/engagement-tech-program";
+import type { FunctionProgramView } from "@/lib/competencies/technical-program";
 
 export type TechCohortReportData = {
   engagementName: string;
@@ -206,6 +207,183 @@ export function renderTechCohortHtml(data: TechCohortReportData, lang: Lang): st
   }
 
   <div class="foot"><span>${t.confidential}</span><span>${esc(data.engagementName)}</span></div>
+</body>
+</html>`;
+}
+
+// ── Function-scoped cohort report (the current model) ────────────────────────
+
+export type TechFunctionCohortData = {
+  programName: string;
+  orgName: string | null;
+  view: FunctionProgramView;
+  generatedAt: Date;
+};
+
+const FL: Record<Lang, Record<string, string>> = {
+  en: {
+    brand: "Virginia Institute of Finance and Management",
+    title: "Technical Assessment — Function Cohort Report",
+    organization: "Organization",
+    program: "Programme",
+    func: "Function",
+    generated: "Generated",
+    participants: "Participants",
+    completed: "Completed",
+    avgLevel: "Average level",
+    perSkill: "Cohort by skill",
+    thSkill: "Skill",
+    thItems: "Items",
+    thCohort: "Cohort score",
+    roster: "Participant results",
+    thParticipant: "Participant",
+    thLevel: "Level",
+    thScore: "Score",
+    rosterEmpty: "No participants have completed the assessment yet.",
+    notTaken: "Not started",
+    indicative:
+      "Indicative — this function assessment signals proficiency for development. Items are AI-authored; it is not a certified qualification.",
+    confidential: "Confidential — for VIFM and the engaged client only.",
+  },
+  ar: {
+    brand: "معهد فرجينيا للتمويل والإدارة",
+    title: "التقييم التقني — تقرير مجموعة الوظيفة",
+    organization: "المؤسسة",
+    program: "البرنامج",
+    func: "الوظيفة",
+    generated: "تاريخ الإصدار",
+    participants: "المشاركون",
+    completed: "أكملوا",
+    avgLevel: "متوسط المستوى",
+    perSkill: "المجموعة حسب المهارة",
+    thSkill: "المهارة",
+    thItems: "البنود",
+    thCohort: "نتيجة المجموعة",
+    roster: "نتائج المشاركين",
+    thParticipant: "المشارك",
+    thLevel: "المستوى",
+    thScore: "النتيجة",
+    rosterEmpty: "لم يُكمل أي مشارك التقييم بعد.",
+    notTaken: "لم يبدأ",
+    indicative:
+      "استرشادي — يشير تقييم الوظيفة هذا إلى الكفاءة لأغراض التطوير. البنود مُولَّدة بالذكاء الاصطناعي؛ وهو ليس مؤهلًا معتمَدًا.",
+    confidential: "سري — لمعهد VIFM والعميل المتعاقد فقط.",
+  },
+};
+
+export function renderTechFunctionCohortHtml(data: TechFunctionCohortData, lang: Lang): string {
+  const t = FL[lang];
+  const rtl = lang === "ar";
+  const { view } = data;
+
+  const taken = view.results.filter((r) => r.taken);
+  const completed = taken.length;
+  const avgLevel = completed ? taken.reduce((s, r) => s + (r.level ?? 0), 0) / completed : 0;
+
+  const dateStr = data.generatedAt.toLocaleDateString(lang === "ar" ? "ar" : "en-GB", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  // Per-skill cohort aggregate (across all who took it).
+  const skillRows = view.skillsEn
+    .map((en, i) => {
+      let correct = 0;
+      let total = 0;
+      for (const r of taken) {
+        const s = r.perSkill.find((x) => x.skill === en);
+        if (s) {
+          correct += s.correct;
+          total += s.total;
+        }
+      }
+      const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+      return `<tr>
+        <td class="strong">${esc(view.skills[i] ?? en)}</td>
+        <td class="num">${correct} / ${total}</td>
+        <td class="num">${total > 0 ? `${pct}%` : "—"}</td>
+      </tr>`;
+    })
+    .join("");
+
+  const rosterRows = view.results
+    .map((r) => {
+      const score = r.taken
+        ? `${r.level ?? "—"}/5${r.levelLabel ? ` · ${esc(r.levelLabel)}` : ""}`
+        : `<span style="color:#999">${t.notTaken}</span>`;
+      return `<tr>
+        <td class="strong">${esc(r.name)}</td>
+        <td class="num">${score}</td>
+        <td class="num">${r.taken && r.pct != null ? `${r.pct}%` : "—"}</td>
+      </tr>`;
+    })
+    .join("");
+
+  return `<!doctype html>
+<html lang="${lang}" dir="${rtl ? "rtl" : "ltr"}">
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+<style>
+  @page { size: A4; margin: 18mm 14mm; }
+  * { box-sizing: border-box; }
+  body { font-family: ${rtl ? "'Cairo'," : ""} 'Open Sans', 'Segoe UI', Tahoma, sans-serif; color: #111232; margin: 0; font-size: 12px; line-height: 1.5; }
+  .head { border-bottom: 3px solid #010131; padding-bottom: 10px; margin-bottom: 18px; }
+  .brand { color: #5391D5; font-size: 11px; font-weight: 600; letter-spacing: .04em; }
+  h1 { font-size: 20px; margin: 4px 0 2px; color: #010131; }
+  .meta { color: #555; font-size: 11px; }
+  .stats { display: flex; gap: 10px; margin: 16px 0 22px; }
+  .stat { flex: 1; border: 1px solid #e3e6ee; border-radius: 8px; padding: 10px 12px; }
+  .stat .v { font-size: 22px; font-weight: 700; color: #010131; }
+  .stat .l { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: #777; margin-top: 2px; }
+  h2 { font-size: 13px; color: #010131; margin: 22px 0 8px; border-${rtl ? "right" : "left"}: 3px solid #5391D5; padding-${rtl ? "right" : "left"}: 8px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: ${rtl ? "right" : "left"}; padding: 7px 8px; border-bottom: 1px solid #eceef4; font-size: 11px; }
+  th { background: #f6f8fc; color: #444; font-weight: 600; text-transform: uppercase; font-size: 9.5px; letter-spacing: .04em; }
+  td.num, th.num { text-align: center; font-variant-numeric: tabular-nums; }
+  td.strong { font-weight: 600; color: #010131; }
+  .caption { font-size: 10px; color: #92400e; background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 6px 9px; margin-top: 10px; }
+  .empty { color: #888; font-size: 11px; padding: 8px 0; }
+  .foot { margin-top: 26px; border-top: 1px solid #e3e6ee; padding-top: 8px; color: #888; font-size: 9.5px; display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+  <div class="head">
+    <div class="brand">${t.brand}</div>
+    <h1>${t.title}</h1>
+    <div class="meta">${t.program}: <b>${esc(data.programName)}</b> · ${t.func}: <b>${esc(view.functionName)}</b>${
+      data.orgName ? ` · ${t.organization}: ${esc(data.orgName)}` : ""
+    } · ${t.generated}: ${dateStr}</div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="v">${view.results.length}</div><div class="l">${t.participants}</div></div>
+    <div class="stat"><div class="v">${completed}</div><div class="l">${t.completed}</div></div>
+    <div class="stat"><div class="v">${completed ? avgLevel.toFixed(1) : "—"}</div><div class="l">${t.avgLevel}</div></div>
+  </div>
+
+  <h2>${t.perSkill}</h2>
+  <table>
+    <thead><tr><th>${t.thSkill}</th><th class="num">${t.thItems}</th><th class="num">${t.thCohort}</th></tr></thead>
+    <tbody>${skillRows}</tbody>
+  </table>
+
+  <h2>${t.roster}</h2>
+  ${
+    view.results.length === 0
+      ? `<p class="empty">${t.rosterEmpty}</p>`
+      : `<table>
+    <thead><tr><th>${t.thParticipant}</th><th class="num">${t.thLevel}</th><th class="num">${t.thScore}</th></tr></thead>
+    <tbody>${rosterRows}</tbody>
+  </table>`
+  }
+
+  <div class="caption">${t.indicative}</div>
+
+  <div class="foot"><span>${t.confidential}</span><span>${esc(data.programName)}</span></div>
 </body>
 </html>`;
 }

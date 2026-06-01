@@ -1,21 +1,20 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { Award, ArrowRight, Building2, Users } from "lucide-react";
+import { Award, ArrowRight, Building2, Users, Layers3 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BackLink } from "@/components/shared/back-link";
-import { getServerT } from "@/lib/i18n/server";
+import { getServerT, getServerLocale } from "@/lib/i18n/server";
 import { listTechnicalPrograms } from "@/lib/competencies/technical-program";
+import { listTechnicalFunctions } from "@/lib/competencies/technical-function";
 import { CreateProgramForm } from "./_components/create-program-form";
 
 export default async function TechnicalProgramsPage() {
   const t = await getServerT();
-  const programs = await listTechnicalPrograms();
-  const tierLabel = (k: string) => {
-    const v = t(`techProg.tiers.${k}`);
-    return v.startsWith("techProg.tiers.") ? k : v;
-  };
+  const locale = await getServerLocale();
+  const [programs, functions] = await Promise.all([listTechnicalPrograms(), listTechnicalFunctions(locale)]);
+  const functionOptions = functions.map((f) => ({ ref: f.ref, name: f.name, categoryLabel: f.categoryLabel }));
   const statusLabel = (k: string) => {
     const v = t(`techProg.status.${k}`);
     return v.startsWith("techProg.status.") ? k : v;
@@ -35,7 +34,7 @@ export default async function TechnicalProgramsPage() {
         </div>
       </div>
 
-      <CreateProgramForm />
+      <CreateProgramForm functions={functionOptions} />
 
       {programs.length === 0 ? (
         <Card>
@@ -52,13 +51,17 @@ export default async function TechnicalProgramsPage() {
                 </div>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                   <span className="inline-flex items-center gap-1"><Building2 className="h-3.5 w-3.5" /> {p.organizationName}</span>
-                  <Badge variant="secondary" className="text-[10px]">{tierLabel(p.tier)}</Badge>
+                  {p.functionName && (
+                    <Badge variant="secondary" className="inline-flex items-center gap-1 text-[10px]">
+                      <Layers3 className="h-3 w-3" /> {p.functionName}
+                    </Badge>
+                  )}
                 </div>
                 <div className="mt-4 flex flex-1 items-end justify-between text-sm">
                   <span className="inline-flex items-center gap-1.5 text-[#010131]">
                     <Users className="h-4 w-4 text-[#5391D5]" />
                     <span className="font-semibold tabular-nums">{p.participantCount}</span>
-                    <span className="text-muted-foreground">{t("techProg.participants")} · {p.domainCount} {t("techProg.domains")}</span>
+                    <span className="text-muted-foreground">{t("techProg.participants")}</span>
                   </span>
                   <ArrowRight className="h-4 w-4 text-[#5391D5]" />
                 </div>

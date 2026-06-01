@@ -33,7 +33,7 @@ export type TechItem = {
 };
 
 export type TechTest = {
-  domain_key: TechDomainKey;
+  domain_key: string; // a TechDomainKey for a domain run, or a function key for a function run
   domain_name: string;
   items: TechItem[];
   ai_generated: boolean;
@@ -45,7 +45,7 @@ export type TechTest = {
 // Answer-key-stripped shape for the browser.
 export type PublicTechItem = Omit<TechItem, "correct_index">;
 export type PublicTechTest = {
-  domain_key: TechDomainKey;
+  domain_key: string; // a TechDomainKey for a domain run, or a function key for a function run
   domain_name: string;
   items: PublicTechItem[];
   ai_generated: boolean;
@@ -70,7 +70,7 @@ export function stripAnswerKey(test: TechTest): PublicTechTest {
 
 export type TechSkillBreakdown = { skill: string; correct: number; total: number };
 export type TechResult = {
-  domain_key: TechDomainKey;
+  domain_key: string; // a TechDomainKey for a domain run, or a function key for a function run
   domain_name: string;
   correct: number;
   total: number;
@@ -119,6 +119,43 @@ const cleanMcq = (r: { options?: string[]; correct_index?: number }): boolean =>
   r.correct_index >= 0 &&
   r.correct_index < 4;
 
+// Shared item-writer persona for both the domain and function generators.
+const ITEM_WRITER_SYSTEM =
+  `You are a subject-matter assessment item writer for VIFM, a GCC finance & ` +
+  `management training institute. You write fair, unambiguous multiple-choice ` +
+  `items that test genuine technical competence in a professional finance domain, ` +
+  `each with exactly one defensible correct answer and three plausible distractors. ` +
+  `You calibrate a difficulty ramp and never write trick questions.`;
+
+// The Arabic-language preamble lines (empty in English). Keeps the EXACT English
+// skill name as the tag axis even when question/options are written in Arabic.
+const arabicLangLines = (language: "en" | "ar"): string[] =>
+  language === "ar"
+    ? [
+        `LANGUAGE: Write every "question" and all four "options" in clear Modern Standard`,
+        `Arabic suitable for GCC finance professionals. Keep standard finance acronyms`,
+        `(IFRS, WACC, CAPM, DCF, EBITDA, REIT) and numeric/currency values as commonly`,
+        `written. Keep each "skill" value as the EXACT English skill name listed below.`,
+        ``,
+      ]
+    : [];
+
+/** Fisher–Yates shuffle of the 4 options → new option order + the index the
+ *  correct answer moved to. LLMs bias the correct answer toward option A;
+ *  re-randomising per administration defeats "always pick A" + position memo —
+ *  a defensibility/integrity must-fix. */
+function shuffleMcq(origOptions: string[], origCorrect: number): { options: string[]; correct_index: number } {
+  const order = [0, 1, 2, 3];
+  for (let j = order.length - 1; j > 0; j--) {
+    const k = Math.floor(Math.random() * (j + 1));
+    [order[j], order[k]] = [order[k], order[j]];
+  }
+  return {
+    options: order.map((idx) => origOptions[idx]),
+    correct_index: order.indexOf(origCorrect),
+  };
+}
+
 export async function generateTechnicalAssessment(input: {
   domainKey: TechDomainKey;
   language?: "en" | "ar";
@@ -130,26 +167,10 @@ export async function generateTechnicalAssessment(input: {
   const client = getAIClient();
   if (!client) return fallbackTest(input.domainKey, language);
 
-  const system =
-    `You are a subject-matter assessment item writer for VIFM, a GCC finance & ` +
-    `management training institute. You write fair, unambiguous multiple-choice ` +
-    `items that test genuine technical competence in a professional finance domain, ` +
-    `each with exactly one defensible correct answer and three plausible distractors. ` +
-    `You calibrate a difficulty ramp and never write trick questions.`;
-
-  const langLine =
-    language === "ar"
-      ? [
-          `LANGUAGE: Write every "question" and all four "options" in clear Modern Standard`,
-          `Arabic suitable for GCC finance professionals. Keep standard finance acronyms`,
-          `(IFRS, WACC, CAPM, DCF, EBITDA, REIT) and numeric/currency values as commonly`,
-          `written. Keep each "skill" value as the EXACT English skill name listed below.`,
-          ``,
-        ]
-      : [];
+  const system = ITEM_WRITER_SYSTEM;
 
   const user = [
-    ...langLine,
+    ...arabicLangLines(language),
     `Write exactly ${ITEM_COUNT} multiple-choice items assessing technical competence in:`,
     `DOMAIN: ${domain.name}`,
     `SKILLS (spread items across these): ${domain.skills.join("; ")}.`,
@@ -180,22 +201,13 @@ export async function generateTechnicalAssessment(input: {
     const items: TechItem[] = (parsed.items ?? [])
       .filter((r) => typeof r.question === "string" && cleanMcq(r))
       .map((r, i): TechItem => {
-        const origOptions = (r.options as string[]).map((o) => String(o));
-        const origCorrect = r.correct_index as number;
-        // Randomise the correct-answer position. LLMs bias the correct answer
-        // toward option A, which would make the assessment trivially gameable
-        // ("always pick A") and invalid — a defensibility/integrity must-fix.
-        const order = [0, 1, 2, 3];
-        for (let j = order.length - 1; j > 0; j--) {
-          const k = Math.floor(Math.random() * (j + 1));
-          [order[j], order[k]] = [order[k], order[j]];
-        }
+        const { options, correct_index } = shuffleMcq((r.options as string[]).map(String), r.correct_index as number);
         return {
           id: r.id || `t${i + 1}`,
           skill: typeof r.skill === "string" && skillSet.has(r.skill) ? r.skill : domain.skills[i % domain.skills.length],
           question: String(r.question),
-          options: order.map((idx) => origOptions[idx]),
-          correct_index: order.indexOf(origCorrect),
+          options,
+          correct_index,
           difficulty: r.difficulty === "hard" ? "hard" : r.difficulty === "medium" ? "medium" : "easy",
         };
       });
@@ -205,6 +217,120 @@ export async function generateTechnicalAssessment(input: {
   } catch (err) {
     console.error("[technical-assessment] generate failed:", err);
     return fallbackTest(input.domainKey, language);
+  }
+}
+
+// ── Function (blueprint) assessment ──────────────────────────────────────────
+// A function is a weighted selection of technical skills (Accounts Payable =
+// invoice match + vendor recon + payment controls + …). Unlike the domain run's
+// 8 generic items, this assembles a DEEP, multi-skill test — ~itemsPerSkill
+// items per blueprint skill — so the per-skill breakdown is real. Items are
+// tagged by the EXACT English skill name (the grading/rollup axis), the test
+// carries the function key in domain_key + the function name in domain_name.
+
+const FUNCTION_ITEMS_PER_SKILL = 4;
+
+function functionFallbackTest(
+  functionKey: string,
+  functionName: string,
+  skillsEn: string[],
+  language: "en" | "ar"
+): TechTest {
+  const skills = skillsEn.length > 0 ? skillsEn : ["Fundamentals"];
+  // One placeholder per skill so the multi-skill structure still renders without
+  // an API key. Clearly not AI-generated; never presented as a real measure.
+  return {
+    domain_key: functionKey,
+    domain_name: functionName,
+    ai_generated: false,
+    items: skills.map((skill, i) => ({
+      id: `f${i + 1}`,
+      skill,
+      question:
+        language === "ar"
+          ? `بند نموذجي لمهارة «${skill}» ضمن وظيفة ${functionName}. اربط ANTHROPIC_API_KEY للحصول على تقييم حقيقي. أي خيار هو الصحيح هنا؟`
+          : `Placeholder item for the "${skill}" skill within ${functionName}. Wire ANTHROPIC_API_KEY for a real, function-specific assessment. Which option is marked correct here?`,
+      options:
+        language === "ar"
+          ? ["الخيار أ (صحيح)", "الخيار ب", "الخيار ج", "الخيار د"]
+          : ["Option A (correct)", "Option B", "Option C", "Option D"],
+      correct_index: 0,
+      difficulty: "easy" as const,
+    })),
+  };
+}
+
+export async function generateFunctionAssessment(input: {
+  functionKey: string;
+  functionName: string;
+  skillsEn: string[];
+  language?: "en" | "ar";
+  itemsPerSkill?: number;
+}): Promise<TechTest> {
+  const language = input.language === "ar" ? "ar" : "en";
+  const skills = input.skillsEn.filter((s) => typeof s === "string" && s.trim().length > 0);
+  const perSkill = Math.max(2, Math.min(8, input.itemsPerSkill ?? FUNCTION_ITEMS_PER_SKILL));
+
+  const client = getAIClient();
+  if (!client || skills.length === 0) {
+    return functionFallbackTest(input.functionKey, input.functionName, skills, language);
+  }
+
+  const target = skills.length * perSkill;
+  const user = [
+    ...arabicLangLines(language),
+    `Write a DEEP technical-competency assessment for the finance function below.`,
+    `FUNCTION: ${input.functionName}`,
+    ``,
+    `Write EXACTLY ${perSkill} multiple-choice items for EACH of these skills (${target} items total):`,
+    ...skills.map((s, i) => `  ${i + 1}. ${s}`),
+    ``,
+    `Within each skill, ramp difficulty (for ${perSkill} items: roughly half easy,`,
+    `the rest medium/hard). Tag every item with the EXACT English skill name it`,
+    `assesses (copied verbatim from the list above) — even when the question text is`,
+    `Arabic. Each item = a question + four options with exactly one correct answer.`,
+    ``,
+    `Return JSON ONLY (no markdown fences):`,
+    `{ "items": [ { "id":"t1","skill":"<exact skill name>","question":"...",`,
+    `  "options":["a","b","c","d"],"correct_index":0,"difficulty":"easy" } ] }`,
+  ].join("\n");
+
+  try {
+    const res = await client.messages.create({
+      model: AI_MODEL,
+      max_tokens: 8000,
+      system: ITEM_WRITER_SYSTEM,
+      messages: [{ role: "user", content: user }],
+    });
+    const block = res.content.find((b) => b.type === "text");
+    if (!block || block.type !== "text") throw new Error("no text");
+    const match = block.text.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error("no json");
+    const parsed = JSON.parse(match[0]) as { items?: Array<Partial<TechItem>> };
+
+    const skillSet = new Set(skills);
+    const items: TechItem[] = (parsed.items ?? [])
+      .filter((r) => typeof r.question === "string" && cleanMcq(r))
+      .map((r, i): TechItem => {
+        const { options, correct_index } = shuffleMcq((r.options as string[]).map(String), r.correct_index as number);
+        return {
+          id: r.id || `t${i + 1}`,
+          skill: typeof r.skill === "string" && skillSet.has(r.skill) ? r.skill : skills[i % skills.length],
+          question: String(r.question),
+          options,
+          correct_index,
+          difficulty: r.difficulty === "hard" ? "hard" : r.difficulty === "medium" ? "medium" : "easy",
+        };
+      });
+
+    // Need enough coverage to be meaningful; fall back if the model under-delivered.
+    if (items.length < Math.max(4, Math.ceil(target / 2))) {
+      return functionFallbackTest(input.functionKey, input.functionName, skills, language);
+    }
+    return { domain_key: input.functionKey, domain_name: input.functionName, items, ai_generated: true };
+  } catch (err) {
+    console.error("[technical-assessment] function generate failed:", err);
+    return functionFallbackTest(input.functionKey, input.functionName, skills, language);
   }
 }
 

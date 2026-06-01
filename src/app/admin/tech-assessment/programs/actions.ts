@@ -17,25 +17,43 @@ async function guard(): Promise<{ ok: true } | { error: string }> {
   }
 }
 
-const TIERS = ["department", "division", "enterprise"] as const;
+const UUID_RE = /^[0-9a-fA-F-]{36}$/;
+
+/** Resolve a function ref (standard key or custom id) → technical_functions.id. */
+async function resolveFunctionId(
+  sb: ReturnType<typeof createServiceClient>,
+  ref: string
+): Promise<string | null> {
+  const byKey = await sb.from("technical_functions").select("id").eq("key", ref).maybeSingle();
+  if (byKey.data?.id) return byKey.data.id as string;
+  if (UUID_RE.test(ref)) {
+    const byId = await sb.from("technical_functions").select("id").eq("id", ref).maybeSingle();
+    if (byId.data?.id) return byId.data.id as string;
+  }
+  return null;
+}
 
 export async function createProgramAction(input: {
   name: string;
   organizationName: string;
-  tier: string;
+  functionRef: string;
 }): Promise<Result<{ id: string }>> {
   const g = await guard();
   if ("error" in g) return g;
   const name = input.name.trim();
   const org = input.organizationName.trim();
+  const ref = input.functionRef?.trim();
   if (!name || !org) return { error: "Name and organization are required." };
-  const tier = (TIERS as readonly string[]).includes(input.tier) ? input.tier : "department";
+  if (!ref) return { error: "Pick a function for this program." };
 
   try {
     const sb = createServiceClient();
+    const functionId = await resolveFunctionId(sb, ref);
+    if (!functionId) return { error: "That function isn't available. Apply migration 00058 and try again." };
+    // A program is a function team; tier keeps its DB default (vestigial).
     const { data, error } = await sb
       .from("technical_programs")
-      .insert({ name, organization_name: org, tier, status: "active" })
+      .insert({ name, organization_name: org, status: "active", function_id: functionId })
       .select("id")
       .single();
     if (error || !data) return { error: error?.message ?? "Could not create program." };

@@ -34,6 +34,7 @@ import {
   SquarePen,
   ListChecks,
   Award,
+  Layers3,
   type LucideIcon,
 } from "lucide-react";
 
@@ -74,6 +75,7 @@ const NAV: NavEntry[] = [
       items: [
         { href: "/admin/tech-assessment", labelKey: "adminNav.techOverview", icon: LayoutDashboard, exact: true },
         { href: "/ac/tech-assessment", labelKey: "adminNav.techTakeAssessment", icon: SquarePen },
+        { href: "/admin/tech-assessment/functions", labelKey: "adminNav.techFunctions", icon: Layers3 },
         { href: "/admin/tech-assessment/items", labelKey: "adminNav.techConsole", icon: ListChecks },
         { href: "/admin/tech-assessment/programs", labelKey: "adminNav.techPrograms", icon: Award },
       ],

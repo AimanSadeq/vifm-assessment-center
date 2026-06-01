@@ -7,6 +7,7 @@ import { TechAssessmentClient } from "./_components/tech-assessment-client";
 import { getServerT, getServerLocale } from "@/lib/i18n/server";
 import { getLocalizedTechTaxonomy } from "@/lib/competencies/technical-taxonomy";
 import { findParticipantByToken } from "@/lib/competencies/technical-program";
+import { listTechnicalFunctions, functionSkillLabels } from "@/lib/competencies/technical-function";
 
 export const dynamic = "force-dynamic";
 
@@ -15,14 +16,30 @@ export const metadata = {
 };
 
 type Props = {
-  searchParams?: { candidateId?: string; engagementId?: string; domainKey?: string; token?: string };
+  searchParams?: {
+    candidateId?: string;
+    engagementId?: string;
+    domainKey?: string;
+    functionKey?: string;
+    token?: string;
+  };
 };
 
 export default async function TechAssessmentPage({ searchParams }: Props) {
   const aiConfigured = isAIConfigured();
   const t = await getServerT();
   const locale = await getServerLocale();
-  const { domains, skillLabels } = await getLocalizedTechTaxonomy(locale);
+  const { domains, skillLabels: domainSkillLabels } = await getLocalizedTechTaxonomy(locale);
+
+  // Functions are the primary unit of assessment (a job-level blueprint of
+  // skills); domains stay as a broad fallback. Merge each function's English→
+  // localized skill labels into the shared map so the per-skill result renders
+  // localized for function runs too.
+  const functions = await listTechnicalFunctions(locale);
+  const skillLabels: Record<string, string> = { ...domainSkillLabels };
+  for (const fn of functions) {
+    Object.assign(skillLabels, functionSkillLabels(fn));
+  }
 
   // Optional org-assigned run: bind the sitting to a candidate (+ engagement) and
   // optionally lock it to one domain. Tolerant — anonymous self-serve if absent.
@@ -35,6 +52,7 @@ export default async function TechAssessmentPage({ searchParams }: Props) {
   let participantId: string | null = null;
   let takerName: string | null = null;
   let takerEmail: string | null = null;
+  let programFunctionRef: string | null = null;
   const token = searchParams?.token?.trim() || null;
   if (token) {
     const participant = await findParticipantByToken(token);
@@ -44,6 +62,7 @@ export default async function TechAssessmentPage({ searchParams }: Props) {
       takerName = participant.fullName;
       takerEmail = participant.email;
       candidateName = participant.fullName; // reuse the "for {name}" banner
+      programFunctionRef = participant.functionRef; // a function-scoped program locks the run
     }
   }
 
@@ -65,6 +84,9 @@ export default async function TechAssessmentPage({ searchParams }: Props) {
   }
   const reqDomain = searchParams?.domainKey?.trim() || null;
   const lockedDomain = reqDomain && domains.some((d) => d.key === reqDomain) ? reqDomain : null;
+  // A function-scoped program binds the run; otherwise honour a ?functionKey= URL.
+  const reqFunction = programFunctionRef || searchParams?.functionKey?.trim() || null;
+  const lockedFunction = reqFunction && functions.some((f) => f.ref === reqFunction) ? reqFunction : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -108,6 +130,7 @@ export default async function TechAssessmentPage({ searchParams }: Props) {
         )}
         <TechAssessmentClient
           domains={domains}
+          functions={functions}
           skillLabels={skillLabels}
           language={locale}
           candidateId={candidateId}
@@ -117,6 +140,7 @@ export default async function TechAssessmentPage({ searchParams }: Props) {
           takerName={takerName}
           takerEmail={takerEmail}
           lockedDomain={lockedDomain}
+          lockedFunction={lockedFunction}
         />
       </main>
     </div>

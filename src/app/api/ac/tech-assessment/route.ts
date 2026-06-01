@@ -26,12 +26,14 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import {
   generateTechnicalAssessment,
+  generateFunctionAssessment,
   scoreTechnicalAssessment,
   stripAnswerKey,
   type TechTest,
   type TechItem,
 } from "@/lib/ai/technical-assessment";
 import { techDomainByKey, type TechDomainKey } from "@/lib/competencies/technical-framework";
+import { getTechnicalFunctionByRef } from "@/lib/competencies/technical-function";
 import {
   buildCertifiedTest,
   getCutScore,
@@ -42,12 +44,18 @@ import { issueCredential } from "@/lib/credentials/issue";
 export const dynamic = "force-dynamic";
 
 // A session stores the full test PLUS the bank item ids it drew (so a certified
-// sitting can post administration stats back to the bank on scoring).
-type StoredTest = TechTest & { item_ids?: string[] };
+// sitting can post administration stats back to the bank on scoring) and, for a
+// function run, the function binding (its key/id — domain_key no longer applies).
+type StoredTest = TechTest & {
+  item_ids?: string[];
+  function_key?: string | null;
+  function_id?: string | null;
+};
 
 type Body = {
   action?: "start" | "score";
   domainKey?: string;
+  functionKey?: string; // a function ref (standard key or custom id) for a function run
   sessionId?: string;
   items?: TechItem[]; // legacy client-graded path only
   domainName?: string;
@@ -66,20 +74,30 @@ const SESSION_TTL_MS = 1000 * 60 * 60 * 3;
 
 async function createSession(
   test: StoredTest,
-  meta: { candidateId: string | null; engagementId: string | null; language: "en" | "ar" }
+  meta: { candidateId: string | null; engagementId: string | null; language: "en" | "ar" },
+  fn: { key: string | null; id: string | null } = { key: null, id: null }
 ): Promise<string | null> {
   try {
     const sb = createServiceClient();
+    // For a function run, domain_key no longer applies (the test spans several
+    // domains' skills) — store NULL there + the function binding instead. For a
+    // domain run we omit the function columns entirely, so the insert is byte-for-
+    // byte the legacy shape and keeps working before 00058 is applied.
+    const row: Record<string, unknown> = {
+      domain_key: fn.key ? null : test.domain_key,
+      ui_language: meta.language,
+      test,
+      candidate_id: meta.candidateId,
+      engagement_id: meta.engagementId,
+      expires_at: new Date(Date.now() + SESSION_TTL_MS).toISOString(),
+    };
+    if (fn.key) {
+      row.function_key = fn.key;
+      row.function_id = fn.id;
+    }
     const { data, error } = await sb
       .from("tech_assessment_sessions")
-      .insert({
-        domain_key: test.domain_key,
-        ui_language: meta.language,
-        test,
-        candidate_id: meta.candidateId,
-        engagement_id: meta.engagementId,
-        expires_at: new Date(Date.now() + SESSION_TTL_MS).toISOString(),
-      })
+      .insert(row)
       .select("id")
       .single();
     if (error || !data) return null;
@@ -121,14 +139,41 @@ export async function POST(req: Request) {
   }
 
   const domainKey = body.domainKey as TechDomainKey | undefined;
+  const functionRef = body.functionKey?.trim() || null;
   const language: "en" | "ar" = body.language === "ar" ? "ar" : "en";
 
   if (body.action === "start") {
-    if (!domainKey || !techDomainByKey(domainKey)) {
-      return NextResponse.json({ error: "valid domainKey required" }, { status: 400 });
-    }
     const candidateId = body.candidateId?.trim() || null;
     const engagementId = body.engagementId?.trim() || null;
+
+    // ── Function run: a DEEP, multi-skill blueprinted assessment (the job-level
+    //    unit). Always indicative (no certified function bank yet). ──
+    if (functionRef) {
+      const fn = await getTechnicalFunctionByRef(functionRef, language);
+      if (!fn) return NextResponse.json({ error: "valid functionKey required" }, { status: 400 });
+      const generated = await generateFunctionAssessment({
+        functionKey: fn.ref,
+        functionName: fn.name,
+        skillsEn: fn.skillsEn,
+        language,
+      });
+      const stored: StoredTest = { ...generated, function_key: fn.ref, function_id: fn.id };
+      const session_id = await createSession(
+        stored,
+        { candidateId, engagementId, language },
+        { key: fn.ref, id: fn.id }
+      );
+      if (session_id) {
+        return NextResponse.json({ session_id, test: stripAnswerKey(stored) });
+      }
+      // Legacy (sessions/00058 not migrated): full test client-side, indicative only.
+      return NextResponse.json({ ...stored });
+    }
+
+    // ── Domain run (legacy path): 8 generic items, certified when the bank allows. ──
+    if (!domainKey || !techDomainByKey(domainKey)) {
+      return NextResponse.json({ error: "valid domainKey or functionKey required" }, { status: 400 });
+    }
 
     // Prefer the certified path (SME-approved bank). Fall back to indicative AI.
     const certified = await buildCertifiedTest(domainKey, undefined, language);
@@ -167,6 +212,10 @@ export async function POST(req: Request) {
     const answers = body.answers ?? {};
     const result = scoreTechnicalAssessment({ test, answers });
 
+    // A function run spans several domains' skills, so domain_key no longer
+    // applies — the result is bound to the function instead (key + id).
+    const isFunctionRun = !!test.function_key;
+
     const takerName = body.takerName?.trim() || null;
     const takerEmail = body.takerEmail?.trim() || null;
     const candidateId = body.candidateId?.trim() || null;
@@ -179,7 +228,8 @@ export async function POST(req: Request) {
     let credentialCode: string | null = null;
 
     if (result.certified) {
-      const cut = await getCutScore(result.domain_key);
+      // Certified runs are always domain runs, so domain_key is a real TechDomainKey.
+      const cut = await getCutScore(result.domain_key as TechDomainKey);
       cutPct = cut.passPct;
       passedCut = result.pct >= cut.passPct;
 
@@ -198,10 +248,15 @@ export async function POST(req: Request) {
     let resultId: string | null = null;
     try {
       const sb = createServiceClient();
+      // Function run: NULL domain_key + the function binding (00058 columns).
+      // Domain run: domain_key as before, no function columns (pre-00058 safe).
+      const functionCols = isFunctionRun
+        ? { function_key: test.function_key ?? null, function_id: test.function_id ?? null }
+        : {};
       const legacy = {
         taker_name: takerName,
         taker_email: takerEmail,
-        domain_key: result.domain_key,
+        domain_key: isFunctionRun ? null : result.domain_key,
         ui_language: language,
         score_correct: result.correct,
         score_total: result.total,
@@ -212,6 +267,7 @@ export async function POST(req: Request) {
         ai_generated: result.ai_generated,
         candidate_id: candidateId,
         engagement_id: engagementId,
+        ...functionCols,
       };
       // Full insert (incl. the 00053 certification columns). If those columns
       // aren't there yet, retry with the legacy set so indicative results still

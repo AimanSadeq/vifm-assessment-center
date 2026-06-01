@@ -11,19 +11,25 @@ import { Label } from "@/components/ui/label";
 import { Plus, Loader2 } from "lucide-react";
 import { createProgramAction } from "../actions";
 
-const TIERS = ["department", "division", "enterprise"] as const;
+export type FunctionOption = { ref: string; name: string; categoryLabel: string };
 
-export function CreateProgramForm() {
+export function CreateProgramForm({ functions }: { functions: FunctionOption[] }) {
   const router = useRouter();
   const { t } = useTranslation();
   const [name, setName] = useState("");
   const [org, setOrg] = useState("");
-  const [tier, setTier] = useState<(typeof TIERS)[number]>("department");
+  const [functionRef, setFunctionRef] = useState(functions[0]?.ref ?? "");
   const [busy, setBusy] = useState(false);
+
+  // Group the options by their (already-localized) category label.
+  const groups = functions.reduce<Record<string, FunctionOption[]>>((acc, f) => {
+    (acc[f.categoryLabel] ??= []).push(f);
+    return acc;
+  }, {});
 
   const submit = async () => {
     setBusy(true);
-    const res = await createProgramAction({ name, organizationName: org, tier });
+    const res = await createProgramAction({ name, organizationName: org, functionRef });
     setBusy(false);
     if ("error" in res) {
       toast.error(res.error);
@@ -44,19 +50,23 @@ export function CreateProgramForm() {
           <Label className="text-xs">{t("techProg.orgLabel")}</Label>
           <Input value={org} onChange={(e) => setOrg(e.target.value)} placeholder={t("techProg.orgPh")} />
         </div>
-        <div className="w-44 space-y-1.5">
-          <Label className="text-xs">{t("techProg.tierLabel")}</Label>
+        <div className="w-56 space-y-1.5">
+          <Label className="text-xs">{t("techProg.functionLabel")}</Label>
           <select
-            value={tier}
-            onChange={(e) => setTier(e.target.value as (typeof TIERS)[number])}
+            value={functionRef}
+            onChange={(e) => setFunctionRef(e.target.value)}
             className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
           >
-            {TIERS.map((tk) => (
-              <option key={tk} value={tk}>{t(`techProg.tiers.${tk}`)}</option>
+            {Object.entries(groups).map(([label, opts]) => (
+              <optgroup key={label} label={label}>
+                {opts.map((f) => (
+                  <option key={f.ref} value={f.ref}>{f.name}</option>
+                ))}
+              </optgroup>
             ))}
           </select>
         </div>
-        <Button onClick={submit} disabled={busy || !name.trim() || !org.trim()} className="gap-1.5">
+        <Button onClick={submit} disabled={busy || !name.trim() || !org.trim() || !functionRef} className="gap-1.5">
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
           {t("techProg.create")}
         </Button>

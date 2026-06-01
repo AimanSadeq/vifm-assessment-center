@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Loader2, CheckCircle2, RotateCcw, GraduationCap, AlertCircle, ShieldCheck, ExternalLink } from "lucide-react";
+import { Loader2, CheckCircle2, RotateCcw, GraduationCap, AlertCircle, ShieldCheck, ExternalLink, Layers3, ChevronDown } from "lucide-react";
 import type { LocalizedTechDomain } from "@/lib/competencies/technical-taxonomy";
+import type { LocalizedTechFunction } from "@/lib/competencies/technical-function";
 import type { PublicTechTest, TechResult } from "@/lib/ai/technical-assessment";
 
 type Phase = "intro" | "test" | "result";
+type RunKind = "function" | "domain";
 
 // The score response augments TechResult with the certification outcome.
 type ScoredResult = TechResult & {
@@ -25,6 +27,7 @@ const LEVEL_TONE: Record<number, string> = {
 
 export function TechAssessmentClient({
   domains,
+  functions,
   skillLabels,
   language = "en",
   candidateId = null,
@@ -34,8 +37,11 @@ export function TechAssessmentClient({
   takerName = null,
   takerEmail = null,
   lockedDomain = null,
+  lockedFunction = null,
 }: {
   domains: LocalizedTechDomain[];
+  /** The job-level functions (primary unit of assessment), grouped by category. */
+  functions: LocalizedTechFunction[];
   skillLabels: Record<string, string>;
   /** UI language — also the language the test content is served/generated in. */
   language?: "en" | "ar";
@@ -50,28 +56,48 @@ export function TechAssessmentClient({
   takerEmail?: string | null;
   /** When set, the runner starts this domain immediately and hides the picker. */
   lockedDomain?: string | null;
+  /** When set, the runner starts this function immediately and hides the picker. */
+  lockedFunction?: string | null;
 }) {
   const { t } = useTranslation();
   const skillLabel = (s: string) => skillLabels[s] ?? s;
-  const domainName = (key: string) => domains.find((d) => d.key === key)?.name ?? key;
+  // A run's display name: localized domain name when the key is a domain, else
+  // the test/result's own (already-localized) name — which is the function name.
+  const displayName = (key: string, fallback: string) => domains.find((d) => d.key === key)?.name ?? fallback;
+  const locked = !!(lockedDomain || lockedFunction);
+
   const [phase, setPhase] = useState<Phase>("intro");
-  const [domainKey, setDomainKey] = useState<string>("");
+  const [runKind, setRunKind] = useState<RunKind>("function");
   const [test, setTest] = useState<PublicTechTest | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [result, setResult] = useState<ScoredResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [showDomains, setShowDomains] = useState(false);
 
-  async function start(key: string) {
+  // Functions grouped by their category, for a tidy picker.
+  const grouped = useMemo(() => {
+    const map = new Map<string, { label: string; items: LocalizedTechFunction[] }>();
+    for (const f of functions) {
+      const key = f.category ?? "other";
+      const bucket = map.get(key);
+      if (bucket) bucket.items.push(f);
+      else map.set(key, { label: f.categoryLabel, items: [f] });
+    }
+    return Array.from(map.values());
+  }, [functions]);
+
+  async function start(kind: RunKind, key: string) {
     setBusy(true);
     setError("");
-    setDomainKey(key);
+    setRunKind(kind);
     try {
+      const idBody = kind === "function" ? { functionKey: key } : { domainKey: key };
       const res = await fetch("/api/ac/tech-assessment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "start", domainKey: key, candidateId, engagementId, programId, participantId, takerName, takerEmail, language }),
+        body: JSON.stringify({ action: "start", ...idBody, candidateId, engagementId, programId, participantId, takerName, takerEmail, language }),
       });
       const raw = (await res.json()) as PublicTechTest & { session_id?: string; test?: PublicTechTest };
       // The session path nests the test under `test`; the legacy (un-migrated)
@@ -100,9 +126,15 @@ export function TechAssessmentClient({
     setError("");
     try {
       const common = { candidateId, engagementId, programId, participantId, takerName, takerEmail, language };
+      // Legacy (no session) path: re-send the run's identity so the server can
+      // re-build + grade. A function run carries its key in domain_key.
+      const idBody =
+        runKind === "function"
+          ? { functionKey: test.domain_key }
+          : { domainKey: test.domain_key, domainName: test.domain_name };
       const payload = sessionId
         ? { action: "score", sessionId, answers, ...common }
-        : { action: "score", domainKey: test.domain_key, domainName: test.domain_name, items: test.items, aiGenerated: test.ai_generated, answers, ...common };
+        : { action: "score", ...idBody, items: test.items, aiGenerated: test.ai_generated, answers, ...common };
       const res = await fetch("/api/ac/tech-assessment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -124,22 +156,25 @@ export function TechAssessmentClient({
     setSessionId(null);
     setAnswers({});
     setResult(null);
-    setDomainKey("");
     setError("");
   }
 
-  // Org-assigned run: when a domain is locked in via the URL, start it once on
-  // mount and skip the picker entirely.
+  // Org-assigned / token run: when a function or domain is locked in via the URL,
+  // start it once on mount and skip the picker entirely.
   const autoStarted = useRef(false);
   useEffect(() => {
-    if (lockedDomain && !autoStarted.current) {
+    if (autoStarted.current) return;
+    if (lockedFunction) {
       autoStarted.current = true;
-      void start(lockedDomain);
+      void start("function", lockedFunction);
+    } else if (lockedDomain) {
+      autoStarted.current = true;
+      void start("domain", lockedDomain);
     }
     // start is intentionally not a dependency (it's recreated each render and the
     // ref guard ensures a single run).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lockedDomain]);
+  }, [lockedDomain, lockedFunction]);
 
   const allAnswered =
     !!test && Array.isArray(test.items) && test.items.length > 0 && test.items.every((i) => answers[i.id] != null);
@@ -148,7 +183,7 @@ export function TechAssessmentClient({
     <div className="space-y-5">
       {error && <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
 
-      {phase === "intro" && lockedDomain && (
+      {phase === "intro" && locked && (
         <div className="rounded-2xl border bg-card p-8 text-center shadow-sm">
           <p className="inline-flex items-center gap-2 text-sm text-slate-600">
             <Loader2 className="h-4 w-4 animate-spin" /> {t("tech.take.building")}
@@ -156,28 +191,70 @@ export function TechAssessmentClient({
         </div>
       )}
 
-      {phase === "intro" && !lockedDomain && (
-        <div className="rounded-2xl border bg-card p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-[#010131]">{t("tech.take.chooseTitle")}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{t("tech.take.chooseIntro")}</p>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {domains.map((d) => (
-              <button
-                key={d.key}
-                onClick={() => start(d.key)}
-                disabled={busy}
-                className="flex flex-col gap-1 rounded-xl border border-slate-200 p-4 text-start transition-colors hover:border-[#5391D5] hover:bg-[#5391D5]/5 disabled:opacity-60"
-              >
-                <span className="font-semibold text-[#010131]">{d.name}</span>
-                <span className="text-[11px] leading-snug text-muted-foreground">{d.skills.slice(0, 3).join(" · ")}…</span>
-              </button>
-            ))}
+      {phase === "intro" && !locked && (
+        <div className="space-y-4">
+          {/* Primary: functions (the job-level unit of assessment). */}
+          <div className="rounded-2xl border bg-card p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-[#010131]">{t("tech.take.chooseFunctionTitle")}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{t("tech.take.chooseFunctionIntro")}</p>
+            <div className="mt-5 space-y-5">
+              {grouped.map((g) => (
+                <div key={g.label}>
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">{g.label}</p>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {g.items.map((f) => (
+                      <button
+                        key={f.ref}
+                        onClick={() => start("function", f.ref)}
+                        disabled={busy}
+                        className="flex flex-col gap-1.5 rounded-xl border border-slate-200 p-4 text-start transition-colors hover:border-[#5391D5] hover:bg-[#5391D5]/5 disabled:opacity-60"
+                      >
+                        <span className="font-semibold text-[#010131]">{f.name}</span>
+                        <span className="text-[11px] leading-snug text-muted-foreground">{f.skills.slice(0, 3).join(" · ")}…</span>
+                        <span className="mt-0.5 inline-flex w-fit items-center gap-1 rounded-full bg-[#5391D5]/10 px-2 py-0.5 text-[10px] font-medium text-[#2b6cb0]">
+                          <Layers3 className="h-3 w-3" /> {t("tech.take.skillsCount", { n: f.skillsEn.length })} · {t("tech.take.functionDeep")}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {busy && (
+              <p className="mt-4 inline-flex items-center gap-2 text-sm text-slate-500">
+                <Loader2 className="h-4 w-4 animate-spin" /> {t("tech.take.building")}
+              </p>
+            )}
           </div>
-          {busy && (
-            <p className="mt-4 inline-flex items-center gap-2 text-sm text-slate-500">
-              <Loader2 className="h-4 w-4 animate-spin" /> {t("tech.take.building")}
-            </p>
-          )}
+
+          {/* Secondary: broad domain screeners (legacy, de-emphasized). */}
+          <div className="rounded-2xl border bg-card p-4 shadow-sm">
+            <button
+              onClick={() => setShowDomains((s) => !s)}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-[#010131]"
+            >
+              <ChevronDown className={`h-4 w-4 transition-transform ${showDomains ? "" : "-rotate-90"}`} />
+              {showDomains ? t("tech.take.hideDomains") : t("tech.take.showDomains")}
+            </button>
+            {showDomains && (
+              <div className="mt-3">
+                <p className="mb-3 text-xs text-muted-foreground">{t("tech.take.domainsHint")}</p>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {domains.map((d) => (
+                    <button
+                      key={d.key}
+                      onClick={() => start("domain", d.key)}
+                      disabled={busy}
+                      className="flex flex-col gap-1 rounded-xl border border-slate-200 p-4 text-start transition-colors hover:border-[#5391D5] hover:bg-[#5391D5]/5 disabled:opacity-60"
+                    >
+                      <span className="font-semibold text-[#010131]">{d.name}</span>
+                      <span className="text-[11px] leading-snug text-muted-foreground">{d.skills.slice(0, 3).join(" · ")}…</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -185,7 +262,7 @@ export function TechAssessmentClient({
         <>
           <div className="rounded-xl border bg-white p-5 shadow-sm">
             <h2 className="inline-flex items-center gap-2 text-lg font-semibold text-[#010131]">
-              <GraduationCap className="h-5 w-5 text-[#5391D5]" /> {domainName(test.domain_key)}
+              <GraduationCap className="h-5 w-5 text-[#5391D5]" /> {displayName(test.domain_key, test.domain_name)}
             </h2>
             <p className="mt-1 text-xs text-slate-500">{t("tech.take.answerAll", { n: test.items.length })}</p>
           </div>
@@ -235,7 +312,7 @@ export function TechAssessmentClient({
           <div className="flex flex-wrap items-center gap-4">
             <div>
               <p className="text-[11px] uppercase tracking-wider text-slate-500">
-                {result.certified ? t("tech.take.certifiedProf") : t("tech.take.indicativeProf")} · {domainName(result.domain_key)}
+                {result.certified ? t("tech.take.certifiedProf") : t("tech.take.indicativeProf")} · {displayName(result.domain_key, result.domain_name)}
               </p>
               <div className={`mt-1 inline-flex items-center justify-center rounded-xl border-2 px-5 py-3 text-2xl font-bold ${LEVEL_TONE[result.proficiency.level]}`}>
                 {result.proficiency.level}/5 · {t(`tech.take.levels.${result.proficiency.label}`)}
@@ -309,12 +386,12 @@ export function TechAssessmentClient({
             </div>
           )}
 
-          {!lockedDomain && (
+          {!locked && (
             <button
               onClick={reset}
               className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
             >
-              <RotateCcw className="h-4 w-4" /> {t("tech.take.another")}
+              <RotateCcw className="h-4 w-4" /> {t("tech.take.restart")}
             </button>
           )}
         </div>

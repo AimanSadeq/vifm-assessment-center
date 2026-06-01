@@ -50,6 +50,9 @@ export function ApplyFlow({ token, ctx }: { token: string; ctx: PrehireCandidate
   const current = stageKinds.find((k) => !done.has(k)) ?? null;
   const allDone = agreed && current === null;
   const stepIndex = current ? stageKinds.indexOf(current) + 1 : stageKinds.length;
+  // Voluntary equal-opportunity monitoring runs once, AFTER consent and BEFORE
+  // the first assessment (decoupled from scoring). Skip + submit both clear it.
+  const demoComplete = !!ctx.candidate.demographics_submitted_at || demoDone;
 
   return (
     <div className="min-h-screen bg-[#F5F7FA]" dir="ltr">
@@ -67,7 +70,7 @@ export function ApplyFlow({ token, ctx }: { token: string; ctx: PrehireCandidate
             {ctx.requisition.clientName ? `${ctx.requisition.clientName} · ` : ""}
             Hi {ctx.candidate.full_name.split(" ")[0]}, welcome.
           </p>
-          {agreed && stageKinds.length > 0 && !allDone && (
+          {agreed && demoComplete && stageKinds.length > 0 && !allDone && (
             <p className="mt-2 text-xs font-medium text-[#5391D5]">
               Step {stepIndex} of {stageKinds.length}
             </p>
@@ -103,34 +106,34 @@ export function ApplyFlow({ token, ctx }: { token: string; ctx: PrehireCandidate
           </Card>
         )}
 
-        {/* Active interactive stage */}
-        {agreed && current === "quiz" && (
+        {/* Voluntary equal-opportunity monitoring — BEFORE the assessment */}
+        {agreed && !demoComplete && (
+          <DemographicsCard token={token} onDone={() => setDemoDone(true)} />
+        )}
+
+        {/* Active interactive stage (after consent + the demographics step) */}
+        {agreed && demoComplete && current === "quiz" && (
           <QuizStage key="quiz" token={token} onDone={() => markDone("quiz")} />
         )}
-        {agreed && current === "cbi" && (
+        {agreed && demoComplete && current === "cbi" && (
           <CbiStage key="cbi" token={token} onDone={() => markDone("cbi")} />
         )}
-        {agreed && current === "fluent" && (
+        {agreed && demoComplete && current === "fluent" && (
           <FluentStage key="fluent" token={token} onDone={() => markDone("fluent")} />
         )}
 
         {/* All stages complete */}
-        {allDone && (
-          <>
-            <Card>
-              <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-                <CheckCircle2 className="h-10 w-10 text-[#00843D]" />
-                <h2 className="text-lg font-semibold text-[#010131]">Thank you</h2>
-                <p className="max-w-sm text-sm text-muted-foreground">
-                  Your responses have been submitted. The hiring team will review them and be in
-                  touch.
-                </p>
-              </CardContent>
-            </Card>
-            {!ctx.candidate.demographics_submitted_at && !demoDone && (
-              <DemographicsCard token={token} onDone={() => setDemoDone(true)} />
-            )}
-          </>
+        {allDone && demoComplete && (
+          <Card>
+            <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+              <CheckCircle2 className="h-10 w-10 text-[#00843D]" />
+              <h2 className="text-lg font-semibold text-[#010131]">Thank you</h2>
+              <p className="max-w-sm text-sm text-muted-foreground">
+                Your responses have been submitted. The hiring team will review them and be in
+                touch.
+              </p>
+            </CardContent>
+          </Card>
         )}
       </main>
     </div>

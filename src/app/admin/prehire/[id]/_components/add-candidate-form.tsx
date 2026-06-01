@@ -8,8 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus } from "lucide-react";
-import { addCandidateAction } from "../../actions";
+import { UserPlus, Mail, Loader2 } from "lucide-react";
+import { addCandidateAction, inviteAllPendingAction } from "../../actions";
 
 export function AddCandidateForm({ requisitionId }: { requisitionId: string }) {
   const router = useRouter();
@@ -18,6 +18,19 @@ export function AddCandidateForm({ requisitionId }: { requisitionId: string }) {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [invitingAll, setInvitingAll] = useState(false);
+
+  const handleInviteAll = async () => {
+    setInvitingAll(true);
+    const res = await inviteAllPendingAction(requisitionId);
+    setInvitingAll(false);
+    if ("error" in res) {
+      toast.error(res.error);
+      return;
+    }
+    toast.success(res.data.total === 0 ? t("prehire.invitedNone") : t("prehire.invitedAllResult", res.data));
+    router.refresh();
+  };
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -70,6 +83,10 @@ export function AddCandidateForm({ requisitionId }: { requisitionId: string }) {
           <Button onClick={handleSubmit} disabled={submitting || !fullName || !email} className="gap-1.5">
             <UserPlus className="h-4 w-4" />
             {submitting ? t("prehire.adding") : t("prehire.addCandidate")}
+          </Button>
+          <Button variant="outline" onClick={handleInviteAll} disabled={invitingAll} className="gap-1.5">
+            {invitingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+            {invitingAll ? t("prehire.invitingAll") : t("prehire.inviteAll")}
           </Button>
         </div>
       </CardContent>

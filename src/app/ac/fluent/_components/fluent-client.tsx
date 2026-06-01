@@ -445,9 +445,6 @@ export function FluentClient({
           <section className="rounded-xl border bg-white p-6 shadow-sm">
             <h2 className="mb-3 inline-flex items-center gap-2 text-lg font-semibold text-[#010131]">
               <PenLine className="h-5 w-5 text-[#5391D5]" /> {t.writing}
-              <span className="ms-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
-                {t.target} {test.writing.cefr_target}
-              </span>
             </h2>
             <p dir="ltr" className="text-sm text-[#111232]">{test.writing.prompt_en}</p>
             {rtl && test.writing.prompt_ar && (
@@ -457,7 +454,7 @@ export function FluentClient({
               onPaste={() => setPasteCount((c) => c + 1)}
               placeholder={t.writeHere} dir="ltr"
               className="mt-3 w-full resize-y rounded-md border border-slate-300 px-3 py-2 text-sm text-[#111232] focus:border-[#5391D5] focus:outline-none" />
-            <div className="mt-1 text-[11px] text-slate-500">
+            <div className={`mt-1 text-[11px] ${wordCount >= test.writing.min_words ? "font-semibold text-emerald-600" : "text-slate-500"}`}>
               {wordCount} {t.words} · {t.min} {test.writing.min_words}
             </div>
           </section>
@@ -467,7 +464,7 @@ export function FluentClient({
             <h2 className="mb-1 inline-flex items-center gap-2 text-lg font-semibold text-[#010131]">
               <Mic className="h-5 w-5 text-[#5391D5]" /> {t.speaking}
               <span className="ms-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
-                {t.optional} · {t.target} {test.speaking.cefr_target}
+                {t.optional}
               </span>
             </h2>
             <p className="mb-3 text-xs text-slate-500">{t.speakHint}</p>

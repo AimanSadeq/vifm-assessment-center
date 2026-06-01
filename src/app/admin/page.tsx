@@ -10,7 +10,7 @@ export default async function AdminDashboardPage() {
   const t = await getServerT();
 
   const [engR, candR, assignR, obsR, ratR, conR, oarR, repR, wsR] = await Promise.all([
-    supabase.from("engagements").select("id"),
+    supabase.from("engagements").select("id").order("created_at", { ascending: false }),
     supabase.from("candidates").select("id"),
     supabase.from("assessor_assignments").select("id"),
     supabase.from("observations").select("id"),
@@ -26,8 +26,12 @@ export default async function AdminDashboardPage() {
   const oar = oarR.data?.length ?? 0, rep = repR.data?.length ?? 0, ws = wsR.data?.length ?? 0;
   const rel = repR.data?.filter((x) => x.status === "released").length ?? 0;
 
-  // If exactly one engagement, link directly to it for steps 2-3
-  const engDetailHref = e === 1 && engR.data?.[0]?.id
+  // "Add candidates" / "Assign assessors" must land on a page that actually has
+  // those controls — an engagement DETAIL (its candidates table + Add Candidate
+  // dialog), not the engagements LIST (whose CTA is "+ New project", which read
+  // as "add a new project"). Deep-link to the most-recent engagement whenever any
+  // exist; only fall back to the list when there are none (create the first).
+  const engDetailHref = e >= 1 && engR.data?.[0]?.id
     ? `/admin/engagements/${engR.data[0].id}`
     : "/admin/engagements";
 

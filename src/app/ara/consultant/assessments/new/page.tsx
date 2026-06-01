@@ -82,18 +82,19 @@ export default async function NewAraAssessmentPage({
             {t("araConsultant.new_step1_intro_after")}
           </p>
 
-          <div className="grid gap-5 md:grid-cols-3">
-            {ARA_STAGE_DEFINITIONS
-              .filter((stage) => stage.id !== "individual")
-              .map((stage) => {
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+            {ARA_STAGE_DEFINITIONS.map((stage) => {
               const tone = TONE_MAP[stage.tone];
               const Icon = STAGE_ICONS[stage.id];
+              // Personal is self-served (4 individual factors, not org pillars),
+              // so its card routes to the consultant personal deep-dive issuance,
+              // never the org pillar wizard (?stage=individual).
+              const isIndividual = stage.id === "individual";
+              const href = isIndividual
+                ? "/ara/consultant/personal-deep-dive/new"
+                : `/ara/consultant/assessments/new?stage=${stage.id}`;
               return (
-                <Link
-                  key={stage.id}
-                  href={`/ara/consultant/assessments/new?stage=${stage.id}`}
-                  className="group block"
-                >
+                <Link key={stage.id} href={href} className="group block">
                   <article
                     className="ara-tile p-6 h-full flex flex-col cursor-pointer"
                     style={{ borderTop: `3px solid ${tone.fg}` }}
@@ -109,7 +110,9 @@ export default async function NewAraAssessmentPage({
                         className="text-[10px] font-semibold uppercase tracking-widest"
                         style={{ color: tone.fg }}
                       >
-                        {t("araConsultant.new_stage_label", { n: stage.number })}
+                        {isIndividual
+                          ? t("araConsultant.new_stage_personal")
+                          : t("araConsultant.new_stage_label", { n: stage.number })}
                       </span>
                     </div>
 
@@ -137,7 +140,9 @@ export default async function NewAraAssessmentPage({
                     <ul className="text-xs text-muted-foreground space-y-1.5 mt-auto">
                       <li className="flex items-center gap-1.5">
                         <Check className="h-3 w-3" style={{ color: tone.fg }} />
-                        {t("araConsultant.new_stage_pillars_of_8", { n: stage.applicable_pillars.length })}
+                        {isIndividual
+                          ? t("araConsultant.new_stage_factors")
+                          : t("araConsultant.new_stage_pillars_of_8", { n: stage.applicable_pillars.length })}
                       </li>
                       <li className="flex items-center gap-1.5">
                         <Check className="h-3 w-3" style={{ color: tone.fg }} />
@@ -147,10 +152,12 @@ export default async function NewAraAssessmentPage({
                         <Check className="h-3 w-3" style={{ color: tone.fg }} />
                         {t("araConsultant.new_stage_report_pages", { n: stage.report_pages })}
                       </li>
-                      <li className="flex items-center gap-1.5 opacity-75">
-                        <User className="h-3 w-3" style={{ color: tone.fg }} />
-                        {t("araConsultant.new_stage_optional_individual")}
-                      </li>
+                      {!isIndividual && (
+                        <li className="flex items-center gap-1.5 opacity-75">
+                          <User className="h-3 w-3" style={{ color: tone.fg }} />
+                          {t("araConsultant.new_stage_optional_individual")}
+                        </li>
+                      )}
                     </ul>
                   </article>
                 </Link>

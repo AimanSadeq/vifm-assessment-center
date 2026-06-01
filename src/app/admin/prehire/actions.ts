@@ -91,6 +91,9 @@ export async function addCandidateAction(input: unknown) {
   }
 
   const svc = createServiceClient();
+  // Add the candidate WITHOUT inviting — the admin decides when to send the
+  // invite (they often add many candidates first). invited_at stays null = not
+  // yet invited; the per-row "Send invite" / copy-link affordances do the send.
   const { data, error } = await svc
     .from("prehire_candidates")
     .insert({
@@ -98,8 +101,8 @@ export async function addCandidateAction(input: unknown) {
       full_name: parsed.data.full_name,
       email: parsed.data.email,
       phone: parsed.data.phone || null,
-      status: "invited",
-      invited_at: new Date().toISOString(),
+      status: "invited", // pipeline entry state (enum has no "added"); invited_at null = uninvited
+      invited_at: null,
     })
     .select("id, access_token")
     .single();
@@ -113,12 +116,32 @@ export async function addCandidateAction(input: unknown) {
     actorLabel: "admin",
   });
 
-  // Best-effort: email the invite immediately. Never block adding the candidate
-  // on email — the recruiter can always copy the link or resend.
-  const emailed = await sendPrehireInvite(data.id as string);
-
   revalidatePath(`/admin/prehire/${parsed.data.requisition_id}`);
-  return { data: { id: data.id as string, access_token: data.access_token as string, emailed } };
+  return { data: { id: data.id as string, access_token: data.access_token as string, emailed: false } };
+}
+
+/** Invite every not-yet-invited candidate on a requisition (admin "send all"). */
+export async function inviteAllPendingAction(requisitionId: string) {
+  const gate = await gateAdmin();
+  if (gate) return gate;
+  if (typeof requisitionId !== "string" || !requisitionId) return { error: "Missing requisition" };
+
+  try {
+    const svc = createServiceClient();
+    const { data: pending } = await svc
+      .from("prehire_candidates")
+      .select("id")
+      .eq("requisition_id", requisitionId)
+      .is("invited_at", null);
+    let sent = 0;
+    for (const c of (pending ?? []) as { id: string }[]) {
+      if (await sendPrehireInvite(c.id)) sent += 1;
+    }
+    revalidatePath(`/admin/prehire/${requisitionId}`);
+    return { data: { total: (pending ?? []).length, sent } };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Could not send invites" };
+  }
 }
 
 /** Resend the invitation email to an existing candidate (admin-gated). */

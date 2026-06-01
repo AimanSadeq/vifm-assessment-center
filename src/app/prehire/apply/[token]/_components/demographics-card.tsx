@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
 /**
- * Voluntary equal-opportunity self-identification, shown only AFTER the
- * screening is submitted so it's visibly decoupled from scoring. Every field is
+ * Voluntary equal-opportunity self-identification, shown after consent and
+ * BEFORE the assessment so it's visibly decoupled from scoring. Every field is
  * optional; "Skip" and "prefer not to say" are first-class. Used by VIFM only in
  * aggregate to monitor fairness (the 4/5ths rule) — never per-individual, never
  * by assessors, never in the score.

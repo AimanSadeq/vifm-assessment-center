@@ -317,9 +317,6 @@ export function FluentStage({ token, onDone }: { token: string; onDone: () => vo
           <section className="rounded-xl border bg-white p-6 shadow-sm">
             <h2 className="mb-3 inline-flex items-center gap-2 text-lg font-semibold text-[#010131]">
               <PenLine className="h-5 w-5 text-[#5391D5]" /> Writing
-              <span className="ms-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
-                Target {test.writing.cefr_target}
-              </span>
             </h2>
             <p className="text-sm text-[#111232]">{test.writing.prompt_en}</p>
             <textarea
@@ -330,7 +327,7 @@ export function FluentStage({ token, onDone }: { token: string; onDone: () => vo
               placeholder="Write your response here…"
               className="mt-3 w-full resize-y rounded-md border border-slate-300 px-3 py-2 text-sm text-[#111232] focus:border-[#5391D5] focus:outline-none focus:ring-2 focus:ring-[#5391D5]/20"
             />
-            <div className="mt-1 text-[11px] text-slate-500">
+            <div className={`mt-1 text-[11px] ${wordCount(writing) >= test.writing.min_words ? "font-semibold text-emerald-600" : "text-slate-500"}`}>
               {wordCount(writing)} words · min {test.writing.min_words}
             </div>
           </section>
@@ -339,9 +336,6 @@ export function FluentStage({ token, onDone }: { token: string; onDone: () => vo
           <section className="rounded-xl border bg-white p-6 shadow-sm">
             <h2 className="mb-1 inline-flex items-center gap-2 text-lg font-semibold text-[#010131]">
               <Mic className="h-5 w-5 text-[#5391D5]" /> Speaking
-              <span className="ms-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
-                Target {test.speaking.cefr_target}
-              </span>
             </h2>
             <p className="mb-3 text-xs text-slate-500">
               Record about {test.speaking.min_seconds} seconds. We transcribe your speech and assess it.

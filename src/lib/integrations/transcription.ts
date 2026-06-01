@@ -1,11 +1,17 @@
 /**
- * Speech-to-text for spoken assessment answers (Whisper) + optional Azure
- * acoustic pronunciation scoring. Shared by the Fluent placement test and the
- * Pre-Hire English screen so both go through ONE code path.
+ * Speech-to-text for spoken assessment answers + optional Azure acoustic
+ * pronunciation scoring. Shared by the Fluent placement test and the Pre-Hire
+ * English screen so both go through ONE code path.
  *
- * Stateless: writes the upload to a temp dir, shells out to
- * scripts/whisper-transcribe.py (faster-whisper, ffmpeg-decoded), optionally
- * transcodes to 16 kHz mono WAV for Azure, then cleans up. No audio persisted.
+ * Transcript backend, in order of preference:
+ *   1. OpenAI Whisper API (OPENAI_API_KEY) — hosted; the only path that works on
+ *      Render, where Python/faster-whisper/ffmpeg aren't installed. Accepts the
+ *      browser's WebM/Opus blob directly (no transcode).
+ *   2. Local Whisper subprocess (scripts/whisper-transcribe.py) — dev fallback
+ *      when no hosted key is set.
+ * Pronunciation (Azure) is best-effort and needs a 16 kHz WAV via ffmpeg; it
+ * degrades to transcript-only when ffmpeg/Azure aren't available. No audio
+ * persisted — temp files are cleaned up.
  */
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
@@ -23,6 +29,46 @@ const FFMPEG_BIN = process.env.FFMPEG_BIN || "ffmpeg";
 const SCRIPT = join(process.cwd(), "scripts", "whisper-transcribe.py");
 const TIMEOUT_MS = 180_000;
 const MAX_BYTES = 25 * 1024 * 1024;
+
+// Hosted STT (OpenAI Whisper). Preferred in production (Render) where the local
+// Python/faster-whisper/ffmpeg toolchain isn't available; the API accepts the
+// browser's WebM/Opus blob directly, so no audio transcoding is needed.
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const OPENAI_STT_MODEL = process.env.OPENAI_STT_MODEL || "whisper-1";
+
+function isOpenAITranscribeConfigured(): boolean {
+  const k = OPENAI_API_KEY;
+  return !!(k && k.trim().length > 0 && !/[<>]/.test(k));
+}
+
+/** Transcribe a recorded blob via the OpenAI audio-transcriptions API. */
+async function transcribeWithOpenAI(file: Blob): Promise<{ transcript?: string; error?: string }> {
+  if (!OPENAI_API_KEY) return { error: "OpenAI not configured" };
+  try {
+    const ext = extFromType(file.type || "");
+    const form = new FormData();
+    // Filename extension lets the API infer the container (webm/ogg/mp4/wav…).
+    form.append("file", file, `speech.${ext}`);
+    form.append("model", OPENAI_STT_MODEL);
+    form.append("language", "en"); // Fluent content is English — bias the decode
+    form.append("response_format", "json");
+
+    const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${OPENAI_API_KEY}` },
+      body: form,
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      return { error: `OpenAI STT ${res.status}: ${detail.slice(0, 200)}` };
+    }
+    const json = (await res.json()) as { text?: string };
+    return { transcript: typeof json.text === "string" ? json.text.trim() : "" };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "OpenAI STT failed" };
+  }
+}
 
 export type TranscriptionResult = {
   transcript?: string;
@@ -111,24 +157,44 @@ export async function transcribeSpeechFile(file: Blob): Promise<TranscriptionRes
     return { error: "audio too large (max 25MB)", status: 413 };
   }
 
+  // ── 1) Transcript ──
+  // Prefer the hosted STT (OpenAI Whisper) so transcription works on Render,
+  // where the local Python/Whisper/ffmpeg toolchain isn't installed. Fall back
+  // to the local Whisper subprocess only when no hosted key is set (dev).
+  let transcript: string | undefined;
+  let lastError: string | undefined;
+  if (isOpenAITranscribeConfigured()) {
+    const r = await transcribeWithOpenAI(file);
+    if (typeof r.transcript === "string") transcript = r.transcript;
+    else lastError = r.error;
+  }
+
   let dir: string | null = null;
   try {
-    dir = await mkdtemp(join(tmpdir(), "vifm-fluent-"));
-    const audioPath = join(dir, `${randomUUID()}.${extFromType(file.type || "")}`);
-    await writeFile(audioPath, Buffer.from(await file.arrayBuffer()));
-
-    const result = await runWhisper(audioPath);
-    if (result.error || typeof result.transcript !== "string") {
-      return { error: result.error || "transcription failed", status: 422 };
+    if (transcript == null) {
+      dir = await mkdtemp(join(tmpdir(), "vifm-fluent-"));
+      const audioPath = join(dir, `${randomUUID()}.${extFromType(file.type || "")}`);
+      await writeFile(audioPath, Buffer.from(await file.arrayBuffer()));
+      const r = await runWhisper(audioPath);
+      if (typeof r.transcript === "string") transcript = r.transcript;
+      else lastError = r.error ?? lastError;
     }
 
-    // Acoustic pronunciation scoring (Azure) - best-effort; transcript-only
-    // when Azure isn't configured or the assessment fails.
+    if (typeof transcript !== "string") {
+      return { error: lastError || "transcription failed", status: 422 };
+    }
+
+    // ── 2) Pronunciation (Azure) — best-effort ──
+    // Needs a 16 kHz WAV (ffmpeg). On Render without ffmpeg this returns null
+    // and we ship transcript-only, exactly as before.
     let pronunciation: PronunciationScore | null = null;
     if (isAzureSpeechConfigured()) {
       try {
+        if (!dir) dir = await mkdtemp(join(tmpdir(), "vifm-fluent-"));
+        const srcPath = join(dir, `${randomUUID()}.${extFromType(file.type || "")}`);
+        await writeFile(srcPath, Buffer.from(await file.arrayBuffer()));
         const wavPath = join(dir, `${randomUUID()}.wav`);
-        if (await transcodeToWav(audioPath, wavPath)) {
+        if (await transcodeToWav(srcPath, wavPath)) {
           pronunciation = await assessPronunciation(await readFile(wavPath));
         }
       } catch {
@@ -136,7 +202,7 @@ export async function transcribeSpeechFile(file: Blob): Promise<TranscriptionRes
       }
     }
 
-    return { transcript: result.transcript, pronunciation };
+    return { transcript, pronunciation };
   } catch (err) {
     console.error("[transcription] failed:", err);
     return { error: "internal transcription error", status: 500 };

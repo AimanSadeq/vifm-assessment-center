@@ -3,8 +3,9 @@
 import { type Dispatch, type SetStateAction, useCallback, useEffect, useRef, useState } from "react";
 import {
   Loader2, Sparkles, RotateCcw, BookOpen, PenLine, CheckCircle2,
-  Headphones, Mic, Square, Play, Volume2, Keyboard, Award, AlertCircle,
+  Headphones, Mic, Square, Play, Volume2, Award, AlertCircle,
 } from "lucide-react";
+import { startBrowserStt, type BrowserSttSession } from "@/lib/speech/browser-stt";
 
 type Language = "en" | "ar";
 type Cefr = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
@@ -69,6 +70,8 @@ const T = {
     yourTranscript: "What we heard", reRecord: "Re-record", typeInstead: "Type instead", recordInstead: "Record instead",
     speakTypeHere: "Type roughly what you would say…", micDenied: "Microphone not available. You can type your answer instead.",
     transcribeFailed: "Transcription didn't work. You can type your answer instead.",
+    noSpeech: "We didn't catch any speech. Please record again.",
+    listening_live: "Listening…",
     optional: "optional", certificate: "Download certificate", resultFor: "Result for",
     transcriptHeading: "Your transcript",
     beginTitle: "Begin your placement",
@@ -96,6 +99,8 @@ const T = {
     yourTranscript: "ما سمعناه", reRecord: "إعادة التسجيل", typeInstead: "اكتب بدلاً من ذلك", recordInstead: "سجّل بدلاً من ذلك",
     speakTypeHere: "اكتب تقريبًا ما كنت ستقوله…", micDenied: "الميكروفون غير متاح. يمكنك كتابة إجابتك بدلاً من ذلك.",
     transcribeFailed: "تعذّر التفريغ. يمكنك كتابة إجابتك بدلاً من ذلك.",
+    noSpeech: "لم نلتقط أي كلام. يُرجى التسجيل مرة أخرى.",
+    listening_live: "جارٍ الاستماع…",
     optional: "اختياري", certificate: "تنزيل الشهادة", resultFor: "نتيجة",
     transcriptHeading: "نص كلامك",
     beginTitle: "ابدأ تحديد مستواك",
@@ -160,6 +165,9 @@ export function FluentClient({
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Browser-native speech-to-text (primary path — free, no server, works on Render).
+  const sttRef = useRef<BrowserSttSession | null>(null);
+  const usingSttRef = useRef(false);
 
   const t = T[language];
   const rtl = language === "ar";
@@ -170,6 +178,7 @@ export function FluentClient({
       if (ttsAvailable()) window.speechSynthesis.cancel();
       if (timerRef.current) clearInterval(timerRef.current);
       streamRef.current?.getTracks().forEach((tr) => tr.stop());
+      sttRef.current?.abort();
     };
   }, []);
 
@@ -200,8 +209,45 @@ export function FluentClient({
     synth.speak(u);
   }, [plays]);
 
+  function endTimer() {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+  }
+
   async function startRecording() {
     setSpeakNote("");
+    // Primary: free, in-browser transcription (no server round-trip, works on
+    // Render). The transcript streams in live; on stop it flows straight into
+    // Claude scoring. Only browsers without the Web Speech API fall through.
+    const stt = startBrowserStt({
+      onPartial: (text) => setTranscript(text),
+      onDone: (finalText) => {
+        endTimer();
+        setRecording(false);
+        usingSttRef.current = false;
+        sttRef.current = null;
+        setTranscript(finalText);
+        if (!finalText) setSpeakNote(t.noSpeech);
+      },
+      onError: (code) => {
+        endTimer();
+        setRecording(false);
+        usingSttRef.current = false;
+        sttRef.current = null;
+        setSpeakMode("type");
+        setSpeakNote(code === "not-allowed" || code === "service-not-allowed" || code === "audio-capture" ? t.micDenied : t.transcribeFailed);
+      },
+    });
+    if (stt) {
+      sttRef.current = stt;
+      usingSttRef.current = true;
+      setTranscript("");
+      setPronunciation(null);
+      setRecording(true);
+      setRecSeconds(0);
+      timerRef.current = setInterval(() => setRecSeconds((s) => s + 1), 1000);
+      return;
+    }
+    // Fallback: MediaRecorder → server transcription (e.g. Firefox).
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
@@ -230,7 +276,12 @@ export function FluentClient({
   }
 
   function stopRecording() {
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    // Web Speech path: stop() triggers onDone, which clears the timer + state.
+    if (usingSttRef.current && sttRef.current) {
+      sttRef.current.stop();
+      return;
+    }
+    endTimer();
     setRecording(false);
     mediaRef.current?.stop();
   }
@@ -498,14 +549,10 @@ export function FluentClient({
                       <Loader2 className="h-4 w-4 animate-spin" /> {t.transcribing}
                     </span>
                   )}
-                  <button onClick={() => { setSpeakMode("type"); setSpeakNote(""); }}
-                    className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700">
-                    <Keyboard className="h-3.5 w-3.5" /> {t.typeInstead}
-                  </button>
                 </div>
-                {transcript && !recording && (
+                {transcript && (
                   <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-                    <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t.yourTranscript}</p>
+                    <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{recording ? t.listening_live : t.yourTranscript}</p>
                     <p dir="ltr" className="text-sm text-[#111232]">{transcript}</p>
                   </div>
                 )}

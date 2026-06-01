@@ -247,14 +247,15 @@ export async function createReflectEngagement(
       return { ok: false, error: fwErr?.message ?? "Could not create framework" };
     }
 
-    // Run Claude - best-effort. If the AI call fails or returns
-    // nothing, we leave the framework empty so the consultant can
-    // populate it manually rather than blocking the wizard.
+    // Run Claude. extractBehaviorsFromValues never throws — it returns null
+    // (no AI key / AI error) or [] (empty/unparseable). Track how many
+    // competencies we actually seed so we can detect a no-op.
     const proposals = await extractBehaviorsFromValues({
       sourceText: p.framework.sourceText,
       defaultLanguage: p.default_language,
     });
 
+    let createdCompetencies = 0;
     if (proposals && proposals.length > 0) {
       for (let i = 0; i < proposals.length; i++) {
         const item = proposals[i];
@@ -271,6 +272,7 @@ export async function createReflectEngagement(
           .select("id")
           .single<{ id: string }>();
         if (compErr || !comp) continue;
+        createdCompetencies += 1;
 
         const behaviorRows = item.behaviors.map((b, j) => ({
           competency_id: comp.id,
@@ -285,6 +287,20 @@ export async function createReflectEngagement(
           await sb.from("reflect_behaviors").insert(behaviorRows);
         }
       }
+    }
+
+    // The AI produced nothing usable (key unset, AI error, or sparse source).
+    // Don't hand the consultant an empty framework that silently fails at
+    // launch ("after the model you stop" / "where is the engagement?"). Roll
+    // back and return a clear, actionable error so the wizard stays on step 2.
+    if (createdCompetencies === 0) {
+      await sb.from("reflect_frameworks").delete().eq("id", fwRow.id);
+      await sb.from("reflect_engagements").delete().eq("id", engagementId);
+      return {
+        ok: false,
+        error:
+          "AI couldn't generate a framework from that text (the AI key may be unset, or the source was too sparse). Choose “Clone a library template” or “Build manually”, or paste richer source values and try again.",
+      };
     }
   }
 

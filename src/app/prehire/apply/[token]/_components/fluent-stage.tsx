@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import {
-  BookOpen, Headphones, PenLine, Mic, Square, Play, Volume2, Keyboard,
+  BookOpen, Headphones, PenLine, Mic, Square, Play, Volume2,
   AlertCircle, CheckCircle2, Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { startBrowserStt, type BrowserSttSession } from "@/lib/speech/browser-stt";
 
 /**
  * Full 4-skill English placement stage for the self-served pre-hire flow.
@@ -69,6 +70,9 @@ export function FluentStage({ token, onDone }: { token: string; onDone: () => vo
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Browser-native speech-to-text (primary path — free, no server, works on Render).
+  const sttRef = useRef<BrowserSttSession | null>(null);
+  const usingSttRef = useRef(false);
 
   // Stop TTS + recording if we unmount mid-flow.
   useEffect(() => {
@@ -76,6 +80,7 @@ export function FluentStage({ token, onDone }: { token: string; onDone: () => vo
       if (ttsAvailable()) window.speechSynthesis.cancel();
       if (timerRef.current) clearInterval(timerRef.current);
       streamRef.current?.getTracks().forEach((tr) => tr.stop());
+      sttRef.current?.abort();
     };
   }, []);
 
@@ -130,8 +135,49 @@ export function FluentStage({ token, onDone }: { token: string; onDone: () => vo
     }
   }
 
+  function endTimer() {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+  }
+
   async function startRecording() {
     setSpeakNote("");
+    // Primary: free, in-browser transcription (no server round-trip, works on
+    // Render). The transcript streams in live and flows straight into scoring.
+    // Only browsers without the Web Speech API (e.g. Firefox) fall through.
+    const stt = startBrowserStt({
+      onPartial: (text) => setTranscript(text),
+      onDone: (finalText) => {
+        endTimer();
+        setRecording(false);
+        usingSttRef.current = false;
+        sttRef.current = null;
+        setTranscript(finalText);
+        if (!finalText) setSpeakNote("We didn't catch any speech. Please record again.");
+      },
+      onError: (code) => {
+        endTimer();
+        setRecording(false);
+        usingSttRef.current = false;
+        sttRef.current = null;
+        setSpeakMode("type");
+        setSpeakNote(
+          code === "not-allowed" || code === "service-not-allowed" || code === "audio-capture"
+            ? "Microphone not available. You can type your answer instead."
+            : "Transcription didn't work. You can type your answer instead."
+        );
+      },
+    });
+    if (stt) {
+      sttRef.current = stt;
+      usingSttRef.current = true;
+      setTranscript("");
+      setPronunciation(null);
+      setRecording(true);
+      setRecSeconds(0);
+      timerRef.current = setInterval(() => setRecSeconds((s) => s + 1), 1000);
+      return;
+    }
+    // Fallback: MediaRecorder → server transcription (e.g. Firefox).
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
@@ -160,7 +206,12 @@ export function FluentStage({ token, onDone }: { token: string; onDone: () => vo
   }
 
   function stopRecording() {
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    // Web Speech path: stop() triggers onDone, which clears the timer + state.
+    if (usingSttRef.current && sttRef.current) {
+      sttRef.current.stop();
+      return;
+    }
+    endTimer();
     setRecording(false);
     mediaRef.current?.stop();
   }
@@ -372,16 +423,10 @@ export function FluentStage({ token, onDone }: { token: string; onDone: () => vo
                       <Loader2 className="h-4 w-4 animate-spin" /> Transcribing your speech…
                     </span>
                   )}
-                  <button
-                    onClick={() => { setSpeakMode("type"); setSpeakNote(""); }}
-                    className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700"
-                  >
-                    <Keyboard className="h-3.5 w-3.5" /> Type instead
-                  </button>
                 </div>
-                {transcript && !recording && (
+                {transcript && (
                   <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-                    <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500">What we heard</p>
+                    <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{recording ? "Listening…" : "What we heard"}</p>
                     <p className="text-sm text-[#111232]">{transcript}</p>
                   </div>
                 )}

@@ -140,10 +140,30 @@ export async function fetchReportData(
     if (p?.full_name) assessorNameSet.add(p.full_name);
   }
 
-  const developmentRecommendations = (devRecResult.data ?? []).map((dr) => {
+  let developmentRecommendations = (devRecResult.data ?? []).map((dr) => {
     const comp = dr.competencies as unknown as { name: string } | null;
-    return { competencyName: comp?.name ?? "Unknown", recommendation: dr.recommendation, priority: dr.priority };
+    return { competencyName: comp?.name ?? "Unknown", recommendation: dr.recommendation, priority: dr.priority as string };
   });
+
+  // No formal recommendations recorded for this candidate? Derive a development
+  // plan from the below-target competencies (consensus below Strength) + their
+  // development tips, so the report always offers concrete next steps. Fully
+  // deterministic — needs no AI key, works on every environment.
+  if (developmentRecommendations.length === 0) {
+    developmentRecommendations = competencies
+      .filter((c) => c.consensusScore != null && c.consensusScore < 4)
+      .sort((a, b) => (a.consensusScore ?? 0) - (b.consensusScore ?? 0))
+      .slice(0, 6)
+      .map((c) => {
+        const score = c.consensusScore ?? 0;
+        const priority = score <= 2 ? "high" : score <= 3 ? "medium" : "low";
+        const tip = c.developmentTips[0];
+        const recommendation = tip
+          ? `Strengthen ${c.competencyName} (currently ${score}/5, target 4): ${tip}`
+          : `Strengthen ${c.competencyName} (currently ${score}/5, target 4) through coaching, targeted learning, and an on-the-job stretch assignment (70-20-10).`;
+        return { competencyName: c.competencyName, recommendation, priority };
+      });
+  }
 
   const formatDate = (d: string | null) => {
     if (!d) return "";

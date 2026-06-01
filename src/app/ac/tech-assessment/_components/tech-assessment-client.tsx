@@ -70,7 +70,8 @@ export function TechAssessmentClient({
   const [runKind, setRunKind] = useState<RunKind>("function");
   const [test, setTest] = useState<PublicTechTest | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [answers, setAnswers] = useState<Record<string, number>>({});
+  // A single-answer item maps to a number; a multi-select item to a number[].
+  const [answers, setAnswers] = useState<Record<string, number | number[]>>({});
   const [result, setResult] = useState<ScoredResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -176,8 +177,26 @@ export function TechAssessmentClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lockedDomain, lockedFunction]);
 
+  // An item is answered when a single item has a chosen index, or a multi item
+  // has at least one option ticked.
+  const isAnswered = (item: PublicTechTest["items"][number]) => {
+    const a = answers[item.id];
+    return item.type === "multi" ? Array.isArray(a) && a.length > 0 : typeof a === "number";
+  };
   const allAnswered =
-    !!test && Array.isArray(test.items) && test.items.length > 0 && test.items.every((i) => answers[i.id] != null);
+    !!test && Array.isArray(test.items) && test.items.length > 0 && test.items.every(isAnswered);
+
+  const toggleSingle = (id: string, oi: number) => setAnswers((a) => ({ ...a, [id]: oi }));
+  const toggleMulti = (id: string, oi: number) =>
+    setAnswers((a) => {
+      const cur = Array.isArray(a[id]) ? (a[id] as number[]) : [];
+      const next = cur.includes(oi) ? cur.filter((x) => x !== oi) : [...cur, oi].sort((p, q) => p - q);
+      return { ...a, [id]: next };
+    });
+  const isPicked = (id: string, oi: number, multi: boolean) => {
+    const a = answers[id];
+    return multi ? Array.isArray(a) && a.includes(oi) : a === oi;
+  };
 
   return (
     <div className="space-y-5">
@@ -266,36 +285,55 @@ export function TechAssessmentClient({
             </h2>
             <p className="mt-1 text-xs text-slate-500">{t("tech.take.answerAll", { n: test.items.length })}</p>
           </div>
-          {test.items.map((item, i) => (
-            <section key={item.id} className="rounded-xl border bg-white p-5 shadow-sm">
-              <div className="mb-2 flex items-center gap-2">
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">
-                  {skillLabel(item.skill)}
-                </span>
-                <span className="text-[10px] uppercase tracking-wide text-slate-400">{t(`tech.sme.diff.${item.difficulty}`)}</span>
-              </div>
-              <p className="text-sm font-semibold text-[#010131]">{i + 1}. {item.question}</p>
-              <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                {item.options.map((opt, oi) => (
-                  <label
-                    key={oi}
-                    className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm ${
-                      answers[item.id] === oi ? "border-[#5391D5] bg-[#5391D5]/5" : "border-slate-200 hover:bg-slate-50"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name={item.id}
-                      checked={answers[item.id] === oi}
-                      onChange={() => setAnswers((a) => ({ ...a, [item.id]: oi }))}
-                      className="accent-[#5391D5]"
-                    />
-                    <span>{opt}</span>
-                  </label>
-                ))}
-              </div>
-            </section>
-          ))}
+          {test.items.map((item, i) => {
+            const multi = item.type === "multi";
+            return (
+              <section key={item.id} className="rounded-xl border bg-white p-5 shadow-sm">
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                    {skillLabel(item.skill)}
+                  </span>
+                  {item.cognitive && (
+                    <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-indigo-600">
+                      {t(`tech.take.cog.${item.cognitive}`)}
+                    </span>
+                  )}
+                  {item.type === "scenario" && (
+                    <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-violet-600">
+                      {t("tech.take.typeScenario")}
+                    </span>
+                  )}
+                  <span className="text-[10px] uppercase tracking-wide text-slate-400">{t(`tech.sme.diff.${item.difficulty}`)}</span>
+                </div>
+                {item.type === "scenario" && item.scenario && (
+                  <p className="mb-2 rounded-md border-s-2 border-violet-300 bg-violet-50/40 px-3 py-2 text-[13px] leading-relaxed text-slate-700">
+                    {item.scenario}
+                  </p>
+                )}
+                <p className="text-sm font-semibold text-[#010131]">{i + 1}. {item.question}</p>
+                {multi && <p className="mt-0.5 text-[11px] font-medium text-[#2b6cb0]">{t("tech.take.selectAll")}</p>}
+                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                  {item.options.map((opt, oi) => (
+                    <label
+                      key={oi}
+                      className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm ${
+                        isPicked(item.id, oi, multi) ? "border-[#5391D5] bg-[#5391D5]/5" : "border-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      <input
+                        type={multi ? "checkbox" : "radio"}
+                        name={item.id}
+                        checked={isPicked(item.id, oi, multi)}
+                        onChange={() => (multi ? toggleMulti(item.id, oi) : toggleSingle(item.id, oi))}
+                        className="accent-[#5391D5]"
+                      />
+                      <span>{opt}</span>
+                    </label>
+                  ))}
+                </div>
+              </section>
+            );
+          })}
           <button
             onClick={submit}
             disabled={busy || !allAnswered}

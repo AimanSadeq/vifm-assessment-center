@@ -380,6 +380,7 @@ export async function buildCertifiedTest(
     return {
       id: r.id || `c${i + 1}`,
       skill: r.skill,
+      type: "single",
       question: baseQuestion,
       options: order.map((idx) => baseOptions[idx]),
       correct_index: order.indexOf(r.correct_index),
@@ -584,7 +585,7 @@ export async function draftAiItemsToBank(
  * model didn't return a usable translation). Used to repair draft items and to
  * backfill the bank. No-ops (all null) without an API key.
  */
-async function translateItemsToArabic(
+export async function translateItemsToArabic(
   items: { question_en: string; options_en: string[] }[]
 ): Promise<({ question_ar: string; options_ar: string[] } | null)[]> {
   const client = getAIClient();

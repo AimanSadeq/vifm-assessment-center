@@ -39,6 +39,7 @@ import {
   getCutScore,
   recordItemAdministration,
 } from "@/lib/competencies/technical-item-bank";
+import { buildCertifiedFunctionTest, getFunctionCutScore } from "@/lib/competencies/technical-function-bank";
 import { issueCredential } from "@/lib/credentials/issue";
 
 export const dynamic = "force-dynamic";
@@ -60,7 +61,7 @@ type Body = {
   items?: TechItem[]; // legacy client-graded path only
   domainName?: string;
   aiGenerated?: boolean;
-  answers?: Record<string, number>;
+  answers?: Record<string, number | number[]>;
   takerName?: string | null;
   takerEmail?: string | null;
   candidateId?: string | null;
@@ -151,13 +152,27 @@ export async function POST(req: Request) {
     if (functionRef) {
       const fn = await getTechnicalFunctionByRef(functionRef, language);
       if (!fn) return NextResponse.json({ error: "valid functionKey required" }, { status: 400 });
-      const generated = await generateFunctionAssessment({
+      // Prefer the certified path (SME-approved per-skill bank). Fall back to the
+      // indicative AI assembly when any skill is below its coverage floor.
+      const certified = await buildCertifiedFunctionTest({
         functionKey: fn.ref,
         functionName: fn.name,
         skillsEn: fn.skillsEn,
+        functionId: fn.id,
         language,
       });
-      const stored: StoredTest = { ...generated, function_key: fn.ref, function_id: fn.id };
+      const stored: StoredTest = certified
+        ? { ...certified.test, item_ids: certified.itemIds, function_key: fn.ref, function_id: fn.id }
+        : {
+            ...(await generateFunctionAssessment({
+              functionKey: fn.ref,
+              functionName: fn.name,
+              skillsEn: fn.skillsEn,
+              language,
+            })),
+            function_key: fn.ref,
+            function_id: fn.id,
+          };
       const session_id = await createSession(
         stored,
         { candidateId, engagementId, language },
@@ -228,10 +243,13 @@ export async function POST(req: Request) {
     let credentialCode: string | null = null;
 
     if (result.certified) {
-      // Certified runs are always domain runs, so domain_key is a real TechDomainKey.
-      const cut = await getCutScore(result.domain_key as TechDomainKey);
-      cutPct = cut.passPct;
-      passedCut = result.pct >= cut.passPct;
+      // A certified FUNCTION run uses its per-function standard; a certified
+      // DOMAIN run uses the domain cut-score (domain_key is a real TechDomainKey).
+      const passPct = isFunctionRun
+        ? (await getFunctionCutScore(test.function_id ?? null)).passPct
+        : (await getCutScore(result.domain_key as TechDomainKey)).passPct;
+      cutPct = passPct;
+      passedCut = result.pct >= passPct;
 
       // Feed light p-value substrate back to the bank (best-effort).
       if (test.item_ids && test.item_ids.length > 0) {
@@ -330,7 +348,7 @@ export async function POST(req: Request) {
         scorePct: result.pct,
         sourceId: resultId,
         metadata: {
-          domain_key: result.domain_key,
+          ...(isFunctionRun ? { function_key: result.domain_key } : { domain_key: result.domain_key }),
           level: result.proficiency.level,
           cut_pct: cutPct,
           certified: true,

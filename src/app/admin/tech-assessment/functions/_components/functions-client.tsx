@@ -10,8 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import Link from "next/link";
 import {
-  Upload, Loader2, Sparkles, FileText, Layers3, Trash2, ExternalLink, Plus, Wand2,
+  Upload, Loader2, Sparkles, FileText, Layers3, Trash2, ExternalLink, Plus, Wand2, ShieldCheck,
 } from "lucide-react";
 import type { LocalizedTechFunction } from "@/lib/competencies/technical-function";
 import type { JdFunctionBlueprint } from "@/lib/ai/jd-technical-extractor";
@@ -287,7 +288,13 @@ export function FunctionsClient({
                       </span>
                     </div>
                     <p className="mt-1 text-[11px] text-muted-foreground">{t("techFn.skillsN", { n: f.skillsEn.length })} · {f.skills.slice(0, 3).join(" · ")}…</p>
-                    <div className="mt-2 flex items-center gap-2">
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <Link
+                        href={`/admin/tech-assessment/functions/${encodeURIComponent(f.ref)}`}
+                        className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium hover:bg-accent"
+                      >
+                        <ShieldCheck className="h-3 w-3" /> {t("techFn.cert.manageCert")}
+                      </Link>
                       <a
                         href={`/ac/tech-assessment?functionKey=${f.ref}`}
                         target="_blank"

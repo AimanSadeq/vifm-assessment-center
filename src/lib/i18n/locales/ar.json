@@ -285,6 +285,9 @@
     "thComposite": "النتيجة المركّبة",
     "thAiSignal": "إشارة الذكاء الاصطناعي",
     "thDecision": "القرار",
+    "thActions": "إجراءات",
+    "report": "التقرير",
+    "ttReport": "تنزيل تقرير فرز هذا المرشّح (PDF)",
     "signalNote": "النتائج إشارة فحص. يراجعها إنسان ويتخذ قرار التوظيف — لا يرفض المسار تلقائيًا أبدًا.",
     "reco": {
       "advance": "تقديم",
@@ -310,6 +313,8 @@
     "emailLabel": "البريد الإلكتروني",
     "phoneLabel": "الهاتف",
     "phonePh": "اختياري",
+    "employeeIdLabel": "الرقم الوظيفي",
+    "employeeIdPh": "اختياري",
     "adding": "جارٍ الإضافة…",
     "addCandidate": "إضافة مرشح",
     "decisionOpt": {

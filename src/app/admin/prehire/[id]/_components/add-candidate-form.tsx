@@ -17,6 +17,7 @@ export function AddCandidateForm({ requisitionId }: { requisitionId: string }) {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [employeeId, setEmployeeId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [invitingAll, setInvitingAll] = useState(false);
 
@@ -39,6 +40,7 @@ export function AddCandidateForm({ requisitionId }: { requisitionId: string }) {
       full_name: fullName,
       email,
       phone: phone || undefined,
+      employee_id: employeeId || undefined,
     });
     setSubmitting(false);
     if ("error" in res) {
@@ -61,6 +63,7 @@ export function AddCandidateForm({ requisitionId }: { requisitionId: string }) {
     setFullName("");
     setEmail("");
     setPhone("");
+    setEmployeeId("");
     router.refresh();
   };
 
@@ -79,6 +82,10 @@ export function AddCandidateForm({ requisitionId }: { requisitionId: string }) {
           <div className="w-36 space-y-1.5">
             <Label htmlFor="cand-phone">{t("prehire.phoneLabel")}</Label>
             <Input id="cand-phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t("prehire.phonePh")} />
+          </div>
+          <div className="w-36 space-y-1.5">
+            <Label htmlFor="cand-empid">{t("prehire.employeeIdLabel")}</Label>
+            <Input id="cand-empid" value={employeeId} onChange={(e) => setEmployeeId(e.target.value)} placeholder={t("prehire.employeeIdPh")} />
           </div>
           <Button onClick={handleSubmit} disabled={submitting || !fullName || !email} className="gap-1.5">
             <UserPlus className="h-4 w-4" />

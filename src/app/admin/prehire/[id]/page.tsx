@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Download, ShieldCheck } from "lucide-react";
+import { Download, ShieldCheck, FileText } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { BackLink } from "@/components/shared/back-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,12 +14,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { computeComposite, rankByComposite } from "@/lib/prehire/scoring";
-import { getServerT } from "@/lib/i18n/server";
+import { getServerT, getServerLocale } from "@/lib/i18n/server";
 import type { PrehireStagePlanEntry, PrehireStageKind } from "@/types/prehire";
-import type { PrehireDecision } from "@/types/prehire";
 import { AddCandidateForm } from "./_components/add-candidate-form";
 import { InviteLink } from "./_components/invite-link";
-import { DecisionCell } from "./_components/decision-cell";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +46,7 @@ const RECO_TONE: Record<string, string> = {
 export default async function RequisitionDetailPage({ params }: { params: { id: string } }) {
   const supabase = await createClient();
   const t = await getServerT();
+  const locale = await getServerLocale();
   const statusLabel = (s: string) => {
     const v = t(`prehire.status.${s}`);
     return v.startsWith("prehire.status.") ? s : v;
@@ -86,16 +85,16 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
 
   const candidates = (candData ?? []) as unknown as CandidateRow[];
 
-  // Tolerant: the `decision` column exists only after migration 00051. Fetch it
-  // separately so a pre-migration DB still renders the shortlist (a missing
-  // column on the main select would empty the table).
-  const { data: decisionRows } = await supabase
+  // Custom fields (00061) — separate best-effort read so a pre-migration DB
+  // (no custom_fields column) can't error the select and empty the shortlist.
+  const customById = new Map<string, Record<string, string>>();
+  const { data: customData } = await supabase
     .from("prehire_candidates")
-    .select("id, decision")
+    .select("id, custom_fields")
     .eq("requisition_id", params.id);
-  const decisionById = new Map<string, PrehireDecision | null>(
-    (decisionRows ?? []).map((r) => [r.id as string, (r.decision as PrehireDecision | null) ?? null])
-  );
+  for (const r of (customData ?? []) as { id: string; custom_fields: Record<string, string> | null }[]) {
+    if (r.custom_fields && typeof r.custom_fields === "object") customById.set(r.id, r.custom_fields);
+  }
 
   const scored = candidates.map((c) => {
     const result = computeComposite(plan, c.prehire_stage_results ?? []);
@@ -170,8 +169,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                   ))}
                   <TableHead className="text-center">{t("prehire.thComposite")}</TableHead>
                   <TableHead>{t("prehire.thAiSignal")}</TableHead>
-                  <TableHead className="w-44">{t("prehire.thDecision")}</TableHead>
-                  <TableHead></TableHead>
+                  <TableHead className="text-end">{t("prehire.thActions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -180,6 +178,11 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                     <TableCell>
                       <div className="font-medium">{c.full_name}</div>
                       <div className="text-xs text-muted-foreground">{c.email}</div>
+                      {customById.get(c.id)?.employee_id && (
+                        <div className="text-xs text-muted-foreground">
+                          {t("prehire.employeeIdLabel")}: {customById.get(c.id)?.employee_id}
+                        </div>
+                      )}
                     </TableCell>
                     {plan.map((s) => {
                       const st = c.perStage.find((p) => p.kind === s.kind);
@@ -207,11 +210,19 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                         {t(`prehire.reco.${c.recommendation}`)}
                       </span>
                     </TableCell>
-                    <TableCell>
-                      <DecisionCell candidateId={c.id} decision={decisionById.get(c.id) ?? null} />
-                    </TableCell>
                     <TableCell className="text-end">
-                      <InviteLink token={c.access_token} candidateId={c.id} />
+                      <div className="inline-flex items-center gap-1">
+                        <a
+                          href={`/api/admin/prehire/${req.id}/candidate/${c.id}/report?lang=${locale}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 rounded-md border border-input bg-background px-2 py-1 text-xs font-medium hover:bg-accent"
+                          title={t("prehire.ttReport")}
+                        >
+                          <FileText className="h-3.5 w-3.5" /> {t("prehire.report")}
+                        </a>
+                        <InviteLink token={c.access_token} candidateId={c.id} />
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

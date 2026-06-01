@@ -79,6 +79,19 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     .eq("requisition_id", params.id);
 
   const candidates = (candData ?? []) as unknown as CandidateRow[];
+
+  // Custom fields (00061) — separate best-effort read so a pre-migration DB
+  // (no custom_fields column) can't error the export's candidate select.
+  const empIdById = new Map<string, string>();
+  const { data: customData } = await svc
+    .from("prehire_candidates")
+    .select("id, custom_fields")
+    .eq("requisition_id", params.id);
+  for (const r of (customData ?? []) as { id: string; custom_fields: Record<string, string> | null }[]) {
+    const eid = r.custom_fields?.employee_id;
+    if (typeof eid === "string" && eid.trim()) empIdById.set(r.id, eid.trim());
+  }
+
   const scored = candidates.map((c) => {
     const result = computeComposite(plan, c.prehire_stage_results ?? []);
     return { ...c, composite: result.composite, recommendation: result.recommendation, perStage: result.perStage };
@@ -97,7 +110,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
   if (format === "csv") {
     const header = [
-      "Rank", "Candidate", "Email", "Phone", "Status",
+      "Rank", "Candidate", "Email", "Employee ID", "Phone", "Status",
       ...plan.map((s) => PREHIRE_STAGE_LABELS[s.kind]),
       "Composite", "Signal", "Consented at", "Invited at", "Completed at",
     ];
@@ -107,7 +120,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
         return st?.normalized == null ? "" : Math.round(st.normalized);
       });
       return [
-        i + 1, c.full_name, c.email, c.phone, c.status,
+        i + 1, c.full_name, c.email, empIdById.get(c.id) ?? "", c.phone, c.status,
         ...stageCells,
         c.composite ?? "", RECOMMENDATION_LABELS[c.recommendation],
         c.consent_at ?? "", c.invited_at ?? "", c.completed_at ?? "",
@@ -148,6 +161,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       rank: i + 1,
       full_name: c.full_name,
       email: c.email,
+      employee_id: empIdById.get(c.id) ?? null,
       phone: c.phone,
       status: c.status,
       composite: c.composite,

@@ -6,7 +6,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { sendEmail, isEmailConfigured } from "@/lib/integrations/email";
 import { logPrehireEvent } from "@/lib/prehire/audit";
-import type { PrehireStagePlanEntry, PrehireStageKind, PrehireDecision } from "@/types/prehire";
+import type { PrehireStagePlanEntry, PrehireStageKind } from "@/types/prehire";
 
 // Admin-only gate. Under AUTH_ENABLED=false the guard returns a synthetic admin
 // (dev keeps working); under auth=on it refuses non-admin callers. Writes go
@@ -79,6 +79,9 @@ const candidateSchema = z.object({
   full_name: z.string().min(2, "Name is required").max(160),
   email: z.string().email("Valid email required"),
   phone: z.string().max(40).optional(),
+  // Recruiter metadata (00061). Optional internal identifier carried on the
+  // candidate (re-hire / internal-mobility). Stored in custom_fields jsonb.
+  employee_id: z.string().max(120).optional(),
 });
 
 export async function addCandidateAction(input: unknown) {
@@ -94,6 +97,7 @@ export async function addCandidateAction(input: unknown) {
   // Add the candidate WITHOUT inviting — the admin decides when to send the
   // invite (they often add many candidates first). invited_at stays null = not
   // yet invited; the per-row "Send invite" / copy-link affordances do the send.
+  const employeeId = (parsed.data.employee_id ?? "").trim();
   const { data, error } = await svc
     .from("prehire_candidates")
     .insert({
@@ -108,6 +112,17 @@ export async function addCandidateAction(input: unknown) {
     .single();
 
   if (error || !data) return { error: error?.message ?? "Could not add candidate" };
+
+  // Best-effort: stash the recruiter's custom fields. Separate UPDATE (not part
+  // of the insert) so a pre-00061 DB without the column still adds the candidate.
+  // Supabase surfaces a missing-column as a resolved { error }, not a throw, so
+  // ignoring the result is enough — the candidate is already added either way.
+  if (employeeId) {
+    await svc
+      .from("prehire_candidates")
+      .update({ custom_fields: { employee_id: employeeId } })
+      .eq("id", data.id);
+  }
 
   await logPrehireEvent({
     action: "candidate_added",
@@ -233,71 +248,4 @@ async function sendPrehireInvite(candidateId: string): Promise<boolean> {
     console.error("[prehire] invite email failed:", e);
     return false;
   }
-}
-
-const DECISION_TO_STATUS: Record<PrehireDecision, string> = {
-  advanced: "shortlisted",
-  rejected: "declined",
-  hold: "hold",
-  withdrawn: "withdrawn",
-};
-
-/**
- * Record the HUMAN hiring decision for a candidate (admin-gated). This is
- * distinct from the AI `recommendation` signal — it's where the
- * human-in-the-loop is captured, with a job-related reason, an actor, and a
- * timestamp, and written to the immutable audit trail. The pipeline never
- * auto-decides; a person always does, here.
- */
-export async function setPrehireDecisionAction(input: {
-  candidateId: string;
-  decision: PrehireDecision;
-  reason?: string;
-}) {
-  let caller;
-  try {
-    caller = await requireRole(["admin"]);
-  } catch (e) {
-    if (isAuthorizationError(e)) return { error: e.message };
-    throw e;
-  }
-
-  const { candidateId, decision } = input ?? {};
-  if (typeof candidateId !== "string" || !candidateId) return { error: "Missing candidate" };
-  if (!(decision in DECISION_TO_STATUS)) return { error: "Invalid decision" };
-  const reason = (input.reason ?? "").toString().trim().slice(0, 2000) || null;
-
-  const svc = createServiceClient();
-  const { data: cand } = await svc
-    .from("prehire_candidates")
-    .select("id, requisition_id")
-    .eq("id", candidateId)
-    .maybeSingle();
-  if (!cand) return { error: "Candidate not found" };
-
-  const { error } = await svc
-    .from("prehire_candidates")
-    .update({
-      decision,
-      decision_reason: reason,
-      // The dev-admin stub uses an all-zero uid that isn't a real profile row —
-      // null it out so the decided_by FK doesn't fail under AUTH_ENABLED=false.
-      decided_by: caller.isDev ? null : caller.uid,
-      decided_at: new Date().toISOString(),
-      status: DECISION_TO_STATUS[decision],
-    })
-    .eq("id", candidateId);
-  if (error) return { error: error.message };
-
-  await logPrehireEvent({
-    action: "decision_recorded",
-    requisitionId: cand.requisition_id as string,
-    candidateId,
-    actorId: caller.isDev ? null : caller.uid,
-    actorLabel: "admin",
-    detail: { decision, hasReason: !!reason }, // never log the reason text into the client-readable trail
-  });
-
-  revalidatePath(`/admin/prehire/${cand.requisition_id}`);
-  return { data: { decision } };
 }

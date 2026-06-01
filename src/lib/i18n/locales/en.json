@@ -285,6 +285,9 @@
     "thComposite": "Composite",
     "thAiSignal": "AI signal",
     "thDecision": "Decision",
+    "thActions": "Actions",
+    "report": "Report",
+    "ttReport": "Download this candidate's screening report (PDF)",
     "signalNote": "Scores are a screening signal. A human reviews and makes the hiring decision — the pipeline never auto-rejects.",
     "reco": {
       "advance": "Advance",
@@ -310,6 +313,8 @@
     "emailLabel": "Email",
     "phoneLabel": "Phone",
     "phonePh": "optional",
+    "employeeIdLabel": "Employee ID",
+    "employeeIdPh": "optional",
     "adding": "Adding…",
     "addCandidate": "Add candidate",
     "decisionOpt": {

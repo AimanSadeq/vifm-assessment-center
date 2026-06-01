@@ -22,6 +22,7 @@ import {
   type TechDomainKey,
   type TechProficiency,
 } from "@/lib/competencies/technical-framework";
+import { technicalConfidenceBand, type TechBand } from "@/lib/scoring/tech-reliability";
 
 /** Item format. `single` = one correct option (classic MCQ); `multi` = select-
  *  all-that-apply (2+ correct, all-or-nothing); `scenario` = a case stem + a
@@ -94,6 +95,7 @@ export type TechResult = {
   total: number;
   pct: number;
   proficiency: TechProficiency; // level 1–5 + label + normalized
+  band: TechBand; // indicative confidence range around the level
   perSkill: TechSkillBreakdown[];
   ai_generated: boolean;
   certified: boolean; // assembled from SME-approved items (credential-eligible)
@@ -478,6 +480,7 @@ export function scoreTechnicalAssessment(input: {
   }
   const total = test.items.length || 1;
   const pct = Math.round((100 * correct) / total);
+  const perSkill = Array.from(bySkill.entries()).map(([skill, v]) => ({ skill, correct: v.correct, total: v.total }));
   return {
     domain_key: test.domain_key,
     domain_name: test.domain_name,
@@ -485,7 +488,8 @@ export function scoreTechnicalAssessment(input: {
     total: test.items.length,
     pct,
     proficiency: proficiencyFromPercent(pct),
-    perSkill: Array.from(bySkill.entries()).map(([skill, v]) => ({ skill, correct: v.correct, total: v.total })),
+    band: technicalConfidenceBand({ correct, total: test.items.length, perSkill }),
+    perSkill,
     ai_generated: test.ai_generated,
     certified: test.certified ?? false,
   };

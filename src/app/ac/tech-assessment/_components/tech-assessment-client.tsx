@@ -355,6 +355,15 @@ export function TechAssessmentClient({
               <div className={`mt-1 inline-flex items-center justify-center rounded-xl border-2 px-5 py-3 text-2xl font-bold ${LEVEL_TONE[result.proficiency.level]}`}>
                 {result.proficiency.level}/5 · {t(`tech.take.levels.${result.proficiency.label}`)}
               </div>
+              {result.band && result.band.levelLow !== result.band.levelHigh && (
+                <p className="mt-1.5 text-[11px] text-slate-500">
+                  {t("tech.take.bandRange", {
+                    low: t(`tech.take.levels.${result.band.labelLow}`),
+                    high: t(`tech.take.levels.${result.band.labelHigh}`),
+                  })}
+                  {result.band.underpowered && <span className="text-amber-600"> · {t("tech.take.bandShort")}</span>}
+                </p>
+              )}
             </div>
             <div className="rounded-md border bg-muted/20 p-3 text-center">
               <p className="text-[10px] uppercase tracking-wider text-slate-500">{t("tech.take.score")}</p>

@@ -20,6 +20,7 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { getAIClient, AI_MODEL } from "@/lib/ai/client";
 import { CERTIFIED_TEST_SIZE, translateItemsToArabic, type BankItem } from "./technical-item-bank";
+import { calibrateItemFields } from "@/lib/scoring/tech-cat";
 import type { TechItem, TechTest } from "@/lib/ai/technical-assessment";
 
 const DEFAULT_PASS_PCT = 70;
@@ -117,6 +118,41 @@ export async function functionBankReadiness(skillsEn: string[], functionId: stri
   const approvedTotal = perSkill.reduce((s, p) => s + p.approved, 0);
   const certifiable = skillsEn.length > 0 && perSkill.every((p) => p.approved >= cut.minItemsPerSkill);
   return { perSkill, minItemsPerSkill: cut.minItemsPerSkill, certifiable, approvedTotal };
+}
+
+/**
+ * Calibrate the function-skill bank for the given skills: write each item's
+ * Rasch difficulty (irt_b) — from its proportion-correct once it has enough
+ * administrations, else the difficulty prior. Powers the CAT candidate set.
+ * Tolerant of migration 00060 being absent (no-op).
+ */
+export async function calibrateFunctionBank(skillsEn: string[]): Promise<{ calibrated: number; error?: string }> {
+  if (skillsEn.length === 0) return { calibrated: 0 };
+  try {
+    const sb = createServiceClient();
+    const { data, error } = await sb
+      .from("tech_assessment_items")
+      .select("id, difficulty, times_administered, times_correct")
+      .is("domain_key", null)
+      .in("skill", skillsEn);
+    if (error) return { calibrated: 0, error: error.message };
+    let calibrated = 0;
+    for (const it of (data ?? []) as { id: string; difficulty: "easy" | "medium" | "hard"; times_administered: number; times_correct: number }[]) {
+      const { irt_b, irt_se } = calibrateItemFields({
+        difficulty: it.difficulty,
+        timesAdministered: Number(it.times_administered ?? 0),
+        timesCorrect: Number(it.times_correct ?? 0),
+      });
+      const upd = await sb
+        .from("tech_assessment_items")
+        .update({ irt_b, irt_se, calibrated_at: new Date().toISOString() })
+        .eq("id", it.id);
+      if (!upd.error) calibrated++;
+    }
+    return { calibrated };
+  } catch {
+    return { calibrated: 0, error: "table_absent" };
+  }
 }
 
 /** All function-skill bank items (any status) for the given skills — the console. */

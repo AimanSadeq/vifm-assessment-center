@@ -9,13 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Sparkles, ShieldCheck, AlertCircle, Check, X, Archive, ChevronDown } from "lucide-react";
+import { Loader2, Sparkles, ShieldCheck, AlertCircle, Check, X, Archive, ChevronDown, Gauge } from "lucide-react";
 import type { BankItem } from "@/lib/competencies/technical-item-bank";
 import type { FunctionReadiness, FunctionCutScore } from "@/lib/competencies/technical-function-bank";
 import {
   draftFunctionSkillItemsAction,
   setFunctionItemStatusAction,
   setFunctionCutScoreAction,
+  calibrateFunctionBankAction,
 } from "../cert-actions";
 
 type Fn = { ref: string; id: string | null; name: string; skillsEn: string[]; skills: string[] };
@@ -145,9 +146,18 @@ export function CertWorkbench({
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
             {t("techFn.cert.saveCut")}
           </Button>
-          {!aiOn && (
-            <span className="text-xs text-amber-700">{t("techFn.aiOff")}</span>
-          )}
+          <Button
+            onClick={() =>
+              run(() => calibrateFunctionBankAction({ ref: fn.ref, skills: fn.skillsEn }), t("techFn.cert.calibrated"))
+            }
+            disabled={pending}
+            variant="ghost"
+            className="gap-1.5"
+            title={t("techFn.cert.calibrateHint")}
+          >
+            <Gauge className="h-4 w-4" /> {t("techFn.cert.calibrate")}
+          </Button>
+          {!aiOn && <span className="text-xs text-amber-700">{t("techFn.aiOff")}</span>}
         </CardContent>
       </Card>
 
@@ -208,6 +218,11 @@ export function CertWorkbench({
                               {t(`techFn.cert.st.${it.status}`)}
                             </Badge>
                             <span className="text-[10px] uppercase tracking-wide text-slate-400">{t(`tech.sme.diff.${it.difficulty}`)}</span>
+                            {it.irt_b != null && (
+                              <span className="rounded-full bg-indigo-50 px-1.5 py-0.5 text-[10px] font-medium text-indigo-600" title="Rasch difficulty (logit)">
+                                b={Number(it.irt_b).toFixed(1)}
+                              </span>
+                            )}
                             {!it.question_ar && <span className="text-[10px] text-amber-600">EN only</span>}
                           </div>
                           <p className="text-sm font-medium text-[#010131]">{it.question_en}</p>

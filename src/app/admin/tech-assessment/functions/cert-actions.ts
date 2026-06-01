@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
 import { requireRole, isAuthorizationError, type AraCaller } from "@/lib/ara/auth-guards";
-import { draftFunctionSkillItems } from "@/lib/competencies/technical-function-bank";
+import { draftFunctionSkillItems, calibrateFunctionBank } from "@/lib/competencies/technical-function-bank";
 import type { BankItemStatus } from "@/lib/competencies/technical-item-bank";
 
 type Result<T = unknown> = ({ ok: true } & T) | { error: string };
@@ -69,6 +69,20 @@ export async function setFunctionItemStatusAction(input: {
   }
   revalidatePath(`/admin/tech-assessment/functions/${input.ref}`);
   return { ok: true };
+}
+
+/** Calibrate the function's per-skill bank — write each item's Rasch difficulty
+ *  (CAT groundwork). Uses the p-value substrate or the difficulty prior. */
+export async function calibrateFunctionBankAction(input: {
+  ref: string;
+  skills: string[];
+}): Promise<Result<{ calibrated: number }>> {
+  const g = await guard();
+  if ("error" in g) return g;
+  const res = await calibrateFunctionBank(input.skills);
+  if (res.error) return { error: `Calibration failed (${res.error}).` };
+  revalidatePath(`/admin/tech-assessment/functions/${input.ref}`);
+  return { ok: true, calibrated: res.calibrated };
 }
 
 /** Set/refresh the documented passing standard (cut-score) for a function. */

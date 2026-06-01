@@ -203,6 +203,8 @@
       "certifiedProf": "Certified proficiency",
       "indicativeProf": "Indicative proficiency",
       "score": "Score",
+      "bandRange": "Indicative range: {{low}}–{{high}}",
+      "bandShort": "short test — read the band, not the point",
       "credIssued": "Technical Proficiency credential issued",
       "credNote": "You scored {{pct}}%, at or above the {{cut}}% cut-score for this domain. Your credential is verifiable below.",
       "viewCred": "View & verify credential",
@@ -671,6 +673,9 @@
       "approve": "Approve",
       "reject": "Reject",
       "retire": "Retire",
+      "calibrate": "Calibrate",
+      "calibrated": "Bank calibrated.",
+      "calibrateHint": "Write each item's IRT difficulty from response data (adaptive-testing groundwork).",
       "needFnId": "This function isn't in the database yet — apply migrations 00058/00059 and reload.",
       "st": { "draft": "Draft", "in_review": "In review", "approved": "Approved", "rejected": "Rejected", "retired": "Retired" }
     }

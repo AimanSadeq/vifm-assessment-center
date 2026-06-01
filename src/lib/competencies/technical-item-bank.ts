@@ -45,6 +45,9 @@ export type BankItem = {
   review_notes: string | null;
   times_administered: number;
   times_correct: number;
+  irt_b: number | null; // Rasch difficulty (logit); null = uncalibrated (00060)
+  irt_se: number | null;
+  calibrated_at: string | null;
   created_at: string;
   updated_at: string;
 };

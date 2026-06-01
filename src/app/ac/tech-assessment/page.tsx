@@ -6,6 +6,7 @@ import { VifmLogo } from "@/components/shared/vifm-logo";
 import { TechAssessmentClient } from "./_components/tech-assessment-client";
 import { getServerT, getServerLocale } from "@/lib/i18n/server";
 import { getLocalizedTechTaxonomy } from "@/lib/competencies/technical-taxonomy";
+import { findParticipantByToken } from "@/lib/competencies/technical-program";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ export const metadata = {
 };
 
 type Props = {
-  searchParams?: { candidateId?: string; engagementId?: string; domainKey?: string };
+  searchParams?: { candidateId?: string; engagementId?: string; domainKey?: string; token?: string };
 };
 
 export default async function TechAssessmentPage({ searchParams }: Props) {
@@ -28,6 +29,24 @@ export default async function TechAssessmentPage({ searchParams }: Props) {
   const candidateId = searchParams?.candidateId?.trim() || null;
   let engagementId = searchParams?.engagementId?.trim() || null;
   let candidateName: string | null = null;
+
+  // Standalone certification-program participant (token, no account).
+  let programId: string | null = null;
+  let participantId: string | null = null;
+  let takerName: string | null = null;
+  let takerEmail: string | null = null;
+  const token = searchParams?.token?.trim() || null;
+  if (token) {
+    const participant = await findParticipantByToken(token);
+    if (participant) {
+      programId = participant.programId;
+      participantId = participant.id;
+      takerName = participant.fullName;
+      takerEmail = participant.email;
+      candidateName = participant.fullName; // reuse the "for {name}" banner
+    }
+  }
+
   if (candidateId) {
     try {
       const sb = createServiceClient();
@@ -93,6 +112,10 @@ export default async function TechAssessmentPage({ searchParams }: Props) {
           language={locale}
           candidateId={candidateId}
           engagementId={engagementId}
+          programId={programId}
+          participantId={participantId}
+          takerName={takerName}
+          takerEmail={takerEmail}
           lockedDomain={lockedDomain}
         />
       </main>

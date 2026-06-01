@@ -66,6 +66,7 @@
     "techOverview": "نظرة عامة",
     "techTakeAssessment": "إجراء التقييم",
     "techConsole": "مراجعة البنود",
+    "techPrograms": "البرامج",
     "settings": "الإعدادات",
     "administrator": "المدير"
   },
@@ -601,6 +602,30 @@
     "copied": "تم النسخ",
     "saving": "جارٍ الحفظ…",
     "downloadPdf": "تقرير PDF"
+  },
+  "techProg": {
+    "title": "برامج الاعتماد",
+    "intro": "برامج اعتماد تقني مستقلة — تطلبها إدارة أو قطاع أو مؤسسة، بمعزل عن مركز التقييم.",
+    "empty": "لا توجد برامج بعد. أنشئ واحدًا أعلاه.",
+    "created": "تم إنشاء البرنامج.",
+    "nameLabel": "اسم البرنامج",
+    "namePh": "مثال: اعتماد الخزينة 2026",
+    "orgLabel": "المؤسسة",
+    "orgPh": "مثال: أدنوك",
+    "tierLabel": "المستوى",
+    "create": "إنشاء البرنامج",
+    "participants": "مشاركين",
+    "domains": "مجالات",
+    "tiers": { "department": "إدارة", "division": "قطاع", "enterprise": "مؤسسة" },
+    "status": { "draft": "مسودة", "active": "نشط", "completed": "مكتمل", "archived": "مؤرشف" },
+    "addParticipant": "إضافة مشارك",
+    "participantNamePh": "الاسم الكامل",
+    "participantEmailPh": "البريد الإلكتروني (اختياري)",
+    "add": "إضافة",
+    "tAdded": "تمت إضافة المشارك.",
+    "tRemoved": "تمت إزالة المشارك.",
+    "removeParticipant": "إزالة المشارك",
+    "noParticipants": "لا يوجد مشاركون بعد. أضف واحدًا أعلاه لإصدار روابط التقييم."
   },
   "observation": {
     "title": "الملاحظة",

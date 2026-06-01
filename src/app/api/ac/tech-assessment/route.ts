@@ -57,6 +57,8 @@ type Body = {
   takerEmail?: string | null;
   candidateId?: string | null;
   engagementId?: string | null;
+  programId?: string | null;
+  participantId?: string | null;
   language?: "en" | "ar";
 };
 
@@ -227,6 +229,22 @@ export async function POST(req: Request) {
       }
     } catch {
       /* table not migrated / older schema — return the result anyway */
+    }
+
+    // Bind the result to a standalone certification-program participant (00057).
+    // Decoupled from the insert above so it's tolerant of those columns being absent.
+    const programId = body.programId?.trim() || null;
+    const participantId = body.participantId?.trim() || null;
+    if (resultId && (programId || participantId)) {
+      try {
+        const sb = createServiceClient();
+        await sb
+          .from("tech_assessment_results")
+          .update({ program_id: programId, participant_id: participantId })
+          .eq("id", resultId);
+      } catch {
+        /* 00057 columns absent — non-fatal */
+      }
     }
 
     // Issue the credential when the certified run passed the cut-score.

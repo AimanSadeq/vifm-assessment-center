@@ -66,6 +66,7 @@
     "techOverview": "Overview",
     "techTakeAssessment": "Take assessment",
     "techConsole": "Item review",
+    "techPrograms": "Programs",
     "settings": "Settings",
     "administrator": "Administrator"
   },
@@ -601,6 +602,30 @@
     "copied": "Copied",
     "saving": "Saving…",
     "downloadPdf": "Cohort PDF"
+  },
+  "techProg": {
+    "title": "Certification Programs",
+    "intro": "Standalone technical certification programmes — commissioned by a department, division, or enterprise, independent of an assessment center.",
+    "empty": "No programs yet. Create one above.",
+    "created": "Program created.",
+    "nameLabel": "Program name",
+    "namePh": "e.g. Treasury Certification 2026",
+    "orgLabel": "Organization",
+    "orgPh": "e.g. ADNOC",
+    "tierLabel": "Tier",
+    "create": "Create program",
+    "participants": "participants",
+    "domains": "domains",
+    "tiers": { "department": "Department", "division": "Division", "enterprise": "Enterprise" },
+    "status": { "draft": "Draft", "active": "Active", "completed": "Completed", "archived": "Archived" },
+    "addParticipant": "Add participant",
+    "participantNamePh": "Full name",
+    "participantEmailPh": "Email (optional)",
+    "add": "Add",
+    "tAdded": "Participant added.",
+    "tRemoved": "Participant removed.",
+    "removeParticipant": "Remove participant",
+    "noParticipants": "No participants yet. Add one above to issue assessment links."
   },
   "observation": {
     "title": "Observation",

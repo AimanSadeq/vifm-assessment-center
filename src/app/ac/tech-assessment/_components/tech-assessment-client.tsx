@@ -29,15 +29,25 @@ export function TechAssessmentClient({
   language = "en",
   candidateId = null,
   engagementId = null,
+  programId = null,
+  participantId = null,
+  takerName = null,
+  takerEmail = null,
   lockedDomain = null,
 }: {
   domains: LocalizedTechDomain[];
   skillLabels: Record<string, string>;
   /** UI language — also the language the test content is served/generated in. */
   language?: "en" | "ar";
-  /** When set, the sitting binds to this candidate (org-assigned run). */
+  /** When set, the sitting binds to this candidate (AC-engagement run). */
   candidateId?: string | null;
   engagementId?: string | null;
+  /** When set, the sitting binds to this standalone-program participant. */
+  programId?: string | null;
+  participantId?: string | null;
+  /** Participant name/email — the credential is issued to them on a pass. */
+  takerName?: string | null;
+  takerEmail?: string | null;
   /** When set, the runner starts this domain immediately and hides the picker. */
   lockedDomain?: string | null;
 }) {
@@ -61,7 +71,7 @@ export function TechAssessmentClient({
       const res = await fetch("/api/ac/tech-assessment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "start", domainKey: key, candidateId, engagementId, language }),
+        body: JSON.stringify({ action: "start", domainKey: key, candidateId, engagementId, programId, participantId, takerName, takerEmail, language }),
       });
       const raw = (await res.json()) as PublicTechTest & { session_id?: string; test?: PublicTechTest };
       // The session path nests the test under `test`; the legacy (un-migrated)
@@ -89,9 +99,10 @@ export function TechAssessmentClient({
     setBusy(true);
     setError("");
     try {
+      const common = { candidateId, engagementId, programId, participantId, takerName, takerEmail, language };
       const payload = sessionId
-        ? { action: "score", sessionId, answers, candidateId, engagementId, language }
-        : { action: "score", domainKey: test.domain_key, domainName: test.domain_name, items: test.items, aiGenerated: test.ai_generated, answers, candidateId, engagementId, language };
+        ? { action: "score", sessionId, answers, ...common }
+        : { action: "score", domainKey: test.domain_key, domainName: test.domain_name, items: test.items, aiGenerated: test.ai_generated, answers, ...common };
       const res = await fetch("/api/ac/tech-assessment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

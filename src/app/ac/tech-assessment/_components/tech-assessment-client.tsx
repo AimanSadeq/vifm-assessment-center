@@ -2,13 +2,17 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Loader2, CheckCircle2, RotateCcw, GraduationCap, AlertCircle, ShieldCheck, ExternalLink, Layers3, ChevronDown } from "lucide-react";
+import { Loader2, CheckCircle2, RotateCcw, GraduationCap, AlertCircle, ShieldCheck, ExternalLink, Layers3, ChevronDown, Gauge } from "lucide-react";
 import type { LocalizedTechDomain } from "@/lib/competencies/technical-taxonomy";
 import type { LocalizedTechFunction } from "@/lib/competencies/technical-function";
 import type { PublicTechTest, TechResult } from "@/lib/ai/technical-assessment";
 
-type Phase = "intro" | "test" | "result";
+type Phase = "intro" | "test" | "adaptive" | "result";
 type RunKind = "function" | "domain";
+
+// One adaptive item (answer key stripped) + the running progress.
+type AdaptiveItem = { id: string; skill: string; type: "single"; question: string; options: string[]; difficulty: "easy" | "medium" | "hard" };
+type AdaptiveProgress = { answered: number; max: number; se: number | null; theta: number };
 
 // The score response augments TechResult with the certification outcome.
 type ScoredResult = TechResult & {
@@ -28,6 +32,7 @@ const LEVEL_TONE: Record<number, string> = {
 export function TechAssessmentClient({
   domains,
   functions,
+  adaptiveRefs = [],
   skillLabels,
   language = "en",
   candidateId = null,
@@ -42,6 +47,8 @@ export function TechAssessmentClient({
   domains: LocalizedTechDomain[];
   /** The job-level functions (primary unit of assessment), grouped by category. */
   functions: LocalizedTechFunction[];
+  /** Function refs whose calibrated bank is deep enough for an adaptive sitting. */
+  adaptiveRefs?: string[];
   skillLabels: Record<string, string>;
   /** UI language — also the language the test content is served/generated in. */
   language?: "en" | "ar";
@@ -76,6 +83,12 @@ export function TechAssessmentClient({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [showDomains, setShowDomains] = useState(false);
+  const adaptiveSet = useMemo(() => new Set(adaptiveRefs), [adaptiveRefs]);
+
+  // Adaptive (turn-based CAT) state.
+  const [adaptiveItem, setAdaptiveItem] = useState<AdaptiveItem | null>(null);
+  const [adaptiveAnswer, setAdaptiveAnswer] = useState<number | null>(null);
+  const [adaptiveProgress, setAdaptiveProgress] = useState<AdaptiveProgress | null>(null);
 
   // Functions grouped by their category, for a tidy picker.
   const grouped = useMemo(() => {
@@ -90,6 +103,10 @@ export function TechAssessmentClient({
   }, [functions]);
 
   async function start(kind: RunKind, key: string) {
+    // An adaptive-ready function gets the shorter, ability-matched CAT sitting.
+    if (kind === "function" && adaptiveSet.has(key)) {
+      return startAdaptive(key);
+    }
     setBusy(true);
     setError("");
     setRunKind(kind);
@@ -151,12 +168,78 @@ export function TechAssessmentClient({
     }
   }
 
+  // ── Adaptive (turn-based CAT) ──
+  async function startAdaptive(ref: string) {
+    setBusy(true);
+    setError("");
+    setRunKind("function");
+    try {
+      const res = await fetch("/api/ac/tech-assessment/adaptive", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "start", functionKey: ref, candidateId, engagementId, programId, participantId, takerName, takerEmail, language }),
+      });
+      const data = (await res.json()) as { session_id?: string; item?: AdaptiveItem; progress?: AdaptiveProgress; error?: string };
+      if (!res.ok || !data.session_id || !data.item) {
+        setError(t("tech.take.errBuild"));
+        return;
+      }
+      setSessionId(data.session_id);
+      setAdaptiveItem(data.item);
+      setAdaptiveProgress(data.progress ?? { answered: 0, max: 0, se: null, theta: 0 });
+      setAdaptiveAnswer(null);
+      setResult(null);
+      setPhase("adaptive");
+    } catch {
+      setError(t("tech.take.errBuild"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function answerAdaptive() {
+    if (!sessionId || adaptiveItem == null || adaptiveAnswer == null) return;
+    setBusy(true);
+    setError("");
+    try {
+      const res = await fetch("/api/ac/tech-assessment/adaptive", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "answer", sessionId, answer: adaptiveAnswer }),
+      });
+      const data = (await res.json()) as
+        | { done: true; result: ScoredResult }
+        | { done: false; item: AdaptiveItem; progress: AdaptiveProgress }
+        | { error: string };
+      if ("error" in data) {
+        setError(t("tech.take.errScore"));
+        return;
+      }
+      if (data.done) {
+        setResult(data.result);
+        setAdaptiveItem(null);
+        setPhase("result");
+      } else {
+        setAdaptiveItem(data.item);
+        setAdaptiveProgress(data.progress);
+        setAdaptiveAnswer(null);
+      }
+    } catch {
+      setError(t("tech.take.errScore"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function reset() {
     setPhase("intro");
     setTest(null);
     setSessionId(null);
     setAnswers({});
     setResult(null);
+    setAdaptiveItem(null);
+    setAdaptiveAnswer(null);
+    setAdaptiveProgress(null);
     setError("");
   }
 
@@ -230,8 +313,15 @@ export function TechAssessmentClient({
                       >
                         <span className="font-semibold text-[#010131]">{f.name}</span>
                         <span className="text-[11px] leading-snug text-muted-foreground">{f.skills.slice(0, 3).join(" · ")}…</span>
-                        <span className="mt-0.5 inline-flex w-fit items-center gap-1 rounded-full bg-[#5391D5]/10 px-2 py-0.5 text-[10px] font-medium text-[#2b6cb0]">
-                          <Layers3 className="h-3 w-3" /> {t("tech.take.skillsCount", { n: f.skillsEn.length })} · {t("tech.take.functionDeep")}
+                        <span className="mt-0.5 flex flex-wrap gap-1">
+                          <span className="inline-flex w-fit items-center gap-1 rounded-full bg-[#5391D5]/10 px-2 py-0.5 text-[10px] font-medium text-[#2b6cb0]">
+                            <Layers3 className="h-3 w-3" /> {t("tech.take.skillsCount", { n: f.skillsEn.length })} · {t("tech.take.functionDeep")}
+                          </span>
+                          {adaptiveSet.has(f.ref) && (
+                            <span className="inline-flex w-fit items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-medium text-indigo-700">
+                              <Gauge className="h-3 w-3" /> {t("tech.take.adaptiveBadge")}
+                            </span>
+                          )}
                         </span>
                       </button>
                     ))}
@@ -342,6 +432,59 @@ export function TechAssessmentClient({
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
             {busy ? t("tech.take.scoring") : t("tech.take.submit")}
           </button>
+        </>
+      )}
+
+      {phase === "adaptive" && adaptiveItem && adaptiveProgress && (
+        <>
+          <div className="rounded-xl border bg-white p-5 shadow-sm">
+            <h2 className="inline-flex items-center gap-2 text-lg font-semibold text-[#010131]">
+              <Gauge className="h-5 w-5 text-indigo-500" /> {t("tech.take.adaptiveTitle")}
+            </h2>
+            <p className="mt-1 text-xs text-slate-500">
+              {t("tech.take.adaptiveProgress", { n: adaptiveProgress.answered + 1, max: adaptiveProgress.max })}
+              {adaptiveProgress.se != null && <span> · {t("tech.take.adaptiveSe", { se: adaptiveProgress.se.toFixed(2) })}</span>}
+            </p>
+            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+              <div
+                className="h-full rounded-full bg-indigo-400 transition-all"
+                style={{ width: `${Math.min(100, Math.round((adaptiveProgress.answered / Math.max(1, adaptiveProgress.max)) * 100))}%` }}
+              />
+            </div>
+          </div>
+          <section className="rounded-xl border bg-white p-5 shadow-sm">
+            <div className="mb-2 flex items-center gap-2">
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                {skillLabel(adaptiveItem.skill)}
+              </span>
+              <span className="text-[10px] uppercase tracking-wide text-slate-400">{t(`tech.sme.diff.${adaptiveItem.difficulty}`)}</span>
+            </div>
+            <p className="text-sm font-semibold text-[#010131]">{adaptiveProgress.answered + 1}. {adaptiveItem.question}</p>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              {adaptiveItem.options.map((opt, oi) => (
+                <label
+                  key={oi}
+                  className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm ${
+                    adaptiveAnswer === oi ? "border-indigo-500 bg-indigo-50" : "border-slate-200 hover:bg-slate-50"
+                  }`}
+                >
+                  <input type="radio" name={adaptiveItem.id} checked={adaptiveAnswer === oi} onChange={() => setAdaptiveAnswer(oi)} className="accent-indigo-500" />
+                  <span>{opt}</span>
+                </label>
+              ))}
+            </div>
+          </section>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={answerAdaptive}
+              disabled={busy || adaptiveAnswer == null}
+              className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+            >
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+              {busy ? t("tech.take.scoring") : t("tech.take.adaptiveNext")}
+            </button>
+            <span className="text-[11px] text-slate-400">{t("tech.take.adaptiveNote")}</span>
+          </div>
         </>
       )}
 

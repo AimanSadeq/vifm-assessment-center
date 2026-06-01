@@ -8,6 +8,7 @@ import { getServerT, getServerLocale } from "@/lib/i18n/server";
 import { getLocalizedTechTaxonomy } from "@/lib/competencies/technical-taxonomy";
 import { findParticipantByToken } from "@/lib/competencies/technical-program";
 import { listTechnicalFunctions, functionSkillLabels } from "@/lib/competencies/technical-function";
+import { adaptiveReadyRefs } from "@/lib/competencies/technical-function-bank";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +41,9 @@ export default async function TechAssessmentPage({ searchParams }: Props) {
   for (const fn of functions) {
     Object.assign(skillLabels, functionSkillLabels(fn));
   }
+  // Which functions have a calibrated pool deep enough for an adaptive sitting.
+  const adaptiveSet = await adaptiveReadyRefs(functions.map((f) => ({ ref: f.ref, skillsEn: f.skillsEn })));
+  const adaptiveRefs = Array.from(adaptiveSet);
 
   // Optional org-assigned run: bind the sitting to a candidate (+ engagement) and
   // optionally lock it to one domain. Tolerant — anonymous self-serve if absent.
@@ -131,6 +135,7 @@ export default async function TechAssessmentPage({ searchParams }: Props) {
         <TechAssessmentClient
           domains={domains}
           functions={functions}
+          adaptiveRefs={adaptiveRefs}
           skillLabels={skillLabels}
           language={locale}
           candidateId={candidateId}

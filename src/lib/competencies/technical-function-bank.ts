@@ -26,6 +26,8 @@ import type { TechItem, TechTest } from "@/lib/ai/technical-assessment";
 const DEFAULT_PASS_PCT = 70;
 const DEFAULT_MIN_PER_SKILL = 2;
 const DEFAULT_DRAW_PER_SKILL = 4;
+/** Min calibrated approved items before an adaptive (CAT) sitting is worthwhile. */
+export const ADAPTIVE_MIN_POOL = 10;
 
 export type FunctionCutScore = {
   passPct: number;
@@ -41,6 +43,23 @@ export type FunctionReadiness = {
   /** Every blueprint skill meets the floor → the function can certify. */
   certifiable: boolean;
   approvedTotal: number;
+  /** Approved items with a calibrated Rasch difficulty (the CAT candidate pool). */
+  calibratedTotal: number;
+  /** Enough calibrated items to run an adaptive (CAT) sitting. */
+  adaptiveReady: boolean;
+};
+
+/** One calibrated, key-bearing item for the adaptive (CAT) pool. */
+export type AdaptivePoolItem = {
+  id: string;
+  skill: string;
+  b: number; // Rasch difficulty (logit)
+  question_en: string;
+  question_ar: string | null;
+  options_en: string[];
+  options_ar: string[] | null;
+  correct_index: number;
+  difficulty: "easy" | "medium" | "hard";
 };
 
 function shuffledOrder(): number[] {
@@ -110,6 +129,24 @@ export async function getFunctionCutScore(functionId: string | null): Promise<Fu
   }
 }
 
+/** Count of APPROVED + CALIBRATED (irt_b set) items across the given skills. */
+export async function calibratedApprovedCount(skills: string[]): Promise<number> {
+  if (skills.length === 0) return 0;
+  try {
+    const sb = createServiceClient();
+    const { count } = await sb
+      .from("tech_assessment_items")
+      .select("id", { count: "exact", head: true })
+      .is("domain_key", null)
+      .eq("status", "approved")
+      .not("irt_b", "is", null)
+      .in("skill", skills);
+    return count ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
 /** Per-skill readiness for a function's blueprint vs its coverage floor. */
 export async function functionBankReadiness(skillsEn: string[], functionId: string | null): Promise<FunctionReadiness> {
   const cut = await getFunctionCutScore(functionId);
@@ -117,7 +154,96 @@ export async function functionBankReadiness(skillsEn: string[], functionId: stri
   const perSkill = skillsEn.map((skill) => ({ skill, approved: counts[skill] ?? 0 }));
   const approvedTotal = perSkill.reduce((s, p) => s + p.approved, 0);
   const certifiable = skillsEn.length > 0 && perSkill.every((p) => p.approved >= cut.minItemsPerSkill);
-  return { perSkill, minItemsPerSkill: cut.minItemsPerSkill, certifiable, approvedTotal };
+  const calibratedTotal = await calibratedApprovedCount(skillsEn);
+  return {
+    perSkill,
+    minItemsPerSkill: cut.minItemsPerSkill,
+    certifiable,
+    approvedTotal,
+    calibratedTotal,
+    adaptiveReady: calibratedTotal >= ADAPTIVE_MIN_POOL,
+  };
+}
+
+/**
+ * The calibrated, key-bearing pool for an adaptive (CAT) sitting: APPROVED items
+ * across the function's skills that carry a Rasch difficulty (irt_b). Returns
+ * null when fewer than ADAPTIVE_MIN_POOL — the caller then serves a fixed form.
+ * Held server-side only (the answer key never reaches the browser).
+ */
+export async function adaptiveReadyRefs(
+  functions: { ref: string; skillsEn: string[] }[]
+): Promise<Set<string>> {
+  const ready = new Set<string>();
+  if (functions.length === 0) return ready;
+  try {
+    const sb = createServiceClient();
+    const { data } = await sb
+      .from("tech_assessment_items")
+      .select("skill")
+      .is("domain_key", null)
+      .eq("status", "approved")
+      .not("irt_b", "is", null);
+    const counts: Record<string, number> = {};
+    for (const r of (data ?? []) as { skill: string }[]) counts[r.skill] = (counts[r.skill] ?? 0) + 1;
+    for (const f of functions) {
+      const total = f.skillsEn.reduce((s, sk) => s + (counts[sk] ?? 0), 0);
+      if (total >= ADAPTIVE_MIN_POOL) ready.add(f.ref);
+    }
+  } catch {
+    /* uncalibrated / not migrated — none ready */
+  }
+  return ready;
+}
+
+export async function buildAdaptivePool(input: {
+  skillsEn: string[];
+  functionId: string | null;
+}): Promise<AdaptivePoolItem[] | null> {
+  if (input.skillsEn.length === 0) return null;
+  try {
+    const sb = createServiceClient();
+    const { data } = await sb
+      .from("tech_assessment_items")
+      .select("id, skill, irt_b, question_en, question_ar, options_en, options_ar, correct_index, difficulty")
+      .is("domain_key", null)
+      .eq("status", "approved")
+      .not("irt_b", "is", null)
+      .in("skill", input.skillsEn);
+    const rows = (data ?? []) as Array<{
+      id: string;
+      skill: string;
+      irt_b: number | null;
+      question_en: string;
+      question_ar: string | null;
+      options_en: string[];
+      options_ar: string[] | null;
+      correct_index: number;
+      difficulty: "easy" | "medium" | "hard";
+    }>;
+    const usable = rows.filter(
+      (r) =>
+        r.irt_b != null &&
+        Array.isArray(r.options_en) &&
+        r.options_en.length === 4 &&
+        r.correct_index >= 0 &&
+        r.correct_index < 4
+    );
+    if (usable.length < ADAPTIVE_MIN_POOL) return null;
+    return usable.map((r) => ({
+      id: r.id,
+      skill: r.skill,
+      b: Number(r.irt_b),
+      question_en: r.question_en,
+      question_ar: r.question_ar,
+      options_en: r.options_en,
+      options_ar: Array.isArray(r.options_ar) ? r.options_ar : null,
+      correct_index: r.correct_index,
+      difficulty: r.difficulty,
+    }));
+  } catch {
+    return null;
+  }
 }
 
 /**

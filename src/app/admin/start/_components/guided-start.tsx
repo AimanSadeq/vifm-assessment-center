@@ -17,10 +17,14 @@ import { GOALS, CONTEXT_OPTIONS, resolveProcess, PROCESS } from "@/lib/start/res
 import type { StartGoal, StartDepth, WizardAnswers, ProcessPlan } from "@/lib/start/types";
 import { createRequisitionAction } from "@/app/admin/prehire/actions";
 import { createReflectEngagement } from "@/lib/reflect/actions";
+import { createEngagementAction } from "@/app/admin/engagements/new/actions";
 import { startAraAssessmentAction } from "../actions";
 
 type AraOrg = { id: string; name: string; region: string; sector: string };
 type ReflectTemplate = { id: string; name_en: string };
+type AcCompetency = { id: string; name: string; domain: string; domainSort: number };
+type AcExercise = { id: string; name: string; exercise_type: string };
+type AcRoleProfile = { id: string; name_en: string; competencyIds: string[] };
 
 // ── Display copy (v1 English; admin portal renders EN-only at runtime — i18n is a fast-follow) ──
 const GOAL_ICON: Record<string, ComponentType<{ className?: string }>> = {
@@ -105,9 +109,15 @@ type Props = {
   araOrgs: AraOrg[];
   araVersionId: string | null;
   reflectTemplates: ReflectTemplate[];
+  acCompetencies: AcCompetency[];
+  acExercises: AcExercise[];
+  acRoleProfiles: AcRoleProfile[];
 };
 
-export function GuidedStart({ organizations, roleProfiles, araOrgs, araVersionId, reflectTemplates }: Props) {
+export function GuidedStart({
+  organizations, roleProfiles, araOrgs, araVersionId, reflectTemplates,
+  acCompetencies, acExercises, acRoleProfiles,
+}: Props) {
   const [mode, setMode] = useState<Mode>("fork");
   const [step, setStep] = useState(1);
   const [answers, setAnswers] = useState<WizardAnswers>({ goal: null, context: null, depth: null });
@@ -255,6 +265,9 @@ export function GuidedStart({ organizations, roleProfiles, araOrgs, araVersionId
               araOrgs={araOrgs}
               araVersionId={araVersionId}
               reflectTemplates={reflectTemplates}
+              acCompetencies={acCompetencies}
+              acExercises={acExercises}
+              acRoleProfiles={acRoleProfiles}
             />
           )}
 
@@ -286,6 +299,7 @@ export function GuidedStart({ organizations, roleProfiles, araOrgs, araVersionId
 // ── Recommendation step (Step 4): names the requirement + inline-create or handoff ──
 function Recommendation({
   plan, depth, organizations, roleProfiles, araOrgs, araVersionId, reflectTemplates,
+  acCompetencies, acExercises, acRoleProfiles,
 }: {
   plan: ProcessPlan;
   depth: StartDepth | null;
@@ -294,6 +308,9 @@ function Recommendation({
   araOrgs: AraOrg[];
   araVersionId: string | null;
   reflectTemplates: ReflectTemplate[];
+  acCompetencies: AcCompetency[];
+  acExercises: AcExercise[];
+  acRoleProfiles: AcRoleProfile[];
 }) {
   return (
     <div className="space-y-4">
@@ -327,18 +344,23 @@ function Recommendation({
         <AraOrgInline araOrgs={araOrgs} araVersionId={araVersionId} />
       ) : plan.module === "reflect" ? (
         <ReflectInline araOrgs={araOrgs} templates={reflectTemplates} />
+      ) : plan.module === "ac" ? (
+        <AcEngagementInline
+          planKey={plan.key}
+          organizations={organizations}
+          competencies={acCompetencies}
+          exercises={acExercises}
+          roleProfiles={acRoleProfiles}
+        />
       ) : (
         (() => {
           const isLaunch = plan.module === "fluent" || plan.module === "technical";
-          const isAc = plan.module === "ac";
           return (
             <div className="flex items-center justify-between gap-4 rounded-md border p-4">
               <p className="text-sm text-muted-foreground">
                 {isLaunch
                   ? "We'll open the assessment runner — ready to go."
-                  : isAc
-                    ? "An assessment centre needs its full competency & exercise design, so we'll open the 5-step builder for you to complete."
-                    : "We'll open this module's create flow, ready for you to configure."}
+                  : "We'll open this module's create flow, ready for you to configure."}
               </p>
               <Link href={plan.createRoute} className="shrink-0">
                 <Button className="gap-1.5">{isLaunch ? "Launch" : "Continue"} <ArrowRight className="h-4 w-4" /></Button>
@@ -551,6 +573,203 @@ function ReflectInline({ araOrgs, templates }: { araOrgs: AraOrg[]; templates: R
         {templateId ? "We'll clone the chosen leadership framework — editable after it opens." : "A blank framework is created for you to build."}
       </p>
       <Button onClick={create} disabled={submitting || !name.trim()} className="w-full gap-1.5">
+        {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+        {submitting ? "Creating…" : "Create & open"}
+      </Button>
+    </div>
+  );
+}
+
+// ── Inline AC engagement (Full-B: the whole competency→exercise→matrix design,
+//    inline, then createEngagementAction → land in the engagement). The Auto-map
+//    button fills a valid matrix (each competency → 2 exercises) in one click. ──
+function AcEngagementInline({
+  planKey, organizations, competencies, exercises, roleProfiles,
+}: {
+  planKey: string;
+  organizations: { id: string; name: string }[];
+  competencies: AcCompetency[];
+  exercises: AcExercise[];
+  roleProfiles: AcRoleProfile[];
+}) {
+  const router = useRouter();
+  const defaultName =
+    planKey === "ac_development" ? "Development centre" : planKey === "ac_succession" ? "Talent review" : "Selection assessment centre";
+  const [orgId, setOrgId] = useState("");
+  const [name, setName] = useState(defaultName);
+  const [targetRole, setTargetRole] = useState("");
+  const [comps, setComps] = useState<Set<string>>(new Set());
+  const [exos, setExos] = useState<Set<string>>(new Set());
+  const [matrix, setMatrix] = useState<Set<string>>(new Set());
+  const [submitting, setSubmitting] = useState(false);
+
+  const cell = (ex: string, c: string) => `${ex}|${c}`;
+  const grouped: { domain: string; items: AcCompetency[] }[] = [];
+  for (const c of [...competencies].sort((a, b) => a.domainSort - b.domainSort || a.name.localeCompare(b.name))) {
+    const last = grouped[grouped.length - 1];
+    if (last && last.domain === c.domain) last.items.push(c);
+    else grouped.push({ domain: c.domain, items: [c] });
+  }
+  const selExos = exercises.filter((e) => exos.has(e.id));
+  const selComps = competencies.filter((c) => comps.has(c.id));
+  const countFor = (compId: string) => selExos.filter((e) => matrix.has(cell(e.id, compId))).length;
+
+  const toggleComp = (id: string) => {
+    setComps((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+    setMatrix((m) => { const n = new Set(m); for (const e of exercises) n.delete(cell(e.id, id)); return n; });
+  };
+  const toggleEx = (id: string) => {
+    setExos((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+    setMatrix((m) => { const n = new Set(m); for (const c of competencies) n.delete(cell(id, c.id)); return n; });
+  };
+  const toggleCell = (ex: string, c: string) =>
+    setMatrix((m) => { const n = new Set(m); const k = cell(ex, c); if (n.has(k)) n.delete(k); else n.add(k); return n; });
+
+  const applyProfile = (pid: string) => {
+    const p = roleProfiles.find((x) => x.id === pid);
+    if (!p) return;
+    const avail = new Set(competencies.map((c) => c.id));
+    setComps(new Set(p.competencyIds.filter((id) => avail.has(id)).slice(0, 15)));
+    setMatrix(new Set());
+  };
+
+  const autoMap = () => {
+    const ex = Array.from(exos);
+    if (ex.length < 2) { toast.error("Select at least 2 exercises to auto-map."); return; }
+    const next = new Set<string>();
+    Array.from(comps).forEach((c, i) => { next.add(cell(ex[i % ex.length], c)); next.add(cell(ex[(i + 1) % ex.length], c)); });
+    setMatrix(next);
+  };
+
+  const allMapped = selComps.length > 0 && selComps.every((c) => countFor(c.id) >= 2);
+  const valid = !!orgId && name.trim().length > 0 && comps.size >= 4 && comps.size <= 15 && exos.size >= 1 && allMapped;
+
+  const create = async () => {
+    if (!valid) return;
+    setSubmitting(true);
+    const res = await createEngagementAction({
+      organizationId: orgId,
+      name: name.trim(),
+      targetRole: targetRole.trim() || undefined,
+      competencies: Array.from(comps).map((competencyId) => ({ competencyId, weight: null })),
+      exercises: Array.from(exos),
+      matrix: Array.from(matrix).map((k) => { const [exerciseId, competencyId] = k.split("|"); return { exerciseId, competencyId }; }),
+    });
+    setSubmitting(false);
+    if ("error" in res && res.error) {
+      toast.error(typeof res.error === "string" ? res.error : "Could not create engagement");
+      return;
+    }
+    toast.success("Assessment centre created.");
+    const id = "data" in res && res.data ? res.data.id : null;
+    router.push(id ? `/admin/engagements/${id}` : "/admin/engagements");
+  };
+
+  return (
+    <div className="space-y-5 rounded-md border p-4">
+      <p className="text-sm font-medium text-[#010131]">Design the assessment centre — we&apos;ll create it and open it.</p>
+
+      {/* Basics */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="ac-org">Client organization</Label>
+          <select id="ac-org" value={orgId} onChange={(e) => setOrgId(e.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+            <option value="">Select…</option>
+            {organizations.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="ac-role">Target role (optional)</Label>
+          <Input id="ac-role" value={targetRole} onChange={(e) => setTargetRole(e.target.value)} placeholder="e.g. Branch Manager" />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="ac-name">Engagement name</Label>
+        <Input id="ac-name" value={name} onChange={(e) => setName(e.target.value)} />
+      </div>
+
+      {/* Competencies */}
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Label>Competencies <span className={comps.size >= 4 && comps.size <= 15 ? "text-emerald-600" : "text-amber-600"}>({comps.size}/4–15)</span></Label>
+          {roleProfiles.length > 0 && (
+            <select onChange={(e) => { applyProfile(e.target.value); e.target.value = ""; }} defaultValue="" className="h-8 rounded-md border border-input bg-background px-2 text-xs">
+              <option value="">Quick-fill from role profile…</option>
+              {roleProfiles.map((p) => <option key={p.id} value={p.id}>{p.name_en}</option>)}
+            </select>
+          )}
+        </div>
+        <div className="max-h-56 space-y-3 overflow-y-auto rounded-md border p-3">
+          {grouped.map((g) => (
+            <div key={g.domain}>
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{g.domain}</p>
+              <div className="grid gap-1.5 sm:grid-cols-2">
+                {g.items.map((c) => (
+                  <label key={c.id} className="flex items-center gap-2 text-sm">
+                    <Checkbox checked={comps.has(c.id)} onCheckedChange={() => toggleComp(c.id)} />
+                    <span className="truncate">{c.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Exercises */}
+      <div className="space-y-2">
+        <Label>Exercises <span className={exos.size >= 1 ? "text-emerald-600" : "text-amber-600"}>({exos.size})</span></Label>
+        <div className="grid gap-1.5 rounded-md border p-3 sm:grid-cols-2">
+          {exercises.map((e) => (
+            <label key={e.id} className="flex items-center gap-2 text-sm">
+              <Checkbox checked={exos.has(e.id)} onCheckedChange={() => toggleEx(e.id)} />
+              <span className="truncate">{e.name}</span>
+            </label>
+          ))}
+          {exercises.length === 0 && <p className="text-xs text-muted-foreground">No exercises in the library yet.</p>}
+        </div>
+      </div>
+
+      {/* Matrix */}
+      {selComps.length > 0 && selExos.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <Label>Exercise × competency matrix <span className="text-xs font-normal text-muted-foreground">(each competency in ≥2 exercises)</span></Label>
+            <button type="button" onClick={autoMap} className="inline-flex items-center gap-1.5 rounded-md border border-[#5391D5] px-2.5 py-1 text-xs font-medium text-[#5391D5] hover:bg-[#5391D5]/5">
+              <Sparkles className="h-3.5 w-3.5" /> Auto-map
+            </button>
+          </div>
+          <div className="overflow-x-auto rounded-md border">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b bg-muted/40">
+                  <th className="sticky left-0 bg-muted/40 px-2 py-2 text-left font-medium">Competency</th>
+                  {selExos.map((e) => <th key={e.id} className="min-w-[80px] px-2 py-2 text-center font-medium">{e.name}</th>)}
+                  <th className="px-2 py-2 text-center">✓</th>
+                </tr>
+              </thead>
+              <tbody>
+                {selComps.map((c) => {
+                  const n = countFor(c.id);
+                  return (
+                    <tr key={c.id} className="border-b">
+                      <td className="sticky left-0 bg-card px-2 py-1.5">{c.name}</td>
+                      {selExos.map((e) => (
+                        <td key={e.id} className="px-2 py-1.5 text-center">
+                          <Checkbox checked={matrix.has(cell(e.id, c.id))} onCheckedChange={() => toggleCell(e.id, c.id)} />
+                        </td>
+                      ))}
+                      <td className={`px-2 py-1.5 text-center font-medium ${n >= 2 ? "text-emerald-600" : "text-amber-600"}`}>{n}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      <Button onClick={create} disabled={submitting || !valid} className="w-full gap-1.5">
         {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
         {submitting ? "Creating…" : "Create & open"}
       </Button>

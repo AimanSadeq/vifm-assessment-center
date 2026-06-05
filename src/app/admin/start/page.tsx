@@ -47,7 +47,7 @@ export default async function StartPage() {
   }));
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 px-6 py-8">
+    <div className="mx-auto max-w-5xl space-y-6 px-6 py-8">
       <BackLink href="/admin" label="Back to dashboard" />
       <GuidedStart
         organizations={(orgsRes.data ?? []) as { id: string; name: string }[]}

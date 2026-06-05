@@ -292,6 +292,20 @@
   .launcher-card-cta svg { transition: transform 300ms ease; }
   .launcher-card:hover .launcher-card-cta svg { transform: translateX(4px); }
 
+  /* Selected state (used by the Guided Start goal tiles): lock in the tone
+     border + glow + drawn-in accent line so a chosen card reads as active. */
+  .launcher-card.is-selected {
+    border-color: rgb(var(--tone) / 0.75);
+    box-shadow: 0 0 0 1px rgb(var(--tone) / 0.65), 0 16px 34px -14px rgb(var(--tone) / 0.42);
+  }
+  .launcher-card.is-selected::before { transform: scaleX(1); }
+  .launcher-card.is-selected .launcher-card-icon { transform: translateY(-2px) scale(1.06); }
+
+  /* Tone-coloured helpers for children inside a .launcher-card (the --tone var
+     cascades): a filled hue chip + hue-coloured text/glyphs. */
+  .launcher-card-chip { background: rgb(var(--tone)); color: #fff; }
+  .launcher-card-tone-text { color: rgb(var(--tone)); }
+
   @media (prefers-reduced-motion: reduce) {
     .launcher-card,
     .launcher-card::before,

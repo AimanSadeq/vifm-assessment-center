@@ -4,14 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight, ArrowLeft, ClipboardCheck, Compass, Aperture, Languages, UserSearch,
-  GraduationCap, BadgeCheck,
+  GraduationCap, BadgeCheck, BrainCircuit,
 } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 
 type Lang = "en" | "ar";
-type Tone = "blue" | "violet" | "teal" | "gold" | "rose" | "indigo";
-type ServiceKey = "ac" | "ara" | "reflect" | "fluent" | "prehire" | "technical";
+type Tone = "blue" | "violet" | "teal" | "gold" | "rose" | "indigo" | "fuchsia";
+type ServiceKey = "ac" | "ara" | "reflect" | "fluent" | "prehire" | "technical" | "psychometric";
 
 const STORAGE_KEY = "vifm-landing-locale";
 
@@ -20,6 +20,7 @@ const SERVICES: ReadonlyArray<{ key: ServiceKey; href: string; icon: typeof Comp
   { key: "prehire", href: "/admin/prehire", icon: UserSearch, tone: "rose" },
   { key: "fluent", href: "/ac/fluent", icon: Languages, tone: "gold" },
   { key: "technical", href: "/ac/tech-assessment", icon: BadgeCheck, tone: "indigo" },
+  { key: "psychometric", href: "/ac/psychometrics", icon: BrainCircuit, tone: "fuchsia" },
   { key: "ac", href: "/admin", icon: ClipboardCheck, tone: "blue" },
   { key: "reflect", href: "/reflect", icon: Aperture, tone: "teal" },
   { key: "ara", href: "/ara", icon: Compass, tone: "violet" },
@@ -56,7 +57,7 @@ const T = {
       },
     },
     servicesHeading: "Start with a diagnosis",
-    servicesSub: "Six bilingual assessment services pinpoint where to focus — then the Academy delivers the learning.",
+    servicesSub: "Seven bilingual assessment services pinpoint where to focus — then the Academy delivers the learning.",
     footerOrg: "Virginia Institute of Finance and Management",
     footerConfidential: "Confidential - for VIFM and engaged clients only.",
     footerGcc: "Built for the GCC",
@@ -66,6 +67,7 @@ const T = {
       reflect: { tagline: "Leadership feedback", name: "Reflect 360", description: "360-degree leadership feedback built from your own values and competencies, with a development plan per leader and an organisation-wide cohort culture view.", tooltip: "Best for developing leaders with candid, multi-rater feedback." },
       fluent: { tagline: "AI English placement", name: "Fluent", description: "A four-skill, CEFR-aligned English placement: AI-generated reading and listening, rubric-scored writing and speaking, with an indicative level and feedback in minutes.", tooltip: "Best for fast, defensible English placement at any scale." },
       technical: { tagline: "Technical proficiency", name: "Technical Assessment", description: "Assess technical proficiency across ten finance domains — from financial modelling to treasury, banking, analytics and AI. SME-reviewed items and documented cut-scores issue a verifiable proficiency credential; indicative banding while a domain's bank is still building.", tooltip: "Best for certifying functional finance skills, defensibly." },
+      psychometric: { tagline: "Cognitive + personality", name: "Psychometrics", description: "Indicative cognitive-ability (numerical, verbal, abstract) and Big-Five personality measures — the foundational aptitude and work-style that predict behavioural competency. Server-scored, admin-run and bilingual.", tooltip: "Best for a foundational read on aptitude and work style." },
       prehire: { tagline: "Pre-employment screening", name: "Pre-Hire", description: "Screen and shortlist applicants before you hire: a configurable funnel of competency quiz, English placement and an AI behavioural interview, with a weighted composite, adverse-impact monitoring and an audit trail. The score is a signal — a person always decides.", tooltip: "Best for shortlisting applicants at scale, defensibly." },
     },
   },
@@ -99,7 +101,7 @@ const T = {
       },
     },
     servicesHeading: "ابدأ بالتشخيص",
-    servicesSub: "ست خدمات تقييم ثنائية اللغة تحدّد أين تركّز — ثم تتولّى الأكاديمية تقديم التعلّم.",
+    servicesSub: "سبع خدمات تقييم ثنائية اللغة تحدّد أين تركّز — ثم تتولّى الأكاديمية تقديم التعلّم.",
     footerOrg: "معهد فرجينيا للتمويل والإدارة",
     footerConfidential: "سري - لـ VIFM والعملاء المتعاقدين فقط.",
     footerGcc: "مُصمّمة لمنطقة الخليج",
@@ -109,6 +111,7 @@ const T = {
       reflect: { tagline: "تغذية راجعة قيادية", name: "ريفلكت 360", description: "تغذية راجعة قيادية بزاوية 360 درجة مبنية على قيمكم وكفاءاتكم، مع خطة تطوير لكل قائد وعرض شامل لثقافة المؤسسة بأكملها.", tooltip: "الأنسب لتطوير القادة عبر تغذية راجعة صريحة ومتعددة المصادر." },
       fluent: { tagline: "تحديد مستوى الإنجليزية بالذكاء الاصطناعي", name: "فلوينت", description: "اختبار لتحديد مستوى الإنجليزية عبر أربع مهارات وفق إطار CEFR: قراءة واستماع مُولّدان بالذكاء الاصطناعي، وكتابة وتحدّث يُقيّمان وفق معايير محدّدة، مع مستوى تقريبي وملاحظات خلال دقائق.", tooltip: "الأنسب لتحديد مستوى الإنجليزية بسرعة وموثوقية وعلى نطاق واسع." },
       technical: { tagline: "الكفاءة التقنية", name: "التقييم التقني", description: "قياس الكفاءة التقنية عبر عشرة مجالات مالية — من النمذجة المالية إلى الخزينة والمصارف والتحليلات والذكاء الاصطناعي. بنود مُراجَعة من الخبراء ودرجات قطع موثّقة تمنح اعتماد كفاءة قابلاً للتحقق، مع تصنيف استرشادي ريثما يكتمل بنك أسئلة المجال.", tooltip: "الأنسب لاعتماد المهارات المالية الوظيفية بموثوقية." },
+      psychometric: { tagline: "القدرات + الشخصية", name: "القياس النفسي", description: "مقاييس استرشادية للقدرة الذهنية (عددية ولفظية ومجرّدة) وشخصية العوامل الخمسة — الأساس من القدرة وأسلوب العمل الذي يتنبّأ بالكفاءات السلوكية. تُصحَّح على الخادم، يُجريها المسؤول، وثنائية اللغة.", tooltip: "الأنسب لقراءة تأسيسية للقدرات وأسلوب العمل." },
       prehire: { tagline: "الفرز قبل التوظيف", name: "ما قبل التوظيف", description: "افرز المرشّحين وأعدّ القائمة المختصرة قبل التوظيف: مسار قابل للتخصيص يجمع اختبار الكفاءات وتحديد مستوى الإنجليزية ومقابلة سلوكية بالذكاء الاصطناعي، مع درجة مركّبة مرجّحة، ومراقبة الأثر التمييزي، وسجل تدقيق كامل. الدرجة إشارة استرشادية — والقرار النهائي لإنسان دائمًا.", tooltip: "الأنسب لإعداد القائمة المختصرة للمتقدّمين على نطاق واسع وبموثوقية." },
     },
   },

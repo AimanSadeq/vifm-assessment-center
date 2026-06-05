@@ -4,7 +4,7 @@ import { PortalSidebar } from "@/components/shared/portal-sidebar";
 export const metadata = {
   title: "VIFM Academy · Learning, assessment & readiness",
   description:
-    "The VIFM Academy turns assessment insight into self-paced finance & management programmes for the GCC — with AI knowledge-checks, verifiable credentials, and five bilingual diagnostic services that personalise each learning path.",
+    "The VIFM Academy turns assessment insight into self-paced finance & management programmes for the GCC — with AI knowledge-checks, verifiable credentials, and seven bilingual diagnostic services that personalise each learning path.",
 };
 
 export default function Home() {

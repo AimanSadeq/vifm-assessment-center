@@ -242,6 +242,7 @@
   .launcher-card.tone-gold   { --tone: 217 119 6; }
   .launcher-card.tone-rose   { --tone: 225 29 72; }
   .launcher-card.tone-indigo { --tone: 79 70 229; }
+  .launcher-card.tone-fuchsia { --tone: 192 38 211; }
 
   .launcher-card::before {
     content: "";

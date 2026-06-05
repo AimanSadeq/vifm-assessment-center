@@ -58,13 +58,27 @@
     "creating": "Creating…",
     "select": "Select…",
     "none": "None",
+    "hero": {
+      "kicker": "Assessment launcher",
+      "lead": "Start the right",
+      "accent": "assessment.",
+      "badge1": "Six services, one launcher",
+      "badge2": "Set up inline in minutes",
+      "badge3": "Bilingual English / Arabic"
+    },
     "fork": {
       "guideTitle": "Guide me",
       "guideDesc": "Answer a few questions — we'll identify the requirement and set up the right process for you.",
       "guideCta": "Start the wizard",
       "myselfTitle": "Set it up myself",
       "myselfDesc": "Go straight to a module's own create flow — nothing about those changes.",
-      "myselfCta": "Choose a module"
+      "myselfCta": "Choose a module",
+      "heading": "How do you want to begin?",
+      "recommended": "Recommended"
+    },
+    "myself": {
+      "heading": "Choose a module",
+      "open": "Open"
     },
     "stepper": { "goal": "Goal", "details": "Details", "rigor": "Rigor", "setup": "Set up" },
     "step1": { "title": "What do you want to do?", "subtitle": "Pick the outcome — we'll map it to the right process." },
@@ -131,7 +145,7 @@
       "technical": "Domain-knowledge items with a documented cut-score for a certifiable result.",
       "ara_org": "Pillar-based maturity across the organization, with peer benchmarks.",
       "ara_personal": "Four-factor individual AI readiness, self-served or consultant-issued.",
-      "psychometric": "Cognitive ability + Big-Five personality — the true 'potential' layer (proposed module)."
+      "psychometric": "Cognitive ability + Big-Five personality — the foundational 'potential' layer that predicts the behavioural competencies."
     },
     "construct": {
       "knowledge": "Knowledge", "language": "Language", "behaviour": "Behaviour",
@@ -243,6 +257,7 @@
     "aiReadiness": "AI Readiness",
     "reflect360": "Reflect 360",
     "fluent": "Fluent",
+    "psychometrics": "Psychometrics",
     "techCertification": "Technical",
     "techOverview": "Overview",
     "techTakeAssessment": "Take assessment",

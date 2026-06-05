@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { BackLink } from "@/components/shared/back-link";
 import { GapBadge } from "@/components/shared/gap-badge";
 import { getCompetencyGap } from "@/lib/scoring/competency-gap";
-import { buildUnifiedProfile, signalToneClass, type CompetencySignal } from "@/lib/competencies/unified-profile";
+import { buildUnifiedProfile, signalToneClass, relationMeta, type CompetencySignal } from "@/lib/competencies/unified-profile";
 import { Target, AlertTriangle, CheckCircle2, BookOpen, Route, Languages, Award, GraduationCap, Layers } from "lucide-react";
 import { PersonalStatistics, type DomainRollup } from "./_components/personal-statistics";
 import { StartQuizButton } from "./_components/start-quiz-button";
@@ -436,7 +436,8 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
                         </span>
                       </div>
 
-                      {/* Unified signals — behavioural rating (AC) + cross-framework enablers (↳) */}
+                      {/* Unified signals — behavioural rating (AC, ●) + cross-framework
+                          enablers (↳ enables) + foundation predictors (⤳ predicts). */}
                       {(comp.score != null || (unified.competencySignals.get(comp.name.toLowerCase())?.length ?? 0) > 0) && (
                         <div className="flex flex-wrap gap-1">
                           {comp.score != null && (
@@ -447,15 +448,18 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
                               AC · {comp.score}/5
                             </span>
                           )}
-                          {(unified.competencySignals.get(comp.name.toLowerCase()) ?? []).map((s: CompetencySignal, i: number) => (
-                            <span
-                              key={i}
-                              title={s.relation === "enables" ? `${s.sourceLabel} — enables this competency` : s.sourceLabel}
-                              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${signalToneClass(s.kind)}`}
-                            >
-                              {s.relation === "enables" ? "↳ " : ""}{s.sourceLabel} · {s.display}
-                            </span>
-                          ))}
+                          {(unified.competencySignals.get(comp.name.toLowerCase()) ?? []).map((s: CompetencySignal, i: number) => {
+                            const rel = relationMeta(s.relation);
+                            return (
+                              <span
+                                key={i}
+                                title={`${s.sourceLabel} — ${rel.label} this competency${rel.predicted ? " (predicted, not measured)" : ""}`}
+                                className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${signalToneClass(s.kind)}`}
+                              >
+                                {rel.glyph} {s.sourceLabel} · {s.display}
+                              </span>
+                            );
+                          })}
                         </div>
                       )}
 

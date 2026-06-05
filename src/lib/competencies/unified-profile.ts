@@ -18,6 +18,7 @@
 
 import { createServiceClient } from "@/lib/supabase/server";
 import { techDomainByKey, normalizedFromLevel } from "@/lib/competencies/technical-framework";
+import { COGNITIVE_SUBTESTS, BIG_FIVE, BAND_LABEL_EN, type PsyBand } from "@/lib/psychometrics/framework";
 
 export type CompetencySource = "ac" | "fluent" | "reflect" | "ara" | "prehire" | "technical" | "psychometric";
 export type CompetencySignalKind =
@@ -99,6 +100,15 @@ export type UnifiedProfile = {
   /** Enabler/contributor signals, keyed by behavioural competency name (lowercased). */
   competencySignals: Map<string, CompetencySignal[]>;
 };
+
+/** Readable label for a psychometrics scale (single source of truth = framework). */
+function psyScaleLabel(sourceKind: string, sourceKey: string): string {
+  if (sourceKind === "cognitive") {
+    if (sourceKey === "g") return "General ability";
+    return COGNITIVE_SUBTESTS.find((s) => s.key === sourceKey)?.name_en ?? sourceKey;
+  }
+  return BIG_FIVE.find((t) => t.key === sourceKey)?.name_en ?? sourceKey;
+}
 
 export async function buildUnifiedProfile(input: {
   candidateId: string;
@@ -260,10 +270,76 @@ export async function buildUnifiedProfile(input: {
     /* bridge tables not migrated — tolerant */
   }
 
-  // ── Foundations (cognitive ability, personality) PREDICT competencies, and
-  // Reflect / ARA / Pre-Hire align to the same spine. Once those modules land,
-  // they register `predicts`/`enables` rows in construct_competency_links and a
-  // per-source value resolver folds them in here exactly like the technical path.
+  // ── Foundations: cognitive ability + personality PREDICT competencies. Reads
+  //    the candidate's latest psy_results (one per kind), maps each scale (+ the
+  //    cognitive g composite) to its normalized value, then folds
+  //    construct_competency_links (source_kind cognitive|personality) into
+  //    per-competency `predicts`/`foundations` signals — the same principled path
+  //    as the technical bridge, but the weakest evidence tier (a propensity, not a
+  //    measurement; rendered with the "predicts" caveat). Reflect / ARA / Pre-Hire
+  //    align to the same spine and slot in here the same way as they land.
+  try {
+    const svc = createServiceClient();
+    const { data } = await svc
+      .from("psy_results")
+      .select("kind, scales, overall, candidate_id, taker_email, created_at")
+      .order("created_at", { ascending: false })
+      .limit(300);
+    const rows = (data ?? []) as Array<{
+      kind: string;
+      scales: Array<{ key: string; normalized: number; band: string }> | null;
+      overall: { normalized: number; band: string } | null;
+      candidate_id: string | null;
+      taker_email: string | null;
+    }>;
+    // "<source_kind>:<source_key>" → { value 0–100, band }
+    const psyValue = new Map<string, { value: number; band: string }>();
+    const seenKind = new Set<string>();
+    for (const r of rows) {
+      const mineRow = r.candidate_id === input.candidateId || (!!input.email && r.taker_email === input.email);
+      if (!mineRow) continue;
+      const sourceKind = r.kind === "cognitive" ? "cognitive" : "personality";
+      if (seenKind.has(sourceKind)) continue; // latest per kind (desc order)
+      seenKind.add(sourceKind);
+      for (const s of r.scales ?? []) {
+        if (!s?.key || typeof s.normalized !== "number") continue;
+        psyValue.set(`${sourceKind}:${s.key}`, { value: s.normalized, band: String(s.band ?? "") });
+      }
+      if (sourceKind === "cognitive" && r.overall && typeof r.overall.normalized === "number") {
+        psyValue.set("cognitive:g", { value: r.overall.normalized, band: String(r.overall.band ?? "") });
+      }
+    }
+
+    if (psyValue.size > 0) {
+      const compNameOf = (c: { name: string } | { name: string }[] | null): string | undefined =>
+        (Array.isArray(c) ? c[0]?.name : c?.name) || undefined;
+      const { data: links } = await svc
+        .from("construct_competency_links")
+        .select("source_kind, source_key, competencies(name)")
+        .in("source_kind", ["cognitive", "personality"]);
+      for (const l of (links ?? []) as unknown as Array<{
+        source_kind: string;
+        source_key: string;
+        competencies: { name: string } | { name: string }[] | null;
+      }>) {
+        const name = compNameOf(l.competencies);
+        if (!name) continue;
+        const v = psyValue.get(`${l.source_kind}:${l.source_key}`);
+        if (!v) continue;
+        add(name, {
+          source: "psychometric",
+          sourceLabel: psyScaleLabel(l.source_kind, l.source_key),
+          kind: l.source_kind === "cognitive" ? "cognitive" : "personality",
+          relation: "predicts",
+          layer: "foundations",
+          value: v.value,
+          display: BAND_LABEL_EN[v.band as PsyBand] ?? `${v.value}`,
+        });
+      }
+    }
+  } catch {
+    /* psy_results / construct_competency_links not migrated — tolerant */
+  }
 
   return { languageSkills, technical, competencySignals };
 }

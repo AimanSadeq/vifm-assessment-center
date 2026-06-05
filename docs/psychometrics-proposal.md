@@ -1,6 +1,6 @@
 # VIFM Psychometric Testing — Fit, Architecture & Path to Professional Quality
 
-*Working draft for internal discussion. Owner: VIFM. Status: proposal — not yet built.*
+*Working draft for internal discussion. Owner: VIFM. Status: **Phase 1 (Tier-1 indicative) shipped** — cognitive + Big-Five (Mini-IPIP) runner at `/ac/psychometrics`, secure server-held key, admin-only results, and the Foundations→competency `predicts` bridge (migrations 00065 + 00066). Tier 2 (SME-reviewed bank + local norms + IRT calibration + a credential) remains the documented next step. See the "VIFM Psychometrics" section in CLAUDE.md.*
 
 ---
 

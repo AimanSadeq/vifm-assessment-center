@@ -31,6 +31,7 @@ import {
   Wand2,
   Aperture,
   Languages,
+  BrainCircuit,
   BadgeCheck,
   SquarePen,
   ListChecks,
@@ -87,6 +88,7 @@ const NAV: NavEntry[] = [
   { kind: "link", link: { href: "/ara", labelKey: "adminNav.aiReadiness", icon: Sparkles } },
   { kind: "link", link: { href: "/reflect", labelKey: "adminNav.reflect360", icon: Aperture } },
   { kind: "link", link: { href: "/ac/fluent", labelKey: "adminNav.fluent", icon: Languages } },
+  { kind: "link", link: { href: "/ac/psychometrics", labelKey: "adminNav.psychometrics", icon: BrainCircuit } },
   {
     kind: "group",
     group: {

@@ -19,15 +19,36 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { techDomainByKey, normalizedFromLevel } from "@/lib/competencies/technical-framework";
 
-export type CompetencySource = "ac" | "fluent" | "reflect" | "ara" | "prehire" | "technical";
-export type CompetencySignalKind = "behavioural" | "language" | "360" | "self" | "screening" | "technical";
+export type CompetencySource = "ac" | "fluent" | "reflect" | "ara" | "prehire" | "technical" | "psychometric";
+export type CompetencySignalKind =
+  | "behavioural"
+  | "language"
+  | "360"
+  | "self"
+  | "screening"
+  | "technical"
+  | "cognitive"
+  | "personality";
+
+/**
+ * How a signal relates to the competency — the spine of the layered model, in
+ * rising order of evidence strength:
+ *   • manifests = a DIRECT measure (this IS the competency: AC / CBI / 360)
+ *   • enables   = an attainment the competency draws on (technical, language)
+ *   • predicts  = a foundation that forecasts it (cognitive, personality) — a
+ *                 propensity, not a measurement; validate before high-stakes use.
+ */
+export type CompetencyRelation = "manifests" | "enables" | "predicts";
+
+/** The measurement layer a construct sits in (see construct_competency_links). */
+export type CompetencyLayer = "foundations" | "attainments" | "competencies";
 
 export type CompetencySignal = {
   source: CompetencySource;
   sourceLabel: string; // the skill/instrument, e.g. "Listening"
   kind: CompetencySignalKind;
-  /** "measures" = a direct measure of this competency; "enables" = a contributor/enabler. */
-  relation: "measures" | "enables";
+  relation: CompetencyRelation;
+  layer: CompetencyLayer;
   value: number; // 0–100 normalized
   display: string; // human-readable, e.g. "B2"
 };
@@ -119,6 +140,7 @@ export async function buildUnifiedProfile(input: {
             sourceLabel: skill.label,
             kind: "language",
             relation: "enables",
+            layer: "attainments",
             value,
             display,
           });
@@ -195,39 +217,53 @@ export async function buildUnifiedProfile(input: {
   technical.push(...Array.from(techByDomain.values()));
 
   // ── Bridge: a MEASURED technical domain ENABLES specific behavioural
-  //    competencies (migration 00054's technical_domain_competencies), mirroring
-  //    Fluent's language→behavioural map. Surfaces the technical result as an
-  //    "enables" signal on each competency it contributes to. Academy-evidence
-  //    domains (no measured level) are too soft to enable, so they're skipped.
+  //    competencies, mirroring Fluent's language→behavioural map. Reads the
+  //    generalised construct_competency_links table (00064) first and falls back
+  //    to technical_domain_competencies (00054) when 00064 isn't applied — so the
+  //    same path serves both. Surfaces as an attainments-layer "enables" signal;
+  //    Academy-evidence domains (no measured level) are too soft to enable.
   try {
     const svc = createServiceClient();
-    const { data } = await svc
-      .from("technical_domain_competencies")
-      .select("domain_key, competencies(name)");
-    const rows = (data ?? []) as unknown as Array<{
-      domain_key: string;
-      competencies: { name: string } | { name: string }[] | null;
-    }>;
-    for (const r of rows) {
-      const sig = techByDomain.get(r.domain_key);
+    const compNameOf = (c: { name: string } | { name: string }[] | null): string | undefined =>
+      (Array.isArray(c) ? c[0]?.name : c?.name) || undefined;
+
+    let pairs: Array<{ key: string; name: string }> = [];
+    const linked = await svc
+      .from("construct_competency_links")
+      .select("source_key, competencies(name)")
+      .eq("source_kind", "technical");
+    if (!linked.error && (linked.data?.length ?? 0) > 0) {
+      pairs = (linked.data as unknown as Array<{ source_key: string; competencies: { name: string } | { name: string }[] | null }>)
+        .map((r) => ({ key: r.source_key, name: compNameOf(r.competencies) }))
+        .filter((p): p is { key: string; name: string } => !!p.name);
+    } else {
+      const legacy = await svc.from("technical_domain_competencies").select("domain_key, competencies(name)");
+      pairs = ((legacy.data ?? []) as unknown as Array<{ domain_key: string; competencies: { name: string } | { name: string }[] | null }>)
+        .map((r) => ({ key: r.domain_key, name: compNameOf(r.competencies) }))
+        .filter((p): p is { key: string; name: string } => !!p.name);
+    }
+
+    for (const p of pairs) {
+      const sig = techByDomain.get(p.key);
       if (!sig || sig.normalized == null || sig.level == null) continue; // measured only
-      const comp = Array.isArray(r.competencies) ? r.competencies[0] : r.competencies;
-      if (!comp?.name) continue;
-      add(comp.name, {
+      add(p.name, {
         source: "technical",
         sourceLabel: sig.domainName,
         kind: "technical",
         relation: "enables",
+        layer: "attainments",
         value: sig.normalized,
         display: `${sig.level}/5`,
       });
     }
   } catch {
-    /* technical_domain_competencies not migrated (00054) — tolerant */
+    /* bridge tables not migrated — tolerant */
   }
 
-  // ── Reflect / ARA / Pre-Hire: own frameworks aligning to the spine — next
-  // increment; they fold in here by email.
+  // ── Foundations (cognitive ability, personality) PREDICT competencies, and
+  // Reflect / ARA / Pre-Hire align to the same spine. Once those modules land,
+  // they register `predicts`/`enables` rows in construct_competency_links and a
+  // per-source value resolver folds them in here exactly like the technical path.
 
   return { languageSkills, technical, competencySignals };
 }
@@ -239,9 +275,27 @@ const KIND_TONE: Record<CompetencySignalKind, string> = {
   self: "border-amber-300 bg-amber-50 text-amber-800",
   screening: "border-rose-300 bg-rose-50 text-rose-800",
   technical: "border-indigo-300 bg-indigo-50 text-indigo-800",
+  cognitive: "border-fuchsia-300 bg-fuchsia-50 text-fuchsia-800",
+  personality: "border-cyan-300 bg-cyan-50 text-cyan-800",
 };
 
 /** Tailwind classes for a source chip, by signal kind. */
 export function signalToneClass(kind: CompetencySignalKind): string {
   return KIND_TONE[kind];
+}
+
+/**
+ * Presentation for a relation — glyph + label + whether it carries the
+ * "predicted, not measured" caveat. Lets surfaces render the three relation
+ * types honestly: a `predicts` chip must never read like a direct measurement.
+ */
+export function relationMeta(relation: CompetencyRelation): { glyph: string; label: string; predicted: boolean } {
+  switch (relation) {
+    case "manifests":
+      return { glyph: "●", label: "measured", predicted: false };
+    case "enables":
+      return { glyph: "↳", label: "enables", predicted: false };
+    case "predicts":
+      return { glyph: "⤳", label: "predicts", predicted: true };
+  }
 }

@@ -50,6 +50,7 @@
   },
   "adminNav": {
     "allServices": "All Services",
+    "startAssessment": "Start an assessment",
     "dashboard": "Dashboard",
     "clients": "Clients",
     "projects": "Projects",

@@ -28,6 +28,7 @@ import {
   ChevronsRight,
   ChevronDown,
   Sparkles,
+  Wand2,
   Aperture,
   Languages,
   BadgeCheck,
@@ -51,6 +52,7 @@ type NavEntry = { kind: "link"; link: NavLeaf } | { kind: "group"; group: NavGro
 // the admin chrome, the mobile drawer, and the landing page's left panel.
 const NAV: NavEntry[] = [
   { kind: "link", link: { href: "/", labelKey: "adminNav.allServices", icon: LayoutGrid } },
+  { kind: "link", link: { href: "/admin/start", labelKey: "adminNav.startAssessment", icon: Wand2 } },
   {
     kind: "group",
     group: {

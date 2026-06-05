@@ -50,6 +50,7 @@
   },
   "adminNav": {
     "allServices": "كل الخدمات",
+    "startAssessment": "بدء تقييم",
     "dashboard": "لوحة التحكم",
     "clients": "العملاء",
     "projects": "المشاريع",

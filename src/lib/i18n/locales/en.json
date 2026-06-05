@@ -48,6 +48,186 @@
     "progressTracker": "Progress tracker",
     "done": "DONE"
   },
+  "start": {
+    "title": "Start an assessment",
+    "subtitle": "Let the wizard identify the right process for you — or set it up yourself. Your existing module flows are unchanged.",
+    "back": "Back",
+    "next": "Next",
+    "startOver": "Start over",
+    "createOpen": "Create & open",
+    "creating": "Creating…",
+    "select": "Select…",
+    "none": "None",
+    "fork": {
+      "guideTitle": "Guide me",
+      "guideDesc": "Answer a few questions — we'll identify the requirement and set up the right process for you.",
+      "guideCta": "Start the wizard",
+      "myselfTitle": "Set it up myself",
+      "myselfDesc": "Go straight to a module's own create flow — nothing about those changes.",
+      "myselfCta": "Choose a module"
+    },
+    "stepper": { "goal": "Goal", "details": "Details", "rigor": "Rigor", "setup": "Set up" },
+    "step1": { "title": "What do you want to do?", "subtitle": "Pick the outcome — we'll map it to the right process." },
+    "step2": { "title": "Tell us a bit more", "subtitle": "This narrows it to the exact process." },
+    "step3": { "title": "How rigorous does it need to be?", "subtitle": "Drives the depth and which tier we use." },
+    "goal": {
+      "hire": { "label": "Hire or screen candidates", "desc": "Evaluate applicants for a role — fast screen or a full selection assessment." },
+      "develop": { "label": "Develop my people", "desc": "Grow current employees: development centre, 360 feedback, or learning." },
+      "succession": { "label": "Spot potential & plan succession", "desc": "Map a talent pool on a 9-box and gauge readiness for bigger roles." },
+      "certify": { "label": "Certify a capability", "desc": "Prove technical, language, or ability/aptitude proficiency." },
+      "ai_readiness": { "label": "Measure AI readiness", "desc": "Assess an organization's or an individual's readiness to adopt AI." },
+      "feedback_360": { "label": "Run 360° leadership feedback", "desc": "Multi-rater feedback against your leadership behaviours." }
+    },
+    "context": {
+      "hire": {
+        "screen_many": { "label": "Screen candidates at scale", "desc": "A short, self-served screen (quiz + English + AI interview)." },
+        "deep_select": { "label": "Run a full selection assessment", "desc": "An assessment centre with exercises and assessors." }
+      },
+      "develop": {
+        "individual": { "label": "Individual growth", "desc": "Development centre focused on one person's competencies." },
+        "leadership_360": { "label": "Leadership 360 feedback", "desc": "Multi-rater feedback on a leader." },
+        "cohort": { "label": "Cohort development", "desc": "A development centre for a group." }
+      },
+      "succession": {
+        "cohort_role": { "label": "A pool against a target role", "desc": "Assess a cohort and place them on the 9-box." }
+      },
+      "certify": {
+        "technical": { "label": "Technical / finance knowledge", "desc": "Domain knowledge certification." },
+        "english": { "label": "English language", "desc": "CEFR placement (reading/listening/writing/speaking)." },
+        "ability": { "label": "Cognitive ability / aptitude", "desc": "Reasoning + personality (psychometrics)." }
+      },
+      "ai_readiness": {
+        "organization": { "label": "A whole organization", "desc": "Pillar-based org AI-readiness diagnostic." },
+        "individual": { "label": "An individual or team", "desc": "Personal AI-readiness across four factors." }
+      },
+      "feedback_360": {
+        "leader": { "label": "A leader", "desc": "360 feedback for a single leader." }
+      }
+    },
+    "depth": {
+      "quick": { "label": "Quick screen", "hint": "Fast, lightweight, indicative." },
+      "standard": { "label": "Standard", "hint": "The usual rigor for most engagements." },
+      "certified": { "label": "Certified / high-stakes", "hint": "Maximum rigor; defensible outcome." }
+    },
+    "requirement": {
+      "pre_screen": "Pre-employment screening",
+      "selection_ac": "Selection assessment centre",
+      "dev_centre": "Development centre",
+      "talent_review": "Talent review & succession",
+      "leadership_360": "360° leadership feedback",
+      "language_placement": "English language placement",
+      "technical_cert": "Technical certification",
+      "org_ai": "Organizational AI readiness",
+      "personal_ai": "Personal AI readiness",
+      "psychometric": "Psychometric assessment"
+    },
+    "rationale": {
+      "prehire": "Self-served, token-linked screening that ranks candidates on a composite — built for volume.",
+      "ac_selection": "Behavioural evidence from exercises + assessors gives the most defensible selection signal.",
+      "ac_development": "A development centre surfaces per-competency gaps and feeds an individual development plan.",
+      "ac_succession": "Scores feed the Talent Map's 9-box and the succession-readiness pipeline.",
+      "reflect": "Multi-rater frequency ratings against observable leadership behaviours.",
+      "fluent": "An indicative CEFR placement across the four language skills.",
+      "technical": "Domain-knowledge items with a documented cut-score for a certifiable result.",
+      "ara_org": "Pillar-based maturity across the organization, with peer benchmarks.",
+      "ara_personal": "Four-factor individual AI readiness, self-served or consultant-issued.",
+      "psychometric": "Cognitive ability + Big-Five personality — the true 'potential' layer (proposed module)."
+    },
+    "construct": {
+      "knowledge": "Knowledge", "language": "Language", "behaviour": "Behaviour",
+      "potential": "Potential", "org_readiness": "Org readiness", "disposition": "Disposition", "ability": "Ability"
+    },
+    "instrument": {
+      "quiz": "Competency quiz", "fluent": "Fluent (English)", "cbi": "AI interview (CBI)",
+      "ac_exercises": "AC exercises", "talent_map": "Talent Map", "reflect_360": "Reflect 360",
+      "technical": "Technical assessment", "ara_org": "AR Compass (org)", "ara_personal": "AR Compass (personal)",
+      "cognitive": "Cognitive battery", "personality": "Personality inventory"
+    },
+    "module": {
+      "prehire": { "label": "Pre-Hire screening", "desc": "Quiz + English + AI interview, ranked." },
+      "ac": { "label": "Assessment Centre", "desc": "Exercises, assessors, wash-up, OAR." },
+      "ara": { "label": "AI Readiness (org)", "desc": "Pillar-based org diagnostic." },
+      "reflect": { "label": "Reflect 360", "desc": "Multi-rater leadership feedback." },
+      "fluent": { "label": "Fluent (English)", "desc": "CEFR placement test." },
+      "technical": { "label": "Technical certification", "desc": "Finance-domain knowledge." }
+    },
+    "rec": {
+      "identified": "Identified requirement",
+      "measures": "Measures:",
+      "uses": "Uses:",
+      "proposedNote": "This module is on the roadmap (see the psychometrics proposal) and isn't built yet — but the requirement is correctly identified. Use \"Set it up myself\" for an available instrument in the meantime.",
+      "launchCopy": "We'll open the assessment runner — ready to go.",
+      "handoffCopy": "We'll open this module's create flow, ready for you to configure.",
+      "launch": "Launch",
+      "continue": "Continue"
+    },
+    "prehire": {
+      "intro": "Set up your screening — we'll create it and take you straight in.",
+      "roleTitle": "Role title",
+      "roleTitlePh": "e.g. Relationship Manager",
+      "clientOrg": "Client organization",
+      "level": "Level (optional)",
+      "levelPh": "e.g. Mid / Senior",
+      "roleProfile": "Role profile (optional)",
+      "stages": "Stages",
+      "weightCut": "weight {{weight}} · cut {{cut}}",
+      "errOrg": "Pick a client organization.",
+      "errStage": "Pick at least one stage.",
+      "created": "Requisition created.",
+      "stage": { "quiz": "Competency quiz", "fluent": "English (Fluent)", "cbi": "AI interview" }
+    },
+    "ara": {
+      "noOrgs": "No AR Compass organizations yet.",
+      "addOne": "Add one",
+      "orMyself": "then come back — or use \"Set it up myself\".",
+      "intro": "Set up the organizational diagnostic — we'll create a draft and open it so you can finish (pillars, respondents).",
+      "organization": "Organization",
+      "region": "Region",
+      "sector": "Sector",
+      "regionUae": "United Arab Emirates",
+      "regionSaudi": "Saudi Arabia",
+      "sectorGov": "Government",
+      "sectorBank": "Banking",
+      "sectorGeneral": "General",
+      "note": "Created at Enterprise scope (all 8 pillars). You can change the stage, pillars and layers after it opens."
+    },
+    "reflect": {
+      "intro": "Set up the 360 — we'll create it and open it so you can add raters and launch.",
+      "name": "Engagement name",
+      "namePh": "e.g. Q3 Leadership 360 — Ahmad",
+      "orgOptional": "Organization (optional)",
+      "framework": "Framework",
+      "blank": "Blank (build it after)",
+      "clone": "Clone: {{name}}",
+      "noteClone": "We'll clone the chosen leadership framework — editable after it opens.",
+      "noteBlank": "A blank framework is created for you to build.",
+      "errName": "Give the engagement a name.",
+      "created": "Reflect 360 engagement created."
+    },
+    "ac": {
+      "intro": "Design the assessment centre — we'll create it and open it.",
+      "clientOrg": "Client organization",
+      "targetRole": "Target role (optional)",
+      "targetRolePh": "e.g. Branch Manager",
+      "name": "Engagement name",
+      "competencies": "Competencies",
+      "countCap": "({{n}}/4–15)",
+      "quickFill": "Quick-fill from role profile…",
+      "exercises": "Exercises",
+      "count": "({{n}})",
+      "noExercises": "No exercises in the library yet.",
+      "matrix": "Exercise × competency matrix",
+      "matrixHint": "(each competency in ≥2 exercises)",
+      "autoMap": "Auto-map",
+      "colCompetency": "Competency",
+      "errAutoMap": "Select at least 2 exercises to auto-map.",
+      "errCreate": "Could not create engagement",
+      "created": "Assessment centre created.",
+      "nameSelection": "Selection assessment centre",
+      "nameDevelopment": "Development centre",
+      "nameSuccession": "Talent review"
+    }
+  },
   "adminNav": {
     "allServices": "All Services",
     "startAssessment": "Start an assessment",

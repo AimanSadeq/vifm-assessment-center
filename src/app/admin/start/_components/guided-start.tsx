@@ -6,9 +6,9 @@ import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
-  Wand2, SlidersHorizontal, ArrowLeft, ArrowRight, Check, Sparkles, Loader2,
+  Wand2, SlidersHorizontal, ArrowLeft, ArrowRight, Check, Sparkles, Loader2, ExternalLink, ListChecks,
   UserCheck, Sprout, TrendingUp, BadgeCheck, BrainCircuit, Users,
-  ClipboardCheck, Compass, Aperture, Languages, UserSearch,
+  ClipboardCheck, Compass, Aperture, Languages, UserSearch, GraduationCap,
   type LucideIcon,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -30,7 +30,7 @@ type AcExercise = { id: string; name: string; exercise_type: string };
 type AcRoleProfile = { id: string; name_en: string; competencyIds: string[] };
 
 // Icons + tone + data only — all copy comes from the start.* i18n namespace.
-type Tone = "blue" | "violet" | "teal" | "gold" | "rose" | "indigo";
+type Tone = "blue" | "violet" | "teal" | "gold" | "rose" | "indigo" | "fuchsia" | "emerald";
 const GOAL_ICON: Record<string, LucideIcon> = {
   UserCheck, Sprout, TrendingUp, BadgeCheck, BrainCircuit, Users,
 };
@@ -40,13 +40,17 @@ const GOAL_TONE: Record<string, Tone> = {
   hire: "rose", develop: "teal", succession: "gold",
   certify: "indigo", ai_readiness: "violet", feedback_360: "blue",
 };
-const MODULE_MENU: { key: string; href: string; icon: LucideIcon; tone: Tone }[] = [
-  { key: "prehire", href: "/admin/prehire/new", icon: UserSearch, tone: "rose" },
-  { key: "ac", href: "/admin/engagements/new", icon: ClipboardCheck, tone: "blue" },
-  { key: "ara", href: "/ara/consultant/assessments/new", icon: Compass, tone: "violet" },
-  { key: "reflect", href: "/reflect/consultant/engagements/new", icon: Aperture, tone: "teal" },
-  { key: "fluent", href: "/ac/fluent", icon: Languages, tone: "gold" },
-  { key: "technical", href: "/ac/tech-assessment", icon: BadgeCheck, tone: "indigo" },
+const MODULE_MENU: { key: string; href: string; icon: LucideIcon; tone: Tone; pillar: "acquire" | "manage" }[] = [
+  // Talent Acquisition
+  { key: "prehire", href: "/admin/prehire/new", icon: UserSearch, tone: "rose", pillar: "acquire" },
+  { key: "fluent", href: "/ac/fluent", icon: Languages, tone: "gold", pillar: "acquire" },
+  { key: "technical", href: "/ac/tech-assessment", icon: BadgeCheck, tone: "indigo", pillar: "acquire" },
+  { key: "psychometric", href: "/ac/psychometrics", icon: BrainCircuit, tone: "fuchsia", pillar: "acquire" },
+  // Talent Management
+  { key: "ac", href: "/admin/engagements/new", icon: ClipboardCheck, tone: "blue", pillar: "manage" },
+  { key: "ara", href: "/ara/consultant/assessments/new", icon: Compass, tone: "violet", pillar: "manage" },
+  { key: "reflect", href: "/reflect/consultant/engagements/new", icon: Aperture, tone: "teal", pillar: "manage" },
+  { key: "academy", href: "/admin/courses", icon: GraduationCap, tone: "emerald", pillar: "manage" },
 ];
 const PREHIRE_STAGES: { kind: "quiz" | "fluent" | "cbi"; weight: number; cut: number }[] = [
   { kind: "quiz", weight: 0.4, cut: 60 },
@@ -54,7 +58,7 @@ const PREHIRE_STAGES: { kind: "quiz" | "fluent" | "cbi"; weight: number; cut: nu
   { kind: "cbi", weight: 0.3, cut: 60 },
 ];
 
-type Mode = "fork" | "wizard" | "myself";
+type Mode = "fork" | "wizard" | "myself" | "plan";
 type Props = {
   organizations: { id: string; name: string }[];
   roleProfiles: { id: string; name_en: string }[];
@@ -74,6 +78,15 @@ export function GuidedStart({
   const [mode, setMode] = useState<Mode>("fork");
   const [step, setStep] = useState(1);
   const [answers, setAnswers] = useState<WizardAnswers>({ goal: null, context: null, depth: null });
+
+  // Combined-plan state (the "Set it up myself" multi-select → checklist flow).
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [planOrgId, setPlanOrgId] = useState("");
+  const [planDone, setPlanDone] = useState<Set<string>>(new Set());
+  const togglePick = (k: string) =>
+    setPicked((s) => { const n = new Set(s); if (n.has(k)) n.delete(k); else n.add(k); return n; });
+  const toggleDone = (k: string) =>
+    setPlanDone((s) => { const n = new Set(s); if (n.has(k)) n.delete(k); else n.add(k); return n; });
 
   const reset = () => {
     setAnswers({ goal: null, context: null, depth: null });
@@ -111,34 +124,149 @@ export function GuidedStart({
     );
   }
 
-  // ── "Set it up myself" — links to the existing (untouched) create flows ──
+  // ── "Set it up myself" — open a single module directly (click the card), or
+  //    tick the checkbox on several to combine them into one plan. Grouped into
+  //    the two solution families (mirrors the landing/sidebar). ──
   if (mode === "myself") {
     return (
-      <div className="space-y-8">
+      <div className="space-y-6">
         <StartHero compact onBack={() => setMode("fork")} />
-        <div className="space-y-3">
-          <SectionLabel>{t("start.myself.heading")}</SectionLabel>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {MODULE_MENU.map((m) => {
-              const Icon = m.icon;
-              return (
-                <Link key={m.href} href={m.href} className={`launcher-card tone-${m.tone} block h-full p-4`}>
-                  <Icon className="launcher-card-glyph h-16 w-16" strokeWidth={1} aria-hidden />
-                  <div className="relative z-10 flex h-full flex-col">
-                    <div className="launcher-card-icon mb-2 flex h-10 w-10 items-center justify-center rounded-xl">
+        {(["acquire", "manage"] as const).map((pillar) => (
+          <div key={pillar} className="space-y-3">
+            <div className="border-b-2 border-accent/30 pb-2">
+              <h2 className="ara-numeral text-[1.45rem] font-extrabold uppercase leading-tight tracking-tight text-accent sm:text-[1.6rem]">{t(`start.pillar.${pillar}`)}</h2>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {MODULE_MENU.filter((m) => m.pillar === pillar).map((m) => {
+                const Icon = m.icon;
+                const isPicked = picked.has(m.key);
+                return (
+                  <Link key={m.href} href={m.href} className={`launcher-card tone-${m.tone} relative block h-full p-4 ${isPicked ? "is-selected" : ""}`}>
+                    {/* Multi-select toggle — tick several to combine into a plan. */}
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); togglePick(m.key); }}
+                      title={t("start.plan.addToggle")}
+                      aria-pressed={isPicked}
+                      className={`absolute end-2 top-2 z-20 grid h-6 w-6 place-items-center rounded-md border transition-colors ${isPicked ? "launcher-card-chip border-transparent" : "border-slate-300 bg-white/80 text-transparent hover:border-[#5391D5]"}`}
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <Icon className="launcher-card-glyph h-16 w-16" strokeWidth={1} aria-hidden />
+                    <div className="relative z-10 flex h-full flex-col">
+                      <div className="launcher-card-icon mb-2 flex h-10 w-10 items-center justify-center rounded-xl">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <h3 className="text-base font-semibold text-primary">{t(`start.module.${m.key}.label`)}</h3>
+                      <p className="mt-1 line-clamp-2 flex-1 text-xs leading-snug text-muted-foreground">{t(`start.module.${m.key}.desc`)}</p>
+                      <div className="launcher-card-cta mt-3 inline-flex items-center gap-1.5 text-sm font-semibold">
+                        {t("start.myself.open")} <ArrowRight className="h-4 w-4" />
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+
+        {/* Sticky action bar — appears once one or more services are ticked. */}
+        {picked.size > 0 && (
+          <div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-3 shadow-lg">
+            <span className="inline-flex items-center gap-2 text-sm font-medium text-[#010131]">
+              <ListChecks className="h-4 w-4 text-[#5391D5]" /> {t("start.plan.selected", { count: picked.size })}
+            </span>
+            <div className="flex items-center gap-3">
+              <button onClick={() => setPicked(new Set())} className="text-xs text-muted-foreground hover:text-foreground">{t("start.plan.clear")}</button>
+              <Button onClick={() => setMode("plan")} className="gap-1.5">{t("start.plan.build")} <ArrowRight className="h-4 w-4" /></Button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── Combined plan — set up several services under one client, tracked here. ──
+  if (mode === "plan") {
+    const items = MODULE_MENU.filter((m) => picked.has(m.key));
+    // Clients live in two tables (organizations for AC/Pre-Hire, ara_organizations
+    // for ARA/Reflect). Merge both, deduped by name, so the picker is never empty.
+    const planOrgs: { id: string; name: string }[] = [
+      ...organizations.map((o) => ({ id: o.id, name: o.name })),
+      ...araOrgs
+        .filter((a) => !organizations.some((o) => o.name.toLowerCase() === a.name.toLowerCase()))
+        .map((a) => ({ id: a.id, name: a.name })),
+    ];
+    const orgName = planOrgs.find((o) => o.id === planOrgId)?.name ?? "";
+    const doneCount = items.filter((m) => planDone.has(m.key)).length;
+    const allDone = items.length > 0 && doneCount === items.length;
+    return (
+      <div className="space-y-6">
+        <StartHero compact onBack={() => setMode("myself")} />
+
+        {/* Shared client — everything in the plan is tagged to it. */}
+        <div className="space-y-2 rounded-xl border p-4">
+          <Label htmlFor="plan-org">{t("start.plan.orgLabel")}</Label>
+          <select
+            id="plan-org"
+            value={planOrgId}
+            onChange={(e) => setPlanOrgId(e.target.value)}
+            className="h-10 w-full max-w-md rounded-md border border-input bg-background px-3 text-sm"
+          >
+            <option value="">{t("start.plan.pickOrg")}</option>
+            {planOrgs.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+          </select>
+          <p className="text-xs text-muted-foreground">{t("start.plan.orgHint")}</p>
+        </div>
+
+        {planOrgId && (
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-end justify-between gap-2 border-b-2 border-accent/30 pb-2">
+              <h2 className="ara-numeral text-[1.45rem] font-extrabold uppercase leading-tight tracking-tight text-accent sm:text-[1.6rem]">
+                {t("start.plan.heading", { org: orgName })}
+              </h2>
+              <span className="text-sm font-medium text-muted-foreground">{t("start.plan.progress", { done: doneCount, total: items.length })}</span>
+            </div>
+            <p className="text-xs text-muted-foreground">{t("start.plan.howto")}</p>
+
+            <ol className="space-y-3">
+              {items.map((m, i) => {
+                const Icon = m.icon;
+                const isDone = planDone.has(m.key);
+                const href = `${m.href}${m.href.includes("?") ? "&" : "?"}org=${planOrgId}`;
+                return (
+                  <li key={m.key} className={`flex flex-wrap items-center gap-4 rounded-xl border p-4 transition-colors ${isDone ? "border-emerald-200 bg-emerald-50/50" : ""}`}>
+                    <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-semibold ${isDone ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-600"}`}>
+                      {isDone ? <Check className="h-4 w-4" /> : i + 1}
+                    </span>
+                    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#5391D5]/10 text-[#5391D5]">
                       <Icon className="h-5 w-5" />
                     </div>
-                    <h3 className="text-base font-semibold text-primary">{t(`start.module.${m.key}.label`)}</h3>
-                    <p className="mt-1 line-clamp-2 flex-1 text-xs leading-snug text-muted-foreground">{t(`start.module.${m.key}.desc`)}</p>
-                    <div className="launcher-card-cta mt-3 inline-flex items-center gap-1.5 text-sm font-semibold">
-                      {t("start.myself.open")} <ArrowRight className="h-4 w-4" />
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-base font-semibold text-[#010131]">{t(`start.module.${m.key}.label`)}</h3>
+                      <p className="text-xs text-muted-foreground">{t(`start.module.${m.key}.desc`)}</p>
                     </div>
-                  </div>
-                </Link>
-              );
-            })}
+                    <a href={href} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                      <Button variant="outline" className="gap-1.5">{t("start.plan.setup")} <ExternalLink className="h-4 w-4" /></Button>
+                    </a>
+                    <button
+                      onClick={() => toggleDone(m.key)}
+                      className={`shrink-0 rounded-md border px-3 py-2 text-xs font-medium transition-colors ${isDone ? "border-emerald-300 bg-emerald-500 text-white" : "border-input text-muted-foreground hover:bg-muted"}`}
+                    >
+                      {isDone ? t("start.plan.doneLabel") : t("start.plan.markDone")}
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+
+            {allDone && (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+                {t("start.plan.allDone", { org: orgName })}
+              </div>
+            )}
           </div>
-        </div>
+        )}
       </div>
     );
   }
@@ -160,32 +288,39 @@ export function GuidedStart({
         <CardContent className="space-y-5 pt-6">
           {step === 1 && (
             <Step title={t("start.step1.title")} subtitle={t("start.step1.subtitle")}>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {GOALS.map((g) => {
-                  const Icon = GOAL_ICON[g.icon] ?? Sparkles;
-                  const tone = GOAL_TONE[g.id] ?? "blue";
-                  const active = answers.goal === g.id;
-                  return (
-                    <button
-                      key={g.id}
-                      onClick={() => setAnswers({ goal: g.id, context: null, depth: null })}
-                      className={`launcher-card tone-${tone} p-4 text-left ${active ? "is-selected" : ""}`}
-                    >
-                      <Icon className="launcher-card-glyph h-16 w-16" strokeWidth={1} aria-hidden />
-                      <div className="relative z-10 flex flex-col">
-                        <div className="mb-2 flex items-center justify-between">
-                          <div className="launcher-card-icon flex h-10 w-10 items-center justify-center rounded-xl">
-                            <Icon className="h-5 w-5" />
+              {(["acquire", "manage"] as const).map((pillar) => (
+                <div key={pillar} className="space-y-3">
+                  <div className="border-b-2 border-accent/30 pb-2">
+                    <h3 className="ara-numeral text-[1.45rem] font-extrabold uppercase leading-tight tracking-tight text-accent sm:text-[1.6rem]">{t(`start.pillar.${pillar}`)}</h3>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {GOALS.filter((g) => g.pillar === pillar).map((g) => {
+                      const Icon = GOAL_ICON[g.icon] ?? Sparkles;
+                      const tone = GOAL_TONE[g.id] ?? "blue";
+                      const active = answers.goal === g.id;
+                      return (
+                        <button
+                          key={g.id}
+                          onClick={() => setAnswers({ goal: g.id, context: null, depth: null })}
+                          className={`launcher-card tone-${tone} p-4 text-left ${active ? "is-selected" : ""}`}
+                        >
+                          <Icon className="launcher-card-glyph h-16 w-16" strokeWidth={1} aria-hidden />
+                          <div className="relative z-10 flex flex-col">
+                            <div className="mb-2 flex items-center justify-between">
+                              <div className="launcher-card-icon flex h-10 w-10 items-center justify-center rounded-xl">
+                                <Icon className="h-5 w-5" />
+                              </div>
+                              {active && <Check className="launcher-card-tone-text h-4 w-4" />}
+                            </div>
+                            <h3 className="text-base font-semibold text-primary">{t(`start.goal.${g.id}.label`)}</h3>
+                            <p className="mt-1 text-xs leading-snug text-muted-foreground">{t(`start.goal.${g.id}.desc`)}</p>
                           </div>
-                          {active && <Check className="launcher-card-tone-text h-4 w-4" />}
-                        </div>
-                        <h3 className="text-base font-semibold text-primary">{t(`start.goal.${g.id}.label`)}</h3>
-                        <p className="mt-1 text-xs leading-snug text-muted-foreground">{t(`start.goal.${g.id}.desc`)}</p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </Step>
           )}
 

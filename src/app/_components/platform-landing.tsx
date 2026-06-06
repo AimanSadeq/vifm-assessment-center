@@ -4,26 +4,33 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight, ArrowLeft, ClipboardCheck, Compass, Aperture, Languages, UserSearch,
-  GraduationCap, BadgeCheck, BrainCircuit,
+  GraduationCap, BadgeCheck, BrainCircuit, Layers,
 } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 
 type Lang = "en" | "ar";
-type Tone = "blue" | "violet" | "teal" | "gold" | "rose" | "indigo" | "fuchsia";
-type ServiceKey = "ac" | "ara" | "reflect" | "fluent" | "prehire" | "technical" | "psychometric";
+type Tone = "blue" | "violet" | "teal" | "gold" | "rose" | "indigo" | "fuchsia" | "emerald";
+type ServiceKey = "ac" | "ara" | "reflect" | "fluent" | "prehire" | "technical" | "psychometric" | "academy";
+// The two solution families (the colleague's talent-lifecycle model). A service
+// may belong to both — Psychometrics is a foundational measure used to select
+// (acquisition) AND to spot potential (management), so it lists in each.
+type Pillar = "acquire" | "manage";
 
 const STORAGE_KEY = "vifm-landing-locale";
 
-// Icon / hue / route are language-independent; copy comes from T[lang].services.
-const SERVICES: ReadonlyArray<{ key: ServiceKey; href: string; icon: typeof Compass; tone: Tone }> = [
-  { key: "prehire", href: "/admin/prehire", icon: UserSearch, tone: "rose" },
-  { key: "fluent", href: "/ac/fluent", icon: Languages, tone: "gold" },
-  { key: "technical", href: "/ac/tech-assessment", icon: BadgeCheck, tone: "indigo" },
-  { key: "psychometric", href: "/ac/psychometrics", icon: BrainCircuit, tone: "fuchsia" },
-  { key: "ac", href: "/admin", icon: ClipboardCheck, tone: "blue" },
-  { key: "reflect", href: "/reflect", icon: Aperture, tone: "teal" },
-  { key: "ara", href: "/ara", icon: Compass, tone: "violet" },
+// Icon / hue / route / pillars are language-independent; copy comes from T[lang].services.
+const SERVICES: ReadonlyArray<{ key: ServiceKey; href: string; icon: typeof Compass; tone: Tone; pillars: Pillar[] }> = [
+  // ── Talent Acquisition ──
+  { key: "prehire", href: "/admin/prehire", icon: UserSearch, tone: "rose", pillars: ["acquire"] },
+  { key: "fluent", href: "/ac/fluent", icon: Languages, tone: "gold", pillars: ["acquire"] },
+  { key: "technical", href: "/ac/tech-assessment", icon: BadgeCheck, tone: "indigo", pillars: ["acquire"] },
+  { key: "psychometric", href: "/ac/psychometrics", icon: BrainCircuit, tone: "fuchsia", pillars: ["acquire", "manage"] },
+  // ── Talent Management ──
+  { key: "reflect", href: "/reflect", icon: Aperture, tone: "teal", pillars: ["manage"] },
+  { key: "ara", href: "/ara", icon: Compass, tone: "violet", pillars: ["manage"] },
+  { key: "ac", href: "/admin", icon: ClipboardCheck, tone: "blue", pillars: ["manage"] },
+  { key: "academy", href: "/courses", icon: GraduationCap, tone: "emerald", pillars: ["manage"] },
 ];
 
 const T = {
@@ -31,10 +38,10 @@ const T = {
     pickLang: "Language",
     catalogue: "Training catalogue",
     enter: "Enter",
-    eyebrow: "VIFM Academy",
+    eyebrow: "VIFM Talent Intelligence Platform",
     h1a: "Build the talent the",
     h1b: "future demands.",
-    sub: "VIFM is a finance & management training institute for the GCC. The Academy turns assessment insight into self-paced programmes — AI knowledge-checks, verifiable credentials, and a curriculum mapped to the gaps our diagnostics reveal.",
+    sub: "VIFM is a finance & management institute for the GCC. Our platform spans the full talent lifecycle — Talent Acquisition to screen and select, Talent Management to develop and retain — with bilingual assessments, verifiable credentials, and learning mapped to the gaps our diagnostics reveal.",
     ctaBrowse: "Browse the catalogue",
     ctaLearning: "My learning",
     trust: ["Bilingual English / Arabic", "Verifiable credentials", "AI-supported learning"],
@@ -57,7 +64,11 @@ const T = {
       },
     },
     servicesHeading: "Start with a diagnosis",
-    servicesSub: "Seven bilingual assessment services pinpoint where to focus — then the Academy delivers the learning.",
+    servicesSub: "Two solution families cover the full talent lifecycle — pick where to focus, and the platform takes it from diagnosis to development.",
+    pillars: {
+      acquire: { title: "Talent Acquisition Solutions", sub: "Assess the people you bring in — screen, place, and select with defensible, bilingual instruments." },
+      manage: { title: "Talent Management Solutions", sub: "Grow the people you have — develop, benchmark, and certify across the organisation." },
+    },
     footerOrg: "Virginia Institute of Finance and Management",
     footerConfidential: "Confidential - for VIFM and engaged clients only.",
     footerGcc: "Built for the GCC",
@@ -69,16 +80,17 @@ const T = {
       technical: { tagline: "Technical proficiency", name: "Technical Assessment", description: "Assess technical proficiency across ten finance domains — from financial modelling to treasury, banking, analytics and AI. SME-reviewed items and documented cut-scores issue a verifiable proficiency credential; indicative banding while a domain's bank is still building.", tooltip: "Best for certifying functional finance skills, defensibly." },
       psychometric: { tagline: "Cognitive + personality", name: "Psychometrics", description: "Indicative cognitive-ability (numerical, verbal, abstract) and Big-Five personality measures — the foundational aptitude and work-style that predict behavioural competency. Server-scored, admin-run and bilingual.", tooltip: "Best for a foundational read on aptitude and work style." },
       prehire: { tagline: "Pre-employment screening", name: "Pre-Hire", description: "Screen and shortlist applicants before you hire: a configurable funnel of competency quiz, English placement and an AI behavioural interview, with a weighted composite, adverse-impact monitoring and an audit trail. The score is a signal — a person always decides.", tooltip: "Best for shortlisting applicants at scale, defensibly." },
+      academy: { tagline: "Learning & delivery", name: "VIFM Academy", description: "Self-paced finance & management programmes that turn each diagnosis into action — AI knowledge-checks per lesson and a verifiable completion credential, in English or Arabic.", tooltip: "Best for closing development gaps with guided, credentialed learning." },
     },
   },
   ar: {
     pickLang: "اللغة",
     catalogue: "دليل البرامج التدريبية",
     enter: "الدخول",
-    eyebrow: "أكاديمية VIFM",
+    eyebrow: "منصّة VIFM لذكاء المواهب",
     h1a: "ابنِ المواهب التي",
     h1b: "يتطلّبها المستقبل.",
-    sub: "VIFM معهد متخصّص في التدريب على التمويل والإدارة لمنطقة الخليج. تحوّل الأكاديمية رؤى التقييم إلى برامج تعليمية ذاتية — مع اختبارات معرفية بالذكاء الاصطناعي، وشهادات قابلة للتحقّق، ومنهج مرتبط بالفجوات التي تكشفها أدواتنا التشخيصية.",
+    sub: "VIFM معهد متخصّص في التمويل والإدارة لمنطقة الخليج. تغطّي منصّتنا دورة المواهب الكاملة — استقطاب المواهب للفرز والاختيار، وإدارة المواهب للتطوير والاستبقاء — مع تقييمات ثنائية اللغة، وشهادات قابلة للتحقّق، وتعلّم مرتبط بالفجوات التي تكشفها أدواتنا.",
     ctaBrowse: "تصفّح دليل البرامج",
     ctaLearning: "مساحة التعلّم",
     trust: ["ثنائية اللغة: الإنجليزية / العربية", "شهادات قابلة للتحقّق", "تعلّم مدعوم بالذكاء الاصطناعي"],
@@ -101,7 +113,11 @@ const T = {
       },
     },
     servicesHeading: "ابدأ بالتشخيص",
-    servicesSub: "سبع خدمات تقييم ثنائية اللغة تحدّد أين تركّز — ثم تتولّى الأكاديمية تقديم التعلّم.",
+    servicesSub: "عائلتا حلول تغطّيان دورة المواهب الكاملة — اختر أين تركّز، وتتولّى المنصّة الباقي من التشخيص إلى التطوير.",
+    pillars: {
+      acquire: { title: "حلول استقطاب المواهب", sub: "قيّم من تستقطبهم — فرز وتحديد مستوى واختيار بأدوات موثوقة وثنائية اللغة." },
+      manage: { title: "حلول إدارة المواهب", sub: "طوّر من لديك — تطوير ومقارنة مرجعية واعتماد على مستوى المؤسسة." },
+    },
     footerOrg: "معهد فرجينيا للتمويل والإدارة",
     footerConfidential: "سري - لـ VIFM والعملاء المتعاقدين فقط.",
     footerGcc: "مُصمّمة لمنطقة الخليج",
@@ -113,6 +129,7 @@ const T = {
       technical: { tagline: "الكفاءة التقنية", name: "التقييم التقني", description: "قياس الكفاءة التقنية عبر عشرة مجالات مالية — من النمذجة المالية إلى الخزينة والمصارف والتحليلات والذكاء الاصطناعي. بنود مُراجَعة من الخبراء ودرجات قطع موثّقة تمنح اعتماد كفاءة قابلاً للتحقق، مع تصنيف استرشادي ريثما يكتمل بنك أسئلة المجال.", tooltip: "الأنسب لاعتماد المهارات المالية الوظيفية بموثوقية." },
       psychometric: { tagline: "القدرات + الشخصية", name: "القياس النفسي", description: "مقاييس استرشادية للقدرة الذهنية (عددية ولفظية ومجرّدة) وشخصية العوامل الخمسة — الأساس من القدرة وأسلوب العمل الذي يتنبّأ بالكفاءات السلوكية. تُصحَّح على الخادم، يُجريها المسؤول، وثنائية اللغة.", tooltip: "الأنسب لقراءة تأسيسية للقدرات وأسلوب العمل." },
       prehire: { tagline: "الفرز قبل التوظيف", name: "ما قبل التوظيف", description: "افرز المرشّحين وأعدّ القائمة المختصرة قبل التوظيف: مسار قابل للتخصيص يجمع اختبار الكفاءات وتحديد مستوى الإنجليزية ومقابلة سلوكية بالذكاء الاصطناعي، مع درجة مركّبة مرجّحة، ومراقبة الأثر التمييزي، وسجل تدقيق كامل. الدرجة إشارة استرشادية — والقرار النهائي لإنسان دائمًا.", tooltip: "الأنسب لإعداد القائمة المختصرة للمتقدّمين على نطاق واسع وبموثوقية." },
+      academy: { tagline: "التعلّم والتقديم", name: "أكاديمية VIFM", description: "برامج ذاتية الوتيرة في التمويل والإدارة تُحوّل كل تشخيص إلى إجراء — اختبارات معرفية بالذكاء الاصطناعي لكل درس وشهادة إتمام قابلة للتحقّق، بالعربية أو الإنجليزية.", tooltip: "الأنسب لمعالجة فجوات التطوير عبر تعلّم موجّه وموثّق بشهادة." },
     },
   },
 } as const;
@@ -176,7 +193,7 @@ export function PlatformLanding() {
           {/* Headline */}
           <div className="max-w-3xl">
             <span className="ara-eyebrow text-accent">
-              <GraduationCap className="h-3 w-3" /> {t.eyebrow}
+              <Layers className="h-3 w-3" /> {t.eyebrow}
             </span>
             <h1 className="ara-numeral mt-2 mb-3 text-2xl font-semibold leading-[1.1] text-white sm:text-3xl lg:text-4xl">
               {t.h1a} <span className="ara-accent-sweep">{t.h1b}</span>
@@ -210,42 +227,59 @@ export function PlatformLanding() {
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-6 py-2">
-        {/* ─── Diagnostic services (the launcher) ─── */}
+      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-6">
+        {/* ─── Solutions as two vertical columns, one per talent-lifecycle family ─── */}
         <section>
           <h2 className="text-lg font-semibold text-[#010131]">{t.servicesHeading}</h2>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{t.servicesSub}</p>
+          <p className="mt-1 max-w-3xl text-sm text-muted-foreground">{t.servicesSub}</p>
 
           <TooltipProvider delayDuration={200}>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {SERVICES.map(({ key, href, icon: Icon, tone }) => {
-                const svc = t.services[key];
-                return (
-                  <Tooltip key={key}>
-                    <TooltipTrigger asChild>
-                      <Link href={href} className="block h-full">
-                        <div className={`launcher-card tone-${tone} h-full p-4`}>
-                          <Icon className="launcher-card-glyph h-16 w-16" strokeWidth={1} aria-hidden />
-                          <div className="relative z-10 flex h-full flex-col">
-                            <div className="launcher-card-icon mb-2 flex h-10 w-10 items-center justify-center rounded-xl">
-                              <Icon className="h-5 w-5" />
-                            </div>
-                            <div className="ara-eyebrow mb-1">{svc.tagline}</div>
-                            <h3 className="text-lg font-semibold text-primary">{svc.name}</h3>
-                            <p className="mt-1 line-clamp-2 flex-1 text-xs leading-snug text-muted-foreground">{svc.description}</p>
-                            <div className="launcher-card-cta mt-3 inline-flex items-center gap-1.5 text-sm font-semibold">
-                              {t.enter} <Arrow className="h-4 w-4" />
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-xs text-center leading-snug">
-                      {svc.tooltip}
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              })}
+            <div className="mt-6 grid items-start gap-x-8 gap-y-10 lg:grid-cols-2">
+              {(["acquire", "manage"] as const).map((pillar) => (
+                <div key={pillar}>
+                  {/* Big pillar heading (the two solution families) */}
+                  <div className="border-b-2 border-accent/30 pb-2.5">
+                    <h3 className="ara-numeral whitespace-nowrap text-[1.45rem] font-extrabold uppercase leading-tight tracking-tight text-accent sm:text-[1.6rem]">
+                      {t.pillars[pillar].title}
+                    </h3>
+                    <p className="mt-1 text-xs text-muted-foreground">{t.pillars[pillar].sub}</p>
+                  </div>
+
+                  {/* Services stacked underneath */}
+                  <div className="mt-4 space-y-3">
+                    {SERVICES.filter((s) => s.pillars.includes(pillar))
+                      .slice()
+                      .sort((a, b) => a.pillars.length - b.pillars.length)
+                      .map(({ key, href, icon: Icon, tone }) => {
+                        const svc = t.services[key];
+                        return (
+                          <Tooltip key={`${pillar}-${key}`}>
+                            <TooltipTrigger asChild>
+                              <Link href={href} className="block">
+                                <div className={`launcher-card tone-${tone} flex items-center gap-4 p-4`}>
+                                  <div className="launcher-card-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-xl">
+                                    <Icon className="h-6 w-6" />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="ara-eyebrow">{svc.tagline}</div>
+                                    <h4 className="text-base font-semibold text-primary">{svc.name}</h4>
+                                    <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-muted-foreground">{svc.description}</p>
+                                  </div>
+                                  <div className="launcher-card-cta shrink-0 self-center">
+                                    <Arrow className="h-5 w-5" />
+                                  </div>
+                                </div>
+                              </Link>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-xs text-center leading-snug">
+                              {svc.tooltip}
+                            </TooltipContent>
+                          </Tooltip>
+                        );
+                      })}
+                  </div>
+                </div>
+              ))}
             </div>
           </TooltipProvider>
         </section>

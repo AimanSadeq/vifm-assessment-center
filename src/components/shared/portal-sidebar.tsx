@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslation } from "react-i18next";
@@ -19,6 +19,8 @@ import {
   Users,
   BarChart3,
   UserSearch,
+  UserPlus,
+  Sprout,
   Briefcase,
   GraduationCap,
   Settings,
@@ -41,54 +43,79 @@ import {
 } from "lucide-react";
 
 type NavLeaf = { href: string; labelKey: string; icon: LucideIcon; exact?: boolean };
-type NavGroup = { key: string; label: string; icon: LucideIcon; items: NavLeaf[] };
 type NavEntry = { kind: "link"; link: NavLeaf } | { kind: "group"; group: NavGroup };
+type NavGroup = { key: string; label: string; icon: LucideIcon; items: NavEntry[] };
 
-// The portal navigation, organised as services + grouped sections so the panel
-// mirrors the launcher: each top-level entry is a service (Assessment Center,
-// Technical Assessment, Pre-Hire, AR Compass, Reflect, Fluent). The two
-// measurement modules that own multiple admin pages — the behavioural
-// Assessment Center and the Technical Assessment — nest their sections as
-// parallel groups; cross-cutting admin areas live under "Platform". Shared by
-// the admin chrome, the mobile drawer, and the landing page's left panel.
+const link = (href: string, labelKey: string, icon: LucideIcon, exact?: boolean): NavEntry => ({
+  kind: "link",
+  link: { href, labelKey, icon, ...(exact ? { exact } : {}) },
+});
+
+// The portal navigation, mirroring the landing launcher's two talent-lifecycle
+// solution families. The two pillars are collapsible top-level groups; the
+// multi-page measurement modules (Assessment Center, Technical Assessment) nest
+// their own sub-sections inside the relevant pillar. Cross-cutting admin areas
+// live under "Platform". Shared by the admin chrome, the mobile drawer, and the
+// landing page's left panel.
 const NAV: NavEntry[] = [
-  { kind: "link", link: { href: "/", labelKey: "adminNav.allServices", icon: LayoutGrid } },
-  { kind: "link", link: { href: "/admin/start", labelKey: "adminNav.startAssessment", icon: Wand2 } },
+  link("/", "adminNav.allServices", LayoutGrid),
+  link("/admin/start", "adminNav.startAssessment", Wand2),
   {
     kind: "group",
     group: {
-      key: "ac",
-      label: "Assessment Center",
-      icon: ClipboardCheck,
+      key: "acquire",
+      label: "Talent Acquisition",
+      icon: UserPlus,
       items: [
-        { href: "/admin", labelKey: "adminNav.dashboard", icon: LayoutDashboard, exact: true },
-        { href: "/admin/engagements", labelKey: "adminNav.projects", icon: ClipboardList },
-        { href: "/admin/exercises", labelKey: "adminNav.exercises", icon: Target },
-        { href: "/admin/assessors", labelKey: "adminNav.assessors", icon: Users },
-        { href: "/admin/analytics", labelKey: "adminNav.analytics", icon: BarChart3 },
+        link("/admin/prehire", "adminNav.preHire", UserSearch),
+        link("/ac/fluent", "adminNav.fluent", Languages),
+        {
+          kind: "group",
+          group: {
+            key: "technical",
+            label: "Technical Assessment",
+            icon: BadgeCheck,
+            items: [
+              link("/admin/tech-assessment", "adminNav.techOverview", LayoutDashboard, true),
+              link("/ac/tech-assessment", "adminNav.techTakeAssessment", SquarePen),
+              link("/admin/tech-assessment/functions", "adminNav.techFunctions", Layers3),
+              link("/admin/tech-assessment/items", "adminNav.techConsole", ListChecks),
+              link("/admin/tech-assessment/programs", "adminNav.techPrograms", Award),
+            ],
+          },
+        },
+        link("/ac/psychometrics", "adminNav.psychometrics", BrainCircuit),
       ],
     },
   },
   {
     kind: "group",
     group: {
-      key: "technical",
-      label: "Technical Assessment",
-      icon: BadgeCheck,
+      key: "manage",
+      label: "Talent Management",
+      icon: Sprout,
       items: [
-        { href: "/admin/tech-assessment", labelKey: "adminNav.techOverview", icon: LayoutDashboard, exact: true },
-        { href: "/ac/tech-assessment", labelKey: "adminNav.techTakeAssessment", icon: SquarePen },
-        { href: "/admin/tech-assessment/functions", labelKey: "adminNav.techFunctions", icon: Layers3 },
-        { href: "/admin/tech-assessment/items", labelKey: "adminNav.techConsole", icon: ListChecks },
-        { href: "/admin/tech-assessment/programs", labelKey: "adminNav.techPrograms", icon: Award },
+        {
+          kind: "group",
+          group: {
+            key: "ac",
+            label: "Assessment Center",
+            icon: ClipboardCheck,
+            items: [
+              link("/admin", "adminNav.dashboard", LayoutDashboard, true),
+              link("/admin/engagements", "adminNav.projects", ClipboardList),
+              link("/admin/exercises", "adminNav.exercises", Target),
+              link("/admin/assessors", "adminNav.assessors", Users),
+              link("/admin/analytics", "adminNav.analytics", BarChart3),
+            ],
+          },
+        },
+        link("/reflect", "adminNav.reflect360", Aperture),
+        link("/ara", "adminNav.aiReadiness", Sparkles),
+        link("/admin/courses", "adminNav.academy", GraduationCap),
       ],
     },
   },
-  { kind: "link", link: { href: "/admin/prehire", labelKey: "adminNav.preHire", icon: UserSearch } },
-  { kind: "link", link: { href: "/ara", labelKey: "adminNav.aiReadiness", icon: Sparkles } },
-  { kind: "link", link: { href: "/reflect", labelKey: "adminNav.reflect360", icon: Aperture } },
-  { kind: "link", link: { href: "/ac/fluent", labelKey: "adminNav.fluent", icon: Languages } },
-  { kind: "link", link: { href: "/ac/psychometrics", labelKey: "adminNav.psychometrics", icon: BrainCircuit } },
   {
     kind: "group",
     group: {
@@ -96,14 +123,18 @@ const NAV: NavEntry[] = [
       label: "Platform",
       icon: Layers,
       items: [
-        { href: "/admin/clients", labelKey: "adminNav.clients", icon: Building2 },
-        { href: "/admin/role-profiles", labelKey: "adminNav.roleProfiles", icon: Briefcase },
-        { href: "/admin/courses", labelKey: "adminNav.trainingCourses", icon: GraduationCap },
+        link("/admin/clients", "adminNav.clients", Building2),
+        link("/admin/role-profiles", "adminNav.roleProfiles", Briefcase),
       ],
     },
   },
-  { kind: "link", link: { href: "/admin/settings", labelKey: "adminNav.settings", icon: Settings } },
+  link("/admin/settings", "adminNav.settings", Settings),
 ];
+
+/** All leaf links, flattened depth-first — for the collapsed icon rail. */
+function collectLeaves(entries: NavEntry[]): NavLeaf[] {
+  return entries.flatMap((e) => (e.kind === "link" ? [e.link] : collectLeaves(e.group.items)));
+}
 
 /**
  * Sidebar content (logo + nav + footer), parameterized by `collapsed`. In the
@@ -119,12 +150,19 @@ export function SidebarBody({
 }) {
   const pathname = usePathname();
   const { t } = useTranslation();
-  const [open, setOpen] = useState<Record<string, boolean>>({ ac: true, technical: true, platform: true });
+  const [open, setOpen] = useState<Record<string, boolean>>({
+    acquire: true, manage: true, ac: true, technical: true, platform: true,
+  });
 
   const isActive = (href: string, exact?: boolean) =>
     exact ? pathname === href : pathname.startsWith(href);
 
-  const leaf = (l: NavLeaf, indent = false) => {
+  // Indentation per nesting depth (0 = top level, 1 = inside a pillar, 2 = inside
+  // a nested sub-group like Assessment Center / Technical Assessment).
+  const PAD = ["px-3", "ps-9 pe-3", "ps-12 pe-3"] as const;
+  const pad = (depth: number) => PAD[Math.min(depth, PAD.length - 1)];
+
+  const leaf = (l: NavLeaf, depth = 0) => {
     const Icon = l.icon;
     const active = isActive(l.href, l.exact);
     return (
@@ -135,7 +173,7 @@ export function SidebarBody({
         title={collapsed ? t(l.labelKey) : undefined}
         className={cn(
           "flex items-center gap-3 rounded-lg py-2.5 text-sm transition-colors",
-          collapsed ? "justify-center px-2" : indent ? "ps-9 pe-3" : "px-3",
+          collapsed ? "justify-center px-2" : pad(depth),
           active
             ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
             : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
@@ -144,6 +182,38 @@ export function SidebarBody({
         <Icon className="h-4 w-4 shrink-0" />
         {!collapsed && <span>{t(l.labelKey)}</span>}
       </Link>
+    );
+  };
+
+  const anyActiveIn = (items: NavEntry[]): boolean =>
+    items.some((it) => (it.kind === "link" ? isActive(it.link.href, it.link.exact) : anyActiveIn(it.group.items)));
+
+  // Recursive: a link renders as a leaf; a group renders a collapsible header
+  // plus its (possibly nested) children at the next depth.
+  const renderNode = (entry: NavEntry, depth: number): ReactNode => {
+    if (entry.kind === "link") return leaf(entry.link, depth);
+    const g = entry.group;
+    const Icon = g.icon;
+    const anyActive = anyActiveIn(g.items);
+    const isOpen = open[g.key] ?? true;
+    return (
+      <div key={g.key}>
+        <button
+          onClick={() => setOpen((s) => ({ ...s, [g.key]: !(s[g.key] ?? true) }))}
+          className={cn(
+            "flex w-full items-center gap-3 rounded-lg py-2.5 text-sm transition-colors",
+            pad(depth),
+            anyActive
+              ? "font-medium text-sidebar-foreground"
+              : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+          )}
+        >
+          <Icon className="h-4 w-4 shrink-0" />
+          <span className="flex-1 text-start">{g.label}</span>
+          <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition-transform", !isOpen && "-rotate-90")} />
+        </button>
+        {isOpen && <div className="mt-0.5 space-y-0.5">{g.items.map((it) => renderNode(it, depth + 1))}</div>}
+      </div>
     );
   };
 
@@ -165,33 +235,9 @@ export function SidebarBody({
       {/* Nav */}
       <nav className="flex-1 space-y-0.5 overflow-y-auto p-2">
         {collapsed
-          ? // Rail: flatten everything to icon-only links.
-            NAV.flatMap((e) => (e.kind === "link" ? [e.link] : e.group.items)).map((l) => leaf(l))
-          : NAV.map((e) => {
-              if (e.kind === "link") return leaf(e.link);
-              const g = e.group;
-              const Icon = g.icon;
-              const anyActive = g.items.some((it) => isActive(it.href, it.exact));
-              const isOpen = open[g.key] ?? true;
-              return (
-                <div key={g.key}>
-                  <button
-                    onClick={() => setOpen((s) => ({ ...s, [g.key]: !(s[g.key] ?? true) }))}
-                    className={cn(
-                      "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors",
-                      anyActive
-                        ? "font-medium text-sidebar-foreground"
-                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                    )}
-                  >
-                    <Icon className="h-4 w-4 shrink-0" />
-                    <span className="flex-1 text-start">{g.label}</span>
-                    <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition-transform", !isOpen && "-rotate-90")} />
-                  </button>
-                  {isOpen && <div className="mt-0.5 space-y-0.5">{g.items.map((it) => leaf(it, true))}</div>}
-                </div>
-              );
-            })}
+          ? // Rail: flatten the whole tree to icon-only links.
+            collectLeaves(NAV).map((l) => leaf(l))
+          : NAV.map((e) => renderNode(e, 0))}
       </nav>
 
       <Separator className="bg-sidebar-border" />

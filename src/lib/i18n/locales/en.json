@@ -51,6 +51,23 @@
   "start": {
     "title": "Start an assessment",
     "subtitle": "Let the wizard identify the right process for you — or set it up yourself. Your existing module flows are unchanged.",
+    "pillar": { "acquire": "Talent Acquisition", "manage": "Talent Management" },
+    "plan": {
+      "addToggle": "Add to a combined plan",
+      "selected": "{{count}} selected",
+      "clear": "Clear",
+      "build": "Build a plan",
+      "orgLabel": "Client organization",
+      "pickOrg": "Select a client…",
+      "orgHint": "Everything in this plan is tagged to one client, so the results roll up together.",
+      "heading": "Set up for {{org}}",
+      "progress": "{{done}} of {{total}} set up",
+      "howto": "Each opens in its own tab — set it up there, then tick it off here.",
+      "setup": "Set up",
+      "markDone": "Mark done",
+      "doneLabel": "Done",
+      "allDone": "All set — your plan for {{org}} is ready. Results roll up under this client."
+    },
     "back": "Back",
     "next": "Next",
     "startOver": "Start over",
@@ -88,7 +105,7 @@
       "hire": { "label": "Hire or screen candidates", "desc": "Evaluate applicants for a role — fast screen or a full selection assessment." },
       "develop": { "label": "Develop my people", "desc": "Grow current employees: development centre, 360 feedback, or learning." },
       "succession": { "label": "Spot potential & plan succession", "desc": "Map a talent pool on a 9-box and gauge readiness for bigger roles." },
-      "certify": { "label": "Certify a capability", "desc": "Prove technical, language, or ability/aptitude proficiency." },
+      "certify": { "label": "Test a specific capability", "desc": "Technical knowledge, English level, or cognitive ability & personality." },
       "ai_readiness": { "label": "Measure AI readiness", "desc": "Assess an organization's or an individual's readiness to adopt AI." },
       "feedback_360": { "label": "Run 360° leadership feedback", "desc": "Multi-rater feedback against your leadership behaviours." }
     },
@@ -163,7 +180,9 @@
       "ara": { "label": "AI Readiness (org)", "desc": "Pillar-based org diagnostic." },
       "reflect": { "label": "Reflect 360", "desc": "Multi-rater leadership feedback." },
       "fluent": { "label": "Fluent (English)", "desc": "CEFR placement test." },
-      "technical": { "label": "Technical certification", "desc": "Finance-domain knowledge." }
+      "technical": { "label": "Technical certification", "desc": "Finance-domain knowledge." },
+      "psychometric": { "label": "Psychometrics", "desc": "Cognitive ability + Big-Five personality (indicative)." },
+      "academy": { "label": "VIFM Academy", "desc": "Self-paced training courses + verifiable credential." }
     },
     "rec": {
       "identified": "Identified requirement",
@@ -258,6 +277,7 @@
     "reflect360": "Reflect 360",
     "fluent": "Fluent",
     "psychometrics": "Psychometrics",
+    "academy": "VIFM Academy",
     "techCertification": "Technical",
     "techOverview": "Overview",
     "techTakeAssessment": "Take assessment",

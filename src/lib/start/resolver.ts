@@ -7,13 +7,18 @@
 import type { StartGoal, WizardAnswers, ProcessPlan } from "./types";
 
 // ── Step 1: goals (outcome language, never module names) ─────────
-export const GOALS: { id: StartGoal; icon: string }[] = [
-  { id: "hire", icon: "UserCheck" },
-  { id: "develop", icon: "Sprout" },
-  { id: "succession", icon: "TrendingUp" },
-  { id: "certify", icon: "BadgeCheck" },
-  { id: "ai_readiness", icon: "BrainCircuit" },
-  { id: "feedback_360", icon: "Users" },
+// Clustered into the two talent-lifecycle solution families (mirrors the
+// landing + sidebar): acquisition = assessing who you bring in; management =
+// growing who you have.
+export const GOALS: { id: StartGoal; icon: string; pillar: "acquire" | "manage" }[] = [
+  // Talent Acquisition
+  { id: "hire", icon: "UserCheck", pillar: "acquire" },
+  { id: "certify", icon: "BadgeCheck", pillar: "acquire" },
+  // Talent Management
+  { id: "develop", icon: "Sprout", pillar: "manage" },
+  { id: "succession", icon: "TrendingUp", pillar: "manage" },
+  { id: "ai_readiness", icon: "BrainCircuit", pillar: "manage" },
+  { id: "feedback_360", icon: "Users", pillar: "manage" },
 ];
 
 // ── Step 2: per-goal context choice (adaptive) ───────────────────

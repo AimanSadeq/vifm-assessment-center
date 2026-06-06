@@ -15,6 +15,8 @@ import {
   type ExtractedCompetencyRecommendation,
 } from "@/lib/ai/jd-competency-extractor";
 import { isAIConfigured } from "@/lib/ai/client";
+import { createClientOrganization } from "@/lib/clients/registry";
+import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import type { Competency } from "@/types/database";
 
 const MAX_JD_FILE_BYTES = 10 * 1024 * 1024;
@@ -171,21 +173,26 @@ export async function createOrganizationAction(values: NewOrganizationValues) {
   const parsed = newOrganizationSchema.safeParse(values);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("organizations")
-    .insert({
-      name: parsed.data.name,
-      industry: parsed.data.industry || null,
-      country: parsed.data.country || null,
-      contact_name: parsed.data.contactName || null,
-      contact_email: parsed.data.contactEmail || null,
-    })
-    .select("id, name")
-    .single();
+  // Admin-gated; under AUTH_ENABLED=false requireRole returns a synthetic admin.
+  try {
+    await requireRole(["admin"]);
+  } catch (e) {
+    if (isAuthorizationError(e)) return { error: "Not authorized." };
+    throw e;
+  }
 
-  if (error) return { error: error.message };
-  return { data };
+  // Write through the shared registry (service-role — fixes the RLS-denied insert
+  // on `organizations`) so the new client also lands in the AR Compass / Reflect
+  // store and is selectable across every service, not just this engagement.
+  const res = await createClientOrganization({
+    name: parsed.data.name,
+    industry: parsed.data.industry || null,
+    country: parsed.data.country || null,
+    contactName: parsed.data.contactName || null,
+    contactEmail: parsed.data.contactEmail || null,
+  });
+  if (!res.ok) return { error: res.error };
+  return { data: { id: res.organizationId, name: parsed.data.name } };
 }
 
 export async function createExerciseAction(values: NewExerciseValues) {

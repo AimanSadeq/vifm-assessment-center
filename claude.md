@@ -37,7 +37,7 @@ src/
   app/
     (auth)/               # Login (email/password + magic link), register, password reset
     admin/                # Admin portal (collapsible sidebar, process map dashboard)
-      clients/            # Client organization management
+      clients/            # Platform Clients — unified registry: "Add Client" dialog (dual-writes to both org stores) + union list with per-service badges
       engagements/        # Engagement list, 5-step wizard, detail with tabs
         new/              # Engagement creation wizard (5 steps + JD extractor + role profile picker)
         [id]/             # Engagement detail with role-profile-aware candidates table + cohort-aggregated VIFM training recommendations + per-candidate filter (?candidate=<id>)
@@ -291,6 +291,7 @@ DAILY_API_KEY=your-daily-api-key
 - Audit trail on all significant actions (immutable log)
 
 ## Important Notes
+- **Platform Clients = unified client registry across two org stores.** The portal keeps two organization tables: `organizations` (Assessment Center + Pre-Hire) and `ara_organizations` (AI Readiness + Reflect 360, requires `region`∈{uae,saudi} + `sector`∈{government,banking,general}). [src/lib/clients/registry.ts](src/lib/clients/registry.ts) `createClientOrganization()` **dual-writes** to both (service-role — bypasses the `organizations` RLS that denied client-side inserts), deduped by case-insensitive name, deriving region/sector from country/industry when absent; `loadPlatformClients()` returns a name-keyed **union** with per-service `acId`/`araId`. Surfaces: the "Add Client" dialog on `/admin/clients` (`createClientAction`) and the engagement wizard's inline "+ New" (`createOrganizationAction`, now service-role — fixes the "new row violates row-level security policy for table organizations" error). A client created once is selectable in every service.
 - The Wash-Up Engine is the single most important differentiator. It includes Supabase Realtime for live multi-user collaboration.
 - Arabic competency translations are placeholders and must be human-reviewed before going live.
 - Auth is disabled for development. Flip `AUTH_ENABLED = true` and follow `src/lib/auth/README.md` for production.

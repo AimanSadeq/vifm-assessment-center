@@ -1,5 +1,6 @@
 import { PlatformLanding } from "./_components/platform-landing";
 import { PortalSidebar } from "@/components/shared/portal-sidebar";
+import { MobileSidebar } from "@/components/shared/mobile-sidebar";
 
 export const metadata = {
   title: "VIFM Academy · Learning, assessment & readiness",
@@ -13,9 +14,13 @@ export default function Home() {
   return (
     <div className="flex h-screen overflow-hidden">
       <PortalSidebar />
-      <main className="min-w-0 flex-1 overflow-y-auto">
-        <PlatformLanding />
-      </main>
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Mobile hamburger + drawer (lg:hidden); desktop shows PortalSidebar */}
+        <MobileSidebar />
+        <main className="min-w-0 flex-1 overflow-y-auto">
+          <PlatformLanding />
+        </main>
+      </div>
     </div>
   );
 }

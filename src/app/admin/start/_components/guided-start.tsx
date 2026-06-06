@@ -233,7 +233,8 @@ export function GuidedStart({
               {items.map((m, i) => {
                 const Icon = m.icon;
                 const isDone = planDone.has(m.key);
-                const href = `${m.href}${m.href.includes("?") ? "&" : "?"}org=${planOrgId}`;
+                const sep = m.href.includes("?") ? "&" : "?";
+                const href = `${m.href}${sep}org=${planOrgId}&orgName=${encodeURIComponent(orgName)}`;
                 return (
                   <li key={m.key} className={`flex flex-wrap items-center gap-4 rounded-xl border p-4 transition-colors ${isDone ? "border-emerald-200 bg-emerald-50/50" : ""}`}>
                     <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-semibold ${isDone ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-600"}`}>

@@ -14,6 +14,7 @@ import { createRequisitionAction } from "../../actions";
 type Props = {
   roleProfiles: { id: string; name_en: string }[];
   organizations: { id: string; name: string }[];
+  defaultOrgId?: string;
 };
 
 // Default weight + cut-score per stage. Weights are normalized at scoring time,
@@ -24,11 +25,11 @@ const STAGES: { kind: "fluent" | "quiz" | "cbi"; label: string; weight: number; 
   { kind: "cbi", label: "AI Interview", weight: 0.3, cut: 60 },
 ];
 
-export function RequisitionForm({ roleProfiles, organizations }: Props) {
+export function RequisitionForm({ roleProfiles, organizations, defaultOrgId }: Props) {
   const router = useRouter();
   const { t } = useTranslation();
   const [title, setTitle] = useState("");
-  const [orgId, setOrgId] = useState("");
+  const [orgId, setOrgId] = useState(defaultOrgId ?? "");
   const [roleProfileId, setRoleProfileId] = useState("");
   const [level, setLevel] = useState("");
   const [englishRequired, setEnglishRequired] = useState(false);

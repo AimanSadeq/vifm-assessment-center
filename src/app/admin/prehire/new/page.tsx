@@ -1,17 +1,24 @@
 import { createClient } from "@/lib/supabase/server";
 import { getServerT } from "@/lib/i18n/server";
 import { BackLink } from "@/components/shared/back-link";
+import { resolvePlanOrgId } from "@/lib/start/resolve-plan-org";
 import { RequisitionForm } from "./_components/requisition-form";
 
 export const dynamic = "force-dynamic";
 
-export default async function NewRequisitionPage() {
+export default async function NewRequisitionPage({
+  searchParams,
+}: {
+  searchParams?: { org?: string; orgName?: string };
+}) {
   const supabase = await createClient();
   const t = await getServerT();
   const [profilesRes, orgsRes] = await Promise.all([
     supabase.from("role_profiles").select("id, name_en").order("name_en"),
     supabase.from("organizations").select("id, name").order("name"),
   ]);
+  const organizations = (orgsRes.data ?? []) as { id: string; name: string }[];
+  const defaultOrgId = resolvePlanOrgId(organizations, searchParams);
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 px-6 py-8">
@@ -24,7 +31,8 @@ export default async function NewRequisitionPage() {
       </div>
       <RequisitionForm
         roleProfiles={(profilesRes.data ?? []) as { id: string; name_en: string }[]}
-        organizations={(orgsRes.data ?? []) as { id: string; name: string }[]}
+        organizations={organizations}
+        defaultOrgId={defaultOrgId}
       />
     </div>
   );

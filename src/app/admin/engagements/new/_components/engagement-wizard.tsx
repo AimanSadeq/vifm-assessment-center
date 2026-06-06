@@ -27,6 +27,7 @@ type Props = {
   competencyTree: CompetencyTree;
   exercises: Exercise[];
   roleProfiles: RoleProfileSummary[];
+  defaultOrgId?: string;
 };
 
 function WizardInner({ organizations, competencyTree, exercises, roleProfiles }: Props) {
@@ -156,7 +157,7 @@ function WizardInner({ organizations, competencyTree, exercises, roleProfiles }:
 
 export function EngagementWizard(props: Props) {
   return (
-    <WizardProvider>
+    <WizardProvider initialOrganizationId={props.defaultOrgId}>
       <WizardInner {...props} />
     </WizardProvider>
   );

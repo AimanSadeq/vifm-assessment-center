@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createAraAssessment } from "@/lib/ara/actions";
+import { resolvePlanOrgId } from "@/lib/start/resolve-plan-org";
 import { ARA_STAGE_DEFINITIONS } from "@/lib/constants/ara-stages";
 import { ARA_ASSESSMENT_TEMPLATES, getAssessmentTemplate } from "@/lib/constants/ara-assessment-templates";
 import type { AraEngagementStage, AraOrganization, AraQuestionBankVersion } from "@/types/ara";
@@ -34,7 +35,7 @@ const TONE_MAP = {
 export default async function NewAraAssessmentPage({
   searchParams,
 }: {
-  searchParams?: { stage?: string; template?: string };
+  searchParams?: { stage?: string; template?: string; org?: string; orgName?: string };
 }) {
   const t = await getServerT();
   const validStages = ARA_STAGE_DEFINITIONS.map((s) => s.id) as string[];
@@ -58,6 +59,12 @@ export default async function NewAraAssessmentPage({
   ]);
 
   const activeVersion = (versions ?? []).find((v) => v.is_active);
+
+  // Combined-plan deep link: prefill the client + preserve it across the stage pick.
+  const defaultOrgId = resolvePlanOrgId((orgs ?? []) as { id: string; name: string | null }[], searchParams);
+  const orgQuery = searchParams?.org
+    ? `&org=${encodeURIComponent(searchParams.org)}&orgName=${encodeURIComponent(searchParams.orgName ?? "")}`
+    : "";
 
   // ─── Step 1: stage picker ─────────────────────────────────
   if (!selectedStage) {
@@ -92,7 +99,7 @@ export default async function NewAraAssessmentPage({
               const isIndividual = stage.id === "individual";
               const href = isIndividual
                 ? "/ara/consultant/personal-deep-dive/new"
-                : `/ara/consultant/assessments/new?stage=${stage.id}`;
+                : `/ara/consultant/assessments/new?stage=${stage.id}${orgQuery}`;
               return (
                 <Link key={stage.id} href={href} className="group block">
                   <article
@@ -213,7 +220,7 @@ export default async function NewAraAssessmentPage({
                 return (
                   <Link
                     key={tpl.id}
-                    href={`/ara/consultant/assessments/new?stage=${tpl.default_stage}&template=${tpl.id}`}
+                    href={`/ara/consultant/assessments/new?stage=${tpl.default_stage}&template=${tpl.id}${orgQuery}`}
                     className="group block"
                   >
                     <article
@@ -374,7 +381,7 @@ export default async function NewAraAssessmentPage({
                   name="organization_id"
                   required
                   className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  defaultValue=""
+                  defaultValue={defaultOrgId}
                 >
                   <option value="" disabled>{t("araConsultant.new_select_organization")}</option>
                   {(orgs ?? []).map((o) => (

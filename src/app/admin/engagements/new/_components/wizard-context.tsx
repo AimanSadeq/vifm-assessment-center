@@ -202,8 +202,17 @@ const initialState: WizardState = {
 const WizardContext = createContext<WizardState>(initialState);
 const WizardDispatchContext = createContext<Dispatch<Action>>(() => {});
 
-export function WizardProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, initialState);
+export function WizardProvider({
+  children,
+  initialOrganizationId,
+}: {
+  children: ReactNode;
+  initialOrganizationId?: string;
+}) {
+  const [state, dispatch] = useReducer(reducer, {
+    ...initialState,
+    organizationId: initialOrganizationId ?? initialState.organizationId,
+  });
 
   return (
     <WizardContext.Provider value={state}>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, Aperture } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getServerT } from "@/lib/i18n/server";
+import { resolvePlanOrgId } from "@/lib/start/resolve-plan-org";
 import { ReflectWizard, type WizardOrg, type WizardTemplate } from "./_components/wizard";
 
 export const metadata = {
@@ -25,9 +26,14 @@ async function fetchWizardData(): Promise<{ orgs: WizardOrg[]; templates: Wizard
   };
 }
 
-export default async function NewReflectEngagementPage() {
+export default async function NewReflectEngagementPage({
+  searchParams,
+}: {
+  searchParams?: { org?: string; orgName?: string };
+}) {
   const { orgs, templates } = await fetchWizardData();
   const t = await getServerT();
+  const defaultOrgId = resolvePlanOrgId(orgs, searchParams);
 
   return (
     <div className="min-h-screen bg-background">
@@ -52,7 +58,7 @@ export default async function NewReflectEngagementPage() {
       </header>
 
       <main className="max-w-5xl mx-auto px-6 py-8">
-        <ReflectWizard orgs={orgs} templates={templates} />
+        <ReflectWizard orgs={orgs} templates={templates} defaultOrgId={defaultOrgId} />
       </main>
     </div>
   );

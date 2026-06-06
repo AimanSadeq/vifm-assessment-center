@@ -73,16 +73,17 @@ const STEPS = [
 type Props = {
   orgs: WizardOrg[];
   templates: WizardTemplate[];
+  defaultOrgId?: string;
 };
 
-export function ReflectWizard({ orgs: initialOrgs, templates }: Props) {
+export function ReflectWizard({ orgs: initialOrgs, templates, defaultOrgId }: Props) {
   const router = useRouter();
   const { t } = useTranslation();
   // Local copy so inline org creation (Step 1) can append without a refetch.
   const [orgs, setOrgs] = useState<WizardOrg[]>(initialOrgs);
   const [state, setState] = useState<WizardState>({
     name: "",
-    organization_id: "",
+    organization_id: defaultOrgId ?? "",
     region: "",
     sector: "",
     default_language: "en",

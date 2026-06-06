@@ -6,6 +6,7 @@ import type {
   Exercise,
 } from "@/types/database";
 import { BackLink } from "@/components/shared/back-link";
+import { resolvePlanOrgId } from "@/lib/start/resolve-plan-org";
 import { EngagementWizard } from "./_components/engagement-wizard";
 import type { RoleProfileSummary } from "./_components/role-profile-picker";
 
@@ -53,9 +54,14 @@ async function fetchWizardData() {
   return { organizations, competencyTree, exercises, roleProfiles };
 }
 
-export default async function NewEngagementPage() {
+export default async function NewEngagementPage({
+  searchParams,
+}: {
+  searchParams?: { org?: string; orgName?: string };
+}) {
   const { organizations, competencyTree, exercises, roleProfiles } = await fetchWizardData();
   const t = await getServerT();
+  const defaultOrgId = resolvePlanOrgId(organizations, searchParams);
 
   return (
     <div>
@@ -70,6 +76,7 @@ export default async function NewEngagementPage() {
           competencyTree={competencyTree}
           exercises={exercises}
           roleProfiles={roleProfiles}
+          defaultOrgId={defaultOrgId}
         />
       </div>
     </div>

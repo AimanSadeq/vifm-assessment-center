@@ -40,7 +40,9 @@ export type ScaleScore = {
   normalized: number;   // 0–100
   band: PsyBand;
   bandLabel: string;
-  sten?: number;        // personality only
+  sten?: number;        // personality (Tier 1) / norm-referenced (Tier 2)
+  z?: number;           // Tier 2 — standard score vs the norm group
+  percentile?: number;  // Tier 2 — percentile within the norm group
 };
 
 export type PsyValidity = { socialDesirability: number; inconsistency: number; flag: boolean };
@@ -48,10 +50,12 @@ export type PsyValidity = { socialDesirability: number; inconsistency: number; f
 export type PsyResult = {
   kind: PsyKind;
   scales: ScaleScore[];
-  overall?: { normalized: number; band: PsyBand; bandLabel: string };
+  overall?: { normalized: number; band: PsyBand; bandLabel: string; percentile?: number };
   validity?: PsyValidity;
   answeredCount: number;
   totalCount: number;
+  /** Tier 2 — set to "calibrated" once norm-referenced; absent/"indicative" otherwise. */
+  tier?: "indicative" | "calibrated";
 };
 
 const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);

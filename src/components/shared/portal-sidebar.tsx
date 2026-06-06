@@ -85,6 +85,7 @@ const NAV: NavEntry[] = [
           },
         },
         link("/ac/psychometrics", "adminNav.psychometrics", BrainCircuit),
+        link("/admin/psychometrics", "adminNav.psychometricsBank", ListChecks),
       ],
     },
   },

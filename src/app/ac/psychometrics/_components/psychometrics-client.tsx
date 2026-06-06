@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BrainCircuit, Sparkles, Loader2, CheckCircle2, RotateCcw, AlertTriangle } from "lucide-react";
+import { BrainCircuit, Sparkles, Loader2, CheckCircle2, RotateCcw, AlertTriangle, Download } from "lucide-react";
 import type { PsyTestPublic, PsyResult, ScaleScore } from "@/lib/psychometrics/scoring";
 import { COGNITIVE_SUBTESTS, BIG_FIVE } from "@/lib/psychometrics/framework";
 
@@ -39,6 +39,7 @@ export function PsychometricsClient({
   const [test, setTest] = useState<PsyTestPublic | null>(null);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [result, setResult] = useState<PsyResult | null>(null);
+  const [resultId, setResultId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -51,7 +52,7 @@ export function PsychometricsClient({
       });
       const d = await res.json();
       if (!res.ok || !d.test) { setError(d.error || "Could not start."); return; }
-      setSessionId(d.session_id); setTest(d.test as PsyTestPublic); setAnswers({}); setResult(null); setPhase("test");
+      setSessionId(d.session_id); setTest(d.test as PsyTestPublic); setAnswers({}); setResult(null); setResultId(null); setPhase("test");
     } catch { setError("Could not start."); } finally { setBusy(false); }
   };
 
@@ -65,11 +66,11 @@ export function PsychometricsClient({
       });
       const d = await res.json();
       if (!res.ok || !d.result) { setError(d.error || "Could not score."); return; }
-      setResult(d.result as PsyResult); setPhase("result");
+      setResult(d.result as PsyResult); setResultId(d.result_id ?? null); setPhase("result");
     } catch { setError("Could not score."); } finally { setBusy(false); }
   };
 
-  const reset = () => { setPhase("intro"); setTest(null); setSessionId(null); setAnswers({}); setResult(null); setError(""); };
+  const reset = () => { setPhase("intro"); setTest(null); setSessionId(null); setAnswers({}); setResult(null); setResultId(null); setError(""); };
 
   const total = test ? test.items.length : 0;
   const answered = Object.keys(answers).length;
@@ -175,13 +176,23 @@ export function PsychometricsClient({
 
       {phase === "result" && result && (
         <div className="space-y-5 rounded-xl border bg-white p-6">
-          {takerName.trim() && <p className="text-sm text-slate-500">Result for <span className="font-semibold text-[#010131]">{takerName.trim()}</span></p>}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            {takerName.trim()
+              ? <p className="text-sm text-slate-500">Result for <span className="font-semibold text-[#010131]">{takerName.trim()}</span></p>
+              : <span />}
+            <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${result.tier === "calibrated" ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"}`}>
+              {result.tier === "calibrated" ? "Tier 2 · Norm-referenced" : "Tier 1 · Indicative"}
+            </span>
+          </div>
 
           {result.overall && (
             <div className="flex items-center gap-3">
               <div>
                 <p className="text-[11px] uppercase tracking-wider text-slate-500">Overall (general ability)</p>
                 <span className={`mt-1 inline-block rounded-lg px-4 py-2 text-2xl font-bold ${BAND_TONE[result.overall.band]}`}>{result.overall.bandLabel}</span>
+                {result.overall.percentile != null && (
+                  <span className="ms-2 text-sm font-medium text-slate-500">{Math.round(result.overall.percentile)}th percentile</span>
+                )}
               </div>
             </div>
           )}
@@ -198,7 +209,10 @@ export function PsychometricsClient({
                 <div className="mt-1 h-2 w-full rounded-full bg-slate-100">
                   <div className="h-2 rounded-full bg-[#5391D5]" style={{ width: `${Math.max(4, s.normalized)}%` }} />
                 </div>
-                <p className="mt-0.5 text-[11px] text-muted-foreground">{scaleDesc(result.kind, s.key)}</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                  {scaleDesc(result.kind, s.key)}
+                  {s.percentile != null && <span className="font-medium text-[#5391D5]"> · {Math.round(s.percentile)}th percentile</span>}
+                </p>
               </div>
             ))}
           </div>
@@ -210,13 +224,29 @@ export function PsychometricsClient({
             </div>
           )}
 
-          <p className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
-            This is an <strong>indicative</strong> result based on raw scores, not local norms or IRT calibration — for development and self-insight, not a standalone hiring decision.
-          </p>
+          {result.tier === "calibrated" ? (
+            <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900">
+              <strong>Norm-referenced</strong> result — scored against the VIFM reference group (percentiles + sten). A screening signal to inform a human decision, never an automatic one.
+            </p>
+          ) : (
+            <p className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+              This is an <strong>indicative</strong> result based on raw scores, not local norms or IRT calibration — for development and self-insight, not a standalone hiring decision.
+            </p>
+          )}
 
-          <button onClick={reset} className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
-            <RotateCcw className="h-4 w-4" /> Start over
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button onClick={reset} className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
+              <RotateCcw className="h-4 w-4" /> Start over
+            </button>
+            {resultId && (
+              <a
+                href={`/api/ac/psychometrics/${resultId}/report`}
+                className="inline-flex items-center gap-2 rounded-md bg-[#010131] px-4 py-2 text-sm font-medium text-white hover:bg-[#1e1b4b]"
+              >
+                <Download className="h-4 w-4" /> Download report (PDF)
+              </a>
+            )}
+          </div>
         </div>
       )}
     </div>

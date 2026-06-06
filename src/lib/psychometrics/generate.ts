@@ -6,6 +6,7 @@
 
 import { getAIClient, AI_MODEL } from "@/lib/ai/client";
 import { MINI_IPIP, COGNITIVE_SUBTESTS, LIKERT_ANCHORS_EN, LIKERT_ANCHORS_AR } from "./framework";
+import { assembleFromBank } from "./bank";
 import type { PsyTest, PsyTestPublic, CognitiveItem, PersonalityItem } from "./scoring";
 
 type Lang = "en" | "ar";
@@ -102,6 +103,12 @@ function personalityItems(lang: Lang): PersonalityItem[] {
 
 /** Build a full keyed test (held server-side). */
 export async function generatePsyTest(kind: "cognitive" | "personality", lang: Lang = "en"): Promise<PsyTest> {
+  // Tier 2: assemble from the SME-approved bank when every scale is sufficiently
+  // populated (item ids are real psy_items uuids → the response log is calibratable).
+  // Otherwise fall back to the Tier-1 source (Mini-IPIP / AI / static deck).
+  const fromBank = await assembleFromBank(kind, lang);
+  if (fromBank) return fromBank;
+
   if (kind === "personality") {
     return { kind: "personality", items: personalityItems(lang) };
   }

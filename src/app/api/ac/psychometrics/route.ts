@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { generatePsyTest, stripAnswerKey } from "@/lib/psychometrics/generate";
 import { computePsyResult, type PsyTest, type CognitiveItem } from "@/lib/psychometrics/scoring";
+import { applyNorms, type ScaleNorm } from "@/lib/psychometrics/calibration";
 import { COGNITIVE_INSTRUMENT, PERSONALITY_INSTRUMENT } from "@/lib/psychometrics/framework";
 
 export const runtime = "nodejs";
@@ -60,6 +61,22 @@ export async function POST(req: Request) {
     const answers = (body.answers ?? {}) as Record<string, number>;
     const result = computePsyResult(test, answers, lang);
 
+    // Tier 2: norm-reference the scores when a norm group exists for this kind
+    // (tolerant — no psy_norms table / no rows ⇒ result stays Tier-1 indicative).
+    let finalResult = result;
+    try {
+      const { data: norms } = await svc.from("psy_norms").select("scale_key, n, mean, sd").eq("kind", test.kind);
+      if (norms && norms.length) {
+        const map: Record<string, ScaleNorm> = {};
+        for (const nm of norms as Array<{ scale_key: string; n: number; mean: number; sd: number }>) {
+          map[nm.scale_key] = { mean: Number(nm.mean), sd: Number(nm.sd), n: Number(nm.n) };
+        }
+        finalResult = applyNorms(result, map);
+      }
+    } catch {
+      /* psy_norms not migrated yet — stays Tier-1 indicative */
+    }
+
     const { data: resRow } = await svc
       .from("psy_results")
       .insert({
@@ -69,10 +86,10 @@ export async function POST(req: Request) {
         engagement_id: session.engagement_id,
         taker_name: (body.takerName as string) ?? null,
         taker_email: (body.takerEmail as string) ?? session.taker_email ?? null,
-        scales: result.scales,
-        overall: result.overall ?? null,
-        validity: result.validity ?? null,
-        result,
+        scales: finalResult.scales,
+        overall: finalResult.overall ?? null,
+        validity: finalResult.validity ?? null,
+        result: finalResult,
       })
       .select("id")
       .single();
@@ -90,7 +107,7 @@ export async function POST(req: Request) {
     }
 
     await svc.from("psy_sessions").update({ consumed: true }).eq("id", sessionId);
-    return NextResponse.json({ result, result_id: resRow?.id ?? null });
+    return NextResponse.json({ result: finalResult, result_id: resRow?.id ?? null });
   }
 
   return NextResponse.json({ error: "Unknown action" }, { status: 400 });

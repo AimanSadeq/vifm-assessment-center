@@ -45,10 +45,10 @@ const TEMPLATES: Record<AraEmailType, Record<AraEmailLanguage, TemplateRenderer>
   ara_respondent_invitation: {
     en: (d) => ({
       contentType: "Text",
-      subject: `You've been invited to the ${d.assessmentName} AI Readiness Assessment`,
+      subject: `You've been invited to the ${d.assessmentName} AI Readiness Compass`,
       body: `Hello ${d.respondentName},
 
-${d.consultantName ? `${d.consultantName} has invited you` : "You have been invited"} to participate in the AI Readiness Assessment for ${d.organizationName}: ${d.assessmentName}.
+${d.consultantName ? `${d.consultantName} has invited you` : "You have been invited"} to participate in the AI Readiness Compass for ${d.organizationName}: ${d.assessmentName}.
 
 Your secure response link (do not share):
 ${d.respondentUrl}
@@ -62,10 +62,10 @@ Virginia Institute of Finance and Management`,
     }),
     ar: (d) => ({
       contentType: "Text",
-      subject: `دعوة للمشاركة في تقييم الجاهزية للذكاء الاصطناعي - ${d.assessmentName}`,
+      subject: `دعوة للمشاركة في بوصلة الجاهزية للذكاء الاصطناعي - ${d.assessmentName}`,
       body: `مرحبًا ${d.respondentName}،
 
-${d.consultantName ? `${d.consultantName} قام بدعوتك` : "تمت دعوتك"} للمشاركة في تقييم الجاهزية للذكاء الاصطناعي لـ ${d.organizationName}: ${d.assessmentName}.
+${d.consultantName ? `${d.consultantName} قام بدعوتك` : "تمت دعوتك"} للمشاركة في بوصلة الجاهزية للذكاء الاصطناعي لـ ${d.organizationName}: ${d.assessmentName}.
 
 رابطك الآمن للإجابة (يُرجى عدم مشاركته):
 ${d.respondentUrl}
@@ -79,16 +79,16 @@ ${d.respondentUrl}
     }),
     bilingual: (d) => ({
       contentType: "HTML",
-      subject: `${d.assessmentName} - AI Readiness Assessment / تقييم الجاهزية للذكاء الاصطناعي`,
+      subject: `${d.assessmentName} - AI Readiness Compass / بوصلة الجاهزية للذكاء الاصطناعي`,
       body: `<div style="font-family:'Open Sans',Arial,sans-serif;line-height:1.55;color:#121232;">
         <p>Hello ${d.respondentName},</p>
-        <p>${d.consultantName ? `${d.consultantName} has invited you` : "You have been invited"} to participate in the AI Readiness Assessment for <strong>${d.organizationName}</strong>: ${d.assessmentName}.</p>
+        <p>${d.consultantName ? `${d.consultantName} has invited you` : "You have been invited"} to participate in the AI Readiness Compass for <strong>${d.organizationName}</strong>: ${d.assessmentName}.</p>
         <p><a href="${d.respondentUrl}" style="color:#5391D5;">Open your secure response link</a> (do not share).</p>
         <p>The assessment takes 20–30 minutes. Answers save automatically; you can pause and resume.</p>
         <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
         <div dir="rtl" style="text-align:right;">
           <p>مرحبًا ${d.respondentName}،</p>
-          <p>${d.consultantName ? `${d.consultantName} قام بدعوتك` : "تمت دعوتك"} للمشاركة في تقييم الجاهزية للذكاء الاصطناعي لـ <strong>${d.organizationName}</strong>: ${d.assessmentName}.</p>
+          <p>${d.consultantName ? `${d.consultantName} قام بدعوتك` : "تمت دعوتك"} للمشاركة في بوصلة الجاهزية للذكاء الاصطناعي لـ <strong>${d.organizationName}</strong>: ${d.assessmentName}.</p>
           <p><a href="${d.respondentUrl}" style="color:#5391D5;">افتح رابطك الآمن للإجابة</a> (يُرجى عدم مشاركته).</p>
           <p>يستغرق التقييم من 20 إلى 30 دقيقة. تُحفظ إجاباتك تلقائيًا، ويمكنك إيقاف التقييم واستئنافه في أي وقت.</p>
         </div>
@@ -110,7 +110,7 @@ ${d.assessmentUrl}
 Status snapshot:
   Completed: ${d.completedCount} of ${d.totalCount}
 
-- VIFM ARA`,
+- VIFM ARC`,
     }),
     ar: (d) => ({
       contentType: "Text",
@@ -125,7 +125,7 @@ ${d.assessmentUrl}
 ملخص الحالة:
   المُكتمل: ${d.completedCount} من ${d.totalCount}
 
-- VIFM ARA`,
+- VIFM ARC`,
     }),
     bilingual: (d) => ({
       contentType: "Text",

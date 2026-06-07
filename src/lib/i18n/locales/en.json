@@ -177,7 +177,7 @@
     "module": {
       "prehire": { "label": "Pre-Hire screening", "desc": "Quiz + English + AI interview, ranked." },
       "ac": { "label": "Assessment Centre", "desc": "Exercises, assessors, wash-up, OAR." },
-      "ara": { "label": "AI Readiness (org)", "desc": "Pillar-based org diagnostic." },
+      "ara": { "label": "AI Readiness Compass (org)", "desc": "Pillar-based org diagnostic." },
       "reflect": { "label": "Reflect 360", "desc": "Multi-rater leadership feedback." },
       "fluent": { "label": "Fluent (English)", "desc": "CEFR placement test." },
       "technical": { "label": "Technical certification", "desc": "Finance-domain knowledge." },
@@ -2028,7 +2028,7 @@
     "add": "Add",
     "list": {
       "title": "Training Courses",
-      "subtitle": "VIFM's course catalogue. Each course maps to Assessment Center behavioural competencies and ARA pillars so the recommender can surface the right development path for each diagnostic.",
+      "subtitle": "VIFM's course catalogue. Each course maps to Assessment Center behavioural competencies and ARC pillars so the recommender can surface the right development path for each diagnostic.",
       "quoteRequests": "Quote requests",
       "findDuplicates": "Find duplicates",
       "importPdfs": "Import PDFs",
@@ -2056,11 +2056,11 @@
       "descPost": "on the courses list - that route runs AI extraction across the six standard blocks."
     },
     "edit": {
-      "desc": "Edit the catalogue entry. The mapping panel below shows the Assessment Center competency + ARA pillar tags that drive the recommender - edit them when you spot an over- or under-tag from the AI extraction."
+      "desc": "Edit the catalogue entry. The mapping panel below shows the Assessment Center competency + ARC pillar tags that drive the recommender - edit them when you spot an over- or under-tag from the AI extraction."
     },
     "import": {
       "title": "Import course PDFs",
-      "desc": "Drop one or many course outline PDFs (English or Arabic, 6-block format). Claude reads the six blocks, populates the structured catalogue fields, and proposes Assessment Center competency + ARA pillar tags with a 1-sentence rationale per tag. You review per-row and accept / skip before any catalogue rows are written.",
+      "desc": "Drop one or many course outline PDFs (English or Arabic, 6-block format). Claude reads the six blocks, populates the structured catalogue fields, and proposes Assessment Center competency + ARC pillar tags with a 1-sentence rationale per tag. You review per-row and accept / skip before any catalogue rows are written.",
       "onlyPdf": "Only PDF files are accepted",
       "maxBatch": "Up to 25 PDFs per batch - split larger uploads",
       "extractedWithMatches": "Extracted {{ok}} of {{total}} PDFs · {{matched}} match existing course(s)",
@@ -2088,7 +2088,7 @@
       "replaceExisting": "Replace existing course",
       "existingFound": "Existing course found - uncheck to import as new",
       "acCompetencies": "AC competencies:",
-      "araPillars": "ARA pillars:",
+      "araPillars": "ARC pillars:",
       "confidence": "Confidence {{pct}}%"
     },
     "duplicates": {
@@ -2192,7 +2192,7 @@
       "block1Placeholder": "Block 1 - paste the course overview paragraph.",
       "block2Label": "2 · Target competencies",
       "block2Placeholder": "Block 2 - one competency phrase per line. e.g.\nDetection Capabilities\nIncident Response\nDigital Forensics\nRisk Mitigation",
-      "block2Help": "These are the PDF's own topical \"Target Competencies\" list (e.g., \"Bookkeeping Automation\"), kept verbatim for audit. The mapping to the Assessment Center's 38 behavioural competencies and ARA's 8 pillars is a separate step (Day 3).",
+      "block2Help": "These are the PDF's own topical \"Target Competencies\" list (e.g., \"Bookkeeping Automation\"), kept verbatim for audit. The mapping to the Assessment Center's 38 behavioural competencies and ARC's 8 pillars is a separate step (Day 3).",
       "block3Label": "3 · Course objectives",
       "block3Placeholder": "Block 3 - one objective per line. e.g.\nApply prompt engineering techniques\nCreate content using AI tools\nAnalyse business data with AI",
       "block4Label": "4 · Target audience",
@@ -2218,7 +2218,7 @@
       "block7Help": "Free-text admin annotation. Not part of the source PDF, not surfaced on client-facing reports. Shown only here and on the recommender's internal panel.",
       "createBtn": "Create course",
       "saveBtn": "Save changes",
-      "blockOrderFootnote": "Six-block order: 1 Overview · 2 Target competencies · 3 Objectives · 4 Target audience · 5 Methodology · 6 Detailed outline - all editable here. Day 3 adds the Assessment Center competency / ARA pillar mapping panel and an Arabic-side editor."
+      "blockOrderFootnote": "Six-block order: 1 Overview · 2 Target competencies · 3 Objectives · 4 Target audience · 5 Methodology · 6 Detailed outline - all editable here. Day 3 adds the Assessment Center competency / ARC pillar mapping panel and an Arabic-side editor."
     },
     "tags": {
       "pillarStrategy": "Strategy",
@@ -2242,14 +2242,14 @@
       "pillarTagsError": "Pillar tags: {{msg}}",
       "mappingsSaved": "Mappings saved",
       "title": "Recommender mappings",
-      "descPre": "Two-axis tagging that drives both Assessment Center and ARA recommendations. Hover the AI rationale text under each tag to see the extractor's reasoning. Edit weights or remove tags below; changes are local until you click",
+      "descPre": "Two-axis tagging that drives both Assessment Center and ARC recommendations. Hover the AI rationale text under each tag to see the extractor's reasoning. Edit weights or remove tags below; changes are local until you click",
       "descPost": ".",
       "saveMappings": "Save mappings",
       "acCompetencies": "AC behavioural competencies",
       "noCompetencyTags": "No competency tags yet. Add one below - courses without competency tags won't surface on Assessment Center engagement recommendations.",
       "addCompetencyPlaceholder": "Add a competency…",
-      "araPillars": "ARA pillars",
-      "noPillarTags": "No pillar tags yet. Courses without pillar tags won't surface on ARA capability-building plans.",
+      "araPillars": "ARC pillars",
+      "noPillarTags": "No pillar tags yet. Courses without pillar tags won't surface on ARC capability-building plans.",
       "addPillarPlaceholder": "Add a pillar…",
       "reset": "Reset",
       "weightOption1": "1 · Tangential",
@@ -2266,7 +2266,7 @@
       "deleteCourse": "Delete course",
       "confirmTitle": "Delete this course?",
       "confirmBodyPre": "",
-      "confirmBodyPost": " will be removed from the catalogue, along with its Assessment Center competency and ARA pillar tag mappings. This does not affect any past assessments or candidate reports. This action cannot be undone.",
+      "confirmBodyPost": " will be removed from the catalogue, along with its Assessment Center competency and ARC pillar tag mappings. This does not affect any past assessments or candidate reports. This action cannot be undone.",
       "deleteBtn": "Delete"
     }
   },
@@ -2675,9 +2675,9 @@
     "tileSandboxDesc": "Clear all sandbox assessments with confirmation.",
     "tileRetentionTitle": "Data Retention",
     "tileRetentionDesc": "Purge archived assessments older than 3 years.",
-    "orgsBackToAdmin": "Back to ARA Admin",
+    "orgsBackToAdmin": "Back to ARC Admin",
     "orgsTitle": "Client Organizations",
-    "orgsSubtitle": "GCC client organizations using the ARA platform.",
+    "orgsSubtitle": "GCC client organizations using the ARC platform.",
     "orgsNewButton": "New organization",
     "orgsEmptyTitle": "No organizations yet.",
     "orgsEmptyBody": "Add a client organization to start assessments.",
@@ -2737,7 +2737,7 @@
     "deleteSuccess": "Organization deleted"
   },
   "araAdminData": {
-    "back_to_ara_admin": "Back to ARA Admin",
+    "back_to_ara_admin": "Back to ARC Admin",
     "back_to_admin": "Back to admin",
     "back_to_versions": "Back to versions",
     "back_to_version": "Back to v{{version}}",
@@ -2823,7 +2823,7 @@
     "vd_sector_general": "General only",
     "vd_display_order_label": "Display order",
     "vd_add_button": "Add question",
-    "eq_bc_ara": "ARA",
+    "eq_bc_ara": "ARC",
     "eq_bc_admin": "Admin",
     "eq_bc_question_bank": "Question Bank",
     "eq_title": "Edit question Q{{number}}",

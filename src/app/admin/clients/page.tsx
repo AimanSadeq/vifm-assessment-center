@@ -69,7 +69,7 @@ export default async function ClientsPage() {
                         <Badge variant="outline" className="border-dashed text-muted-foreground">AC: not linked</Badge>
                       )}
                       {!c.araId && (
-                        <Badge variant="outline" className="border-dashed text-muted-foreground">ARA: not linked</Badge>
+                        <Badge variant="outline" className="border-dashed text-muted-foreground">ARC: not linked</Badge>
                       )}
                     </div>
                   </TableCell>

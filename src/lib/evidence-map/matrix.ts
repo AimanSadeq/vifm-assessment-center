@@ -54,6 +54,12 @@ function presenceCell(n: number | null, okNote: string, gapNote: string): Cell {
 export function buildMatrix(metrics: EvidenceMetrics): MatrixRow[] {
   const acAnchor = anchorCell(metrics.ac.competenciesVerified, metrics.ac.competenciesTotal);
   const arcAnchor = anchorCell(metrics.arc.questionsVerified, metrics.arc.questionsTotal);
+  // The four adapter-driven instruments now carry the same per-construct
+  // validation_evidence trail; their anchor cells go live off it.
+  const flAnchor = anchorCell(metrics.fluent.anchorsVerified, metrics.fluent.items);
+  const tcAnchor = anchorCell(metrics.technical.anchorsVerified, metrics.technical.items);
+  const rfAnchor = anchorCell(metrics.reflect.anchorsVerified, metrics.reflect.competencies);
+  const psyAnchor = anchorCell(metrics.psy.anchorsVerified, metrics.psy.scalesTotal);
 
   return [
     {
@@ -89,10 +95,10 @@ export function buildMatrix(metrics: EvidenceMetrics): MatrixRow[] {
         ac: acAnchor,
         arc_org: arcAnchor,
         arc_ind: arcAnchor,
-        fluent: p("CEFR-aligned; no per-item literature trail"),
-        technical: p("SME-authored + cut-score method/rationale"),
-        reflect: p("behaviour source tracked (manual/AI), no literature trail"),
-        psy: d("IPIP — public-domain validated pool"),
+        fluent: flAnchor,
+        technical: tcAnchor,
+        reflect: rfAnchor,
+        psy: psyAnchor,
       },
     },
     {

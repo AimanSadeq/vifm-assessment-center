@@ -58,10 +58,10 @@ export async function gatherEvidenceMetrics(): Promise<EvidenceMetrics> {
   const [
     acTotal, acVerified, acEdited, acProposed, acIndicators, acExercises, acRatings,
     arcTotal, arcVerified, arcEdited, arcProposed, arcResponses, arcAssessments, arcRespDone,
-    flItems, flLive, flCal, flHuman, flResults,
-    tcItems, tcApproved, tcCal, tcCut, tcResults,
-    rfComp, rfBeh, rfBehAi, rfResp,
-    psyItems, psyApproved, psyNorms, psyItemResp, psyResults,
+    flItems, flLive, flCal, flHuman, flResults, flAnchVer, flAnchEd, flAnchProp,
+    tcItems, tcApproved, tcCal, tcCut, tcResults, tcAnchVer, tcAnchEd, tcAnchProp,
+    rfComp, rfBeh, rfBehAi, rfResp, rfAnchVer, rfAnchEd, rfAnchProp,
+    psyItems, psyApproved, psyNorms, psyItemResp, psyResults, psyScales, psyAnchVer, psyAnchEd, psyAnchProp,
   ] = await Promise.all([
     // AC
     count(sb, "competencies"),
@@ -85,23 +85,36 @@ export async function gatherEvidenceMetrics(): Promise<EvidenceMetrics> {
     count(sb, "eng_fluent_items", (q: any) => q.not("irt_b", "is", null)),
     count(sb, "eng_fluent_human_ratings"),
     count(sb, "eng_fluent_results"),
+    count(sb, "eng_fluent_items", verifiedFilter),
+    count(sb, "eng_fluent_items", editedFilter),
+    count(sb, "eng_fluent_items", proposedFilter),
     // Technical
     count(sb, "tech_assessment_items"),
     count(sb, "tech_assessment_items", (q: any) => q.eq("status", "approved")),
     count(sb, "tech_assessment_items", (q: any) => q.not("calibrated_at", "is", null)),
     count(sb, "tech_assessment_cut_scores"),
     count(sb, "tech_assessment_results"),
+    count(sb, "tech_assessment_items", verifiedFilter),
+    count(sb, "tech_assessment_items", editedFilter),
+    count(sb, "tech_assessment_items", proposedFilter),
     // Reflect
     count(sb, "reflect_competencies"),
     count(sb, "reflect_behaviors"),
     count(sb, "reflect_behaviors", (q: any) => q.eq("source", "ai_generated")),
     count(sb, "reflect_responses"),
+    count(sb, "reflect_competencies", verifiedFilter),
+    count(sb, "reflect_competencies", editedFilter),
+    count(sb, "reflect_competencies", proposedFilter),
     // Psychometrics
     count(sb, "psy_items"),
     count(sb, "psy_items", (q: any) => q.eq("status", "approved")),
     count(sb, "psy_norms"),
     count(sb, "psy_item_responses"),
     count(sb, "psy_results"),
+    count(sb, "psy_scales"),
+    count(sb, "psy_scales", verifiedFilter),
+    count(sb, "psy_scales", editedFilter),
+    count(sb, "psy_scales", proposedFilter),
   ]);
 
   return {
@@ -121,9 +134,9 @@ export async function gatherEvidenceMetrics(): Promise<EvidenceMetrics> {
       assessments: arcAssessments,
       respondentsCompleted: arcRespDone,
     },
-    fluent: { items: flItems, live: flLive, calibrated: flCal, humanRatings: flHuman, results: flResults },
-    technical: { items: tcItems, approved: tcApproved, calibrated: tcCal, cutScores: tcCut, results: tcResults },
-    reflect: { competencies: rfComp, behaviors: rfBeh, behaviorsAi: rfBehAi, responses: rfResp },
-    psy: { items: psyItems, approved: psyApproved, norms: psyNorms, itemResponses: psyItemResp, results: psyResults },
+    fluent: { items: flItems, live: flLive, calibrated: flCal, humanRatings: flHuman, results: flResults, anchorsVerified: add(flAnchVer, flAnchEd), anchorsProposed: flAnchProp },
+    technical: { items: tcItems, approved: tcApproved, calibrated: tcCal, cutScores: tcCut, results: tcResults, anchorsVerified: add(tcAnchVer, tcAnchEd), anchorsProposed: tcAnchProp },
+    reflect: { competencies: rfComp, behaviors: rfBeh, behaviorsAi: rfBehAi, responses: rfResp, anchorsVerified: add(rfAnchVer, rfAnchEd), anchorsProposed: rfAnchProp },
+    psy: { items: psyItems, approved: psyApproved, norms: psyNorms, itemResponses: psyItemResp, results: psyResults, scalesTotal: psyScales, anchorsVerified: add(psyAnchVer, psyAnchEd), anchorsProposed: psyAnchProp },
   };
 }

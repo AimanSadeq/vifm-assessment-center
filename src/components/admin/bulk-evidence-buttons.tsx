@@ -6,6 +6,7 @@ import { Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { generateAllCompetencyEvidence } from "@/lib/ac/evidence-actions";
 import { generateAllQuestionEvidence } from "@/lib/ara/actions";
+import { generateAllEvidence } from "@/lib/evidence/actions";
 
 /**
  * One-tap bulk evidence drafting. Each tap auto-loops: it calls the
@@ -16,13 +17,28 @@ import { generateAllQuestionEvidence } from "@/lib/ara/actions";
  * in the console before anything reaches a client.
  */
 
-type Kind = "ac" | "arc";
+type Kind = "ac" | "arc" | "fluent" | "technical" | "reflect" | "psy";
 type Result = { ok: boolean; processed?: number; failed?: number; remaining?: number; error?: string };
 
 const LABEL: Record<Kind, string> = {
   ac: "Generate AI drafts — AC competencies",
   arc: "Generate AI drafts — ARC questions",
+  fluent: "Generate AI drafts — Fluent (English)",
+  technical: "Generate AI drafts — Technical Cert",
+  reflect: "Generate AI drafts — Reflect 360",
+  psy: "Generate AI drafts — Psychometrics",
 };
+
+function runBatch(kind: Kind): Promise<Result> {
+  switch (kind) {
+    case "ac":
+      return generateAllCompetencyEvidence({ batchSize: 6 });
+    case "arc":
+      return generateAllQuestionEvidence({ batchSize: 6 });
+    default:
+      return generateAllEvidence(kind, { batchSize: 6 });
+  }
+}
 
 export function BulkEvidenceButtons({ show = ["ac"] }: { show?: Kind[] }) {
   const router = useRouter();
@@ -36,10 +52,7 @@ export function BulkEvidenceButtons({ show = ["ac"] }: { show?: Kind[] }) {
     let guard = 0;
     try {
       while (guard++ < 500) {
-        const r: Result =
-          kind === "ac"
-            ? await generateAllCompetencyEvidence({ batchSize: 6 })
-            : await generateAllQuestionEvidence({ batchSize: 6 });
+        const r: Result = await runBatch(kind);
 
         if (!r.ok) {
           setMsg(`Stopped: ${r.error ?? "unknown error"}`);

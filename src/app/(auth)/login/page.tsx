@@ -20,7 +20,7 @@ import { LogIn, Mail, ChevronDown } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 const DEMO_ROLES = [
-  { id: "Admin", labelKey: "authPublic.login.roleAdmin", email: "admin@viftraining.com", password: "admin123", redirect: "/admin" },
+  { id: "Admin", labelKey: "authPublic.login.roleAdmin", email: "admin@viftraining.com", password: "admin123", redirect: "/" },
   { id: "Assessor", labelKey: "authPublic.login.roleAssessor", email: "assessor@viftraining.com", password: "admin123", redirect: "/assessor" },
   { id: "Candidate", labelKey: "authPublic.login.roleCandidate", email: "candidate@viftraining.com", password: "admin123", redirect: "/candidate" },
   { id: "Client", labelKey: "authPublic.login.roleClient", email: "client@viftraining.com", password: "admin123", redirect: "/client" },
@@ -75,15 +75,16 @@ export default function LoginPage() {
         .single();
 
       switch (profile?.role) {
-        case "admin": router.push("/admin"); break;
+        // Admins (and any unrecognised role) land on the All Services launcher.
+        case "admin": router.push("/"); break;
         case "lead_assessor":
         case "associate_assessor": router.push("/assessor"); break;
         case "candidate": router.push("/candidate"); break;
         case "client": router.push("/client"); break;
-        default: router.push("/admin");
+        default: router.push("/");
       }
     } else {
-      router.push("/admin");
+      router.push("/");
     }
   };
 

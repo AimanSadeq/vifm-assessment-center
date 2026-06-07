@@ -7,7 +7,8 @@
     "dev:clean": "rimraf .next && next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "backfill:evidence": "tsx scripts/backfill-evidence.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.81.0",

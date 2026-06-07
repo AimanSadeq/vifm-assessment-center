@@ -64,7 +64,7 @@ export function EvidenceMapClient({ metrics, matrix, totals }: Props) {
         ))}
       </div>
 
-      <BulkEvidenceButtons show={["ac", "arc"]} />
+      <BulkEvidenceButtons show={["ac", "arc", "fluent", "technical", "reflect", "psy"]} />
 
       {/* Tabs */}
       <div className="inline-flex rounded-lg border bg-card p-1 mb-6">

@@ -3,6 +3,7 @@ import { Sparkles, GraduationCap, Clock, Globe2, Search } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getServerT, type ServerT } from "@/lib/i18n/server";
 import { VifmLogo } from "@/components/shared/vifm-logo";
+import { AllServicesLink } from "@/components/shared/all-services-link";
 import { Badge } from "@/components/ui/badge";
 import {
   type VifmCourse,
@@ -216,12 +217,15 @@ function Shell({ children, t }: { children: React.ReactNode; t: ServerT }) {
               {t("coursesPublic.navTrainingCatalogue")}
             </span>
           </Link>
-          <Link
-            href="/ara/engage"
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
-          >
-            {t("coursesPublic.navAiReadinessCompass")}
-          </Link>
+          <div className="flex items-center gap-2">
+            <AllServicesLink />
+            <Link
+              href="/ara/engage"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+            >
+              {t("coursesPublic.navAiReadinessCompass")}
+            </Link>
+          </div>
         </div>
       </header>
       {children}

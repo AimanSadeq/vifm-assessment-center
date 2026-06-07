@@ -1,4 +1,5 @@
 import { PsychometricsClient } from "./_components/psychometrics-client";
+import { AllServicesLink } from "@/components/shared/all-services-link";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,9 @@ export default function PsychometricsPage({
 }) {
   return (
     <div className="mx-auto max-w-3xl px-6 py-8">
+      <div className="mb-4 flex justify-end">
+        <AllServicesLink />
+      </div>
       <PsychometricsClient
         candidateId={searchParams?.candidateId ?? null}
         engagementId={searchParams?.engagementId ?? null}

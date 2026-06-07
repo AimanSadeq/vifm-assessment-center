@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, Bot } from "lucide-react";
+import { AllServicesLink } from "@/components/shared/all-services-link";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getServerT } from "@/lib/i18n/server";
 import { isAIConfigured } from "@/lib/ai/client";
@@ -90,12 +91,15 @@ export default async function AiInterviewPage() {
     <div className="min-h-screen bg-[#F5F7FA]">
       <header className="border-b bg-white">
         <div className="max-w-5xl mx-auto px-6 py-5">
-          <Link
-            href="/admin"
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-1"
-          >
-            <ArrowLeft className="h-3 w-3" /> {t("acTools.interview.backLink")}
-          </Link>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <Link
+              href="/admin"
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-3 w-3" /> {t("acTools.interview.backLink")}
+            </Link>
+            <AllServicesLink />
+          </div>
           <div className="flex items-center gap-2">
             <Bot className="h-5 w-5 text-[#5391D5]" />
             <h1 className="text-xl font-semibold text-[#010131]">

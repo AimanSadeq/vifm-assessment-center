@@ -39,6 +39,8 @@ import {
   ListChecks,
   Award,
   Layers3,
+  ShieldCheck,
+  FlaskConical,
   type LucideIcon,
 } from "lucide-react";
 
@@ -108,6 +110,7 @@ const NAV: NavEntry[] = [
               link("/admin/exercises", "adminNav.exercises", Target),
               link("/admin/assessors", "adminNav.assessors", Users),
               link("/admin/analytics", "adminNav.analytics", BarChart3),
+              link("/admin/ac-evidence", "adminNav.acEvidence", ShieldCheck),
             ],
           },
         },
@@ -126,6 +129,7 @@ const NAV: NavEntry[] = [
       items: [
         link("/admin/clients", "adminNav.clients", Building2),
         link("/admin/role-profiles", "adminNav.roleProfiles", Briefcase),
+        link("/admin/evidence-map", "adminNav.evidenceMap", FlaskConical),
       ],
     },
   },

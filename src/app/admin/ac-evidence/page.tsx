@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createServiceClient } from "@/lib/supabase/server";
 import { ShieldCheck, FlaskConical, ChevronRight, BookOpenCheck } from "lucide-react";
+import { BulkEvidenceButtons } from "@/components/admin/bulk-evidence-buttons";
 import type { ValidationEvidence } from "@/types/evidence";
 
 export const dynamic = "force-dynamic";
@@ -99,6 +100,8 @@ export default async function AcEvidencePage() {
           Could not load competencies: {error.message}
         </div>
       )}
+
+      <BulkEvidenceButtons show={["ac"]} />
 
       {/* Coverage summary */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">

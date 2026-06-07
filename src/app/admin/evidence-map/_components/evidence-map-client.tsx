@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { INSTRUMENTS } from "@/lib/evidence-map/types";
 import type { Cell, CellStatus, EvidenceMetrics, MatrixRow } from "@/lib/evidence-map/types";
+import { BulkEvidenceButtons } from "@/components/admin/bulk-evidence-buttons";
 
 /**
  * Evidence & Validity Map — client view. Two tabs: a live Dashboard of
@@ -62,6 +63,8 @@ export function EvidenceMapClient({ metrics, matrix, totals }: Props) {
           </span>
         ))}
       </div>
+
+      <BulkEvidenceButtons show={["ac", "arc"]} />
 
       {/* Tabs */}
       <div className="inline-flex rounded-lg border bg-card p-1 mb-6">

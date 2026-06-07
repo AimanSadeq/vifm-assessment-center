@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
 import { requireRole, AuthorizationError } from "@/lib/ara/auth-guards";
 import { suggestCompetencyValidationEvidence } from "@/lib/ai/ac-evidence-suggester";
+import { isAIConfigured } from "@/lib/ai/client";
 import type { ValidationEvidence } from "@/types/evidence";
 
 /**
@@ -112,4 +113,51 @@ export async function saveCompetencyEvidence(
   revalidatePath("/admin/ac-evidence");
   revalidatePath("/admin/evidence-map");
   return { ok: true as const };
+}
+
+/**
+ * Bulk evidence generation for the AC competencies. Processes a small
+ * BATCH per call (so a hosted serverless request never times out making
+ * dozens of AI calls) and reports how many remain, so a client button
+ * can loop until done. Reuses the per-item action, which saves as
+ * ai_proposed (never verified). Idempotent: skips human-touched items;
+ * pass refresh to also redo items still in ai_proposed.
+ */
+export async function generateAllCompetencyEvidence(opts?: { batchSize?: number; refresh?: boolean }) {
+  try {
+    await requireRole("admin");
+  } catch (e) {
+    return authErr(e);
+  }
+  if (!isAIConfigured()) {
+    return { ok: false as const, error: "ANTHROPIC_API_KEY is not set on the server, so the AI suggester can't run." };
+  }
+  const batchSize = opts?.batchSize ?? 6;
+  const refresh = opts?.refresh ?? false;
+  const sb = createServiceClient();
+
+  const { data, error } = await sb.from("competencies").select("id, validation_evidence");
+  if (error) return { ok: false as const, error: error.message };
+
+  const pending = (data ?? []).filter(
+    (row: { validation_evidence: { review_status?: string } | null }) => {
+      const ev = row.validation_evidence;
+      if (!ev) return true;
+      if (ev.review_status === "ai_proposed") return refresh;
+      return false; // verified / edited / rejected → leave human work alone
+    }
+  );
+
+  const batch = pending.slice(0, batchSize) as Array<{ id: string }>;
+  let processed = 0;
+  let failed = 0;
+  for (const row of batch) {
+    const r = await suggestCompetencyEvidence(row.id);
+    if (r.ok) processed++;
+    else failed++;
+  }
+
+  revalidatePath("/admin/ac-evidence");
+  revalidatePath("/admin/evidence-map");
+  return { ok: true as const, processed, failed, remaining: pending.length - processed };
 }

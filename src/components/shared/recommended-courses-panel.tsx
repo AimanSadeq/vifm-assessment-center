@@ -6,7 +6,7 @@ import { verticalLabel } from "@/lib/constants/verticals";
 import { getServerT } from "@/lib/i18n/server";
 import type { RecommendedCourse } from "@/lib/recommender/courses";
 import { HIGH_FIT_THRESHOLD } from "@/lib/recommender/courses";
-import { formatFitScore } from "@/lib/recommender/format";
+import { formatFitScore, fitMatchPercent } from "@/lib/recommender/format";
 
 type Props = {
   title: string;
@@ -61,6 +61,10 @@ export async function RecommendedCoursesPanel({
     );
   }
 
+  // Top match = 100%; the rest are shown relative to it (display only — the
+  // ranking and the ★ High-fit badge still use the raw fit score).
+  const topScore = Math.max(0, ...courses.map((c) => c.total_score));
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -86,10 +90,10 @@ export async function RecommendedCoursesPanel({
             competencies (relevance {" "}<span className="font-mono">×1</span>{" "}light,
             {" "}<span className="font-mono">×2</span>{" "}medium,
             {" "}<span className="font-mono">×3</span>{" "}strong). The
-            {" "}<span className="font-semibold text-foreground">fit score</span>{" "}
-            is the sum of all those matches.
+            {" "}<span className="font-semibold text-foreground">match %</span>{" "}
+            shows each programme&apos;s overall strength relative to your strongest match.
             {" "}<span className="font-semibold text-foreground">★ High fit</span>{" "}
-            marks programmes at fit ≥ {HIGH_FIT_THRESHOLD}.
+            marks the programmes that close the most, highest-priority gaps.
           </p>
         </div>
         {courses.map((c) => {
@@ -144,10 +148,10 @@ export async function RecommendedCoursesPanel({
 
                 <div className="flex flex-col items-end gap-1 shrink-0">
                   <span className="text-[10px] text-muted-foreground tabular-nums">
-                    fit score
+                    match
                   </span>
                   <span className="text-base font-bold tabular-nums">
-                    {formatFitScore(c.total_score)}
+                    {fitMatchPercent(c.total_score, topScore)}%
                   </span>
                 </div>
               </div>

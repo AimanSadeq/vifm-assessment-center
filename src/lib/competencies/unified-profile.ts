@@ -65,10 +65,10 @@ export const LANGUAGE_SKILLS: {
   column: string; // eng_fluent_results per-skill CEFR column
   enables: string[]; // behavioural competency names this skill contributes to
 }[] = [
-  { key: "reading", label: "Reading", column: "reading_cefr", enables: ["Analytical Reasoning", "Manages Complexity"] },
-  { key: "listening", label: "Listening", column: "listening_cefr", enables: ["Communicates Effectively", "Collaboration", "Emotional Intelligence"] },
-  { key: "writing", label: "Writing", column: "writing_cefr", enables: ["Communicates Effectively"] },
-  { key: "speaking", label: "Speaking", column: "speaking_cefr", enables: ["Communicates Effectively", "Persuades"] },
+  { key: "reading", label: "Reading", column: "reading_cefr", enables: ["Critical Analysis", "Navigating Complexity"] },
+  { key: "listening", label: "Listening", column: "listening_cefr", enables: ["Clear & Adaptive Communication", "Cross-Functional Collaboration", "Emotional Regulation & Empathy"] },
+  { key: "writing", label: "Writing", column: "writing_cefr", enables: ["Clear & Adaptive Communication"] },
+  { key: "speaking", label: "Speaking", column: "speaking_cefr", enables: ["Clear & Adaptive Communication", "Persuasion & Buy-in"] },
 ];
 
 const CEFR_ORDER = ["A1", "A2", "B1", "B2", "C1", "C2"];

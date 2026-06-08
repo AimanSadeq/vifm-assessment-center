@@ -23,26 +23,26 @@ export const COGNITIVE_SUBTESTS: CognitiveSubtest[] = [
     name_en: "Numerical reasoning",
     name_ar: "الاستدلال العددي",
     desc_en: "Interpreting data, ratios, percentages and trends.",
-    competencies: ["Financial Acumen", "Analytical Reasoning", "Decision Quality"],
+    competencies: ["Financial Literacy & Acumen", "Critical Analysis", "Sound Judgement"],
   },
   {
     key: "verbal",
     name_en: "Verbal reasoning",
     name_ar: "الاستدلال اللفظي",
     desc_en: "Comprehension and critical reasoning from text.",
-    competencies: ["Communicates Effectively", "Analytical Reasoning"],
+    competencies: ["Clear & Adaptive Communication", "Critical Analysis"],
   },
   {
     key: "abstract",
     name_en: "Abstract reasoning",
     name_ar: "الاستدلال المجرد",
     desc_en: "Pattern recognition independent of language (culture-fair).",
-    competencies: ["Manages Complexity", "Cultivates Innovation"],
+    competencies: ["Navigating Complexity", "Creative Problem-Solving"],
   },
 ];
 
 /** General mental ability (g) — the composite — predicts broadly. */
-export const COGNITIVE_G_COMPETENCIES = ["Analytical Reasoning", "Decision Quality", "Manages Complexity"];
+export const COGNITIVE_G_COMPETENCIES = ["Critical Analysis", "Sound Judgement", "Navigating Complexity"];
 
 // ── Big-Five (OCEAN) personality ─────────────────────────────────
 export type BigFiveTrait = {
@@ -53,11 +53,11 @@ export type BigFiveTrait = {
   competencies: string[];
 };
 export const BIG_FIVE: BigFiveTrait[] = [
-  { key: "O", name_en: "Openness", name_ar: "الانفتاح على التجارب", desc_en: "Curiosity, imagination, openness to new ideas.", competencies: ["Cultivates Innovation", "Nimble Learning", "Manages Complexity"] },
-  { key: "C", name_en: "Conscientiousness", name_ar: "يقظة الضمير", desc_en: "Organisation, diligence, follow-through.", competencies: ["Drives Results", "Plans and Aligns", "Action Oriented"] },
-  { key: "E", name_en: "Extraversion", name_ar: "الانبساط", desc_en: "Sociability, assertiveness, energy.", competencies: ["Communicates Effectively", "Persuades", "Builds Networks"] },
-  { key: "A", name_en: "Agreeableness", name_ar: "المقبولية", desc_en: "Empathy, cooperation, trust.", competencies: ["Collaboration", "Develops Talent", "Emotional Intelligence"] },
-  { key: "S", name_en: "Emotional Stability", name_ar: "الاتزان الانفعالي", desc_en: "Calm and resilience under pressure (low neuroticism).", competencies: ["Being Resilient", "Manages Ambiguity", "Self-Awareness"] },
+  { key: "O", name_en: "Openness", name_ar: "الانفتاح على التجارب", desc_en: "Curiosity, imagination, openness to new ideas.", competencies: ["Creative Problem-Solving", "Learning by Doing", "Navigating Complexity"] },
+  { key: "C", name_en: "Conscientiousness", name_ar: "يقظة الضمير", desc_en: "Organisation, diligence, follow-through.", competencies: ["Outcome Ownership", "Planning & Prioritisation", "Proactive Initiative"] },
+  { key: "E", name_en: "Extraversion", name_ar: "الانبساط", desc_en: "Sociability, assertiveness, energy.", competencies: ["Clear & Adaptive Communication", "Persuasion & Buy-in", "Relationship Networks"] },
+  { key: "A", name_en: "Agreeableness", name_ar: "المقبولية", desc_en: "Empathy, cooperation, trust.", competencies: ["Cross-Functional Collaboration", "Coaching & Talent Growth", "Emotional Regulation & Empathy"] },
+  { key: "S", name_en: "Emotional Stability", name_ar: "الاتزان الانفعالي", desc_en: "Calm and resilience under pressure (low neuroticism).", competencies: ["Resilience Under Pressure", "Operating Through Uncertainty", "Self-Insight"] },
 ];
 
 // ── Mini-IPIP (Donnellan, Oswald, Baird & Lucas, 2006) — public domain ──

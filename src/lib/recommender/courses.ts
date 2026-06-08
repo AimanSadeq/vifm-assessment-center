@@ -311,7 +311,7 @@ export async function recommendCoursesForReflectParticipant(args: {
   );
 
   // 4. Map each Reflect gap → AC competency. Keep the AC label so the
-  //    PDF can show "Communication & Influence → Communicates Effectively".
+  //    PDF can show "Communication & Influence → Clear & Adaptive Communication".
   type MappedGap = { competency_id: string; name: string; gap: number };
   const mappedGaps: MappedGap[] = [];
   const unmapped: string[] = [];

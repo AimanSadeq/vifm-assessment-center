@@ -4,41 +4,42 @@
 ipsative-vs-normative scoring guidance), `competency-framework-v2-design.md`
 (definitions), `competency-framework-research-grounding.md` (citations).
 
-For each competency: **(A)** a GCC-banking SJT with a criterion key, and
+For each competency: **(A)** a **sector-neutral** SJT with a criterion key, and
 **(B)** a CBI question scored against BARS (design doc §5). Research source noted
 per competency.
 
+> **Universal base / sector packs.** SJTs are sector-neutral. For higher fidelity,
+> swap in a sector variant — e.g. `sector-packs/finance-banking-sjt.md` — which
+> keeps the same competencies and key logic. CBI is universal.
+
 > **Test-design note:** SJT options are shown A–D for readability, with the key
-> stated. **At delivery, option order is randomised**, so the correct ("MOST")
-> answer does not sit in a fixed position. SJT keys are theory/expert-seeded and
-> must be confirmed with an SME effectiveness-rating panel + pilot item stats
-> before high-stakes use.
+> stated. **At delivery, option order is randomised.** SJT keys are
+> theory/expert-seeded and must be confirmed with an SME effectiveness-rating
+> panel + pilot item stats before high-stakes use.
 
 ---
 
 ## Cluster 2 — Innovation & Complexity
 
 ### 6. Creative Problem-Solving · *Amabile (1988); Scott & Bruce (1994)*
-**(A) SJT.** Many applicants abandon your branch's account-opening process midway.
-The standard fix is to add staff. MOST / LEAST effective:
-- A. Add more staff to process applications faster.
-- B. Map where applicants drop off and redesign those steps, piloting a simpler
-  digital flow.
-- C. Accept the abandonment as normal for the industry.
-- D. Copy a competitor's process wholesale without testing fit.
+**(A) SJT.** Many people abandon your team's intake/onboarding process partway
+through; the standard fix is to add staff. MOST / LEAST:
+- A. Add more staff to move people through faster.
+- B. Map where people drop off and redesign those steps, piloting a simpler flow.
+- C. Accept the drop-off as normal.
+- D. Copy another team's process wholesale without testing fit.
 
 **Key:** MOST = **B**; LEAST = **C**.
 **(B) CBI.** "Tell me about a time you solved a problem in a way that broke from
-the usual approach." *Probes:* What was the standard route? What did you try? How
-did it land?
+the usual approach." *Probes:* What was the standard route? What did you try?
 
 ### 7. Navigating Complexity · *Streufert & Swezey (1986)*
-**(A) SJT.** A launch depends on legal, IT, compliance, and three vendors, with
+**(A) SJT.** A project depends on several teams and outside suppliers, with
 conflicting timelines and incomplete data. MOST / LEAST:
 - A. Push every party to hit the original date regardless of dependencies.
 - B. Map the dependencies, identify the critical path, and sequence decisions
   around it.
-- C. Delay the whole launch until everything is fully certain.
+- C. Delay everything until it's fully certain.
 - D. Focus only on the parts you control and ignore the rest.
 
 **Key:** MOST = **B**; LEAST = **A**.
@@ -47,25 +48,25 @@ you had to make sense of." *Probes:* How did you structure it? What did you
 prioritise?
 
 ### 8. Systems & Global Perspective · *Earley & Ang (2003); Ang et al. (2007)*
-**(A) SJT.** A risk model that works at home is to be applied to a cross-border
-GCC expansion. MOST / LEAST:
-- A. Apply the model unchanged to save time.
-- B. Assess how local regulation, currency, and customer behaviour differ, then
-  adapt the model.
-- C. Discard the model and rebuild from scratch unnecessarily.
-- D. Apply it but adjust only the currency field.
+**(A) SJT.** An approach that works in one region/market is to be rolled out to a
+very different one. MOST / LEAST:
+- A. Apply it unchanged to save time.
+- B. Assess how local rules, conditions, and customer behaviour differ, then adapt
+  it.
+- C. Discard it and rebuild from scratch unnecessarily.
+- D. Apply it but change only one minor element.
 
 **Key:** MOST = **B**; LEAST = **A**.
-**(B) CBI.** "Tell me about a time you weighed the wider or cross-border system in
-a decision." *Probes:* Which broader factors? What was the impact?
+**(B) CBI.** "Tell me about a time you weighed the wider or cross-boundary system
+in a decision." *Probes:* Which broader factors? What was the impact?
 
 ### 9. Digital & Data Fluency · *Colbert, Yee & George (2016)*
-**(A) SJT.** A manager runs monthly sales reporting on manual spreadsheets with
-frequent errors. MOST / LEAST:
+**(A) SJT.** A manager runs key reporting on manual spreadsheets with frequent
+errors. MOST / LEAST:
 - A. Keep the spreadsheets; the team is used to them.
 - B. Introduce an automated dashboard from source systems, with checks, and train
   the team.
-- C. Outsource all reporting to a vendor without reviewing the data needs.
+- C. Outsource all reporting without reviewing the data needs.
 - D. Add a second person to double-check the spreadsheets.
 
 **Key:** MOST = **B**; LEAST = **A**.
@@ -77,7 +78,7 @@ done." *Probes:* What changed? What was the benefit?
 ## Cluster 3 — Delivery & Execution
 
 ### 10. Proactive Initiative · *Bateman & Crant (1993); Frese & Fay (2001)*
-**(A) SJT.** You spot a recurring complaint pattern that no one owns. MOST / LEAST:
+**(A) SJT.** You spot a recurring problem that no one owns. MOST / LEAST:
 - A. Wait for your manager to assign someone.
 - B. Raise it, propose a fix, and take ownership of resolving it.
 - C. Mention it informally but take no action.
@@ -88,17 +89,17 @@ done." *Probes:* What changed? What was the benefit?
 *Probes:* What prompted you? What did you do?
 
 ### 11. Outcome Ownership · *Locke & Latham (2002)*
-**(A) SJT.** Mid-quarter, your team is behind a key target due to a vendor delay.
+**(A) SJT.** Mid-period, your team is behind a key target due to a supplier delay.
 MOST / LEAST:
-- A. Report the vendor as the reason and lower expectations.
+- A. Report the supplier as the reason and lower expectations.
 - B. Re-plan with the team to recover what's achievable while escalating the
-  vendor issue in parallel.
+  supplier issue in parallel.
 - C. Push the team harder without changing the plan.
-- D. Wait to see if the vendor recovers on its own.
+- D. Wait to see if the supplier recovers on its own.
 
 **Key:** MOST = **B**; LEAST = **A**.
-**(B) CBI.** "Describe a time you drove a result despite obstacles." *Probes:*
-What got in the way? How did you sustain effort?
+**(B) CBI.** "Describe a time you drove a result despite obstacles." *Probes:* What
+got in the way? How did you sustain effort?
 
 ### 12. Accountability for Commitments · *Lerner & Tetlock (1999)*
 **(A) SJT.** You realise you'll miss a deadline you promised a colleague.
@@ -122,35 +123,35 @@ MOST / LEAST:
 - D. Do them in the order they arrived.
 
 **Key:** MOST = **B**; LEAST = **A**.
-**(B) CBI.** "Describe how you handled competing high-priority demands."
-*Probes:* How did you decide order? What did you renegotiate?
+**(B) CBI.** "Describe how you handled competing high-priority demands." *Probes:*
+How did you decide order? What did you renegotiate?
 
 ### 14. Process Optimisation · *Anderson, Rungtusanatham & Schroeder (1994)*
-**(A) SJT.** A reconciliation process takes three days with repeated rework.
+**(A) SJT.** A routine process takes far too long with repeated rework.
 MOST / LEAST:
 - A. Accept it as the cost of accuracy.
 - B. Find where the rework originates, fix the root cause, then standardise the
   improved process.
-- C. Speed it up by skipping a control check.
+- C. Speed it up by skipping a quality/control check.
 - D. Add overtime to finish faster.
 
 **Key:** MOST = **B**; LEAST = **C** *(removing a control to optimise is the worst
-option in a banking context)*.
-**(B) CBI.** "Tell me about a process you improved." *Probes:* What was wrong?
-Root cause? Result?
+option)*.
+**(B) CBI.** "Tell me about a process you improved." *Probes:* What was wrong? Root
+cause? Result?
 
 ---
 
 ## Cluster 4 — Adaptability & Change
 
 ### 15. Operating Through Uncertainty · *Pulakos et al. (2000); Furnham & Ribchester (1995)*
-**(A) SJT.** A regulatory change is announced, but final rules are months away and
-clients are asking how it affects them. MOST / LEAST:
-- A. Tell clients nothing until the rules are final.
-- B. Communicate what's known, flag what's pending, and prepare for the most
-  likely scenarios.
-- C. Guess at the final rules and advise clients firmly.
-- D. Refer every query to legal and disengage.
+**(A) SJT.** A change is announced, but the details won't be clear for months and
+people are asking how it affects them. MOST / LEAST:
+- A. Say nothing until the details are final.
+- B. Share what's known, flag what's pending, and prepare for the most likely
+  scenarios.
+- C. Guess at the details and state them firmly.
+- D. Refer every query elsewhere and disengage.
 
 **Key:** MOST = **B**; LEAST = **A**.
 **(B) CBI.** "Describe a time you had to act without clear direction or complete
@@ -158,7 +159,7 @@ information." *Probes:* How did you proceed? How did you revisit as things
 clarified?
 
 ### 16. Learning by Doing · *Kolb (1984); DeRue, Ashford & Myers (2012)*
-**(A) SJT.** You're assigned a product area you've never worked in. MOST / LEAST:
+**(A) SJT.** You're assigned an area you've never worked in. MOST / LEAST:
 - A. Wait for formal training before doing anything.
 - B. Start with small, low-risk tasks, seek feedback, and adjust as you learn.
 - C. Act as if you already know it to appear competent.
@@ -169,24 +170,24 @@ clarified?
 *Probes:* How did you learn? How did you adjust?
 
 ### 17. Resilience Under Pressure · *Bonanno (2004); Luthans et al. (2007)*
-**(A) SJT.** A major deal you led collapses publicly. MOST / LEAST:
-- A. Withdraw and avoid similar deals in future.
+**(A) SJT.** A major effort you led fails publicly. MOST / LEAST:
+- A. Withdraw and avoid similar efforts in future.
 - B. Process the setback, extract the lessons, and re-engage with the next
   opportunity.
 - C. Blame others to protect your standing.
 - D. Carry on as if nothing happened, ignoring the lessons.
 
 **Key:** MOST = **B**; LEAST = **A**.
-**(B) CBI.** "Describe a significant setback and how you responded." *Probes:*
-What did you learn? How did you re-engage?
+**(B) CBI.** "Describe a significant setback and how you responded." *Probes:* What
+did you learn? How did you re-engage?
 
 ### 18. Mobilising Around Purpose · *Bass (1985); Conger & Kanungo (1987)*
-**(A) SJT.** Your team is demoralised during a restructuring. MOST / LEAST:
+**(A) SJT.** Your team is demoralised during a reorganisation. MOST / LEAST:
 - A. Tell them to focus on their tasks and stop worrying.
 - B. Connect their work to a clear, credible picture of where the unit is heading
   and why it matters.
 - C. Promise everything will be fine, without basis.
-- D. Share your own frustration openly to bond with them.
+- D. Vent your own frustration openly to bond with them.
 
 **Key:** MOST = **B**; LEAST = **A**.
 **(B) CBI.** "Tell me about a time you rallied people around a goal during a hard
@@ -197,29 +198,29 @@ period." *Probes:* How did you frame it? How did they respond?
 ## Cluster 5 — Influence & Communication
 
 ### 19. Clear & Adaptive Communication · *Spitzberg & Cupach (1984)*
-**(A) SJT.** You must explain a complex risk exposure to a non-technical board.
-MOST / LEAST:
-- A. Present the full technical model in detail.
+**(A) SJT.** You must explain a complex, technical issue to a non-technical senior
+audience. MOST / LEAST:
+- A. Present the full technical detail.
 - B. Lead with the key implication and the decision needed, in plain language with
   one simple visual.
 - C. Send a long written report and skip the meeting.
-- D. Simplify so far that the key risk is omitted.
+- D. Oversimplify so far that the key point is lost.
 
 **Key:** MOST = **B**; LEAST = **A**.
 **(B) CBI.** "Describe explaining something complex to a non-expert audience."
 *Probes:* How did you adapt? Did it land?
 
 ### 20. Persuasion & Buy-in · *Yukl & Falbe (1990); Cialdini & Goldstein (2004)*
-**(A) SJT.** Another department resists adopting a new shared process. MOST / LEAST:
+**(A) SJT.** Another team resists adopting a new shared process. MOST / LEAST:
 - A. Escalate to force compliance immediately.
-- B. Understand their concerns, show how the change benefits them, and involve
-  them in shaping it.
+- B. Understand their concerns, show how the change benefits them, and involve them
+  in shaping it.
 - C. Repeatedly resend the same instruction.
 - D. Implement it without telling them.
 
 **Key:** MOST = **B**; LEAST = **D**.
-**(B) CBI.** "Tell me about winning support for an idea others resisted."
-*Probes:* How did you address their concerns?
+**(B) CBI.** "Tell me about winning support for an idea others resisted." *Probes:*
+How did you address their concerns?
 
 ### 21. Constructive Conflict Handling · *De Dreu & Weingart (2003)*
 **(A) SJT.** Two of your team members are in open disagreement that's stalling
@@ -235,12 +236,12 @@ work. MOST / LEAST:
 it on the issue rather than the people?
 
 ### 22. Principled Negotiation · *Thompson, Wang & Gunia (2010)*
-**(A) SJT.** A key client demands a price you can't profitably meet. MOST / LEAST:
-- A. Give the discount to keep the client.
+**(A) SJT.** A key counterpart demands terms you can't meet. MOST / LEAST:
+- A. Concede the terms to keep them.
 - B. Explore their underlying needs to find options that create value for both
   sides.
 - C. Refuse flatly and end the conversation.
-- D. Agree now and try to claw it back later.
+- D. Agree now and try to walk it back later.
 
 **Key:** MOST = **B**; LEAST = **D** *(agreeing deceptively damages trust most)*.
 **(B) CBI.** "Tell me about a negotiation where you found a solution good for both
@@ -252,7 +253,7 @@ support for an initiative. MOST / LEAST:
 - A. Rely solely on your manager to bring others on board.
 - B. Build relationships proactively across the relevant functions before you need
   them.
-- C. Email senior people cold only when you need something.
+- C. Cold-contact senior people only when you need something.
 - D. Avoid involving others to keep control.
 
 **Key:** MOST = **B**; LEAST = **D**.
@@ -287,10 +288,10 @@ grow rather than solving it for them?
 did you do about trust and shared goals?
 
 ### 26. Cross-Functional Collaboration · *Wageman (1995)*
-**(A) SJT.** Your goals conflict with another unit's, yet both are needed for a
-client outcome. MOST / LEAST:
+**(A) SJT.** Your goals conflict with another unit's, yet both are needed for the
+outcome. MOST / LEAST:
 - A. Optimise your own unit's metric and let them manage theirs.
-- B. Align on the shared client outcome and negotiate the trade-offs jointly.
+- B. Align on the shared outcome and negotiate the trade-offs jointly.
 - C. Escalate immediately for a ruling.
 - D. Quietly deprioritise the joint work.
 
@@ -312,7 +313,7 @@ handle a commitment under strain?
 
 ### 28. Interpersonal Adaptability · *Snyder (1974)*
 **(A) SJT.** Your usual direct style isn't landing with a reserved,
-detail-oriented stakeholder. MOST / LEAST:
+detail-oriented colleague. MOST / LEAST:
 - A. Keep your style; they should adapt to you.
 - B. Adjust your approach to their preferences while staying authentic.
 - C. Avoid dealing with them.
@@ -346,12 +347,12 @@ did." *Probes:* How did you act on it?
 - D. Withdraw and avoid them afterwards.
 
 **Key:** MOST = **B**; LEAST = **A**.
-**(B) CBI.** "Tell me about staying composed when emotions ran high." *Probes:*
-How did you manage yourself and others?
+**(B) CBI.** "Tell me about staying composed when emotions ran high." *Probes:* How
+did you manage yourself and others?
 
 ### 31. Principled Courage · *Morrison (2011)*
-**(A) SJT.** You believe a popular decision in a meeting is a compliance risk.
-MOST / LEAST:
+**(A) SJT.** You believe a popular decision carries a serious risk or ethical
+issue. MOST / LEAST:
 - A. Stay silent to avoid being the odd one out.
 - B. Raise the concern respectfully, with your reasoning, even if unpopular.
 - C. Complain about it privately afterwards.
@@ -362,9 +363,9 @@ MOST / LEAST:
 *Probes:* What was at stake? How did you raise it?
 
 ### 32. Ethical Conduct · *Brown, Treviño & Harrison (2005); Ones et al. (1993)*
-**(A) SJT.** A top performer is bending a client-suitability rule to hit targets.
-MOST / LEAST:
-- A. Ignore it because they bring in revenue.
+**(A) SJT.** A top performer is bending an important rule or standard to hit
+targets. MOST / LEAST:
+- A. Ignore it because of their results.
 - B. Address it directly, uphold the standard, and escalate per policy.
 - C. Hint that they should be careful, but take no real action.
 - D. Apply the rule to others but not to them.
@@ -374,7 +375,7 @@ MOST / LEAST:
 What did you do? What was the cost?
 
 ### 33. Cultural & Inclusive Sensitivity · *Ang et al. (2007)*
-**(A) SJT.** A team member's cultural practice affects meeting scheduling.
+**(A) SJT.** A team member's background or practice affects meeting scheduling.
 MOST / LEAST:
 - A. Insist everyone follow the majority's schedule.
 - B. Understand the need and find an arrangement that works for the whole team.
@@ -408,15 +409,14 @@ did you adjust prior approaches?
 - D. Note it but take no action.
 
 **Key:** MOST = **B**; LEAST = **A**.
-**(B) CBI.** "Describe how you've actively developed yourself recently."
-*Probes:* What prompted it? How did you apply it?
+**(B) CBI.** "Describe how you've actively developed yourself recently." *Probes:*
+What prompted it? How did you apply it?
 
 ### 36. Composure Under Stress · *Lazarus & Folkman (1984); Barrick & Mount (1991)*
-**(A) SJT.** A systems outage hits during peak hours and everyone looks to you.
-MOST / LEAST:
+**(A) SJT.** A major disruption hits at the worst possible time and everyone looks
+to you. MOST / LEAST:
 - A. Show visible panic and rush decisions.
-- B. Stay calm, prioritise, communicate clearly, and work the problem
-  methodically.
+- B. Stay calm, prioritise, communicate clearly, and work the problem methodically.
 - C. Freeze and wait for instructions.
 - D. Project false calm and hide the severity from your team.
 
@@ -451,5 +451,5 @@ you secure or repurpose what you needed?
 ---
 
 *Scoring follows the Cluster 1 model: SJT MOST/LEAST keyed (criterion-referenced);
-CBI rated 1–5 on BARS. Confirm SJT keys with an SME panel and pilot stats before
-high-stakes use.*
+CBI rated 1–5 on BARS. For sector fidelity, swap SJTs for a pack (e.g.
+`sector-packs/finance-banking-sjt.md`) without changing CBI or scoring.*

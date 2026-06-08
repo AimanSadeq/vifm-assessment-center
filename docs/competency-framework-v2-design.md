@@ -20,9 +20,9 @@ authored** framework that VIFM owns outright.
 ## 1. Purpose & Principles
 
 VIFM-AC needs a competency model that is (a) **owned by VIFM** (no third-party
-IP in names, definitions, or behavioural indicators), (b) **fit for GCC banking
-and finance** roles, and (c) **defensible to clients** as research- and
-job-analysis-grounded.
+IP in names, definitions, or behavioural indicators), (b) **applicable across
+sectors** — a universal core framework with optional sector-specific item packs —
+and (c) **defensible to clients** as research- and job-analysis-grounded.
 
 Design principles:
 
@@ -33,9 +33,11 @@ Design principles:
    "communicating clearly" or "building trust" are shared professional
    vocabulary that no party owns. What must be original is VIFM's **structure,
    names, and expression**.
-3. **Finance-contextualised.** Definitions and indicators are anchored in
-   banking/finance situations, which both differentiates the framework and
-   strengthens job-relatedness (content validity).
+3. **Universal core + sector packs.** The framework (domains, clusters,
+   competencies, definitions) is **sector-agnostic** and reusable across
+   industries. Situational items (SJTs) have a **sector-neutral base**, with
+   **optional sector packs** (e.g., finance & banking) layered on for higher
+   fidelity. See `sector-packs/README.md`.
 4. **Evidence-led, not rename-led.** The competency *set* is provisional until
    Phase 1 job analysis confirms, revises, or replaces it.
 5. **Standards-aligned.** Built to satisfy AERA/APA/NCME *Standards*, ISO 10667,

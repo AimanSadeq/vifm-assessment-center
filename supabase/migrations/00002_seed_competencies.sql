@@ -1,6 +1,6 @@
 -- ============================================================
 -- VIFM Assessment Center - Seed: Competency Framework
--- 4 Domains → 8 Clusters → 33 Competencies
+-- 4 Domains → 8 Clusters → 38 Competencies
 -- Source: VIFM Assessment Center Blueprint (Section 3.2)
 -- ============================================================
 
@@ -41,7 +41,7 @@ INSERT INTO competency_clusters (id, domain_id, name, sort_order) VALUES
 
 
 -- ────────────────────────────────────────────────────────────
--- COMPETENCIES (33 total)
+-- COMPETENCIES (38 total)
 -- ────────────────────────────────────────────────────────────
 
 -- Cluster: Strategic Thinking (5 competencies)

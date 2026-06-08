@@ -53,7 +53,7 @@ export default async function EditCoursePage({ params }: Props) {
 
   return (
     <div className="space-y-4">
-      <BackLink href="/admin/courses" label={t("adminCourses.backToCourses")} />
+      <BackLink href="/admin/courses" label={t("common.back")} history />
       <Card>
         <CardHeader>
           <CardTitle>{course.title_en}</CardTitle>

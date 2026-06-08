@@ -1,5 +1,5 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
-import { formatFitScore, fitMatchPercent } from "@/lib/recommender/format";
+import { formatFitScore, fitScoreOutOfTen } from "@/lib/recommender/format";
 import {
   ARA_INDIVIDUAL_FACTORS,
   getIndividualMaturityStage,
@@ -506,8 +506,8 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
               <Text style={s.fitExplainerMono}>x1</Text> light,{" "}
               <Text style={s.fitExplainerMono}>x2</Text> medium,{" "}
               <Text style={s.fitExplainerMono}>x3</Text> strong). The{" "}
-              <Text style={{ fontFamily: "Helvetica-Bold" }}>match %</Text>{" "}
-              shows each programme&apos;s strength relative to your strongest match.{" "}
+              <Text style={{ fontFamily: "Helvetica-Bold" }}>fit score</Text>{" "}
+              is out of 10 - your strongest-matched programme scores 10, the rest relative to it.{" "}
               <Text style={{ fontFamily: "Helvetica-Bold" }}>* High fit</Text>{" "}
               marks the programmes that close the most, highest-priority gaps.
             </Text>
@@ -516,7 +516,7 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
         {data.recommendedCourses.length > 0 ? (
           data.recommendedCourses.slice(0, 5).map((c) => {
             const isHighFit = c.total_score >= 4;
-            const pct = fitMatchPercent(
+            const fit = fitScoreOutOfTen(
               c.total_score,
               Math.max(0, ...data.recommendedCourses.map((x) => x.total_score))
             );
@@ -531,7 +531,7 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
                       </Text>
                     )}
                   </Text>
-                  {isHighFit && <Text style={s.courseFitPill}>★ HIGH FIT · {pct}% match</Text>}
+                  {isHighFit && <Text style={s.courseFitPill}>★ HIGH FIT · {fit}</Text>}
                 </View>
                 <View style={s.courseMetaRow}>
                   <Text style={s.courseMetaPill}>
@@ -541,7 +541,7 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
                     {c.level.charAt(0).toUpperCase() + c.level.slice(1)}
                   </Text>
                   <Text style={s.courseMetaPill}>{c.duration_label}</Text>
-                  {!isHighFit && <Text style={s.courseMetaPill}>{pct}% match</Text>}
+                  {!isHighFit && <Text style={s.courseMetaPill}>fit · {fit}</Text>}
                 </View>
                 <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
                   {c.drivers.map((d, i) => (

@@ -1,7 +1,7 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import type { ReportData } from "./report-types";
 import { getCompetencyGap, GAP_TONES } from "@/lib/scoring/competency-gap";
-import { formatFitScore, fitMatchPercent } from "@/lib/recommender/format";
+import { formatFitScore, fitScoreOutOfTen } from "@/lib/recommender/format";
 
 const C = {
   primary: "#010131",
@@ -484,14 +484,14 @@ function CoursesPage({ d }: { d: ReportData }) {
       <Text style={s.bodyText}>
         These VIFM training courses map to the competencies where your
         scores fell below target. They&apos;re ordered by how well they match
-        your gaps - the strongest match is shown as 100%, the rest relative to
-        it. Discuss with your manager or VIFM consultant which course best fits
-        your current development priority.
+        your gaps - the strongest match scores 10 out of 10, the rest relative
+        to it. Discuss with your manager or VIFM consultant which course best
+        fits your current development priority.
       </Text>
 
       {courses.map((c) => {
         const isHighFit = c.total_score >= 4;
-        const pct = fitMatchPercent(
+        const fit = fitScoreOutOfTen(
           c.total_score,
           Math.max(0, ...courses.map((x) => x.total_score))
         );
@@ -508,7 +508,7 @@ function CoursesPage({ d }: { d: ReportData }) {
                 {c.title_ar && <Text style={s.courseTitleAr}>{c.title_ar}</Text>}
               </View>
               {isHighFit && (
-                <Text style={s.courseFitPill}>★ HIGH FIT · {pct}% match</Text>
+                <Text style={s.courseFitPill}>★ HIGH FIT · {fit}</Text>
               )}
             </View>
 
@@ -517,7 +517,7 @@ function CoursesPage({ d }: { d: ReportData }) {
               <Text style={s.courseMetaPill}>{c.level.charAt(0).toUpperCase() + c.level.slice(1)}</Text>
               <Text style={s.courseMetaPill}>{c.duration_label}</Text>
               {!isHighFit && (
-                <Text style={s.courseMetaPill}>{pct}% match</Text>
+                <Text style={s.courseMetaPill}>fit score · {fit}</Text>
               )}
             </View>
 

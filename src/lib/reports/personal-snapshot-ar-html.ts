@@ -33,7 +33,7 @@ import {
   type AraIndividualMaturityStageId,
 } from "@/lib/constants/ara-individual-factors";
 import { VIFM_VERTICAL_LABELS, type VifmVertical } from "@/types/database";
-import { fitMatchPercent } from "@/lib/recommender/format";
+import { fitScoreOutOfTen } from "@/lib/recommender/format";
 
 // ────────────────────────────────────────────────────────────────
 // Content - Arabic strings for everything the React-PDF template
@@ -228,7 +228,7 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
   const coursesHtml = data.recommendedCourses.length > 0
     ? data.recommendedCourses.slice(0, 5).map((c) => {
         const isHighFit = c.total_score >= 4;
-        const pct = fitMatchPercent(
+        const fit = fitScoreOutOfTen(
           c.total_score,
           Math.max(0, ...data.recommendedCourses.map((x) => x.total_score))
         );
@@ -243,7 +243,7 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
                 <h4 class="course-title">${esc(titleAr)}</h4>
                 ${c.code ? `<span class="course-code">${esc(c.code)}</span>` : ""}
               </div>
-              ${isHighFit ? `<span class="course-fit">★ ملاءمة عالية · ${pct}% مطابقة</span>` : `<span class="course-fit-mute">${pct}% مطابقة</span>`}
+              ${isHighFit ? `<span class="course-fit">★ ملاءمة عالية · ${fit}</span>` : `<span class="course-fit-mute">درجة الملاءمة · ${fit}</span>`}
             </header>
             <div class="course-meta">
               <span class="meta-pill">${esc(vertical)}</span>
@@ -268,7 +268,7 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
         كل شريحة أدناه تمثّل تطابقاً واحداً بين دورة وعامل سجّلت فيه أقل من المستوى المستهدف 4 / 5.
         الصيغة <code>فجوة N × ×R</code> تعني فجوتك إلى المستهدف (N) مضروبة بقوة ارتباط الدورة بكفاءات ذلك العامل
         (الأهمية <code>×1</code> منخفضة، <code>×2</code> متوسطة، <code>×3</code> قوية).
-        <strong>نسبة المطابقة</strong> تعكس قوة كل برنامج مقارنةً بأفضل تطابق لديك.
+        <strong>درجة الملاءمة</strong> من 10 — يحصل أقوى تطابق على 10، وتُعرض البقية نسبةً إليه.
         <strong>★ ملاءمة عالية</strong> يشير إلى البرامج التي تعالج أكبر عدد من الفجوات ذات الأولوية.
       </p>
     </div>

@@ -6,7 +6,7 @@ import { verticalLabel } from "@/lib/constants/verticals";
 import { getServerT } from "@/lib/i18n/server";
 import type { RecommendedCourse } from "@/lib/recommender/courses";
 import { HIGH_FIT_THRESHOLD } from "@/lib/recommender/courses";
-import { formatFitScore, fitMatchPercent } from "@/lib/recommender/format";
+import { formatFitScore, fitScoreOutOfTen } from "@/lib/recommender/format";
 
 type Props = {
   title: string;
@@ -90,8 +90,8 @@ export async function RecommendedCoursesPanel({
             competencies (relevance {" "}<span className="font-mono">×1</span>{" "}light,
             {" "}<span className="font-mono">×2</span>{" "}medium,
             {" "}<span className="font-mono">×3</span>{" "}strong). The
-            {" "}<span className="font-semibold text-foreground">match %</span>{" "}
-            shows each programme&apos;s overall strength relative to your strongest match.
+            {" "}<span className="font-semibold text-foreground">fit score</span>{" "}
+            is out of 10 - your strongest-matched programme scores 10, the rest relative to it.
             {" "}<span className="font-semibold text-foreground">★ High fit</span>{" "}
             marks the programmes that close the most, highest-priority gaps.
           </p>
@@ -148,10 +148,10 @@ export async function RecommendedCoursesPanel({
 
                 <div className="flex flex-col items-end gap-1 shrink-0">
                   <span className="text-[10px] text-muted-foreground tabular-nums">
-                    match
+                    fit score
                   </span>
                   <span className="text-base font-bold tabular-nums">
-                    {fitMatchPercent(c.total_score, topScore)}%
+                    {fitScoreOutOfTen(c.total_score, topScore)}
                   </span>
                 </div>
               </div>

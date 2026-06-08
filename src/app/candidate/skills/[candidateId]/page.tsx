@@ -13,7 +13,8 @@ import { Target, AlertTriangle, CheckCircle2, BookOpen, Route, Languages, Award,
 import { PersonalStatistics, type DomainRollup } from "./_components/personal-statistics";
 import { StartQuizButton } from "./_components/start-quiz-button";
 import { ImpersonationBanner } from "@/components/shared/impersonation-banner";
-import { getServerT } from "@/lib/i18n/server";
+import { getServerT, getServerLocale, getServerDir } from "@/lib/i18n/server";
+import { localizedName } from "@/lib/i18n/localized";
 
 type Props = {
   params: { candidateId: string };
@@ -27,16 +28,19 @@ type RoleProfileCompetencyRow = {
   competencies: {
     id: string;
     name: string;
+    name_ar: string | null;
     description: string | null;
     cluster_id: string;
     competency_clusters: {
       id: string;
       name: string;
+      name_ar: string | null;
       sort_order: number;
       domain_id: string;
       competency_domains: {
         id: string;
         name: string;
+        name_ar: string | null;
         sort_order: number;
       } | null;
     } | null;
@@ -50,8 +54,10 @@ type DomainGroup = {
   competencies: {
     id: string;
     name: string;
+    name_ar: string | null;
     description: string | null;
     clusterName: string;
+    clusterName_ar: string | null;
     target: number;
     score: number | null;
   }[];
@@ -60,6 +66,7 @@ type DomainGroup = {
 export default async function CandidateSkillsPage({ params, searchParams }: Props) {
   const supabase = await createClient();
   const t = await getServerT();
+  const rtl = getServerDir(await getServerLocale()) === "rtl";
   const { candidateId } = params;
   const asAdmin = searchParams?.asAdmin === "1";
 
@@ -169,7 +176,7 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
     supabase
       .from("role_profile_competencies")
       .select(
-        "competency_id, weight, priority, competencies(id, name, description, cluster_id, competency_clusters(id, name, sort_order, domain_id, competency_domains(id, name, sort_order)))"
+        "competency_id, weight, priority, competencies(id, name, name_ar, description, cluster_id, competency_clusters(id, name, name_ar, sort_order, domain_id, competency_domains(id, name, name_ar, sort_order)))"
       )
       .eq("role_profile_id", profile.id),
     supabase
@@ -206,8 +213,10 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
     group.competencies.push({
       id: comp.id,
       name: comp.name,
+      name_ar: comp.name_ar,
       description: comp.description,
       clusterName: cluster.name,
+      clusterName_ar: cluster.name_ar,
       target,
       score: scoreById.get(comp.id) ?? null,
     });
@@ -406,10 +415,10 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="font-medium text-sm leading-tight">
-                            {comp.name}
+                            {localizedName(comp, rtl)}
                           </p>
                           <p className="text-[11px] text-muted-foreground mt-0.5">
-                            {comp.clusterName}
+                            {localizedName({ name: comp.clusterName, name_ar: comp.clusterName_ar }, rtl)}
                           </p>
                         </div>
                         {isAssessed ? (

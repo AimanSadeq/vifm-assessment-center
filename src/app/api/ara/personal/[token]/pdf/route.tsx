@@ -139,6 +139,7 @@ export async function GET(
       total_score: c.total_score,
       drivers: c.drivers.map((d) => ({
         label: d.label,
+        label_ar: d.label_ar,
         gap: d.gap,
         relevance: d.relevance,
       })),

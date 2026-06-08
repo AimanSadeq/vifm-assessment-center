@@ -37,6 +37,7 @@ import { addCandidateAction, createAssignmentAction, addDemoAssessorAction, upda
 import { Trash2, Send, FileText, CheckCircle, Eye, Repeat2, Loader2, History, Grid3x3 } from "lucide-react";
 import Link from "next/link";
 import { Checkbox } from "@/components/ui/checkbox";
+import { localizedName } from "@/lib/i18n/localized";
 
 type RoleProfileOption = {
   id: string;
@@ -82,7 +83,8 @@ export function EngagementDetail({
   currentOarMap = {},
 }: Props) {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const rtl = i18n.language === "ar";
   const [candidates, setCandidates] = useState(initCandidates);
   const [assignments, setAssignments] = useState(initAssignments);
   const [assessors, setAssessors] = useState(initAssessors);
@@ -852,8 +854,8 @@ export function EngagementDetail({
                     const comps = matrix
                       .filter((m) => m.exercise_id === exId)
                       .map((m) => {
-                        const c = m.competencies as Record<string, unknown> | null;
-                        return c?.name as string ?? t("adminEngagements.detail.unknown");
+                        const c = m.competencies as { name?: string | null; name_ar?: string | null } | null;
+                        return localizedName(c, rtl) || t("adminEngagements.detail.unknown");
                       });
                     return (
                       <div key={exId} className="flex gap-2 items-start py-2 border-b last:border-0">
@@ -910,12 +912,12 @@ export function EngagementDetail({
                           </TableHeader>
                           <TableBody>
                             {candWs.map((w) => {
-                              const comp = w.competencies as Record<string, unknown> | null;
+                              const comp = w.competencies as { name?: string | null; name_ar?: string | null } | null;
                               const prof = w.profiles as Record<string, unknown> | null;
                               return (
                                 <TableRow key={w.id as string}>
                                   <TableCell className="text-sm">
-                                    {(comp?.name as string) ?? "-"}
+                                    {localizedName(comp, rtl) || "-"}
                                   </TableCell>
                                   <TableCell className="text-sm">
                                     {(prof?.full_name as string) ?? "-"}

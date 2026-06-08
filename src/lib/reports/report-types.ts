@@ -82,6 +82,7 @@ export type ReportRecommendedCourse = {
   total_score: number;
   drivers: Array<{
     label: string;
+    label_ar: string | null;
     gap: number;
     relevance: 1 | 2 | 3;
     rationale?: string | null;

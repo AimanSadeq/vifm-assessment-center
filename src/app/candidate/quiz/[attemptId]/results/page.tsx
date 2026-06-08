@@ -57,7 +57,7 @@ export default async function QuizResultsPage({ params }: Props) {
   const { data: attempt, error } = await supabase
     .from("candidate_quiz_attempts")
     .select(
-      "id, candidate_id, competency_id, status, questions, answers, score_pct, correct_count, total_count, passing_score_pct, time_taken_seconds, started_at, completed_at, competencies(id, name)"
+      "id, candidate_id, competency_id, status, questions, answers, score_pct, correct_count, total_count, passing_score_pct, time_taken_seconds, started_at, completed_at, competencies(id, name, name_ar)"
     )
     .eq("id", attemptId)
     .single();
@@ -65,7 +65,7 @@ export default async function QuizResultsPage({ params }: Props) {
   if (error || !attempt) return notFound();
 
   const a = attempt as unknown as CandidateQuizAttempt & {
-    competencies: { id: string; name: string } | null;
+    competencies: { id: string; name: string; name_ar: string | null } | null;
   };
 
   const questions: QuizQuestion[] = a.questions;
@@ -105,7 +105,8 @@ export default async function QuizResultsPage({ params }: Props) {
           body: t("quiz.results.headerKeepLearningBody"),
         };
 
-  const competencyName = a.competencies?.name ?? "Skill";
+  const competencyName =
+    (isAr ? a.competencies?.name_ar : null) || a.competencies?.name || "Skill";
   const scoreLabel = a.score_pct !== null ? `${Math.round(a.score_pct)}%` : "-";
   const scoreFraction = (a.score_pct ?? 0) / 100;
 

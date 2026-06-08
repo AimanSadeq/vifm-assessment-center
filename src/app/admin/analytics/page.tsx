@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { getServerT } from "@/lib/i18n/server";
+import { getServerT, getServerLocale, getServerDir } from "@/lib/i18n/server";
+import { localizedName } from "@/lib/i18n/localized";
 import { calculateICC, getICCInterpretation } from "@/lib/scoring/icc";
 import { calculateBiasMetrics } from "@/lib/scoring/bias-detection";
 import { AnalyticsDashboard } from "./_components/analytics-dashboard";
@@ -7,12 +8,13 @@ import { AnalyticsDashboard } from "./_components/analytics-dashboard";
 export default async function AnalyticsPage() {
   const supabase = await createClient();
   const t = await getServerT();
+  const rtl = getServerDir(await getServerLocale()) === "rtl";
 
   // Fetch all ratings with assessor and competency info
   const { data: ratings } = await supabase
     .from("ratings")
     .select(
-      "score, competency_id, assessor_assignment_id, competencies(name), assessor_assignments(assessor_id, candidate_id, profiles(full_name))"
+      "score, competency_id, assessor_assignment_id, competencies(name, name_ar), assessor_assignments(assessor_id, candidate_id, profiles(full_name))"
     );
 
   const { data: engagements } = await supabase
@@ -32,7 +34,7 @@ export default async function AnalyticsPage() {
   // Get consensus ratings for per-candidate competency breakdown
   const { data: consensusRatings } = await supabase
     .from("consensus_ratings")
-    .select("candidate_id, competency_id, final_score, competencies(name)");
+    .select("candidate_id, competency_id, final_score, competencies(name, name_ar)");
 
   // Build ICC matrix: each unique (candidate, competency) is a subject, each assessor is a rater
   const subjectKey = (candidateId: string, competencyId: string) =>
@@ -124,8 +126,8 @@ export default async function AnalyticsPage() {
   // Competency averages
   const compScoreMap = new Map<string, { name: string; total: number; count: number }>();
   for (const r of ratings ?? []) {
-    const comp = r.competencies as unknown as { name: string } | null;
-    const name = comp?.name ?? t("adminAnalytics.unknown");
+    const comp = r.competencies as unknown as { name: string; name_ar: string | null } | null;
+    const name = (comp ? localizedName(comp, rtl) : "") || t("adminAnalytics.unknown");
     if (!compScoreMap.has(r.competency_id)) {
       compScoreMap.set(r.competency_id, { name, total: 0, count: 0 });
     }

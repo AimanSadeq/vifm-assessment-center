@@ -3,6 +3,8 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { ShieldCheck, FlaskConical, ChevronRight, BookOpenCheck } from "lucide-react";
 import { BulkEvidenceButtons } from "@/components/admin/bulk-evidence-buttons";
 import type { ValidationEvidence } from "@/types/evidence";
+import { getServerLocale, getServerDir } from "@/lib/i18n/server";
+import { localizedName } from "@/lib/i18n/localized";
 
 export const dynamic = "force-dynamic";
 
@@ -20,13 +22,15 @@ export const dynamic = "force-dynamic";
 type Row = {
   id: string;
   name: string;
+  name_ar: string | null;
   description: string | null;
   sort_order: number;
   validation_evidence: ValidationEvidence | null;
   competency_clusters: {
     name: string;
+    name_ar: string | null;
     sort_order: number;
-    competency_domains: { name: string; sort_order: number } | null;
+    competency_domains: { name: string; name_ar: string | null; sort_order: number } | null;
   } | null;
 };
 
@@ -49,10 +53,11 @@ const STATUS_META: Record<StatusKey, { label: string; tone: string }> = {
 
 export default async function AcEvidencePage() {
   const sb = createServiceClient();
+  const rtl = getServerDir(await getServerLocale()) === "rtl";
   const { data, error } = await sb
     .from("competencies")
     .select(
-      "id, name, description, sort_order, validation_evidence, competency_clusters(name, sort_order, competency_domains(name, sort_order))"
+      "id, name, name_ar, description, sort_order, validation_evidence, competency_clusters(name, name_ar, sort_order, competency_domains(name, name_ar, sort_order))"
     );
 
   // Supabase types to-one embeds as arrays; at runtime they're single
@@ -68,14 +73,16 @@ export default async function AcEvidencePage() {
   // Group by domain → cluster, preserving sort order.
   const domains = new Map<
     string,
-    { sort: number; clusters: Map<string, { sort: number; items: Row[] }> }
+    { sort: number; display: string; clusters: Map<string, { sort: number; items: Row[] }> }
   >();
   for (const r of rows) {
-    const dName = r.competency_clusters?.competency_domains?.name ?? "Unassigned";
-    const dSort = r.competency_clusters?.competency_domains?.sort_order ?? 999;
+    const dom = r.competency_clusters?.competency_domains;
+    const dName = dom?.name ?? "Unassigned";
+    const dDisplay = dom ? localizedName(dom, rtl) : "Unassigned";
+    const dSort = dom?.sort_order ?? 999;
     const cName = r.competency_clusters?.name ?? "Unassigned";
     const cSort = r.competency_clusters?.sort_order ?? 999;
-    if (!domains.has(dName)) domains.set(dName, { sort: dSort, clusters: new Map() });
+    if (!domains.has(dName)) domains.set(dName, { sort: dSort, display: dDisplay, clusters: new Map() });
     const d = domains.get(dName)!;
     if (!d.clusters.has(cName)) d.clusters.set(cName, { sort: cSort, items: [] });
     d.clusters.get(cName)!.items.push(r);
@@ -118,7 +125,7 @@ export default async function AcEvidencePage() {
             <section key={dName}>
               <div className="flex items-center gap-2 mb-2">
                 <BookOpenCheck className="h-4 w-4 text-muted-foreground" />
-                <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">{dName}</h2>
+                <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">{d.display}</h2>
               </div>
               <div className="rounded-lg border bg-card divide-y divide-border">
                 {sortedClusters.flatMap(([, c]) =>
@@ -134,7 +141,7 @@ export default async function AcEvidencePage() {
                           className="flex items-center gap-3 px-4 py-3 hover:bg-muted transition-colors"
                         >
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{r.name}</p>
+                            <p className="text-sm font-medium truncate">{localizedName(r, rtl)}</p>
                             {r.validation_evidence?.anchor_instruments?.length ? (
                               <p className="text-[11px] text-muted-foreground truncate">
                                 {r.validation_evidence.anchor_instruments.length} anchor(s) ·{" "}

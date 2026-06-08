@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getClientOrgId } from "@/lib/auth/get-org-id";
-import { getServerT } from "@/lib/i18n/server";
+import { getServerT, getServerLocale, getServerDir } from "@/lib/i18n/server";
+import { localizedName } from "@/lib/i18n/localized";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -13,6 +14,7 @@ export const dynamic = "force-dynamic";
 export default async function ClientAnalyticsPage() {
   const supabase = await createClient();
   const t = await getServerT();
+  const rtl = getServerDir(await getServerLocale()) === "rtl";
 
   const orgId = await getClientOrgId();
 
@@ -26,7 +28,7 @@ export default async function ClientAnalyticsPage() {
   const [oarResult, consensusResult, candidatesResult] = engIds.length > 0
     ? await Promise.all([
         supabase.from("overall_assessment_ratings").select("candidate_id, overall_score, recommendation").in("engagement_id", engIds),
-        supabase.from("consensus_ratings").select("candidate_id, final_score, competency_id, competencies(name)").in("engagement_id", engIds),
+        supabase.from("consensus_ratings").select("candidate_id, final_score, competency_id, competencies(name, name_ar)").in("engagement_id", engIds),
         supabase.from("candidates").select("id, full_name, department, seniority_level").in("engagement_id", engIds),
       ])
     : [{ data: [] }, { data: [] }, { data: [] }];
@@ -66,8 +68,8 @@ export default async function ClientAnalyticsPage() {
   // Competency strength/weakness analysis
   const compMap = new Map<string, { name: string; total: number; count: number }>();
   for (const cr of consensusData ?? []) {
-    const comp = cr.competencies as unknown as { name: string } | null;
-    const name = comp?.name ?? t("clientAnalytics.unknownCompetency");
+    const comp = cr.competencies as unknown as { name: string; name_ar: string | null } | null;
+    const name = (comp ? localizedName(comp, rtl) : "") || t("clientAnalytics.unknownCompetency");
     if (!compMap.has(cr.competency_id)) {
       compMap.set(cr.competency_id, { name, total: 0, count: 0 });
     }

@@ -4,6 +4,8 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { ArrowLeft } from "lucide-react";
 import { CompetencyEvidencePanel } from "./_components/competency-evidence-panel";
 import type { ValidationEvidence } from "@/types/evidence";
+import { getServerLocale, getServerDir } from "@/lib/i18n/server";
+import { localizedName, localizedDescription } from "@/lib/i18n/localized";
 
 export const dynamic = "force-dynamic";
 
@@ -12,11 +14,14 @@ type Props = { params: { competencyId: string } };
 type Detail = {
   id: string;
   name: string;
+  name_ar: string | null;
   description: string | null;
+  description_ar: string | null;
   validation_evidence: ValidationEvidence | null;
   competency_clusters: {
     name: string;
-    competency_domains: { name: string } | null;
+    name_ar: string | null;
+    competency_domains: { name: string; name_ar: string | null } | null;
   } | null;
   behavioral_indicators: Array<{
     indicator_type: string;
@@ -27,18 +32,20 @@ type Detail = {
 
 export default async function CompetencyEvidenceDetailPage({ params }: Props) {
   const sb = createServiceClient();
+  const rtl = getServerDir(await getServerLocale()) === "rtl";
   const { data } = await sb
     .from("competencies")
     .select(
-      "id, name, description, validation_evidence, competency_clusters(name, competency_domains(name)), behavioral_indicators(indicator_type, description, sort_order)"
+      "id, name, name_ar, description, description_ar, validation_evidence, competency_clusters(name, name_ar, competency_domains(name, name_ar)), behavioral_indicators(indicator_type, description, sort_order)"
     )
     .eq("id", params.competencyId)
     .maybeSingle<Detail>();
 
   if (!data) notFound();
 
-  const domain = data.competency_clusters?.competency_domains?.name ?? "Unassigned";
-  const cluster = data.competency_clusters?.name ?? "";
+  const dom = data.competency_clusters?.competency_domains;
+  const domain = dom ? localizedName(dom, rtl) : "Unassigned";
+  const cluster = data.competency_clusters ? localizedName(data.competency_clusters, rtl) : "";
   const indicators = (data.behavioral_indicators ?? []).sort((a, b) => a.sort_order - b.sort_order);
 
   return (
@@ -54,8 +61,8 @@ export default async function CompetencyEvidenceDetailPage({ params }: Props) {
         {domain}
         {cluster ? ` · ${cluster}` : ""}
       </div>
-      <h1 className="text-xl font-bold mb-2">{data.name}</h1>
-      {data.description && <p className="text-sm text-muted-foreground mb-5">{data.description}</p>}
+      <h1 className="text-xl font-bold mb-2">{localizedName(data, rtl)}</h1>
+      {localizedDescription(data, rtl) && <p className="text-sm text-muted-foreground mb-5">{localizedDescription(data, rtl)}</p>}
 
       {/* Behavioural indicators give the AI suggester + reviewer construct context. */}
       {indicators.length > 0 && (

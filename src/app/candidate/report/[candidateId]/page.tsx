@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ImpersonationBanner } from "@/components/shared/impersonation-banner";
-import { getServerT } from "@/lib/i18n/server";
+import { getServerT, getServerLocale, getServerDir } from "@/lib/i18n/server";
+import { localizedName } from "@/lib/i18n/localized";
 
 type Props = {
   params: { candidateId: string };
@@ -18,6 +19,7 @@ type Props = {
 export default async function CandidateReportPage({ params, searchParams }: Props) {
   const supabase = await createClient();
   const t = await getServerT();
+  const rtl = getServerDir(await getServerLocale()) === "rtl";
   const { candidateId } = params;
   const asAdmin = searchParams?.asAdmin === "1";
 
@@ -41,7 +43,7 @@ export default async function CandidateReportPage({ params, searchParams }: Prop
         .maybeSingle(),
       supabase
         .from("consensus_ratings")
-        .select("competency_id, final_score, competencies(name)")
+        .select("competency_id, final_score, competencies(name, name_ar)")
         .eq("candidate_id", candidateId),
     ]);
 
@@ -142,11 +144,11 @@ export default async function CandidateReportPage({ params, searchParams }: Prop
               </CardHeader>
               <CardContent className="space-y-3">
                 {consensusRatings.map((cr) => {
-                  const comp = cr.competencies as unknown as { name: string } | null;
+                  const comp = cr.competencies as unknown as { name: string; name_ar: string | null } | null;
                   return (
                     <div key={cr.competency_id} className="flex items-center gap-3">
                       <span className="text-sm min-w-[180px]">
-                        {comp?.name ?? t("candidateReport.unknownCompetency")}
+                        {localizedName(comp, rtl) || t("candidateReport.unknownCompetency")}
                       </span>
                       <div className="flex-1 h-3 rounded-full bg-muted overflow-hidden">
                         <div

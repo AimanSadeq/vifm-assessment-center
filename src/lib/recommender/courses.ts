@@ -56,6 +56,7 @@ export type RecommendedCourse = {
   // recommended - e.g. "Strategic Thinking (gap 2 × relevance 3 = 6)".
   drivers: Array<{
     label: string;        // human-readable competency or pillar name
+    label_ar: string | null; // Arabic label when available (null for pillars / unmapped)
     kind: "competency" | "pillar";
     gap: number;          // how far below target
     relevance: 1 | 2 | 3; // course→driver relevance weight
@@ -91,7 +92,7 @@ type PillarTagJoin = Omit<CompetencyTagJoin, "competency_id"> & {
 type ConsensusRow = {
   competency_id: string;
   final_score: number | null;
-  competencies: { name: string } | null;
+  competencies: { name: string; name_ar: string | null } | null;
 };
 
 // ──────────────────────────────────────────────────────────────
@@ -112,17 +113,18 @@ export async function recommendCoursesForAcCandidate(args: {
   // 1. Pull the candidate's consensus ratings + competency name.
   const consensusRes = await sb
     .from("consensus_ratings")
-    .select("competency_id, final_score, competencies(name)")
+    .select("competency_id, final_score, competencies(name, name_ar)")
     .eq("engagement_id", args.engagementId)
     .eq("candidate_id", args.candidateId);
   const consensus = (consensusRes.data ?? []) as unknown as ConsensusRow[];
 
   // 2. Compute gaps. Anything ≤ 0 is on-target or stronger - skip.
-  type GapEntry = { competency_id: string; name: string; gap: number };
+  type GapEntry = { competency_id: string; name: string; name_ar: string | null; gap: number };
   const gaps: GapEntry[] = consensus
     .map((row) => ({
       competency_id: row.competency_id,
       name: row.competencies?.name ?? "(unknown)",
+      name_ar: row.competencies?.name_ar ?? null,
       gap: target - (row.final_score ?? target),
     }))
     .filter((g) => g.gap > 0);
@@ -162,11 +164,11 @@ export async function recommendCoursesForAcCohort(args: {
   // the engagement. A wider cohort gap = course is more valuable.
   const consensusRes = await sb
     .from("consensus_ratings")
-    .select("competency_id, final_score, competencies(name)")
+    .select("competency_id, final_score, competencies(name, name_ar)")
     .eq("engagement_id", args.engagementId);
   const consensus = (consensusRes.data ?? []) as unknown as ConsensusRow[];
 
-  const gapByCompetency = new Map<string, { name: string; gap: number }>();
+  const gapByCompetency = new Map<string, { name: string; name_ar: string | null; gap: number }>();
   for (const row of consensus) {
     const gap = target - (row.final_score ?? target);
     if (gap <= 0) continue;
@@ -176,6 +178,7 @@ export async function recommendCoursesForAcCohort(args: {
     } else {
       gapByCompetency.set(row.competency_id, {
         name: row.competencies?.name ?? "(unknown)",
+        name_ar: row.competencies?.name_ar ?? null,
         gap,
       });
     }
@@ -184,7 +187,7 @@ export async function recommendCoursesForAcCohort(args: {
   if (gapByCompetency.size === 0) return [];
 
   const gaps = Array.from(gapByCompetency.entries()).map(
-    ([competency_id, { name, gap }]) => ({ competency_id, name, gap })
+    ([competency_id, { name, name_ar, gap }]) => ({ competency_id, name, name_ar, gap })
   );
 
   const tagsRes = await sb
@@ -506,7 +509,7 @@ export async function recommendCoursesForAraAssessment(args: {
 
 function rankFromCompetencyTags(
   tags: CompetencyTagJoin[],
-  gaps: Array<{ competency_id: string; name: string; gap: number }>,
+  gaps: Array<{ competency_id: string; name: string; name_ar?: string | null; gap: number }>,
   limit: number
 ): RecommendedCourse[] {
   const gapByCompId = new Map(gaps.map((g) => [g.competency_id, g]));
@@ -524,6 +527,7 @@ function rankFromCompetencyTags(
       existing.total_score += contribution;
       existing.drivers.push({
         label: driver.name,
+        label_ar: driver.name_ar ?? null,
         kind: "competency",
         gap: driver.gap,
         relevance: tag.relevance_weight,
@@ -544,6 +548,7 @@ function rankFromCompetencyTags(
         total_score: contribution,
         drivers: [{
           label: driver.name,
+          label_ar: driver.name_ar ?? null,
           kind: "competency",
           gap: driver.gap,
           relevance: tag.relevance_weight,
@@ -577,6 +582,7 @@ function rankFromPillarTags(
       existing.total_score += contribution;
       existing.drivers.push({
         label: driver.name,
+        label_ar: null,
         kind: "pillar",
         gap: driver.gap,
         relevance: tag.relevance_weight,
@@ -597,6 +603,7 @@ function rankFromPillarTags(
         total_score: contribution,
         drivers: [{
           label: driver.name,
+          label_ar: null,
           kind: "pillar",
           gap: driver.gap,
           relevance: tag.relevance_weight,
@@ -662,11 +669,12 @@ export async function recommendCoursesForIndividualSnapshot(args: {
   const sb = createServiceClient();
 
   // 1. Build a flat list of (factor, competency_name, gap) tuples.
-  type FactorGap = { factorId: AraIndividualFactorId; factorLabel: string; competencyNames: string[]; gap: number };
+  type FactorGap = { factorId: AraIndividualFactorId; factorLabel: string; factorLabelAr: string | null; competencyNames: string[]; gap: number };
   const factorGaps: FactorGap[] = ARA_INDIVIDUAL_FACTORS
     .map((f) => ({
       factorId: f.id,
       factorLabel: f.name_en,
+      factorLabelAr: f.name_ar ?? null,
       competencyNames: f.ac_competency_names,
       gap: target - (args.factorScores[f.id] ?? target),
     }))
@@ -687,7 +695,7 @@ export async function recommendCoursesForIndividualSnapshot(args: {
 
   // Build (factor → competency_id list) so we can compute per-factor
   // contributions when ranking.
-  type FactorCompPair = { factorLabel: string; competency_id: string; gap: number };
+  type FactorCompPair = { factorLabel: string; factorLabelAr: string | null; competency_id: string; gap: number };
   const pairs: FactorCompPair[] = [];
   for (const fg of factorGaps) {
     for (const name of fg.competencyNames) {
@@ -695,6 +703,7 @@ export async function recommendCoursesForIndividualSnapshot(args: {
       if (!compId) continue; // competency name not in catalogue - skip
       pairs.push({
         factorLabel: fg.factorLabel,
+        factorLabelAr: fg.factorLabelAr,
         competency_id: compId,
         gap: fg.gap,
       });
@@ -733,6 +742,7 @@ export async function recommendCoursesForIndividualSnapshot(args: {
         existing.total_score += contribution;
         existing.drivers.push({
           label: pair.factorLabel,
+          label_ar: pair.factorLabelAr,
           kind: "competency",
           gap: pair.gap,
           relevance: tag.relevance_weight,
@@ -753,6 +763,7 @@ export async function recommendCoursesForIndividualSnapshot(args: {
           total_score: contribution,
           drivers: [{
             label: pair.factorLabel,
+            label_ar: pair.factorLabelAr,
             kind: "competency",
             gap: pair.gap,
             relevance: tag.relevance_weight,

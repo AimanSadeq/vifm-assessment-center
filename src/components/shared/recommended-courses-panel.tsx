@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { GraduationCap, ArrowRight } from "lucide-react";
 import { verticalLabel } from "@/lib/constants/verticals";
-import { getServerT } from "@/lib/i18n/server";
+import { getServerT, getServerLocale, getServerDir } from "@/lib/i18n/server";
 import type { RecommendedCourse } from "@/lib/recommender/courses";
 import { HIGH_FIT_THRESHOLD } from "@/lib/recommender/courses";
 import { formatFitScore, fitScoreOutOfTen } from "@/lib/recommender/format";
@@ -42,6 +42,7 @@ export async function RecommendedCoursesPanel({
   context,
 }: Props) {
   const t = await getServerT();
+  const rtl = getServerDir(await getServerLocale()) === "rtl";
   if (courses.length === 0) {
     return (
       <Card>
@@ -137,7 +138,7 @@ export async function RecommendedCoursesPanel({
                         }`}
                         title={d.rationale ?? undefined}
                       >
-                        <span className="font-medium">{d.label}</span>
+                        <span className="font-medium">{rtl ? (d.label_ar || d.label) : d.label}</span>
                         <span className="opacity-70 tabular-nums">
                           gap {formatFitScore(d.gap)} · ×{d.relevance}
                         </span>

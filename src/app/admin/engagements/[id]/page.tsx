@@ -49,11 +49,11 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
         .in("role", ["lead_assessor", "associate_assessor"]),
       supabase
         .from("exercise_competency_matrix")
-        .select("exercise_id, competency_id, competencies(name)")
+        .select("exercise_id, competency_id, competencies(name, name_ar)")
         .eq("engagement_id", id),
       supabase
         .from("integration_worksheets")
-        .select("*, competencies(name), profiles:assessor_id(full_name)")
+        .select("*, competencies(name, name_ar), profiles:assessor_id(full_name)")
         .eq("engagement_id", id),
       supabase
         .from("role_profiles")

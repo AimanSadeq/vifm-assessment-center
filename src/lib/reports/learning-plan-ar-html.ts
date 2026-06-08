@@ -189,7 +189,7 @@ function courseCardHtml(c: NonNullable<ReportData["recommendedCourses"]>[number]
   const drivers = c.drivers
     .map(
       (d) =>
-        `<span class="driver-chip">${escapeHtml(d.label)} · الفجوة ${escapeHtml(
+        `<span class="driver-chip">${escapeHtml(d.label_ar || d.label)} · الفجوة ${escapeHtml(
           formatFitScore(d.gap)
         )} × ×${d.relevance}</span>`
     )

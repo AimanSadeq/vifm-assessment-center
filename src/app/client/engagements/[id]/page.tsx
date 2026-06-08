@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getClientOrgId } from "@/lib/auth/get-org-id";
-import { getServerT } from "@/lib/i18n/server";
+import { getServerT, getServerLocale, getServerDir } from "@/lib/i18n/server";
+import { localizedName } from "@/lib/i18n/localized";
 import { BackLink } from "@/components/shared/back-link";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +27,7 @@ export default async function ClientEngagementDetailPage({ params }: Props) {
   const supabase = await createClient();
   const orgId = await getClientOrgId();
   const t = await getServerT();
+  const rtl = getServerDir(await getServerLocale()) === "rtl";
 
   // Build engagement query with org-scoping
   let engQuery = supabase
@@ -51,7 +53,7 @@ export default async function ClientEngagementDetailPage({ params }: Props) {
       .eq("engagement_id", params.id),
     supabase
       .from("consensus_ratings")
-      .select("candidate_id, competency_id, final_score, competencies(name)")
+      .select("candidate_id, competency_id, final_score, competencies(name, name_ar)")
       .eq("engagement_id", params.id),
   ]);
 
@@ -70,8 +72,8 @@ export default async function ClientEngagementDetailPage({ params }: Props) {
   const competencyNames = new Map<string, string>();
   const candidateScores = new Map<string, Map<string, number>>();
   for (const cr of consensusRatings) {
-    const comp = cr.competencies as unknown as { name: string } | null;
-    if (comp) competencyNames.set(cr.competency_id, comp.name);
+    const comp = cr.competencies as unknown as { name: string; name_ar: string | null } | null;
+    if (comp) competencyNames.set(cr.competency_id, localizedName(comp, rtl));
     if (!candidateScores.has(cr.candidate_id)) {
       candidateScores.set(cr.candidate_id, new Map());
     }

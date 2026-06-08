@@ -2,7 +2,8 @@ export const dynamic = "force-dynamic";
 
 import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
-import { getServerT } from "@/lib/i18n/server";
+import { getServerT, getServerLocale, getServerDir } from "@/lib/i18n/server";
+import { localizedName } from "@/lib/i18n/localized";
 import { BackLink } from "@/components/shared/back-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,9 +24,9 @@ import {
 
 type Props = { params: { id: string } };
 
-type DomainRef = { name: string; sort_order: number } | null;
+type DomainRef = { name: string; name_ar: string | null; sort_order: number } | null;
 type ClusterRef = { competency_domains: DomainRef } | null;
-type CompetencyRef = { name: string; competency_clusters: ClusterRef } | null;
+type CompetencyRef = { name: string; name_ar: string | null; competency_clusters: ClusterRef } | null;
 
 type ConsensusRow = {
   candidate_id: string;
@@ -77,6 +78,7 @@ type Placed = {
 export default async function TalentMapPage({ params }: Props) {
   const engagementId = params.id;
   const t = await getServerT();
+  const rtl = getServerDir(await getServerLocale()) === "rtl";
 
   let engName = "";
   let orgName = "-";
@@ -118,7 +120,7 @@ export default async function TalentMapPage({ params }: Props) {
         .from("consensus_ratings")
         .select(
           "candidate_id, competency_id, final_score, " +
-            "competencies(name, competency_clusters(competency_domains(name, sort_order)))"
+            "competencies(name, name_ar, competency_clusters(competency_domains(name, name_ar, sort_order)))"
         )
         .eq("engagement_id", engagementId),
       sb
@@ -192,13 +194,15 @@ export default async function TalentMapPage({ params }: Props) {
   }
 
   // ---- Skills heatmap matrix ----------------------------------------------
-  const compMeta = new Map<string, { name: string; domain: string; domainSort: number }>();
+  const compMeta = new Map<string, { name: string; domain: string; domainDisplay: string; domainSort: number }>();
   for (const r of consensus) {
     if (compMeta.has(r.competency_id)) continue;
     const d = r.competencies?.competency_clusters?.competency_domains;
     compMeta.set(r.competency_id, {
-      name: r.competencies?.name ?? "(unknown)",
+      name: localizedName(r.competencies, rtl) || "(unknown)",
+      // English domain name stays as the tint/group key; localized variant for display.
       domain: d?.name ?? "OTHER",
+      domainDisplay: d ? localizedName(d, rtl) : "OTHER",
       domainSort: d?.sort_order ?? 99,
     });
   }
@@ -207,11 +211,11 @@ export default async function TalentMapPage({ params }: Props) {
     .sort((a, b) => a.domainSort - b.domainSort || a.name.localeCompare(b.name));
 
   // Domain column-group runs (orderedComps is already domain-contiguous).
-  const domainGroups: { domain: string; span: number }[] = [];
+  const domainGroups: { domain: string; domainDisplay: string; span: number }[] = [];
   for (const comp of orderedComps) {
     const last = domainGroups[domainGroups.length - 1];
     if (last && last.domain === comp.domain) last.span += 1;
-    else domainGroups.push({ domain: comp.domain, span: 1 });
+    else domainGroups.push({ domain: comp.domain, domainDisplay: comp.domainDisplay, span: 1 });
   }
 
   const scoreAt = new Map<string, number>(); // `${candId}:${compId}` -> score
@@ -422,7 +426,7 @@ export default async function TalentMapPage({ params }: Props) {
                       colSpan={g.span}
                       className={`text-[10px] font-semibold uppercase tracking-wide rounded-t px-1 py-0.5 ${DOMAIN_TINT[g.domain] ?? "bg-muted text-muted-foreground"}`}
                     >
-                      {g.domain}
+                      {g.domainDisplay}
                     </th>
                   ))}
                 </tr>

@@ -194,7 +194,7 @@ export type PersonalSnapshotArData = {
     level: string;
     duration_label: string;
     total_score: number;
-    drivers: Array<{ label: string; gap: number; relevance: 1 | 2 | 3 }>;
+    drivers: Array<{ label: string; label_ar?: string | null; gap: number; relevance: 1 | 2 | 3 }>;
   }>;
 };
 
@@ -235,7 +235,7 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
         const titleAr = c.title_ar ?? c.title_en;
         const vertical = VIFM_VERTICAL_LABELS[c.vertical] ?? c.vertical;
         const level = c.level.charAt(0).toUpperCase() + c.level.slice(1);
-        const drivers = c.drivers.map((d) => `<span class="driver-chip">${esc(d.label)} · فجوة ${d.gap} × ×${d.relevance}</span>`).join("");
+        const drivers = c.drivers.map((d) => `<span class="driver-chip">${esc(d.label_ar || d.label)} · فجوة ${d.gap} × ×${d.relevance}</span>`).join("");
         return `
           <article class="course-card">
             <header class="course-head">

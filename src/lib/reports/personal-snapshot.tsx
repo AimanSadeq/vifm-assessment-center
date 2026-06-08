@@ -261,7 +261,7 @@ export type PersonalSnapshotData = {
     level: string;
     duration_label: string;
     total_score: number;
-    drivers: Array<{ label: string; gap: number; relevance: 1 | 2 | 3 }>;
+    drivers: Array<{ label: string; label_ar?: string | null; gap: number; relevance: 1 | 2 | 3 }>;
   }>;
 };
 

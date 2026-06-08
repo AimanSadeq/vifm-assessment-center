@@ -32,7 +32,7 @@
 
 import type { ReportData, ReportCompetencyData } from "./report-types";
 import { getCompetencyGap, GAP_TONES } from "@/lib/scoring/competency-gap";
-import { formatFitScore } from "@/lib/recommender/format";
+import { formatFitScore, fitMatchPercent } from "@/lib/recommender/format";
 import { AR_FONT_HREF, escapeHtml } from "./html-to-pdf";
 
 // ────────────────────────────────────────────────────────────────
@@ -181,8 +181,9 @@ function competencyCardHtml(
 // Course card - mirrors the React-PDF CoursesPage card. Prefers the
 // Arabic course title where present, else the English title.
 // ────────────────────────────────────────────────────────────────
-function courseCardHtml(c: NonNullable<ReportData["recommendedCourses"]>[number]): string {
+function courseCardHtml(c: NonNullable<ReportData["recommendedCourses"]>[number], topScore: number): string {
   const isHighFit = c.total_score >= 4;
+  const pct = fitMatchPercent(c.total_score, topScore);
   const titleAr = c.title_ar ?? c.title_en;
   const level = c.level.charAt(0).toUpperCase() + c.level.slice(1);
   const drivers = c.drivers
@@ -194,7 +195,7 @@ function courseCardHtml(c: NonNullable<ReportData["recommendedCourses"]>[number]
     )
     .join("");
   const fit = isHighFit
-    ? `<span class="course-fit">★ ملاءمة عالية · ${escapeHtml(formatFitScore(c.total_score))}</span>`
+    ? `<span class="course-fit">★ ملاءمة عالية · ${pct}% مطابقة</span>`
     : "";
   return `
     <article class="course-card">
@@ -211,7 +212,7 @@ function courseCardHtml(c: NonNullable<ReportData["recommendedCourses"]>[number]
         <span class="meta-pill">${escapeHtml(c.duration_label)}</span>
         ${
           !isHighFit
-            ? `<span class="meta-pill">درجة الملاءمة · ${escapeHtml(formatFitScore(c.total_score))}</span>`
+            ? `<span class="meta-pill">${pct}% مطابقة</span>`
             : ""
         }
       </div>
@@ -271,8 +272,8 @@ export function renderLearningPlanHtmlAr(data: ReportData): string {
     <p class="section-eyebrow">تدريب مستهدف</p>
     <h2 class="section-title">البرامج التدريبية الموصى بها من VIFM</h2>
     <div class="section-rule"></div>
-    <p class="body-text">ترتبط دورات VIFM التدريبية هذه بالكفاءات التي جاءت درجاتك فيها دون المستوى المستهدف. وهي مرتّبة حسب الملاءمة - المحتسبة كحاصل جمع (حجم الفجوة × صلة الدورة) عبر الكفاءات التي تطوّرها الدورة. ناقش مع مديرك أو مع استشاري VIFM أيّ دورة تناسب أولويتك التطويرية الحالية.</p>
-    ${courses.map((c) => courseCardHtml(c)).join("")}
+    <p class="body-text">ترتبط دورات VIFM التدريبية هذه بالكفاءات التي جاءت درجاتك فيها دون المستوى المستهدف. وهي مرتّبة حسب مدى مطابقتها لفجواتك - يظهر أقوى تطابق بنسبة 100% وتُعرض البقية نسبةً إليه. ناقش مع مديرك أو مع استشاري VIFM أيّ دورة تناسب أولويتك التطويرية الحالية.</p>
+    ${courses.map((c) => courseCardHtml(c, Math.max(0, ...courses.map((x) => x.total_score)))).join("")}
     ${footerHtml(data.candidateName)}
   </section>`
       : "";

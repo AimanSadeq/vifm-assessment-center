@@ -176,6 +176,15 @@ export default async function ReflectEngagementDetailPage({ params }: Params) {
                   {t("reflectConsultant.cohortReport")}
                 </a>
               )}
+              <Link
+                href={`/reflect/consultant/engagements/${engagement.id}/preview-rater`}
+                target="_blank"
+                className="inline-flex items-center gap-1.5 rounded-md border bg-card px-2.5 py-1.5 text-xs text-foreground hover:bg-muted transition-colors"
+                title="Preview the gamified rater experience — no data is saved"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Preview rater experience
+              </Link>
               {(engagement.status === "complete" || engagement.status === "archived" || engagement.status === "live") && (
                 <ReflectReassessButton engagementId={engagement.id} />
               )}

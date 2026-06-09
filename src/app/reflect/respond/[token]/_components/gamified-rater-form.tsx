@@ -133,7 +133,7 @@ const G = {
 
 const TENURE_ORDER: ReflectRaterTenure[] = ["less_than_6mo", "six_mo_to_2yr", "two_to_5yr", "over_5yr"];
 
-export function GamifiedRaterForm({ ctx }: { ctx: RaterContext }) {
+export function GamifiedRaterForm({ ctx, preview = false }: { ctx: RaterContext; preview?: boolean }) {
   const router = useRouter();
   const [language, setLanguage] = useState<"en" | "ar">(ctx.rater.language_preference);
   const rtl = language === "ar";
@@ -180,6 +180,7 @@ export function GamifiedRaterForm({ ctx }: { ctx: RaterContext }) {
   const [showNote, setShowNote] = useState(false);
 
   const [saveState, setSaveState] = useState<"idle" | "saving" | "failed">("idle");
+  const [previewDone, setPreviewDone] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const [submitting, startSubmitting] = useTransition();
 
@@ -210,6 +211,7 @@ export function GamifiedRaterForm({ ctx }: { ctx: RaterContext }) {
   };
 
   const persistOne = (behaviorId: string, next: LocalAnswer) => {
+    if (preview) return Promise.resolve();
     setSaveState("saving");
     return track(
       (async () => {
@@ -230,6 +232,7 @@ export function GamifiedRaterForm({ ctx }: { ctx: RaterContext }) {
   };
 
   const persistOpen = (kind: "start" | "stop" | "continue", text: string) => {
+    if (preview) return Promise.resolve();
     setSaveState("saving");
     return track(
       (async () => {
@@ -296,23 +299,26 @@ export function GamifiedRaterForm({ ctx }: { ctx: RaterContext }) {
       const next = new Set(prev);
       if (next.has(competencyId)) next.delete(competencyId);
       else next.add(competencyId);
-      setSaveState("saving");
-      track(
-        (async () => {
-          try {
-            const res = await saveReflectCriticalPicks({ token: ctx.rater.access_token, competency_ids: Array.from(next) });
-            if (!res.ok) setSaveState("failed");
-          } catch {
-            setSaveState("failed");
-          }
-        })()
-      );
+      if (!preview) {
+        setSaveState("saving");
+        track(
+          (async () => {
+            try {
+              const res = await saveReflectCriticalPicks({ token: ctx.rater.access_token, competency_ids: Array.from(next) });
+              if (!res.ok) setSaveState("failed");
+            } catch {
+              setSaveState("failed");
+            }
+          })()
+        );
+      }
       return next;
     });
   };
 
   const setTenure = (next: ReflectRaterTenure) => {
     setTenureState(next);
+    if (preview) return;
     setSaveState("saving");
     track(
       (async () => {
@@ -327,6 +333,10 @@ export function GamifiedRaterForm({ ctx }: { ctx: RaterContext }) {
   };
 
   const submit = () => {
+    if (preview) {
+      setPreviewDone(true);
+      return;
+    }
     startSubmitting(async () => {
       for (const [bid, timer] of Array.from(commentTimerRef.current.entries())) {
         clearTimeout(timer);
@@ -380,11 +390,34 @@ export function GamifiedRaterForm({ ctx }: { ctx: RaterContext }) {
     </span>
   );
 
+  if (previewDone) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-6 text-center" dir={rtl ? "rtl" : "ltr"}>
+        <div className="max-w-md">
+          <div className="h-14 w-14 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4">
+            <Trophy className="h-7 w-7" />
+          </div>
+          <h1 className="text-2xl font-semibold text-primary mb-2">{rtl ? "انتهت المعاينة" : "Preview complete"}</h1>
+          <p className="text-sm text-muted-foreground">
+            {rtl
+              ? "هكذا يختبر المُقيّمون التقييم 360 التفاعلي. لم يُحفظ أي شيء."
+              : "That's the gamified 360 as your raters experience it. Nothing was saved."}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background flex flex-col" dir={rtl ? "rtl" : "ltr"}>
       {!isOnline && (
         <div className="bg-amber-100 text-amber-900 px-4 py-2 text-xs flex items-center gap-2 justify-center border-b border-amber-200">
           <WifiOff className="h-3.5 w-3.5" /> {t.offline}
+        </div>
+      )}
+      {preview && (
+        <div className="bg-primary/10 text-primary px-4 py-2 text-xs text-center border-b border-primary/20 font-medium">
+          {rtl ? "معاينة — لا يُحفظ أي شيء تنقر عليه هنا" : "Preview — nothing you tap here is saved"}
         </div>
       )}
 

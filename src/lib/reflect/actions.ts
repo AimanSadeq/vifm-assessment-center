@@ -198,6 +198,7 @@ export async function createReflectEngagement(
       field_window_start: p.field_window_start ?? null,
       field_window_end: p.field_window_end ?? null,
       is_sandbox: p.is_sandbox,
+      gamified_mode: p.gamified_mode,
       status: "draft",
     })
     .select("id")

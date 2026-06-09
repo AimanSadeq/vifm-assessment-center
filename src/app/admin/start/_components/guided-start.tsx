@@ -633,6 +633,7 @@ function ReflectInline({ araOrgs, templates }: { araOrgs: AraOrg[]; templates: R
       report_language: "bilingual",
       anonymity_min_n: 3,
       is_sandbox: false,
+      gamified_mode: false,
       framework,
     });
     setSubmitting(false);

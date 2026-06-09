@@ -3177,6 +3177,7 @@
       "fieldStartLabel": "Field window start",
       "fieldEndLabel": "Field window end",
       "sandboxLabel": "Sandbox engagement - invitations + reminders are redirected to the sandbox inbox and do not reach real raters. Use this for client demos and internal testing.",
+      "gamifiedLabel": "Gamified rater experience (beta) - raters get a faster, one-card-at-a-time flow with progress and momentum. Same questions and scoring as the standard 360.",
       "modal": {
         "title": "Add a new organisation",
         "subtitle": "Stored in the shared client list - also available to AI Readiness engagements.",

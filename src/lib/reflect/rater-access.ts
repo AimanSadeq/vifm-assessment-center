@@ -50,6 +50,7 @@ export type EngagementRow = {
   name: string;
   status: string;
   is_sandbox: boolean;
+  gamified_mode: boolean;
   default_language: "en" | "ar";
   scale_type: string;
   anonymity_min_n: number;
@@ -136,7 +137,7 @@ export async function loadRaterByToken(token: string): Promise<RaterContext | nu
   const { data: engagement } = await sb
     .from("reflect_engagements")
     .select(
-      "id, name, status, is_sandbox, default_language, scale_type, anonymity_min_n, ara_organizations(id, name, name_ar)"
+      "id, name, status, is_sandbox, gamified_mode, default_language, scale_type, anonymity_min_n, ara_organizations(id, name, name_ar)"
     )
     .eq("id", participant.engagement_id)
     .maybeSingle<EngagementRow>();

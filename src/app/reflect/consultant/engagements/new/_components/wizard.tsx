@@ -47,6 +47,7 @@ export type WizardState = {
   field_window_start: string;
   field_window_end: string;
   is_sandbox: boolean;
+  gamified_mode: boolean;
 
   // Step 2
   framework_kind: FrameworkKind;
@@ -93,6 +94,7 @@ export function ReflectWizard({ orgs: initialOrgs, templates, defaultOrgId }: Pr
     field_window_start: "",
     field_window_end: "",
     is_sandbox: false,
+    gamified_mode: false,
     framework_kind: "clone",
     framework_template_id: "",
     framework_name_en: "",
@@ -167,6 +169,7 @@ export function ReflectWizard({ orgs: initialOrgs, templates, defaultOrgId }: Pr
         field_window_start: state.field_window_start || null,
         field_window_end: state.field_window_end || null,
         is_sandbox: state.is_sandbox,
+        gamified_mode: state.gamified_mode,
         framework:
           state.framework_kind === "clone"
             ? { kind: "clone", templateId: state.framework_template_id }

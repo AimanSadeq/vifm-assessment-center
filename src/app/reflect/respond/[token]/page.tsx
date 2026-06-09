@@ -3,6 +3,7 @@ import { Aperture, CheckCircle2 } from "lucide-react";
 import { loadRaterByToken } from "@/lib/reflect/rater-access";
 import { touchReflectRater } from "@/lib/reflect/rater-actions";
 import { RaterForm } from "./_components/rater-form";
+import { GamifiedRaterForm } from "./_components/gamified-rater-form";
 
 export const dynamic = "force-dynamic";
 
@@ -43,5 +44,5 @@ export default async function ReflectRespondPage({ params }: Params) {
     );
   }
 
-  return <RaterForm ctx={ctx} />;
+  return ctx.engagement.gamified_mode ? <GamifiedRaterForm ctx={ctx} /> : <RaterForm ctx={ctx} />;
 }

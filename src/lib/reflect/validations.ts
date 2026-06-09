@@ -67,6 +67,7 @@ export const createEngagementSchema = z.object({
   field_window_start: z.string().nullable().optional(),
   field_window_end: z.string().nullable().optional(),
   is_sandbox: z.boolean().default(false),
+  gamified_mode: z.boolean().default(false),
   // Framework selection at create time. One of:
   //   { kind: 'clone', templateId }
   //   { kind: 'manual', name }

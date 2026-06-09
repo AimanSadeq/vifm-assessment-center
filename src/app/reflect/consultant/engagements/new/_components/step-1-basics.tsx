@@ -205,6 +205,17 @@ export function StepBasics({ state, update, orgs, onOrgCreated }: Props) {
             {t("reflectWizard.step1.sandboxLabel")}
           </Label>
         </div>
+
+        <div className="md:col-span-2 flex items-center gap-2 rounded-md border bg-muted/30 p-3">
+          <Checkbox
+            id="rf-gamified"
+            checked={state.gamified_mode}
+            onCheckedChange={(v) => update({ gamified_mode: Boolean(v) })}
+          />
+          <Label htmlFor="rf-gamified" className="text-sm font-normal cursor-pointer">
+            {t("reflectWizard.step1.gamifiedLabel")}
+          </Label>
+        </div>
       </div>
 
       {/* Add-new-org modal */}

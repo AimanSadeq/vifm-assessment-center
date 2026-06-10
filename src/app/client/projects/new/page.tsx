@@ -133,7 +133,7 @@ export default function ClientNewProjectPage() {
               <Label>{t("clientAnalytics.newProject.labelProjectName")}</Label>
               <Input value={projectName} onChange={(e) => setProjectName(e.target.value)} placeholder={t("clientAnalytics.newProject.placeholderProjectName")} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>{t("clientAnalytics.newProject.labelProjectType")}</Label>
                 <Select value={projectType} onValueChange={setProjectType}>
@@ -157,7 +157,7 @@ export default function ClientNewProjectPage() {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>{t("clientAnalytics.newProject.labelStartDate")}</Label>
                 <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />

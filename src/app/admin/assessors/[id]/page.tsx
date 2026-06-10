@@ -82,7 +82,7 @@ export default async function AssessorDetailPage({
       </div>
 
       {/* KPI cards */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-muted-foreground">{t("adminAssessors.kpi.assignments")}</CardTitle>

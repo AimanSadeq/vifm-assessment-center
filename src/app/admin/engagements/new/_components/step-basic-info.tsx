@@ -187,7 +187,7 @@ export function StepBasicInfo({ organizations: initialOrgs }: Props) {
         </div>
 
         {/* Assessment Type & Norm Group */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>{t("adminWizard.step1.assessmentType")}</Label>
             <Select
@@ -231,7 +231,7 @@ export function StepBasicInfo({ organizations: initialOrgs }: Props) {
         </div>
 
         {/* Dates */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>{t("adminWizard.step1.startDate")}</Label>
             <Input

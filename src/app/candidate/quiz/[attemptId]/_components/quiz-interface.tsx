@@ -173,7 +173,7 @@ export function QuizInterface({
 
       {/* Question */}
       <Card>
-        <CardContent className="p-6 space-y-5">
+        <CardContent className="p-4 sm:p-6 space-y-5">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
               {t("quiz.questionOfTotal", { n: currentIdx + 1, total: questions.length })}
@@ -245,12 +245,12 @@ export function QuizInterface({
       </Card>
 
       {/* Footer */}
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Button
           variant="destructive"
           onClick={handleEndSession}
           disabled={submitting}
-          className="gap-2"
+          className="gap-2 min-h-10"
         >
           <AlertTriangle className="h-4 w-4" />
           {t("quiz.endSession")}
@@ -258,11 +258,11 @@ export function QuizInterface({
 
         <div className="ms-auto flex items-center gap-2">
           {currentIdx > 0 && (
-            <Button variant="ghost" onClick={handlePrev} disabled={submitting}>
+            <Button variant="ghost" onClick={handlePrev} disabled={submitting} className="min-h-10">
               {t("quiz.previous")}
             </Button>
           )}
-          <Button onClick={handleNext} disabled={submitting}>
+          <Button onClick={handleNext} disabled={submitting} className="min-h-10">
             {submitting && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
             {isFinal
               ? allAnswered

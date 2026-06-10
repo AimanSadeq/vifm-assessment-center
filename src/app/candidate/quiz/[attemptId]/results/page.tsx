@@ -139,8 +139,8 @@ export default async function QuizResultsPage({ params }: Props) {
       </div>
 
       {/* Score circle + stat cards */}
-      <div className="grid gap-3 sm:grid-cols-4">
-        <Card className="sm:col-span-1">
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
+        <Card className="col-span-2 sm:col-span-1">
           <CardContent className="p-4 flex flex-col items-center justify-center gap-1">
             <ScoreCircle pct={scoreFraction} label={scoreLabel} />
             <p className="text-[11px] text-muted-foreground uppercase tracking-wide">{t("quiz.results.yourScore")}</p>

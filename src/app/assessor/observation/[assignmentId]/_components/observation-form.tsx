@@ -257,7 +257,7 @@ export function ObservationForm({
       </div>
 
       <Tabs defaultValue="overview">
-        <TabsList>
+        <TabsList className="max-w-full overflow-x-auto">
           <TabsTrigger value="overview">{t("assessorPortal.observation.tabs.overview")}</TabsTrigger>
           <TabsTrigger value="observe">{t("assessorPortal.observation.tabs.observe")}</TabsTrigger>
           <TabsTrigger value="rate">{t("assessorPortal.observation.tabs.rate", { rated: Object.values(ratings).filter((r) => r.score > 0).length, total: competencies.length })}</TabsTrigger>
@@ -342,7 +342,7 @@ export function ObservationForm({
               <CardTitle className="text-base">{t("assessorPortal.observation.observe.recordTitle")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label>{t("assessorPortal.observation.observe.competency")}</Label>
                   <Select value={newObsCompId} onValueChange={setNewObsCompId}>

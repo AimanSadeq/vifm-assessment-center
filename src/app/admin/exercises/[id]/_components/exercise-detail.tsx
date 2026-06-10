@@ -161,7 +161,7 @@ export function ExerciseDetail({ exercise, rolePlayerPrompts }: Props) {
               <CardTitle className="text-base">{t("exercise.cardTiming")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label>{t("exercise.lblInstrMin")}</Label>
                   <Input type="number" value={instructionsMinutes} onChange={(e) => setInstructionsMinutes(Number(e.target.value))} placeholder="10" />
@@ -210,7 +210,7 @@ export function ExerciseDetail({ exercise, rolePlayerPrompts }: Props) {
                 </p>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>{t("exercise.lblCharName")}</Label>
                     <Input value={characterName} onChange={(e) => setCharacterName(e.target.value)} placeholder={t("exercise.phCharName")} />

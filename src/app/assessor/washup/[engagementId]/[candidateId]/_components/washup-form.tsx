@@ -562,7 +562,7 @@ export function WashupForm({
           {/* Recommendation */}
           <div className="space-y-2">
             <Label className="text-sm font-medium">{t("assessorWashup.form.recommendation")}</Label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {(["ready_now", "ready_with_development", "not_ready"] as const).map(
                 (rec) => (
                   <Button

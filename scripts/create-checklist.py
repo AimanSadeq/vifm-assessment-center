@@ -4,15 +4,23 @@ from reportlab.lib.colors import HexColor, white
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.enums import TA_CENTER
+import os
 
 PRIMARY = HexColor("#010131")
 ACCENT = HexColor("#5391D5")
+DONE = HexColor("#1F9D55")
 LIGHT_BG = HexColor("#F4F6F8")
 BORDER = HexColor("#DDE1E6")
 TEXT = HexColor("#333333")
 TEXT_LIGHT = HexColor("#666666")
 
-output_path = r"C:\Users\AimanSadeq\OneDrive - Virginia Institute of Finance\VIFM ASSESSMENT CENTER\VIFM_AC_Portal_Production_Checklist.pdf"
+# Write next to the repo root so this regenerates anywhere (the PDF lives at
+# the project root). Falls back to the original OneDrive path if you'd rather
+# point it there manually.
+output_path = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "VIFM_AC_Portal_Production_Checklist.pdf",
+)
 
 s_title = ParagraphStyle("title", fontName="Helvetica-Bold", fontSize=22, textColor=white, alignment=TA_CENTER)
 s_subtitle = ParagraphStyle("subtitle", fontName="Helvetica", fontSize=12, textColor=ACCENT, alignment=TA_CENTER)
@@ -20,9 +28,14 @@ s_date = ParagraphStyle("date", fontName="Helvetica", fontSize=10, textColor=Hex
 s_phase = ParagraphStyle("phase", fontName="Helvetica-Bold", fontSize=13, textColor=PRIMARY, spaceBefore=14, spaceAfter=2)
 s_meta = ParagraphStyle("meta", fontName="Helvetica", fontSize=8, textColor=TEXT_LIGHT, spaceAfter=6)
 s_item = ParagraphStyle("item", fontName="Helvetica", fontSize=9, textColor=TEXT, leading=13)
+s_item_done = ParagraphStyle("item_done", fontName="Helvetica", fontSize=9, textColor=TEXT_LIGHT, leading=13)
 s_cb = ParagraphStyle("cb", fontName="Helvetica", fontSize=12, textColor=ACCENT)
+s_cb_done = ParagraphStyle("cb_done", fontName="Helvetica-Bold", fontSize=12, textColor=DONE)
 s_notes = ParagraphStyle("notes", fontName="Helvetica-Bold", fontSize=11, textColor=PRIMARY, spaceBefore=18, spaceAfter=6)
 
+# Each item is either a plain string (pending) or a (text, True) tuple (done).
+# Done items render with a green check + strikethrough so the remaining work
+# reads at a glance.
 phases = [
     ("PHASE A: DESIGN FINALIZATION", "Owner: VIFM Team  |  Timeline: 1-2 weeks", [
         "Walk through Admin portal - create engagement, add candidates, assign assessors",
@@ -34,7 +47,7 @@ phases = [
         "Generate PDF report - print and review for client-readiness",
         "Add real exercise content - briefings, timing, role player guides",
         "Test the gamified process maps on all 4 portals",
-        "Test mobile responsiveness on phone and tablet",
+        ("Test mobile responsiveness on phone and tablet", True),
         "Flag any UI/UX changes for developer",
     ]),
     ("PHASE B: AUTHENTICATION & SECURITY", "Owner: Developer  |  Timeline: 1-2 days", [
@@ -129,10 +142,18 @@ for name, meta, items in phases:
 
     rows = []
     for item in items:
-        rows.append([
-            Paragraph("\u25a1", s_cb),
-            Paragraph(item, s_item),
-        ])
+        done = isinstance(item, tuple) and item[1]
+        text = item[0] if isinstance(item, tuple) else item
+        if done:
+            rows.append([
+                Paragraph("\u2611", s_cb_done),
+                Paragraph("<strike>%s</strike>" % text, s_item_done),
+            ])
+        else:
+            rows.append([
+                Paragraph("\u25a1", s_cb),
+                Paragraph(text, s_item),
+            ])
 
     t = Table(rows, colWidths=[8*mm, doc.width - 10*mm])
     t.setStyle(TableStyle([

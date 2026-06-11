@@ -93,7 +93,7 @@ export function AnalyticsDashboard({
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
             <p className="text-2xl font-bold">{engagementCount}</p>
@@ -134,7 +134,7 @@ export function AnalyticsDashboard({
         </Card>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Score Distribution */}
         <Card>
           <CardHeader>
@@ -221,7 +221,7 @@ export function AnalyticsDashboard({
         </Card>
       )}
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Department Comparison */}
         {departmentAverages.length > 0 && (
           <Card>

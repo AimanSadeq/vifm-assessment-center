@@ -146,19 +146,21 @@ export default async function CandidateReportPage({ params, searchParams }: Prop
                 {consensusRatings.map((cr) => {
                   const comp = cr.competencies as unknown as { name: string; name_ar: string | null } | null;
                   return (
-                    <div key={cr.competency_id} className="flex items-center gap-3">
-                      <span className="text-sm min-w-[180px]">
+                    <div key={cr.competency_id} className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
+                      <span className="text-sm sm:min-w-[180px]">
                         {localizedName(comp, rtl) || t("candidateReport.unknownCompetency")}
                       </span>
-                      <div className="flex-1 h-3 rounded-full bg-muted overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-primary transition-all"
-                          style={{ width: `${(cr.final_score / 5) * 100}%` }}
-                        />
+                      <div className="flex items-center gap-3 sm:flex-1">
+                        <div className="flex-1 h-3 rounded-full bg-muted overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-primary transition-all"
+                            style={{ width: `${(cr.final_score / 5) * 100}%` }}
+                          />
+                        </div>
+                        <Badge variant={cr.final_score >= 3 ? "default" : "destructive"}>
+                          {cr.final_score}/5
+                        </Badge>
                       </div>
-                      <Badge variant={cr.final_score >= 3 ? "default" : "destructive"}>
-                        {cr.final_score}/5
-                      </Badge>
                     </div>
                   );
                 })}
@@ -172,7 +174,7 @@ export default async function CandidateReportPage({ params, searchParams }: Prop
               <CardTitle>{t("candidateReport.pdfsTitle")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex items-center justify-between gap-4 rounded-md border p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-md border p-4">
                 <div>
                   <p className="font-medium">{t("candidateReport.fullReportTitle")}</p>
                   <p className="text-sm text-muted-foreground">
@@ -183,11 +185,12 @@ export default async function CandidateReportPage({ params, searchParams }: Prop
                   href={`/api/reports/${eng.id}/${candidateId}`}
                   target="_blank"
                   rel="noopener noreferrer"
+                  className="shrink-0"
                 >
-                  <Button>{t("candidateReport.downloadReport")}</Button>
+                  <Button className="w-full sm:w-auto">{t("candidateReport.downloadReport")}</Button>
                 </a>
               </div>
-              <div className="flex items-center justify-between gap-4 rounded-md border p-4 bg-accent/5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-md border p-4 bg-accent/5">
                 <div>
                   <p className="font-medium">{t("candidateReport.learningPlanTitle")}</p>
                   <p className="text-sm text-muted-foreground">
@@ -198,8 +201,9 @@ export default async function CandidateReportPage({ params, searchParams }: Prop
                   href={`/api/reports/${eng.id}/${candidateId}/learning-plan`}
                   target="_blank"
                   rel="noopener noreferrer"
+                  className="shrink-0"
                 >
-                  <Button variant="secondary">{t("candidateReport.downloadLearningPlan")}</Button>
+                  <Button variant="secondary" className="w-full sm:w-auto">{t("candidateReport.downloadLearningPlan")}</Button>
                 </a>
               </div>
             </CardContent>

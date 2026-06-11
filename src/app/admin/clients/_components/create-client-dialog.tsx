@@ -67,7 +67,7 @@ export function CreateClientDialog() {
             <Input id="cl-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Gulf Investment Bank" />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="cl-industry">Industry</Label>
               <Input id="cl-industry" value={industry} onChange={(e) => setIndustry(e.target.value)} placeholder="e.g. Banking" />
@@ -78,7 +78,7 @@ export function CreateClientDialog() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="cl-region">Region <span className="text-slate-400">(AI Readiness / Reflect)</span></Label>
               <select id="cl-region" className={selectCls} value={region} onChange={(e) => setRegion(e.target.value as "uae" | "saudi")}>
@@ -96,7 +96,7 @@ export function CreateClientDialog() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="cl-cname">Contact name</Label>
               <Input id="cl-cname" value={contactName} onChange={(e) => setContactName(e.target.value)} />

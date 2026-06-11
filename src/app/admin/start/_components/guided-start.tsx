@@ -522,7 +522,7 @@ function PrehireInline({
         <Label htmlFor="w-title">{t("start.prehire.roleTitle")}</Label>
         <Input id="w-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("start.prehire.roleTitlePh")} />
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="w-org">{t("start.prehire.clientOrg")}</Label>
           <select id="w-org" value={orgId} onChange={(e) => setOrgId(e.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
@@ -586,7 +586,7 @@ function AraOrgInline({ araOrgs, araVersionId }: { araOrgs: AraOrg[]; araVersion
           ))}
         </select>
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="ara-region">{t("start.ara.region")}</Label>
           <select id="ara-region" name="region" required defaultValue="" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
@@ -649,7 +649,7 @@ function ReflectInline({ araOrgs, templates }: { araOrgs: AraOrg[]; templates: R
         <Label htmlFor="rf-name">{t("start.reflect.name")}</Label>
         <Input id="rf-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("start.reflect.namePh")} />
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="rf-org">{t("start.reflect.orgOptional")}</Label>
           <select id="rf-org" value={orgId} onChange={(e) => setOrgId(e.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">

@@ -14,6 +14,7 @@ import type { BankItem } from "@/lib/competencies/technical-item-bank";
 import type { FunctionReadiness, FunctionCutScore } from "@/lib/competencies/technical-function-bank";
 import {
   draftFunctionSkillItemsAction,
+  draftAllFunctionSkillItemsAction,
   setFunctionItemStatusAction,
   setFunctionCutScoreAction,
   calibrateFunctionBankAction,
@@ -93,6 +94,26 @@ export function CertWorkbench({
     });
   };
 
+  const [draftingAll, setDraftingAll] = useState(false);
+  const draftAll = () => {
+    setDraftingAll(true);
+    startTransition(async () => {
+      const res = await draftAllFunctionSkillItemsAction({
+        ref: fn.ref,
+        skills: fn.skillsEn,
+        context: fn.name,
+        perSkill: DRAFT_COUNT,
+      });
+      setDraftingAll(false);
+      if ("error" in res) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success(t("techFn.cert.draftedAll", { n: res.inserted, s: res.skillsDrafted }));
+      router.refresh();
+    });
+  };
+
   const setStatus = (itemId: string, status: string) =>
     run(() => setFunctionItemStatusAction({ ref: fn.ref, itemId, status }));
 
@@ -164,7 +185,19 @@ export function CertWorkbench({
       {/* Per-skill bank */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">{t("techFn.cert.certTitle")}</CardTitle>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle className="text-base">{t("techFn.cert.certTitle")}</CardTitle>
+            <Button
+              onClick={draftAll}
+              disabled={pending || !aiOn}
+              size="sm"
+              className="gap-1.5"
+              title={t("techFn.cert.draftAllHint")}
+            >
+              {draftingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              {draftingAll ? t("techFn.cert.draftingAll") : t("techFn.cert.draftAll")}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-2">
           {fn.skillsEn.map((skill) => {

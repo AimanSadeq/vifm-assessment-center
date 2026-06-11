@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "backfill:evidence": "tsx scripts/backfill-evidence.ts"
+    "backfill:evidence": "tsx scripts/backfill-evidence.ts",
+    "draft:tech-items": "tsx scripts/draft-function-items.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.81.0",

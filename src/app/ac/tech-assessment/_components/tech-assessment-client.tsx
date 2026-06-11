@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Loader2, CheckCircle2, RotateCcw, GraduationCap, AlertCircle, ShieldCheck, ExternalLink, Layers3, ChevronDown, Gauge } from "lucide-react";
 import type { LocalizedTechDomain } from "@/lib/competencies/technical-taxonomy";
 import type { LocalizedTechFunction } from "@/lib/competencies/technical-function";
+import { categoryRank } from "@/lib/competencies/technical-function";
 import type { PublicTechTest, TechResult } from "@/lib/ai/technical-assessment";
 
 type Phase = "intro" | "test" | "adaptive" | "result";
@@ -92,14 +93,15 @@ export function TechAssessmentClient({
 
   // Functions grouped by their category, for a tidy picker.
   const grouped = useMemo(() => {
-    const map = new Map<string, { label: string; items: LocalizedTechFunction[] }>();
+    const map = new Map<string, { cat: string; label: string; items: LocalizedTechFunction[] }>();
     for (const f of functions) {
       const key = f.category ?? "other";
       const bucket = map.get(key);
       if (bucket) bucket.items.push(f);
-      else map.set(key, { label: f.categoryLabel, items: [f] });
+      else map.set(key, { cat: key, label: f.categoryLabel, items: [f] });
     }
-    return Array.from(map.values());
+    // Order the competency buckets by the canonical CATEGORY_ORDER.
+    return Array.from(map.values()).sort((a, b) => categoryRank(a.cat) - categoryRank(b.cat));
   }, [functions]);
 
   async function start(kind: RunKind, key: string) {

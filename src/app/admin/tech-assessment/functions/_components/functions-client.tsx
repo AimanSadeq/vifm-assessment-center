@@ -15,6 +15,7 @@ import {
   Upload, Loader2, Sparkles, FileText, Layers3, Trash2, ExternalLink, Plus, Wand2, ShieldCheck,
 } from "lucide-react";
 import type { LocalizedTechFunction } from "@/lib/competencies/technical-function";
+import { categoryRank } from "@/lib/competencies/technical-function";
 import type { JdFunctionBlueprint } from "@/lib/ai/jd-technical-extractor";
 import {
   extractFunctionFromJdAction,
@@ -59,7 +60,9 @@ export function FunctionsClient({
       const k = f.categoryLabel;
       (map.get(k) ?? map.set(k, []).get(k)!).push(f);
     }
-    return Array.from(map.entries());
+    return Array.from(map.entries()).sort(
+      (a, b) => categoryRank(a[1][0]?.category ?? null) - categoryRank(b[1][0]?.category ?? null)
+    );
   }, [functions]);
 
   const handleExtract = () => {

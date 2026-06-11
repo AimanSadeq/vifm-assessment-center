@@ -15,7 +15,7 @@ import {
   Upload, Loader2, Sparkles, FileText, Layers3, Trash2, ExternalLink, Plus, Wand2, ShieldCheck,
 } from "lucide-react";
 import type { LocalizedTechFunction } from "@/lib/competencies/technical-function";
-import { categoryRank } from "@/lib/competencies/technical-function";
+import { categoryRank } from "@/lib/competencies/technical-categories";
 import type { JdFunctionBlueprint } from "@/lib/ai/jd-technical-extractor";
 import {
   extractFunctionFromJdAction,

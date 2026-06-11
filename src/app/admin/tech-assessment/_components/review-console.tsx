@@ -108,7 +108,7 @@ export function ReviewConsole({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs">{t("tech.sme.passMark")}</Label>
                 <Input
@@ -400,7 +400,7 @@ function ItemEditor({
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <Label className="text-xs">{t("tech.sme.skill")}</Label>
           <Select value={skill} onValueChange={setSkill}>

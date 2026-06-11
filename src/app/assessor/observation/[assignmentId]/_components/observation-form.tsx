@@ -257,7 +257,7 @@ export function ObservationForm({
       </div>
 
       <Tabs defaultValue="overview">
-        <TabsList>
+        <TabsList className="max-w-full overflow-x-auto">
           <TabsTrigger value="overview">{t("assessorPortal.observation.tabs.overview")}</TabsTrigger>
           <TabsTrigger value="observe">{t("assessorPortal.observation.tabs.observe")}</TabsTrigger>
           <TabsTrigger value="rate">{t("assessorPortal.observation.tabs.rate", { rated: Object.values(ratings).filter((r) => r.score > 0).length, total: competencies.length })}</TabsTrigger>
@@ -342,7 +342,7 @@ export function ObservationForm({
               <CardTitle className="text-base">{t("assessorPortal.observation.observe.recordTitle")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label>{t("assessorPortal.observation.observe.competency")}</Label>
                   <Select value={newObsCompId} onValueChange={setNewObsCompId}>
@@ -376,7 +376,7 @@ export function ObservationForm({
               {newObsCompId && getIndicators(newObsCompId).length > 0 && (
                 <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
                   <p className="text-xs font-semibold text-muted-foreground">{t("assessorPortal.observation.observe.lookForBehaviors")}</p>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                       <p className="text-[10px] font-medium text-green-700 mb-1">{t("assessorPortal.observation.observe.positiveIndicators")}</p>
                       {getIndicators(newObsCompId, "positive").map((bi) => (
@@ -508,7 +508,7 @@ export function ObservationForm({
                   {getIndicators(comp.id).length > 0 && (
                     <div className="rounded-md bg-muted/40 p-2.5 space-y-1">
                       <p className="text-[10px] font-semibold text-muted-foreground">{t("assessorPortal.observation.rate.behavioralIndicators")}</p>
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-0.5">
                         {getIndicators(comp.id, "positive").slice(0, 4).map((bi) => (
                           <p key={bi.id} className="text-[10px] text-green-700">+ {bi.description}</p>
                         ))}

@@ -407,10 +407,78 @@ export default async function TalentMapPage({ params }: Props) {
             {t("adminEngagements.talentMap.heatmapDesc")}
           </p>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent>
           {orderedComps.length === 0 || candidates.length === 0 ? (
             <EmptyNote text={t("adminEngagements.talentMap.heatmapEmpty")} />
           ) : (
+            <>
+            {/* Mobile: per-candidate card list (the wide heatmap matrix scrolls awkwardly on a phone) */}
+            <div className="space-y-4 md:hidden">
+              {candidates.map((c) => (
+                <div key={c.id} className="rounded-lg border p-3">
+                  <p className="mb-2 text-sm font-semibold">{c.full_name}</p>
+                  <div className="space-y-2.5">
+                    {domainGroups.map((g, gi) => (
+                      <div key={gi}>
+                        <p className={`mb-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${DOMAIN_TINT[g.domain] ?? "bg-muted text-muted-foreground"}`}>
+                          {g.domainDisplay}
+                        </p>
+                        <div className="space-y-1">
+                          {orderedComps.filter((comp) => comp.domain === g.domain).map((comp) => {
+                            const s = scoreAt.get(`${c.id}:${comp.id}`);
+                            const tone = s === undefined ? null : heatmapTone(s);
+                            return (
+                              <div key={comp.id} className="flex items-center justify-between gap-2 text-xs">
+                                <span className="min-w-0 flex-1 truncate text-muted-foreground">{comp.name}</span>
+                                <span
+                                  className={`grid h-6 w-9 shrink-0 place-items-center rounded text-[11px] font-bold ${tone ? "" : "bg-muted/40 font-normal text-muted-foreground"}`}
+                                  style={tone ? { backgroundColor: tone.bg, color: tone.fg } : undefined}
+                                >
+                                  {s ?? "-"}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {/* Cohort average */}
+              <div className="rounded-lg border border-dashed p-3">
+                <p className="mb-2 text-sm font-semibold">{t("adminEngagements.talentMap.cohortAvg")}</p>
+                <div className="space-y-2.5">
+                  {domainGroups.map((g, gi) => (
+                    <div key={gi}>
+                      <p className={`mb-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${DOMAIN_TINT[g.domain] ?? "bg-muted text-muted-foreground"}`}>
+                        {g.domainDisplay}
+                      </p>
+                      <div className="space-y-1">
+                        {orderedComps.filter((comp) => comp.domain === g.domain).map((comp) => {
+                          const m = compAvg.get(comp.id);
+                          const tone = m === undefined ? null : heatmapTone(m);
+                          return (
+                            <div key={comp.id} className="flex items-center justify-between gap-2 text-xs">
+                              <span className="min-w-0 flex-1 truncate text-muted-foreground">{comp.name}</span>
+                              <span
+                                className={`grid h-6 w-9 shrink-0 place-items-center rounded text-[11px] font-bold ${tone ? "" : "bg-muted/40 font-normal text-muted-foreground"}`}
+                                style={tone ? { backgroundColor: tone.bg, color: tone.fg } : undefined}
+                              >
+                                {m === undefined ? "-" : m.toFixed(1)}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Tablet/desktop: scrollable heatmap matrix */}
+            <div className="hidden overflow-x-auto md:block">
             <table className="w-full border-separate border-spacing-0.5 text-sm">
               <thead>
                 <tr>
@@ -501,6 +569,8 @@ export default async function TalentMapPage({ params }: Props) {
                 </tr>
               </tbody>
             </table>
+            </div>
+            </>
           )}
         </CardContent>
       </Card>

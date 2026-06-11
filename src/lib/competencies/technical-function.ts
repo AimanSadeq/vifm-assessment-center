@@ -26,7 +26,9 @@ export type StandardFunction = {
   skills_ar: string[];
 };
 
-/** Canonical fallback — mirrors the 00058 seed exactly (12 standard finance functions). */
+/** Canonical fallback — mirrors the 00058 + 00060 seed (47 standard functions
+ *  across 9 competencies: Finance, Accounting, Banking, Investment, Treasury,
+ *  Data Analytics, Business Intelligence, Artificial Intelligence, HR). */
 export const STANDARD_FUNCTIONS: StandardFunction[] = [
   {
     key: "accounts_payable",
@@ -56,7 +58,7 @@ export const STANDARD_FUNCTIONS: StandardFunction[] = [
     key: "financial_reporting",
     name_en: "Financial Reporting & Consolidation",
     name_ar: "التقارير المالية والتوحيد",
-    category: "reporting",
+    category: "accounting",
     skills_en: ["IFRS Application & Disclosures", "Consolidation & Eliminations", "FX Translation", "Statutory & Regulatory Reporting", "Narrative & ESG Reporting", "Reporting Controls"],
     skills_ar: ["تطبيق المعايير الدولية والإفصاحات", "التوحيد والاستبعادات", "ترجمة العملات الأجنبية", "التقارير النظامية والرقابية", "التقارير السردية وتقارير الاستدامة (ESG)", "ضوابط إعداد التقارير"],
   },
@@ -64,7 +66,7 @@ export const STANDARD_FUNCTIONS: StandardFunction[] = [
     key: "management_accounting",
     name_en: "Management Accounting",
     name_ar: "المحاسبة الإدارية",
-    category: "accounting",
+    category: "finance",
     skills_en: ["Costing Methods (Standard/ABC/Marginal)", "Variance Analysis", "Budgeting Support", "Profitability & Contribution Analysis", "Cost Allocation", "Management Reporting"],
     skills_ar: ["طرق التكاليف (المعيارية/على الأنشطة/الحدية)", "تحليل الانحرافات", "دعم إعداد الموازنات", "تحليل الربحية والمساهمة", "توزيع التكاليف", "التقارير الإدارية"],
   },
@@ -80,7 +82,7 @@ export const STANDARD_FUNCTIONS: StandardFunction[] = [
     key: "fpa",
     name_en: "Financial Planning & Analysis",
     name_ar: "التخطيط والتحليل المالي",
-    category: "fpa",
+    category: "finance",
     skills_en: ["Budgeting & Rolling Forecasts", "Driver & Variance Analysis", "Financial Modelling", "Scenario & Sensitivity Analysis", "KPI & Dashboarding", "Business-Partnering Analytics"],
     skills_ar: ["إعداد الموازنات والتنبؤات المتجددة", "تحليل المحركات والانحرافات", "النمذجة المالية", "تحليل السيناريوهات والحساسية", "مؤشرات الأداء ولوحات المعلومات", "تحليلات الشراكة مع الأعمال"],
   },
@@ -88,7 +90,7 @@ export const STANDARD_FUNCTIONS: StandardFunction[] = [
     key: "tax",
     name_en: "Tax",
     name_ar: "الضرائب",
-    category: "tax",
+    category: "accounting",
     skills_en: ["Corporate Income Tax", "VAT & Indirect Tax", "Withholding Tax", "Transfer Pricing", "Deferred Tax & Provisioning", "GCC Specifics (Zakat, E-Invoicing)"],
     skills_ar: ["ضريبة دخل الشركات", "ضريبة القيمة المضافة والضرائب غير المباشرة", "ضريبة الاستقطاع", "تسعير المعاملات بين الشركات", "الضريبة المؤجلة والمخصصات", "خصوصيات الخليج (الزكاة، الفوترة الإلكترونية)"],
   },
@@ -96,7 +98,7 @@ export const STANDARD_FUNCTIONS: StandardFunction[] = [
     key: "internal_audit",
     name_en: "Internal Audit & Controls",
     name_ar: "التدقيق الداخلي والضوابط",
-    category: "audit",
+    category: "accounting",
     skills_en: ["Risk-Based Audit Planning", "Internal Controls (COSO)", "Walkthroughs & Testing", "Fraud Risk", "Audit Reporting & Follow-up", "Audit Analytics"],
     skills_ar: ["تخطيط التدقيق القائم على المخاطر", "الضوابط الداخلية (COSO)", "اختبارات السير والفحص", "مخاطر الاحتيال", "تقارير التدقيق والمتابعة", "تحليلات التدقيق"],
   },
@@ -104,7 +106,7 @@ export const STANDARD_FUNCTIONS: StandardFunction[] = [
     key: "external_audit",
     name_en: "External / Statutory Audit",
     name_ar: "التدقيق الخارجي / القانوني",
-    category: "audit",
+    category: "accounting",
     skills_en: ["Auditing Standards (ISA)", "Materiality & Sampling", "Controls vs Substantive Testing", "Audit Evidence & Documentation", "Going Concern & Opinion", "IFRS Audit Considerations"],
     skills_ar: ["معايير التدقيق الدولية (ISA)", "الأهمية النسبية والعينات", "اختبارات الضوابط مقابل الاختبارات الأساسية", "أدلة التدقيق والتوثيق", "الاستمرارية وإبداء الرأي", "اعتبارات تدقيق المعايير الدولية"],
   },
@@ -124,17 +126,338 @@ export const STANDARD_FUNCTIONS: StandardFunction[] = [
     skills_en: ["Capitalization & Componentization", "Depreciation Methods", "Impairment (IAS 36)", "Asset Register & Verification", "Disposals & Revaluation"],
     skills_ar: ["الرسملة وتجزئة المكوّنات", "طرق الإهلاك", "انخفاض القيمة (IAS 36)", "سجل الأصول والجرد", "الاستبعادات وإعادة التقييم"],
   },
+
+  // ── Banking ──────────────────────────────────────────────────────────────
+  {
+    key: "credit_underwriting",
+    name_en: "Credit & Underwriting",
+    name_ar: "الائتمان والاكتتاب",
+    category: "banking",
+    skills_en: ["Financial Spreading", "Credit Risk Assessment", "Collateral & Security", "Credit Scoring Models", "Covenant Monitoring", "Credit Approval Process"],
+    skills_ar: ["تحليل القوائم المالية (Spreading)", "تقييم مخاطر الائتمان", "الضمانات والرهونات", "نماذج التقييم الائتماني", "مراقبة التعهدات", "عملية اعتماد الائتمان"],
+  },
+  {
+    key: "loan_operations",
+    name_en: "Loan Operations & Administration",
+    name_ar: "عمليات وإدارة القروض",
+    category: "banking",
+    skills_en: ["Loan Documentation", "Disbursement & Drawdown", "Loan Servicing", "Collateral Management", "Delinquency Handling", "Loan System Operations"],
+    skills_ar: ["توثيق القروض", "الصرف والسحب", "خدمة القروض", "إدارة الضمانات", "معالجة التعثّر", "تشغيل أنظمة القروض"],
+  },
+  {
+    key: "banking_risk",
+    name_en: "Banking Risk Management",
+    name_ar: "إدارة المخاطر المصرفية",
+    category: "banking",
+    skills_en: ["Credit Risk", "Market Risk", "Operational Risk", "Basel III/IV & Capital Adequacy", "Stress Testing", "Risk Reporting"],
+    skills_ar: ["مخاطر الائتمان", "مخاطر السوق", "المخاطر التشغيلية", "بازل 3/4 وكفاية رأس المال", "اختبارات الضغط", "تقارير المخاطر"],
+  },
+  {
+    key: "compliance_aml_kyc",
+    name_en: "Compliance, AML & KYC",
+    name_ar: "الامتثال ومكافحة غسل الأموال واعرف عميلك",
+    category: "banking",
+    skills_en: ["KYC & Customer Due Diligence", "AML Transaction Monitoring", "Sanctions Screening", "Regulatory Reporting", "Fraud Detection", "FATCA & CRS"],
+    skills_ar: ["اعرف عميلك والعناية الواجبة", "مراقبة معاملات غسل الأموال", "فحص العقوبات", "التقارير الرقابية", "كشف الاحتيال", "فاتكا والمعيار الموحد (CRS)"],
+  },
+  {
+    key: "trade_finance",
+    name_en: "Trade Finance",
+    name_ar: "تمويل التجارة",
+    category: "banking",
+    skills_en: ["Letters of Credit", "Documentary Collections", "Guarantees & Bonds", "Supply-Chain Finance", "UCP 600 Rules", "Trade Risk"],
+    skills_ar: ["الاعتمادات المستندية", "التحصيل المستندي", "الضمانات والكفالات", "تمويل سلاسل الإمداد", "قواعد UCP 600", "مخاطر التجارة"],
+  },
+  {
+    key: "islamic_banking",
+    name_en: "Islamic Banking",
+    name_ar: "الصيرفة الإسلامية",
+    category: "banking",
+    skills_en: ["Murabaha", "Ijara", "Musharaka & Mudaraba", "Sukuk", "Sharia Compliance", "Islamic Treasury"],
+    skills_ar: ["المرابحة", "الإجارة", "المشاركة والمضاربة", "الصكوك", "الالتزام بالشريعة", "الخزينة الإسلامية"],
+  },
+
+  // ── Investment ───────────────────────────────────────────────────────────
+  {
+    key: "equity_research",
+    name_en: "Equity Research",
+    name_ar: "أبحاث الأسهم",
+    category: "investment",
+    skills_en: ["Industry & Company Analysis", "Financial Modelling", "Valuation (DCF & Multiples)", "Earnings Forecasting", "Investment Thesis & Reports", "Sector Coverage"],
+    skills_ar: ["تحليل القطاع والشركة", "النمذجة المالية", "التقييم (التدفقات النقدية والمضاعفات)", "التنبؤ بالأرباح", "أطروحة الاستثمار والتقارير", "تغطية القطاعات"],
+  },
+  {
+    key: "portfolio_management",
+    name_en: "Portfolio Management",
+    name_ar: "إدارة المحافظ",
+    category: "investment",
+    skills_en: ["Asset Allocation", "Security Selection", "Rebalancing", "Risk Budgeting", "Mandate & IPS Compliance", "Performance Review"],
+    skills_ar: ["توزيع الأصول", "اختيار الأوراق المالية", "إعادة التوازن", "موازنة المخاطر", "الالتزام بالتفويض وسياسة الاستثمار", "مراجعة الأداء"],
+  },
+  {
+    key: "fixed_income",
+    name_en: "Fixed Income",
+    name_ar: "الدخل الثابت",
+    category: "investment",
+    skills_en: ["Bond Valuation", "Yield Curve Analysis", "Duration & Convexity", "Credit Analysis", "Spread Analysis", "Interest-Rate Strategy"],
+    skills_ar: ["تقييم السندات", "تحليل منحنى العائد", "المدة والتحدّب", "تحليل الائتمان", "تحليل الهوامش", "استراتيجية أسعار الفائدة"],
+  },
+  {
+    key: "wealth_management",
+    name_en: "Wealth Management & Advisory",
+    name_ar: "إدارة الثروات والاستشارات",
+    category: "investment",
+    skills_en: ["Client Profiling & Suitability", "Financial Planning", "Product Selection", "Portfolio Construction", "Relationship Management", "Regulatory Suitability"],
+    skills_ar: ["تصنيف العملاء والملاءمة", "التخطيط المالي", "اختيار المنتجات", "بناء المحافظ", "إدارة العلاقات", "الملاءمة التنظيمية"],
+  },
+  {
+    key: "investment_performance",
+    name_en: "Performance & Risk",
+    name_ar: "الأداء والمخاطر",
+    category: "investment",
+    skills_en: ["Performance Measurement", "Attribution Analysis", "GIPS Compliance", "Risk Metrics (VaR, Beta)", "Benchmark Analysis", "Reporting"],
+    skills_ar: ["قياس الأداء", "تحليل المساهمة في العائد", "الالتزام بمعايير GIPS", "مقاييس المخاطر (القيمة المعرضة للخطر، بيتا)", "تحليل المؤشرات المرجعية", "إعداد التقارير"],
+  },
+  {
+    key: "alternative_investments",
+    name_en: "Alternative Investments",
+    name_ar: "الاستثمارات البديلة",
+    category: "investment",
+    skills_en: ["Private Equity", "Real Estate Funds", "Hedge Fund Strategies", "Fund Due Diligence", "Illiquidity & Valuation", "ESG Integration"],
+    skills_ar: ["الأسهم الخاصة", "صناديق العقار", "استراتيجيات صناديق التحوّط", "العناية الواجبة للصناديق", "عدم السيولة والتقييم", "دمج معايير الاستدامة (ESG)"],
+  },
+
+  // ── Data Analytics ─────────────────────────────────────────────────────────
+  {
+    key: "data_preparation",
+    name_en: "Data Preparation & Engineering",
+    name_ar: "إعداد البيانات وهندستها",
+    category: "analytics",
+    skills_en: ["Data Cleaning", "Data Wrangling", "SQL Querying", "Data Integration", "Data Quality", "Pipeline Basics"],
+    skills_ar: ["تنظيف البيانات", "معالجة البيانات", "الاستعلام بلغة SQL", "تكامل البيانات", "جودة البيانات", "أساسيات خطوط البيانات"],
+  },
+  {
+    key: "statistical_analysis",
+    name_en: "Statistical Analysis",
+    name_ar: "التحليل الإحصائي",
+    category: "analytics",
+    skills_en: ["Descriptive Statistics", "Hypothesis Testing", "Regression Analysis", "Correlation & Causation", "Sampling", "Time-Series Basics"],
+    skills_ar: ["الإحصاء الوصفي", "اختبار الفرضيات", "تحليل الانحدار", "الارتباط والسببية", "المعاينة", "أساسيات السلاسل الزمنية"],
+  },
+  {
+    key: "forecasting_modelling",
+    name_en: "Forecasting & Modelling",
+    name_ar: "التنبؤ والنمذجة",
+    category: "analytics",
+    skills_en: ["Forecasting Methods", "Predictive Modelling", "Scenario & Sensitivity Analysis", "Model Validation", "Spreadsheet Engineering", "Driver-Based Models"],
+    skills_ar: ["أساليب التنبؤ", "النمذجة التنبؤية", "تحليل السيناريوهات والحساسية", "التحقق من النماذج", "هندسة الجداول الإلكترونية", "النماذج المبنية على المحركات"],
+  },
+  {
+    key: "analytics_programming",
+    name_en: "Programming for Analytics",
+    name_ar: "البرمجة للتحليلات",
+    category: "analytics",
+    skills_en: ["Python for Data", "R for Statistics", "Pandas & NumPy", "Automation Scripting", "APIs & Data Extraction", "Version Control Basics"],
+    skills_ar: ["بايثون للبيانات", "R للإحصاء", "Pandas وNumPy", "برمجة الأتمتة", "واجهات برمجة التطبيقات واستخراج البيانات", "أساسيات إدارة الإصدارات"],
+  },
+  {
+    key: "data_visualization",
+    name_en: "Visualization & Storytelling",
+    name_ar: "التصور السردي للبيانات",
+    category: "analytics",
+    skills_en: ["Chart Selection", "Dashboard Design", "Narrative & Insight", "Stakeholder Communication", "Visualization Tools", "Reporting"],
+    skills_ar: ["اختيار الرسوم البيانية", "تصميم لوحات المعلومات", "السرد والاستبصار", "التواصل مع أصحاب المصلحة", "أدوات التصور", "إعداد التقارير"],
+  },
+
+  // ── Business Intelligence ──────────────────────────────────────────────────
+  {
+    key: "dashboard_development",
+    name_en: "Dashboard Development",
+    name_ar: "تطوير لوحات المعلومات",
+    category: "business_intelligence",
+    skills_en: ["Dashboard Design", "Visual Best Practices", "Interactivity & Filters", "Power BI / Tableau Build", "Mobile & Responsive BI", "BI UX"],
+    skills_ar: ["تصميم لوحات المعلومات", "أفضل ممارسات العرض المرئي", "التفاعلية والمرشحات", "البناء على Power BI / Tableau", "ذكاء الأعمال للجوال والمتجاوب", "تجربة المستخدم لذكاء الأعمال"],
+  },
+  {
+    key: "bi_data_modelling",
+    name_en: "Data Modelling (BI)",
+    name_ar: "نمذجة البيانات (ذكاء الأعمال)",
+    category: "business_intelligence",
+    skills_en: ["Star Schema", "Relationships & Cardinality", "DAX & Calculated Measures", "Data Granularity", "Semantic Layer", "Performance Optimization"],
+    skills_ar: ["مخطط النجمة", "العلاقات والتعدّدية", "DAX والمقاييس المحسوبة", "دقة تفصيل البيانات", "الطبقة الدلالية", "تحسين الأداء"],
+  },
+  {
+    key: "etl_integration",
+    name_en: "ETL & Data Integration",
+    name_ar: "الاستخلاص والتحويل وتكامل البيانات",
+    category: "business_intelligence",
+    skills_en: ["Data Source Connection", "Power Query / ETL", "Data Transformation", "Incremental Refresh", "Pipeline Scheduling", "Data Lineage"],
+    skills_ar: ["الاتصال بمصادر البيانات", "Power Query / ETL", "تحويل البيانات", "التحديث التزايدي", "جدولة خطوط البيانات", "تتبّع مسار البيانات"],
+  },
+  {
+    key: "kpi_metric_design",
+    name_en: "KPI & Metric Design",
+    name_ar: "تصميم مؤشرات الأداء والمقاييس",
+    category: "business_intelligence",
+    skills_en: ["KPI Definition", "Metric Frameworks", "Targets & Thresholds", "Drill-Down Hierarchies", "Balanced Scorecard", "Metric Governance"],
+    skills_ar: ["تعريف مؤشرات الأداء", "أطر المقاييس", "المستهدفات والحدود", "التسلسلات الهرمية للتفصيل", "بطاقة الأداء المتوازن", "حوكمة المقاييس"],
+  },
+  {
+    key: "bi_governance",
+    name_en: "BI Governance & Administration",
+    name_ar: "حوكمة وإدارة ذكاء الأعمال",
+    category: "business_intelligence",
+    skills_en: ["Workspace & Tenant Admin", "Row-Level Security", "Refresh & Gateway Management", "Version Control", "Self-Service Enablement", "Data Governance"],
+    skills_ar: ["إدارة مساحات العمل والمستأجر", "أمن مستوى الصفوف", "إدارة التحديث والبوابات", "إدارة الإصدارات", "تمكين الخدمة الذاتية", "حوكمة البيانات"],
+  },
+
+  // ── Artificial Intelligence ────────────────────────────────────────────────
+  {
+    key: "ml_foundations",
+    name_en: "AI & ML Foundations",
+    name_ar: "أساسيات الذكاء الاصطناعي والتعلم الآلي",
+    category: "artificial_intelligence",
+    skills_en: ["Supervised vs Unsupervised", "Model Training Basics", "Feature Engineering", "Overfitting & Validation", "Evaluation Metrics", "Algorithm Selection"],
+    skills_ar: ["التعلّم الموجّه مقابل غير الموجّه", "أساسيات تدريب النماذج", "هندسة الخصائص", "فرط التخصيص والتحقق", "مقاييس التقييم", "اختيار الخوارزميات"],
+  },
+  {
+    key: "applied_ai_finance",
+    name_en: "Applied AI in Finance",
+    name_ar: "الذكاء الاصطناعي التطبيقي في المالية",
+    category: "artificial_intelligence",
+    skills_en: ["Credit Scoring Models", "Fraud Detection", "Forecasting & Demand", "Customer Analytics", "Document Automation", "Use-Case Scoping"],
+    skills_ar: ["نماذج التقييم الائتماني", "كشف الاحتيال", "التنبؤ والطلب", "تحليلات العملاء", "أتمتة المستندات", "تحديد نطاق حالات الاستخدام"],
+  },
+  {
+    key: "generative_ai",
+    name_en: "Generative AI & Prompting",
+    name_ar: "الذكاء الاصطناعي التوليدي والتلقين",
+    category: "artificial_intelligence",
+    skills_en: ["Prompt Engineering", "LLM Capabilities & Limits", "RAG Basics", "GenAI Tooling", "Output Evaluation", "Productivity Workflows"],
+    skills_ar: ["هندسة التلقين", "قدرات النماذج اللغوية وحدودها", "أساسيات RAG", "أدوات الذكاء التوليدي", "تقييم المخرجات", "تدفّقات الإنتاجية"],
+  },
+  {
+    key: "ai_data_readiness",
+    name_en: "Data Readiness for AI",
+    name_ar: "جاهزية البيانات للذكاء الاصطناعي",
+    category: "artificial_intelligence",
+    skills_en: ["Data Quality for AI", "Feature Stores", "Data Labeling", "Data Pipelines", "Bias in Data", "Data Governance for AI"],
+    skills_ar: ["جودة البيانات للذكاء الاصطناعي", "مخازن الخصائص", "توسيم البيانات", "خطوط البيانات", "التحيّز في البيانات", "حوكمة البيانات للذكاء الاصطناعي"],
+  },
+  {
+    key: "ai_governance",
+    name_en: "AI Risk, Ethics & Governance",
+    name_ar: "مخاطر الذكاء الاصطناعي وأخلاقياته وحوكمته",
+    category: "artificial_intelligence",
+    skills_en: ["Model Risk Management", "Explainability", "Bias & Fairness", "Regulatory & Ethics", "Model Monitoring", "AI Policy"],
+    skills_ar: ["إدارة مخاطر النماذج", "القابلية للتفسير", "التحيّز والإنصاف", "التنظيم والأخلاقيات", "مراقبة النماذج", "سياسة الذكاء الاصطناعي"],
+  },
+  {
+    key: "intelligent_automation",
+    name_en: "Intelligent Automation",
+    name_ar: "الأتمتة الذكية",
+    category: "artificial_intelligence",
+    skills_en: ["RPA Fundamentals", "AI + RPA Integration", "Process Identification", "Workflow Orchestration", "NLP & Document Intelligence", "ROI Measurement"],
+    skills_ar: ["أساسيات الأتمتة الروبوتية (RPA)", "دمج الذكاء الاصطناعي مع RPA", "تحديد العمليات", "تنسيق سير العمل", "معالجة اللغة وذكاء المستندات", "قياس العائد على الاستثمار"],
+  },
+
+  // ── Human Resources ────────────────────────────────────────────────────────
+  {
+    key: "talent_acquisition",
+    name_en: "Talent Acquisition & Recruitment",
+    name_ar: "استقطاب المواهب والتوظيف",
+    category: "human_resources",
+    skills_en: ["Workforce Planning", "Sourcing & Screening", "Interviewing & Selection", "Employer Branding", "Onboarding", "Recruitment Metrics"],
+    skills_ar: ["تخطيط القوى العاملة", "البحث والفرز", "المقابلات والاختيار", "العلامة التجارية لصاحب العمل", "الإلحاق الوظيفي", "مؤشرات التوظيف"],
+  },
+  {
+    key: "compensation_benefits",
+    name_en: "Compensation & Benefits",
+    name_ar: "التعويضات والمزايا",
+    category: "human_resources",
+    skills_en: ["Salary Structures & Grading", "Job Evaluation", "Benefits Administration", "Incentive & Bonus Design", "Market Benchmarking", "Payroll Coordination"],
+    skills_ar: ["هياكل الرواتب والدرجات", "تقييم الوظائف", "إدارة المزايا", "تصميم الحوافز والمكافآت", "المقارنة بالسوق", "تنسيق الرواتب"],
+  },
+  {
+    key: "learning_development",
+    name_en: "Learning & Development",
+    name_ar: "التعلّم والتطوير",
+    category: "human_resources",
+    skills_en: ["Training Needs Analysis", "Program Design", "Delivery & Facilitation", "Competency Frameworks", "L&D Evaluation (ROI)", "Succession & Career Pathing"],
+    skills_ar: ["تحليل الاحتياجات التدريبية", "تصميم البرامج", "التقديم والتيسير", "أطر الجدارات", "تقييم التعلّم والتطوير (العائد)", "التعاقب والمسارات الوظيفية"],
+  },
+  {
+    key: "performance_management",
+    name_en: "Performance Management",
+    name_ar: "إدارة الأداء",
+    category: "human_resources",
+    skills_en: ["Goal Setting & KPIs", "Appraisal Cycles", "Calibration", "Feedback & Coaching", "Performance Improvement Plans", "Reward Linkage"],
+    skills_ar: ["تحديد الأهداف ومؤشرات الأداء", "دورات التقييم", "المعايرة", "التغذية الراجعة والإرشاد", "خطط تحسين الأداء", "الربط بالمكافآت"],
+  },
+  {
+    key: "employee_relations",
+    name_en: "Employee Relations & Engagement",
+    name_ar: "علاقات الموظفين وإشراكهم",
+    category: "human_resources",
+    skills_en: ["Labor Law & Disputes", "Grievance Handling", "Engagement Surveys", "Disciplinary Process", "Wellbeing", "Culture & Communication"],
+    skills_ar: ["قانون العمل والنزاعات", "معالجة الشكاوى", "استبيانات الإشراك", "الإجراءات التأديبية", "العافية", "الثقافة والتواصل"],
+  },
+  {
+    key: "hr_operations",
+    name_en: "HR Operations & HRIS",
+    name_ar: "عمليات الموارد البشرية وأنظمتها",
+    category: "human_resources",
+    skills_en: ["Employee Lifecycle Admin", "HRIS & Systems", "HR Policies & Compliance", "Records & Documentation", "GCC Labor Compliance (Saudization, GOSI/WPS)", "HR Analytics"],
+    skills_ar: ["إدارة دورة حياة الموظف", "أنظمة معلومات الموارد البشرية", "سياسات الموارد البشرية والامتثال", "السجلات والتوثيق", "الامتثال العمالي الخليجي (السعودة، التأمينات/حماية الأجور)", "تحليلات الموارد البشرية"],
+  },
+  {
+    key: "people_analytics",
+    name_en: "People Analytics",
+    name_ar: "تحليلات الموارد البشرية",
+    category: "human_resources",
+    skills_en: ["HR Metrics & Dashboards", "Turnover & Attrition Analysis", "Workforce Planning Analytics", "Predictive HR", "Engagement Analytics", "Reporting"],
+    skills_ar: ["مقاييس ولوحات الموارد البشرية", "تحليل الدوران والتسرّب", "تحليلات تخطيط القوى العاملة", "الموارد البشرية التنبؤية", "تحليلات الإشراك", "إعداد التقارير"],
+  },
 ];
 
-/** The function categories (used by the JD-import picker + grouping). */
-export const TECH_FUNCTION_CATEGORIES = ["accounting", "reporting", "treasury", "fpa", "tax", "audit"] as const;
+// The competency that a function belongs to. This is the top-level grouping the
+// runner shows ("Select a competency"), with the functions listed underneath.
+// Order here is the display order in the picker.
+export const TECH_FUNCTION_CATEGORIES = [
+  "finance",
+  "accounting",
+  "banking",
+  "investment",
+  "treasury",
+  "analytics",
+  "business_intelligence",
+  "artificial_intelligence",
+  "human_resources",
+] as const;
 export type TechFunctionCategory = (typeof TECH_FUNCTION_CATEGORIES)[number];
 
-/** Category display labels (for grouping functions in the picker). */
+/** Competency display order for the grouped pickers (the "select a competency" list). */
+export const CATEGORY_ORDER: readonly string[] = TECH_FUNCTION_CATEGORIES;
+
+/** Rank a category by CATEGORY_ORDER; unknown/legacy categories sort last. */
+export function categoryRank(category: string | null): number {
+  const i = CATEGORY_ORDER.indexOf(category ?? "");
+  return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+}
+
+/** Category (competency) display labels for grouping functions in the picker. */
 const CATEGORY_LABELS: Record<string, { en: string; ar: string }> = {
+  finance: { en: "Finance", ar: "المالية" },
   accounting: { en: "Accounting", ar: "المحاسبة" },
-  reporting: { en: "Reporting", ar: "التقارير" },
+  banking: { en: "Banking", ar: "الأعمال المصرفية" },
+  investment: { en: "Investment", ar: "الاستثمار" },
   treasury: { en: "Treasury", ar: "الخزينة" },
+  analytics: { en: "Data Analytics", ar: "تحليلات البيانات" },
+  business_intelligence: { en: "Business Intelligence", ar: "ذكاء الأعمال" },
+  artificial_intelligence: { en: "Artificial Intelligence", ar: "الذكاء الاصطناعي" },
+  human_resources: { en: "Human Resources", ar: "الموارد البشرية" },
+  // Legacy categories — kept so any pre-existing JD-derived functions still label.
+  reporting: { en: "Reporting", ar: "التقارير" },
   fpa: { en: "FP&A", ar: "التخطيط والتحليل المالي" },
   tax: { en: "Tax", ar: "الضرائب" },
   audit: { en: "Audit", ar: "التدقيق" },

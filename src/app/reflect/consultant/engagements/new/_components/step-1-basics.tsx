@@ -250,7 +250,7 @@ export function StepBasics({ state, update, orgs, onOrgCreated }: Props) {
               />
             </div>
 
-            <div className="grid gap-3 grid-cols-2">
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
               <div>
                 <Label htmlFor="rf-new-org-region">{t("reflectWizard.step1.modal.regionLabel")}</Label>
                 <select

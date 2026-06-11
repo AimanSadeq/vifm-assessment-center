@@ -58,7 +58,7 @@ export function CandidateDemographicsForm({ candidateId, initialData }: Props) {
       <p className="text-xs text-muted-foreground">
         {t("candidateWelcome.form.subtitle")}
       </p>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1">
           <Label className="text-xs">{t("candidateWelcome.form.idLabel")}</Label>
           <Input

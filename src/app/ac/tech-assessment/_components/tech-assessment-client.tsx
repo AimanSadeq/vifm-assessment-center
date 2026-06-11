@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Loader2, CheckCircle2, RotateCcw, GraduationCap, AlertCircle, ShieldCheck, ExternalLink, Layers3, ChevronDown, Gauge } from "lucide-react";
 import type { LocalizedTechDomain } from "@/lib/competencies/technical-taxonomy";
 import type { LocalizedTechFunction } from "@/lib/competencies/technical-function";
-import { categoryRank } from "@/lib/competencies/technical-function";
+import { categoryRank } from "@/lib/competencies/technical-categories";
 import type { PublicTechTest, TechResult } from "@/lib/ai/technical-assessment";
 
 type Phase = "intro" | "test" | "adaptive" | "result";

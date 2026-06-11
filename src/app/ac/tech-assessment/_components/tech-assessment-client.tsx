@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Loader2, CheckCircle2, RotateCcw, GraduationCap, AlertCircle, ShieldCheck, ExternalLink, Layers3, ChevronDown, Gauge } from "lucide-react";
+import { Loader2, CheckCircle2, RotateCcw, GraduationCap, AlertCircle, ShieldCheck, ExternalLink, Layers3, ChevronDown, ChevronRight, ChevronLeft, Gauge } from "lucide-react";
 import type { LocalizedTechDomain } from "@/lib/competencies/technical-taxonomy";
 import type { LocalizedTechFunction } from "@/lib/competencies/technical-function";
 import { categoryRank } from "@/lib/competencies/technical-categories";
@@ -84,6 +84,8 @@ export function TechAssessmentClient({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [showDomains, setShowDomains] = useState(false);
+  // Two-level picker: pick a competency first, then a function within it.
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const adaptiveSet = useMemo(() => new Set(adaptiveRefs), [adaptiveRefs]);
 
   // Adaptive (turn-based CAT) state.
@@ -103,6 +105,9 @@ export function TechAssessmentClient({
     // Order the competency buckets by the canonical CATEGORY_ORDER.
     return Array.from(map.values()).sort((a, b) => categoryRank(a.cat) - categoryRank(b.cat));
   }, [functions]);
+
+  // The competency drilled into (level 2), or null on the competency picker (level 1).
+  const selectedGroup = selectedCategory ? grouped.find((g) => g.cat === selectedCategory) ?? null : null;
 
   async function start(kind: RunKind, key: string) {
     // An adaptive-ready function gets the shorter, ability-matched CAT sitting.
@@ -299,42 +304,67 @@ export function TechAssessmentClient({
         <div className="space-y-4">
           {/* Primary: functions (the job-level unit of assessment). */}
           <div className="rounded-2xl border bg-card p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-[#010131]">{t("tech.take.chooseFunctionTitle")}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{t("tech.take.chooseFunctionIntro")}</p>
-            <div className="mt-5 space-y-5">
-              {grouped.map((g) => (
-                <div key={g.label}>
-                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">{g.label}</p>
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {g.items.map((f) => (
-                      <button
-                        key={f.ref}
-                        onClick={() => start("function", f.ref)}
-                        disabled={busy}
-                        className="flex flex-col gap-1.5 rounded-xl border border-slate-200 p-4 text-start transition-colors hover:border-[#5391D5] hover:bg-[#5391D5]/5 disabled:opacity-60"
-                      >
-                        <span className="font-semibold text-[#010131]">{f.name}</span>
-                        <span className="text-[11px] leading-snug text-muted-foreground">{f.skills.slice(0, 3).join(" · ")}…</span>
-                        <span className="mt-0.5 flex flex-wrap gap-1">
-                          <span className="inline-flex w-fit items-center gap-1 rounded-full bg-[#5391D5]/10 px-2 py-0.5 text-[10px] font-medium text-[#2b6cb0]">
-                            <Layers3 className="h-3 w-3" /> {t("tech.take.skillsCount", { n: f.skillsEn.length })} · {t("tech.take.functionDeep")}
-                          </span>
-                          {adaptiveSet.has(f.ref) && (
-                            <span className="inline-flex w-fit items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-medium text-indigo-700">
-                              <Gauge className="h-3 w-3" /> {t("tech.take.adaptiveBadge")}
-                            </span>
-                          )}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
+            {!selectedGroup ? (
+              /* Level 1 — pick a competency */
+              <>
+                <h2 className="text-lg font-semibold text-[#010131]">{t("tech.take.chooseFunctionTitle")}</h2>
+                <p className="mt-1 text-sm text-muted-foreground">{t("tech.take.chooseFunctionIntro")}</p>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {grouped.map((g) => (
+                    <button
+                      key={g.cat}
+                      onClick={() => setSelectedCategory(g.cat)}
+                      className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 p-4 text-start transition-colors hover:border-[#5391D5] hover:bg-[#5391D5]/5"
+                    >
+                      <span className="flex flex-col gap-1">
+                        <span className="font-semibold text-[#010131]">{g.label}</span>
+                        <span className="text-[11px] text-muted-foreground">{t("tech.take.functionsCount", { n: g.items.length })}</span>
+                      </span>
+                      <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
+                    </button>
+                  ))}
                 </div>
-              ))}
-            </div>
-            {busy && (
-              <p className="mt-4 inline-flex items-center gap-2 text-sm text-slate-500">
-                <Loader2 className="h-4 w-4 animate-spin" /> {t("tech.take.building")}
-              </p>
+              </>
+            ) : (
+              /* Level 2 — pick a function within the chosen competency */
+              <>
+                <button
+                  onClick={() => setSelectedCategory(null)}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition-colors hover:text-[#010131]"
+                >
+                  <ChevronLeft className="h-4 w-4" /> {t("tech.take.backToCompetencies")}
+                </button>
+                <h2 className="mt-3 text-lg font-semibold text-[#010131]">{selectedGroup.label}</h2>
+                <p className="mt-1 text-sm text-muted-foreground">{t("tech.take.selectFunctionSub")}</p>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {selectedGroup.items.map((f) => (
+                    <button
+                      key={f.ref}
+                      onClick={() => start("function", f.ref)}
+                      disabled={busy}
+                      className="flex flex-col gap-1.5 rounded-xl border border-slate-200 p-4 text-start transition-colors hover:border-[#5391D5] hover:bg-[#5391D5]/5 disabled:opacity-60"
+                    >
+                      <span className="font-semibold text-[#010131]">{f.name}</span>
+                      <span className="text-[11px] leading-snug text-muted-foreground">{f.skills.slice(0, 3).join(" · ")}…</span>
+                      <span className="mt-0.5 flex flex-wrap gap-1">
+                        <span className="inline-flex w-fit items-center gap-1 rounded-full bg-[#5391D5]/10 px-2 py-0.5 text-[10px] font-medium text-[#2b6cb0]">
+                          <Layers3 className="h-3 w-3" /> {t("tech.take.skillsCount", { n: f.skillsEn.length })} · {t("tech.take.functionDeep")}
+                        </span>
+                        {adaptiveSet.has(f.ref) && (
+                          <span className="inline-flex w-fit items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-medium text-indigo-700">
+                            <Gauge className="h-3 w-3" /> {t("tech.take.adaptiveBadge")}
+                          </span>
+                        )}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                {busy && (
+                  <p className="mt-4 inline-flex items-center gap-2 text-sm text-slate-500">
+                    <Loader2 className="h-4 w-4 animate-spin" /> {t("tech.take.building")}
+                  </p>
+                )}
+              </>
             )}
           </div>
 

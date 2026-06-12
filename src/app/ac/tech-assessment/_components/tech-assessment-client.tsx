@@ -83,7 +83,6 @@ export function TechAssessmentClient({
   const [result, setResult] = useState<ScoredResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [showDomains, setShowDomains] = useState(false);
   // Two-level picker: pick a competency first, then a function within it.
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const adaptiveSet = useMemo(() => new Set(adaptiveRefs), [adaptiveRefs]);
@@ -519,35 +518,6 @@ export function TechAssessmentClient({
                   </p>
                 )}
               </>
-            )}
-          </div>
-
-          {/* Secondary: broad domain screeners (legacy, de-emphasized). */}
-          <div className="rounded-2xl border bg-card p-4 shadow-sm">
-            <button
-              onClick={() => setShowDomains((s) => !s)}
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-[#010131]"
-            >
-              <ChevronDown className={`h-4 w-4 transition-transform ${showDomains ? "" : "-rotate-90"}`} />
-              {showDomains ? t("tech.take.hideDomains") : t("tech.take.showDomains")}
-            </button>
-            {showDomains && (
-              <div className="mt-3">
-                <p className="mb-3 text-xs text-muted-foreground">{t("tech.take.domainsHint")}</p>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {domains.map((d) => (
-                    <button
-                      key={d.key}
-                      onClick={() => start("domain", d.key)}
-                      disabled={busy}
-                      className="flex flex-col gap-1 rounded-xl border border-slate-200 p-4 text-start transition-colors hover:border-[#5391D5] hover:bg-[#5391D5]/5 disabled:opacity-60"
-                    >
-                      <span className="font-semibold text-[#010131]">{d.name}</span>
-                      <span className="text-[11px] leading-snug text-muted-foreground">{d.skills.slice(0, 3).join(" · ")}…</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
             )}
           </div>
         </div>

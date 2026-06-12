@@ -58,6 +58,7 @@ type Body = {
   domainKey?: string;
   functionKey?: string; // a function ref (standard key or custom id) for a function run
   functionKeys?: string[]; // 2+ refs → a combined (mix & match) run over the merged blueprints
+  skills?: string[]; // optional skill selection (canonical English names) filtering the merged blueprint
   sessionId?: string;
   items?: TechItem[]; // legacy client-graded path only
   domainName?: string;
@@ -148,23 +149,38 @@ export async function POST(req: Request) {
     const candidateId = body.candidateId?.trim() || null;
     const engagementId = body.engagementId?.trim() || null;
 
-    // ── Combined (mix & match) run: several functions picked ad hoc in the
-    //    runner — their skill blueprints merge (deduped) into ONE sitting.
-    //    Nothing is persisted to the function library. ──
+    // ── Combined (mix & match) run: skills picked ad hoc in the runner across
+    //    one or more functions — the selection (or the full merged blueprints
+    //    when none given) becomes ONE sitting. Nothing is persisted. ──
     const mixRefs = Array.isArray(body.functionKeys)
       ? Array.from(new Set(body.functionKeys.map((r) => String(r).trim()).filter(Boolean)))
       : [];
-    if (mixRefs.length === 1 && !functionRef) functionRef = mixRefs[0];
-    if (mixRefs.length >= 2) {
+    const pickedSkills = Array.isArray(body.skills)
+      ? Array.from(new Set(body.skills.map((s) => String(s).trim()).filter(Boolean)))
+      : [];
+    if (mixRefs.length === 1 && pickedSkills.length === 0 && !functionRef) functionRef = mixRefs[0];
+    if (mixRefs.length >= 2 || (mixRefs.length >= 1 && pickedSkills.length > 0)) {
       const fns = (await Promise.all(mixRefs.map((r) => getTechnicalFunctionByRef(r, language)))).filter(
         (f): f is NonNullable<typeof f> => f != null
       );
-      if (fns.length < 2) {
-        return NextResponse.json({ error: "at least two valid functionKeys required" }, { status: 400 });
+      if (fns.length === 0) {
+        return NextResponse.json({ error: "valid functionKeys required" }, { status: 400 });
       }
-      const skillsEn = Array.from(new Set(fns.flatMap((f) => f.skillsEn)));
-      const functionName = fns.map((f) => f.name).join(" + ");
-      const compositeKey = `mix:${fns.map((f) => f.ref).join("+")}`;
+      // Merge the blueprints (deduped), then narrow to the picked skills — only
+      // canonical blueprint skills are accepted (the selection can't inject
+      // arbitrary strings into assembly/generation).
+      let skillsEn = Array.from(new Set(fns.flatMap((f) => f.skillsEn)));
+      if (pickedSkills.length > 0) {
+        const allowed = new Set(skillsEn);
+        skillsEn = pickedSkills.filter((s) => allowed.has(s));
+        if (skillsEn.length === 0) {
+          return NextResponse.json({ error: "no valid skills selected" }, { status: 400 });
+        }
+      }
+      const pickedSet = new Set(skillsEn);
+      const contributing = fns.filter((f) => f.skillsEn.some((s) => pickedSet.has(s)));
+      const functionName = (contributing.length > 0 ? contributing : fns).map((f) => f.name).join(" + ");
+      const compositeKey = `mix:${(contributing.length > 0 ? contributing : fns).map((f) => f.ref).join("+")}`;
       // Scale the per-skill draw down as the merged blueprint grows, so a
       // combined sitting stays a sane length (~24 items).
       const perSkill = Math.max(2, Math.min(4, Math.floor(24 / Math.max(1, skillsEn.length))));

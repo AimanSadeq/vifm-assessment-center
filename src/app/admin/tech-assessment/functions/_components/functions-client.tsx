@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import Link from "next/link";
 import {
-  Upload, Loader2, Sparkles, FileText, Layers3, Trash2, ExternalLink, Plus, Wand2, ShieldCheck,
+  Upload, Loader2, Sparkles, FileText, Layers3, Trash2, ExternalLink, Plus, Wand2, ShieldCheck, Blend, X,
 } from "lucide-react";
 import type { LocalizedTechFunction } from "@/lib/competencies/technical-function";
 import { categoryRank } from "@/lib/competencies/technical-categories";
@@ -54,6 +54,14 @@ export function FunctionsClient({
   const [proposedName, setProposedName] = useState<Record<number, string>>({});
   const [creating, startCreate] = useTransition();
 
+  // Mix & match composer: pick functions across competencies, merge their skill
+  // blueprints (deduped), trim per skill, and save as one custom function.
+  const [pickedRefs, setPickedRefs] = useState<Record<string, boolean>>({});
+  const [skillOff, setSkillOff] = useState<Record<string, boolean>>({});
+  const [composeName, setComposeName] = useState("");
+  const [composeNameTouched, setComposeNameTouched] = useState(false);
+  const [composeCategory, setComposeCategory] = useState("");
+
   const grouped = useMemo(() => {
     const map = new Map<string, LocalizedTechFunction[]>();
     for (const f of functions) {
@@ -64,6 +72,68 @@ export function FunctionsClient({
       (a, b) => categoryRank(a[1][0]?.category ?? null) - categoryRank(b[1][0]?.category ?? null)
     );
   }, [functions]);
+
+  // ── Composer derived state ──
+  const picked = useMemo(() => functions.filter((f) => pickedRefs[f.ref]), [functions, pickedRefs]);
+  // The merged blueprint: deduped English skill names in first-appearance order,
+  // each remembering which picked function(s) contributed it.
+  const combined = useMemo(() => {
+    const out: { skill: string; label: string; from: string[] }[] = [];
+    const idx = new Map<string, number>();
+    for (const f of picked) {
+      f.skillsEn.forEach((s, i) => {
+        const at = idx.get(s);
+        if (at == null) {
+          idx.set(s, out.length);
+          out.push({ skill: s, label: f.skills[i] ?? s, from: [f.name] });
+        } else {
+          out[at].from.push(f.name);
+        }
+      });
+    }
+    return out;
+  }, [picked]);
+  const composeSkills = combined.filter((c) => skillOff[c.skill] !== true).map((c) => c.skill);
+  // Auto-suggest the role name + category from the picks until the admin edits them.
+  const suggestedName = picked.map((f) => f.name).join(" + ");
+  const effectiveComposeName = composeNameTouched ? composeName : suggestedName;
+  const effectiveComposeCategory =
+    composeCategory || picked[0]?.category || categories[0]?.value || "accounting";
+
+  const togglePick = (ref: string) => setPickedRefs((s) => ({ ...s, [ref]: !s[ref] }));
+  const resetComposer = () => {
+    setPickedRefs({});
+    setSkillOff({});
+    setComposeName("");
+    setComposeNameTouched(false);
+    setComposeCategory("");
+  };
+
+  const handleCompose = () => {
+    const finalName = effectiveComposeName.trim();
+    if (!finalName) {
+      toast.error(t("techFn.needName"));
+      return;
+    }
+    if (composeSkills.length < 3) {
+      toast.error(t("techFn.atLeast3"));
+      return;
+    }
+    startCreate(async () => {
+      const res = await createTechnicalFunctionAction({
+        name: finalName,
+        category: effectiveComposeCategory,
+        skills: composeSkills,
+      });
+      if ("error" in res) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success(t("techFn.composeCreated"));
+      resetComposer();
+      router.refresh();
+    });
+  };
 
   const handleExtract = () => {
     if (!jdText.trim() && !file) {
@@ -186,6 +256,118 @@ export function FunctionsClient({
               {extracting ? t("techFn.analyzing") : t("techFn.analyze")}
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Mix & match composer */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Blend className="h-4 w-4 text-[#5391D5]" /> {t("techFn.composeTitle")}
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">{t("techFn.composeIntro")}</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Pick functions — across any competency */}
+          <div className="space-y-3">
+            {grouped.map(([label, fns]) => (
+              <div key={label}>
+                <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">{label}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {fns.map((f) => {
+                    const on = !!pickedRefs[f.ref];
+                    return (
+                      <button
+                        key={f.ref}
+                        type="button"
+                        onClick={() => togglePick(f.ref)}
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                          on
+                            ? "border-[#5391D5] bg-[#5391D5]/10 text-[#2b6cb0]"
+                            : "border-slate-200 text-slate-600 hover:border-[#5391D5]/50 hover:bg-[#5391D5]/5"
+                        }`}
+                      >
+                        {on && <X className="h-3 w-3" />}
+                        {f.name}
+                        <span className="text-[10px] text-slate-400">{f.skillsEn.length}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Combined blueprint */}
+          {picked.length === 0 ? (
+            <p className="rounded-md border border-dashed px-3 py-2.5 text-xs text-muted-foreground">
+              {t("techFn.composeEmpty")}
+            </p>
+          ) : (
+            <div className="space-y-4 rounded-lg border border-[#5391D5]/40 bg-[#5391D5]/[0.03] p-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                {t("techFn.composeSkillsTitle", { n: composeSkills.length, fns: picked.length })}
+              </p>
+              <div className="grid gap-1.5 sm:grid-cols-2">
+                {combined.map((c) => (
+                  <label key={c.skill} className="flex items-start gap-2.5 rounded-md border bg-white p-2.5 text-sm">
+                    <Checkbox
+                      checked={skillOff[c.skill] !== true}
+                      onCheckedChange={(v) => setSkillOff((s) => ({ ...s, [c.skill]: v !== true }))}
+                      className="mt-0.5"
+                    />
+                    <span className="flex-1">
+                      <span className="font-medium text-[#010131]">{c.label}</span>
+                      {c.from.length > 1 && (
+                        <Badge variant="secondary" className="ms-2 text-[10px]">{t("techFn.composeShared")}</Badge>
+                      )}
+                      <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                        {t("techFn.composeFrom", { names: c.from.join(" · ") })}
+                      </span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap items-end gap-3">
+                <div className="min-w-[14rem] flex-1 space-y-1.5">
+                  <Label className="text-xs">{t("techFn.nameLabel")}</Label>
+                  <Input
+                    value={effectiveComposeName}
+                    onChange={(e) => { setComposeName(e.target.value); setComposeNameTouched(true); }}
+                    placeholder={t("techFn.composeNamePh")}
+                  />
+                </div>
+                <div className="w-48 space-y-1.5">
+                  <Label className="text-xs">{t("techFn.categoryLabel")}</Label>
+                  <select
+                    value={effectiveComposeCategory}
+                    onChange={(e) => setComposeCategory(e.target.value)}
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    {categories.map((c) => (
+                      <option key={c.value} value={c.value}>{c.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 border-t pt-3">
+                <Button
+                  onClick={handleCompose}
+                  disabled={creating || composeSkills.length < 3 || !effectiveComposeName.trim()}
+                  className="gap-2"
+                >
+                  {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                  {t("techFn.composeCreate", { n: composeSkills.length })}
+                </Button>
+                <Button variant="ghost" onClick={resetComposer} disabled={creating}>
+                  {t("techFn.composeClear")}
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground">{t("techFn.composeHint")}</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

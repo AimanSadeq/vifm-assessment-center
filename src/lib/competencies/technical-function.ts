@@ -26,9 +26,9 @@ export type StandardFunction = {
   skills_ar: string[];
 };
 
-/** Canonical fallback — mirrors the 00058 + 00060 seed (47 standard functions
- *  across 9 competencies: Finance, Accounting, Banking, Investment, Treasury,
- *  Data Analytics, Business Intelligence, Artificial Intelligence, HR). */
+/** Canonical fallback — mirrors the 00058 + 00060 + 00073 seed (48 standard
+ *  functions across 9 competencies: Finance, Accounting, Banking, Investment,
+ *  Treasury, Data Analytics, Business Intelligence, Artificial Intelligence, HR). */
 export const STANDARD_FUNCTIONS: StandardFunction[] = [
   {
     key: "accounts_payable",
@@ -85,6 +85,14 @@ export const STANDARD_FUNCTIONS: StandardFunction[] = [
     category: "finance",
     skills_en: ["Budgeting & Rolling Forecasts", "Driver & Variance Analysis", "Financial Modelling", "Scenario & Sensitivity Analysis", "KPI & Dashboarding", "Business-Partnering Analytics"],
     skills_ar: ["إعداد الموازنات والتنبؤات المتجددة", "تحليل المحركات والانحرافات", "النمذجة المالية", "تحليل السيناريوهات والحساسية", "مؤشرات الأداء ولوحات المعلومات", "تحليلات الشراكة مع الأعمال"],
+  },
+  {
+    key: "corporate_finance",
+    name_en: "Corporate Finance",
+    name_ar: "التمويل المؤسسي",
+    category: "finance",
+    skills_en: ["Capital Budgeting", "Cost of Capital (WACC)", "Capital Structure", "Working Capital Management", "Investment Appraisal", "Financial Statement Analysis"],
+    skills_ar: ["الموازنة الرأسمالية", "تكلفة رأس المال (WACC)", "هيكل رأس المال", "إدارة رأس المال العامل", "تقييم جدوى الاستثمار", "تحليل القوائم المالية"],
   },
   {
     key: "tax",

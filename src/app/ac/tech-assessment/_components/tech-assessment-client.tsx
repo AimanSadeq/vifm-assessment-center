@@ -87,12 +87,45 @@ export function TechAssessmentClient({
   // Two-level picker: pick a competency first, then a function within it.
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const adaptiveSet = useMemo(() => new Set(adaptiveRefs), [adaptiveRefs]);
-  // Mix & match basket: function refs picked (across competencies) for one
-  // combined sitting over their merged skill blueprints. Nothing is persisted.
-  const [mixOn, setMixOn] = useState<Record<string, boolean>>({});
-  const mixList = useMemo(() => functions.filter((f) => mixOn[f.ref]), [functions, mixOn]);
-  const mixSkillCount = useMemo(() => new Set(mixList.flatMap((f) => f.skillsEn)).size, [mixList]);
-  const toggleMix = (ref: string) => setMixOn((s) => ({ ...s, [ref]: !s[ref] }));
+  // Mix & match basket: individual SKILLS picked across functions/competencies
+  // for one combined sitting. Keyed by the canonical English skill name, each
+  // remembering the function it was picked from. Nothing is persisted.
+  type MixPick = { ref: string; fnName: string; label: string };
+  const [mixSkills, setMixSkills] = useState<Record<string, MixPick>>({});
+  // The function card currently expanded to show its pickable skills.
+  const [expandedRef, setExpandedRef] = useState<string | null>(null);
+  const mixCount = Object.keys(mixSkills).length;
+  // Contributing functions (for the basket chips + the start payload).
+  const mixFns = useMemo(() => {
+    const by = new Map<string, { ref: string; name: string; count: number }>();
+    for (const p of Object.values(mixSkills)) {
+      const cur = by.get(p.ref);
+      if (cur) cur.count += 1;
+      else by.set(p.ref, { ref: p.ref, name: p.fnName, count: 1 });
+    }
+    return Array.from(by.values());
+  }, [mixSkills]);
+  const MIX_MIN_SKILLS = 3;
+
+  const toggleMixSkill = (f: LocalizedTechFunction, skillEn: string, label: string) =>
+    setMixSkills((s) => {
+      const next = { ...s };
+      if (next[skillEn]) delete next[skillEn];
+      else next[skillEn] = { ref: f.ref, fnName: f.name, label };
+      return next;
+    });
+  const setAllMixSkills = (f: LocalizedTechFunction, on: boolean) =>
+    setMixSkills((s) => {
+      const next = { ...s };
+      f.skillsEn.forEach((en, i) => {
+        if (on) next[en] = next[en] ?? { ref: f.ref, fnName: f.name, label: f.skills[i] ?? en };
+        else delete next[en];
+      });
+      return next;
+    });
+  const removeMixFn = (ref: string) =>
+    setMixSkills((s) => Object.fromEntries(Object.entries(s).filter(([, p]) => p.ref !== ref)));
+  const pickedCountOf = (f: LocalizedTechFunction) => f.skillsEn.filter((en) => !!mixSkills[en]).length;
 
   // Adaptive (turn-based CAT) state.
   const [adaptiveItem, setAdaptiveItem] = useState<AdaptiveItem | null>(null);
@@ -123,11 +156,12 @@ export function TechAssessmentClient({
     return beginFixed(kind, kind === "function" ? { functionKey: key } : { domainKey: key });
   }
 
-  // Combined (mix & match) run: the basket's refs in one sitting over their
-  // merged blueprints. Always the fixed form (CAT pools are per-function).
+  // Combined (mix & match) run: the basket's picked skills in one sitting.
+  // Always the fixed form (CAT pools are per-function).
   async function startMix() {
-    if (mixList.length < 2) return;
-    return beginFixed("function", { functionKeys: mixList.map((f) => f.ref) });
+    const skills = Object.keys(mixSkills);
+    if (skills.length < MIX_MIN_SKILLS) return;
+    return beginFixed("function", { functionKeys: mixFns.map((f) => f.ref), skills });
   }
 
   async function beginFixed(kind: RunKind, idBody: Record<string, unknown>) {
@@ -318,33 +352,39 @@ export function TechAssessmentClient({
 
       {phase === "intro" && !locked && (
         <div className="space-y-4">
-          {/* Mix & match basket: combined assessment across competencies. */}
-          {mixList.length > 0 && (
+          {/* Mix & match basket: skills picked across functions/competencies. */}
+          {mixCount > 0 && (
             <div className="rounded-2xl border border-[#5391D5]/50 bg-[#5391D5]/[0.04] p-4 shadow-sm">
               <p className="inline-flex items-center gap-2 text-sm font-semibold text-[#010131]">
                 <Blend className="h-4 w-4 text-[#5391D5]" /> {t("tech.take.mixTitle")}
               </p>
               <div className="mt-2 flex flex-wrap gap-1.5">
-                {mixList.map((f) => (
+                {mixFns.map((f) => (
                   <button
                     key={f.ref}
-                    onClick={() => toggleMix(f.ref)}
+                    onClick={() => removeMixFn(f.ref)}
+                    title={t("tech.take.mixRemoveFn")}
                     className="inline-flex items-center gap-1.5 rounded-full border border-[#5391D5] bg-white px-3 py-1 text-xs font-medium text-[#2b6cb0] hover:bg-rose-50 hover:text-rose-600"
                   >
-                    {f.name} <X className="h-3 w-3" />
+                    {f.name} · {f.count} <X className="h-3 w-3" />
                   </button>
                 ))}
               </div>
+              <p className="mt-2 text-[11px] leading-relaxed text-slate-600">
+                {Object.values(mixSkills).map((p) => p.label).join(" · ")}
+              </p>
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 <button
                   onClick={startMix}
-                  disabled={busy || mixList.length < 2}
+                  disabled={busy || mixCount < MIX_MIN_SKILLS}
                   className="inline-flex items-center gap-2 rounded-md bg-[#047857] px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
                 >
                   {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <GraduationCap className="h-4 w-4" />}
-                  {t("tech.take.mixStart", { skills: mixSkillCount, n: mixList.length })}
+                  {t("tech.take.mixStart", { skills: mixCount, n: mixFns.length })}
                 </button>
-                {mixList.length < 2 && <span className="text-[11px] text-slate-500">{t("tech.take.mixNeedTwo")}</span>}
+                {mixCount < MIX_MIN_SKILLS && (
+                  <span className="text-[11px] text-slate-500">{t("tech.take.mixNeedMore", { min: MIX_MIN_SKILLS })}</span>
+                )}
               </div>
             </div>
           )}
@@ -385,46 +425,93 @@ export function TechAssessmentClient({
                 <p className="mt-1 text-sm text-muted-foreground">{t("tech.take.selectFunctionSub")}</p>
                 <p className="mt-1 text-[11px] text-muted-foreground">{t("tech.take.mixHint")}</p>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {selectedGroup.items.map((f) => (
-                    <div
-                      key={f.ref}
-                      className={`relative flex rounded-xl border transition-colors ${
-                        mixOn[f.ref] ? "border-[#5391D5] bg-[#5391D5]/5" : "border-slate-200 hover:border-[#5391D5] hover:bg-[#5391D5]/5"
-                      }`}
-                    >
-                      <button
-                        onClick={() => start("function", f.ref)}
-                        disabled={busy}
-                        className="flex flex-1 flex-col gap-1.5 p-4 pe-10 text-start disabled:opacity-60"
+                  {selectedGroup.items.map((f) => {
+                    const open = expandedRef === f.ref;
+                    const picked = pickedCountOf(f);
+                    const allOn = picked === f.skillsEn.length;
+                    return (
+                      <div
+                        key={f.ref}
+                        className={`rounded-xl border transition-colors ${
+                          open || picked > 0 ? "border-[#5391D5] bg-[#5391D5]/5" : "border-slate-200 hover:border-[#5391D5] hover:bg-[#5391D5]/5"
+                        } ${open ? "sm:col-span-2 lg:col-span-3" : ""}`}
                       >
-                        <span className="font-semibold text-[#010131]">{f.name}</span>
-                        <span className="text-[11px] leading-snug text-muted-foreground">{f.skills.slice(0, 3).join(" · ")}…</span>
-                        <span className="mt-0.5 flex flex-wrap gap-1">
-                          <span className="inline-flex w-fit items-center gap-1 rounded-full bg-[#5391D5]/10 px-2 py-0.5 text-[10px] font-medium text-[#2b6cb0]">
-                            <Layers3 className="h-3 w-3" /> {t("tech.take.skillsCount", { n: f.skillsEn.length })} · {t("tech.take.functionDeep")}
-                          </span>
-                          {adaptiveSet.has(f.ref) && (
-                            <span className="inline-flex w-fit items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-medium text-indigo-700">
-                              <Gauge className="h-3 w-3" /> {t("tech.take.adaptiveBadge")}
+                        {/* Card header: tap to open the function's skills. */}
+                        <button
+                          onClick={() => setExpandedRef(open ? null : f.ref)}
+                          disabled={busy}
+                          className="flex w-full items-start justify-between gap-3 p-4 text-start disabled:opacity-60"
+                        >
+                          <span className="flex flex-col gap-1.5">
+                            <span className="font-semibold text-[#010131]">{f.name}</span>
+                            {!open && (
+                              <span className="text-[11px] leading-snug text-muted-foreground">{f.skills.slice(0, 3).join(" · ")}…</span>
+                            )}
+                            <span className="mt-0.5 flex flex-wrap gap-1">
+                              <span className="inline-flex w-fit items-center gap-1 rounded-full bg-[#5391D5]/10 px-2 py-0.5 text-[10px] font-medium text-[#2b6cb0]">
+                                <Layers3 className="h-3 w-3" /> {t("tech.take.skillsCount", { n: f.skillsEn.length })} · {t("tech.take.functionDeep")}
+                              </span>
+                              {adaptiveSet.has(f.ref) && (
+                                <span className="inline-flex w-fit items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-medium text-indigo-700">
+                                  <Gauge className="h-3 w-3" /> {t("tech.take.adaptiveBadge")}
+                                </span>
+                              )}
+                              {picked > 0 && (
+                                <span className="inline-flex w-fit items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
+                                  <Check className="h-3 w-3" /> {t("tech.take.mixPicked", { n: picked })}
+                                </span>
+                              )}
                             </span>
-                          )}
-                        </span>
-                      </button>
-                      <button
-                        onClick={() => toggleMix(f.ref)}
-                        disabled={busy}
-                        title={t("tech.take.mixToggle")}
-                        aria-label={t("tech.take.mixToggle")}
-                        className={`absolute end-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full border transition-colors ${
-                          mixOn[f.ref]
-                            ? "border-[#5391D5] bg-[#5391D5] text-white"
-                            : "border-slate-300 bg-white text-slate-400 hover:border-[#5391D5] hover:text-[#5391D5]"
-                        }`}
-                      >
-                        {mixOn[f.ref] ? <Check className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
-                      </button>
-                    </div>
-                  ))}
+                          </span>
+                          <ChevronDown className={`mt-1 h-4 w-4 shrink-0 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`} />
+                        </button>
+
+                        {/* Expanded: pick one, some, or all of this function's skills. */}
+                        {open && (
+                          <div className="border-t border-[#5391D5]/20 p-4">
+                            <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
+                              {f.skillsEn.map((en, i) => {
+                                const on = !!mixSkills[en];
+                                const label = f.skills[i] ?? en;
+                                return (
+                                  <label
+                                    key={en}
+                                    className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm ${
+                                      on ? "border-[#5391D5] bg-white" : "border-slate-200 bg-white/60 hover:bg-white"
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={on}
+                                      onChange={() => toggleMixSkill(f, en, label)}
+                                      className="accent-[#5391D5]"
+                                    />
+                                    <span>{label}</span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                              <button
+                                onClick={() => setAllMixSkills(f, !allOn)}
+                                className="inline-flex items-center gap-1.5 rounded-md border border-[#5391D5]/50 px-3 py-1.5 text-xs font-medium text-[#2b6cb0] hover:bg-[#5391D5]/10"
+                              >
+                                {allOn ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+                                {allOn ? t("tech.take.mixUnselectAll") : t("tech.take.mixSelectAll")}
+                              </button>
+                              <button
+                                onClick={() => start("function", f.ref)}
+                                disabled={busy}
+                                className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+                              >
+                                <GraduationCap className="h-3.5 w-3.5" /> {t("tech.take.mixAssessNow")}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
                 {busy && (
                   <p className="mt-4 inline-flex items-center gap-2 text-sm text-slate-500">

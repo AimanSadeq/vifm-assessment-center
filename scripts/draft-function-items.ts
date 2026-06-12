@@ -18,11 +18,12 @@
  * Run (needs NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY
  * in .env.local — same as backfill:evidence):
  *   npx tsx scripts/draft-function-items.ts --dry          # plan only, no AI/DB writes
+ *   npx tsx scripts/draft-function-items.ts --function corporate_finance   # one function's skills
  *   npx tsx scripts/draft-function-items.ts --new-only     # only the 6 new competencies
  *   npx tsx scripts/draft-function-items.ts --category banking
  *   npx tsx scripts/draft-function-items.ts --per 6        # items per skill (default 4)
  *   npx tsx scripts/draft-function-items.ts --limit 5      # first 5 skills (test run)
- *   npx tsx scripts/draft-function-items.ts                # all 47 functions' skills
+ *   npx tsx scripts/draft-function-items.ts                # all standard functions' skills
  */
 
 import { config as loadEnv } from "dotenv";
@@ -57,6 +58,7 @@ const DRY = has("--dry");
 const FORCE = has("--force");
 const NEW_ONLY = has("--new-only");
 const CATEGORY = valOf("--category");
+const FUNCTION = valOf("--function"); // a single standard function key, e.g. corporate_finance
 const PER = Math.max(1, Math.min(20, Number(valOf("--per") ?? "4")));
 const LIMIT = valOf("--limit") ? Math.max(1, Number(valOf("--limit"))) : null;
 // Existing drafts/in-review/approved that count toward "already covered".
@@ -64,7 +66,8 @@ const COUNTED_STATUSES = ["draft", "in_review", "approved"];
 
 function pickFunctions() {
   let fns = STANDARD_FUNCTIONS;
-  if (CATEGORY) fns = fns.filter((f) => f.category === CATEGORY);
+  if (FUNCTION) fns = fns.filter((f) => f.key === FUNCTION);
+  else if (CATEGORY) fns = fns.filter((f) => f.category === CATEGORY);
   else if (NEW_ONLY) fns = fns.filter((f) => NEW_COMPETENCIES.has(f.category));
   return fns;
 }
@@ -117,9 +120,20 @@ async function main() {
     process.exit(1);
   }
 
+  if (FUNCTION && pickFunctions().length === 0) {
+    console.error(`✗ No standard function with key='${FUNCTION}'. Check src/lib/competencies/technical-function.ts.`);
+    process.exit(1);
+  }
+
   const sb = createClient(url, key);
   const plan = skillPlan();
-  const scope = CATEGORY ? `category=${CATEGORY}` : NEW_ONLY ? "new competencies" : "all standard functions";
+  const scope = FUNCTION
+    ? `function=${FUNCTION}`
+    : CATEGORY
+      ? `category=${CATEGORY}`
+      : NEW_ONLY
+        ? "new competencies"
+        : "all standard functions";
 
   console.log(`\nBulk function-item drafting`);
   console.log(`  scope:   ${scope}  (${pickFunctions().length} functions)`);

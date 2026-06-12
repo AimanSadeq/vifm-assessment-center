@@ -57,6 +57,7 @@ type Body = {
   action?: "start" | "score";
   domainKey?: string;
   functionKey?: string; // a function ref (standard key or custom id) for a function run
+  functionKeys?: string[]; // 2+ refs → a combined (mix & match) run over the merged blueprints
   sessionId?: string;
   items?: TechItem[]; // legacy client-graded path only
   domainName?: string;
@@ -140,12 +141,67 @@ export async function POST(req: Request) {
   }
 
   const domainKey = body.domainKey as TechDomainKey | undefined;
-  const functionRef = body.functionKey?.trim() || null;
+  let functionRef = body.functionKey?.trim() || null;
   const language: "en" | "ar" = body.language === "ar" ? "ar" : "en";
 
   if (body.action === "start") {
     const candidateId = body.candidateId?.trim() || null;
     const engagementId = body.engagementId?.trim() || null;
+
+    // ── Combined (mix & match) run: several functions picked ad hoc in the
+    //    runner — their skill blueprints merge (deduped) into ONE sitting.
+    //    Nothing is persisted to the function library. ──
+    const mixRefs = Array.isArray(body.functionKeys)
+      ? Array.from(new Set(body.functionKeys.map((r) => String(r).trim()).filter(Boolean)))
+      : [];
+    if (mixRefs.length === 1 && !functionRef) functionRef = mixRefs[0];
+    if (mixRefs.length >= 2) {
+      const fns = (await Promise.all(mixRefs.map((r) => getTechnicalFunctionByRef(r, language)))).filter(
+        (f): f is NonNullable<typeof f> => f != null
+      );
+      if (fns.length < 2) {
+        return NextResponse.json({ error: "at least two valid functionKeys required" }, { status: 400 });
+      }
+      const skillsEn = Array.from(new Set(fns.flatMap((f) => f.skillsEn)));
+      const functionName = fns.map((f) => f.name).join(" + ");
+      const compositeKey = `mix:${fns.map((f) => f.ref).join("+")}`;
+      // Scale the per-skill draw down as the merged blueprint grows, so a
+      // combined sitting stays a sane length (~24 items).
+      const perSkill = Math.max(2, Math.min(4, Math.floor(24 / Math.max(1, skillsEn.length))));
+      // Certified when EVERY merged skill clears the approved floor (item banks
+      // are keyed by skill, so each function's pool is reused); else indicative.
+      const certified = await buildCertifiedFunctionTest({
+        functionKey: compositeKey,
+        functionName,
+        skillsEn,
+        functionId: null,
+        drawPerSkill: perSkill,
+        language,
+      });
+      const stored: StoredTest = certified
+        ? { ...certified.test, item_ids: certified.itemIds, function_key: compositeKey, function_id: null }
+        : {
+            ...(await generateFunctionAssessment({
+              functionKey: compositeKey,
+              functionName,
+              skillsEn,
+              language,
+              itemsPerSkill: perSkill,
+            })),
+            function_key: compositeKey,
+            function_id: null,
+          };
+      const session_id = await createSession(
+        stored,
+        { candidateId, engagementId, language },
+        { key: compositeKey, id: null }
+      );
+      if (session_id) {
+        return NextResponse.json({ session_id, test: stripAnswerKey(stored) });
+      }
+      // Legacy (sessions/00058 not migrated): full test client-side, indicative only.
+      return NextResponse.json({ ...stored });
+    }
 
     // ── Function run: a DEEP, multi-skill blueprinted assessment (the job-level
     //    unit). Always indicative (no certified function bank yet). ──

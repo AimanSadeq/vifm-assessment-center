@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Loader2, CheckCircle2, RotateCcw, GraduationCap, AlertCircle, ShieldCheck, ExternalLink, Layers3, ChevronDown, ChevronRight, ChevronLeft, Gauge } from "lucide-react";
+import { Loader2, CheckCircle2, RotateCcw, GraduationCap, AlertCircle, ShieldCheck, ExternalLink, Layers3, ChevronDown, ChevronRight, ChevronLeft, Gauge, Blend, Plus, Check, X } from "lucide-react";
 import type { LocalizedTechDomain } from "@/lib/competencies/technical-taxonomy";
 import type { LocalizedTechFunction } from "@/lib/competencies/technical-function";
 import { categoryRank } from "@/lib/competencies/technical-categories";
@@ -87,6 +87,12 @@ export function TechAssessmentClient({
   // Two-level picker: pick a competency first, then a function within it.
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const adaptiveSet = useMemo(() => new Set(adaptiveRefs), [adaptiveRefs]);
+  // Mix & match basket: function refs picked (across competencies) for one
+  // combined sitting over their merged skill blueprints. Nothing is persisted.
+  const [mixOn, setMixOn] = useState<Record<string, boolean>>({});
+  const mixList = useMemo(() => functions.filter((f) => mixOn[f.ref]), [functions, mixOn]);
+  const mixSkillCount = useMemo(() => new Set(mixList.flatMap((f) => f.skillsEn)).size, [mixList]);
+  const toggleMix = (ref: string) => setMixOn((s) => ({ ...s, [ref]: !s[ref] }));
 
   // Adaptive (turn-based CAT) state.
   const [adaptiveItem, setAdaptiveItem] = useState<AdaptiveItem | null>(null);
@@ -114,11 +120,21 @@ export function TechAssessmentClient({
     if (kind === "function" && adaptiveSet.has(key)) {
       return startAdaptive(key);
     }
+    return beginFixed(kind, kind === "function" ? { functionKey: key } : { domainKey: key });
+  }
+
+  // Combined (mix & match) run: the basket's refs in one sitting over their
+  // merged blueprints. Always the fixed form (CAT pools are per-function).
+  async function startMix() {
+    if (mixList.length < 2) return;
+    return beginFixed("function", { functionKeys: mixList.map((f) => f.ref) });
+  }
+
+  async function beginFixed(kind: RunKind, idBody: Record<string, unknown>) {
     setBusy(true);
     setError("");
     setRunKind(kind);
     try {
-      const idBody = kind === "function" ? { functionKey: key } : { domainKey: key };
       const res = await fetch("/api/ac/tech-assessment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -302,6 +318,37 @@ export function TechAssessmentClient({
 
       {phase === "intro" && !locked && (
         <div className="space-y-4">
+          {/* Mix & match basket: combined assessment across competencies. */}
+          {mixList.length > 0 && (
+            <div className="rounded-2xl border border-[#5391D5]/50 bg-[#5391D5]/[0.04] p-4 shadow-sm">
+              <p className="inline-flex items-center gap-2 text-sm font-semibold text-[#010131]">
+                <Blend className="h-4 w-4 text-[#5391D5]" /> {t("tech.take.mixTitle")}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {mixList.map((f) => (
+                  <button
+                    key={f.ref}
+                    onClick={() => toggleMix(f.ref)}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[#5391D5] bg-white px-3 py-1 text-xs font-medium text-[#2b6cb0] hover:bg-rose-50 hover:text-rose-600"
+                  >
+                    {f.name} <X className="h-3 w-3" />
+                  </button>
+                ))}
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <button
+                  onClick={startMix}
+                  disabled={busy || mixList.length < 2}
+                  className="inline-flex items-center gap-2 rounded-md bg-[#047857] px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
+                >
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <GraduationCap className="h-4 w-4" />}
+                  {t("tech.take.mixStart", { skills: mixSkillCount, n: mixList.length })}
+                </button>
+                {mixList.length < 2 && <span className="text-[11px] text-slate-500">{t("tech.take.mixNeedTwo")}</span>}
+              </div>
+            </div>
+          )}
+
           {/* Primary: functions (the job-level unit of assessment). */}
           <div className="rounded-2xl border bg-card p-6 shadow-sm">
             {!selectedGroup ? (
@@ -336,27 +383,47 @@ export function TechAssessmentClient({
                 </button>
                 <h2 className="mt-3 text-lg font-semibold text-[#010131]">{selectedGroup.label}</h2>
                 <p className="mt-1 text-sm text-muted-foreground">{t("tech.take.selectFunctionSub")}</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">{t("tech.take.mixHint")}</p>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {selectedGroup.items.map((f) => (
-                    <button
+                    <div
                       key={f.ref}
-                      onClick={() => start("function", f.ref)}
-                      disabled={busy}
-                      className="flex flex-col gap-1.5 rounded-xl border border-slate-200 p-4 text-start transition-colors hover:border-[#5391D5] hover:bg-[#5391D5]/5 disabled:opacity-60"
+                      className={`relative flex rounded-xl border transition-colors ${
+                        mixOn[f.ref] ? "border-[#5391D5] bg-[#5391D5]/5" : "border-slate-200 hover:border-[#5391D5] hover:bg-[#5391D5]/5"
+                      }`}
                     >
-                      <span className="font-semibold text-[#010131]">{f.name}</span>
-                      <span className="text-[11px] leading-snug text-muted-foreground">{f.skills.slice(0, 3).join(" · ")}…</span>
-                      <span className="mt-0.5 flex flex-wrap gap-1">
-                        <span className="inline-flex w-fit items-center gap-1 rounded-full bg-[#5391D5]/10 px-2 py-0.5 text-[10px] font-medium text-[#2b6cb0]">
-                          <Layers3 className="h-3 w-3" /> {t("tech.take.skillsCount", { n: f.skillsEn.length })} · {t("tech.take.functionDeep")}
-                        </span>
-                        {adaptiveSet.has(f.ref) && (
-                          <span className="inline-flex w-fit items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-medium text-indigo-700">
-                            <Gauge className="h-3 w-3" /> {t("tech.take.adaptiveBadge")}
+                      <button
+                        onClick={() => start("function", f.ref)}
+                        disabled={busy}
+                        className="flex flex-1 flex-col gap-1.5 p-4 pe-10 text-start disabled:opacity-60"
+                      >
+                        <span className="font-semibold text-[#010131]">{f.name}</span>
+                        <span className="text-[11px] leading-snug text-muted-foreground">{f.skills.slice(0, 3).join(" · ")}…</span>
+                        <span className="mt-0.5 flex flex-wrap gap-1">
+                          <span className="inline-flex w-fit items-center gap-1 rounded-full bg-[#5391D5]/10 px-2 py-0.5 text-[10px] font-medium text-[#2b6cb0]">
+                            <Layers3 className="h-3 w-3" /> {t("tech.take.skillsCount", { n: f.skillsEn.length })} · {t("tech.take.functionDeep")}
                           </span>
-                        )}
-                      </span>
-                    </button>
+                          {adaptiveSet.has(f.ref) && (
+                            <span className="inline-flex w-fit items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-medium text-indigo-700">
+                              <Gauge className="h-3 w-3" /> {t("tech.take.adaptiveBadge")}
+                            </span>
+                          )}
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => toggleMix(f.ref)}
+                        disabled={busy}
+                        title={t("tech.take.mixToggle")}
+                        aria-label={t("tech.take.mixToggle")}
+                        className={`absolute end-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full border transition-colors ${
+                          mixOn[f.ref]
+                            ? "border-[#5391D5] bg-[#5391D5] text-white"
+                            : "border-slate-300 bg-white text-slate-400 hover:border-[#5391D5] hover:text-[#5391D5]"
+                        }`}
+                      >
+                        {mixOn[f.ref] ? <Check className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+                      </button>
+                    </div>
                   ))}
                 </div>
                 {busy && (

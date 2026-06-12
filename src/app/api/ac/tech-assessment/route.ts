@@ -29,6 +29,7 @@ import {
   generateFunctionAssessment,
   scoreTechnicalAssessment,
   stripAnswerKey,
+  TechGenerationError,
   type TechTest,
   type TechItem,
 } from "@/lib/ai/technical-assessment";
@@ -74,6 +75,22 @@ type Body = {
 };
 
 const SESSION_TTL_MS = 1000 * 60 * 60 * 3;
+
+// The self-answering placeholder deck exists so the dev flow renders without an
+// API key — it must never be administered in production.
+const isPlaceholderTest = (t: TechTest) => !t.certified && !t.ai_generated;
+
+const generationFailedResponse = () =>
+  NextResponse.json(
+    { error: "The assessment couldn't be generated right now. Please try again." },
+    { status: 503 }
+  );
+
+const engineNotConfiguredResponse = () =>
+  NextResponse.json(
+    { error: "The assessment engine is not configured on this server." },
+    { status: 503 }
+  );
 
 async function createSession(
   test: StoredTest,
@@ -233,9 +250,12 @@ export async function POST(req: Request) {
         functionId: fn.id,
         language,
       });
-      const stored: StoredTest = certified
-        ? { ...certified.test, item_ids: certified.itemIds, function_key: fn.ref, function_id: fn.id }
-        : {
+      let stored: StoredTest;
+      if (certified) {
+        stored = { ...certified.test, item_ids: certified.itemIds, function_key: fn.ref, function_id: fn.id };
+      } else {
+        try {
+          stored = {
             ...(await generateFunctionAssessment({
               functionKey: fn.ref,
               functionName: fn.name,
@@ -245,6 +265,17 @@ export async function POST(req: Request) {
             function_key: fn.ref,
             function_id: fn.id,
           };
+        } catch (err) {
+          if (err instanceof TechGenerationError) {
+            console.error("[tech-assessment] function start failed:", err.message);
+            return generationFailedResponse();
+          }
+          throw err;
+        }
+      }
+      if (process.env.NODE_ENV === "production" && isPlaceholderTest(stored)) {
+        return engineNotConfiguredResponse();
+      }
       const session_id = await createSession(
         stored,
         { candidateId, engagementId, language },
@@ -264,9 +295,23 @@ export async function POST(req: Request) {
 
     // Prefer the certified path (SME-approved bank). Fall back to indicative AI.
     const certified = await buildCertifiedTest(domainKey, undefined, language);
-    const stored: StoredTest = certified
-      ? { ...certified.test, item_ids: certified.itemIds }
-      : await generateTechnicalAssessment({ domainKey, language });
+    let stored: StoredTest;
+    if (certified) {
+      stored = { ...certified.test, item_ids: certified.itemIds };
+    } else {
+      try {
+        stored = await generateTechnicalAssessment({ domainKey, language });
+      } catch (err) {
+        if (err instanceof TechGenerationError) {
+          console.error("[tech-assessment] domain start failed:", err.message);
+          return generationFailedResponse();
+        }
+        throw err;
+      }
+    }
+    if (process.env.NODE_ENV === "production" && isPlaceholderTest(stored)) {
+      return engineNotConfiguredResponse();
+    }
 
     const session_id = await createSession(stored, { candidateId, engagementId, language });
     if (session_id) {

@@ -12,9 +12,12 @@
  * Positioning (honest by design): this is an INDICATIVE proficiency signal, not
  * a certified qualification. AI-authored items should be human-reviewed /
  * calibrated before any high-stakes use. Falls back to a small generic set when
- * ANTHROPIC_API_KEY is absent so the flow still renders end-to-end.
+ * ANTHROPIC_API_KEY is absent so the dev flow still renders end-to-end; when a
+ * key IS configured but generation fails, TechGenerationError is thrown so the
+ * route can surface it — a taker is never silently served the placeholder deck.
  */
 
+import type Anthropic from "@anthropic-ai/sdk";
 import { getAIClient, AI_MODEL } from "./client";
 import {
   techDomainByKey,
@@ -100,6 +103,17 @@ export type TechResult = {
   ai_generated: boolean;
   certified: boolean; // assembled from SME-approved items (credential-eligible)
 };
+
+/** Thrown when AI generation was attempted (an API key IS configured) but no
+ *  usable test could be produced — API failure, truncated/malformed output, or
+ *  the model under-delivering. The route maps this to an explicit 5xx so a
+ *  taker is never silently administered the placeholder deck. */
+export class TechGenerationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TechGenerationError";
+  }
+}
 
 const ITEM_COUNT = 8;
 
@@ -289,41 +303,46 @@ export async function generateTechnicalAssessment(input: {
     `  "options":["a","b","c","d"],"correct_index":0,"difficulty":"easy" } ] }`,
   ].join("\n");
 
-  try {
-    const res = await client.messages.create({
-      model: AI_MODEL,
-      max_tokens: 3500,
-      system,
-      messages: [{ role: "user", content: user }],
-    });
-    const block = res.content.find((b) => b.type === "text");
-    if (!block || block.type !== "text") throw new Error("no text");
-    const match = block.text.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error("no json");
-    const parsed = JSON.parse(match[0]) as { items?: Array<Partial<TechItem>> };
-
-    const skillSet = new Set(domain.skills);
-    const items: TechItem[] = (parsed.items ?? [])
-      .filter((r) => typeof r.question === "string" && cleanMcq(r))
-      .map((r, i): TechItem => {
-        const { options, correct_index } = shuffleMcq((r.options as string[]).map(String), r.correct_index as number);
-        return {
-          id: r.id || `t${i + 1}`,
-          skill: typeof r.skill === "string" && skillSet.has(r.skill) ? r.skill : domain.skills[i % domain.skills.length],
-          type: "single",
-          question: String(r.question),
-          options,
-          correct_index,
-          difficulty: r.difficulty === "hard" ? "hard" : r.difficulty === "medium" ? "medium" : "easy",
-        };
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const res = await client.messages.create({
+        model: AI_MODEL,
+        max_tokens: 3500,
+        system,
+        messages: [{ role: "user", content: user }],
       });
+      if (res.stop_reason === "max_tokens") throw new Error("output truncated at max_tokens");
+      const block = res.content.find((b) => b.type === "text");
+      if (!block || block.type !== "text") throw new Error("no text");
+      const match = block.text.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error("no json");
+      const parsed = JSON.parse(match[0]) as { items?: Array<Partial<TechItem>> };
 
-    if (items.length < 4) return fallbackTest(input.domainKey, language);
-    return { domain_key: input.domainKey, domain_name: domain.name, items, ai_generated: true };
-  } catch (err) {
-    console.error("[technical-assessment] generate failed:", err);
-    return fallbackTest(input.domainKey, language);
+      const skillSet = new Set(domain.skills);
+      const items: TechItem[] = (parsed.items ?? [])
+        .filter((r) => typeof r.question === "string" && cleanMcq(r))
+        .map((r, i): TechItem => {
+          const { options, correct_index } = shuffleMcq((r.options as string[]).map(String), r.correct_index as number);
+          return {
+            id: r.id || `t${i + 1}`,
+            skill: typeof r.skill === "string" && skillSet.has(r.skill) ? r.skill : domain.skills[i % domain.skills.length],
+            type: "single",
+            question: String(r.question),
+            options,
+            correct_index,
+            difficulty: r.difficulty === "hard" ? "hard" : r.difficulty === "medium" ? "medium" : "easy",
+          };
+        });
+
+      if (items.length < 4) throw new Error(`only ${items.length} usable items (need 4+)`);
+      return { domain_key: input.domainKey, domain_name: domain.name, items, ai_generated: true };
+    } catch (err) {
+      console.error(`[technical-assessment] domain generate attempt ${attempt} failed:`, err);
+    }
   }
+  // The key is configured but the model couldn't deliver — surface the failure
+  // rather than silently administering the placeholder deck.
+  throw new TechGenerationError(`AI generation failed for domain "${domain.name}"`);
 }
 
 // ── Function (blueprint) assessment ──────────────────────────────────────────
@@ -367,6 +386,87 @@ function functionFallbackTest(
   };
 }
 
+/** A 4-item chunk costs ~250 output tokens per item (scenario stems, multi
+ *  options); 3000 gives ~3x headroom so truncation is a hard error, not a
+ *  likelihood. */
+const PER_SKILL_MAX_TOKENS = 3000;
+
+/** One model call: `perSkill` items for ONE skill of the function. Returns []
+ *  after exhausting retries so the caller can judge coverage across skills. */
+async function generateSkillItems(
+  client: Anthropic,
+  input: { functionName: string; skill: string; perSkill: number; language: "en" | "ar" }
+): Promise<TechItem[]> {
+  const { functionName, skill, perSkill, language } = input;
+  // Per-skill type mix, mirroring the old whole-test 55/25/20 target: for the
+  // default 4 items/skill → 2 single + 1 multi + 1 scenario.
+  const scenarioN = 1;
+  const multiN = perSkill >= 3 ? 1 : 0;
+  const singleN = perSkill - scenarioN - multiN;
+
+  const user = [
+    ...arabicLangLines(language),
+    `Write EXACTLY ${perSkill} technical-competency assessment items for ONE skill`,
+    `of the finance function below.`,
+    `FUNCTION: ${functionName}`,
+    `SKILL: ${skill}`,
+    ``,
+    `EXACT TYPE MIX:`,
+    `  • ${singleN} × "single"   — one question, four options, exactly ONE correct (correct_index).`,
+    ...(multiN > 0
+      ? [
+          `  • ${multiN} × "multi"    — select-all-that-apply: 4-6 options with 2-3 correct`,
+          `                 (correct_indices array). At least one option must be wrong.`,
+        ]
+      : []),
+    `  • ${scenarioN} × "scenario" — a short realistic case in "scenario" (2-4 sentences with`,
+    `                 figures), then a single-best-answer question (four options,`,
+    `                 correct_index).`,
+    ``,
+    `TAG COGNITIVE LEVEL ("cognitive"): "recall" (definition/fact), "apply"`,
+    `(compute/use a rule), or "analyze" (judge/diagnose a situation). Ramp from`,
+    `recall toward analyze; pair the scenario item with apply/analyze.`,
+    ``,
+    `Ramp "difficulty" easy→medium→hard across the ${perSkill} items. Set every`,
+    `item's "skill" to EXACTLY this English string — even when the text is Arabic:`,
+    `${skill}`,
+    ``,
+    `Return JSON ONLY (no markdown fences):`,
+    `{ "items": [`,
+    `  { "skill":${JSON.stringify(skill)},"type":"single","question":"...",`,
+    `    "options":["a","b","c","d"],"correct_index":0,"cognitive":"recall","difficulty":"easy" },`,
+    `  { "skill":${JSON.stringify(skill)},"type":"multi","question":"Which apply?",`,
+    `    "options":["a","b","c","d","e"],"correct_indices":[0,2],"cognitive":"apply","difficulty":"medium" },`,
+    `  { "skill":${JSON.stringify(skill)},"type":"scenario","scenario":"<case with figures>",`,
+    `    "question":"...","options":["a","b","c","d"],"correct_index":1,"cognitive":"analyze","difficulty":"hard" } ] }`,
+  ].join("\n");
+
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const res = await client.messages.create({
+        model: AI_MODEL,
+        max_tokens: PER_SKILL_MAX_TOKENS,
+        system: ITEM_WRITER_SYSTEM,
+        messages: [{ role: "user", content: user }],
+      });
+      if (res.stop_reason === "max_tokens") throw new Error("output truncated at max_tokens");
+      const block = res.content.find((b) => b.type === "text");
+      if (!block || block.type !== "text") throw new Error("no text");
+      const match = block.text.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error("no json");
+      const parsed = JSON.parse(match[0]) as { items?: RawRichItem[] };
+      const items = (parsed.items ?? [])
+        .map((r, i) => normalizeRichItem(r, i, [skill], new Set([skill])))
+        .filter((it): it is TechItem => it !== null);
+      if (items.length === 0) throw new Error("no usable items");
+      return items.slice(0, perSkill);
+    } catch (err) {
+      console.error(`[technical-assessment] skill "${skill}" attempt ${attempt} failed:`, err);
+    }
+  }
+  return [];
+}
+
 export async function generateFunctionAssessment(input: {
   functionKey: string;
   functionName: string;
@@ -383,69 +483,32 @@ export async function generateFunctionAssessment(input: {
     return functionFallbackTest(input.functionKey, input.functionName, skills, language);
   }
 
+  // One small call per skill instead of one giant call for the whole blueprint:
+  // a 6-skill × 4-item single request overruns its output budget (truncated
+  // JSON) and streams longer than proxy timeouts — both of which used to fall
+  // back, silently, to the placeholder deck. Chunks also fail independently,
+  // so one bad skill can't void five good ones.
+  const perSkillItems = await Promise.all(
+    skills.map((skill) =>
+      generateSkillItems(client, { functionName: input.functionName, skill, perSkill, language })
+    )
+  );
+
+  const items = perSkillItems
+    .flat()
+    .map((it, i) => ({ ...it, id: `t${i + 1}` })); // stable, collision-free ids
   const target = skills.length * perSkill;
-  const user = [
-    ...arabicLangLines(language),
-    `Write a DEEP technical-competency assessment for the finance function below.`,
-    `FUNCTION: ${input.functionName}`,
-    ``,
-    `Write EXACTLY ${perSkill} items for EACH of these skills (${target} items total):`,
-    ...skills.map((s, i) => `  ${i + 1}. ${s}`),
-    ``,
-    `MIX ITEM TYPES (vary across each skill's items):`,
-    `  • "single"   — one question, four options, exactly ONE correct (correct_index).`,
-    `  • "multi"    — select-all-that-apply: 4-6 options with 2-3 correct`,
-    `                 (correct_indices array). At least one option must be wrong.`,
-    `  • "scenario" — a short realistic case in "scenario" (2-4 sentences with`,
-    `                 figures), then a single-best-answer question (four options,`,
-    `                 correct_index). Use for higher-order items.`,
-    `Aim for roughly 55% single, 25% multi, 20% scenario across the test.`,
-    ``,
-    `TAG COGNITIVE LEVEL ("cognitive"): "recall" (definition/fact), "apply"`,
-    `(compute/use a rule), or "analyze" (judge/diagnose a situation). Ramp from`,
-    `recall toward analyze; pair scenario items with apply/analyze.`,
-    ``,
-    `Ramp "difficulty" easy→medium→hard. Tag every item with the EXACT English`,
-    `skill name it assesses (copied verbatim above) — even when the text is Arabic.`,
-    ``,
-    `Return JSON ONLY (no markdown fences):`,
-    `{ "items": [`,
-    `  { "skill":"<exact skill>","type":"single","question":"...",`,
-    `    "options":["a","b","c","d"],"correct_index":0,"cognitive":"recall","difficulty":"easy" },`,
-    `  { "skill":"<exact skill>","type":"multi","question":"Which apply?",`,
-    `    "options":["a","b","c","d","e"],"correct_indices":[0,2],"cognitive":"apply","difficulty":"medium" },`,
-    `  { "skill":"<exact skill>","type":"scenario","scenario":"<case with figures>",`,
-    `    "question":"...","options":["a","b","c","d"],"correct_index":1,"cognitive":"analyze","difficulty":"hard" } ] }`,
-  ].join("\n");
 
-  try {
-    const res = await client.messages.create({
-      model: AI_MODEL,
-      max_tokens: 8000,
-      system: ITEM_WRITER_SYSTEM,
-      messages: [{ role: "user", content: user }],
-    });
-    const block = res.content.find((b) => b.type === "text");
-    if (!block || block.type !== "text") throw new Error("no text");
-    const match = block.text.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error("no json");
-    const parsed = JSON.parse(match[0]) as { items?: RawRichItem[] };
-
-    const skillSet = new Set(skills);
-    const items: TechItem[] = (parsed.items ?? [])
-      .map((r, i) => normalizeRichItem(r, i, skills, skillSet))
-      .filter((it): it is TechItem => it !== null)
-      .map((it, i) => ({ ...it, id: `t${i + 1}` })); // stable, collision-free ids
-
-    // Need enough coverage to be meaningful; fall back if the model under-delivered.
-    if (items.length < Math.max(4, Math.ceil(target / 2))) {
-      return functionFallbackTest(input.functionKey, input.functionName, skills, language);
-    }
-    return { domain_key: input.functionKey, domain_name: input.functionName, items, ai_generated: true };
-  } catch (err) {
-    console.error("[technical-assessment] function generate failed:", err);
-    return functionFallbackTest(input.functionKey, input.functionName, skills, language);
+  // Need enough coverage to be meaningful; the key IS configured here, so an
+  // under-delivery is surfaced — never swapped for the placeholder deck.
+  if (items.length < Math.max(4, Math.ceil(target / 2))) {
+    const failed = skills.filter((_, i) => perSkillItems[i].length === 0);
+    throw new TechGenerationError(
+      `AI generation under-delivered for function "${input.functionName}" ` +
+        `(${items.length}/${target} items${failed.length > 0 ? `; failed skills: ${failed.join(", ")}` : ""})`
+    );
   }
+  return { domain_key: input.functionKey, domain_name: input.functionName, items, ai_generated: true };
 }
 
 /** Did the taker get this item right? single/scenario = exact index; multi =

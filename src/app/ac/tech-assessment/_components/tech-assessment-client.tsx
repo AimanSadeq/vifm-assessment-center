@@ -404,7 +404,7 @@ export function TechAssessmentClient({
                     >
                       <span className="flex flex-col gap-1">
                         <span className="font-semibold text-[#010131]">{g.label}</span>
-                        <span className="text-[11px] text-muted-foreground">{t("tech.take.functionsCount", { n: g.items.length })}</span>
+                        <span className="text-[11px] text-muted-foreground">{t("tech.take.functionsCount", { count: g.items.length })}</span>
                       </span>
                       <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
                     </button>
@@ -448,7 +448,7 @@ export function TechAssessmentClient({
                             )}
                             <span className="mt-0.5 flex flex-wrap gap-1">
                               <span className="inline-flex w-fit items-center gap-1 rounded-full bg-[#5391D5]/10 px-2 py-0.5 text-[10px] font-medium text-[#2b6cb0]">
-                                <Layers3 className="h-3 w-3" /> {t("tech.take.skillsCount", { n: f.skillsEn.length })} · {t("tech.take.functionDeep")}
+                                <Layers3 className="h-3 w-3" /> {t("tech.take.skillsCount", { count: f.skillsEn.length })} · {t("tech.take.functionDeep")}
                               </span>
                               {adaptiveSet.has(f.ref) && (
                                 <span className="inline-flex w-fit items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-medium text-indigo-700">

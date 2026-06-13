@@ -79,10 +79,42 @@ function hash(s: string): string {
 }
 
 /**
- * Execute the candidate query and the master query in a rolled-back
- * transaction against the throwaway sandbox DB, returning whether the
- * result sets match.
+ * Health check: prove the sandbox DB is reachable and supports the full
+ * pattern (temp table -> insert -> select -> rollback). Used by the admin
+ * "Test sandbox DB" button to validate SANDBOX_DATABASE_URL.
  */
+export async function pingSandboxDb(): Promise<{ ok: boolean; detail?: string; error?: string }> {
+  const p = getPool();
+  if (!p) return { ok: false, error: "SANDBOX_DATABASE_URL is not configured." };
+  let client;
+  try {
+    client = await p.connect();
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+  try {
+    await client.query("BEGIN");
+    await client.query(`SET LOCAL statement_timeout = ${STATEMENT_TIMEOUT_MS}`);
+    await client.query("CREATE TEMP TABLE _ping (n int)");
+    await client.query("INSERT INTO _ping VALUES (1)");
+    const r = await client.query("SELECT count(*)::int AS c FROM _ping");
+    const ver = await client.query("SELECT version()");
+    return {
+      ok: true,
+      detail: `Connected. Temp-table roundtrip OK (rows=${r.rows[0].c}). ${String(ver.rows[0].version).split(",")[0]}`,
+    };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  } finally {
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      /* ignore */
+    }
+    client.release();
+  }
+}
+
 export async function runSqlCheckpoint(
   config: SqlEngineConfig,
   candidateQuery: string,

@@ -3,8 +3,17 @@
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { createSession, listFunctionDescriptors } from "@/lib/technical-sandbox/service";
 import { matchJobDescription } from "@/lib/technical-sandbox/jd-matcher";
+import { pingSandboxDb } from "@/lib/technical-sandbox/sql-runner";
 
 type Result<T = unknown> = ({ ok: true } & T) | { error: string };
+
+export async function checkSandboxDbAction(): Promise<Result<{ detail?: string }>> {
+  const g = await guard();
+  if ("error" in g) return g;
+  const res = await pingSandboxDb();
+  if (!res.ok) return { error: res.error ?? "Sandbox DB unreachable." };
+  return { ok: true, detail: res.detail };
+}
 
 async function guard(): Promise<{ ok: true; userId?: string } | { error: string }> {
   try {

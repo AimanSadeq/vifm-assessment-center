@@ -4,7 +4,7 @@
 // token-accessed sitting and copy the candidate link.
 import { useState } from "react";
 import type { FunctionRow } from "@/lib/technical-sandbox/service";
-import { matchJdAction, createSandboxSessionAction } from "../actions";
+import { matchJdAction, createSandboxSessionAction, checkSandboxDbAction } from "../actions";
 
 interface JdMatch {
   functionId: string;
@@ -25,6 +25,16 @@ export function AdminClient({ functions }: { functions: FunctionRow[] }) {
   const [link, setLink] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dbStatus, setDbStatus] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  async function testDb() {
+    setBusy(true);
+    setDbStatus(null);
+    const res = await checkSandboxDbAction();
+    setBusy(false);
+    if ("error" in res) setDbStatus({ ok: false, msg: res.error });
+    else setDbStatus({ ok: true, msg: res.detail ?? "Connected." });
+  }
 
   async function runMatch() {
     setBusy(true);
@@ -56,6 +66,28 @@ export function AdminClient({ functions }: { functions: FunctionRow[] }) {
 
   return (
     <div className="space-y-6">
+      <section className="rounded-lg border border-border bg-card p-4">
+        <div className="flex items-center justify-between">
+          <h2 className="font-medium text-foreground">SQL sandbox connection</h2>
+          <button
+            onClick={testDb}
+            disabled={busy}
+            className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground hover:bg-muted disabled:opacity-50"
+          >
+            Test sandbox DB
+          </button>
+        </div>
+        {dbStatus && (
+          <p className={`mt-2 text-sm ${dbStatus.ok ? "text-emerald-700" : "text-red-600"}`}>
+            {dbStatus.ok ? "✓ " : "✗ "}
+            {dbStatus.msg}
+          </p>
+        )}
+        <p className="mt-1 text-xs text-muted-foreground">
+          Verifies SANDBOX_DATABASE_URL is reachable (required for SQL skill blocks).
+        </p>
+      </section>
+
       <section className="rounded-lg border border-border bg-card p-4">
         <h2 className="mb-3 font-medium text-foreground">Match a job description (optional)</h2>
         <textarea

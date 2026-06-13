@@ -15,17 +15,17 @@
 - [ ] Produce sample reports off VIFM behavioural competencies for THREE audiences:
       candidate, hiring manager, talent acquisition (each a different lens on the same assessment data).
 
-**P2.3 - Technical assessment: 3 proficiency levels with reports**
-MODEL (corrected): the assessed unit is the **COMPETENCY**, measured by its skills. Domain (Finance)
-and Function (Accounts Payable) are groupings/jobs and are NOT banded. Band is per competency only.
-Thresholds: Basic < 60, Intermediate 60-84, Advanced >= 85.
-- [x] 3-band classifier `proficiencyTier()` + PER-COMPETENCY banding on the results screen.
-      Overall domain/function band removed (commit pending) - it was wrong per the model.
-- [ ] DEPENDENCY: competencies must be real (multiple per function, each a group of skills). The
-      current baseline = one competency per function, so banding is degenerate until the AI-regroup
-      (Option B) splits each function's skills into real competencies. Then band-per-competency is meaningful.
-- [ ] Formal PDF breakdown report: per-competency Basic/Intermediate/Advanced + what each band means
-      + development pointers. Subject: **Finance**.
+**P2.3 - Technical assessment: professional competency framework + 3 bands + reports**
+Vision: a professional technical competency framework per FUNCTION (job), online-assessable, to
+hire/screen AND develop; default-general, customisable from a client JD. Model: Function (job, not
+banded) → Competency (assessed unit, banded Basic/Intermediate/Advanced) → Skill (measured by questions).
+Thresholds: Basic < 60 / Intermediate 60-84 / Advanced >= 85.
+- [x] 3-band classifier `proficiencyTier()`; per-competency banding on results; overall band removed.
+- [~] **AP competency framework drafted** (`docs/technical-ap-competency-framework.md`, 6 competencies) - AWAITING APPROVAL.
+- [ ] On approval: seed AP competencies + skills (replace the one-per-function baseline), map questions
+      to skills, band per competency.
+- [ ] PDF breakdown report (per-competency band + descriptor + development pointers). Subject: Finance/AP.
+- [ ] Extend the framework template to other finance functions + JD-custom path.
 
 **P2.4 - Combine question types into one customised assessment (investigation)**
 - [ ] Viability analysis: can questions from different assessment types (behavioural / technical /

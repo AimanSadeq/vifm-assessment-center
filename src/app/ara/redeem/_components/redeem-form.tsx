@@ -9,7 +9,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { redeemVoucherAction } from "../actions";
 
-export function RedeemForm() {
+type Props = {
+  initialCode?: string;
+  initialEmail?: string;
+  initialName?: string;
+  initialCompany?: string;
+};
+
+export function RedeemForm({
+  initialCode = "",
+  initialEmail = "",
+  initialName = "",
+  initialCompany = "",
+}: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,29 +43,35 @@ export function RedeemForm() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-xl">
-          <Compass className="h-5 w-5 text-[#5391D5]" /> AI Readiness Compass - Practice Access
+          <Compass className="h-5 w-5 text-[#5391D5]" /> AI Readiness Compass
         </CardTitle>
-        <CardDescription>
-          Enter your voucher code and details to start your practice assessment.
-        </CardDescription>
+        <CardDescription>Confirm your details to start your assessment.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="code">Voucher code</Label>
-            <Input id="code" name="code" placeholder="VIFM-ARC-XXXX-XXXX" autoComplete="off" required />
+            <Input
+              id="code"
+              name="code"
+              placeholder="VIFM-ARC-XXXX-XXXX"
+              autoComplete="off"
+              defaultValue={initialCode}
+              readOnly={!!initialCode}
+              required
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="name">Full name</Label>
-            <Input id="name" name="name" required />
+            <Input id="name" name="name" defaultValue={initialName} required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" required />
+            <Input id="email" name="email" type="email" defaultValue={initialEmail} required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="company">Company</Label>
-            <Input id="company" name="company" placeholder="Your organisation" required />
+            <Input id="company" name="company" placeholder="Your organisation" defaultValue={initialCompany} required />
           </div>
 
           {error && (
@@ -62,7 +80,7 @@ export function RedeemForm() {
 
           <Button type="submit" disabled={loading} className="w-full gap-2">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Compass className="h-4 w-4" />}
-            {loading ? "Starting…" : "Start practice assessment"}
+            {loading ? "Starting..." : "Start assessment"}
           </Button>
           <p className="text-center text-[11px] text-muted-foreground">
             This is a practice run for development purposes - not an official certified assessment.

@@ -5,6 +5,24 @@ import { revalidatePath } from "next/cache";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { createVoucherBatch } from "@/lib/ara/vouchers";
 import { createServiceClient } from "@/lib/supabase/server";
+import { sendViaResend } from "@/lib/integrations/resend";
+
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://caliber.viftraining.com").replace(/\/+$/, "");
+
+function inviteEmailHtml(link: string, code: string): string {
+  return `
+  <div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#111">
+    <h2 style="color:#010131">VIFM AI Readiness Compass</h2>
+    <p>You have been invited to take the AI Readiness Compass - a short, confidential assessment.</p>
+    <p style="margin:24px 0">
+      <a href="${link}" style="background:#5391D5;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:bold">Start your assessment</a>
+    </p>
+    <p style="font-size:13px;color:#555">If the button does not work, open this link:<br/>
+      <a href="${link}">${link}</a></p>
+    <p style="font-size:13px;color:#555">Your access code: <strong>${code}</strong></p>
+    <p style="font-size:12px;color:#888">This assessment is private to you. Your results are emailed to you on completion.</p>
+  </div>`;
+}
 
 async function requireAdmin() {
   try {
@@ -82,6 +100,94 @@ export async function createVoucherBatchAction(formData: FormData) {
 
   revalidatePath("/ara/admin/vouchers");
   return { ok: true as const, codes: res.codes, batchId: res.batchId };
+}
+
+const emailDelegatesSchema = z.object({
+  emails: z.string().min(3),
+  organizationId: z.string().uuid().optional(),
+  clientName: z.string().max(300).optional(),
+  expiresAt: z.string().optional(),
+});
+
+/**
+ * Generate one single-use voucher per delegate email and send each a one-click
+ * redeem link (code baked into the URL). Region/client are inherited from the
+ * tagged org. Admin-only. Returns per-email results.
+ */
+export async function emailVouchersToDelegatesAction(formData: FormData) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
+  const parsed = emailDelegatesSchema.safeParse({
+    emails: formData.get("emails"),
+    organizationId: formData.get("organizationId") || undefined,
+    clientName: formData.get("clientName") || undefined,
+    expiresAt: formData.get("expiresAt") || undefined,
+  });
+  if (!parsed.success) return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Invalid input" };
+
+  // Parse the email list (one per line; tolerate commas/semicolons).
+  const emails = Array.from(
+    new Set(
+      parsed.data.emails
+        .split(/[\n,;]+/)
+        .map((e) => e.trim().toLowerCase())
+        .filter((e) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))
+    )
+  );
+  if (emails.length === 0) return { ok: false as const, error: "No valid email addresses found." };
+  if (emails.length > 200) return { ok: false as const, error: "Max 200 delegates per send." };
+
+  // Inherit region + client name from the tagged org.
+  let region: "uae" | "saudi" = "uae";
+  let clientName = parsed.data.clientName ?? null;
+  if (parsed.data.organizationId) {
+    const sb = createServiceClient();
+    const { data: org } = await sb
+      .from("ara_organizations")
+      .select("name, region")
+      .eq("id", parsed.data.organizationId)
+      .maybeSingle<{ name: string; region: string }>();
+    if (org) {
+      region = org.region === "saudi" ? "saudi" : "uae";
+      clientName = clientName ?? org.name;
+    }
+  }
+
+  const caller = await requireRole(["admin"]).catch(() => null);
+  const expiresAt = parsed.data.expiresAt ? new Date(parsed.data.expiresAt).toISOString() : null;
+  const results: Array<{ email: string; ok: boolean; error?: string }> = [];
+
+  for (const email of emails) {
+    const batch = await createVoucherBatch({
+      count: 1,
+      label: email, // track which delegate this code is for
+      organizationId: parsed.data.organizationId ?? null,
+      clientName,
+      tier: "snapshot",
+      region,
+      maxUses: 1,
+      isPractice: true,
+      expiresAt,
+      createdBy: caller?.uid ?? null,
+    });
+    if (!batch.ok) {
+      results.push({ email, ok: false, error: batch.error });
+      continue;
+    }
+    const code = batch.codes[0];
+    const link = `${SITE_URL}/ara/redeem?code=${encodeURIComponent(code)}&email=${encodeURIComponent(email)}`;
+    const sent = await sendViaResend({
+      to: email,
+      subject: "Your VIFM AI Readiness Compass access",
+      html: inviteEmailHtml(link, code),
+    });
+    results.push({ email, ok: sent.ok, error: sent.error });
+  }
+
+  revalidatePath("/ara/admin/vouchers");
+  const sentCount = results.filter((r) => r.ok).length;
+  return { ok: true as const, sent: sentCount, total: results.length, results };
 }
 
 export async function setVoucherStatusAction(id: string, status: "active" | "disabled") {

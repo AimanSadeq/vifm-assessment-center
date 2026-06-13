@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { createVoucherBatchAction, setVoucherStatusAction, createClientOrgAction } from "../actions";
+import { createVoucherBatchAction, setVoucherStatusAction, createClientOrgAction, emailVouchersToDelegatesAction } from "../actions";
 
 type VoucherRow = {
   id: string;
@@ -58,6 +58,33 @@ export function VouchersClient({
   const [newClientSector, setNewClientSector] = useState("general");
   const [clientError, setClientError] = useState<string | null>(null);
   const [savingClient, setSavingClient] = useState(false);
+
+  // "Email to delegates" state
+  const [delegateEmails, setDelegateEmails] = useState("");
+  const [emailingDelegates, setEmailingDelegates] = useState(false);
+  const [emailResult, setEmailResult] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+
+  async function emailDelegates() {
+    setEmailError(null);
+    setEmailResult(null);
+    if (delegateEmails.trim().length < 3) {
+      setEmailError("Enter at least one email address.");
+      return;
+    }
+    setEmailingDelegates(true);
+    const fd = new FormData();
+    fd.set("emails", delegateEmails);
+    if (selectedOrg) fd.set("organizationId", selectedOrg);
+    const res = await emailVouchersToDelegatesAction(fd);
+    setEmailingDelegates(false);
+    if (!res.ok) {
+      setEmailError(res.error);
+      return;
+    }
+    setEmailResult(`Sent ${res.sent} of ${res.total} invitation(s).`);
+    setDelegateEmails("");
+  }
 
   async function saveClient() {
     setClientError(null);
@@ -263,6 +290,31 @@ export function VouchersClient({
               </div>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Email codes to delegates */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Email codes to delegates</CardTitle>
+          <CardDescription>
+            One single-use code per email, sent as a one-click link. Uses the client selected above
+            {selectedOrg ? "." : " (none - pick a client above to tag + inherit region)."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <textarea
+            className="w-full min-h-[110px] rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            placeholder={"one email per line\nahmed@client.com\nsara@client.com"}
+            value={delegateEmails}
+            onChange={(e) => setDelegateEmails(e.target.value)}
+            disabled={emailingDelegates}
+          />
+          {emailError && <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{emailError}</div>}
+          {emailResult && <div className="rounded-md bg-emerald-50 p-3 text-sm text-emerald-700">{emailResult}</div>}
+          <Button onClick={emailDelegates} disabled={emailingDelegates} className="gap-2">
+            <Ticket className="h-4 w-4" /> {emailingDelegates ? "Sending..." : "Generate & email"}
+          </Button>
         </CardContent>
       </Card>
 

@@ -74,3 +74,45 @@ export async function setVoucherStatusAction(id: string, status: "active" | "dis
   revalidatePath("/ara/admin/vouchers");
   return { ok: true as const };
 }
+
+const clientSchema = z.object({
+  name: z.string().min(2).max(300),
+  nameAr: z.string().max(300).optional(),
+  region: z.enum(["uae", "saudi"]).default("uae"),
+  sector: z.enum(["government", "banking", "general"]).default("general"),
+});
+
+/** Create a client org (ara_organizations) inline from the vouchers screen so a
+ *  batch can be tagged to it without leaving the page. Admin-only. */
+export async function createClientOrgAction(
+  formData: FormData
+): Promise<{ ok: true; org: { id: string; name: string } } | { ok: false; error: string }> {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
+  const parsed = clientSchema.safeParse({
+    name: formData.get("name"),
+    nameAr: formData.get("nameAr") || undefined,
+    region: formData.get("region") || "uae",
+    sector: formData.get("sector") || "general",
+  });
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+
+  const sb = createServiceClient();
+  const { data, error } = await sb
+    .from("ara_organizations")
+    .insert({
+      name: parsed.data.name,
+      name_ar: parsed.data.nameAr ?? null,
+      region: parsed.data.region,
+      sector: parsed.data.sector,
+    })
+    .select("id, name")
+    .single<{ id: string; name: string }>();
+  if (error || !data) return { ok: false, error: error?.message ?? "Could not create client" };
+
+  revalidatePath("/ara/admin/vouchers");
+  return { ok: true, org: data };
+}

@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Ticket, Copy, Download, Check, Ban, RotateCcw } from "lucide-react";
+import { Ticket, Copy, Download, Check, Ban, RotateCcw, Plus, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { createVoucherBatchAction, setVoucherStatusAction } from "../actions";
+import { createVoucherBatchAction, setVoucherStatusAction, createClientOrgAction } from "../actions";
 
 type VoucherRow = {
   id: string;
@@ -31,6 +31,39 @@ export function VouchersClient({ vouchers, orgs }: { vouchers: VoucherRow[]; org
   const [error, setError] = useState<string | null>(null);
   const [generated, setGenerated] = useState<string[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
+
+  // Client orgs are stateful so a newly-added client appears + auto-selects.
+  const [orgList, setOrgList] = useState<OrgOption[]>(orgs);
+  const [selectedOrg, setSelectedOrg] = useState("");
+  const [showAddClient, setShowAddClient] = useState(false);
+  const [newClientName, setNewClientName] = useState("");
+  const [newClientRegion, setNewClientRegion] = useState("uae");
+  const [newClientSector, setNewClientSector] = useState("general");
+  const [clientError, setClientError] = useState<string | null>(null);
+  const [savingClient, setSavingClient] = useState(false);
+
+  async function saveClient() {
+    setClientError(null);
+    if (newClientName.trim().length < 2) {
+      setClientError("Enter a client name.");
+      return;
+    }
+    setSavingClient(true);
+    const fd = new FormData();
+    fd.set("name", newClientName.trim());
+    fd.set("region", newClientRegion);
+    fd.set("sector", newClientSector);
+    const res = await createClientOrgAction(fd);
+    setSavingClient(false);
+    if (!res.ok) {
+      setClientError(res.error);
+      return;
+    }
+    setOrgList((prev) => [res.org, ...prev]);
+    setSelectedOrg(res.org.id);
+    setNewClientName("");
+    setShowAddClient(false);
+  }
 
   function copy(text: string, key: string) {
     void navigator.clipboard.writeText(text);
@@ -101,13 +134,53 @@ export function VouchersClient({ vouchers, orgs }: { vouchers: VoucherRow[]; org
               <Input id="label" name="label" placeholder="e.g. ADNOC pilot" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="organizationId">Client org (tag for tracking)</Label>
-              <select id="organizationId" name="organizationId" className={selectClass} defaultValue="">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="organizationId">Client org (tag for tracking)</Label>
+                <button
+                  type="button"
+                  onClick={() => { setShowAddClient((s) => !s); setClientError(null); }}
+                  className="inline-flex items-center gap-1 text-xs font-medium text-[#5391D5] hover:underline"
+                >
+                  {showAddClient ? <><X className="h-3 w-3" /> Cancel</> : <><Plus className="h-3 w-3" /> Add client</>}
+                </button>
+              </div>
+              <select
+                id="organizationId"
+                name="organizationId"
+                className={selectClass}
+                value={selectedOrg}
+                onChange={(e) => setSelectedOrg(e.target.value)}
+              >
                 <option value="">— none —</option>
-                {orgs.map((o) => (
+                {orgList.map((o) => (
                   <option key={o.id} value={o.id}>{o.name}</option>
                 ))}
               </select>
+
+              {showAddClient && (
+                <div className="mt-2 space-y-2 rounded-md border border-border bg-muted/40 p-3">
+                  <Input
+                    placeholder="New client / organisation name"
+                    value={newClientName}
+                    onChange={(e) => setNewClientName(e.target.value)}
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <select className={selectClass} value={newClientRegion} onChange={(e) => setNewClientRegion(e.target.value)}>
+                      <option value="uae">UAE</option>
+                      <option value="saudi">Saudi</option>
+                    </select>
+                    <select className={selectClass} value={newClientSector} onChange={(e) => setNewClientSector(e.target.value)}>
+                      <option value="general">General</option>
+                      <option value="banking">Banking</option>
+                      <option value="government">Government</option>
+                    </select>
+                  </div>
+                  {clientError && <p className="text-xs text-destructive">{clientError}</p>}
+                  <Button type="button" size="sm" onClick={saveClient} disabled={savingClient} className="gap-1">
+                    <Plus className="h-3.5 w-3.5" /> {savingClient ? "Saving…" : "Save client"}
+                  </Button>
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="clientName">Client name (free text, optional)</Label>

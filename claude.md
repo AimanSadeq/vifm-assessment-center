@@ -29,7 +29,7 @@ All 5 development phases are **complete**. The portal is functionally ready with
 - **Video:** Daily.co SDK placeholder for virtual AC sessions
 - **Font:** Open Sans (VIFM Brand Kit)
 - **Colors:** Primary Blue #010131, Accent Blue #5391D5, Off-White #FEFFF9, Dark Blue #111232, Navy Blue #121140
-- **Deployment:** Vercel (frontend) + Supabase Cloud (backend)
+- **Deployment:** Render (web service) + Supabase Cloud (backend). NOT Vercel — the production checklist PDF still says Vercel and is stale; ignore it. Render auto-deploys on push to `master`.
 
 ## Project Structure
 ```

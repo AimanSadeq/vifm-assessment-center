@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Building2, Database, FileText, FlaskConical, FileClock, ArrowRight } from "lucide-react";
+import { Building2, Database, FileText, FlaskConical, FileClock, Ticket, ArrowRight } from "lucide-react";
 import { AraTopBar } from "@/components/shared/ara-top-bar";
 import { getServerT } from "@/lib/i18n/server";
 
@@ -44,6 +44,14 @@ export default async function AraAdminPage() {
       tone: "rose",
       title: t("araAdmin.tileRetentionTitle"),
       description: t("araAdmin.tileRetentionDesc"),
+      status: "Ready",
+    },
+    {
+      href: "/ara/admin/vouchers",
+      icon: Ticket,
+      tone: "emerald",
+      title: t("araAdmin.tileVouchersTitle"),
+      description: t("araAdmin.tileVouchersDesc"),
       status: "Ready",
     },
   ] as const;

@@ -2716,6 +2716,8 @@
     "tileSandboxDesc": "مسح جميع تقييمات بيئة الاختبار بعد التأكيد.",
     "tileRetentionTitle": "الاحتفاظ بالبيانات",
     "tileRetentionDesc": "حذف التقييمات المؤرشفة الأقدم من ثلاث سنوات.",
+    "tileVouchersTitle": "القسائم",
+    "tileVouchersDesc": "أنشئ رموز وصول تدريبية ليجرّب العملاء البوصلة.",
     "orgsBackToAdmin": "الرجوع إلى إدارة ARC",
     "orgsTitle": "مؤسسات العملاء",
     "orgsSubtitle": "مؤسسات العملاء في دول مجلس التعاون الخليجي التي تستخدم منصة ARC.",

@@ -30,8 +30,8 @@
 - [x] Voucher service (`src/lib/ara/vouchers.ts`: generate batch + atomic redeem → provisions sandbox individual run)
 - [x] Admin generate/manage UI (`/ara/admin/vouchers` — batch, seat pool, client-org tag, copy/CSV, disable)
 - [x] Public redeem page (`/ara/redeem` — code + name + email + **company**, auth-bypassed) → drops into `/ara/respond/{token}`
-- [ ] **Apply migration 00075** to live Supabase (SQL editor or `supabase db push`)
-- [ ] Add a nav link to `/ara/admin/vouchers` (admin/consultant nav) — currently direct-URL only
+- [x] Apply migration 00075 to live Supabase (done 2026-06-13)
+- [x] Nav tile on the ARA admin hub (`/ara/admin` → Vouchers)
 - [ ] Verify end-to-end on deployed app: generate code → redeem → take run → result
 - [ ] Phase 4 polish (optional): results email on completion, redemption analytics (issued→redeemed→completed funnel), per-company insights view, deep-dive tier option (currently snapshot-only by decision)
 

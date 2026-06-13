@@ -2708,6 +2708,8 @@
     "tileSandboxDesc": "Clear all sandbox assessments with confirmation.",
     "tileRetentionTitle": "Data Retention",
     "tileRetentionDesc": "Purge archived assessments older than 3 years.",
+    "tileVouchersTitle": "Vouchers",
+    "tileVouchersDesc": "Generate practice-access codes for clients to try the Compass.",
     "orgsBackToAdmin": "Back to ARC Admin",
     "orgsTitle": "Client Organizations",
     "orgsSubtitle": "GCC client organizations using the ARC platform.",

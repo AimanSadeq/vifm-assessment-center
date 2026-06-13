@@ -23,6 +23,7 @@
  */
 
 import { ClientSecretCredential } from "@azure/identity";
+import { resendConfigured, sendViaResend, type EmailAttachment } from "@/lib/integrations/resend";
 import { Client } from "@microsoft/microsoft-graph-client";
 import { TokenCredentialAuthenticationProvider } from "@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials/index.js";
 import { createServiceClient } from "@/lib/supabase/server";
@@ -222,6 +223,8 @@ export type SendAraEmailInput = {
   isSandbox?: boolean;
   respondentId?: string | null;
   assessmentId?: string | null;
+  /** Optional file attachments (e.g. the results PDF), base64-encoded. */
+  attachments?: EmailAttachment[];
 };
 
 export async function sendAraEmail(input: SendAraEmailInput): Promise<{ ok: boolean; error?: string }> {
@@ -240,9 +243,25 @@ export async function sendAraEmail(input: SendAraEmailInput): Promise<{ ok: bool
   let status: "sent" | "mocked" | "failed" = "sent";
   let errorMsg: string | undefined;
 
-  if (!graphClient || !fromAddress) {
+  const isHtml = rendered.contentType === "HTML";
+
+  if (resendConfigured()) {
+    // Preferred transport: Resend (also supports attachments).
+    const r = await sendViaResend({
+      to: recipient,
+      subject: rendered.subject,
+      html: isHtml ? rendered.body : undefined,
+      text: isHtml ? undefined : rendered.body,
+      attachments: input.attachments,
+    });
+    if (!r.ok) {
+      status = "failed";
+      errorMsg = r.error;
+      console.error("[ara-email] Resend send failed:", r.error);
+    }
+  } else if (!graphClient || !fromAddress) {
     status = "mocked";
-    console.warn("[ara-email] Graph not configured - falling back to console mock.");
+    console.warn("[ara-email] No transport configured - falling back to console mock.");
     console.log(`[ara-email MOCK] type=${input.emailType} lang=${input.language} to=${recipient}${isRedirected ? " (sandbox)" : ""}`);
     console.log(`[ara-email MOCK] subject=${rendered.subject}`);
   } else {

@@ -3,6 +3,7 @@ import { Open_Sans } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { I18nProvider } from "@/lib/i18n/provider";
 import { Toaster } from "sonner";
+import { RecoveryRedirect } from "@/components/shared/recovery-redirect";
 import "./globals.css";
 
 const openSans = Open_Sans({ subsets: ["latin"], variable: "--font-sans" });
@@ -21,6 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en" dir="ltr" className={cn("font-sans", openSans.variable)}>
       <body className="antialiased">
+        <RecoveryRedirect />
         <I18nProvider>{children}</I18nProvider>
         <Toaster richColors position="top-right" />
       </body>

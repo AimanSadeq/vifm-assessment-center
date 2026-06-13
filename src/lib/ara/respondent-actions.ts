@@ -200,6 +200,24 @@ export async function markAraRespondentComplete(token: string): Promise<void> {
         (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
       const resultsUrl = `${baseUrl}/ara/personal/results/${token}`;
       const pdfUrl = `${baseUrl}/api/ara/personal/${token}/pdf`;
+
+      // Attach the results PDF to the email (best effort). Falls back to the
+      // in-email PDF link if generation/fetch fails.
+      let attachments: { filename: string; content: string }[] | undefined;
+      try {
+        const pdfRes = await fetch(pdfUrl);
+        if (pdfRes.ok) {
+          const buf = Buffer.from(await pdfRes.arrayBuffer());
+          if (buf.length > 0) {
+            attachments = [
+              { filename: "AI-Readiness-Compass-Results.pdf", content: buf.toString("base64") },
+            ];
+          }
+        }
+      } catch (pdfErr) {
+        console.error("[markAraRespondentComplete] results PDF fetch failed (sending link only):", pdfErr);
+      }
+
       await sendAraEmail({
         to: respondent.email,
         emailType: "ara_personal_results_link",
@@ -209,6 +227,7 @@ export async function markAraRespondentComplete(token: string): Promise<void> {
           resultsUrl,
           pdfUrl,
         },
+        attachments,
         isSandbox: !!a?.is_sandbox,
         respondentId: respondent.id,
         assessmentId: respondent.assessment_id,

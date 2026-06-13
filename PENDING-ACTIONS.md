@@ -36,8 +36,14 @@
 - [x] Add-client inline on the vouchers screen; region inherits from the tagged client
 - [x] Per-company redemptions insights view (delegates / started / completed / completion% + CSV)
 - [x] Back link on the vouchers screen
-- [ ] Verify end-to-end on deployed app: generate code, redeem, take run, see result
-- [ ] Phase 4 polish (optional): results email on completion, full funnel analytics (issued vs redeemed vs completed), deep-dive tier option (currently snapshot-only by decision)
+- [x] Resend app-email transport (`src/lib/integrations/resend.ts`) wired into sendAraEmail
+- [x] "Email codes to delegates" on the voucher screen (per-delegate single-use code + one-click link)
+- [x] One-click redeem: `?code=` + email + company prefill
+- [x] Auto-email results with the PDF attached on completion (markAraRespondentComplete)
+- [ ] **ENV on Render**: set `RESEND_API_KEY`, `EMAIL_FROM`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_APP_URL` (all = caliber.viftraining.com for the URLs)
+- [ ] **Verify a domain in Resend** + switch `EMAIL_FROM` to `noreply@viftraining.com` (required to email external delegates, not just your Resend-account email)
+- [ ] Verify end-to-end on deployed app: email a delegate, redeem one-click, complete, receive results PDF
+- [ ] Phase 4 polish (optional): full funnel analytics, deep-dive tier option (currently snapshot-only)
 
 ## D. Minor / cleanup
 - [ ] Remove dead i18n keys `tech.take.chooseTitle` / `chooseIntro` (deprecated broad-domain screener, no live references)

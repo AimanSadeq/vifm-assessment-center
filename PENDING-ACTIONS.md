@@ -15,10 +15,12 @@
 - [ ] Produce sample reports off VIFM behavioural competencies for THREE audiences:
       candidate, hiring manager, talent acquisition (each a different lens on the same assessment data).
 
-**P2.3 - Technical assessment: 3-level breakdown with reports**
-- [ ] Restructure so the technical assessment reports at THREE levels (not just an overall score) -
-      builds on the Domain → Function → Competency → Skill tier already added (migration 00074).
-      First subject: **Finance** competencies. Per-level reports.
+**P2.3 - Technical assessment: 3 proficiency levels with reports**
+Thresholds: Basic < 60, Intermediate 60-84, Advanced >= 85.
+- [x] 3-band classifier `proficiencyTier()` + results screen breakdown: overall band + per-competency
+      Basic/Intermediate/Advanced (commit 2a185dd). Additive over the 1-5 model.
+- [ ] Formal PDF "Finance Technical Proficiency" breakdown report (overall band + per-competency bands
+      + what each band means + development pointers). Subject: **Finance**.
 
 **P2.4 - Combine question types into one customised assessment (investigation)**
 - [ ] Viability analysis: can questions from different assessment types (behavioural / technical /

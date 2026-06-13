@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { createServiceClient } from "@/lib/supabase/server";
+import { requireCandidateAccess } from "@/lib/auth/candidate-access";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BackLink } from "@/components/shared/back-link";
@@ -65,6 +66,7 @@ export default async function MyLearningPage({ searchParams }: Props) {
   let enrolledCourseIds = new Set<string>();
 
   if (candidateId) {
+    await requireCandidateAccess(candidateId);
     try {
       const sb = createServiceClient();
 

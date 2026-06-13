@@ -6,6 +6,7 @@ import { Loader2, CheckCircle2, RotateCcw, GraduationCap, AlertCircle, ShieldChe
 import type { LocalizedTechDomain } from "@/lib/competencies/technical-taxonomy";
 import type { LocalizedTechFunction } from "@/lib/competencies/technical-function";
 import { categoryRank, aggregateByCompetency } from "@/lib/competencies/technical-categories";
+import { proficiencyTier, proficiencyTierLabel } from "@/lib/competencies/proficiency-tier";
 import type { PublicTechTest, TechResult } from "@/lib/ai/technical-assessment";
 
 type Phase = "intro" | "test" | "adaptive" | "result";
@@ -651,8 +652,13 @@ export function TechAssessmentClient({
               <p className="text-[11px] uppercase tracking-wider text-slate-500">
                 {result.certified ? t("tech.take.certifiedProf") : t("tech.take.indicativeProf")} · {displayName(result.domain_key, result.domain_name)}
               </p>
-              <div className={`mt-1 inline-flex items-center justify-center rounded-xl border-2 px-5 py-3 text-2xl font-bold ${LEVEL_TONE[result.proficiency.level]}`}>
-                {result.proficiency.level}/5 · {t(`tech.take.levels.${result.proficiency.label}`)}
+              <div className="mt-1 flex items-center gap-2">
+                <div className={`inline-flex items-center justify-center rounded-xl border-2 px-4 py-2.5 text-lg font-bold ${proficiencyTier(result.pct).tone}`}>
+                  {proficiencyTierLabel(proficiencyTier(result.pct).tier, language)}
+                </div>
+                <div className={`inline-flex items-center justify-center rounded-xl border-2 px-3 py-2.5 text-sm font-semibold ${LEVEL_TONE[result.proficiency.level]}`}>
+                  {result.proficiency.level}/5 · {t(`tech.take.levels.${result.proficiency.label}`)}
+                </div>
               </div>
               {result.band && result.band.levelLow !== result.band.levelHigh && (
                 <p className="mt-1.5 text-[11px] text-slate-500">
@@ -708,17 +714,23 @@ export function TechAssessmentClient({
               <div>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{t("tech.take.byCompetency")}</p>
                 <div className="space-y-1.5">
-                  {comp.map((c) => (
-                    <div key={c.competencyEn} className="flex items-center gap-3 text-xs">
-                      <span className="w-56 shrink-0 truncate font-medium">{c.competency}</span>
-                      <div className="flex flex-1 gap-1">
-                        {Array.from({ length: c.total }).map((_, n) => (
-                          <span key={n} className={`h-2 flex-1 rounded-full ${n < c.correct ? "bg-[#5391D5]" : "bg-slate-200"}`} />
-                        ))}
+                  {comp.map((c) => {
+                    const tier = proficiencyTier(c.pct);
+                    return (
+                      <div key={c.competencyEn} className="flex items-center gap-3 text-xs">
+                        <span className="w-48 shrink-0 truncate font-medium">{c.competency}</span>
+                        <div className="flex flex-1 gap-1">
+                          {Array.from({ length: c.total }).map((_, n) => (
+                            <span key={n} className={`h-2 flex-1 rounded-full ${n < c.correct ? "bg-[#5391D5]" : "bg-slate-200"}`} />
+                          ))}
+                        </div>
+                        <span className={`w-24 shrink-0 rounded-full border px-2 py-0.5 text-center text-[10px] font-semibold ${tier.tone}`}>
+                          {proficiencyTierLabel(tier.tier, language)}
+                        </span>
+                        <span className="w-12 shrink-0 text-right tabular-nums text-slate-500">{c.correct}/{c.total}</span>
                       </div>
-                      <span className="w-12 shrink-0 text-right tabular-nums text-slate-500">{c.correct}/{c.total}</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             );

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslation } from "react-i18next";
+import { createClient } from "@/lib/supabase/client";
 import { Separator } from "@/components/ui/separator";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
 import { VifmLogo } from "@/components/shared/vifm-logo";
@@ -159,6 +160,21 @@ export function SidebarBody({
     acquire: true, manage: true, ac: true, technical: true, platform: true,
   });
 
+  // The signed-in user, for the footer identity.
+  const [me, setMe] = useState<{ name: string; email: string } | null>(null);
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      const u = data.user;
+      if (u) {
+        setMe({
+          name: (u.user_metadata?.full_name as string) || u.email || "",
+          email: u.email || "",
+        });
+      }
+    });
+  }, []);
+
   const isActive = (href: string, exact?: boolean) =>
     exact ? pathname === href : pathname.startsWith(href);
 
@@ -257,9 +273,8 @@ export function SidebarBody({
           </div>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              {/* TODO: Replace with authenticated user name */}
-              <p className="text-xs font-medium text-sidebar-foreground/80 truncate">{t("adminNav.administrator")}</p>
-              <p className="text-[10px] text-sidebar-foreground/40 truncate">admin@vifm.ae</p>
+              <p className="text-xs font-medium text-sidebar-foreground/80 truncate">{me?.name || t("adminNav.administrator")}</p>
+              <p className="text-[10px] text-sidebar-foreground/40 truncate">{me?.email || ""}</p>
             </div>
           )}
         </div>

@@ -144,6 +144,58 @@ async function loadScoringBlocks(functionId: string): Promise<ScoringBlock[]> {
   });
 }
 
+export interface FunctionRow {
+  id: string;
+  key: string | null;
+  nodeId: string | null;
+  nameEn: string;
+  nameAr: string | null;
+  domainKey: string | null;
+  nodeStatus: "active" | "inactive";
+}
+
+/** Node index for admin pickers. activeOnly = functions with seeded content. */
+export async function listFunctions(activeOnly = false): Promise<FunctionRow[]> {
+  const sb = createServiceClient();
+  let q = sb
+    .from("technical_functions")
+    .select("id, key, node_id, name_en, name_ar, domain_key, node_status")
+    .not("node_id", "is", null)
+    .order("node_id");
+  if (activeOnly) q = q.eq("node_status", "active");
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []).map((f) => ({
+    id: f.id,
+    key: f.key,
+    nodeId: f.node_id,
+    nameEn: f.name_en,
+    nameAr: f.name_ar,
+    domainKey: f.domain_key,
+    nodeStatus: f.node_status,
+  }));
+}
+
+/** Descriptors for the JD matcher (keywords + prose, all node functions). */
+export async function listFunctionDescriptors() {
+  const sb = createServiceClient();
+  const { data, error } = await sb
+    .from("technical_functions")
+    .select("id, key, node_id, name_en, domain_key, keywords, descriptor_en, node_status")
+    .not("node_id", "is", null);
+  if (error) throw error;
+  return (data ?? []).map((f) => ({
+    id: f.id,
+    key: f.key,
+    nodeId: f.node_id,
+    nameEn: f.name_en,
+    domainKey: f.domain_key,
+    keywords: (f.keywords ?? []) as string[],
+    descriptor: f.descriptor_en as string | null,
+    nodeStatus: f.node_status as "active" | "inactive",
+  }));
+}
+
 export interface CreateSessionInput {
   functionId: string;
   candidateName?: string;

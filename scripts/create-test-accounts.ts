@@ -1,14 +1,20 @@
 /**
- * Create test accounts for all 4 roles.
+ * Create test accounts for all non-admin user_role values.
  * Run: npx tsx scripts/create-test-accounts.ts
  *
  * Creates:
+ * - consultant@viftraining.com (consultant)
  * - assessor@viftraining.com (lead_assessor)
+ * - associate@viftraining.com (associate_assessor)
  * - candidate@viftraining.com (candidate)
  * - client@viftraining.com (client, linked to ADNOC Group org)
  *
  * All with password: admin123
- * Admin account (admin@viftraining.com) should already exist.
+ * Admin account (admin@viftraining.com) is created by scripts/create-admin.ts.
+ *
+ * These are the accounts the login page's quick-login dropdown signs in as.
+ * Requires NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY in .env.local
+ * pointing at the real Supabase project.
  */
 import { createClient } from "@supabase/supabase-js";
 import * as dotenv from "dotenv";
@@ -81,24 +87,34 @@ async function main() {
     .eq("name", "ADNOC Group")
     .maybeSingle();
 
-  // 1. Assessor
-  console.log("1. assessor@viftraining.com (lead_assessor)");
+  // 1. Consultant (ARA)
+  console.log("1. consultant@viftraining.com (consultant)");
+  await createUser("consultant@viftraining.com", "Layla Al Hashimi", "consultant");
+
+  // 2. Lead Assessor
+  console.log("\n2. assessor@viftraining.com (lead_assessor)");
   await createUser("assessor@viftraining.com", "Dr. Sarah Al Ameri", "lead_assessor");
 
-  // 2. Candidate
-  console.log("\n2. candidate@viftraining.com (candidate)");
+  // 3. Associate Assessor
+  console.log("\n3. associate@viftraining.com (associate_assessor)");
+  await createUser("associate@viftraining.com", "Omar Al Suwaidi", "associate_assessor");
+
+  // 4. Candidate
+  console.log("\n4. candidate@viftraining.com (candidate)");
   await createUser("candidate@viftraining.com", "Ahmed Al Mansoori", "candidate");
 
-  // 3. Client
-  console.log("\n3. client@viftraining.com (client)");
+  // 5. Client
+  console.log("\n5. client@viftraining.com (client)");
   await createUser("client@viftraining.com", "Mohammed Al Jaber", "client", org?.id);
 
   console.log("\n✅ All test accounts ready!");
   console.log("\nLogin credentials:");
-  console.log("  admin@viftraining.com     / admin123  → /admin (full access to all portals)");
-  console.log("  assessor@viftraining.com  / admin123  → /assessor");
-  console.log("  candidate@viftraining.com / admin123  → /candidate");
-  console.log("  client@viftraining.com    / admin123  → /client");
+  console.log("  admin@viftraining.com      / admin123  → /          (full access to all portals)");
+  console.log("  consultant@viftraining.com / admin123  → /ara/consultant");
+  console.log("  assessor@viftraining.com   / admin123  → /assessor  (lead_assessor)");
+  console.log("  associate@viftraining.com  / admin123  → /assessor  (associate_assessor)");
+  console.log("  candidate@viftraining.com  / admin123  → /candidate");
+  console.log("  client@viftraining.com     / admin123  → /client");
 }
 
 main().catch(console.error);

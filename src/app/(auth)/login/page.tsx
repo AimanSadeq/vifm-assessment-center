@@ -19,9 +19,16 @@ import { Label } from "@/components/ui/label";
 import { LogIn, Mail, ChevronDown } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
+// Pre-seeded test logins, one per user_role (all password admin123). These
+// accounts must exist in Supabase (run scripts/create-test-accounts.ts +
+// scripts/create-admin.ts) before they work — the quick-login does a real
+// signInWithPassword. Demo-only: gate behind NODE_ENV !== "production"
+// before real go-live.
 const DEMO_ROLES = [
   { id: "Admin", labelKey: "authPublic.login.roleAdmin", email: "admin@viftraining.com", password: "admin123", redirect: "/" },
+  { id: "Consultant", labelKey: "authPublic.login.roleConsultant", email: "consultant@viftraining.com", password: "admin123", redirect: "/ara/consultant" },
   { id: "Assessor", labelKey: "authPublic.login.roleAssessor", email: "assessor@viftraining.com", password: "admin123", redirect: "/assessor" },
+  { id: "AssociateAssessor", labelKey: "authPublic.login.roleAssociateAssessor", email: "associate@viftraining.com", password: "admin123", redirect: "/assessor" },
   { id: "Candidate", labelKey: "authPublic.login.roleCandidate", email: "candidate@viftraining.com", password: "admin123", redirect: "/candidate" },
   { id: "Client", labelKey: "authPublic.login.roleClient", email: "client@viftraining.com", password: "admin123", redirect: "/client" },
 ] as const;
@@ -77,6 +84,7 @@ export default function LoginPage() {
       switch (profile?.role) {
         // Admins (and any unrecognised role) land on the All Services launcher.
         case "admin": router.push("/"); break;
+        case "consultant": router.push("/ara/consultant"); break;
         case "lead_assessor":
         case "associate_assessor": router.push("/assessor"); break;
         case "candidate": router.push("/candidate"); break;

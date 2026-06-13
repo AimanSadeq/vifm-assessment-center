@@ -652,13 +652,8 @@ export function TechAssessmentClient({
               <p className="text-[11px] uppercase tracking-wider text-slate-500">
                 {result.certified ? t("tech.take.certifiedProf") : t("tech.take.indicativeProf")} · {displayName(result.domain_key, result.domain_name)}
               </p>
-              <div className="mt-1 flex items-center gap-2">
-                <div className={`inline-flex items-center justify-center rounded-xl border-2 px-4 py-2.5 text-lg font-bold ${proficiencyTier(result.pct).tone}`}>
-                  {proficiencyTierLabel(proficiencyTier(result.pct).tier, language)}
-                </div>
-                <div className={`inline-flex items-center justify-center rounded-xl border-2 px-3 py-2.5 text-sm font-semibold ${LEVEL_TONE[result.proficiency.level]}`}>
-                  {result.proficiency.level}/5 · {t(`tech.take.levels.${result.proficiency.label}`)}
-                </div>
+              <div className={`mt-1 inline-flex items-center justify-center rounded-xl border-2 px-5 py-3 text-2xl font-bold ${LEVEL_TONE[result.proficiency.level]}`}>
+                {result.proficiency.level}/5 · {t(`tech.take.levels.${result.proficiency.label}`)}
               </div>
               {result.band && result.band.levelLow !== result.band.levelHigh && (
                 <p className="mt-1.5 text-[11px] text-slate-500">

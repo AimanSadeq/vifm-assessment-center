@@ -1,5 +1,6 @@
 import { PsychometricsClient } from "./_components/psychometrics-client";
 import { AllServicesLink } from "@/components/shared/all-services-link";
+import { BackLink } from "@/components/shared/back-link";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ export default function PsychometricsPage({
 }) {
   return (
     <div className="mx-auto max-w-3xl px-6 py-8">
+      <BackLink href="/" label="Back" history />
       <div className="mb-4 flex justify-end">
         <AllServicesLink />
       </div>

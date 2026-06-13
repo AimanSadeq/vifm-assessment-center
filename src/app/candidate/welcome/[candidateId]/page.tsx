@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { CandidateDemographicsForm } from "./_components/candidate-demographics-form";
 import { ImpersonationBanner } from "@/components/shared/impersonation-banner";
 import { getServerT } from "@/lib/i18n/server";
+import { BackLink } from "@/components/shared/back-link";
 
 type Props = {
   params: { candidateId: string };
@@ -49,6 +50,7 @@ export default async function CandidateWelcomePage({ params, searchParams }: Pro
 
   return (
     <div className="space-y-6">
+      <BackLink href="/candidate" label="Back" history />
       {asAdmin && (
         <ImpersonationBanner
           candidateName={candidate.full_name}

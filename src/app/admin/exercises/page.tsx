@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/table";
 import { getServerT } from "@/lib/i18n/server";
 import { Clock, FileText } from "lucide-react";
+import { BackLink } from "@/components/shared/back-link";
 
 export default async function ExercisesPage() {
   const supabase = await createClient();
@@ -23,6 +24,7 @@ export default async function ExercisesPage() {
 
   return (
     <div>
+      <BackLink href="/admin" label="Back" history />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{t("exercise.libTitle")}</h1>

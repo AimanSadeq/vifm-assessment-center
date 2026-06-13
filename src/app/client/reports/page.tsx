@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { BackLink } from "@/components/shared/back-link";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +47,7 @@ export default async function ClientReportsPage() {
 
   return (
     <div>
+      <BackLink href="/client" label="Back" history />
       <h1 className="text-2xl font-bold">{t("clientPortal.reports.title")}</h1>
       <p className="mt-1 text-muted-foreground">
         {t("clientPortal.reports.subtitle")}

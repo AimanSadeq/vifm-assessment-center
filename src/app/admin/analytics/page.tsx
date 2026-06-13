@@ -5,6 +5,8 @@ import { calculateICC, getICCInterpretation } from "@/lib/scoring/icc";
 import { calculateBiasMetrics } from "@/lib/scoring/bias-detection";
 import { AnalyticsDashboard } from "./_components/analytics-dashboard";
 
+import { BackLink } from "@/components/shared/back-link";
+
 export default async function AnalyticsPage() {
   const supabase = await createClient();
   const t = await getServerT();
@@ -181,7 +183,9 @@ export default async function AnalyticsPage() {
   }));
 
   return (
-    <AnalyticsDashboard
+    <>
+      <BackLink href="/admin" label="Back" history />
+      <AnalyticsDashboard
       engagementCount={engagements?.length ?? 0}
       candidateCount={candidates?.length ?? 0}
       totalRatings={ratings?.length ?? 0}
@@ -192,6 +196,7 @@ export default async function AnalyticsPage() {
       competencyAverages={competencyAverages}
       candidateComparisons={candidateComparisons}
       departmentAverages={departmentAverages}
-    />
+      />
+    </>
   );
 }

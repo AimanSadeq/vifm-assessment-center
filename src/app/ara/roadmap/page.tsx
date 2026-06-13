@@ -9,6 +9,7 @@ import { AraTopBar } from "@/components/shared/ara-top-bar";
 import { AnimatedCompass } from "@/components/shared/ara/animated-compass";
 import { FadeIn } from "@/components/shared/ara/fade-in";
 import { CountUp } from "@/components/shared/ara/count-up";
+import { BackLink } from "@/components/shared/back-link";
 
 export const metadata = {
   title: "Portal Roadmap",
@@ -164,6 +165,7 @@ const MILESTONES: Array<{ id: string; title: string; body: string }> = [
 export default function AraRoadmapPage() {
   return (
     <div className="min-h-screen bg-background">
+      <BackLink href="/ara" label="Back" history />
       <AraTopBar role="consultant" />
 
       {/* ─── Hero ─── */}

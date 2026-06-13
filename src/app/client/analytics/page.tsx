@@ -8,6 +8,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { NineBoxGrid } from "./_components/nine-box-grid";
+import { BackLink } from "@/components/shared/back-link";
 
 export const dynamic = "force-dynamic";
 
@@ -87,6 +88,7 @@ export default async function ClientAnalyticsPage() {
 
   return (
     <div className="space-y-6">
+      <BackLink href="/client" label="Back" history />
       <div>
         <h1 className="text-2xl font-bold">{t("clientAnalytics.title")}</h1>
         <p className="mt-1 text-muted-foreground">

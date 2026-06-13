@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { BackLink } from "@/components/shared/back-link";
 
 export default async function ClientEngagementsPage() {
   const supabase = await createClient();
@@ -44,6 +45,7 @@ export default async function ClientEngagementsPage() {
 
   return (
     <div>
+      <BackLink href="/client" label="Back" history />
       <h1 className="text-2xl font-bold">{t("clientPortal.engagements.title")}</h1>
       <p className="mt-1 text-muted-foreground">
         {t("clientPortal.engagements.subtitle")}

@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { IntegrationForm } from "./_components/integration-form";
+import { BackLink } from "@/components/shared/back-link";
 
 type Props = {
   params: { engagementId: string; candidateId: string };
@@ -59,6 +60,7 @@ export default async function IntegrationWorksheetPage({ params }: Props) {
 
   return (
     <div>
+      <BackLink href="/assessor" label="Back" history />
       <IntegrationForm
         engagementId={engagementId}
         engagementName={engResult.data.name}

@@ -15,6 +15,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Star, Trash2, Copy } from "lucide-react";
+import { BackLink } from "@/components/shared/back-link";
 
 type Template = {
   id: string;
@@ -69,6 +70,7 @@ export default function ClientTemplatesPage() {
 
   return (
     <div className="space-y-6">
+      <BackLink href="/client" label="Back" history />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{tr("clientAnalytics.templates.title")}</h1>

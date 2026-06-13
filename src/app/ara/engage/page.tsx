@@ -9,6 +9,7 @@ import {
   ARA_STAGE_DEFINITIONS, ARA_STAGE_CAPABILITIES,
 } from "@/lib/constants/ara-stages";
 import type { AraEngagementStage } from "@/types/ara";
+import { BackLink } from "@/components/shared/back-link";
 
 export const metadata = {
   title: "Engage",
@@ -66,6 +67,7 @@ const STAGES_IN_DISPLAY_ORDER = DISPLAY_ORDER.map(
 export default function AraEngagePage() {
   return (
     <div className="min-h-screen bg-background">
+      <BackLink href="/ara" label="Back" history />
       <AraTopBar role="consultant" />
 
       {/* ─── Hero ─── */}

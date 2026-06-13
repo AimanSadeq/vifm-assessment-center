@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
 import { loadReflectFrameworkForEngagement } from "@/lib/reflect/actions";
+import { BackLink } from "@/components/shared/back-link";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,7 @@ export default async function ReflectFrameworkPreviewPage({
 
   return (
     <div className={`framework-pdf ${bare ? "bare" : ""}`} dir={rtl ? "rtl" : "ltr"}>
+      <BackLink href="/reflect" label="Back" history />
       <style>{CSS}</style>
 
       {/* Cover */}

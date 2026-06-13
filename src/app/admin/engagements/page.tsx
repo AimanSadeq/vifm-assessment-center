@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/table";
 import { EngagementStatusFilter } from "./_components/engagement-status-filter";
 import { ProjectListToolbar } from "./_components/project-list-toolbar";
+import { BackLink } from "@/components/shared/back-link";
 
 const STATUS_COLORS: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
   draft: "secondary",
@@ -72,6 +73,7 @@ export default async function EngagementsPage({
 
   return (
     <div>
+      <BackLink href="/admin" label="Back" history />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{t("adminEngagements.list.title")}</h1>

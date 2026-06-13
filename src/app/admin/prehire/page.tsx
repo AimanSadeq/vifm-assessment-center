@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getServerT } from "@/lib/i18n/server";
 import { Badge } from "@/components/ui/badge";
 import { Plus, UserSearch, Building2, Users, ArrowRight, Briefcase } from "lucide-react";
+import { BackLink } from "@/components/shared/back-link";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +38,7 @@ export default async function PreHireListPage() {
 
   return (
     <>
+      <BackLink href="/admin" label="Back" history />
       {/* ─── Hero ─── */}
       <section className="prehire-hero">
         <div className="mx-auto max-w-6xl px-6 pt-10 pb-20">

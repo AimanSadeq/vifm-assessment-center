@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
+import { BackLink } from "@/components/shared/back-link";
 
 export default async function AssessorsPage() {
   const supabase = await createClient();
@@ -44,6 +45,7 @@ export default async function AssessorsPage() {
 
   return (
     <div>
+      <BackLink href="/admin" label="Back" history />
       <h1 className="text-2xl font-bold">{t("adminAssessors.title")}</h1>
       <p className="mt-1 text-muted-foreground">
         {t("adminAssessors.subtitle")}

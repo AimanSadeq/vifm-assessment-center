@@ -6,6 +6,7 @@ import { isAIConfigured } from "@/lib/ai/client";
 import { isEmailConfigured } from "@/lib/integrations/email";
 import { isVideoConfigured } from "@/lib/integrations/video";
 import { getServerT } from "@/lib/i18n/server";
+import { BackLink } from "@/components/shared/back-link";
 
 export default async function SettingsPage() {
   const t = await getServerT();
@@ -72,6 +73,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-6">
+      <BackLink href="/admin" label="Back" history />
       <div>
         <h1 className="text-2xl font-bold">{t("adminSettings.title")}</h1>
         <p className="mt-1 text-muted-foreground">

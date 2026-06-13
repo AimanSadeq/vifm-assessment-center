@@ -12,6 +12,7 @@ import {
 } from "@/lib/constants/ara-individual-factors";
 import { getServerT } from "@/lib/i18n/server";
 import type { AraAssessment, AraOrganization } from "@/types/ara";
+import { BackLink } from "@/components/shared/back-link";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +69,7 @@ export default async function PublicCohortDashboardPage({
   if (!rollup || rollup.respondents.length === 0) {
     return (
       <CohortShell orgName={assessment.organization?.name ?? ""}>
+        <BackLink href="/ara" label="Back" history />
         <div className="rounded-md border border-dashed p-12 text-center">
           <Users className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
           <p className="text-sm text-muted-foreground">

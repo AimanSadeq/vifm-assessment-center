@@ -1,6 +1,7 @@
 import { gatherEvidenceMetrics } from "@/lib/evidence-map/metrics";
 import { buildMatrix, matrixTotals } from "@/lib/evidence-map/matrix";
 import { EvidenceMapClient } from "./_components/evidence-map-client";
+import { BackLink } from "@/components/shared/back-link";
 
 export const dynamic = "force-dynamic";
 
@@ -21,5 +22,10 @@ export default async function EvidenceMapPage() {
   const matrix = buildMatrix(metrics);
   const totals = matrixTotals(matrix);
 
-  return <EvidenceMapClient metrics={metrics} matrix={matrix} totals={totals} />;
+  return (
+    <>
+      <BackLink href="/admin" label="Back" history />
+      <EvidenceMapClient metrics={metrics} matrix={matrix} totals={totals} />
+    </>
+  );
 }

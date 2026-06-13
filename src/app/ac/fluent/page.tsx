@@ -9,6 +9,7 @@ import { getServerT } from "@/lib/i18n/server";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { AllServicesLink } from "@/components/shared/all-services-link";
 import { FluentClient } from "./_components/fluent-client";
+import { BackLink } from "@/components/shared/back-link";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +69,7 @@ export default async function FluentPage({ searchParams }: Props) {
 
   return (
     <div className="min-h-screen bg-background">
+      <BackLink href="/" label="Back" history />
       {/* ─── Hero ─── */}
       <header className="fluent-hero">
         <div className="mx-auto max-w-5xl px-6 pt-7 pb-24">

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ProcessMap, type ProcessStep } from "@/components/shared/process-map";
 import { getTechPipelineStats } from "@/lib/competencies/technical-item-bank";
 import { getServerT } from "@/lib/i18n/server";
+import { BackLink } from "@/components/shared/back-link";
 
 const ITEMS_HREF = "/admin/tech-assessment/items";
 const RUNNER_HREF = "/ac/tech-assessment";
@@ -33,6 +34,7 @@ export default async function TechAssessmentCommandPage() {
 
   return (
     <div className="space-y-6">
+      <BackLink href="/admin" label="Back" history />
       {/* Hero */}
       <section className="rounded-2xl border bg-gradient-to-r from-[#4c0519] to-[#881337] text-white overflow-hidden">
         <div className="px-6 py-8 sm:px-8 sm:py-10">

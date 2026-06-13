@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { ExerciseDetail } from "./_components/exercise-detail";
+import { BackLink } from "@/components/shared/back-link";
 
 type Props = { params: { id: string } };
 
@@ -15,9 +16,12 @@ export default async function ExerciseDetailPage({ params }: Props) {
   if (exResult.error || !exResult.data) return notFound();
 
   return (
-    <ExerciseDetail
-      exercise={exResult.data}
-      rolePlayerPrompts={promptsResult.data ?? []}
-    />
+    <>
+      <BackLink href="/admin/exercises" label="Back" history />
+      <ExerciseDetail
+        exercise={exResult.data}
+        rolePlayerPrompts={promptsResult.data ?? []}
+      />
+    </>
   );
 }

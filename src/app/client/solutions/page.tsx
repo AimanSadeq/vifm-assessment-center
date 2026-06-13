@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   ClipboardCheck, Users, BarChart3, FileText, Monitor, Smartphone, Tablet, Shield,
 } from "lucide-react";
+import { BackLink } from "@/components/shared/back-link";
 
 const SOLUTIONS = [
   {
@@ -40,6 +41,7 @@ export default async function ClientSolutionsPage() {
 
   return (
     <div className="space-y-6">
+      <BackLink href="/client" label="Back" history />
       <div>
         <h1 className="text-2xl font-bold">{t("clientAnalytics.solutions.title")}</h1>
         <p className="mt-1 text-muted-foreground">

@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Sparkles, Globe, Building2, Users, FileUp } from "lucide-react";
+import { BackLink } from "@/components/shared/back-link";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +43,7 @@ export default async function RoleProfilesListPage() {
 
   return (
     <div className="space-y-6">
+      <BackLink href="/admin" label="Back" history />
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">{t("adminRoleProfiles.list.title")}</h1>

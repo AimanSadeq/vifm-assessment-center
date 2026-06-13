@@ -28,6 +28,7 @@ import type {
   AraAssessment, AraOrganization, AraPillarId,
 } from "@/types/ara";
 import "./report.css";
+import { BackLink } from "@/components/shared/back-link";
 
 export const dynamic = "force-dynamic";
 
@@ -304,6 +305,7 @@ export default async function AraReportPage({
   if (langParam === "bilingual") {
     return (
       <>
+        <BackLink href="/ara" label="Back" history />
         {!bare && (
           <div className="no-print bg-gray-100 py-6 px-4 text-center">
             <p className="text-sm text-muted-foreground">

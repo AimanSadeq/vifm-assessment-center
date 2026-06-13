@@ -8,6 +8,7 @@ import { VifmLogo } from "@/components/shared/vifm-logo";
 import { FadeIn } from "@/components/shared/ara/fade-in";
 import { CountUp } from "@/components/shared/ara/count-up";
 import { getServerT, type ServerT } from "@/lib/i18n/server";
+import { BackLink } from "@/components/shared/back-link";
 
 export const metadata = {
   title: "Roadmap · VIFM Assessment Center",
@@ -126,6 +127,7 @@ export default async function AcRoadmapPage() {
   const t = await getServerT();
   return (
     <div className="min-h-screen bg-background">
+      <BackLink href="/" label="Back" history />
       {/* ─── Top bar ─── */}
       <header className="border-b bg-card/80 backdrop-blur sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">

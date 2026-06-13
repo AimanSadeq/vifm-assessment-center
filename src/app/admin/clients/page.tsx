@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/table";
 import { loadPlatformClients } from "@/lib/clients/registry";
 import { CreateClientDialog } from "./_components/create-client-dialog";
+import { BackLink } from "@/components/shared/back-link";
 
 const SECTOR_LABEL: Record<string, string> = { government: "Government", banking: "Banking", general: "General" };
 const REGION_LABEL: Record<string, string> = { uae: "UAE", saudi: "Saudi Arabia" };
@@ -17,6 +18,7 @@ export default async function ClientsPage() {
 
   return (
     <div>
+      <BackLink href="/admin" label="Back" history />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">{t("adminClients.title")}</h1>

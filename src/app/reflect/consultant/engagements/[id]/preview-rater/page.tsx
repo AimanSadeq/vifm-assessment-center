@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
 import { GamifiedRaterForm } from "@/app/reflect/respond/[token]/_components/gamified-rater-form";
+import { BackLink } from "@/components/shared/back-link";
 import type {
   RaterContext,
   EngagementRow,
@@ -99,5 +100,10 @@ export default async function PreviewRaterPage({ params }: Params) {
     tenure: null,
   };
 
-  return <GamifiedRaterForm ctx={ctx} preview />;
+  return (
+    <>
+      <BackLink href="/reflect" label="Back" history />
+      <GamifiedRaterForm ctx={ctx} preview />
+    </>
+  );
 }

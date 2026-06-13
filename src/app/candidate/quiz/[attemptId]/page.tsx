@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { QuizInterface } from "./_components/quiz-interface";
+import { BackLink } from "@/components/shared/back-link";
 import type { CandidateQuizAttempt } from "@/types/database";
 
 type Props = { params: { attemptId: string } };
@@ -29,12 +30,15 @@ export default async function QuizAttemptPage({ params }: Props) {
   const competency = attempt.competencies as unknown as { id: string; name: string } | null;
 
   return (
-    <QuizInterface
+    <>
+      <BackLink href="/candidate" label="Back" history />
+      <QuizInterface
       attemptId={attempt.id as string}
       competencyName={competency?.name ?? "Skill"}
       questions={attempt.questions as CandidateQuizAttempt["questions"]}
       initialAnswers={attempt.answers as CandidateQuizAttempt["answers"]}
       startedAt={attempt.started_at as string}
-    />
+      />
+    </>
   );
 }

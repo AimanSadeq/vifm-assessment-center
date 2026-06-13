@@ -4,6 +4,7 @@ import { ShieldCheck, FlaskConical, ChevronRight, BookOpenCheck } from "lucide-r
 import { BulkEvidenceButtons } from "@/components/admin/bulk-evidence-buttons";
 import { getEvidenceAdapter } from "@/lib/evidence/instruments";
 import type { ValidationEvidence } from "@/types/evidence";
+import { BackLink } from "@/components/shared/back-link";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +57,7 @@ export default async function InstrumentEvidencePage({ params }: Props) {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
+      <BackLink href="/admin" label="Back" history />
       <div className="flex items-center gap-2 mb-1">
         <ShieldCheck className="h-5 w-5 text-accent" />
         <h1 className="text-xl font-bold">{adapter.label} — Evidence Console</h1>

@@ -9,6 +9,7 @@ import { getLocalizedTechTaxonomy } from "@/lib/competencies/technical-taxonomy"
 import { findParticipantByToken } from "@/lib/competencies/technical-program";
 import { listTechnicalFunctions, functionSkillLabels } from "@/lib/competencies/technical-function";
 import { adaptiveReadyRefs } from "@/lib/competencies/technical-function-bank";
+import { BackLink } from "@/components/shared/back-link";
 
 export const dynamic = "force-dynamic";
 
@@ -94,6 +95,7 @@ export default async function TechAssessmentPage({ searchParams }: Props) {
 
   return (
     <div className="min-h-screen bg-background">
+      <BackLink href="/" label="Back" history />
       <header className="prehire-hero">
         <div className="mx-auto max-w-5xl px-6 pt-7 pb-24">
           <div className="mb-10 flex items-center justify-between gap-4">

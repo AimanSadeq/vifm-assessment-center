@@ -5,6 +5,7 @@ import {
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { getServerT, type ServerT } from "@/lib/i18n/server";
 import { CompetencyConfigurator } from "./_components/competency-configurator";
+import { BackLink } from "@/components/shared/back-link";
 
 export const metadata = {
   title: "Engage · VIFM Assessment Center",
@@ -155,6 +156,7 @@ export default async function AcEngagePage() {
   const tr = await getServerT();
   return (
     <div className="min-h-screen bg-background">
+      <BackLink href="/" label="Back" history />
       {/* ─── Top bar ─── */}
       <header className="border-b bg-card/80 backdrop-blur sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">

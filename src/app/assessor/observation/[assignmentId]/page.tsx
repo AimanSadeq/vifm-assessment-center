@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { ObservationForm } from "./_components/observation-form";
+import { BackLink } from "@/components/shared/back-link";
 
 type Props = {
   params: { assignmentId: string };
@@ -60,6 +61,7 @@ export default async function ObservationPage({ params }: Props) {
 
   return (
     <div>
+      <BackLink href="/assessor" label="Back" history />
       <ObservationForm
         assignmentId={assignmentId}
         engagementId={assignment.engagement_id}

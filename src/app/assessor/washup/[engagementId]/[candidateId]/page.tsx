@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { WashupForm } from "./_components/washup-form";
+import { BackLink } from "@/components/shared/back-link";
 
 type Props = {
   params: { engagementId: string; candidateId: string };
@@ -51,6 +52,7 @@ export default async function WashupCandidatePage({ params }: Props) {
 
   return (
     <div>
+      <BackLink href="/assessor" label="Back" history />
       <WashupForm
         engagementId={engagementId}
         engagementName={engResult.data.name}

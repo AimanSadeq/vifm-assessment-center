@@ -4,12 +4,27 @@
 > asks "any pending actions?" (or similar), and keep it updated as items close.
 > Last updated: 2026-06-13.
 
-## ⭐ Priority 2 - KAFD (King Abdullah Financial District) rollout
-Client receiving 20 ARC access codes (vouchers already issued).
-- [x] Onboarding presentation (`scripts/build-kafd-onboarding-deck.js` → `KAFD-AI-Readiness-Compass-Onboarding.pptx`, 14 slides, voucher journey, VIFM brand)
-- [ ] Final visual polish pass on the deck (open in PowerPoint; sandbox here can't render slide images for QA)
+## ⭐ Priority 2 - KAFD (King Abdullah Financial District)
+
+**P2.1 - 20 ARC access codes + presentation**
+- [x] Onboarding presentation (`scripts/build-kafd-onboarding-deck.js` → `KAFD-AI-Readiness-Compass-Onboarding.pptx`)
 - [ ] Send the 20 invitations to KAFD delegates (needs Resend domain verified - see §E)
 - [ ] Collect completions + share an aggregated readout
+
+**P2.2 - Sample reports from the VIFM behavioural assessment**
+- [ ] Produce sample reports off VIFM behavioural competencies for THREE audiences:
+      candidate, hiring manager, talent acquisition (each a different lens on the same assessment data).
+
+**P2.3 - Technical assessment: 3-level breakdown with reports**
+- [ ] Restructure so the technical assessment reports at THREE levels (not just an overall score) -
+      builds on the Domain → Function → Competency → Skill tier already added (migration 00074).
+      First subject: **Finance** competencies. Per-level reports.
+
+**P2.4 - Combine question types into one customised assessment (investigation)**
+- [ ] Viability analysis: can questions from different assessment types (behavioural / technical /
+      Fluent / ARA / CBI / psychometrics) be merged into one overall assessment? Which combine
+      logically, which don't, and how scoring would work. (Precedent: Pre-Hire already chains
+      quiz + Fluent + CBI.) Deliverable = a written assessment, not code (yet).
 
 ## A. Auth go-live
 - [x] Admin account live: `asadeq@viftraining.com` (role `admin`, strong password set via `scripts/reset-password.ts`); login verified on caliber.viftraining.com

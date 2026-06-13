@@ -127,7 +127,14 @@ export default function LoginPage() {
             <div className="relative flex-1">
               <select
                 value={selectedRole}
-                onChange={(e) => setSelectedRole(e.target.value)}
+                onChange={(e) => {
+                  const id = e.target.value;
+                  setSelectedRole(id);
+                  // Selecting a role logs in immediately — password is
+                  // already embedded in DEMO_ROLES.
+                  const role = DEMO_ROLES.find((r) => r.id === id);
+                  if (role) quickLogin(role.email, role.password, role.redirect);
+                }}
                 disabled={loading}
                 className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring appearance-none pr-8"
               >

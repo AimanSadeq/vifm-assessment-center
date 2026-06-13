@@ -1,447 +1,402 @@
 /**
- * Build a generic, reusable client ONBOARDING deck (.pptx) for the AI Readiness Compass
- * voucher journey - what a delegate does, start to finish.
+ * ARC client ONBOARDING deck (.pptx) - generic / reusable for any client.
+ * Styled to match the VIFM NUPCO proposal deck: off-white slides with a dark
+ * title band, left accent rail, icon-in-circle cards, and the NUPCO footer
+ * (section tag chip + running footer + page number). Reuses the VIFM icon set
+ * (scripts/assets/arc-icons/imageN.png) extracted from that deck.
  *
- * Brand/template patterns reuse scripts/build-arc-pitch-deck.js (the VIFM
- * brand system materialised into pptxgenjs). Scope: ONLY the voucher ->
- * individual AI Readiness Compass journey. Not a sales pitch.
- *
+ * Scope: the voucher -> individual AI Readiness Compass journey, start to finish.
  * Run:  npm install --no-save pptxgenjs && node scripts/build-arc-client-onboarding-deck.js
  */
 const pptxgen = require("pptxgenjs");
+const path = require("path");
 
 const C = {
-  primary:  "010131",
-  navy:     "1A3A6B",
-  accent:   "5391D5",
-  light:    "A8C4E5",
-  pale:     "D0DFF4",
-  offWhite: "F5F7FA",
-  white:    "FFFFFF",
-  text:     "1E293B",
-  textMute: "64748B",
+  primary: "010131", navy: "1A3A6B", accent: "5391D5", light: "A8C4E5",
+  pale: "D0DFF4", iceberg: "EDF1F5", offWhite: "F5F7FA", white: "FFFFFF",
+  text: "1E293B", textMute: "64748B", green: "00843D",
 };
 const FONT = "Open Sans";
-const FOOTER = "VIFM AI Readiness Compass   |   Client Onboarding";
+const W = 10, H = 5.625, BAND = 0.86, RAIL = 0.18;
+
+// VIFM icon set (white glyphs unless noted). image2 = VIFM mark.
+const I = {
+  compass: 21, book: 5, bulb: 20, globe: 6, clip: 4, people: 16, peopleBlue: 7,
+  target: 3, search: 10, pen: 11, check: 14, arrow: 15, calendar: 17,
+  shield: 13, translate: 19, handshake: 22, flag: 23, vifm: 2, badge: 12,
+};
+const icon = (n) => path.join(__dirname, "assets/arc-icons", `image${n}.png`);
 
 const pres = new pptxgen();
-pres.layout = "LAYOUT_16x9";       // 10 x 5.625 in
+pres.layout = "LAYOUT_16x9";
 pres.author = "VIFM";
 pres.company = "Virginia Institute of Finance and Management";
 pres.title = "AI Readiness Compass - Client Onboarding";
 
-const W = 10, H = 5.625;
+const S = pres.shapes;
 
-// ── shared helpers ──────────────────────────────────────────────
-function rail(slide, color = C.accent) {
-  slide.addShape(pres.shapes.RECTANGLE, { x: 0, y: 0, w: 0.16, h: H, fill: { color }, line: { color } });
-}
-function footer(slide, n, onDark = false) {
-  slide.addText(FOOTER, { x: 0.35, y: 5.24, w: 7.5, h: 0.25, fontSize: 8, color: onDark ? C.navy : C.textMute, fontFace: FONT });
-  slide.addText(`${n}`, { x: 9.2, y: 5.24, w: 0.5, h: 0.25, fontSize: 8, color: onDark ? C.navy : C.textMute, fontFace: FONT, align: "right" });
-}
-function eyebrow(slide, text, x, y, color = C.accent) {
-  slide.addText(text, { x, y, w: 7, h: 0.28, fontSize: 9, color, fontFace: FONT, charSpacing: 3, bold: true });
-}
-// content slide: light bg + dark title band
-function contentHeader(slide, eb, title) {
-  slide.addShape(pres.shapes.RECTANGLE, { x: 0, y: 0, w: W, h: H, fill: { color: C.offWhite }, line: { color: C.offWhite } });
-  slide.addShape(pres.shapes.RECTANGLE, { x: 0, y: 0, w: W, h: 1.0, fill: { color: C.primary }, line: { color: C.primary } });
-  rail(slide);
-  eyebrow(slide, eb, 0.35, 0.18, C.accent);
-  slide.addText(title, { x: 0.35, y: 0.44, w: 9.3, h: 0.48, fontSize: 22, bold: true, color: C.white, fontFace: FONT, valign: "middle" });
+// ── chrome ──────────────────────────────────────────────────────
+function rail(s) { s.addShape(S.RECTANGLE, { x: 0, y: 0, w: RAIL, h: H, fill: { color: C.accent }, line: { color: C.accent } }); }
+
+function footer(s, tag, page, dark = false) {
+  const chipW = 0.36 + tag.length * 0.082;
+  s.addShape(S.ROUNDED_RECTANGLE, { x: 0.4, y: 5.33, w: chipW, h: 0.26, rectRadius: 0.04, fill: { color: C.accent }, line: { color: C.accent } });
+  s.addText(tag, { x: 0.4, y: 5.33, w: chipW, h: 0.26, fontSize: 8, bold: true, color: C.white, fontFace: FONT, align: "center", valign: "middle", charSpacing: 1 });
+  s.addText("VIFM   |   AI Readiness Compass", { x: 0.4 + chipW + 0.16, y: 5.33, w: 6, h: 0.26, fontSize: 8, color: dark ? C.light : C.textMute, fontFace: FONT, valign: "middle" });
+  s.addText(String(page), { x: 9.1, y: 5.33, w: 0.5, h: 0.26, fontSize: 8, color: dark ? C.light : C.textMute, fontFace: FONT, align: "right", valign: "middle" });
 }
 
-// ════════════════════════════════════════════════════════════════
-// 1 - Cover
-// ════════════════════════════════════════════════════════════════
+function chrome(s, eyebrow, title) {
+  s.addShape(S.RECTANGLE, { x: 0, y: 0, w: W, h: H, fill: { color: C.offWhite }, line: { color: C.offWhite } });
+  s.addShape(S.RECTANGLE, { x: 0, y: 0, w: W, h: BAND, fill: { color: C.primary }, line: { color: C.primary } });
+  s.addShape(S.RECTANGLE, { x: 0, y: BAND, w: W, h: 0.04, fill: { color: C.accent }, line: { color: C.accent } });
+  rail(s);
+  s.addText(eyebrow, { x: 0.38, y: 0.13, w: 9, h: 0.26, fontSize: 9, bold: true, color: C.accent, fontFace: FONT, charSpacing: 3 });
+  s.addText(title, { x: 0.38, y: 0.38, w: 9.2, h: 0.44, fontSize: 23, bold: true, color: C.white, fontFace: FONT, valign: "middle" });
+}
+
+function iconCircle(s, x, y, d, n, circle) {
+  const cc = circle || C.accent;
+  s.addShape(S.OVAL, { x, y, w: d, h: d, fill: { color: cc }, line: { color: cc } });
+  const id = d * 0.54;
+  s.addImage({ path: icon(n), x: x + (d - id) / 2, y: y + (d - id) / 2, w: id, h: id });
+}
+
+// ════════════════════════════════════════════ 1 - Cover
 {
   const s = pres.addSlide();
-  s.addShape(pres.shapes.RECTANGLE, { x: 0, y: 0, w: W, h: H, fill: { color: C.primary }, line: { color: C.primary } });
+  s.addShape(S.RECTANGLE, { x: 0, y: 0, w: W, h: H, fill: { color: C.primary }, line: { color: C.primary } });
   rail(s);
-  // decorative geometric corner
-  s.addShape(pres.shapes.RECTANGLE, { x: 7.7, y: 0, w: 2.3, h: 1.9, fill: { color: C.navy }, line: { color: C.navy } });
-  s.addShape(pres.shapes.OVAL, { x: 8.15, y: 0.32, w: 0.55, h: 0.55, fill: { color: C.accent }, line: { color: C.accent } });
-  s.addShape(pres.shapes.OVAL, { x: 8.95, y: 0.78, w: 0.32, h: 0.32, fill: { color: C.light }, line: { color: C.light } });
-  eyebrow(s, "[  CLIENT ONBOARDING   |   AI READINESS COMPASS  ]", 0.35, 0.32, C.accent);
-  s.addText("AI Readiness\nCompass", { x: 0.35, y: 1.25, w: 9, h: 2.3, fontSize: 46, bold: true, color: C.white, fontFace: FONT, valign: "middle", lineSpacingMultiple: 0.95 });
-  s.addText("Your access, and how it works - a step-by-step guide for your team.", { x: 0.37, y: 3.7, w: 7.6, h: 0.6, fontSize: 15, italic: true, color: C.light, fontFace: FONT });
-  // chips
+  s.addShape(S.RECTANGLE, { x: 7.55, y: 0, w: 2.45, h: 2.05, fill: { color: C.navy }, line: { color: C.navy } });
+  iconCircle(s, 8.35, 0.55, 0.95, I.compass, C.accent);
+  s.addText("[  CLIENT ONBOARDING   |   AI READINESS COMPASS  ]", { x: 0.4, y: 0.34, w: 7, h: 0.28, fontSize: 9, bold: true, color: C.accent, fontFace: FONT, charSpacing: 3 });
+  s.addText("AI Readiness\nCompass", { x: 0.4, y: 1.3, w: 9, h: 2.2, fontSize: 46, bold: true, color: C.white, fontFace: FONT, valign: "middle", lineSpacingMultiple: 0.95 });
+  s.addText("Your access, and how it works - a step-by-step guide for your team.", { x: 0.42, y: 3.65, w: 7.4, h: 0.5, fontSize: 15, italic: true, color: C.light, fontFace: FONT });
   const chips = ["A code for each person", "~10 minutes", "Bilingual EN / AR", "Private to you"];
-  let cx = 0.37;
+  let cx = 0.42;
   chips.forEach((t) => {
-    const cw = 0.30 + t.length * 0.092;
-    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: cx, y: 4.45, w: cw, h: 0.4, rectRadius: 0.2, fill: { color: C.navy }, line: { color: C.accent, width: 0.75 } });
-    s.addText(t, { x: cx, y: 4.45, w: cw, h: 0.4, fontSize: 10, color: C.light, fontFace: FONT, align: "center", valign: "middle" });
+    const cw = 0.34 + t.length * 0.094;
+    s.addShape(S.ROUNDED_RECTANGLE, { x: cx, y: 4.45, w: cw, h: 0.42, rectRadius: 0.21, fill: { color: C.navy }, line: { color: C.accent, width: 0.75 } });
+    s.addText(t, { x: cx, y: 4.45, w: cw, h: 0.42, fontSize: 10, color: C.light, fontFace: FONT, align: "center", valign: "middle" });
     cx += cw + 0.18;
   });
-  s.addText("caliber.viftraining.com", { x: 0.37, y: 5.05, w: 5, h: 0.3, fontSize: 11, color: C.accent, fontFace: FONT });
+  s.addText("caliber.viftraining.com", { x: 0.42, y: 5.08, w: 5, h: 0.3, fontSize: 11, color: C.accent, fontFace: FONT });
 }
 
-// ════════════════════════════════════════════════════════════════
-// 2 - What is the Compass (split panel)
-// ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════ 2 - What is the Compass
 {
   const s = pres.addSlide();
-  s.addShape(pres.shapes.RECTANGLE, { x: 0, y: 0, w: 3.9, h: H, fill: { color: C.primary }, line: { color: C.primary } });
-  s.addShape(pres.shapes.RECTANGLE, { x: 3.9, y: 0, w: 6.1, h: H, fill: { color: C.offWhite }, line: { color: C.offWhite } });
-  rail(s);
-  eyebrow(s, "[  THE INSTRUMENT  ]", 0.35, 0.3, C.accent);
-  s.addText("What is the\nAI Readiness\nCompass?", { x: 0.35, y: 1.0, w: 3.3, h: 2.0, fontSize: 26, bold: true, color: C.white, fontFace: FONT, lineSpacingMultiple: 1.0 });
-  s.addText("A short, confidential self-check that shows each person where they stand on working effectively with AI.", { x: 0.35, y: 3.25, w: 3.3, h: 1.5, fontSize: 12.5, italic: true, color: C.light, fontFace: FONT, wrap: true });
-
-  const points = [
-    ["Quick and self-served", "About 10 minutes, online, no account and nothing to install."],
-    ["Bilingual", "Take it in English or Arabic - switch at any time."],
-    ["Private to you", "Your results are yours. This is for development, not a pass / fail test."],
-    ["Practical, not theoretical", "It looks at how you actually work with AI day to day."],
+  chrome(s, "[  THE INSTRUMENT  ]", "What is the AI Readiness Compass?");
+  s.addText("A short, confidential self-check that shows each person where they stand on working effectively with AI.", { x: 0.42, y: 1.06, w: 9.2, h: 0.6, fontSize: 14, italic: true, color: C.navy, fontFace: FONT, wrap: true });
+  const rows = [
+    [I.calendar, "Quick and self-served", "About 10 minutes, online. No account, nothing to install."],
+    [I.translate, "Bilingual", "Take it in English or Arabic, and switch at any time."],
+    [I.shield, "Private to you", "Your results are yours. For development - not a pass / fail test."],
+    [I.target, "Practical, not theoretical", "It looks at how you actually work with AI day to day."],
   ];
-  let py = 0.65;
-  points.forEach((p, i) => {
-    s.addShape(pres.shapes.OVAL, { x: 4.2, y: py, w: 0.44, h: 0.44, fill: { color: C.accent }, line: { color: C.accent } });
-    s.addText(`${i + 1}`, { x: 4.2, y: py, w: 0.44, h: 0.44, fontSize: 13, bold: true, color: C.white, fontFace: FONT, align: "center", valign: "middle" });
-    s.addText(p[0], { x: 4.8, y: py - 0.02, w: 4.9, h: 0.34, fontSize: 14.5, bold: true, color: C.primary, fontFace: FONT });
-    s.addText(p[1], { x: 4.8, y: py + 0.34, w: 4.9, h: 0.62, fontSize: 12, color: C.text, fontFace: FONT, wrap: true });
-    py += 1.13;
+  const cw = 4.55, ch = 1.45, gx = 0.3, gy = 0.2, x0 = 0.4, y0 = 1.8;
+  rows.forEach((r, i) => {
+    const x = x0 + (i % 2) * (cw + gx), y = y0 + Math.floor(i / 2) * (ch + gy);
+    s.addShape(S.ROUNDED_RECTANGLE, { x, y, w: cw, h: ch, rectRadius: 0.1, fill: { color: C.white }, line: { color: C.pale, width: 1 }, shadow: { type: "outer", color: "000000", blur: 4, offset: 1, angle: 135, opacity: 0.08 } });
+    iconCircle(s, x + 0.24, y + 0.26, 0.62, r[0], C.accent);
+    s.addText(r[1], { x: x + 1.04, y: y + 0.24, w: cw - 1.2, h: 0.4, fontSize: 14.5, bold: true, color: C.primary, fontFace: FONT, valign: "middle" });
+    s.addText(r[2], { x: x + 1.04, y: y + 0.68, w: cw - 1.2, h: 0.65, fontSize: 11.5, color: C.text, fontFace: FONT, wrap: true });
   });
-  footer(s, 2);
+  footer(s, "OVERVIEW", 2);
 }
 
-// ════════════════════════════════════════════════════════════════
-// 3 - What you've received (stat)
-// ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════ 3 - What you receive
 {
   const s = pres.addSlide();
-  contentHeader(s, "[  YOUR ACCESS  ]", "What you receive");
-  // big stat card
-  s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 0.35, y: 1.3, w: 3.4, h: 3.5, rectRadius: 0.12, fill: { color: C.primary }, line: { color: C.primary }, shadow: { type: "outer", color: "000000", blur: 5, offset: 2, angle: 135, opacity: 0.12 } });
-  s.addText("1", { x: 0.35, y: 1.55, w: 3.4, h: 1.5, fontSize: 96, bold: true, color: C.accent, fontFace: FONT, align: "center", valign: "middle" });
-  s.addText("code per person", { x: 0.35, y: 3.05, w: 3.4, h: 0.5, fontSize: 16, bold: true, color: C.white, fontFace: FONT, align: "center" });
-  s.addText("Personal to you.\nEach single-use.", { x: 0.35, y: 3.6, w: 3.4, h: 0.9, fontSize: 12.5, color: C.light, fontFace: FONT, align: "center", wrap: true });
+  chrome(s, "[  YOUR ACCESS  ]", "What you receive");
+  s.addShape(S.ROUNDED_RECTANGLE, { x: 0.4, y: 1.3, w: 3.2, h: 3.4, rectRadius: 0.12, fill: { color: C.primary }, line: { color: C.primary }, shadow: { type: "outer", color: "000000", blur: 5, offset: 2, angle: 135, opacity: 0.12 } });
+  iconCircle(s, 1.5, 1.6, 1.0, I.badge, C.accent);
+  s.addText("1 code", { x: 0.4, y: 2.75, w: 3.2, h: 0.6, fontSize: 30, bold: true, color: C.white, fontFace: FONT, align: "center" });
+  s.addText("per person", { x: 0.4, y: 3.32, w: 3.2, h: 0.4, fontSize: 15, bold: true, color: C.accent, fontFace: FONT, align: "center" });
+  s.addText("Single-use and personal to each delegate.", { x: 0.55, y: 3.8, w: 2.9, h: 0.7, fontSize: 11.5, color: C.light, fontFace: FONT, align: "center", wrap: true });
 
   const rights = [
-    ["A one-click invitation", "Each delegate receives a personal email from VIFM with their code and a direct link - no code to type, no sign-up."],
-    ["VIFM handles delivery", "We send the invitations and resend on request. your team does not need to manage codes."],
-    ["Works on any device", "Phone, tablet, or laptop. Nothing to install."],
+    [I.globe, "A one-click invitation", "Each delegate gets a personal email with their code and a direct link - no code to type, no sign-up."],
+    [I.handshake, "VIFM handles delivery", "We send the invitations and resend on request. Your team does not manage codes."],
+    [I.check, "Works on any device", "Phone, tablet, or laptop. Nothing to install."],
   ];
-  let ry = 1.35;
+  let ry = 1.32;
   rights.forEach((r) => {
-    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 4.05, y: ry, w: 5.6, h: 1.05, rectRadius: 0.1, fill: { color: C.white }, line: { color: C.pale, width: 1 }, shadow: { type: "outer", color: "000000", blur: 4, offset: 1, angle: 135, opacity: 0.08 } });
-    s.addText(r[0], { x: 4.3, y: ry + 0.14, w: 5.2, h: 0.34, fontSize: 14.5, bold: true, color: C.primary, fontFace: FONT });
-    s.addText(r[1], { x: 4.3, y: ry + 0.48, w: 5.2, h: 0.5, fontSize: 11.5, color: C.text, fontFace: FONT, wrap: true });
+    s.addShape(S.ROUNDED_RECTANGLE, { x: 3.95, y: ry, w: 5.7, h: 1.06, rectRadius: 0.1, fill: { color: C.white }, line: { color: C.pale, width: 1 }, shadow: { type: "outer", color: "000000", blur: 4, offset: 1, angle: 135, opacity: 0.08 } });
+    iconCircle(s, 4.15, ry + 0.23, 0.6, r[0], r[0] === I.check ? C.white : C.accent);
+    s.addText(r[1], { x: 4.95, y: ry + 0.15, w: 4.55, h: 0.34, fontSize: 14, bold: true, color: C.primary, fontFace: FONT });
+    s.addText(r[2], { x: 4.95, y: ry + 0.49, w: 4.55, h: 0.5, fontSize: 11, color: C.text, fontFace: FONT, wrap: true });
     ry += 1.18;
   });
-  footer(s, 3);
+  footer(s, "ACCESS", 3);
 }
 
-// ════════════════════════════════════════════════════════════════
-// 4 - The journey at a glance (process flow)
-// ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════ 4 - Journey at a glance
 {
   const s = pres.addSlide();
-  contentHeader(s, "[  THE PROCESS  ]", "The journey at a glance");
+  chrome(s, "[  THE PROCESS  ]", "The journey at a glance");
   const steps = [
-    ["1", "Get your invite", "A personal email from VIFM with your link."],
-    ["2", "One click", "Open the link - your details are pre-filled."],
-    ["3", "Confirm", "Check your name and press Start."],
-    ["4", "Take it", "~24 short questions, about 10 minutes."],
-    ["5", "Your results", "On screen instantly + emailed PDF."],
+    [I.globe, "Get your invite", "A personal email from VIFM with your link."],
+    [I.compass, "One click", "Open the link - your details are pre-filled."],
+    [I.clip, "Confirm", "Check your name and press Start."],
+    [I.pen, "Take it", "~24 short questions, about 10 minutes."],
+    [I.check, "Your results", "On screen instantly, plus an emailed PDF."],
   ];
-  const n = steps.length;
-  const cardW = 1.74, gap = 0.13, startX = 0.34, y = 1.6, cardH = 2.7;
+  const cw = 1.74, gap = 0.13, x0 = 0.34, y = 1.55, ch = 3.0;
   steps.forEach((st, i) => {
-    const x = startX + i * (cardW + gap);
-    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y, w: cardW, h: cardH, rectRadius: 0.1, fill: { color: C.primary }, line: { color: C.primary }, shadow: { type: "outer", color: "000000", blur: 4, offset: 1, angle: 135, opacity: 0.1 } });
-    s.addShape(pres.shapes.OVAL, { x: x + cardW / 2 - 0.33, y: y + 0.28, w: 0.66, h: 0.66, fill: { color: C.accent }, line: { color: C.accent } });
-    s.addText(st[0], { x: x + cardW / 2 - 0.33, y: y + 0.28, w: 0.66, h: 0.66, fontSize: 22, bold: true, color: C.white, fontFace: FONT, align: "center", valign: "middle" });
-    s.addText(st[1], { x: x + 0.1, y: y + 1.08, w: cardW - 0.2, h: 0.6, fontSize: 13.5, bold: true, color: C.white, fontFace: FONT, align: "center", wrap: true });
-    s.addText(st[2], { x: x + 0.12, y: y + 1.66, w: cardW - 0.24, h: 0.9, fontSize: 10.5, color: C.light, fontFace: FONT, align: "center", wrap: true });
-    if (i < n - 1) {
-      s.addText(">", { x: x + cardW - 0.02, y: y + 0.95, w: gap + 0.04, h: 0.4, fontSize: 16, bold: true, color: C.accent, fontFace: FONT, align: "center", valign: "middle" });
-    }
+    const x = x0 + i * (cw + gap);
+    s.addShape(S.ROUNDED_RECTANGLE, { x, y, w: cw, h: ch, rectRadius: 0.1, fill: { color: C.primary }, line: { color: C.primary }, shadow: { type: "outer", color: "000000", blur: 4, offset: 1, angle: 135, opacity: 0.1 } });
+    iconCircle(s, x + cw / 2 - 0.34, y + 0.3, 0.68, st[0], i === 4 ? C.white : C.accent);
+    s.addText(`0${i + 1}`, { x, y: y + 1.06, w: cw, h: 0.3, fontSize: 11, bold: true, color: C.accent, fontFace: FONT, align: "center", charSpacing: 2 });
+    s.addText(st[1], { x: x + 0.1, y: y + 1.38, w: cw - 0.2, h: 0.55, fontSize: 13.5, bold: true, color: C.white, fontFace: FONT, align: "center", wrap: true });
+    s.addText(st[2], { x: x + 0.12, y: y + 1.95, w: cw - 0.24, h: 0.95, fontSize: 10.5, color: C.light, fontFace: FONT, align: "center", wrap: true });
+    if (i < steps.length - 1) s.addText(">", { x: x + cw - 0.05, y: y + 1.05, w: gap + 0.1, h: 0.4, fontSize: 15, bold: true, color: C.accent, fontFace: FONT, align: "center", valign: "middle" });
   });
-  s.addText("Every step is self-served and takes one sitting. No training required.", { x: 0.34, y: 4.7, w: 9.3, h: 0.4, fontSize: 12, italic: true, color: C.navy, fontFace: FONT, align: "center" });
-  footer(s, 4);
+  s.addText("Every step is self-served and takes one sitting. No training required.", { x: 0.34, y: 4.78, w: 9.3, h: 0.38, fontSize: 12, italic: true, color: C.navy, fontFace: FONT, align: "center" });
+  footer(s, "PROCESS", 4);
 }
 
-// ════════════════════════════════════════════════════════════════
-// 5 - Step 1: invitation (email mock)
-// ════════════════════════════════════════════════════════════════
-{
-  const s = pres.addSlide();
-  contentHeader(s, "[  STEP 1  ]", "Your invitation arrives by email");
-  // left guidance
-  const pts = [
-    ["From VIFM", "The email comes from the VIFM AI Readiness Compass."],
-    ["Your personal link", "A one-click button takes you straight in."],
-    ["Your access code", "Included as a backup - you rarely need to type it."],
-    ["Check spam once", "If it is not in your inbox, look in junk / spam."],
-  ];
+function stepWithMock(s, eyebrow, title, rows, drawMock, tag, page) {
+  chrome(s, eyebrow, title);
   let yy = 1.4;
-  pts.forEach((p) => {
-    s.addShape(pres.shapes.OVAL, { x: 0.4, y: yy, w: 0.4, h: 0.4, fill: { color: C.accent }, line: { color: C.accent } });
-    s.addText("•", { x: 0.4, y: yy - 0.04, w: 0.4, h: 0.4, fontSize: 18, bold: true, color: C.white, fontFace: FONT, align: "center", valign: "middle" });
-    s.addText(p[0], { x: 0.95, y: yy - 0.02, w: 4.0, h: 0.34, fontSize: 14.5, bold: true, color: C.primary, fontFace: FONT });
-    s.addText(p[1], { x: 0.95, y: yy + 0.32, w: 4.0, h: 0.55, fontSize: 11.5, color: C.text, fontFace: FONT, wrap: true });
-    yy += 0.92;
+  rows.forEach((p) => {
+    iconCircle(s, 0.4, yy, 0.56, p[0], C.accent);
+    s.addText(p[1], { x: 1.1, y: yy - 0.02, w: 3.9, h: 0.34, fontSize: 14, bold: true, color: C.primary, fontFace: FONT });
+    s.addText(p[2], { x: 1.1, y: yy + 0.32, w: 3.9, h: 0.55, fontSize: 11.5, color: C.text, fontFace: FONT, wrap: true });
+    yy += 0.95;
   });
-  // right: email mock card
-  const ex = 5.25, ey = 1.35, ew = 4.4, eh = 3.45;
-  s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: ex, y: ey, w: ew, h: eh, rectRadius: 0.08, fill: { color: C.white }, line: { color: C.pale, width: 1 }, shadow: { type: "outer", color: "000000", blur: 6, offset: 2, angle: 135, opacity: 0.12 } });
-  s.addShape(pres.shapes.RECTANGLE, { x: ex, y: ey, w: ew, h: 0.62, fill: { color: C.primary }, line: { color: C.primary } });
-  s.addText("VIFM AI Readiness Compass", { x: ex + 0.2, y: ey + 0.06, w: ew - 0.4, h: 0.24, fontSize: 11, bold: true, color: C.white, fontFace: FONT });
-  s.addText("Your AI Readiness Compass access", { x: ex + 0.2, y: ey + 0.3, w: ew - 0.4, h: 0.26, fontSize: 9.5, color: C.light, fontFace: FONT });
-  s.addText("Dear delegate,\n\nYou have been invited to take the AI Readiness Compass - a short, confidential assessment.", { x: ex + 0.25, y: ey + 0.78, w: ew - 0.5, h: 1.1, fontSize: 11, color: C.text, fontFace: FONT, wrap: true });
-  s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: ex + 0.25, y: ey + 2.0, w: 2.5, h: 0.55, rectRadius: 0.1, fill: { color: C.accent }, line: { color: C.accent } });
-  s.addText("Start your assessment", { x: ex + 0.25, y: ey + 2.0, w: 2.5, h: 0.55, fontSize: 12, bold: true, color: C.white, fontFace: FONT, align: "center", valign: "middle" });
-  s.addText("Access code:  VIFM-ARC-XXXX-XXXX", { x: ex + 0.25, y: ey + 2.75, w: ew - 0.5, h: 0.3, fontSize: 10, color: C.textMute, fontFace: FONT });
-  footer(s, 5);
+  drawMock(s);
+  footer(s, tag, page);
 }
 
-// ════════════════════════════════════════════════════════════════
-// 6 - Step 2: one-click start (form mock)
-// ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════ 5 - Step 1: invitation
 {
   const s = pres.addSlide();
-  contentHeader(s, "[  STEP 2  ]", "One click - we pre-fill the rest");
-  const pts = [
-    ["The link opens the start page", "caliber.viftraining.com/ara/redeem"],
-    ["Code, email and company pre-filled", "Carried in from your invitation - nothing to look up."],
-    ["Just confirm your name", "Then press Start. That is the whole sign-in."],
-    ["No password, no account", "You go straight into the assessment."],
-  ];
-  let yy = 1.4;
-  pts.forEach((p) => {
-    s.addShape(pres.shapes.OVAL, { x: 0.4, y: yy, w: 0.4, h: 0.4, fill: { color: C.accent }, line: { color: C.accent } });
-    s.addText("•", { x: 0.4, y: yy - 0.04, w: 0.4, h: 0.4, fontSize: 18, bold: true, color: C.white, fontFace: FONT, align: "center", valign: "middle" });
-    s.addText(p[0], { x: 0.95, y: yy - 0.02, w: 4.0, h: 0.34, fontSize: 14, bold: true, color: C.primary, fontFace: FONT });
-    s.addText(p[1], { x: 0.95, y: yy + 0.32, w: 4.0, h: 0.55, fontSize: 11.5, color: C.text, fontFace: FONT, wrap: true });
-    yy += 0.92;
-  });
-  // form mock
-  const fx = 5.25, fy = 1.35, fw = 4.4, fh = 3.5;
-  s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: fx, y: fy, w: fw, h: fh, rectRadius: 0.1, fill: { color: C.white }, line: { color: C.pale, width: 1 }, shadow: { type: "outer", color: "000000", blur: 6, offset: 2, angle: 135, opacity: 0.12 } });
-  s.addText("AI Readiness Compass", { x: fx + 0.3, y: fy + 0.22, w: fw - 0.6, h: 0.3, fontSize: 13, bold: true, color: C.primary, fontFace: FONT });
-  const fields = [
-    ["Voucher code", "VIFM-ARC-7K3M-9QX2", true],
-    ["Email", "you@yourcompany.com", true],
-    ["Company", "Your company", true],
-    ["Full name", "type your name", false],
-  ];
-  let fyy = fy + 0.65;
-  fields.forEach((f) => {
-    s.addText(f[0], { x: fx + 0.3, y: fyy, w: fw - 0.6, h: 0.22, fontSize: 9.5, color: C.textMute, fontFace: FONT });
-    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: fx + 0.3, y: fyy + 0.24, w: fw - 0.6, h: 0.4, rectRadius: 0.05, fill: { color: f[2] ? C.offWhite : C.white }, line: { color: f[2] ? C.pale : C.accent, width: 1 } });
-    s.addText(f[1], { x: fx + 0.42, y: fyy + 0.24, w: fw - 0.8, h: 0.4, fontSize: 11, color: f[2] ? C.text : C.textMute, fontFace: FONT, valign: "middle", italic: !f[2] });
-    if (f[2]) s.addText("pre-filled", { x: fx + fw - 1.35, y: fyy, w: 1.05, h: 0.22, fontSize: 8, color: C.accent, fontFace: FONT, align: "right", bold: true });
-    fyy += 0.7;
-  });
-  footer(s, 6);
+  stepWithMock(s, "[  STEP 1  ]", "Your invitation arrives by email",
+    [
+      [I.globe, "From VIFM", "It comes from the VIFM AI Readiness Compass."],
+      [I.compass, "Your personal link", "A one-click button takes you straight in."],
+      [I.badge, "Your access code", "Included as a backup - you rarely type it."],
+      [I.check, "Check spam once", "If it is not in your inbox, look in junk."],
+    ],
+    (sl) => {
+      const ex = 5.3, ey = 1.4, ew = 4.35, eh = 3.4;
+      sl.addShape(S.ROUNDED_RECTANGLE, { x: ex, y: ey, w: ew, h: eh, rectRadius: 0.08, fill: { color: C.white }, line: { color: C.pale, width: 1 }, shadow: { type: "outer", color: "000000", blur: 6, offset: 2, angle: 135, opacity: 0.12 } });
+      sl.addShape(S.RECTANGLE, { x: ex, y: ey, w: ew, h: 0.62, fill: { color: C.primary }, line: { color: C.primary } });
+      sl.addText("VIFM AI Readiness Compass", { x: ex + 0.2, y: ey + 0.07, w: ew - 0.4, h: 0.24, fontSize: 11, bold: true, color: C.white, fontFace: FONT });
+      sl.addText("Your AI Readiness Compass access", { x: ex + 0.2, y: ey + 0.31, w: ew - 0.4, h: 0.24, fontSize: 9.5, color: C.light, fontFace: FONT });
+      sl.addText("Dear delegate,\n\nYou have been invited to take the AI Readiness Compass - a short, confidential assessment.", { x: ex + 0.25, y: ey + 0.8, w: ew - 0.5, h: 1.05, fontSize: 11, color: C.text, fontFace: FONT, wrap: true });
+      sl.addShape(S.ROUNDED_RECTANGLE, { x: ex + 0.25, y: ey + 2.0, w: 2.5, h: 0.55, rectRadius: 0.1, fill: { color: C.accent }, line: { color: C.accent } });
+      sl.addText("Start your assessment", { x: ex + 0.25, y: ey + 2.0, w: 2.5, h: 0.55, fontSize: 12, bold: true, color: C.white, fontFace: FONT, align: "center", valign: "middle" });
+      sl.addText("Access code:  VIFM-ARC-XXXX-XXXX", { x: ex + 0.25, y: ey + 2.75, w: ew - 0.5, h: 0.3, fontSize: 10, color: C.textMute, fontFace: FONT });
+    }, "STEP 1", 5);
 }
 
-// ════════════════════════════════════════════════════════════════
-// 7 - Step 3: the assessment (stats)
-// ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════ 6 - Step 2: one-click start
 {
   const s = pres.addSlide();
-  contentHeader(s, "[  STEP 3  ]", "Take the assessment");
+  stepWithMock(s, "[  STEP 2  ]", "One click - we pre-fill the rest",
+    [
+      [I.compass, "The link opens the start page", "caliber.viftraining.com/ara/redeem"],
+      [I.clip, "Code, email, company pre-filled", "Carried in from your invitation."],
+      [I.pen, "Just confirm your name", "Then press Start. That is the whole sign-in."],
+      [I.check, "No password, no account", "You go straight into the assessment."],
+    ],
+    (sl) => {
+      const fx = 5.3, fy = 1.4, fw = 4.35, fh = 3.45;
+      sl.addShape(S.ROUNDED_RECTANGLE, { x: fx, y: fy, w: fw, h: fh, rectRadius: 0.1, fill: { color: C.white }, line: { color: C.pale, width: 1 }, shadow: { type: "outer", color: "000000", blur: 6, offset: 2, angle: 135, opacity: 0.12 } });
+      sl.addText("AI Readiness Compass", { x: fx + 0.3, y: fy + 0.2, w: fw - 0.6, h: 0.3, fontSize: 13, bold: true, color: C.primary, fontFace: FONT });
+      const fields = [["Voucher code", "VIFM-ARC-7K3M-9QX2", true], ["Email", "you@yourcompany.com", true], ["Company", "Your company", true], ["Full name", "type your name", false]];
+      let fyy = fy + 0.62;
+      fields.forEach((f) => {
+        sl.addText(f[0], { x: fx + 0.3, y: fyy, w: fw - 0.6, h: 0.2, fontSize: 9, color: C.textMute, fontFace: FONT });
+        sl.addShape(S.ROUNDED_RECTANGLE, { x: fx + 0.3, y: fyy + 0.22, w: fw - 0.6, h: 0.38, rectRadius: 0.05, fill: { color: f[2] ? C.offWhite : C.white }, line: { color: f[2] ? C.pale : C.accent, width: 1 } });
+        sl.addText(f[1], { x: fx + 0.42, y: fyy + 0.22, w: fw - 0.85, h: 0.38, fontSize: 10.5, color: f[2] ? C.text : C.textMute, fontFace: FONT, valign: "middle", italic: !f[2] });
+        if (f[2]) sl.addText("pre-filled", { x: fx + fw - 1.35, y: fyy, w: 1.05, h: 0.2, fontSize: 8, color: C.accent, fontFace: FONT, align: "right", bold: true });
+        fyy += 0.68;
+      });
+    }, "STEP 2", 6);
+}
+
+// ════════════════════════════════════════════ 7 - Step 3: the assessment
+{
+  const s = pres.addSlide();
+  chrome(s, "[  STEP 3  ]", "Take the assessment");
   const stats = [
-    ["~10", "minutes", "In one sitting."],
-    ["~24", "short questions", "Quick to answer."],
-    ["2", "languages", "English or Arabic."],
-    ["4", "factors", "See the next slide."],
+    [I.calendar, "~10", "minutes", "In one sitting."],
+    [I.clip, "~24", "short questions", "Quick to answer."],
+    [I.translate, "2", "languages", "English or Arabic."],
+    [I.target, "4", "factors", "See the next slide."],
   ];
-  const sw = 2.27, sgap = 0.12, sx0 = 0.34, sy = 1.35, sh = 1.85;
+  const sw = 2.27, sgap = 0.12, x0 = 0.34, y = 1.3, sh = 1.95;
   stats.forEach((st, i) => {
-    const x = sx0 + i * (sw + sgap);
-    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y: sy, w: sw, h: sh, rectRadius: 0.1, fill: { color: C.primary }, line: { color: C.primary }, shadow: { type: "outer", color: "000000", blur: 4, offset: 1, angle: 135, opacity: 0.1 } });
-    s.addText(st[0], { x, y: sy + 0.18, w: sw, h: 0.85, fontSize: 44, bold: true, color: C.accent, fontFace: FONT, align: "center", valign: "middle" });
-    s.addText(st[1], { x, y: sy + 1.0, w: sw, h: 0.32, fontSize: 13, bold: true, color: C.white, fontFace: FONT, align: "center" });
-    s.addText(st[2], { x: x + 0.1, y: sy + 1.34, w: sw - 0.2, h: 0.42, fontSize: 10, color: C.light, fontFace: FONT, align: "center", wrap: true });
+    const x = x0 + i * (sw + sgap);
+    s.addShape(S.ROUNDED_RECTANGLE, { x, y, w: sw, h: sh, rectRadius: 0.1, fill: { color: C.primary }, line: { color: C.primary }, shadow: { type: "outer", color: "000000", blur: 4, offset: 1, angle: 135, opacity: 0.1 } });
+    iconCircle(s, x + sw / 2 - 0.28, y + 0.22, 0.56, st[0], C.accent);
+    s.addText(st[1], { x, y: y + 0.78, w: sw, h: 0.55, fontSize: 32, bold: true, color: C.accent, fontFace: FONT, align: "center" });
+    s.addText(st[2], { x, y: y + 1.34, w: sw, h: 0.3, fontSize: 12.5, bold: true, color: C.white, fontFace: FONT, align: "center" });
+    s.addText(st[3], { x: x + 0.1, y: y + 1.62, w: sw - 0.2, h: 0.3, fontSize: 9.5, color: C.light, fontFace: FONT, align: "center" });
   });
-  // reassurance band
-  s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 0.34, y: 3.5, w: 9.32, h: 1.25, rectRadius: 0.1, fill: { color: C.pale }, line: { color: C.pale } });
-  s.addText("It is a self-reflection, not a test.", { x: 0.6, y: 3.62, w: 9, h: 0.4, fontSize: 15, bold: true, color: C.primary, fontFace: FONT });
-  s.addText("There are no trick questions and no pass / fail. Answer honestly about how you work with AI today - that is what makes your results useful. Your answers are private to you.", { x: 0.6, y: 4.02, w: 9, h: 0.66, fontSize: 12, color: C.text, fontFace: FONT, wrap: true });
-  footer(s, 7);
+  s.addShape(S.ROUNDED_RECTANGLE, { x: 0.34, y: 3.55, w: 9.32, h: 1.2, rectRadius: 0.1, fill: { color: C.iceberg }, line: { color: C.pale, width: 1 } });
+  iconCircle(s, 0.6, 3.85, 0.6, I.bulb, C.accent);
+  s.addText("It is a self-reflection, not a test.", { x: 1.4, y: 3.66, w: 8.1, h: 0.38, fontSize: 15, bold: true, color: C.primary, fontFace: FONT });
+  s.addText("No trick questions, no pass / fail. Answer honestly about how you work with AI today - that is what makes your results useful. Your answers are private to you.", { x: 1.4, y: 4.04, w: 8.1, h: 0.66, fontSize: 11.5, color: C.text, fontFace: FONT, wrap: true });
+  footer(s, "STEP 3", 7);
 }
 
-// ════════════════════════════════════════════════════════════════
-// 8 - The four factors (2x2)
-// ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════ 8 - The four factors (dark)
 {
   const s = pres.addSlide();
-  s.addShape(pres.shapes.RECTANGLE, { x: 0, y: 0, w: W, h: H, fill: { color: C.primary }, line: { color: C.primary } });
+  s.addShape(S.RECTANGLE, { x: 0, y: 0, w: W, h: H, fill: { color: C.primary }, line: { color: C.primary } });
   rail(s);
-  eyebrow(s, "[  WHAT IT MEASURES  ]", 0.35, 0.22, C.accent);
-  s.addText("The four factors", { x: 0.35, y: 0.5, w: 9.3, h: 0.5, fontSize: 22, bold: true, color: C.white, fontFace: FONT });
-  const factors = [
-    ["THINKING", "AI Sense-Check", "You treat AI output as a draft to verify, not a finished answer - testing claims and catching confidently-wrong facts.", "5391D5"],
-    ["RESULTS", "AI Working Practice", "You build AI into how you already work - clear prompts, iterating, folding it into recurring tasks.", "047857"],
-    ["PEOPLE", "AI Collaboration", "You help the team move with AI - explaining what it can and can't do, and pushing back on blind trust.", "C2410C"],
-    ["SELF", "AI Adaptive Mindset", "You stay open as AI changes the work - relearning, asking where models fail, keeping policy in view.", "6D28D9"],
+  s.addText("[  WHAT IT MEASURES  ]", { x: 0.38, y: 0.22, w: 6, h: 0.28, fontSize: 9, bold: true, color: C.accent, fontFace: FONT, charSpacing: 3 });
+  s.addText("The four factors", { x: 0.38, y: 0.5, w: 9.3, h: 0.5, fontSize: 23, bold: true, color: C.white, fontFace: FONT });
+  const f = [
+    [I.search, "THINKING", "AI Sense-Check", "You treat AI output as a draft to verify, not a finished answer - catching confidently-wrong facts.", "5391D5"],
+    [I.pen, "RESULTS", "AI Working Practice", "You build AI into how you already work - clear prompts, iterating, folding it into recurring tasks.", "00843D"],
+    [I.people, "PEOPLE", "AI Collaboration", "You help the team move with AI - explaining what it can and can't do, pushing back on blind trust.", "C2410C"],
+    [I.bulb, "SELF", "AI Adaptive Mindset", "You stay open as AI changes the work - relearning, asking where models fail, keeping policy in view.", "6D28D9"],
   ];
-  const fw = 4.56, fh = 1.75, fgx = 0.3, fgy = 0.2, fx0 = 0.35, fy0 = 1.15;
-  factors.forEach((f, i) => {
-    const x = fx0 + (i % 2) * (fw + fgx), y = fy0 + Math.floor(i / 2) * (fh + fgy);
-    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y, w: fw, h: fh, rectRadius: 0.1, fill: { color: C.navy }, line: { color: C.navy }, shadow: { type: "outer", color: "000000", blur: 4, offset: 1, angle: 135, opacity: 0.12 } });
-    s.addShape(pres.shapes.OVAL, { x: x + 0.25, y: y + 0.3, w: 0.5, h: 0.5, fill: { color: f[3] }, line: { color: f[3] } });
-    s.addText(f[0], { x: x + 0.95, y: y + 0.2, w: fw - 1.1, h: 0.3, fontSize: 9, bold: true, color: f[3], fontFace: FONT, charSpacing: 2 });
-    s.addText(f[1], { x: x + 0.95, y: y + 0.46, w: fw - 1.1, h: 0.4, fontSize: 16, bold: true, color: C.white, fontFace: FONT });
-    s.addText(f[2], { x: x + 0.25, y: y + 0.95, w: fw - 0.5, h: 0.72, fontSize: 11, color: C.light, fontFace: FONT, wrap: true });
+  const cw = 4.56, ch = 1.78, gx = 0.3, gy = 0.18, x0 = 0.38, y0 = 1.12;
+  f.forEach((c, i) => {
+    const x = x0 + (i % 2) * (cw + gx), y = y0 + Math.floor(i / 2) * (ch + gy);
+    s.addShape(S.ROUNDED_RECTANGLE, { x, y, w: cw, h: ch, rectRadius: 0.1, fill: { color: C.navy }, line: { color: C.navy }, shadow: { type: "outer", color: "000000", blur: 4, offset: 1, angle: 135, opacity: 0.12 } });
+    iconCircle(s, x + 0.26, y + 0.32, 0.62, c[0], c[4]);
+    s.addText(c[1], { x: x + 1.06, y: y + 0.26, w: cw - 1.2, h: 0.28, fontSize: 9, bold: true, color: c[4], fontFace: FONT, charSpacing: 2 });
+    s.addText(c[2], { x: x + 1.06, y: y + 0.52, w: cw - 1.2, h: 0.4, fontSize: 16, bold: true, color: C.white, fontFace: FONT });
+    s.addText(c[3], { x: x + 0.26, y: y + 1.0, w: cw - 0.5, h: 0.72, fontSize: 11, color: C.light, fontFace: FONT, wrap: true });
   });
-  s.addText("Mapped to VIFM's behavioural framework: Thinking, Results, People, Self.", { x: 0.35, y: 4.95, w: 9.3, h: 0.35, fontSize: 11, italic: true, color: C.light, fontFace: FONT, align: "center" });
-  footer(s, 8, true);
+  footer(s, "FACTORS", 8, true);
 }
 
-// ════════════════════════════════════════════════════════════════
-// 9 - Step 4: your results
-// ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════ 9 - Step 4: results
 {
   const s = pres.addSlide();
-  contentHeader(s, "[  STEP 4  ]", "Your results, instantly");
+  chrome(s, "[  STEP 4  ]", "Your results, instantly");
   const cards = [
-    ["On screen", "The moment you finish, your results appear - your profile across the four factors, with what each means for you."],
-    ["By email, with PDF", "We email you a copy with the results PDF attached, so you can keep it and share it if you choose."],
-    ["A page you can return to", "Your results page is bookmarkable - come back to it any time from the link in your email."],
+    [I.clip, "On screen", "The moment you finish, your results appear - your profile across the four factors, with what each means."],
+    [I.check, "By email, with PDF", "We email you a copy with the results PDF attached, to keep or share if you choose."],
+    [I.compass, "A page to return to", "Your results page is bookmarkable - come back any time from the link in your email."],
   ];
-  const cw = 3.04, cgap = 0.1, cx0 = 0.34, cy = 1.35, ch = 2.7;
+  const cw = 3.04, gap = 0.1, x0 = 0.34, y = 1.3, ch = 2.8;
   cards.forEach((c, i) => {
-    const x = cx0 + i * (cw + cgap);
-    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y: cy, w: cw, h: ch, rectRadius: 0.1, fill: { color: C.white }, line: { color: C.pale, width: 1 }, shadow: { type: "outer", color: "000000", blur: 4, offset: 1, angle: 135, opacity: 0.1 } });
-    s.addShape(pres.shapes.OVAL, { x: x + 0.25, y: cy + 0.28, w: 0.6, h: 0.6, fill: { color: C.accent }, line: { color: C.accent } });
-    s.addText(`${i + 1}`, { x: x + 0.25, y: cy + 0.28, w: 0.6, h: 0.6, fontSize: 20, bold: true, color: C.white, fontFace: FONT, align: "center", valign: "middle" });
-    s.addText(c[0], { x: x + 0.25, y: cy + 1.0, w: cw - 0.5, h: 0.45, fontSize: 15, bold: true, color: C.primary, fontFace: FONT });
-    s.addText(c[1], { x: x + 0.25, y: cy + 1.45, w: cw - 0.5, h: 1.1, fontSize: 11.5, color: C.text, fontFace: FONT, wrap: true });
+    const x = x0 + i * (cw + gap);
+    s.addShape(S.ROUNDED_RECTANGLE, { x, y, w: cw, h: ch, rectRadius: 0.1, fill: { color: C.white }, line: { color: C.pale, width: 1 }, shadow: { type: "outer", color: "000000", blur: 4, offset: 1, angle: 135, opacity: 0.1 } });
+    iconCircle(s, x + cw / 2 - 0.35, y + 0.3, 0.7, c[0], c[0] === I.check ? C.white : C.accent);
+    s.addText(c[1], { x: x + 0.2, y: y + 1.12, w: cw - 0.4, h: 0.4, fontSize: 15, bold: true, color: C.primary, fontFace: FONT, align: "center" });
+    s.addText(c[2], { x: x + 0.24, y: y + 1.55, w: cw - 0.48, h: 1.1, fontSize: 11.5, color: C.text, fontFace: FONT, align: "center", wrap: true });
   });
-  s.addText("No waiting, no follow-up needed - the delegate has their result before they close the tab.", { x: 0.34, y: 4.7, w: 9.3, h: 0.4, fontSize: 12, italic: true, color: C.navy, fontFace: FONT, align: "center" });
-  footer(s, 9);
+  s.addText("No waiting - the delegate has their result before they close the tab.", { x: 0.34, y: 4.75, w: 9.3, h: 0.38, fontSize: 12, italic: true, color: C.navy, fontFace: FONT, align: "center" });
+  footer(s, "STEP 4", 9);
 }
 
-// ════════════════════════════════════════════════════════════════
-// 10 - What the results tell you
-// ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════ 10 - What results tell you
 {
   const s = pres.addSlide();
-  contentHeader(s, "[  YOUR REPORT  ]", "What your results tell you");
+  chrome(s, "[  YOUR REPORT  ]", "What your results tell you");
   const rows = [
-    ["A profile across the four factors", "Where you are strong with AI today, and where there is room to grow - factor by factor."],
-    ["Plain-language guidance", "Each factor comes with a short read on what it means and practical pointers to develop it."],
-    ["Development, not judgement", "There is no score to pass. It is a personal baseline to build from."],
-    ["Private to you", "Your individual report is yours. Your organisation and VIFM see completion and an anonymised group picture - not your answers."],
+    [I.target, "A profile across the four factors", "Where you are strong with AI today, and where there is room to grow."],
+    [I.bulb, "Plain-language guidance", "Each factor comes with a short read on what it means and how to develop it."],
+    [I.check, "Development, not judgement", "There is no score to pass - it is a personal baseline to build from."],
+    [I.shield, "Private to you", "Your report is yours. Your organisation sees completion and an anonymised group picture, not your answers."],
   ];
-  let yy = 1.35;
+  let yy = 1.3;
   rows.forEach((r, i) => {
-    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 0.35, y: yy, w: 9.3, h: 0.82, rectRadius: 0.08, fill: { color: i % 2 ? C.white : C.pale }, line: { color: C.pale, width: 1 } });
-    s.addShape(pres.shapes.OVAL, { x: 0.55, y: yy + 0.21, w: 0.4, h: 0.4, fill: { color: C.accent }, line: { color: C.accent } });
-    s.addText(`${i + 1}`, { x: 0.55, y: yy + 0.21, w: 0.4, h: 0.4, fontSize: 12, bold: true, color: C.white, fontFace: FONT, align: "center", valign: "middle" });
-    s.addText(r[0], { x: 1.15, y: yy + 0.1, w: 3.4, h: 0.62, fontSize: 13.5, bold: true, color: C.primary, fontFace: FONT, valign: "middle" });
-    s.addText(r[1], { x: 4.65, y: yy + 0.1, w: 4.85, h: 0.62, fontSize: 11.5, color: C.text, fontFace: FONT, valign: "middle", wrap: true });
-    yy += 0.9;
+    s.addShape(S.ROUNDED_RECTANGLE, { x: 0.35, y: yy, w: 9.3, h: 0.84, rectRadius: 0.08, fill: { color: i % 2 ? C.white : C.iceberg }, line: { color: C.pale, width: 1 } });
+    iconCircle(s, 0.55, yy + 0.2, 0.44, r[0], C.accent);
+    s.addText(r[1], { x: 1.2, y: yy + 0.1, w: 3.5, h: 0.64, fontSize: 13.5, bold: true, color: C.primary, fontFace: FONT, valign: "middle" });
+    s.addText(r[2], { x: 4.75, y: yy + 0.1, w: 4.75, h: 0.64, fontSize: 11.5, color: C.text, fontFace: FONT, valign: "middle", wrap: true });
+    yy += 0.92;
   });
-  footer(s, 10);
+  footer(s, "REPORT", 10);
 }
 
-// ════════════════════════════════════════════════════════════════
-// 11 - For the coordinator
-// ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════ 11 - For the coordinator
 {
   const s = pres.addSlide();
-  contentHeader(s, "[  FOR THE COORDINATOR  ]", "Running this for your team");
+  chrome(s, "[  FOR THE COORDINATOR  ]", "Running this for your team");
   const items = [
-    ["We send the invitations", "Share your delegates' names and emails with VIFM, and we email each a personal one-click link. No code-handling for you."],
-    ["Track completion", "You receive a simple view of who has started and who has finished, by company - no spreadsheets."],
-    ["An aggregated readout", "When the group is done, VIFM can share an anonymised picture of where the team stands - plus optional next steps."],
-    ["Zero admin overhead", "No software, no licences to manage, no accounts to create for delegates."],
+    [I.globe, "We send the invitations", "Share your delegates' names and emails with VIFM, and we email each a personal one-click link."],
+    [I.calendar, "Track completion", "You get a simple view of who has started and finished, by company - no spreadsheets."],
+    [I.handshake, "An aggregated readout", "When the group is done, VIFM shares an anonymised picture of where the team stands, plus next steps."],
+    [I.check, "Zero admin overhead", "No software, no licences to manage, no accounts to create for delegates."],
   ];
-  const cw = 4.56, ch = 1.55, cgx = 0.3, cgy = 0.2, cx0 = 0.35, cy0 = 1.3;
+  const cw = 4.56, ch = 1.6, gx = 0.3, gy = 0.18, x0 = 0.38, y0 = 1.25;
   items.forEach((it, i) => {
-    const x = cx0 + (i % 2) * (cw + cgx), y = cy0 + Math.floor(i / 2) * (ch + cgy);
-    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y, w: cw, h: ch, rectRadius: 0.1, fill: { color: C.white }, line: { color: C.pale, width: 1 }, shadow: { type: "outer", color: "000000", blur: 4, offset: 1, angle: 135, opacity: 0.08 } });
-    s.addShape(pres.shapes.OVAL, { x: x + 0.22, y: y + 0.22, w: 0.5, h: 0.5, fill: { color: C.primary }, line: { color: C.primary } });
-    s.addText(`${i + 1}`, { x: x + 0.22, y: y + 0.22, w: 0.5, h: 0.5, fontSize: 16, bold: true, color: C.accent, fontFace: FONT, align: "center", valign: "middle" });
-    s.addText(it[0], { x: x + 0.85, y: y + 0.2, w: cw - 1.05, h: 0.34, fontSize: 14, bold: true, color: C.primary, fontFace: FONT });
-    s.addText(it[1], { x: x + 0.85, y: y + 0.56, w: cw - 1.05, h: 0.9, fontSize: 11, color: C.text, fontFace: FONT, wrap: true });
+    const x = x0 + (i % 2) * (cw + gx), y = y0 + Math.floor(i / 2) * (ch + gy);
+    s.addShape(S.ROUNDED_RECTANGLE, { x, y, w: cw, h: ch, rectRadius: 0.1, fill: { color: C.white }, line: { color: C.pale, width: 1 }, shadow: { type: "outer", color: "000000", blur: 4, offset: 1, angle: 135, opacity: 0.08 } });
+    iconCircle(s, x + 0.22, y + 0.26, 0.6, it[0], it[0] === I.check ? C.white : C.accent);
+    s.addText(it[1], { x: x + 0.96, y: y + 0.22, w: cw - 1.15, h: 0.34, fontSize: 14, bold: true, color: C.primary, fontFace: FONT });
+    s.addText(it[2], { x: x + 0.96, y: y + 0.56, w: cw - 1.15, h: 0.95, fontSize: 11, color: C.text, fontFace: FONT, wrap: true });
   });
-  footer(s, 11);
+  footer(s, "COORDINATOR", 11);
 }
 
-// ════════════════════════════════════════════════════════════════
-// 12 - Privacy & confidentiality
-// ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════ 12 - Privacy (dark)
 {
   const s = pres.addSlide();
-  s.addShape(pres.shapes.RECTANGLE, { x: 0, y: 0, w: W, h: H, fill: { color: C.navy }, line: { color: C.navy } });
+  s.addShape(S.RECTANGLE, { x: 0, y: 0, w: W, h: H, fill: { color: C.navy }, line: { color: C.navy } });
   rail(s);
-  eyebrow(s, "[  PRIVACY & CONFIDENTIALITY  ]", 0.35, 0.4, C.light);
-  s.addText("Your answers stay yours", { x: 0.35, y: 0.75, w: 9.3, h: 0.6, fontSize: 26, bold: true, color: C.white, fontFace: FONT });
+  s.addText("[  PRIVACY & CONFIDENTIALITY  ]", { x: 0.38, y: 0.4, w: 7, h: 0.28, fontSize: 9, bold: true, color: C.light, fontFace: FONT, charSpacing: 3 });
+  s.addText("Your answers stay yours", { x: 0.38, y: 0.74, w: 9.3, h: 0.6, fontSize: 26, bold: true, color: C.white, fontFace: FONT });
   const items = [
-    ["Individual results are private", "Your personal report is visible to you. It is not shared with managers as an individual scorecard."],
-    ["For development, not selection", "This is a readiness baseline - not a hiring, promotion, or performance decision."],
-    ["GCC-tuned", "Built for the region and aligned to UAE and Saudi expectations, bilingual throughout."],
+    [I.shield, "Individual results are private", "Your personal report is visible to you. It is not shared as an individual scorecard."],
+    [I.check, "For development, not selection", "A readiness baseline - not a hiring, promotion, or performance decision."],
+    [I.globe, "GCC-tuned", "Built for the region, aligned to UAE and Saudi expectations, bilingual throughout."],
   ];
-  let yy = 1.75;
+  let yy = 1.78;
   items.forEach((it) => {
-    s.addShape(pres.shapes.OVAL, { x: 0.5, y: yy, w: 0.5, h: 0.5, fill: { color: C.accent }, line: { color: C.accent } });
-    s.addText("✓", { x: 0.5, y: yy, w: 0.5, h: 0.5, fontSize: 18, bold: true, color: C.white, fontFace: FONT, align: "center", valign: "middle" });
-    s.addText(it[0], { x: 1.2, y: yy - 0.02, w: 8.3, h: 0.36, fontSize: 16, bold: true, color: C.white, fontFace: FONT });
-    s.addText(it[1], { x: 1.2, y: yy + 0.36, w: 8.3, h: 0.6, fontSize: 12.5, color: C.light, fontFace: FONT, wrap: true });
-    yy += 1.05;
+    iconCircle(s, 0.5, yy, 0.6, it[0], it[0] === I.check ? C.white : C.accent);
+    s.addText(it[1], { x: 1.3, y: yy - 0.02, w: 8.2, h: 0.36, fontSize: 16, bold: true, color: C.white, fontFace: FONT });
+    s.addText(it[2], { x: 1.3, y: yy + 0.36, w: 8.2, h: 0.6, fontSize: 12.5, color: C.light, fontFace: FONT, wrap: true });
+    yy += 1.08;
   });
-  footer(s, 12, true);
+  footer(s, "PRIVACY", 12, true);
 }
 
-// ════════════════════════════════════════════════════════════════
-// 13 - Timeline / next steps
-// ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════ 13 - Timeline
 {
   const s = pres.addSlide();
-  contentHeader(s, "[  WHAT HAPPENS NEXT  ]", "From here to results");
+  chrome(s, "[  WHAT HAPPENS NEXT  ]", "From here to results");
   const steps = [
-    ["Now", "Codes issued", "Your access codes are ready to send."],
-    ["This week", "Invitations sent", "VIFM emails each delegate their one-click link."],
-    ["~2 weeks", "Delegates complete", "Each person takes ~10 minutes, whenever suits them."],
-    ["After", "Group readout", "VIFM shares an anonymised picture + next steps."],
+    [I.flag, "Now", "Codes issued", "Your access codes are ready to send."],
+    [I.globe, "This week", "Invitations sent", "VIFM emails each delegate a one-click link."],
+    [I.pen, "~2 weeks", "Delegates complete", "Each person takes ~10 minutes, whenever suits."],
+    [I.handshake, "After", "Group readout", "VIFM shares an anonymised picture + next steps."],
   ];
-  const cardW = 2.2, gap = 0.18, startX = 0.4, y = 1.55, cardH = 2.6;
+  const cw = 2.2, gap = 0.18, x0 = 0.4, y = 1.5, ch = 2.75;
   steps.forEach((st, i) => {
-    const x = startX + i * (cardW + gap);
-    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y, w: cardW, h: cardH, rectRadius: 0.1, fill: { color: i === 0 ? C.accent : C.primary }, line: { color: i === 0 ? C.accent : C.primary }, shadow: { type: "outer", color: "000000", blur: 4, offset: 1, angle: 135, opacity: 0.1 } });
-    s.addText(st[0].toUpperCase(), { x: x + 0.2, y: y + 0.25, w: cardW - 0.4, h: 0.3, fontSize: 10, bold: true, color: i === 0 ? C.primary : C.accent, fontFace: FONT, charSpacing: 2 });
-    s.addText(st[1], { x: x + 0.2, y: y + 0.62, w: cardW - 0.4, h: 0.7, fontSize: 15, bold: true, color: C.white, fontFace: FONT, wrap: true });
-    s.addText(st[2], { x: x + 0.2, y: y + 1.45, w: cardW - 0.4, h: 1.0, fontSize: 11, color: i === 0 ? C.primary : C.light, fontFace: FONT, wrap: true });
-    if (i < steps.length - 1) s.addText(">", { x: x + cardW - 0.04, y: y + 1.0, w: gap + 0.08, h: 0.4, fontSize: 18, bold: true, color: C.navy, fontFace: FONT, align: "center", valign: "middle" });
+    const x = x0 + i * (cw + gap);
+    const active = i === 0;
+    s.addShape(S.ROUNDED_RECTANGLE, { x, y, w: cw, h: ch, rectRadius: 0.1, fill: { color: active ? C.accent : C.primary }, line: { color: active ? C.accent : C.primary }, shadow: { type: "outer", color: "000000", blur: 4, offset: 1, angle: 135, opacity: 0.1 } });
+    iconCircle(s, x + cw / 2 - 0.33, y + 0.26, 0.66, st[0], active ? C.primary : C.accent);
+    s.addText(st[1].toUpperCase(), { x: x + 0.15, y: y + 1.02, w: cw - 0.3, h: 0.3, fontSize: 10, bold: true, color: active ? C.primary : C.accent, fontFace: FONT, align: "center", charSpacing: 2 });
+    s.addText(st[2], { x: x + 0.15, y: y + 1.34, w: cw - 0.3, h: 0.6, fontSize: 14, bold: true, color: C.white, fontFace: FONT, align: "center", wrap: true });
+    s.addText(st[3], { x: x + 0.18, y: y + 1.95, w: cw - 0.36, h: 0.78, fontSize: 10.5, color: active ? C.primary : C.light, fontFace: FONT, align: "center", wrap: true });
+    if (i < steps.length - 1) s.addText(">", { x: x + cw - 0.05, y: y + 1.05, w: gap + 0.1, h: 0.4, fontSize: 16, bold: true, color: C.navy, fontFace: FONT, align: "center", valign: "middle" });
   });
-  s.addText("Timeline is indicative and flexes to your schedule.", { x: 0.4, y: 4.6, w: 9.2, h: 0.4, fontSize: 11.5, italic: true, color: C.navy, fontFace: FONT, align: "center" });
-  footer(s, 13);
+  s.addText("Timeline is indicative and flexes to your schedule.", { x: 0.4, y: 4.65, w: 9.2, h: 0.38, fontSize: 11.5, italic: true, color: C.navy, fontFace: FONT, align: "center" });
+  footer(s, "TIMELINE", 13);
 }
 
-// ════════════════════════════════════════════════════════════════
-// 14 - Support & contact (closing)
-// ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════ 14 - Closing (dark)
 {
   const s = pres.addSlide();
-  s.addShape(pres.shapes.RECTANGLE, { x: 0, y: 0, w: W, h: H, fill: { color: C.primary }, line: { color: C.primary } });
+  s.addShape(S.RECTANGLE, { x: 0, y: 0, w: W, h: H, fill: { color: C.primary }, line: { color: C.primary } });
   rail(s);
-  s.addShape(pres.shapes.RECTANGLE, { x: 7.7, y: 3.7, w: 2.3, h: 1.925, fill: { color: C.navy }, line: { color: C.navy } });
-  s.addShape(pres.shapes.OVAL, { x: 8.95, y: 4.75, w: 0.55, h: 0.55, fill: { color: C.accent }, line: { color: C.accent } });
-  eyebrow(s, "[  WE ARE HERE TO HELP  ]", 0.35, 0.75, C.accent);
-  s.addText("Welcome to your\nAI Readiness Compass", { x: 0.35, y: 1.15, w: 9, h: 1.6, fontSize: 34, bold: true, color: C.white, fontFace: FONT, lineSpacingMultiple: 1.0 });
-  s.addText("Any questions before you begin? Reach the VIFM team:", { x: 0.37, y: 2.95, w: 8, h: 0.4, fontSize: 14, italic: true, color: C.light, fontFace: FONT });
-  const contacts = [
-    ["Email", "courses@viftraining.com"],
-    ["Phone", "+9714 436 5820"],
-    ["Web", "caliber.viftraining.com"],
-  ];
-  let yy = 3.6;
+  s.addShape(S.RECTANGLE, { x: 7.55, y: 3.55, w: 2.45, h: 2.075, fill: { color: C.navy }, line: { color: C.navy } });
+  iconCircle(s, 8.35, 4.05, 0.95, I.compass, C.accent);
+  s.addText("[  WE ARE HERE TO HELP  ]", { x: 0.4, y: 0.7, w: 6, h: 0.3, fontSize: 9, bold: true, color: C.accent, fontFace: FONT, charSpacing: 3 });
+  s.addText("Welcome to your\nAI Readiness Compass", { x: 0.4, y: 1.1, w: 9, h: 1.6, fontSize: 33, bold: true, color: C.white, fontFace: FONT, lineSpacingMultiple: 1.0 });
+  s.addText("Any questions before you begin? Reach the VIFM team:", { x: 0.42, y: 2.9, w: 8, h: 0.4, fontSize: 14, italic: true, color: C.light, fontFace: FONT });
+  const contacts = [["Email", "courses@viftraining.com"], ["Phone", "+9714 436 5820"], ["Web", "caliber.viftraining.com"]];
+  let yy = 3.55;
   contacts.forEach((c) => {
-    s.addText(c[0].toUpperCase(), { x: 0.4, y: yy, w: 1.3, h: 0.34, fontSize: 10, bold: true, color: C.accent, fontFace: FONT, charSpacing: 2, valign: "middle" });
-    s.addText(c[1], { x: 1.7, y: yy, w: 6, h: 0.34, fontSize: 15, bold: true, color: C.white, fontFace: FONT, valign: "middle" });
+    s.addText(c[0].toUpperCase(), { x: 0.42, y: yy, w: 1.3, h: 0.34, fontSize: 10, bold: true, color: C.accent, fontFace: FONT, charSpacing: 2, valign: "middle" });
+    s.addText(c[1], { x: 1.72, y: yy, w: 5.6, h: 0.34, fontSize: 15, bold: true, color: C.white, fontFace: FONT, valign: "middle" });
     yy += 0.5;
   });
-  s.addText("Virginia Institute of Finance and Management", { x: 0.37, y: 5.2, w: 7, h: 0.3, fontSize: 9, color: C.light, fontFace: FONT });
+  s.addText("Virginia Institute of Finance and Management", { x: 0.42, y: 5.2, w: 7, h: 0.3, fontSize: 9, color: C.light, fontFace: FONT });
 }
 
-pres.writeFile({ fileName: "VIFM-ARC-Client-Onboarding.pptx" }).then((fn) => {
-  console.log("Wrote", fn);
-});
+pres.writeFile({ fileName: "VIFM-ARC-Client-Onboarding.pptx" }).then((fn) => console.log("Wrote", fn));

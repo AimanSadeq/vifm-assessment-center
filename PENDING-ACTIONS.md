@@ -22,8 +22,9 @@ banded) → Competency (assessed unit, banded Basic/Intermediate/Advanced) → S
 Thresholds: Basic < 60 / Intermediate 60-84 / Advanced >= 85.
 - [x] 3-band classifier `proficiencyTier()`; per-competency banding on results; overall band removed.
 - [x] **AP competency framework approved** (`docs/technical-ap-competency-framework.md`, 6 competencies).
-- [x] AP framework seeded (migration 00076; validated on scratch PG; 6 competencies x 5 skills, blueprint aligned). **APPLY 00076 to Supabase** to activate.
-- [ ] Draft + SME-review exam questions for the 30 AP skills (item-bank flow); needs ANTHROPIC_API_KEY run.
+- [x] AP framework v2 seeded (migration 00076; validated on scratch PG): **6 categories / 19 competencies / 36 skills** + `category`/`reference` columns, blueprint aligned. **APPLY 00076 to Supabase** to activate.
+- [ ] Group the results "By competency" view by category (+ reference) - pairs with the report step.
+- [ ] Draft + SME-review exam questions for the 36 AP skills (`scripts/draft-function-items.ts --function accounts_payable`; needs ANTHROPIC_API_KEY). Question count per skill: decide here.
 - [ ] PDF breakdown report (per-competency band + descriptor + development pointers). Subject: Finance/AP.
 - [ ] Extend the framework template to other finance functions + JD-custom path.
 

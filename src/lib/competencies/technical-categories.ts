@@ -53,3 +53,71 @@ export function categoryLabel(category: string | null, locale: "en" | "ar"): str
   if (!m) return category;
   return locale === "ar" ? m.ar : m.en;
 }
+
+// ── Competency-tier roll-up (server-free, pure) ──────────────────────────────
+// Aggregate a per-skill result breakdown into per-competency rows, using a
+// function's competency groups (each group = a name + its English skill names).
+// Skills not in any group fall into an "Other" bucket so totals always reconcile.
+
+export type SkillBreakdownLite = { skill: string; correct: number; total: number };
+export type CompetencyGroupLite = { nameEn: string; name: string; skillsEn: string[] };
+export type CompetencyBreakdown = {
+  competencyEn: string;
+  competency: string; // localized
+  correct: number;
+  total: number;
+  pct: number; // 0–100, 0 when total is 0
+  skills: SkillBreakdownLite[];
+};
+
+export function aggregateByCompetency(
+  breakdown: SkillBreakdownLite[],
+  groups: CompetencyGroupLite[],
+  locale: "en" | "ar"
+): CompetencyBreakdown[] {
+  const bySkill = new Map<string, SkillBreakdownLite>();
+  for (const b of breakdown) bySkill.set(b.skill, b);
+
+  const used = new Set<string>();
+  const out: CompetencyBreakdown[] = [];
+
+  for (const g of groups) {
+    const skills: SkillBreakdownLite[] = [];
+    let correct = 0;
+    let total = 0;
+    for (const skillEn of g.skillsEn) {
+      const b = bySkill.get(skillEn);
+      if (!b) continue;
+      used.add(skillEn);
+      skills.push(b);
+      correct += b.correct;
+      total += b.total;
+    }
+    if (total === 0 && skills.length === 0) continue; // competency not exercised in this sitting
+    out.push({
+      competencyEn: g.nameEn,
+      competency: g.name,
+      correct,
+      total,
+      pct: total > 0 ? Math.round((correct / total) * 100) : 0,
+      skills,
+    });
+  }
+
+  // Any measured skills not mapped to a competency → "Other".
+  const leftover = breakdown.filter((b) => !used.has(b.skill));
+  if (leftover.length > 0) {
+    const correct = leftover.reduce((s, b) => s + b.correct, 0);
+    const total = leftover.reduce((s, b) => s + b.total, 0);
+    out.push({
+      competencyEn: "Other",
+      competency: locale === "ar" ? "أخرى" : "Other",
+      correct,
+      total,
+      pct: total > 0 ? Math.round((correct / total) * 100) : 0,
+      skills: leftover,
+    });
+  }
+
+  return out;
+}

@@ -440,6 +440,17 @@ export {
 } from "./technical-categories";
 import { categoryLabel } from "./technical-categories";
 
+/** A competency within a function (migration 00074), localized. */
+export type LocalizedTechCompetency = {
+  id: string;
+  name: string; // localized
+  nameEn: string;
+  /** Canonical English skill names in this competency (the tag/grading axis). */
+  skillsEn: string[];
+  /** Localized skill labels, index-aligned with skillsEn. */
+  skills: string[];
+};
+
 /** A function localized for the runner: display name + localized + canonical skills. */
 export type LocalizedTechFunction = {
   /** Stable handle for the runner: the function `key` (standard) or `id` (custom JD). */
@@ -454,6 +465,9 @@ export type LocalizedTechFunction = {
   skillsEn: string[];
   /** Localized skill labels, index-aligned with skillsEn. */
   skills: string[];
+  /** The Competency tier (00074). Empty when none are seeded for this function —
+   *  consumers fall back to the flat skillsEn list. */
+  competencies: LocalizedTechCompetency[];
   source: TechFunctionSource;
 };
 
@@ -479,6 +493,7 @@ function localizeStandard(f: StandardFunction, locale: "en" | "ar"): LocalizedTe
     categoryLabel: categoryLabel(f.category, locale),
     skillsEn: [...f.skills_en],
     skills: locale === "ar" ? f.skills_ar.map((s, i) => s || f.skills_en[i]) : [...f.skills_en],
+    competencies: [], // code-side fallback has no ids → no competency rows
     source: "standard",
   };
 }
@@ -496,8 +511,71 @@ function localizeRow(r: FunctionRow, locale: "en" | "ar"): LocalizedTechFunction
     categoryLabel: categoryLabel(r.category, locale),
     skillsEn,
     skills: locale === "ar" ? skillsEn.map((s, i) => skillsAr[i] || s) : skillsEn,
+    competencies: [], // attached separately by the loaders (batch query)
     source: r.source === "jd" ? "jd" : "standard",
   };
+}
+
+// ── Competency tier (migration 00074) ───────────────────────────────────────
+type CompetencyRow = { id: string; function_id: string; name_en: string; name_ar: string | null };
+type CompetencySkillRow = { competency_id: string; name_en: string; name_ar: string | null };
+
+/**
+ * Batch-load the competency groups for the given function ids and attach them to
+ * the matching localized functions (in place). Tolerant: on any error or empty
+ * result the functions keep `competencies: []` and callers fall back to skillsEn.
+ */
+async function attachCompetencies(
+  sb: ReturnType<typeof createServiceClient>,
+  fns: LocalizedTechFunction[],
+  locale: "en" | "ar"
+): Promise<void> {
+  const ids = fns.map((f) => f.id).filter((id): id is string => !!id);
+  if (ids.length === 0) return;
+  try {
+    const { data: comps } = await sb
+      .from("technical_competencies")
+      .select("id, function_id, name_en, name_ar")
+      .in("function_id", ids)
+      .order("sort_order");
+    const compRows = (comps ?? []) as CompetencyRow[];
+    if (compRows.length === 0) return;
+
+    const { data: skills } = await sb
+      .from("technical_competency_skills")
+      .select("competency_id, name_en, name_ar")
+      .in("competency_id", compRows.map((c) => c.id))
+      .order("sort_order");
+    const skillRows = (skills ?? []) as CompetencySkillRow[];
+
+    const skillsByComp = new Map<string, CompetencySkillRow[]>();
+    for (const s of skillRows) {
+      const arr = skillsByComp.get(s.competency_id) ?? [];
+      arr.push(s);
+      skillsByComp.set(s.competency_id, arr);
+    }
+
+    const compsByFn = new Map<string, LocalizedTechCompetency[]>();
+    for (const c of compRows) {
+      const cs = skillsByComp.get(c.id) ?? [];
+      const localized: LocalizedTechCompetency = {
+        id: c.id,
+        nameEn: c.name_en,
+        name: locale === "ar" ? c.name_ar || c.name_en : c.name_en,
+        skillsEn: cs.map((s) => s.name_en),
+        skills: cs.map((s) => (locale === "ar" ? s.name_ar || s.name_en : s.name_en)),
+      };
+      const arr = compsByFn.get(c.function_id) ?? [];
+      arr.push(localized);
+      compsByFn.set(c.function_id, arr);
+    }
+
+    for (const f of fns) {
+      if (f.id && compsByFn.has(f.id)) f.competencies = compsByFn.get(f.id)!;
+    }
+  } catch {
+    /* tolerant — leave competencies empty, callers fall back to flat skills */
+  }
 }
 
 /**
@@ -517,7 +595,9 @@ export async function listTechnicalFunctions(locale: "en" | "ar"): Promise<Local
     if (error || !data || data.length === 0) {
       return STANDARD_FUNCTIONS.map((f) => localizeStandard(f, locale));
     }
-    return (data as FunctionRow[]).map((r) => localizeRow(r, locale));
+    const fns = (data as FunctionRow[]).map((r) => localizeRow(r, locale));
+    await attachCompetencies(sb, fns, locale);
+    return fns;
   } catch {
     return STANDARD_FUNCTIONS.map((f) => localizeStandard(f, locale));
   }
@@ -555,7 +635,9 @@ export async function getTechnicalFunctionByRef(
       if (byId.data) row = byId.data as FunctionRow;
     }
     if (!row) return fallback();
-    return localizeRow(row, locale);
+    const fn = localizeRow(row, locale);
+    await attachCompetencies(sb, [fn], locale);
+    return fn;
   } catch {
     return fallback();
   }

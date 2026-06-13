@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Loader2, CheckCircle2, RotateCcw, GraduationCap, AlertCircle, ShieldCheck, ExternalLink, Layers3, ChevronDown, ChevronRight, ChevronLeft, Gauge, Blend, Plus, Check, X } from "lucide-react";
 import type { LocalizedTechDomain } from "@/lib/competencies/technical-taxonomy";
 import type { LocalizedTechFunction } from "@/lib/competencies/technical-function";
-import { categoryRank } from "@/lib/competencies/technical-categories";
+import { categoryRank, aggregateByCompetency } from "@/lib/competencies/technical-categories";
 import type { PublicTechTest, TechResult } from "@/lib/ai/technical-assessment";
 
 type Phase = "intro" | "test" | "adaptive" | "result";
@@ -696,6 +696,33 @@ export function TechAssessmentClient({
               <p className="mt-1 text-xs text-rose-700">{t("tech.take.belowNote", { pct: result.pct, cut: result.cutPct })}</p>
             </div>
           )}
+
+          {/* Per-competency breakdown (00074 tier) — only when the function has competencies */}
+          {(() => {
+            const fn = functions.find((f) => f.ref === result.domain_key);
+            const groups = (fn?.competencies ?? []).map((c) => ({ nameEn: c.nameEn, name: c.name, skillsEn: c.skillsEn }));
+            if (groups.length === 0) return null;
+            const comp = aggregateByCompetency(result.perSkill, groups, language);
+            if (comp.length === 0) return null;
+            return (
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{t("tech.take.byCompetency")}</p>
+                <div className="space-y-1.5">
+                  {comp.map((c) => (
+                    <div key={c.competencyEn} className="flex items-center gap-3 text-xs">
+                      <span className="w-56 shrink-0 truncate font-medium">{c.competency}</span>
+                      <div className="flex flex-1 gap-1">
+                        {Array.from({ length: c.total }).map((_, n) => (
+                          <span key={n} className={`h-2 flex-1 rounded-full ${n < c.correct ? "bg-[#5391D5]" : "bg-slate-200"}`} />
+                        ))}
+                      </div>
+                      <span className="w-12 shrink-0 text-right tabular-nums text-slate-500">{c.correct}/{c.total}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Per-skill breakdown */}
           <div>

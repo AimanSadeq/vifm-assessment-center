@@ -41,6 +41,28 @@ export default async function FunctionCertPage({ params }: { params: { ref: stri
         </div>
       </div>
 
+      {fn.competencies.length > 0 && (
+        <div className="rounded-lg border border-border bg-card p-4">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {t("techFn.competencies")}
+          </p>
+          <div className="space-y-3">
+            {fn.competencies.map((c) => (
+              <div key={c.id}>
+                <p className="text-sm font-medium text-[#010131]">{c.name}</p>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {c.skills.map((s, i) => (
+                    <Badge key={i} variant="outline" className="text-[11px] font-normal">
+                      {s}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <CertWorkbench
         fn={{ ref: fn.ref, id: fn.id, name: fn.name, skillsEn: fn.skillsEn, skills: fn.skills }}
         readiness={readiness}

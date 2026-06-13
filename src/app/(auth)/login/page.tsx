@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
@@ -41,6 +41,15 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedRole, setSelectedRole] = useState("");
+
+  // A password-recovery link redirects through here (the root redirect carries
+  // the token hash to /login). Forward it to the dedicated set-password page.
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.hash.includes("type=recovery")) {
+      window.location.replace(`/update-password${window.location.hash}`);
+    }
+  }, []);
+
   const quickLogin = async (targetEmail: string, targetPassword: string, redirect: string) => {
     setLoading(true);
     setError(null);

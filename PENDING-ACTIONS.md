@@ -4,13 +4,14 @@
 > asks "any pending actions?" (or similar), and keep it updated as items close.
 > Last updated: 2026-06-13.
 
-## A. Auth go-live (user-paused)
-- [ ] Provision the 6 role accounts in the **live** Supabase:
-      `npx tsx scripts/create-admin.ts` + `npx tsx scripts/create-test-accounts.ts`
-- [ ] Confirm each of the 6 roles logs in (admin/consultant/lead+associate assessor/candidate/client; all pwd `admin123`)
-- [ ] Flip `AUTH_ENABLED = true` in `src/lib/auth/config.ts`
-- [ ] Gate the demo-login dropdown to `NODE_ENV !== "production"` (so embedded creds don't ship to prod)
-- [ ] Rotate the `admin123` demo password before real go-live
+## A. Auth go-live
+- [x] Admin account live: `asadeq@viftraining.com` (role `admin`, strong password set via `scripts/reset-password.ts`); login verified on caliber.viftraining.com
+- [x] `AUTH_ENABLED = true` (flipped 2026-06-13)
+- [x] Demo-login dropdown gated to `NODE_ENV !== "production"` (hidden on the live site)
+- [x] Supabase Auth Site URL set to `https://caliber.viftraining.com`
+- [ ] Create additional role logins as needed (consultant / lead+associate assessor / candidate / client) - same flow, set `role` accordingly
+- [ ] Decide on open self-registration: `/register` is reachable when logged out; confirm that's acceptable or lock it down
+- [ ] NOW LIVE-RELEVANT: pre-flip hardening buckets 2-3 below are enforced in prod from here on
 
 ## B. Pre-flip hardening (remaining buckets)
 - [x] Bucket 1 — candidate ownership guards on service-client page reads (shipped, commit 9dbf31f)

@@ -122,42 +122,47 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Quick role login - compact dropdown for dev/demo */}
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <select
-                value={selectedRole}
-                onChange={(e) => {
-                  const id = e.target.value;
-                  setSelectedRole(id);
-                  // Selecting a role logs in immediately — password is
-                  // already embedded in DEMO_ROLES.
-                  const role = DEMO_ROLES.find((r) => r.id === id);
-                  if (role) quickLogin(role.email, role.password, role.redirect);
-                }}
-                disabled={loading}
-                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring appearance-none pr-8"
-              >
-                <option value="">{t("authPublic.login.selectRole")}</option>
-                {DEMO_ROLES.map((r) => (
-                  <option key={r.id} value={r.id}>{t(r.labelKey)}</option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-2 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
-            </div>
-            <Button
-              disabled={loading || !selectedRole}
-              onClick={() => {
-                const role = DEMO_ROLES.find((r) => r.id === selectedRole);
-                if (role) quickLogin(role.email, role.password, role.redirect);
-              }}
-              className="shrink-0"
-            >
-              {loading ? t("authPublic.login.signingIn") : t("authPublic.login.quickLogin")}
-            </Button>
-          </div>
+          {/* Quick role login - dev/demo only. Hidden in production so the
+              embedded demo credentials can't be used to bypass auth. */}
+          {process.env.NODE_ENV !== "production" && (
+            <>
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <select
+                    value={selectedRole}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      setSelectedRole(id);
+                      // Selecting a role logs in immediately - password is
+                      // already embedded in DEMO_ROLES.
+                      const role = DEMO_ROLES.find((r) => r.id === id);
+                      if (role) quickLogin(role.email, role.password, role.redirect);
+                    }}
+                    disabled={loading}
+                    className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring appearance-none pr-8"
+                  >
+                    <option value="">{t("authPublic.login.selectRole")}</option>
+                    {DEMO_ROLES.map((r) => (
+                      <option key={r.id} value={r.id}>{t(r.labelKey)}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-2 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+                </div>
+                <Button
+                  disabled={loading || !selectedRole}
+                  onClick={() => {
+                    const role = DEMO_ROLES.find((r) => r.id === selectedRole);
+                    if (role) quickLogin(role.email, role.password, role.redirect);
+                  }}
+                  className="shrink-0"
+                >
+                  {loading ? t("authPublic.login.signingIn") : t("authPublic.login.quickLogin")}
+                </Button>
+              </div>
 
-          <Separator />
+              <Separator />
+            </>
+          )}
 
           {/* Email/password form */}
           {(

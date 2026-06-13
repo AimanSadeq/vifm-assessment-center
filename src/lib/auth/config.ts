@@ -11,4 +11,4 @@
 //      / associate_assessor).
 //   2. Create at least one admin user via the Supabase dashboard.
 //   3. Follow src/lib/auth/README.md for the rest of the cutover.
-export const AUTH_ENABLED = false;
+export const AUTH_ENABLED = true;

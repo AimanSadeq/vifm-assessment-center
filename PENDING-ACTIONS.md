@@ -16,6 +16,10 @@
       candidate, hiring manager, talent acquisition (each a different lens on the same assessment data).
 
 **P2.3 - Technical assessment: professional competency framework + 3 bands + reports**
+> SUPERSEDED (2026-06-13): the MCQ + AP-framework approach below is replaced by the
+> performance-based Sandbox portal (see the Technical Assessment Portal section at the
+> top). The 3-band model (Basic/Intermediate/Advanced at competency level) carries over;
+> the MCQ runner + AP framework (00076) are retired from the live flow.
 Vision: a professional technical competency framework per FUNCTION (job), online-assessable, to
 hire/screen AND develop; default-general, customisable from a client JD. Model: Function (job, not
 banded) → Competency (assessed unit, banded Basic/Intermediate/Advanced) → Skill (measured by questions).
@@ -33,6 +37,36 @@ Thresholds: Basic < 60 / Intermediate 60-84 / Advanced >= 85.
       Fluent / ARA / CBI / psychometrics) be merged into one overall assessment? Which combine
       logically, which don't, and how scoring would work. (Precedent: Pre-Hire already chains
       quiz + Fluent + CBI.) Deliverable = a written assessment, not code (yet).
+
+## ⭐ Technical Assessment Portal - Performance-Based Sandbox (replaces MCQ)
+
+Decisions + data model + build order: `docs/technical-sandbox-portal.md`. SRS:
+Domain -> Function -> Pillar -> Skill Block (banded competency, sandbox-delivered).
+9 domains / 62 functions seeded as a lazy-load node index; **FP&A 1.7 is the live
+worked example** (3 pillars, 4 skill blocks: 3-statement spreadsheet, sensitivity
+matrix, PVM logic-input, read-only SQL).
+
+**Shipped (all gated: tsc clean + `npm run build` passes; logic verified on scratch PG):**
+- [x] Migration 00077: schema + 9 domains + 62-function node index + full FP&A 1.7 seed
+- [x] Core logic: validators (cell/array-formula/logic/SQL), scoring + banding (60/85), pluggable JD matcher
+- [x] Read-only SQL runner (single SELECT guard, rolled-back tx, statement timeout, hash-match)
+- [x] Service layer (public blueprint w/ answer key stripped; create/start/save/submit)
+- [x] Candidate runner `/tech-sandbox/[token]`: timed, autosave, auto-submit, bilingual EN/AR, banded results; 3 engines (Univer spreadsheet, logic-input, SQL)
+- [x] Token API (start/save/submit) + middleware bypass
+- [x] Admin `/admin/tech-sandbox`: pick function or JD-match shortlist -> issue token link
+
+**Manual steps to activate (USER):**
+- [ ] **Apply migration 00077 to Supabase** (seeds the node index + FP&A 1.7)
+- [ ] **Set `SANDBOX_DATABASE_URL` on Render** to a DEDICATED throwaway Postgres (NEVER the app/Supabase DB) - required for the SQL block 3.1 to execute. Without it, SQL checkpoints score 0 with a clear error.
+
+**Remaining build:**
+- [ ] **Univer grid runtime browser QA** - the spreadsheet engine compiles + lazy-loads; verify on the deployed site that the grid renders, editable cells accept input, and readWork() returns formula+value (incl. data-table array formula). Reconcile facade method names if Univer 0.5 differs.
+- [ ] Add a nav tile/link to `/admin/tech-sandbox` from the admin hub
+- [ ] Email the candidate link on session create + email results + PDF on completion (reuse sendAraEmail / Resend + the report pattern)
+- [ ] PDF report (per-competency band + checkpoint detail + development pointers), bilingual
+- [ ] Admin results view (sessions list + per-candidate breakdown)
+- [ ] Build out more functions beyond FP&A 1.7 (each: pillars + skill blocks + payloads/master/checkpoints); JD-custom path
+- [ ] Python code sandbox engine (deferred; needs isolated-execution design) for Data/AI functions
 
 ## A. Auth go-live
 - [x] Admin account live: `asadeq@viftraining.com` (role `admin`, strong password set via `scripts/reset-password.ts`); login verified on caliber.viftraining.com

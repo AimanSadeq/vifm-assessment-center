@@ -40,6 +40,12 @@ const isPublicVerifyRoute = (pathname: string) =>
 const isPreHireApplyRoute = (pathname: string) =>
   pathname.startsWith("/prehire/apply/") || pathname.startsWith("/api/prehire/");
 
+// Technical sandbox candidate flow - a candidate reaches the performance-based
+// assessment via technical_sandbox_sessions.access_token (no account). Identity
+// is derived server-side from the token. Bypass auth in dev and prod.
+const isTechSandboxRoute = (pathname: string) =>
+  pathname.startsWith("/tech-sandbox/") || pathname.startsWith("/api/tech-sandbox/");
+
 export async function middleware(request: NextRequest) {
   if (
     isAraRespondentRoute(request.nextUrl.pathname) ||
@@ -47,7 +53,8 @@ export async function middleware(request: NextRequest) {
     isReflectRaterRoute(request.nextUrl.pathname) ||
     isPublicCoursesRoute(request.nextUrl.pathname) ||
     isPublicVerifyRoute(request.nextUrl.pathname) ||
-    isPreHireApplyRoute(request.nextUrl.pathname)
+    isPreHireApplyRoute(request.nextUrl.pathname) ||
+    isTechSandboxRoute(request.nextUrl.pathname)
   ) {
     return NextResponse.next();
   }

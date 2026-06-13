@@ -1,5 +1,8 @@
 # VIFM Assessment Center Digital Portal
 
+> **Open work is tracked in [`PENDING-ACTIONS.md`](./PENDING-ACTIONS.md).** When the user
+> asks whether there are any pending actions, read that file and surface the open items.
+
 ## Project Overview
 Custom-built Assessment Center management platform for Virginia Institute of Finance and Management (VIFM). The portal operationalizes the VIFM-AC Framework across four user interfaces: Admin, Assessor, Candidate, and Client. Target market: GCC and MENA region (banking, government, corporate).
 

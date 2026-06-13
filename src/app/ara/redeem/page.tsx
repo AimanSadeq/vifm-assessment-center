@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Redeem Voucher · AI Readiness Compass" };
 
-/** Public voucher redemption — no account required (auth-bypassed in middleware). */
+/** Public voucher redemption - no account required (auth-bypassed in middleware). */
 export default function RedeemVoucherPage() {
   return (
     <div className="min-h-screen bg-background">

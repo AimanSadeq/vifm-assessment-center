@@ -46,13 +46,32 @@ export async function createVoucherBatchAction(formData: FormData) {
   }
 
   const caller = await requireRole(["admin"]).catch(() => null);
+
+  // Region (and client_name) are inherited from the tagged client org when one
+  // is selected - the client's own fields are authoritative. The form region is
+  // only used when no client is tagged.
+  let region = parsed.data.region;
+  let clientName = parsed.data.clientName ?? null;
+  if (parsed.data.organizationId) {
+    const sb = createServiceClient();
+    const { data: org } = await sb
+      .from("ara_organizations")
+      .select("name, region")
+      .eq("id", parsed.data.organizationId)
+      .maybeSingle<{ name: string; region: string }>();
+    if (org) {
+      region = org.region === "saudi" ? "saudi" : "uae";
+      clientName = clientName ?? org.name;
+    }
+  }
+
   const res = await createVoucherBatch({
     count: parsed.data.count,
     label: parsed.data.label ?? null,
     organizationId: parsed.data.organizationId ?? null,
-    clientName: parsed.data.clientName ?? null,
+    clientName,
     tier: "snapshot", // snapshot-only by decision; column stays flexible
-    region: parsed.data.region,
+    region,
     language: parsed.data.language,
     maxUses: parsed.data.maxUses,
     isPractice: true,
@@ -86,7 +105,7 @@ const clientSchema = z.object({
  *  batch can be tagged to it without leaving the page. Admin-only. */
 export async function createClientOrgAction(
   formData: FormData
-): Promise<{ ok: true; org: { id: string; name: string } } | { ok: false; error: string }> {
+): Promise<{ ok: true; org: { id: string; name: string; region: string } } | { ok: false; error: string }> {
   const denied = await requireAdmin();
   if (denied) return denied;
 
@@ -109,8 +128,8 @@ export async function createClientOrgAction(
       region: parsed.data.region,
       sector: parsed.data.sector,
     })
-    .select("id, name")
-    .single<{ id: string; name: string }>();
+    .select("id, name, region")
+    .single<{ id: string; name: string; region: string }>();
   if (error || !data) return { ok: false, error: error?.message ?? "Could not create client" };
 
   revalidatePath("/ara/admin/vouchers");

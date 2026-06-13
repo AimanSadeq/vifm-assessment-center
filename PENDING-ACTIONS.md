@@ -32,8 +32,11 @@
 - [x] Public redeem page (`/ara/redeem` — code + name + email + **company**, auth-bypassed) → drops into `/ara/respond/{token}`
 - [x] Apply migration 00075 to live Supabase (done 2026-06-13)
 - [x] Nav tile on the ARA admin hub (`/ara/admin` → Vouchers)
-- [ ] Verify end-to-end on deployed app: generate code → redeem → take run → result
-- [ ] Phase 4 polish (optional): results email on completion, redemption analytics (issued→redeemed→completed funnel), per-company insights view, deep-dive tier option (currently snapshot-only by decision)
+- [x] Add-client inline on the vouchers screen; region inherits from the tagged client
+- [x] Per-company redemptions insights view (delegates / started / completed / completion% + CSV)
+- [x] Back link on the vouchers screen
+- [ ] Verify end-to-end on deployed app: generate code, redeem, take run, see result
+- [ ] Phase 4 polish (optional): results email on completion, full funnel analytics (issued vs redeemed vs completed), deep-dive tier option (currently snapshot-only by decision)
 
 ## D. Minor / cleanup
 - [ ] Remove dead i18n keys `tech.take.chooseTitle` / `chooseIntro` (deprecated broad-domain screener, no live references)

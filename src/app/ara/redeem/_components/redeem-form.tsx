@@ -31,7 +31,7 @@ export function RedeemForm() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-xl">
-          <Compass className="h-5 w-5 text-[#5391D5]" /> AI Readiness Compass — Practice Access
+          <Compass className="h-5 w-5 text-[#5391D5]" /> AI Readiness Compass - Practice Access
         </CardTitle>
         <CardDescription>
           Enter your voucher code and details to start your practice assessment.
@@ -65,7 +65,7 @@ export function RedeemForm() {
             {loading ? "Starting…" : "Start practice assessment"}
           </Button>
           <p className="text-center text-[11px] text-muted-foreground">
-            This is a practice run for development purposes — not an official certified assessment.
+            This is a practice run for development purposes - not an official certified assessment.
           </p>
         </form>
       </CardContent>

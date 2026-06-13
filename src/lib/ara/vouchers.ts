@@ -1,7 +1,7 @@
 import { createServiceClient } from "@/lib/supabase/server";
 
 // ─────────────────────────────────────────────────────────────
-// ARA voucher service — generate + redeem PRACTICE AI Readiness
+// ARA voucher service - generate + redeem PRACTICE AI Readiness
 // Compass (ARC) access codes. Server-only (uses the service-role
 // client). Admin generation is gated by the calling server action;
 // redemption is public (the delegate has no session) and validated
@@ -86,8 +86,8 @@ export type RedeemInput = {
   userAgent?: string | null;
 };
 
-const PRACTICE_ORG_NAME_EN = "AI Readiness Compass — Practice";
-const PRACTICE_ORG_NAME_AR = "بوصلة الجاهزية للذكاء الاصطناعي — تدريب";
+const PRACTICE_ORG_NAME_EN = "AI Readiness Compass - Practice";
+const PRACTICE_ORG_NAME_AR = "بوصلة الجاهزية للذكاء الاصطناعي - تدريب";
 
 type ClaimedVoucher = {
   id: string;
@@ -116,7 +116,7 @@ export async function redeemVoucher(
 
   const sb = createServiceClient();
 
-  // 1. Atomic claim — consumes a seat only if the voucher is valid.
+  // 1. Atomic claim - consumes a seat only if the voucher is valid.
   const { data: claimed, error: claimErr } = await sb.rpc("ara_voucher_claim", { p_code: code });
   if (claimErr) return { ok: false, error: "Could not redeem this code. Please try again." };
   const voucher = (Array.isArray(claimed) ? claimed[0] : claimed) as ClaimedVoucher | undefined;

@@ -12,7 +12,7 @@ const schema = z.object({
 });
 
 /**
- * Public voucher redemption. No session — the delegate redeems a code, entering
+ * Public voucher redemption. No session - the delegate redeems a code, entering
  * name, email, and company (required, for future per-company insights). Returns
  * { ok, redirectTo } so the client component performs the redirect (calling
  * redirect() inside a server action mid-transition swallows the throw).

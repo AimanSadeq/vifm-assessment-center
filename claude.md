@@ -2,6 +2,10 @@
 
 > **Open work is tracked in [`PENDING-ACTIONS.md`](./PENDING-ACTIONS.md).** When the user
 > asks whether there are any pending actions, read that file and surface the open items.
+>
+> **Conventions (SOP):**
+> - **No em dashes (`—`).** Use regular hyphens (`-`) in all code, UI strings, content, comments, and chat replies.
+> - **Every screen needs a back affordance.** New pages must include a back link (e.g. the shared `BackLink` component) so users can return to the previous screen.
 
 ## Project Overview
 Custom-built Assessment Center management platform for Virginia Institute of Finance and Management (VIFM). The portal operationalizes the VIFM-AC Framework across four user interfaces: Admin, Assessor, Candidate, and Client. Target market: GCC and MENA region (banking, government, corporate).

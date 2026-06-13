@@ -21,12 +21,27 @@ type VoucherRow = {
   expires_at: string | null;
   created_at: string;
 };
-type OrgOption = { id: string; name: string };
+type OrgOption = { id: string; name: string; region: string };
+type CompanyRollup = {
+  company: string;
+  delegates: number;
+  started: number;
+  completed: number;
+  lastRedeemed: string | null;
+};
 
 const selectClass =
   "h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
-export function VouchersClient({ vouchers, orgs }: { vouchers: VoucherRow[]; orgs: OrgOption[] }) {
+export function VouchersClient({
+  vouchers,
+  orgs,
+  companies,
+}: {
+  vouchers: VoucherRow[];
+  orgs: OrgOption[];
+  companies: CompanyRollup[];
+}) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [generated, setGenerated] = useState<string[]>([]);
@@ -35,6 +50,8 @@ export function VouchersClient({ vouchers, orgs }: { vouchers: VoucherRow[]; org
   // Client orgs are stateful so a newly-added client appears + auto-selects.
   const [orgList, setOrgList] = useState<OrgOption[]>(orgs);
   const [selectedOrg, setSelectedOrg] = useState("");
+  // Region inherits from the tagged client; only editable when no client is set.
+  const [batchRegion, setBatchRegion] = useState("uae");
   const [showAddClient, setShowAddClient] = useState(false);
   const [newClientName, setNewClientName] = useState("");
   const [newClientRegion, setNewClientRegion] = useState("uae");
@@ -61,6 +78,7 @@ export function VouchersClient({ vouchers, orgs }: { vouchers: VoucherRow[]; org
     }
     setOrgList((prev) => [res.org, ...prev]);
     setSelectedOrg(res.org.id);
+    setBatchRegion(res.org.region);
     setNewClientName("");
     setShowAddClient(false);
   }
@@ -71,13 +89,12 @@ export function VouchersClient({ vouchers, orgs }: { vouchers: VoucherRow[]; org
     setTimeout(() => setCopied(null), 1500);
   }
 
-  function downloadCsv(codes: string[]) {
-    const csv = "code\n" + codes.join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
+  function downloadCsv(lines: string[], prefix = "arc-export") {
+    const blob = new Blob([lines.join("\n")], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `arc-vouchers-${Date.now()}.csv`;
+    a.download = `${prefix}-${Date.now()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -106,7 +123,7 @@ export function VouchersClient({ vouchers, orgs }: { vouchers: VoucherRow[]; org
     <div className="space-y-8">
       <div>
         <h1 className="flex items-center gap-2 text-2xl font-bold text-[#010131]">
-          <Ticket className="h-6 w-6 text-[#5391D5]" /> AI Readiness Compass — Vouchers
+          <Ticket className="h-6 w-6 text-[#5391D5]" /> AI Readiness Compass - Vouchers
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Generate practice-access codes for clients. Each code provisions a sandbox (practice) Compass run.
@@ -149,9 +166,14 @@ export function VouchersClient({ vouchers, orgs }: { vouchers: VoucherRow[]; org
                 name="organizationId"
                 className={selectClass}
                 value={selectedOrg}
-                onChange={(e) => setSelectedOrg(e.target.value)}
+                onChange={(e) => {
+                  const id = e.target.value;
+                  setSelectedOrg(id);
+                  const org = orgList.find((o) => o.id === id);
+                  if (org) setBatchRegion(org.region);
+                }}
               >
-                <option value="">— none —</option>
+                <option value="">- none -</option>
                 {orgList.map((o) => (
                   <option key={o.id} value={o.id}>{o.name}</option>
                 ))}
@@ -191,8 +213,15 @@ export function VouchersClient({ vouchers, orgs }: { vouchers: VoucherRow[]; org
               <Input id="expiresAt" name="expiresAt" type="date" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="region">Region</Label>
-              <select id="region" name="region" className={selectClass} defaultValue="uae">
+              <Label htmlFor="region">Region {selectedOrg && <span className="text-xs font-normal text-muted-foreground">(from client)</span>}</Label>
+              <select
+                id="region"
+                name="region"
+                className={selectClass}
+                value={batchRegion}
+                onChange={(e) => setBatchRegion(e.target.value)}
+                disabled={!!selectedOrg}
+              >
                 <option value="uae">UAE</option>
                 <option value="saudi">Saudi</option>
               </select>
@@ -222,7 +251,7 @@ export function VouchersClient({ vouchers, orgs }: { vouchers: VoucherRow[]; org
                   <Button size="sm" variant="outline" className="gap-1" onClick={() => copy(generated.join("\n"), "all")}>
                     {copied === "all" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} Copy all
                   </Button>
-                  <Button size="sm" variant="outline" className="gap-1" onClick={() => downloadCsv(generated)}>
+                  <Button size="sm" variant="outline" className="gap-1" onClick={() => downloadCsv(["code", ...generated], "arc-vouchers")}>
                     <Download className="h-3.5 w-3.5" /> CSV
                   </Button>
                 </div>
@@ -266,13 +295,13 @@ export function VouchersClient({ vouchers, orgs }: { vouchers: VoucherRow[]; org
                           {v.code} {copied === v.id ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3 text-muted-foreground" />}
                         </button>
                       </td>
-                      <td className="py-2 pe-3 text-muted-foreground">{v.label ?? v.client_name ?? "—"}</td>
+                      <td className="py-2 pe-3 text-muted-foreground">{v.label ?? v.client_name ?? "-"}</td>
                       <td className="py-2 pe-3 tabular-nums">{v.used_count}/{v.max_uses}</td>
                       <td className="py-2 pe-3">
                         <Badge variant={v.status === "active" ? "secondary" : "outline"}>{v.status}</Badge>
                       </td>
                       <td className="py-2 pe-3 text-muted-foreground">
-                        {v.expires_at ? new Date(v.expires_at).toLocaleDateString() : "—"}
+                        {v.expires_at ? new Date(v.expires_at).toLocaleDateString() : "-"}
                       </td>
                       <td className="py-2 text-right">
                         <Button size="sm" variant="ghost" className="gap-1" disabled={pending} onClick={() => toggle(v)}>
@@ -281,6 +310,72 @@ export function VouchersClient({ vouchers, orgs }: { vouchers: VoucherRow[]; org
                       </td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Redemptions by company */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg">Redemptions by company</CardTitle>
+              <CardDescription>How each company&apos;s delegates are progressing through the Compass.</CardDescription>
+            </div>
+            {companies.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1"
+                onClick={() =>
+                  downloadCsv([
+                    "company,delegates,started,completed,last_redeemed",
+                    ...companies.map((c) =>
+                      [c.company, c.delegates, c.started, c.completed, c.lastRedeemed ?? ""].join(",")
+                    ),
+                  ])
+                }
+              >
+                <Download className="h-3.5 w-3.5" /> CSV
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {companies.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No redemptions yet.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                    <th className="py-2 pe-3 font-medium">Company</th>
+                    <th className="py-2 pe-3 font-medium">Delegates</th>
+                    <th className="py-2 pe-3 font-medium">Started</th>
+                    <th className="py-2 pe-3 font-medium">Completed</th>
+                    <th className="py-2 pe-3 font-medium">Completion</th>
+                    <th className="py-2 font-medium">Last redeemed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {companies.map((c) => {
+                    const pct = c.delegates > 0 ? Math.round((c.completed / c.delegates) * 100) : 0;
+                    return (
+                      <tr key={c.company} className="border-b border-border/60">
+                        <td className="py-2 pe-3 font-medium">{c.company}</td>
+                        <td className="py-2 pe-3 tabular-nums">{c.delegates}</td>
+                        <td className="py-2 pe-3 tabular-nums">{c.started}</td>
+                        <td className="py-2 pe-3 tabular-nums">{c.completed}</td>
+                        <td className="py-2 pe-3 tabular-nums">{pct}%</td>
+                        <td className="py-2 text-muted-foreground">
+                          {c.lastRedeemed ? new Date(c.lastRedeemed).toLocaleDateString() : "-"}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

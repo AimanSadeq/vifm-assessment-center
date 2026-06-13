@@ -8,6 +8,12 @@ import { AUTH_ENABLED } from "@/lib/auth/config";
 const isAraRespondentRoute = (pathname: string) =>
   pathname.startsWith("/ara/respond/") || pathname.startsWith("/api/ara/respond/");
 
+// Public voucher redemption - a delegate redeems a practice-access code with no
+// account; the code is validated server-side via the ara_voucher_claim RPC.
+// Bypass auth in dev and prod, like the ARA respondent flow.
+const isAraRedeemRoute = (pathname: string) =>
+  pathname === "/ara/redeem" || pathname.startsWith("/ara/redeem/");
+
 // Reflect rater routes follow the same token pattern - rater identity
 // is established server-side from reflect_raters.access_token.
 const isReflectRaterRoute = (pathname: string) =>
@@ -37,6 +43,7 @@ const isPreHireApplyRoute = (pathname: string) =>
 export async function middleware(request: NextRequest) {
   if (
     isAraRespondentRoute(request.nextUrl.pathname) ||
+    isAraRedeemRoute(request.nextUrl.pathname) ||
     isReflectRaterRoute(request.nextUrl.pathname) ||
     isPublicCoursesRoute(request.nextUrl.pathname) ||
     isPublicVerifyRoute(request.nextUrl.pathname) ||

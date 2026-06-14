@@ -116,3 +116,9 @@ matrix, PVM logic-input, read-only SQL).
 
 ## D. Minor / cleanup
 - [ ] Remove dead i18n keys `tech.take.chooseTitle` / `chooseIntro` (deprecated broad-domain screener, no live references)
+- [ ] **Course-catalogue vertical tag hygiene** (surfaced during the 2026-06-14 ARC e2e test). The recommender now floats AI-relevant verticals (`artificial_intelligence`/`analytics`/`business_intelligence`) to the top for AI-readiness results - but some courses are mis-categorised, so non-AI courses ride that boost. Concrete example: "Microsoft Office Specialist Certification (Office 365)" and "Microsoft PowerPoint Associate" are tagged `vertical = business_intelligence`, so they surfaced as #2/#3 AI-readiness recommendations. Audit `vifm_courses.vertical` (admin `/admin/courses/[id]`) and re-classify office/productivity courses out of the AI/data verticals. Not a code bug - data hygiene; makes ARC recs pristine for client demos.
+
+## F. AI Readiness Compass - recently shipped (2026-06-14)
+- [x] **Graded individual question types** (`situational_judgment` + `knowledge_check`) on the 4 personal factors - migrations 00080/00081, server-side scored, answer key never sent to the browser, bilingual chips. Verified e2e on production (`caliber.viftraining.com`).
+- [x] **Recommender fix** (AI-readiness surfaces only): min-gap threshold (>= 0.5) so trivial gaps stop recommending, and AI/data verticals floated to the top so an AI-readiness gap recommends AI training (not "The Art of Public Speaking"). AC + Reflect recommenders intentionally unchanged.
+- [ ] Seed items 301-312 carry `validation_evidence.review_status='ai_proposed'` - SME-review + flip to `verified` before relying on them in a client deliverable.

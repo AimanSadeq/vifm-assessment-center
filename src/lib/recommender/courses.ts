@@ -39,10 +39,12 @@ const TAG_LIMIT_DEFAULT = 8;
 // Above this score-per-result we emit "high-fit" badge in the UI.
 export const HIGH_FIT_THRESHOLD = 4;
 
-// Minimum gap (on the shared 1-5 scale) worth a training recommendation. Below
-// this the person/cohort is effectively on-target; pushing a course for a ~0.1
-// shortfall produced misleadingly-strong "fit" recs, so we suppress them. Applied
-// per-unit (per candidate/respondent) before any cohort summing.
+// Minimum gap (on the 1-5 scale) worth a training recommendation. Used ONLY by
+// the AI Readiness Compass recommenders (personal snapshot + org pillars): below
+// this the respondent is effectively on-target, and pushing a course for a ~0.1
+// shortfall produced misleadingly-strong "fit" recs. The AC behavioural and
+// Reflect 360 recommenders intentionally do NOT apply this - they recommend on
+// any positive gap.
 export const MIN_MEANINGFUL_GAP = 0.5;
 
 // AI-readiness contexts (ARA personal snapshot + org pillars) should recommend
@@ -144,7 +146,7 @@ export async function recommendCoursesForAcCandidate(args: {
       name_ar: row.competencies?.name_ar ?? null,
       gap: target - (row.final_score ?? target),
     }))
-    .filter((g) => g.gap >= MIN_MEANINGFUL_GAP);
+    .filter((g) => g.gap > 0);
 
   if (gaps.length === 0) return [];
 
@@ -188,7 +190,7 @@ export async function recommendCoursesForAcCohort(args: {
   const gapByCompetency = new Map<string, { name: string; name_ar: string | null; gap: number }>();
   for (const row of consensus) {
     const gap = target - (row.final_score ?? target);
-    if (gap < MIN_MEANINGFUL_GAP) continue;
+    if (gap <= 0) continue;
     const existing = gapByCompetency.get(row.competency_id);
     if (existing) {
       existing.gap += gap;
@@ -317,7 +319,7 @@ export async function recommendCoursesForReflectParticipant(args: {
         gap: target - observed,
       };
     })
-    .filter((g): g is RawGap => g !== null && g.gap >= MIN_MEANINGFUL_GAP);
+    .filter((g): g is RawGap => g !== null && g.gap > 0);
 
   if (rawGaps.length === 0) return { recommendations: [], unmapped: [] };
 
@@ -403,7 +405,7 @@ export async function recommendCoursesForReflectCohort(args: {
     const observed = c.mean;
     if (observed === null) continue;
     const gapPerParticipant = target - observed;
-    if (gapPerParticipant < MIN_MEANINGFUL_GAP) continue;
+    if (gapPerParticipant <= 0) continue;
     rawGaps.push({
       reflect_name: c.name_en,
       gap: gapPerParticipant * Math.max(c.distribution.counted, 1),

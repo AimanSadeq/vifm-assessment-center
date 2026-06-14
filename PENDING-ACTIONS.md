@@ -12,8 +12,7 @@
 - [ ] Collect completions + share an aggregated readout
 
 **P2.2 - Sample reports from the VIFM behavioural assessment**
-- [ ] Produce sample reports off VIFM behavioural competencies for THREE audiences:
-      candidate, hiring manager, talent acquisition (each a different lens on the same assessment data).
+- [x] Produced THREE audience-lens sample PDFs off one synthetic persona (Noura Al-Otaibi, Senior Manager - Corporate Banking, 3.1/5 Ready with Development) using the current v2 competency names: candidate (development), hiring manager (decision), talent acquisition (screening). Files in `public/samples/VIFM-AC-Sample-{Candidate,Hiring-Manager,Talent-Acquisition}-Report.pdf`; regenerate via `npx tsx scripts/build-audience-reports.tsx`. New lens components in `src/lib/reports/` (not yet wired to portal routes - that's the optional "productize" follow-up if the client wants self-serve generation).
 
 **P2.3 - Technical assessment: professional competency framework + 3 bands + reports**
 > SUPERSEDED (2026-06-13): the MCQ + AP-framework approach below is replaced by the

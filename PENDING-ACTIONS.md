@@ -60,8 +60,10 @@ matrix, PVM logic-input, read-only SQL).
 - [ ] **Set `SANDBOX_DATABASE_URL` on Render** to a DEDICATED throwaway Postgres (NEVER the app/Supabase DB) - required for the SQL block 3.1 to execute. Without it, SQL checkpoints score 0 with a clear error.
 
 **Remaining build:**
-- [ ] **Univer grid runtime browser QA** - the spreadsheet engine compiles + lazy-loads; verify on the deployed site that the grid renders, editable cells accept input, and readWork() returns formula+value (incl. data-table array formula). Reconcile facade method names if Univer 0.5 differs.
+- [x] **Univer grid runtime QA** - grid renders + accepts input; verified end-to-end on the deployed site (3-statement, sensitivity, PVM, SQL all score correctly). Fixes: required `name`+`sheetOrder`, `theme: defaultTheme`, reader via onRegister callback (next/dynamic drops refs) reading from the workbook snapshot.
 - [x] Nav chip to `/admin/tech-sandbox` on the admin hub hero
+- [x] Per-checkpoint pass/fail breakdown on the results screen
+- [x] Admin-only Model Answers page (`/admin/tech-sandbox/answers`: model values/formulas, master SQL, checkpoints+weights)
 - [ ] Email the candidate link on session create + email results + PDF on completion (reuse sendAraEmail / Resend + the report pattern)
 - [ ] PDF report (per-competency band + checkpoint detail + development pointers), bilingual
 - [ ] Admin results view (sessions list + per-candidate breakdown)

@@ -64,8 +64,8 @@ matrix, PVM logic-input, read-only SQL).
 - [x] Nav chip to `/admin/tech-sandbox` on the admin hub hero
 - [x] Per-checkpoint pass/fail breakdown on the results screen
 - [x] Admin-only Model Answers page (`/admin/tech-sandbox/answers`: model values/formulas, master SQL, checkpoints+weights)
-- [ ] Email the candidate link on session create + email results + PDF on completion (reuse sendAraEmail / Resend + the report pattern)
-- [ ] PDF report (per-competency band + checkpoint detail + development pointers), bilingual
+- [ ] Email the candidate link on session create + email results + the PDF on completion (reuse sendAraEmail / Resend). BLOCKED on Resend domain verification (see §E). PDF generator is ready to attach.
+- [x] PDF report (overall + per-pillar + per-block band + per-checkpoint pass/fail), downloadable from results. English-only (React-PDF; matches Fluent cert). Route: GET /api/tech-sandbox/[token]/report
 - [ ] Admin results view (sessions list + per-candidate breakdown)
 - [ ] Build out more functions beyond FP&A 1.7 (each: pillars + skill blocks + payloads/master/checkpoints); JD-custom path
 - [ ] Python code sandbox engine (deferred; needs isolated-execution design) for Data/AI functions

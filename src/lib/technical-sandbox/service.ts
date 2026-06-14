@@ -462,3 +462,86 @@ export async function getAnswerKey(): Promise<AnswerKeyFunction[]> {
   }
   return out;
 }
+
+// ── Completed-session report data (for PDF + future email) ──
+export interface ReportBlock {
+  nameEn: string;
+  frameworkRef: string | null;
+  scorePct: number;
+  band: string;
+  checkpoints: { label: string; passed: boolean }[];
+}
+export interface ReportPillar {
+  nameEn: string;
+  advancedCount: number;
+  intermediateCount: number;
+  basicCount: number;
+  blocks: ReportBlock[];
+}
+export interface SessionReport {
+  functionName: string;
+  nodeId: string | null;
+  candidateName: string | null;
+  candidateEmail: string | null;
+  organizationName: string | null;
+  submittedAt: string | null;
+  overallPct: number;
+  overallBand: string;
+  pillars: ReportPillar[];
+}
+
+export async function getSessionReport(token: string): Promise<SessionReport | null> {
+  const sb = createServiceClient();
+  const session = await getSessionByToken(token);
+  if (!session || session.status !== "submitted") return null;
+
+  const { data: fn } = await sb
+    .from("technical_functions")
+    .select("name_en, node_id")
+    .eq("id", session.function_id)
+    .single();
+  const { pillars, blocks } = await loadBlocks(session.function_id);
+  const { data: responses } = await sb
+    .from("technical_sandbox_responses")
+    .select("skill_block_id, score_pct, band, checkpoint_results")
+    .eq("session_id", session.id);
+  const byBlock = new Map(
+    (responses ?? []).map((r) => [r.skill_block_id, r]),
+  );
+
+  const reportPillars: ReportPillar[] = pillars.map((p) => {
+    const pBlocks = blocks.filter((b) => b.pillar_id === p.id);
+    const rBlocks: ReportBlock[] = pBlocks.map((b) => {
+      const resp = byBlock.get(b.id);
+      const cps = ((resp?.checkpoint_results ?? []) as { label_en?: string; id?: string; passed?: boolean }[]).map(
+        (c) => ({ label: c.label_en ?? c.id ?? "", passed: !!c.passed }),
+      );
+      return {
+        nameEn: b.name_en,
+        frameworkRef: b.framework_ref,
+        scorePct: Number(resp?.score_pct ?? 0),
+        band: String(resp?.band ?? "basic"),
+        checkpoints: cps,
+      };
+    });
+    return {
+      nameEn: p.name_en,
+      advancedCount: rBlocks.filter((x) => x.band === "advanced").length,
+      intermediateCount: rBlocks.filter((x) => x.band === "intermediate").length,
+      basicCount: rBlocks.filter((x) => x.band === "basic").length,
+      blocks: rBlocks,
+    };
+  });
+
+  return {
+    functionName: fn?.name_en ?? "Technical Assessment",
+    nodeId: fn?.node_id ?? null,
+    candidateName: session.candidate_name,
+    candidateEmail: session.candidate_email,
+    organizationName: session.organization_name,
+    submittedAt: session.submitted_at,
+    overallPct: Number(session.overall_score_pct ?? 0),
+    overallBand: String(session.overall_band ?? "basic"),
+    pillars: reportPillars,
+  };
+}

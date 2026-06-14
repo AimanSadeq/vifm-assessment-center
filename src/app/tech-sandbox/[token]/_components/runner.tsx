@@ -146,7 +146,7 @@ export function Runner({
   }
 
   if (submitted) {
-    return <Results blueprint={blueprint} result={result} locale={locale} />;
+    return <Results token={token} blueprint={blueprint} result={result} locale={locale} />;
   }
 
   const fmt = (s: number | null) =>
@@ -259,10 +259,12 @@ export function Runner({
 }
 
 function Results({
+  token,
   blueprint,
   result,
   locale,
 }: {
+  token: string;
   blueprint: PublicBlueprint;
   result: SubmitResult["result"] | null;
   locale: "en" | "ar";
@@ -271,9 +273,17 @@ function Results({
   const score = result?.score;
   return (
     <div className="mx-auto max-w-3xl space-y-4 p-4">
-      <Link href="/" className="text-sm text-[#5391D5] hover:underline">
-        {ar ? "الرئيسية" : "Home"}
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link href="/" className="text-sm text-[#5391D5] hover:underline">
+          {ar ? "الرئيسية" : "Home"}
+        </Link>
+        <a
+          href={`/api/tech-sandbox/${token}/report`}
+          className="rounded-md bg-[#010131] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+        >
+          {ar ? "تنزيل التقرير PDF" : "Download PDF report"}
+        </a>
+      </div>
       <div className="rounded-lg border border-border bg-card p-6 text-center">
         <h1 className="text-lg font-semibold text-foreground">
           {ar ? "اكتمل التقييم" : "Assessment complete"}

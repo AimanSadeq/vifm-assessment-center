@@ -62,22 +62,28 @@ export async function generateVouchersAction(input: {
   label?: string;
   maxUsesPerCode?: number;
   expiresAt?: string;
-}): Promise<Result<{ codes: string[] }>> {
+  delegates?: { name: string; email: string }[];
+}): Promise<Result<{ codes: string[]; assignments: { name: string; email: string; code: string }[] }>> {
   const g = await guard();
   if ("error" in g) return g;
   if (!input.functionId) return { error: "Select a function." };
-  if (!input.count || input.count < 1) return { error: "Enter how many codes to generate." };
-  const { codes } = await generateVoucherBatch({
+  const named = (input.delegates ?? []).filter((d) => d.name?.trim() && d.email?.trim());
+  if (named.length === 0 && (!input.count || input.count < 1)) {
+    return { error: "Enter how many codes to generate, or add at least one delegate." };
+  }
+  const { codes, assignments } = await generateVoucherBatch({
     functionId: input.functionId,
     count: input.count,
     organizationName: input.organizationName || null,
     label: input.label || null,
     maxUsesPerCode: input.maxUsesPerCode ?? 1,
     expiresAt: input.expiresAt || null,
+    delegates: named.length > 0 ? named : null,
     createdBy: "userId" in g ? g.userId : undefined,
   });
   revalidatePath("/admin/tech-sandbox/vouchers");
-  return { ok: true, codes };
+  revalidatePath("/admin/tech-sandbox");
+  return { ok: true, codes, assignments };
 }
 
 export async function setVoucherStatusAction(input: {

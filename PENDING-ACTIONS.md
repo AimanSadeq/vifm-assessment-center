@@ -57,7 +57,7 @@ matrix, PVM logic-input, read-only SQL).
 - [x] Voucher system (00078): admin generates a batch (single-use codes or one shared seat-pool code) bound to a function + client; public redeem `/tech-sandbox/redeem` (code+name+email+company) -> provisions a sitting. Atomic claim + release verified on scratch PG (concurrency, expiry, disabled)
 
 **Manual steps to activate (USER):**
-- [ ] **Apply migration 00078 to Supabase** (technical sandbox voucher tables + claim/release RPCs)
+- [ ] **Apply migrations 00078 + 00079 to Supabase** (voucher tables + claim/release RPCs; 00079 adds per-delegate assigned_name/email)
 - [ ] **Apply migration 00077 to Supabase** (seeds the node index + FP&A 1.7)
 - [ ] **Set `SANDBOX_DATABASE_URL` on Render** to a DEDICATED throwaway Postgres (NEVER the app/Supabase DB) - required for the SQL block 3.1 to execute. Without it, SQL checkpoints score 0 with a clear error.
 

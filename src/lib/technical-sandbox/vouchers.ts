@@ -25,6 +25,10 @@ export function normalizeCode(code: string): string {
   return code.trim().toUpperCase();
 }
 
+export interface Delegate {
+  name: string;
+  email: string;
+}
 export interface GenerateBatchInput {
   functionId: string;
   count: number;
@@ -33,30 +37,61 @@ export interface GenerateBatchInput {
   maxUsesPerCode?: number; // 1 = single-use codes (default), >1 = seat-pool code
   expiresAt?: string | null;
   createdBy?: string | null;
+  /** When provided, generate ONE named single-use code per delegate. */
+  delegates?: Delegate[] | null;
+}
+export interface GeneratedAssignment {
+  name: string;
+  email: string;
+  code: string;
 }
 
-/** Generate a batch of voucher codes for one function. Returns the codes. */
+/** Generate a batch of voucher codes for one function. Returns codes + (if named) assignments. */
 export async function generateVoucherBatch(input: GenerateBatchInput) {
   const sb = createServiceClient();
-  const count = Math.max(1, Math.min(500, Math.floor(input.count)));
-  const maxUses = Math.max(1, Math.floor(input.maxUsesPerCode ?? 1));
   const batchId = crypto.randomUUID();
-  const rows = Array.from({ length: count }, () => ({
-    code: generateVoucherCode(),
-    label: input.label ?? null,
-    batch_id: batchId,
-    function_id: input.functionId,
-    organization_name: input.organizationName ?? null,
-    max_uses: maxUses,
-    expires_at: input.expiresAt ?? null,
-    created_by: input.createdBy ?? null,
-  }));
+  const delegates = (input.delegates ?? []).filter((d) => d.name?.trim() && d.email?.trim());
+
+  let rows: Record<string, unknown>[];
+  if (delegates.length > 0) {
+    // One named, single-use code per delegate.
+    rows = delegates.slice(0, 1000).map((d) => ({
+      code: generateVoucherCode(),
+      label: input.label ?? null,
+      batch_id: batchId,
+      function_id: input.functionId,
+      organization_name: input.organizationName ?? null,
+      max_uses: 1,
+      assigned_name: d.name.trim(),
+      assigned_email: d.email.trim(),
+      expires_at: input.expiresAt ?? null,
+      created_by: input.createdBy ?? null,
+    }));
+  } else {
+    const count = Math.max(1, Math.min(500, Math.floor(input.count)));
+    const maxUses = Math.max(1, Math.floor(input.maxUsesPerCode ?? 1));
+    rows = Array.from({ length: count }, () => ({
+      code: generateVoucherCode(),
+      label: input.label ?? null,
+      batch_id: batchId,
+      function_id: input.functionId,
+      organization_name: input.organizationName ?? null,
+      max_uses: maxUses,
+      expires_at: input.expiresAt ?? null,
+      created_by: input.createdBy ?? null,
+    }));
+  }
+
   const { data, error } = await sb
     .from("technical_sandbox_vouchers")
     .insert(rows)
-    .select("code");
+    .select("code, assigned_name, assigned_email");
   if (error) throw error;
-  return { batchId, codes: (data ?? []).map((r) => r.code as string) };
+  const codes = (data ?? []).map((r) => r.code as string);
+  const assignments: GeneratedAssignment[] = (data ?? [])
+    .filter((r) => r.assigned_email)
+    .map((r) => ({ name: r.assigned_name as string, email: r.assigned_email as string, code: r.code as string }));
+  return { batchId, codes, assignments };
 }
 
 export interface RedeemInput {
@@ -128,6 +163,8 @@ export interface VoucherRow {
   status: string;
   expiresAt: string | null;
   batchId: string | null;
+  assignedName: string | null;
+  assignedEmail: string | null;
   createdAt: string;
 }
 
@@ -136,7 +173,7 @@ export async function listVouchers(): Promise<VoucherRow[]> {
   const sb = createServiceClient();
   const { data, error } = await sb
     .from("technical_sandbox_vouchers")
-    .select("id, code, label, organization_name, function_id, max_uses, used_count, status, expires_at, batch_id, created_at")
+    .select("id, code, label, organization_name, function_id, max_uses, used_count, status, expires_at, batch_id, assigned_name, assigned_email, created_at")
     .order("created_at", { ascending: false })
     .limit(500);
   if (error) throw error;
@@ -151,6 +188,8 @@ export async function listVouchers(): Promise<VoucherRow[]> {
     status: v.status,
     expiresAt: v.expires_at,
     batchId: v.batch_id,
+    assignedName: v.assigned_name,
+    assignedEmail: v.assigned_email,
     createdAt: v.created_at,
   }));
 }

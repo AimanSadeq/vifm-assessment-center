@@ -545,3 +545,73 @@ export async function getSessionReport(token: string): Promise<SessionReport | n
     pillars: reportPillars,
   };
 }
+
+// ── Framework overview (showcase): domains -> functions -> (active) pillars/blocks ──
+export interface OverviewBlock { nameEn: string; engineType: EngineType; frameworkRef: string | null }
+export interface OverviewPillar { nameEn: string; blocks: OverviewBlock[] }
+export interface OverviewFunction {
+  id: string;
+  nodeId: string | null;
+  nameEn: string;
+  status: "active" | "inactive";
+  pillars: OverviewPillar[];
+}
+export interface OverviewDomain {
+  key: string;
+  nameEn: string;
+  functions: OverviewFunction[];
+}
+
+export async function getFrameworkOverview(): Promise<OverviewDomain[]> {
+  const sb = createServiceClient();
+  const { data: domains } = await sb
+    .from("technical_domains")
+    .select("key, name_en, sort_order")
+    .order("sort_order");
+  const { data: fns } = await sb
+    .from("technical_functions")
+    .select("id, node_id, name_en, domain_key, node_status")
+    .not("node_id", "is", null)
+    .order("node_id");
+
+  // Pillars/blocks only for active functions (cheap; one active today).
+  const activeIds = (fns ?? []).filter((f) => f.node_status === "active").map((f) => f.id);
+  const pillarsByFn = new Map<string, OverviewPillar[]>();
+  for (const fid of activeIds) {
+    const { pillars, blocks } = await loadBlocks(fid);
+    pillarsByFn.set(
+      fid,
+      pillars.map((p) => ({
+        nameEn: p.name_en,
+        blocks: blocks
+          .filter((b) => b.pillar_id === p.id)
+          .map((b) => ({
+            nameEn: b.name_en,
+            engineType: b.engine_type as EngineType,
+            frameworkRef: b.framework_ref,
+          })),
+      })),
+    );
+  }
+
+  const order = new Map((domains ?? []).map((d, i) => [d.key, i]));
+  const wanted = new Set((domains ?? []).map((d) => d.key));
+  const byDomain = new Map<string, OverviewFunction[]>();
+  for (const f of fns ?? []) {
+    if (!f.domain_key || !wanted.has(f.domain_key)) continue;
+    const arr = byDomain.get(f.domain_key) ?? [];
+    arr.push({
+      id: f.id,
+      nodeId: f.node_id,
+      nameEn: f.name_en,
+      status: f.node_status as "active" | "inactive",
+      pillars: pillarsByFn.get(f.id) ?? [],
+    });
+    byDomain.set(f.domain_key, arr);
+  }
+
+  return (domains ?? [])
+    .filter((d) => byDomain.has(d.key))
+    .sort((a, b) => (order.get(a.key) ?? 0) - (order.get(b.key) ?? 0))
+    .map((d) => ({ key: d.key, nameEn: d.name_en, functions: byDomain.get(d.key) ?? [] }));
+}

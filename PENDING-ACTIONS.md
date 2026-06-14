@@ -56,10 +56,10 @@ matrix, PVM logic-input, read-only SQL).
 - [x] Admin `/admin/tech-sandbox`: pick function or JD-match shortlist -> issue token link (per-delegate direct link)
 - [x] Voucher system (00078): admin generates a batch (single-use codes or one shared seat-pool code) bound to a function + client; public redeem `/tech-sandbox/redeem` (code+name+email+company) -> provisions a sitting. Atomic claim + release verified on scratch PG (concurrency, expiry, disabled)
 
-**Manual steps to activate (USER):**
-- [ ] **Apply migrations 00078 + 00079 to Supabase** (voucher tables + claim/release RPCs; 00079 adds per-delegate assigned_name/email)
-- [ ] **Apply migration 00077 to Supabase** (seeds the node index + FP&A 1.7)
-- [ ] **Set `SANDBOX_DATABASE_URL` on Render** to a DEDICATED throwaway Postgres (NEVER the app/Supabase DB) - required for the SQL block 3.1 to execute. Without it, SQL checkpoints score 0 with a clear error.
+**Manual steps to activate (USER):** — all done + verified on production 2026-06-14
+- [x] **Apply migrations 00078 + 00079 to Supabase** (voucher tables + claim/release RPCs; 00079 per-delegate assigned_name/email) — applied
+- [x] **Apply migration 00077 to Supabase** (node index + FP&A 1.7) — applied (framework shows 9 domains / 62 functions / 1 live)
+- [x] **`SANDBOX_DATABASE_URL` on Render** — set to the dedicated `caliber-sql-sandbox` Postgres (PostgreSQL 18); "Test sandbox DB" green on both local + production. Local `.env.local` uses the External URL + `?sslmode=no-verify`; the web service uses the internal URL.
 
 **Remaining build:**
 - [x] **Univer grid runtime QA** - grid renders + accepts input; verified end-to-end on the deployed site (3-statement, sensitivity, PVM, SQL all score correctly). Fixes: required `name`+`sheetOrder`, `theme: defaultTheme`, reader via onRegister callback (next/dynamic drops refs) reading from the workbook snapshot.
@@ -68,6 +68,7 @@ matrix, PVM logic-input, read-only SQL).
 - [x] Admin-only Model Answers page (`/admin/tech-sandbox/answers`: model values/formulas, master SQL, checkpoints+weights)
 - [x] Email wiring shipped: `emailResults` (with the PDF) fires from the submit route on completion (`src/lib/technical-sandbox/results-email.tsx`); admin `emailSandboxLinkAction` ("Email to candidate" on the issue screen) + `emailVoucherCodesAction` ("Email N delegate(s)" on the generated batch + per-row "Email" in the vouchers table) send one-click redeem links (code+name+email+company prefilled). Best-effort throughout (degrades cleanly when `resendConfigured()` is false). **Still gated for EXTERNAL delivery on Resend domain verification (see §E)** - until then sends only reach the Resend-account address.
 - [x] PDF report (overall + per-pillar + per-block band + per-checkpoint pass/fail), downloadable from results. English-only (React-PDF; matches Fluent cert). Route: GET /api/tech-sandbox/[token]/report
+- [x] **End-to-end delegate flow verified on production 2026-06-14** (asadeq@gmail.com): issued FP&A session -> invitation email delivered to inbox from `noreply@viftraining.com` (verified domain, external delivery) -> delegate link opened the live timed assessment -> submit -> results email delivered WITH the PDF attached (`vifm-technical-...-.pdf`, application/pdf). Confirms EMAIL_FROM + Resend + the submit-route results-email wiring all work live. (Test was a blank attempt = 0%/basic; scoring accuracy verified separately.)
 - [ ] Admin results view (sessions list + per-candidate breakdown)
 - [ ] Build out more functions beyond FP&A 1.7 (each: pillars + skill blocks + payloads/master/checkpoints); JD-custom path
 - [ ] Python code sandbox engine (deferred; needs isolated-execution design) for Data/AI functions
@@ -108,9 +109,8 @@ matrix, PVM logic-input, read-only SQL).
 - [x] "Email codes to delegates" on the voucher screen (per-delegate single-use code + one-click link)
 - [x] One-click redeem: `?code=` + email + company prefill
 - [x] Auto-email results with the PDF attached on completion (markAraRespondentComplete)
-- [ ] **ENV on Render**: set `RESEND_API_KEY`, `EMAIL_FROM`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_APP_URL` (all = caliber.viftraining.com for the URLs)
-- [ ] **Verify the `viftraining.com` domain in Resend** (DNS records sent to IT 2026-06-14: DKIM CNAME/TXT + SPF `include:` TXT merged with any existing SPF + DMARC TXT at `_dmarc.viftraining.com`). Required to email external delegates (not just the Resend-account owner's address).
-  - **AFTER the domain shows "Verified" in Resend**, set `EMAIL_FROM=noreply@viftraining.com` on Render (web service env) and redeploy. Until then, leave `EMAIL_FROM` as the Resend-account email or sends to external addresses will be rejected.
+- [x] **Verify the `viftraining.com` domain in Resend** - confirmed verified by IT 2026-06-14 (DKIM CNAME/TXT + SPF `include:` TXT + DMARC TXT at `_dmarc.viftraining.com`). External delegate sends are now possible once `EMAIL_FROM` is switched (next item).
+- [ ] **ENV on Render (now the active blocker)**: set `EMAIL_FROM=VIFM Assessment Center <noreply@viftraining.com>` on the web service and redeploy (the from-domain must match the verified Resend domain; until set, code falls back to `onboarding@resend.dev` = Resend-account owner only). Confirm `RESEND_API_KEY`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_APP_URL` (= caliber.viftraining.com) are also set.
 - [ ] Verify end-to-end on deployed app: email a delegate, redeem one-click, complete, receive results PDF
 - [ ] Phase 4 polish (optional): full funnel analytics, deep-dive tier option (currently snapshot-only)
 

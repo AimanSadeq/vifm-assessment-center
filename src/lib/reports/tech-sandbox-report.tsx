@@ -61,9 +61,9 @@ const s = StyleSheet.create({
     marginLeft: 6,
   },
   framework: { fontSize: 7, color: C.light, marginTop: 2 },
-  cp: { flexDirection: "row", alignItems: "center", marginTop: 3 },
-  cpMark: { fontSize: 9, fontFamily: "Helvetica-Bold", width: 12 },
-  cpLabel: { fontSize: 8, color: C.text },
+  cp: { flexDirection: "row", alignItems: "flex-start", marginTop: 3 },
+  cpMark: { fontSize: 8, fontFamily: "Helvetica-Bold", width: 26 },
+  cpLabel: { fontSize: 8, color: C.text, flex: 1 },
   footer: { position: "absolute", bottom: 22, left: 36, right: 36, fontSize: 7, color: C.light, textAlign: "center" },
 });
 

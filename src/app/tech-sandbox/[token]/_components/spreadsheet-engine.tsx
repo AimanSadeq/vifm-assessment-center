@@ -86,7 +86,7 @@ export const SpreadsheetEngine = forwardRef<SpreadsheetHandle, SpreadsheetProps>
       let cancelled = false;
       (async () => {
         try {
-          const [{ createUniver, LocaleType }, { UniverSheetsCorePreset }, enUS] =
+          const [{ createUniver, LocaleType, defaultTheme }, { UniverSheetsCorePreset }, enUS] =
             await Promise.all([
               import("@univerjs/presets"),
               import("@univerjs/preset-sheets-core"),
@@ -113,6 +113,7 @@ export const SpreadsheetEngine = forwardRef<SpreadsheetHandle, SpreadsheetProps>
           const { univerAPI } = createUniver({
             locale: LocaleType.EN_US,
             locales: { [LocaleType.EN_US]: enLocale },
+            theme: defaultTheme,
             presets: [UniverSheetsCorePreset({ container: containerRef.current })],
           });
           // name + sheetOrder are required for the sheet to render.
@@ -131,6 +132,15 @@ export const SpreadsheetEngine = forwardRef<SpreadsheetHandle, SpreadsheetProps>
             },
           });
           apiRef.current = univerAPI as unknown as { getActiveWorkbook: () => unknown };
+          // Diagnostic: if no canvas/DOM renders into the container shortly after
+          // init, surface a clear hint instead of a silent blank.
+          setTimeout(() => {
+            if (!cancelled && containerRef.current && containerRef.current.childElementCount === 0) {
+              setInitError(
+                "Spreadsheet initialised but did not render (no canvas). Likely a CSS/theme load issue.",
+              );
+            }
+          }, 1800);
           disposeRef.current = () => {
             try {
               (univerAPI as unknown as { dispose?: () => void }).dispose?.();

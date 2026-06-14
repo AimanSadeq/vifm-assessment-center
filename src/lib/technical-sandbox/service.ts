@@ -359,3 +359,106 @@ export async function submitSession(token: string) {
   if (error) throw error;
   return { session: updated, score: sessionScore };
 }
+
+// ── Admin-only answer key (model answers + checkpoints) for active functions ──
+export interface AnswerKeyCheckpoint {
+  id: string;
+  kind: string;
+  weight: number;
+  label: string;
+  target?: string;
+  field?: string;
+  expected?: number | string;
+}
+export interface AnswerKeyBlock {
+  id: string;
+  nameEn: string;
+  pillarNameEn: string;
+  engineType: EngineType;
+  frameworkRef: string | null;
+  timeLimitSeconds: number;
+  /** Per editable cell: label + model formula (hint) + expected value. */
+  cells?: { ref: string; label?: string; formula?: string; expected?: number }[];
+  /** Logic-input: field + expected value. */
+  fields?: { id: string; label: string; expected?: number }[];
+  /** SQL: master query. */
+  masterQuery?: string;
+  checkpoints: AnswerKeyCheckpoint[];
+}
+export interface AnswerKeyFunction {
+  functionId: string;
+  nodeId: string | null;
+  nameEn: string;
+  blocks: AnswerKeyBlock[];
+}
+
+export async function getAnswerKey(): Promise<AnswerKeyFunction[]> {
+  const sb = createServiceClient();
+  const { data: fns, error } = await sb
+    .from("technical_functions")
+    .select("id, node_id, name_en")
+    .eq("node_status", "active")
+    .order("node_id");
+  if (error) throw error;
+
+  const out: AnswerKeyFunction[] = [];
+  for (const fn of fns ?? []) {
+    const { pillars, blocks } = await loadBlocks(fn.id);
+    const pillarById = new Map(pillars.map((p) => [p.id, p]));
+    const akBlocks: AnswerKeyBlock[] = blocks.map((b) => {
+      const engineType = b.engine_type as EngineType;
+      const cfg = (b.engine_config ?? {}) as Record<string, unknown>;
+      const master = (b.master_solution ?? {}) as Record<string, unknown>;
+      const checkpoints = ((b.checkpoints ?? []) as Record<string, unknown>[]).map((c) => ({
+        id: String(c.id),
+        kind: String(c.kind),
+        weight: Number(c.weight ?? 1),
+        label: String(c.label_en ?? c.id),
+        target: c.target ? String(c.target) : undefined,
+        field: c.field ? String(c.field) : undefined,
+        expected: c.expected as number | string | undefined,
+      }));
+
+      const block: AnswerKeyBlock = {
+        id: b.id,
+        nameEn: b.name_en,
+        pillarNameEn: pillarById.get(b.pillar_id)?.name_en ?? "",
+        engineType,
+        frameworkRef: b.framework_ref,
+        timeLimitSeconds: b.time_limit_seconds,
+        checkpoints,
+      };
+
+      if (engineType === "spreadsheet" || engineType === "advanced_spreadsheet") {
+        const rows = (cfg.rows ?? []) as { ref?: string; A?: string | number; hint?: string }[];
+        const editable = ((cfg.editable ?? []) as string[]).flatMap((e) =>
+          e.includes(":") ? [e] : [e],
+        );
+        const masterCells = (master.cells ?? {}) as Record<string, number>;
+        const byRef = new Map(rows.filter((r) => r.ref).map((r) => [r.ref as string, r]));
+        block.cells = editable.map((ref) => {
+          const row = byRef.get(ref);
+          return {
+            ref,
+            label: row?.A != null ? String(row.A).trim() : undefined,
+            formula: row?.hint,
+            expected: masterCells[ref],
+          };
+        });
+      } else if (engineType === "logic_input") {
+        const fields = (cfg.fields ?? []) as { id: string; label_en?: string }[];
+        const masterFields = (master.fields ?? {}) as Record<string, number>;
+        block.fields = fields.map((f) => ({
+          id: f.id,
+          label: f.label_en ?? f.id,
+          expected: masterFields[f.id],
+        }));
+      } else if (engineType === "sql") {
+        block.masterQuery = (master.master_query as string) ?? "";
+      }
+      return block;
+    });
+    out.push({ functionId: fn.id, nodeId: fn.node_id, nameEn: fn.name_en, blocks: akBlocks });
+  }
+  return out;
+}

@@ -39,6 +39,23 @@ const TAG_LIMIT_DEFAULT = 8;
 // Above this score-per-result we emit "high-fit" badge in the UI.
 export const HIGH_FIT_THRESHOLD = 4;
 
+// Minimum gap (on the shared 1-5 scale) worth a training recommendation. Below
+// this the person/cohort is effectively on-target; pushing a course for a ~0.1
+// shortfall produced misleadingly-strong "fit" recs, so we suppress them. Applied
+// per-unit (per candidate/respondent) before any cohort summing.
+export const MIN_MEANINGFUL_GAP = 0.5;
+
+// AI-readiness contexts (ARA personal snapshot + org pillars) should recommend
+// AI / data training, not a generic soft-skills course that merely shares a
+// behavioural-competency tag (e.g. public speaking matching "Communication").
+// Courses in these verticals are floated to the top for those recommenders;
+// others still appear, ranked below, as fallback.
+const AI_RELEVANT_VERTICALS = new Set<VifmVertical>([
+  "artificial_intelligence",
+  "analytics",
+  "business_intelligence",
+]);
+
 export type RecommendedCourse = {
   course_id: string;
   course_code: string | null;
@@ -127,7 +144,7 @@ export async function recommendCoursesForAcCandidate(args: {
       name_ar: row.competencies?.name_ar ?? null,
       gap: target - (row.final_score ?? target),
     }))
-    .filter((g) => g.gap > 0);
+    .filter((g) => g.gap >= MIN_MEANINGFUL_GAP);
 
   if (gaps.length === 0) return [];
 
@@ -171,7 +188,7 @@ export async function recommendCoursesForAcCohort(args: {
   const gapByCompetency = new Map<string, { name: string; name_ar: string | null; gap: number }>();
   for (const row of consensus) {
     const gap = target - (row.final_score ?? target);
-    if (gap <= 0) continue;
+    if (gap < MIN_MEANINGFUL_GAP) continue;
     const existing = gapByCompetency.get(row.competency_id);
     if (existing) {
       existing.gap += gap;
@@ -300,7 +317,7 @@ export async function recommendCoursesForReflectParticipant(args: {
         gap: target - observed,
       };
     })
-    .filter((g): g is RawGap => g !== null && g.gap > 0);
+    .filter((g): g is RawGap => g !== null && g.gap >= MIN_MEANINGFUL_GAP);
 
   if (rawGaps.length === 0) return { recommendations: [], unmapped: [] };
 
@@ -386,7 +403,7 @@ export async function recommendCoursesForReflectCohort(args: {
     const observed = c.mean;
     if (observed === null) continue;
     const gapPerParticipant = target - observed;
-    if (gapPerParticipant <= 0) continue;
+    if (gapPerParticipant < MIN_MEANINGFUL_GAP) continue;
     rawGaps.push({
       reflect_name: c.name_en,
       gap: gapPerParticipant * Math.max(c.distribution.counted, 1),
@@ -484,7 +501,7 @@ export async function recommendCoursesForAraAssessment(args: {
         gap: target - level,
       };
     })
-    .filter((g) => g.gap > 0);
+    .filter((g) => g.gap >= MIN_MEANINGFUL_GAP);
 
   if (gaps.length === 0) return [];
 
@@ -500,7 +517,8 @@ export async function recommendCoursesForAraAssessment(args: {
     .in("pillar_id", pillarIds);
   const tags = (tagsRes.data ?? []) as unknown as PillarTagJoin[];
 
-  return rankFromPillarTags(tags, gaps, limit);
+  // AI-readiness context: float AI/data courses above generic ones.
+  return rankFromPillarTags(tags, gaps, limit, AI_RELEVANT_VERTICALS);
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -565,7 +583,8 @@ function rankFromCompetencyTags(
 function rankFromPillarTags(
   tags: PillarTagJoin[],
   gaps: Array<{ pillar_id: string; name: string; gap: number }>,
-  limit: number
+  limit: number,
+  preferVerticals?: Set<VifmVertical>
 ): RecommendedCourse[] {
   const gapByPillarId = new Map(gaps.map((g) => [g.pillar_id, g]));
   const accumulator = new Map<string, RecommendedCourse>();
@@ -614,12 +633,15 @@ function rankFromPillarTags(
     }
   }
 
-  return finaliseRanking(accumulator, limit);
+  return finaliseRanking(accumulator, limit, preferVerticals);
 }
 
 function finaliseRanking(
   accumulator: Map<string, RecommendedCourse>,
-  limit: number
+  limit: number,
+  /** When set, courses in these verticals are floated above others (AI-readiness
+   *  contexts) before the score sort. Others remain as ranked fallback. */
+  preferVerticals?: Set<VifmVertical>
 ): RecommendedCourse[] {
   const ranked = Array.from(accumulator.values());
   // Sort drivers within each course by contribution desc so the UI
@@ -627,8 +649,14 @@ function finaliseRanking(
   for (const r of ranked) {
     r.drivers.sort((a, b) => b.contribution - a.contribution);
   }
-  // Sort courses by total_score desc, then by course title asc as tiebreaker.
+  // Sort: preferred verticals first (when requested), then total_score desc,
+  // then course title asc as tiebreaker.
   ranked.sort((a, b) => {
+    if (preferVerticals) {
+      const aPref = preferVerticals.has(a.vertical) ? 1 : 0;
+      const bPref = preferVerticals.has(b.vertical) ? 1 : 0;
+      if (aPref !== bPref) return bPref - aPref;
+    }
     if (b.total_score !== a.total_score) return b.total_score - a.total_score;
     return a.title_en.localeCompare(b.title_en);
   });
@@ -678,7 +706,7 @@ export async function recommendCoursesForIndividualSnapshot(args: {
       competencyNames: f.ac_competency_names,
       gap: target - (args.factorScores[f.id] ?? target),
     }))
-    .filter((fg) => fg.gap > 0 && fg.competencyNames.length > 0);
+    .filter((fg) => fg.gap >= MIN_MEANINGFUL_GAP && fg.competencyNames.length > 0);
 
   if (factorGaps.length === 0) return [];
 
@@ -775,5 +803,6 @@ export async function recommendCoursesForIndividualSnapshot(args: {
     }
   }
 
-  return finaliseRanking(accumulator, limit);
+  // AI-readiness context: float AI/data courses above generic soft-skills ones.
+  return finaliseRanking(accumulator, limit, AI_RELEVANT_VERTICALS);
 }

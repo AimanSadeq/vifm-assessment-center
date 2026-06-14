@@ -3,7 +3,7 @@
 // Best-effort: callers should not fail their flow if email fails.
 import { sendViaResend, resendConfigured } from "@/lib/integrations/resend";
 
-function appOrigin(): string {
+export function appOrigin(): string {
   return (
     process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
     process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||

@@ -66,7 +66,7 @@ matrix, PVM logic-input, read-only SQL).
 - [x] Nav chip to `/admin/tech-sandbox` on the admin hub hero
 - [x] Per-checkpoint pass/fail breakdown on the results screen
 - [x] Admin-only Model Answers page (`/admin/tech-sandbox/answers`: model values/formulas, master SQL, checkpoints+weights)
-- [ ] Email the candidate link on session create + email results + the PDF on completion (reuse sendAraEmail / Resend). BLOCKED on Resend domain verification (see §E). PDF generator is ready to attach.
+- [x] Email wiring shipped: `emailResults` (with the PDF) fires from the submit route on completion (`src/lib/technical-sandbox/results-email.tsx`); admin `emailSandboxLinkAction` ("Email to candidate" on the issue screen) + `emailVoucherCodesAction` ("Email N delegate(s)" on the generated batch + per-row "Email" in the vouchers table) send one-click redeem links (code+name+email+company prefilled). Best-effort throughout (degrades cleanly when `resendConfigured()` is false). **Still gated for EXTERNAL delivery on Resend domain verification (see §E)** - until then sends only reach the Resend-account address.
 - [x] PDF report (overall + per-pillar + per-block band + per-checkpoint pass/fail), downloadable from results. English-only (React-PDF; matches Fluent cert). Route: GET /api/tech-sandbox/[token]/report
 - [ ] Admin results view (sessions list + per-candidate breakdown)
 - [ ] Build out more functions beyond FP&A 1.7 (each: pillars + skill blocks + payloads/master/checkpoints); JD-custom path

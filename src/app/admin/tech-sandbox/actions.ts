@@ -1,11 +1,26 @@
 "use server";
 
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
-import { createSession, listFunctionDescriptors } from "@/lib/technical-sandbox/service";
+import {
+  createSession,
+  listFunctionDescriptors,
+  listFunctions,
+  getSessionByToken,
+} from "@/lib/technical-sandbox/service";
 import { matchJobDescription } from "@/lib/technical-sandbox/jd-matcher";
 import { pingSandboxDb } from "@/lib/technical-sandbox/sql-runner";
-import { generateVoucherBatch, setVoucherStatus } from "@/lib/technical-sandbox/vouchers";
+import {
+  generateVoucherBatch,
+  setVoucherStatus,
+  getVouchersByCodes,
+} from "@/lib/technical-sandbox/vouchers";
+import { emailAccessLink, appOrigin } from "@/lib/technical-sandbox/email";
 import { revalidatePath } from "next/cache";
+
+function functionLabel(fn?: { nodeId: string | null; nameEn: string }): string {
+  if (!fn) return "Technical Assessment";
+  return [fn.nodeId, fn.nameEn].filter(Boolean).join(" · ");
+}
 
 type Result<T = unknown> = ({ ok: true } & T) | { error: string };
 
@@ -95,4 +110,68 @@ export async function setVoucherStatusAction(input: {
   await setVoucherStatus(input.id, input.status);
   revalidatePath("/admin/tech-sandbox/vouchers");
   return { ok: true };
+}
+
+/** Email a direct-link session's access link to the candidate on file. */
+export async function emailSandboxLinkAction(input: {
+  token: string;
+}): Promise<Result<{ to: string }>> {
+  const g = await guard();
+  if ("error" in g) return g;
+  const session = await getSessionByToken(input.token);
+  if (!session) return { error: "Session not found." };
+  if (!session.candidate_email) return { error: "No candidate email on file for this session." };
+  const fns = await listFunctions();
+  const url = `${appOrigin()}/tech-sandbox/${input.token}`;
+  const res = await emailAccessLink({
+    to: session.candidate_email,
+    name: session.candidate_name ?? undefined,
+    functionName: functionLabel(fns.find((f) => f.id === session.function_id)),
+    url,
+  });
+  if (!res.ok) return { error: res.error ?? "Could not send email." };
+  return { ok: true, to: session.candidate_email };
+}
+
+/**
+ * Email named-delegate voucher codes with a one-click redeem link (code + name +
+ * email + company baked into the URL). Only codes that carry an assigned delegate
+ * email are sent. Returns per-email results.
+ */
+export async function emailVoucherCodesAction(input: {
+  codes: string[];
+}): Promise<Result<{ sent: number; total: number; results: { email: string; ok: boolean; error?: string }[] }>> {
+  const g = await guard();
+  if ("error" in g) return g;
+  const codes = (input.codes ?? []).filter(Boolean);
+  if (codes.length === 0) return { error: "No codes to email." };
+
+  const vouchers = await getVouchersByCodes(codes);
+  const withEmail = vouchers.filter((v) => v.assignedEmail);
+  if (withEmail.length === 0) return { error: "None of these codes have an assigned delegate email." };
+  if (withEmail.length > 200) return { error: "Max 200 delegates per send." };
+
+  const fns = await listFunctions();
+  const fnById = new Map(fns.map((f) => [f.id, f]));
+  const origin = appOrigin();
+  const results: { email: string; ok: boolean; error?: string }[] = [];
+
+  for (const v of withEmail) {
+    const email = v.assignedEmail;
+    if (!email) continue;
+    const qs = new URLSearchParams({ code: v.code, email });
+    if (v.assignedName) qs.set("name", v.assignedName);
+    if (v.organizationName) qs.set("company", v.organizationName);
+    const sent = await emailAccessLink({
+      to: email,
+      name: v.assignedName ?? undefined,
+      functionName: functionLabel(fnById.get(v.functionId)),
+      url: `${origin}/tech-sandbox/redeem?${qs.toString()}`,
+      code: v.code,
+    });
+    results.push({ email, ok: sent.ok, error: sent.error });
+  }
+
+  const sent = results.filter((r) => r.ok).length;
+  return { ok: true, sent, total: results.length, results };
 }

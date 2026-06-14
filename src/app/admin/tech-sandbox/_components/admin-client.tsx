@@ -4,7 +4,7 @@
 // token-accessed sitting and copy the candidate link.
 import { useState } from "react";
 import type { FunctionRow } from "@/lib/technical-sandbox/service";
-import { matchJdAction, createSandboxSessionAction, checkSandboxDbAction } from "../actions";
+import { matchJdAction, createSandboxSessionAction, checkSandboxDbAction, emailSandboxLinkAction } from "../actions";
 
 interface JdMatch {
   functionId: string;
@@ -23,6 +23,8 @@ export function AdminClient({ functions }: { functions: FunctionRow[] }) {
   const [jd, setJd] = useState("");
   const [matches, setMatches] = useState<JdMatch[] | null>(null);
   const [link, setLink] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [emailMsg, setEmailMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dbStatus, setDbStatus] = useState<{ ok: boolean; msg: string } | null>(null);
@@ -53,6 +55,8 @@ export function AdminClient({ functions }: { functions: FunctionRow[] }) {
     setBusy(true);
     setError(null);
     setLink(null);
+    setToken(null);
+    setEmailMsg(null);
     const res = await createSandboxSessionAction({
       functionId,
       candidateName: candidateName || undefined,
@@ -61,7 +65,18 @@ export function AdminClient({ functions }: { functions: FunctionRow[] }) {
     });
     setBusy(false);
     if ("error" in res) return setError(res.error);
+    setToken(res.token);
     setLink(`${window.location.origin}/tech-sandbox/${res.token}`);
+  }
+
+  async function emailLink() {
+    if (!token) return;
+    setBusy(true);
+    setEmailMsg(null);
+    const res = await emailSandboxLinkAction({ token });
+    setBusy(false);
+    if ("error" in res) return setEmailMsg({ ok: false, text: res.error });
+    setEmailMsg({ ok: true, text: `Link emailed to ${res.to}.` });
   }
 
   return (
@@ -173,7 +188,15 @@ export function AdminClient({ functions }: { functions: FunctionRow[] }) {
               <button onClick={() => navigator.clipboard?.writeText(link)} className="rounded bg-emerald-600 px-3 py-1 text-xs text-white">
                 Copy
               </button>
+              {candidateEmail && (
+                <button onClick={emailLink} disabled={busy} className="rounded border border-emerald-300 px-3 py-1 text-xs text-emerald-800 disabled:opacity-50">
+                  Email to candidate
+                </button>
+              )}
             </div>
+            {emailMsg && (
+              <p className={`mt-2 text-xs ${emailMsg.ok ? "text-emerald-700" : "text-red-600"}`}>{emailMsg.text}</p>
+            )}
           </div>
         )}
       </section>

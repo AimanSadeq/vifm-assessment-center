@@ -7,7 +7,7 @@
 // session token so the delegate proceeds to /tech-sandbox/{token}.
 // ─────────────────────────────────────────────────────────────
 import { createServiceClient } from "@/lib/supabase/server";
-import { createSession } from "./service";
+import { createSession, isMissingSchemaError } from "./service";
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I
 
@@ -168,34 +168,84 @@ export interface VoucherRow {
   createdAt: string;
 }
 
-/** List vouchers (admin), newest first. */
+// Columns common to every voucher row; assigned_name/assigned_email (migration
+// 00079) are appended only when present so a pending 00079 degrades gracefully.
+const VOUCHER_BASE_COLS =
+  "id, code, label, organization_name, function_id, max_uses, used_count, status, expires_at, batch_id, created_at";
+
+function mapVoucher(v: Record<string, unknown>): VoucherRow {
+  return {
+    id: v.id as string,
+    code: v.code as string,
+    label: (v.label as string) ?? null,
+    organizationName: (v.organization_name as string) ?? null,
+    functionId: v.function_id as string,
+    maxUses: v.max_uses as number,
+    usedCount: v.used_count as number,
+    status: v.status as string,
+    expiresAt: (v.expires_at as string) ?? null,
+    batchId: (v.batch_id as string) ?? null,
+    assignedName: (v.assigned_name as string) ?? null,
+    assignedEmail: (v.assigned_email as string) ?? null,
+    createdAt: v.created_at as string,
+  };
+}
+
+/**
+ * List vouchers (admin), newest first. Tolerant of a pending migration 00079:
+ * if the assigned_* columns are missing it retries without them; if the whole
+ * table is missing (00078 not applied) it returns []. The page renders either way.
+ */
 export async function listVouchers(): Promise<VoucherRow[]> {
   const sb = createServiceClient();
-  const { data, error } = await sb
-    .from("technical_sandbox_vouchers")
-    .select("id, code, label, organization_name, function_id, max_uses, used_count, status, expires_at, batch_id, assigned_name, assigned_email, created_at")
-    .order("created_at", { ascending: false })
-    .limit(500);
-  if (error) throw error;
-  return (data ?? []).map((v) => ({
-    id: v.id,
-    code: v.code,
-    label: v.label,
-    organizationName: v.organization_name,
-    functionId: v.function_id,
-    maxUses: v.max_uses,
-    usedCount: v.used_count,
-    status: v.status,
-    expiresAt: v.expires_at,
-    batchId: v.batch_id,
-    assignedName: v.assigned_name,
-    assignedEmail: v.assigned_email,
-    createdAt: v.created_at,
-  }));
+  const run = (cols: string) =>
+    sb
+      .from("technical_sandbox_vouchers")
+      .select(cols)
+      .order("created_at", { ascending: false })
+      .limit(500);
+
+  let { data, error } = await run(`${VOUCHER_BASE_COLS}, assigned_name, assigned_email`);
+  if (error && isMissingSchemaError(error)) {
+    // Retry without the 00079 columns (table exists, columns don't).
+    ({ data, error } = await run(VOUCHER_BASE_COLS));
+  }
+  if (error) {
+    if (isMissingSchemaError(error)) return []; // table absent (00078 not applied)
+    throw error;
+  }
+  return ((data ?? []) as unknown as Record<string, unknown>[]).map(mapVoucher);
 }
 
 export async function setVoucherStatus(id: string, status: "active" | "disabled") {
   const sb = createServiceClient();
   const { error } = await sb.from("technical_sandbox_vouchers").update({ status }).eq("id", id);
   if (error) throw error;
+}
+
+export interface DelegateVoucher {
+  code: string;
+  assignedName: string | null;
+  assignedEmail: string | null;
+  functionId: string;
+  organizationName: string | null;
+}
+
+/** Load vouchers by code (admin email-codes flow). Codes are normalized first. */
+export async function getVouchersByCodes(codes: string[]): Promise<DelegateVoucher[]> {
+  const sb = createServiceClient();
+  const norm = Array.from(new Set(codes.map(normalizeCode).filter(Boolean)));
+  if (norm.length === 0) return [];
+  const { data, error } = await sb
+    .from("technical_sandbox_vouchers")
+    .select("code, assigned_name, assigned_email, function_id, organization_name")
+    .in("code", norm);
+  if (error) throw error;
+  return (data ?? []).map((v) => ({
+    code: v.code,
+    assignedName: v.assigned_name,
+    assignedEmail: v.assigned_email,
+    functionId: v.function_id,
+    organizationName: v.organization_name,
+  }));
 }

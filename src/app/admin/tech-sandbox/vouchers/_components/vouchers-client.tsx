@@ -7,7 +7,7 @@
 import { useMemo, useRef, useState } from "react";
 import type { FunctionRow } from "@/lib/technical-sandbox/service";
 import type { VoucherRow } from "@/lib/technical-sandbox/vouchers";
-import { generateVouchersAction, setVoucherStatusAction } from "../../actions";
+import { generateVouchersAction, setVoucherStatusAction, emailVoucherCodesAction } from "../../actions";
 
 type Mode = "delegates" | "single" | "pool";
 type Delegate = { name: string; email: string };
@@ -55,6 +55,9 @@ export function VouchersClient({
   const [error, setError] = useState<string | null>(null);
   const [newCodes, setNewCodes] = useState<string[] | null>(null);
   const [assignments, setAssignments] = useState<Assignment[] | null>(null);
+  const [emailing, setEmailing] = useState(false);
+  const [emailMsg, setEmailMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [rowEmailing, setRowEmailing] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -94,6 +97,30 @@ export function VouchersClient({
   async function toggle(id: string, status: string) {
     await setVoucherStatusAction({ id, status: status === "active" ? "disabled" : "active" });
     window.location.reload();
+  }
+
+  async function emailDelegates(codes: string[]) {
+    setEmailing(true);
+    setEmailMsg(null);
+    const res = await emailVoucherCodesAction({ codes });
+    setEmailing(false);
+    if ("error" in res) return setEmailMsg({ ok: false, text: res.error });
+    const failed = res.results.filter((r) => !r.ok);
+    setEmailMsg({
+      ok: res.sent > 0,
+      text:
+        `Emailed ${res.sent} of ${res.total} delegate(s).` +
+        (failed.length ? ` Failed: ${failed.map((f) => f.email).join(", ")}.` : ""),
+    });
+  }
+
+  async function emailRow(code: string) {
+    setRowEmailing(code);
+    setEmailMsg(null);
+    const res = await emailVoucherCodesAction({ codes: [code] });
+    setRowEmailing(null);
+    if ("error" in res) return setEmailMsg({ ok: false, text: res.error });
+    setEmailMsg({ ok: res.sent > 0, text: res.sent > 0 ? `Emailed ${res.results[0]?.email}.` : (res.results[0]?.error ?? "Send failed.") });
   }
 
   const redeemUrl = (code: string) => `${origin}/tech-sandbox/redeem?code=${code}`;
@@ -168,22 +195,34 @@ export function VouchersClient({
 
         {assignments && (
           <div className="mt-4 rounded-md border border-emerald-300 bg-emerald-50 p-3">
-            <div className="mb-2 flex items-center justify-between">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <span className="text-sm font-medium text-emerald-800">{assignments.length} delegate code(s) generated</span>
-              <button
-                onClick={() => {
-                  const csv = "name,email,code,redeem_url\n" + assignments.map((a) => `${a.name},${a.email},${a.code},${redeemUrl(a.code)}`).join("\n");
-                  const blob = new Blob([csv], { type: "text/csv" });
-                  const link = document.createElement("a");
-                  link.href = URL.createObjectURL(blob);
-                  link.download = "technical-delegate-codes.csv";
-                  link.click();
-                }}
-                className="rounded bg-emerald-600 px-3 py-1 text-xs text-white"
-              >
-                Download CSV (name · email · code · link)
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => emailDelegates(assignments.map((a) => a.code))}
+                  disabled={emailing}
+                  className="rounded bg-emerald-600 px-3 py-1 text-xs text-white disabled:opacity-50"
+                >
+                  {emailing ? "Emailing…" : `Email ${assignments.length} delegate(s)`}
+                </button>
+                <button
+                  onClick={() => {
+                    const csv = "name,email,code,redeem_url\n" + assignments.map((a) => `${a.name},${a.email},${a.code},${redeemUrl(a.code)}`).join("\n");
+                    const blob = new Blob([csv], { type: "text/csv" });
+                    const link = document.createElement("a");
+                    link.href = URL.createObjectURL(blob);
+                    link.download = "technical-delegate-codes.csv";
+                    link.click();
+                  }}
+                  className="rounded border border-emerald-300 px-3 py-1 text-xs text-emerald-800"
+                >
+                  Download CSV (name · email · code · link)
+                </button>
+              </div>
             </div>
+            {emailMsg && (
+              <p className={`mb-2 text-xs ${emailMsg.ok ? "text-emerald-700" : "text-red-600"}`}>{emailMsg.text}</p>
+            )}
             <div className="max-h-52 overflow-auto">
               <table className="w-full text-xs">
                 <thead className="text-muted-foreground"><tr><th className="p-1 text-start">Name</th><th className="p-1 text-start">Email</th><th className="p-1 text-start">Code</th></tr></thead>
@@ -232,6 +271,9 @@ export function VouchersClient({
 
       <section className="rounded-lg border border-border bg-card p-4">
         <h3 className="mb-3 font-medium text-foreground">Existing vouchers</h3>
+        {emailMsg && !assignments && (
+          <p className={`mb-3 text-xs ${emailMsg.ok ? "text-emerald-700" : "text-red-600"}`}>{emailMsg.text}</p>
+        )}
         {vouchers.length === 0 ? (
           <p className="text-sm text-muted-foreground">No vouchers yet.</p>
         ) : (
@@ -258,9 +300,20 @@ export function VouchersClient({
                     <td className="p-2 text-end">{v.usedCount} / {v.maxUses}</td>
                     <td className="p-2"><span className={v.status === "active" ? "text-emerald-700" : "text-muted-foreground"}>{v.status}</span></td>
                     <td className="p-2 text-end">
-                      <button onClick={() => toggle(v.id, v.status)} className="text-xs text-[#5391D5] hover:underline">
-                        {v.status === "active" ? "Disable" : "Enable"}
-                      </button>
+                      <div className="flex items-center justify-end gap-3">
+                        {v.assignedEmail && (
+                          <button
+                            onClick={() => emailRow(v.code)}
+                            disabled={rowEmailing === v.code}
+                            className="text-xs text-emerald-700 hover:underline disabled:opacity-50"
+                          >
+                            {rowEmailing === v.code ? "Emailing…" : "Email"}
+                          </button>
+                        )}
+                        <button onClick={() => toggle(v.id, v.status)} className="text-xs text-[#5391D5] hover:underline">
+                          {v.status === "active" ? "Disable" : "Enable"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -3,12 +3,22 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { redeemVoucherAction } from "../actions";
 
-export function RedeemForm({ initialCode }: { initialCode?: string }) {
+export function RedeemForm({
+  initialCode,
+  initialName,
+  initialEmail,
+  initialCompany,
+}: {
+  initialCode?: string;
+  initialName?: string;
+  initialEmail?: string;
+  initialCompany?: string;
+}) {
   const router = useRouter();
   const [code, setCode] = useState(initialCode ?? "");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [company, setCompany] = useState("");
+  const [name, setName] = useState(initialName ?? "");
+  const [email, setEmail] = useState(initialEmail ?? "");
+  const [company, setCompany] = useState(initialCompany ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

@@ -60,6 +60,16 @@ interface ScoringBlock {
   checkpoints: Checkpoint[];
 }
 
+/**
+ * True for Postgres "table/column does not exist" (undefined_table / undefined_column).
+ * Lets callers degrade gracefully when a migration is pending instead of 500ing the
+ * page - mirrors the rest of the codebase's "tolerant of migration not applied" pattern.
+ */
+export function isMissingSchemaError(err: unknown): boolean {
+  const code = (err as { code?: string } | null)?.code;
+  return code === "42P01" || code === "42703";
+}
+
 async function loadBlocks(functionId: string) {
   const sb = createServiceClient();
   const { data: pillars, error: pErr } = await sb
@@ -67,7 +77,10 @@ async function loadBlocks(functionId: string) {
     .select("id, name_en, name_ar, sort_order")
     .eq("function_id", functionId)
     .order("sort_order");
-  if (pErr) throw pErr;
+  if (pErr) {
+    if (isMissingSchemaError(pErr)) return { pillars: [], blocks: [] };
+    throw pErr;
+  }
   const pillarIds = (pillars ?? []).map((p) => p.id);
   const { data: blocks, error: bErr } = await sb
     .from("technical_skill_blocks")
@@ -75,7 +88,10 @@ async function loadBlocks(functionId: string) {
     .in("pillar_id", pillarIds.length ? pillarIds : ["00000000-0000-0000-0000-000000000000"])
     .eq("status", "active")
     .order("sort_order");
-  if (bErr) throw bErr;
+  if (bErr) {
+    if (isMissingSchemaError(bErr)) return { pillars: pillars ?? [], blocks: [] };
+    throw bErr;
+  }
   return { pillars: pillars ?? [], blocks: blocks ?? [] };
 }
 
@@ -164,7 +180,10 @@ export async function listFunctions(activeOnly = false): Promise<FunctionRow[]> 
     .order("node_id");
   if (activeOnly) q = q.eq("node_status", "active");
   const { data, error } = await q;
-  if (error) throw error;
+  if (error) {
+    if (isMissingSchemaError(error)) return [];
+    throw error;
+  }
   return (data ?? []).map((f) => ({
     id: f.id,
     key: f.key,

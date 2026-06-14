@@ -53,9 +53,11 @@ matrix, PVM logic-input, read-only SQL).
 - [x] Service layer (public blueprint w/ answer key stripped; create/start/save/submit)
 - [x] Candidate runner `/tech-sandbox/[token]`: timed, autosave, auto-submit, bilingual EN/AR, banded results; 3 engines (Univer spreadsheet, logic-input, SQL)
 - [x] Token API (start/save/submit) + middleware bypass
-- [x] Admin `/admin/tech-sandbox`: pick function or JD-match shortlist -> issue token link
+- [x] Admin `/admin/tech-sandbox`: pick function or JD-match shortlist -> issue token link (per-delegate direct link)
+- [x] Voucher system (00078): admin generates a batch (single-use codes or one shared seat-pool code) bound to a function + client; public redeem `/tech-sandbox/redeem` (code+name+email+company) -> provisions a sitting. Atomic claim + release verified on scratch PG (concurrency, expiry, disabled)
 
 **Manual steps to activate (USER):**
+- [ ] **Apply migration 00078 to Supabase** (technical sandbox voucher tables + claim/release RPCs)
 - [ ] **Apply migration 00077 to Supabase** (seeds the node index + FP&A 1.7)
 - [ ] **Set `SANDBOX_DATABASE_URL` on Render** to a DEDICATED throwaway Postgres (NEVER the app/Supabase DB) - required for the SQL block 3.1 to execute. Without it, SQL checkpoints score 0 with a clear error.
 

@@ -4,6 +4,8 @@ import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { createSession, listFunctionDescriptors } from "@/lib/technical-sandbox/service";
 import { matchJobDescription } from "@/lib/technical-sandbox/jd-matcher";
 import { pingSandboxDb } from "@/lib/technical-sandbox/sql-runner";
+import { generateVoucherBatch, setVoucherStatus } from "@/lib/technical-sandbox/vouchers";
+import { revalidatePath } from "next/cache";
 
 type Result<T = unknown> = ({ ok: true } & T) | { error: string };
 
@@ -51,4 +53,40 @@ export async function createSandboxSessionAction(input: {
     invitedBy: "userId" in g ? g.userId : undefined,
   });
   return { ok: true, token: accessToken };
+}
+
+export async function generateVouchersAction(input: {
+  functionId: string;
+  count: number;
+  organizationName?: string;
+  label?: string;
+  maxUsesPerCode?: number;
+  expiresAt?: string;
+}): Promise<Result<{ codes: string[] }>> {
+  const g = await guard();
+  if ("error" in g) return g;
+  if (!input.functionId) return { error: "Select a function." };
+  if (!input.count || input.count < 1) return { error: "Enter how many codes to generate." };
+  const { codes } = await generateVoucherBatch({
+    functionId: input.functionId,
+    count: input.count,
+    organizationName: input.organizationName || null,
+    label: input.label || null,
+    maxUsesPerCode: input.maxUsesPerCode ?? 1,
+    expiresAt: input.expiresAt || null,
+    createdBy: "userId" in g ? g.userId : undefined,
+  });
+  revalidatePath("/admin/tech-sandbox/vouchers");
+  return { ok: true, codes };
+}
+
+export async function setVoucherStatusAction(input: {
+  id: string;
+  status: "active" | "disabled";
+}): Promise<Result> {
+  const g = await guard();
+  if ("error" in g) return g;
+  await setVoucherStatus(input.id, input.status);
+  revalidatePath("/admin/tech-sandbox/vouchers");
+  return { ok: true };
 }

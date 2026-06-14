@@ -27,12 +27,14 @@ export default async function TechSandboxAdminPage() {
           live sandboxes (spreadsheet, logic, SQL) and is scored against master answers and banded
           per competency.
         </p>
-        <Link
-          href="/admin/tech-sandbox/answers"
-          className="mt-2 inline-block text-sm text-[#5391D5] hover:underline"
-        >
-          View model answers (admin) →
-        </Link>
+        <div className="mt-2 flex flex-wrap gap-4">
+          <Link href="/admin/tech-sandbox/vouchers" className="text-sm text-[#5391D5] hover:underline">
+            Voucher codes (client self-distribute) →
+          </Link>
+          <Link href="/admin/tech-sandbox/answers" className="text-sm text-[#5391D5] hover:underline">
+            View model answers (admin) →
+          </Link>
+        </div>
       </div>
       {functions.length === 0 ? (
         <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">

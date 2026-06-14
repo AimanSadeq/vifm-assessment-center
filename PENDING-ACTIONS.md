@@ -61,7 +61,7 @@ matrix, PVM logic-input, read-only SQL).
 
 **Remaining build:**
 - [ ] **Univer grid runtime browser QA** - the spreadsheet engine compiles + lazy-loads; verify on the deployed site that the grid renders, editable cells accept input, and readWork() returns formula+value (incl. data-table array formula). Reconcile facade method names if Univer 0.5 differs.
-- [ ] Add a nav tile/link to `/admin/tech-sandbox` from the admin hub
+- [x] Nav chip to `/admin/tech-sandbox` on the admin hub hero
 - [ ] Email the candidate link on session create + email results + PDF on completion (reuse sendAraEmail / Resend + the report pattern)
 - [ ] PDF report (per-competency band + checkpoint detail + development pointers), bilingual
 - [ ] Admin results view (sessions list + per-candidate breakdown)

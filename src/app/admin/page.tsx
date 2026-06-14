@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
-import { ArrowRight, Sparkles, Compass, Map } from "lucide-react";
+import { ArrowRight, Sparkles, Compass, Map, FlaskConical } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getServerT } from "@/lib/i18n/server";
 import { ProcessMap, type ProcessStep } from "@/components/shared/process-map";
@@ -78,6 +78,13 @@ export default async function AdminDashboardPage() {
             >
               <Map className="h-3.5 w-3.5" />
               {t("adminDashboard.chips.platformRoadmap")}
+            </Link>
+            <Link
+              href="/admin/tech-sandbox"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-white/85 px-3.5 py-1.5 rounded-full border border-white/15 bg-white/0 hover:bg-white/10 hover:border-white/30 backdrop-blur transition-colors"
+            >
+              <FlaskConical className="h-3.5 w-3.5" />
+              Technical Sandbox
             </Link>
             <Link
               href="/ara"

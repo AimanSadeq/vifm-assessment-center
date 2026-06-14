@@ -105,7 +105,8 @@ matrix, PVM logic-input, read-only SQL).
 - [x] One-click redeem: `?code=` + email + company prefill
 - [x] Auto-email results with the PDF attached on completion (markAraRespondentComplete)
 - [ ] **ENV on Render**: set `RESEND_API_KEY`, `EMAIL_FROM`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_APP_URL` (all = caliber.viftraining.com for the URLs)
-- [ ] **Verify a domain in Resend** + switch `EMAIL_FROM` to `noreply@viftraining.com` (required to email external delegates, not just your Resend-account email)
+- [ ] **Verify the `viftraining.com` domain in Resend** (DNS records sent to IT 2026-06-14: DKIM CNAME/TXT + SPF `include:` TXT merged with any existing SPF + DMARC TXT at `_dmarc.viftraining.com`). Required to email external delegates (not just the Resend-account owner's address).
+  - **AFTER the domain shows "Verified" in Resend**, set `EMAIL_FROM=noreply@viftraining.com` on Render (web service env) and redeploy. Until then, leave `EMAIL_FROM` as the Resend-account email or sends to external addresses will be rejected.
 - [ ] Verify end-to-end on deployed app: email a delegate, redeem one-click, complete, receive results PDF
 - [ ] Phase 4 polish (optional): full funnel analytics, deep-dive tier option (currently snapshot-only)
 

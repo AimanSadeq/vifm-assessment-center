@@ -3,7 +3,7 @@
 // per Decision 6) and to an overall function band. Banding lives at
 // the Skill Block (competency) level only.
 // ─────────────────────────────────────────────────────────────
-import type { BlockScore, ProficiencyTier } from "./types";
+import type { BlockScore, ProficiencyTier, CheckpointResult } from "./types";
 import { tierFor } from "./validators";
 
 export interface ScoredBlock {
@@ -13,6 +13,7 @@ export interface ScoredBlock {
   nameAr?: string | null;
   scorePct: number;
   tier: ProficiencyTier;
+  checkpointResults: CheckpointResult[];
 }
 
 export interface PillarRollup {
@@ -53,6 +54,7 @@ export function scoreSession(blocks: BlockInput[]): SessionScore {
     nameAr: b.nameAr,
     scorePct: b.score.scorePct,
     tier: b.score.tier,
+    checkpointResults: b.score.checkpointResults,
   }));
 
   const byPillar = new Map<string, BlockInput[]>();
@@ -72,6 +74,7 @@ export function scoreSession(blocks: BlockInput[]): SessionScore {
         nameAr: g.nameAr,
         scorePct: g.score.scorePct,
         tier: g.score.tier,
+        checkpointResults: g.score.checkpointResults,
       }));
       const meanPct = Math.round(blks.reduce((s, x) => s + x.scorePct, 0) / (blks.length || 1));
       return {

@@ -28,7 +28,12 @@ interface SubmitResult {
         advancedCount: number;
         intermediateCount: number;
         basicCount: number;
-        blocks: { nameEn: string; scorePct: number; tier: "basic" | "intermediate" | "advanced" }[];
+        blocks: {
+          nameEn: string;
+          scorePct: number;
+          tier: "basic" | "intermediate" | "advanced";
+          checkpointResults?: { id: string; passed: boolean; label_en?: string; label_ar?: string }[];
+        }[];
       }[];
     };
   };
@@ -295,16 +300,32 @@ function Results({
               {p.advancedCount} adv · {p.intermediateCount} int · {p.basicCount} basic
             </span>
           </div>
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {p.blocks.map((b) => (
-              <li key={b.nameEn} className="flex items-center justify-between text-sm">
-                <span className="text-foreground">{b.nameEn}</span>
-                <span className="flex items-center gap-2">
-                  <span className="text-muted-foreground">{b.scorePct}%</span>
-                  <span className={`rounded-full border px-2 py-0.5 text-xs ${proficiencyTier(b.scorePct).tone}`}>
-                    {proficiencyTierLabel(b.tier, locale)}
+              <li key={b.nameEn} className="text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-foreground">{b.nameEn}</span>
+                  <span className="flex items-center gap-2">
+                    <span className="text-muted-foreground">{b.scorePct}%</span>
+                    <span className={`rounded-full border px-2 py-0.5 text-xs ${proficiencyTier(b.scorePct).tone}`}>
+                      {proficiencyTierLabel(b.tier, locale)}
+                    </span>
                   </span>
-                </span>
+                </div>
+                {b.checkpointResults && b.checkpointResults.length > 0 && (
+                  <ul className="mt-1.5 space-y-0.5 ps-1">
+                    {b.checkpointResults.map((c) => (
+                      <li key={c.id} className="flex items-start gap-1.5 text-xs">
+                        <span className={c.passed ? "text-emerald-600" : "text-red-500"}>
+                          {c.passed ? "✓" : "✗"}
+                        </span>
+                        <span className="text-muted-foreground">
+                          {(ar ? c.label_ar ?? c.label_en : c.label_en) ?? c.id}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </li>
             ))}
           </ul>

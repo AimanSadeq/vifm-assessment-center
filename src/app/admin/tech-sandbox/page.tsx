@@ -6,6 +6,7 @@ import { listVouchers } from "@/lib/technical-sandbox/vouchers";
 import { AdminClient } from "./_components/admin-client";
 import { VouchersClient } from "./vouchers/_components/vouchers-client";
 import { FrameworkOverview } from "./_components/framework-overview";
+import { CollapsibleSection } from "./_components/collapsible-section";
 
 export const dynamic = "force-dynamic";
 
@@ -51,27 +52,28 @@ export default async function TechSandboxAdminPage() {
         )}
       </section>
 
-      {/* 2) Distribution — both options on one page. */}
+      {/* 2) Distribution — both options, collapsible. */}
       {functions.length > 0 && (
-        <section className="space-y-4">
+        <section className="space-y-3">
           <h2 className="text-base font-semibold text-foreground">Give delegates access</h2>
 
-          <div className="rounded-md border-s-4 border-[#5391D5] bg-muted/40 p-3">
-            <h3 className="text-sm font-semibold text-foreground">Option 1 — Direct link per delegate</h3>
-            <p className="text-xs text-muted-foreground">
-              You know who is taking it. Create a personal link (and email it once the domain is verified).
-            </p>
-          </div>
-          <AdminClient functions={functions} />
+          <CollapsibleSection
+            tone="blue"
+            icon="link"
+            title="Option 1 - Direct link per delegate"
+            subtitle="You know who is taking it. Create a personal link and email it to the candidate."
+          >
+            <AdminClient functions={functions} />
+          </CollapsibleSection>
 
-          <div className="mt-2 rounded-md border-s-4 border-emerald-500 bg-muted/40 p-3">
-            <h3 className="text-sm font-semibold text-foreground">Option 2 — Voucher codes (client self-distributes)</h3>
-            <p className="text-xs text-muted-foreground">
-              The client says &ldquo;give me 20&rdquo; and hands them out. Generate single-use codes or one
-              shared seat-pool code; delegates redeem at <span className="font-mono">/tech-sandbox/redeem</span>.
-            </p>
-          </div>
-          <VouchersClient functions={functions} vouchers={vouchers} />
+          <CollapsibleSection
+            tone="green"
+            icon="ticket"
+            title="Option 2 - Voucher codes (client self-distributes)"
+            subtitle="The client wants a batch to hand out - generate single-use codes or one shared seat-pool code; delegates redeem at /tech-sandbox/redeem."
+          >
+            <VouchersClient functions={functions} vouchers={vouchers} />
+          </CollapsibleSection>
         </section>
       )}
     </div>

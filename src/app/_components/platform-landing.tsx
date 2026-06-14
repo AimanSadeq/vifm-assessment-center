@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight, ArrowLeft, ClipboardCheck, Compass, Aperture, Languages, UserSearch,
-  GraduationCap, BadgeCheck, BrainCircuit, Layers,
+  GraduationCap, BadgeCheck, BrainCircuit, Layers, ShieldCheck,
 } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
@@ -37,6 +37,7 @@ const T = {
   en: {
     pickLang: "Language",
     catalogue: "Training catalogue",
+    admin: "Admin",
     enter: "Enter",
     eyebrow: "VIFM Talent Intelligence Platform",
     h1a: "Build the talent the",
@@ -86,6 +87,7 @@ const T = {
   ar: {
     pickLang: "اللغة",
     catalogue: "دليل البرامج التدريبية",
+    admin: "الإدارة",
     enter: "الدخول",
     eyebrow: "منصّة VIFM لذكاء المواهب",
     h1a: "ابنِ المواهب التي",
@@ -173,6 +175,12 @@ export function PlatformLanding() {
                 className="hidden items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/85 backdrop-blur transition-colors hover:border-white/35 hover:bg-white/15 sm:inline-flex"
               >
                 <GraduationCap className="h-3.5 w-3.5" /> {t.catalogue}
+              </Link>
+              <Link
+                href="/admin"
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/85 backdrop-blur transition-colors hover:border-white/35 hover:bg-white/15"
+              >
+                <ShieldCheck className="h-3.5 w-3.5" /> {t.admin}
               </Link>
               <div className="inline-flex rounded-full border border-white/15 bg-white/5 p-0.5 backdrop-blur">
                 {(["en", "ar"] as const).map((l) => (

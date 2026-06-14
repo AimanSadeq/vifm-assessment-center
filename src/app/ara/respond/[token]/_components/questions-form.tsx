@@ -409,10 +409,24 @@ function QuestionRow({
   const [helpOpen, setHelpOpen] = useState(false);
   const codeNumber = displayNumber ?? question.question_number;
 
+  // Graded items get a distinct chip so respondents know it's a scenario /
+  // knowledge check (an objective item), not a self-rating.
+  const gradedLabel =
+    question.question_type === "situational_judgment"
+      ? rtl ? "سيناريو" : "Scenario"
+      : question.question_type === "knowledge_check"
+        ? rtl ? "اختبار معرفي" : "Knowledge check"
+        : null;
+
   return (
     <div className="px-6 py-5" dir={rtl ? "rtl" : "ltr"}>
       <div className="flex items-start justify-between gap-4 mb-3">
         <div className="flex-1">
+          {gradedLabel && (
+            <span className="mb-1.5 inline-block rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">
+              {gradedLabel}
+            </span>
+          )}
           <p className="text-sm font-medium leading-relaxed">
             <span className="text-muted-foreground me-2">Q{codeNumber}.</span>
             {text}
@@ -527,7 +541,12 @@ function QuestionInput({
     );
   }
 
-  if (type === "yes_no" || type === "multiple_choice") {
+  if (
+    type === "yes_no" ||
+    type === "multiple_choice" ||
+    type === "situational_judgment" ||
+    type === "knowledge_check"
+  ) {
     const opts =
       options && Array.isArray(options) && options.length > 0
         ? options

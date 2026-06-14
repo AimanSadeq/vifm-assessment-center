@@ -409,6 +409,8 @@ export default async function AraVersionDetailPage({
                     <option value="multiple_choice">{t("araAdminData.vd_type_multiple_choice")}</option>
                     <option value="yes_no">{t("araAdminData.vd_type_yes_no")}</option>
                     <option value="open_text">{t("araAdminData.vd_type_open_text")}</option>
+                    <option value="situational_judgment">{t("araAdminData.vd_type_situational_judgment")}</option>
+                    <option value="knowledge_check">{t("araAdminData.vd_type_knowledge_check")}</option>
                   </select>
                 </div>
               </div>

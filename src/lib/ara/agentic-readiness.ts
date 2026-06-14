@@ -3,6 +3,8 @@ import {
   ARA_AGENTIC_DIMENSION_IDS,
   type AraAgenticDimensionId,
 } from "@/lib/constants/ara-agentic-dimensions";
+import { calculateQuestionScore } from "./scoring";
+import type { AraQuestionType } from "@/types/ara";
 
 /**
  * Aggregate Agentic-AI Readiness rollup for an org assessment that has
@@ -82,17 +84,21 @@ export async function computeAgenticReadiness(
 
   const { data: questions } = await sb
     .from("ara_questions")
-    .select("id, agentic_dimension_id, score_map")
+    .select("id, agentic_dimension_id, score_map, question_type")
     .eq("version_id", assessment.question_bank_version_id)
     .not("agentic_dimension_id", "is", null);
   const questionRows = (questions ?? []) as Array<{
     id: string;
     agentic_dimension_id: AraAgenticDimensionId;
     score_map: Record<string, number> | null;
+    question_type: AraQuestionType;
   }>;
   if (questionRows.length === 0) return null;
   const questionDimById = new Map(
-    questionRows.map((q) => [q.id, { dimensionId: q.agentic_dimension_id, scoreMap: q.score_map }])
+    questionRows.map((q) => [
+      q.id,
+      { dimensionId: q.agentic_dimension_id, scoreMap: q.score_map, questionType: q.question_type },
+    ])
   );
 
   // 3. Responses for these respondents to those questions.
@@ -114,10 +120,13 @@ export async function computeAgenticReadiness(
   for (const r of responseRows) {
     const meta = questionDimById.get(r.question_id);
     if (!meta) continue;
-    const numeric =
-      typeof r.answer_value === "number"
-        ? r.answer_value
-        : (meta.scoreMap?.[String(r.answer_value)] ?? null);
+    // Canonical per-answer scorer (rating -> Number; mc/yes_no/graded -> score_map),
+    // so this rollup matches respondent-side scoring instead of dropping rating items.
+    const numeric = calculateQuestionScore(
+      meta.questionType,
+      r.answer_value == null ? null : String(r.answer_value),
+      meta.scoreMap
+    );
     if (typeof numeric !== "number" || !Number.isFinite(numeric)) continue;
     const buckets = perRespondent.get(r.respondent_id) ?? initDimensions();
     buckets[meta.dimensionId].sum += numeric;

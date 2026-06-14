@@ -51,8 +51,13 @@ interface ResponseRow {
   respondent_id: string;
   question_score: number | null;
   answered_at: string;
-  question: { pillar_id: AraPillarId | null } | null;
+  question: { pillar_id: AraPillarId | null; question_type: string | null } | null;
 }
+
+// Graded individual-factor items have an objective right answer, so their score
+// distribution must NOT feed faking detection (a correct answer is not "extreme"
+// or "straight-lining"). Excluded from every distortion signal.
+const GRADED_QUESTION_TYPES = new Set(["situational_judgment", "knowledge_check"]);
 
 interface RespondentRow {
   id: string;
@@ -75,12 +80,14 @@ export async function computeAraDistortion(assessmentId: string): Promise<Distor
       .returns<RespondentRow[]>(),
     sb
       .from("ara_responses")
-      .select("respondent_id, question_score, answered_at, question:ara_questions(pillar_id)")
+      .select("respondent_id, question_score, answered_at, question:ara_questions(pillar_id, question_type)")
       .eq("assessment_id", assessmentId)
       .order("answered_at"),
   ]);
 
-  const allRows = (rows ?? []) as unknown as ResponseRow[];
+  const allRows = ((rows ?? []) as unknown as ResponseRow[]).filter(
+    (r) => !GRADED_QUESTION_TYPES.has(r.question?.question_type ?? "")
+  );
 
   // Population pillar means - used as the comparison anchor for each
   // respondent's pillar mean.

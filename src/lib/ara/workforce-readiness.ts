@@ -3,6 +3,8 @@ import {
   ARA_INDIVIDUAL_FACTOR_IDS,
   type AraIndividualFactorId,
 } from "@/lib/constants/ara-individual-factors";
+import { calculateQuestionScore } from "./scoring";
+import type { AraQuestionType } from "@/types/ara";
 
 /**
  * Aggregate workforce-readiness rollup for an org assessment that has
@@ -79,17 +81,21 @@ export async function computeWorkforceReadiness(
 
   const { data: questions } = await sb
     .from("ara_questions")
-    .select("id, individual_factor_id, score_map")
+    .select("id, individual_factor_id, score_map, question_type")
     .eq("version_id", assessment.question_bank_version_id)
     .not("individual_factor_id", "is", null);
   const questionRows = (questions ?? []) as Array<{
     id: string;
     individual_factor_id: AraIndividualFactorId;
     score_map: Record<string, number> | null;
+    question_type: AraQuestionType;
   }>;
   if (questionRows.length === 0) return null;
   const questionFactorById = new Map(
-    questionRows.map((q) => [q.id, { factorId: q.individual_factor_id, scoreMap: q.score_map }])
+    questionRows.map((q) => [
+      q.id,
+      { factorId: q.individual_factor_id, scoreMap: q.score_map, questionType: q.question_type },
+    ])
   );
 
   // 3. All responses for these respondents to those questions.
@@ -119,10 +125,13 @@ export async function computeWorkforceReadiness(
   for (const r of responseRows) {
     const meta = questionFactorById.get(r.question_id);
     if (!meta) continue;
-    const numeric =
-      typeof r.answer_value === "number"
-        ? r.answer_value
-        : (meta.scoreMap?.[String(r.answer_value)] ?? null);
+    // Use the canonical per-answer scorer so this rollup never diverges from the
+    // respondent-side scoring (rating -> Number; mc/yes_no/graded -> score_map).
+    const numeric = calculateQuestionScore(
+      meta.questionType,
+      r.answer_value == null ? null : String(r.answer_value),
+      meta.scoreMap
+    );
     if (typeof numeric !== "number" || !Number.isFinite(numeric)) continue;
     const buckets = perRespondent.get(r.respondent_id) ?? initFactors();
     buckets[meta.factorId].sum += numeric;

@@ -141,10 +141,13 @@ export default async function AraRespondPage({
 
       <div className="max-w-3xl mx-auto px-6 py-10 space-y-6 -mt-8 relative z-10">
 
-        {/* Questions form */}
+        {/* Questions form. Strip the answer key (score_map) + evidence rationale
+            before it reaches the browser - graded items (situational_judgment /
+            knowledge_check) must never expose their correct answer client-side.
+            Scoring re-fetches score_map server-side in saveAraAnswer. */}
         <QuestionsForm
           token={params.token}
-          questions={questions}
+          questions={questions.map((q) => ({ ...q, score_map: null, validation_evidence: null }))}
           answers={(answers ?? []).map((a) => ({
             question_id: a.question_id,
             answer_value: a.answer_value,

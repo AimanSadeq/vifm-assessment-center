@@ -2850,6 +2850,8 @@
     "vd_type_multiple_choice": "اختيار من متعدد",
     "vd_type_yes_no": "نعم / لا",
     "vd_type_open_text": "نص مفتوح",
+    "vd_type_situational_judgment": "سيناريو موقفي",
+    "vd_type_knowledge_check": "اختبار معرفي",
     "vd_question_text_en_label": "نص السؤال (الإنجليزية) *",
     "vd_question_text_ar_label": "نص السؤال (العربية) *",
     "vd_options_en_label": "الخيارات (الإنجليزية) - مصفوفة JSON",

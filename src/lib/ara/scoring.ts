@@ -21,7 +21,11 @@ export function calculateQuestionScore(
       return null;
     }
     case "multiple_choice":
-    case "yes_no": {
+    case "yes_no":
+    // Graded individual-factor types: scored against the expert key (score_map),
+    // exactly like multiple_choice (best/correct option -> 5, etc.).
+    case "situational_judgment":
+    case "knowledge_check": {
       if (!scoreMap) return null;
       const score = scoreMap[answerValue];
       return typeof score === "number" ? score : null;

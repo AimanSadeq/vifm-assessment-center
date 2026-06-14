@@ -107,7 +107,10 @@ export const createAraQuestionSchema = z.object({
   question_number: z.coerce.number().int().positive(),
   question_text_en: z.string().min(1, "English question text required"),
   question_text_ar: z.string().min(1, "Arabic question text required"),
-  question_type: z.enum(["rating", "multiple_choice", "yes_no", "open_text"]),
+  question_type: z.enum([
+    "rating", "multiple_choice", "yes_no", "open_text",
+    "situational_judgment", "knowledge_check",
+  ]),
   options_en: z.array(questionOptionSchema).optional().nullable(),
   options_ar: z.array(questionOptionSchema).optional().nullable(),
   score_map: z.record(z.string(), z.number()).optional().nullable(),

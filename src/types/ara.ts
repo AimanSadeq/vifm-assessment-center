@@ -9,7 +9,15 @@ export type AraReportLanguage = "en" | "ar" | "bilingual";
 export type AraAssessmentStatus = "draft" | "active" | "completed" | "frozen" | "archived";
 export type AraAssessmentPhase = "phase1" | "phase2" | "report";
 export type AraEngagementStage = "department" | "division" | "enterprise" | "individual";
-export type AraQuestionType = "rating" | "multiple_choice" | "yes_no" | "open_text";
+export type AraQuestionType =
+  | "rating"
+  | "multiple_choice"
+  | "yes_no"
+  | "open_text"
+  // Graded individual-factor types (migration 00080): scored against an expert
+  // key (score_map) server-side; the key is never sent to the respondent.
+  | "situational_judgment"
+  | "knowledge_check";
 export type AraMaterialType = "url" | "word" | "pdf" | "powerpoint";
 export type AraFrameworkCategory =
   | "ai_governance"

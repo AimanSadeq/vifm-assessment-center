@@ -158,6 +158,8 @@ export default async function EditAraQuestionPage({
                     <option value="multiple_choice">{t("araAdminData.vd_type_multiple_choice")}</option>
                     <option value="yes_no">{t("araAdminData.vd_type_yes_no")}</option>
                     <option value="open_text">{t("araAdminData.vd_type_open_text")}</option>
+                    <option value="situational_judgment">{t("araAdminData.vd_type_situational_judgment")}</option>
+                    <option value="knowledge_check">{t("araAdminData.vd_type_knowledge_check")}</option>
                   </select>
                 </div>
               </div>
@@ -288,7 +290,14 @@ function QuestionLineageCard({ question, t }: { question: AraQuestion; t: Server
   const isIndividual = !!factor;
 
   const scoreMap = (question.score_map ?? null) as Record<string, number> | null;
-  const optionsEn = (question.options_en ?? null) as string[] | null;
+  // Options may be a legacy string[] (org bank) OR the {value,label}[] shape used by
+  // graded individual items. Normalize to {key,label} so the score-map preview renders
+  // either without crashing (key is what score_map is keyed by).
+  const rawOptions = (question.options_en ?? null) as Array<string | { value: string; label: string }> | null;
+  const optionRows: { key: string; label: string }[] =
+    rawOptions && rawOptions.length > 0
+      ? rawOptions.map((o) => (typeof o === "string" ? { key: o, label: o } : { key: o.value, label: o.label }))
+      : Object.keys(scoreMap ?? {}).map((k) => ({ key: k, label: k }));
 
   return (
     <Card className="mb-6 border-accent/30 bg-accent/[0.03]">
@@ -381,11 +390,11 @@ function QuestionLineageCard({ question, t }: { question: AraQuestion; t: Server
                 </tr>
               </thead>
               <tbody>
-                {(optionsEn ?? Object.keys(scoreMap)).map((opt) => (
-                  <tr key={opt} className="border-b last:border-b-0">
-                    <td className="py-1.5">{opt}</td>
+                {optionRows.map((o) => (
+                  <tr key={o.key} className="border-b last:border-b-0">
+                    <td className="py-1.5">{o.label}</td>
                     <td className="py-1.5 text-end font-mono tabular-nums">
-                      {scoreMap[opt] ?? "-"}
+                      {scoreMap[o.key] ?? "-"}
                     </td>
                   </tr>
                 ))}

@@ -2842,6 +2842,8 @@
     "vd_type_multiple_choice": "Multiple choice",
     "vd_type_yes_no": "Yes / No",
     "vd_type_open_text": "Open text",
+    "vd_type_situational_judgment": "Situational judgment",
+    "vd_type_knowledge_check": "Knowledge check",
     "vd_question_text_en_label": "Question text (English) *",
     "vd_question_text_ar_label": "Question text (Arabic) *",
     "vd_options_en_label": "Options (English) - JSON array",

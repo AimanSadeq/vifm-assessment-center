@@ -6,7 +6,7 @@
 //
 // Runtime browser QA is still required (see PENDING-ACTIONS). It is wired to the
 // documented Univer 0.5 facade API and gated by `npm run build`.
-import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import "@univerjs/preset-sheets-core/lib/index.css";
 import { expandRange } from "@/lib/technical-sandbox/validators";
 
@@ -50,6 +50,7 @@ export const SpreadsheetEngine = forwardRef<SpreadsheetHandle, SpreadsheetProps>
     // Univer facade workbook API instance (typed loosely; lib is dynamic).
     const apiRef = useRef<{ getActiveWorkbook: () => unknown } | null>(null);
     const disposeRef = useRef<null | (() => void)>(null);
+    const [initError, setInitError] = useState<string | null>(null);
 
     const editableRefs = (config.editable ?? []).flatMap((e) =>
       e.includes(":") ? expandRange(e) : [e],
@@ -84,55 +85,62 @@ export const SpreadsheetEngine = forwardRef<SpreadsheetHandle, SpreadsheetProps>
     useEffect(() => {
       let cancelled = false;
       (async () => {
-        const [{ createUniver, LocaleType }, { UniverSheetsCorePreset }, enUS] =
-          await Promise.all([
-            import("@univerjs/presets"),
-            import("@univerjs/preset-sheets-core"),
-            import("@univerjs/preset-sheets-core/locales/en-US"),
-          ]);
-        if (cancelled || !containerRef.current) return;
-        const enLocale = ((enUS as { default?: unknown }).default ?? enUS) as never;
+        try {
+          const [{ createUniver, LocaleType }, { UniverSheetsCorePreset }, enUS] =
+            await Promise.all([
+              import("@univerjs/presets"),
+              import("@univerjs/preset-sheets-core"),
+              import("@univerjs/preset-sheets-core/locales/en-US"),
+            ]);
+          if (cancelled || !containerRef.current) return;
+          const enLocale = ((enUS as { default?: unknown }).default ?? enUS) as never;
 
-        // Build the cellData matrix from the row spec.
-        const cellData: Record<number, Record<number, { v?: number | string; f?: string }>> = {};
-        let maxRow = 0;
-        for (const row of config.rows ?? []) {
-          const r = row.r - 1;
-          maxRow = Math.max(maxRow, r);
-          for (const colLetter of COLS) {
-            const val = (row as unknown as Record<string, unknown>)[colLetter];
-            if (val === undefined || val === null) continue;
-            const c = COLS.indexOf(colLetter);
-            cellData[r] = cellData[r] ?? {};
-            cellData[r][c] = { v: val as number | string };
+          // Build the cellData matrix from the row spec.
+          const cellData: Record<number, Record<number, { v?: number | string; f?: string }>> = {};
+          let maxRow = 0;
+          for (const row of config.rows ?? []) {
+            const r = row.r - 1;
+            maxRow = Math.max(maxRow, r);
+            for (const colLetter of COLS) {
+              const val = (row as unknown as Record<string, unknown>)[colLetter];
+              if (val === undefined || val === null) continue;
+              const c = COLS.indexOf(colLetter);
+              cellData[r] = cellData[r] ?? {};
+              cellData[r][c] = { v: val as number | string };
+            }
           }
-        }
 
-        const { univerAPI } = createUniver({
-          locale: LocaleType.EN_US,
-          locales: { [LocaleType.EN_US]: enLocale },
-          presets: [UniverSheetsCorePreset({ container: containerRef.current })],
-        });
-        univerAPI.createWorkbook({
-          id: "tech-sandbox",
-          sheets: {
-            sheet1: {
-              id: "sheet1",
-              name: config.sheetName ?? "Model",
-              rowCount: Math.max(maxRow + 5, 40),
-              columnCount: 8,
-              cellData,
+          const { univerAPI } = createUniver({
+            locale: LocaleType.EN_US,
+            locales: { [LocaleType.EN_US]: enLocale },
+            presets: [UniverSheetsCorePreset({ container: containerRef.current })],
+          });
+          // name + sheetOrder are required for the sheet to render.
+          univerAPI.createWorkbook({
+            id: "tech-sandbox",
+            name: config.sheetName ?? "Model",
+            sheetOrder: ["sheet1"],
+            sheets: {
+              sheet1: {
+                id: "sheet1",
+                name: config.sheetName ?? "Model",
+                rowCount: Math.max(maxRow + 5, 40),
+                columnCount: 8,
+                cellData,
+              },
             },
-          },
-        });
-        apiRef.current = univerAPI as unknown as { getActiveWorkbook: () => unknown };
-        disposeRef.current = () => {
-          try {
-            (univerAPI as unknown as { dispose?: () => void }).dispose?.();
-          } catch {
-            /* ignore */
-          }
-        };
+          });
+          apiRef.current = univerAPI as unknown as { getActiveWorkbook: () => unknown };
+          disposeRef.current = () => {
+            try {
+              (univerAPI as unknown as { dispose?: () => void }).dispose?.();
+            } catch {
+              /* ignore */
+            }
+          };
+        } catch (e) {
+          if (!cancelled) setInitError(e instanceof Error ? e.message : String(e));
+        }
       })();
       return () => {
         cancelled = true;
@@ -146,6 +154,11 @@ export const SpreadsheetEngine = forwardRef<SpreadsheetHandle, SpreadsheetProps>
         <div className="text-xs text-muted-foreground">
           Editable cells: {editableRefs.join(", ") || "(none)"}
         </div>
+        {initError && (
+          <div className="rounded-md border border-red-300 bg-red-50 p-2 text-xs text-red-700">
+            Spreadsheet failed to load: {initError}
+          </div>
+        )}
         <div ref={containerRef} className="h-[460px] w-full rounded-md border border-border" />
       </div>
     );

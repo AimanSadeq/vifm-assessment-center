@@ -9,7 +9,7 @@ import type { PublicBlueprint, PublicSkillBlock } from "@/lib/technical-sandbox/
 import { proficiencyTier, proficiencyTierLabel } from "@/lib/competencies/proficiency-tier";
 import { LogicInputEngine } from "./logic-input-engine";
 import { SqlEngine } from "./sql-engine";
-import type { SpreadsheetHandle } from "./spreadsheet-engine";
+import type { SpreadsheetReader } from "./spreadsheet-engine";
 
 const SpreadsheetEngine = dynamic(
   () => import("./spreadsheet-engine").then((m) => m.SpreadsheetEngine),
@@ -56,7 +56,7 @@ export function Runner({
   const [remaining, setRemaining] = useState<number | null>(null);
 
   const workRef = useRef<Record<string, Work>>({});
-  const sheetRef = useRef<SpreadsheetHandle | null>(null);
+  const sheetReaderRef = useRef<SpreadsheetReader | null>(null);
   const ar = locale === "ar";
   const current = blocks[idx];
 
@@ -64,9 +64,9 @@ export function Runner({
     if (!current) return;
     if (
       (current.engineType === "spreadsheet" || current.engineType === "advanced_spreadsheet") &&
-      sheetRef.current
+      sheetReaderRef.current
     ) {
-      workRef.current[current.id] = sheetRef.current.readWork();
+      workRef.current[current.id] = sheetReaderRef.current();
     }
   }, [current]);
 
@@ -215,9 +215,10 @@ export function Runner({
             )}
             {(current.engineType === "spreadsheet" || current.engineType === "advanced_spreadsheet") && (
               <SpreadsheetEngine
-                ref={sheetRef as never}
+                key={current.id}
                 config={current.engineConfig as never}
                 locale={locale}
+                onRegister={(reader) => (sheetReaderRef.current = reader)}
               />
             )}
           </div>

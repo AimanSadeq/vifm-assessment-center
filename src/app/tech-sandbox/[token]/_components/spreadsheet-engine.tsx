@@ -1,12 +1,12 @@
 "use client";
 // Interactive spreadsheet engine (FP&A 1.1 / 1.2) powered by Univer (Apache-2.0).
-// Loaded client-only. Builds the worksheet from engineConfig.rows, then on
-// autosave/submit reads each editable cell's value + formula via the facade and
-// returns { cells: { ref: { value, formula, isArrayFormula } } }.
+// Loaded client-only. Builds the worksheet from engineConfig.rows, then reads
+// each editable cell's value + formula from the workbook SNAPSHOT and returns
+// { cells: { ref: { value, formula, isArrayFormula } } }.
 //
-// Runtime browser QA is still required (see PENDING-ACTIONS). It is wired to the
-// documented Univer 0.5 facade API and gated by `npm run build`.
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+// NOTE: next/dynamic does NOT forward refs, so the parent gets the reader via the
+// onRegister callback prop (not a React ref).
+import { useEffect, useRef, useState } from "react";
 import "@univerjs/preset-sheets-core/lib/index.css";
 import { expandRange } from "@/lib/technical-sandbox/validators";
 
@@ -27,12 +27,13 @@ export interface SpreadsheetConfig {
   rows?: Row[];
   editable?: string[];
 }
-export interface SpreadsheetHandle {
-  readWork: () => { cells: Record<string, { value?: number | string | null; formula?: string | null; isArrayFormula?: boolean }> };
-}
+type CellWork = { value?: number | string | null; formula?: string | null; isArrayFormula?: boolean };
+export type SpreadsheetReader = () => { cells: Record<string, CellWork> };
 export interface SpreadsheetProps {
   config: SpreadsheetConfig;
   locale: "en" | "ar";
+  /** Parent registers the work reader here (refs aren't forwarded through next/dynamic). */
+  onRegister?: (reader: SpreadsheetReader) => void;
 }
 
 const COLS = ["A", "B", "C", "D", "E", "F", "G"];
@@ -44,8 +45,7 @@ function refToRowCol(ref: string): { row: number; col: number } | null {
   return { row: Number(m[2]) - 1, col };
 }
 
-export const SpreadsheetEngine = forwardRef<SpreadsheetHandle, SpreadsheetProps>(
-  function SpreadsheetEngine({ config }, ref) {
+export function SpreadsheetEngine({ config, onRegister }: SpreadsheetProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     // Univer facade workbook API instance (typed loosely; lib is dynamic).
     const apiRef = useRef<{ getActiveWorkbook: () => unknown } | null>(null);
@@ -56,31 +56,42 @@ export const SpreadsheetEngine = forwardRef<SpreadsheetHandle, SpreadsheetProps>
       e.includes(":") ? expandRange(e) : [e],
     );
 
-    useImperativeHandle(ref, () => ({
-      readWork() {
-        const cells: Record<string, { value?: number | string | null; formula?: string | null; isArrayFormula?: boolean }> = {};
-        try {
-          const api = apiRef.current as {
-            getActiveWorkbook: () => { getActiveSheet: () => { getRange: (a1: string) => { getValue: () => unknown; getFormula?: () => string } } };
-          } | null;
-          const sheet = api?.getActiveWorkbook()?.getActiveSheet();
-          if (!sheet) return { cells };
-          for (const r of editableRefs) {
-            const range = sheet.getRange(r);
-            const value = range.getValue() as number | string | null;
-            const formula = (range.getFormula?.() ?? "") as string;
-            cells[r] = {
-              value: typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value)) ? Number(value) : value,
-              formula: formula || null,
-              isArrayFormula: /\bTABLE\s*\(/i.test(formula) || /^\{=/.test(formula),
+    // Read editable cells from the workbook SNAPSHOT (has both v and f reliably).
+    const readWork: SpreadsheetReader = () => {
+      const cells: Record<string, CellWork> = {};
+      try {
+        const api = apiRef.current as {
+          getActiveWorkbook: () => {
+            save: () => {
+              sheetOrder: string[];
+              sheets: Record<string, { cellData?: Record<number, Record<number, { v?: unknown; f?: string }>> }>;
             };
-          }
-        } catch {
-          /* facade not ready */
+          };
+        } | null;
+        const snap = api?.getActiveWorkbook()?.save();
+        if (!snap) return { cells };
+        const sheet = snap.sheets[snap.sheetOrder[0]];
+        const cellData = sheet?.cellData ?? {};
+        for (const r of editableRefs) {
+          const rc = refToRowCol(r);
+          const cell = rc ? cellData[rc.row]?.[rc.col] : undefined;
+          const rawV = cell?.v;
+          const formula = (cell?.f ?? "") as string;
+          const value =
+            typeof rawV === "string" && rawV.trim() !== "" && Number.isFinite(Number(rawV))
+              ? Number(rawV)
+              : (rawV as number | string | null | undefined) ?? null;
+          cells[r] = {
+            value,
+            formula: formula || null,
+            isArrayFormula: /\bTABLE\s*\(/i.test(formula) || /^\{=/.test(formula),
+          };
         }
-        return { cells };
-      },
-    }));
+      } catch {
+        /* facade not ready */
+      }
+      return { cells };
+    };
 
     useEffect(() => {
       let cancelled = false;
@@ -159,6 +170,12 @@ export const SpreadsheetEngine = forwardRef<SpreadsheetHandle, SpreadsheetProps>
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    // Hand the reader to the parent (next/dynamic drops refs).
+    useEffect(() => {
+      onRegister?.(readWork);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     return (
       <div className="space-y-2">
         <div className="text-xs text-muted-foreground">
@@ -172,5 +189,4 @@ export const SpreadsheetEngine = forwardRef<SpreadsheetHandle, SpreadsheetProps>
         <div ref={containerRef} className="h-[460px] w-full rounded-md border border-border" />
       </div>
     );
-  },
-);
+}

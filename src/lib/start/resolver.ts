@@ -100,7 +100,7 @@ export const PROCESS: Record<string, ProcessPlan> = {
     constructs: ["knowledge"],
     instruments: ["technical"],
     launch: "handoff",
-    createRoute: "/ac/tech-assessment",
+    createRoute: "/admin/tech-sandbox",
     rationaleKey: "technical",
   },
   ara_org: {

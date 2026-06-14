@@ -44,7 +44,7 @@ const MODULE_MENU: { key: string; href: string; icon: LucideIcon; tone: Tone; pi
   // Talent Acquisition
   { key: "prehire", href: "/admin/prehire/new", icon: UserSearch, tone: "rose", pillar: "acquire" },
   { key: "fluent", href: "/ac/fluent", icon: Languages, tone: "gold", pillar: "acquire" },
-  { key: "technical", href: "/ac/tech-assessment", icon: BadgeCheck, tone: "indigo", pillar: "acquire" },
+  { key: "technical", href: "/admin/tech-sandbox", icon: BadgeCheck, tone: "indigo", pillar: "acquire" },
   { key: "psychometric", href: "/ac/psychometrics", icon: BrainCircuit, tone: "fuchsia", pillar: "acquire" },
   // Talent Management
   { key: "ac", href: "/admin/engagements/new", icon: ClipboardCheck, tone: "blue", pillar: "manage" },

@@ -18,6 +18,7 @@ import { ReviewConsole } from "../_components/review-console";
 import { BridgeEditor } from "../_components/bridge-editor";
 import { HashScroll } from "../_components/hash-scroll";
 import { getServerT } from "@/lib/i18n/server";
+import { getTimerMinutes } from "@/lib/assessment-timers";
 
 type Props = { searchParams: { domain?: string } };
 
@@ -26,13 +27,14 @@ export default async function TechAssessmentReviewPage({ searchParams }: Props) 
   const selected: TechDomainKey =
     (techDomainByKey(searchParams.domain ?? "")?.key as TechDomainKey | undefined) ?? TECH_DOMAINS[0].key;
 
-  const [readiness, items, cut, domainMeta, bridge, competencies] = await Promise.all([
+  const [readiness, items, cut, domainMeta, bridge, competencies, domainTimer] = await Promise.all([
     bankReadiness(),
     listBankItems(selected),
     getCutScore(selected),
     getDomainMeta(selected),
     listDomainBridge(selected),
     listBehaviouralCompetencies(),
+    getTimerMinutes(`tech_domain:${selected}`, null),
   ]);
 
   const domain = techDomainByKey(selected)!;
@@ -121,6 +123,7 @@ export default async function TechAssessmentReviewPage({ searchParams }: Props) 
         cut={cut}
         approvedHere={approvedHere}
         certifiableHere={certifiableHere}
+        domainTimerMinutes={domainTimer}
       />
     </div>
   );

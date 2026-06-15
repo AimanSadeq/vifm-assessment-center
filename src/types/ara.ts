@@ -98,6 +98,8 @@ export type AraAssessment = {
    *  engagement_stage default" via getPillarsForAssessment. Department-stage assessments
    *  must hold exactly 4; Division must hold exactly 6; Enterprise stays NULL (always all 8). */
   pillars_in_scope: AraPillarId[] | null;
+  /** Optional per-instance time limit in minutes (migration 00084). NULL = no limit. */
+  time_limit_minutes: number | null;
 };
 
 export type AraRespondent = {
@@ -120,6 +122,8 @@ export type AraRespondent = {
   created_at: string;
   /** When true, this respondent skips org-side pillar questions and only answers the individual-factor items. */
   individual_only: boolean;
+  /** Stamped when the respondent first clicks Start; anchors the countdown (migration 00084). */
+  started_at: string | null;
 };
 
 export type AraRespondentPillarAssignment = {

@@ -178,6 +178,8 @@ export async function createAraAssessment(formData: FormData) {
   // into an array, dedupe, and validate cardinality against the stage.
   const rawPillars = formData.getAll("pillars_in_scope").map(String).filter(Boolean);
   const dedupedPillars = Array.from(new Set(rawPillars));
+  const rawTimeLimit = formData.get("time_limit_minutes");
+  const timeLimit = rawTimeLimit && String(rawTimeLimit).trim() !== "" ? Number(rawTimeLimit) : null;
   const parsed = createAraAssessmentSchema.safeParse({
     organization_id: formData.get("organization_id"),
     region: formData.get("region"),
@@ -192,6 +194,7 @@ export async function createAraAssessment(formData: FormData) {
     // Tier only matters when the layer is on; default to snapshot otherwise.
     assessment_tier: includeIndividual && rawTier === "deep_dive" ? "deep_dive" : "snapshot",
     pillars_in_scope: dedupedPillars.length > 0 ? dedupedPillars : null,
+    time_limit_minutes: timeLimit,
   });
 
   if (!parsed.success) {
@@ -213,28 +216,30 @@ export async function createAraAssessment(formData: FormData) {
   }
 
   const sb = createServiceClient();
-  const { data, error } = await sb
-    .from("ara_assessments")
-    .insert({
-      organization_id: parsed.data.organization_id,
-      region: parsed.data.region,
-      sector: parsed.data.sector,
-      default_language: parsed.data.default_language,
-      is_sandbox: parsed.data.is_sandbox,
-      question_bank_version_id: parsed.data.question_bank_version_id || null,
-      engagement_stage: parsed.data.engagement_stage,
-      scope_label: parsed.data.scope_label ?? null,
-      status: "draft",
-      phase: "phase1",
-      // Owner is the creating consultant (or null when an admin creates).
-      consultant_id: caller.role === "consultant" && !caller.isDev ? caller.uid : null,
-      include_individual_layer: parsed.data.include_individual_layer,
-      include_agentic_layer: parsed.data.include_agentic_layer,
-      assessment_tier: parsed.data.assessment_tier,
-      pillars_in_scope: pillarsToStore,
-    })
-    .select("id")
-    .single();
+  const insertPayload: Record<string, unknown> = {
+    organization_id: parsed.data.organization_id,
+    region: parsed.data.region,
+    sector: parsed.data.sector,
+    default_language: parsed.data.default_language,
+    is_sandbox: parsed.data.is_sandbox,
+    question_bank_version_id: parsed.data.question_bank_version_id || null,
+    engagement_stage: parsed.data.engagement_stage,
+    scope_label: parsed.data.scope_label ?? null,
+    status: "draft",
+    phase: "phase1",
+    // Owner is the creating consultant (or null when an admin creates).
+    consultant_id: caller.role === "consultant" && !caller.isDev ? caller.uid : null,
+    include_individual_layer: parsed.data.include_individual_layer,
+    include_agentic_layer: parsed.data.include_agentic_layer,
+    assessment_tier: parsed.data.assessment_tier,
+    pillars_in_scope: pillarsToStore,
+  };
+  // Only reference the 00084 column when a limit is actually set, so creation
+  // still works if that migration has not been applied (no-limit is the default).
+  if (parsed.data.time_limit_minutes != null) {
+    insertPayload.time_limit_minutes = parsed.data.time_limit_minutes;
+  }
+  const { data, error } = await sb.from("ara_assessments").insert(insertPayload).select("id").single();
 
   if (error) return { ok: false, error: error.message };
 

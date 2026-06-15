@@ -38,6 +38,27 @@ export async function touchAraRespondent(token: string): Promise<void> {
     .eq("id", respondent.id);
 }
 
+/**
+ * Stamp `started_at` when the respondent first clicks Start - this anchors the
+ * countdown so the deadline survives pausing + returning via the same link.
+ * Idempotent: keeps the original start on resume. Returns the effective start
+ * (ISO). Tolerant of migration 00084 not being applied (returns now; the client
+ * then anchors locally).
+ */
+export async function markAraRespondentStarted(token: string): Promise<string> {
+  const respondent = await requireRespondent(token);
+  const existing = (respondent as { started_at?: string | null }).started_at;
+  if (existing) return existing;
+  const now = new Date().toISOString();
+  try {
+    const sb = createServiceClient();
+    await sb.from("ara_respondents").update({ started_at: now, last_active_at: now }).eq("id", respondent.id);
+  } catch {
+    /* migration 00084 not applied - client anchors instead */
+  }
+  return now;
+}
+
 // ─────────────────────────────────────────────────────────────
 // Save or update an answer (auto-save per question).
 // Validates that the question belongs to this respondent's assessment

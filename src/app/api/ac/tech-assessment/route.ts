@@ -43,8 +43,27 @@ import {
 } from "@/lib/competencies/technical-item-bank";
 import { buildCertifiedFunctionTest, getFunctionCutScore } from "@/lib/competencies/technical-function-bank";
 import { issueCredential } from "@/lib/credentials/issue";
+import { getTimerMinutes } from "@/lib/assessment-timers";
 
 export const dynamic = "force-dynamic";
+
+/** Per-instance time limit (seconds) for a technical run, or null = no limit.
+ *  Domain/function read their own scope; a mix sums the contributing functions'
+ *  limits (capped), per the agreed mix-and-match rule. */
+async function techTimeLimitSeconds(scopes: string[], { sum }: { sum: boolean }): Promise<number | null> {
+  if (scopes.length === 0) return null;
+  if (!sum) {
+    const m = await getTimerMinutes(scopes[0], null);
+    return m == null ? null : m * 60;
+  }
+  let total = 0;
+  let any = false;
+  for (const s of scopes) {
+    const m = await getTimerMinutes(s, null);
+    if (m != null) { total += m; any = true; }
+  }
+  return any ? Math.min(180, total) * 60 : null;
+}
 
 // A session stores the full test PLUS the bank item ids it drew (so a certified
 // sitting can post administration stats back to the bank on scoring) and, for a
@@ -231,7 +250,11 @@ export async function POST(req: Request) {
         { key: compositeKey, id: null }
       );
       if (session_id) {
-        return NextResponse.json({ session_id, test: stripAnswerKey(stored) });
+        const time_limit_seconds = await techTimeLimitSeconds(
+          (contributing.length > 0 ? contributing : fns).map((f) => `tech_function:${f.ref}`),
+          { sum: true }
+        );
+        return NextResponse.json({ session_id, test: stripAnswerKey(stored), time_limit_seconds });
       }
       // Legacy (sessions/00058 not migrated): full test client-side, indicative only.
       return NextResponse.json({ ...stored });
@@ -283,7 +306,8 @@ export async function POST(req: Request) {
         { key: fn.ref, id: fn.id }
       );
       if (session_id) {
-        return NextResponse.json({ session_id, test: stripAnswerKey(stored) });
+        const time_limit_seconds = await techTimeLimitSeconds([`tech_function:${fn.ref}`], { sum: false });
+        return NextResponse.json({ session_id, test: stripAnswerKey(stored), time_limit_seconds });
       }
       // Legacy (sessions/00058 not migrated): full test client-side, indicative only.
       return NextResponse.json({ ...stored });
@@ -316,7 +340,8 @@ export async function POST(req: Request) {
 
     const session_id = await createSession(stored, { candidateId, engagementId, language });
     if (session_id) {
-      return NextResponse.json({ session_id, test: stripAnswerKey(stored) });
+      const time_limit_seconds = await techTimeLimitSeconds([`tech_domain:${domainKey}`], { sum: false });
+      return NextResponse.json({ session_id, test: stripAnswerKey(stored), time_limit_seconds });
     }
     // Legacy (sessions table not migrated): full test client-side, indicative only.
     return NextResponse.json({ ...stored });

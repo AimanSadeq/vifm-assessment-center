@@ -3,6 +3,7 @@
     "eyebrow": "Instructions",
     "title": "Before you begin",
     "howTo": "How to answer",
+    "timeRemaining": "Time remaining",
     "quiz": {
       "intro": "This is a short practice quiz on {{competency}}. It has {{n}} questions with a {{minutes}}-minute timer, and is for your own learning - your score is not part of any hiring decision.",
       "mcq": { "label": "Multiple choice", "text": "select the one best answer." },
@@ -31,7 +32,8 @@
       "knowledge": { "label": "Knowledge check", "text": "select the answer you believe is correct." },
       "open": { "label": "Written response", "text": "answer briefly in your own words." },
       "g1": "Your answers save automatically; you can pause and return using the same link.",
-      "g2": "There is no time limit - answer at your own pace.",
+      "g2": "Answer at your own pace.",
+      "timed": "You have {{min}} minutes; the assessment submits automatically when time runs out.",
       "start": "Start"
     },
     "sandbox": {
@@ -410,6 +412,8 @@
       "cutTitle": "Cut-score — {{domain}}",
       "passMark": "Pass mark (%)",
       "minItems": "Min approved items",
+      "timeLimit": "Time limit (minutes)",
+      "timeLimitPh": "blank = no limit",
       "method": "Standard-setting method",
       "methodPh": "e.g. Modified Angoff, 3-SME panel",
       "rationale": "Rationale (for the audit file)",
@@ -487,6 +491,7 @@
       "selectAll": "Select all that apply.",
       "typeScenario": "Scenario",
       "typeTrueFalse": "True / False",
+      "timeRemaining": "Time remaining",
       "instr": {
         "eyebrow": "Instructions",
         "title": "Before you begin",
@@ -2473,6 +2478,9 @@
     "new_scope_help_department": "e.g. Risk Management, IT, Human Resources",
     "new_scope_help_division": "e.g. Retail Banking, Treasury, Operations Division",
     "new_scope_help_enterprise": "Optional - leave blank for an organisation-wide assessment.",
+    "new_field_time_limit": "Time limit (minutes)",
+    "new_field_time_limit_ph": "e.g. 30",
+    "new_field_time_limit_help": "Optional. Leave blank for no limit. Respondents see a countdown and the assessment submits automatically when time runs out.",
     "new_field_region": "Region *",
     "new_select_placeholder": "Select…",
     "new_region_uae": "UAE",

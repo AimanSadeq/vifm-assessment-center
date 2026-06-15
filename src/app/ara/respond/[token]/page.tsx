@@ -155,6 +155,8 @@ export default async function AraRespondPage({
             needs_verification: a.needs_verification ?? false,
           }))}
           language={language}
+          timeLimitMinutes={ctx.assessment.time_limit_minutes ?? null}
+          startedAt={ctx.respondent.started_at ?? null}
         />
 
         {/* AI Use Case Portfolio (optional) - org-side only. Personal /

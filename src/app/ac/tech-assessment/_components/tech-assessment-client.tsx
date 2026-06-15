@@ -88,6 +88,11 @@ export function TechAssessmentClient({
   const [result, setResult] = useState<ScoredResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // Admin per-instance time limit (seconds) from the start response; the deadline
+  // is stamped when the taker clicks Start, then counts down + auto-submits.
+  const [timeLimitSeconds, setTimeLimitSeconds] = useState<number | null>(null);
+  const [deadline, setDeadline] = useState<number | null>(null);
+  const [remaining, setRemaining] = useState<number | null>(null);
   // Two-level picker: pick a competency first, then a function within it.
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const adaptiveSet = useMemo(() => new Set(adaptiveRefs), [adaptiveRefs]);
@@ -178,7 +183,11 @@ export function TechAssessmentClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "start", ...idBody, candidateId, engagementId, programId, participantId, takerName, takerEmail, language }),
       });
-      const raw = (await res.json()) as PublicTechTest & { session_id?: string; test?: PublicTechTest };
+      const raw = (await res.json()) as PublicTechTest & {
+        session_id?: string;
+        test?: PublicTechTest;
+        time_limit_seconds?: number | null;
+      };
       // The session path nests the test under `test`; the legacy (un-migrated)
       // path returns the test fields flat. Normalize, and refuse to enter the
       // test phase with a malformed or empty deck.
@@ -189,8 +198,11 @@ export function TechAssessmentClient({
       }
       setSessionId(raw.session_id ?? null);
       setTest(built);
+      setTimeLimitSeconds(typeof raw.time_limit_seconds === "number" && raw.time_limit_seconds > 0 ? raw.time_limit_seconds : null);
       setAnswers({});
       setResult(null);
+      setDeadline(null);
+      setRemaining(null);
       setStartTarget("test");
       setPhase("instructions");
     } catch {
@@ -303,6 +315,9 @@ export function TechAssessmentClient({
     setAdaptiveItem(null);
     setAdaptiveAnswer(null);
     setAdaptiveProgress(null);
+    setTimeLimitSeconds(null);
+    setDeadline(null);
+    setRemaining(null);
     setError("");
   }
 
@@ -322,6 +337,22 @@ export function TechAssessmentClient({
     // ref guard ensures a single run).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lockedDomain, lockedFunction]);
+
+  // Countdown + auto-submit when the admin per-instance time limit runs out.
+  useEffect(() => {
+    if (phase !== "test" || deadline == null) return;
+    const id = setInterval(() => {
+      const secs = Math.max(0, Math.round((deadline - Date.now()) / 1000));
+      setRemaining(secs);
+      if (secs <= 0) {
+        clearInterval(id);
+        if (!busy) void submit();
+      }
+    }, 1000);
+    return () => clearInterval(id);
+    // submit is a stable closure; deadline/phase/busy drive the timer.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, deadline, busy]);
 
   // An item is answered when a single item has a chosen index, or a multi item
   // has at least one option ticked.
@@ -586,7 +617,13 @@ export function TechAssessmentClient({
               ))}
 
             <button
-              onClick={() => setPhase(startTarget)}
+              onClick={() => {
+                if (startTarget === "test" && timeLimitSeconds) {
+                  setDeadline(Date.now() + timeLimitSeconds * 1000);
+                  setRemaining(timeLimitSeconds);
+                }
+                setPhase(startTarget);
+              }}
               className="inline-flex items-center gap-2 rounded-md bg-[#047857] px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800"
             >
               <GraduationCap className="h-4 w-4" /> {t("tech.take.instr.start")}
@@ -597,6 +634,18 @@ export function TechAssessmentClient({
 
       {phase === "test" && test && (
         <>
+          {remaining != null && (
+            <div
+              className={`sticky top-0 z-10 flex items-center justify-between rounded-lg border px-4 py-2 text-sm shadow-sm ${
+                remaining <= 60 ? "border-rose-200 bg-rose-50 text-rose-700" : "border-slate-200 bg-white text-slate-600"
+              }`}
+            >
+              <span>{t("tech.take.timeRemaining")}</span>
+              <span className="font-mono font-semibold tabular-nums">
+                {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, "0")}
+              </span>
+            </div>
+          )}
           <div className="rounded-xl border bg-white p-5 shadow-sm">
             <h2 className="inline-flex items-center gap-2 text-lg font-semibold text-[#010131]">
               <GraduationCap className="h-5 w-5 text-[#5391D5]" /> {displayName(test.domain_key, test.domain_name)}

@@ -38,18 +38,22 @@ export function CertWorkbench({
   items,
   cut,
   aiOn,
+  timerMinutes = null,
 }: {
   fn: Fn;
   readiness: FunctionReadiness;
   items: BankItem[];
   cut: FunctionCutScore;
   aiOn: boolean;
+  /** Per-instance time limit (minutes) for this function; null = no limit. */
+  timerMinutes?: number | null;
 }) {
   const { t } = useTranslation();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [passPct, setPassPct] = useState(String(cut.passPct));
   const [minPer, setMinPer] = useState(String(cut.minItemsPerSkill));
+  const [timeLimit, setTimeLimit] = useState(timerMinutes != null ? String(timerMinutes) : "");
   const [openSkill, setOpenSkill] = useState<string | null>(null);
   const [draftingSkill, setDraftingSkill] = useState<string | null>(null);
 
@@ -129,6 +133,7 @@ export function CertWorkbench({
           functionId: fn.id!,
           passPct: Number(passPct),
           minItemsPerSkill: Number(minPer),
+          timeLimitMinutes: timeLimit.trim() === "" ? null : Number(timeLimit),
         }),
       t("techFn.cert.cutSaved")
     );
@@ -162,6 +167,17 @@ export function CertWorkbench({
           <div className="w-44 space-y-1.5">
             <Label className="text-xs">{t("techFn.cert.minPerSkill")}</Label>
             <Input type="number" min={1} max={20} value={minPer} onChange={(e) => setMinPer(e.target.value)} />
+          </div>
+          <div className="w-44 space-y-1.5">
+            <Label className="text-xs">{t("tech.sme.timeLimit")}</Label>
+            <Input
+              type="number"
+              min={1}
+              max={600}
+              placeholder={t("tech.sme.timeLimitPh")}
+              value={timeLimit}
+              onChange={(e) => setTimeLimit(e.target.value)}
+            />
           </div>
           <Button onClick={saveCut} disabled={pending} variant="outline" className="gap-1.5">
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}

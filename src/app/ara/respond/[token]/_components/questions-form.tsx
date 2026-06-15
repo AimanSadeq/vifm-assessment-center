@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { Check, Loader2, AlertCircle, HelpCircle } from "lucide-react";
 import { AssessmentIntro, type IntroPoint } from "@/components/shared/assessment-intro";
-import { saveAraAnswer } from "@/lib/ara/respondent-actions";
+import { saveAraAnswer, markAraRespondentStarted, markAraRespondentComplete } from "@/lib/ara/respondent-actions";
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
 import {
   ARA_INDIVIDUAL_FACTORS,
@@ -43,6 +44,10 @@ type QuestionsFormProps = {
   questions: AraQuestion[];
   answers: ExistingAnswer[];
   language: AraLanguage;
+  /** Per-instance time limit (minutes); null = no limit (migration 00084). */
+  timeLimitMinutes?: number | null;
+  /** Persisted start (ISO) if the respondent already began; anchors the countdown. */
+  startedAt?: string | null;
 };
 
 type SaveState = "idle" | "saving" | "saved" | "error";
@@ -57,12 +62,18 @@ type LocalAnswer = {
 
 const DEBOUNCE_MS = 600;
 
-export function QuestionsForm({ token, questions, answers, language }: QuestionsFormProps) {
+export function QuestionsForm({ token, questions, answers, language, timeLimitMinutes = null, startedAt = null }: QuestionsFormProps) {
   const rtl = language === "ar";
+  const router = useRouter();
   // Intro is rendered in the ASSESSMENT's language (en/ar), not the UI cookie.
   const { i18n } = useTranslation();
   const at = useMemo(() => i18n.getFixedT(language === "ar" ? "ar" : "en"), [i18n, language]);
   const [started, setStarted] = useState(false);
+  const [starting, setStarting] = useState(false);
+  // Countdown (only when a per-instance limit is set), anchored to started_at.
+  const [deadline, setDeadline] = useState<number | null>(null);
+  const [remaining, setRemaining] = useState<number | null>(null);
+  const [finishing, setFinishing] = useState(false);
 
   // Split questions into pillar-only and individual-factor groups.
   // Items with individual_factor_id set belong to the personal factor
@@ -255,6 +266,36 @@ export function QuestionsForm({ token, questions, answers, language }: Questions
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, timers]);
 
+  // Auto-submit when the per-instance time limit runs out: flush pending saves
+  // (reusing the same gate Submit uses), mark complete, then refresh so the page
+  // renders the completed state.
+  const finishOnExpiry = async () => {
+    if (finishing) return;
+    setFinishing(true);
+    try {
+      await FORM_GATES.get(token)?.flushPendingSaves();
+      await markAraRespondentComplete(token);
+      router.refresh();
+    } catch {
+      setFinishing(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!started || deadline == null) return;
+    const id = setInterval(() => {
+      const secs = Math.max(0, Math.round((deadline - Date.now()) / 1000));
+      setRemaining(secs);
+      if (secs <= 0) {
+        clearInterval(id);
+        void finishOnExpiry();
+      }
+    }, 1000);
+    return () => clearInterval(id);
+    // finishOnExpiry is a stable closure; started/deadline drive the timer.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [started, deadline]);
+
   // Progress metrics
   const answeredCount = questions.filter((q) => {
     const a = state[q.id];
@@ -282,9 +323,27 @@ export function QuestionsForm({ token, questions, answers, language }: Questions
         intro={at("aintro.arc.intro")}
         howToTitle={at("aintro.howTo")}
         howTo={howTo}
-        guidance={[at("aintro.arc.g1"), at("aintro.arc.g2")]}
+        guidance={[
+          at("aintro.arc.g1"),
+          at("aintro.arc.g2"),
+          ...(timeLimitMinutes ? [at("aintro.arc.timed", { min: timeLimitMinutes })] : []),
+        ]}
         startLabel={at("aintro.arc.start")}
-        onStart={() => setStarted(true)}
+        busy={starting}
+        onStart={async () => {
+          if (timeLimitMinutes && timeLimitMinutes > 0) {
+            setStarting(true);
+            try {
+              const startIso = await markAraRespondentStarted(token);
+              const dl = new Date(startIso).getTime() + timeLimitMinutes * 60 * 1000;
+              setDeadline(dl);
+              setRemaining(Math.max(0, Math.round((dl - Date.now()) / 1000)));
+            } finally {
+              setStarting(false);
+            }
+          }
+          setStarted(true);
+        }}
       />
     );
   }
@@ -298,7 +357,16 @@ export function QuestionsForm({ token, questions, answers, language }: Questions
             {rtl ? "التقدم" : "Progress"}:{" "}
             {answeredCount} / {questions.length} {rtl ? "إجابة" : "answered"}
           </span>
-          <span className="text-muted-foreground">{progress}%</span>
+          <span className="flex items-center gap-3">
+            {remaining != null && (
+              <span
+                className={`font-mono font-semibold tabular-nums ${remaining <= 60 ? "text-rose-600" : "text-muted-foreground"}`}
+              >
+                {at("aintro.timeRemaining")} {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, "0")}
+              </span>
+            )}
+            <span className="text-muted-foreground">{progress}%</span>
+          </span>
         </div>
         <div className="h-2 bg-muted rounded-full overflow-hidden">
           <div

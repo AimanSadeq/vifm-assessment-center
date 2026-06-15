@@ -410,6 +410,20 @@ export default async function NewAraAssessmentPage({
                 <p className="text-xs text-muted-foreground">{scopeLabelHelp}</p>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="time_limit_minutes">{t("araConsultant.new_field_time_limit")}</Label>
+                <input
+                  id="time_limit_minutes"
+                  name="time_limit_minutes"
+                  type="number"
+                  min={1}
+                  max={600}
+                  placeholder={t("araConsultant.new_field_time_limit_ph")}
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                />
+                <p className="text-xs text-muted-foreground">{t("araConsultant.new_field_time_limit_help")}</p>
+              </div>
+
               <div className="grid gap-5 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="region">{t("araConsultant.new_field_region")}</Label>

@@ -68,6 +68,7 @@ export function ReviewConsole({
   cut,
   approvedHere,
   certifiableHere,
+  domainTimerMinutes = null,
 }: {
   domainKey: string;
   domainName: string;
@@ -76,6 +77,8 @@ export function ReviewConsole({
   cut: CutScore;
   approvedHere: number;
   certifiableHere: boolean;
+  /** Per-instance time limit (minutes) for this domain; null = no limit. */
+  domainTimerMinutes?: number | null;
 }) {
   const router = useRouter();
   const { t } = useTranslation();
@@ -88,6 +91,7 @@ export function ReviewConsole({
   const [minItems, setMinItems] = useState(String(cut.minItems));
   const [method, setMethod] = useState(cut.method ?? "");
   const [rationale, setRationale] = useState(cut.rationale ?? "");
+  const [timeLimit, setTimeLimit] = useState(domainTimerMinutes != null ? String(domainTimerMinutes) : "");
 
   const run = (fn: () => Promise<{ error?: string; ok?: boolean; inserted?: number }>, okMsg: string) =>
     startTransition(async () => {
@@ -139,6 +143,17 @@ export function ReviewConsole({
               </div>
             </div>
             <div>
+              <Label className="text-xs">{t("tech.sme.timeLimit")}</Label>
+              <Input
+                type="number"
+                min={1}
+                max={600}
+                placeholder={t("tech.sme.timeLimitPh")}
+                value={timeLimit}
+                onChange={(e) => setTimeLimit(e.target.value)}
+              />
+            </div>
+            <div>
               <Label className="text-xs">{t("tech.sme.method")}</Label>
               <Input
                 placeholder={t("tech.sme.methodPh")}
@@ -167,6 +182,7 @@ export function ReviewConsole({
                       minItems: Number(minItems),
                       method: method.trim() || null,
                       rationale: rationale.trim() || null,
+                      timeLimitMinutes: timeLimit.trim() === "" ? null : Number(timeLimit),
                     }),
                   t("tech.sme.tCutSaved")
                 )

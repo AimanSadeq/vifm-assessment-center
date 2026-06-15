@@ -6,6 +6,7 @@ import { requireRole, isAuthorizationError, type AraCaller } from "@/lib/ara/aut
 import { draftAiItemsToBank, backfillBankArabic } from "@/lib/competencies/technical-item-bank";
 import { techDomainByKey, type TechDomainKey } from "@/lib/competencies/technical-framework";
 import type { BankItemStatus, BankItemType } from "@/lib/competencies/technical-item-bank";
+import { setTimerMinutes } from "@/lib/assessment-timers";
 
 // Admin-only gate. Under AUTH_ENABLED=false requireRole returns a synthetic
 // admin so dev works; under auth=on it throws for non-admins. Returns the
@@ -172,6 +173,8 @@ export async function setCutScoreAction(input: {
   minItems: number;
   method?: string | null;
   rationale?: string | null;
+  /** Per-instance time limit (minutes); null/0 = no limit. */
+  timeLimitMinutes?: number | null;
 }) {
   const g = await guard();
   if ("error" in g) return g;
@@ -179,6 +182,12 @@ export async function setCutScoreAction(input: {
 
   const passPct = Math.max(1, Math.min(100, Math.round(Number(input.passPct))));
   const minItems = Math.max(1, Math.min(50, Math.round(Number(input.minItems))));
+
+  // Per-instance time limit (best-effort; tolerant of 00083 absence).
+  if (input.timeLimitMinutes !== undefined) {
+    const m = input.timeLimitMinutes && input.timeLimitMinutes > 0 ? Math.round(input.timeLimitMinutes) : null;
+    await setTimerMinutes(`tech_domain:${input.domainKey}`, m);
+  }
 
   try {
     const sb = createServiceClient();

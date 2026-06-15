@@ -5,6 +5,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { requireRole, isAuthorizationError, type AraCaller } from "@/lib/ara/auth-guards";
 import { draftFunctionSkillItems, calibrateFunctionBank } from "@/lib/competencies/technical-function-bank";
 import type { BankItemStatus } from "@/lib/competencies/technical-item-bank";
+import { setTimerMinutes } from "@/lib/assessment-timers";
 
 type Result<T = unknown> = ({ ok: true } & T) | { error: string };
 
@@ -151,6 +152,8 @@ export async function setFunctionCutScoreAction(input: {
   minItemsPerSkill: number;
   method?: string | null;
   rationale?: string | null;
+  /** Per-instance time limit (minutes); null/0 = no limit. */
+  timeLimitMinutes?: number | null;
 }): Promise<Result> {
   const g = await guard();
   if ("error" in g) return g;
@@ -158,6 +161,12 @@ export async function setFunctionCutScoreAction(input: {
 
   const passPct = Math.max(1, Math.min(100, Math.round(Number(input.passPct))));
   const minItemsPerSkill = Math.max(1, Math.min(20, Math.round(Number(input.minItemsPerSkill))));
+
+  // Per-instance time limit, keyed by the function ref (the run scope the API reads).
+  if (input.timeLimitMinutes !== undefined) {
+    const m = input.timeLimitMinutes && input.timeLimitMinutes > 0 ? Math.round(input.timeLimitMinutes) : null;
+    await setTimerMinutes(`tech_function:${input.ref}`, m);
+  }
 
   try {
     const sb = createServiceClient();

@@ -13,6 +13,7 @@ import {
   getFunctionCutScore,
 } from "@/lib/competencies/technical-function-bank";
 import { CertWorkbench } from "../_components/cert-workbench";
+import { getTimerMinutes } from "@/lib/assessment-timers";
 
 export default async function FunctionCertPage({ params }: { params: { ref: string } }) {
   const t = await getServerT();
@@ -20,10 +21,11 @@ export default async function FunctionCertPage({ params }: { params: { ref: stri
   const fn = await getTechnicalFunctionByRef(decodeURIComponent(params.ref), locale);
   if (!fn) notFound();
 
-  const [readiness, items, cut] = await Promise.all([
+  const [readiness, items, cut, fnTimer] = await Promise.all([
     functionBankReadiness(fn.skillsEn, fn.id),
     listFunctionBankItems(fn.skillsEn),
     getFunctionCutScore(fn.id),
+    getTimerMinutes(`tech_function:${fn.ref}`, null),
   ]);
 
   return (
@@ -69,6 +71,7 @@ export default async function FunctionCertPage({ params }: { params: { ref: stri
         items={items}
         cut={cut}
         aiOn={isAIConfigured()}
+        timerMinutes={fnTimer}
       />
     </div>
   );

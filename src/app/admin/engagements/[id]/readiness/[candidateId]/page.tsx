@@ -5,7 +5,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getServerT, getServerLocale, getServerDir } from "@/lib/i18n/server";
 import { BackLink } from "@/components/shared/back-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, Target, Gauge, ShieldAlert, Eye, EyeOff, Clock, AlertTriangle, Users } from "lucide-react";
+import { TrendingUp, Target, Gauge, ShieldAlert, Eye, EyeOff, Clock, AlertTriangle, Users, Download } from "lucide-react";
 import { computeCandidateReadiness } from "@/lib/scoring/readiness-data";
 import { READINESS_TIER_META, type SelfAwarenessFlag } from "@/lib/scoring/readiness";
 import { GenerateIdpButton } from "./_components/generate-idp-button";
@@ -59,13 +59,21 @@ export default async function ReadinessReportPage({ params }: Props) {
 
       {/* Header */}
       <div className="rounded-md border bg-gradient-to-r from-[#010131] to-[#121140] p-5 text-white">
-        <div className="flex flex-wrap items-center gap-3">
-          <TrendingUp className="h-8 w-8 shrink-0 text-[#5391D5]" />
-          <div className="min-w-0">
-            <p className="text-xs uppercase tracking-wide text-white/70">{t("readinessReport.title")}</p>
-            <h1 className="text-2xl font-bold leading-tight">{cand.full_name}</h1>
-            <p className="mt-0.5 text-sm text-white/80">{engName}</p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <TrendingUp className="h-8 w-8 shrink-0 text-[#5391D5]" />
+            <div className="min-w-0">
+              <p className="text-xs uppercase tracking-wide text-white/70">{t("readinessReport.title")}</p>
+              <h1 className="text-2xl font-bold leading-tight">{cand.full_name}</h1>
+              <p className="mt-0.5 text-sm text-white/80">{engName}</p>
+            </div>
           </div>
+          <a
+            href={`/api/readiness/${params.id}/${params.candidateId}/pdf`}
+            className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/20"
+          >
+            <Download className="h-4 w-4" /> {t("readinessReport.downloadPdf")}
+          </a>
         </div>
       </div>
 

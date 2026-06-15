@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Check, ChevronLeft, ChevronRight, ClipboardCheck } from "lucide-react";
+import { Loader2, Check, ChevronLeft, ChevronRight, ClipboardCheck, Download } from "lucide-react";
 import type { BehavioralCompetency } from "@/lib/scoring/behavioral-items";
 import { saveBehavioralAnswersAction, submitBehavioralAction } from "../actions";
 
@@ -54,6 +54,34 @@ export function BehavioralRunner({
   const answeredCount = Object.keys(answers).length;
   const allAnswered = answeredCount >= totalItems;
 
+  // Self-profile (computed client-side from answers, reverse mapped) shown on
+  // the submitted screen so the candidate sees their own result.
+  const selfProfile = useMemo(() => {
+    const byCluster = new Map<number, { name: string; rows: { name: string; score: number }[] }>();
+    const all: number[] = [];
+    for (const comp of competencies) {
+      const vals: number[] = [];
+      for (const it of comp.items) {
+        const v = answers[it.itemKey];
+        if (v == null) continue;
+        vals.push(it.reverse ? 6 - v : v);
+      }
+      if (vals.length === 0) continue;
+      const score = Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 100) / 100;
+      all.push(score);
+      const cName = ar ? comp.clusterNameAr : comp.clusterNameEn;
+      if (!byCluster.has(comp.clusterOrder)) byCluster.set(comp.clusterOrder, { name: cName, rows: [] });
+      byCluster.get(comp.clusterOrder)!.rows.push({ name: ar ? comp.nameAr : comp.nameEn, score });
+    }
+    const clusters = [...byCluster.entries()].sort((a, b) => a[0] - b[0]).map(([, c]) => ({
+      ...c,
+      avg: c.rows.reduce((a, r) => a + r.score, 0) / c.rows.length,
+    }));
+    const overall = all.length ? Math.round((all.reduce((a, b) => a + b, 0) / all.length) * 100) / 100 : 0;
+    return { clusters, overall };
+  }, [answers, competencies, ar]);
+  const bandColor = (v: number) => (v >= 4 ? "text-emerald-700" : v >= 3 ? "text-sky-700" : "text-amber-700");
+
   const tx = (en: string, arabic: string) => (ar ? arabic : en);
 
   function answer(itemKey: string, acCompetencyId: string, reverse: boolean, value: number) {
@@ -74,19 +102,54 @@ export function BehavioralRunner({
 
   if (submitted) {
     return (
-      <div className="mx-auto max-w-2xl p-6" dir={ar ? "rtl" : "ltr"}>
+      <div className="mx-auto max-w-2xl space-y-4 p-4" dir={ar ? "rtl" : "ltr"}>
         <Card>
-          <CardContent className="flex flex-col items-center gap-3 p-10 text-center">
+          <CardContent className="flex flex-col items-center gap-2 p-8 text-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
               <ClipboardCheck className="h-6 w-6 text-emerald-700" />
             </div>
             <h1 className="text-xl font-bold">{tx("Assessment submitted", "تم إرسال التقييم")}</h1>
             <p className="text-sm text-muted-foreground">
-              {tx(
-                "Thank you. Your self-assessment has been recorded.",
-                "شكرًا لك. تم تسجيل تقييمك الذاتي.",
-              )}
+              {tx("Thank you. Here is your self-profile.", "شكرًا لك. إليك ملفك الذاتي.")}
             </p>
+            <a
+              href={`/api/ac/persona/${sessionId}/report`}
+              className="mt-2 inline-flex items-center gap-2 rounded-md bg-[#010131] px-4 py-2 text-sm font-medium text-white hover:bg-[#121140]"
+            >
+              <Download className="h-4 w-4" /> {tx("Download PDF", "تنزيل التقرير (PDF)")}
+            </a>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center justify-between text-sm">
+              <span>{tx("Your self-profile", "ملفك الذاتي")}</span>
+              <span className={`text-base font-bold ${bandColor(selfProfile.overall)}`}>{selfProfile.overall.toFixed(2)} / 5</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {selfProfile.clusters.map((cl) => (
+              <div key={cl.name}>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <p className="text-sm font-semibold text-[#010131]">{cl.name}</p>
+                  <span className={`text-xs font-semibold ${bandColor(cl.avg)}`}>{cl.avg.toFixed(1)}</span>
+                </div>
+                <div className="space-y-1.5">
+                  {cl.rows.map((r) => (
+                    <div key={r.name}>
+                      <div className="flex items-center justify-between text-xs">
+                        <span>{r.name}</span>
+                        <span className="tabular-nums text-muted-foreground">{r.score.toFixed(1)}</span>
+                      </div>
+                      <div className="mt-0.5 h-1.5 w-full rounded-full bg-muted">
+                        <div className="h-1.5 rounded-full bg-[#5391D5]" style={{ width: `${(r.score / 5) * 100}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </CardContent>
         </Card>
       </div>

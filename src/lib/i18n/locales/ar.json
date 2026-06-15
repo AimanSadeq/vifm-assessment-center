@@ -346,6 +346,7 @@
   "readinessReport": {
     "back": "العودة إلى خريطة المواهب",
     "title": "جاهزية التعاقب",
+    "downloadPdf": "تنزيل التقرير (PDF)",
     "horizon": "الأفق الزمني",
     "weightedOthers": "متوسط الآخرين المرجّح",
     "target": "مستهدف الدور",

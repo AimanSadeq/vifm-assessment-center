@@ -346,6 +346,7 @@
   "readinessReport": {
     "back": "Back to talent map",
     "title": "Succession Readiness",
+    "downloadPdf": "Download PDF",
     "horizon": "Horizon",
     "weightedOthers": "Weighted Others",
     "target": "Role target",

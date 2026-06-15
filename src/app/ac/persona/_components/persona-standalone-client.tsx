@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import {
-  Layers, Sparkles, Loader2, CheckCircle2, RotateCcw, ChevronLeft, ChevronRight, AlertTriangle,
+  Layers, Sparkles, Loader2, CheckCircle2, RotateCcw, ChevronLeft, ChevronRight, AlertTriangle, Download,
 } from "lucide-react";
 import type { BehavioralCompetency } from "@/lib/scoring/behavioral-items";
 import type { BehavioralProfileRow } from "@/lib/scoring/behavioral";
@@ -239,20 +239,21 @@ export function PersonaStandaloneClient({ competencies }: { competencies: Behavi
       )}
 
       {phase === "result" && profile && (
-        <PersonaResult competencies={competencies} profile={profile} name={name.trim()} ar={ar} onReset={reset} />
+        <PersonaResult competencies={competencies} profile={profile} name={name.trim()} ar={ar} onReset={reset} sessionId={sessionId} />
       )}
     </div>
   );
 }
 
 function PersonaResult({
-  competencies, profile, name, ar, onReset,
+  competencies, profile, name, ar, onReset, sessionId,
 }: {
   competencies: BehavioralCompetency[];
   profile: BehavioralProfileRow[];
   name: string;
   ar: boolean;
   onReset: () => void;
+  sessionId: string | null;
 }) {
   const tx = (en: string, arabic: string) => (ar ? arabic : en);
   const scoreById = new Map(profile.map((p) => [p.competencyId, p.selfScore]));
@@ -322,9 +323,19 @@ function PersonaResult({
         )}
       </div>
 
-      <button onClick={onReset} className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
-        <RotateCcw className="h-4 w-4" /> {tx("Start over", "البدء من جديد")}
-      </button>
+      <div className="flex flex-wrap items-center gap-2">
+        {sessionId && (
+          <a
+            href={`/api/ac/persona/${sessionId}/report`}
+            className="inline-flex items-center gap-2 rounded-md bg-[#010131] px-4 py-2 text-sm font-medium text-white hover:bg-[#121140]"
+          >
+            <Download className="h-4 w-4" /> {tx("Download PDF", "تنزيل التقرير (PDF)")}
+          </a>
+        )}
+        <button onClick={onReset} className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
+          <RotateCcw className="h-4 w-4" /> {tx("Start over", "البدء من جديد")}
+        </button>
+      </div>
     </div>
   );
 }

@@ -43,6 +43,80 @@ export async function getOrCreateBehavioralSession(
   return { id: data.id as string, status: data.status as BehavioralStatus };
 }
 
+/**
+ * Create an anonymous Persona session - no candidate, no engagement, just a
+ * name label (migration 00098). Used by the standalone runner at /ac/persona.
+ * Throws if 00098 isn't applied (candidate_id/engagement_id still NOT NULL);
+ * the calling server action catches and surfaces a friendly message.
+ */
+export async function createAnonymousBehavioralSession(
+  takerName: string | null,
+): Promise<BehavioralSession> {
+  const sb = createServiceClient();
+  const { data, error } = await sb
+    .from("behavioral_assessment_sessions")
+    .insert({
+      taker_name: takerName,
+      status: "in_progress",
+      started_at: new Date().toISOString(),
+    })
+    .select("id, status")
+    .single();
+  if (error || !data) throw error ?? new Error("Could not create Persona session");
+  return { id: data.id as string, status: data.status as BehavioralStatus };
+}
+
+export type BehavioralProfileRow = {
+  competencyId: string;
+  selfScore: number; // 1-5, reverse already applied
+  itemCount: number;
+};
+
+/**
+ * Finalize an anonymous session: compute per-competency self scores (reverse
+ * mapped 6 - raw), mark the session submitted, and RETURN the profile. Unlike
+ * the candidate path it does NOT write behavioral_competency_scores - an
+ * anonymous run has no candidate/engagement to feed the readiness engine.
+ */
+export async function submitAnonymousBehavioral(
+  sessionId: string,
+): Promise<{ ok: boolean; profile?: BehavioralProfileRow[]; error?: string }> {
+  const sb = createServiceClient();
+  const { data: session } = await sb
+    .from("behavioral_assessment_sessions")
+    .select("id, status")
+    .eq("id", sessionId)
+    .maybeSingle();
+  if (!session) return { ok: false, error: "No session" };
+
+  const { data: responses } = await sb
+    .from("behavioral_assessment_responses")
+    .select("competency_id, raw_score, is_reverse")
+    .eq("session_id", sessionId);
+
+  const byComp = new Map<string, number[]>();
+  for (const r of responses ?? []) {
+    const raw = Number(r.raw_score);
+    const scored = r.is_reverse ? 6 - raw : raw; // reverse mapping
+    const cid = r.competency_id as string;
+    if (!byComp.has(cid)) byComp.set(cid, []);
+    byComp.get(cid)!.push(scored);
+  }
+
+  const profile: BehavioralProfileRow[] = Array.from(byComp.entries()).map(([competencyId, vals]) => ({
+    competencyId,
+    selfScore: Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 100) / 100,
+    itemCount: vals.length,
+  }));
+
+  await sb
+    .from("behavioral_assessment_sessions")
+    .update({ status: "submitted", submitted_at: new Date().toISOString() })
+    .eq("id", sessionId);
+
+  return { ok: true, profile };
+}
+
 /** Map of item_key -> raw_score for resume. */
 export async function loadBehavioralResponses(sessionId: string): Promise<Record<string, number>> {
   const sb = createServiceClient();

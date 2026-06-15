@@ -40,6 +40,7 @@ import {
   Award,
   ShieldCheck,
   FlaskConical,
+  TrendingUp,
   type LucideIcon,
 } from "lucide-react";
 
@@ -113,6 +114,7 @@ const NAV: NavEntry[] = [
         },
         link("/reflect", "adminNav.reflect360", Aperture),
         link("/ara", "adminNav.aiReadiness", Sparkles),
+        link("/admin/readiness/config", "adminNav.readinessConfig", TrendingUp),
         link("/admin/courses", "adminNav.academy", GraduationCap),
       ],
     },

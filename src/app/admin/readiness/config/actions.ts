@@ -16,6 +16,8 @@ export type ReadinessConfigInput = {
   useWeights: boolean;
   minOthersPerCompetency: number;
   coverageMinPct: number;
+  borderlineBand: number;
+  raterAgreementSpreadMax: number;
   yearLayerEnabled: boolean;
   yearMap: { ready_now: string; ready_soon: string; developing: string; not_ready: string };
 };
@@ -50,12 +52,18 @@ export async function saveReadinessConfigAction(
   }
   if (!TIERS.includes(input.knockoutCapTier)) return { error: "Invalid knockout cap tier." };
   if (!["high", "medium", "low"].includes(input.knockoutPriority)) return { error: "Invalid knockout priority." };
+  if (!(Number.isFinite(input.borderlineBand) && input.borderlineBand >= 0 && input.borderlineBand <= 2)) {
+    return { error: "Borderline band must be between 0 and 2." };
+  }
+  if (!(Number.isFinite(input.raterAgreementSpreadMax) && input.raterAgreementSpreadMax >= 0 && input.raterAgreementSpreadMax <= 4)) {
+    return { error: "Rater-agreement spread max must be between 0 and 4 (a 1-5 scale)." };
+  }
   for (const k of ["ready_now", "ready_soon", "developing", "not_ready"] as const) {
     if (!input.yearMap?.[k]?.trim()) return { error: "Every year-layer label must be filled in." };
   }
 
   const sb = createServiceClient();
-  const patch = {
+  const base = {
     ready_now_gap_cut: input.readyNowGapCut,
     ready_soon_gap_cut: input.readySoonGapCut,
     developing_gap_cut: input.developingGapCut,
@@ -76,11 +84,15 @@ export async function saveReadinessConfigAction(
     // Real admin in prod; dev caller has a non-persisted stub uid, so null it.
     updated_by: caller.isDev ? null : caller.uid,
   };
+  const v2 = {
+    ...base,
+    borderline_band: input.borderlineBand,
+    rater_agreement_spread_max: input.raterAgreementSpreadMax,
+  };
 
-  const { error } = await sb
-    .from("readiness_index_config")
-    .update(patch)
-    .is("organization_id", null);
+  // Try the v2 columns; if migration 00096 isn't applied yet, save the base set.
+  let { error } = await sb.from("readiness_index_config").update(v2).is("organization_id", null);
+  if (error) ({ error } = await sb.from("readiness_index_config").update(base).is("organization_id", null));
   if (error) return { error: error.message || "Could not save (apply migration 00087)." };
 
   revalidatePath("/admin/readiness/config");

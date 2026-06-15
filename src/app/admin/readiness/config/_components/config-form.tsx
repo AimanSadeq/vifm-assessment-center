@@ -53,6 +53,8 @@ export function ReadinessConfigForm({ initial }: { initial: ReadinessConfig }) {
   const [useWeights, setUseWeights] = useState(initial.useWeights);
   const [minOthers, setMinOthers] = useState(String(initial.minOthersPerCompetency));
   const [coverageMin, setCoverageMin] = useState(String(initial.coverageMinPct));
+  const [borderlineBand, setBorderlineBand] = useState(String(initial.borderlineBand));
+  const [spreadMax, setSpreadMax] = useState(String(initial.raterAgreementSpreadMax));
   const [yearEnabled, setYearEnabled] = useState(initial.yearLayerEnabled);
   const [yearMap, setYearMap] = useState({ ...initial.yearMap });
   const [pending, start] = useTransition();
@@ -60,12 +62,14 @@ export function ReadinessConfigForm({ initial }: { initial: ReadinessConfig }) {
   function buildInput(): ReadinessConfigInput | { error: string } {
     const n = (s: string) => Number(s);
     const rn = n(readyNow), rs = n(readySoon), dv = n(developing), kg = n(knockoutGap);
-    const mo = n(minOthers), cm = n(coverageMin);
+    const mo = n(minOthers), cm = n(coverageMin), bb = n(borderlineBand), sm = n(spreadMax);
     const inBand = (x: number) => Number.isFinite(x) && x >= -5 && x <= 5;
     if (![rn, rs, dv, kg].every(inBand)) return { error: "Gap values must be numbers between -5 and 5." };
     if (!(rn >= rs && rs >= dv)) return { error: "Tier cutoffs must be descending: Ready Now ≥ Ready Soon ≥ Developing." };
     if (!(Number.isFinite(cm) && cm >= 0 && cm <= 1)) return { error: "Coverage minimum must be between 0 and 1." };
     if (!(Number.isInteger(mo) && mo >= 1)) return { error: "Minimum Others per competency must be a whole number ≥ 1." };
+    if (!(Number.isFinite(bb) && bb >= 0 && bb <= 2)) return { error: "Borderline band must be between 0 and 2." };
+    if (!(Number.isFinite(sm) && sm >= 0 && sm <= 4)) return { error: "Rater-agreement spread max must be between 0 and 4." };
     for (const k of ["ready_now", "ready_soon", "developing", "not_ready"] as ReadinessTier[]) {
       if (!yearMap[k]?.trim()) return { error: "Every year-layer label must be filled in." };
     }
@@ -80,6 +84,8 @@ export function ReadinessConfigForm({ initial }: { initial: ReadinessConfig }) {
       useWeights,
       minOthersPerCompetency: mo,
       coverageMinPct: cm,
+      borderlineBand: bb,
+      raterAgreementSpreadMax: sm,
       yearLayerEnabled: yearEnabled,
       yearMap: { ...yearMap },
     };
@@ -166,6 +172,21 @@ export function ReadinessConfigForm({ initial }: { initial: ReadinessConfig }) {
         <div className="flex flex-wrap gap-6">
           <NumField label="Min Others per competency" hint="Raters needed to count as covered" value={minOthers} onChange={setMinOthers} step="1" />
           <NumField label="Coverage minimum" hint="Fraction 0–1 (0.7 = 70%). Below this → Insufficient Data" value={coverageMin} onChange={setCoverageMin} step="0.05" />
+        </div>
+      </section>
+
+      {/* Advisory confidence (v2) */}
+      <section className="space-y-3">
+        <div>
+          <h3 className="text-sm font-semibold">Advisory confidence</h3>
+          <p className="text-[11px] text-muted-foreground">
+            Caveats only - these never change the tier. They flag a near-call result and competencies
+            where the 360 raters disagree.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-6">
+          <NumField label="Borderline band" hint="Gap within this of a cutoff → flagged near-call" value={borderlineBand} onChange={setBorderlineBand} step="0.05" />
+          <NumField label="Rater-agreement spread max" hint="Others spread (max−min) ≥ this → low agreement (1-5 scale; 3 matches Reflect)" value={spreadMax} onChange={setSpreadMax} step="0.5" />
         </div>
       </section>
 

@@ -12,9 +12,15 @@
  *   - PURE + dependency-free, so it unit-tests cleanly and can be reused by
  *     a server action, a PDF, or a client-facing surface.
  *   - CONFIG-DRIVEN. Every threshold, the knockout rule, the weighting
- *     switch, the coverage floor, and the optional year layer come in via a
- *     ReadinessConfig object. The admin panel persists that object so the
- *     index can be tuned without a code change (see the handover doc).
+ *     switch, the coverage floor, the advisory bands, and the optional year
+ *     layer come in via a ReadinessConfig object. The admin panel persists
+ *     that object so the index can be tuned without a code change.
+ *
+ * v2 adds two ADVISORY confidence signals that never change the tier:
+ *   - borderline: the candidate sits within `borderlineBand` of a cutoff, so
+ *     the tier is a near-call and should not be over-read.
+ *   - low rater agreement: the 360 Others disagree sharply on a competency
+ *     (Others spread at or above `raterAgreementSpreadMax`).
  *
  * ──────────────────────────────────────────────────────────────────────────
  * THE READINESS INDEX — how it is calculated
@@ -61,6 +67,11 @@
  *   7. Optional year layer. When `yearLayerEnabled`, the tier is mapped to a
  *      client-defined horizon label (`yearMap`) for stakeholder-facing copy.
  *      It is presentation only and is derived FROM the tier, never the maths.
+ *
+ *   8. Advisory confidence (v2, never changes the tier). `borderline` is set
+ *      when overallGap is within `borderlineBand` of any cutoff;
+ *      `lowAgreementCount` counts covered competencies whose Others spread is
+ *      at or above `raterAgreementSpreadMax`. Surface both as caveats.
  */
 
 export type ReadinessTier = "ready_now" | "ready_soon" | "developing" | "not_ready";
@@ -83,6 +94,10 @@ export type ReadinessConfig = {
   minOthersPerCompetency: number;
   /** Fraction (0–1) of role competencies that must be covered to assert a tier. */
   coverageMinPct: number;
+  /** Advisory: |gap − cutoff| at or under this flags the result as borderline. */
+  borderlineBand: number;
+  /** Advisory: a competency's Others spread (max−min) at or above this flags low agreement. */
+  raterAgreementSpreadMax: number;
   /** Optional stakeholder-facing horizon layer. */
   yearLayerEnabled: boolean;
   yearMap: Record<ReadinessTier, string>;
@@ -99,6 +114,8 @@ export const DEFAULT_READINESS_CONFIG: ReadinessConfig = {
   useWeights: true,
   minOthersPerCompetency: 1,
   coverageMinPct: 0.7,
+  borderlineBand: 0.1,
+  raterAgreementSpreadMax: 3,
   yearLayerEnabled: false,
   yearMap: {
     ready_now: "0–2 years",
@@ -179,6 +196,8 @@ export type ObservedCompetency = {
   selfMean: number | null;
   /** Distinct Others raters contributing to othersMean. */
   othersCount?: number;
+  /** Spread of the Others ratings (max−min across rater groups). Enables the low-agreement flag. */
+  othersSpread?: number | null;
 };
 
 export type CompetencyReadiness = {
@@ -196,6 +215,8 @@ export type CompetencyReadiness = {
   /** selfMean − othersMean. */
   selfOthersGap: number | null;
   selfFlag: SelfAwarenessFlag;
+  /** Advisory: Others disagree sharply on this competency (spread ≥ raterAgreementSpreadMax). */
+  lowAgreement: boolean;
 };
 
 export type ReadinessResult = {
@@ -215,6 +236,11 @@ export type ReadinessResult = {
   competencies: CompetencyReadiness[];
   overallSelf: number | null;
   overallSelfOthersGap: number | null;
+  /** Advisory confidence flags (never change the tier). */
+  borderline: boolean;
+  borderlineNote: string | null;
+  nearestCutoffDistance: number | null;
+  lowAgreementCount: number;
 };
 
 function weightedMean(pairs: Array<{ value: number; weight: number }>): number | null {
@@ -255,7 +281,7 @@ function selfAwarenessFlag(
  * Compute a candidate's succession readiness for a target role.
  *
  * @param role     The target role's weighted competency requirements.
- * @param observed Per-competency 360 evidence (Others-mean + self source).
+ * @param observed Per-competency 360 evidence (Others-mean + self source + optional spread).
  * @param config   Tunable parameters (defaults to DEFAULT_READINESS_CONFIG).
  */
 export function computeReadiness(
@@ -278,6 +304,8 @@ export function computeReadiness(
       covered &&
       req.priority === config.knockoutPriority &&
       othersMean! <= req.target - config.knockoutGap;
+    const lowAgreement =
+      covered && o?.othersSpread != null && (o.othersSpread as number) >= config.raterAgreementSpreadMax;
     return {
       competencyId: req.competencyId,
       name: req.name,
@@ -291,12 +319,14 @@ export function computeReadiness(
       selfMean,
       selfOthersGap: selfMean != null && othersMean != null ? selfMean - othersMean : null,
       selfFlag: selfAwarenessFlag(selfMean, othersMean, req.target),
+      lowAgreement,
     };
   });
 
   const covered = competencies.filter((c) => c.covered);
   const coveredCount = covered.length;
   const coveragePct = totalCount > 0 ? coveredCount / totalCount : 0;
+  const lowAgreementCount = covered.filter((c) => c.lowAgreement).length;
 
   // Self-awareness headline is available even when readiness can't be asserted.
   const selfPairs = competencies
@@ -319,6 +349,10 @@ export function computeReadiness(
       competencies,
       overallSelf,
       overallSelfOthersGap: null,
+      borderline: false,
+      borderlineNote: null,
+      nearestCutoffDistance: null,
+      lowAgreementCount,
     };
   }
 
@@ -342,6 +376,24 @@ export function computeReadiness(
   const overallSelfOthersGap =
     overallSelf != null && overallOthersForGap != null ? overallSelf - overallOthersForGap : null;
 
+  // Advisory: how close is the gap to the nearest tier boundary?
+  const g = overallGap as number;
+  const cutoffs: Array<{ label: string; cut: number }> = [
+    { label: "Ready Now", cut: config.readyNowGapCut },
+    { label: "Ready Soon", cut: config.readySoonGapCut },
+    { label: "Developing", cut: config.developingGapCut },
+  ];
+  let nearestCutoffDistance: number | null = null;
+  let borderlineNote: string | null = null;
+  for (const { label, cut } of cutoffs) {
+    const d = Math.abs(g - cut);
+    if (nearestCutoffDistance === null || d < nearestCutoffDistance) {
+      nearestCutoffDistance = d;
+      borderlineNote = `gap ${g.toFixed(2)} is ${d.toFixed(2)} from the ${label} cutoff (${cut.toFixed(2)})`;
+    }
+  }
+  const borderline = nearestCutoffDistance !== null && nearestCutoffDistance <= config.borderlineBand;
+
   return {
     status: tier,
     tier,
@@ -356,5 +408,9 @@ export function computeReadiness(
     competencies,
     overallSelf,
     overallSelfOthersGap,
+    borderline,
+    borderlineNote: borderline ? borderlineNote : null,
+    nearestCutoffDistance,
+    lowAgreementCount,
   };
 }

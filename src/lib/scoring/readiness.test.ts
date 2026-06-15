@@ -8,7 +8,7 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { computeReadiness, DEFAULT_READINESS_CONFIG } from "./readiness";
+import { computeReadiness, DEFAULT_READINESS_CONFIG } from "./readiness.ts";
 
 const role = [
   { competencyId: "c1", name: "Sound Judgement", weight: 8, priority: "high" as const, target: 4 },
@@ -93,4 +93,38 @@ test("E: large gap -> Not Ready, year label maps when enabled", () => {
   );
   assert.equal(r.tier, "not_ready");
   assert.ok(r.yearLabel && r.yearLabel.length > 0);
+});
+
+test("F: gap sitting on a cutoff is flagged borderline (tier unchanged)", () => {
+  const r = computeReadiness(
+    role,
+    [
+      { competencyId: "c1", othersMean: 3.5, selfMean: 4, othersCount: 5 },
+      { competencyId: "c2", othersMean: 3.5, selfMean: 4, othersCount: 5 },
+      { competencyId: "c3", othersMean: 3.5, selfMean: 4, othersCount: 5 },
+      { competencyId: "c4", othersMean: 3.5, selfMean: 4, othersCount: 5 },
+      { competencyId: "c5", othersMean: 3.5, selfMean: 4, othersCount: 5 },
+    ],
+    DEFAULT_READINESS_CONFIG,
+  );
+  assert.equal(r.tier, "ready_soon"); // gap = -0.5, on the Ready Soon cutoff
+  assert.equal(r.borderline, true);
+  assert.ok((r.nearestCutoffDistance ?? 1) <= DEFAULT_READINESS_CONFIG.borderlineBand);
+});
+
+test("G: sharp Others disagreement flags low rater agreement", () => {
+  const r = computeReadiness(
+    role,
+    [
+      { competencyId: "c1", othersMean: 4.0, selfMean: 4, othersCount: 5, othersSpread: 4 }, // spread >= 3
+      { competencyId: "c2", othersMean: 4.0, selfMean: 4, othersCount: 5, othersSpread: 1 },
+      { competencyId: "c3", othersMean: 4.0, selfMean: 4, othersCount: 5, othersSpread: 0 },
+      { competencyId: "c4", othersMean: 4.0, selfMean: 4, othersCount: 5, othersSpread: 1 },
+      { competencyId: "c5", othersMean: 4.0, selfMean: 4, othersCount: 5, othersSpread: 0 },
+    ],
+    DEFAULT_READINESS_CONFIG,
+  );
+  assert.equal(r.tier, "ready_now");
+  assert.equal(r.lowAgreementCount, 1);
+  assert.equal(r.competencies.find((c) => c.competencyId === "c1")?.lowAgreement, true);
 });

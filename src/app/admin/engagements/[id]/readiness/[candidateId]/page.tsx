@@ -5,9 +5,10 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getServerT, getServerLocale, getServerDir } from "@/lib/i18n/server";
 import { BackLink } from "@/components/shared/back-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, Target, Gauge, ShieldAlert, Eye, EyeOff, Clock } from "lucide-react";
+import { TrendingUp, Target, Gauge, ShieldAlert, Eye, EyeOff, Clock, AlertTriangle, Users } from "lucide-react";
 import { computeCandidateReadiness } from "@/lib/scoring/readiness-data";
 import { READINESS_TIER_META, type SelfAwarenessFlag } from "@/lib/scoring/readiness";
+import { GenerateIdpButton } from "./_components/generate-idp-button";
 
 type Props = { params: { id: string; candidateId: string } };
 
@@ -78,8 +79,19 @@ export default async function ReadinessReportPage({ params }: Props) {
                 <Clock className="h-3.5 w-3.5" /> {t("readinessReport.horizon")}: {r.yearLabel}
               </span>
             )}
+            {r.borderline && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800"
+                title={r.borderlineNote ?? undefined}
+              >
+                <AlertTriangle className="h-3.5 w-3.5" /> {t("readinessReport.borderline")}
+              </span>
+            )}
           </div>
           <p className="pt-2 text-sm text-muted-foreground">{meta.blurb}</p>
+          {r.borderline && r.borderlineNote && (
+            <p className="text-[11px] text-amber-700">{t("readinessReport.borderlineHint")} - {r.borderlineNote}.</p>
+          )}
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -128,6 +140,12 @@ export default async function ReadinessReportPage({ params }: Props) {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">{t("readinessReport.detailTitle")}</CardTitle>
+          {r.lowAgreementCount > 0 && (
+            <p className="inline-flex items-center gap-1.5 text-xs text-amber-700">
+              <Users className="h-3.5 w-3.5" />
+              {t("readinessReport.lowAgreementSummary", { count: r.lowAgreementCount })}
+            </p>
+          )}
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -146,7 +164,16 @@ export default async function ReadinessReportPage({ params }: Props) {
               <tbody>
                 {r.competencies.map((c) => (
                   <tr key={c.competencyId} className={`border-b last:border-0 ${!c.covered ? "opacity-60" : ""}`}>
-                    <td className="px-2 py-2 font-medium text-foreground">{c.name}</td>
+                    <td className="px-2 py-2 font-medium text-foreground">
+                      <span className="inline-flex items-center gap-1.5">
+                        {c.name}
+                        {c.lowAgreement && (
+                          <Users className="h-3.5 w-3.5 text-amber-600" aria-label={t("readinessReport.lowAgreement")}>
+                            <title>{t("readinessReport.lowAgreement")}</title>
+                          </Users>
+                        )}
+                      </span>
+                    </td>
                     <td className="px-2 py-2 text-muted-foreground">{t(`readinessReport.priority.${c.priority}`)}</td>
                     <td className="px-2 py-2 text-end tabular-nums">{num(c.othersMean)}</td>
                     <td className="px-2 py-2 text-end tabular-nums">{c.target.toFixed(1)}</td>
@@ -183,6 +210,29 @@ export default async function ReadinessReportPage({ params }: Props) {
           )}
         </CardContent>
       </Card>
+
+      {/* Slice 5 — readiness → IDP */}
+      {r.status !== "insufficient_data" && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">{t("readinessReport.idpTitle")}</CardTitle>
+            <p className="text-sm text-muted-foreground">{t("readinessReport.idpDesc")}</p>
+          </CardHeader>
+          <CardContent>
+            <GenerateIdpButton
+              engagementId={params.id}
+              candidateId={params.candidateId}
+              labels={{
+                generate: t("readinessReport.idpGenerate"),
+                generating: t("readinessReport.idpGenerating"),
+                open: t("readinessReport.idpOpen"),
+                noParticipant: t("readinessReport.idpNoParticipant"),
+                error: t("readinessReport.idpError"),
+              }}
+            />
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

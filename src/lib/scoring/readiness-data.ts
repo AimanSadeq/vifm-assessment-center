@@ -48,12 +48,30 @@ export type ReadinessConfigRow = {
   year_map: Record<string, string> | null;
   updated_by: string | null;
   updated_at: string;
+  // v2 advisory-confidence columns (migration 00096). Optional: a pre-migration
+  // row won't have them, so rowToConfig falls back to the engine defaults.
+  borderline_band?: number | string | null;
+  rater_agreement_spread_max?: number | string | null;
 };
 
-const CONFIG_COLUMNS =
+const CONFIG_COLUMNS_BASE =
   "id, organization_id, ready_now_gap_cut, ready_soon_gap_cut, developing_gap_cut, " +
   "knockout_enabled, knockout_priority, knockout_gap, knockout_cap_tier, use_weights, " +
   "min_others_per_competency, coverage_min_pct, year_layer_enabled, year_map, updated_by, updated_at";
+const CONFIG_COLUMNS_V2 = CONFIG_COLUMNS_BASE + ", borderline_band, rater_agreement_spread_max";
+
+/** Load the config row for a scope, tolerant of the v2 columns not being
+ *  migrated yet (retries with the base column list on a missing-column error). */
+async function loadConfigRow(sb: Sb, orgId: string | null): Promise<ReadinessConfigRow | null> {
+  const build = (cols: string) => {
+    const q = sb.from("readiness_index_config").select(cols);
+    return (orgId ? q.eq("organization_id", orgId) : q.is("organization_id", null)).maybeSingle();
+  };
+  let { data, error } = await build(CONFIG_COLUMNS_V2);
+  if (error) ({ data, error } = await build(CONFIG_COLUMNS_BASE));
+  if (error) return null;
+  return (data ?? null) as unknown as ReadinessConfigRow | null;
+}
 
 const TIERS: ReadinessTier[] = ["ready_now", "ready_soon", "developing", "not_ready"];
 
@@ -83,6 +101,8 @@ export function rowToConfig(row: ReadinessConfigRow | null): ReadinessConfig {
     useWeights: row.use_weights ?? DEFAULT_READINESS_CONFIG.useWeights,
     minOthersPerCompetency: Math.max(1, Math.round(num(row.min_others_per_competency, DEFAULT_READINESS_CONFIG.minOthersPerCompetency))),
     coverageMinPct: num(row.coverage_min_pct, DEFAULT_READINESS_CONFIG.coverageMinPct),
+    borderlineBand: num(row.borderline_band, DEFAULT_READINESS_CONFIG.borderlineBand),
+    raterAgreementSpreadMax: num(row.rater_agreement_spread_max, DEFAULT_READINESS_CONFIG.raterAgreementSpreadMax),
     yearLayerEnabled: row.year_layer_enabled ?? DEFAULT_READINESS_CONFIG.yearLayerEnabled,
     yearMap,
   };
@@ -94,24 +114,12 @@ export async function loadEffectiveConfig(
   sb: Sb,
   organizationId: string | null,
 ): Promise<{ config: ReadinessConfig; row: ReadinessConfigRow | null; scope: "org" | "global" | "default" }> {
-  try {
-    if (organizationId) {
-      const { data: orgRow } = await sb
-        .from("readiness_index_config")
-        .select(CONFIG_COLUMNS)
-        .eq("organization_id", organizationId)
-        .maybeSingle();
-      if (orgRow) return { config: rowToConfig(orgRow as unknown as ReadinessConfigRow), row: orgRow as unknown as ReadinessConfigRow, scope: "org" };
-    }
-    const { data: globalRow } = await sb
-      .from("readiness_index_config")
-      .select(CONFIG_COLUMNS)
-      .is("organization_id", null)
-      .maybeSingle();
-    if (globalRow) return { config: rowToConfig(globalRow as unknown as ReadinessConfigRow), row: globalRow as unknown as ReadinessConfigRow, scope: "global" };
-  } catch {
-    // table not migrated yet — fall through to engine defaults
+  if (organizationId) {
+    const orgRow = await loadConfigRow(sb, organizationId);
+    if (orgRow) return { config: rowToConfig(orgRow), row: orgRow, scope: "org" };
   }
+  const globalRow = await loadConfigRow(sb, null);
+  if (globalRow) return { config: rowToConfig(globalRow), row: globalRow, scope: "global" };
   return { config: DEFAULT_READINESS_CONFIG, row: null, scope: "default" };
 }
 
@@ -126,6 +134,19 @@ export async function loadGlobalReadinessConfig(): Promise<{ config: ReadinessCo
 function othersCountFromGroups(byGroup: Array<{ rater_role: string; rater_count: number }> | undefined): number {
   if (!byGroup) return 0;
   return byGroup.filter((g) => g.rater_role !== "self").reduce((a, g) => a + (g.rater_count ?? 0), 0);
+}
+
+/** Spread of the Others view = max−min across rater-group means (excludes self).
+ *  Feeds the engine's low-agreement flag (v2). Null when <2 groups have a mean. */
+function othersSpreadFromGroups(
+  byGroup: Array<{ rater_role: string; mean: number | null }> | undefined,
+): number | null {
+  if (!byGroup) return null;
+  const means = byGroup
+    .filter((g) => g.rater_role !== "self" && typeof g.mean === "number")
+    .map((g) => g.mean as number);
+  if (means.length < 2) return null;
+  return Math.max(...means) - Math.min(...means);
 }
 
 /**
@@ -176,11 +197,25 @@ export async function computeCandidateReadiness(
       .select("default_target_proficiency")
       .eq("id", roleProfileId)
       .maybeSingle();
-    const target = Number(rp?.default_target_proficiency ?? 3) || 3;
-    const { data: rpcs } = await sb
-      .from("role_profile_competencies")
-      .select("competency_id, weight, priority")
-      .eq("role_profile_id", roleProfileId);
+    const defaultTarget = Number(rp?.default_target_proficiency ?? 3) || 3;
+    // Per-competency target (handover C, migration 00097) overrides the role
+    // default when set. Tolerant: retry without the column if not yet migrated.
+    let rpcs: Array<Record<string, unknown>> | null = null;
+    {
+      const v2 = await sb
+        .from("role_profile_competencies")
+        .select("competency_id, weight, priority, target_proficiency")
+        .eq("role_profile_id", roleProfileId);
+      if (v2.error) {
+        const base = await sb
+          .from("role_profile_competencies")
+          .select("competency_id, weight, priority")
+          .eq("role_profile_id", roleProfileId);
+        rpcs = (base.data as Array<Record<string, unknown>>) ?? [];
+      } else {
+        rpcs = (v2.data as Array<Record<string, unknown>>) ?? [];
+      }
+    }
     const compIds = (rpcs ?? []).map((r) => r.competency_id as string);
     const nameById = new Map<string, string>();
     if (compIds.length) {
@@ -189,12 +224,13 @@ export async function computeCandidateReadiness(
     }
     for (const r of rpcs ?? []) {
       const priority = (["high", "medium", "low"].includes(r.priority as string) ? r.priority : "medium") as RoleCompetencyPriority;
+      const perComp = r.target_proficiency == null ? null : Number(r.target_proficiency);
       role.push({
         competencyId: r.competency_id as string,
         name: nameById.get(r.competency_id as string) ?? "",
         weight: Number(r.weight ?? 1) || 1,
         priority,
-        target,
+        target: perComp != null && Number.isFinite(perComp) ? perComp : defaultTarget,
       });
     }
   }
@@ -279,6 +315,7 @@ export async function computeCandidateReadiness(
         othersMean: cs.others_mean,
         selfMean,
         othersCount: othersCountFromGroups(cs.by_group),
+        othersSpread: othersSpreadFromGroups(cs.by_group),
       });
     }
   }

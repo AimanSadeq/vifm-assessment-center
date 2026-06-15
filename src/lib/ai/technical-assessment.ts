@@ -27,10 +27,11 @@ import {
 } from "@/lib/competencies/technical-framework";
 import { technicalConfidenceBand, type TechBand } from "@/lib/scoring/tech-reliability";
 
-/** Item format. `single` = one correct option (classic MCQ); `multi` = select-
- *  all-that-apply (2+ correct, all-or-nothing); `scenario` = a case stem + a
- *  single-best-answer MCQ grounded in it. */
-export type TechItemType = "single" | "multi" | "scenario";
+/** Item format. `single` = one correct option (classic MCQ, 4 options); `multi` =
+ *  select-all-that-apply (2+ correct, all-or-nothing, 4-6 options); `scenario` =
+ *  a case stem + a single-best-answer MCQ grounded in it (4 options);
+ *  `true_false` = a single proposition with exactly 2 options (True / False). */
+export type TechItemType = "single" | "multi" | "scenario" | "true_false";
 /** Bloom cognitive demand the item targets. */
 export type CognitiveLevel = "recall" | "apply" | "analyze";
 
@@ -147,13 +148,6 @@ function fallbackTest(domainKey: TechDomainKey, language: "en" | "ar" = "en"): T
   };
 }
 
-const cleanMcq = (r: { options?: string[]; correct_index?: number }): boolean =>
-  Array.isArray(r.options) &&
-  r.options.length === 4 &&
-  typeof r.correct_index === "number" &&
-  r.correct_index >= 0 &&
-  r.correct_index < 4;
-
 // Shared item-writer persona for both the domain and function generators.
 const ITEM_WRITER_SYSTEM =
   `You are a subject-matter assessment item writer for VIFM, a GCC finance & ` +
@@ -167,7 +161,7 @@ const ITEM_WRITER_SYSTEM =
 const arabicLangLines = (language: "en" | "ar"): string[] =>
   language === "ar"
     ? [
-        `LANGUAGE: Write every "question" and all four "options" in clear Modern Standard`,
+        `LANGUAGE: Write every "question", "scenario", and all "options" in clear Modern Standard`,
         `Arabic suitable for GCC finance professionals. Keep standard finance acronyms`,
         `(IFRS, WACC, CAPM, DCF, EBITDA, REIT) and numeric/currency values as commonly`,
         `written. Keep each "skill" value as the EXACT English skill name listed below.`,
@@ -193,8 +187,9 @@ function shuffleMcq(origOptions: string[], origCorrect: number): { options: stri
 
 /** Generalized Fisher–Yates over N options carrying a SET of correct positions
  *  (handles multi-select). Returns the shuffled options + the correct positions
- *  in the new order. Same integrity purpose as shuffleMcq. */
-function shuffleChoices(options: string[], correct: number[]): { options: string[]; correct: number[] } {
+ *  in the new order. Re-randomising per administration defeats "always pick A"
+ *  + position memorisation - a defensibility/integrity must-fix. */
+export function shuffleChoices(options: string[], correct: number[]): { options: string[]; correct: number[] } {
   const order = options.map((_, i) => i);
   for (let j = order.length - 1; j > 0; j--) {
     const k = Math.floor(Math.random() * (j + 1));
@@ -237,9 +232,11 @@ type RawRichItem = {
 function normalizeRichItem(raw: RawRichItem, i: number, skills: string[], skillSet: Set<string>): TechItem | null {
   if (typeof raw.question !== "string" || !raw.question.trim()) return null;
   const opts = Array.isArray(raw.options) ? (raw.options as unknown[]).map(String) : [];
-  if (opts.length < 4 || opts.length > 6) return null;
 
-  const declared: TechItemType = raw.type === "multi" ? "multi" : raw.type === "scenario" ? "scenario" : "single";
+  const declared: TechItemType =
+    raw.type === "multi" ? "multi" :
+    raw.type === "scenario" ? "scenario" :
+    raw.type === "true_false" ? "true_false" : "single";
   const skill = typeof raw.skill === "string" && skillSet.has(raw.skill) ? raw.skill : skills[i % skills.length];
   const base = {
     id: raw.id || `t${i + 1}`,
@@ -249,7 +246,17 @@ function normalizeRichItem(raw: RawRichItem, i: number, skills: string[], skillS
     difficulty: asDifficulty(raw.difficulty),
   };
 
+  if (declared === "true_false") {
+    // Exactly 2 options, one correct. Option order is canonical (True / False),
+    // so it is not shuffled - position carries no answer signal at n=2.
+    if (opts.length !== 2) return null;
+    const idx = typeof raw.correct_index === "number" ? raw.correct_index : Number(raw.correct_index);
+    if (!Number.isInteger(idx) || idx < 0 || idx > 1) return null;
+    return { ...base, type: "true_false", options: opts, correct_index: idx };
+  }
+
   if (declared === "multi") {
+    if (opts.length < 4 || opts.length > 6) return null;
     const ci = Array.isArray(raw.correct_indices)
       ? Array.from(
           new Set(
@@ -261,7 +268,8 @@ function normalizeRichItem(raw: RawRichItem, i: number, skills: string[], skillS
       : [];
     if (ci.length < 2 || ci.length >= opts.length) return null; // need 2+ correct AND a distractor
     const { options, correct } = shuffleChoices(opts, ci);
-    return { ...base, type: "multi", options, correct_index: correct[0] ?? 0, correct_indices: correct };
+    if (correct.length < 2) return null; // defensive: shuffle must preserve the correct set
+    return { ...base, type: "multi", options, correct_index: correct[0], correct_indices: correct };
   }
 
   // single / scenario — exactly 4 options, one correct
@@ -290,24 +298,36 @@ export async function generateTechnicalAssessment(input: {
 
   const user = [
     ...arabicLangLines(language),
-    `Write exactly ${ITEM_COUNT} multiple-choice items assessing technical competence in:`,
+    `Write EXACTLY ${ITEM_COUNT} technical-competency assessment items for the finance`,
+    `domain below, spread across its skills, and VARY the item format.`,
     `DOMAIN: ${domain.name}`,
-    `SKILLS (spread items across these): ${domain.skills.join("; ")}.`,
+    `SKILLS (use the EXACT English name as the "skill" tag): ${domain.skills.join("; ")}.`,
     ``,
-    `Ramp difficulty: ~3 easy, ~3 medium, ~2 hard. Each item = a question + four`,
-    `options (one correct). Tag each item with the single skill it best assesses`,
-    `(use the exact skill names above).`,
+    `TYPE MIX:`,
+    `  • 4 × "single"     - one question, four options, exactly ONE correct (correct_index).`,
+    `  • 1 × "true_false" - a single proposition; options ["True","False"]; correct_index 0 or 1.`,
+    `  • 2 × "multi"      - select-all-that-apply: 4-6 options with 2-3 correct`,
+    `                       (correct_indices array). At least one option must be wrong.`,
+    `  • 1 × "scenario"   - a short realistic case in "scenario" (2-4 sentences with`,
+    `                       figures), then a single-best-answer question (four options, correct_index).`,
+    ``,
+    `Tag COGNITIVE level ("cognitive"): "recall" / "apply" / "analyze". Ramp`,
+    `"difficulty" across easy / medium / hard. Tag each item with the single skill`,
+    `it best assesses (exact names above).`,
     ``,
     `Return JSON ONLY (no markdown fences):`,
-    `{ "items": [ { "id":"t1","skill":"<one of the skills>","question":"...",`,
-    `  "options":["a","b","c","d"],"correct_index":0,"difficulty":"easy" } ] }`,
+    `{ "items": [`,
+    `  { "skill":"<skill>","type":"single","question":"...","options":["a","b","c","d"],"correct_index":0,"cognitive":"recall","difficulty":"easy" },`,
+    `  { "skill":"<skill>","type":"true_false","question":"...","options":["True","False"],"correct_index":0,"cognitive":"recall","difficulty":"easy" },`,
+    `  { "skill":"<skill>","type":"multi","question":"Which apply?","options":["a","b","c","d","e"],"correct_indices":[0,2],"cognitive":"apply","difficulty":"medium" },`,
+    `  { "skill":"<skill>","type":"scenario","scenario":"<case with figures>","question":"...","options":["a","b","c","d"],"correct_index":1,"cognitive":"analyze","difficulty":"hard" } ] }`,
   ].join("\n");
 
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
       const res = await client.messages.create({
         model: AI_MODEL,
-        max_tokens: 3500,
+        max_tokens: 4000,
         system,
         messages: [{ role: "user", content: user }],
       });
@@ -316,23 +336,13 @@ export async function generateTechnicalAssessment(input: {
       if (!block || block.type !== "text") throw new Error("no text");
       const match = block.text.match(/\{[\s\S]*\}/);
       if (!match) throw new Error("no json");
-      const parsed = JSON.parse(match[0]) as { items?: Array<Partial<TechItem>> };
+      const parsed = JSON.parse(match[0]) as { items?: RawRichItem[] };
 
       const skillSet = new Set(domain.skills);
       const items: TechItem[] = (parsed.items ?? [])
-        .filter((r) => typeof r.question === "string" && cleanMcq(r))
-        .map((r, i): TechItem => {
-          const { options, correct_index } = shuffleMcq((r.options as string[]).map(String), r.correct_index as number);
-          return {
-            id: r.id || `t${i + 1}`,
-            skill: typeof r.skill === "string" && skillSet.has(r.skill) ? r.skill : domain.skills[i % domain.skills.length],
-            type: "single",
-            question: String(r.question),
-            options,
-            correct_index,
-            difficulty: r.difficulty === "hard" ? "hard" : r.difficulty === "medium" ? "medium" : "easy",
-          };
-        });
+        .map((r, i) => normalizeRichItem(r, i, domain.skills, skillSet))
+        .filter((it): it is TechItem => it !== null)
+        .map((it, i) => ({ ...it, id: `t${i + 1}` })); // stable, collision-free ids
 
       if (items.length < 4) throw new Error(`only ${items.length} usable items (need 4+)`);
       return { domain_key: input.domainKey, domain_name: domain.name, items, ai_generated: true };
@@ -511,9 +521,9 @@ export async function generateFunctionAssessment(input: {
   return { domain_key: input.functionKey, domain_name: input.functionName, items, ai_generated: true };
 }
 
-/** Did the taker get this item right? single/scenario = exact index; multi =
- *  the selected set exactly equals the correct set (all-or-nothing). */
-function itemIsCorrect(item: TechItem, answer: number | number[] | undefined): boolean {
+/** Did the taker get this item right? single/scenario/true_false = exact index;
+ *  multi = the selected set exactly equals the correct set (all-or-nothing). */
+export function itemIsCorrect(item: TechItem, answer: number | number[] | undefined): boolean {
   if (item.type === "multi") {
     const want = item.correct_indices ?? [];
     const got = Array.isArray(answer) ? answer : typeof answer === "number" ? [answer] : [];

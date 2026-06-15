@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useTranslation } from "react-i18next";
 import { Check, Loader2, AlertCircle, HelpCircle } from "lucide-react";
+import { AssessmentIntro, type IntroPoint } from "@/components/shared/assessment-intro";
 import { saveAraAnswer } from "@/lib/ara/respondent-actions";
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
 import {
@@ -57,6 +59,10 @@ const DEBOUNCE_MS = 600;
 
 export function QuestionsForm({ token, questions, answers, language }: QuestionsFormProps) {
   const rtl = language === "ar";
+  // Intro is rendered in the ASSESSMENT's language (en/ar), not the UI cookie.
+  const { i18n } = useTranslation();
+  const at = useMemo(() => i18n.getFixedT(language === "ar" ? "ar" : "en"), [i18n, language]);
+  const [started, setStarted] = useState(false);
 
   // Split questions into pillar-only and individual-factor groups.
   // Items with individual_factor_id set belong to the personal factor
@@ -255,6 +261,33 @@ export function QuestionsForm({ token, questions, answers, language }: Questions
     return a && (a.value !== null || (q.question_type === "open_text" && a.text));
   }).length;
   const progress = questions.length === 0 ? 0 : Math.round((answeredCount / questions.length) * 100);
+
+  if (!started) {
+    const present = new Set<AraQuestionType>(questions.map((q) => q.question_type));
+    const order: Array<[AraQuestionType, string]> = [
+      ["rating", "rating"],
+      ["multiple_choice", "choice"],
+      ["situational_judgment", "judgment"],
+      ["knowledge_check", "knowledge"],
+      ["open_text", "open"],
+    ];
+    const howTo: IntroPoint[] = order
+      .filter(([qt]) => present.has(qt))
+      .map(([, key]) => ({ label: at(`aintro.arc.${key}.label`), text: at(`aintro.arc.${key}.text`) }));
+    return (
+      <AssessmentIntro
+        dir={rtl ? "rtl" : "ltr"}
+        eyebrow={at("aintro.eyebrow")}
+        title={at("aintro.title")}
+        intro={at("aintro.arc.intro")}
+        howToTitle={at("aintro.howTo")}
+        howTo={howTo}
+        guidance={[at("aintro.arc.g1"), at("aintro.arc.g2")]}
+        startLabel={at("aintro.arc.start")}
+        onStart={() => setStarted(true)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-8">

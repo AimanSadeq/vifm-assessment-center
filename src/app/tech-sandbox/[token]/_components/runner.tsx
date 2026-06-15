@@ -3,8 +3,10 @@
 // through every active skill block (spreadsheet / logic_input / sql), autosaves
 // work, auto-submits on expiry, and shows the banded result.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { AssessmentIntro, type IntroPoint } from "@/components/shared/assessment-intro";
 import type { PublicBlueprint, PublicSkillBlock } from "@/lib/technical-sandbox/service";
 import { proficiencyTier, proficiencyTierLabel } from "@/lib/competencies/proficiency-tier";
 import { LogicInputEngine } from "./logic-input-engine";
@@ -59,6 +61,9 @@ export function Runner({
   const [idx, setIdx] = useState(0);
   const [expiresAt, setExpiresAt] = useState<number | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
+  const [beginning, setBeginning] = useState(false);
+  const { i18n } = useTranslation();
+  const at = useMemo(() => i18n.getFixedT(locale), [i18n, locale]);
 
   const workRef = useRef<Record<string, Work>>({});
   const sheetReaderRef = useRef<SpreadsheetReader | null>(null);
@@ -102,18 +107,22 @@ export function Runner({
     }
   }, [captureCurrentWork, current, save, token]);
 
-  // Start the sitting (stamps expiry).
-  useEffect(() => {
-    if (started || submitted) return;
-    (async () => {
+  // Start the sitting (stamps expiry) - triggered from the intro's Start button
+  // so the timer begins when the taker is ready, not on page load.
+  const begin = useCallback(async () => {
+    if (started || submitted || beginning) return;
+    setBeginning(true);
+    try {
       const res = await fetch(`/api/tech-sandbox/${token}/start`, { method: "POST" });
       const json = (await res.json()) as { ok: boolean; expiresAt?: string };
       if (json.ok && json.expiresAt) {
         setExpiresAt(new Date(json.expiresAt).getTime());
         setStarted(true);
       }
-    })();
-  }, [started, submitted, token]);
+    } finally {
+      setBeginning(false);
+    }
+  }, [started, submitted, beginning, token]);
 
   // Countdown + auto-submit.
   useEffect(() => {
@@ -147,6 +156,41 @@ export function Runner({
 
   if (submitted) {
     return <Results token={token} blueprint={blueprint} result={result} locale={locale} />;
+  }
+
+  if (!started) {
+    const engines = new Set(blocks.map((b) => b.engineType));
+    const howTo: IntroPoint[] = [];
+    if (engines.has("spreadsheet") || engines.has("advanced_spreadsheet"))
+      howTo.push({ label: at("aintro.sandbox.spreadsheet.label"), text: at("aintro.sandbox.spreadsheet.text") });
+    if (engines.has("sql")) howTo.push({ label: at("aintro.sandbox.sql.label"), text: at("aintro.sandbox.sql.text") });
+    if (engines.has("logic_input")) howTo.push({ label: at("aintro.sandbox.logic.label"), text: at("aintro.sandbox.logic.text") });
+    return (
+      <div className="mx-auto max-w-4xl space-y-4 p-4">
+        <div className="flex items-center justify-between">
+          <Link href="/" className="text-sm text-[#5391D5] hover:underline">{ar ? "الرئيسية" : "Home"}</Link>
+          <button
+            onClick={() => setLocale(ar ? "en" : "ar")}
+            className="rounded-md border border-border px-3 py-1 text-sm text-foreground hover:bg-muted"
+          >
+            {ar ? "English" : "العربية"}
+          </button>
+        </div>
+        <AssessmentIntro
+          dir={ar ? "rtl" : "ltr"}
+          eyebrow={at("aintro.eyebrow")}
+          title={at("aintro.title")}
+          intro={at("aintro.sandbox.intro", { function: ar ? blueprint.nameAr ?? blueprint.nameEn : blueprint.nameEn })}
+          howToTitle={at("aintro.howTo")}
+          howTo={howTo}
+          guidance={[at("aintro.sandbox.g1")]}
+          note={{ tone: "amber", text: at("aintro.sandbox.g2") }}
+          startLabel={at("aintro.sandbox.start")}
+          onStart={begin}
+          busy={beginning}
+        />
+      </div>
+    );
   }
 
   const fmt = (s: number | null) =>

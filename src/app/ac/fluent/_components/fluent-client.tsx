@@ -75,7 +75,13 @@ const T = {
     optional: "optional", certificate: "Download certificate", resultFor: "Result for",
     transcriptHeading: "Your transcript",
     beginTitle: "Begin your placement",
-    beginSub: "About 15 minutes · four skills · an indicative CEFR level the moment you finish.",
+    beginSub: "About {min} minutes · four skills · an indicative CEFR level the moment you finish.",
+    howToTitle: "How to answer",
+    howReading: "Reading & Listening: choose the best answer; listening items have audio you can replay.",
+    howWriting: "Writing: type your response; write naturally and stay on the topic.",
+    howSpeaking: "Speaking: allow microphone access and speak clearly when prompted.",
+    prep1: "Find a quiet place; the speaking part needs a working microphone.",
+    prep2: "Take your time and do your own work - it gives the most useful placement.",
   },
   ar: {
     start: "ابدأ اختبار تحديد المستوى", starting: "جارٍ إعداد اختبارك…",
@@ -104,7 +110,13 @@ const T = {
     optional: "اختياري", certificate: "تنزيل الشهادة", resultFor: "نتيجة",
     transcriptHeading: "نص كلامك",
     beginTitle: "ابدأ تحديد مستواك",
-    beginSub: "نحو 15 دقيقة · أربع مهارات · مستوى CEFR تقريبي فور انتهائك.",
+    beginSub: "نحو {min} دقيقة · أربع مهارات · مستوى CEFR تقريبي فور انتهائك.",
+    howToTitle: "كيفية الإجابة",
+    howReading: "القراءة والاستماع: اختر الإجابة الأنسب؛ بنود الاستماع تتضمّن صوتًا يمكنك إعادة تشغيله.",
+    howWriting: "الكتابة: اكتب إجابتك بأسلوب طبيعي والتزم بالموضوع.",
+    howSpeaking: "التحدث: اسمح باستخدام الميكروفون وتحدّث بوضوح عند الطلب.",
+    prep1: "اختر مكانًا هادئًا؛ يحتاج قسم التحدث إلى ميكروفون يعمل.",
+    prep2: "خذ وقتك وأجب بنفسك - فهذا يمنح أدقّ تحديد للمستوى.",
   },
 } as const;
 
@@ -125,14 +137,21 @@ export function FluentClient({
   engagementId = null,
   prefillName,
   prefillEmail,
+  timerMinutes,
 }: {
   candidateId?: string | null;
   engagementId?: string | null;
   prefillName?: string;
   prefillEmail?: string;
+  /** Admin-configurable time limit (minutes); defaults to 15. */
+  timerMinutes?: number;
 } = {}) {
+  const limitMinutes = timerMinutes && timerMinutes > 0 ? timerMinutes : 15;
   const [language, setLanguage] = useState<Language>("en");
   const [phase, setPhase] = useState<"intro" | "test" | "result">("intro");
+  // Countdown: deadline is stamped when the test starts; on expiry, auto-submit.
+  const [deadline, setDeadline] = useState<number | null>(null);
+  const [remaining, setRemaining] = useState<number | null>(null);
   const [test, setTest] = useState<FluentTest | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, number>>({});
@@ -325,11 +344,29 @@ export function FluentClient({
       setPlays({}); setPlayingId(null);
       setTranscript(""); setPronunciation(null); setSpeakNote(""); setSpeakMode("record"); setRecSeconds(0);
       setBlurCount(0); setPasteCount(0);
+      setDeadline(Date.now() + limitMinutes * 60 * 1000);
+      setRemaining(limitMinutes * 60);
       setPhase("test");
     } catch {
       setError("Could not build the test. Please try again.");
     } finally { setBusy(false); }
   }
+
+  // Countdown + auto-submit when the admin-set time limit runs out.
+  useEffect(() => {
+    if (phase !== "test" || deadline == null) return;
+    const id = setInterval(() => {
+      const secs = Math.max(0, Math.round((deadline - Date.now()) / 1000));
+      setRemaining(secs);
+      if (secs <= 0) {
+        clearInterval(id);
+        if (!busy) void submit();
+      }
+    }, 1000);
+    return () => clearInterval(id);
+    // submit is a hoisted function declaration; deadline/phase drive the timer.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, deadline, busy]);
 
   async function submit() {
     if (!test) return;
@@ -386,7 +423,7 @@ export function FluentClient({
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <h2 className="text-lg font-semibold text-[#010131]">{t.beginTitle}</h2>
-              <p className="mt-1 text-sm text-slate-500">{t.beginSub}</p>
+              <p className="mt-1 text-sm text-slate-500">{t.beginSub.replace("{min}", String(limitMinutes))}</p>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{t.pickLang}</span>
@@ -416,6 +453,22 @@ export function FluentClient({
             </label>
           </div>
 
+          <div className="mt-6 rounded-lg border border-slate-200 bg-slate-50/60 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t.howToTitle}</p>
+            <ul className="mt-2 space-y-1.5 text-sm text-slate-700">
+              {[t.howReading, t.howWriting, t.howSpeaking].map((line, i) => (
+                <li key={i} className="flex gap-2">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#5391D5]" />
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
+            <ul className="mt-3 space-y-1 text-[13px] text-slate-600">
+              <li>· {t.prep1}</li>
+              <li>· {t.prep2}</li>
+            </ul>
+          </div>
+
           <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2">
             <button onClick={start} disabled={busy}
               className="ara-pulse inline-flex items-center gap-2 rounded-lg bg-[#010131] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#121140] disabled:cursor-not-allowed disabled:opacity-60">
@@ -430,6 +483,18 @@ export function FluentClient({
       {/* ── Test ── */}
       {phase === "test" && test && (
         <>
+          {remaining != null && (
+            <div
+              className={`sticky top-0 z-10 flex items-center justify-between rounded-lg border px-4 py-2 text-sm shadow-sm ${
+                remaining <= 60 ? "border-rose-200 bg-rose-50 text-rose-700" : "border-slate-200 bg-white text-slate-600"
+              }`}
+            >
+              <span>{language === "ar" ? "الوقت المتبقي" : "Time remaining"}</span>
+              <span className="font-mono font-semibold tabular-nums">
+                {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, "0")}
+              </span>
+            </div>
+          )}
           {/* Reading */}
           <section className="rounded-xl border bg-white p-6 shadow-sm">
             <h2 className="mb-4 inline-flex items-center gap-2 text-lg font-semibold text-[#010131]">

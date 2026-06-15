@@ -9,8 +9,10 @@ import { categoryRank, aggregateByCompetency } from "@/lib/competencies/technica
 import { proficiencyTier, proficiencyTierLabel } from "@/lib/competencies/proficiency-tier";
 import type { PublicTechTest, TechResult } from "@/lib/ai/technical-assessment";
 
-type Phase = "intro" | "test" | "adaptive" | "result";
+type Phase = "intro" | "instructions" | "test" | "adaptive" | "result";
 type RunKind = "function" | "domain";
+// Canonical display order for the per-type "how to answer" guidance.
+const TYPE_ORDER = ["single", "true_false", "multi", "scenario"] as const;
 
 // One adaptive item (answer key stripped) + the running progress.
 type AdaptiveItem = { id: string; skill: string; type: "single"; question: string; options: string[]; difficulty: "easy" | "medium" | "hard" };
@@ -76,6 +78,8 @@ export function TechAssessmentClient({
   const locked = !!(lockedDomain || lockedFunction);
 
   const [phase, setPhase] = useState<Phase>("intro");
+  // After the instructions screen, which phase to begin: the fixed test or the adaptive flow.
+  const [startTarget, setStartTarget] = useState<"test" | "adaptive">("test");
   const [runKind, setRunKind] = useState<RunKind>("function");
   const [test, setTest] = useState<PublicTechTest | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -187,7 +191,8 @@ export function TechAssessmentClient({
       setTest(built);
       setAnswers({});
       setResult(null);
-      setPhase("test");
+      setStartTarget("test");
+      setPhase("instructions");
     } catch {
       setError(t("tech.take.errBuild"));
     } finally {
@@ -246,7 +251,8 @@ export function TechAssessmentClient({
       setAdaptiveProgress(data.progress ?? { answered: 0, max: 0, se: null, theta: 0 });
       setAdaptiveAnswer(null);
       setResult(null);
-      setPhase("adaptive");
+      setStartTarget("adaptive");
+      setPhase("instructions");
     } catch {
       setError(t("tech.take.errBuild"));
     } finally {
@@ -524,6 +530,71 @@ export function TechAssessmentClient({
         </div>
       )}
 
+      {phase === "instructions" && (() => {
+        const isAdaptive = startTarget === "adaptive";
+        const name = isAdaptive
+          ? t("tech.take.adaptiveTitle")
+          : test
+            ? displayName(test.domain_key, test.domain_name)
+            : "";
+        const count = isAdaptive ? adaptiveProgress?.max ?? 0 : test?.items.length ?? 0;
+        const present = isAdaptive
+          ? (["single"] as string[])
+          : TYPE_ORDER.filter((ty) => (test?.items ?? []).some((i) => i.type === ty));
+        const certified = !isAdaptive && !!test?.certified;
+        return (
+          <div className="rounded-2xl border bg-card p-6 shadow-sm space-y-4">
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-slate-500">{t("tech.take.instr.eyebrow")}</p>
+              <h2 className="mt-1 inline-flex items-center gap-2 text-lg font-semibold text-[#010131]">
+                <GraduationCap className="h-5 w-5 text-[#5391D5]" /> {t("tech.take.instr.title")}
+              </h2>
+            </div>
+            <p className="text-sm text-slate-700">{t("tech.take.instr.intro", { name, n: count })}</p>
+
+            <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{t("tech.take.instr.howTo")}</p>
+              <ul className="mt-2 space-y-1.5 text-sm text-slate-700">
+                {present.map((ty) => (
+                  <li key={ty} className="flex gap-2">
+                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#5391D5]" />
+                    <span>
+                      <span className="font-semibold">{t(`tech.take.instr.t.${ty}.label`)}:</span> {t(`tech.take.instr.t.${ty}.how`)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <ul className="space-y-1.5 text-sm text-slate-600">
+              <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />{t("tech.take.instr.g1")}</li>
+              <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />{t("tech.take.instr.g2")}</li>
+              {isAdaptive && (
+                <li className="flex gap-2"><Gauge className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" />{t("tech.take.instr.adaptive")}</li>
+              )}
+            </ul>
+
+            {!isAdaptive &&
+              (certified ? (
+                <div className="flex items-start gap-2 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-[12px] text-emerald-800">
+                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" /> {t("tech.take.instr.certified")}
+                </div>
+              ) : (
+                <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-[12px] text-amber-800">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /> {t("tech.take.instr.indicative")}
+                </div>
+              ))}
+
+            <button
+              onClick={() => setPhase(startTarget)}
+              className="inline-flex items-center gap-2 rounded-md bg-[#047857] px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800"
+            >
+              <GraduationCap className="h-4 w-4" /> {t("tech.take.instr.start")}
+            </button>
+          </div>
+        );
+      })()}
+
       {phase === "test" && test && (
         <>
           <div className="rounded-xl border bg-white p-5 shadow-sm">
@@ -548,6 +619,11 @@ export function TechAssessmentClient({
                   {item.type === "scenario" && (
                     <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-violet-600">
                       {t("tech.take.typeScenario")}
+                    </span>
+                  )}
+                  {item.type === "true_false" && (
+                    <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-teal-600">
+                      {t("tech.take.typeTrueFalse")}
                     </span>
                   )}
                   <span className="text-[10px] uppercase tracking-wide text-slate-400">{t(`tech.sme.diff.${item.difficulty}`)}</span>

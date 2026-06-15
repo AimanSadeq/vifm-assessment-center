@@ -1,4 +1,49 @@
 {
+  "aintro": {
+    "eyebrow": "Instructions",
+    "title": "Before you begin",
+    "howTo": "How to answer",
+    "quiz": {
+      "intro": "This is a short practice quiz on {{competency}}. It has {{n}} questions with a {{minutes}}-minute timer, and is for your own learning - your score is not part of any hiring decision.",
+      "mcq": { "label": "Multiple choice", "text": "select the one best answer." },
+      "tf": { "label": "True / False", "text": "decide whether the statement is correct." },
+      "pattern": { "label": "Pattern", "text": "work out the rule, then choose the option that fits." },
+      "g1": "Answer every question; you can move between them before you finish.",
+      "g2": "When you finish you will see your score and an explanation for each question.",
+      "note": "Practice only - this does not affect your assessment or any hiring decision.",
+      "start": "Start quiz"
+    },
+    "fluent": {
+      "intro": "This is an English placement check across reading, listening, writing, and speaking. It gives an indicative CEFR level (A1-C2) to guide placement; it is not a formal certificate.",
+      "reading": { "label": "Reading & Listening", "text": "choose the best answer; listening items have audio you can replay." },
+      "writing": { "label": "Writing", "text": "type your response; write naturally and stay on the topic." },
+      "speaking": { "label": "Speaking", "text": "allow microphone access and speak clearly when prompted." },
+      "g1": "Find a quiet place; the speaking part needs a working microphone.",
+      "g2": "Take your time and do your own work - it gives the most useful placement.",
+      "note": "Indicative placement only - it guides your starting level, not a formal qualification.",
+      "start": "Start placement"
+    },
+    "arc": {
+      "intro": "This is the VIFM AI Readiness questionnaire. Please answer honestly about how you actually work - for the rating questions there are no right or wrong answers, and your candid view gives the most useful result.",
+      "rating": { "label": "Rating", "text": "choose how much you agree, from strongly disagree to strongly agree." },
+      "choice": { "label": "Multiple choice", "text": "select the option that best matches your situation." },
+      "judgment": { "label": "Situational judgment", "text": "read the short scenario, then choose the best course of action." },
+      "knowledge": { "label": "Knowledge check", "text": "select the answer you believe is correct." },
+      "open": { "label": "Written response", "text": "answer briefly in your own words." },
+      "g1": "Your answers save automatically; you can pause and return using the same link.",
+      "g2": "There is no time limit - answer at your own pace.",
+      "start": "Start"
+    },
+    "sandbox": {
+      "intro": "This is a hands-on technical assessment for {{function}}. You will complete a series of practical tasks - working in a spreadsheet, writing queries, or entering results - just as you would on the job.",
+      "spreadsheet": { "label": "Spreadsheet tasks", "text": "build the formula or model in the grid provided." },
+      "sql": { "label": "SQL tasks", "text": "write a query that returns the required result, then run it." },
+      "logic": { "label": "Logic & input tasks", "text": "work out the answer and enter it in the field provided." },
+      "g1": "Your work saves automatically as you go; finish each task, then move to the next.",
+      "g2": "The assessment is timed and single-use - complete it in one sitting once you begin.",
+      "start": "Start assessment"
+    }
+  },
   "ratings": {
     "bars": {
       "1": "Significant Development Needed",
@@ -399,7 +444,16 @@
       "skill": "Skill",
       "difficulty": "Difficulty",
       "status": { "draft": "draft", "in_review": "in review", "approved": "approved", "rejected": "rejected", "retired": "retired" },
-      "diff": { "easy": "easy", "medium": "medium", "hard": "hard" }
+      "diff": { "easy": "easy", "medium": "medium", "hard": "hard" },
+      "itemType": "Format",
+      "type": { "single": "Single answer", "multi": "Select all that apply", "scenario": "Scenario", "true_false": "True / False" },
+      "selectAllHint": "Tick every correct option (2 or more, and leave at least one wrong).",
+      "scenarioLabel": "Scenario (case shown above the question)",
+      "scenarioPh": "A short realistic case with figures…",
+      "addOption": "Add option",
+      "removeOption": "Remove",
+      "optTrue": "True",
+      "optFalse": "False"
     },
     "take": {
       "errBuild": "Couldn't build the assessment. Please try again.",
@@ -432,6 +486,25 @@
       "answerAll": "Answer all {{n}} questions. Your answer key is graded on the server.",
       "selectAll": "Select all that apply.",
       "typeScenario": "Scenario",
+      "typeTrueFalse": "True / False",
+      "instr": {
+        "eyebrow": "Instructions",
+        "title": "Before you begin",
+        "intro": "You are about to take the {{name}} assessment. It contains {{n}} questions.",
+        "howTo": "How to answer",
+        "t": {
+          "single": { "label": "Single answer", "how": "select the one best option." },
+          "true_false": { "label": "True / False", "how": "decide whether the statement is correct." },
+          "multi": { "label": "Select all that apply", "how": "tick every correct option; partial answers are marked incorrect." },
+          "scenario": { "label": "Scenario", "how": "read the short case shown above the question, then choose the best answer." }
+        },
+        "g1": "Answer every question; you can change your answers until you submit.",
+        "g2": "Read each question carefully - some options are deliberately close.",
+        "adaptive": "The test adapts to your answers and ends once your level is clear.",
+        "certified": "This is a certified assessment. It is single-use: once you submit, the sitting is complete and a passing score can earn a verifiable credential.",
+        "indicative": "This is an indicative assessment - it gives a guidance-level result, not a formal certificate.",
+        "start": "Start assessment"
+      },
       "cog": { "recall": "Recall", "apply": "Apply", "analyze": "Analyze" },
       "scoring": "Scoring…",
       "submit": "Submit for scoring",
@@ -1415,6 +1488,7 @@
     "title": "Settings",
     "subtitle": "System configuration, integrations, and compliance settings.",
     "integrations": "Integrations",
+    "timersTitle": "Assessment Timers",
     "complianceTitle": "Compliance & Data Protection",
     "environmentTitle": "Environment",
     "status": {

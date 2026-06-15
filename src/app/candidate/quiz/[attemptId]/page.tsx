@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { QuizInterface } from "./_components/quiz-interface";
 import { BackLink } from "@/components/shared/back-link";
+import { getTimerMinutes, TIMER_DEFAULTS } from "@/lib/assessment-timers";
 import type { CandidateQuizAttempt } from "@/types/database";
 
 type Props = { params: { attemptId: string } };
@@ -28,6 +29,8 @@ export default async function QuizAttemptPage({ params }: Props) {
   }
 
   const competency = attempt.competencies as unknown as { id: string; name: string } | null;
+  // Admin-configurable quiz time limit (minutes); falls back to the default.
+  const quizMinutes = (await getTimerMinutes("quiz", TIMER_DEFAULTS.quiz)) ?? TIMER_DEFAULTS.quiz;
 
   return (
     <>
@@ -38,6 +41,7 @@ export default async function QuizAttemptPage({ params }: Props) {
       questions={attempt.questions as CandidateQuizAttempt["questions"]}
       initialAnswers={attempt.answers as CandidateQuizAttempt["answers"]}
       startedAt={attempt.started_at as string}
+      durationSeconds={quizMinutes * 60}
       />
     </>
   );

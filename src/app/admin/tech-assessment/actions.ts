@@ -5,7 +5,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { requireRole, isAuthorizationError, type AraCaller } from "@/lib/ara/auth-guards";
 import { draftAiItemsToBank, backfillBankArabic } from "@/lib/competencies/technical-item-bank";
 import { techDomainByKey, type TechDomainKey } from "@/lib/competencies/technical-framework";
-import type { BankItemStatus } from "@/lib/competencies/technical-item-bank";
+import type { BankItemStatus, BankItemType } from "@/lib/competencies/technical-item-bank";
 
 // Admin-only gate. Under AUTH_ENABLED=false requireRole returns a synthetic
 // admin so dev works; under auth=on it throws for non-admins. Returns the
@@ -89,40 +89,75 @@ export async function setItemStatusAction(
 
 export type EditItemFields = {
   skill?: string;
+  question_type?: BankItemType;
   question_en?: string;
   question_ar?: string | null;
+  scenario_en?: string | null;
+  scenario_ar?: string | null;
   options_en?: string[];
   options_ar?: string[] | null;
   correct_index?: number;
+  correct_indices?: number[] | null;
   difficulty?: "easy" | "medium" | "hard";
   explanation_en?: string | null;
 };
 
-/** Edit an item's content (a human refining an AI draft). */
+/** Edit an item's content (a human refining an AI draft). Type-aware: single /
+ *  scenario need 4 options + one correct; true_false 2 options + one correct;
+ *  multi 4-6 options + 2+ correct (with a distractor). */
 export async function updateItemAction(itemId: string, fields: EditItemFields) {
   const g = await guard();
   if ("error" in g) return g;
 
-  // Validate the option/correct shape if those fields are present.
+  // Validate the option / correct shape against the (effective) item type.
   if (fields.options_en) {
-    if (!Array.isArray(fields.options_en) || fields.options_en.length !== 4) {
-      return { error: "exactly 4 options required" };
+    const type = fields.question_type ?? "single";
+    const opts = fields.options_en;
+    if (!Array.isArray(opts) || opts.some((o) => typeof o !== "string" || !o.trim())) {
+      return { error: "all options must be filled in" };
     }
-  }
-  if (fields.correct_index != null && (fields.correct_index < 0 || fields.correct_index > 3)) {
-    return { error: "correct_index must be 0–3" };
+    if (type === "true_false") {
+      if (opts.length !== 2) return { error: "true/false needs exactly 2 options" };
+    } else if (type === "multi") {
+      if (opts.length < 4 || opts.length > 6) return { error: "select-all needs 4-6 options" };
+      const ci = Array.isArray(fields.correct_indices) ? fields.correct_indices : [];
+      if (ci.length < 2 || ci.length >= opts.length || ci.some((n) => n < 0 || n >= opts.length)) {
+        return { error: "select-all needs 2+ correct options and at least one wrong" };
+      }
+    } else {
+      if (opts.length !== 4) return { error: "exactly 4 options required" };
+    }
+    const maxIdx = type === "true_false" ? 1 : opts.length - 1;
+    if (fields.correct_index != null && (fields.correct_index < 0 || fields.correct_index > maxIdx)) {
+      return { error: `correct option out of range` };
+    }
   }
 
   const patch: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(fields)) {
     if (v !== undefined) patch[k] = v;
   }
+  // Non-multi items must not carry a stale multi answer key.
+  if (fields.question_type && fields.question_type !== "multi") patch.correct_indices = null;
+  // Non-scenario items must not carry a stale stem.
+  if (fields.question_type && fields.question_type !== "scenario") {
+    patch.scenario_en = null;
+    patch.scenario_ar = null;
+  }
   if (Object.keys(patch).length === 0) return { ok: true };
 
   try {
     const sb = createServiceClient();
     const { error } = await sb.from("tech_assessment_items").update(patch).eq("id", itemId);
-    if (error) return { error: error.message };
+    if (error) {
+      // migration 00082 not applied — retry with only the legacy columns so
+      // editing a classic single-answer item still works pre-migration.
+      const NEW_COLS = ["question_type", "correct_indices", "scenario_en", "scenario_ar"];
+      const legacy = Object.fromEntries(Object.entries(patch).filter(([k]) => !NEW_COLS.includes(k)));
+      if (Object.keys(legacy).length === 0) return { ok: true };
+      const retry = await sb.from("tech_assessment_items").update(legacy).eq("id", itemId);
+      if (retry.error) return { error: retry.error.message };
+    }
   } catch (e) {
     return { error: e instanceof Error ? e.message : "update failed" };
   }

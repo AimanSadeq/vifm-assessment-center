@@ -23,9 +23,11 @@ import {
   TECH_DOMAINS,
   type TechDomainKey,
 } from "@/lib/competencies/technical-framework";
-import type { TechItem, TechTest } from "@/lib/ai/technical-assessment";
+import { shuffleChoices, type TechItem, type TechItemType, type TechTest } from "@/lib/ai/technical-assessment";
 
 export type BankItemStatus = "draft" | "in_review" | "approved" | "rejected" | "retired";
+/** Bank item format (migration 00082). Legacy rows are 'single'. */
+export type BankItemType = "single" | "multi" | "scenario" | "true_false";
 
 export type BankItem = {
   id: string;
@@ -36,6 +38,11 @@ export type BankItem = {
   options_en: string[];
   options_ar: string[] | null;
   correct_index: number;
+  // Richer formats (00082): null/absent on legacy rows ⇒ treated as 'single'.
+  question_type?: BankItemType | null;
+  correct_indices?: number[] | null; // multi: full set of correct positions
+  scenario_en?: string | null;       // scenario: case stem (EN)
+  scenario_ar?: string | null;       // scenario: case stem (AR)
   difficulty: "easy" | "medium" | "hard";
   explanation_en: string | null;
   status: BankItemStatus;
@@ -64,17 +71,6 @@ export const CERTIFIED_TEST_SIZE = 10;
 const DEFAULT_PASS_PCT = 70;
 const DEFAULT_MIN_ITEMS = 8;
 
-/** Fisher-Yates on [0,1,2,3] — re-randomises option positions per administration
- *  so a memorised "correct is option C" can't transfer between sittings. */
-function shuffledOrder(): number[] {
-  const order = [0, 1, 2, 3];
-  for (let j = order.length - 1; j > 0; j--) {
-    const k = Math.floor(Math.random() * (j + 1));
-    [order[j], order[k]] = [order[k], order[j]];
-  }
-  return order;
-}
-
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -82,6 +78,84 @@ function shuffle<T>(arr: T[]): T[] {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
+}
+
+/** The columns needed to assemble a key-bearing item from a bank row. */
+export type AssemblyRow = {
+  id: string;
+  skill: string;
+  question_en: string;
+  question_ar: string | null;
+  options_en: string[];
+  options_ar: string[] | null;
+  correct_index: number;
+  question_type?: string | null;
+  correct_indices?: number[] | null;
+  scenario_en?: string | null;
+  scenario_ar?: string | null;
+  difficulty: "easy" | "medium" | "hard";
+};
+
+/** The column list for the type-aware (00082) assembly select. */
+export const ASSEMBLY_COLS =
+  "id, skill, question_en, question_ar, options_en, options_ar, correct_index, correct_indices, question_type, scenario_en, scenario_ar, difficulty";
+/** Legacy column list (pre-00082) — used as a fallback so a bank that predates
+ *  the richer-types migration still certifies as single-answer MCQ. */
+export const ASSEMBLY_COLS_LEGACY =
+  "id, skill, question_en, question_ar, options_en, options_ar, correct_index, difficulty";
+
+/** Is a bank row a usable, well-formed item for the certified pool? Type-aware:
+ *  single/scenario need 4 options + a valid correct_index; true_false needs 2
+ *  options + correct_index 0|1; multi needs 4-6 options + 2+ correct (and a
+ *  distractor). Legacy rows (no question_type) are treated as single. */
+export function bankRowUsable(r: AssemblyRow): boolean {
+  const type = (r.question_type ?? "single") as BankItemType;
+  const opts = Array.isArray(r.options_en) ? r.options_en : [];
+  if (type === "true_false") return opts.length === 2 && r.correct_index >= 0 && r.correct_index <= 1;
+  if (type === "multi") {
+    const ci = Array.isArray(r.correct_indices) ? r.correct_indices.map(Number) : [];
+    return (
+      opts.length >= 4 && opts.length <= 6 &&
+      ci.length >= 2 && ci.length < opts.length &&
+      ci.every((n) => Number.isInteger(n) && n >= 0 && n < opts.length)
+    );
+  }
+  return opts.length === 4 && r.correct_index >= 0 && r.correct_index < 4; // single / scenario
+}
+
+/** Build a key-bearing TechItem from a bank row, re-randomising option positions
+ *  per administration (true_false keeps canonical True/False order). Serves
+ *  Arabic only when the question + every option are translated (never a mixed-
+ *  language item); the scenario stem follows the same language, EN fallback. */
+export function bankRowToTechItem(r: AssemblyRow, language: "en" | "ar"): TechItem {
+  const type = (r.question_type ?? "single") as TechItemType;
+  const useAr =
+    language === "ar" && !!r.question_ar && Array.isArray(r.options_ar) && r.options_ar.length === r.options_en.length;
+  const question = useAr ? (r.question_ar as string) : r.question_en;
+  const options = useAr ? (r.options_ar as string[]) : r.options_en;
+  const base = { id: r.id, skill: r.skill, question, difficulty: r.difficulty };
+
+  if (type === "true_false") {
+    return { ...base, type: "true_false", options, correct_index: r.correct_index };
+  }
+  if (type === "multi") {
+    const ci = (Array.isArray(r.correct_indices) ? r.correct_indices : []).map(Number);
+    const { options: shuffled, correct } = shuffleChoices(options, ci);
+    return { ...base, type: "multi", options: shuffled, correct_index: correct[0] ?? 0, correct_indices: correct };
+  }
+  // single / scenario
+  const { options: shuffled, correct } = shuffleChoices(options, [r.correct_index]);
+  const item: TechItem = {
+    ...base,
+    type: type === "scenario" ? "scenario" : "single",
+    options: shuffled,
+    correct_index: correct[0] ?? 0,
+  };
+  if (type === "scenario") {
+    const stem = useAr && r.scenario_ar ? r.scenario_ar : r.scenario_en;
+    if (stem) item.scenario = stem;
+  }
+  return item;
 }
 
 /** The documented passing standard for a domain (defaults when unset). */
@@ -351,44 +425,37 @@ export async function buildCertifiedTest(
   if (!domain) return null;
   const cut = await getCutScore(domainKey);
 
-  let rows: BankItem[] = [];
+  let rows: AssemblyRow[] = [];
   try {
     const sb = createServiceClient();
-    const { data } = await sb
+    const full = await sb
       .from("tech_assessment_items")
-      .select("id, skill, question_en, question_ar, options_en, options_ar, correct_index, difficulty")
+      .select(ASSEMBLY_COLS)
       .eq("domain_key", domainKey)
       .eq("status", "approved");
-    rows = (data as BankItem[] | null) ?? [];
+    if (full.error) {
+      // migration 00082 not applied — certify single-answer MCQ from legacy cols.
+      const legacy = await sb
+        .from("tech_assessment_items")
+        .select(ASSEMBLY_COLS_LEGACY)
+        .eq("domain_key", domainKey)
+        .eq("status", "approved");
+      rows = (legacy.data as AssemblyRow[] | null) ?? [];
+    } else {
+      rows = (full.data as AssemblyRow[] | null) ?? [];
+    }
   } catch {
     return null; // table absent → can't certify
   }
 
-  const usable = rows.filter(
-    (r) => Array.isArray(r.options_en) && r.options_en.length === 4 && r.correct_index >= 0 && r.correct_index < 4
-  );
+  const usable = rows.filter(bankRowUsable);
   if (usable.length < cut.minItems) return null;
 
   const picked = shuffle(usable).slice(0, Math.min(size, usable.length));
   const itemIds: string[] = [];
   const items: TechItem[] = picked.map((r, i): TechItem => {
     itemIds.push(r.id);
-    const order = shuffledOrder();
-    // Serve Arabic for this item only when BOTH the question and four options are
-    // translated — avoids a mixed-language item. Falls back to English otherwise.
-    const useAr =
-      language === "ar" && !!r.question_ar && Array.isArray(r.options_ar) && r.options_ar.length === 4;
-    const baseQuestion = useAr ? (r.question_ar as string) : r.question_en;
-    const baseOptions = useAr ? (r.options_ar as string[]) : r.options_en;
-    return {
-      id: r.id || `c${i + 1}`,
-      skill: r.skill,
-      type: "single",
-      question: baseQuestion,
-      options: order.map((idx) => baseOptions[idx]),
-      correct_index: order.indexOf(r.correct_index),
-      difficulty: r.difficulty,
-    };
+    return { ...bankRowToTechItem(r, language), id: r.id || `c${i + 1}` };
   });
 
   return {
@@ -434,133 +501,160 @@ export async function recordItemAdministration(
   }
 }
 
-type DraftedItem = {
+/** A validated, ready-to-store bank item in a mix of formats (no shuffle - the
+ *  canonical option order is stored; assembly re-randomises per administration). */
+export type BankDraft = {
   skill: string;
+  question_type: BankItemType;
   question_en: string;
   question_ar: string | null;
+  scenario_en: string | null;
+  scenario_ar: string | null;
   options_en: string[];
   options_ar: string[] | null;
   correct_index: number;
+  correct_indices: number[] | null;
   difficulty: "easy" | "medium" | "hard";
   explanation_en: string | null;
 };
 
-/**
- * AI-author candidate items for a domain and insert them as 'draft' for SME
- * review. Bilingual (EN + AR) with a rationale for each correct answer (the
- * reviewer's aid + later learner feedback). Returns the number inserted.
- * Requires ANTHROPIC_API_KEY; returns 0 without it (nothing un-reviewed leaks).
- */
-export async function draftAiItemsToBank(
-  domainKey: TechDomainKey,
-  count: number
-): Promise<{ inserted: number; error?: string }> {
-  const domain = techDomainByKey(domainKey);
-  if (!domain) return { inserted: 0, error: "unknown domain" };
-  const client = getAIClient();
-  if (!client) return { inserted: 0, error: "no_api_key" };
+/** Shared item-writer persona for the mixed-format drafters. */
+export const MIXED_ITEM_WRITER_SYSTEM =
+  `You are a subject-matter assessment item writer for VIFM, a GCC finance & ` +
+  `management training institute. You write fair, unambiguous technical-competency ` +
+  `items in a MIX of formats (single-best-answer, select-all-that-apply, true/false, ` +
+  `and short scenario), each defensible and never a trick question. You always ` +
+  `provide a faithful Gulf-Arabic translation of every question, option, and scenario.`;
 
-  const n = Math.max(1, Math.min(20, count));
-  const system =
-    `You are a subject-matter assessment item writer for VIFM, a GCC finance & ` +
-    `management training institute. You write fair, unambiguous multiple-choice ` +
-    `items that test genuine technical competence, each with exactly one ` +
-    `defensible correct answer, three plausible distractors, and a short ` +
-    `rationale for the key. You never write trick questions. You produce a ` +
-    `faithful Gulf-Arabic translation of every question and option.`;
-
-  const user = [
-    `Write exactly ${n} multiple-choice items assessing technical competence in:`,
-    `DOMAIN: ${domain.name}`,
-    `SKILLS (spread items across these): ${domain.skills.join("; ")}.`,
+/** Build the mixed-format draft prompt for a subject (a domain, or one skill). */
+export function mixedDraftPrompt(input: { count: number; subjectLine: string; skills: string[]; spread: boolean }): string {
+  const { count, subjectLine, skills, spread } = input;
+  return [
+    `Write EXACTLY ${count} technical-competency assessment items, VARYING the format.`,
+    subjectLine,
+    `SKILLS (use the EXACT English name as the "skill" tag${spread ? "; spread items across them" : ""}): ${skills.join("; ")}.`,
     ``,
-    `Ramp difficulty across easy / medium / hard. Each item = a question + four`,
-    `options (exactly one correct) + the single skill it best assesses (use the`,
-    `exact skill names above) + a one-sentence rationale for why the key is`,
-    `correct. Provide a faithful Gulf-Arabic translation of the question and the`,
-    `four options (same option order).`,
+    `Use a MIX of formats (about half "single", plus some "true_false", "multi", and "scenario"):`,
+    `  • "single"     - four options, exactly ONE correct (correct_index 0-3).`,
+    `  • "true_false" - options ["True","False"], correct_index 0 or 1.`,
+    `  • "multi"      - 4-6 options with 2-3 correct (correct_indices array; at least one wrong).`,
+    `  • "scenario"   - a short realistic case in "scenario_en" (2-4 sentences with figures),`,
+    `                   then a single-best-answer question (four options, correct_index).`,
+    ``,
+    `Ramp difficulty easy / medium / hard. Give a one-sentence "explanation_en" for why the`,
+    `key is correct. Provide faithful Gulf-Arabic: "question_ar", "options_ar" (SAME order +`,
+    `count as options_en), and "scenario_ar" for scenario items.`,
     ``,
     `Return JSON ONLY (no markdown fences):`,
-    `{ "items": [ {`,
-    `  "skill":"<one of the skills>",`,
-    `  "question_en":"...", "question_ar":"...",`,
-    `  "options_en":["a","b","c","d"], "options_ar":["أ","ب","ج","د"],`,
-    `  "correct_index":0, "difficulty":"easy",`,
-    `  "explanation_en":"..." } ] }`,
+    `{ "items": [`,
+    `  { "skill":"<skill>","question_type":"single","question_en":"...","question_ar":"...",`,
+    `    "options_en":["a","b","c","d"],"options_ar":["أ","ب","ج","د"],"correct_index":0,"difficulty":"easy","explanation_en":"..." },`,
+    `  { "skill":"<skill>","question_type":"true_false","question_en":"...","question_ar":"...",`,
+    `    "options_en":["True","False"],"options_ar":["صحيح","خطأ"],"correct_index":0,"difficulty":"easy","explanation_en":"..." },`,
+    `  { "skill":"<skill>","question_type":"multi","question_en":"Which apply?","question_ar":"...",`,
+    `    "options_en":["a","b","c","d","e"],"options_ar":["..","..","..","..",".."],"correct_indices":[0,2],"difficulty":"medium","explanation_en":"..." },`,
+    `  { "skill":"<skill>","question_type":"scenario","scenario_en":"<case>","scenario_ar":"<...>","question_en":"...","question_ar":"...",`,
+    `    "options_en":["a","b","c","d"],"options_ar":["..","..","..",".."],"correct_index":1,"difficulty":"hard","explanation_en":"..." } ] }`,
   ].join("\n");
+}
 
-  let drafted: DraftedItem[] = [];
-  try {
-    const res = await client.messages.create({
-      model: AI_MODEL,
-      max_tokens: 4000,
-      system,
-      messages: [{ role: "user", content: user }],
-    });
-    const block = res.content.find((b) => b.type === "text");
-    if (!block || block.type !== "text") return { inserted: 0, error: "no_text" };
-    const match = block.text.match(/\{[\s\S]*\}/);
-    if (!match) return { inserted: 0, error: "no_json" };
-    const parsed = JSON.parse(match[0]) as { items?: Array<Record<string, unknown>> };
-    const skillSet = new Set(domain.skills);
+/** Validate one raw model item into a storable BankDraft (type-aware), or null. */
+export function validateBankDraft(
+  raw: Record<string, unknown>,
+  skillSet: Set<string>,
+  fallbackSkill: string
+): BankDraft | null {
+  if (typeof raw.question_en !== "string" || !raw.question_en.trim()) return null;
+  const type: BankItemType =
+    raw.question_type === "multi" ? "multi" :
+    raw.question_type === "scenario" ? "scenario" :
+    raw.question_type === "true_false" ? "true_false" : "single";
+  const optsEn = Array.isArray(raw.options_en) ? (raw.options_en as unknown[]).map(String) : [];
+  const skill = typeof raw.skill === "string" && skillSet.has(raw.skill) ? raw.skill : fallbackSkill;
+  const difficulty: "easy" | "medium" | "hard" =
+    raw.difficulty === "hard" ? "hard" : raw.difficulty === "medium" ? "medium" : "easy";
+  const explanation_en = typeof raw.explanation_en === "string" ? raw.explanation_en : null;
+  const question_ar = typeof raw.question_ar === "string" && raw.question_ar.trim() ? raw.question_ar : null;
+  const optsArRaw = Array.isArray(raw.options_ar) ? (raw.options_ar as unknown[]).map(String) : null;
+  const options_ar = optsArRaw && optsArRaw.length === optsEn.length ? optsArRaw : null;
+  const common = { skill, question_en: String(raw.question_en), question_ar, options_en: optsEn, options_ar, difficulty, explanation_en };
 
-    drafted = (parsed.items ?? [])
-      .filter((r) => {
-        const opts = r.options_en;
-        const ci = r.correct_index;
-        return (
-          typeof r.question_en === "string" &&
-          Array.isArray(opts) &&
-          opts.length === 4 &&
-          typeof ci === "number" &&
-          ci >= 0 &&
-          ci < 4
-        );
-      })
-      .map((r): DraftedItem => {
-        const optsAr = Array.isArray(r.options_ar) && (r.options_ar as unknown[]).length === 4
-          ? (r.options_ar as unknown[]).map((o) => String(o))
-          : null;
-        return {
-          skill: typeof r.skill === "string" && skillSet.has(r.skill) ? r.skill : domain.skills[0],
-          question_en: String(r.question_en),
-          question_ar: typeof r.question_ar === "string" ? r.question_ar : null,
-          options_en: (r.options_en as unknown[]).map((o) => String(o)),
-          options_ar: optsAr,
-          correct_index: r.correct_index as number,
-          difficulty: r.difficulty === "hard" ? "hard" : r.difficulty === "medium" ? "medium" : "easy",
-          explanation_en: typeof r.explanation_en === "string" ? r.explanation_en : null,
-        };
-      });
-  } catch (e) {
-    console.error("[tech-item-bank] draft failed:", e);
-    return { inserted: 0, error: "ai_error" };
+  if (type === "true_false") {
+    if (optsEn.length !== 2) return null;
+    const ci = Number(raw.correct_index);
+    if (!Number.isInteger(ci) || ci < 0 || ci > 1) return null;
+    return { ...common, question_type: "true_false", scenario_en: null, scenario_ar: null, correct_index: ci, correct_indices: null };
   }
+  if (type === "multi") {
+    if (optsEn.length < 4 || optsEn.length > 6) return null;
+    const ci = Array.isArray(raw.correct_indices)
+      ? Array.from(new Set((raw.correct_indices as unknown[]).map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n < optsEn.length))).sort((a, b) => a - b)
+      : [];
+    if (ci.length < 2 || ci.length >= optsEn.length) return null;
+    return { ...common, question_type: "multi", scenario_en: null, scenario_ar: null, correct_index: ci[0], correct_indices: ci };
+  }
+  // single / scenario
+  if (optsEn.length !== 4) return null;
+  const ci = Number(raw.correct_index);
+  if (!Number.isInteger(ci) || ci < 0 || ci >= 4) return null;
+  const scEn = type === "scenario" && typeof raw.scenario_en === "string" && raw.scenario_en.trim() ? raw.scenario_en.trim() : null;
+  const scAr = scEn && typeof raw.scenario_ar === "string" && raw.scenario_ar.trim() ? raw.scenario_ar.trim() : null;
+  return { ...common, question_type: scEn ? "scenario" : "single", scenario_en: scEn, scenario_ar: scAr, correct_index: ci, correct_indices: null };
+}
 
-  if (drafted.length === 0) return { inserted: 0, error: "no_items" };
-
-  // Guarantee bilingual: repair any item the model left without valid Arabic so
-  // the bank is never seeded English-only (keeps the certified path Arabic).
-  const repairIdx = drafted
-    .map((d, i) => (!d.question_ar || !d.options_ar ? i : -1))
+/** Best-effort bilingual repair: fill missing Arabic on 4-option items (single /
+ *  scenario) via translateItemsToArabic. Multi/true-false rely on the model's AR;
+ *  assembly falls back to English per item when AR is incomplete. Mutates in place. */
+export async function repairBankDraftsArabic(drafts: BankDraft[]): Promise<void> {
+  const repairIdx = drafts
+    .map((d, i) => (d.options_en.length === 4 && (!d.question_ar || !d.options_ar) ? i : -1))
     .filter((i) => i >= 0);
-  if (repairIdx.length > 0) {
-    const trs = await translateItemsToArabic(
-      repairIdx.map((i) => ({ question_en: drafted[i].question_en, options_en: drafted[i].options_en }))
-    );
-    repairIdx.forEach((idx, k) => {
-      const tr = trs[k];
-      if (tr) {
-        drafted[idx].question_ar = tr.question_ar;
-        drafted[idx].options_ar = tr.options_ar;
-      }
-    });
-  }
+  if (repairIdx.length === 0) return;
+  const trs = await translateItemsToArabic(
+    repairIdx.map((i) => ({ question_en: drafts[i].question_en, options_en: drafts[i].options_en }))
+  );
+  repairIdx.forEach((idx, k) => {
+    const tr = trs[k];
+    if (tr) {
+      drafts[idx].question_ar = tr.question_ar;
+      drafts[idx].options_ar = tr.options_ar;
+    }
+  });
+}
 
+/** Insert validated drafts as 'draft' for SME review. Tolerant of migration 00082
+ *  being absent: on a column error it retries inserting only the single-type
+ *  items with the legacy column set (so drafting still works pre-migration). */
+export async function insertBankDrafts(drafts: BankDraft[], domainKey: string | null): Promise<{ inserted: number; error?: string }> {
+  if (drafts.length === 0) return { inserted: 0, error: "no_items" };
   try {
     const sb = createServiceClient();
-    const { error } = await sb.from("tech_assessment_items").insert(
-      drafted.map((d) => ({
+    const ins = await sb.from("tech_assessment_items").insert(
+      drafts.map((d) => ({
+        domain_key: domainKey,
+        skill: d.skill,
+        question_type: d.question_type,
+        question_en: d.question_en,
+        question_ar: d.question_ar,
+        scenario_en: d.scenario_en,
+        scenario_ar: d.scenario_ar,
+        options_en: d.options_en,
+        options_ar: d.options_ar,
+        correct_index: d.correct_index,
+        correct_indices: d.correct_indices,
+        difficulty: d.difficulty,
+        explanation_en: d.explanation_en,
+        status: "draft",
+        source: "ai_generated",
+      }))
+    );
+    if (!ins.error) return { inserted: drafts.length };
+
+    // migration 00082 not applied — store only the single-type drafts (legacy cols).
+    const singles = drafts.filter((d) => d.question_type === "single");
+    if (singles.length === 0) return { inserted: 0, error: ins.error.message };
+    const ins2 = await sb.from("tech_assessment_items").insert(
+      singles.map((d) => ({
         domain_key: domainKey,
         skill: d.skill,
         question_en: d.question_en,
@@ -574,12 +668,56 @@ export async function draftAiItemsToBank(
         source: "ai_generated",
       }))
     );
-    if (error) return { inserted: 0, error: error.message };
-    return { inserted: drafted.length };
+    if (ins2.error) return { inserted: 0, error: ins2.error.message };
+    return { inserted: singles.length };
   } catch (e) {
     console.error("[tech-item-bank] insert failed:", e);
     return { inserted: 0, error: "insert_error" };
   }
+}
+
+/**
+ * AI-author candidate items for a domain (a MIX of single / multi / scenario /
+ * true-false) and insert them as 'draft' for SME review. Bilingual EN + AR with a
+ * rationale. Requires ANTHROPIC_API_KEY; returns 0 without it (nothing leaks).
+ */
+export async function draftAiItemsToBank(
+  domainKey: TechDomainKey,
+  count: number
+): Promise<{ inserted: number; error?: string }> {
+  const domain = techDomainByKey(domainKey);
+  if (!domain) return { inserted: 0, error: "unknown domain" };
+  const client = getAIClient();
+  if (!client) return { inserted: 0, error: "no_api_key" };
+
+  const n = Math.max(1, Math.min(20, count));
+  const user = mixedDraftPrompt({ count: n, subjectLine: `DOMAIN: ${domain.name}`, skills: domain.skills, spread: true });
+
+  let drafted: BankDraft[] = [];
+  try {
+    const res = await client.messages.create({
+      model: AI_MODEL,
+      max_tokens: 4500,
+      system: MIXED_ITEM_WRITER_SYSTEM,
+      messages: [{ role: "user", content: user }],
+    });
+    const block = res.content.find((b) => b.type === "text");
+    if (!block || block.type !== "text") return { inserted: 0, error: "no_text" };
+    const match = block.text.match(/\{[\s\S]*\}/);
+    if (!match) return { inserted: 0, error: "no_json" };
+    const parsed = JSON.parse(match[0]) as { items?: Array<Record<string, unknown>> };
+    const skillSet = new Set(domain.skills);
+    drafted = (parsed.items ?? [])
+      .map((r) => validateBankDraft(r, skillSet, domain.skills[0]))
+      .filter((d): d is BankDraft => d !== null);
+  } catch (e) {
+    console.error("[tech-item-bank] draft failed:", e);
+    return { inserted: 0, error: "ai_error" };
+  }
+
+  if (drafted.length === 0) return { inserted: 0, error: "no_items" };
+  await repairBankDraftsArabic(drafted);
+  return insertBankDrafts(drafted, domainKey);
 }
 
 /**

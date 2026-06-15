@@ -27,6 +27,7 @@ import {
   Loader2,
   Target,
   Languages,
+  Plus,
 } from "lucide-react";
 import type { BankItem, CutScore } from "@/lib/competencies/technical-item-bank";
 import {
@@ -50,6 +51,13 @@ const DIFF_TONE: Record<string, string> = {
   medium: "bg-violet-50 text-violet-700 border-violet-200",
   hard: "bg-rose-50 text-rose-700 border-rose-200",
 };
+const TYPE_TONE: Record<string, string> = {
+  single: "bg-slate-50 text-slate-600 border-slate-200",
+  multi: "bg-blue-50 text-blue-700 border-blue-200",
+  scenario: "bg-violet-50 text-violet-700 border-violet-200",
+  true_false: "bg-teal-50 text-teal-700 border-teal-200",
+};
+type ItemType = "single" | "multi" | "scenario" | "true_false";
 const STATUS_ORDER = ["in_review", "draft", "approved", "rejected", "retired"];
 
 export function ReviewConsole({
@@ -288,11 +296,18 @@ function ItemRow({
   onStatus: (status: string) => void;
 }) {
   const { t } = useTranslation();
+  const type = (item.question_type ?? "single") as ItemType;
+  const correctSet = new Set<number>(
+    type === "multi" ? (item.correct_indices ?? []) : [item.correct_index]
+  );
   return (
     <div className="rounded-md border p-3">
       <div className="flex flex-wrap items-center gap-2 mb-1.5">
         <Badge variant="outline" className={STATUS_TONE[item.status]}>
           {t(`tech.sme.status.${item.status}`)}
+        </Badge>
+        <Badge variant="outline" className={TYPE_TONE[type] ?? TYPE_TONE.single}>
+          {t(`tech.sme.type.${type}`)}
         </Badge>
         <Badge variant="outline" className={DIFF_TONE[item.difficulty]}>
           {t(`tech.sme.diff.${item.difficulty}`)}
@@ -306,16 +321,21 @@ function ItemRow({
         )}
       </div>
 
+      {type === "scenario" && item.scenario_en && (
+        <p className="mb-1.5 rounded-md border-s-2 border-violet-300 bg-violet-50/40 px-3 py-2 text-xs leading-relaxed text-slate-700">
+          {item.scenario_en}
+        </p>
+      )}
       <p className="text-sm font-medium text-[#010131]">{item.question_en}</p>
       <ul className="mt-1.5 space-y-1">
         {item.options_en.map((o, i) => (
           <li
             key={i}
             className={`flex items-start gap-2 text-xs ${
-              i === item.correct_index ? "text-emerald-700 font-medium" : "text-muted-foreground"
+              correctSet.has(i) ? "text-emerald-700 font-medium" : "text-muted-foreground"
             }`}
           >
-            {i === item.correct_index ? (
+            {correctSet.has(i) ? (
               <CheckCircle2 className="h-3.5 w-3.5 shrink-0 mt-0.5" />
             ) : (
               <span className="h-3.5 w-3.5 shrink-0 rounded-full border border-muted-foreground/30 mt-0.5" />
@@ -365,31 +385,107 @@ function ItemEditor({
   onCancel: () => void;
   onSave: (fields: EditItemFields) => void;
 }) {
+  const { t } = useTranslation();
+  const initialType = (item.question_type ?? "single") as ItemType;
+  const [qType, setQType] = useState<ItemType>(initialType);
   const [question, setQuestion] = useState(item.question_en);
-  const [options, setOptions] = useState<string[]>(
-    item.options_en.length === 4 ? item.options_en : [...item.options_en, "", "", "", ""].slice(0, 4)
+  const [scenario, setScenario] = useState(item.scenario_en ?? "");
+  const [options, setOptions] = useState<string[]>(() => {
+    if (initialType === "true_false") {
+      return item.options_en.length === 2 ? item.options_en : [t("tech.sme.optTrue"), t("tech.sme.optFalse")];
+    }
+    const base = item.options_en.slice(0, 6);
+    while (base.length < 4) base.push("");
+    return base;
+  });
+  const [correct, setCorrect] = useState<Set<number>>(
+    () => new Set<number>(initialType === "multi" ? item.correct_indices ?? [] : [item.correct_index])
   );
-  const [correct, setCorrect] = useState(item.correct_index);
   const [skill, setSkill] = useState(item.skill);
   const [difficulty, setDifficulty] = useState(item.difficulty);
   const [explanation, setExplanation] = useState(item.explanation_en ?? "");
-  const { t } = useTranslation();
+
+  const multi = qType === "multi";
+
+  function changeType(next: ItemType) {
+    setQType(next);
+    setOptions((prev) => {
+      if (next === "true_false") return [t("tech.sme.optTrue"), t("tech.sme.optFalse")];
+      const arr = prev.slice(0, 6);
+      while (arr.length < 4) arr.push("");
+      return next === "multi" ? arr : arr.slice(0, 4);
+    });
+    setCorrect((prev) => {
+      const arr = [...prev].sort((a, b) => a - b);
+      if (next === "multi") return new Set(arr);
+      if (next === "true_false") return new Set([arr[0] === 1 ? 1 : 0]);
+      return new Set([arr.find((n) => n < 4) ?? 0]); // single / scenario — one correct, < 4
+    });
+  }
+
+  const toggleCorrect = (i: number) =>
+    setCorrect((prev) => {
+      if (!multi) return new Set([i]);
+      const n = new Set(prev);
+      if (n.has(i)) n.delete(i);
+      else n.add(i);
+      return n;
+    });
+
+  const addOption = () => setOptions((o) => (o.length < 6 ? [...o, ""] : o));
+  const removeOption = (i: number) =>
+    setOptions((o) => {
+      if (o.length <= 4) return o;
+      setCorrect((c) => new Set([...c].filter((n) => n !== i).map((n) => (n > i ? n - 1 : n))));
+      return o.filter((_, j) => j !== i);
+    });
+
+  const valid = (() => {
+    if (!question.trim() || options.some((o) => !o.trim())) return false;
+    if (qType === "multi") return options.length >= 4 && options.length <= 6 && correct.size >= 2 && correct.size < options.length;
+    if (qType === "true_false") return options.length === 2 && correct.size === 1;
+    if (qType === "scenario") return options.length === 4 && correct.size === 1 && !!scenario.trim();
+    return options.length === 4 && correct.size === 1;
+  })();
 
   return (
     <div className="rounded-md border border-rose-200 bg-rose-50/30 p-3 space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <Label className="text-xs">{t("tech.sme.itemType")}</Label>
+          <Select value={qType} onValueChange={(v) => changeType(v as ItemType)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="single">{t("tech.sme.type.single")}</SelectItem>
+              <SelectItem value="multi">{t("tech.sme.type.multi")}</SelectItem>
+              <SelectItem value="scenario">{t("tech.sme.type.scenario")}</SelectItem>
+              <SelectItem value="true_false">{t("tech.sme.type.true_false")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      {qType === "scenario" && (
+        <div>
+          <Label className="text-xs">{t("tech.sme.scenarioLabel")}</Label>
+          <Textarea rows={2} placeholder={t("tech.sme.scenarioPh")} value={scenario} onChange={(e) => setScenario(e.target.value)} />
+        </div>
+      )}
       <div>
         <Label className="text-xs">{t("tech.sme.question")}</Label>
         <Textarea rows={2} value={question} onChange={(e) => setQuestion(e.target.value)} />
       </div>
       <div className="space-y-2">
         <Label className="text-xs">{t("tech.sme.optionsLabel")}</Label>
+        {multi && <p className="text-[11px] text-[#2b6cb0]">{t("tech.sme.selectAllHint")}</p>}
         {options.map((o, i) => (
           <div key={i} className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setCorrect(i)}
-              className={`h-4 w-4 shrink-0 rounded-full border-2 ${
-                i === correct ? "border-emerald-600 bg-emerald-500" : "border-muted-foreground/40"
+              onClick={() => toggleCorrect(i)}
+              className={`h-4 w-4 shrink-0 border-2 ${multi ? "rounded-[3px]" : "rounded-full"} ${
+                correct.has(i) ? "border-emerald-600 bg-emerald-500" : "border-muted-foreground/40"
               }`}
               aria-label={t("tech.sme.markCorrect", { n: i + 1 })}
             />
@@ -397,8 +493,27 @@ function ItemEditor({
               value={o}
               onChange={(e) => setOptions((prev) => prev.map((p, j) => (j === i ? e.target.value : p)))}
             />
+            {multi && options.length > 4 && (
+              <button
+                type="button"
+                onClick={() => removeOption(i)}
+                className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-rose-50 hover:text-rose-600"
+                aria-label={t("tech.sme.removeOption")}
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
         ))}
+        {multi && options.length < 6 && (
+          <button
+            type="button"
+            onClick={addOption}
+            className="inline-flex items-center gap-1 rounded-md border border-dashed border-slate-300 px-2.5 py-1 text-xs text-slate-600 hover:bg-slate-50"
+          >
+            <Plus className="h-3.5 w-3.5" /> {t("tech.sme.addOption")}
+          </button>
+        )}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
@@ -437,17 +552,21 @@ function ItemEditor({
       <div className="flex gap-2">
         <Button
           size="sm"
-          disabled={pending}
-          onClick={() =>
+          disabled={pending || !valid}
+          onClick={() => {
+            const sortedCorrect = [...correct].sort((a, b) => a - b);
             onSave({
+              question_type: qType,
               question_en: question.trim(),
+              scenario_en: qType === "scenario" ? scenario.trim() || null : null,
               options_en: options.map((o) => o.trim()),
-              correct_index: correct,
+              correct_index: sortedCorrect[0] ?? 0,
+              correct_indices: qType === "multi" ? sortedCorrect : null,
               skill,
               difficulty,
               explanation_en: explanation.trim() || null,
-            })
-          }
+            });
+          }}
         >
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
           {t("tech.bridge.save")}

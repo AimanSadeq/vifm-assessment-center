@@ -28,6 +28,7 @@ import {
   generateTechnicalAssessment,
   generateFunctionAssessment,
   scoreTechnicalAssessment,
+  itemIsCorrect,
   stripAnswerKey,
   TechGenerationError,
   type TechTest,
@@ -372,7 +373,7 @@ export async function POST(req: Request) {
       if (test.item_ids && test.item_ids.length > 0) {
         const correctById: Record<string, boolean> = {};
         for (const item of test.items) {
-          correctById[item.id] = answers[item.id] === item.correct_index;
+          correctById[item.id] = itemIsCorrect(item, answers[item.id]);
         }
         await recordItemAdministration(test.item_ids, correctById);
       }

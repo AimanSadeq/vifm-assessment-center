@@ -14,6 +14,7 @@ import {
   saveQuizAnswerAction,
 } from "../../actions";
 import type { QuizAnswer, QuizQuestion } from "@/types/database";
+import { AssessmentIntro } from "@/components/shared/assessment-intro";
 
 const QUIZ_DURATION_SECONDS = 5 * 60;
 
@@ -32,6 +33,8 @@ type Props = {
   questions: QuizQuestion[];
   initialAnswers: QuizAnswer[];
   startedAt: string;
+  /** Admin-configurable time limit (seconds); defaults to QUIZ_DURATION_SECONDS. */
+  durationSeconds?: number;
 };
 
 export function QuizInterface({
@@ -40,7 +43,9 @@ export function QuizInterface({
   questions,
   initialAnswers,
   startedAt,
+  durationSeconds,
 }: Props) {
+  const quizDuration = durationSeconds && durationSeconds > 0 ? durationSeconds : QUIZ_DURATION_SECONDS;
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const isAr = i18n.language === "ar";
@@ -64,6 +69,8 @@ export function QuizInterface({
   });
   const [submitting, startTransition] = useTransition();
   const [savingPick, setSavingPick] = useState(false);
+  // Show a "Before you begin" intro first; the questions reveal on Start.
+  const [started, setStarted] = useState(false);
 
   // Countdown timer driven off started_at so a refresh doesn't reset it.
   const startedTime = useMemo(() => new Date(startedAt).getTime(), [startedAt]);
@@ -73,7 +80,7 @@ export function QuizInterface({
     return () => clearInterval(id);
   }, []);
   const elapsed = Math.floor((now - startedTime) / 1000);
-  const remaining = Math.max(0, QUIZ_DURATION_SECONDS - elapsed);
+  const remaining = Math.max(0, quizDuration - elapsed);
   const mins = Math.floor(remaining / 60);
   const secs = remaining % 60;
   const timerLabel = `${mins}:${secs.toString().padStart(2, "0")}`;
@@ -143,12 +150,37 @@ export function QuizInterface({
     });
   };
 
-  // Auto-finalise when timer hits zero
+  // Auto-finalise when timer hits zero (only once the taker has begun).
   useEffect(() => {
-    if (remaining > 0) return;
+    if (!started || remaining > 0) return;
     handleComplete();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [remaining]);
+  }, [remaining, started]);
+
+  if (!started) {
+    return (
+      <AssessmentIntro
+        dir={isAr ? "rtl" : "ltr"}
+        eyebrow={t("aintro.eyebrow")}
+        title={t("aintro.title")}
+        intro={t("aintro.quiz.intro", {
+          competency: competencyName,
+          n: questions.length,
+          minutes: Math.round(quizDuration / 60),
+        })}
+        howToTitle={t("aintro.howTo")}
+        howTo={[
+          { label: t("aintro.quiz.mcq.label"), text: t("aintro.quiz.mcq.text") },
+          { label: t("aintro.quiz.tf.label"), text: t("aintro.quiz.tf.text") },
+          { label: t("aintro.quiz.pattern.label"), text: t("aintro.quiz.pattern.text") },
+        ]}
+        guidance={[t("aintro.quiz.g1"), t("aintro.quiz.g2")]}
+        note={{ tone: "info", text: t("aintro.quiz.note") }}
+        startLabel={t("aintro.quiz.start")}
+        onStart={() => setStarted(true)}
+      />
+    );
+  }
 
   const tone = DIFFICULTY_TONES[q.difficulty];
 

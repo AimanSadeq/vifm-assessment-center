@@ -19,7 +19,21 @@
  */
 import { createServiceClient } from "@/lib/supabase/server";
 import { getAIClient, AI_MODEL } from "@/lib/ai/client";
-import { CERTIFIED_TEST_SIZE, translateItemsToArabic, type BankItem } from "./technical-item-bank";
+import {
+  CERTIFIED_TEST_SIZE,
+  ASSEMBLY_COLS,
+  ASSEMBLY_COLS_LEGACY,
+  bankRowUsable,
+  bankRowToTechItem,
+  mixedDraftPrompt,
+  validateBankDraft,
+  repairBankDraftsArabic,
+  insertBankDrafts,
+  MIXED_ITEM_WRITER_SYSTEM,
+  type AssemblyRow,
+  type BankDraft,
+  type BankItem,
+} from "./technical-item-bank";
 import { calibrateItemFields } from "@/lib/scoring/tech-cat";
 import type { TechItem, TechTest } from "@/lib/ai/technical-assessment";
 
@@ -62,14 +76,6 @@ export type AdaptivePoolItem = {
   difficulty: "easy" | "medium" | "hard";
 };
 
-function shuffledOrder(): number[] {
-  const order = [0, 1, 2, 3];
-  for (let j = order.length - 1; j > 0; j--) {
-    const k = Math.floor(Math.random() * (j + 1));
-    [order[j], order[k]] = [order[k], order[j]];
-  }
-  return order;
-}
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -203,13 +209,25 @@ export async function buildAdaptivePool(input: {
   if (input.skillsEn.length === 0) return null;
   try {
     const sb = createServiceClient();
-    const { data } = await sb
+    // CAT is single-best-answer only (scenario needs its stem; multi isn't
+    // dichotomous; true/false is 2-option) — fetch question_type to exclude them,
+    // with a legacy fallback so the pool still builds pre-00082 (all single then).
+    const full = await sb
       .from("tech_assessment_items")
-      .select("id, skill, irt_b, question_en, question_ar, options_en, options_ar, correct_index, difficulty")
+      .select("id, skill, irt_b, question_en, question_ar, options_en, options_ar, correct_index, difficulty, question_type")
       .is("domain_key", null)
       .eq("status", "approved")
       .not("irt_b", "is", null)
       .in("skill", input.skillsEn);
+    const data = full.error
+      ? (await sb
+          .from("tech_assessment_items")
+          .select("id, skill, irt_b, question_en, question_ar, options_en, options_ar, correct_index, difficulty")
+          .is("domain_key", null)
+          .eq("status", "approved")
+          .not("irt_b", "is", null)
+          .in("skill", input.skillsEn)).data
+      : full.data;
     const rows = (data ?? []) as Array<{
       id: string;
       skill: string;
@@ -220,9 +238,11 @@ export async function buildAdaptivePool(input: {
       options_ar: string[] | null;
       correct_index: number;
       difficulty: "easy" | "medium" | "hard";
+      question_type?: string | null;
     }>;
     const usable = rows.filter(
       (r) =>
+        (r.question_type ?? "single") === "single" &&
         r.irt_b != null &&
         Array.isArray(r.options_en) &&
         r.options_en.length === 4 &&
@@ -325,26 +345,35 @@ export async function buildCertifiedFunctionTest(input: {
   const cut = await getFunctionCutScore(functionId);
   const drawPerSkill = Math.max(cut.minItemsPerSkill, input.drawPerSkill ?? DEFAULT_DRAW_PER_SKILL);
 
-  let rows: BankItem[] = [];
+  let rows: AssemblyRow[] = [];
   try {
     const sb = createServiceClient();
-    const { data } = await sb
+    const full = await sb
       .from("tech_assessment_items")
-      .select("id, skill, question_en, question_ar, options_en, options_ar, correct_index, difficulty")
+      .select(ASSEMBLY_COLS)
       .is("domain_key", null)
       .eq("status", "approved")
       .in("skill", skillsEn);
-    rows = (data as BankItem[] | null) ?? [];
+    if (full.error) {
+      // migration 00082 not applied — certify single-answer MCQ from legacy cols.
+      const legacy = await sb
+        .from("tech_assessment_items")
+        .select(ASSEMBLY_COLS_LEGACY)
+        .is("domain_key", null)
+        .eq("status", "approved")
+        .in("skill", skillsEn);
+      rows = (legacy.data as AssemblyRow[] | null) ?? [];
+    } else {
+      rows = (full.data as AssemblyRow[] | null) ?? [];
+    }
   } catch {
     return null; // table/columns absent → can't certify
   }
 
-  const usable = rows.filter(
-    (r) => Array.isArray(r.options_en) && r.options_en.length === 4 && r.correct_index >= 0 && r.correct_index < 4
-  );
+  const usable = rows.filter(bankRowUsable);
 
   // Group by skill; every blueprint skill must clear the floor.
-  const bySkill = new Map<string, BankItem[]>();
+  const bySkill = new Map<string, AssemblyRow[]>();
   for (const s of skillsEn) bySkill.set(s, []);
   for (const r of usable) {
     if (bySkill.has(r.skill)) bySkill.get(r.skill)!.push(r);
@@ -353,7 +382,7 @@ export async function buildCertifiedFunctionTest(input: {
     if ((bySkill.get(s)?.length ?? 0) < cut.minItemsPerSkill) return null;
   }
 
-  const picked: BankItem[] = [];
+  const picked: AssemblyRow[] = [];
   for (const s of skillsEn) {
     picked.push(...shuffle(bySkill.get(s) ?? []).slice(0, drawPerSkill));
   }
@@ -364,19 +393,7 @@ export async function buildCertifiedFunctionTest(input: {
   const itemIds: string[] = [];
   const items: TechItem[] = shuffle(picked).map((r, i): TechItem => {
     itemIds.push(r.id);
-    const order = shuffledOrder();
-    const useAr = language === "ar" && !!r.question_ar && Array.isArray(r.options_ar) && r.options_ar.length === 4;
-    const baseQuestion = useAr ? (r.question_ar as string) : r.question_en;
-    const baseOptions = useAr ? (r.options_ar as string[]) : r.options_en;
-    return {
-      id: r.id || `c${i + 1}`,
-      skill: r.skill,
-      type: "single",
-      question: baseQuestion,
-      options: order.map((idx) => baseOptions[idx]),
-      correct_index: order.indexOf(r.correct_index),
-      difficulty: r.difficulty,
-    };
+    return { ...bankRowToTechItem(r, language), id: r.id || `c${i + 1}` };
   });
 
   return {
@@ -385,20 +402,10 @@ export async function buildCertifiedFunctionTest(input: {
   };
 }
 
-type DraftedItem = {
-  question_en: string;
-  question_ar: string | null;
-  options_en: string[];
-  options_ar: string[] | null;
-  correct_index: number;
-  difficulty: "easy" | "medium" | "hard";
-  explanation_en: string | null;
-};
-
 /**
- * AI-author candidate items for ONE function skill and insert them as 'draft'
- * (domain_key NULL) for SME review. Bilingual with a rationale. Returns the
- * count inserted; 0 without ANTHROPIC_API_KEY (nothing un-reviewed leaks).
+ * AI-author candidate items for ONE function skill (a MIX of single / multi /
+ * scenario / true-false) and insert them as 'draft' (domain_key NULL) for SME
+ * review. Bilingual with a rationale. 0 without ANTHROPIC_API_KEY (nothing leaks).
  */
 export async function draftFunctionSkillItems(
   skill: string,
@@ -411,37 +418,19 @@ export async function draftFunctionSkillItems(
   if (!cleanSkill) return { inserted: 0, error: "no_skill" };
   const n = Math.max(1, Math.min(20, count));
 
-  const system =
-    `You are a subject-matter assessment item writer for VIFM, a GCC finance & ` +
-    `management training institute. You write fair, unambiguous 4-option multiple-` +
-    `choice items that test genuine technical competence, each with exactly one ` +
-    `defensible correct answer, three plausible distractors, and a short rationale ` +
-    `for the key. You never write trick questions. You produce a faithful Gulf-` +
-    `Arabic translation of every question and option.`;
+  const user = mixedDraftPrompt({
+    count: n,
+    subjectLine: `SKILL: ${cleanSkill}${context ? ` (in the context of: ${context})` : ""}`,
+    skills: [cleanSkill],
+    spread: false,
+  });
 
-  const user = [
-    `Write exactly ${n} multiple-choice items assessing this single finance technical skill:`,
-    `SKILL: ${cleanSkill}${context ? ` (in the context of: ${context})` : ""}`,
-    ``,
-    `Ramp difficulty across easy / medium / hard. Each item = a question + four`,
-    `options (exactly one correct) + a one-sentence rationale for why the key is`,
-    `correct. Provide a faithful Gulf-Arabic translation of the question and the`,
-    `four options (same option order).`,
-    ``,
-    `Return JSON ONLY (no markdown fences):`,
-    `{ "items": [ {`,
-    `  "question_en":"...", "question_ar":"...",`,
-    `  "options_en":["a","b","c","d"], "options_ar":["أ","ب","ج","د"],`,
-    `  "correct_index":0, "difficulty":"easy",`,
-    `  "explanation_en":"..." } ] }`,
-  ].join("\n");
-
-  let drafted: DraftedItem[] = [];
+  let drafted: BankDraft[] = [];
   try {
     const res = await client.messages.create({
       model: AI_MODEL,
-      max_tokens: 4000,
-      system,
+      max_tokens: 4500,
+      system: MIXED_ITEM_WRITER_SYSTEM,
       messages: [{ role: "user", content: user }],
     });
     const block = res.content.find((b) => b.type === "text");
@@ -449,78 +438,16 @@ export async function draftFunctionSkillItems(
     const match = block.text.match(/\{[\s\S]*\}/);
     if (!match) return { inserted: 0, error: "no_json" };
     const parsed = JSON.parse(match[0]) as { items?: Array<Record<string, unknown>> };
-
+    const skillSet = new Set([cleanSkill]);
     drafted = (parsed.items ?? [])
-      .filter((r) => {
-        const opts = r.options_en;
-        const ci = r.correct_index;
-        return (
-          typeof r.question_en === "string" &&
-          Array.isArray(opts) &&
-          opts.length === 4 &&
-          typeof ci === "number" &&
-          ci >= 0 &&
-          ci < 4
-        );
-      })
-      .map((r): DraftedItem => {
-        const optsAr =
-          Array.isArray(r.options_ar) && (r.options_ar as unknown[]).length === 4
-            ? (r.options_ar as unknown[]).map((o) => String(o))
-            : null;
-        return {
-          question_en: String(r.question_en),
-          question_ar: typeof r.question_ar === "string" ? r.question_ar : null,
-          options_en: (r.options_en as unknown[]).map((o) => String(o)),
-          options_ar: optsAr,
-          correct_index: r.correct_index as number,
-          difficulty: r.difficulty === "hard" ? "hard" : r.difficulty === "medium" ? "medium" : "easy",
-          explanation_en: typeof r.explanation_en === "string" ? r.explanation_en : null,
-        };
-      });
+      .map((r) => validateBankDraft(r, skillSet, cleanSkill))
+      .filter((d): d is BankDraft => d !== null);
   } catch (e) {
     console.error("[tech-function-bank] draft failed:", e);
     return { inserted: 0, error: "ai_error" };
   }
 
   if (drafted.length === 0) return { inserted: 0, error: "no_items" };
-
-  // Guarantee bilingual — repair any item missing valid Arabic.
-  const repairIdx = drafted.map((d, i) => (!d.question_ar || !d.options_ar ? i : -1)).filter((i) => i >= 0);
-  if (repairIdx.length > 0) {
-    const trs = await translateItemsToArabic(
-      repairIdx.map((i) => ({ question_en: drafted[i].question_en, options_en: drafted[i].options_en }))
-    );
-    repairIdx.forEach((idx, k) => {
-      const tr = trs[k];
-      if (tr) {
-        drafted[idx].question_ar = tr.question_ar;
-        drafted[idx].options_ar = tr.options_ar;
-      }
-    });
-  }
-
-  try {
-    const sb = createServiceClient();
-    const { error } = await sb.from("tech_assessment_items").insert(
-      drafted.map((d) => ({
-        domain_key: null, // function-skill item — keyed by skill alone
-        skill: cleanSkill,
-        question_en: d.question_en,
-        question_ar: d.question_ar,
-        options_en: d.options_en,
-        options_ar: d.options_ar,
-        correct_index: d.correct_index,
-        difficulty: d.difficulty,
-        explanation_en: d.explanation_en,
-        status: "draft",
-        source: "ai_generated",
-      }))
-    );
-    if (error) return { inserted: 0, error: error.message };
-    return { inserted: drafted.length };
-  } catch (e) {
-    console.error("[tech-function-bank] insert failed:", e);
-    return { inserted: 0, error: "insert_error" };
-  }
+  await repairBankDraftsArabic(drafted);
+  return insertBankDrafts(drafted, null);
 }

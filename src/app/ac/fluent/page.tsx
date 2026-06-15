@@ -10,6 +10,7 @@ import { VifmLogo } from "@/components/shared/vifm-logo";
 import { AllServicesLink } from "@/components/shared/all-services-link";
 import { FluentClient } from "./_components/fluent-client";
 import { BackLink } from "@/components/shared/back-link";
+import { getTimerMinutes, TIMER_DEFAULTS } from "@/lib/assessment-timers";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,8 @@ const SKILL_ICONS = [
 export default async function FluentPage({ searchParams }: Props) {
   const t = await getServerT("en"); // Fluent stays English regardless of locale cookie
   const aiConfigured = isAIConfigured();
+  // Admin-configurable Fluent time limit (minutes).
+  const fluentMinutes = (await getTimerMinutes("fluent", TIMER_DEFAULTS.fluent)) ?? TIMER_DEFAULTS.fluent;
 
   const SKILLS = SKILL_ICONS.map((s) => ({
     icon: s.icon,
@@ -166,6 +169,7 @@ export default async function FluentPage({ searchParams }: Props) {
           engagementId={engagementId}
           prefillName={candidateName ?? undefined}
           prefillEmail={candidateEmail ?? undefined}
+          timerMinutes={fluentMinutes}
         />
       </main>
     </div>

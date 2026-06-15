@@ -7,12 +7,18 @@ import { isEmailConfigured } from "@/lib/integrations/email";
 import { isVideoConfigured } from "@/lib/integrations/video";
 import { getServerT } from "@/lib/i18n/server";
 import { BackLink } from "@/components/shared/back-link";
+import { getTimersMap, TIMER_DEFAULTS } from "@/lib/assessment-timers";
+import { TimerSettings } from "./_components/timer-settings";
 
 export default async function SettingsPage() {
   const t = await getServerT();
   const aiConfigured = isAIConfigured();
   const emailConfigured = isEmailConfigured();
   const videoConfigured = isVideoConfigured();
+
+  const timers = await getTimersMap(["quiz", "fluent"]);
+  const quizTimer = timers.quiz ?? TIMER_DEFAULTS.quiz;
+  const fluentTimer = timers.fluent ?? TIMER_DEFAULTS.fluent;
 
   const integrations = [
     {
@@ -106,6 +112,19 @@ export default async function SettingsPage() {
               </div>
             );
           })}
+        </CardContent>
+      </Card>
+
+      {/* Assessment timers */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Clock className="h-4 w-4 text-accent" />
+            {t("adminSettings.timersTitle")}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TimerSettings quiz={quizTimer} fluent={fluentTimer} />
         </CardContent>
       </Card>
 

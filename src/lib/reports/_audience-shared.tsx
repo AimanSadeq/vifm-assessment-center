@@ -2,9 +2,25 @@
 // reports (hiring-manager + talent-acquisition lenses). Kept visually aligned
 // with candidate-report.tsx so the three reports read as one family.
 import React from "react";
-import { Text, View, StyleSheet } from "@react-pdf/renderer";
+import { Text, View, Image, StyleSheet } from "@react-pdf/renderer";
+import { readFileSync } from "fs";
+import { join } from "path";
 import { getCompetencyGap, GAP_TONES } from "@/lib/scoring/competency-gap";
 import type { ReportData, ReportCompetencyData } from "./report-types";
+
+// VIFM logo assets, inlined as data URIs so the same render path works from the
+// build script and any server route. White wordmark for the navy cover; the
+// full-colour wordmark for the white content pages. Server-only module.
+function logoDataUri(file: string): string {
+  try {
+    const buf = readFileSync(join(process.cwd(), "public", "images", file));
+    return `data:image/png;base64,${buf.toString("base64")}`;
+  } catch {
+    return "";
+  }
+}
+const LOGO_WHITE = logoDataUri("vifm-logo-white.png"); // ratio ~3.14
+const LOGO_COLOR = logoDataUri("vifm-logo-light.png"); // ratio ~2.56
 
 export const C = {
   primary: "#010131", accent: "#5391D5", navy: "#121140",
@@ -35,6 +51,28 @@ export function recColor(rec: string | null): string {
   if (rec === "not_ready") return C.negative;
   return C.warning; // ready_with_development / pending
 }
+
+// Selection-decision language: a hiring "fit" recommendation, NOT a hire/no-hire
+// verdict. Maps the assessment outcome to a "recommend to pursue" framing.
+const FIT_LABELS: Record<string, string> = {
+  ready_now: "Recommend to pursue",
+  ready_with_development: "Recommend to pursue, with a development plan",
+  not_ready: "Not recommended to pursue at this stage",
+};
+const FIT_BAND: Record<string, string> = {
+  ready_now: "Strong fit",
+  ready_with_development: "Conditional fit",
+  not_ready: "Limited fit",
+};
+export function fitLabel(rec: string | null): string {
+  if (!rec) return "Under review";
+  return FIT_LABELS[rec] ?? rec;
+}
+export function fitBand(rec: string | null): string {
+  if (!rec) return "Pending";
+  return FIT_BAND[rec] ?? "";
+}
+export const fitColor = recColor;
 export function scoreColor(n: number | null): string {
   if (n == null) return C.textMuted;
   return [, C.bar1, C.bar2, C.bar3, C.bar4, C.bar5][Math.round(n)] ?? C.bar3;
@@ -77,7 +115,7 @@ export const sh = StyleSheet.create({
   statValue: { fontSize: 20, fontFamily: "Helvetica-Bold", color: C.primary, lineHeight: 1, letterSpacing: -0.4 },
   statSuffix: { fontSize: 8, color: C.textLight, marginTop: 4 },
   // Competency matrix
-  matRow: { flexDirection: "row", alignItems: "center", paddingVertical: 5, borderBottomWidth: 0.5, borderBottomColor: C.borderSoft },
+  matRow: { flexDirection: "row", alignItems: "center", paddingVertical: 3.5, borderBottomWidth: 0.5, borderBottomColor: C.borderSoft },
   matName: { width: 168, fontSize: 8.5, color: C.text, paddingRight: 6 },
   matCluster: { fontSize: 6.5, color: C.textMuted },
   matTrack: { flex: 1, height: 6, backgroundColor: C.borderSoft, borderRadius: 3, marginRight: 8 },
@@ -110,8 +148,9 @@ export function CoverHero(props: {
   candidateName: string; rows: Array<[string, string]>; audience: string;
 }) {
   return (
-    <View>
+    <View style={{ height: "100%" }}>
       <View style={sh.coverBanner}>
+        {LOGO_WHITE ? <Image src={LOGO_WHITE} style={{ width: 150, height: 48, marginBottom: 26 }} /> : null}
         <View style={sh.goldRule} />
         <Text style={sh.coverConfidential}>Strictly Confidential</Text>
         <Text style={sh.coverEyebrow}>{props.eyebrow}</Text>
@@ -132,7 +171,7 @@ export function CoverHero(props: {
       </View>
       <View style={sh.coverFooter}>
         <Text style={sh.coverFooterText}>
-          Virginia Institute of Finance and Management · VIFM Assessment Center · {props.audience}
+          Virginia Institute of Finance and Management · Behavioural Psychometric Assessment · {props.audience}
         </Text>
       </View>
     </View>
@@ -141,10 +180,13 @@ export function CoverHero(props: {
 
 export function SectionHeader({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
-    <View>
-      <Text style={sh.eyebrow}>{eyebrow}</Text>
-      <Text style={sh.title}>{title}</Text>
-      <View style={sh.rule} />
+    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
+      <View style={{ flex: 1, paddingRight: 12 }}>
+        <Text style={sh.eyebrow}>{eyebrow}</Text>
+        <Text style={sh.title}>{title}</Text>
+        <View style={sh.rule} />
+      </View>
+      {LOGO_COLOR ? <Image src={LOGO_COLOR} style={{ width: 84, height: 33, marginTop: 2 }} /> : null}
     </View>
   );
 }
@@ -154,7 +196,7 @@ export function Footer({ name, audience }: { name: string; audience: string }) {
     <View style={sh.footer} fixed>
       <Text style={sh.confidential}>STRICTLY CONFIDENTIAL</Text>
       <Text style={sh.footerText}>
-        {name} · {audience} · VIFM Assessment Center
+        {name} · {audience} · VIFM Behavioural Assessment
       </Text>
     </View>
   );
@@ -191,6 +233,187 @@ export function CompetencyMatrix({ competencies, target = 3 }: { competencies: R
       })}
     </View>
   );
+}
+
+/**
+ * Turns the headline selection numbers into plain-English narrative, computed
+ * from the actual competencies (works for any candidate, not just the sample):
+ *   - the fit score (what the average means vs the role bar)
+ *   - how many competencies sit at/above the bar (and which)
+ *   - how many sit below (and that below-bar = develop, not disqualify)
+ *   - how many are clear strengths (and what a 4-5 actually signifies)
+ */
+export type DecisionPoint = { lead: string; text: string };
+
+export function buildDecisionPoints(
+  comps: ReportCompetencyData[],
+  target: number,
+  oar: number | null,
+  rec: string | null,
+): DecisionPoint[] {
+  const total = comps.length;
+  const atOrAbove = comps.filter((c) => (c.consensusScore ?? 0) >= target);
+  const below = comps.filter((c) => (c.consensusScore ?? 0) < target);
+  const strengths = comps
+    .filter((c) => (c.consensusScore ?? 0) >= 4)
+    .sort((a, b) => (b.consensusScore ?? 0) - (a.consensusScore ?? 0));
+  const names = (xs: ReportCompetencyData[]) => xs.map((c) => c.competencyName).join(", ");
+  const points: DecisionPoint[] = [];
+
+  if (oar != null) {
+    const rel =
+      oar >= target + 1 ? "comfortably above" :
+      oar >= target ? "above" :
+      oar >= target - 0.5 ? "just below" : "below";
+    points.push({
+      lead: `Fit score ${oar.toFixed(1)} of 5.`,
+      text:
+        `The average result across all ${total} competencies, weighted to the role. At ${oar.toFixed(1)} it sits ` +
+        `${rel} the Competent bar (3.0) - a ${fitBand(rec).toLowerCase()}. It summarises the rows below; it is ` +
+        `not a pass mark.`,
+    });
+  }
+
+  points.push({
+    lead: `${atOrAbove.length} of ${total} above the bar.`,
+    text: atOrAbove.length
+      ? `The candidate meets or exceeds the role bar (Competent, ${target}/5) on ${atOrAbove.length} of ${total} ` +
+        `competencies${atOrAbove.length <= 6 ? ` - ${names(atOrAbove)}` : ""}. That is how much of the role ` +
+        `profile is already covered today.`
+      : `No competency currently reaches the role bar (Competent, ${target}/5).`,
+  });
+
+  points.push({
+    lead: below.length ? `${below.length} below the bar.` : "None below the bar.",
+    text: below.length
+      ? `${below.length === 1 ? "One competency falls" : `${below.length} competencies fall`} short of the bar - ` +
+        `${names(below)}. Below-bar signals where development is indicated, not that the candidate is unsuitable; ` +
+        `these are the areas to probe in interview and plan support for.`
+      : `Every assessed competency meets or exceeds the bar - no development gaps were flagged.`,
+  });
+
+  points.push({
+    lead: `${strengths.length} clear ${strengths.length === 1 ? "strength" : "strengths"}.`,
+    text: strengths.length
+      ? `${strengths.length === 1 ? "One competency was scored" : `${strengths.length} competencies were scored`} ` +
+        `4 or 5 - ${names(strengths)}. A 4-5 (Strength / Significant Strength) means the behaviour showed ` +
+        `consistently and beyond what the role requires: what the candidate brings from day one.`
+      : `No competency reached the 4-5 strength band; the profile clusters around the Competent line.`,
+  });
+
+  return points;
+}
+
+/** Narrative readout that explains each headline number in one line. */
+export function DecisionReadout({ points, tone = C.accent }: { points: DecisionPoint[]; tone?: string }) {
+  return (
+    <View wrap={false} style={[sh.panel, { borderLeftColor: tone }]}>
+      <Text style={[sh.panelTitle, { color: tone }]}>Reading the result</Text>
+      {points.map((p, i) => (
+        <View style={sh.liRow} key={i}>
+          <Text style={[sh.liGlyph, { color: tone }]}>{"•"}</Text>
+          <Text style={sh.liText}>
+            <Text style={sh.liLabel}>{p.lead} </Text>{p.text}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+// VIFM behavioural domain palette (matches the candidate skills dashboard).
+export const DOMAIN_TONE: Record<string, string> = {
+  THINKING: "#5391D5", RESULTS: "#059669", PEOPLE: "#D97706", SELF: "#7C3AED",
+};
+
+/** A 5-segment score bar (1-5), filled to the score and toned by band. */
+export function ScoreDots({ score, height = 6 }: { score: number | null; height?: number }) {
+  const s = score ?? 0;
+  const col = scoreColor(s);
+  return (
+    <View style={{ flexDirection: "row" }}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <View
+          key={n}
+          style={{ width: 16, height, borderRadius: 2, marginRight: 2, backgroundColor: n <= s ? col : C.borderSoft }}
+        />
+      ))}
+    </View>
+  );
+}
+
+/** Domain section header: a colour chip + the domain name. */
+export function DomainHeader({ name, marginTop = 10 }: { name: string; marginTop?: number }) {
+  const tone = DOMAIN_TONE[name] ?? C.textLight;
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", marginTop, marginBottom: 6 }}>
+      <View style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: tone, marginRight: 7 }} />
+      <Text style={{ fontSize: 11, fontFamily: "Helvetica-Bold", color: C.primary, letterSpacing: 0.5 }}>{name}</Text>
+    </View>
+  );
+}
+
+/** Group competencies by domain, preserving first-seen order. */
+export function groupByDomain(comps: ReportCompetencyData[]): { name: string; items: ReportCompetencyData[] }[] {
+  const out: { name: string; items: ReportCompetencyData[] }[] = [];
+  for (const c of comps) {
+    let g = out.find((x) => x.name === c.domainName);
+    if (!g) { g = { name: c.domainName, items: [] }; out.push(g); }
+    g.items.push(c);
+  }
+  return out;
+}
+
+// --- Band-based narrative generators (data-driven; weave per-competency band
+// into plain prose so reports read well for any candidate, not just the sample).
+
+/** Second-person "your result" line for the candidate report - consistently warm and direct. */
+export function resultNarrative(c: ReportCompetencyData): string {
+  const s = c.consensusScore ?? 0;
+  if (s >= 5) return "You show real strength here - it is one of the clearest patterns in your results, and you sustain it even under pressure.";
+  if (s === 4) return "You show strength here. You apply it consistently, and it is something colleagues can count on.";
+  if (s === 3) return "You are solid here, meeting what the role asks in familiar situations. With more stretch, you could make this a signature strength.";
+  if (s === 2) return "You have room to grow here. Your responses suggest it shows less consistently than the role expects, and focused practice will move it forward.";
+  if (s === 1) return "You have clear room to grow here. It is not yet showing consistently, so it is a good place to focus your energy.";
+  return "There was not enough evidence to rate this competency.";
+}
+
+/** Third-person "this candidate is likely to..." line for the TA report. */
+export function behaviourPrediction(c: ReportCompetencyData): string {
+  const s = c.consensusScore ?? 0;
+  if (s >= 5) return "This candidate is very likely to demonstrate this consistently and beyond what the role requires - a clear differentiator.";
+  if (s === 4) return "This candidate is likely to demonstrate this reliably and above the role bar.";
+  if (s === 3) return "This candidate is likely to meet the role bar on this in most situations.";
+  if (s === 2) return "This candidate may apply this less consistently than the role needs; targeted support is indicated.";
+  if (s === 1) return "This candidate is likely to find this challenging without development; treat it as a priority gap.";
+  return "Not enough evidence was gathered to predict behaviour on this competency.";
+}
+
+/** "Where they stand" development statement for the manager report. */
+export function developmentStatement(c: ReportCompetencyData): string {
+  const s = c.consensusScore ?? 0;
+  if (s >= 4) return "A strength to build on. This is applied consistently and above the role bar - the goal is to extend it through stretch work and chances to model it for others.";
+  if (s === 3) return "Solid and on target. Reliable in familiar situations; development here is about sustaining it under greater complexity and pressure.";
+  if (s === 2) return "A development priority. This sits below the role bar today, so focused effort here will have the most impact.";
+  if (s === 1) return "A high-priority development area. This is well below the role bar and deserves early, structured attention.";
+  return "Not enough evidence was gathered to advise on this competency.";
+}
+
+/** Development tips for a competency: prefer stored tips, then evidence, then a band fallback. */
+export function developmentTipsFor(c: ReportCompetencyData): string[] {
+  if (c.developmentTips?.length) return c.developmentTips;
+  const fromAreas = (c.developmentAreas ?? []).map((d) => d.text).filter(Boolean);
+  if (fromAreas.length) return fromAreas;
+  const s = c.consensusScore ?? 0;
+  if (s >= 4) return [
+    "Give them a stretch assignment that puts this strength to work on a harder problem.",
+    "Ask them to coach a peer in this area - teaching it deepens the strength and spreads it.",
+  ];
+  return [
+    "Agree one specific, observable behaviour to practise over the next 30 days.",
+    "Build in feedback on it after key meetings or deliverables, and review what changed.",
+    "Pair them with a colleague who is strong here and compare approaches.",
+  ];
 }
 
 export type AudienceReportProps = { data: ReportData };

@@ -4,6 +4,10 @@ export type ReportCompetencyData = {
   domainName: string;
   weight: number | null;
   consensusScore: number | null;
+  // Optional one-line "what this competency measures" - rendered in the
+  // talent-acquisition + candidate-results lenses. Existing fetchers may leave
+  // it unset (the candidate development report ignores it).
+  explanation?: string | null;
   // Evidence split into strengths vs development
   strengths: {
     exerciseName: string;

@@ -39,6 +39,14 @@ export interface GenerateBatchInput {
   createdBy?: string | null;
   /** When provided, generate ONE named single-use code per delegate. */
   delegates?: Delegate[] | null;
+  /** MCQ section weight (0-100) for sittings redeemed from this batch. 0 = sandbox-only. */
+  mcqPct?: number | null;
+}
+
+/** Clamp a possibly-undefined MCQ weight into the 0-100 column range. */
+function clampMcqPct(v: number | null | undefined): number {
+  if (typeof v !== "number" || !Number.isFinite(v)) return 0;
+  return Math.max(0, Math.min(100, Math.round(v)));
 }
 export interface GeneratedAssignment {
   name: string;
@@ -51,6 +59,7 @@ export async function generateVoucherBatch(input: GenerateBatchInput) {
   const sb = createServiceClient();
   const batchId = crypto.randomUUID();
   const delegates = (input.delegates ?? []).filter((d) => d.name?.trim() && d.email?.trim());
+  const mcqPct = clampMcqPct(input.mcqPct);
 
   let rows: Record<string, unknown>[];
   if (delegates.length > 0) {
@@ -66,6 +75,7 @@ export async function generateVoucherBatch(input: GenerateBatchInput) {
       assigned_email: d.email.trim(),
       expires_at: input.expiresAt ?? null,
       created_by: input.createdBy ?? null,
+      mcq_pct: mcqPct,
     }));
   } else {
     const count = Math.max(1, Math.min(500, Math.floor(input.count)));
@@ -79,13 +89,25 @@ export async function generateVoucherBatch(input: GenerateBatchInput) {
       max_uses: maxUses,
       expires_at: input.expiresAt ?? null,
       created_by: input.createdBy ?? null,
+      mcq_pct: mcqPct,
     }));
   }
 
-  const { data, error } = await sb
+  let { data, error } = await sb
     .from("technical_sandbox_vouchers")
     .insert(rows)
     .select("code, assigned_name, assigned_email");
+  // Tolerant of migration 00085 not applied yet: drop the mcq_pct column and retry.
+  if (error && isMissingSchemaError(error)) {
+    const legacyRows = rows.map(({ mcq_pct, ...rest }) => {
+      void mcq_pct;
+      return rest;
+    });
+    ({ data, error } = await sb
+      .from("technical_sandbox_vouchers")
+      .insert(legacyRows)
+      .select("code, assigned_name, assigned_email"));
+  }
   if (error) throw error;
   const codes = (data ?? []).map((r) => r.code as string);
   const assignments: GeneratedAssignment[] = (data ?? [])
@@ -125,12 +147,27 @@ export async function redeemVoucher(input: RedeemInput): Promise<RedeemResult> {
     return { ok: false, error: "This code is invalid, disabled, expired, or fully used." };
   }
 
+  // The claim RPC doesn't return mcq_pct; read it separately (tolerant of 00085
+  // not applied - legacy vouchers have no MCQ section, i.e. mcq_pct 0).
+  let mcqPct = 0;
+  try {
+    const { data: vRow } = await sb
+      .from("technical_sandbox_vouchers")
+      .select("mcq_pct")
+      .eq("id", voucher.id as string)
+      .maybeSingle<{ mcq_pct: number | null }>();
+    mcqPct = clampMcqPct(vRow?.mcq_pct ?? 0);
+  } catch {
+    mcqPct = 0;
+  }
+
   try {
     const { id: sessionId, accessToken } = await createSession({
       functionId: voucher.function_id as string,
       candidateName: input.name.trim(),
       candidateEmail: input.email.trim(),
       organizationName: (input.company || voucher.organization_name || "").trim() || undefined,
+      mcqPct,
     });
     await sb.from("technical_sandbox_voucher_redemptions").insert({
       voucher_id: voucher.id,

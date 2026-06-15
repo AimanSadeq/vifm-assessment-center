@@ -10,6 +10,9 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { scoreBlock } from "./validators";
 import { scoreSession, type BlockInput } from "./scoring";
 import { runSqlCheckpoint, type SqlEngineConfig } from "./sql-runner";
+import { buildMcqTestForFunction, gradeMcqTest, combineScores } from "./combined";
+import { issueCredential } from "@/lib/credentials/issue";
+import type { TechTest } from "@/lib/ai/technical-assessment";
 import type { Checkpoint, EngineType, SandboxWork } from "./types";
 
 export interface PublicSkillBlock {
@@ -222,22 +225,55 @@ export interface CreateSessionInput {
   organizationName?: string;
   invitedBy?: string;
   validityDays?: number;
+  /** MCQ section weight (0-100). >0 provisions a keyed MCQ knowledge section
+   *  alongside the hands-on blocks (the combined technical assessment). */
+  mcqPct?: number;
 }
 export async function createSession(input: CreateSessionInput) {
   const sb = createServiceClient();
-  const { data, error } = await sb
+  const mcqPct = Math.max(0, Math.min(100, Math.round(input.mcqPct ?? 0)));
+
+  // Provision the keyed MCQ test up front (held server-side; stripped before it
+  // reaches the browser). Built in English for v1 - the sandbox blocks keep
+  // their bilingual toggle; the MCQ section is English-only for now.
+  let mcqTest: TechTest | null = null;
+  if (mcqPct > 0) {
+    try {
+      mcqTest = await buildMcqTestForFunction(input.functionId, "en");
+    } catch {
+      mcqTest = null;
+    }
+  }
+
+  const baseRow = {
+    function_id: input.functionId,
+    candidate_name: input.candidateName ?? null,
+    candidate_email: input.candidateEmail ?? null,
+    organization_name: input.organizationName ?? null,
+    invited_by: input.invitedBy ?? null,
+    status: "invited" as const,
+  };
+  // Only carry the MCQ section when there's a usable test, so a generation
+  // miss falls back to sandbox-only rather than an empty knowledge section.
+  const mcqRow =
+    mcqPct > 0 && mcqTest && mcqTest.items.length > 0
+      ? { mcq_pct: mcqPct, mcq_test: mcqTest }
+      : {};
+
+  let { data, error } = await sb
     .from("technical_sandbox_sessions")
-    .insert({
-      function_id: input.functionId,
-      candidate_name: input.candidateName ?? null,
-      candidate_email: input.candidateEmail ?? null,
-      organization_name: input.organizationName ?? null,
-      invited_by: input.invitedBy ?? null,
-      status: "invited",
-    })
+    .insert({ ...baseRow, ...mcqRow })
     .select("id, access_token")
     .single();
-  if (error) throw error;
+  // Tolerant of migration 00085 not applied: retry without the MCQ columns.
+  if (error && isMissingSchemaError(error)) {
+    ({ data, error } = await sb
+      .from("technical_sandbox_sessions")
+      .insert(baseRow)
+      .select("id, access_token")
+      .single());
+  }
+  if (error || !data) throw error ?? new Error("Could not create session");
   return { id: data.id as string, accessToken: data.access_token as string };
 }
 
@@ -260,11 +296,19 @@ export async function startSession(token: string) {
   if (session.status === "submitted") return session;
   if (session.started_at) return session;
   const blocks = await loadScoringBlocks(session.function_id);
-  const totalSeconds = (await loadBlocks(session.function_id)).blocks.reduce(
+  const sandboxSeconds = (await loadBlocks(session.function_id)).blocks.reduce(
     (s, b) => s + (b.time_limit_seconds ?? 1200),
     0,
   );
   void blocks;
+  // Budget extra time for the MCQ knowledge section so it doesn't eat into the
+  // hands-on allowance (60s per item).
+  const mcqTest = (session.mcq_test ?? null) as TechTest | null;
+  const mcqItemCount =
+    Number(session.mcq_pct ?? 0) > 0 && mcqTest && Array.isArray(mcqTest.items)
+      ? mcqTest.items.length
+      : 0;
+  const totalSeconds = sandboxSeconds + mcqItemCount * 60;
   const expiresAt = new Date(Date.now() + totalSeconds * 1000).toISOString();
   const { data, error } = await sb
     .from("technical_sandbox_sessions")
@@ -297,12 +341,20 @@ export async function saveResponse(token: string, skillBlockId: string, work: Sa
   return { ok: true };
 }
 
-/** Score every block from saved work, persist results, and finalize the sitting. */
-export async function submitSession(token: string) {
+/** Score every block from saved work, persist results, and finalize the sitting.
+ *  When the sitting carries an MCQ knowledge section (combined technical
+ *  assessment), grade it server-side from the keyed test + the taker's answers,
+ *  blend the two sections by the agreed weight, and issue a credential when the
+ *  result clears the floors + bar and the knowledge section is bank-certified. */
+export async function submitSession(
+  token: string,
+  mcqAnswers?: Record<string, number | number[]> | null,
+) {
   const sb = createServiceClient();
   const session = await getSessionByToken(token);
   if (!session) throw new Error("Invalid token");
-  if (session.status === "submitted") return session;
+  // Already finalized: never echo the raw row (it carries the keyed mcq_test).
+  if (session.status === "submitted") return { alreadySubmitted: true as const };
 
   const scoringBlocks = await loadScoringBlocks(session.function_id);
   const { data: responses } = await sb
@@ -364,19 +416,128 @@ export async function submitSession(token: string) {
   }
 
   const sessionScore = scoreSession(blockInputs);
-  const { data: updated, error } = await sb
+
+  // ── Combined (MCQ + sandbox) blend, when the sitting carries a knowledge section ──
+  const mcqPct = Math.max(0, Math.min(100, Math.round(Number(session.mcq_pct ?? 0))));
+  const mcqTest = (session.mcq_test ?? null) as TechTest | null;
+  const hasMcqSection = mcqPct > 0 && !!mcqTest && Array.isArray(mcqTest.items) && mcqTest.items.length > 0;
+
+  const mcqScorePct = hasMcqSection ? gradeMcqTest(mcqTest, mcqAnswers ?? {}) : null;
+  const combined = combineScores({
+    mcqPct,
+    mcqScorePct,
+    sandboxScorePct: sessionScore.overallPct,
+  });
+
+  // ── Finalize atomically. The status transition is a compare-and-set
+  //    (.neq("status","submitted")) so two concurrent submits can't both
+  //    proceed: only the row that flips in_progress -> submitted is "claimed",
+  //    and only that winner issues the credential. Credential is issued AFTER
+  //    the claim, never before, so a lost race issues nothing. ──
+  const baseUpdate = {
+    status: "submitted" as const,
+    submitted_at: new Date().toISOString(),
+    overall_score_pct: sessionScore.overallPct,
+    overall_band: sessionScore.overallTier,
+  };
+  const combinedCols = {
+    mcq_answers: hasMcqSection ? (mcqAnswers ?? {}) : null,
+    mcq_score_pct: mcqScorePct,
+    combined_score_pct: combined.combinedPct,
+    combined_band: combined.combinedBand,
+  };
+
+  let { data: claimed, error } = await sb
     .from("technical_sandbox_sessions")
-    .update({
-      status: "submitted",
-      submitted_at: new Date().toISOString(),
-      overall_score_pct: sessionScore.overallPct,
-      overall_band: sessionScore.overallTier,
-    })
+    .update({ ...baseUpdate, ...combinedCols })
     .eq("id", session.id)
-    .select("*")
-    .single();
+    .neq("status", "submitted")
+    .select("id")
+    .maybeSingle();
+  // Tolerant of migration 00085 not applied: persist the legacy columns only.
+  if (error && isMissingSchemaError(error)) {
+    ({ data: claimed, error } = await sb
+      .from("technical_sandbox_sessions")
+      .update(baseUpdate)
+      .eq("id", session.id)
+      .neq("status", "submitted")
+      .select("id")
+      .maybeSingle());
+  }
   if (error) throw error;
-  return { session: updated, score: sessionScore };
+  // Lost the race (a concurrent submit already finalized) -> do not re-issue.
+  if (!claimed) return { alreadySubmitted: true as const };
+
+  // The technical_proficiency credential keeps its "bank-certified" invariant:
+  // issued only for a passing combined sitting whose knowledge section was
+  // assembled from SME-approved bank items (not an AI-generated fallback).
+  let credentialCode: string | null = null;
+  const eligibleToCertify = hasMcqSection && !!mcqTest?.certified && combined.passed;
+  if (eligibleToCertify) {
+    // Idempotency: reuse an existing credential for this sitting if one exists
+    // (mirrors markEnrollmentComplete) so a retry can't mint a duplicate.
+    let existingCode: string | null = null;
+    try {
+      const { data: existing } = await sb
+        .from("vifm_credentials")
+        .select("verification_code")
+        .eq("source_id", session.id)
+        .eq("credential_type", "technical_proficiency")
+        .maybeSingle<{ verification_code: string }>();
+      existingCode = existing?.verification_code ?? null;
+    } catch {
+      existingCode = null;
+    }
+    credentialCode =
+      existingCode ??
+      (
+        await issueCredential({
+          candidateId: null,
+          issuedToName: (session.candidate_name as string) || "Candidate",
+          issuedToEmail: (session.candidate_email as string) || null,
+          type: "technical_proficiency",
+          titleEn: "Technical Proficiency",
+          titleAr: "الكفاءة الفنية",
+          subtitleEn: (session.organization_name as string) || null,
+          scorePct: combined.combinedPct,
+          sourceId: session.id as string,
+          metadata: {
+            kind: "technical_combined",
+            function_id: session.function_id,
+            mcq_pct: mcqPct,
+            mcq_score_pct: mcqScorePct,
+            sandbox_score_pct: sessionScore.overallPct,
+            combined_score_pct: combined.combinedPct,
+            band: combined.combinedBand,
+          },
+        })
+      )?.verificationCode ??
+      null;
+    if (credentialCode) {
+      // Best-effort; tolerant of 00085 not applied (column absent -> no-op).
+      await sb
+        .from("technical_sandbox_sessions")
+        .update({ credential_code: credentialCode })
+        .eq("id", session.id);
+    }
+  }
+
+  return {
+    score: sessionScore,
+    combined: {
+      mcqPct,
+      hasMcqSection,
+      mcqScorePct,
+      sandboxScorePct: sessionScore.overallPct,
+      combinedPct: combined.combinedPct,
+      combinedBand: combined.combinedBand,
+      mcqPassed: combined.mcqPassed,
+      sandboxPassed: combined.sandboxPassed,
+      passed: combined.passed,
+      certified: !!mcqTest?.certified,
+      credentialCode,
+    },
+  };
 }
 
 // ── Admin-only answer key (model answers + checkpoints) for active functions ──

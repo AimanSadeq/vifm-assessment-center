@@ -78,6 +78,7 @@ export async function generateVouchersAction(input: {
   maxUsesPerCode?: number;
   expiresAt?: string;
   delegates?: { name: string; email: string }[];
+  mcqPct?: number;
 }): Promise<Result<{ codes: string[]; assignments: { name: string; email: string; code: string }[] }>> {
   const g = await guard();
   if ("error" in g) return g;
@@ -95,6 +96,7 @@ export async function generateVouchersAction(input: {
     expiresAt: input.expiresAt || null,
     delegates: named.length > 0 ? named : null,
     createdBy: "userId" in g ? g.userId : undefined,
+    mcqPct: input.mcqPct ?? 0,
   });
   revalidatePath("/admin/tech-sandbox/vouchers");
   revalidatePath("/admin/tech-sandbox");

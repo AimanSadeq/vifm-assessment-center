@@ -50,6 +50,7 @@ export function VouchersClient({
   const [organizationName, setOrganizationName] = useState("");
   const [label, setLabel] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
+  const [mcqPct, setMcqPct] = useState(0);
   const [delegateText, setDelegateText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,6 +88,7 @@ export function VouchersClient({
       maxUsesPerCode: mode === "pool" ? count : 1,
       expiresAt: expiresAt || undefined,
       delegates: mode === "delegates" ? parsedDelegates : undefined,
+      mcqPct,
     });
     setBusy(false);
     if ("error" in res) return setError(res.error);
@@ -186,6 +188,27 @@ export function VouchersClient({
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-muted-foreground">Expires (optional)</span>
             <input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} className="rounded-md border border-border bg-card px-3 py-2 text-foreground" />
+          </label>
+          <label className="flex flex-col gap-1 text-sm sm:col-span-2">
+            <span className="text-muted-foreground">Knowledge (MCQ) section weight</span>
+            <select
+              value={mcqPct}
+              onChange={(e) => setMcqPct(Number(e.target.value))}
+              className="rounded-md border border-border bg-card px-3 py-2 text-foreground"
+            >
+              <option value={0}>Hands-on only (no knowledge section)</option>
+              <option value={20}>20% knowledge · 80% hands-on</option>
+              <option value={30}>30% knowledge · 70% hands-on</option>
+              <option value={40}>40% knowledge · 60% hands-on</option>
+              <option value={50}>50% knowledge · 50% hands-on</option>
+              <option value={60}>60% knowledge · 40% hands-on</option>
+              <option value={70}>70% knowledge · 30% hands-on</option>
+            </select>
+            <span className="text-xs text-muted-foreground">
+              The % is a <strong>score weight</strong>, not a question count. With a knowledge section, each part
+              is scored 0-100, then blended by this weight. A combined sitting can issue a Technical Proficiency
+              credential when both sections clear their floor and the overall bar.
+            </span>
           </label>
         </div>
         <button onClick={generate} disabled={busy || !functionId || (mode === "delegates" && parsedDelegates.length === 0)} className="mt-3 rounded-md bg-[#010131] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50">

@@ -33,7 +33,7 @@
       "open": { "label": "Written response", "text": "answer briefly in your own words." },
       "g1": "Your answers save automatically; you can pause and return using the same link.",
       "g2": "Answer at your own pace.",
-      "timed": "You have {{min}} minutes; the assessment submits automatically when time runs out.",
+      "timed": "You have {{min}} min; the assessment submits automatically when time runs out.",
       "start": "Start"
     },
     "sandbox": {

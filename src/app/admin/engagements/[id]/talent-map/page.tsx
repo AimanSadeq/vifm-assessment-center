@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getServerT, getServerLocale, getServerDir } from "@/lib/i18n/server";
 import { localizedName } from "@/lib/i18n/localized";
@@ -8,6 +9,8 @@ import { BackLink } from "@/components/shared/back-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Grid3x3, TrendingUp, Users, Award, Layers } from "lucide-react";
+import { computeCandidateReadiness } from "@/lib/scoring/readiness-data";
+import { READINESS_TIER_META, type ReadinessStatus } from "@/lib/scoring/readiness";
 import {
   scoreBand,
   nineBoxCell,
@@ -41,7 +44,23 @@ type OarRow = {
   recommendation: "ready_now" | "ready_with_development" | "not_ready";
 };
 
-type CandidateRow = { id: string; full_name: string; email: string | null };
+type CandidateRow = { id: string; full_name: string; email: string | null; role_profile_id?: string | null };
+
+// Tier chip tones for the engine-readiness cohort panel (READINESS_TIER_META tone tokens).
+const READINESS_CHIP: Record<string, string> = {
+  emerald: "bg-emerald-100 text-emerald-800",
+  sky: "bg-sky-100 text-sky-800",
+  amber: "bg-amber-100 text-amber-800",
+  rose: "bg-rose-100 text-rose-800",
+  slate: "bg-slate-100 text-slate-700",
+};
+const READINESS_ORDER: ReadinessStatus[] = [
+  "ready_now",
+  "ready_soon",
+  "developing",
+  "not_ready",
+  "insufficient_data",
+];
 
 // Domain tints for the heatmap column groups (matches the H1/H2 palette).
 const DOMAIN_TINT: Record<string, string> = {
@@ -113,7 +132,7 @@ export default async function TalentMapPage({ params }: Props) {
     const [candRes, consRes, oarRes] = await Promise.all([
       sb
         .from("candidates")
-        .select("id, full_name, email")
+        .select("id, full_name, email, role_profile_id")
         .eq("engagement_id", engagementId)
         .order("full_name"),
       sb
@@ -192,6 +211,28 @@ export default async function TalentMapPage({ params }: Props) {
     const oar = oarByCand.get(c.id);
     succession[(oar?.recommendation as SuccessionKey) ?? "unassessed"].push(c);
   }
+
+  // ---- Engine readiness (360 observed-vs-role-bar), read-only -------------
+  // Only candidates bound to a role profile can have a readiness tier; compute
+  // read-only (persist=false) so viewing the cohort doesn't write snapshots.
+  const readinessByCand = new Map<string, ReadinessStatus>();
+  await Promise.all(
+    candidates
+      .filter((c) => c.role_profile_id)
+      .map(async (c) => {
+        try {
+          const rr = await computeCandidateReadiness(engagementId, c.id, null, false);
+          readinessByCand.set(c.id, rr.status);
+        } catch {
+          /* skip a candidate whose readiness can't be computed */
+        }
+      }),
+  );
+  const anyReadiness = readinessByCand.size > 0;
+  const readinessBuckets = READINESS_ORDER.map((status) => ({
+    status,
+    people: candidates.filter((c) => readinessByCand.get(c.id) === status),
+  }));
 
   // ---- Skills heatmap matrix ----------------------------------------------
   const compMeta = new Map<string, { name: string; domain: string; domainDisplay: string; domainSort: number }>();
@@ -393,6 +434,52 @@ export default async function TalentMapPage({ params }: Props) {
               );
             })}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Succession readiness (engine: 360 observed-vs-role-bar) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-[#5391D5]" />
+            {t("readinessCohort.title")}
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">{t("readinessCohort.desc")}</p>
+        </CardHeader>
+        <CardContent>
+          {!anyReadiness ? (
+            <EmptyNote text={t("readinessCohort.empty")} />
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              {readinessBuckets.map(({ status, people }) => {
+                const meta = READINESS_TIER_META[status];
+                return (
+                  <div key={status} className="rounded-md border p-3">
+                    <div className="flex items-center justify-between">
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${READINESS_CHIP[meta.tone]}`}>
+                        {meta.label}
+                      </span>
+                      <span className="text-lg font-bold tabular-nums">{people.length}</span>
+                    </div>
+                    <ul className="mt-2 space-y-0.5">
+                      {people.map((c) => (
+                        <li key={c.id} className="truncate text-xs">
+                          <Link
+                            href={`/admin/engagements/${engagementId}/readiness/${c.id}`}
+                            className="text-[#5391D5] hover:underline"
+                            title={t("readinessCohort.viewReport")}
+                          >
+                            {c.full_name}
+                          </Link>
+                        </li>
+                      ))}
+                      {people.length === 0 && <li className="text-xs text-muted-foreground">-</li>}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
 

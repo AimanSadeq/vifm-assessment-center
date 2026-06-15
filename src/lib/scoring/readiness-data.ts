@@ -136,6 +136,9 @@ export async function computeCandidateReadiness(
   engagementId: string,
   candidateId: string,
   computedBy?: string | null,
+  /** Persist a readiness_results snapshot (default true). The cohort view
+   *  passes false to compute read-only without write amplification. */
+  persist: boolean = true,
 ): Promise<ReadinessResult> {
   const sb = createServiceClient();
 
@@ -223,11 +226,22 @@ export async function computeCandidateReadiness(
   const scoring = participantId ? await computeParticipantScoring(participantId) : null;
 
   // 6 (self source). In combined mode the self comes from the behavioral
-  // self-assessment (Slice 3); until that lands the map is empty and self
-  // flags simply won't render. In standalone mode we use the 360 self-rater.
+  // self-assessment (Slice 4: behavioral_competency_scores, keyed by AC
+  // competency). In standalone mode we use the 360 self-rater. Tolerant of the
+  // table not being migrated (map stays empty -> self flags just won't render).
   const behavioralSelfByAc = new Map<string, number>();
-  // TODO(Slice 3): populate behavioralSelfByAc from the behavioral self-assessment
-  // per AC competency when assessmentMode === "combined".
+  if (assessmentMode === "combined") {
+    try {
+      const { data: bx } = await sb
+        .from("behavioral_competency_scores")
+        .select("competency_id, self_score")
+        .eq("engagement_id", engagementId)
+        .eq("candidate_id", candidateId);
+      for (const row of bx ?? []) behavioralSelfByAc.set(row.competency_id as string, Number(row.self_score));
+    } catch {
+      /* behavioral_competency_scores not migrated yet */
+    }
+  }
 
   // 5) Map Reflect competencies -> AC catalogue competencies; build observed[].
   const observed: ObservedCompetency[] = [];
@@ -273,6 +287,7 @@ export async function computeCandidateReadiness(
   const result = computeReadiness(role, observed, config);
 
   // 8) Best-effort snapshot (tolerant of readiness_results not being migrated).
+  if (!persist) return result;
   try {
     const r2 = (n: number | null) => (n == null ? null : Math.round(n * 100) / 100);
     const r3 = (n: number) => Math.round(n * 1000) / 1000;

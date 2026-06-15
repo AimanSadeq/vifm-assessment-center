@@ -1,0 +1,187 @@
+-- ============================================================
+-- 00093 - Expand the 38-competency 360 framework to the full item bank
+--
+-- Slice 2.2. Replaces the starter (1 behaviour/competency) seeded by 00092
+-- with the full 4 observer items per competency, transformed from the
+-- behavioural self-report item bank (docs/competency-self-report-*.md) into
+-- observer perspective ("This person ...") in EN + AR. Aligned to each
+-- catalogue competency by ac_competency_id.
+--
+-- NOTE on reverse-keying: the self-report bank has one reverse-keyed item per
+-- competency. The Reflect scorer has NO reverse handling (it means raw 1-5
+-- directly), so each reverse item was re-keyed POSITIVE (reworded to measure
+-- the same construct in the positive direction) - standard for observer 360s -
+-- rather than silently inverting a competency mean. Arabic is best-effort MSA
+-- pending human review (project convention).
+--
+-- Prerequisite: 00092 (the framework + ac_competency_id links). Idempotent.
+-- ============================================================
+
+DO $$
+DECLARE v_fw uuid := 'f1000001-0000-0000-0000-000000000001';
+BEGIN
+  -- Replace any existing behaviours for this framework (starter or prior run).
+  DELETE FROM reflect_behaviors
+  WHERE competency_id IN (SELECT id FROM reflect_competencies WHERE framework_id = v_fw);
+
+  INSERT INTO reflect_behaviors (competency_id, level_tier, text_en, text_ar, source, display_order)
+  SELECT rc.id, 'all', v.text_en, v.text_ar, 'manual', v.ord
+  FROM reflect_competencies rc
+  JOIN (VALUES
+    ('a0000001-0000-0000-0000-000000000001'::uuid, 1, 'This person thinks several years ahead about how their market could change.', 'يفكّر هذا الشخص قبل سنوات في كيفية تغيّر سوقه.'),
+    ('a0000001-0000-0000-0000-000000000001', 2, 'This person connects day-to-day decisions to a longer-term direction.', 'يربط هذا الشخص القرارات اليومية بتوجّه أطول أمدًا.'),
+    ('a0000001-0000-0000-0000-000000000001', 3, 'This person looks beyond immediate targets to anticipate future shifts.', 'ينظر هذا الشخص إلى ما وراء المستهدفات الآنية ليستبق التحوّلات المستقبلية.'),
+    ('a0000001-0000-0000-0000-000000000001', 4, 'This person anticipates how regulation or competition might reshape their area.', 'يستشرف هذا الشخص كيف قد تعيد التشريعات أو المنافسة تشكيل مجاله.'),
+    ('a0000001-0000-0000-0000-000000000002', 1, 'This person keeps close track of competitor and market moves in their industry.', 'يتابع هذا الشخص عن كثب تحرّكات المنافسين والسوق في صناعته.'),
+    ('a0000001-0000-0000-0000-000000000002', 2, 'This person factors the wider economic climate into business decisions.', 'يُدخل هذا الشخص المناخ الاقتصادي الأوسع في قرارات الأعمال.'),
+    ('a0000001-0000-0000-0000-000000000002', 3, 'This person readily sees how external trends affect their work.', 'يرى هذا الشخص بسهولة كيف تؤثّر الاتجاهات الخارجية في عمله.'),
+    ('a0000001-0000-0000-0000-000000000002', 4, 'This person spots commercial opportunities that others miss.', 'يلتقط هذا الشخص فرصًا تجارية يغفل عنها غيره.'),
+    ('a0000001-0000-0000-0000-000000000003', 1, 'This person is comfortable interpreting financial statements and ratios.', 'يرتاح هذا الشخص في تفسير القوائم والنسب المالية.'),
+    ('a0000001-0000-0000-0000-000000000003', 2, 'This person uses financial data to weigh trade-offs in decisions.', 'يستخدم هذا الشخص البيانات المالية لموازنة المفاضلات في القرارات.'),
+    ('a0000001-0000-0000-0000-000000000003', 3, 'This person explains the financial implications of choices on their own.', 'يشرح هذا الشخص الآثار المالية للخيارات بنفسه.'),
+    ('a0000001-0000-0000-0000-000000000003', 4, 'This person can quickly read what a set of financial indicators is signalling.', 'يقرأ هذا الشخص بسرعة ما تشير إليه مجموعة من المؤشرات المالية.'),
+    ('a0000001-0000-0000-0000-000000000004', 1, 'This person tests the assumptions behind a conclusion before accepting it.', 'يختبر هذا الشخص الافتراضات الكامنة خلف استنتاج قبل قبوله.'),
+    ('a0000001-0000-0000-0000-000000000004', 2, 'This person breaks complex problems into parts to understand them.', 'يُفكّك هذا الشخص المشكلات المعقّدة إلى أجزاء لفهمها.'),
+    ('a0000001-0000-0000-0000-000000000004', 3, 'This person scrutinises reports rather than accepting them at face value.', 'يُمحّص هذا الشخص التقارير بدل قبولها كما هي.'),
+    ('a0000001-0000-0000-0000-000000000004', 4, 'This person weighs evidence carefully before forming a view.', 'يوازن هذا الشخص الأدلة بعناية قبل تكوين رأي.'),
+    ('a0000001-0000-0000-0000-000000000005', 1, 'This person makes balanced decisions even when information is incomplete.', 'يتّخذ هذا الشخص قرارات متوازنة حتى حين تكون المعلومات ناقصة.'),
+    ('a0000001-0000-0000-0000-000000000005', 2, 'This person considers the knock-on consequences of their decisions.', 'يراعي هذا الشخص التبعات غير المباشرة لقراراته.'),
+    ('a0000001-0000-0000-0000-000000000005', 3, 'This person decides in good time without waiting for complete certainty.', 'يقرّر هذا الشخص في الوقت المناسب دون انتظار اكتمال اليقين.'),
+    ('a0000001-0000-0000-0000-000000000005', 4, 'People trust this person''s judgement on difficult calls.', 'يثق الناس بحُكم هذا الشخص في القرارات الصعبة.'),
+    ('a0000001-0000-0000-0000-000000000006', 1, 'This person looks for new and better ways to do things.', 'يبحث هذا الشخص عن طرق جديدة وأفضل لإنجاز الأمور.'),
+    ('a0000001-0000-0000-0000-000000000006', 2, 'This person challenges "the way it''s always been done."', 'يتحدّى هذا الشخص "الطريقة التي اعتدنا عليها دائمًا".'),
+    ('a0000001-0000-0000-0000-000000000006', 3, 'This person is willing to try new approaches beyond proven methods.', 'يبدي هذا الشخص استعدادًا لتجربة أساليب جديدة تتجاوز المجرَّبة.'),
+    ('a0000001-0000-0000-0000-000000000006', 4, 'This person generates original ideas to solve problems.', 'يبتكر هذا الشخص أفكارًا أصيلة لحلّ المشكلات.'),
+    ('a0000001-0000-0000-0000-000000000007', 1, 'This person can make sense of messy, conflicting information.', 'يستطيع هذا الشخص فهم المعلومات المتشابكة والمتضاربة.'),
+    ('a0000001-0000-0000-0000-000000000007', 2, 'This person finds the key issue inside a complicated situation.', 'يجد هذا الشخص القضية الجوهرية داخل موقف معقّد.'),
+    ('a0000001-0000-0000-0000-000000000007', 3, 'This person stays composed when problems have many moving parts.', 'يبقى هذا الشخص متماسكًا حين تكون للمشكلات أجزاء متحرّكة كثيرة.'),
+    ('a0000001-0000-0000-0000-000000000007', 4, 'This person structures complex problems into manageable parts.', 'يُهيكل هذا الشخص المشكلات المعقّدة إلى أجزاء قابلة للإدارة.'),
+    ('a0000001-0000-0000-0000-000000000008', 1, 'This person considers the bigger picture beyond their own area.', 'يراعي هذا الشخص الصورة الأكبر بما يتجاوز مجاله.'),
+    ('a0000001-0000-0000-0000-000000000008', 2, 'This person thinks about how parts of a system connect.', 'يفكّر هذا الشخص في كيفية ترابط أجزاء النظام.'),
+    ('a0000001-0000-0000-0000-000000000008', 3, 'This person looks beyond their immediate remit to the wider organisation.', 'ينظر هذا الشخص إلى ما وراء نطاق مسؤوليته المباشر نحو المنظمة الأوسع.'),
+    ('a0000001-0000-0000-0000-000000000008', 4, 'This person takes a broad, cross-boundary view of issues.', 'يتبنّى هذا الشخص نظرة واسعة عابرة للحدود للقضايا.'),
+    ('a0000001-0000-0000-0000-000000000009', 1, 'This person uses digital tools to work more effectively.', 'يستخدم هذا الشخص الأدوات الرقمية ليعمل بفاعلية أكبر.'),
+    ('a0000001-0000-0000-0000-000000000009', 2, 'This person is comfortable working with data and analytics.', 'يرتاح هذا الشخص في العمل بالبيانات والتحليلات.'),
+    ('a0000001-0000-0000-0000-000000000009', 3, 'This person embraces new technology when it can help.', 'يُقبل هذا الشخص على التقنية الجديدة متى كانت مفيدة.'),
+    ('a0000001-0000-0000-0000-000000000009', 4, 'This person looks for ways to automate or improve work with technology.', 'يبحث هذا الشخص عن سُبُل أتمتة العمل أو تحسينه بالتقنية.'),
+    ('a0000001-0000-0000-0000-000000000010', 1, 'This person acts on problems without waiting to be told.', 'يتصرّف هذا الشخص تجاه المشكلات دون انتظار التوجيه.'),
+    ('a0000001-0000-0000-0000-000000000010', 2, 'This person takes the initiative to improve things.', 'يبادر هذا الشخص إلى تحسين الأمور.'),
+    ('a0000001-0000-0000-0000-000000000010', 3, 'This person acts on their own initiative without waiting for direction.', 'يتصرّف هذا الشخص بمبادرته دون انتظار التوجيه.'),
+    ('a0000001-0000-0000-0000-000000000010', 4, 'This person looks for opportunities and acts on them.', 'يبحث هذا الشخص عن الفرص ويتحرّك تجاهها.'),
+    ('a0000001-0000-0000-0000-000000000011', 1, 'This person sees things through to a result.', 'يمضي هذا الشخص بالأمور حتى تحقيق نتيجة.'),
+    ('a0000001-0000-0000-0000-000000000011', 2, 'This person keeps pushing even when it''s hard.', 'يواصل هذا الشخص الدفع حتى حين يصعب الأمر.'),
+    ('a0000001-0000-0000-0000-000000000011', 3, 'This person presses on when obstacles appear.', 'يمضي هذا الشخص قُدُمًا عند ظهور العقبات.'),
+    ('a0000001-0000-0000-0000-000000000011', 4, 'This person takes personal responsibility for outcomes.', 'يتحمّل هذا الشخص المسؤولية الشخصية عن النتائج.'),
+    ('a0000001-0000-0000-0000-000000000012', 1, 'This person does what they say they will do.', 'يفعل هذا الشخص ما يقول إنه سيفعله.'),
+    ('a0000001-0000-0000-0000-000000000012', 2, 'This person owns up quickly when they can''t meet a commitment.', 'يعترف هذا الشخص بسرعة حين يتعذّر عليه الوفاء بالتزام.'),
+    ('a0000001-0000-0000-0000-000000000012', 3, 'This person takes responsibility when things slip.', 'يتحمّل هذا الشخص المسؤولية حين تتعثّر الأمور.'),
+    ('a0000001-0000-0000-0000-000000000012', 4, 'This person holds themselves to their promises.', 'يُلزِم هذا الشخص نفسه بوعوده.'),
+    ('a0000001-0000-0000-0000-000000000013', 1, 'This person plans their work around what matters most.', 'يخطّط هذا الشخص عمله حول الأهمّ.'),
+    ('a0000001-0000-0000-0000-000000000013', 2, 'This person prioritises by impact and deadline.', 'يرتّب هذا الشخص الأولويات بحسب الأثر والموعد.'),
+    ('a0000001-0000-0000-0000-000000000013', 3, 'This person sequences tasks deliberately rather than in the order they arrive.', 'يرتّب هذا الشخص المهام عن قصد بدل تناولها بترتيب وصولها.'),
+    ('a0000001-0000-0000-0000-000000000013', 4, 'This person organises their work to meet key commitments.', 'ينظّم هذا الشخص عمله للوفاء بالالتزامات الرئيسة.'),
+    ('a0000001-0000-0000-0000-000000000014', 1, 'This person looks for ways to make processes more efficient.', 'يبحث هذا الشخص عن سُبُل لجعل العمليات أكثر كفاءة.'),
+    ('a0000001-0000-0000-0000-000000000014', 2, 'This person fixes the root cause of recurring problems.', 'يعالج هذا الشخص السبب الجذري للمشكلات المتكرّرة.'),
+    ('a0000001-0000-0000-0000-000000000014', 3, 'This person reworks inefficient processes rather than leaving them as they are.', 'يُعيد هذا الشخص تصميم العمليات غير الكفؤة بدل تركها كما هي.'),
+    ('a0000001-0000-0000-0000-000000000014', 4, 'This person improves how work gets done.', 'يُحسّن هذا الشخص طريقة إنجاز العمل.'),
+    ('a0000001-0000-0000-0000-000000000015', 1, 'This person stays effective when things are unclear.', 'يبقى هذا الشخص فاعلًا حين تكون الأمور غير واضحة.'),
+    ('a0000001-0000-0000-0000-000000000015', 2, 'This person makes progress without complete information.', 'يُحرز هذا الشخص تقدّمًا دون معلومات كاملة.'),
+    ('a0000001-0000-0000-0000-000000000015', 3, 'This person stays effective when the way forward isn''t clear.', 'يبقى هذا الشخص فاعلًا حين لا يكون الطريق للأمام واضحًا.'),
+    ('a0000001-0000-0000-0000-000000000015', 4, 'This person is comfortable acting amid uncertainty.', 'يرتاح هذا الشخص في التصرّف وسط عدم اليقين.'),
+    ('a0000001-0000-0000-0000-000000000016', 1, 'This person learns quickly by trying things.', 'يتعلّم هذا الشخص بسرعة بتجربة الأشياء.'),
+    ('a0000001-0000-0000-0000-000000000016', 2, 'This person treats mistakes as a way to learn.', 'يتعامل هذا الشخص مع الأخطاء كوسيلة للتعلّم.'),
+    ('a0000001-0000-0000-0000-000000000016', 3, 'This person takes on tasks and learns as they go rather than waiting to be fully trained.', 'يتولّى هذا الشخص المهام ويتعلّم أثناءها بدل انتظار تدريب كامل.'),
+    ('a0000001-0000-0000-0000-000000000016', 4, 'This person adjusts their approach as they learn.', 'يعدّل هذا الشخص نهجه وهو يتعلّم.'),
+    ('a0000001-0000-0000-0000-000000000017', 1, 'This person bounces back from setbacks.', 'ينهض هذا الشخص من الانتكاسات.'),
+    ('a0000001-0000-0000-0000-000000000017', 2, 'This person keeps performing through adversity.', 'يواصل هذا الشخص الأداء خلال الشدائد.'),
+    ('a0000001-0000-0000-0000-000000000017', 3, 'This person gets back on course quickly after setbacks.', 'يعود هذا الشخص إلى مساره بسرعة بعد الانتكاسات.'),
+    ('a0000001-0000-0000-0000-000000000017', 4, 'This person recovers quickly when things go wrong.', 'يتعافى هذا الشخص بسرعة حين تسوء الأمور.'),
+    ('a0000001-0000-0000-0000-000000000018', 1, 'This person gives people a clear sense of direction.', 'يمنح هذا الشخص الناس إحساسًا واضحًا بالوجهة.'),
+    ('a0000001-0000-0000-0000-000000000018', 2, 'This person connects people''s work to a bigger purpose.', 'يربط هذا الشخص عمل الناس بغاية أكبر.'),
+    ('a0000001-0000-0000-0000-000000000018', 3, 'This person energises others to rally behind a goal.', 'يشحذ هذا الشخص همم الآخرين للالتفاف حول هدف.'),
+    ('a0000001-0000-0000-0000-000000000018', 4, 'This person motivates people toward a shared goal.', 'يحفّز هذا الشخص الناس نحو هدف مشترك.'),
+    ('a0000001-0000-0000-0000-000000000019', 1, 'This person explains complex things clearly.', 'يشرح هذا الشخص الأمور المعقّدة بوضوح.'),
+    ('a0000001-0000-0000-0000-000000000019', 2, 'This person tailors their message to the audience.', 'يكيّف هذا الشخص رسالته وفق الجمهور.'),
+    ('a0000001-0000-0000-0000-000000000019', 3, 'This person gets their point across simply.', 'يُوصل هذا الشخص فكرته ببساطة.'),
+    ('a0000001-0000-0000-0000-000000000019', 4, 'This person communicates in a way people understand.', 'يتواصل هذا الشخص بطريقة يفهمها الناس.'),
+    ('a0000001-0000-0000-0000-000000000020', 1, 'This person wins people''s genuine support for ideas.', 'يكسب هذا الشخص تأييد الناس الحقيقي للأفكار.'),
+    ('a0000001-0000-0000-0000-000000000020', 2, 'This person builds a convincing case.', 'يبني هذا الشخص حجّة مقنعة.'),
+    ('a0000001-0000-0000-0000-000000000020', 3, 'This person brings others around to their point of view.', 'يستميل هذا الشخص الآخرين إلى وجهة نظره.'),
+    ('a0000001-0000-0000-0000-000000000020', 4, 'This person gains commitment, not just compliance.', 'يكسب هذا الشخص التزامًا لا مجرّد امتثال.'),
+    ('a0000001-0000-0000-0000-000000000021', 1, 'This person addresses disagreements directly and calmly.', 'يتناول هذا الشخص الخلافات بصراحة وهدوء.'),
+    ('a0000001-0000-0000-0000-000000000021', 2, 'This person keeps conflict focused on the issue, not the person.', 'يُبقي هذا الشخص الخلاف على القضية لا الشخص.'),
+    ('a0000001-0000-0000-0000-000000000021', 3, 'This person tackles conflict head-on rather than avoiding it.', 'يواجه هذا الشخص الخلاف مباشرةً بدل تجنّبه.'),
+    ('a0000001-0000-0000-0000-000000000021', 4, 'This person resolves tensions without drama.', 'يحلّ هذا الشخص التوتّرات دون ضجّة.'),
+    ('a0000001-0000-0000-0000-000000000022', 1, 'This person finds agreements that work for both sides.', 'يجد هذا الشخص اتفاقات تناسب الطرفين.'),
+    ('a0000001-0000-0000-0000-000000000022', 2, 'This person looks for the other party''s underlying needs.', 'يبحث هذا الشخص عن احتياجات الطرف الآخر الكامنة.'),
+    ('a0000001-0000-0000-0000-000000000022', 3, 'This person stays flexible and principled when negotiating, neither giving in nor digging in.', 'يبقى هذا الشخص مرنًا ومبدئيًا عند التفاوض، فلا يستسلم ولا يتعنّت.'),
+    ('a0000001-0000-0000-0000-000000000022', 4, 'This person reaches durable, fair agreements.', 'يتوصّل هذا الشخص إلى اتفاقات مستدامة وعادلة.'),
+    ('a0000001-0000-0000-0000-000000000023', 1, 'This person builds relationships across the organisation.', 'يبني هذا الشخص علاقات عبر المنظمة.'),
+    ('a0000001-0000-0000-0000-000000000023', 2, 'This person invests in connections before they need them.', 'يستثمر هذا الشخص في الصلات قبل أن يحتاجها.'),
+    ('a0000001-0000-0000-0000-000000000023', 3, 'This person reaches out beyond their own team and contacts.', 'يمدّ هذا الشخص صلاته إلى ما وراء فريقه وصلاته المعتادة.'),
+    ('a0000001-0000-0000-0000-000000000023', 4, 'This person maintains a strong network of relationships.', 'يصون هذا الشخص شبكة علاقات قوية.'),
+    ('a0000001-0000-0000-0000-000000000024', 1, 'This person helps others develop their skills.', 'يساعد هذا الشخص الآخرين على تنمية مهاراتهم.'),
+    ('a0000001-0000-0000-0000-000000000024', 2, 'This person coaches people to find their own solutions.', 'يُوجّه هذا الشخص الناس لإيجاد حلولهم بأنفسهم.'),
+    ('a0000001-0000-0000-0000-000000000024', 3, 'This person develops people rather than just solving their problems for them.', 'يطوّر هذا الشخص الناس بدل أن يكتفي بحلّ مشكلاتهم بدلًا منهم.'),
+    ('a0000001-0000-0000-0000-000000000024', 4, 'This person supports people''s growth.', 'يدعم هذا الشخص نمو الناس.'),
+    ('a0000001-0000-0000-0000-000000000025', 1, 'This person builds teams that work well together.', 'يبني هذا الشخص فرقًا تعمل معًا جيدًا.'),
+    ('a0000001-0000-0000-0000-000000000025', 2, 'This person creates a shared sense of purpose in teams.', 'يصنع هذا الشخص إحساسًا مشتركًا بالغاية في الفرق.'),
+    ('a0000001-0000-0000-0000-000000000025', 3, 'This person actively shapes healthy team dynamics.', 'يُشكّل هذا الشخص بنشاط ديناميات فريق سليمة.'),
+    ('a0000001-0000-0000-0000-000000000025', 4, 'This person brings people together around common goals.', 'يجمع هذا الشخص الناس حول أهداف مشتركة.'),
+    ('a0000001-0000-0000-0000-000000000026', 1, 'This person works well across departments.', 'يعمل هذا الشخص بكفاءة عبر الإدارات.'),
+    ('a0000001-0000-0000-0000-000000000026', 2, 'This person puts shared goals ahead of their own unit''s interests.', 'يُقدّم هذا الشخص الأهداف المشتركة على مصالح وحدته.'),
+    ('a0000001-0000-0000-0000-000000000026', 3, 'This person prioritises joint results alongside their own area''s.', 'يُعطي هذا الشخص النتائج المشتركة أولوية إلى جانب نتائج مجاله.'),
+    ('a0000001-0000-0000-0000-000000000026', 4, 'This person partners effectively with other teams.', 'يتشارك هذا الشخص بفاعلية مع الفرق الأخرى.'),
+    ('a0000001-0000-0000-0000-000000000027', 1, 'People rely on this person to follow through.', 'يعتمد الناس على هذا الشخص في الوفاء.'),
+    ('a0000001-0000-0000-0000-000000000027', 2, 'This person is honest and consistent in what they do.', 'هذا الشخص صادق ومتّسق فيما يفعل.'),
+    ('a0000001-0000-0000-0000-000000000027', 3, 'This person can reliably be counted on.', 'يمكن الاعتماد على هذا الشخص بثقة.'),
+    ('a0000001-0000-0000-0000-000000000027', 4, 'This person earns others'' trust.', 'يكسب هذا الشخص ثقة الآخرين.'),
+    ('a0000001-0000-0000-0000-000000000028', 1, 'This person adapts their style to different people.', 'يكيّف هذا الشخص أسلوبه مع مختلف الناس.'),
+    ('a0000001-0000-0000-0000-000000000028', 2, 'This person reads situations and adjusts their approach.', 'يقرأ هذا الشخص المواقف ويعدّل نهجه.'),
+    ('a0000001-0000-0000-0000-000000000028', 3, 'This person varies their approach to suit different people.', 'يُنوّع هذا الشخص نهجه ليناسب مختلف الناس.'),
+    ('a0000001-0000-0000-0000-000000000028', 4, 'This person flexes how they work to fit the person.', 'يُرَوِّن هذا الشخص طريقة عمله لتناسب الشخص.'),
+    ('a0000001-0000-0000-0000-000000000029', 1, 'This person understands their own strengths and limits.', 'يفهم هذا الشخص نقاط قوّته وحدوده.'),
+    ('a0000001-0000-0000-0000-000000000029', 2, 'This person acts on feedback about themselves.', 'يتصرّف هذا الشخص بناءً على التغذية الراجعة عن نفسه.'),
+    ('a0000001-0000-0000-0000-000000000029', 3, 'This person is aware of how they come across to others.', 'يدرك هذا الشخص كيف يبدو للآخرين.'),
+    ('a0000001-0000-0000-0000-000000000029', 4, 'This person reflects on their impact on others.', 'يتأمّل هذا الشخص أثره في الآخرين.'),
+    ('a0000001-0000-0000-0000-000000000030', 1, 'This person manages their emotions well under pressure.', 'يُحسن هذا الشخص إدارة انفعالاته تحت الضغط.'),
+    ('a0000001-0000-0000-0000-000000000030', 2, 'This person picks up on how others are feeling.', 'يلتقط هذا الشخص مشاعر الآخرين.'),
+    ('a0000001-0000-0000-0000-000000000030', 3, 'This person keeps their emotions in check.', 'يضبط هذا الشخص انفعالاته.'),
+    ('a0000001-0000-0000-0000-000000000030', 4, 'This person responds to others'' emotions appropriately.', 'يستجيب هذا الشخص لمشاعر الآخرين بما يناسب.'),
+    ('a0000001-0000-0000-0000-000000000031', 1, 'This person speaks up about difficult issues.', 'يتكلّم هذا الشخص عن القضايا الصعبة.'),
+    ('a0000001-0000-0000-0000-000000000031', 2, 'This person says what needs to be said, even if unpopular.', 'يقول هذا الشخص ما يجب قوله ولو كان غير محبّب.'),
+    ('a0000001-0000-0000-0000-000000000031', 3, 'This person speaks up even at the risk of standing out.', 'يتكلّم هذا الشخص ولو خاطر بأن يبرز.'),
+    ('a0000001-0000-0000-0000-000000000031', 4, 'This person raises concerns others avoid.', 'يطرح هذا الشخص المخاوف التي يتجنّبها غيره.'),
+    ('a0000001-0000-0000-0000-000000000032', 1, 'This person acts honestly and fairly.', 'يتصرّف هذا الشخص بأمانة وعدل.'),
+    ('a0000001-0000-0000-0000-000000000032', 2, 'This person upholds standards even under pressure.', 'يُرسي هذا الشخص المعايير حتى تحت الضغط.'),
+    ('a0000001-0000-0000-0000-000000000032', 3, 'This person sticks to the rules even when bending them would be convenient.', 'يلتزم هذا الشخص بالقواعد حتى حين يكون تجاوزها أيسر له.'),
+    ('a0000001-0000-0000-0000-000000000032', 4, 'This person does the right thing even when it''s hard.', 'يفعل هذا الشخص الصواب حتى حين يصعب.'),
+    ('a0000001-0000-0000-0000-000000000033', 1, 'This person respects different cultural norms and views.', 'يحترم هذا الشخص الأعراف ووجهات النظر الثقافية المختلفة.'),
+    ('a0000001-0000-0000-0000-000000000033', 2, 'This person works inclusively with diverse people.', 'يعمل هذا الشخص بروح الشمول مع المتنوّعين.'),
+    ('a0000001-0000-0000-0000-000000000033', 3, 'This person adjusts to others'' ways of doing things.', 'يتكيّف هذا الشخص مع طرائق الآخرين في إنجاز الأمور.'),
+    ('a0000001-0000-0000-0000-000000000033', 4, 'This person adapts to work well across backgrounds.', 'يتكيّف هذا الشخص ليعمل جيدًا عبر الخلفيات.'),
+    ('a0000001-0000-0000-0000-000000000034', 1, 'This person learns fast in unfamiliar situations.', 'يتعلّم هذا الشخص بسرعة في المواقف غير المألوفة.'),
+    ('a0000001-0000-0000-0000-000000000034', 2, 'This person applies lessons to new conditions.', 'يطبّق هذا الشخص الدروس على ظروف جديدة.'),
+    ('a0000001-0000-0000-0000-000000000034', 3, 'This person updates their approach when things change rather than relying on what worked before.', 'يُحدّث هذا الشخص نهجه عند تغيّر الأمور بدل الاعتماد على ما نجح سابقًا.'),
+    ('a0000001-0000-0000-0000-000000000034', 4, 'This person adapts quickly to new demands.', 'يتكيّف هذا الشخص بسرعة مع المتطلّبات الجديدة.'),
+    ('a0000001-0000-0000-0000-000000000035', 1, 'This person actively seeks to grow and improve.', 'يسعى هذا الشخص بنشاط إلى النمو والتحسّن.'),
+    ('a0000001-0000-0000-0000-000000000035', 2, 'This person looks for development opportunities.', 'يبحث هذا الشخص عن فرص التطوير.'),
+    ('a0000001-0000-0000-0000-000000000035', 3, 'This person takes charge of their own development.', 'يتولّى هذا الشخص زمام تطوير نفسه.'),
+    ('a0000001-0000-0000-0000-000000000035', 4, 'This person works on getting better at what they do.', 'يعمل هذا الشخص على التحسّن فيما يفعله.'),
+    ('a0000001-0000-0000-0000-000000000036', 1, 'This person stays calm under pressure.', 'يبقى هذا الشخص هادئًا تحت الضغط.'),
+    ('a0000001-0000-0000-0000-000000000036', 2, 'This person thinks clearly in stressful moments.', 'يفكّر هذا الشخص بوضوح في اللحظات العصيبة.'),
+    ('a0000001-0000-0000-0000-000000000036', 3, 'This person stays steady when the pressure is on.', 'يبقى هذا الشخص ثابتًا حين يشتدّ الضغط.'),
+    ('a0000001-0000-0000-0000-000000000036', 4, 'This person keeps their composure in tough situations.', 'يحافظ هذا الشخص على رباطة جأشه في المواقف الصعبة.'),
+    ('a0000001-0000-0000-0000-000000000037', 1, 'This person manages their energy to perform over time.', 'يُدير هذا الشخص طاقته ليؤدّي عبر الزمن.'),
+    ('a0000001-0000-0000-0000-000000000037', 2, 'This person balances work demands with recovery.', 'يوازن هذا الشخص متطلّبات العمل مع التعافي.'),
+    ('a0000001-0000-0000-0000-000000000037', 3, 'This person paces themselves sustainably even when busy.', 'يُنظّم هذا الشخص وتيرته بما يحفظ استدامته حتى حين ينشغل.'),
+    ('a0000001-0000-0000-0000-000000000037', 4, 'This person sustains their performance without burning out.', 'يُديم هذا الشخص أداءه دون احتراق وظيفي.'),
+    ('a0000001-0000-0000-0000-000000000038', 1, 'This person gets the resources needed to deliver.', 'يحصل هذا الشخص على الموارد اللازمة للإنجاز.'),
+    ('a0000001-0000-0000-0000-000000000038', 2, 'This person makes the most of what they have.', 'يستثمر هذا الشخص ما لديه على أفضل وجه.'),
+    ('a0000001-0000-0000-0000-000000000038', 3, 'This person finds a way forward even when resources are tight.', 'يجد هذا الشخص سبيلًا للمضيّ قُدُمًا حتى حين تشحّ الموارد.'),
+    ('a0000001-0000-0000-0000-000000000038', 4, 'This person deploys people and tools effectively.', 'يوظّف هذا الشخص الأفراد والأدوات بفاعلية.')
+  ) AS v(ac_id, ord, text_en, text_ar) ON v.ac_id = rc.ac_competency_id
+  WHERE rc.framework_id = v_fw;
+
+  RAISE NOTICE 'Expanded 360 framework % to % observer behaviours.', v_fw, 152;
+END $$;

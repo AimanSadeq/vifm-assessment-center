@@ -301,6 +301,12 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
         >
           <GraduationCap className="h-4 w-4 text-[#5391D5]" /> {t("candidateSkills.myLearning")}
         </Link>
+        <Link
+          href={`/candidate/behavioral/${candidateId}`}
+          className="inline-flex items-center gap-2 rounded-md border border-[#5391D5] px-4 py-2 text-sm font-medium text-[#010131] hover:bg-[#5391D5]/10"
+        >
+          <Layers className="h-4 w-4 text-[#5391D5]" /> {t("candidateSkills.selfAssessment")}
+        </Link>
       </div>
 
       {/* Language Skills (Fluent) — a framework of its own; each skill enables

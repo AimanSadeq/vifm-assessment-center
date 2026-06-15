@@ -103,7 +103,7 @@ export function BehavioralRunner({
     <div className="mx-auto max-w-3xl space-y-4 p-4" dir={ar ? "rtl" : "ltr"}>
       <div>
         <p className="text-xs uppercase tracking-wide text-muted-foreground">
-          {tx("Behavioural self-assessment", "التقييم الذاتي السلوكي")}
+          {tx("Persona · Behavioural Competency Self-Assessment", "بيرسونا · التقييم الذاتي للجدارات السلوكية")}
         </p>
         <h1 className="text-xl font-bold">
           {tx("Rate how well each statement describes you", "قيّم مدى انطباق كل عبارة عليك")}

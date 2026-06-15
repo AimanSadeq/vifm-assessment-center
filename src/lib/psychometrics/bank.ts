@@ -31,9 +31,10 @@ const SCALE_DEFS: Record<PsyKind, ScaleDef[]> = {
   personality: BIG_FIVE.map((t) => ({ key: t.key, nameEn: t.name_en, nameAr: t.name_ar })),
 };
 const ITEM_KIND: Record<PsyKind, PsyItemKind> = { cognitive: "mcq", personality: "likert" };
+// Personality/OCEAN retired - the behavioural instrument is now Persona (the
+// 38-competency self-assessment), so the bank console manages cognitive only.
 const INSTRUMENTS: { kind: PsyKind; code: string; nameEn: string; nameAr: string }[] = [
   { kind: "cognitive", code: COGNITIVE_INSTRUMENT.code, nameEn: COGNITIVE_INSTRUMENT.name_en, nameAr: COGNITIVE_INSTRUMENT.name_ar },
-  { kind: "personality", code: PERSONALITY_INSTRUMENT.code, nameEn: PERSONALITY_INSTRUMENT.name_en, nameAr: PERSONALITY_INSTRUMENT.name_ar },
 ];
 
 export type BankItem = {

@@ -128,7 +128,7 @@ export const PROCESS: Record<string, ProcessPlan> = {
     requirementKey: "psychometric",
     module: "psychometric",
     constructs: ["ability", "disposition"],
-    instruments: ["cognitive", "personality"],
+    instruments: ["cognitive", "persona"],
     launch: "handoff",
     createRoute: "/ac/psychometrics",
     rationaleKey: "psychometric",

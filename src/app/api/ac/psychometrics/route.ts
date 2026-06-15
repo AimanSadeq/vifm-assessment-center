@@ -3,7 +3,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { generatePsyTest, stripAnswerKey } from "@/lib/psychometrics/generate";
 import { computePsyResult, type PsyTest, type CognitiveItem } from "@/lib/psychometrics/scoring";
 import { applyNorms, type ScaleNorm } from "@/lib/psychometrics/calibration";
-import { COGNITIVE_INSTRUMENT, PERSONALITY_INSTRUMENT } from "@/lib/psychometrics/framework";
+import { COGNITIVE_INSTRUMENT } from "@/lib/psychometrics/framework";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,8 +14,10 @@ export const dynamic = "force-dynamic";
  * browser), grading happens here, the session is single-use, and writes go
  * through the service role. Needs migration 00065.
  *
- *   { action:"start", kind:"cognitive"|"personality", language, candidateId?, engagementId?, takerEmail? }
- *     → { session_id, kind, instrument, test }   (test is answer-key-stripped)
+ *   { action:"start", language, candidateId?, engagementId?, takerEmail? }
+ *     → { session_id, kind, instrument, test }   (cognitive ability; answer-key-stripped)
+ *   (Personality/OCEAN was retired - the behavioural instrument is now Persona,
+ *    the 38-competency self-assessment under /candidate/behavioral.)
  *   { action:"score", session_id, answers, takerName?, takerEmail? }
  *     → { result, result_id }
  */
@@ -26,7 +28,8 @@ export async function POST(req: Request) {
   const svc = createServiceClient();
 
   if (action === "start") {
-    const kind: "cognitive" | "personality" = body.kind === "personality" ? "personality" : "cognitive";
+    // Cognitive ability only - personality/OCEAN retired in favour of Persona.
+    const kind = "cognitive" as const;
     const test = await generatePsyTest(kind, lang);
     const { data, error } = await svc
       .from("psy_sessions")
@@ -45,7 +48,7 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     }
-    const instrument = kind === "cognitive" ? COGNITIVE_INSTRUMENT : PERSONALITY_INSTRUMENT;
+    const instrument = COGNITIVE_INSTRUMENT;
     return NextResponse.json({ session_id: data.id, kind, instrument, test: stripAnswerKey(test, lang) });
   }
 

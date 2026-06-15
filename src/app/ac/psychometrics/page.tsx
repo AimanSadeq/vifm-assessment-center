@@ -5,9 +5,10 @@ import { BackLink } from "@/components/shared/back-link";
 export const dynamic = "force-dynamic";
 
 /**
- * Psychometrics runner (Tier 1 indicative) — cognitive ability + Big-Five
- * personality. Self-served; an admin can bind a result to a candidate/engagement
- * via ?candidateId=…&engagementId=… (mirrors the Fluent runner).
+ * Psychometrics runner (Tier 1 indicative) — cognitive ability. The behavioural
+ * instrument is Persona (the 38-competency self-assessment), launched from here.
+ * Self-served; an admin can bind a result to a candidate/engagement via
+ * ?candidateId=…&engagementId=… (mirrors the Fluent runner).
  */
 export default function PsychometricsPage({
   searchParams,

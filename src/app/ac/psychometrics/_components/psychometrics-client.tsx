@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { BrainCircuit, Sparkles, Loader2, CheckCircle2, RotateCcw, AlertTriangle, Download } from "lucide-react";
+import Link from "next/link";
+import { BrainCircuit, Sparkles, Loader2, CheckCircle2, RotateCcw, AlertTriangle, Download, Layers, ArrowRight } from "lucide-react";
 import type { PsyTestPublic, PsyResult, ScaleScore } from "@/lib/psychometrics/scoring";
-import { COGNITIVE_SUBTESTS, BIG_FIVE } from "@/lib/psychometrics/framework";
+import { COGNITIVE_SUBTESTS } from "@/lib/psychometrics/framework";
 
-type Kind = "cognitive" | "personality";
 type Lang = "en" | "ar";
 
 const BAND_TONE: Record<string, string> = {
@@ -16,14 +16,10 @@ const BAND_TONE: Record<string, string> = {
   high: "bg-emerald-200 text-emerald-900",
 };
 
-const scaleName = (kind: Kind, key: string): string => {
-  if (kind === "cognitive") return COGNITIVE_SUBTESTS.find((s) => s.key === key)?.name_en ?? key;
-  return BIG_FIVE.find((t) => t.key === key)?.name_en ?? key;
-};
-const scaleDesc = (kind: Kind, key: string): string => {
-  if (kind === "cognitive") return COGNITIVE_SUBTESTS.find((s) => s.key === key)?.desc_en ?? "";
-  return BIG_FIVE.find((t) => t.key === key)?.desc_en ?? "";
-};
+const scaleName = (key: string): string =>
+  COGNITIVE_SUBTESTS.find((s) => s.key === key)?.name_en ?? key;
+const scaleDesc = (key: string): string =>
+  COGNITIVE_SUBTESTS.find((s) => s.key === key)?.desc_en ?? "";
 
 export function PsychometricsClient({
   candidateId, engagementId,
@@ -32,7 +28,6 @@ export function PsychometricsClient({
   engagementId: string | null;
 }) {
   const [phase, setPhase] = useState<"intro" | "test" | "result">("intro");
-  const [kind, setKind] = useState<Kind>("cognitive");
   const [lang, setLang] = useState<Lang>("en");
   const [takerName, setTakerName] = useState("");
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -48,7 +43,7 @@ export function PsychometricsClient({
     try {
       const res = await fetch("/api/ac/psychometrics", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "start", kind, language: lang, candidateId, engagementId, takerEmail: null }),
+        body: JSON.stringify({ action: "start", language: lang, candidateId, engagementId, takerEmail: null }),
       });
       const d = await res.json();
       if (!res.ok || !d.test) { setError(d.error || "Could not start."); return; }
@@ -83,24 +78,19 @@ export function PsychometricsClient({
           <BrainCircuit className="h-6 w-6 text-[#5391D5]" /> Psychometrics
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Cognitive ability + Big-Five personality. <strong>Indicative</strong> — developmental insight, not a norm-referenced or high-stakes score.
+          Cognitive ability — <strong>indicative</strong> developmental insight, not a norm-referenced or high-stakes score.
+          The behavioural instrument is <strong>Persona</strong> (the 38-competency self-assessment).
         </p>
       </div>
 
       {error && <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
 
       {phase === "intro" && (
+        <>
         <div className="space-y-5 rounded-xl border bg-card p-6">
-          <div className="grid gap-3 sm:grid-cols-2">
-            {(["cognitive", "personality"] as Kind[]).map((k) => (
-              <button key={k} onClick={() => setKind(k)}
-                className={`rounded-lg border p-4 text-left transition-colors ${kind === k ? "border-[#5391D5] bg-[#5391D5]/5 ring-1 ring-[#5391D5]" : "hover:border-[#5391D5]/50"}`}>
-                <p className="font-semibold text-[#010131]">{k === "cognitive" ? "Cognitive ability" : "Personality (Big Five)"}</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {k === "cognitive" ? "Numerical · verbal · abstract reasoning (timed-style MCQs)." : "20 short statements across the five factors (OCEAN)."}
-                </p>
-              </button>
-            ))}
+          <div className="rounded-lg border border-[#5391D5] bg-[#5391D5]/5 p-4">
+            <p className="font-semibold text-[#010131]">Cognitive ability</p>
+            <p className="mt-1 text-xs text-muted-foreground">Numerical · verbal · abstract reasoning (timed-style MCQs).</p>
           </div>
           <div className="flex flex-wrap items-end gap-4">
             <label className="flex-1 min-w-[12rem]">
@@ -123,9 +113,32 @@ export function PsychometricsClient({
           <button onClick={start} disabled={busy}
             className="inline-flex items-center gap-2 rounded-lg bg-[#010131] px-6 py-3 text-sm font-semibold text-white hover:bg-[#121140] disabled:opacity-60">
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            {busy ? "Preparing…" : "Begin"}
+            {busy ? "Preparing…" : "Begin cognitive assessment"}
           </button>
         </div>
+
+        {/* Persona - the behavioural competency self-assessment (38 competencies). */}
+        <div className="rounded-xl border bg-card p-6">
+          <div className="flex items-start gap-3">
+            <Layers className="mt-0.5 h-5 w-5 shrink-0 text-[#5391D5]" />
+            <div className="min-w-0">
+              <p className="font-semibold text-[#010131]">Persona — Behavioural Competency Self-Assessment</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Self-ratings across the 38 competencies (the same framework as the Reflect 360). Feeds the
+                succession readiness engine as the &ldquo;self&rdquo; view.
+              </p>
+            </div>
+          </div>
+          {candidateId ? (
+            <Link href={`/candidate/behavioral/${candidateId}`}
+              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#010131] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#121140]">
+              Open Persona <ArrowRight className="h-4 w-4" />
+            </Link>
+          ) : (
+            <p className="mt-4 text-xs text-amber-600">Open this page from a candidate to run Persona (it records against that candidate).</p>
+          )}
+        </div>
+        </>
       )}
 
       {phase === "test" && test && (
@@ -145,23 +158,7 @@ export function PsychometricsClient({
                   </div>
                 </section>
               ))
-            : test.items.map((item, i) => (
-                <section key={item.id} className="rounded-lg border bg-white p-4">
-                  <p className="text-sm font-semibold text-[#010131]">{i + 1}. {item.text}</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {test.anchors.map((anchor, ai) => {
-                      const val = ai + 1;
-                      return (
-                        <label key={ai} className={`flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs ${answers[item.id] === val ? "border-[#5391D5] bg-[#5391D5]/5" : "border-slate-200 hover:bg-slate-50"}`}>
-                          <input type="radio" name={item.id} checked={answers[item.id] === val}
-                            onChange={() => setAnswers((a) => ({ ...a, [item.id]: val }))} className="accent-[#5391D5]" />
-                          <span>{anchor}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </section>
-              ))}
+            : null}
 
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">{answered}/{total} answered</span>
@@ -201,7 +198,7 @@ export function PsychometricsClient({
             {result.scales.map((s: ScaleScore) => (
               <div key={s.key}>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium text-[#010131]">{scaleName(result.kind, s.key)}</span>
+                  <span className="font-medium text-[#010131]">{scaleName(s.key)}</span>
                   <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${BAND_TONE[s.band]}`}>
                     {s.bandLabel}{s.sten ? ` · sten ${s.sten}` : ""}
                   </span>
@@ -210,7 +207,7 @@ export function PsychometricsClient({
                   <div className="h-2 rounded-full bg-[#5391D5]" style={{ width: `${Math.max(4, s.normalized)}%` }} />
                 </div>
                 <p className="mt-0.5 text-[11px] text-muted-foreground">
-                  {scaleDesc(result.kind, s.key)}
+                  {scaleDesc(s.key)}
                   {s.percentile != null && <span className="font-medium text-[#5391D5]"> · {Math.round(s.percentile)}th percentile</span>}
                 </p>
               </div>

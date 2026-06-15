@@ -8,6 +8,12 @@ import { COGNITIVE_SUBTESTS } from "@/lib/psychometrics/framework";
 
 type Lang = "en" | "ar";
 
+export type EngagementOption = {
+  id: string;
+  name: string;
+  candidates: { id: string; full_name: string }[];
+};
+
 const BAND_TONE: Record<string, string> = {
   low: "bg-rose-100 text-rose-800",
   below: "bg-amber-100 text-amber-800",
@@ -22,13 +28,17 @@ const scaleDesc = (key: string): string =>
   COGNITIVE_SUBTESTS.find((s) => s.key === key)?.desc_en ?? "";
 
 export function PsychometricsClient({
-  candidateId, engagementId,
+  candidateId, engagementId, engagements = [],
 }: {
   candidateId: string | null;
   engagementId: string | null;
+  engagements?: EngagementOption[];
 }) {
   const [phase, setPhase] = useState<"intro" | "test" | "result">("intro");
   const [lang, setLang] = useState<Lang>("en");
+  // Persona candidate picker (when no candidate came in via the URL).
+  const [pickEng, setPickEng] = useState("");
+  const [pickCand, setPickCand] = useState("");
   const [takerName, setTakerName] = useState("");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [test, setTest] = useState<PsyTestPublic | null>(null);
@@ -134,8 +144,52 @@ export function PsychometricsClient({
               className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#010131] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#121140]">
               Open Persona <ArrowRight className="h-4 w-4" />
             </Link>
+          ) : engagements.length === 0 ? (
+            <p className="mt-4 text-xs text-amber-600">No candidates found. Add candidates to an engagement first; Persona records against a candidate.</p>
           ) : (
-            <p className="mt-4 text-xs text-amber-600">Open this page from a candidate to run Persona (it records against that candidate).</p>
+            <div className="mt-4 space-y-3">
+              <p className="text-xs text-muted-foreground">Pick the candidate this self-assessment is for:</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="text-sm">
+                  <span className="text-xs font-medium text-slate-500">Engagement</span>
+                  <select
+                    value={pickEng}
+                    onChange={(e) => { setPickEng(e.target.value); setPickCand(""); }}
+                    className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                  >
+                    <option value="">Select an engagement…</option>
+                    {engagements.map((e) => (
+                      <option key={e.id} value={e.id}>{e.name} ({e.candidates.length})</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="text-sm">
+                  <span className="text-xs font-medium text-slate-500">Candidate</span>
+                  <select
+                    value={pickCand}
+                    onChange={(e) => setPickCand(e.target.value)}
+                    disabled={!pickEng}
+                    className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400"
+                  >
+                    <option value="">{pickEng ? "Select a candidate…" : "Choose an engagement first"}</option>
+                    {(engagements.find((e) => e.id === pickEng)?.candidates ?? []).map((c) => (
+                      <option key={c.id} value={c.id}>{c.full_name}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              {pickCand ? (
+                <Link href={`/candidate/behavioral/${pickCand}`}
+                  className="inline-flex items-center gap-2 rounded-lg bg-[#010131] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#121140]">
+                  Open Persona <ArrowRight className="h-4 w-4" />
+                </Link>
+              ) : (
+                <button disabled
+                  className="inline-flex items-center gap-2 rounded-lg bg-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-400">
+                  Open Persona <ArrowRight className="h-4 w-4" />
+                </button>
+              )}
+            </div>
           )}
         </div>
         </>

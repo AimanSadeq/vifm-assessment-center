@@ -41,6 +41,7 @@ import {
   ShieldCheck,
   FlaskConical,
   TrendingUp,
+  SlidersHorizontal,
   type LucideIcon,
 } from "lucide-react";
 
@@ -84,8 +85,19 @@ const NAV: NavEntry[] = [
             ],
           },
         },
-        link("/ac/psychometrics", "adminNav.psychometrics", BrainCircuit),
-        link("/admin/psychometrics", "adminNav.psychometricsBank", ListChecks),
+        {
+          kind: "group",
+          group: {
+            key: "psychometrics",
+            label: "Psychometrics",
+            icon: BrainCircuit,
+            items: [
+              link("/ac/psychometrics", "adminNav.psyCognitive", BrainCircuit, true),
+              link("/ac/psychometrics#persona", "adminNav.psyPersona", Layers),
+              link("/admin/psychometrics", "adminNav.psychometricsBank", ListChecks),
+            ],
+          },
+        },
       ],
     },
   },
@@ -113,8 +125,19 @@ const NAV: NavEntry[] = [
           },
         },
         link("/reflect", "adminNav.reflect360", Aperture),
+        {
+          kind: "group",
+          group: {
+            key: "readiness",
+            label: "Succession Readiness",
+            icon: TrendingUp,
+            items: [
+              link("/admin/readiness", "adminNav.readinessOverview", LayoutDashboard, true),
+              link("/admin/readiness/config", "adminNav.readinessConfig", SlidersHorizontal),
+            ],
+          },
+        },
         link("/ara", "adminNav.aiReadiness", Sparkles),
-        link("/admin/readiness/config", "adminNav.readinessConfig", TrendingUp),
         link("/admin/courses", "adminNav.academy", GraduationCap),
       ],
     },
@@ -155,7 +178,7 @@ export function SidebarBody({
   const pathname = usePathname();
   const { t } = useTranslation();
   const [open, setOpen] = useState<Record<string, boolean>>({
-    acquire: true, manage: true, ac: true, technical: true, platform: true,
+    acquire: true, manage: true, ac: true, technical: true, psychometrics: true, readiness: true, platform: true,
   });
 
   // The signed-in user, for the footer identity.

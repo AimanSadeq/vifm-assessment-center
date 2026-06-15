@@ -4,30 +4,36 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight, ArrowLeft, ClipboardCheck, Compass, Aperture, Languages, UserSearch,
-  GraduationCap, BadgeCheck, BrainCircuit, Layers, ShieldCheck,
+  GraduationCap, BadgeCheck, BrainCircuit, Layers, ShieldCheck, TrendingUp,
 } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 
 type Lang = "en" | "ar";
-type Tone = "blue" | "violet" | "teal" | "gold" | "rose" | "indigo" | "fuchsia" | "emerald";
-type ServiceKey = "ac" | "ara" | "reflect" | "fluent" | "prehire" | "technical" | "psychometric" | "academy";
-// The two solution families (the colleague's talent-lifecycle model). A service
-// may belong to both — Psychometrics is a foundational measure used to select
-// (acquisition) AND to spot potential (management), so it lists in each.
+type Tone = "blue" | "violet" | "teal" | "gold" | "rose" | "indigo" | "fuchsia" | "emerald" | "amber";
+type ServiceKey = "ac" | "ara" | "reflect" | "fluent" | "prehire" | "technical" | "cognitive" | "persona" | "readiness" | "academy";
+// The two solution families (the colleague's talent-lifecycle model).
 type Pillar = "acquire" | "manage";
+// Cognitive + Persona are two instruments inside one Psychometrics tile, so they
+// render clustered under a shared header rather than as loose siblings.
+type GroupKey = "psychometrics";
 
 const STORAGE_KEY = "vifm-landing-locale";
 
 // Icon / hue / route / pillars are language-independent; copy comes from T[lang].services.
-const SERVICES: ReadonlyArray<{ key: ServiceKey; href: string; icon: typeof Compass; tone: Tone; pillars: Pillar[] }> = [
+const SERVICES: ReadonlyArray<{ key: ServiceKey; href: string; icon: typeof Compass; tone: Tone; pillars: Pillar[]; group?: GroupKey }> = [
   // ── Talent Acquisition ──
   { key: "prehire", href: "/admin/prehire", icon: UserSearch, tone: "rose", pillars: ["acquire"] },
   { key: "fluent", href: "/ac/fluent", icon: Languages, tone: "gold", pillars: ["acquire"] },
   { key: "technical", href: "/admin/tech-sandbox", icon: BadgeCheck, tone: "indigo", pillars: ["acquire"] },
-  { key: "psychometric", href: "/ac/psychometrics", icon: BrainCircuit, tone: "fuchsia", pillars: ["acquire", "manage"] },
+  // Psychometrics holds two instruments: Cognitive (aptitude) + Persona (the
+  // 38-competency behavioural self-assessment, the "self" view of readiness).
+  { key: "cognitive", href: "/ac/psychometrics", icon: BrainCircuit, tone: "fuchsia", pillars: ["acquire"], group: "psychometrics" },
+  { key: "persona", href: "/ac/psychometrics#persona", icon: Layers, tone: "fuchsia", pillars: ["acquire"], group: "psychometrics" },
   // ── Talent Management ──
   { key: "reflect", href: "/reflect", icon: Aperture, tone: "teal", pillars: ["manage"] },
+  // Succession Readiness fuses Persona (self) + a Reflect 360 (others) vs a role.
+  { key: "readiness", href: "/admin/readiness", icon: TrendingUp, tone: "amber", pillars: ["manage"] },
   { key: "ara", href: "/ara", icon: Compass, tone: "violet", pillars: ["manage"] },
   { key: "ac", href: "/admin", icon: ClipboardCheck, tone: "blue", pillars: ["manage"] },
   { key: "academy", href: "/courses", icon: GraduationCap, tone: "emerald", pillars: ["manage"] },
@@ -66,6 +72,7 @@ const T = {
     },
     servicesHeading: "Start with a diagnosis",
     servicesSub: "Two solution families cover the full talent lifecycle — pick where to focus, and the platform takes it from diagnosis to development.",
+    psychometricsGroup: "Psychometrics",
     pillars: {
       acquire: { title: "Talent Acquisition Solutions", sub: "Assess the people you bring in — screen, place, and select with defensible, bilingual instruments." },
       manage: { title: "Talent Management Solutions", sub: "Grow the people you have — develop, benchmark, and certify across the organisation." },
@@ -79,7 +86,9 @@ const T = {
       reflect: { tagline: "Leadership feedback", name: "Reflect 360", description: "360-degree leadership feedback built from your own values and competencies, with a development plan per leader and an organisation-wide cohort culture view.", tooltip: "Best for developing leaders with candid, multi-rater feedback." },
       fluent: { tagline: "AI English placement", name: "Fluent", description: "A four-skill, CEFR-aligned English placement: AI-generated reading and listening, rubric-scored writing and speaking, with an indicative level and feedback in minutes.", tooltip: "Best for fast, defensible English placement at any scale." },
       technical: { tagline: "Technical proficiency", name: "Technical Assessment", description: "Performance-based, function-specific assessment: candidates do real work in live sandboxes (build a 3-statement model, a variance breakdown, write SQL) graded against master answers and banded Basic / Intermediate / Advanced per competency. Issue a direct link per delegate, or hand a client voucher codes to self-distribute.", tooltip: "Best for screening and developing functional skills with hands-on tasks." },
-      psychometric: { tagline: "Cognitive + Persona", name: "Psychometrics", description: "Indicative cognitive-ability (numerical, verbal, abstract) plus Persona — the 38-competency behavioural self-assessment (the same framework as the 360) that feeds succession readiness. Server-scored, admin-run and bilingual.", tooltip: "Best for a foundational read on aptitude and behavioural self-view." },
+      cognitive: { tagline: "Cognitive ability", name: "Cognitive", description: "Indicative numerical, verbal and abstract reasoning - a foundational read on aptitude. Server-scored, admin-run and bilingual.", tooltip: "Best for a foundational read on reasoning and aptitude." },
+      persona: { tagline: "Behavioural self-assessment", name: "Persona", description: "Self-ratings across the 38 competencies - the same framework as the 360. The 'self' view that feeds Succession Readiness.", tooltip: "Best for fast behavioural self-insight on the 38 competencies." },
+      readiness: { tagline: "Self + 360 vs the role", name: "Succession Readiness", description: "Combines Persona (self) and a Reflect 360 (others) against a target role to produce a readiness tier, gaps, blind spots and a development plan.", tooltip: "Best for judging whether someone is ready for a target role." },
       prehire: { tagline: "Pre-employment screening", name: "Pre-Hire", description: "Screen and shortlist applicants before you hire: a configurable funnel of competency quiz, English placement and an AI behavioural interview, with a weighted composite, adverse-impact monitoring and an audit trail. The score is a signal — a person always decides.", tooltip: "Best for shortlisting applicants at scale, defensibly." },
       academy: { tagline: "Learning & delivery", name: "VIFM Academy", description: "Self-paced finance & management programmes that turn each diagnosis into action — AI knowledge-checks per lesson and a verifiable completion credential, in English or Arabic.", tooltip: "Best for closing development gaps with guided, credentialed learning." },
     },
@@ -116,6 +125,7 @@ const T = {
     },
     servicesHeading: "ابدأ بالتشخيص",
     servicesSub: "عائلتا حلول تغطّيان دورة المواهب الكاملة — اختر أين تركّز، وتتولّى المنصّة الباقي من التشخيص إلى التطوير.",
+    psychometricsGroup: "القياس النفسي",
     pillars: {
       acquire: { title: "حلول استقطاب المواهب", sub: "قيّم من تستقطبهم — فرز وتحديد مستوى واختيار بأدوات موثوقة وثنائية اللغة." },
       manage: { title: "حلول إدارة المواهب", sub: "طوّر من لديك — تطوير ومقارنة مرجعية واعتماد على مستوى المؤسسة." },
@@ -129,7 +139,9 @@ const T = {
       reflect: { tagline: "تغذية راجعة قيادية", name: "ريفلكت 360", description: "تغذية راجعة قيادية بزاوية 360 درجة مبنية على قيمكم وكفاءاتكم، مع خطة تطوير لكل قائد وعرض شامل لثقافة المؤسسة بأكملها.", tooltip: "الأنسب لتطوير القادة عبر تغذية راجعة صريحة ومتعددة المصادر." },
       fluent: { tagline: "تحديد مستوى الإنجليزية بالذكاء الاصطناعي", name: "فلوينت", description: "اختبار لتحديد مستوى الإنجليزية عبر أربع مهارات وفق إطار CEFR: قراءة واستماع مُولّدان بالذكاء الاصطناعي، وكتابة وتحدّث يُقيّمان وفق معايير محدّدة، مع مستوى تقريبي وملاحظات خلال دقائق.", tooltip: "الأنسب لتحديد مستوى الإنجليزية بسرعة وموثوقية وعلى نطاق واسع." },
       technical: { tagline: "الكفاءة التقنية", name: "التقييم التقني", description: "قياس الكفاءة التقنية عبر عشرة مجالات مالية — من النمذجة المالية إلى الخزينة والمصارف والتحليلات والذكاء الاصطناعي. بنود مُراجَعة من الخبراء ودرجات قطع موثّقة تمنح اعتماد كفاءة قابلاً للتحقق، مع تصنيف استرشادي ريثما يكتمل بنك أسئلة المجال.", tooltip: "الأنسب لاعتماد المهارات المالية الوظيفية بموثوقية." },
-      psychometric: { tagline: "القدرات + الشخصية", name: "القياس النفسي", description: "مقاييس استرشادية للقدرة الذهنية (عددية ولفظية ومجرّدة) وشخصية العوامل الخمسة — الأساس من القدرة وأسلوب العمل الذي يتنبّأ بالكفاءات السلوكية. تُصحَّح على الخادم، يُجريها المسؤول، وثنائية اللغة.", tooltip: "الأنسب لقراءة تأسيسية للقدرات وأسلوب العمل." },
+      cognitive: { tagline: "القدرة الذهنية", name: "القدرات الذهنية", description: "مقاييس استرشادية للاستدلال العددي واللفظي والمجرّد - قراءة تأسيسية للقدرات. تُصحَّح على الخادم، يُجريها المسؤول، وثنائية اللغة.", tooltip: "الأنسب لقراءة تأسيسية للاستدلال والقدرات." },
+      persona: { tagline: "تقييم سلوكي ذاتي", name: "بيرسونا", description: "تقييم ذاتي عبر الكفاءات الـ38 - الإطار نفسه المستخدم في تقييم 360. تمثّل رؤية «الذات» التي تغذّي جاهزية التعاقب.", tooltip: "الأنسب لرؤية ذاتية سلوكية سريعة عبر الكفاءات الـ38." },
+      readiness: { tagline: "الذات + 360 مقابل الدور", name: "جاهزية التعاقب", description: "تجمع بيرسونا (الذات) وتقييم ريفلكت 360 (الآخرون) مقابل دور مستهدف لإنتاج مستوى جاهزية وفجوات ونقاط عمياء وخطة تطوير.", tooltip: "الأنسب للحكم على جاهزية الشخص لدور مستهدف." },
       prehire: { tagline: "الفرز قبل التوظيف", name: "ما قبل التوظيف", description: "افرز المرشّحين وأعدّ القائمة المختصرة قبل التوظيف: مسار قابل للتخصيص يجمع اختبار الكفاءات وتحديد مستوى الإنجليزية ومقابلة سلوكية بالذكاء الاصطناعي، مع درجة مركّبة مرجّحة، ومراقبة الأثر التمييزي، وسجل تدقيق كامل. الدرجة إشارة استرشادية — والقرار النهائي لإنسان دائمًا.", tooltip: "الأنسب لإعداد القائمة المختصرة للمتقدّمين على نطاق واسع وبموثوقية." },
       academy: { tagline: "التعلّم والتقديم", name: "أكاديمية VIFM", description: "برامج ذاتية الوتيرة في التمويل والإدارة تُحوّل كل تشخيص إلى إجراء — اختبارات معرفية بالذكاء الاصطناعي لكل درس وشهادة إتمام قابلة للتحقّق، بالعربية أو الإنجليزية.", tooltip: "الأنسب لمعالجة فجوات التطوير عبر تعلّم موجّه وموثّق بشهادة." },
     },
@@ -160,6 +172,36 @@ export function PlatformLanding() {
   const t = T[lang];
   const rtl = lang === "ar";
   const Arrow = rtl ? ArrowLeft : ArrowRight;
+
+  // One launcher card. Shared by the flat tiles and the Psychometrics cluster.
+  const renderCard = (svc: (typeof SERVICES)[number]) => {
+    const Icon = svc.icon;
+    const copy = t.services[svc.key];
+    return (
+      <Tooltip key={svc.key}>
+        <TooltipTrigger asChild>
+          <Link href={svc.href} className="block">
+            <div className={`launcher-card tone-${svc.tone} flex items-center gap-4 p-4`}>
+              <div className="launcher-card-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-xl">
+                <Icon className="h-6 w-6" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="ara-eyebrow">{copy.tagline}</div>
+                <h4 className="text-base font-semibold text-primary">{copy.name}</h4>
+                <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-muted-foreground">{copy.description}</p>
+              </div>
+              <div className="launcher-card-cta shrink-0 self-center">
+                <Arrow className="h-5 w-5" />
+              </div>
+            </div>
+          </Link>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-xs text-center leading-snug">
+          {copy.tooltip}
+        </TooltipContent>
+      </Tooltip>
+    );
+  };
 
   return (
     <div dir={rtl ? "rtl" : "ltr"} className="flex min-h-full flex-col bg-background">
@@ -253,38 +295,25 @@ export function PlatformLanding() {
                     <p className="mt-1 text-xs text-muted-foreground">{t.pillars[pillar].sub}</p>
                   </div>
 
-                  {/* Services stacked underneath */}
+                  {/* Services stacked underneath. Flat tiles first, then the
+                      Psychometrics cluster (Cognitive + Persona under one header). */}
                   <div className="mt-4 space-y-3">
-                    {SERVICES.filter((s) => s.pillars.includes(pillar))
-                      .slice()
-                      .sort((a, b) => a.pillars.length - b.pillars.length)
-                      .map(({ key, href, icon: Icon, tone }) => {
-                        const svc = t.services[key];
-                        return (
-                          <Tooltip key={`${pillar}-${key}`}>
-                            <TooltipTrigger asChild>
-                              <Link href={href} className="block">
-                                <div className={`launcher-card tone-${tone} flex items-center gap-4 p-4`}>
-                                  <div className="launcher-card-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-xl">
-                                    <Icon className="h-6 w-6" />
-                                  </div>
-                                  <div className="min-w-0 flex-1">
-                                    <div className="ara-eyebrow">{svc.tagline}</div>
-                                    <h4 className="text-base font-semibold text-primary">{svc.name}</h4>
-                                    <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-muted-foreground">{svc.description}</p>
-                                  </div>
-                                  <div className="launcher-card-cta shrink-0 self-center">
-                                    <Arrow className="h-5 w-5" />
-                                  </div>
-                                </div>
-                              </Link>
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="max-w-xs text-center leading-snug">
-                              {svc.tooltip}
-                            </TooltipContent>
-                          </Tooltip>
-                        );
-                      })}
+                    {SERVICES.filter((s) => s.pillars.includes(pillar) && !s.group).map(renderCard)}
+                    {(() => {
+                      const psy = SERVICES.filter((s) => s.pillars.includes(pillar) && s.group === "psychometrics");
+                      if (psy.length === 0) return null;
+                      return (
+                        <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-3">
+                          <div className="mb-2 flex items-center gap-2 px-1">
+                            <BrainCircuit className="h-4 w-4 text-[#c026d3]" />
+                            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                              {t.psychometricsGroup}
+                            </span>
+                          </div>
+                          <div className="space-y-3">{psy.map(renderCard)}</div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               ))}

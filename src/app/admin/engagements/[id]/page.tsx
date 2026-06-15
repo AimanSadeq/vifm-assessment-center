@@ -11,6 +11,8 @@ import {
 import { getEngagementTechProgram } from "@/lib/competencies/engagement-tech-program";
 import { TechnicalCertPanel } from "./_components/technical-cert-panel";
 import { CandidateFilterBar } from "./_components/candidate-filter-bar";
+import { loadReadinessSetup } from "@/lib/scoring/readiness-setup";
+import { ReadinessSetupPanel } from "./_components/readiness-setup-panel";
 
 type Props = {
   params: { id: string };
@@ -128,6 +130,9 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
   // Technical certification program for this engagement (paid org layer).
   const techProgram = await getEngagementTechProgram(id, await getServerLocale());
 
+  // Succession Readiness setup (combined-mode wiring + per-candidate status).
+  const readinessSetup = await loadReadinessSetup(id);
+
   return (
     <div className="space-y-6">
       <BackLink href="/admin/engagements" label={t("adminEngagements.detail.backToProjects")} />
@@ -143,6 +148,7 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
         priorOarMap={priorOarMap}
         currentOarMap={currentOarMap}
       />
+      <ReadinessSetupPanel engagementId={id} setup={readinessSetup} />
       <CandidateFilterBar
         engagementId={id}
         candidates={candidates.map((c) => ({

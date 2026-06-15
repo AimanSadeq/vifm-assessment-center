@@ -372,3 +372,98 @@ export async function createReengagementAction(input: {
 
   return { data: { id: newId } };
 }
+
+// ─────────────────────────────────────────────────────────────
+// Succession Readiness - combined-mode wiring (the "self lever").
+// These are the setters the engine has always read but nothing wrote.
+// ─────────────────────────────────────────────────────────────
+const ASSESSMENT_MODES = ["standalone", "combined"] as const;
+type AssessmentMode = (typeof ASSESSMENT_MODES)[number];
+
+/** Flip an engagement between standalone (360 self) and combined (Persona self). */
+export async function setAssessmentModeAction(engagementId: string, mode: AssessmentMode) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+  if (!ASSESSMENT_MODES.includes(mode)) return { error: "Invalid assessment mode" };
+  const sb = createServiceClient();
+  const { error } = await sb.from("engagements").update({ assessment_mode: mode }).eq("id", engagementId);
+  if (error) return { error: error.message };
+  return { ok: true };
+}
+
+/**
+ * Link an AC engagement to a Reflect 360 engagement (the "others" source) and
+ * turn on combined mode. On link, best-effort wiring:
+ *   1. bridge reflect_participants.candidate_id by email/name match within the
+ *      Reflect engagement (so readiness finds each candidate's 360 reliably),
+ *   2. map reflect_competencies.ac_competency_id by name (so 360 scores land on
+ *      the role-profile competencies), and
+ *   3. suppress the 360 self-rater on bridged participants (Persona is self).
+ * Pass reflectEngagementId=null to unlink (mode is left as-is for the admin to flip).
+ */
+export async function linkReflectEngagementAction(
+  engagementId: string,
+  reflectEngagementId: string | null,
+) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+  const sb = createServiceClient();
+
+  const update: Record<string, unknown> = { reflect_engagement_id: reflectEngagementId };
+  if (reflectEngagementId) update.assessment_mode = "combined";
+  const { error } = await sb.from("engagements").update(update).eq("id", engagementId);
+  if (error) return { error: error.message };
+  if (!reflectEngagementId) return { ok: true, linked: 0, mapped: 0 };
+
+  const norm = (v: unknown) => (v == null ? "" : String(v).trim().toLowerCase());
+
+  // (1) bridge participants -> candidates by email, else exact name.
+  const [{ data: cands }, { data: parts }] = await Promise.all([
+    sb.from("candidates").select("id, full_name, email").eq("engagement_id", engagementId),
+    sb.from("reflect_participants").select("id, full_name, email, candidate_id").eq("engagement_id", reflectEngagementId),
+  ]);
+  let linked = 0;
+  const bridgedPartIds: string[] = [];
+  for (const p of parts ?? []) {
+    if (p.candidate_id) { bridgedPartIds.push(p.id as string); continue; }
+    const pe = norm(p.email);
+    const pn = norm(p.full_name);
+    const match = (cands ?? []).find((c) => (pe && norm(c.email) === pe) || (pn && norm(c.full_name) === pn));
+    if (match) {
+      const r = await sb.from("reflect_participants").update({ candidate_id: match.id }).eq("id", p.id);
+      if (!r.error) { linked++; bridgedPartIds.push(p.id as string); }
+    }
+  }
+
+  // (3) suppress the 360 self-rater on bridged participants (best-effort; needs 00099).
+  if (bridgedPartIds.length > 0) {
+    await sb.from("reflect_participants").update({ suppress_self: true }).in("id", bridgedPartIds);
+  }
+
+  // (2) map reflect competencies -> AC competencies by name (framework aligned to AC names).
+  let mapped = 0;
+  const { data: fws } = await sb
+    .from("reflect_frameworks")
+    .select("id")
+    .eq("engagement_id", reflectEngagementId)
+    .eq("is_template", false)
+    .limit(1);
+  const fw = fws?.[0];
+  if (fw) {
+    const [{ data: acComps }, { data: rComps }] = await Promise.all([
+      sb.from("competencies").select("id, name"),
+      sb.from("reflect_competencies").select("id, name_en, ac_competency_id").eq("framework_id", fw.id),
+    ]);
+    const acByName = new Map((acComps ?? []).map((c) => [norm(c.name), c.id as string]));
+    for (const rc of rComps ?? []) {
+      if (rc.ac_competency_id) continue;
+      const acId = acByName.get(norm(rc.name_en));
+      if (acId) {
+        const r = await sb.from("reflect_competencies").update({ ac_competency_id: acId }).eq("id", rc.id);
+        if (!r.error) mapped++;
+      }
+    }
+  }
+
+  return { ok: true, linked, mapped };
+}

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Check, ChevronLeft, ChevronRight, ClipboardCheck, Download } from "lucide-react";
 import type { BehavioralCompetency } from "@/lib/scoring/behavioral-items";
 import { saveBehavioralAnswersAction, submitBehavioralAction } from "../actions";
+import { personaBand, personaBandLabel, PERSONA_BAND_TW } from "@/lib/scoring/persona-bands";
 
 type Props = {
   candidateId: string;
@@ -125,7 +126,10 @@ export function BehavioralRunner({
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center justify-between text-sm">
               <span>{tx("Your self-profile", "ملفك الذاتي")}</span>
-              <span className={`text-base font-bold ${bandColor(selfProfile.overall)}`}>{selfProfile.overall.toFixed(2)} / 5</span>
+              <span className="flex items-center gap-2">
+                <span className={`text-base font-bold ${bandColor(selfProfile.overall)}`}>{selfProfile.overall.toFixed(2)} / 5</span>
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${PERSONA_BAND_TW[personaBand(selfProfile.overall).key]}`}>{personaBandLabel(selfProfile.overall, ar)}</span>
+              </span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -133,7 +137,7 @@ export function BehavioralRunner({
               <div key={cl.name}>
                 <div className="mb-1.5 flex items-center justify-between">
                   <p className="text-sm font-semibold text-[#010131]">{cl.name}</p>
-                  <span className={`text-xs font-semibold ${bandColor(cl.avg)}`}>{cl.avg.toFixed(1)}</span>
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${PERSONA_BAND_TW[personaBand(cl.avg).key]}`}>{cl.avg.toFixed(1)} · {personaBandLabel(cl.avg, ar)}</span>
                 </div>
                 <div className="space-y-1.5">
                   {cl.rows.map((r) => (

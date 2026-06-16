@@ -1,4 +1,5 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { personaBand } from "@/lib/scoring/persona-bands";
 
 // Persona - Behavioural Competency Self-Assessment profile PDF (English /
 // React-PDF). Works for any behavioral session (anonymous /ac/persona or
@@ -67,7 +68,7 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
         <View style={s.overallRow}>
           <View>
             <Text style={s.overallLabel}>Overall self-rating</Text>
-            <Text style={[s.overallValue, { color: band(data.overall) }]}>{data.overall.toFixed(2)} / 5</Text>
+            <Text style={[s.overallValue, { color: band(data.overall) }]}>{data.overall.toFixed(2)} / 5  ·  {personaBand(data.overall).label}</Text>
           </View>
         </View>
 
@@ -75,7 +76,7 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
           <View key={cl.name} wrap={false}>
             <View style={s.clusterTitleRow}>
               <Text style={s.clusterName}>{cl.name}</Text>
-              <Text style={[s.clusterAvg, { color: band(cl.avg) }]}>{cl.avg.toFixed(1)}</Text>
+              <Text style={[s.clusterAvg, { color: band(cl.avg) }]}>{cl.avg.toFixed(1)} · {personaBand(cl.avg).label}</Text>
             </View>
             {cl.rows.map((r) => (
               <View key={r.name} style={s.row}>

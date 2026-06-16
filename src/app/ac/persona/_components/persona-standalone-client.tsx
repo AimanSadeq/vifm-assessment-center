@@ -7,14 +7,12 @@ import {
 import type { BehavioralCompetency } from "@/lib/scoring/behavioral-items";
 import type { BehavioralProfileRow } from "@/lib/scoring/behavioral";
 import { startPersonaAction, savePersonaAnswersAction, submitPersonaAction } from "../actions";
+import { personaBand, personaBandLabel, PERSONA_BAND_TW } from "@/lib/scoring/persona-bands";
 
 type Lang = "en" | "ar";
 type Phase = "intro" | "test" | "result";
 
 const LIKERT = [1, 2, 3, 4, 5];
-
-const bandTone = (v: number): string =>
-  v >= 4 ? "bg-emerald-100 text-emerald-800" : v >= 3 ? "bg-sky-100 text-sky-800" : "bg-amber-100 text-amber-800";
 
 export function PersonaStandaloneClient({ competencies }: { competencies: BehavioralCompetency[] }) {
   const [phase, setPhase] = useState<Phase>("intro");
@@ -286,7 +284,7 @@ function PersonaResult({
 
       <div>
         <p className="text-[11px] uppercase tracking-wider text-slate-500">{tx("Overall self-rating", "متوسط التقييم الذاتي")}</p>
-        <span className={`mt-1 inline-block rounded-lg px-4 py-2 text-2xl font-bold ${bandTone(overall)}`}>{overall.toFixed(2)} / 5</span>
+        <span className={`mt-1 inline-block rounded-lg px-4 py-2 text-2xl font-bold ${PERSONA_BAND_TW[personaBand(overall).key]}`}>{overall.toFixed(2)} / 5 · {personaBandLabel(overall, ar)}</span>
       </div>
 
       <div className="space-y-5">
@@ -296,7 +294,7 @@ function PersonaResult({
             <div key={cl.order}>
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-sm font-semibold text-[#010131]">{ar ? cl.nameAr : cl.nameEn}</p>
-                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${bandTone(clAvg)}`}>{clAvg.toFixed(1)}</span>
+                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${PERSONA_BAND_TW[personaBand(clAvg).key]}`}>{clAvg.toFixed(1)} · {personaBandLabel(clAvg, ar)}</span>
               </div>
               <div className="space-y-2">
                 {cl.rows.map((r) => (

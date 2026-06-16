@@ -91,7 +91,7 @@ export default async function CognitiveCohortPage({ searchParams }: { searchPara
             </span>
           </div>
           <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-            Aggregate cognitive-ability results (numerical / verbal / abstract reasoning). Tier 1 bands are based on
+            Aggregate cognitive-ability results (numerical / verbal / inductive / deductive reasoning). Tier 1 bands are based on
             raw scores, not local norms.
           </p>
         </div>

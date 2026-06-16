@@ -31,8 +31,8 @@ async function loadEngagementOptions(): Promise<EngagementOption[]> {
 }
 
 /**
- * Cognitive Ability runner (Tier 1 indicative) — numerical / verbal / abstract
- * reasoning. A standalone service. Self-served; an admin can bind a result to a
+ * Cognitive Ability runner (Tier 1 indicative) — numerical / verbal / inductive /
+ * deductive reasoning. A standalone service. Self-served; an admin can bind a result to a
  * candidate/engagement via ?candidateId=…&engagementId=… (mirrors Fluent) or the
  * inline picker.
  */

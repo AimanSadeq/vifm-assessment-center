@@ -87,7 +87,7 @@ const VARIANTS: Record<Lang, Partial<Record<ServiceKey, Partial<Record<Pillar, V
     cognitive: {
       acquire: {
         tagline: "Cognitive ability · selection", badge: "For Selection",
-        description: "Numerical, verbal and abstract reasoning - an aptitude fit signal to screen and shortlist candidates.",
+        description: "Numerical, verbal, inductive and deductive reasoning - an aptitude fit signal to screen and shortlist candidates.",
         tooltip: "Selection use: a foundational aptitude signal for screening.",
       },
       manage: {
@@ -219,7 +219,7 @@ const T = {
       reflect: { tagline: "Leadership feedback", name: "Reflect 360", description: "360-degree leadership feedback built from your own values and competencies, with a development plan per leader and an organisation-wide cohort culture view.", tooltip: "Best for developing leaders with candid, multi-rater feedback." },
       fluent: { tagline: "AI English placement", name: "Fluent", description: "A four-skill, CEFR-aligned English placement: AI-generated reading and listening, rubric-scored writing and speaking, with an indicative level and feedback in minutes.", tooltip: "Best for fast, defensible English placement at any scale." },
       technical: { tagline: "Technical proficiency", name: "Technical Assessment", description: "Performance-based, function-specific assessment: candidates do real work in live sandboxes (build a 3-statement model, a variance breakdown, write SQL) graded against master answers and banded Basic / Intermediate / Advanced per competency. Issue a direct link per delegate, or hand a client voucher codes to self-distribute.", tooltip: "Best for screening and developing functional skills with hands-on tasks." },
-      cognitive: { tagline: "Cognitive ability", name: "Cognitive", description: "Indicative numerical, verbal and abstract reasoning - a foundational read on aptitude. Server-scored, admin-run and bilingual.", tooltip: "Best for a foundational read on reasoning and aptitude." },
+      cognitive: { tagline: "Cognitive ability", name: "Cognitive", description: "Indicative numerical, verbal, inductive and deductive reasoning - a foundational read on aptitude. Server-scored, admin-run and bilingual.", tooltip: "Best for a foundational read on reasoning and aptitude." },
       persona: { tagline: "Behavioural self-assessment", name: "Persona", description: "Self-ratings across the 38 competencies - the same framework as the 360. The 'self' view that feeds Succession Readiness.", tooltip: "Best for fast behavioural self-insight on the 38 competencies." },
       readiness: { tagline: "Self + 360 vs the role", name: "Succession Readiness", description: "Combines Persona (self) and a Reflect 360 (others) against a target role to produce a readiness tier, gaps, blind spots and a development plan.", tooltip: "Best for judging whether someone is ready for a target role." },
       prehire: { tagline: "Pre-employment screening", name: "Pre-Hire", description: "Screen and shortlist applicants before you hire: a configurable funnel of competency quiz, English placement and an AI behavioural interview, with a weighted composite, adverse-impact monitoring and an audit trail. The score is a signal — a person always decides.", tooltip: "Best for shortlisting applicants at scale, defensibly." },

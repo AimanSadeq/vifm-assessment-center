@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { BrainCircuit, Sparkles, Loader2, CheckCircle2, RotateCcw, AlertTriangle, Download, Clock } from "lucide-react";
 import type { PsyTestPublic, PsyResult, ScaleScore } from "@/lib/psychometrics/scoring";
-import { COGNITIVE_SUBTESTS } from "@/lib/psychometrics/framework";
+import { COGNITIVE_SUBTESTS, cognitiveNarrative } from "@/lib/psychometrics/framework";
 
 type Lang = "en" | "ar";
 
@@ -25,6 +25,8 @@ const scaleName = (key: string): string =>
   COGNITIVE_SUBTESTS.find((s) => s.key === key)?.name_en ?? key;
 const scaleDesc = (key: string): string =>
   COGNITIVE_SUBTESTS.find((s) => s.key === key)?.desc_en ?? "";
+const scaleDefinition = (key: string): string =>
+  COGNITIVE_SUBTESTS.find((s) => s.key === key)?.definition_en ?? "";
 
 export function PsychometricsClient({
   candidateId, engagementId, engagements = [], redemptionToken = null, prefillName, timerMinutes,
@@ -125,7 +127,7 @@ export function PsychometricsClient({
           <BrainCircuit className="h-6 w-6 text-[#5391D5]" /> Cognitive Ability
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Numerical, verbal and abstract reasoning — an <strong>indicative</strong> developmental read,
+          Numerical, verbal, inductive and deductive reasoning — an <strong>indicative</strong> developmental read,
           not a norm-referenced or high-stakes score.
         </p>
       </div>
@@ -136,7 +138,7 @@ export function PsychometricsClient({
         <div className="space-y-5 rounded-xl border bg-card p-6">
           <div className="rounded-lg border border-[#5391D5] bg-[#5391D5]/5 p-4">
             <p className="font-semibold text-[#010131]">Cognitive ability</p>
-            <p className="mt-1 text-xs text-muted-foreground">Numerical · verbal · abstract reasoning (timed-style MCQs).</p>
+            <p className="mt-1 text-xs text-muted-foreground">Numerical · verbal · inductive · deductive reasoning (timed-style MCQs).</p>
           </div>
           {!candidateId && engagements.length > 0 && (
             <div className="rounded-lg border border-slate-200 p-3">
@@ -262,7 +264,7 @@ export function PsychometricsClient({
 
           <div className="space-y-3">
             {result.scales.map((s: ScaleScore) => (
-              <div key={s.key}>
+              <div key={s.key} className="rounded-lg border border-slate-100 bg-slate-50/40 p-3">
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium text-[#010131]">{scaleName(s.key)}</span>
                   <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${BAND_TONE[s.band]}`}>
@@ -272,9 +274,12 @@ export function PsychometricsClient({
                 <div className="mt-1 h-2 w-full rounded-full bg-slate-100">
                   <div className="h-2 rounded-full bg-[#5391D5]" style={{ width: `${Math.max(4, s.normalized)}%` }} />
                 </div>
-                <p className="mt-0.5 text-[11px] text-muted-foreground">
-                  {scaleDesc(s.key)}
+                <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                  {scaleDefinition(s.key) || scaleDesc(s.key)}
                   {s.percentile != null && <span className="font-medium text-[#5391D5]"> · {Math.round(s.percentile)}th percentile</span>}
+                </p>
+                <p className="mt-1 text-[11px] font-medium leading-relaxed text-[#010131]">
+                  {cognitiveNarrative(s.normalized, false)}
                 </p>
               </div>
             ))}

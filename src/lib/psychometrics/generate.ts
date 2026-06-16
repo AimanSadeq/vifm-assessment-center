@@ -23,9 +23,14 @@ const COGNITIVE_DECK: DeckItem[] = [
   { scale: "verbal", stem_en: "All managers attended. Some managers are directors. Therefore: some directors attended.", stem_ar: "حضر جميع المديرين. بعض المديرين هم رؤساء أقسام. إذن: بعض رؤساء الأقسام حضروا.", options_en: ["True", "False", "Cannot say"], options_ar: ["صحيح", "خطأ", "لا يمكن تحديده"], correct: 0, difficulty: "medium" },
   { scale: "verbal", stem_en: "The policy applies only to full-time staff. Sara is part-time. Therefore the policy applies to Sara.", stem_ar: "تنطبق السياسة على الموظفين المتفرّغين فقط. سارة موظفة بدوام جزئي. إذن تنطبق عليها السياسة.", options_en: ["True", "False", "Cannot say"], options_ar: ["صحيح", "خطأ", "لا يمكن تحديده"], correct: 1, difficulty: "medium" },
   { scale: "verbal", stem_en: "Choose the word closest in meaning to \"mitigate\":", stem_ar: "اختر الكلمة الأقرب معنى إلى «mitigate» (يخفّف):", options_en: ["worsen", "reduce", "ignore", "delay"], options_ar: ["يزيد سوءًا", "يقلّل", "يتجاهل", "يؤجّل"], correct: 1, difficulty: "easy" },
-  { scale: "abstract", stem_en: "What comes next? 2, 4, 8, 16, ?", stem_ar: "ما العدد التالي؟ 2، 4، 8، 16، ؟", options_en: ["24", "32", "20", "18"], options_ar: ["24", "32", "20", "18"], correct: 1, difficulty: "easy" },
-  { scale: "abstract", stem_en: "What comes next? 1, 4, 9, 16, ?", stem_ar: "ما العدد التالي؟ 1، 4، 9، 16، ؟", options_en: ["20", "25", "24", "36"], options_ar: ["20", "25", "24", "36"], correct: 1, difficulty: "medium" },
-  { scale: "abstract", stem_en: "What comes next? 2, 3, 5, 8, 12, ?", stem_ar: "ما العدد التالي؟ 2، 3، 5، 8، 12، ؟", options_en: ["16", "17", "18", "15"], options_ar: ["16", "17", "18", "15"], correct: 1, difficulty: "hard" },
+  // Inductive — infer the underlying rule from a pattern / series.
+  { scale: "inductive", stem_en: "What comes next? 2, 4, 8, 16, ?", stem_ar: "ما العدد التالي؟ 2، 4، 8، 16، ؟", options_en: ["24", "32", "20", "18"], options_ar: ["24", "32", "20", "18"], correct: 1, difficulty: "easy" },
+  { scale: "inductive", stem_en: "What comes next? 1, 4, 9, 16, ?", stem_ar: "ما العدد التالي؟ 1، 4، 9، 16، ؟", options_en: ["20", "25", "24", "36"], options_ar: ["20", "25", "24", "36"], correct: 1, difficulty: "medium" },
+  { scale: "inductive", stem_en: "Which number does NOT fit the pattern? 3, 5, 7, 9, 11", stem_ar: "أي رقم لا يتبع النمط؟ 3، 5، 7، 9، 11", options_en: ["3", "9", "11", "5"], options_ar: ["3", "9", "11", "5"], correct: 1, difficulty: "hard" },
+  // Deductive — apply the given rules/premises to a necessarily valid conclusion.
+  { scale: "deductive", stem_en: "All auditors are analysts. No analyst is a trainee. Therefore: no auditor is a trainee.", stem_ar: "كل المدققين محللون. لا أحد من المحللين متدرّب. إذن: لا أحد من المدققين متدرّب.", options_en: ["Valid", "Invalid", "Cannot say"], options_ar: ["صحيح", "غير صحيح", "لا يمكن تحديده"], correct: 0, difficulty: "medium" },
+  { scale: "deductive", stem_en: "If the report is late, the bonus is withheld. The bonus was paid. Therefore: the report was not late.", stem_ar: "إذا تأخّر التقرير، يُحجب المكافأة. دُفعت المكافأة. إذن: لم يتأخّر التقرير.", options_en: ["Valid", "Invalid", "Cannot say"], options_ar: ["صحيح", "غير صحيح", "لا يمكن تحديده"], correct: 0, difficulty: "medium" },
+  { scale: "deductive", stem_en: "Three desks in a row: A is left of B; C is right of B. Who is in the middle?", stem_ar: "ثلاثة مكاتب في صف: A على يسار B؛ C على يمين B. من في الوسط؟", options_en: ["A", "B", "C", "Cannot say"], options_ar: ["A", "B", "C", "لا يمكن تحديده"], correct: 1, difficulty: "easy" },
 ];
 
 function staticCognitive(lang: Lang): CognitiveItem[] {
@@ -41,7 +46,7 @@ function staticCognitive(lang: Lang): CognitiveItem[] {
 
 const COG_SYSTEM =
   "You are a psychometric item writer for VIFM. You write clean cognitive-ability " +
-  "multiple-choice items (numerical, verbal, and abstract reasoning) with exactly one " +
+  "multiple-choice items (numerical, verbal, inductive, and deductive reasoning) with exactly one " +
   "defensible correct answer, suitable for GCC banking and government professionals. " +
   "No trick questions; each is solvable in under a minute.";
 
@@ -49,11 +54,13 @@ function cognitivePrompt(lang: Lang, perSubtest: number): string {
   const langName = lang === "ar" ? "Arabic (Modern Standard Arabic)" : "English";
   return [
     `Write cognitive-ability multiple-choice items in ${langName}.`,
-    `Produce ${perSubtest} items for EACH subtest: "numerical", "verbal", "abstract".`,
-    `numerical = data/ratio/percentage reasoning; verbal = comprehension or true/false/cannot-say logic;`,
-    `abstract = number or pattern series (culture-fair).`,
+    `Produce ${perSubtest} items for EACH subtest: "numerical", "verbal", "inductive", "deductive".`,
+    `numerical = data / ratio / percentage / table-and-chart interpretation;`,
+    `verbal = reading comprehension, verbal analogies, or vocabulary-in-context;`,
+    `inductive = infer the rule from examples: number/figure series, odd-one-out, next-in-sequence (text-described, culture-fair);`,
+    `deductive = apply given rules/premises to a necessarily valid conclusion: syllogisms, if-then (conditional) logic, or simple arrangements.`,
     `Return ONE JSON array (no markdown fences). Each element:`,
-    `{ "scale": "numerical"|"verbal"|"abstract", "stem": "<text>", "options": ["a","b","c","d"],`,
+    `{ "scale": "numerical"|"verbal"|"inductive"|"deductive", "stem": "<text>", "options": ["a","b","c","d"],`,
     `  "correct": <0-based index>, "difficulty": "easy"|"medium"|"hard" }`,
     `Provide 3–4 options each, exactly one correct.`,
   ].join("\n");
@@ -74,7 +81,7 @@ async function aiCognitive(lang: Lang, perSubtest: number): Promise<CognitiveIte
     const jsonText = block.text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
     const parsed = JSON.parse(jsonText) as unknown;
     if (!Array.isArray(parsed)) return null;
-    const valid = new Set(["numerical", "verbal", "abstract"]);
+    const valid = new Set(["numerical", "verbal", "inductive", "deductive"]);
     const items: CognitiveItem[] = [];
     parsed.forEach((r, i) => {
       const q = r as Record<string, unknown>;
@@ -86,7 +93,7 @@ async function aiCognitive(lang: Lang, perSubtest: number): Promise<CognitiveIte
     });
     // Require at least one item per subtest, else fall back.
     const haveAll = Array.from(valid).every((s) => items.some((it) => it.scale === s));
-    return haveAll && items.length >= 6 ? items : null;
+    return haveAll && items.length >= 8 ? items : null;
   } catch {
     return null;
   }

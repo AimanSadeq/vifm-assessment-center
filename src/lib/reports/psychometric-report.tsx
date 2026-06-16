@@ -69,6 +69,8 @@ const s = StyleSheet.create({
   pctFill: { height: 7, backgroundColor: C.accent, borderRadius: 4 },
 
   predicts: { fontSize: 7.5, color: C.textMuted, marginTop: 6, fontStyle: "italic" },
+  scaleDefinition: { fontSize: 8, color: C.textLight, lineHeight: 1.5, marginTop: 4 },
+  scaleNarrative: { fontSize: 8, color: C.text, fontFamily: "Helvetica-Bold", lineHeight: 1.5, marginTop: 3 },
 
   // validity / disclaimer panels
   panel: { borderWidth: 0.5, borderColor: C.border, borderRadius: 4, padding: 11, marginBottom: 10, backgroundColor: C.bgSoft },
@@ -97,6 +99,10 @@ export type PsyReportScale = {
   bandLabel: string;
   sten?: number;
   percentile?: number;
+  /** Fuller "what this measures" definition (cognitive subtests). */
+  definition?: string;
+  /** Score-band narrative for this scale. */
+  narrative?: string;
 };
 
 export type PsyReportData = {
@@ -215,6 +221,9 @@ export function PsychometricReport({ data }: { data: PsyReportData }) {
                 </View>
               )}
 
+              {sc.definition && <Text style={s.scaleDefinition}>{sc.definition}</Text>}
+              {sc.narrative && <Text style={s.scaleNarrative}>{sc.narrative}</Text>}
+
               {sc.predicts.length > 0 && (
                 <Text style={s.predicts}>Predicts (foundations): {sc.predicts.join(" · ")}</Text>
               )}
@@ -297,7 +306,7 @@ export function PsychometricReport({ data }: { data: PsyReportData }) {
           <Text style={s.disclaimerTitle}>Methodology &amp; limits</Text>
           <Text style={s.disclaimerBody}>
             {data.kind === "cognitive"
-              ? "Cognitive ability is estimated from numerical, verbal and abstract reasoning items, scored as % correct per subtest with a general (g) composite. "
+              ? "Cognitive ability is estimated from numerical, verbal, inductive and deductive reasoning items, scored as % correct per subtest with a general (g) composite. "
               : "Personality is measured with public-domain Big-Five (IPIP) self-report items on a 1–5 Likert scale, reverse-keyed and averaged per trait, with social-desirability and inconsistency validity checks. "}
             {calibrated
               ? `Scores are norm-referenced against a calibrated reference sample${data.normSource ? ` (${data.normSource})` : ""}; percentiles and stens are derived from that distribution. Local norms should still be reviewed periodically for representativeness and fairness.`

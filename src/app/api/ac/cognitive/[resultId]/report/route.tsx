@@ -15,18 +15,18 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { PsychometricReport, type PsyReportData, type PsyReportScale } from "@/lib/reports/psychometric-report";
 import {
   COGNITIVE_INSTRUMENT, PERSONALITY_INSTRUMENT, BAND_LABEL_EN,
-  COGNITIVE_SUBTESTS, BIG_FIVE, type PsyBand,
+  COGNITIVE_SUBTESTS, BIG_FIVE, cognitiveNarrative, type PsyBand,
 } from "@/lib/psychometrics/framework";
 import type { PsyResult } from "@/lib/psychometrics/scoring";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-/** Resolve a scale's display name + the competencies it predicts (Foundations). */
-function scaleMeta(kind: string, key: string): { name: string; predicts: string[] } {
+/** Resolve a scale's display name, the competencies it predicts (Foundations), and (cognitive) a fuller definition. */
+function scaleMeta(kind: string, key: string): { name: string; predicts: string[]; definition?: string } {
   if (kind === "cognitive") {
     const d = COGNITIVE_SUBTESTS.find((x) => x.key === key);
-    return { name: d?.name_en ?? key, predicts: d?.competencies ?? [] };
+    return { name: d?.name_en ?? key, predicts: d?.competencies ?? [], definition: d?.definition_en };
   }
   const d = BIG_FIVE.find((x) => x.key === key);
   return { name: d?.name_en ?? key, predicts: d?.competencies ?? [] };
@@ -86,6 +86,8 @@ export async function GET(_req: Request, { params }: { params: { resultId: strin
       bandLabel: BAND_LABEL_EN[band] ?? sc.bandLabel,
       sten: sc.sten,
       percentile: sc.percentile,
+      definition: meta.definition,
+      narrative: isCog ? cognitiveNarrative(sc.raw, false) : undefined,
     };
   });
 

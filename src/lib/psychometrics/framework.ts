@@ -15,6 +15,9 @@ export type CognitiveSubtest = {
   name_en: string;
   name_ar: string;
   desc_en: string;
+  /** Fuller, scientifically-grounded definition surfaced on the result + report. */
+  definition_en: string;
+  definition_ar: string;
   competencies: string[];
 };
 export const COGNITIVE_SUBTESTS: CognitiveSubtest[] = [
@@ -23,6 +26,10 @@ export const COGNITIVE_SUBTESTS: CognitiveSubtest[] = [
     name_en: "Numerical reasoning",
     name_ar: "الاستدلال العددي",
     desc_en: "Interpreting data, ratios, percentages and trends.",
+    definition_en:
+      "Working with numbers and quantitative information: number series, ratios and percentages, and interpreting data presented in tables and charts to draw correct conclusions.",
+    definition_ar:
+      "التعامل مع الأرقام والمعلومات الكمية: المتسلسلات العددية والنسب والمئويات، وتفسير البيانات في الجداول والرسوم لاستخلاص النتائج الصحيحة.",
     competencies: ["Financial Literacy & Acumen", "Critical Analysis", "Sound Judgement"],
   },
   {
@@ -30,16 +37,52 @@ export const COGNITIVE_SUBTESTS: CognitiveSubtest[] = [
     name_en: "Verbal reasoning",
     name_ar: "الاستدلال اللفظي",
     desc_en: "Comprehension and critical reasoning from text.",
+    definition_en:
+      "Understanding and reasoning with language: comprehension of written passages, verbal analogies, and evaluating arguments to judge what does or does not follow.",
+    definition_ar:
+      "الفهم والاستدلال باللغة: استيعاب النصوص المكتوبة، والتناظر اللفظي، وتقييم الحجج لتمييز ما يصح استنتاجه.",
     competencies: ["Clear & Adaptive Communication", "Critical Analysis"],
   },
   {
-    key: "abstract",
-    name_en: "Abstract reasoning",
-    name_ar: "الاستدلال المجرد",
-    desc_en: "Pattern recognition independent of language (culture-fair).",
+    key: "inductive",
+    name_en: "Inductive reasoning",
+    name_ar: "الاستدلال الاستقرائي",
+    desc_en: "Inferring the underlying rule from patterns and examples.",
+    definition_en:
+      "Inferring the general rule from specific cases - spotting the pattern in figural series, matrices and odd-one-out problems, then predicting what comes next. A core marker of fluid intelligence.",
+    definition_ar:
+      "استنتاج القاعدة العامة من حالات محددة - تمييز النمط في المتسلسلات الشكلية والمصفوفات ومسائل (الشاذ)، ثم توقّع ما يلي. مؤشر أساسي للذكاء السيّال.",
     competencies: ["Navigating Complexity", "Creative Problem-Solving"],
   },
+  {
+    key: "deductive",
+    name_en: "Deductive reasoning",
+    name_ar: "الاستدلال الاستنباطي",
+    desc_en: "Applying given rules and premises to reach a valid conclusion.",
+    definition_en:
+      "Applying given rules or premises to reach a logically valid conclusion - syllogisms, conditional (if-then) logic, and arrangement/ordering problems where the answer must follow necessarily from the information given.",
+    definition_ar:
+      "تطبيق قواعد أو مقدمات معطاة للوصول إلى نتيجة صحيحة منطقيًا - القياس المنطقي، والمنطق الشرطي (إذا-فإن)، ومسائل الترتيب حيث تلزم النتيجة من المعطيات.",
+    competencies: ["Critical Analysis", "Sound Judgement"],
+  },
 ];
+
+/** Score-band narrative per subtest (indicative; non-clinical). */
+export function cognitiveNarrative(scorePct: number, ar: boolean): string {
+  if (scorePct >= 75) {
+    return ar
+      ? "أداء قوي: يتعامل بثقة مع البنود الأصعب ويصل إلى الإجابة الصحيحة باطّراد."
+      : "Strong performance: handles the harder items confidently and reaches the correct answer consistently.";
+  }
+  if (scorePct >= 45) {
+    return ar
+      ? "أداء متوسط: أساس سليم في البنود المعتادة، مع فرص للتحسّن في الأصعب."
+      : "Mid-range performance: a sound grasp of standard items, with room to grow on the harder ones.";
+  }
+  return ar
+    ? "أداء يحتاج تطويرًا: ركّز على التدرّب على هذا النوع من الاستدلال لبناء الأساس."
+    : "Developing performance: targeted practice on this reasoning type will build the foundation.";
+}
 
 /** General mental ability (g) — the composite — predicts broadly. */
 export const COGNITIVE_G_COMPETENCIES = ["Critical Analysis", "Sound Judgement", "Navigating Complexity"];

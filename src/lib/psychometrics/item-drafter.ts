@@ -2,7 +2,7 @@
 // ONE scale at a time; the SME reviews → approves into the bank. Returns [] when
 // no ANTHROPIC_API_KEY is set (the console then offers manual authoring instead).
 //
-// Cognitive → MCQs for a subtest (numerical/verbal/abstract) with one defensible
+// Cognitive → MCQs for a subtest (numerical/verbal/inductive/deductive) with one defensible
 // key + difficulty. Personality → first-person Likert statements for one Big-Five
 // trait, each flagged reverse/forward. Everything is drafted EN+AR together so
 // locale parity holds from the start.
@@ -29,8 +29,10 @@ const SYSTEM =
 
 function cognitivePrompt(scaleKey: string, scaleName: string, count: number): string {
   const kind =
-    scaleKey === "numerical" ? "numerical reasoning (data, ratios, percentages, trends)"
-    : scaleKey === "verbal" ? "verbal reasoning (comprehension or true/false/cannot-say logic)"
+    scaleKey === "numerical" ? "numerical reasoning (data, ratios, percentages, table/chart interpretation)"
+    : scaleKey === "verbal" ? "verbal reasoning (comprehension, analogies, vocabulary-in-context)"
+    : scaleKey === "inductive" ? "inductive reasoning (infer the rule from examples: number/figure series, odd-one-out)"
+    : scaleKey === "deductive" ? "deductive reasoning (apply rules/premises to a valid conclusion: syllogisms, if-then logic, arrangements)"
     : "abstract reasoning (number or pattern series, culture-fair)";
   return [
     `Write ${count} multiple-choice ${kind} items for the "${scaleName}" subtest.`,

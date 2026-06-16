@@ -580,7 +580,7 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
             findings.
           </Text>
           <Text style={s.methodLink}>
-            github.com/AimanSadeq/vifm-assessment-center/blob/master/docs/ARA-Methodology-Brief.md
+            Full methodology brief: caliber.viftraining.com/api/ara/methodology/pdf
           </Text>
         </View>
 

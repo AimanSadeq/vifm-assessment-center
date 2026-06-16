@@ -357,12 +357,12 @@ export default async function PersonalResultsPage({ params }: Props) {
                 : "Item development, content validity, reliability plan, reference frameworks, and explicit limitations - documented in the methodology brief."}
             </p>
             <a
-              href="https://github.com/AimanSadeq/vifm-assessment-center/blob/master/docs/ARA-Methodology-Brief.md"
+              href="/api/ara/methodology/pdf"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-[11px] font-medium text-accent hover:underline mt-1"
             >
-              {isAr ? "اقرأ موجز المنهجية" : "Read the methodology brief"}
+              {isAr ? "تنزيل موجز المنهجية (PDF)" : "Download the methodology brief (PDF)"}
               <ArrowLeft className="h-3 w-3 rotate-180" />
             </a>
           </div>

@@ -594,7 +594,7 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
     <div class="method-box">
       <h4>كيف بنينا هذا التقييم</h4>
       <p>إطار من أربعة عوامل، 24 بنداً للتقرير الذاتي على مقياس ليكرت من 1 إلى 5، تُحتسب كمتوسط غير مرجّح لكل عامل. ترتبط العوامل بنموذج كفاءات السلوك في مركز تقييم VIFM ليتوافق استعداد الفرد للذكاء الاصطناعي مع العمل التطويري الذي تقوم به أصلاً. هذه لقطة - أما التشخيص المعمّق بقيادة استشاري مدفوع فيضاعف عدد البنود ويضيف مقارنات مع الأقران ومناقشة منظمة للنتائج.</p>
-      <p class="method-link">github.com/AimanSadeq/vifm-assessment-center/blob/master/docs/ARA-Methodology-Brief.md</p>
+      <p class="method-link">موجز المنهجية الكامل: caliber.viftraining.com/api/ara/methodology/pdf</p>
     </div>
   </section>
 

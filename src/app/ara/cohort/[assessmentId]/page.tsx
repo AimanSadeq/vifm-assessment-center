@@ -213,7 +213,7 @@ export default async function PublicCohortDashboardPage({
             <p className="text-muted-foreground mt-1">
               {t("araReport.cohort_methodology_body")}{" "}
               <a
-                href="https://github.com/AimanSadeq/vifm-assessment-center/blob/master/docs/ARA-Methodology-Brief.md"
+                href="/api/ara/methodology/pdf"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-accent hover:underline"

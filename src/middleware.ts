@@ -20,6 +20,11 @@ const isAraRedeemRoute = (pathname: string) =>
 const isAraCohortRoute = (pathname: string) =>
   pathname.startsWith("/ara/cohort/");
 
+// Public ARC methodology brief PDF - static methodology content, linked from
+// the no-account report + cohort + personal-results surfaces. No PII.
+const isAraMethodologyRoute = (pathname: string) =>
+  pathname === "/api/ara/methodology/pdf";
+
 // Reflect rater routes follow the same token pattern - rater identity
 // is established server-side from reflect_raters.access_token.
 const isReflectRaterRoute = (pathname: string) =>
@@ -86,6 +91,7 @@ export async function middleware(request: NextRequest) {
     isAraRespondentRoute(request.nextUrl.pathname) ||
     isAraRedeemRoute(request.nextUrl.pathname) ||
     isAraCohortRoute(request.nextUrl.pathname) ||
+    isAraMethodologyRoute(request.nextUrl.pathname) ||
     isReflectRaterRoute(request.nextUrl.pathname) ||
     isPublicCoursesRoute(request.nextUrl.pathname) ||
     isPublicVerifyRoute(request.nextUrl.pathname) ||

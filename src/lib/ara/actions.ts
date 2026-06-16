@@ -16,6 +16,7 @@ import {
 } from "@/lib/ara/auth-guards";
 import { sendAraEmail, type AraEmailLanguage } from "@/lib/ara/email";
 import { isAIConfigured } from "@/lib/ai/client";
+import { createClientOrganization, type AraRegion, type AraSector } from "@/lib/clients/registry";
 
 // Uniform auth-error unwrapper - server actions return a shape the UI
 // can render as a toast instead of a Next error screen.
@@ -27,6 +28,44 @@ function authErr(e: unknown) {
 // ─────────────────────────────────────────────────────────────
 // Organizations
 // ─────────────────────────────────────────────────────────────
+/**
+ * Register a client from within ARC as a FIRST-CLASS platform client.
+ *
+ * Unlike createAraOrganization (which only wrote ara_organizations), this routes
+ * through the shared registry so the client is created in BOTH org stores and is
+ * reusable across every VIFM service - the "standalone service registers a real
+ * platform client" pattern. Region + sector stay required here (they drive ARC's
+ * UAE/Saudi framework isolation); industry/country/contact enrich the AC profile.
+ * Stamps created_by so consultant RLS ownership still works.
+ */
+export async function registerAraClient(formData: FormData) {
+  let caller;
+  try { caller = await requireRole(["admin", "consultant"]); } catch (e) { return authErr(e); }
+
+  const name = String(formData.get("name") ?? "").trim();
+  const region = String(formData.get("region") ?? "");
+  const sector = String(formData.get("sector") ?? "");
+  if (!name) return { ok: false as const, error: "A client name is required." };
+  if (region !== "uae" && region !== "saudi") return { ok: false as const, error: "Select a region." };
+  if (!["government", "banking", "general"].includes(sector)) return { ok: false as const, error: "Select a sector." };
+
+  const res = await createClientOrganization({
+    name,
+    nameAr: String(formData.get("name_ar") ?? "").trim() || null,
+    region: region as AraRegion,
+    sector: sector as AraSector,
+    industry: String(formData.get("industry") ?? "").trim() || null,
+    country: String(formData.get("country") ?? "").trim() || null,
+    contactName: String(formData.get("contact_name") ?? "").trim() || null,
+    contactEmail: String(formData.get("contact_email") ?? "").trim() || null,
+    createdBy: caller.isDev ? null : caller.uid,
+  });
+  if (!res.ok) return { ok: false as const, error: res.error };
+
+  revalidatePath("/ara/admin/organizations");
+  redirect("/ara/admin/organizations");
+}
+
 export async function createAraOrganization(formData: FormData) {
   let caller;
   try { caller = await requireRole(["admin", "consultant"]); } catch (e) { return authErr(e); }

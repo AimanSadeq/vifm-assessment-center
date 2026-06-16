@@ -4,14 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { createAraOrganization } from "@/lib/ara/actions";
+import { registerAraClient } from "@/lib/ara/actions";
 import { getServerT } from "@/lib/i18n/server";
 
 export default async function NewAraOrganizationPage() {
   const t = await getServerT();
   const createAction = async (fd: FormData) => {
     "use server";
-    await createAraOrganization(fd);
+    await registerAraClient(fd);
   };
   return (
     <div className="min-h-screen bg-background">
@@ -73,6 +73,33 @@ export default async function NewAraOrganizationPage() {
                   <option value="banking">{t("araAdmin.sectorBanking")}</option>
                   <option value="general">{t("araAdmin.sectorGeneral")}</option>
                 </select>
+              </div>
+
+              {/* Optional client details - shared across every VIFM service via
+                  the platform registry (this client becomes reusable elsewhere). */}
+              <div className="rounded-lg border border-dashed bg-muted/20 p-4 space-y-4">
+                <div>
+                  <p className="text-sm font-medium text-foreground">{t("araAdmin.orgClientDetailsSection")}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{t("araAdmin.orgClientDetailsHint")}</p>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="industry">{t("araAdmin.orgFieldIndustry")}</Label>
+                    <Input id="industry" name="industry" maxLength={120} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="country">{t("araAdmin.orgFieldCountry")}</Label>
+                    <Input id="country" name="country" maxLength={120} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contact_name">{t("araAdmin.orgFieldContactName")}</Label>
+                    <Input id="contact_name" name="contact_name" maxLength={120} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contact_email">{t("araAdmin.orgFieldContactEmail")}</Label>
+                    <Input id="contact_email" name="contact_email" type="email" maxLength={160} />
+                  </div>
+                </div>
               </div>
 
               <div className="flex gap-3 pt-2">

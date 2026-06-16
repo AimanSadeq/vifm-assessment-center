@@ -7,6 +7,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { ArrowLeft, Plus } from "lucide-react";
+import { loadPlatformClients } from "@/lib/clients/registry";
 import type { AraOrganization } from "@/types/ara";
 
 export default async function AraOrganizationsPage() {
@@ -17,6 +18,12 @@ export default async function AraOrganizationsPage() {
     .select("*")
     .order("created_at", { ascending: false })
     .returns<AraOrganization[]>();
+
+  // Cross-reference the platform registry so each ARC client shows which other
+  // VIFM services it's wired into (acId => also in the AC / Pre-Hire store).
+  const platform = await loadPlatformClients();
+  const acByName = new Map(platform.filter((c) => c.acId).map((c) => [c.name.trim().toLowerCase(), true]));
+  const crossService = (name: string) => acByName.has(name.trim().toLowerCase());
 
   return (
     <div className="min-h-screen bg-background">
@@ -54,6 +61,7 @@ export default async function AraOrganizationsPage() {
                 <TableHead>{t("araAdmin.orgsColNameAr")}</TableHead>
                 <TableHead>{t("araAdmin.orgsColRegion")}</TableHead>
                 <TableHead>{t("araAdmin.orgsColSector")}</TableHead>
+                <TableHead>{t("araAdmin.orgsColServices")}</TableHead>
                 <TableHead>{t("araAdmin.orgsColCreated")}</TableHead>
               </TableRow>
             </TableHeader>
@@ -77,6 +85,15 @@ export default async function AraOrganizationsPage() {
                     <Badge variant="outline" className="capitalize">
                       {org.sector}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {crossService(org.name) ? (
+                      <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-50">
+                        {t("araAdmin.orgsServicesAll")}
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary">{t("araAdmin.orgsServicesArcOnly")}</Badge>
+                    )}
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {new Date(org.created_at).toLocaleDateString()}

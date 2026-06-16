@@ -37,6 +37,10 @@ export type CreateClientInput = {
   region?: AraRegion;
   sector?: AraSector;
   nameAr?: string | null;
+  /** Stamp the ara_organizations row's creator so consultant RLS scoping works
+   *  when a client is registered from within a service (e.g. ARC). Null/omitted
+   *  leaves it unset (the prior behaviour for the global Platform Clients page). */
+  createdBy?: string | null;
 };
 
 export type CreateClientResult =
@@ -92,6 +96,7 @@ export async function createClientOrganization(input: CreateClientInput): Promis
         name_ar: input.nameAr || null,
         sector,
         region,
+        ...(input.createdBy ? { created_by: input.createdBy } : {}),
       }).select("id").single();
       if (ins.error || !ins.data) return { ok: false, error: ins.error?.message ?? "Could not create the client (AR Compass store)." };
       araOrganizationId = (ins.data as { id: string }).id;

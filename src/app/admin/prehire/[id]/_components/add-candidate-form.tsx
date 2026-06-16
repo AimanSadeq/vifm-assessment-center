@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UserPlus, Mail, Loader2 } from "lucide-react";
 import { addCandidateAction, inviteAllPendingAction } from "../../actions";
+import { copyToClipboard } from "@/lib/utils/clipboard";
 
 export function AddCandidateForm({ requisitionId }: { requisitionId: string }) {
   const router = useRouter();
@@ -56,7 +57,7 @@ export function AddCandidateForm({ requisitionId }: { requisitionId: string }) {
       });
     }
     try {
-      await navigator.clipboard.writeText(link);
+      await copyToClipboard(link);
     } catch {
       /* clipboard may be unavailable; link is shown via the toast */
     }

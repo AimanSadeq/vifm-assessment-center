@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Link2, Check, Mail, Loader2 } from "lucide-react";
 import { resendPrehireInviteAction } from "../../actions";
+import { copyToClipboard } from "@/lib/utils/clipboard";
 
 export function InviteLink({ token, candidateId }: { token: string; candidateId: string }) {
   const { t } = useTranslation();
@@ -21,7 +22,7 @@ export function InviteLink({ token, candidateId }: { token: string; candidateId:
   const copy = async () => {
     if (!url) return;
     try {
-      await navigator.clipboard.writeText(url);
+      await copyToClipboard(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {

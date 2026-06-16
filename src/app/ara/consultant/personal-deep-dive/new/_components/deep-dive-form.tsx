@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Copy, ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
+import { copyToClipboard } from "@/lib/utils/clipboard";
 
 type Result =
   | { ok: false; error: string }
@@ -59,7 +60,7 @@ export function DeepDiveForm({ action }: Props) {
   const copy = async () => {
     if (!fullUrl) return;
     try {
-      await navigator.clipboard.writeText(fullUrl);
+      await copyToClipboard(fullUrl);
       toast.success(t("araAssessmentDetail.dd_toast_copied"));
     } catch {
       toast.error(t("araAssessmentDetail.dd_toast_copy_failed"));

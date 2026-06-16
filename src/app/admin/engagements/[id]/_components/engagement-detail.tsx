@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
+import { copyToClipboard } from "@/lib/utils/clipboard";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -178,7 +179,7 @@ export function EngagementDetail({
         // Email not configured / failed: hand the admin the link to share.
         toast.success(t("adminEngagements.detail.toastInviteLinkReady"));
         try {
-          await navigator.clipboard.writeText(result.portalUrl);
+          await copyToClipboard(result.portalUrl);
           toast.message(t("adminEngagements.detail.toastInviteLinkCopied"));
         } catch {
           toast.message(result.portalUrl);

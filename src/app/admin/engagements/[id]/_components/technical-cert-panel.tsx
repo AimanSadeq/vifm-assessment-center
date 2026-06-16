@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { GraduationCap, ShieldCheck, AlertCircle, Link2, Check, ExternalLink, Loader2, Plus, X, Download } from "lucide-react";
 import type { EngagementTechProgram } from "@/lib/competencies/engagement-tech-program";
 import { setEngagementTechDomainAction } from "../technical-actions";
+import { copyToClipboard } from "@/lib/utils/clipboard";
 
 export function TechnicalCertPanel({
   engagementId,
@@ -44,7 +45,7 @@ export function TechnicalCertPanel({
   const copyLink = async (candidateId: string, domainKey: string) => {
     const url = `${window.location.origin}/ac/tech-assessment?candidateId=${candidateId}&engagementId=${engagementId}&domainKey=${domainKey}`;
     try {
-      await navigator.clipboard.writeText(url);
+      await copyToClipboard(url);
       setCopied(`${candidateId}|${domainKey}`);
       setTimeout(() => setCopied(""), 2000);
     } catch {

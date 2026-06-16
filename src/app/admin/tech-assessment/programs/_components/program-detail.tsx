@@ -14,6 +14,7 @@ import {
 import type { EngagementTechProgram } from "@/lib/competencies/engagement-tech-program";
 import type { ProgramParticipant } from "@/lib/competencies/technical-program";
 import { setProgramDomainAction, addParticipantAction, removeParticipantAction } from "../actions";
+import { copyToClipboard } from "@/lib/utils/clipboard";
 
 export function ProgramDetail({
   programId,
@@ -55,7 +56,7 @@ export function ProgramDetail({
   const copyLink = async (accessToken: string, domainKey: string) => {
     const url = `${window.location.origin}/ac/tech-assessment?token=${accessToken}&domainKey=${domainKey}`;
     try {
-      await navigator.clipboard.writeText(url);
+      await copyToClipboard(url);
       setCopied(`${accessToken}|${domainKey}`);
       setTimeout(() => setCopied(""), 2000);
     } catch {

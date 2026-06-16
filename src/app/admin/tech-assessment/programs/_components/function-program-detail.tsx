@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Layers3, Link2, Check, Loader2, Download, UserPlus, Trash2 } from "lucide-react";
 import type { FunctionProgramView, ProgramParticipant } from "@/lib/competencies/technical-program";
 import { addParticipantAction, removeParticipantAction } from "../actions";
+import { copyToClipboard } from "@/lib/utils/clipboard";
 
 const LEVEL_TONE: Record<number, string> = {
   1: "bg-rose-100 text-rose-800 border-rose-300",
@@ -66,7 +67,7 @@ export function FunctionProgramDetail({
   const copyLink = async (accessToken: string) => {
     const url = `${window.location.origin}/ac/tech-assessment?token=${accessToken}&functionKey=${view.functionRef}`;
     try {
-      await navigator.clipboard.writeText(url);
+      await copyToClipboard(url);
       setCopied(accessToken);
       setTimeout(() => setCopied(""), 2000);
     } catch {

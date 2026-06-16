@@ -3,6 +3,7 @@ import type { Browser } from "puppeteer";
 import { createServiceClient } from "@/lib/supabase/server";
 import { computeParticipantScoring } from "@/lib/reflect/scoring";
 import { guardReflectEngagementAccess } from "@/lib/reflect/report-access";
+import { issueReflect360Credential } from "@/lib/reflect/credential";
 
 // Puppeteer needs the Node runtime, not Edge.
 export const runtime = "nodejs";
@@ -71,6 +72,10 @@ export async function GET(
       scores_snapshot: scoring,
       version: 1,
     });
+
+    // Issue the verifiable Reflect 360 completion credential (best-effort,
+    // idempotent; no-ops until migration 00107 is applied).
+    await issueReflect360Credential(scoring.participant_id);
 
     const filename = `reflect-${scoring.participant_name.replace(/[^a-zA-Z0-9]+/g, "_")}-${language}.pdf`;
     return new NextResponse(pdf as any, {

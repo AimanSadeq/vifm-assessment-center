@@ -21,6 +21,7 @@ const TYPE_LABEL_KEY: Record<string, string> = {
   fluent_cefr: "authPublic.verify.typeFluentCefr",
   technical_proficiency: "authPublic.verify.typeTechnicalProficiency",
   ai_readiness: "authPublic.verify.typeAiReadiness",
+  reflect_360: "authPublic.verify.typeReflect360",
 };
 
 function fmtDate(iso: string | null): string | null {

@@ -21,6 +21,7 @@ const TYPE_LABEL: Record<string, string> = {
   fluent_cefr: "English Placement",
   technical_proficiency: "Technical Proficiency",
   ai_readiness: "AI Readiness",
+  reflect_360: "Reflect 360",
 };
 
 // Arabic type labels, keyed by credential_type. Falls back to a generic
@@ -31,6 +32,7 @@ const TYPE_LABEL_AR: Record<string, string> = {
   fluent_cefr: "تحديد مستوى الإنجليزية",
   technical_proficiency: "الكفاءة التقنية",
   ai_readiness: "الجاهزية للذكاء الاصطناعي",
+  reflect_360: "ريفلكت 360",
 };
 
 function fmt(iso?: string | null, locale: "en-GB" | "ar-AE" = "en-GB"): string {

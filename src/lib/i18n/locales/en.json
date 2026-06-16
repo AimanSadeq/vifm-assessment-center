@@ -4138,6 +4138,7 @@
       "typeFluentCefr": "English Placement",
       "typeTechnicalProficiency": "Technical Proficiency",
       "typeAiReadiness": "AI Readiness",
+      "typeReflect360": "Reflect 360",
       "credentialFallback": "Credential",
       "notFoundTitle": "Credential not found",
       "notFoundBody": "We could not find a credential with this verification code. Check the code and try again.",

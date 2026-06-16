@@ -22,7 +22,8 @@ export type CredentialType =
   | "ac_ready_now"
   | "fluent_cefr"
   | "technical_proficiency"
-  | "ai_readiness";
+  | "ai_readiness"
+  | "reflect_360";
 
 // Default validity per credential type (renewable by issuing a fresh row).
 // technical_proficiency is a measured competence claim, so it carries the
@@ -34,6 +35,7 @@ const EXPIRY_YEARS: Record<CredentialType, number> = {
   fluent_cefr: 1,
   technical_proficiency: 1,
   ai_readiness: 1,
+  reflect_360: 2,
 };
 
 function defaultExpiry(type: CredentialType): string {

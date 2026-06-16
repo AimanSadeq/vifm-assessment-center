@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
-import { Ticket, Copy, Download, Check, Ban, RotateCcw, Plus, X, Link2 } from "lucide-react";
+import { Ticket, Copy, Download, Check, Ban, RotateCcw, Plus, X, Link2, Upload } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -94,6 +94,31 @@ export function VouchersClient({
     }
     setEmailResult(`Sent ${res.sent} of ${res.total} invitation(s).`);
     setDelegateEmails("");
+  }
+
+  // Pull a delegate list straight from a file (CSV / TXT exported from Excel).
+  // We extract every email-looking token regardless of column layout, dedupe
+  // against what's already in the box, and fill the textarea.
+  function importEmailsFromFile(file: File) {
+    setEmailError(null);
+    setEmailResult(null);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result ?? "");
+      const found = (text.match(/[^\s,;:<>"'()[\]]+@[^\s,;:<>"'()[\]]+\.[^\s,;:<>"'()[\]]+/g) ?? [])
+        .map((e) => e.trim().toLowerCase())
+        .filter((e) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e));
+      if (found.length === 0) {
+        setEmailError("No email addresses found in that file. Use a CSV/TXT with one email per row.");
+        return;
+      }
+      const existing = delegateEmails.split(/[\n,;]+/).map((e) => e.trim().toLowerCase()).filter(Boolean);
+      const merged = Array.from(new Set([...existing, ...found]));
+      setDelegateEmails(merged.join("\n"));
+      setEmailResult(`Loaded ${found.length} email(s) from ${file.name}. ${merged.length} unique in the list.`);
+    };
+    reader.onerror = () => setEmailError("Could not read that file.");
+    reader.readAsText(file);
   }
 
   async function saveClient() {
@@ -323,10 +348,36 @@ export function VouchersClient({
           <CardTitle className="text-lg">Email codes to delegates</CardTitle>
           <CardDescription>
             One single-use code per email, sent as a one-click link. Uses the client selected above
-            {selectedOrg ? "." : " (none - pick a client above to tag + inherit region)."}
+            {selectedOrg ? "." : " (none - pick a client above to tag + inherit region)."}{" "}
+            Paste a list, or upload a CSV / TXT of emails from the client.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
+          <div className="flex items-center gap-2">
+            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted">
+              <Upload className="h-3.5 w-3.5" /> Upload list (CSV / TXT)
+              <input
+                type="file"
+                accept=".csv,.txt,.tsv,text/csv,text/plain"
+                className="hidden"
+                disabled={emailingDelegates}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) importEmailsFromFile(f);
+                  e.currentTarget.value = ""; // allow re-uploading the same file
+                }}
+              />
+            </label>
+            {delegateEmails.trim() && (
+              <button
+                type="button"
+                onClick={() => { setDelegateEmails(""); setEmailResult(null); setEmailError(null); }}
+                className="text-xs text-muted-foreground hover:text-foreground hover:underline"
+              >
+                Clear
+              </button>
+            )}
+          </div>
           <textarea
             className="w-full min-h-[110px] rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             placeholder={"one email per line\nahmed@client.com\nsara@client.com"}

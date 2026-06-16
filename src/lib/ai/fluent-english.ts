@@ -192,9 +192,19 @@ function receptiveCefrWeighted(
 
 const FALLBACK_TEST: FluentTest = {
   ai_generated: false,
+  // 10 reading items, A1 -> C2 difficulty ramp (used only when no AI key is set;
+  // the AI path generates a fresh 10-item set per administration).
   reading: [
     {
       id: "r1",
+      passage: "The bank opens at nine in the morning.",
+      question: "When does the bank open?",
+      options: ["Nine in the morning", "Nine at night", "Ten in the morning", "Noon"],
+      correct_index: 0,
+      cefr: "A1",
+    },
+    {
+      id: "r2",
       passage: "Sara works at a bank. She starts at 8 a.m. and finishes at 4 p.m.",
       question: "What time does Sara finish work?",
       options: ["8 a.m.", "4 p.m.", "noon", "6 p.m."],
@@ -202,7 +212,16 @@ const FALLBACK_TEST: FluentTest = {
       cefr: "A2",
     },
     {
-      id: "r2",
+      id: "r3",
+      passage:
+        "Please bring your ID card to the meeting on Tuesday. Without it, you cannot enter the secure floor.",
+      question: "What do you need to enter the secure floor?",
+      options: ["A laptop", "Your ID card", "A visitor badge", "A meeting invite"],
+      correct_index: 1,
+      cefr: "A2",
+    },
+    {
+      id: "r4",
       passage:
         "The team postponed the launch because the data migration was not complete. They agreed to revisit the timeline next week.",
       question: "Why was the launch postponed?",
@@ -216,7 +235,49 @@ const FALLBACK_TEST: FluentTest = {
       cefr: "B1",
     },
     {
-      id: "r3",
+      id: "r5",
+      passage:
+        "Customers who pay before the due date receive a small discount, while late payments add a fixed fee to the next statement.",
+      question: "What happens if a customer pays late?",
+      options: [
+        "They get a discount",
+        "A fixed fee is added to the next statement",
+        "Their account is closed",
+        "Nothing changes",
+      ],
+      correct_index: 1,
+      cefr: "B1",
+    },
+    {
+      id: "r6",
+      passage:
+        "The report notes that revenue rose in every region except the north, where new competitors gradually eroded the bank's market share.",
+      question: "What happened in the north?",
+      options: [
+        "Revenue rose fastest there",
+        "Competitors reduced the bank's market share",
+        "The branch closed",
+        "Costs fell sharply",
+      ],
+      correct_index: 1,
+      cefr: "B2",
+    },
+    {
+      id: "r7",
+      passage:
+        "Rather than rejecting the plan outright, the director asked the team to stress-test their assumptions against a downturn scenario before resubmitting.",
+      question: "What did the director ask the team to do?",
+      options: [
+        "Abandon the plan",
+        "Test their assumptions against a downturn before resubmitting",
+        "Submit the plan unchanged",
+        "Find a new director",
+      ],
+      correct_index: 1,
+      cefr: "B2",
+    },
+    {
+      id: "r8",
       passage:
         "Although the proposal was ambitious, the committee questioned whether the projected returns justified the upfront capital exposure.",
       question: "What was the committee's main concern?",
@@ -229,10 +290,47 @@ const FALLBACK_TEST: FluentTest = {
       correct_index: 1,
       cefr: "C1",
     },
+    {
+      id: "r9",
+      passage:
+        "The auditor's caveat was subtle but consequential: the figures were accurate as stated, yet the methodology understated the firm's exposure to a single counterparty.",
+      question: "What was the auditor implying?",
+      options: [
+        "The figures were wrong",
+        "The numbers were correct but the method hid a concentration risk",
+        "The firm had no exposure",
+        "The audit was incomplete",
+      ],
+      correct_index: 1,
+      cefr: "C1",
+    },
+    {
+      id: "r10",
+      passage:
+        "Had the regulator not intervened, the bank's liquidity buffer - comfortable on paper - would have proven illusory the moment short-term funding markets seized.",
+      question: "What does the passage suggest about the liquidity buffer?",
+      options: [
+        "It was genuinely robust",
+        "It looked adequate but would have failed under funding stress",
+        "It was never reported",
+        "It exceeded all requirements",
+      ],
+      correct_index: 1,
+      cefr: "C2",
+    },
   ],
+  // 10 listening items, A1 -> C2 difficulty ramp.
   listening: [
     {
       id: "l1",
+      script: "The lift is on your left. Take it to the second floor.",
+      question: "Where is the lift?",
+      options: ["On the left", "On the right", "Outside", "On the roof"],
+      correct_index: 0,
+      cefr: "A1",
+    },
+    {
+      id: "l2",
       script:
         "Good morning. The training session has moved from room two to room five. Please go to the third floor.",
       question: "Where should listeners go?",
@@ -241,7 +339,16 @@ const FALLBACK_TEST: FluentTest = {
       cefr: "A2",
     },
     {
-      id: "l2",
+      id: "l3",
+      script:
+        "Reminder: the office will close early on Thursday for maintenance. Please save your work before three o'clock.",
+      question: "What should staff do before three o'clock on Thursday?",
+      options: ["Go home", "Save their work", "Start maintenance", "Book a room"],
+      correct_index: 1,
+      cefr: "A2",
+    },
+    {
+      id: "l4",
       script:
         "Our quarterly numbers are strong, but the board wants us to slow down hiring until the new budget is approved next month.",
       question: "What does the board want?",
@@ -253,6 +360,90 @@ const FALLBACK_TEST: FluentTest = {
       ],
       correct_index: 1,
       cefr: "B1",
+    },
+    {
+      id: "l5",
+      script:
+        "The client said they were happy with the service overall, but they'd like faster responses to email queries during the weekend.",
+      question: "What does the client want improved?",
+      options: [
+        "The price",
+        "Weekend email response times",
+        "The office location",
+        "The product design",
+      ],
+      correct_index: 1,
+      cefr: "B1",
+    },
+    {
+      id: "l6",
+      script:
+        "We can meet the deadline, but only if we descope the reporting module. Otherwise, we'll need two more developers and another fortnight.",
+      question: "What is the trade-off the speaker describes?",
+      options: [
+        "Cut the reporting module, or add people and time",
+        "Cancel the project entirely",
+        "Hire one developer and finish early",
+        "Keep everything and still finish on time",
+      ],
+      correct_index: 0,
+      cefr: "B2",
+    },
+    {
+      id: "l7",
+      script:
+        "I'm not against the acquisition in principle; my hesitation is about timing, given how volatile the currency has been this quarter.",
+      question: "What is the speaker's position?",
+      options: [
+        "They oppose the acquisition completely",
+        "They support it in principle but worry about the timing",
+        "They want to buy a different company",
+        "They have no opinion",
+      ],
+      correct_index: 1,
+      cefr: "B2",
+    },
+    {
+      id: "l8",
+      script:
+        "While the headline figure looks encouraging, I'd caution the committee against reading too much into a single quarter that benefited from one-off gains.",
+      question: "Why does the speaker urge caution?",
+      options: [
+        "The figure was a loss",
+        "The quarter was boosted by one-off gains, so it may not repeat",
+        "The committee is too large",
+        "The report was late",
+      ],
+      correct_index: 1,
+      cefr: "C1",
+    },
+    {
+      id: "l9",
+      script:
+        "What troubles me isn't the strategy itself, which is sound, but our apparent assumption that the regulator will interpret the new rules exactly as we have.",
+      question: "What is the speaker concerned about?",
+      options: [
+        "The strategy is flawed",
+        "The team may be wrong to assume the regulator shares its reading of the rules",
+        "The regulator has banned the strategy",
+        "There are no new rules",
+      ],
+      correct_index: 1,
+      cefr: "C1",
+    },
+    {
+      id: "l10",
+      script:
+        "Let me be candid: the model is elegant, but elegance is precisely the problem - it is so internally consistent that it leaves no room for the messiness the market will inevitably throw at it.",
+      question: "What is the speaker's criticism of the model?",
+      options: [
+        "It is too simple to be useful",
+        "Its very consistency makes it unable to handle real-world messiness",
+        "It is incomplete",
+        "It copies a competitor",
+      ],
+      correct_index: 1,
+      cefr: "C2",
     },
   ],
   writing: {
@@ -426,7 +617,7 @@ const clamp = (n: unknown): number =>
 const sanitizeResponse = (s: string): string =>
   s
     .trim()
-    .replace(/[ -]/g, " ")
+    .replace(/[\x00-\x1f\x7f]/g, " ")
     .slice(0, 4000);
 
 // Compact CEFR band anchors injected into the writing/speaking prompts so the

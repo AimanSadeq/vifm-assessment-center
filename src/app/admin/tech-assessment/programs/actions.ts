@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { techDomainByKey } from "@/lib/competencies/technical-framework";
+import { createClientOrganization } from "@/lib/clients/registry";
 
 type Result<T = unknown> = ({ ok: true } & T) | { error: string };
 
@@ -50,6 +51,19 @@ export async function createProgramAction(input: {
     const sb = createServiceClient();
     const functionId = await resolveFunctionId(sb, ref);
     if (!functionId) return { error: "That function isn't available. Apply migration 00058 and try again." };
+
+    // Register the client first-class via the shared registry (dual-write to
+    // organizations + ara_organizations, deduped by name) so the program's org
+    // is a real platform client reusable across services. Best-effort: a
+    // registry hiccup falls back to the name-only program below.
+    let organizationId: string | null = null;
+    try {
+      const reg = await createClientOrganization({ name: org });
+      if (reg.ok) organizationId = reg.organizationId;
+    } catch {
+      /* fall back to name-only */
+    }
+
     // A program is a function team; tier keeps its DB default (vestigial).
     const { data, error } = await sb
       .from("technical_programs")
@@ -57,6 +71,13 @@ export async function createProgramAction(input: {
       .select("id")
       .single();
     if (error || !data) return { error: error?.message ?? "Could not create program." };
+
+    // Link the FK (best-effort; the column lands with migration 00103, so this
+    // no-ops cleanly until then).
+    if (organizationId) {
+      await sb.from("technical_programs").update({ organization_id: organizationId }).eq("id", data.id);
+    }
+
     revalidatePath("/admin/tech-assessment/programs");
     return { ok: true, id: data.id as string };
   } catch (e) {

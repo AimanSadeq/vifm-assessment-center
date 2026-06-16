@@ -8,13 +8,19 @@ import { BackLink } from "@/components/shared/back-link";
 import { getServerT, getServerLocale } from "@/lib/i18n/server";
 import { listTechnicalPrograms } from "@/lib/competencies/technical-program";
 import { listTechnicalFunctions } from "@/lib/competencies/technical-function";
+import { loadPlatformClients } from "@/lib/clients/registry";
 import { CreateProgramForm } from "./_components/create-program-form";
 
 export default async function TechnicalProgramsPage() {
   const t = await getServerT();
   const locale = await getServerLocale();
-  const [programs, functions] = await Promise.all([listTechnicalPrograms(), listTechnicalFunctions(locale)]);
+  const [programs, functions, clients] = await Promise.all([
+    listTechnicalPrograms(),
+    listTechnicalFunctions(locale),
+    loadPlatformClients(),
+  ]);
   const functionOptions = functions.map((f) => ({ ref: f.ref, name: f.name, categoryLabel: f.categoryLabel }));
+  const clientNames = clients.map((c) => c.name);
   const statusLabel = (k: string) => {
     const v = t(`techProg.status.${k}`);
     return v.startsWith("techProg.status.") ? k : v;
@@ -34,7 +40,7 @@ export default async function TechnicalProgramsPage() {
         </div>
       </div>
 
-      <CreateProgramForm functions={functionOptions} />
+      <CreateProgramForm functions={functionOptions} clients={clientNames} />
 
       {programs.length === 0 ? (
         <Card>

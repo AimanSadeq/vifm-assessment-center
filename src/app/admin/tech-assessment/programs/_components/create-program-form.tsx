@@ -13,7 +13,7 @@ import { createProgramAction } from "../actions";
 
 export type FunctionOption = { ref: string; name: string; categoryLabel: string };
 
-export function CreateProgramForm({ functions }: { functions: FunctionOption[] }) {
+export function CreateProgramForm({ functions, clients = [] }: { functions: FunctionOption[]; clients?: string[] }) {
   const router = useRouter();
   const { t } = useTranslation();
   const [name, setName] = useState("");
@@ -48,7 +48,17 @@ export function CreateProgramForm({ functions }: { functions: FunctionOption[] }
         </div>
         <div className="flex-1 min-w-[12rem] space-y-1.5">
           <Label className="text-xs">{t("techProg.orgLabel")}</Label>
-          <Input value={org} onChange={(e) => setOrg(e.target.value)} placeholder={t("techProg.orgPh")} />
+          <Input
+            value={org}
+            onChange={(e) => setOrg(e.target.value)}
+            placeholder={t("techProg.orgPh")}
+            list="tech-client-list"
+          />
+          <datalist id="tech-client-list">
+            {clients.map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
         </div>
         <div className="w-56 space-y-1.5">
           <Label className="text-xs">{t("techProg.functionLabel")}</Label>

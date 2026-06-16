@@ -14,30 +14,164 @@ type Tone = "blue" | "violet" | "teal" | "gold" | "rose" | "indigo" | "fuchsia" 
 type ServiceKey = "ac" | "ara" | "reflect" | "fluent" | "prehire" | "technical" | "cognitive" | "persona" | "readiness" | "academy";
 // The two solution families (the colleague's talent-lifecycle model).
 type Pillar = "acquire" | "manage";
-// Cognitive + Persona are two instruments inside one Psychometrics tile, so they
-// render clustered under a shared header rather than as loose siblings.
-type GroupKey = "psychometrics";
 
 const STORAGE_KEY = "vifm-landing-locale";
 
 // Icon / hue / route / pillars are language-independent; copy comes from T[lang].services.
-const SERVICES: ReadonlyArray<{ key: ServiceKey; href: string; icon: typeof Compass; tone: Tone; pillars: Pillar[]; group?: GroupKey }> = [
-  // ── Talent Acquisition ──
+// A service in BOTH pillars (ac / ara / technical) renders once per column with
+// pillar-specific copy from VARIANTS below: Talent Acquisition = "for selection"
+// (fit-score outcome), Talent Management = "for development" (course outcome).
+const SERVICES: ReadonlyArray<{ key: ServiceKey; href: string; icon: typeof Compass; tone: Tone; pillars: Pillar[] }> = [
+  // ── Dual-purpose diagnostics (lead both columns, same order on each side):
+  //    each serves selection (Talent Acquisition) and development (Talent Management). ──
+  { key: "ac", href: "/admin", icon: ClipboardCheck, tone: "blue", pillars: ["acquire", "manage"] },
+  { key: "ara", href: "/ara", icon: Compass, tone: "violet", pillars: ["acquire", "manage"] },
+  { key: "technical", href: "/admin/tech-sandbox", icon: BadgeCheck, tone: "indigo", pillars: ["acquire", "manage"] },
+  // Cognitive (aptitude) + Persona (the 38-competency behavioural self-assessment,
+  // the "self" view of readiness) - individual diagnostics, dual-purpose too.
+  { key: "cognitive", href: "/ac/psychometrics", icon: BrainCircuit, tone: "fuchsia", pillars: ["acquire", "manage"] },
+  { key: "persona", href: "/ac/psychometrics#persona", icon: Layers, tone: "fuchsia", pillars: ["acquire", "manage"] },
+  // ── Talent Acquisition only ──
   { key: "prehire", href: "/admin/prehire", icon: UserSearch, tone: "rose", pillars: ["acquire"] },
   { key: "fluent", href: "/ac/fluent", icon: Languages, tone: "gold", pillars: ["acquire"] },
-  { key: "technical", href: "/admin/tech-sandbox", icon: BadgeCheck, tone: "indigo", pillars: ["acquire"] },
-  // Psychometrics holds two instruments: Cognitive (aptitude) + Persona (the
-  // 38-competency behavioural self-assessment, the "self" view of readiness).
-  { key: "cognitive", href: "/ac/psychometrics", icon: BrainCircuit, tone: "fuchsia", pillars: ["acquire"], group: "psychometrics" },
-  { key: "persona", href: "/ac/psychometrics#persona", icon: Layers, tone: "fuchsia", pillars: ["acquire"], group: "psychometrics" },
-  // ── Talent Management ──
+  // ── Talent Management only ──
   { key: "reflect", href: "/reflect", icon: Aperture, tone: "teal", pillars: ["manage"] },
   // Succession Readiness fuses Persona (self) + a Reflect 360 (others) vs a role.
   { key: "readiness", href: "/admin/readiness", icon: TrendingUp, tone: "amber", pillars: ["manage"] },
-  { key: "ara", href: "/ara", icon: Compass, tone: "violet", pillars: ["manage"] },
-  { key: "ac", href: "/admin", icon: ClipboardCheck, tone: "blue", pillars: ["manage"] },
   { key: "academy", href: "/courses", icon: GraduationCap, tone: "emerald", pillars: ["manage"] },
 ];
+
+// Per-pillar copy overrides for the dual-purpose services. The base copy in
+// T[lang].services is used for the (default) acquire side where no override
+// exists; these refine name / tagline / outcome and add the selection vs
+// development badge. Selection => fit-score report; Development => VIFM Academy courses.
+type Variant = { name?: string; tagline?: string; description?: string; tooltip?: string; badge?: string };
+const VARIANTS: Record<Lang, Partial<Record<ServiceKey, Partial<Record<Pillar, Variant>>>>> = {
+  en: {
+    ac: {
+      acquire: {
+        name: "Assessment Center", tagline: "Competency assessment · selection", badge: "For Selection",
+        description: "Observe behaviour across exercises and reach scoring consensus - a competency fit-score for hiring and promotion decisions.",
+        tooltip: "Selection use: a defensible competency fit-score for hiring and promotion.",
+      },
+      manage: {
+        name: "Development Center", tagline: "Competency development · development", badge: "For Development",
+        description: "The same framework run developmentally - strengths and gaps become a personal plan and matched VIFM Academy courses.",
+        tooltip: "Development use: strengths, gaps and a course-mapped development plan.",
+      },
+    },
+    ara: {
+      acquire: {
+        name: "AI Readiness", tagline: "AR Compass · selection", badge: "For Selection",
+        description: "Screen people for AI readiness and get a fit-score report - how ready each person is to work with AI, for selection.",
+        tooltip: "Selection use: an AI-readiness fit-score to rank and place people.",
+      },
+      manage: {
+        name: "AI Readiness", tagline: "AR Compass · development", badge: "For Development",
+        description: "Diagnose AI-readiness gaps and turn them into matched VIFM Academy courses that build the capability.",
+        tooltip: "Development use: readiness gaps mapped to AI-capability courses.",
+      },
+    },
+    technical: {
+      acquire: {
+        name: "Technical Assessment", tagline: "Technical proficiency · selection", badge: "For Selection",
+        description: "Hands-on, function-specific tasks graded against master answers - a technical fit-score for shortlisting and selection.",
+        tooltip: "Selection use: a hands-on technical fit-score for shortlisting.",
+      },
+      manage: {
+        name: "Technical Assessment", tagline: "Technical proficiency · development", badge: "For Development",
+        description: "The same hands-on tasks run developmentally - results map to VIFM Academy courses that close each skill gap.",
+        tooltip: "Development use: skill gaps mapped to technical courses.",
+      },
+    },
+    cognitive: {
+      acquire: {
+        tagline: "Cognitive ability · selection", badge: "For Selection",
+        description: "Numerical, verbal and abstract reasoning - an aptitude fit signal to screen and shortlist candidates.",
+        tooltip: "Selection use: a foundational aptitude signal for screening.",
+      },
+      manage: {
+        tagline: "Cognitive ability · development", badge: "For Development",
+        description: "Reasoning strengths and gaps that point each person toward the right stretch work and VIFM Academy courses.",
+        tooltip: "Development use: a reasoning profile to guide growth and learning.",
+      },
+    },
+    persona: {
+      acquire: {
+        tagline: "Behavioural self-assessment · selection", badge: "For Selection",
+        description: "Self-ratings across the 38 competencies - a behavioural fit signal alongside the rest of the screen.",
+        tooltip: "Selection use: a behavioural self-view to complement screening.",
+      },
+      manage: {
+        tagline: "Behavioural self-assessment · development", badge: "For Development",
+        description: "Self-insight across the 38 competencies - development areas become a plan and matched VIFM Academy courses.",
+        tooltip: "Development use: self-insight feeding a development plan.",
+      },
+    },
+  },
+  ar: {
+    ac: {
+      acquire: {
+        name: "مركز التقييم", tagline: "تقييم الكفاءات · للاختيار", badge: "للاختيار",
+        description: "لاحِظ السلوك عبر التمارين وتوصّل إلى توافق في التقييم - درجة ملاءمة كفاءات لقرارات التوظيف والترقية.",
+        tooltip: "للاختيار: درجة ملاءمة كفاءات موثوقة للتوظيف والترقية.",
+      },
+      manage: {
+        name: "مركز التطوير", tagline: "تطوير الكفاءات · للتطوير", badge: "للتطوير",
+        description: "الإطار نفسه بهدف التطوير - تتحوّل نقاط القوة والفجوات إلى خطة فردية ودورات من أكاديمية VIFM.",
+        tooltip: "للتطوير: نقاط قوة وفجوات وخطة تطوير مرتبطة بالدورات.",
+      },
+    },
+    ara: {
+      acquire: {
+        name: "الجاهزية للذكاء الاصطناعي", tagline: "بوصلة الجاهزية · للاختيار", badge: "للاختيار",
+        description: "افحص جاهزية الأفراد للذكاء الاصطناعي واحصل على تقرير درجة ملاءمة - مدى جاهزية كل شخص للعمل مع الذكاء الاصطناعي، للاختيار.",
+        tooltip: "للاختيار: درجة ملاءمة لجاهزية الذكاء الاصطناعي لترتيب الأفراد.",
+      },
+      manage: {
+        name: "الجاهزية للذكاء الاصطناعي", tagline: "بوصلة الجاهزية · للتطوير", badge: "للتطوير",
+        description: "شخّص فجوات الجاهزية للذكاء الاصطناعي وحوّلها إلى دورات من أكاديمية VIFM تبني القدرة.",
+        tooltip: "للتطوير: فجوات مرتبطة بدورات بناء قدرات الذكاء الاصطناعي.",
+      },
+    },
+    technical: {
+      acquire: {
+        name: "التقييم التقني", tagline: "الكفاءة التقنية · للاختيار", badge: "للاختيار",
+        description: "مهام عملية خاصة بالوظيفة تُصحَّح وفق إجابات نموذجية - درجة ملاءمة تقنية للفرز والاختيار.",
+        tooltip: "للاختيار: درجة ملاءمة تقنية عملية للفرز.",
+      },
+      manage: {
+        name: "التقييم التقني", tagline: "الكفاءة التقنية · للتطوير", badge: "للتطوير",
+        description: "المهام العملية نفسها بهدف التطوير - تُربط النتائج بدورات من أكاديمية VIFM تعالج كل فجوة مهارة.",
+        tooltip: "للتطوير: فجوات المهارات مرتبطة بالدورات التقنية.",
+      },
+    },
+    cognitive: {
+      acquire: {
+        tagline: "القدرة الذهنية · للاختيار", badge: "للاختيار",
+        description: "الاستدلال العددي واللفظي والمجرّد - إشارة ملاءمة للقدرات لفرز المرشّحين وإعداد القائمة المختصرة.",
+        tooltip: "للاختيار: إشارة قدرات تأسيسية للفرز.",
+      },
+      manage: {
+        tagline: "القدرة الذهنية · للتطوير", badge: "للتطوير",
+        description: "نقاط القوة والفجوات في الاستدلال توجّه كل شخص نحو المهام التطويرية المناسبة ودورات أكاديمية VIFM.",
+        tooltip: "للتطوير: ملف استدلالي لتوجيه النمو والتعلّم.",
+      },
+    },
+    persona: {
+      acquire: {
+        tagline: "تقييم سلوكي ذاتي · للاختيار", badge: "للاختيار",
+        description: "تقييم ذاتي عبر الكفاءات الـ38 - إشارة ملاءمة سلوكية إلى جانب بقية الفرز.",
+        tooltip: "للاختيار: رؤية ذاتية سلوكية تكمّل الفرز.",
+      },
+      manage: {
+        tagline: "تقييم سلوكي ذاتي · للتطوير", badge: "للتطوير",
+        description: "رؤية ذاتية عبر الكفاءات الـ38 - تتحوّل مجالات التطوير إلى خطة ودورات من أكاديمية VIFM.",
+        tooltip: "للتطوير: رؤية ذاتية تغذّي خطة التطوير.",
+      },
+    },
+  },
+};
 
 const T = {
   en: {
@@ -72,7 +206,6 @@ const T = {
     },
     servicesHeading: "Start with a diagnosis",
     servicesSub: "Two solution families cover the full talent lifecycle — pick where to focus, and the platform takes it from diagnosis to development.",
-    psychometricsGroup: "Psychometrics",
     pillars: {
       acquire: { title: "Talent Acquisition Solutions", sub: "Assess the people you bring in — screen, place, and select with defensible, bilingual instruments." },
       manage: { title: "Talent Management Solutions", sub: "Grow the people you have — develop, benchmark, and certify across the organisation." },
@@ -125,7 +258,6 @@ const T = {
     },
     servicesHeading: "ابدأ بالتشخيص",
     servicesSub: "عائلتا حلول تغطّيان دورة المواهب الكاملة — اختر أين تركّز، وتتولّى المنصّة الباقي من التشخيص إلى التطوير.",
-    psychometricsGroup: "القياس النفسي",
     pillars: {
       acquire: { title: "حلول استقطاب المواهب", sub: "قيّم من تستقطبهم — فرز وتحديد مستوى واختيار بأدوات موثوقة وثنائية اللغة." },
       manage: { title: "حلول إدارة المواهب", sub: "طوّر من لديك — تطوير ومقارنة مرجعية واعتماد على مستوى المؤسسة." },
@@ -174,20 +306,39 @@ export function PlatformLanding() {
   const Arrow = rtl ? ArrowLeft : ArrowRight;
 
   // One launcher card. Shared by the flat tiles and the Psychometrics cluster.
-  const renderCard = (svc: (typeof SERVICES)[number]) => {
+  // `pillar` lets a dual-purpose service show selection vs development copy.
+  const renderCard = (svc: (typeof SERVICES)[number], pillar: Pillar) => {
     const Icon = svc.icon;
-    const copy = t.services[svc.key];
+    const variant = VARIANTS[lang]?.[svc.key]?.[pillar];
+    const copy = { ...t.services[svc.key], ...variant };
+    const badge = variant?.badge;
+    // Icon / card accent colour is keyed to the PILLAR, not the service, so the
+    // two solution families read as two colours at a glance: blue = Talent
+    // Acquisition (selection), emerald = Talent Management (development). Matches
+    // the For Selection / For Development badges.
+    const tone = pillar === "acquire" ? "blue" : "emerald";
+    const badgeClass =
+      pillar === "acquire"
+        ? "border-accent/30 bg-accent/10 text-accent"
+        : "border-emerald-300/60 bg-emerald-50 text-emerald-700";
     return (
       <Tooltip key={svc.key}>
         <TooltipTrigger asChild>
           <Link href={svc.href} className="block">
-            <div className={`launcher-card tone-${svc.tone} flex items-center gap-4 p-4`}>
+            <div className={`launcher-card tone-${tone} flex items-center gap-4 p-4`}>
               <div className="launcher-card-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-xl">
                 <Icon className="h-6 w-6" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="ara-eyebrow">{copy.tagline}</div>
-                <h4 className="text-base font-semibold text-primary">{copy.name}</h4>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h4 className="text-base font-semibold text-primary">{copy.name}</h4>
+                  {badge && (
+                    <span className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${badgeClass}`}>
+                      {badge}
+                    </span>
+                  )}
+                </div>
                 <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-muted-foreground">{copy.description}</p>
               </div>
               <div className="launcher-card-cta shrink-0 self-center">
@@ -284,9 +435,13 @@ export function PlatformLanding() {
           <p className="mt-1 max-w-3xl text-sm text-muted-foreground">{t.servicesSub}</p>
 
           <TooltipProvider delayDuration={200}>
-            <div className="mt-6 grid items-start gap-x-8 gap-y-10 lg:grid-cols-2">
+            {/* Two-row subgrid: both pillar headers share row 1 (so they equalise
+                height regardless of how the sub-text wraps) and both tile stacks
+                share row 2 - keeping the columns aligned. Each column still nests
+                its own header + tiles, so it stacks correctly on mobile. */}
+            <div className="mt-6 grid gap-x-8 gap-y-10 lg:grid-cols-2 lg:grid-rows-[auto_1fr] lg:gap-y-0">
               {(["acquire", "manage"] as const).map((pillar) => (
-                <div key={pillar}>
+                <div key={pillar} className="lg:row-span-2 lg:grid lg:grid-rows-subgrid">
                   {/* Big pillar heading (the two solution families) */}
                   <div className="border-b-2 border-accent/30 pb-2.5">
                     <h3 className="ara-numeral whitespace-nowrap text-[1.45rem] font-extrabold uppercase leading-tight tracking-tight text-accent sm:text-[1.6rem]">
@@ -295,25 +450,9 @@ export function PlatformLanding() {
                     <p className="mt-1 text-xs text-muted-foreground">{t.pillars[pillar].sub}</p>
                   </div>
 
-                  {/* Services stacked underneath. Flat tiles first, then the
-                      Psychometrics cluster (Cognitive + Persona under one header). */}
+                  {/* Services stacked underneath - each instrument its own card. */}
                   <div className="mt-4 space-y-3">
-                    {SERVICES.filter((s) => s.pillars.includes(pillar) && !s.group).map(renderCard)}
-                    {(() => {
-                      const psy = SERVICES.filter((s) => s.pillars.includes(pillar) && s.group === "psychometrics");
-                      if (psy.length === 0) return null;
-                      return (
-                        <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-3">
-                          <div className="mb-2 flex items-center gap-2 px-1">
-                            <BrainCircuit className="h-4 w-4 text-[#c026d3]" />
-                            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                              {t.psychometricsGroup}
-                            </span>
-                          </div>
-                          <div className="space-y-3">{psy.map(renderCard)}</div>
-                        </div>
-                      );
-                    })()}
+                    {SERVICES.filter((s) => s.pillars.includes(pillar)).map((svc) => renderCard(svc, pillar))}
                   </div>
                 </div>
               ))}

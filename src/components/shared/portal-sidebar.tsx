@@ -70,9 +70,27 @@ const NAV: NavEntry[] = [
       key: "acquire",
       label: "Talent Acquisition",
       icon: UserPlus,
+      // Every service used FOR SELECTION. The three dual-purpose diagnostics
+      // (Assessment Center, AI Readiness, Technical Assessment) lead - they also
+      // appear under Talent Management for development, mirroring the landing.
       items: [
-        link("/admin/prehire", "adminNav.preHire", UserSearch),
-        link("/ac/fluent", "adminNav.fluent", Languages),
+        {
+          kind: "group",
+          group: {
+            key: "ac-acq",
+            label: "Assessment Center",
+            icon: ClipboardCheck,
+            items: [
+              link("/admin", "adminNav.dashboard", LayoutDashboard, true),
+              link("/admin/engagements", "adminNav.projects", ClipboardList),
+              link("/admin/exercises", "adminNav.exercises", Target),
+              link("/admin/assessors", "adminNav.assessors", Users),
+              link("/admin/analytics", "adminNav.analytics", BarChart3),
+              link("/admin/ac-evidence", "adminNav.acEvidence", ShieldCheck),
+            ],
+          },
+        },
+        link("/ara", "adminNav.aiReadiness", Sparkles),
         {
           kind: "group",
           group: {
@@ -86,19 +104,10 @@ const NAV: NavEntry[] = [
             ],
           },
         },
-        {
-          kind: "group",
-          group: {
-            key: "psychometrics",
-            label: "Psychometrics",
-            icon: BrainCircuit,
-            items: [
-              link("/ac/psychometrics", "adminNav.psyCognitive", BrainCircuit, true),
-              link("/ac/psychometrics#persona", "adminNav.psyPersona", Layers),
-              link("/admin/psychometrics", "adminNav.psychometricsBank", ListChecks),
-            ],
-          },
-        },
+        link("/ac/psychometrics", "adminNav.psyCognitive", BrainCircuit, true),
+        link("/ac/psychometrics#persona", "adminNav.psyPersona", Layers),
+        link("/admin/prehire", "adminNav.preHire", UserSearch),
+        link("/ac/fluent", "adminNav.fluent", Languages),
       ],
     },
   },
@@ -108,12 +117,15 @@ const NAV: NavEntry[] = [
       key: "manage",
       label: "Talent Management",
       icon: Sprout,
+      // Every service used FOR DEVELOPMENT. The three dual-purpose diagnostics
+      // lead here too (Assessment Center shown as "Development Center"), then the
+      // development-only services.
       items: [
         {
           kind: "group",
           group: {
             key: "ac",
-            label: "Assessment Center",
+            label: "Development Center",
             icon: ClipboardCheck,
             items: [
               link("/admin", "adminNav.dashboard", LayoutDashboard, true),
@@ -125,6 +137,22 @@ const NAV: NavEntry[] = [
             ],
           },
         },
+        link("/ara", "adminNav.aiReadiness", Sparkles),
+        {
+          kind: "group",
+          group: {
+            key: "technical-mng",
+            label: "Technical Assessment",
+            icon: BadgeCheck,
+            items: [
+              link("/admin/tech-sandbox", "adminNav.techOverview", LayoutDashboard, true),
+              link("/admin/vouchers?service=technical", "adminNav.techVouchers", Award),
+              link("/admin/tech-sandbox/answers", "adminNav.techAnswers", ListChecks),
+            ],
+          },
+        },
+        link("/ac/psychometrics", "adminNav.psyCognitive", BrainCircuit, true),
+        link("/ac/psychometrics#persona", "adminNav.psyPersona", Layers),
         link("/reflect", "adminNav.reflect360", Aperture),
         {
           kind: "group",
@@ -138,7 +166,6 @@ const NAV: NavEntry[] = [
             ],
           },
         },
-        link("/ara", "adminNav.aiReadiness", Sparkles),
         link("/admin/courses", "adminNav.academy", GraduationCap),
       ],
     },
@@ -154,15 +181,36 @@ const NAV: NavEntry[] = [
         link("/admin/role-profiles", "adminNav.roleProfiles", Briefcase),
         link("/admin/vouchers", "adminNav.vouchers", Ticket),
         link("/admin/evidence-map", "adminNav.evidenceMap", FlaskConical),
+        link("/admin/psychometrics", "adminNav.psychometricsBank", ListChecks),
       ],
     },
   },
   link("/admin/settings", "adminNav.settings", Settings),
 ];
 
-/** All leaf links, flattened depth-first — for the collapsed icon rail. */
+/**
+ * All leaf links, flattened depth-first and de-duped by href — for the collapsed
+ * icon rail. Dual-purpose services (e.g. /admin, /ara, /admin/tech-sandbox) are
+ * listed under both pillars, so the rail would otherwise show duplicate icons /
+ * collide on the React key.
+ */
 function collectLeaves(entries: NavEntry[]): NavLeaf[] {
-  return entries.flatMap((e) => (e.kind === "link" ? [e.link] : collectLeaves(e.group.items)));
+  const seen = new Set<string>();
+  const out: NavLeaf[] = [];
+  const walk = (es: NavEntry[]) => {
+    for (const e of es) {
+      if (e.kind === "link") {
+        if (!seen.has(e.link.href)) {
+          seen.add(e.link.href);
+          out.push(e.link);
+        }
+      } else {
+        walk(e.group.items);
+      }
+    }
+  };
+  walk(entries);
+  return out;
 }
 
 /**
@@ -179,8 +227,26 @@ export function SidebarBody({
 }) {
   const pathname = usePathname();
   const { t } = useTranslation();
-  const [open, setOpen] = useState<Record<string, boolean>>({
-    acquire: true, manage: true, ac: true, technical: true, psychometrics: true, readiness: true, platform: true,
+  // Pillars + Platform open by default; the nested service groups collapse so
+  // each pillar reads as a clean list of services. The group containing the
+  // current route auto-expands so the active page stays visible.
+  const [open, setOpen] = useState<Record<string, boolean>>(() => {
+    const st: Record<string, boolean> = {
+      acquire: true, manage: true, platform: true,
+      "ac-acq": false, ac: false, technical: false, "technical-mng": false, readiness: false,
+    };
+    const openActive = (entries: NavEntry[]) => {
+      for (const e of entries) {
+        if (e.kind !== "group") continue;
+        const hasActiveLeaf = e.group.items.some(
+          (it) => it.kind === "link" && (it.link.exact ? pathname === it.link.href : pathname.startsWith(it.link.href)),
+        );
+        if (hasActiveLeaf) st[e.group.key] = true;
+        openActive(e.group.items);
+      }
+    };
+    openActive(NAV);
+    return st;
   });
 
   // The signed-in user, for the footer identity.

@@ -42,6 +42,7 @@ import {
   FlaskConical,
   TrendingUp,
   SlidersHorizontal,
+  Ticket,
   type LucideIcon,
 } from "lucide-react";
 
@@ -80,7 +81,7 @@ const NAV: NavEntry[] = [
             icon: BadgeCheck,
             items: [
               link("/admin/tech-sandbox", "adminNav.techOverview", LayoutDashboard, true),
-              link("/admin/tech-sandbox/vouchers", "adminNav.techVouchers", Award),
+              link("/admin/vouchers?service=technical", "adminNav.techVouchers", Award),
               link("/admin/tech-sandbox/answers", "adminNav.techAnswers", ListChecks),
             ],
           },
@@ -151,6 +152,7 @@ const NAV: NavEntry[] = [
       items: [
         link("/admin/clients", "adminNav.clients", Building2),
         link("/admin/role-profiles", "adminNav.roleProfiles", Briefcase),
+        link("/admin/vouchers", "adminNav.vouchers", Ticket),
         link("/admin/evidence-map", "adminNav.evidenceMap", FlaskConical),
       ],
     },

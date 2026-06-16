@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Ticket } from "lucide-react";
 import { PsychometricsClient, type EngagementOption } from "./_components/psychometrics-client";
 import { AllServicesLink } from "@/components/shared/all-services-link";
 import { BackLink } from "@/components/shared/back-link";
@@ -5,7 +7,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-/** Engagements (with their candidates) for the Persona candidate picker. */
+/** Engagements (with their candidates) for the optional candidate binding. */
 async function loadEngagementOptions(): Promise<EngagementOption[]> {
   try {
     const sb = createServiceClient();
@@ -28,13 +30,12 @@ async function loadEngagementOptions(): Promise<EngagementOption[]> {
 }
 
 /**
- * Psychometrics runner (Tier 1 indicative) — cognitive ability. The behavioural
- * instrument is Persona (the 38-competency self-assessment), launched from here.
- * Self-served; an admin can bind a result to a candidate/engagement via
- * ?candidateId=…&engagementId=… (mirrors the Fluent runner), or pick a candidate
- * in the Persona card.
+ * Cognitive Ability runner (Tier 1 indicative) — numerical / verbal / abstract
+ * reasoning. A standalone service. Self-served; an admin can bind a result to a
+ * candidate/engagement via ?candidateId=…&engagementId=… (mirrors Fluent) or the
+ * inline picker.
  */
-export default async function PsychometricsPage({
+export default async function CognitivePage({
   searchParams,
 }: {
   searchParams?: { candidateId?: string; engagementId?: string };
@@ -43,7 +44,13 @@ export default async function PsychometricsPage({
   return (
     <div className="mx-auto max-w-3xl px-6 py-8">
       <BackLink href="/" label="Back" history />
-      <div className="mb-4 flex justify-end">
+      <div className="mb-4 flex items-center justify-end gap-2">
+        <Link
+          href="/ac/cognitive/vouchers"
+          className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted"
+        >
+          <Ticket className="h-3.5 w-3.5" /> Vouchers
+        </Link>
         <AllServicesLink />
       </div>
       <PsychometricsClient

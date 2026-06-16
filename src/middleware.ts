@@ -59,6 +59,14 @@ const isFluentPublicRoute = (pathname: string) =>
   pathname === "/api/ac/fluent/tts" ||
   (pathname.startsWith("/api/ac/fluent/") && pathname.endsWith("/certificate"));
 
+// Cognitive voucher delegate flow - same pattern as Fluent: redeem page,
+// token-gated runner, start/score API, and the result-report PDF.
+const isCognitivePublicRoute = (pathname: string) =>
+  pathname === "/ac/cognitive/redeem" ||
+  pathname.startsWith("/ac/cognitive/take/") ||
+  pathname === "/api/ac/cognitive" ||
+  (pathname.startsWith("/api/ac/cognitive/") && pathname.endsWith("/report"));
+
 export async function middleware(request: NextRequest) {
   if (
     isAraRespondentRoute(request.nextUrl.pathname) ||
@@ -68,7 +76,8 @@ export async function middleware(request: NextRequest) {
     isPublicVerifyRoute(request.nextUrl.pathname) ||
     isPreHireApplyRoute(request.nextUrl.pathname) ||
     isTechSandboxRoute(request.nextUrl.pathname) ||
-    isFluentPublicRoute(request.nextUrl.pathname)
+    isFluentPublicRoute(request.nextUrl.pathname) ||
+    isCognitivePublicRoute(request.nextUrl.pathname)
   ) {
     return NextResponse.next();
   }

@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { BrainCircuit, Sparkles, Loader2, CheckCircle2, RotateCcw, AlertTriangle, Download, Layers, ArrowRight } from "lucide-react";
+import { BrainCircuit, Sparkles, Loader2, CheckCircle2, RotateCcw, AlertTriangle, Download } from "lucide-react";
 import type { PsyTestPublic, PsyResult, ScaleScore } from "@/lib/psychometrics/scoring";
 import { COGNITIVE_SUBTESTS } from "@/lib/psychometrics/framework";
 
@@ -28,21 +27,21 @@ const scaleDesc = (key: string): string =>
   COGNITIVE_SUBTESTS.find((s) => s.key === key)?.desc_en ?? "";
 
 export function PsychometricsClient({
-  candidateId, engagementId, engagements = [],
+  candidateId, engagementId, engagements = [], redemptionToken = null, prefillName,
 }: {
   candidateId: string | null;
   engagementId: string | null;
   engagements?: EngagementOption[];
+  /** Voucher redemption token (delegate flow); stamps the result with the client org. */
+  redemptionToken?: string | null;
+  prefillName?: string;
 }) {
   const [phase, setPhase] = useState<"intro" | "test" | "result">("intro");
   const [lang, setLang] = useState<Lang>("en");
-  // Persona candidate picker (when no candidate came in via the URL).
-  const [pickEng, setPickEng] = useState("");
-  const [pickCand, setPickCand] = useState("");
-  // Cognitive candidate picker - optional binding (mirrors Persona). Blank = anonymous.
+  // Cognitive candidate picker - optional binding. Blank = anonymous.
   const [cogEng, setCogEng] = useState("");
   const [cogCand, setCogCand] = useState("");
-  const [takerName, setTakerName] = useState("");
+  const [takerName, setTakerName] = useState(prefillName ?? "");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [test, setTest] = useState<PsyTestPublic | null>(null);
   const [answers, setAnswers] = useState<Record<string, number>>({});
@@ -57,7 +56,7 @@ export function PsychometricsClient({
       // URL binding wins; otherwise honour the optional candidate picker (blank = anonymous).
       const boundCandidateId = candidateId ?? (cogCand || null);
       const boundEngagementId = engagementId ?? (cogEng || null);
-      const res = await fetch("/api/ac/psychometrics", {
+      const res = await fetch("/api/ac/cognitive", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "start", language: lang, candidateId: boundCandidateId, engagementId: boundEngagementId, takerEmail: null }),
       });
@@ -71,9 +70,9 @@ export function PsychometricsClient({
     if (!test || !sessionId) return;
     setBusy(true); setError("");
     try {
-      const res = await fetch("/api/ac/psychometrics", {
+      const res = await fetch("/api/ac/cognitive", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "score", session_id: sessionId, answers, takerName: takerName.trim() || null, language: lang }),
+        body: JSON.stringify({ action: "score", session_id: sessionId, answers, takerName: takerName.trim() || null, language: lang, redemptionToken }),
       });
       const d = await res.json();
       if (!res.ok || !d.result) { setError(d.error || "Could not score."); return; }
@@ -91,18 +90,17 @@ export function PsychometricsClient({
     <div dir={lang === "ar" ? "rtl" : "ltr"} className="space-y-5">
       <div>
         <h1 className="inline-flex items-center gap-2 text-2xl font-bold text-[#010131]">
-          <BrainCircuit className="h-6 w-6 text-[#5391D5]" /> Psychometrics
+          <BrainCircuit className="h-6 w-6 text-[#5391D5]" /> Cognitive Ability
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Cognitive ability — <strong>indicative</strong> developmental insight, not a norm-referenced or high-stakes score.
-          The behavioural instrument is <strong>Persona</strong> (the 38-competency self-assessment).
+          Numerical, verbal and abstract reasoning — an <strong>indicative</strong> developmental read,
+          not a norm-referenced or high-stakes score.
         </p>
       </div>
 
       {error && <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
 
       {phase === "intro" && (
-        <>
         <div className="space-y-5 rounded-xl border bg-card p-6">
           <div className="rounded-lg border border-[#5391D5] bg-[#5391D5]/5 p-4">
             <p className="font-semibold text-[#010131]">Cognitive ability</p>
@@ -167,86 +165,6 @@ export function PsychometricsClient({
             {busy ? "Preparing…" : "Begin cognitive assessment"}
           </button>
         </div>
-
-        {/* Persona - the behavioural competency self-assessment (38 competencies). */}
-        <div id="persona" className="scroll-mt-24 rounded-xl border bg-card p-6">
-          <div className="flex items-start gap-3">
-            <Layers className="mt-0.5 h-5 w-5 shrink-0 text-[#5391D5]" />
-            <div className="min-w-0">
-              <p className="font-semibold text-[#010131]">Persona — Behavioural Competency Self-Assessment</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Self-ratings across the 38 competencies (the same framework as the Reflect 360).
-              </p>
-            </div>
-          </div>
-
-          {/* Standalone run - just a name, exactly like the cognitive assessment. */}
-          <Link href="/ac/persona"
-            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#010131] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#121140]">
-            <Sparkles className="h-4 w-4" /> Begin Persona assessment
-          </Link>
-          <p className="mt-1.5 text-xs text-muted-foreground">Quick self-profile, no candidate needed.</p>
-
-          {/* Candidate-bound run - feeds Succession Readiness. */}
-          <div className="mt-5 border-t pt-4">
-            <p className="text-xs font-medium text-[#010131]">Or run for a specific candidate</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Records against the candidate and feeds the Succession Readiness engine as the &ldquo;self&rdquo; view.
-            </p>
-            {candidateId ? (
-              <Link href={`/candidate/behavioral/${candidateId}`}
-                className="mt-3 inline-flex items-center gap-2 rounded-lg border border-[#010131] px-5 py-2.5 text-sm font-semibold text-[#010131] hover:bg-slate-50">
-                Open Persona for this candidate <ArrowRight className="h-4 w-4" />
-              </Link>
-            ) : engagements.length === 0 ? (
-              <p className="mt-3 text-xs text-amber-600">No candidates found. Add candidates to an engagement first.</p>
-            ) : (
-              <div className="mt-3 space-y-3">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="text-sm">
-                    <span className="text-xs font-medium text-slate-500">Engagement</span>
-                    <select
-                      value={pickEng}
-                      onChange={(e) => { setPickEng(e.target.value); setPickCand(""); }}
-                      className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-                    >
-                      <option value="">Select an engagement…</option>
-                      {engagements.map((e) => (
-                        <option key={e.id} value={e.id}>{e.name} ({e.candidates.length})</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="text-sm">
-                    <span className="text-xs font-medium text-slate-500">Candidate</span>
-                    <select
-                      value={pickCand}
-                      onChange={(e) => setPickCand(e.target.value)}
-                      disabled={!pickEng}
-                      className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400"
-                    >
-                      <option value="">{pickEng ? "Select a candidate…" : "Choose an engagement first"}</option>
-                      {(engagements.find((e) => e.id === pickEng)?.candidates ?? []).map((c) => (
-                        <option key={c.id} value={c.id}>{c.full_name}</option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-                {pickCand ? (
-                  <Link href={`/candidate/behavioral/${pickCand}`}
-                    className="inline-flex items-center gap-2 rounded-lg border border-[#010131] px-5 py-2.5 text-sm font-semibold text-[#010131] hover:bg-slate-50">
-                    Open Persona for this candidate <ArrowRight className="h-4 w-4" />
-                  </Link>
-                ) : (
-                  <button disabled
-                    className="inline-flex items-center gap-2 rounded-lg bg-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-400">
-                    Open Persona <ArrowRight className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-        </>
       )}
 
       {phase === "test" && test && (
@@ -345,7 +263,7 @@ export function PsychometricsClient({
             </button>
             {resultId && (
               <a
-                href={`/api/ac/psychometrics/${resultId}/report`}
+                href={`/api/ac/cognitive/${resultId}/report`}
                 className="inline-flex items-center gap-2 rounded-md bg-[#010131] px-4 py-2 text-sm font-medium text-white hover:bg-[#1e1b4b]"
               >
                 <Download className="h-4 w-4" /> Download report (PDF)

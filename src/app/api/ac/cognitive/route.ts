@@ -109,6 +109,28 @@ export async function POST(req: Request) {
       await svc.from("psy_item_responses").insert(rows);
     }
 
+    // Voucher delegate flow: stamp the result with the client org + the
+    // redemption (best-effort; no-ops until migration 00105 is applied).
+    if (resRow && typeof body.redemptionToken === "string" && body.redemptionToken.trim()) {
+      try {
+        const token = body.redemptionToken.trim();
+        const { data: redemption } = await svc
+          .from("cognitive_voucher_redemptions")
+          .select("id, organization_id")
+          .eq("redemption_token", token)
+          .maybeSingle<{ id: string; organization_id: string | null }>();
+        if (redemption) {
+          await svc
+            .from("psy_results")
+            .update({ organization_id: redemption.organization_id, voucher_redemption_id: redemption.id })
+            .eq("id", resRow.id);
+          await svc.from("cognitive_voucher_redemptions").update({ result_id: resRow.id }).eq("id", redemption.id);
+        }
+      } catch {
+        /* voucher tables not migrated - ignore */
+      }
+    }
+
     await svc.from("psy_sessions").update({ consumed: true }).eq("id", sessionId);
     return NextResponse.json({ result: finalResult, result_id: resRow?.id ?? null });
   }

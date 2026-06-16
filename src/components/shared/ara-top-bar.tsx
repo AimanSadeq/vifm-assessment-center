@@ -36,10 +36,10 @@ export async function AraTopBar({
         </div>
 
         <Link
-          href="/admin"
+          href="/ara"
           className="text-xs text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
         >
-          {t("araNav.assessmentCenter")} <ArrowRight className="h-3 w-3" />
+          {t("araNav.compass")} <ArrowRight className="h-3 w-3" />
         </Link>
       </div>
     </header>

@@ -1,9 +1,13 @@
 # Authentication & Authorization - Implementation Guide
 
-## Current State (Development)
+## Current State (Auth ENABLED)
 
 Auth is gated by one flag: `AUTH_ENABLED` in `src/lib/auth/config.ts` (currently
-`false`), consumed by `src/middleware.ts` and `src/lib/ara/auth-guards.ts`.
+`true` - enabled 2026-06-13, commit `1092c28`), consumed by `src/middleware.ts`
+and `src/lib/ara/auth-guards.ts`. Unauthenticated requests to non-public routes
+redirect to `/login` (verified: `/admin/*`, `/candidate/*` → `/login`); the
+token-gated routes below and `/login` stay open, and the demo quick-login
+dropdown is hidden outside development.
 
 - **Middleware:** while `AUTH_ENABLED` is `false`, `src/middleware.ts` lets every
   request through without a session; when `true`, it enforces auth via
@@ -28,13 +32,14 @@ session → `anon` → every read denied. Log in via a demo account to get a ses
 
 ## Production Checklist
 
-### Step 1: Flip the auth gate
-1. Set `AUTH_ENABLED = true` in `src/lib/auth/config.ts`. Middleware already
-   enforces via `updateSession(request)` and the login form already uses
-   `signInWithPassword()`, so no other code change is needed for the switch.
-2. Provision **real** users + matching `profiles` rows (demo accounts are dev-only).
-3. Gate or remove the quick-login demo dropdown in production builds
-   (e.g. `process.env.NODE_ENV === "development"`).
+### Step 1: Flip the auth gate - DONE (2026-06-13, commit `1092c28`)
+1. `AUTH_ENABLED = true` is set; middleware enforces via `updateSession(request)`
+   and the login form uses `signInWithPassword()`. ✅
+2. Provision **real** users + matching `profiles` rows - run `scripts/create-admin.ts`
+   (defaults to ahmad.rashid@viftraining.com; override via `ADMIN_EMAIL`/`ADMIN_NAME`).
+   Demo accounts are dev-only; **rotate or disable** the `admin123` demo credential
+   in production.
+3. The quick-login demo dropdown is hidden outside development. ✅
 
 ### Step 2: Audit data-access clients (largely done)
 Page reads already use the RLS-aware `createClient()`. The remaining work is an

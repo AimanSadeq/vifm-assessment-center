@@ -214,6 +214,16 @@ export async function markAraRespondentComplete(token: string): Promise<void> {
     (a?.include_individual_layer === true);
 
   if (personalEmailApplies) {
+    // Issue the verifiable AI Readiness credential (best-effort, idempotent on
+    // the respondent). No-ops cleanly until migration 00102 widens the
+    // credential_type whitelist.
+    try {
+      const { issueAraReadinessCredential } = await import("@/lib/ara/readiness-credential");
+      await issueAraReadinessCredential(token);
+    } catch (err) {
+      console.error("[markAraRespondentComplete] AI Readiness credential issue failed:", err);
+    }
+
     try {
       const { sendAraEmail } = await import("@/lib/ara/email");
       const baseUrl =

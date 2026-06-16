@@ -148,10 +148,11 @@ export async function saveAraAnswer(input: z.infer<typeof saveAnswerSchema>): Pr
 
   if (error) return { ok: false, error: error.message };
 
-  // Fire-and-await scoring recalculation. Small number of pillars, should
-  // complete in <500ms; we await so the client can display updated totals
-  // on the next re-render if desired.
-  await recalculateAssessmentScores(respondent.assessment_id);
+  // NOTE: scores are recalculated ONCE at submit (markAraRespondentComplete),
+  // not on every auto-save. Per-save recalcs serialised several full
+  // recalculations into the final submit flush, which is the main reason Submit
+  // felt slow. Totals aren't shown to the respondent while answering, so
+  // deferring the recalc to submit is invisible to them and keeps saves fast.
 
   // Update last-active timestamp opportunistically
   await sb
@@ -187,6 +188,11 @@ export async function markAraRespondentComplete(token: string): Promise<void> {
     .from("ara_respondents")
     .update({ completed_at: now, last_active_at: now })
     .eq("id", respondent.id);
+
+  // Final score calculation runs once here (every answer is persisted by the
+  // submit flush) instead of on every auto-save - fast Submit, accurate scores.
+  await recalculateAssessmentScores(respondent.assessment_id);
+
   revalidatePath(`/ara/respond/${token}`);
 
   // Look up the assessment to decide which downstream notifications fire.

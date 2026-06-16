@@ -120,9 +120,12 @@ export function stripAnswerKey(test: FluentTest): PublicFluentTest {
 export type WritingScore = {
   cefr: CefrLevel;
   task_achievement: number; // 1–5
-  coherence: number; // 1–5
-  lexical_range: number; // 1–5
-  grammar: number; // 1–5
+  coherence: number; // 1–5 - coherence & cohesion (organisation)
+  lexical_range: number; // 1–5 - lexical resource (vocabulary use)
+  grammar: number; // 1–5 - grammatical range & accuracy
+  register: number; // 1–5 - business-like / professional tone fit
+  etiquette: number; // 1–5 - courtesy, politeness, cultural appropriateness
+  mechanics: number; // 1–5 - spelling & punctuation
   feedback_en: string;
   feedback_ar: string | null;
   ai_generated: boolean;
@@ -302,12 +305,12 @@ export async function generateFluentTest(input: {
   const user = [
     `Produce a short English placement test as JSON covering four skills.`,
     ``,
-    `READING: exactly 6 reading items on a difficulty ramp (two A2, two B1, one B2,`,
-    `one C1). Each = a 1–3 sentence passage + one question + four options (one correct).`,
+    `READING: exactly 10 reading items on a difficulty ramp (two A1, two A2, two B1,`,
+    `two B2, one C1, one C2). Each = a 1–3 sentence passage + one question + four options (one correct).`,
     ``,
-    `LISTENING: exactly 4 items on a ramp (one A2, two B1, one B2). Each "script" is`,
-    `1–2 sentences of natural SPOKEN English that will be read aloud to the candidate`,
-    `(they will NOT see the text), then one question + four options (one correct).`,
+    `LISTENING: exactly 10 items on a ramp (two A1, two A2, two B1, two B2, one C1, one C2).`,
+    `Each "script" is 1–2 sentences of natural SPOKEN English that will be read aloud to the`,
+    `candidate (they will NOT see the text), then one question + four options (one correct).`,
     `Keep scripts self-contained and answerable from a single hearing.`,
     ``,
     `WRITING: one task at B1–B2 - a realistic short workplace writing prompt`,
@@ -331,7 +334,7 @@ export async function generateFluentTest(input: {
   try {
     const res = await client.messages.create({
       model: AI_MODEL,
-      max_tokens: 3500,
+      max_tokens: 6000,
       system,
       messages: [{ role: "user", content: user }],
     });
@@ -377,7 +380,9 @@ export async function generateFluentTest(input: {
 
     const w = parsed.writing;
     const s = parsed.speaking;
-    if (reading.length < 3 || !w || typeof w.prompt_en !== "string") {
+    // Require a substantial reading set; if the model under-delivers, fall back
+    // to the static deck rather than serve a too-short test.
+    if (reading.length < 8 || !w || typeof w.prompt_en !== "string") {
       return FALLBACK_TEST;
     }
     const writing: WritingTask = {
@@ -475,6 +480,9 @@ export async function scoreFluentWriting(input: {
       coherence: 3,
       lexical_range: 3,
       grammar: 3,
+      register: 3,
+      etiquette: 3,
+      mechanics: 3,
       feedback_en:
         "AI scoring is disabled (no ANTHROPIC_API_KEY). This is a placeholder so the prototype renders. Wire the key for a real CEFR assessment of the writing.",
       feedback_ar: null,
@@ -484,12 +492,18 @@ export async function scoreFluentWriting(input: {
 
   const wantsAr = input.language === "ar";
   const system =
-    `You are a CEFR-certified English writing examiner. You score a candidate's ` +
-    `written response against the task on four criteria, each 1–5 (1 = far below, ` +
-    `5 = excellent for the level): Task Achievement, Coherence & Cohesion, Lexical ` +
-    `Resource, Grammatical Range & Accuracy. Then assign an overall CEFR level ` +
-    `(A1–C2) and give 2–3 sentences of specific, constructive feedback. Be fair but ` +
-    `rigorous; reward communication, not just accuracy. ` +
+    `You are a CEFR-certified English writing examiner for a GCC finance & management ` +
+    `institute. Score a candidate's written response against the task on SEVEN criteria, ` +
+    `each 1–5 (1 = far below, 5 = excellent for the level): ` +
+    `Task Achievement (does it fully address the prompt); ` +
+    `Coherence & Cohesion (organisation, logical flow, linking); ` +
+    `Lexical Resource (range and precision of vocabulary); ` +
+    `Grammatical Range & Accuracy; ` +
+    `Register (professional, business-like tone appropriate to a workplace email/message); ` +
+    `Etiquette (courtesy, politeness, appropriate greetings/closings, cultural sensitivity); ` +
+    `Mechanics (spelling and punctuation). ` +
+    `Then assign an overall CEFR level (A1–C2) and give 2–3 sentences of specific, ` +
+    `constructive feedback. Be fair but rigorous; reward communication, not just accuracy. ` +
     CEFR_ANCHORS;
 
   const user = [
@@ -504,6 +518,7 @@ export async function scoreFluentWriting(input: {
     `{`,
     `  "cefr":"B1",`,
     `  "task_achievement":<1-5>, "coherence":<1-5>, "lexical_range":<1-5>, "grammar":<1-5>,`,
+    `  "register":<1-5>, "etiquette":<1-5>, "mechanics":<1-5>,`,
     `  "feedback_en":"<2-3 sentences>",`,
     `  "feedback_ar":${wantsAr ? '"<same feedback in Modern Standard Arabic>"' : "null"}`,
     `}`,
@@ -527,6 +542,9 @@ export async function scoreFluentWriting(input: {
       coherence: clamp(p.coherence),
       lexical_range: clamp(p.lexical_range),
       grammar: clamp(p.grammar),
+      register: clamp(p.register),
+      etiquette: clamp(p.etiquette),
+      mechanics: clamp(p.mechanics),
       feedback_en: typeof p.feedback_en === "string" ? p.feedback_en.trim() : "No feedback produced.",
       feedback_ar: typeof p.feedback_ar === "string" && p.feedback_ar.trim() ? p.feedback_ar.trim() : null,
       ai_generated: true,
@@ -539,6 +557,9 @@ export async function scoreFluentWriting(input: {
       coherence: 3,
       lexical_range: 3,
       grammar: 3,
+      register: 3,
+      etiquette: 3,
+      mechanics: 3,
       feedback_en: "Scoring could not be completed automatically. Please try again.",
       feedback_ar: null,
       ai_generated: false,
@@ -667,6 +688,9 @@ export async function scoreFluentWritingEnsemble(input: {
     coherence: medianInt(runs.map((r) => r.coherence)),
     lexical_range: medianInt(runs.map((r) => r.lexical_range)),
     grammar: medianInt(runs.map((r) => r.grammar)),
+    register: medianInt(runs.map((r) => r.register)),
+    etiquette: medianInt(runs.map((r) => r.etiquette)),
+    mechanics: medianInt(runs.map((r) => r.mechanics)),
     feedback_en: pick.feedback_en,
     feedback_ar: pick.feedback_ar,
     ai_generated: runs.some((r) => r.ai_generated),

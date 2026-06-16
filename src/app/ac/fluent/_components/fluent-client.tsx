@@ -6,6 +6,7 @@ import {
   Headphones, Mic, Square, Play, Volume2, Award, AlertCircle,
 } from "lucide-react";
 import { startBrowserStt, type BrowserSttSession } from "@/lib/speech/browser-stt";
+import { FluentDefinitions } from "./fluent-definitions";
 
 type Language = "en" | "ar";
 type Cefr = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
@@ -28,6 +29,7 @@ type FluentTest = {
 };
 type WritingScore = {
   cefr: Cefr; task_achievement: number; coherence: number; lexical_range: number; grammar: number;
+  register: number; etiquette: number; mechanics: number;
   feedback_en: string; feedback_ar: string | null; ai_generated: boolean;
 };
 type SpeakingScore = {
@@ -56,7 +58,7 @@ const T = {
     range: "Indicative range", indicative: "short test, wide margin",
     readingScore: "Reading", listeningScore: "Listening", writingScore: "Writing", speakingScore: "Speaking",
     feedback: "Examiner feedback", startOver: "Start over", correct: "correct",
-    writeCrit: { task_achievement: "Task achievement", coherence: "Coherence & cohesion", lexical_range: "Lexical resource", grammar: "Grammar range & accuracy" },
+    writeCrit: { task_achievement: "Task achievement", coherence: "Coherence & cohesion", lexical_range: "Lexical resource", grammar: "Grammar range & accuracy", register: "Register (business-like)", etiquette: "Etiquette & courtesy", mechanics: "Spelling & punctuation" },
     speakCrit: { fluency: "Fluency", coherence: "Coherence & cohesion", lexical_range: "Lexical resource", grammar: "Grammar range & accuracy" },
     pronunciation: "Pronunciation (acoustic)", azureNote: "Acoustic analysis",
     writeHere: "Write your response here…", pickLang: "Test language", target: "Target",
@@ -72,7 +74,7 @@ const T = {
     transcribeFailed: "Transcription didn't work. You can type your answer instead.",
     noSpeech: "We didn't catch any speech. Please record again.",
     listening_live: "Listening…",
-    optional: "optional", certificate: "Download certificate", resultFor: "Result for",
+    optional: "optional", required: "required", certificate: "Download report", resultFor: "Result for",
     transcriptHeading: "Your transcript",
     beginTitle: "Begin your placement",
     beginSub: "About {min} minutes · four skills · an indicative CEFR level the moment you finish.",
@@ -91,7 +93,7 @@ const T = {
     range: "النطاق التقريبي", indicative: "اختبار قصير، هامش واسع",
     readingScore: "القراءة", listeningScore: "الاستماع", writingScore: "الكتابة", speakingScore: "التحدث",
     feedback: "ملاحظات المُقيّم", startOver: "ابدأ من جديد", correct: "صحيحة",
-    writeCrit: { task_achievement: "تحقيق المهمة", coherence: "الترابط والتماسك", lexical_range: "الثروة اللغوية", grammar: "القواعد ودقتها" },
+    writeCrit: { task_achievement: "تحقيق المهمة", coherence: "الترابط والتماسك", lexical_range: "الثروة اللغوية", grammar: "القواعد ودقتها", register: "الأسلوب المهني", etiquette: "اللياقة والكياسة", mechanics: "الإملاء وعلامات الترقيم" },
     speakCrit: { fluency: "الطلاقة", coherence: "الترابط والتماسك", lexical_range: "الثروة اللغوية", grammar: "القواعد ودقتها" },
     pronunciation: "النطق (صوتيًا)", azureNote: "تحليل صوتي",
     writeHere: "اكتب إجابتك هنا…", pickLang: "لغة الاختبار", target: "المستوى المستهدف",
@@ -107,7 +109,7 @@ const T = {
     transcribeFailed: "تعذّر التفريغ. يمكنك كتابة إجابتك بدلاً من ذلك.",
     noSpeech: "لم نلتقط أي كلام. يُرجى التسجيل مرة أخرى.",
     listening_live: "جارٍ الاستماع…",
-    optional: "اختياري", certificate: "تنزيل الشهادة", resultFor: "نتيجة",
+    optional: "اختياري", required: "إلزامي", certificate: "تنزيل التقرير", resultFor: "نتيجة",
     transcriptHeading: "نص كلامك",
     beginTitle: "ابدأ تحديد مستواك",
     beginSub: "نحو {min} دقيقة · أربع مهارات · مستوى CEFR تقريبي فور انتهائك.",
@@ -412,9 +414,12 @@ export function FluentClient({
   }
 
   const wordCount = writing.trim() ? writing.trim().split(/\s+/).length : 0;
+  // Speaking is MANDATORY: a spoken (or typed-fallback) response of at least a
+  // few words is required before the test can be submitted.
+  const speakWordCount = transcript.trim() ? transcript.trim().split(/\s+/).length : 0;
   const receptive = test ? [...test.reading, ...test.listening] : [];
   const allAnswered = receptive.length > 0 && receptive.every((r) => answers[r.id] != null);
-  const canSubmit = allAnswered && wordCount >= 5 && !transcribing && !recording;
+  const canSubmit = allAnswered && wordCount >= 5 && speakWordCount >= 3 && !transcribing && !recording;
 
   return (
     <div dir={rtl ? "rtl" : "ltr"} className="space-y-5">
@@ -582,8 +587,8 @@ export function FluentClient({
           <section className="rounded-xl border bg-white p-6 shadow-sm">
             <h2 className="mb-1 inline-flex items-center gap-2 text-lg font-semibold text-[#010131]">
               <Mic className="h-5 w-5 text-[#5391D5]" /> {t.speaking}
-              <span className="ms-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
-                {t.optional}
+              <span className="ms-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+                {t.required}
               </span>
             </h2>
             <p className="mb-3 text-xs text-slate-500">{t.speakHint}</p>
@@ -693,7 +698,7 @@ export function FluentClient({
           {/* Writing criteria + feedback */}
           <div className="rounded-lg border border-slate-200 p-4">
             <p className="mb-2 inline-flex items-center gap-1.5 text-sm font-semibold text-[#010131]"><PenLine className="h-4 w-4 text-[#5391D5]" /> {t.writing}</p>
-            <CriteriaBars values={result.writing} keys={["task_achievement", "coherence", "lexical_range", "grammar"] as const} labels={t.writeCrit} />
+            <CriteriaBars values={result.writing} keys={["task_achievement", "coherence", "lexical_range", "grammar", "register", "etiquette", "mechanics"] as const} labels={t.writeCrit} />
             <FeedbackBox text_en={result.writing.feedback_en} text_ar={rtl ? result.writing.feedback_ar : null} ai={result.writing.ai_generated} label={t.feedback} />
           </div>
 
@@ -728,6 +733,8 @@ export function FluentClient({
               <FeedbackBox text_en={result.speaking.feedback_en} text_ar={rtl ? result.speaking.feedback_ar : null} ai={result.speaking.ai_generated} label={t.feedback} />
             </div>
           )}
+
+          <FluentDefinitions ar={rtl} />
 
           <div className="flex flex-wrap items-center gap-3">
             <button onClick={reset}

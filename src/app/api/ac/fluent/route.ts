@@ -209,6 +209,9 @@ async function persistScoreRuns(
           coherence: writing.coherence,
           lexical_range: writing.lexical_range,
           grammar: writing.grammar,
+          register: writing.register,
+          etiquette: writing.etiquette,
+          mechanics: writing.mechanics,
         },
         // Keep the candidate's text so a human can re-rate it for calibration.
         raw: { ai_generated: writing.ai_generated, response: texts.writingResponse.slice(0, 8000) },

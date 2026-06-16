@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useRef, useCallback } from "react";
 import {
   Layers, Sparkles, Loader2, CheckCircle2, RotateCcw, ChevronLeft, ChevronRight,
   AlertTriangle, Download, Target, GraduationCap,
@@ -51,11 +51,37 @@ export function PersonaStandaloneClient({
   const [profile, setProfile] = useState<BehavioralProfileRow[] | null>(null);
   const [page, setPage] = useState(0);
   const [busy, setBusy] = useState(false);
-  const [saving, startSave] = useTransition();
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   const ar = lang === "ar";
   const tx = (en: string, arabic: string) => (ar ? arabic : en);
+
+  // Autosave is debounced + batched: answers accumulate in a buffer keyed by
+  // itemKey and flush in ONE server action call ~700ms after the last change
+  // (and immediately before page-advance / submit). This collapses what would
+  // otherwise be one server-action round-trip per click (160+ per test) into a
+  // handful, avoiding the request storm + router-refresh cascade that one save
+  // per answer produces.
+  const pendingRef = useRef<Map<string, BehavioralAnswer>>(new Map());
+  const flushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flush = useCallback(async (): Promise<void> => {
+    if (flushTimer.current) { clearTimeout(flushTimer.current); flushTimer.current = null; }
+    if (!sessionId) return;
+    const batch = [...pendingRef.current.values()];
+    if (batch.length === 0) return;
+    pendingRef.current.clear();
+    setSaving(true);
+    try { await savePersonaAnswersAction(sessionId, batch); }
+    finally { setSaving(false); }
+  }, [sessionId]);
+
+  const queue = useCallback((a: BehavioralAnswer) => {
+    pendingRef.current.set(a.itemKey, a);
+    if (flushTimer.current) clearTimeout(flushTimer.current);
+    flushTimer.current = setTimeout(() => { void flush(); }, 700);
+  }, [flush]);
 
   // Seeded, section-hidden layouts (stable once the seed is set at begin()).
   const normItems = useMemo<FlatNormItem[]>(
@@ -91,54 +117,43 @@ export function PersonaStandaloneClient({
 
   const answerNorm = (it: FlatNormItem, value: number) => {
     setAnswers((prev) => ({ ...prev, [it.itemKey]: value }));
-    if (!sessionId) return;
-    startSave(async () => {
-      await savePersonaAnswersAction(sessionId, [
-        { itemKey: it.itemKey, competencyId: it.competencyId, rawScore: value, isReverse: it.reverse },
-      ]);
-    });
+    queue({ itemKey: it.itemKey, competencyId: it.competencyId, rawScore: value, isReverse: it.reverse });
   };
 
-  // Forced-choice: record most/least, enforce distinct, and persist the whole
-  // block once both are picked (most=5, least=1, the rest=3 neutral).
+  // Forced-choice: record most/least, enforce distinct, and queue the whole
+  // block once both are picked (most=5, least=1, the rest=3 neutral). State
+  // update + autosave queueing both run in the event handler (never inside the
+  // setState updater - a side effect during render is illegal and drops state).
   const chooseIps = (block: IpsativeBlock, statementKey: string, choice: IpsativeChoice) => {
-    setIpsChoices((prev) => {
-      const cur = { ...(prev[block.blockId] ?? {}) };
-      // Toggle off if re-clicking the same cell.
-      if (cur[choice] === statementKey) { delete cur[choice]; }
-      else {
-        cur[choice] = statementKey;
-        // The same statement can't be both most and least.
-        const other: IpsativeChoice = choice === "most" ? "least" : "most";
-        if (cur[other] === statementKey) delete cur[other];
+    const prev = ipsChoices[block.blockId] ?? {};
+    const cur: { most?: string; least?: string } = { ...prev };
+    // Toggle off if re-clicking the same cell.
+    if (cur[choice] === statementKey) { delete cur[choice]; }
+    else {
+      cur[choice] = statementKey;
+      // The same statement can't be both most and least.
+      const other: IpsativeChoice = choice === "most" ? "least" : "most";
+      if (cur[other] === statementKey) delete cur[other];
+    }
+    setIpsChoices((p) => ({ ...p, [block.blockId]: cur }));
+    if (cur.most && cur.least) {
+      const mostKey = cur.most, leastKey = cur.least;
+      for (const st of block.statements) {
+        const raw = st.itemKey === mostKey ? 5 : st.itemKey === leastKey ? 1 : 3;
+        const ch = st.itemKey === mostKey ? "most" : st.itemKey === leastKey ? "least" : "mid";
+        queue({
+          itemKey: st.itemKey, competencyId: st.competencyId, rawScore: raw,
+          isReverse: false, itemType: "ipsative", answerData: { block: block.blockId, choice: ch },
+        });
       }
-      const next = { ...prev, [block.blockId]: cur };
-      if (sessionId && cur.most && cur.least) void persistBlock(block, cur.most, cur.least);
-      return next;
-    });
-  };
-
-  const persistBlock = async (block: IpsativeBlock, mostKey: string, leastKey: string) => {
-    if (!sessionId) return;
-    const batch: BehavioralAnswer[] = block.statements.map((st) => {
-      const raw = st.itemKey === mostKey ? 5 : st.itemKey === leastKey ? 1 : 3;
-      const choice = st.itemKey === mostKey ? "most" : st.itemKey === leastKey ? "least" : "mid";
-      return {
-        itemKey: st.itemKey,
-        competencyId: st.competencyId,
-        rawScore: raw,
-        isReverse: false,
-        itemType: "ipsative",
-        answerData: { block: block.blockId, choice },
-      };
-    });
-    startSave(async () => { await savePersonaAnswersAction(sessionId, batch); });
+    }
   };
 
   const submit = async () => {
     if (!sessionId) return;
     setBusy(true); setError("");
     try {
+      await flush(); // persist any buffered answers before scoring
       const res = await submitPersonaAction(sessionId);
       if (!res.ok || !res.profile) { setError(res.error || tx("Could not score.", "تعذّر التقييم.")); return; }
       setProfile(res.profile); setPhase("result");
@@ -146,6 +161,8 @@ export function PersonaStandaloneClient({
   };
 
   const reset = () => {
+    if (flushTimer.current) { clearTimeout(flushTimer.current); flushTimer.current = null; }
+    pendingRef.current.clear();
     setPhase("intro"); setSessionId(null); setAnswers({}); setIpsChoices({});
     setProfile(null); setPage(0); setSeed(0); setError("");
   };
@@ -328,7 +345,7 @@ export function PersonaStandaloneClient({
               </button>
             ) : (
               <button
-                onClick={() => { setPhase("ipsative"); window.scrollTo({ top: 0 }); }}
+                onClick={() => { void flush(); setPhase("ipsative"); window.scrollTo({ top: 0 }); }}
                 disabled={!allNormAnswered}
                 className="inline-flex items-center gap-1 rounded-md bg-[#010131] px-4 py-2 text-sm font-semibold text-white hover:bg-[#121140] disabled:opacity-50"
               >

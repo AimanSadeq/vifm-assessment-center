@@ -279,7 +279,7 @@ export function PsychometricsClient({
                   {s.percentile != null && <span className="font-medium text-[#5391D5]"> · {Math.round(s.percentile)}th percentile</span>}
                 </p>
                 <p className="mt-1 text-[11px] font-medium leading-relaxed text-[#010131]">
-                  {cognitiveNarrative(s.normalized, false)}
+                  {cognitiveNarrative(s.raw, false)}
                 </p>
               </div>
             ))}

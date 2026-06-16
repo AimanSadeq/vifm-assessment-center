@@ -33,7 +33,10 @@ function cognitivePrompt(scaleKey: string, scaleName: string, count: number): st
     : scaleKey === "verbal" ? "verbal reasoning (comprehension, analogies, vocabulary-in-context)"
     : scaleKey === "inductive" ? "inductive reasoning (infer the rule from examples: number/figure series, odd-one-out)"
     : scaleKey === "deductive" ? "deductive reasoning (apply rules/premises to a valid conclusion: syllogisms, if-then logic, arrangements)"
-    : "abstract reasoning (number or pattern series, culture-fair)";
+    // Defensive default: the four subtests above are the only valid cognitive
+    // scales (resolveScaleId rejects others upstream). Keep this generic rather
+    // than naming the retired "abstract" construct.
+    : "logical reasoning (a clean single-construct reasoning item)";
   return [
     `Write ${count} multiple-choice ${kind} items for the "${scaleName}" subtest.`,
     `Each item: 3–4 options, exactly one defensible correct answer, solvable in under a minute, no trick wording.`,

@@ -101,10 +101,12 @@ export function buildIpsativeBlocks(
   competencies: BehavioralCompetency[],
   seed: number,
 ): IpsativeBlock[] {
-  // One representative forward item per competency (fall back to the first item).
+  // One representative FORWARD item per competency. Forced-choice statements are
+  // stored with is_reverse=false, so a reverse item here would be mis-keyed -
+  // skip any competency with no forward item rather than fall back to a reverse.
   const statements: IpsativeStatement[] = [];
   for (const c of competencies) {
-    const fwd = c.items.find((i) => !i.reverse) ?? c.items[0];
+    const fwd = c.items.find((i) => !i.reverse);
     if (!fwd) continue;
     statements.push({
       itemKey: `ips:${fwd.itemKey}`,

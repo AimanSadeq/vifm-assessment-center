@@ -25,6 +25,15 @@ const isAraCohortRoute = (pathname: string) =>
 const isAraMethodologyRoute = (pathname: string) =>
   pathname === "/api/ara/methodology/pdf";
 
+// Personal AI Readiness snapshot - anonymous Mode A start + the token-gated
+// results page + the token-gated results PDF. No account: the unguessable token
+// plus handler-level gating (eligibility, completion, client visibility) protect
+// them. Without this, the server-side completion task that fetches the PDF to
+// attach to the results email gets redirected to /login and attaches the login
+// HTML as a corrupt "PDF" - and real delegates can't open their results at all.
+const isAraPersonalRoute = (pathname: string) =>
+  pathname.startsWith("/ara/personal/") || pathname.startsWith("/api/ara/personal/");
+
 // Reflect rater routes follow the same token pattern - rater identity
 // is established server-side from reflect_raters.access_token.
 const isReflectRaterRoute = (pathname: string) =>
@@ -92,6 +101,7 @@ export async function middleware(request: NextRequest) {
     isAraRedeemRoute(request.nextUrl.pathname) ||
     isAraCohortRoute(request.nextUrl.pathname) ||
     isAraMethodologyRoute(request.nextUrl.pathname) ||
+    isAraPersonalRoute(request.nextUrl.pathname) ||
     isReflectRaterRoute(request.nextUrl.pathname) ||
     isPublicCoursesRoute(request.nextUrl.pathname) ||
     isPublicVerifyRoute(request.nextUrl.pathname) ||

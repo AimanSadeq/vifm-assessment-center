@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { Browser } from "puppeteer";
 import { createServiceClient } from "@/lib/supabase/server";
 import { computeParticipantScoring } from "@/lib/reflect/scoring";
+import { guardReflectEngagementAccess } from "@/lib/reflect/report-access";
 
 // Puppeteer needs the Node runtime, not Edge.
 export const runtime = "nodejs";
@@ -22,9 +23,8 @@ async function launchBrowser(): Promise<Browser> {
  * Renders the SSR report page at /reflect/consultant/participants/[id]/report?bare=1&lang=<language>
  * in headless Chromium, outputs PDF, and persists a row in reflect_reports.
  *
- * No auth guard yet - for M4 we keep this endpoint open to whoever has
- * the link. When AUTH_ENABLED flips on, this should require the
- * engagement consultant or admin (mirrors the ARA PDF route).
+ * Auth: admin or the owning consultant only (guardReflectEngagementAccess),
+ * resolved from the participant's engagement. Mirrors the ARA PDF route.
  */
 export async function GET(
   req: NextRequest,
@@ -43,6 +43,10 @@ export async function GET(
   if (!scoring) {
     return NextResponse.json({ ok: false, error: "Participant not found" }, { status: 404 });
   }
+
+  // Gate before the expensive Puppeteer launch: admin or owning consultant only.
+  const denied = await guardReflectEngagementAccess(scoring.engagement_id);
+  if (denied) return denied;
 
   let browser: Browser | null = null;
   try {

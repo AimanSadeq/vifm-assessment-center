@@ -6,6 +6,7 @@
  */
 import { renderToBuffer } from "@react-pdf/renderer";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getCurrentCaller } from "@/lib/ara/auth-guards";
 import { CredentialCertificate } from "@/lib/reports/credential-certificate";
 import { renderCredentialCertificateHtmlAr } from "@/lib/reports/credential-certificate-ar-html";
 import { renderHtmlToPdfBuffer } from "@/lib/reports/html-to-pdf";
@@ -44,10 +45,29 @@ export async function GET(req: Request, { params }: { params: { credentialId: st
     const sb = createServiceClient();
     const { data, error } = await sb
       .from("vifm_credentials")
-      .select("id, verification_code, issued_to_name, credential_type, title_en, title_ar, subtitle_en, subtitle_ar, score_pct, issued_at, expires_at")
+      .select("id, verification_code, issued_to_name, credential_type, title_en, title_ar, subtitle_en, subtitle_ar, score_pct, issued_at, expires_at, candidate_id")
       .eq("id", params.credentialId)
       .maybeSingle();
     if (error || !data) return new Response("Credential not found", { status: 404 });
+
+    // Ownership: admin gets any certificate; a candidate gets only their own.
+    // (The public, non-sensitive check lives at /verify/[code]; this is the
+    // full certificate PDF.)
+    const caller = await getCurrentCaller();
+    if (!caller) return new Response("Unauthorized", { status: 401 });
+    if (caller.role !== "admin") {
+      if (caller.role !== "candidate" || !data.candidate_id) {
+        return new Response("Forbidden", { status: 403 });
+      }
+      const { data: cand } = await sb
+        .from("candidates")
+        .select("profile_id")
+        .eq("id", data.candidate_id)
+        .maybeSingle<{ profile_id: string | null }>();
+      if (!cand || cand.profile_id !== caller.uid) {
+        return new Response("Forbidden", { status: 403 });
+      }
+    }
 
     const base = process.env.NEXT_PUBLIC_SITE_URL || "https://caliber.viftraining.com";
     const verifyUrl = `${base}/verify/${data.verification_code}`;

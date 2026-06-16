@@ -8,6 +8,7 @@
  */
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { guardAcademyCandidate, candidateIdForAttempt } from "@/lib/academy/access";
 import type { QuizAnswer, QuizQuestion } from "@/types/database";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +21,10 @@ export async function POST(
   if (!attemptId) {
     return NextResponse.json({ error: "attemptId is required" }, { status: 400 });
   }
+
+  // Ownership: admin, or the candidate who owns this attempt.
+  const denied = await guardAcademyCandidate(await candidateIdForAttempt(attemptId));
+  if (denied) return denied;
 
   let body: { questionIndex?: number; pickedIndex?: number | null };
   try {

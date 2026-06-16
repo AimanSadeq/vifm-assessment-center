@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { Browser } from "puppeteer";
 import { createServiceClient } from "@/lib/supabase/server";
 import { computeCohortScoring } from "@/lib/reflect/scoring";
+import { guardReflectEngagementAccess } from "@/lib/reflect/report-access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,6 +24,10 @@ export async function GET(
   { params }: { params: Promise<{ engagementId: string }> }
 ) {
   const { engagementId } = await params;
+
+  // Admin or the owning consultant only.
+  const denied = await guardReflectEngagementAccess(engagementId);
+  if (denied) return denied;
 
   const url = new URL(req.url);
   const langRaw = url.searchParams.get("language") ?? "en";

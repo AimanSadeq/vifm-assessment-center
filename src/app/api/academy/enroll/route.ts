@@ -9,6 +9,7 @@
  */
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { guardAcademyCandidate } from "@/lib/academy/access";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,11 @@ export async function POST(req: Request) {
   if (!candidateId || !courseId) {
     return NextResponse.json({ error: "candidateId and courseId are required" }, { status: 400 });
   }
+
+  // Ownership: admin, or the candidate enrolling themselves.
+  const denied = await guardAcademyCandidate(candidateId);
+  if (denied) return denied;
+
   const source = VALID_SOURCES.includes(body.source ?? "") ? body.source : "self";
 
   try {

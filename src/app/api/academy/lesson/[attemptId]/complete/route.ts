@@ -15,6 +15,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { markEnrollmentComplete } from "@/lib/academy/complete";
+import { guardAcademyCandidate, candidateIdForAttempt } from "@/lib/academy/access";
 import type {
   QuizAnswer,
   QuizQuestion,
@@ -42,6 +43,11 @@ export async function POST(
   if (!attemptId) {
     return NextResponse.json({ error: "attemptId is required" }, { status: 400 });
   }
+
+  // Ownership: admin, or the candidate who owns this attempt. Gate before
+  // scoring + any credential issuance.
+  const denied = await guardAcademyCandidate(await candidateIdForAttempt(attemptId));
+  if (denied) return denied;
 
   try {
     const sb = createServiceClient();

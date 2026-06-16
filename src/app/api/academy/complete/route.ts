@@ -13,6 +13,7 @@
  */
 import { NextResponse } from "next/server";
 import { markEnrollmentComplete } from "@/lib/academy/complete";
+import { guardAcademyCandidate, candidateIdForEnrollment } from "@/lib/academy/access";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,11 @@ export async function POST(req: Request) {
   if (!enrollmentId) {
     return NextResponse.json({ error: "enrollmentId is required" }, { status: 400 });
   }
+
+  // Ownership: admin, or the candidate who owns this enrollment. Gate before
+  // completion + credential issuance.
+  const denied = await guardAcademyCandidate(await candidateIdForEnrollment(enrollmentId));
+  if (denied) return denied;
 
   try {
     const result = await markEnrollmentComplete(enrollmentId);

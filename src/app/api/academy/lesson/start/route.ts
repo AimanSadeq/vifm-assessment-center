@@ -17,6 +17,7 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { generateQuizQuestions } from "@/lib/ai/quiz-generator";
 import { indexFromLessonKey } from "@/lib/academy/lesson-key";
+import { guardAcademyCandidate, candidateIdForEnrollment } from "@/lib/academy/access";
 import type {
   QuizAnswer,
   QuizQuestion,
@@ -104,6 +105,11 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
+
+  // Ownership: admin, or the candidate who owns this enrollment. Gate before
+  // any AI generation so a non-owner can never drive a paid model call.
+  const denied = await guardAcademyCandidate(await candidateIdForEnrollment(enrollmentId));
+  if (denied) return denied;
 
   try {
     const sb = createServiceClient();

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Browser } from "puppeteer";
+import { guardReflectEngagementAccess } from "@/lib/reflect/report-access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,6 +27,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+
+  // Admin or the owning consultant only.
+  const denied = await guardReflectEngagementAccess(id);
+  if (denied) return denied;
 
   const url = new URL(req.url);
   const langRaw = url.searchParams.get("language") ?? "en";

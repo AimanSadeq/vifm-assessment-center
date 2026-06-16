@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { guardReflectEngagementAccess } from "@/lib/reflect/report-access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,6 +20,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+
+  // Admin or the owning consultant only - this CSV is raw participant PII.
+  const denied = await guardReflectEngagementAccess(id);
+  if (denied) return denied;
+
   const sb = createServiceClient();
 
   const { data: engagement } = await sb

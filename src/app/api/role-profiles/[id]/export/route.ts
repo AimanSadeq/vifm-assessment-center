@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,16 @@ export async function GET(
   _request: Request,
   { params }: { params: { id: string } }
 ) {
+  // Role profiles are an admin-managed library; the export is admin-only.
+  try {
+    await requireRole(["admin"]);
+  } catch (e) {
+    if (isAuthorizationError(e)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    throw e;
+  }
+
   const supabase = await createClient();
 
   const [profileResult, compsResult] = await Promise.all([

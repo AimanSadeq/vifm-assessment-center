@@ -10,6 +10,7 @@ import { AssessmentIntro, type IntroPoint } from "@/components/shared/assessment
 import type { PublicBlueprint, PublicSkillBlock } from "@/lib/technical-sandbox/service";
 import type { PublicTechTest } from "@/lib/ai/technical-assessment";
 import { proficiencyTier, proficiencyTierLabel } from "@/lib/competencies/proficiency-tier";
+import { ScoreMethodology } from "./score-methodology";
 import { LogicInputEngine } from "./logic-input-engine";
 import { SqlEngine } from "./sql-engine";
 import type { SpreadsheetReader } from "./spreadsheet-engine";
@@ -537,6 +538,17 @@ function Results({
           </div>
         )}
       </div>
+
+      {score && (
+        <ScoreMethodology
+          overallPct={score.overallPct}
+          overallTier={score.overallTier}
+          pillars={score.pillars}
+          ar={ar}
+          showCombined={showCombined}
+          mcqPct={combined?.mcqPct ?? 0}
+        />
+      )}
 
       {showCombined && (
         <div className="grid grid-cols-2 gap-3">

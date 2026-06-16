@@ -107,7 +107,7 @@ export function SpreadsheetEngine({ config, onRegister }: SpreadsheetProps) {
           const enLocale = ((enUS as { default?: unknown }).default ?? enUS) as never;
 
           // Build the cellData matrix from the row spec.
-          const cellData: Record<number, Record<number, { v?: number | string; f?: string }>> = {};
+          const cellData: Record<number, Record<number, { v?: number | string; f?: string; s?: string }>> = {};
           let maxRow = 0;
           for (const row of config.rows ?? []) {
             const r = row.r - 1;
@@ -121,6 +121,32 @@ export function SpreadsheetEngine({ config, onRegister }: SpreadsheetProps) {
             }
           }
 
+          // Green-highlight the editable answer cells (including empty ones) so
+          // the user can see exactly where input is required.
+          const ANSWER_STYLE = "answerCell";
+          for (const ref of editableRefs) {
+            const rc = refToRowCol(ref);
+            if (!rc) continue;
+            cellData[rc.row] = cellData[rc.row] ?? {};
+            cellData[rc.row][rc.col] = { ...(cellData[rc.row][rc.col] ?? {}), s: ANSWER_STYLE };
+          }
+
+          // Auto-fit column widths from content. Column A (labels / questions)
+          // gets the most room; others stay compact. Clamped so a long prompt
+          // stays readable without an absurdly wide sheet.
+          const columnData: Record<number, { w: number }> = {};
+          for (const colLetter of COLS) {
+            const cIdx = COLS.indexOf(colLetter);
+            let maxLen = colLetter === "A" ? 10 : 6;
+            for (const row of config.rows ?? []) {
+              const v = (row as unknown as Record<string, unknown>)[colLetter];
+              if (v == null) continue;
+              maxLen = Math.max(maxLen, String(v).length);
+            }
+            const cap = colLetter === "A" ? 520 : 200;
+            columnData[cIdx] = { w: Math.min(Math.max(maxLen * 7 + 24, 64), cap) };
+          }
+
           const { univerAPI } = createUniver({
             locale: LocaleType.EN_US,
             locales: { [LocaleType.EN_US]: enLocale },
@@ -132,12 +158,17 @@ export function SpreadsheetEngine({ config, onRegister }: SpreadsheetProps) {
             id: "tech-sandbox",
             name: config.sheetName ?? "Model",
             sheetOrder: ["sheet1"],
+            styles: {
+              // Light-green fill + dark-green text marks an answer-required cell.
+              [ANSWER_STYLE]: { bg: { rgb: "#D1FAE5" }, cl: { rgb: "#065F46" } },
+            },
             sheets: {
               sheet1: {
                 id: "sheet1",
                 name: config.sheetName ?? "Model",
                 rowCount: Math.max(maxRow + 5, 40),
                 columnCount: 8,
+                columnData,
                 cellData,
               },
             },
@@ -178,8 +209,9 @@ export function SpreadsheetEngine({ config, onRegister }: SpreadsheetProps) {
 
     return (
       <div className="space-y-2">
-        <div className="text-xs text-muted-foreground">
-          Editable cells: {editableRefs.join(", ") || "(none)"}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span className="inline-block h-3 w-3 shrink-0 rounded-sm border border-emerald-300 bg-emerald-100" aria-hidden="true" />
+          <span>Type your answers in the green cells: {editableRefs.join(", ") || "(none)"}</span>
         </div>
         {initError && (
           <div className="rounded-md border border-red-300 bg-red-50 p-2 text-xs text-red-700">

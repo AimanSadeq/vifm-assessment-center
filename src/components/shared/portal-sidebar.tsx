@@ -43,6 +43,7 @@ import {
   TrendingUp,
   SlidersHorizontal,
   Ticket,
+  FileClock,
   type LucideIcon,
 } from "lucide-react";
 
@@ -53,6 +54,32 @@ type NavGroup = { key: string; label: string; icon: LucideIcon; items: NavEntry[
 const link = (href: string, labelKey: string, icon: LucideIcon, exact?: boolean): NavEntry => ({
   kind: "link",
   link: { href, labelKey, icon, ...(exact ? { exact } : {}) },
+});
+
+// A self-serve instrument (Fluent / Cognitive / Persona) exposes the same
+// management surfaces - runner, cohort report, vouchers, retention (+ Fluent's
+// calibration). Group them so every admin surface is reachable from the sidebar,
+// not just via the runner page's chips. `key` must be unique per pillar section.
+const instrumentGroup = (
+  key: string,
+  label: string,
+  icon: LucideIcon,
+  base: string,
+  opts?: { calibration?: boolean },
+): NavEntry => ({
+  kind: "group",
+  group: {
+    key,
+    label,
+    icon,
+    items: [
+      link(base, "adminNav.svcOverview", LayoutDashboard, true),
+      link(`${base}/cohort`, "adminNav.svcCohort", Users),
+      link(`${base}/vouchers`, "adminNav.svcVouchers", Ticket),
+      ...(opts?.calibration ? [link(`${base}/calibration`, "adminNav.svcCalibration", SlidersHorizontal)] : []),
+      link(`${base}/retention`, "adminNav.svcRetention", FileClock),
+    ],
+  },
 });
 
 // The portal navigation, mirroring the landing launcher's two talent-lifecycle
@@ -87,6 +114,7 @@ const NAV: NavEntry[] = [
               link("/admin/assessors", "adminNav.assessors", Users),
               link("/admin/analytics", "adminNav.analytics", BarChart3),
               link("/admin/ac-evidence", "adminNav.acEvidence", ShieldCheck),
+              link("/admin/engagements/retention", "adminNav.svcRetention", FileClock),
             ],
           },
         },
@@ -101,13 +129,25 @@ const NAV: NavEntry[] = [
               link("/admin/tech-sandbox", "adminNav.techOverview", LayoutDashboard, true),
               link("/admin/vouchers?service=technical", "adminNav.techVouchers", Award),
               link("/admin/tech-sandbox/answers", "adminNav.techAnswers", ListChecks),
+              link("/admin/tech-assessment/retention", "adminNav.svcRetention", FileClock),
             ],
           },
         },
-        link("/ac/cognitive", "adminNav.psyCognitive", BrainCircuit, true),
-        link("/ac/persona", "adminNav.psyPersona", Layers),
-        link("/admin/prehire", "adminNav.preHire", UserSearch),
-        link("/ac/fluent", "adminNav.fluent", Languages),
+        instrumentGroup("cognitive-acq", "Cognitive", BrainCircuit, "/ac/cognitive"),
+        instrumentGroup("persona-acq", "Persona", Layers, "/ac/persona"),
+        {
+          kind: "group",
+          group: {
+            key: "prehire-acq",
+            label: "Pre-Hire",
+            icon: UserSearch,
+            items: [
+              link("/admin/prehire", "adminNav.svcOverview", LayoutDashboard, true),
+              link("/admin/prehire/retention", "adminNav.svcRetention", FileClock),
+            ],
+          },
+        },
+        instrumentGroup("fluent-acq", "Fluent", Languages, "/ac/fluent", { calibration: true }),
       ],
     },
   },
@@ -134,6 +174,7 @@ const NAV: NavEntry[] = [
               link("/admin/assessors", "adminNav.assessors", Users),
               link("/admin/analytics", "adminNav.analytics", BarChart3),
               link("/admin/ac-evidence", "adminNav.acEvidence", ShieldCheck),
+              link("/admin/engagements/retention", "adminNav.svcRetention", FileClock),
             ],
           },
         },
@@ -148,11 +189,12 @@ const NAV: NavEntry[] = [
               link("/admin/tech-sandbox", "adminNav.techOverview", LayoutDashboard, true),
               link("/admin/vouchers?service=technical", "adminNav.techVouchers", Award),
               link("/admin/tech-sandbox/answers", "adminNav.techAnswers", ListChecks),
+              link("/admin/tech-assessment/retention", "adminNav.svcRetention", FileClock),
             ],
           },
         },
-        link("/ac/cognitive", "adminNav.psyCognitive", BrainCircuit, true),
-        link("/ac/persona", "adminNav.psyPersona", Layers),
+        instrumentGroup("cognitive-mng", "Cognitive", BrainCircuit, "/ac/cognitive"),
+        instrumentGroup("persona-mng", "Persona", Layers, "/ac/persona"),
         link("/reflect", "adminNav.reflect360", Aperture),
         {
           kind: "group",

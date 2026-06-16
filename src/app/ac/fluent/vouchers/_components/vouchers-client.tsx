@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, Ticket, Copy, Ban } from "lucide-react";
 import { fmtDate } from "@/lib/utils/format-date";
+import { copyToClipboard } from "@/lib/utils/clipboard";
 import { generateFluentVouchersAction, disableFluentVoucherAction } from "../actions";
 
 export type FluentVoucherRow = {
@@ -57,7 +58,7 @@ export function VouchersClient({ vouchers, clients }: { vouchers: FluentVoucherR
 
   const copy = async (text: string) => {
     try {
-      await navigator.clipboard.writeText(text);
+      await copyToClipboard(text);
       toast.message("Copied to clipboard.");
     } catch {
       toast.error("Copy failed.");

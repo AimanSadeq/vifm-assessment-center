@@ -3,6 +3,7 @@
 import { useState, useEffect, useTransition } from "react";
 import { Ticket, Copy, Download, Check, Ban, RotateCcw, Plus, X, Link2, Upload } from "lucide-react";
 import { fmtDate } from "@/lib/utils/format-date";
+import { copyToClipboard } from "@/lib/utils/clipboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -147,9 +148,14 @@ export function VouchersClient({
   }
 
   function copy(text: string, key: string) {
-    void navigator.clipboard.writeText(text);
-    setCopied(key);
-    setTimeout(() => setCopied(null), 1500);
+    void copyToClipboard(text)
+      .then(() => {
+        setCopied(key);
+        setTimeout(() => setCopied(null), 1500);
+      })
+      .catch(() => {
+        /* clipboard + fallback both blocked (e.g. iframe) - don't crash */
+      });
   }
 
   function downloadCsv(lines: string[], prefix = "arc-export") {

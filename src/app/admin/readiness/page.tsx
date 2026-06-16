@@ -4,6 +4,8 @@ import {
   TrendingUp, Layers, Aperture, SlidersHorizontal, ClipboardList, ArrowRight, Info,
 } from "lucide-react";
 import { BackLink } from "@/components/shared/back-link";
+import { createServiceClient } from "@/lib/supabase/server";
+import { StartReadinessProgram } from "./_components/start-readiness-program";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +52,11 @@ const STEPS: { n: string; title: string; body: string }[] = [
  * links to the inputs, the scoring config, and the engagements where the
  * readiness verdict is rendered.
  */
-export default function ReadinessHomePage() {
+export default async function ReadinessHomePage() {
+  const sb = createServiceClient();
+  const { data: orgRows } = await sb.from("organizations").select("id, name").order("name");
+  const orgs = (orgRows ?? []).map((o) => ({ id: o.id as string, name: (o.name as string) ?? "Untitled" }));
+
   return (
     <div className="space-y-6">
       <BackLink href="/" label="Back" history />
@@ -68,6 +74,9 @@ export default function ReadinessHomePage() {
           </p>
         </div>
       </div>
+
+      {/* Thin front door: start a combined-mode programme without going via the AC. */}
+      <StartReadinessProgram orgs={orgs} />
 
       {/* The two inputs, each its own standalone service */}
       <div className="grid gap-4 sm:grid-cols-2">

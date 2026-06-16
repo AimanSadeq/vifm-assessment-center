@@ -8,13 +8,27 @@ import {
   type BehavioralAnswer,
 } from "@/lib/scoring/behavioral";
 
+export type StartPersonaOptions = {
+  /** 'development' (narrative + suggestions) or 'hiring' (fit vs a target role). */
+  purpose?: "development" | "hiring";
+  /** Target role profile for a hiring fit read. */
+  targetRoleProfileId?: string | null;
+  /** Seed for the reproducible (randomized, section-hidden) item layout. */
+  seed?: number | null;
+};
+
 /**
  * Start a standalone (anonymous) Persona run. Name is an optional label.
  * If a voucher redemptionToken is supplied (delegate flow), the session is
  * stamped with the voucher's client org + redemption, and the redemption is
  * back-linked to the session - best-effort, so the non-voucher path is unchanged.
+ * `opts` carries the purpose (development/hiring), target role + the layout seed.
  */
-export async function startPersonaAction(name: string, redemptionToken?: string | null) {
+export async function startPersonaAction(
+  name: string,
+  redemptionToken?: string | null,
+  opts?: StartPersonaOptions,
+) {
   try {
     let organizationId: string | null = null;
     let redemptionId: string | null = null;
@@ -38,6 +52,9 @@ export async function startPersonaAction(name: string, redemptionToken?: string 
     const session = await createAnonymousBehavioralSession(name.trim() || null, {
       organizationId,
       voucherRedemptionId: redemptionId,
+      purpose: opts?.purpose === "hiring" ? "hiring" : "development",
+      targetRoleProfileId: opts?.purpose === "hiring" ? opts?.targetRoleProfileId ?? null : null,
+      seed: opts?.seed ?? null,
     });
 
     if (redemptionId) {

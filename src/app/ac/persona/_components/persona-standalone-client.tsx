@@ -2,35 +2,54 @@
 
 import { useMemo, useState, useTransition } from "react";
 import {
-  Layers, Sparkles, Loader2, CheckCircle2, RotateCcw, ChevronLeft, ChevronRight, AlertTriangle, Download,
+  Layers, Sparkles, Loader2, CheckCircle2, RotateCcw, ChevronLeft, ChevronRight,
+  AlertTriangle, Download, Target, GraduationCap,
 } from "lucide-react";
 import type { BehavioralCompetency } from "@/lib/scoring/behavioral-items";
-import type { BehavioralProfileRow } from "@/lib/scoring/behavioral";
+import type { BehavioralProfileRow, BehavioralAnswer } from "@/lib/scoring/behavioral";
 import { startPersonaAction, savePersonaAnswersAction, submitPersonaAction } from "../actions";
 import { personaBand, personaBandLabel, PERSONA_BAND_TW } from "@/lib/scoring/persona-bands";
+import {
+  freshSeed, flattenNormativeItems, paginate, buildIpsativeBlocks,
+  type FlatNormItem, type IpsativeBlock, type IpsativeChoice,
+} from "@/lib/scoring/persona-format";
+import {
+  computeFit, FIT_BAND_TW, type RoleCompReq, type FitResult,
+} from "@/lib/scoring/persona-fit";
 
 type Lang = "en" | "ar";
-type Phase = "intro" | "test" | "result";
+type Phase = "intro" | "normative" | "ipsative" | "result";
+type Purpose = "development" | "hiring";
 
 const LIKERT = [1, 2, 3, 4, 5];
+const ITEMS_PER_PAGE = 12;
+
+export type RoleProfileOption = { id: string; name: string; comps: RoleCompReq[] };
 
 export function PersonaStandaloneClient({
   competencies,
   redemptionToken = null,
   prefillName,
+  roleProfiles = [],
 }: {
   competencies: BehavioralCompetency[];
   /** Voucher redemption token (delegate flow); stamps the result with the client org. */
   redemptionToken?: string | null;
   prefillName?: string;
+  /** Role profiles offered for a hiring fit read (empty = hiring picker hidden). */
+  roleProfiles?: RoleProfileOption[];
 }) {
   const [phase, setPhase] = useState<Phase>("intro");
   const [lang, setLang] = useState<Lang>("en");
   const [name, setName] = useState(prefillName ?? "");
+  const [purpose, setPurpose] = useState<Purpose>("development");
+  const [targetRoleId, setTargetRoleId] = useState("");
+  const [seed, setSeed] = useState<number>(0);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [ipsChoices, setIpsChoices] = useState<Record<string, { most?: string; least?: string }>>({});
   const [profile, setProfile] = useState<BehavioralProfileRow[] | null>(null);
-  const [step, setStep] = useState(0);
+  const [page, setPage] = useState(0);
   const [busy, setBusy] = useState(false);
   const [saving, startSave] = useTransition();
   const [error, setError] = useState("");
@@ -38,35 +57,82 @@ export function PersonaStandaloneClient({
   const ar = lang === "ar";
   const tx = (en: string, arabic: string) => (ar ? arabic : en);
 
-  // One cluster per step.
-  const steps = useMemo(() => {
-    const byCluster = new Map<number, BehavioralCompetency[]>();
-    for (const c of competencies) {
-      if (!byCluster.has(c.clusterOrder)) byCluster.set(c.clusterOrder, []);
-      byCluster.get(c.clusterOrder)!.push(c);
-    }
-    return Array.from(byCluster.entries()).sort((a, b) => a[0] - b[0]).map(([order, comps]) => ({ order, comps }));
-  }, [competencies]);
+  // Seeded, section-hidden layouts (stable once the seed is set at begin()).
+  const normItems = useMemo<FlatNormItem[]>(
+    () => (seed ? flattenNormativeItems(competencies, seed) : []),
+    [competencies, seed],
+  );
+  const normPages = useMemo(() => paginate(normItems, ITEMS_PER_PAGE), [normItems]);
+  const ipsBlocks = useMemo<IpsativeBlock[]>(
+    () => (seed ? buildIpsativeBlocks(competencies, seed) : []),
+    [competencies, seed],
+  );
 
-  const totalItems = useMemo(() => competencies.reduce((n, c) => n + c.items.length, 0), [competencies]);
-  const answeredCount = Object.keys(answers).length;
-  const allAnswered = answeredCount >= totalItems;
+  const totalNorm = normItems.length;
+  const answeredNorm = Object.keys(answers).length;
+  const allNormAnswered = answeredNorm >= totalNorm && totalNorm > 0;
+  const blocksDone = ipsBlocks.filter((b) => ipsChoices[b.blockId]?.most && ipsChoices[b.blockId]?.least).length;
+  const allIpsDone = ipsBlocks.length > 0 ? blocksDone >= ipsBlocks.length : true;
 
   const begin = async () => {
     setBusy(true); setError("");
+    const s = freshSeed();
     try {
-      const res = await startPersonaAction(name, redemptionToken);
+      const res = await startPersonaAction(name, redemptionToken, {
+        purpose,
+        targetRoleProfileId: purpose === "hiring" ? targetRoleId || null : null,
+        seed: s,
+      });
       if (!res.ok) { setError(res.error); return; }
-      setSessionId(res.sessionId); setPhase("test"); setStep(0);
-    } catch { setError("Could not start the Persona assessment."); } finally { setBusy(false); }
+      setSeed(s); setSessionId(res.sessionId); setPhase("normative"); setPage(0);
+    } catch { setError(tx("Could not start the Persona assessment.", "تعذّر بدء تقييم بيرسونا.")); }
+    finally { setBusy(false); }
   };
 
-  const answer = (itemKey: string, competencyId: string, isReverse: boolean, value: number) => {
-    setAnswers((prev) => ({ ...prev, [itemKey]: value }));
+  const answerNorm = (it: FlatNormItem, value: number) => {
+    setAnswers((prev) => ({ ...prev, [it.itemKey]: value }));
     if (!sessionId) return;
     startSave(async () => {
-      await savePersonaAnswersAction(sessionId, [{ itemKey, competencyId, rawScore: value, isReverse }]);
+      await savePersonaAnswersAction(sessionId, [
+        { itemKey: it.itemKey, competencyId: it.competencyId, rawScore: value, isReverse: it.reverse },
+      ]);
     });
+  };
+
+  // Forced-choice: record most/least, enforce distinct, and persist the whole
+  // block once both are picked (most=5, least=1, the rest=3 neutral).
+  const chooseIps = (block: IpsativeBlock, statementKey: string, choice: IpsativeChoice) => {
+    setIpsChoices((prev) => {
+      const cur = { ...(prev[block.blockId] ?? {}) };
+      // Toggle off if re-clicking the same cell.
+      if (cur[choice] === statementKey) { delete cur[choice]; }
+      else {
+        cur[choice] = statementKey;
+        // The same statement can't be both most and least.
+        const other: IpsativeChoice = choice === "most" ? "least" : "most";
+        if (cur[other] === statementKey) delete cur[other];
+      }
+      const next = { ...prev, [block.blockId]: cur };
+      if (sessionId && cur.most && cur.least) void persistBlock(block, cur.most, cur.least);
+      return next;
+    });
+  };
+
+  const persistBlock = async (block: IpsativeBlock, mostKey: string, leastKey: string) => {
+    if (!sessionId) return;
+    const batch: BehavioralAnswer[] = block.statements.map((st) => {
+      const raw = st.itemKey === mostKey ? 5 : st.itemKey === leastKey ? 1 : 3;
+      const choice = st.itemKey === mostKey ? "most" : st.itemKey === leastKey ? "least" : "mid";
+      return {
+        itemKey: st.itemKey,
+        competencyId: st.competencyId,
+        rawScore: raw,
+        isReverse: false,
+        itemType: "ipsative",
+        answerData: { block: block.blockId, choice },
+      };
+    });
+    startSave(async () => { await savePersonaAnswersAction(sessionId, batch); });
   };
 
   const submit = async () => {
@@ -74,19 +140,22 @@ export function PersonaStandaloneClient({
     setBusy(true); setError("");
     try {
       const res = await submitPersonaAction(sessionId);
-      if (!res.ok || !res.profile) { setError(res.error || "Could not score."); return; }
+      if (!res.ok || !res.profile) { setError(res.error || tx("Could not score.", "تعذّر التقييم.")); return; }
       setProfile(res.profile); setPhase("result");
-    } catch { setError("Could not score."); } finally { setBusy(false); }
+    } catch { setError(tx("Could not score.", "تعذّر التقييم.")); } finally { setBusy(false); }
   };
 
   const reset = () => {
-    setPhase("intro"); setSessionId(null); setAnswers({}); setProfile(null); setStep(0); setError("");
+    setPhase("intro"); setSessionId(null); setAnswers({}); setIpsChoices({});
+    setProfile(null); setPage(0); setSeed(0); setError("");
   };
 
   const likertLabel = (v: number) =>
     ar
       ? ["لا أوافق بشدة", "لا أوافق", "محايد", "أوافق", "أوافق بشدة"][v - 1]
       : ["Strongly disagree", "Disagree", "Neither", "Agree", "Strongly agree"][v - 1];
+
+  const selectedRole = roleProfiles.find((r) => r.id === targetRoleId) ?? null;
 
   return (
     <div dir={ar ? "rtl" : "ltr"} className="space-y-5">
@@ -106,15 +175,69 @@ export function PersonaStandaloneClient({
 
       {phase === "intro" && (
         <div className="space-y-5 rounded-xl border bg-card p-6">
+          {/* Purpose - drives the result (development narrative vs hiring fit). */}
+          <div>
+            <p className="text-xs font-medium text-slate-500">{tx("What is this assessment for?", "ما الغرض من هذا التقييم؟")}</p>
+            <div className="mt-2 grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setPurpose("development")}
+                className={`rounded-lg border p-4 text-start transition ${purpose === "development" ? "border-[#5391D5] bg-[#5391D5]/5 ring-1 ring-[#5391D5]" : "border-slate-200 hover:bg-slate-50"}`}
+              >
+                <span className="inline-flex items-center gap-2 font-semibold text-[#010131]">
+                  <GraduationCap className="h-4 w-4 text-[#5391D5]" /> {tx("Development", "التطوير")}
+                </span>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {tx("A growth read: per-competency explanation and suggestions.", "قراءة تطويرية: شرح واقتراحات لكل جدارة.")}
+                </p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPurpose("hiring")}
+                className={`rounded-lg border p-4 text-start transition ${purpose === "hiring" ? "border-[#5391D5] bg-[#5391D5]/5 ring-1 ring-[#5391D5]" : "border-slate-200 hover:bg-slate-50"}`}
+              >
+                <span className="inline-flex items-center gap-2 font-semibold text-[#010131]">
+                  <Target className="h-4 w-4 text-[#5391D5]" /> {tx("Hiring / selection", "التوظيف / الاختيار")}
+                </span>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {tx("A fit score against a target role profile.", "درجة ملاءمة مقابل ملف دور مستهدف.")}
+                </p>
+              </button>
+            </div>
+          </div>
+
+          {purpose === "hiring" && (
+            <div className="rounded-lg border border-slate-200 p-3">
+              <p className="text-xs font-medium text-[#010131]">{tx("Target role", "الدور المستهدف")}</p>
+              {roleProfiles.length > 0 ? (
+                <select
+                  value={targetRoleId}
+                  onChange={(e) => setTargetRoleId(e.target.value)}
+                  className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                >
+                  <option value="">{tx("Select a role profile…", "اختر ملف دور…")}</option>
+                  {roleProfiles.map((r) => (
+                    <option key={r.id} value={r.id}>{r.name}</option>
+                  ))}
+                </select>
+              ) : (
+                <p className="mt-1 text-xs text-amber-600">
+                  {tx("No role profiles available. Create one under Role Profiles to get a fit score.", "لا تتوفّر ملفات أدوار. أنشئ ملفًا في (ملفات الأدوار) للحصول على درجة الملاءمة.")}
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="rounded-lg border border-[#5391D5] bg-[#5391D5]/5 p-4">
-            <p className="font-semibold text-[#010131]">{tx("Self-assessment", "تقييم ذاتي")}</p>
+            <p className="font-semibold text-[#010131]">{tx("How it works", "كيف يعمل")}</p>
             <p className="mt-1 text-xs text-muted-foreground">
               {tx(
-                `${totalItems} first-person statements, rated 1-5. Takes about 10 minutes. You get a self-profile across the competency clusters at the end.`,
-                `${totalItems} عبارة بصيغة المتكلّم، تُقيَّم من 1 إلى 5. تستغرق نحو 10 دقائق. ستحصل على ملف ذاتي عبر مجموعات الجدارات في النهاية.`,
+                `Part 1: ${totalNormPreview(competencies)} statements rated 1-5 (in random order). Part 2: a few quick "most / least like me" choices. About 12-15 minutes.`,
+                `الجزء 1: ${totalNormPreview(competencies)} عبارة تُقيَّم من 1 إلى 5 (بترتيب عشوائي). الجزء 2: اختيارات سريعة (الأكثر/الأقل انطباقًا عليّ). نحو 12-15 دقيقة.`,
               )}
             </p>
           </div>
+
           <div className="flex flex-wrap items-end gap-4">
             <label className="min-w-[12rem] flex-1">
               <span className="text-xs font-medium text-slate-500">{tx("Your name (optional)", "اسمك (اختياري)")}</span>
@@ -149,65 +272,46 @@ export function PersonaStandaloneClient({
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             {busy ? tx("Preparing…", "جارٍ التحضير…") : tx("Begin Persona assessment", "ابدأ تقييم بيرسونا")}
           </button>
-          <p className="text-xs text-muted-foreground">
-            {tx(
-              "Running this for a specific person? Open Persona from a candidate so it feeds Succession Readiness.",
-              "تُجري هذا التقييم لشخص محدّد؟ افتح بيرسونا من بطاقة المرشّح كي يغذّي جاهزية التعاقب.",
-            )}
-          </p>
         </div>
       )}
 
-      {phase === "test" && (
+      {phase === "normative" && (
         <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-              <div className="h-full bg-[#5391D5]" style={{ width: `${Math.round((answeredCount / totalItems) * 100)}%` }} />
-            </div>
-            <span className="text-xs tabular-nums text-muted-foreground">{answeredCount}/{totalItems}</span>
-          </div>
-
+          <ProgressBar value={answeredNorm} total={totalNorm} ar={ar} />
           <p className="text-sm font-semibold text-[#010131]">
-            {tx("Section", "القسم")} {steps[step].order} / {steps.length}
-            {" · "}
-            {ar ? steps[step].comps[0]?.clusterNameAr : steps[step].comps[0]?.clusterNameEn}
+            {tx("Rate each statement", "قيّم كل عبارة")} · {tx("Page", "صفحة")} {page + 1}/{normPages.length}
           </p>
 
-          {steps[step].comps.map((comp) => (
-            <section key={comp.acCompetencyId} className="rounded-lg border bg-white p-4">
-              <p className="text-sm font-semibold text-[#010131]">{ar ? comp.nameAr : comp.nameEn}</p>
-              <div className="mt-3 space-y-3">
-                {comp.items.map((it) => (
-                  <div key={it.itemKey} className="space-y-1.5">
-                    <p className="text-sm">{ar ? it.textAr : it.textEn}</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {LIKERT.map((v) => {
-                        const selected = answers[it.itemKey] === v;
-                        return (
-                          <button
-                            key={v}
-                            type="button"
-                            title={likertLabel(v)}
-                            onClick={() => answer(it.itemKey, comp.acCompetencyId, it.reverse, v)}
-                            className={`min-w-[2.25rem] rounded-md border px-2.5 py-1.5 text-sm transition ${
-                              selected ? "border-[#5391D5] bg-[#5391D5] text-white" : "border-border hover:bg-muted"
-                            }`}
-                          >
-                            {v}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
+          <section className="space-y-3 rounded-lg border bg-white p-4">
+            {(normPages[page] ?? []).map((it) => (
+              <div key={it.itemKey} className="space-y-1.5 border-b border-slate-100 pb-3 last:border-0 last:pb-0">
+                <p className="text-sm">{ar ? it.textAr : it.textEn}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {LIKERT.map((v) => {
+                    const selected = answers[it.itemKey] === v;
+                    return (
+                      <button
+                        key={v}
+                        type="button"
+                        title={likertLabel(v)}
+                        onClick={() => answerNorm(it, v)}
+                        className={`min-w-[2.25rem] rounded-md border px-2.5 py-1.5 text-sm transition ${
+                          selected ? "border-[#5391D5] bg-[#5391D5] text-white" : "border-border hover:bg-muted"
+                        }`}
+                      >
+                        {v}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </section>
-          ))}
+            ))}
+          </section>
 
           <div className="flex items-center justify-between gap-3">
             <button
-              disabled={step === 0}
-              onClick={() => setStep((s) => Math.max(0, s - 1))}
+              disabled={page === 0}
+              onClick={() => setPage((s) => Math.max(0, s - 1))}
               className="inline-flex items-center gap-1 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
             >
               <ChevronLeft className="h-4 w-4" /> {tx("Previous", "السابق")}
@@ -215,30 +319,111 @@ export function PersonaStandaloneClient({
             <span className="text-[11px] text-muted-foreground">
               {saving ? tx("Saving…", "جارٍ الحفظ…") : tx("Answers save automatically", "تُحفظ الإجابات تلقائيًا")}
             </span>
-            {step < steps.length - 1 ? (
+            {page < normPages.length - 1 ? (
               <button
-                onClick={() => setStep((s) => Math.min(steps.length - 1, s + 1))}
+                onClick={() => setPage((s) => Math.min(normPages.length - 1, s + 1))}
                 className="inline-flex items-center gap-1 rounded-md bg-[#010131] px-4 py-2 text-sm font-semibold text-white hover:bg-[#121140]"
               >
                 {tx("Next", "التالي")} <ChevronRight className="h-4 w-4" />
               </button>
             ) : (
               <button
-                onClick={submit}
-                disabled={!allAnswered || busy}
-                className="inline-flex items-center gap-2 rounded-md bg-[#047857] px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
+                onClick={() => { setPhase("ipsative"); window.scrollTo({ top: 0 }); }}
+                disabled={!allNormAnswered}
+                className="inline-flex items-center gap-1 rounded-md bg-[#010131] px-4 py-2 text-sm font-semibold text-white hover:bg-[#121140] disabled:opacity-50"
               >
-                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                {busy ? tx("Scoring…", "جارٍ التقييم…") : tx("Submit", "إرسال")}
+                {tx("Continue", "متابعة")} <ChevronRight className="h-4 w-4" />
               </button>
             )}
           </div>
-          {!allAnswered && step === steps.length - 1 && (
+          {!allNormAnswered && page === normPages.length - 1 && (
             <p className="flex items-center justify-end gap-1 text-end text-[11px] text-amber-600">
               <AlertTriangle className="h-3.5 w-3.5" />
               {tx(
-                `Answer all ${totalItems} statements to submit (${totalItems - answeredCount} left).`,
-                `أجب عن جميع العبارات (${totalItems}) للإرسال (تبقّى ${totalItems - answeredCount}).`,
+                `Answer all ${totalNorm} statements to continue (${totalNorm - answeredNorm} left).`,
+                `أجب عن جميع العبارات (${totalNorm}) للمتابعة (تبقّى ${totalNorm - answeredNorm}).`,
+              )}
+            </p>
+          )}
+        </div>
+      )}
+
+      {phase === "ipsative" && (
+        <div className="space-y-4">
+          <ProgressBar value={blocksDone} total={ipsBlocks.length} ar={ar} unit={tx("blocks", "مجموعات")} />
+          <div className="rounded-lg border border-[#5391D5] bg-[#5391D5]/5 p-3">
+            <p className="text-sm font-semibold text-[#010131]">{tx("Most / least like me", "الأكثر / الأقل انطباقًا عليّ")}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {tx(
+                "In each set, mark the one statement MOST like you and the one LEAST like you.",
+                "في كل مجموعة، حدّد العبارة الأكثر انطباقًا عليك والعبارة الأقل انطباقًا عليك.",
+              )}
+            </p>
+          </div>
+
+          {ipsBlocks.map((block, bi) => {
+            const ch = ipsChoices[block.blockId] ?? {};
+            const complete = ch.most && ch.least;
+            return (
+              <section key={block.blockId} className={`rounded-lg border bg-white p-4 ${complete ? "border-emerald-200" : "border-slate-200"}`}>
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-xs font-medium text-slate-500">{tx("Set", "مجموعة")} {bi + 1}/{ipsBlocks.length}</p>
+                  {complete && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
+                </div>
+                <div className="space-y-2">
+                  {block.statements.map((st) => {
+                    const isMost = ch.most === st.itemKey;
+                    const isLeast = ch.least === st.itemKey;
+                    return (
+                      <div key={st.itemKey} className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => chooseIps(block, st.itemKey, "most")}
+                          className={`shrink-0 rounded-md border px-2 py-1 text-[11px] font-semibold transition ${isMost ? "border-emerald-500 bg-emerald-500 text-white" : "border-slate-200 text-slate-500 hover:bg-emerald-50"}`}
+                        >
+                          {tx("Most", "الأكثر")}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => chooseIps(block, st.itemKey, "least")}
+                          className={`shrink-0 rounded-md border px-2 py-1 text-[11px] font-semibold transition ${isLeast ? "border-rose-500 bg-rose-500 text-white" : "border-slate-200 text-slate-500 hover:bg-rose-50"}`}
+                        >
+                          {tx("Least", "الأقل")}
+                        </button>
+                        <span className="text-sm">{ar ? st.textAr : st.textEn}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
+
+          <div className="flex items-center justify-between gap-3">
+            <button
+              onClick={() => { setPhase("normative"); setPage(normPages.length - 1); }}
+              className="inline-flex items-center gap-1 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+            >
+              <ChevronLeft className="h-4 w-4" /> {tx("Back", "رجوع")}
+            </button>
+            <span className="text-[11px] text-muted-foreground">
+              {saving ? tx("Saving…", "جارٍ الحفظ…") : tx("Answers save automatically", "تُحفظ الإجابات تلقائيًا")}
+            </span>
+            <button
+              onClick={submit}
+              disabled={!allNormAnswered || !allIpsDone || busy}
+              className="inline-flex items-center gap-2 rounded-md bg-[#047857] px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
+            >
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+              {busy ? tx("Scoring…", "جارٍ التقييم…") : tx("Submit", "إرسال")}
+            </button>
+          </div>
+          {!allIpsDone && (
+            <p className="flex items-center justify-end gap-1 text-end text-[11px] text-amber-600">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              {tx(
+                `Complete all ${ipsBlocks.length} sets to submit (${ipsBlocks.length - blocksDone} left).`,
+                `أكمل جميع المجموعات (${ipsBlocks.length}) للإرسال (تبقّى ${ipsBlocks.length - blocksDone}).`,
               )}
             </p>
           )}
@@ -246,14 +431,41 @@ export function PersonaStandaloneClient({
       )}
 
       {phase === "result" && profile && (
-        <PersonaResult competencies={competencies} profile={profile} name={name.trim()} ar={ar} onReset={reset} sessionId={sessionId} />
+        <PersonaResult
+          competencies={competencies}
+          profile={profile}
+          name={name.trim()}
+          ar={ar}
+          onReset={reset}
+          sessionId={sessionId}
+          purpose={purpose}
+          role={selectedRole}
+        />
       )}
     </div>
   );
 }
 
+function totalNormPreview(competencies: BehavioralCompetency[]): number {
+  return competencies.reduce((n, c) => n + c.items.length, 0);
+}
+
+function ProgressBar({ value, total, ar, unit }: { value: number; total: number; ar: boolean; unit?: string }) {
+  const pct = total > 0 ? Math.round((value / total) * 100) : 0;
+  return (
+    <div className="flex items-center gap-3">
+      <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+        <div className="h-full bg-[#5391D5]" style={{ width: `${pct}%` }} />
+      </div>
+      <span className="text-xs tabular-nums text-muted-foreground">
+        {value}/{total}{unit ? ` ${unit}` : ""}
+      </span>
+    </div>
+  );
+}
+
 function PersonaResult({
-  competencies, profile, name, ar, onReset, sessionId,
+  competencies, profile, name, ar, onReset, sessionId, purpose, role,
 }: {
   competencies: BehavioralCompetency[];
   profile: BehavioralProfileRow[];
@@ -261,24 +473,45 @@ function PersonaResult({
   ar: boolean;
   onReset: () => void;
   sessionId: string | null;
+  purpose: Purpose;
+  role: RoleProfileOption | null;
 }) {
   const tx = (en: string, arabic: string) => (ar ? arabic : en);
-  const scoreById = new Map(profile.map((p) => [p.competencyId, p.selfScore]));
+  const scoreById = useMemo(() => new Map(profile.map((p) => [p.competencyId, p.selfScore])), [profile]);
+
+  const fit: FitResult | null = useMemo(() => {
+    if (purpose !== "hiring" || !role) return null;
+    return computeFit(scoreById, role.comps);
+  }, [purpose, role, scoreById]);
+
+  const nameById = useMemo(
+    () => new Map(competencies.map((c) => [c.acCompetencyId, ar ? c.nameAr : c.nameEn])),
+    [competencies, ar],
+  );
 
   // Group competencies by cluster, attaching the self score where present.
   const clusters = useMemo(() => {
-    const byCluster = new Map<number, { nameEn: string; nameAr: string; rows: { name: string; score: number }[] }>();
+    const byCluster = new Map<number, { nameEn: string; nameAr: string; rows: { id: string; name: string; score: number }[] }>();
     for (const c of competencies) {
       const score = scoreById.get(c.acCompetencyId);
       if (score == null) continue;
       if (!byCluster.has(c.clusterOrder)) byCluster.set(c.clusterOrder, { nameEn: c.clusterNameEn, nameAr: c.clusterNameAr, rows: [] });
-      byCluster.get(c.clusterOrder)!.rows.push({ name: ar ? c.nameAr : c.nameEn, score });
+      byCluster.get(c.clusterOrder)!.rows.push({ id: c.acCompetencyId, name: ar ? c.nameAr : c.nameEn, score });
     }
     return Array.from(byCluster.entries()).sort((a, b) => a[0] - b[0]).map(([order, v]) => ({ order, ...v }));
   }, [competencies, ar, scoreById]);
 
   const all = profile.map((p) => p.selfScore);
   const overall = all.length ? Math.round((all.reduce((a, b) => a + b, 0) / all.length) * 100) / 100 : 0;
+
+  // Development: the lowest-scoring competencies become the focus list.
+  const focus = useMemo(() => {
+    if (purpose !== "development") return [];
+    return [...profile]
+      .sort((a, b) => a.selfScore - b.selfScore)
+      .slice(0, 5)
+      .map((p) => ({ name: nameById.get(p.competencyId) ?? "", score: p.selfScore }));
+  }, [purpose, profile, nameById]);
 
   return (
     <div className="space-y-5 rounded-xl border bg-white p-6">
@@ -287,14 +520,72 @@ function PersonaResult({
           <p className="text-sm text-slate-500">{tx("Self-profile for", "الملف الذاتي لـ")} <span className="font-semibold text-[#010131]">{name}</span></p>
         ) : <span />}
         <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
-          {tx("Self-report · indicative", "تقييم ذاتي · استرشادي")}
+          {purpose === "hiring" ? tx("Hiring fit · self-report", "ملاءمة توظيف · تقييم ذاتي") : tx("Development · self-report", "تطوير · تقييم ذاتي")}
         </span>
       </div>
+
+      {/* HIRING: fit headline + biggest gaps */}
+      {purpose === "hiring" && fit && (
+        <div className="rounded-lg border border-slate-200 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-slate-500">{tx("Role fit", "ملاءمة الدور")}{role ? ` · ${role.name}` : ""}</p>
+              <span className={`mt-1 inline-block rounded-lg px-4 py-2 text-2xl font-bold ${FIT_BAND_TW[fit.band]}`}>
+                {fit.fitPct}% · {ar ? fit.bandLabelAr : fit.bandLabel}
+              </span>
+            </div>
+          </div>
+          <p className="mt-3 text-[11px] text-slate-500">
+            {tx("Biggest gaps vs the role target", "أكبر الفجوات مقابل مستهدف الدور")}
+          </p>
+          <div className="mt-1 space-y-1.5">
+            {fit.gaps.filter((g) => g.self != null && g.gap > 0).slice(0, 5).map((g) => (
+              <div key={g.competencyId} className="flex items-center justify-between text-sm">
+                <span className="text-[#010131]">{nameById.get(g.competencyId) ?? g.name}</span>
+                <span className="tabular-nums text-rose-600">{g.self?.toFixed(1)} / {g.target.toFixed(1)} <span className="text-slate-400">(-{g.gap.toFixed(1)})</span></span>
+              </div>
+            ))}
+            {fit.gaps.filter((g) => g.self != null && g.gap > 0).length === 0 && (
+              <p className="text-sm text-emerald-700">{tx("Meets or exceeds every target competency.", "يحقّق أو يتجاوز كل الجدارات المستهدفة.")}</p>
+            )}
+          </div>
+          <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
+            {tx(
+              "A self-report screening signal - corroborate with a Reflect 360, interview and evidence before any hiring decision.",
+              "إشارة فرز قائمة على تقييم ذاتي - تحقّق منها بتقييم 360 ومقابلة وأدلة قبل أي قرار توظيف.",
+            )}
+          </p>
+        </div>
+      )}
 
       <div>
         <p className="text-[11px] uppercase tracking-wider text-slate-500">{tx("Overall self-rating", "متوسط التقييم الذاتي")}</p>
         <span className={`mt-1 inline-block rounded-lg px-4 py-2 text-2xl font-bold ${PERSONA_BAND_TW[personaBand(overall).key]}`}>{overall.toFixed(2)} / 5 · {personaBandLabel(overall, ar)}</span>
       </div>
+
+      {/* DEVELOPMENT: focus list with explanation + suggestion per band */}
+      {purpose === "development" && focus.length > 0 && (
+        <div className="rounded-lg border border-slate-200 p-4">
+          <p className="text-sm font-semibold text-[#010131]">{tx("Development focus", "أولويات التطوير")}</p>
+          <div className="mt-2 space-y-2.5">
+            {focus.map((f) => {
+              const b = personaBand(f.score);
+              return (
+                <div key={f.name}>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-[#010131]">{f.name}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${PERSONA_BAND_TW[b.key]}`}>{f.score.toFixed(1)} · {ar ? b.labelAr : b.label}</span>
+                  </div>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">{b.action}</p>
+                </div>
+              );
+            })}
+          </div>
+          <p className="mt-3 text-[11px] text-slate-500">
+            {tx("Full per-competency suggestions are in the downloadable report.", "تتوفّر الاقتراحات الكاملة لكل جدارة في التقرير القابل للتنزيل.")}
+          </p>
+        </div>
+      )}
 
       <div className="space-y-5">
         {clusters.map((cl) => {
@@ -307,7 +598,7 @@ function PersonaResult({
               </div>
               <div className="space-y-2">
                 {cl.rows.map((r) => (
-                  <div key={r.name}>
+                  <div key={r.id}>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-[#010131]">{r.name}</span>
                       <span className="tabular-nums text-muted-foreground">{r.score.toFixed(1)}</span>

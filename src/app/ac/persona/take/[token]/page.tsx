@@ -3,6 +3,7 @@ import { Layers } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
+import { loadPersonaRoleOptions } from "@/lib/scoring/persona-roles";
 import { PersonaStandaloneClient } from "../../_components/persona-standalone-client";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +22,8 @@ export default async function PersonaTakePage({ params }: { params: { token: str
     .eq("redemption_token", params.token)
     .maybeSingle<{ redemption_token: string; redeemer_name: string }>();
   if (!redemption) return notFound();
+
+  const roleProfiles = await loadPersonaRoleOptions();
 
   return (
     <div className="min-h-screen bg-background">
@@ -43,6 +46,7 @@ export default async function PersonaTakePage({ params }: { params: { token: str
           competencies={BEHAVIORAL_COMPETENCIES}
           redemptionToken={redemption.redemption_token}
           prefillName={redemption.redeemer_name ?? undefined}
+          roleProfiles={roleProfiles}
         />
       </main>
     </div>

@@ -51,23 +51,49 @@ export async function getOrCreateBehavioralSession(
  */
 export async function createAnonymousBehavioralSession(
   takerName: string | null,
-  opts?: { organizationId?: string | null; voucherRedemptionId?: string | null },
+  opts?: {
+    organizationId?: string | null;
+    voucherRedemptionId?: string | null;
+    /** 'development' (narrative + suggestions) or 'hiring' (fit vs a target role). */
+    purpose?: "development" | "hiring";
+    /** Target role profile for a hiring fit read (migration 00110). */
+    targetRoleProfileId?: string | null;
+    /** Seed for the reproducible item layout (migration 00110). */
+    seed?: number | null;
+  },
 ): Promise<BehavioralSession> {
   const sb = createServiceClient();
-  const { data, error } = await sb
+  const base: Record<string, unknown> = {
+    taker_name: takerName,
+    status: "in_progress",
+    started_at: new Date().toISOString(),
+    // Voucher delegate flow: stamp the client org + redemption (columns land
+    // with migration 00106; only included when provided so the non-voucher
+    // path keeps working before the migration).
+    ...(opts?.organizationId ? { organization_id: opts.organizationId } : {}),
+    ...(opts?.voucherRedemptionId ? { voucher_redemption_id: opts.voucherRedemptionId } : {}),
+  };
+  // Purpose/target/seed land with migration 00110; only included when provided
+  // and stripped + retried if the columns aren't there yet (tolerant).
+  const extended: Record<string, unknown> = {
+    ...base,
+    ...(opts?.purpose ? { purpose: opts.purpose } : {}),
+    ...(opts?.targetRoleProfileId ? { target_role_profile_id: opts.targetRoleProfileId } : {}),
+    ...(opts?.seed != null ? { randomization_seed: opts.seed } : {}),
+  };
+
+  let { data, error } = await sb
     .from("behavioral_assessment_sessions")
-    .insert({
-      taker_name: takerName,
-      status: "in_progress",
-      started_at: new Date().toISOString(),
-      // Voucher delegate flow: stamp the client org + redemption (columns land
-      // with migration 00106; only included when provided so the non-voucher
-      // path keeps working before the migration).
-      ...(opts?.organizationId ? { organization_id: opts.organizationId } : {}),
-      ...(opts?.voucherRedemptionId ? { voucher_redemption_id: opts.voucherRedemptionId } : {}),
-    })
+    .insert(extended)
     .select("id, status")
     .single();
+  if (error && /column .*(purpose|target_role_profile_id|randomization_seed)/i.test(error.message)) {
+    ({ data, error } = await sb
+      .from("behavioral_assessment_sessions")
+      .insert(base)
+      .select("id, status")
+      .single());
+  }
   if (error || !data) throw error ?? new Error("Could not create Persona session");
   return { id: data.id as string, status: data.status as BehavioralStatus };
 }
@@ -140,6 +166,10 @@ export type BehavioralAnswer = {
   competencyId: string; // AC catalogue competency id
   rawScore: number; // 1-5
   isReverse: boolean;
+  /** 'normative' (Likert) or 'ipsative' (forced-choice). Optional; defaults to normative. */
+  itemType?: "normative" | "ipsative";
+  /** Forced-choice block context for ipsative rows (migration 00110). */
+  answerData?: Record<string, unknown> | null;
 };
 
 /** Upsert a batch of answers (autosave). Refuses once the session is submitted. */
@@ -157,19 +187,32 @@ export async function saveBehavioralAnswers(
   if (!session) return { ok: false, error: "Invalid session" };
   if (session.status === "submitted") return { ok: false, error: "Session already submitted" };
 
-  const rows = answers
-    .filter((a) => Number.isInteger(a.rawScore) && a.rawScore >= 1 && a.rawScore <= 5)
-    .map((a) => ({
-      session_id: sessionId,
-      item_key: a.itemKey,
-      competency_id: a.competencyId,
-      raw_score: a.rawScore,
-      is_reverse: a.isReverse,
-      answered_at: new Date().toISOString(),
-    }));
-  const { error } = await sb
+  const valid = answers.filter((a) => Number.isInteger(a.rawScore) && a.rawScore >= 1 && a.rawScore <= 5);
+  const baseRow = (a: BehavioralAnswer) => ({
+    session_id: sessionId,
+    item_key: a.itemKey,
+    competency_id: a.competencyId,
+    raw_score: a.rawScore,
+    is_reverse: a.isReverse,
+    answered_at: new Date().toISOString(),
+  });
+  // item_type / answer_data land with migration 00110; only attach them when an
+  // answer actually carries them, and strip + retry if the columns aren't there.
+  const hasExtended = valid.some((a) => a.itemType || a.answerData != null);
+  const rowsExtended = valid.map((a) => ({
+    ...baseRow(a),
+    ...(a.itemType ? { item_type: a.itemType } : {}),
+    ...(a.answerData != null ? { answer_data: a.answerData } : {}),
+  }));
+
+  let { error } = await sb
     .from("behavioral_assessment_responses")
-    .upsert(rows, { onConflict: "session_id,item_key" });
+    .upsert(rowsExtended, { onConflict: "session_id,item_key" });
+  if (error && hasExtended && /column .*(item_type|answer_data)/i.test(error.message)) {
+    ({ error } = await sb
+      .from("behavioral_assessment_responses")
+      .upsert(valid.map(baseRow), { onConflict: "session_id,item_key" }));
+  }
   if (error) return { ok: false, error: error.message };
   await sb
     .from("behavioral_assessment_sessions")

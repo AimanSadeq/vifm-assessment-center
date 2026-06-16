@@ -190,8 +190,6 @@ export async function markAraRespondentComplete(token: string): Promise<void> {
   revalidatePath(`/ara/respond/${token}`);
 
   // Look up the assessment to decide which downstream notifications fire.
-  // All branches are fire-and-forget - a Graph outage can't block the
-  // respondent's completion.
   const { data: a } = await sb
     .from("ara_assessments")
     .select("engagement_stage, is_sandbox, default_language, include_individual_layer")
@@ -213,71 +211,94 @@ export async function markAraRespondentComplete(token: string): Promise<void> {
     a?.engagement_stage === "individual" ||
     (a?.include_individual_layer === true);
 
-  if (personalEmailApplies) {
-    // Issue the verifiable AI Readiness credential (best-effort, idempotent on
-    // the respondent). No-ops cleanly until migration 00102 widens the
-    // credential_type whitelist.
-    try {
-      const { issueAraReadinessCredential } = await import("@/lib/ara/readiness-credential");
-      await issueAraReadinessCredential(token);
-    } catch (err) {
-      console.error("[markAraRespondentComplete] AI Readiness credential issue failed:", err);
-    }
+  // ── Post-completion work runs in the BACKGROUND ──────────────────
+  // Credential issuance, the results email + PDF render, and the consultant
+  // notification are slow (Puppeteer PDF + email I/O + count queries = several
+  // seconds) and the respondent needs none of them to land on their results
+  // page. We kick them off without awaiting so Submit returns immediately.
+  // Render runs a long-lived Node server, so these promises keep running after
+  // the action returns. Each branch is independently best-effort.
+  const runPostCompletion = async () => {
+    const tasks: Promise<unknown>[] = [];
 
-    try {
-      const { sendAraEmail } = await import("@/lib/ara/email");
-      const baseUrl =
-        process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
-      const resultsUrl = `${baseUrl}/ara/personal/results/${token}`;
-      const pdfUrl = `${baseUrl}/api/ara/personal/${token}/pdf`;
-
-      // Attach the results PDF to the email (best effort). Falls back to the
-      // in-email PDF link if generation/fetch fails.
-      let attachments: { filename: string; content: string }[] | undefined;
-      try {
-        const pdfRes = await fetch(pdfUrl);
-        if (pdfRes.ok) {
-          const buf = Buffer.from(await pdfRes.arrayBuffer());
-          if (buf.length > 0) {
-            attachments = [
-              { filename: "AI-Readiness-Compass-Results.pdf", content: buf.toString("base64") },
-            ];
+    if (personalEmailApplies) {
+      // Verifiable AI Readiness credential (best-effort, idempotent on the
+      // respondent; no-ops until migration 00102 widens the type whitelist).
+      tasks.push(
+        (async () => {
+          try {
+            const { issueAraReadinessCredential } = await import("@/lib/ara/readiness-credential");
+            await issueAraReadinessCredential(token);
+          } catch (err) {
+            console.error("[markAraRespondentComplete] AI Readiness credential issue failed:", err);
           }
-        }
-      } catch (pdfErr) {
-        console.error("[markAraRespondentComplete] results PDF fetch failed (sending link only):", pdfErr);
-      }
+        })(),
+      );
 
-      await sendAraEmail({
-        to: respondent.email,
-        emailType: "ara_personal_results_link",
-        language: respondent.language_preference ?? a?.default_language ?? "en",
-        data: {
-          respondentName: respondent.name,
-          resultsUrl,
-          pdfUrl,
-        },
-        attachments,
-        isSandbox: !!a?.is_sandbox,
-        respondentId: respondent.id,
-        assessmentId: respondent.assessment_id,
-      });
-    } catch (err) {
-      console.error("[markAraRespondentComplete] personal results email failed:", err);
-    }
-  }
+      // Personal results email with the PDF attached (best effort; falls back
+      // to the in-email link if PDF generation fails).
+      tasks.push(
+        (async () => {
+          try {
+            const { sendAraEmail } = await import("@/lib/ara/email");
+            const baseUrl =
+              process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
+              (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+            const resultsUrl = `${baseUrl}/ara/personal/results/${token}`;
+            const pdfUrl = `${baseUrl}/api/ara/personal/${token}/pdf`;
 
-  // Consultant notification - fires for org-stage assessments. Mode C
-  // assessments still get this on top of the personal email above
-  // because the consultant cares about completion progress regardless
-  // of whether the respondent also did the individual layer.
-  if (a?.engagement_stage !== "individual") {
-    try {
-      const { notifyConsultantOnRespondentComplete } = await import("@/lib/ara/actions");
-      await notifyConsultantOnRespondentComplete(respondent.id);
-    } catch (err) {
-      console.error("[markAraRespondentComplete] consultant notify failed:", err);
+            let attachments: { filename: string; content: string }[] | undefined;
+            try {
+              const pdfRes = await fetch(pdfUrl);
+              if (pdfRes.ok) {
+                const buf = Buffer.from(await pdfRes.arrayBuffer());
+                if (buf.length > 0) {
+                  attachments = [
+                    { filename: "AI-Readiness-Compass-Results.pdf", content: buf.toString("base64") },
+                  ];
+                }
+              }
+            } catch (pdfErr) {
+              console.error("[markAraRespondentComplete] results PDF fetch failed (sending link only):", pdfErr);
+            }
+
+            await sendAraEmail({
+              to: respondent.email,
+              emailType: "ara_personal_results_link",
+              language: respondent.language_preference ?? a?.default_language ?? "en",
+              data: { respondentName: respondent.name, resultsUrl, pdfUrl },
+              attachments,
+              isSandbox: !!a?.is_sandbox,
+              respondentId: respondent.id,
+              assessmentId: respondent.assessment_id,
+            });
+          } catch (err) {
+            console.error("[markAraRespondentComplete] personal results email failed:", err);
+          }
+        })(),
+      );
     }
-  }
+
+    // Consultant notification - fires for org-stage assessments (incl. Mode C,
+    // where the consultant tracks completion progress regardless of the layer).
+    if (a?.engagement_stage !== "individual") {
+      tasks.push(
+        (async () => {
+          try {
+            const { notifyConsultantOnRespondentComplete } = await import("@/lib/ara/actions");
+            await notifyConsultantOnRespondentComplete(respondent.id);
+          } catch (err) {
+            console.error("[markAraRespondentComplete] consultant notify failed:", err);
+          }
+        })(),
+      );
+    }
+
+    await Promise.allSettled(tasks);
+  };
+
+  // Fire-and-forget: do not await. Submit returns now.
+  void runPostCompletion().catch((err) =>
+    console.error("[markAraRespondentComplete] background tasks failed:", err),
+  );
 }

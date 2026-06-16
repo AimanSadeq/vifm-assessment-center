@@ -12,6 +12,8 @@ import {
 import { publishNotification, publishToAllAdmins } from "@/lib/notifications/publish";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { issueReadyNowForEngagement } from "@/lib/credentials/ac-ready-now";
+import { provisionCandidateLogin, generateCandidateSetupLink } from "@/lib/auth/provision-candidate";
+import { sendEmail } from "@/lib/integrations/email";
 
 // Defence-in-depth: every admin-only mutating action runs through this.
 // Under AUTH_ENABLED=false the helper returns a synthetic admin so dev
@@ -164,6 +166,101 @@ export async function addDemoAssessorAction(values: {
   }
 
   return { data };
+}
+
+/**
+ * Provision a portal login for a candidate and email them a set-password link.
+ * Idempotent: re-inviting reuses the existing auth user and just re-sends the
+ * link. Creates the auth user + profiles(role=candidate) + sets profile_id on
+ * the candidate's rows. The actual account creation runs under the admin's
+ * action (service-role), mirroring addDemoAssessorAction.
+ */
+export async function inviteCandidateToPortalAction(candidateId: string) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
+  const sb = createServiceClient();
+  const { data: cand } = await sb
+    .from("candidates")
+    .select(
+      "id, full_name, email, engagement_id, engagements(name, target_role, organization_id, start_date, end_date, organizations(name))",
+    )
+    .eq("id", candidateId)
+    .maybeSingle<{
+      id: string;
+      full_name: string;
+      email: string | null;
+      engagement_id: string;
+      engagements:
+        | {
+            name: string;
+            target_role: string | null;
+            organization_id: string | null;
+            start_date: string | null;
+            end_date: string | null;
+            organizations: { name: string } | { name: string }[] | null;
+          }
+        | {
+            name: string;
+            target_role: string | null;
+            organization_id: string | null;
+            start_date: string | null;
+            end_date: string | null;
+            organizations: { name: string } | { name: string }[] | null;
+          }[]
+        | null;
+    }>();
+
+  if (!cand) return { error: "Candidate not found" };
+  if (!cand.email) return { error: "This candidate has no email on file." };
+
+  const eng = Array.isArray(cand.engagements) ? cand.engagements[0] : cand.engagements;
+  const orgRel = eng?.organizations;
+  const orgName =
+    (Array.isArray(orgRel) ? orgRel[0]?.name : orgRel?.name) ?? "your organization";
+
+  const prov = await provisionCandidateLogin({
+    email: cand.email,
+    fullName: cand.full_name,
+    organizationId: eng?.organization_id ?? null,
+  });
+  if (!prov.ok) {
+    return {
+      error: prov.roleMismatch
+        ? `This email already has a ${prov.existingRole} account, so a candidate login was not created.`
+        : prov.error ?? "Could not provision the login.",
+    };
+  }
+
+  const link = await generateCandidateSetupLink(cand.email);
+  const portalUrl =
+    link ?? `${process.env.NEXT_PUBLIC_SITE_URL || "https://caliber.viftraining.com"}/login`;
+
+  const dates =
+    eng?.start_date && eng?.end_date
+      ? `${eng.start_date} to ${eng.end_date}`
+      : "See the portal for your schedule.";
+
+  const emailed = await sendEmail({
+    to: cand.email,
+    template: "candidate_invitation",
+    data: {
+      candidateName: cand.full_name,
+      engagementName: eng?.name ?? "your assessment",
+      organizationName: orgName,
+      assessmentDates: dates,
+      targetRole: eng?.target_role ?? "-",
+      portalUrl,
+    },
+  });
+
+  return {
+    ok: true as const,
+    emailed,
+    portalUrl,
+    created: prov.created ?? false,
+    linkedCandidateCount: prov.linkedCandidateCount ?? 0,
+  };
 }
 
 export async function removeCandidateAction(candidateId: string) {

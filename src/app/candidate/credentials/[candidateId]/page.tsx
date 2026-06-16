@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, Award, ShieldCheck, ShieldX, Download } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
-import { requireCandidateAccess } from "@/lib/auth/candidate-access";
+import { requireCandidateAccessOrNotFound } from "@/lib/auth/candidate-access";
 import { getServerT, getServerLocale } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +31,7 @@ function fmt(iso: string | null, locale: string): string {
 export default async function CandidateCredentialsPage({ params }: { params: { candidateId: string } }) {
   const t = await getServerT();
   const locale = await getServerLocale();
-  await requireCandidateAccess(params.candidateId);
+  await requireCandidateAccessOrNotFound(params.candidateId);
   let creds: Credential[] = [];
   try {
     const sb = createServiceClient();

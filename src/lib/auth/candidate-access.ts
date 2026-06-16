@@ -1,4 +1,5 @@
-import { getCurrentCaller, AuthorizationError } from "@/lib/ara/auth-guards";
+import { notFound } from "next/navigation";
+import { getCurrentCaller, AuthorizationError, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { createServiceClient } from "@/lib/supabase/server";
 
 /**
@@ -34,4 +35,21 @@ export async function requireCandidateAccess(candidateId: string): Promise<void>
   }
 
   throw new AuthorizationError("Not permitted on this candidate");
+}
+
+/**
+ * Page-level wrapper: same ownership check, but a denial renders the 404 page
+ * instead of bubbling an AuthorizationError up to the 500 boundary. Use this in
+ * candidate server components (skills / academy / credentials) so a candidate
+ * who hits another candidate's URL - or whose profile_id link isn't set up yet -
+ * gets a clean "not found" rather than a crash. Non-authorization errors still
+ * propagate.
+ */
+export async function requireCandidateAccessOrNotFound(candidateId: string): Promise<void> {
+  try {
+    await requireCandidateAccess(candidateId);
+  } catch (e) {
+    if (isAuthorizationError(e)) notFound();
+    throw e;
+  }
 }

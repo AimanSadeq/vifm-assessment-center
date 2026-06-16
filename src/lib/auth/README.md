@@ -47,9 +47,13 @@ audit, not a sweep: confirm every `createServiceClient()` reachable from a page
 render is justified — an elevated server action, a token-gated flow (ARA/Reflect),
 or an admin-only operation — and is not sidestepping RLS on user-facing data.
 
-### Step 3: Add Auth Guards to API Routes
-- `src/app/api/reports/*/route.tsx` - verify user is admin, client (own org), or candidate (own report, released)
-- `src/app/api/consent/*/route.ts` - verify user is the candidate
+### Step 3: Add Auth Guards to API Routes - DONE (2026-06-16)
+- `src/app/api/reports/*/route.tsx` + `learning-plan` - `guardCandidateReportAccess` (admin / own-org client / own-record candidate), `src/lib/auth/report-access.ts`.
+- `src/app/api/consent/*/route.ts` - owning candidate or admin.
+- Reflect report routes (`participant`/`cohort` PDF, `framework.pdf`, `needs-scheduling.csv`) - `guardReflectEngagementAccess` (admin or owning consultant), `src/lib/reflect/report-access.ts`.
+- Academy action routes (`enroll`, `lesson/start`, `lesson/[id]/save`, `lesson/[id]/complete`, `complete`) - `guardAcademyCandidate` (admin or owning candidate), `src/lib/academy/access.ts`.
+- Credential PDF - admin or owning candidate; role-profiles export - `requireRole(["admin"])`.
+- Adequate as-is (no guard needed): ARA report PDF (`requireAssessmentOwner`), ARA-personal + tech-sandbox (unguessable token), Fluent cert / psychometrics / standalone Persona report (UUID-secret + anonymous takers), prehire export (`requireRole(admin)`), credential verify (public-by-design).
 
 ### Step 4: Fix Organization Scoping
 - Client pages use `getClientOrgId()` from `src/lib/auth/get-org-id.ts`
@@ -60,6 +64,30 @@ or an admin-only operation — and is not sidestepping RLS on user-facing data.
 - Replace "Administrator", "Assessor", "Client" placeholders in layouts with `session.user.full_name`
 - Replace `created_by: null` in engagement creation with `auth.uid()`
 - Replace dev assessor ID fallback in integration worksheet with `auth.uid()`
+
+### Step 6: Provisioning candidate logins (go-live)
+AC candidates need a REAL Supabase auth account to sign in to `/candidate/*`
+(unlike Pre-Hire / ARA respondents, which are token-based and need no account).
+New candidate rows are created with `profile_id = NULL`, so a candidate cannot
+log in and see their own report/skills/credentials until provisioned. Three
+pieces must line up: an `auth.users` row, a `profiles` row with `role='candidate'`,
+and `candidates.profile_id` pointing at it.
+
+- **Core:** `provisionCandidateLogin()` in `src/lib/auth/provision-candidate.ts`
+  (find-or-create user -> upsert profile -> link every candidate row sharing the
+  email). Refuses to touch an email that already has a non-candidate profile.
+- **In-app:** the "Invite to portal" (KeyRound) button on each candidate row of
+  the engagement detail page calls `inviteCandidateToPortalAction`, which
+  provisions + emails the `candidate_invitation` template with a set-password
+  link (recovery link via `generateCandidateSetupLink`; copy-link fallback when
+  Microsoft Graph email is unconfigured).
+- **Batch:** `npx tsx scripts/provision-candidate-logins.ts` (dry-run by default;
+  `--apply` to execute; pass specific emails to scope). Prints a set-password link
+  per candidate. Do NOT provision seeded `@adnoc.ae` demo rows, and do NOT
+  provision an email intended to be an admin (e.g. ahmad.rashid) as a candidate.
+- **Clients** are already provisioned the normal way: a `profiles` row with
+  `role='client'` + `organization_id` (the client-org guard reads it via
+  `getClientOrgId()`).
 
 ### Files with TODO Comments
 Search for `// TODO:` to find all auth-related placeholders:

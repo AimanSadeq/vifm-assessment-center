@@ -33,8 +33,8 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { addCandidateAction, createAssignmentAction, addDemoAssessorAction, updateEngagementStatusAction, removeCandidateAction, deleteAssignmentAction, setCandidateRoleProfileAction, createReengagementAction } from "../actions";
-import { Trash2, Send, FileText, CheckCircle, Eye, Repeat2, Loader2, History, Grid3x3 } from "lucide-react";
+import { addCandidateAction, createAssignmentAction, addDemoAssessorAction, updateEngagementStatusAction, removeCandidateAction, deleteAssignmentAction, setCandidateRoleProfileAction, createReengagementAction, inviteCandidateToPortalAction } from "../actions";
+import { Trash2, Send, FileText, CheckCircle, Eye, Repeat2, Loader2, History, Grid3x3, KeyRound } from "lucide-react";
 import Link from "next/link";
 import { Checkbox } from "@/components/ui/checkbox";
 import { localizedName } from "@/lib/i18n/localized";
@@ -152,6 +152,38 @@ export function EngagementDetail({
       toast.error(typeof result.error === "string" ? result.error : t("adminEngagements.detail.toastStatusFailed"));
     } else {
       toast.success(t(`adminEngagements.detail.toastStatusChanged.${statusConfirm.status}`));
+      router.refresh();
+    }
+  };
+
+  const [invitingId, setInvitingId] = useState<string | null>(null);
+
+  const handleInviteCandidate = async (candidateId: string, name: string, email: string) => {
+    if (!email) {
+      toast.error(t("adminEngagements.detail.toastInviteNoEmail"));
+      return;
+    }
+    if (!confirm(t("adminEngagements.detail.confirmInviteCandidate", { name, email }))) return;
+    setInvitingId(candidateId);
+    const result = await inviteCandidateToPortalAction(candidateId);
+    setInvitingId(null);
+    if ("error" in result && result.error) {
+      toast.error(typeof result.error === "string" ? result.error : t("adminEngagements.detail.toastInviteFailed"));
+      return;
+    }
+    if ("ok" in result && result.ok) {
+      if (result.emailed) {
+        toast.success(t("adminEngagements.detail.toastInviteSent", { name }));
+      } else {
+        // Email not configured / failed: hand the admin the link to share.
+        toast.success(t("adminEngagements.detail.toastInviteLinkReady"));
+        try {
+          await navigator.clipboard.writeText(result.portalUrl);
+          toast.message(t("adminEngagements.detail.toastInviteLinkCopied"));
+        } catch {
+          toast.message(result.portalUrl);
+        }
+      }
       router.refresh();
     }
   };
@@ -657,6 +689,20 @@ export function EngagementDetail({
                                   <Eye className="h-3.5 w-3.5" />
                                 </Button>
                               </Link>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-muted-foreground hover:text-primary"
+                                title={t("adminEngagements.detail.inviteToPortal")}
+                                disabled={invitingId === (c.id as string)}
+                                onClick={() => handleInviteCandidate(c.id as string, c.full_name as string, (c.email as string) ?? "")}
+                              >
+                                {invitingId === (c.id as string) ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <KeyRound className="h-3.5 w-3.5" />
+                                )}
+                              </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"

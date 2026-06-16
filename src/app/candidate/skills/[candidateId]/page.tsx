@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { requireCandidateAccess } from "@/lib/auth/candidate-access";
+import { requireCandidateAccessOrNotFound } from "@/lib/auth/candidate-access";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -71,7 +71,7 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
   const { candidateId } = params;
   const asAdmin = searchParams?.asAdmin === "1";
 
-  await requireCandidateAccess(candidateId);
+  await requireCandidateAccessOrNotFound(candidateId);
 
   const { data: candidate, error: candErr } = await supabase
     .from("candidates")

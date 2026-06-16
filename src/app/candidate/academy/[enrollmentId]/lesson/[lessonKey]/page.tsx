@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
-import { requireCandidateAccess } from "@/lib/auth/candidate-access";
+import { requireCandidateAccessOrNotFound } from "@/lib/auth/candidate-access";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -102,7 +102,7 @@ export default async function AcademyLessonPage({ params }: Props) {
   if (!enrollment || !course) return notFound();
 
   // Ownership is keyed off the enrollment's candidate, resolved above.
-  await requireCandidateAccess(enrollment.candidate_id);
+  await requireCandidateAccessOrNotFound(enrollment.candidate_id);
 
   const outline = course.outline_en ?? [];
   const hasOutline = outline.length > 0;

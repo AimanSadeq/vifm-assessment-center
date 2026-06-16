@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Check } from "lucide-react";
 import { setAssessmentTimerAction } from "../actions";
 
-type Scope = "quiz" | "fluent";
+type Scope = "quiz" | "fluent" | "cognitive";
 
 function TimerRow({
   scope,
@@ -56,12 +56,13 @@ function TimerRow({
   );
 }
 
-/** Admin editor for the two type-level assessment timers (quiz + fluent). */
-export function TimerSettings({ quiz, fluent }: { quiz: number; fluent: number }) {
+/** Admin editor for the type-level assessment timers (quiz + fluent + cognitive). */
+export function TimerSettings({ quiz, fluent, cognitive }: { quiz: number; fluent: number; cognitive: number }) {
   return (
     <div className="space-y-5">
       <TimerRow scope="quiz" label="Candidate practice quiz" hint="Time limit for the self-serve AI quiz." initial={quiz} />
       <TimerRow scope="fluent" label="Fluent English placement" hint="Time limit for the four-skill placement test." initial={fluent} />
+      <TimerRow scope="cognitive" label="Cognitive ability" hint="Time limit for the numerical / verbal / abstract reasoning test." initial={cognitive} />
       <p className="text-[11px] text-muted-foreground">
         ARC and Technical assessments are timed per assessment / per domain where they are configured. The Sandbox
         uses its own per-blueprint time.

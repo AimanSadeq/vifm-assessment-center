@@ -130,7 +130,7 @@ export const PROCESS: Record<string, ProcessPlan> = {
     constructs: ["ability", "disposition"],
     instruments: ["cognitive", "persona"],
     launch: "handoff",
-    createRoute: "/ac/psychometrics",
+    createRoute: "/ac/cognitive",
     rationaleKey: "psychometric",
   },
 };

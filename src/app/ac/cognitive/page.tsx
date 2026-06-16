@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { Ticket } from "lucide-react";
+import { Ticket, Users, FileClock } from "lucide-react";
 import { PsychometricsClient, type EngagementOption } from "./_components/psychometrics-client";
 import { AllServicesLink } from "@/components/shared/all-services-link";
 import { BackLink } from "@/components/shared/back-link";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getTimerMinutes, TIMER_DEFAULTS } from "@/lib/assessment-timers";
 
 export const dynamic = "force-dynamic";
 
@@ -41,15 +42,28 @@ export default async function CognitivePage({
   searchParams?: { candidateId?: string; engagementId?: string };
 }) {
   const engagements = await loadEngagementOptions();
+  const timerMinutes = await getTimerMinutes("cognitive", TIMER_DEFAULTS.cognitive);
   return (
     <div className="mx-auto max-w-3xl px-6 py-8">
       <BackLink href="/" label="Back" history />
       <div className="mb-4 flex items-center justify-end gap-2">
         <Link
+          href="/ac/cognitive/cohort"
+          className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted"
+        >
+          <Users className="h-3.5 w-3.5" /> Cohort
+        </Link>
+        <Link
           href="/ac/cognitive/vouchers"
           className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted"
         >
           <Ticket className="h-3.5 w-3.5" /> Vouchers
+        </Link>
+        <Link
+          href="/ac/cognitive/retention"
+          className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted"
+        >
+          <FileClock className="h-3.5 w-3.5" /> Retention
         </Link>
         <AllServicesLink />
       </div>
@@ -57,6 +71,7 @@ export default async function CognitivePage({
         candidateId={searchParams?.candidateId ?? null}
         engagementId={searchParams?.engagementId ?? null}
         engagements={engagements}
+        timerMinutes={timerMinutes}
       />
     </div>
   );

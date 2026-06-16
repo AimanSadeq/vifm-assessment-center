@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { BrainCircuit, Sparkles, Loader2, CheckCircle2, RotateCcw, AlertTriangle, Download } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { BrainCircuit, Sparkles, Loader2, CheckCircle2, RotateCcw, AlertTriangle, Download, Clock } from "lucide-react";
 import type { PsyTestPublic, PsyResult, ScaleScore } from "@/lib/psychometrics/scoring";
 import { COGNITIVE_SUBTESTS } from "@/lib/psychometrics/framework";
 
@@ -27,7 +27,7 @@ const scaleDesc = (key: string): string =>
   COGNITIVE_SUBTESTS.find((s) => s.key === key)?.desc_en ?? "";
 
 export function PsychometricsClient({
-  candidateId, engagementId, engagements = [], redemptionToken = null, prefillName,
+  candidateId, engagementId, engagements = [], redemptionToken = null, prefillName, timerMinutes,
 }: {
   candidateId: string | null;
   engagementId: string | null;
@@ -35,9 +35,15 @@ export function PsychometricsClient({
   /** Voucher redemption token (delegate flow); stamps the result with the client org. */
   redemptionToken?: string | null;
   prefillName?: string;
+  /** Admin-configurable time limit (minutes); null/0 = no limit. */
+  timerMinutes?: number | null;
 }) {
+  const limitMinutes = timerMinutes && timerMinutes > 0 ? timerMinutes : null;
   const [phase, setPhase] = useState<"intro" | "test" | "result">("intro");
   const [lang, setLang] = useState<Lang>("en");
+  // Countdown: deadline stamped when the test starts; on expiry, auto-submit.
+  const [deadline, setDeadline] = useState<number | null>(null);
+  const [remaining, setRemaining] = useState<number | null>(null);
   // Cognitive candidate picker - optional binding. Blank = anonymous.
   const [cogEng, setCogEng] = useState("");
   const [cogCand, setCogCand] = useState("");
@@ -62,7 +68,9 @@ export function PsychometricsClient({
       });
       const d = await res.json();
       if (!res.ok || !d.test) { setError(d.error || "Could not start."); return; }
-      setSessionId(d.session_id); setTest(d.test as PsyTestPublic); setAnswers({}); setResult(null); setResultId(null); setPhase("test");
+      setSessionId(d.session_id); setTest(d.test as PsyTestPublic); setAnswers({}); setResult(null); setResultId(null);
+      setDeadline(limitMinutes ? Date.now() + limitMinutes * 60_000 : null);
+      setPhase("test");
     } catch { setError("Could not start."); } finally { setBusy(false); }
   };
 
@@ -80,7 +88,31 @@ export function PsychometricsClient({
     } catch { setError("Could not score."); } finally { setBusy(false); }
   };
 
-  const reset = () => { setPhase("intro"); setTest(null); setSessionId(null); setAnswers({}); setResult(null); setResultId(null); setError(""); };
+  const reset = () => {
+    setPhase("intro"); setTest(null); setSessionId(null); setAnswers({});
+    setResult(null); setResultId(null); setError(""); setDeadline(null); setRemaining(null);
+  };
+
+  // Countdown + auto-submit on expiry. firedRef guards against a double submit
+  // if a tick lands while the async submit is still in flight.
+  const submitRef = useRef(submit);
+  submitRef.current = submit;
+  const firedRef = useRef(false);
+  useEffect(() => {
+    if (phase !== "test" || deadline == null) { firedRef.current = false; return; }
+    const tick = () => {
+      const ms = deadline - Date.now();
+      if (ms <= 0) {
+        setRemaining(0);
+        if (!firedRef.current) { firedRef.current = true; submitRef.current(); }
+      } else {
+        setRemaining(Math.ceil(ms / 1000));
+      }
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [phase, deadline]);
 
   const total = test ? test.items.length : 0;
   const answered = Object.keys(answers).length;
@@ -187,7 +219,15 @@ export function PsychometricsClient({
             : null}
 
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">{answered}/{total} answered</span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-muted-foreground">{answered}/{total} answered</span>
+              {remaining != null && (
+                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium tabular-nums ${remaining <= 60 ? "bg-rose-100 text-rose-700" : "bg-slate-100 text-slate-600"}`}>
+                  <Clock className="h-3 w-3" />
+                  {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, "0")}
+                </span>
+              )}
+            </div>
             <button onClick={submit} disabled={!canSubmit}
               className="inline-flex items-center gap-2 rounded-md bg-[#047857] px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50">
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}

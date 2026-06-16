@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { BrainCircuit } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getTimerMinutes, TIMER_DEFAULTS } from "@/lib/assessment-timers";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { PsychometricsClient } from "../../_components/psychometrics-client";
 
@@ -20,6 +21,8 @@ export default async function CognitiveTakePage({ params }: { params: { token: s
     .eq("redemption_token", params.token)
     .maybeSingle<{ redemption_token: string; redeemer_name: string }>();
   if (!redemption) return notFound();
+
+  const timerMinutes = await getTimerMinutes("cognitive", TIMER_DEFAULTS.cognitive);
 
   return (
     <div className="min-h-screen bg-background">
@@ -43,6 +46,7 @@ export default async function CognitiveTakePage({ params }: { params: { token: s
           engagementId={null}
           redemptionToken={redemption.redemption_token}
           prefillName={redemption.redeemer_name ?? undefined}
+          timerMinutes={timerMinutes}
         />
       </main>
     </div>

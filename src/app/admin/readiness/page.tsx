@@ -25,7 +25,7 @@ const INPUTS: {
     lens: "Self",
     name: "Persona",
     body: "The person rates themselves across the 38 competencies - the same framework as the 360. This is the self view of readiness.",
-    href: "/ac/psychometrics#persona",
+    href: "/ac/persona",
     cta: "Open Persona",
   },
   {

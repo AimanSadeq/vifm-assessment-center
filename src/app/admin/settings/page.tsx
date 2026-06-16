@@ -16,9 +16,10 @@ export default async function SettingsPage() {
   const emailConfigured = isEmailConfigured();
   const videoConfigured = isVideoConfigured();
 
-  const timers = await getTimersMap(["quiz", "fluent"]);
+  const timers = await getTimersMap(["quiz", "fluent", "cognitive"]);
   const quizTimer = timers.quiz ?? TIMER_DEFAULTS.quiz;
   const fluentTimer = timers.fluent ?? TIMER_DEFAULTS.fluent;
+  const cognitiveTimer = timers.cognitive ?? TIMER_DEFAULTS.cognitive;
 
   const integrations = [
     {
@@ -124,7 +125,7 @@ export default async function SettingsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <TimerSettings quiz={quizTimer} fluent={fluentTimer} />
+          <TimerSettings quiz={quizTimer} fluent={fluentTimer} cognitive={cognitiveTimer} />
         </CardContent>
       </Card>
 

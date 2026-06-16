@@ -29,8 +29,8 @@ const SERVICES: ReadonlyArray<{ key: ServiceKey; href: string; icon: typeof Comp
   { key: "technical", href: "/admin/tech-sandbox", icon: BadgeCheck, tone: "indigo", pillars: ["acquire", "manage"] },
   // Cognitive (aptitude) + Persona (the 38-competency behavioural self-assessment,
   // the "self" view of readiness) - individual diagnostics, dual-purpose too.
-  { key: "cognitive", href: "/ac/psychometrics", icon: BrainCircuit, tone: "fuchsia", pillars: ["acquire", "manage"] },
-  { key: "persona", href: "/ac/psychometrics#persona", icon: Layers, tone: "fuchsia", pillars: ["acquire", "manage"] },
+  { key: "cognitive", href: "/ac/cognitive", icon: BrainCircuit, tone: "fuchsia", pillars: ["acquire", "manage"] },
+  { key: "persona", href: "/ac/persona", icon: Layers, tone: "fuchsia", pillars: ["acquire", "manage"] },
   // ── Talent Acquisition only ──
   { key: "prehire", href: "/admin/prehire", icon: UserSearch, tone: "rose", pillars: ["acquire"] },
   { key: "fluent", href: "/ac/fluent", icon: Languages, tone: "gold", pillars: ["acquire"] },

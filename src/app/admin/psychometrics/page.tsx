@@ -84,7 +84,7 @@ export default async function PsychometricsBankPage() {
 
       <p className="text-xs text-slate-400">
         Take the assessment at{" "}
-        <Link href="/ac/psychometrics" className="inline-flex items-center gap-0.5 text-accent hover:underline">
+        <Link href="/ac/cognitive" className="inline-flex items-center gap-0.5 text-accent hover:underline">
           the runner <ArrowUpRight className="h-3 w-3" />
         </Link>
         . Once a scale clears all three gates, its results are reported as percentiles/stens against the norm group.

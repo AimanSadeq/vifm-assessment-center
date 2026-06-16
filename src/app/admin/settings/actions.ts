@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { setTimerMinutes } from "@/lib/assessment-timers";
 
-const TYPE_SCOPES = ["quiz", "fluent"] as const;
+const TYPE_SCOPES = ["quiz", "fluent", "cognitive"] as const;
 type TypeScope = (typeof TYPE_SCOPES)[number];
 
 /** Set the admin time limit (minutes) for a type-level assessment (quiz / fluent). */

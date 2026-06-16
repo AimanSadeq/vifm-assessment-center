@@ -14,6 +14,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 export const TIMER_DEFAULTS = {
   quiz: 5,
   fluent: 15,
+  cognitive: 20,
 } as const;
 
 /** Resolved value: a positive minute count, or null for "no time limit". */

@@ -1,7 +1,7 @@
 /**
- * VIFM Psychometrics — professional result report (PDF).
+ * VIFM Cognitive Ability — professional result report (PDF).
  *
- *   GET /api/ac/psychometrics/[resultId]/report  → downloadable PDF
+ *   GET /api/ac/cognitive/[resultId]/report  → downloadable PDF
  *
  * Reads the stored result via the service client (psy_results is admin-RLS; the
  * result id is an unguessable uuid handed back to the taker after scoring, mirror

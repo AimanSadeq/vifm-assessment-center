@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Ticket } from "lucide-react";
 import { BackLink } from "@/components/shared/back-link";
 import { AllServicesLink } from "@/components/shared/all-services-link";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
@@ -14,8 +16,14 @@ export const dynamic = "force-dynamic";
 export default function PersonaPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-8">
-      <BackLink href="/ac/psychometrics" label="Back" history />
-      <div className="mb-4 flex justify-end">
+      <BackLink href="/" label="Back" history />
+      <div className="mb-4 flex items-center justify-end gap-2">
+        <Link
+          href="/ac/persona/vouchers"
+          className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted"
+        >
+          <Ticket className="h-3.5 w-3.5" /> Vouchers
+        </Link>
         <AllServicesLink />
       </div>
       <PersonaStandaloneClient competencies={BEHAVIORAL_COMPETENCIES} />

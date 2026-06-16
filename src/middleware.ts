@@ -67,6 +67,14 @@ const isCognitivePublicRoute = (pathname: string) =>
   pathname === "/api/ac/cognitive" ||
   (pathname.startsWith("/api/ac/cognitive/") && pathname.endsWith("/report"));
 
+// Persona voucher delegate flow. The runner is driven by server actions (which
+// POST to the take-page route), so only the redeem page, the token runner, and
+// the result-report PDF need bypassing.
+const isPersonaPublicRoute = (pathname: string) =>
+  pathname === "/ac/persona/redeem" ||
+  pathname.startsWith("/ac/persona/take/") ||
+  (pathname.startsWith("/api/ac/persona/") && pathname.endsWith("/report"));
+
 export async function middleware(request: NextRequest) {
   if (
     isAraRespondentRoute(request.nextUrl.pathname) ||
@@ -77,7 +85,8 @@ export async function middleware(request: NextRequest) {
     isPreHireApplyRoute(request.nextUrl.pathname) ||
     isTechSandboxRoute(request.nextUrl.pathname) ||
     isFluentPublicRoute(request.nextUrl.pathname) ||
-    isCognitivePublicRoute(request.nextUrl.pathname)
+    isCognitivePublicRoute(request.nextUrl.pathname) ||
+    isPersonaPublicRoute(request.nextUrl.pathname)
   ) {
     return NextResponse.next();
   }

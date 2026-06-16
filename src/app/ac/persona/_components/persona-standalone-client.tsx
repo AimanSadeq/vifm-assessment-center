@@ -14,10 +14,19 @@ type Phase = "intro" | "test" | "result";
 
 const LIKERT = [1, 2, 3, 4, 5];
 
-export function PersonaStandaloneClient({ competencies }: { competencies: BehavioralCompetency[] }) {
+export function PersonaStandaloneClient({
+  competencies,
+  redemptionToken = null,
+  prefillName,
+}: {
+  competencies: BehavioralCompetency[];
+  /** Voucher redemption token (delegate flow); stamps the result with the client org. */
+  redemptionToken?: string | null;
+  prefillName?: string;
+}) {
   const [phase, setPhase] = useState<Phase>("intro");
   const [lang, setLang] = useState<Lang>("en");
-  const [name, setName] = useState("");
+  const [name, setName] = useState(prefillName ?? "");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [profile, setProfile] = useState<BehavioralProfileRow[] | null>(null);
@@ -46,7 +55,7 @@ export function PersonaStandaloneClient({ competencies }: { competencies: Behavi
   const begin = async () => {
     setBusy(true); setError("");
     try {
-      const res = await startPersonaAction(name);
+      const res = await startPersonaAction(name, redemptionToken);
       if (!res.ok) { setError(res.error); return; }
       setSessionId(res.sessionId); setPhase("test"); setStep(0);
     } catch { setError("Could not start the Persona assessment."); } finally { setBusy(false); }

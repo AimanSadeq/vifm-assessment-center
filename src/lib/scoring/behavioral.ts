@@ -51,6 +51,7 @@ export async function getOrCreateBehavioralSession(
  */
 export async function createAnonymousBehavioralSession(
   takerName: string | null,
+  opts?: { organizationId?: string | null; voucherRedemptionId?: string | null },
 ): Promise<BehavioralSession> {
   const sb = createServiceClient();
   const { data, error } = await sb
@@ -59,6 +60,11 @@ export async function createAnonymousBehavioralSession(
       taker_name: takerName,
       status: "in_progress",
       started_at: new Date().toISOString(),
+      // Voucher delegate flow: stamp the client org + redemption (columns land
+      // with migration 00106; only included when provided so the non-voucher
+      // path keeps working before the migration).
+      ...(opts?.organizationId ? { organization_id: opts.organizationId } : {}),
+      ...(opts?.voucherRedemptionId ? { voucher_redemption_id: opts.voucherRedemptionId } : {}),
     })
     .select("id, status")
     .single();

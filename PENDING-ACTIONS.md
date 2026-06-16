@@ -2,7 +2,7 @@
 
 > Living checklist of open/deferred work. Claude: surface this whenever the user
 > asks "any pending actions?" (or similar), and keep it updated as items close.
-> Last updated: 2026-06-13.
+> Last updated: 2026-06-16.
 
 ## ⭐ Priority 2 - KAFD (King Abdullah Financial District)
 
@@ -78,6 +78,8 @@ matrix, PVM logic-input, read-only SQL).
 - [x] Demo-login dropdown gated to `NODE_ENV !== "production"` (hidden on the live site)
 - [x] Supabase Auth Site URL set to `https://caliber.viftraining.com`
 - [ ] Create additional role logins as needed (consultant / lead+associate assessor / candidate / client) - same flow, set `role` accordingly
+- [ ] Create `ahmad.rashid@viftraining.com` admin - run `scripts/create-admin.ts` (creates the auth user + role=admin profile; prints a temp password to share/reset)
+- [ ] Rotate or disable the weak demo credential `admin@viftraining.com` / `admin123` now that auth is live
 - [ ] Decide on open self-registration: `/register` is reachable when logged out; confirm that's acceptable or lock it down
 - [ ] NOW LIVE-RELEVANT: pre-flip hardening buckets 2-3 below are enforced in prod from here on
 
@@ -109,15 +111,26 @@ matrix, PVM logic-input, read-only SQL).
 - [x] One-click redeem: `?code=` + email + company prefill
 - [x] Auto-email results with the PDF attached on completion (markAraRespondentComplete)
 - [x] **Verify the `viftraining.com` domain in Resend** - confirmed verified by IT 2026-06-14 (DKIM CNAME/TXT + SPF `include:` TXT + DMARC TXT at `_dmarc.viftraining.com`). External delegate sends are now possible once `EMAIL_FROM` is switched (next item).
-- [ ] **ENV on Render (now the active blocker)**: set `EMAIL_FROM=VIFM Assessment Center <noreply@viftraining.com>` on the web service and redeploy (the from-domain must match the verified Resend domain; until set, code falls back to `onboarding@resend.dev` = Resend-account owner only). Confirm `RESEND_API_KEY`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_APP_URL` (= caliber.viftraining.com) are also set.
+- [x] **ENV on Render**: `EMAIL_FROM` set to the verified `noreply@viftraining.com` domain - confirmed by the Technical-portal external-delivery test on 2026-06-14 (invitation + results emails reached an external inbox from `noreply@viftraining.com`, which requires the verified from-domain). `RESEND_API_KEY` / `NEXT_PUBLIC_SITE_URL` / `NEXT_PUBLIC_APP_URL` set.
 - [ ] Verify end-to-end on deployed app: email a delegate, redeem one-click, complete, receive results PDF
 - [ ] Phase 4 polish (optional): full funnel analytics, deep-dive tier option (currently snapshot-only)
 
 ## D. Minor / cleanup
 - [ ] Remove dead i18n keys `tech.take.chooseTitle` / `chooseIntro` (deprecated broad-domain screener, no live references)
+- [ ] Fix the pre-existing **ARA voucher-page hydration warning** (dev-only "server HTML replaced with client content"; present on `/ara/admin/vouchers` and inherited by the new `/admin/vouchers` hub - React recovers and the page works, but worth cleaning up)
 - [ ] **Course-catalogue vertical tag hygiene** (surfaced during the 2026-06-14 ARC e2e test). The recommender now floats AI-relevant verticals (`artificial_intelligence`/`analytics`/`business_intelligence`) to the top for AI-readiness results - but some courses are mis-categorised, so non-AI courses ride that boost. Concrete example: "Microsoft Office Specialist Certification (Office 365)" and "Microsoft PowerPoint Associate" are tagged `vertical = business_intelligence`, so they surfaced as #2/#3 AI-readiness recommendations. Audit `vifm_courses.vertical` (admin `/admin/courses/[id]`) and re-classify office/productivity courses out of the AI/data verticals. Not a code bug - data hygiene; makes ARC recs pristine for client demos.
 
 ## F. AI Readiness Compass - recently shipped (2026-06-14)
 - [x] **Graded individual question types** (`situational_judgment` + `knowledge_check`) on the 4 personal factors - migrations 00080/00081, server-side scored, answer key never sent to the browser, bilingual chips. Verified e2e on production (`caliber.viftraining.com`).
 - [x] **Recommender fix** (AI-readiness surfaces only): min-gap threshold (>= 0.5) so trivial gaps stop recommending, and AI/data verticals floated to the top so an AI-readiness gap recommends AI training (not "The Art of Public Speaking"). AC + Reflect recommenders intentionally unchanged.
 - [ ] Seed items 301-312 carry `validation_evidence.review_status='ai_proposed'` - SME-review + flip to `verified` before relying on them in a client deliverable.
+
+## G. Succession Readiness · Persona · Reflect 360 · Vouchers - shipped 2026-06-16
+Migrations 00099 / 00100 / 00101 applied to prod this session.
+- [x] **Auth confirmed ENABLED** + stale docs fixed (README + CLAUDE.md said "false"; now accurate). Enforcement verified (`/admin/*` + `/candidate/*` → `/login`; `/login` + `/courses` open). `scripts/create-admin.ts` generalized (any email, secure temp password).
+- [x] **Persona scopes to the agreed competencies** (`engagement_competencies`); full 38/41 framework retained; standalone `/ac/persona` stays full. 5-band interpretation guide on Persona results + PDF.
+- [x] **9th competency cluster - Customer & Stakeholder Focus** (00100): cluster + 3 competencies (Customer Orientation, Stakeholder Management, Value Creation) under RESULTS + dev tips + matching Persona bank items. Framework now **9 clusters / 41 competencies**.
+- [x] **Succession Readiness combined-mode wiring** (00099): setup panel on the engagement detail (mode toggle + link a Reflect 360 + per-candidate status + readiness-report link); thin front door at `/admin/readiness` to start a combined programme; readiness + Persona PDFs + candidate self-results view.
+- [x] **Reflect 360 five open-ended questions** (00101): rater form (standard + gamified) + scoring + participant report, bilingual, alongside Start/Stop/Continue.
+- [x] **Consolidated voucher hub** at `/admin/vouchers` (ARC + Technical tabs + cross-service summary; Technical nav repointed; no schema change).
+- [ ] (Optional follow-up) Replace Reflect's Start/Stop/Continue with the 5 questions if 8 open prompts is too many - currently keeping both per user decision.

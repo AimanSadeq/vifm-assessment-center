@@ -34,6 +34,7 @@ import {
 } from "@/lib/constants/ara-individual-factors";
 import { VIFM_VERTICAL_LABELS, type VifmVertical } from "@/types/database";
 import { fitScoreOutOfTen } from "@/lib/recommender/format";
+import { personalFactSheetRows } from "@/lib/reports/fact-sheet-content";
 
 // ────────────────────────────────────────────────────────────────
 // Content - Arabic strings for everything the React-PDF template
@@ -512,6 +513,11 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
     .method-box h4 { font-size: 10pt; font-weight: 700; color: ${C.primary}; margin: 0 0 4px; }
     .method-box p { font-size: 9pt; color: ${C.textLight}; line-height: 1.6; margin: 0 0 4px; }
     .method-link { font-size: 9pt; color: ${C.accent}; font-family: Consolas, monospace; }
+    .fact-sheet { border: 1px solid ${C.border}; border-radius: 6px; padding: 12px; background: ${C.bgSoft}; margin-top: 12px; }
+    .fact-sheet h4 { font-size: 11pt; font-weight: 700; color: ${C.primary}; margin: 0 0 8px; }
+    .fact-row { display: flex; gap: 10px; margin-bottom: 6px; }
+    .fact-label { width: 110px; flex-shrink: 0; font-size: 9pt; font-weight: 700; color: ${C.text}; }
+    .fact-value { flex: 1; font-size: 9pt; color: ${C.textLight}; line-height: 1.6; }
 
     /* Footer at the bottom of each page */
     .page-footer {
@@ -591,10 +597,14 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
     ${fitExplainerHtml}
     ${coursesHtml}
 
-    <div class="method-box">
-      <h4>كيف بنينا هذا التقييم</h4>
-      <p>إطار من أربعة عوامل، 24 بنداً للتقرير الذاتي على مقياس ليكرت من 1 إلى 5، تُحتسب كمتوسط غير مرجّح لكل عامل. ترتبط العوامل بنموذج كفاءات السلوك في مركز تقييم VIFM ليتوافق استعداد الفرد للذكاء الاصطناعي مع العمل التطويري الذي تقوم به أصلاً. هذه لقطة - أما التشخيص المعمّق بقيادة استشاري مدفوع فيضاعف عدد البنود ويضيف مقارنات مع الأقران ومناقشة منظمة للنتائج.</p>
-      <p class="method-link">موجز المنهجية الكامل: caliber.viftraining.com/api/ara/methodology/pdf</p>
+    <div class="fact-sheet">
+      <h4>بطاقة معلومات التقييم</h4>
+      ${personalFactSheetRows("ar")
+        .map(
+          (r) =>
+            `<div class="fact-row"><span class="fact-label">${esc(r.label)}</span><span class="fact-value">${esc(r.value)}</span></div>`,
+        )
+        .join("")}
     </div>
   </section>
 

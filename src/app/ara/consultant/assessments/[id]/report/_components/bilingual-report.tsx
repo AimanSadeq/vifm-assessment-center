@@ -1,4 +1,5 @@
 import { VifmLogo } from "@/components/shared/vifm-logo";
+import { orgFactSheetRows } from "@/lib/reports/fact-sheet-content";
 import { ARA_PILLARS, ARA_MATURITY_LEVELS, ARA_OVERALL_BANDS } from "@/lib/constants/ara-pillars";
 import { ARA_STAGE_MAP } from "@/lib/constants/ara-stages";
 import type { FrameworkComplianceSummary } from "@/lib/ara/compliance";
@@ -426,6 +427,28 @@ export function BilingualReport(p: BilingualReportProps) {
               </tbody>
             </table>
           )}
+        </div>
+      </section>
+
+      {/* ─── Assessment Fact Sheet ─── */}
+      <section className="report-page-bilingual">
+        <div className="col-en">
+          <h2 className="report-h2">Assessment Fact Sheet</h2>
+          {orgFactSheetRows("en").map((r) => (
+            <div key={r.label} style={{ display: "flex", gap: "8px", marginBottom: "5pt" }}>
+              <span className="report-body" style={{ width: "92pt", flexShrink: 0, fontWeight: 700 }}>{r.label}</span>
+              <span className="report-body report-muted" style={{ flex: 1 }}>{r.value}</span>
+            </div>
+          ))}
+        </div>
+        <div className="col-ar" dir="rtl">
+          <h2 className="report-h2">بطاقة معلومات التقييم</h2>
+          {orgFactSheetRows("ar").map((r) => (
+            <div key={r.label} style={{ display: "flex", gap: "8px", marginBottom: "5pt" }}>
+              <span className="report-body" style={{ width: "92pt", flexShrink: 0, fontWeight: 700 }}>{r.label}</span>
+              <span className="report-body report-muted" style={{ flex: 1 }}>{r.value}</span>
+            </div>
+          ))}
         </div>
       </section>
 

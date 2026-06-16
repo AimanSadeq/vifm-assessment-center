@@ -7,6 +7,7 @@ import {
   type AraIndividualMaturityStageId,
 } from "@/lib/constants/ara-individual-factors";
 import { VIFM_VERTICAL_LABELS, type VifmVertical } from "@/types/database";
+import { personalFactSheetRows } from "@/lib/reports/fact-sheet-content";
 
 /**
  * Personal AI Readiness Snapshot - multi-page mini-report.
@@ -230,6 +231,12 @@ const s = StyleSheet.create({
   methodTitle: { fontSize: 9, fontFamily: "Helvetica-Bold", color: C.primary, marginBottom: 3 },
   methodBody: { fontSize: 8, color: C.textLight, lineHeight: 1.5 },
   methodLink: { fontSize: 8, color: C.accent, marginTop: 4 },
+  // Assessment fact sheet
+  factSheet: { marginTop: 14, borderWidth: 1, borderColor: C.border, borderRadius: 6, padding: 12, backgroundColor: C.bgSoft },
+  factTitle: { fontSize: 11, fontFamily: "Helvetica-Bold", color: C.primary, marginBottom: 8 },
+  factRow: { flexDirection: "row", marginBottom: 6 },
+  factLabel: { width: 94, fontSize: 8, fontFamily: "Helvetica-Bold", color: C.text, paddingRight: 8 },
+  factValue: { flex: 1, fontSize: 8, color: C.textLight, lineHeight: 1.5 },
 
   footer: {
     position: "absolute",
@@ -567,21 +574,15 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
           </View>
         )}
 
-        {/* Methodology */}
-        <View style={s.methodBox}>
-          <Text style={s.methodTitle}>How we built this assessment</Text>
-          <Text style={s.methodBody}>
-            Four-factor framework, 24 self-report items rated on a 1-5 Likert
-            scale, scored as the unweighted mean per factor. Factors map to the
-            VIFM AC behavioural competency model so personal AI readiness lines
-            up with the development work you&apos;re already doing. This is a
-            snapshot - a paid consultant-led deep-dive doubles the items and
-            adds peer benchmarking and a structured conversation about
-            findings.
-          </Text>
-          <Text style={s.methodLink}>
-            Full methodology brief: caliber.viftraining.com/api/ara/methodology/pdf
-          </Text>
+        {/* Assessment fact sheet */}
+        <View style={s.factSheet} wrap={false}>
+          <Text style={s.factTitle}>Assessment Fact Sheet</Text>
+          {personalFactSheetRows("en").map((row) => (
+            <View key={row.label} style={s.factRow}>
+              <Text style={s.factLabel}>{row.label}</Text>
+              <Text style={s.factValue}>{row.value}</Text>
+            </View>
+          ))}
         </View>
 
         <View style={s.footer} fixed>

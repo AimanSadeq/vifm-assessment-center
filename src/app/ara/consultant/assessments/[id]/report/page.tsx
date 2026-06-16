@@ -19,6 +19,7 @@ import { InvestmentMatrix } from "./_components/investment-matrix";
 import { GanttRoadmap } from "./_components/gantt-roadmap";
 import { tr, type ReportLang } from "./_components/report-i18n";
 import { BilingualReport } from "./_components/bilingual-report";
+import { orgFactSheetRows } from "@/lib/reports/fact-sheet-content";
 import {
   SectionHeader, StatTile, Metric, FindingCard, inferFindingType,
   Callout, EmptyCallout, StatusChip, FindingsPanel, RecommendationCard,
@@ -1212,6 +1213,18 @@ export default async function AraReportPage({
         {/* ─── APPENDIX ─── */}
         <section className="report-page">
           <h2 className="report-h2">{t("appendix")}</h2>
+
+          <h3 className="report-h3">{rtl ? "بطاقة معلومات التقييم" : "Assessment Fact Sheet"}</h3>
+          {orgFactSheetRows(rtl ? "ar" : "en").map((r) => (
+            <div
+              key={r.label}
+              dir={rtl ? "rtl" : "ltr"}
+              style={{ display: "flex", gap: "8px", marginBottom: "5pt" }}
+            >
+              <span className="report-body" style={{ width: "110pt", flexShrink: 0, fontWeight: 700 }}>{r.label}</span>
+              <span className="report-body report-muted" style={{ flex: 1 }}>{r.value}</span>
+            </div>
+          ))}
 
           <h3 className="report-h3">Scoring methodology</h3>
           <p className="report-body">

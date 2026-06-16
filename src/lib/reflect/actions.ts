@@ -21,12 +21,15 @@ import {
 } from "./validations";
 import { extractBehaviorsFromValues } from "@/lib/ai/reflect-behavior-extractor";
 import { sendReflectEmail, roleLabel } from "./email";
+import { createClientOrganization } from "@/lib/clients/registry";
 
 // ──────────────────────────────────────────────────────────────
 // Inline org creation - used by the wizard's "Add new" affordance.
-// Inserts into ara_organizations (Reflect reuses the AR Compass
-// client list) and returns the newly created row so the wizard can
-// merge it into the picker without a refetch.
+// Routes through the shared platform registry so a Reflect-registered
+// client is FIRST-CLASS (dual-written to organizations + ara_organizations,
+// createdBy stamped) and reusable across every VIFM service - the same
+// standalone pattern as ARC. Returns the ara_organizations row so the
+// wizard can merge it into the picker without a refetch.
 // ──────────────────────────────────────────────────────────────
 
 const createInlineOrgSchema = z.object({
@@ -58,17 +61,23 @@ export async function createInlineReflectOrganisation(
   }
   const p = parsed.data;
 
+  // First-class registration: dual-write through the shared registry.
+  const res = await createClientOrganization({
+    name: p.name,
+    nameAr: p.name_ar ? p.name_ar : null,
+    region: p.region,
+    sector: p.sector,
+    createdBy: caller.isDev ? null : caller.uid,
+  });
+  if (!res.ok) return { ok: false, error: res.error };
+
+  // Load the ara_organizations row (registry deduped by name, so this may be a
+  // pre-existing org) to return its true stored values to the wizard picker.
   const sb = createServiceClient();
   const { data, error } = await sb
     .from("ara_organizations")
-    .insert({
-      name: p.name,
-      name_ar: p.name_ar ? p.name_ar : null,
-      sector: p.sector,
-      region: p.region,
-      created_by: caller.isDev ? null : caller.uid,
-    })
     .select("id, name, name_ar, region, sector")
+    .eq("id", res.araOrganizationId)
     .single<{
       id: string;
       name: string;
@@ -76,7 +85,7 @@ export async function createInlineReflectOrganisation(
       region: "uae" | "saudi";
       sector: "government" | "banking" | "general";
     }>();
-  if (error || !data) return { ok: false, error: error?.message ?? "Insert failed" };
+  if (error || !data) return { ok: false, error: error?.message ?? "Org created but could not be loaded" };
 
   return { ok: true, org: data };
 }

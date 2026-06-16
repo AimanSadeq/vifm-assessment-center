@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {
-  Languages, Users, UserCheck, ClipboardCheck,
+  Languages, Users, UserCheck, ClipboardCheck, Ticket,
   BookOpen, Headphones, PenLine, Mic, CheckCircle2,
 } from "lucide-react";
 import { isAIConfigured } from "@/lib/ai/client";
@@ -86,6 +86,12 @@ export default async function FluentPage({ searchParams }: Props) {
                 className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/85 backdrop-blur transition-colors hover:border-white/35 hover:bg-white/15"
               >
                 <Users className="h-3.5 w-3.5" /> {t("acFluent.navCohortReport")}
+              </Link>
+              <Link
+                href="/ac/fluent/vouchers"
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/85 backdrop-blur transition-colors hover:border-white/35 hover:bg-white/15"
+              >
+                <Ticket className="h-3.5 w-3.5" /> Vouchers
               </Link>
               <Link
                 href="/ac/fluent/calibration"

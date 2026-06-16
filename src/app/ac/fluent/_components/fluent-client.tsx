@@ -135,12 +135,15 @@ const ttsAvailable = () =>
 export function FluentClient({
   candidateId = null,
   engagementId = null,
+  redemptionToken = null,
   prefillName,
   prefillEmail,
   timerMinutes,
 }: {
   candidateId?: string | null;
   engagementId?: string | null;
+  /** Voucher redemption token (delegate flow); stamps the result with the client org. */
+  redemptionToken?: string | null;
   prefillName?: string;
   prefillEmail?: string;
   /** Admin-configurable time limit (minutes); defaults to 15. */
@@ -378,7 +381,7 @@ export function FluentClient({
         writingResponse: writing, speakingTranscript: transcript,
         takerName: takerName.trim() || null, takerEmail: takerEmail.trim() || null,
         integrityFlags: { blurCount, pasteCount },
-        candidateId, engagementId, pronunciation,
+        candidateId, engagementId, redemptionToken, pronunciation,
       };
       // Secure: server grades from the stored session. Legacy: post the test.
       const payload = sessionId

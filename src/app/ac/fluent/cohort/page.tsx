@@ -25,7 +25,15 @@ type Row = {
   ai_scored: boolean;
   integrity_flags?: { blurCount?: number; pasteCount?: number } | null;
   email_sent_at?: string | null;
+  organization?: { name: string } | { name: string }[] | null;
 };
+
+/** Resolve the (possibly array-shaped) joined org name. */
+function orgName(r: Row): string | null {
+  const o = r.organization;
+  if (!o) return null;
+  return Array.isArray(o) ? o[0]?.name ?? null : o.name ?? null;
+}
 
 const CEFR_TONE: Record<string, string> = {
   A1: "bg-rose-100 text-rose-800 border-rose-300",
@@ -56,13 +64,11 @@ async function loadRows(): Promise<Row[] | null> {
     const query = (cols: string) =>
       sb.from("eng_fluent_results").select(cols).order("created_at", { ascending: false }).limit(500);
 
-    // Try with the depth columns (migration 00043); fall back without them
-    // so a 00042-only database still renders the report. The cast via unknown
-    // sidesteps the typed client treating the not-yet-generated columns as errors.
-    let res = (await query(base + ", integrity_flags, email_sent_at")) as unknown as LoadResp;
-    if (res.error) {
-      res = (await query(base)) as unknown as LoadResp;
-    }
+    // Graceful degradation across migrations: try with the client-org join
+    // (00104), then the depth columns (00043), then the base (00042-only).
+    let res = (await query(base + ", integrity_flags, email_sent_at, organization:organizations(name)")) as unknown as LoadResp;
+    if (res.error) res = (await query(base + ", integrity_flags, email_sent_at")) as unknown as LoadResp;
+    if (res.error) res = (await query(base)) as unknown as LoadResp;
     if (res.error) return null;
     return res.data ?? [];
   } catch {
@@ -70,9 +76,11 @@ async function loadRows(): Promise<Row[] | null> {
   }
 }
 
-export default async function FluentCohortPage() {
+export default async function FluentCohortPage({ searchParams }: { searchParams?: { org?: string } }) {
   const t = await getServerT("en"); // Fluent stays English regardless of locale cookie
-  const rows = await loadRows();
+  const allRows = await loadRows();
+  const orgFilter = searchParams?.org?.trim() || null;
+  const rows = allRows && orgFilter ? allRows.filter((r) => orgName(r) === orgFilter) : allRows;
 
   return (
     <div className="min-h-screen bg-[#F5F7FA]">
@@ -114,6 +122,26 @@ export default async function FluentCohortPage() {
             {t("acFluent.cohortEmptySuffix")}
           </div>
         )}
+
+        {/* Client filter chips - org-scoped results (each voucher-redeemed run
+            carries its client org). */}
+        {allRows && allRows.length > 0 && (() => {
+          const clientsList = Array.from(new Set(allRows.map(orgName).filter((n): n is string => !!n))).sort();
+          if (clientsList.length === 0) return null;
+          return (
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="text-slate-500">Client:</span>
+              <Link href="/ac/fluent/cohort" className={`rounded-full border px-2.5 py-0.5 ${!orgFilter ? "border-[#5391D5] bg-[#5391D5]/10 text-[#5391D5] font-medium" : "text-slate-600 hover:bg-slate-100"}`}>
+                All
+              </Link>
+              {clientsList.map((c) => (
+                <Link key={c} href={`/ac/fluent/cohort?org=${encodeURIComponent(c)}`} className={`rounded-full border px-2.5 py-0.5 ${orgFilter === c ? "border-[#5391D5] bg-[#5391D5]/10 text-[#5391D5] font-medium" : "text-slate-600 hover:bg-slate-100"}`}>
+                  {c}
+                </Link>
+              ))}
+            </div>
+          );
+        })()}
 
         {rows !== null && rows.length > 0 && <CohortBody rows={rows} t={t} />}
       </main>
@@ -197,6 +225,7 @@ function CohortBody({ rows, t }: { rows: Row[]; t: ServerT }) {
                 <th className="px-4 py-2.5 font-medium">{t("acFluent.colDate")}</th>
                 <th className="px-4 py-2.5 font-medium">{t("acFluent.colName")}</th>
                 <th className="px-4 py-2.5 font-medium">{t("acFluent.colEmail")}</th>
+                <th className="px-4 py-2.5 font-medium">Client</th>
                 <th className="px-3 py-2.5 text-center font-medium">{t("acFluent.colOverall")}</th>
                 <th className="px-3 py-2.5 text-center font-medium">{t("acFluent.colReadingShort")}</th>
                 <th className="px-3 py-2.5 text-center font-medium">{t("acFluent.colListeningShort")}</th>
@@ -219,6 +248,7 @@ function CohortBody({ rows, t }: { rows: Row[]; t: ServerT }) {
                       {r.email_sent_at && <MailCheck className="h-3 w-3 text-emerald-600" />}
                     </span>
                   </td>
+                  <td className="px-4 py-2.5 text-slate-500">{orgName(r) ?? <span className="text-slate-300">-</span>}</td>
                   <td className="px-3 py-2.5 text-center">
                     <span className={`inline-block rounded border px-1.5 py-0.5 text-xs font-bold ${CEFR_TONE[r.overall_cefr] ?? ""}`}>{r.overall_cefr}</span>
                   </td>

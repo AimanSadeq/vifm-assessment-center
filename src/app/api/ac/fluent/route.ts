@@ -64,6 +64,7 @@ type Body = {
   integrityFlags?: IntegrityFlags;
   candidateId?: string | null;
   engagementId?: string | null;
+  redemptionToken?: string | null;
   pronunciation?: PronunciationScore | null;
 };
 
@@ -301,6 +302,30 @@ async function logItemResponses(
   }
 }
 
+/**
+ * Link a completed result to its voucher redemption: stamp the result with the
+ * voucher's client org + the redemption id, and back-link the redemption's
+ * result_id. Best-effort; no-ops cleanly until migration 00104 is applied.
+ */
+async function linkRedemption(resultId: string, redemptionToken: string): Promise<void> {
+  try {
+    const sb = createServiceClient();
+    const { data: redemption } = await sb
+      .from("eng_fluent_voucher_redemptions")
+      .select("id, organization_id")
+      .eq("redemption_token", redemptionToken)
+      .maybeSingle<{ id: string; organization_id: string | null }>();
+    if (!redemption) return;
+    await sb
+      .from("eng_fluent_results")
+      .update({ organization_id: redemption.organization_id, voucher_redemption_id: redemption.id })
+      .eq("id", resultId);
+    await sb.from("eng_fluent_voucher_redemptions").update({ result_id: resultId }).eq("id", redemption.id);
+  } catch {
+    /* tables/columns not migrated - ignore */
+  }
+}
+
 const SESSION_TTL_MS = 1000 * 60 * 60 * 3; // 3 hours
 
 /**
@@ -465,6 +490,11 @@ export async function POST(req: Request) {
       engagementId: body.engagementId?.trim() ? body.engagementId.trim() : null,
       reliability,
     });
+
+    // Voucher delegate flow: stamp the result with the client org (best-effort).
+    if (result_id && body.redemptionToken?.trim()) {
+      await linkRedemption(result_id, body.redemptionToken.trim());
+    }
 
     // Audit the AI scoring run for calibration (best-effort).
     if (result_id) {

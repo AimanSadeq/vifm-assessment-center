@@ -46,6 +46,19 @@ const isPreHireApplyRoute = (pathname: string) =>
 const isTechSandboxRoute = (pathname: string) =>
   pathname.startsWith("/tech-sandbox/") || pathname.startsWith("/api/tech-sandbox/");
 
+// Fluent voucher delegate flow - a no-account delegate redeems a code and takes
+// the English placement via a redemption token. Precise paths only: the redeem
+// page, the token-gated runner, the start/score + speech APIs, and the
+// certificate. The bare /ac/fluent runner and admin surfaces (cohort,
+// calibration, vouchers) stay session-gated.
+const isFluentPublicRoute = (pathname: string) =>
+  pathname === "/ac/fluent/redeem" ||
+  pathname.startsWith("/ac/fluent/take/") ||
+  pathname === "/api/ac/fluent" ||
+  pathname === "/api/ac/fluent/transcribe" ||
+  pathname === "/api/ac/fluent/tts" ||
+  (pathname.startsWith("/api/ac/fluent/") && pathname.endsWith("/certificate"));
+
 export async function middleware(request: NextRequest) {
   if (
     isAraRespondentRoute(request.nextUrl.pathname) ||
@@ -54,7 +67,8 @@ export async function middleware(request: NextRequest) {
     isPublicCoursesRoute(request.nextUrl.pathname) ||
     isPublicVerifyRoute(request.nextUrl.pathname) ||
     isPreHireApplyRoute(request.nextUrl.pathname) ||
-    isTechSandboxRoute(request.nextUrl.pathname)
+    isTechSandboxRoute(request.nextUrl.pathname) ||
+    isFluentPublicRoute(request.nextUrl.pathname)
   ) {
     return NextResponse.next();
   }

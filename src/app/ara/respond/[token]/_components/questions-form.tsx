@@ -510,14 +510,17 @@ function QuestionRow({
   const [helpOpen, setHelpOpen] = useState(false);
   const codeNumber = displayNumber ?? question.question_number;
 
-  // Graded items get a distinct chip so respondents know it's a scenario /
-  // knowledge check (an objective item), not a self-rating.
+  // Every question shows its response type so respondents can tell a
+  // self-rating apart from an objective scenario / knowledge-check item
+  // (a section can mix all three).
   const gradedLabel =
     question.question_type === "situational_judgment"
       ? rtl ? "سيناريو" : "Scenario"
       : question.question_type === "knowledge_check"
         ? rtl ? "اختبار معرفي" : "Knowledge check"
-        : null;
+        : question.question_type === "rating"
+          ? rtl ? "تقييم ذاتي" : "Self-rating"
+          : null;
 
   return (
     <div className="px-6 py-5" dir={rtl ? "rtl" : "ltr"}>

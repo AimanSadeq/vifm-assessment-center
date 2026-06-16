@@ -1617,5 +1617,47 @@ export const BEHAVIORAL_COMPETENCIES: BehavioralCompetency[] = [
         "textAr": "أوظّف الأفراد والأدوات بفاعلية."
       }
     ]
+  },
+  {
+    "acCompetencyId": "a0000001-0000-0000-0000-000000000039",
+    "nameEn": "Customer Orientation",
+    "nameAr": "التوجّه نحو العميل",
+    "clusterOrder": 9,
+    "clusterNameEn": "Customer & Stakeholder Focus",
+    "clusterNameAr": "التركيز على العملاء وأصحاب المصلحة",
+    "items": [
+      { "itemKey": "39-1", "acCompetencyId": "a0000001-0000-0000-0000-000000000039", "ord": 1, "reverse": false, "textEn": "I anticipate customer needs before they are expressed.", "textAr": "أستبق احتياجات العملاء قبل أن يُعبَّر عنها." },
+      { "itemKey": "39-2", "acCompetencyId": "a0000001-0000-0000-0000-000000000039", "ord": 2, "reverse": false, "textEn": "I go beyond expectations to deliver an excellent customer experience.", "textAr": "أتجاوز التوقعات لتقديم تجربة عملاء متميزة." },
+      { "itemKey": "39-3", "acCompetencyId": "a0000001-0000-0000-0000-000000000039", "ord": 3, "reverse": true, "textEn": "I lose sight of the customer when under internal pressure.", "textAr": "أفقد التركيز على العميل عند وجود ضغوط داخلية." },
+      { "itemKey": "39-4", "acCompetencyId": "a0000001-0000-0000-0000-000000000039", "ord": 4, "reverse": false, "textEn": "I use customer feedback to improve how I work.", "textAr": "أستفيد من ملاحظات العملاء لتحسين طريقة عملي." }
+    ]
+  },
+  {
+    "acCompetencyId": "a0000001-0000-0000-0000-000000000040",
+    "nameEn": "Stakeholder Management",
+    "nameAr": "إدارة أصحاب المصلحة",
+    "clusterOrder": 9,
+    "clusterNameEn": "Customer & Stakeholder Focus",
+    "clusterNameAr": "التركيز على العملاء وأصحاب المصلحة",
+    "items": [
+      { "itemKey": "40-1", "acCompetencyId": "a0000001-0000-0000-0000-000000000040", "ord": 1, "reverse": false, "textEn": "I map and manage the expectations of key stakeholders.", "textAr": "أحدّد وأدير توقعات أصحاب المصلحة الرئيسيين." },
+      { "itemKey": "40-2", "acCompetencyId": "a0000001-0000-0000-0000-000000000040", "ord": 2, "reverse": false, "textEn": "I keep stakeholders informed on progress, risks and changes.", "textAr": "أُبقي أصحاب المصلحة على اطلاع بالتقدّم والمخاطر والتغييرات." },
+      { "itemKey": "40-3", "acCompetencyId": "a0000001-0000-0000-0000-000000000040", "ord": 3, "reverse": false, "textEn": "I build trusted relationships with partners inside and outside the organisation.", "textAr": "أبني علاقات موثوقة مع الشركاء داخل المؤسسة وخارجها." },
+      { "itemKey": "40-4", "acCompetencyId": "a0000001-0000-0000-0000-000000000040", "ord": 4, "reverse": true, "textEn": "I avoid difficult stakeholder conversations until they escalate.", "textAr": "أتجنّب المحادثات الصعبة مع أصحاب المصلحة حتى تتفاقم." }
+    ]
+  },
+  {
+    "acCompetencyId": "a0000001-0000-0000-0000-000000000041",
+    "nameEn": "Value Creation",
+    "nameAr": "خلق القيمة",
+    "clusterOrder": 9,
+    "clusterNameEn": "Customer & Stakeholder Focus",
+    "clusterNameAr": "التركيز على العملاء وأصحاب المصلحة",
+    "items": [
+      { "itemKey": "41-1", "acCompetencyId": "a0000001-0000-0000-0000-000000000041", "ord": 1, "reverse": false, "textEn": "I connect my work to commercial outcomes and the wider value chain.", "textAr": "أربط عملي بالنتائج التجارية وسلسلة القيمة الأوسع." },
+      { "itemKey": "41-2", "acCompetencyId": "a0000001-0000-0000-0000-000000000041", "ord": 2, "reverse": false, "textEn": "I look for opportunities to create additional value for customers and the business.", "textAr": "أبحث عن فرص لخلق قيمة إضافية للعملاء وللمؤسسة." },
+      { "itemKey": "41-3", "acCompetencyId": "a0000001-0000-0000-0000-000000000041", "ord": 3, "reverse": true, "textEn": "I prioritise short-term wins over sustainable long-term value.", "textAr": "أُفضّل المكاسب قصيرة المدى على القيمة المستدامة بعيدة المدى." },
+      { "itemKey": "41-4", "acCompetencyId": "a0000001-0000-0000-0000-000000000041", "ord": 4, "reverse": false, "textEn": "I measure and communicate the impact of my work on key outcomes.", "textAr": "أقيس وأوصّل أثر عملي على النتائج الرئيسية." }
+    ]
   }
 ];

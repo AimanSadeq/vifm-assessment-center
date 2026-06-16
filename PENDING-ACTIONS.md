@@ -85,8 +85,9 @@ matrix, PVM logic-input, read-only SQL).
 
 ## B. Pre-flip hardening (remaining buckets)
 - [x] Bucket 1 — candidate ownership guards on service-client page reads (shipped, commit 9dbf31f)
-- [ ] Bucket 2 — auth guards on API routes (`/api/reports/*`, `/api/consent/*`)
-- [ ] Bucket 3 — identity TODOs (layout `full_name`, `created_by = auth.uid()`, assessor-id fallback)
+- [x] Bucket 2 — auth guards on API routes (2026-06-16): `/api/reports/*` (full + learning-plan) + `/api/readiness/*/pdf` enforce admin / own-org-client / own-record-candidate via `guardCandidateReportAccess` (`src/lib/auth/report-access.ts`); `/api/consent/*` requires the owning candidate or admin. Unauthenticated is already blocked by middleware (307 → /login); these add the role/ownership layer. Verified: admin passes, unauth blocked.
+- [x] Bucket 3 — identity (2026-06-16): assessor + client headers show the signed-in user (`CurrentUserBadge`) instead of a static role label; `created_by = auth.uid()` and assessor-id = `auth.uid()` were already in place (README was stale).
+- [ ] (Follow-up) Broader API-auth pass: other PDF/data routes (ARA reports, tech-sandbox, Fluent cert, credentials, psychometrics, standalone Persona) currently rely on token / result-id / service-role gating + middleware session-presence; a role/ownership audit of those would complete the hardening.
 
 ## C. Technical competency tier (Domain → Function → Competency → Skill)
 - [x] Migration 00074 applied + baseline competencies populated (one-per-function)

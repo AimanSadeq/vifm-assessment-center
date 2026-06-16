@@ -6,6 +6,7 @@ import { renderHtmlToPdfBuffer } from "@/lib/reports/html-to-pdf";
 import { getServerLocale } from "@/lib/i18n/server";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { guardCandidateReportAccess } from "@/lib/auth/report-access";
 
 // The Arabic path renders RTL HTML through Puppeteer (React-PDF can't
 // shape Arabic glyphs), and Puppeteer can't run on the Edge runtime.
@@ -16,11 +17,9 @@ export async function GET(
   { params }: { params: { engagementId: string; candidateId: string } }
 ) {
   try {
+    const denied = await guardCandidateReportAccess(params.engagementId, params.candidateId);
+    if (denied) return denied;
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
 
     const { data: oar } = await supabase
       .from("overall_assessment_ratings")

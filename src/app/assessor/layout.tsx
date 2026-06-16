@@ -15,6 +15,7 @@ import {
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { AllServicesLink } from "@/components/shared/all-services-link";
+import { CurrentUserBadge } from "@/components/shared/current-user-badge";
 
 const navLinks: { href: string; labelKey: string; icon: LucideIcon; exact: boolean }[] = [
   { href: "/assessor", labelKey: "assessorPortal.nav.missionBoard", icon: ClipboardCheck, exact: true },
@@ -67,12 +68,7 @@ export default function AssessorLayout({
             <AllServicesLink />
             <div className="hidden sm:block"><LanguageSwitcher /></div>
             <Separator orientation="vertical" className="h-6 hidden sm:block" />
-            <div className="hidden md:flex items-center gap-2">
-              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <UserCircle className="h-5 w-5 text-primary" />
-              </div>
-              <span className="text-sm text-muted-foreground">{t("assessorPortal.roleLabel")}</span>
-            </div>
+            <CurrentUserBadge Icon={UserCircle} fallbackLabel={t("assessorPortal.roleLabel")} />
             <LogoutButton />
           </div>
         </div>

@@ -19,6 +19,7 @@ import {
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { LogoutButton } from "@/components/shared/logout-button";
 import { AllServicesLink } from "@/components/shared/all-services-link";
+import { CurrentUserBadge } from "@/components/shared/current-user-badge";
 
 const navLinks: { href: string; labelKey: string; icon: LucideIcon; exact: boolean }[] = [
   { href: "/client", labelKey: "clientPortal.nav.dashboard", icon: LayoutDashboard, exact: true },
@@ -75,12 +76,7 @@ export default function ClientLayout({
             <AllServicesLink />
             <div className="hidden sm:block"><LanguageSwitcher /></div>
             <Separator orientation="vertical" className="h-6 hidden sm:block" />
-            <div className="hidden md:flex items-center gap-2">
-              <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center">
-                <Building2 className="h-4 w-4 text-accent-foreground" />
-              </div>
-              <span className="text-sm text-muted-foreground">{t("clientPortal.nav.clientRole")}</span>
-            </div>
+            <CurrentUserBadge Icon={Building2} fallbackLabel={t("clientPortal.nav.clientRole")} iconWrapClass="bg-accent" iconClass="text-accent-foreground" />
             <LogoutButton />
           </div>
         </div>

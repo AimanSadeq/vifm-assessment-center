@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { computeCandidateReadiness } from "@/lib/scoring/readiness-data";
 import { READINESS_TIER_META } from "@/lib/scoring/readiness";
 import { ReadinessReportPdf, type ReadinessPdfData } from "@/lib/reports/readiness-report";
+import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 
 export const runtime = "nodejs";
 
@@ -15,6 +16,12 @@ export async function GET(
   { params }: { params: { engagementId: string; candidateId: string } },
 ) {
   try {
+    try {
+      await requireRole(["admin", "consultant"]);
+    } catch (e) {
+      if (isAuthorizationError(e)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      throw e;
+    }
     const sb = createServiceClient();
     const { data: cand } = await sb
       .from("candidates")

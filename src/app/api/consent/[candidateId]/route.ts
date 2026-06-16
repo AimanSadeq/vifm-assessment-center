@@ -1,6 +1,7 @@
 "use server";
 
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { getCurrentCaller } from "@/lib/ara/auth-guards";
 import { NextResponse } from "next/server";
 
 export async function POST(
@@ -8,10 +9,10 @@ export async function POST(
   { params }: { params: { candidateId: string } }
 ) {
   try {
-    // Auth guard - verify user is authenticated
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    // Auth guard - the candidate who owns the record, or an admin (the admin
+    // "view as candidate" flow). Ownership is verified against the candidate below.
+    const caller = await getCurrentCaller();
+    if (!caller) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -46,15 +47,20 @@ export async function POST(
     // Validate candidate exists
     const { data: candidate } = await svc
       .from("candidates")
-      .select("id")
+      .select("id, profile_id")
       .eq("id", params.candidateId)
-      .maybeSingle();
+      .maybeSingle<{ id: string; profile_id: string | null }>();
 
     if (!candidate) {
       return NextResponse.json(
         { error: "Candidate not found" },
         { status: 404 }
       );
+    }
+
+    // Ownership: only the candidate who owns this record (or an admin) may consent.
+    if (caller.role !== "admin" && candidate.profile_id !== caller.uid) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     // Idempotency: check if consent already exists for this candidate

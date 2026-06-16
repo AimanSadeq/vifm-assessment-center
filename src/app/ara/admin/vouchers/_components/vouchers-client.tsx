@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Ticket, Copy, Download, Check, Ban, RotateCcw, Plus, X } from "lucide-react";
+import { useState, useEffect, useTransition } from "react";
+import { Ticket, Copy, Download, Check, Ban, RotateCcw, Plus, X, Link2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,10 @@ type CompanyRollup = {
 const selectClass =
   "h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
+// Canonical redeem base. Prefer the live origin (set after mount); fall back to
+// the configured site URL so a server-rendered link is still valid.
+const SITE_FALLBACK = (process.env.NEXT_PUBLIC_SITE_URL || "https://caliber.viftraining.com").replace(/\/+$/, "");
+
 export function VouchersClient({
   vouchers,
   orgs,
@@ -46,6 +50,12 @@ export function VouchersClient({
   const [error, setError] = useState<string | null>(null);
   const [generated, setGenerated] = useState<string[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
+
+  // Live origin for shareable redeem links (window is client-only).
+  const [origin, setOrigin] = useState("");
+  useEffect(() => setOrigin(window.location.origin), []);
+  const redeemLink = (code: string) =>
+    `${origin || SITE_FALLBACK}/ara/redeem?code=${encodeURIComponent(code)}`;
 
   // Client orgs are stateful so a newly-added client appears + auto-selects.
   const [orgList, setOrgList] = useState<OrgOption[]>(orgs);
@@ -275,17 +285,31 @@ export function VouchersClient({
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-sm font-medium">{generated.length} code(s) generated</p>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" className="gap-1" onClick={() => copy(generated.join("\n"), "all")}>
-                    {copied === "all" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} Copy all
+                  <Button size="sm" variant="outline" className="gap-1" onClick={() => copy(generated.map(redeemLink).join("\n"), "all-links")}>
+                    {copied === "all-links" ? <Check className="h-3.5 w-3.5" /> : <Link2 className="h-3.5 w-3.5" />} Copy links
                   </Button>
-                  <Button size="sm" variant="outline" className="gap-1" onClick={() => downloadCsv(["code", ...generated], "arc-vouchers")}>
+                  <Button size="sm" variant="outline" className="gap-1" onClick={() => copy(generated.join("\n"), "all")}>
+                    {copied === "all" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} Copy codes
+                  </Button>
+                  <Button size="sm" variant="outline" className="gap-1" onClick={() => downloadCsv(["code,link", ...generated.map((c) => `${c},${redeemLink(c)}`)], "arc-vouchers")}>
                     <Download className="h-3.5 w-3.5" /> CSV
                   </Button>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-1.5">
+              <p className="mb-2.5 text-xs text-muted-foreground">
+                Each link opens the redeem page with the code prefilled - send it to the delegate to start.
+              </p>
+              <div className="space-y-1.5">
                 {generated.map((c) => (
-                  <code key={c} className="rounded bg-card px-2 py-1 text-xs">{c}</code>
+                  <div key={c} className="flex items-center justify-between gap-2 rounded bg-card px-2.5 py-1.5">
+                    <div className="min-w-0">
+                      <code className="text-xs font-medium">{c}</code>
+                      <span className="block truncate text-[11px] text-muted-foreground">{redeemLink(c)}</span>
+                    </div>
+                    <Button size="sm" variant="ghost" className="shrink-0 gap-1" onClick={() => copy(redeemLink(c), `gen-${c}`)}>
+                      {copied === `gen-${c}` ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Link2 className="h-3.5 w-3.5" />} Copy link
+                    </Button>
+                  </div>
                 ))}
               </div>
             </div>
@@ -356,9 +380,14 @@ export function VouchersClient({
                         {v.expires_at ? new Date(v.expires_at).toLocaleDateString() : "-"}
                       </td>
                       <td className="py-2 text-right">
-                        <Button size="sm" variant="ghost" className="gap-1" disabled={pending} onClick={() => toggle(v)}>
-                          {v.status === "active" ? <><Ban className="h-3.5 w-3.5" /> Disable</> : <><RotateCcw className="h-3.5 w-3.5" /> Enable</>}
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button size="sm" variant="ghost" className="gap-1" onClick={() => copy(redeemLink(v.code), `link-${v.id}`)} title={redeemLink(v.code)}>
+                            {copied === `link-${v.id}` ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Link2 className="h-3.5 w-3.5" />} Link
+                          </Button>
+                          <Button size="sm" variant="ghost" className="gap-1" disabled={pending} onClick={() => toggle(v)}>
+                            {v.status === "active" ? <><Ban className="h-3.5 w-3.5" /> Disable</> : <><RotateCcw className="h-3.5 w-3.5" /> Enable</>}
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}

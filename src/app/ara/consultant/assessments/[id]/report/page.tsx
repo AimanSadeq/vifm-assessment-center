@@ -1233,11 +1233,11 @@ export default async function AraReportPage({
             report is reproducible against the same items even if the bank
             advances. The full methodology brief (item development, content
             validity, reliability planning, reference frameworks, limitations)
-            is published at{" "}
+            is available as a downloadable PDF at{" "}
             <span style={{ fontFamily: "monospace", fontSize: "9pt" }}>
-              docs/ARA-Methodology-Brief.md
-            </span>{" "}
-            on the VIFM platform repository.
+              caliber.viftraining.com/api/ara/methodology/pdf
+            </span>
+            .
           </p>
 
           {evidenceAnchors.length > 0 && (

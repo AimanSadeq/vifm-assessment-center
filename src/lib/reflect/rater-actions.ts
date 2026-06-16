@@ -163,7 +163,10 @@ export async function saveReflectResponse(
 
 const saveOpenResponseSchema = z.object({
   token: z.string().min(1),
-  kind: z.enum(["start", "stop", "continue"]),
+  kind: z.enum([
+    "start", "stop", "continue",
+    "strengths", "development", "example", "advice", "other",
+  ]),
   text: z.string().max(2000),
 });
 
@@ -189,6 +192,11 @@ export async function saveReflectOpenResponse(
     start: "open_start",
     stop: "open_stop",
     continue: "open_continue",
+    strengths: "open_strengths",
+    development: "open_development",
+    example: "open_example",
+    advice: "open_advice",
+    other: "open_other",
   } as const;
   const col = colByKind[p.kind];
   const trimmed = p.text.trim();

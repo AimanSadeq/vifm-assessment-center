@@ -1212,10 +1212,19 @@ function VerbatimPage({
   scoring: ParticipantScoring;
   rtl: boolean;
 }) {
-  const SECTIONS: Array<{ kind: "start" | "stop" | "continue"; en: string; ar: string }> = [
+  const SECTIONS: Array<{
+    kind: "start" | "stop" | "continue" | "strengths" | "development" | "example" | "advice" | "other";
+    en: string;
+    ar: string;
+  }> = [
     { kind: "start", en: "What raters say I should START", ar: "ما الذي ينبغي أن أبدأ به" },
     { kind: "stop", en: "What raters say I should STOP", ar: "ما الذي ينبغي أن أتوقّف عنه" },
     { kind: "continue", en: "What raters say I should CONTINUE", ar: "ما الذي ينبغي أن أستمر فيه" },
+    { kind: "strengths", en: "Most significant strengths", ar: "أبرز نقاط القوة" },
+    { kind: "development", en: "Areas to develop or improve", ar: "مجالات التطوير أو التحسين" },
+    { kind: "example", en: "Exceptional leadership or collaboration", ar: "قيادة أو تعاون استثنائي" },
+    { kind: "advice", en: "One piece of advice", ar: "نصيحة واحدة" },
+    { kind: "other", en: "Anything else", ar: "أمور أخرى" },
   ];
 
   const ROLE_ORDER: Record<string, number> = {

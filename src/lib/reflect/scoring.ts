@@ -70,8 +70,10 @@ export type ReflectRaterTenure =
   | "over_5yr";
 
 export type OpenVerbatim = {
-  /** "start" | "stop" | "continue" */
-  kind: "start" | "stop" | "continue";
+  /** SSC (start/stop/continue) + the five open-ended questions (00101) */
+  kind:
+    | "start" | "stop" | "continue"
+    | "strengths" | "development" | "example" | "advice" | "other";
   rater_role: ReflectRaterRole;
   text: string;
   /** P2: how long this rater has worked with the participant. NULL when not provided. */
@@ -315,6 +317,11 @@ export async function computeParticipantScoring(
     open_start: string | null;
     open_stop: string | null;
     open_continue: string | null;
+    open_strengths: string | null;
+    open_development: string | null;
+    open_example: string | null;
+    open_advice: string | null;
+    open_other: string | null;
     critical_competency_ids: string[];
     tenure: ReflectRaterTenure | null;
   };
@@ -323,7 +330,7 @@ export async function computeParticipantScoring(
     const full = await sb
       .from("reflect_raters")
       .select(
-        "id, rater_role, status, open_start, open_stop, open_continue, critical_competency_ids, tenure"
+        "id, rater_role, status, open_start, open_stop, open_continue, open_strengths, open_development, open_example, open_advice, open_other, critical_competency_ids, tenure"
       )
       .eq("participant_id", participantId);
     if (full.error) {
@@ -338,6 +345,11 @@ export async function computeParticipantScoring(
         open_start: null,
         open_stop: null,
         open_continue: null,
+        open_strengths: null,
+        open_development: null,
+        open_example: null,
+        open_advice: null,
+        open_other: null,
         critical_competency_ids: [],
         tenure: null,
       }));
@@ -355,6 +367,11 @@ export async function computeParticipantScoring(
           open_start: row.open_start ?? null,
           open_stop: row.open_stop ?? null,
           open_continue: row.open_continue ?? null,
+          open_strengths: row.open_strengths ?? null,
+          open_development: row.open_development ?? null,
+          open_example: row.open_example ?? null,
+          open_advice: row.open_advice ?? null,
+          open_other: row.open_other ?? null,
           critical_competency_ids: row.critical_competency_ids ?? [],
           tenure: row.tenure ?? null,
         };
@@ -643,6 +660,21 @@ export async function computeParticipantScoring(
     }
     if (r.open_continue) {
       open_responses.push({ kind: "continue", rater_role: r.rater_role, text: r.open_continue, tenure: r.tenure });
+    }
+    if (r.open_strengths) {
+      open_responses.push({ kind: "strengths", rater_role: r.rater_role, text: r.open_strengths, tenure: r.tenure });
+    }
+    if (r.open_development) {
+      open_responses.push({ kind: "development", rater_role: r.rater_role, text: r.open_development, tenure: r.tenure });
+    }
+    if (r.open_example) {
+      open_responses.push({ kind: "example", rater_role: r.rater_role, text: r.open_example, tenure: r.tenure });
+    }
+    if (r.open_advice) {
+      open_responses.push({ kind: "advice", rater_role: r.rater_role, text: r.open_advice, tenure: r.tenure });
+    }
+    if (r.open_other) {
+      open_responses.push({ kind: "other", rater_role: r.rater_role, text: r.open_other, tenure: r.tenure });
     }
   }
 

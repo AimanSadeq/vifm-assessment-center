@@ -19,6 +19,7 @@ import {
   saveReflectRaterTenure,
 } from "@/lib/reflect/rater-actions";
 import type { RaterContext, ReflectRaterTenure } from "@/lib/reflect/rater-access";
+import { OpenQuestionsBlock } from "./open-questions-block";
 
 type LocalAnswer = {
   score: number | null;
@@ -770,6 +771,16 @@ export function RaterForm({ ctx }: Props) {
             value={openText.continue_}
             onChange={(v) => setOpen("continue", v)}
             rtl={rtl}
+          />
+        </section>
+
+        {/* Five open-ended questions (00101) - autosave on blur, independent of the SSC machine */}
+        <section className="rounded-lg border bg-card p-5">
+          <OpenQuestionsBlock
+            token={ctx.rater.access_token}
+            isSelf={ctx.rater.rater_role === "self"}
+            ar={rtl}
+            initial={ctx.openQuestions}
           />
         </section>
 

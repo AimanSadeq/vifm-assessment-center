@@ -17,6 +17,12 @@ export type RaterRow = {
   open_start: string | null;
   open_stop: string | null;
   open_continue: string | null;
+  /** Five open-ended questions (migration 00101). */
+  open_strengths: string | null;
+  open_development: string | null;
+  open_example: string | null;
+  open_advice: string | null;
+  open_other: string | null;
   /**
    * P1 critical-competency picks (migration 00037). Used only by Self and
    * Manager raters - they pick competencies they consider most critical
@@ -103,6 +109,14 @@ export type RaterContext = {
     start: string;
     stop: string;
     continue_: string;
+  };
+  /** Five open-ended questions (00101) - survives revisits. */
+  openQuestions: {
+    strengths: string;
+    development: string;
+    example: string;
+    advice: string;
+    other: string;
   };
   /** P1: list of competency_ids the rater flagged as role-critical. */
   criticalCompetencyIds: string[];
@@ -209,6 +223,15 @@ export async function loadRaterByToken(token: string): Promise<RaterContext | nu
       start: (rater.open_start ?? "") || "",
       stop: (rater.open_stop ?? "") || "",
       continue_: (rater.open_continue ?? "") || "",
+    },
+    // Five open-ended questions (00101). Coerce missing columns to "" so the
+    // block simply renders empty until the migration runs.
+    openQuestions: {
+      strengths: rater.open_strengths ?? "",
+      development: rater.open_development ?? "",
+      example: rater.open_example ?? "",
+      advice: rater.open_advice ?? "",
+      other: rater.open_other ?? "",
     },
     // P1 critical-competency picks (00037). Defensively coerces missing
     // column to empty so the form simply hides the picker.

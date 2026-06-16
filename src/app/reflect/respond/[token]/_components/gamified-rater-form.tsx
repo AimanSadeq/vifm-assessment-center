@@ -20,6 +20,7 @@ import {
   Rocket,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { OpenQuestionsBlock } from "./open-questions-block";
 import {
   saveReflectResponse,
   markReflectRaterComplete,
@@ -621,6 +622,15 @@ export function GamifiedRaterForm({ ctx, preview = false }: { ctx: RaterContext;
                   </div>
                 );
               })}
+            </div>
+
+            <div className="rounded-2xl border bg-card p-4">
+              <OpenQuestionsBlock
+                token={ctx.rater.access_token}
+                isSelf={isSelf}
+                ar={rtl}
+                initial={ctx.openQuestions}
+              />
             </div>
 
             <button

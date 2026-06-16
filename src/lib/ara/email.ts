@@ -31,7 +31,8 @@ import { createServiceClient } from "@/lib/supabase/server";
 export type AraEmailType =
   | "ara_respondent_invitation"
   | "ara_consultant_completion"
-  | "ara_personal_results_link";
+  | "ara_personal_results_link"
+  | "ara_personal_results_to_client";
 export type AraEmailLanguage = "en" | "ar" | "bilingual";
 
 type RenderedEmail = {
@@ -193,6 +194,49 @@ ${d.pdfUrl}
 <div dir="rtl" style="font-family:'Open Sans',Arial,sans-serif;">
 <p>مرحبًا ${d.respondentName}،</p>
 <p>شكراً لإكمالك اللقطة الشخصية. احفظ الرابط أعلاه للرجوع إليه من أي جهاز.</p>
+</div>
+</div>`,
+    }),
+  },
+  ara_personal_results_to_client: {
+    en: (d) => ({
+      contentType: "Text",
+      subject: `AI Readiness results - ${d.respondentName} (${d.assessmentName})`,
+      body: `Hello ${d.clientName},
+
+${d.respondentName}${d.respondentEmail ? ` (${d.respondentEmail})` : ""} has completed the VIFM AI Readiness Snapshot for ${d.assessmentName}.
+
+Their results report is attached as a PDF. It covers the four AI-readiness factors and the VIFM training programmes most likely to close any gaps.
+
+If you have questions about interpreting the results, please contact your VIFM consultant.
+
+Best regards,
+Virginia Institute of Finance and Management`,
+    }),
+    ar: (d) => ({
+      contentType: "Text",
+      subject: `نتائج الجاهزية للذكاء الاصطناعي - ${d.respondentName} (${d.assessmentName})`,
+      body: `مرحبًا ${d.clientName}،
+
+أكمل ${d.respondentName}${d.respondentEmail ? ` (${d.respondentEmail})` : ""} لقطة الجاهزية للذكاء الاصطناعي من VIFM لـ ${d.assessmentName}.
+
+تقرير النتائج مرفق بصيغة PDF. يغطي عوامل الجاهزية الأربعة وبرامج تدريب VIFM الأكثر ملاءمة لمعالجة أي فجوات.
+
+إذا كانت لديك أسئلة حول تفسير النتائج، يرجى التواصل مع مستشار VIFM الخاص بك.
+
+مع أطيب التحيات،
+معهد فرجينيا للتمويل والإدارة`,
+    }),
+    bilingual: (d) => ({
+      contentType: "HTML",
+      subject: `AI Readiness results - ${d.respondentName} / نتائج الجاهزية`,
+      body: `<div style="font-family:'Open Sans',Arial,sans-serif;line-height:1.55;color:#121232;">
+<p>Hello ${d.clientName},</p>
+<p>${d.respondentName}${d.respondentEmail ? ` (${d.respondentEmail})` : ""} has completed the VIFM AI Readiness Snapshot for <strong>${d.assessmentName}</strong>. Their results report is attached as a PDF.</p>
+<hr style="border:0;border-top:1px solid #e5e7eb;margin:18px 0;"/>
+<div dir="rtl" style="font-family:'Open Sans',Arial,sans-serif;">
+<p>مرحبًا ${d.clientName}،</p>
+<p>أكمل ${d.respondentName} لقطة الجاهزية للذكاء الاصطناعي لـ <strong>${d.assessmentName}</strong>. تقرير النتائج مرفق بصيغة PDF.</p>
 </div>
 </div>`,
     }),

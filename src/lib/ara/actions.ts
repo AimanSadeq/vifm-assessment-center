@@ -127,6 +127,21 @@ export async function updateAraOrganization(formData: FormData) {
     .eq("id", id);
   if (error) return { ok: false, error: error.message };
 
+  // Results-visibility + send-to-client prefs (migration 00108). Separate,
+  // best-effort update so org edits keep working before the migration is
+  // applied (a missing column can't fail the core save above).
+  const { error: visErr } = await sb
+    .from("ara_organizations")
+    .update({
+      respondent_can_view_results: formData.get("respondent_can_view_results") != null,
+      client_contact_email: String(formData.get("client_contact_email") ?? "").trim() || null,
+      send_results_to_client: formData.get("send_results_to_client") != null,
+    })
+    .eq("id", id);
+  if (visErr) {
+    console.warn("[updateAraOrganization] results-visibility not saved (apply migration 00108):", visErr.message);
+  }
+
   revalidatePath("/ara/admin/organizations");
   revalidatePath(`/ara/admin/organizations/${id}`);
   redirect("/ara/admin/organizations");

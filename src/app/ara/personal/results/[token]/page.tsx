@@ -5,6 +5,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { loadRespondentByToken, loadQuestionsForRespondent } from "@/lib/ara/respondent-access";
+import { getOrgResultsPrefs } from "@/lib/ara/results-visibility";
 import { calculateQuestionScore } from "@/lib/ara/scoring";
 import {
   ARA_INDIVIDUAL_FACTORS,
@@ -47,6 +48,32 @@ export default async function PersonalResultsPage({ params }: Props) {
 
   const language = ctx.respondent.language_preference;
   const isAr = language === "ar";
+
+  // Client-level gate (migration 00108): a client may withhold results from
+  // delegates (results go to the client instead). Anonymous Mode A has no org
+  // and stays visible.
+  const prefs = await getOrgResultsPrefs(ctx.assessment.organization_id);
+  if (!prefs.respondentCanView) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-6">
+        <Card className="max-w-md text-center">
+          <CardHeader>
+            <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-full bg-accent/10">
+              <Compass className="h-5 w-5 text-accent" />
+            </div>
+            <CardTitle className="text-lg">
+              {isAr ? "تم استلام إجاباتك" : "Your responses are recorded"}
+            </CardTitle>
+            <CardDescription>
+              {isAr
+                ? "شكرًا لإكمالك التقييم. ستتم مشاركة نتائجك مع مؤسستك، التي ستتواصل معك بشأن الخطوات التالية."
+                : "Thank you for completing the assessment. Your results are shared with your organisation, who will follow up with you on next steps."}
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
 
   const sb = createServiceClient();
   const questions = await loadQuestionsForRespondent(ctx);

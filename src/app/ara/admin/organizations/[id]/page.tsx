@@ -132,6 +132,60 @@ export default async function EditAraOrganizationPage({
                 </select>
               </div>
 
+              {/* Results delivery (migration 00108) - who sees the delegate's
+                  results, and whether they go to the client contact. */}
+              {(() => {
+                const o = org as AraOrganization & {
+                  respondent_can_view_results?: boolean;
+                  client_contact_email?: string | null;
+                  send_results_to_client?: boolean;
+                };
+                return (
+                  <div className="space-y-4 rounded-lg border p-4">
+                    <p className="text-sm font-medium">Results delivery</p>
+                    <label className="flex items-start gap-2.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="respondent_can_view_results"
+                        defaultChecked={o.respondent_can_view_results ?? true}
+                        className="mt-0.5 h-4 w-4"
+                      />
+                      <span className="text-sm">
+                        Delegate can view their own results
+                        <span className="block text-xs text-muted-foreground">
+                          If off, the results page, PDF download, and the auto results email are withheld from the delegate.
+                        </span>
+                      </span>
+                    </label>
+                    <div className="space-y-2">
+                      <Label htmlFor="client_contact_email">Client contact email</Label>
+                      <Input
+                        id="client_contact_email"
+                        name="client_contact_email"
+                        type="email"
+                        maxLength={200}
+                        placeholder="contact@client.com"
+                        defaultValue={o.client_contact_email ?? ""}
+                      />
+                    </div>
+                    <label className="flex items-start gap-2.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="send_results_to_client"
+                        defaultChecked={o.send_results_to_client ?? false}
+                        className="mt-0.5 h-4 w-4"
+                      />
+                      <span className="text-sm">
+                        Send results to the client contact
+                        <span className="block text-xs text-muted-foreground">
+                          On completion, email each delegate&apos;s results PDF to the contact above. Requires a contact email.
+                        </span>
+                      </span>
+                    </label>
+                  </div>
+                );
+              })()}
+
               <div className="flex gap-3 pt-2">
                 <Button type="submit">{t("araAdmin.orgSaveButton")}</Button>
                 <Link href="/ara/admin/organizations">

@@ -5,6 +5,7 @@ import {
   loadRespondentByToken,
   loadQuestionsForRespondent,
 } from "@/lib/ara/respondent-access";
+import { getOrgResultsPrefs } from "@/lib/ara/results-visibility";
 import { calculateQuestionScore } from "@/lib/ara/scoring";
 import { createServiceClient } from "@/lib/supabase/server";
 import {
@@ -52,13 +53,27 @@ const TARGET = 4;
  * when the respondent hasn't completed yet.
  */
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: { token: string } }
 ) {
   try {
     const ctx = await loadRespondentByToken(params.token);
     if (!ctx) {
       return NextResponse.json({ error: "Token not found" }, { status: 404 });
+    }
+
+    // Client-level visibility gate (migration 00108): if the client withheld
+    // results from delegates, block direct (token) downloads. The completion
+    // task still needs the PDF to attach to the client email, so it passes a
+    // server-only header (CRON_SECRET) to bypass.
+    const prefs = await getOrgResultsPrefs(ctx.assessment.organization_id);
+    const internalKey = request.headers.get("x-ara-internal");
+    const isInternal = !!process.env.CRON_SECRET && internalKey === process.env.CRON_SECRET;
+    if (!prefs.respondentCanView && !isInternal) {
+      return NextResponse.json(
+        { error: "Results are not available to the respondent for this assessment." },
+        { status: 403 }
+      );
     }
     // Same eligibility rule as the results page - Mode A/B individual-stage
     // OR Mode C org-stage with include_individual_layer=true.

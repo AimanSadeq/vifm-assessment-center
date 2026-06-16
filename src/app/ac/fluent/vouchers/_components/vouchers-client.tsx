@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, Ticket, Copy, Ban } from "lucide-react";
+import { fmtDate } from "@/lib/utils/format-date";
 import { generateFluentVouchersAction, disableFluentVoucherAction } from "../actions";
 
 export type FluentVoucherRow = {
@@ -171,7 +172,7 @@ export function VouchersClient({ vouchers, clients }: { vouchers: FluentVoucherR
                         )}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
-                        {v.expires_at ? new Date(v.expires_at).toLocaleDateString() : "-"}
+                        {fmtDate(v.expires_at)}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-end gap-1">

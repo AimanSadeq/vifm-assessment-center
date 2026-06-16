@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { useTranslation } from "react-i18next";
 import { Bell, BellRing, Check, CheckCheck } from "lucide-react";
+import { fmtDate } from "@/lib/utils/format-date";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -34,7 +35,7 @@ function buildRelativeTime(t: (key: string, vars?: Record<string, string | numbe
     if (d < 7) return t("notifications.time.daysAgo", { n: d });
     const w = Math.floor(d / 7);
     if (w < 5) return t("notifications.time.weeksAgo", { n: w });
-    return new Date(iso).toLocaleDateString();
+    return fmtDate(iso);
   };
 }
 

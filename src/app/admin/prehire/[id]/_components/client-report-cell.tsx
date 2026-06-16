@@ -45,7 +45,7 @@ export function ClientReportCell({
   };
 
   const sentLabel = sentAt
-    ? new Date(sentAt).toLocaleDateString(lang === "ar" ? "ar" : "en-GB", { day: "numeric", month: "short" })
+    ? new Date(sentAt).toLocaleDateString(lang === "ar" ? "ar" : "en-GB", { day: "numeric", month: "short", timeZone: "UTC" })
     : null;
 
   return (

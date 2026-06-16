@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Trash2, Save, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
+import { fmtDate } from "@/lib/utils/format-date";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -149,7 +150,7 @@ export function IdpEditor({ participantId, competencies, initial }: Props) {
             {statusLabel(status)}
             {signedOffAt && status === "agreed" && (
               <span className="text-[10px] opacity-80">
-                · {new Date(signedOffAt).toLocaleDateString()}
+                · {fmtDate(signedOffAt)}
               </span>
             )}
           </span>

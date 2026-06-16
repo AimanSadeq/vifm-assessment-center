@@ -21,7 +21,9 @@ type Props = {
   totals: Record<CellStatus, number>;
 };
 
-const fmt = (n: number | null) => (n === null ? "—" : n.toLocaleString());
+// Fixed locale so the thousands separator is identical on server + client
+// (avoids a React hydration mismatch).
+const fmt = (n: number | null) => (n === null ? "—" : n.toLocaleString("en-US"));
 
 const STATUS_STYLE: Record<CellStatus, { cell: string; dot: string; label: string }> = {
   documented: { cell: "bg-emerald-50 text-emerald-900", dot: "bg-emerald-500", label: "Documented" },

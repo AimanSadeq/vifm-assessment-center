@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { Ticket, Copy, Download, Check, Ban, RotateCcw, Plus, X, Link2, Upload } from "lucide-react";
+import { fmtDate } from "@/lib/utils/format-date";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -428,7 +429,7 @@ export function VouchersClient({
                         <Badge variant={v.status === "active" ? "secondary" : "outline"}>{v.status}</Badge>
                       </td>
                       <td className="py-2 pe-3 text-muted-foreground">
-                        {v.expires_at ? new Date(v.expires_at).toLocaleDateString() : "-"}
+                        {v.expires_at ? fmtDate(v.expires_at) : "-"}
                       </td>
                       <td className="py-2 text-right">
                         <div className="flex items-center justify-end gap-1">
@@ -503,7 +504,7 @@ export function VouchersClient({
                         <td className="py-2 pe-3 tabular-nums">{c.completed}</td>
                         <td className="py-2 pe-3 tabular-nums">{pct}%</td>
                         <td className="py-2 text-muted-foreground">
-                          {c.lastRedeemed ? new Date(c.lastRedeemed).toLocaleDateString() : "-"}
+                          {c.lastRedeemed ? fmtDate(c.lastRedeemed) : "-"}
                         </td>
                       </tr>
                     );

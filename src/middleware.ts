@@ -14,6 +14,12 @@ const isAraRespondentRoute = (pathname: string) =>
 const isAraRedeemRoute = (pathname: string) =>
   pathname === "/ara/redeem" || pathname.startsWith("/ara/redeem/");
 
+// Public ARC cohort dashboard - a share-by-link, read-only client view keyed
+// by the assessment UUID (no PII; gated server-side to Mode C assessments). The
+// page is designed as a share-by-link credential, so bypass auth like redeem.
+const isAraCohortRoute = (pathname: string) =>
+  pathname.startsWith("/ara/cohort/");
+
 // Reflect rater routes follow the same token pattern - rater identity
 // is established server-side from reflect_raters.access_token.
 const isReflectRaterRoute = (pathname: string) =>
@@ -79,6 +85,7 @@ export async function middleware(request: NextRequest) {
   if (
     isAraRespondentRoute(request.nextUrl.pathname) ||
     isAraRedeemRoute(request.nextUrl.pathname) ||
+    isAraCohortRoute(request.nextUrl.pathname) ||
     isReflectRaterRoute(request.nextUrl.pathname) ||
     isPublicCoursesRoute(request.nextUrl.pathname) ||
     isPublicVerifyRoute(request.nextUrl.pathname) ||

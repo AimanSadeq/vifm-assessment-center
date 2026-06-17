@@ -1,12 +1,22 @@
 import { renderToBuffer } from "@react-pdf/renderer";
 import { getSessionReport } from "@/lib/technical-sandbox/service";
 import { TechSandboxReport } from "@/lib/reports/tech-sandbox-report";
+import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// GET /api/tech-sandbox/[token]/report -> downloadable PDF of the completed sitting.
+// GET /api/tech-sandbox/[token]/report -> the scored PDF. This is a CLIENT / VIFM
+// admin deliverable and must NEVER be fetchable by the candidate (who holds the
+// token). /api/tech-sandbox/* is auth-bypassed in middleware for the candidate
+// flow, so admin is enforced explicitly here.
 export async function GET(_req: Request, { params }: { params: { token: string } }) {
+  try {
+    await requireRole(["admin"]);
+  } catch (e) {
+    if (isAuthorizationError(e)) return new Response("Not authorized.", { status: 403 });
+    throw e;
+  }
   const data = await getSessionReport(params.token);
   if (!data) {
     return new Response("Report not available (assessment not yet submitted).", { status: 404 });

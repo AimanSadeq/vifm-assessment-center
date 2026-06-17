@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { submitSession } from "@/lib/technical-sandbox/service";
-import { emailSessionResults } from "@/lib/technical-sandbox/results-email";
 
 export const runtime = "nodejs";
 
@@ -18,19 +17,14 @@ export async function POST(req: Request, { params }: { params: { token: string }
       // No body (sandbox-only submit) - fine.
     }
     const result = await submitSession(params.token, mcqAnswers);
-    // Only a fresh transition carries { score, combined }; an already-submitted
-    // replay returns { alreadySubmitted: true }. Build an explicit allowlisted
-    // DTO so the keyed mcq_test (held only on the session row) can NEVER be
-    // serialized to the browser, on either path.
-    const isFresh =
-      result && typeof result === "object" && "score" in result;
-    if (isFresh) {
-      // best-effort; never throws
-      await emailSessionResults(params.token);
-    }
-    const safe = isFresh
-      ? { score: (result as { score: unknown }).score, combined: (result as { combined: unknown }).combined }
-      : { alreadySubmitted: true };
+    // The assessment is scored + persisted server-side, but the candidate must
+    // NOT receive results. The response carries only a completion flag - never a
+    // score and never the keyed mcq_test. The scored report is a client / VIFM
+    // admin deliverable (admin results view + admin-gated PDF); the candidate is
+    // not emailed results. (Auto-delivery to a client recipient is a follow-on
+    // pending a client-recipient field; today VIFM admin reviews + sends.)
+    const isFresh = result && typeof result === "object" && "score" in result;
+    const safe = isFresh ? { submitted: true } : { alreadySubmitted: true };
     return NextResponse.json({ ok: true, result: safe });
   } catch (e: unknown) {
     return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "error" }, { status: 400 });

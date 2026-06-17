@@ -93,7 +93,11 @@ export default async function TechSandboxPage({ params }: { params: { token: str
       ? stripAnswerKey(keyedMcq)
       : null;
 
-  const initialResult = await buildInitialResult(params.token, session, mcqPct);
+  // The candidate must NOT see results on completion - the scored report goes to
+  // the client / VIFM admin (admin results view + admin-gated PDF). So the
+  // candidate runner is never seeded with results; on submit it shows only a
+  // confirmation. (buildInitialResult is retained for the admin-side view.)
+  void buildInitialResult;
 
   return (
     <Runner
@@ -102,7 +106,7 @@ export default async function TechSandboxPage({ params }: { params: { token: str
       initialStatus={session.status}
       mcqPct={mcqPct}
       mcqTest={mcqTest}
-      initialResult={initialResult}
+      initialResult={null}
       initialExpiresAt={(session.expires_at as string) ?? null}
     />
   );

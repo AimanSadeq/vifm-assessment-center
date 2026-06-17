@@ -86,9 +86,10 @@ export function Runner({
   const [locale, setLocale] = useState<"en" | "ar">("en");
   const [started, setStarted] = useState(initialStatus === "in_progress");
   const [submitted, setSubmitted] = useState(initialStatus === "submitted");
-  // Seed from the persisted result so a reload after submit still shows the
-  // score panels + credential-verify link (instead of a blank "complete" page).
-  const [result, setResult] = useState<SubmitResult["result"] | null>(initialResult);
+  // Candidate-side result state is retained only so the submit handler can no-op
+  // safely. The candidate is NOT shown results (see the `submitted` branch); the
+  // scored report goes to the client / VIFM admin, never the taker.
+  const [, setResult] = useState<SubmitResult["result"] | null>(initialResult);
   // Two-phase combined flow: knowledge (MCQ) section first, then hands-on blocks.
   const [phase, setPhase] = useState<"mcq" | "sandbox">(hasMcq ? "mcq" : "sandbox");
   // MCQ answers are client-side until submit; mirror to sessionStorage so a
@@ -239,8 +240,26 @@ export function Runner({
     setIdx(next);
   }
 
+  // Results are intentionally HIDDEN from the candidate. On completion they see
+  // only a confirmation; the scored report is delivered to the client / VIFM
+  // admin (admin results view + the admin-gated PDF). Never render scores here.
   if (submitted) {
-    return <Results token={token} blueprint={blueprint} result={result} locale={locale} />;
+    const ar = locale === "ar";
+    return (
+      <div className="mx-auto max-w-md p-10 text-center" dir={ar ? "rtl" : "ltr"}>
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-2xl text-emerald-700">
+          ✓
+        </div>
+        <h1 className="text-lg font-semibold text-[#010131]">
+          {ar ? "تم إرسال تقييمك" : "Your assessment has been submitted"}
+        </h1>
+        <p className="mt-3 text-sm text-muted-foreground">
+          {ar
+            ? "شكراً لك. ستتم مشاركة نتائجك مع المؤسسة الطالبة للتقييم، ولا تُعرض هنا."
+            : "Thank you. Your results will be shared with the requesting organization and are not shown here."}
+        </p>
+      </div>
+    );
   }
 
   if (!started) {

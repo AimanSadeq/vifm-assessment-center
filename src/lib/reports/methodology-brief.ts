@@ -121,7 +121,7 @@ export function methodologyBriefHtml(md: string): string {
 </head>
 <body>
   <div class="brandbar">
-    <div class="eyebrow">VIFM AI Readiness Compass</div>
+    <div class="eyebrow">VIFM AI Readiness Compass®</div>
     <div class="org">Virginia Institute of Finance and Management</div>
   </div>
   ${body}

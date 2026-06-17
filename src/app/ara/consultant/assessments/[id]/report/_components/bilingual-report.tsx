@@ -166,7 +166,7 @@ export function BilingualReport(p: BilingualReportProps) {
           )}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20pt", marginTop: "12pt" }}>
             <p style={{ color: "white", opacity: 0.85, fontSize: "14pt" }}>
-              AI Readiness Compass Report
+              AI Readiness Compass® Report
             </p>
             <p dir="rtl" style={{ color: "white", opacity: 0.85, fontSize: "14pt" }}>
               {tr("ar", "report_title")}

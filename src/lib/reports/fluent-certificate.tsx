@@ -96,7 +96,7 @@ export function FluentCertificate({ data }: { data: FluentCertificateData }) {
       <Page size="A4" orientation="landscape" style={s.page}>
         <View style={s.frame}>
           <Text style={s.brand}>VIRGINIA INSTITUTE OF FINANCE &amp; MANAGEMENT</Text>
-          <Text style={s.title}>Fluent - Certificate of English Placement</Text>
+          <Text style={s.title}>Fluent® - Certificate of English Placement</Text>
           <Text style={s.subtitle}>
             CEFR-aligned indicative placement · Reading · Listening · Writing · Speaking
           </Text>

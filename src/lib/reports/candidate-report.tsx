@@ -205,7 +205,7 @@ function Footer({ name }: { name: string }) {
   return (
     <View style={s.footer} fixed>
       <Text style={s.confidential}>STRICTLY CONFIDENTIAL</Text>
-      <Text style={s.footerText}>{name} · VIFM Assessment Center</Text>
+      <Text style={s.footerText}>{name} · VIFM Assessment Center®</Text>
       <Text style={s.footerText} render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
     </View>
   );
@@ -217,7 +217,7 @@ function CoverPage({ d }: { d: ReportData }) {
       <View style={s.coverBanner}>
         <View style={s.coverGoldRule} />
         <Text style={s.coverConfidential}>Confidential · For Internal VIFM Use</Text>
-        <Text style={s.coverEyebrow}>VIFM Assessment Center</Text>
+        <Text style={s.coverEyebrow}>VIFM Assessment Center®</Text>
         <Text style={s.coverTitle}>Talent Assessment Report</Text>
         <Text style={s.coverSubtitle}>
           {d.engagementName}{d.targetRole ? ` · ${d.targetRole}` : ""}

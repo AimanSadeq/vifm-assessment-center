@@ -196,7 +196,7 @@ export async function GET(req: Request, { params }: { params: { resultId: string
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Fluent - Certificate of Placement</title>
+<title>Fluent® - Certificate of Placement</title>
 <style>
   :root { --navy:#010131; --accent:#5391D5; --ink:#111232; }
   * { box-sizing: border-box; }
@@ -242,7 +242,7 @@ export async function GET(req: Request, { params }: { params: { resultId: string
   <div class="sheet">
     <div class="frame">
       <div class="brand">Virginia Institute of Finance &amp; Management</div>
-      <div class="title">Fluent - Certificate of English Placement</div>
+      <div class="title">Fluent® - Certificate of English Placement</div>
       <p class="subtitle">CEFR-aligned indicative placement · Reading · Listening · Writing · Speaking</p>
 
       <div class="awarded">This is to certify that</div>

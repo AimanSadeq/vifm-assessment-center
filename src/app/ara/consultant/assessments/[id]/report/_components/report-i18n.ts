@@ -8,7 +8,7 @@ type Dict = Record<string, string>;
 const EN: Dict = {
   confidential_internal: "Confidential - For Internal VIFM Use",
   confidential_sample: "Confidential - Sample - Not for Client Distribution",
-  report_title: "AI Readiness Compass Report",
+  report_title: "AI Readiness Compass® Report",
   report_generated: "Report generated",
   org_suffix: "Virginia Institute of Finance and Management",
 
@@ -163,7 +163,7 @@ const EN: Dict = {
 const AR: Dict = {
   confidential_internal: "سري - لاستخدام VIFM الداخلي",
   confidential_sample: "سري - عينة - غير مخصص للتوزيع على العميل",
-  report_title: "تقرير بوصلة الاستعداد للذكاء الاصطناعي",
+  report_title: "تقرير بوصلة الاستعداد للذكاء الاصطناعي®",
   report_generated: "تاريخ إصدار التقرير",
   org_suffix: "معهد فرجينيا للتمويل والإدارة",
 

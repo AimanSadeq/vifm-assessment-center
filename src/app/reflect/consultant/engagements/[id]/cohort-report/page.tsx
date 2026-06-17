@@ -67,7 +67,7 @@ function CohortReport({
       <section className="page cover">
         <div className="brand-stripe" />
         <div className="cover-inner">
-          <div className="eyebrow">Reflect 360 · Cohort report</div>
+          <div className="eyebrow">Reflect 360® · Cohort report</div>
           <h1>{scoring.engagement_name}</h1>
           <div className="role-title">{scoring.organization_name}</div>
           <dl className="cover-meta">

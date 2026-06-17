@@ -157,7 +157,7 @@ function pageFooter(name: string): string {
   return `
     <div class="page-footer">
       <span class="footer-confidential">سري للغاية</span>
-      <span class="footer-meta">${esc(name)} · مركز VIFM للتقييم</span>
+      <span class="footer-meta">${esc(name)} · مركز VIFM للتقييم®</span>
     </div>`;
 }
 
@@ -731,7 +731,7 @@ export function renderCandidateReportHtmlAr(data: ReportData): string {
     <div class="cover-banner">
       <div class="cover-gold-rule"></div>
       <p class="cover-confidential">سري · للاستخدام الداخلي في VIFM</p>
-      <p class="cover-eyebrow">مركز VIFM للتقييم</p>
+      <p class="cover-eyebrow">مركز VIFM للتقييم®</p>
       <h1 class="cover-title">تقرير تقييم المواهب</h1>
       <p class="cover-subtitle">${esc(d.engagementName)}${d.targetRole ? ` · ${esc(d.targetRole)}` : ""}</p>
       <span class="cover-name-pill"><span class="cover-name-pill-text">${esc(d.candidateName)}</span></span>

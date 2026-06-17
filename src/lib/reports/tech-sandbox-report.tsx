@@ -83,7 +83,7 @@ export function TechSandboxReport({ data }: { data: SessionReport }) {
   return (
     <Document>
       <Page size="A4" style={s.page}>
-        <Text style={s.brand}>VIFM · TECHNICAL ASSESSMENT</Text>
+        <Text style={s.brand}>VIFM · TECHNICAL ASSESSMENT®</Text>
         <Text style={s.title}>
           {data.nodeId ? `${data.nodeId} · ` : ""}
           {data.functionName}
@@ -184,7 +184,7 @@ export function TechSandboxReport({ data }: { data: SessionReport }) {
         ))}
 
         <Text style={s.footer} fixed>
-          VIFM Technical Assessment · Bands: Basic &lt; 60 · Intermediate 60–84 · Advanced ≥ 85 ·
+          VIFM Technical Assessment® · Bands: Basic &lt; 60 · Intermediate 60–84 · Advanced ≥ 85 ·
           Generated {new Date().toLocaleDateString()}
         </Text>
       </Page>

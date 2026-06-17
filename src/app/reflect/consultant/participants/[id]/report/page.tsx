@@ -94,7 +94,7 @@ function ReportBody({
       <section className="page cover">
         <div className="brand-stripe" />
         <div className="cover-inner">
-          <div className="eyebrow">{showAr ? "Reflect 360 · Leadership Feedback" : "Reflect 360 · Leadership Feedback"}</div>
+          <div className="eyebrow">{showAr ? "Reflect 360® · Leadership Feedback" : "Reflect 360® · Leadership Feedback"}</div>
           <h1>{showEn && scoring.participant_name}{showEn && showAr && " · "}{showAr && (scoring.participant_name_ar ?? scoring.participant_name)}</h1>
           {scoring.participant_role_title && (
             <div className="role-title">{scoring.participant_role_title}</div>

@@ -163,7 +163,7 @@ export function PsychometricReport({ data }: { data: PsyReportData }) {
       <Page size="A4" style={s.page} wrap>
         {/* Hero */}
         <View style={s.hero}>
-          <Text style={s.heroEyebrow}>VIFM Psychometrics · Foundations</Text>
+          <Text style={s.heroEyebrow}>VIFM Psychometrics® · Foundations</Text>
           <Text style={s.heroTitle}>{data.instrumentName}</Text>
           <Text style={s.heroIdentity}>{data.takerName} · {data.date}</Text>
           <View style={s.heroPillRow}>
@@ -254,7 +254,7 @@ export function PsychometricReport({ data }: { data: PsyReportData }) {
         )}
 
         <View style={s.footer} fixed>
-          <Text style={s.footerText}>VIFM Psychometrics · {calibrated ? "Norm-referenced" : "Indicative"} report</Text>
+          <Text style={s.footerText}>VIFM Psychometrics® · {calibrated ? "Norm-referenced" : "Indicative"} report</Text>
           <Text style={s.footerText} render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
         </View>
       </Page>

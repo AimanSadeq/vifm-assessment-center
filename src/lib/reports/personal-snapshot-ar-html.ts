@@ -539,7 +539,7 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
   <!-- PAGE 1 - score + per-factor (first two) -->
   <section>
     <div class="hero">
-      <p class="hero-eyebrow">بوصلة VIFM للاستعداد للذكاء الاصطناعي · شخصية</p>
+      <p class="hero-eyebrow">بوصلة VIFM للاستعداد للذكاء الاصطناعي® · شخصية</p>
       <h1 class="hero-title">لقطة الجاهزية الشخصية للذكاء الاصطناعي</h1>
       <p class="hero-identity">${esc(data.respondentName)} · ${esc(data.respondentEmail)}</p>
       <div class="hero-score-row">
@@ -609,7 +609,7 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
   </section>
 
   <div class="page-footer">
-    <span>بوصلة VIFM للاستعداد للذكاء الاصطناعي · لقطة شخصية</span>
+    <span>بوصلة VIFM للاستعداد للذكاء الاصطناعي® · لقطة شخصية</span>
     <span>أُنشئت في ${esc(data.generatedAt)}</span>
   </div>
 

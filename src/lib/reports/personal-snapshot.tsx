@@ -386,7 +386,7 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
       <Page size="A4" style={s.page} wrap>
         {/* Hero */}
         <View style={s.hero}>
-          <Text style={s.heroEyebrow}>VIFM AI Readiness Compass · Personal</Text>
+          <Text style={s.heroEyebrow}>VIFM AI Readiness Compass® · Personal</Text>
           <Text style={s.heroTitle}>Personal AI Readiness Snapshot</Text>
           <Text style={s.heroIdentity}>
             {data.respondentName} · {data.respondentEmail}
@@ -471,7 +471,7 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
         </View>
 
         <View style={s.footer} fixed>
-          <Text style={s.footerText}>VIFM AI Readiness Compass · Personal Snapshot</Text>
+          <Text style={s.footerText}>VIFM AI Readiness Compass® · Personal Snapshot</Text>
           <Text style={s.footerText} render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
         </View>
       </Page>

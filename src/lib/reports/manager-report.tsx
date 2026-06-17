@@ -53,7 +53,7 @@ export function ManagerReport({ data }: AudienceReportProps) {
       <Page size="A4" style={sh.cover}>
         <CoverHero
           eyebrow="Behavioural Psychometric · For the Line Manager"
-          title="Manager Development Report"
+          title="Manager Development Report®"
           subtitle={`Developing ${firstName} - where they stand and how to grow`}
           candidateName={data.candidateName}
           audience={AUDIENCE}

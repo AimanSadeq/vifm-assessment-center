@@ -38,7 +38,7 @@ type Lang = "en" | "ar";
 const L: Record<Lang, Record<string, string>> = {
   en: {
     brand: "Virginia Institute of Finance and Management",
-    title: "Pre-Hire Screening Report",
+    title: "Pre-Hire® Screening Report",
     candidate: "Candidate",
     employeeId: "Employee ID",
     role: "Role",

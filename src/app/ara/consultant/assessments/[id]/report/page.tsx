@@ -419,10 +419,10 @@ export default async function AraReportPage({
               </p>
             )}
             <p className="text-lg" style={{ color: "white", opacity: 0.85 }}>
-              AI Readiness Compass Report
+              AI Readiness Compass® Report
             </p>
             <p dir="rtl" className="text-lg" style={{ color: "white", opacity: 0.85, marginTop: 8 }}>
-              تقرير بوصلة الاستعداد للذكاء الاصطناعي
+              تقرير بوصلة الاستعداد للذكاء الاصطناعي®
             </p>
           </div>
           <div className="flex justify-between text-xs" style={{ color: "white", opacity: 0.75 }}>

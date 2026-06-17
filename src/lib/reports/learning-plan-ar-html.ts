@@ -528,7 +528,7 @@ export function renderLearningPlanHtmlAr(data: ReportData): string {
   <section class="cover">
     <div class="cover-banner">
       <div class="cover-gold-rule"></div>
-      <p class="cover-eyebrow">مركز تقييم VIFM</p>
+      <p class="cover-eyebrow">مركز تقييم VIFM®</p>
       <h1 class="cover-title">خطة التعلّم الشخصية</h1>
       <p class="cover-subtitle">${escapeHtml(data.engagementName)}${
     data.targetRole ? ` · ${escapeHtml(data.targetRole)}` : ""

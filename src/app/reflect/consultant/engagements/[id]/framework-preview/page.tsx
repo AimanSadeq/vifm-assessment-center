@@ -51,7 +51,7 @@ export default async function ReflectFrameworkPreviewPage({
       <section className="page cover">
         <div className="brand-stripe" />
         <div className="cover-inner">
-          <div className="eyebrow">Reflect 360 · Framework review</div>
+          <div className="eyebrow">Reflect 360® · Framework review</div>
           <h1>{engagement.name}</h1>
           <div className="role-title">{engagement.ara_organizations?.name ?? ""}</div>
           <dl className="cover-meta">

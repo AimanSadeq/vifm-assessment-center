@@ -317,7 +317,7 @@ function CoverPage({ d }: { d: ReportData }) {
     <Page size="A4" style={s.coverPage}>
       <View style={s.coverBanner}>
         <View style={s.coverGoldRule} />
-        <Text style={s.coverEyebrow}>VIFM Assessment Center</Text>
+        <Text style={s.coverEyebrow}>VIFM Assessment Center®</Text>
         <Text style={s.coverTitle}>Personalized Learning Plan</Text>
         <Text style={s.coverSubtitle}>
           {d.engagementName}

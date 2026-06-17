@@ -11,7 +11,7 @@ const METHODOLOGY_URL = "caliber.viftraining.com/api/ara/methodology/pdf";
 export function personalFactSheetRows(lang: "en" | "ar"): FactSheetRow[] {
   if (lang === "ar") {
     return [
-      { label: "الأداة", value: "بوصلة VIFM للجاهزية للذكاء الاصطناعي - اللقطة الشخصية" },
+      { label: "الأداة", value: "بوصلة VIFM للجاهزية للذكاء الاصطناعي® - اللقطة الشخصية" },
       {
         label: "ما الذي تقيسه",
         value:
@@ -36,7 +36,7 @@ export function personalFactSheetRows(lang: "en" | "ar"): FactSheetRow[] {
     ];
   }
   return [
-    { label: "Instrument", value: "VIFM AI Readiness Compass - Personal Snapshot" },
+    { label: "Instrument", value: "VIFM AI Readiness Compass® - Personal Snapshot" },
     {
       label: "What it measures",
       value:
@@ -65,7 +65,7 @@ export function personalFactSheetRows(lang: "en" | "ar"): FactSheetRow[] {
 export function orgFactSheetRows(lang: "en" | "ar"): FactSheetRow[] {
   if (lang === "ar") {
     return [
-      { label: "الأداة", value: "بوصلة VIFM للجاهزية للذكاء الاصطناعي - التقييم المؤسسي" },
+      { label: "الأداة", value: "بوصلة VIFM للجاهزية للذكاء الاصطناعي® - التقييم المؤسسي" },
       {
         label: "ما الذي تقيسه",
         value:
@@ -90,7 +90,7 @@ export function orgFactSheetRows(lang: "en" | "ar"): FactSheetRow[] {
     ];
   }
   return [
-    { label: "Instrument", value: "VIFM AI Readiness Compass - Organisational assessment" },
+    { label: "Instrument", value: "VIFM AI Readiness Compass® - Organisational assessment" },
     {
       label: "What it measures",
       value:

@@ -7,12 +7,12 @@
 // master_solution or checkpoints — those stay server-side for scoring.
 // ─────────────────────────────────────────────────────────────
 import { createServiceClient } from "@/lib/supabase/server";
-import { scoreBlock } from "./validators";
+import { scoreBlock, tierFor } from "./validators";
 import { scoreSession, type BlockInput } from "./scoring";
 import { runSqlCheckpoint, type SqlEngineConfig } from "./sql-runner";
 import { buildMcqTestForFunction, gradeMcqTest, combineScores } from "./combined";
 import { issueCredential } from "@/lib/credentials/issue";
-import type { TechTest } from "@/lib/ai/technical-assessment";
+import { scoreTechnicalAssessment, type TechTest } from "@/lib/ai/technical-assessment";
 import type { Checkpoint, EngineType, SandboxWork } from "./types";
 
 export interface PublicSkillBlock {
@@ -73,16 +73,36 @@ export function isMissingSchemaError(err: unknown): boolean {
   return code === "42P01" || code === "42703";
 }
 
+type PillarRow = {
+  id: string; name_en: string; name_ar: string | null; sort_order: number;
+  description_en?: string | null; description_ar?: string | null;
+};
+
 async function loadBlocks(functionId: string) {
   const sb = createServiceClient();
-  const { data: pillars, error: pErr } = await sb
+  // Prefer the wide select (with definition columns, migration 00118). If those
+  // columns aren't applied yet, fall back to the base select so the report still
+  // renders names-only instead of returning empty.
+  let pillars: PillarRow[] = [];
+  const wide = await sb
     .from("technical_pillars")
-    .select("id, name_en, name_ar, sort_order")
+    .select("id, name_en, name_ar, sort_order, description_en, description_ar")
     .eq("function_id", functionId)
     .order("sort_order");
-  if (pErr) {
-    if (isMissingSchemaError(pErr)) return { pillars: [], blocks: [] };
-    throw pErr;
+  if (wide.error) {
+    if (!isMissingSchemaError(wide.error)) throw wide.error;
+    const base = await sb
+      .from("technical_pillars")
+      .select("id, name_en, name_ar, sort_order")
+      .eq("function_id", functionId)
+      .order("sort_order");
+    if (base.error) {
+      if (isMissingSchemaError(base.error)) return { pillars: [], blocks: [] };
+      throw base.error;
+    }
+    pillars = (base.data ?? []) as PillarRow[];
+  } else {
+    pillars = (wide.data ?? []) as PillarRow[];
   }
   const pillarIds = (pillars ?? []).map((p) => p.id);
   const { data: blocks, error: bErr } = await sb
@@ -646,6 +666,10 @@ export async function getAnswerKey(): Promise<AnswerKeyFunction[]> {
 // ── Completed-session report data (for PDF + future email) ──
 export interface ReportBlock {
   nameEn: string;
+  nameAr: string | null;
+  /** Plain-English (and Arabic) definition of what this subcategory tested. */
+  descriptionEn: string | null;
+  descriptionAr: string | null;
   frameworkRef: string | null;
   scorePct: number;
   band: string;
@@ -653,10 +677,21 @@ export interface ReportBlock {
 }
 export interface ReportPillar {
   nameEn: string;
+  nameAr: string | null;
+  /** Plain-English (and Arabic) definition of what this category tested. */
+  descriptionEn: string | null;
+  descriptionAr: string | null;
   advancedCount: number;
   intermediateCount: number;
   basicCount: number;
   blocks: ReportBlock[];
+}
+/** Per-subcategory breakdown of the knowledge (MCQ) section. */
+export interface ReportKnowledgeSkill {
+  skill: string;
+  scorePct: number;
+  band: string;
+  total: number;
 }
 export interface SessionReport {
   functionName: string;
@@ -667,7 +702,30 @@ export interface SessionReport {
   submittedAt: string | null;
   overallPct: number;
   overallBand: string;
+  /** Knowledge-section overall %, null when the sitting had no MCQ section. */
+  knowledgePct: number | null;
+  /** Per-subcategory knowledge bands (empty when there was no MCQ section). */
+  knowledgeSkills: ReportKnowledgeSkill[];
+  /** Short plain-language performance summary for the reviewing manager. */
+  narrativeEn: string;
+  narrativeAr: string;
   pillars: ReportPillar[];
+}
+
+function techBandSentenceEn(band: string): string {
+  if (band === "advanced") return "performance is strong and consistent across the assessed areas";
+  if (band === "intermediate") return "performance is solid, with clear areas to strengthen";
+  return "performance shows foundational ability with significant room to develop";
+}
+function techBandSentenceAr(band: string): string {
+  if (band === "advanced") return "الأداء قوي ومتسق عبر المجالات المُقيَّمة";
+  if (band === "intermediate") return "الأداء جيد مع مجالات واضحة للتعزيز";
+  return "يُظهر الأداء قدرة تأسيسية مع مجال كبير للتطوير";
+}
+function techBandLabelAr(band: string): string {
+  if (band === "advanced") return "متقدمة";
+  if (band === "intermediate") return "متوسطة";
+  return "أساسية";
 }
 
 export async function getSessionReport(token: string): Promise<SessionReport | null> {
@@ -698,6 +756,9 @@ export async function getSessionReport(token: string): Promise<SessionReport | n
       );
       return {
         nameEn: b.name_en,
+        nameAr: b.name_ar ?? null,
+        descriptionEn: b.description_en ?? null,
+        descriptionAr: b.description_ar ?? null,
         frameworkRef: b.framework_ref,
         scorePct: Number(resp?.score_pct ?? 0),
         band: String(resp?.band ?? "basic"),
@@ -706,12 +767,61 @@ export async function getSessionReport(token: string): Promise<SessionReport | n
     });
     return {
       nameEn: p.name_en,
+      nameAr: p.name_ar ?? null,
+      descriptionEn: p.description_en ?? null,
+      descriptionAr: p.description_ar ?? null,
       advancedCount: rBlocks.filter((x) => x.band === "advanced").length,
       intermediateCount: rBlocks.filter((x) => x.band === "intermediate").length,
       basicCount: rBlocks.filter((x) => x.band === "basic").length,
       blocks: rBlocks,
     };
   });
+
+  // Knowledge (MCQ) section: recompute the per-subcategory breakdown from the
+  // stored keyed test + the taker's answers, so the report bands EVERY knowledge
+  // subcategory, not just the four hands-on tasks.
+  const knowledgeSkills: ReportKnowledgeSkill[] = [];
+  let knowledgePct: number | null = null;
+  const mcqTest = (session.mcq_test ?? null) as TechTest | null;
+  const mcqAnswers = (session.mcq_answers ?? null) as Record<string, number | number[]> | null;
+  if (mcqTest && Array.isArray(mcqTest.items) && mcqTest.items.length > 0 && mcqAnswers) {
+    const scored = scoreTechnicalAssessment({ test: mcqTest, answers: mcqAnswers });
+    knowledgePct = scored.pct;
+    for (const sk of scored.perSkill) {
+      const pct = sk.total > 0 ? Math.round((100 * sk.correct) / sk.total) : 0;
+      knowledgeSkills.push({ skill: sk.skill, scorePct: pct, band: tierFor(pct), total: sk.total });
+    }
+  } else if (session.mcq_score_pct != null) {
+    knowledgePct = Number(session.mcq_score_pct);
+  }
+
+  const overallPct = Number(session.overall_score_pct ?? 0);
+  const overallBand = String(session.overall_band ?? "basic");
+
+  // Deterministic candidate narrative across the assessed areas (each pillar by
+  // its mean block score, plus the knowledge section).
+  type Area = { nameEn: string; nameAr: string; mean: number };
+  const areas: Area[] = reportPillars
+    .filter((p) => p.blocks.length > 0)
+    .map((p) => ({
+      nameEn: p.nameEn,
+      nameAr: p.nameAr ?? p.nameEn,
+      mean: p.blocks.reduce((a, b) => a + b.scorePct, 0) / p.blocks.length,
+    }));
+  if (knowledgePct != null) areas.push({ nameEn: "Knowledge", nameAr: "المعرفة", mean: knowledgePct });
+  let strongest: Area | null = null;
+  let weakest: Area | null = null;
+  for (const a of areas) {
+    if (strongest === null || a.mean > strongest.mean) strongest = a;
+    if (weakest === null || a.mean < weakest.mean) weakest = a;
+  }
+  const showSW = !!strongest && !!weakest && areas.length > 1 && strongest.nameEn !== weakest.nameEn;
+  const narrativeEn =
+    `Overall this is a ${overallBand} result at ${overallPct}%, where ${techBandSentenceEn(overallBand)}.` +
+    (showSW ? ` Strongest area: ${strongest!.nameEn}. Most room to grow: ${weakest!.nameEn}.` : "");
+  const narrativeAr =
+    `بشكل عام، النتيجة ${techBandLabelAr(overallBand)} عند ${overallPct}%، حيث ${techBandSentenceAr(overallBand)}.` +
+    (showSW ? ` أقوى مجال: ${strongest!.nameAr}. أكثر مجال يحتاج إلى تطوير: ${weakest!.nameAr}.` : "");
 
   return {
     functionName: fn?.name_en ?? "Technical Assessment",
@@ -720,8 +830,12 @@ export async function getSessionReport(token: string): Promise<SessionReport | n
     candidateEmail: session.candidate_email,
     organizationName: session.organization_name,
     submittedAt: session.submitted_at,
-    overallPct: Number(session.overall_score_pct ?? 0),
-    overallBand: String(session.overall_band ?? "basic"),
+    overallPct,
+    overallBand,
+    knowledgePct,
+    knowledgeSkills,
+    narrativeEn,
+    narrativeAr,
     pillars: reportPillars,
   };
 }

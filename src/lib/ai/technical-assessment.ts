@@ -363,7 +363,10 @@ export async function generateTechnicalAssessment(input: {
 // tagged by the EXACT English skill name (the grading/rollup axis), the test
 // carries the function key in domain_key + the function name in domain_name.
 
-const FUNCTION_ITEMS_PER_SKILL = 4;
+// Items generated per blueprint skill (subcategory). 5 gives a more reliable
+// per-subcategory read than the old 4 (a single careless answer swings a
+// 4-item skill by 25%); callers may still override 2-8 via itemsPerSkill.
+const FUNCTION_ITEMS_PER_SKILL = 5;
 
 function functionFallbackTest(
   functionKey: string,

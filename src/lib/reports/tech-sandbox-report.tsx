@@ -64,6 +64,16 @@ const s = StyleSheet.create({
   cp: { flexDirection: "row", alignItems: "flex-start", marginTop: 3 },
   cpMark: { fontSize: 8, fontFamily: "Helvetica-Bold", width: 26 },
   cpLabel: { fontSize: 8, color: C.text, flex: 1 },
+  narrativeBox: { backgroundColor: "#f5f8fc", borderRadius: 4, padding: 10, marginTop: 12 },
+  narrativeHead: { fontSize: 9, fontFamily: "Helvetica-Bold", color: C.primary, marginBottom: 3 },
+  narrativeText: { fontSize: 9.5, color: C.text, lineHeight: 1.4 },
+  sectionLabel: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.accent, letterSpacing: 1, marginTop: 16, marginBottom: 2 },
+  pillarDef: { fontSize: 8, color: C.light, marginBottom: 4, lineHeight: 1.35 },
+  blockDef: { fontSize: 7.5, color: C.light, marginTop: 2, lineHeight: 1.3 },
+  kSection: { marginTop: 6 },
+  kRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderTopWidth: 1, borderTopColor: C.border, paddingVertical: 3 },
+  kName: { fontSize: 9, color: C.text, flex: 1, paddingRight: 8 },
+  kScore: { flexDirection: "row", alignItems: "center" },
   footer: { position: "absolute", bottom: 22, left: 36, right: 36, fontSize: 7, color: C.light, textAlign: "center" },
 });
 
@@ -97,6 +107,37 @@ export function TechSandboxReport({ data }: { data: SessionReport }) {
           </Text>
         </View>
 
+        {data.narrativeEn ? (
+          <View style={s.narrativeBox} wrap={false}>
+            <Text style={s.narrativeHead}>Performance summary</Text>
+            <Text style={s.narrativeText}>{data.narrativeEn}</Text>
+          </View>
+        ) : null}
+
+        {data.knowledgeSkills.length > 0 ? (
+          <View style={s.kSection} wrap={false}>
+            <Text style={s.sectionLabel}>KNOWLEDGE BY SUBCATEGORY</Text>
+            <Text style={s.pillarName}>
+              Knowledge section{data.knowledgePct != null ? ` · ${data.knowledgePct}% overall` : ""}
+            </Text>
+            {data.knowledgeSkills.map((k) => (
+              <View key={k.skill} style={s.kRow}>
+                <Text style={s.kName}>{k.skill}</Text>
+                <View style={s.kScore}>
+                  <Text style={{ fontSize: 9, color: C.light }}>{k.scorePct}%</Text>
+                  <Text style={[s.smallBadge, { backgroundColor: bandColor(k.band) }]}>
+                    {bandLabel(k.band)}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
+        {data.pillars.length > 0 ? (
+          <Text style={s.sectionLabel}>HANDS-ON TASKS BY CATEGORY</Text>
+        ) : null}
+
         {data.pillars.map((p) => (
           <View key={p.nameEn} style={s.pillar} wrap={false}>
             <View style={s.pillarHead}>
@@ -105,6 +146,7 @@ export function TechSandboxReport({ data }: { data: SessionReport }) {
                 {p.advancedCount} advanced · {p.intermediateCount} intermediate · {p.basicCount} basic
               </Text>
             </View>
+            {p.descriptionEn ? <Text style={s.pillarDef}>{p.descriptionEn}</Text> : null}
             {p.blocks.map((b) => (
               <View key={b.nameEn} style={s.block} wrap={false}>
                 <View style={s.blockHead}>
@@ -116,6 +158,7 @@ export function TechSandboxReport({ data }: { data: SessionReport }) {
                     </Text>
                   </View>
                 </View>
+                {b.descriptionEn ? <Text style={s.blockDef}>{b.descriptionEn}</Text> : null}
                 {b.frameworkRef ? <Text style={s.framework}>{b.frameworkRef}</Text> : null}
                 {b.checkpoints.map((c, i) => (
                   <View key={i} style={s.cp}>

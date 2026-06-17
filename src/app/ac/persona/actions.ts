@@ -8,6 +8,10 @@ import {
   type BehavioralAnswer,
 } from "@/lib/scoring/behavioral";
 import { getVoucherScopeByRedemptionToken } from "@/lib/persona/vouchers";
+import { loadPersonaRoleById } from "@/lib/scoring/persona-roles";
+import { loadCompetencyDefinitions } from "@/lib/scoring/competency-definitions";
+import { generatePersonaInsights } from "@/lib/ai/persona-insights";
+import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
 
 export type StartPersonaOptions = {
   /** 'development' (narrative + suggestions) or 'hiring' (fit vs a target role). */
@@ -101,7 +105,67 @@ export async function savePersonaAnswersAction(sessionId: string, answers: Behav
   return saveBehavioralAnswers(sessionId, answers);
 }
 
-/** Finalize: score per competency and return the self-profile (no rollup write). */
+/** Finalize: score per competency and return the self-profile (no rollup write).
+ *  For a HIRING sitting, also generate per-competency AI insights grounded in the
+ *  candidate's actual item-level answers, store them on the session (for the PDF)
+ *  and return them (for the on-screen result). Best-effort: any failure leaves the
+ *  report to fall back to the deterministic narrative. */
 export async function submitPersonaAction(sessionId: string) {
-  return submitAnonymousBehavioral(sessionId);
+  const res = await submitAnonymousBehavioral(sessionId);
+  if (!res.ok || !res.profile) return res;
+
+  try {
+    const sb = createServiceClient();
+    const { data: session } = await sb
+      .from("behavioral_assessment_sessions")
+      .select("purpose, target_role_profile_id")
+      .eq("id", sessionId)
+      .maybeSingle<{ purpose: string | null; target_role_profile_id: string | null }>();
+    if (session?.purpose !== "hiring" || !session.target_role_profile_id) return res;
+
+    const role = await loadPersonaRoleById(session.target_role_profile_id);
+    if (!role) return res;
+
+    // Per-statement effective ratings, grouped by competency (reverse mapped).
+    const stmtByKey = new Map<string, string>();
+    for (const c of BEHAVIORAL_COMPETENCIES) for (const it of c.items) stmtByKey.set(it.itemKey, it.textEn);
+    const { data: responses } = await sb
+      .from("behavioral_assessment_responses")
+      .select("competency_id, item_key, raw_score, is_reverse")
+      .eq("session_id", sessionId);
+    const itemsByComp = new Map<string, { statement: string; score: number }[]>();
+    for (const r of responses ?? []) {
+      const statement = stmtByKey.get(r.item_key as string);
+      if (!statement) continue;
+      const score = r.is_reverse ? 6 - Number(r.raw_score) : Number(r.raw_score);
+      const cid = r.competency_id as string;
+      if (!itemsByComp.has(cid)) itemsByComp.set(cid, []);
+      itemsByComp.get(cid)!.push({ statement, score });
+    }
+
+    const selfById = new Map(res.profile.map((p) => [p.competencyId, p.selfScore]));
+    const defs = await loadCompetencyDefinitions();
+    const competencies = role.comps
+      .filter((c) => selfById.has(c.competencyId))
+      .map((c) => ({
+        competencyId: c.competencyId,
+        name: c.name,
+        definition: defs[c.competencyId],
+        self: selfById.get(c.competencyId) as number,
+        target: c.target,
+        items: itemsByComp.get(c.competencyId) ?? [],
+      }));
+    if (competencies.length === 0) return res;
+
+    const insights = await generatePersonaInsights({ roleName: role.name, competencies });
+    // Persist for the PDF (tolerant of migration 00125 not applied).
+    try {
+      await sb.from("behavioral_assessment_sessions").update({ competency_insights: insights }).eq("id", sessionId);
+    } catch {
+      /* column absent - on-screen still gets insights from the return value */
+    }
+    return { ...res, insights };
+  } catch {
+    return res;
+  }
 }

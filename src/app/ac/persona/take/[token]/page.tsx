@@ -58,7 +58,7 @@ export default async function PersonaTakePage({ params }: { params: { token: str
           <VifmLogo variant="white" size="sm" />
           <div className="mt-8 max-w-2xl">
             <span className="ara-eyebrow text-accent">
-              <Layers className="h-3 w-3" /> VIFM Persona
+              <Layers className="h-3 w-3" /> VIFM Persona®
             </span>
             <h1 className="ara-numeral mt-3 text-2xl font-semibold leading-tight text-white sm:text-3xl">
               Welcome{redemption.redeemer_name ? `, ${redemption.redeemer_name}` : ""}

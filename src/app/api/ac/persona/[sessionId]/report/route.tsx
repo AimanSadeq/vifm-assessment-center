@@ -105,6 +105,20 @@ export async function GET(_req: Request, { params }: { params: { sessionId: stri
       : null;
     const targetById = new Map((role?.comps ?? []).map((c) => [c.competencyId, c.target]));
 
+    // Stored AI insights (00125), generated at submit and grounded in the
+    // candidate's answers. Read tolerantly; fall back to a deterministic narrative.
+    let insightsById: Record<string, string> = {};
+    try {
+      const { data: ci } = await sb
+        .from("behavioral_assessment_sessions")
+        .select("competency_insights")
+        .eq("id", params.sessionId)
+        .maybeSingle<{ competency_insights: Record<string, string> | null }>();
+      if (ci?.competency_insights && typeof ci.competency_insights === "object") insightsById = ci.competency_insights;
+    } catch {
+      /* migration 00125 not applied */
+    }
+
     // Group by competency cluster from the bank, enriched with definition,
     // a score-interpretation narrative, and (development) a suggestion.
     const byCluster = new Map<number, PersonaPdfCluster>();
@@ -116,7 +130,7 @@ export async function GET(_req: Request, { params }: { params: { sessionId: stri
         name: comp.nameEn,
         score,
         definition: definitionById.get(comp.acCompetencyId),
-        narrative: competencyNarrative(score, purpose === "hiring" ? targetById.get(comp.acCompetencyId) ?? null : null),
+        narrative: insightsById[comp.acCompetencyId] ?? competencyNarrative(score, purpose === "hiring" ? targetById.get(comp.acCompetencyId) ?? null : null),
         // Development reports carry a suggestion on the rows that need it most.
         tip: purpose === "development" && score < 3.5 ? tipById.get(comp.acCompetencyId) : undefined,
       });

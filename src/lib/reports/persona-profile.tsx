@@ -84,7 +84,7 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
     <Document>
       <Page size="A4" style={s.page}>
         <View style={s.banner}>
-          <Text style={s.eyebrow}>Persona - Behavioural Self-Assessment</Text>
+          <Text style={s.eyebrow}>Persona® - Behavioural Self-Assessment</Text>
           <Text style={s.title}>{data.takerName || "Self-profile"}</Text>
           <Text style={s.subtitle}>
             {data.purpose === "hiring"

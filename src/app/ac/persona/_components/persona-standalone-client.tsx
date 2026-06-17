@@ -62,6 +62,8 @@ export function PersonaStandaloneClient({
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [ipsChoices, setIpsChoices] = useState<Record<string, { most?: string; least?: string }>>({});
   const [profile, setProfile] = useState<BehavioralProfileRow[] | null>(null);
+  // AI per-competency insights (hiring), grounded in the candidate's answers.
+  const [insights, setInsights] = useState<Record<string, string>>({});
   const [page, setPage] = useState(0);
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -195,6 +197,7 @@ export function PersonaStandaloneClient({
       await flush(); // persist any buffered answers before scoring
       const res = await submitPersonaAction(sessionId);
       if (!res.ok || !res.profile) { setError(res.error || tx("Could not score.", "تعذّر التقييم.")); return; }
+      setInsights((res as { insights?: Record<string, string> }).insights ?? {});
       setProfile(res.profile); setPhase("result");
     } catch { setError(tx("Could not score.", "تعذّر التقييم.")); } finally { setBusy(false); }
   };
@@ -203,7 +206,7 @@ export function PersonaStandaloneClient({
     if (flushTimer.current) { clearTimeout(flushTimer.current); flushTimer.current = null; }
     pendingRef.current.clear();
     setPhase("intro"); setSessionId(null); setAnswers({}); setIpsChoices({});
-    setProfile(null); setPage(0); setSeed(0); setError("");
+    setProfile(null); setInsights({}); setPage(0); setSeed(0); setError("");
   };
 
   const likertLabel = (v: number) =>
@@ -217,7 +220,7 @@ export function PersonaStandaloneClient({
     <div dir={ar ? "rtl" : "ltr"} className="space-y-5">
       <div>
         <h1 className="inline-flex items-center gap-2 text-2xl font-bold text-[#010131]">
-          <Layers className="h-6 w-6 text-[#5391D5]" /> {tx("Persona", "بيرسونا")}
+          <Layers className="h-6 w-6 text-[#5391D5]" /> {tx("Persona®", "بيرسونا®")}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {tx(
@@ -575,6 +578,7 @@ export function PersonaStandaloneClient({
             purpose={purpose}
             role={selectedRole}
             definitions={definitions}
+            insights={insights}
           />
         )
       )}
@@ -601,7 +605,7 @@ function ProgressBar({ value, total, ar, unit }: { value: number; total: number;
 }
 
 function PersonaResult({
-  competencies, profile, name, ar, onReset, sessionId, purpose, role, definitions = {},
+  competencies, profile, name, ar, onReset, sessionId, purpose, role, definitions = {}, insights = {},
 }: {
   competencies: BehavioralCompetency[];
   profile: BehavioralProfileRow[];
@@ -612,6 +616,8 @@ function PersonaResult({
   purpose: Purpose;
   role: RoleProfileOption | null;
   definitions?: Record<string, string>;
+  /** AI per-competency insights (hiring); falls back to a deterministic narrative. */
+  insights?: Record<string, string>;
 }) {
   const tx = (en: string, arabic: string) => (ar ? arabic : en);
   const scoreById = useMemo(() => new Map(profile.map((p) => [p.competencyId, p.selfScore])), [profile]);
@@ -676,37 +682,61 @@ function PersonaResult({
               </span>
             </div>
           </div>
-          <p className="mt-3 text-[11px] text-slate-500">
-            {tx("Biggest gaps vs the role target", "أكبر الفجوات مقابل مستهدف الدور")}
-          </p>
-          <div className="mt-1 space-y-1.5">
-            {fit.gaps.filter((g) => g.self != null && g.gap > 0).slice(0, 5).map((g) => (
-              <div key={g.competencyId} className="flex items-center justify-between text-sm">
-                <span className="text-[#010131]">{nameById.get(g.competencyId) ?? g.name}</span>
-                <span className="tabular-nums text-rose-600">{g.self?.toFixed(1)} / {g.target.toFixed(1)} <span className="text-slate-400">(-{g.gap.toFixed(1)})</span></span>
+          {/* Biggest strengths + biggest gaps, side by side */}
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-emerald-700">{tx("Biggest strengths", "أبرز نقاط القوة")}</p>
+              <div className="mt-1 space-y-1">
+                {fit.gaps.filter((g) => g.self != null && (g.self as number) >= g.target)
+                  .sort((a, b) => ((b.self as number) - b.target) - ((a.self as number) - a.target))
+                  .slice(0, 5).map((g) => (
+                  <div key={g.competencyId} className="flex items-center justify-between text-sm">
+                    <span className="text-[#010131]">{nameById.get(g.competencyId) ?? g.name}</span>
+                    <span className="tabular-nums font-semibold text-emerald-600">{g.self?.toFixed(1)} / {g.target.toFixed(1)}</span>
+                  </div>
+                ))}
+                {fit.gaps.filter((g) => g.self != null && (g.self as number) >= g.target).length === 0 && (
+                  <p className="text-sm text-slate-400">{tx("None at or above target.", "لا شيء عند المستهدف أو أعلى.")}</p>
+                )}
               </div>
-            ))}
-            {fit.gaps.filter((g) => g.self != null && g.gap > 0).length === 0 && (
-              <p className="text-sm text-emerald-700">{tx("Meets or exceeds every target competency.", "يحقّق أو يتجاوز كل الجدارات المستهدفة.")}</p>
-            )}
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-rose-700">{tx("Biggest gaps vs the role target", "أكبر الفجوات مقابل المستهدف")}</p>
+              <div className="mt-1 space-y-1">
+                {fit.gaps.filter((g) => g.self != null && g.gap > 0).slice(0, 5).map((g) => (
+                  <div key={g.competencyId} className="flex items-center justify-between text-sm">
+                    <span className="text-[#010131]">{nameById.get(g.competencyId) ?? g.name}</span>
+                    <span className="tabular-nums font-semibold text-rose-600">{g.self?.toFixed(1)} / {g.target.toFixed(1)}</span>
+                  </div>
+                ))}
+                {fit.gaps.filter((g) => g.self != null && g.gap > 0).length === 0 && (
+                  <p className="text-sm text-emerald-700">{tx("Meets or exceeds every target.", "يحقّق أو يتجاوز كل المستهدفات.")}</p>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Per-competency detail: what each competency means + what the
-              candidate's answers suggest against the role target. */}
-          <div className="mt-4 space-y-2">
+          {/* Per-competency detail: paired boxes - definition + an insight read
+              from the candidate's own answers, with a target-coloured score. */}
+          <div className="mt-4">
             <p className="text-[11px] uppercase tracking-wider text-slate-500">{tx("Competency detail", "تفصيل الجدارات")}</p>
-            {fit.gaps.filter((g) => g.self != null).map((g) => (
-              <div key={g.competencyId} className="rounded-md border border-slate-200 p-2.5">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-medium text-[#010131]">{nameById.get(g.competencyId) ?? g.name}</span>
-                  <span className="shrink-0 tabular-nums text-xs text-slate-500">{g.self?.toFixed(1)} / {g.target.toFixed(1)}</span>
-                </div>
-                {definitions[g.competencyId] ? (
-                  <p className="mt-1 text-xs text-slate-500">{definitions[g.competencyId]}</p>
-                ) : null}
-                <p className="mt-1 text-xs text-[#121232]">{competencyNarrative(g.self as number, g.target)}</p>
-              </div>
-            ))}
+            <div className="mt-2 grid gap-3 sm:grid-cols-2">
+              {fit.gaps.filter((g) => g.self != null).map((g) => {
+                const meets = (g.self as number) >= g.target;
+                return (
+                  <div key={g.competencyId} className="flex flex-col rounded-lg border border-slate-200 p-3">
+                    <span className="text-center text-sm font-semibold text-[#010131]">{nameById.get(g.competencyId) ?? g.name}</span>
+                    <span className={`mt-1 text-center text-2xl font-bold tabular-nums ${meets ? "text-emerald-600" : "text-rose-600"}`}>
+                      {g.self?.toFixed(1)} / {g.target.toFixed(1)}
+                    </span>
+                    {definitions[g.competencyId] ? (
+                      <p className="mt-2 text-xs text-slate-500">{definitions[g.competencyId]}</p>
+                    ) : null}
+                    <p className="mt-1.5 text-xs text-[#121232]">{insights[g.competencyId] ?? competencyNarrative(g.self as number, g.target)}</p>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-[11px] text-amber-800">

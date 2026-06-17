@@ -164,7 +164,7 @@ export function PsychometricReport({ data }: { data: PsyReportData }) {
         {/* Hero */}
         <View style={s.hero}>
           <Text style={s.heroEyebrow}>VIFM Psychometrics® · Foundations</Text>
-          <Text style={s.heroTitle}>{data.instrumentName}</Text>
+          <Text style={s.heroTitle}>{data.instrumentName}®</Text>
           <Text style={s.heroIdentity}>{data.takerName} · {data.date}</Text>
           <View style={s.heroPillRow}>
             <Text style={s.heroPill}>{calibrated ? "Tier 2 · Norm-referenced" : "Tier 1 · Indicative"}</Text>

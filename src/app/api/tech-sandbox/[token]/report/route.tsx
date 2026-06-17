@@ -12,7 +12,14 @@ export const dynamic = "force-dynamic";
 // flow, so admin is enforced explicitly here.
 export async function GET(_req: Request, { params }: { params: { token: string } }) {
   try {
-    await requireRole(["admin"]);
+    const caller = await requireRole(["admin"]);
+    // Defence-in-depth: in production this scored PDF must never be served on a
+    // synthetic dev-admin (which requireRole returns when AUTH_ENABLED is off),
+    // or a misconfigured auth-off prod deploy would let the candidate's token
+    // fetch it. (Local dev auth-off still works.)
+    if (caller.isDev && process.env.NODE_ENV === "production") {
+      return new Response("Not authorized.", { status: 403 });
+    }
   } catch (e) {
     if (isAuthorizationError(e)) return new Response("Not authorized.", { status: 403 });
     throw e;

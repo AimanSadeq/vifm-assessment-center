@@ -4,6 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
+import { sendAraRespondentInvitation } from "@/lib/ara/actions";
 
 async function requireConsultant() {
   try {
@@ -50,7 +51,7 @@ export async function createDeepDivePersonalAssessment(
   formData: FormData
 ): Promise<
   | { ok: false; error: string }
-  | { ok: true; respondentUrl: string; assessmentId: string; respondentId: string }
+  | { ok: true; respondentUrl: string; assessmentId: string; respondentId: string; emailed: boolean }
 > {
   const denied = await requireConsultant();
   if (denied) return denied;
@@ -147,11 +148,24 @@ export async function createDeepDivePersonalAssessment(
     return { ok: false, error: respErr?.message ?? "Could not create respondent" };
   }
 
+  // M2.1: email the respondent their secure link (best-effort - the deep-dive
+  // was issued to this person's email, so send the invitation automatically).
+  // Sandbox redirect / console-mock protect non-prod; the consultant also gets
+  // the URL back to share manually if the send fails.
+  let emailed = false;
+  try {
+    const sent = await sendAraRespondentInvitation(respondent.id);
+    emailed = !!sent && "ok" in sent && sent.ok === true;
+  } catch {
+    /* non-blocking: issuance succeeds even if email send fails */
+  }
+
   revalidatePath("/ara/consultant");
   return {
     ok: true,
     respondentUrl: `/ara/respond/${respondent.access_token}`,
     assessmentId: assessment.id,
     respondentId: respondent.id,
+    emailed,
   };
 }

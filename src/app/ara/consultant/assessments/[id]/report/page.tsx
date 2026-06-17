@@ -357,6 +357,11 @@ export default async function AraReportPage({
               engagement_stage: assessment.engagement_stage,
               pillars_in_scope: assessment.pillars_in_scope ?? null,
             })}
+            workforceRollup={workforceRollup}
+            agenticRollup={agenticRollup}
+            includeIndividualLayer={assessment.include_individual_layer}
+            includeAgenticLayer={assessment.include_agentic_layer}
+            assessmentTier={assessment.assessment_tier}
           />
         </div>
       </>

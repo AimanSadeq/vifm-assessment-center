@@ -11,7 +11,7 @@ import { copyToClipboard } from "@/lib/utils/clipboard";
 
 type Result =
   | { ok: false; error: string }
-  | { ok: true; respondentUrl: string; assessmentId: string; respondentId: string };
+  | { ok: true; respondentUrl: string; assessmentId: string; respondentId: string; emailed?: boolean };
 
 type Props = {
   action: (fd: FormData) => Promise<Result>;
@@ -31,6 +31,7 @@ export function DeepDiveForm({ action }: Props) {
   const [issued, setIssued] = useState<{
     respondentUrl: string;
     name: string;
+    emailed: boolean;
   } | null>(null);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -48,6 +49,7 @@ export function DeepDiveForm({ action }: Props) {
       setIssued({
         respondentUrl: result.respondentUrl,
         name,
+        emailed: result.emailed === true,
       });
       toast.success(t("araAssessmentDetail.dd_toast_issued"));
     });
@@ -77,8 +79,13 @@ export function DeepDiveForm({ action }: Props) {
               {t("araAssessmentDetail.dd_issued_for", { name: issued.name })}
             </p>
           </div>
-          <p className="text-xs text-emerald-900/80 mb-3">
+          <p className="text-xs text-emerald-900/80 mb-1">
             {t("araAssessmentDetail.dd_issued_help")}
+          </p>
+          <p className="text-xs font-medium mb-3" style={{ color: issued.emailed ? "#047857" : "#b45309" }}>
+            {issued.emailed
+              ? t("araAssessmentDetail.dd_emailed_yes")
+              : t("araAssessmentDetail.dd_emailed_no")}
           </p>
           <div className="flex items-stretch gap-2">
             <Input

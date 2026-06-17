@@ -2,9 +2,13 @@ import { VifmLogo } from "@/components/shared/vifm-logo";
 import { orgFactSheetRows } from "@/lib/reports/fact-sheet-content";
 import { ARA_PILLARS, ARA_MATURITY_LEVELS, ARA_OVERALL_BANDS } from "@/lib/constants/ara-pillars";
 import { ARA_STAGE_MAP } from "@/lib/constants/ara-stages";
+import { ARA_INDIVIDUAL_FACTORS } from "@/lib/constants/ara-individual-factors";
+import { ARA_AGENTIC_DIMENSIONS } from "@/lib/constants/ara-agentic-dimensions";
 import type { FrameworkComplianceSummary } from "@/lib/ara/compliance";
 import type { PeerBenchmarkResult } from "@/lib/ara/peer-benchmarks";
 import type { YoYComparison } from "@/lib/ara/year-on-year";
+import type { WorkforceReadinessRollup } from "@/lib/ara/workforce-readiness";
+import type { AgenticReadinessRollup } from "@/lib/ara/agentic-readiness";
 import type { AraEngagementStage, AraPillarId, AraUseCase } from "@/types/ara";
 import { MaturityGauge } from "./maturity-gauge";
 import { RadarChart } from "./radar-chart";
@@ -82,6 +86,21 @@ export type BilingualReportProps = {
    *  when null. Caller resolves via getPillarsForAssessment. Optional -
    *  defaults to stage default when omitted (back-compat). */
   pillarsInScope?: ReadonlyArray<AraPillarId>;
+  /** Workforce AI Readiness (Mode C) cohort rollup. The Workforce
+   *  section renders only when includeIndividualLayer is true and at
+   *  least one respondent has an overall score. */
+  workforceRollup?: WorkforceReadinessRollup | null;
+  /** Agentic-AI Readiness cohort rollup. The Agentic section renders
+   *  only when includeAgenticLayer is true and at least one respondent
+   *  has answered agentic-dimension items. */
+  agenticRollup?: AgenticReadinessRollup | null;
+  /** Mode C toggle - gates the Workforce AI Readiness section. */
+  includeIndividualLayer?: boolean;
+  /** Agentic-layer toggle - gates the Agentic-AI Readiness section. */
+  includeAgenticLayer?: boolean;
+  /** Individual-layer tier (snapshot | deep_dive) - shapes the
+   *  Workforce reliability caption. */
+  assessmentTier?: string | null;
 };
 
 /**
@@ -1025,6 +1044,220 @@ export function BilingualReport(p: BilingualReportProps) {
         </div>
       </section>
 
+      {/* ─── Workforce AI Readiness (Mode C) ─── *
+       * Renders only when this assessment opted into the individual
+       * readiness layer AND at least one respondent has a four-factor
+       * overall. Cohort-level rollup only - per-respondent breakdown
+       * stays in the consultant portal, not the client-facing PDF. */}
+      {p.includeIndividualLayer && p.workforceRollup && p.workforceRollup.respondents.some((r) => r.overall != null) && (
+        <section className="report-page-bilingual">
+          <div className="col-en">
+            <h2 className="report-h2">Workforce AI Readiness</h2>
+            <p className="report-body">
+              Alongside the eight pillar scores, this assessment measured the
+              personal AI readiness of {p.workforceRollup.cohort_size}{" "}
+              respondent{p.workforceRollup.cohort_size === 1 ? "" : "s"}{" "}
+              ({p.workforceRollup.completed_count} completed) across four VIFM
+              individual readiness factors mapped to THINKING, RESULTS, PEOPLE
+              and SELF.
+              {p.assessmentTier === "deep_dive"
+                ? " The deep-dive tier (12 items per factor) was used - research-grade reliability."
+                : " The snapshot tier (6 items per factor) was used - directional reliability."}
+            </p>
+            <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "10pt" }}>
+              <thead>
+                <tr style={{ borderBottom: "2px solid #010131" }}>
+                  <th style={biCellHead}>Factor</th>
+                  <th style={biCellHeadRight}>Score / 5</th>
+                  <th style={biCellHeadRight}>Respondents</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style={{ borderTop: "1px solid #e5e7eb", background: "#f8fafc" }}>
+                  <td style={{ ...biCell, fontWeight: 700 }}>Cohort overall</td>
+                  <td style={{ ...biCellRight, fontWeight: 700 }}>
+                    {p.workforceRollup.cohort_overall != null ? p.workforceRollup.cohort_overall.toFixed(2) : "-"}
+                  </td>
+                  <td style={biCellRight}>{p.workforceRollup.completed_count}</td>
+                </tr>
+                {ARA_INDIVIDUAL_FACTORS.map((f) => {
+                  const avg = p.workforceRollup!.factor_averages.find((x) => x.factor_id === f.id);
+                  return (
+                    <tr key={f.id} style={{ borderTop: "1px solid #e5e7eb" }}>
+                      <td style={biCell}>
+                        <span style={{ display: "inline-block", width: "8pt", height: "8pt", borderRadius: "4pt", background: f.color, marginRight: "6pt", verticalAlign: "middle" }} />
+                        <strong>{f.name_en}</strong>{" "}
+                        <span style={{ fontSize: "8pt", color: "#6b7280" }}>({f.domain})</span>
+                      </td>
+                      <td style={biCellRight}>{avg && avg.respondent_count > 0 ? avg.average.toFixed(2) : "-"}</td>
+                      <td style={biCellRight}>{avg?.respondent_count ?? 0}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <p className="report-body report-muted" style={{ fontSize: "8.5pt", marginTop: "10pt" }}>
+              4.0 and above - strong readiness; 3.0 to 3.9 - developing;
+              below 3.0 - a priority for targeted training. The per-respondent
+              breakdown stays in the consultant portal and is not included in
+              this client-facing report by default.
+            </p>
+          </div>
+          <div className="col-ar" dir="rtl">
+            <h2 className="report-h2">الجاهزية الذكية للقوى العاملة</h2>
+            <p className="report-body">
+              إلى جانب درجات الركائز الثماني، قاس هذا التقييم الجاهزية الشخصية
+              للذكاء الاصطناعي لدى {p.workforceRollup.cohort_size} مشارك
+              ({p.workforceRollup.completed_count} مكتمل) عبر أربعة عوامل
+              جاهزية فردية من VIFM مرتبطة بمجالات التفكير والنتائج والأشخاص
+              والذات.
+              {p.assessmentTier === "deep_dive"
+                ? " استُخدم المستوى المعمّق (12 عنصراً لكل عامل) - موثوقية بحثية."
+                : " استُخدم المستوى السريع (6 عناصر لكل عامل) - موثوقية توجيهية."}
+            </p>
+            <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "10pt" }}>
+              <thead>
+                <tr style={{ borderBottom: "2px solid #010131" }}>
+                  <th style={{ ...biCellHead, textAlign: "right" }}>العامل</th>
+                  <th style={{ ...biCellHead, textAlign: "right" }}>الدرجة / 5</th>
+                  <th style={{ ...biCellHead, textAlign: "right" }}>المشاركون</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style={{ borderTop: "1px solid #e5e7eb", background: "#f8fafc" }}>
+                  <td style={{ ...biCell, fontWeight: 700 }}>الإجمالي للمجموعة</td>
+                  <td style={{ ...biCell, textAlign: "right", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
+                    {p.workforceRollup.cohort_overall != null ? p.workforceRollup.cohort_overall.toFixed(2) : "-"}
+                  </td>
+                  <td style={{ ...biCell, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{p.workforceRollup.completed_count}</td>
+                </tr>
+                {ARA_INDIVIDUAL_FACTORS.map((f) => {
+                  const avg = p.workforceRollup!.factor_averages.find((x) => x.factor_id === f.id);
+                  return (
+                    <tr key={f.id} style={{ borderTop: "1px solid #e5e7eb" }}>
+                      <td style={{ ...biCell, textAlign: "right" }}>
+                        <strong>{f.name_ar}</strong>{" "}
+                        <span style={{ fontSize: "8pt", color: "#6b7280" }}>({AR_DOMAIN[f.domain]})</span>
+                        <span style={{ display: "inline-block", width: "8pt", height: "8pt", borderRadius: "4pt", background: f.color, marginInlineStart: "6pt", verticalAlign: "middle" }} />
+                      </td>
+                      <td style={{ ...biCell, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{avg && avg.respondent_count > 0 ? avg.average.toFixed(2) : "-"}</td>
+                      <td style={{ ...biCell, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{avg?.respondent_count ?? 0}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <p className="report-body report-muted" style={{ fontSize: "8.5pt", marginTop: "10pt" }}>
+              4.0 فأعلى - جاهزية قوية؛ 3.0 إلى 3.9 - قيد التطور؛ أقل من 3.0 -
+              أولوية للتدريب الموجَّه. يبقى التفصيل لكل مشارك في بوابة الاستشاري
+              ولا يُدرَج في هذا التقرير الموجَّه للعميل افتراضياً.
+            </p>
+          </div>
+        </section>
+      )}
+
+      {/* ─── Agentic-AI Readiness ─── *
+       * Renders only when this assessment opted into the agentic layer
+       * AND at least one respondent has answered agentic-dimension items.
+       * Cohort overall + per-dimension mean across the six dimensions. */}
+      {p.includeAgenticLayer && p.agenticRollup && p.agenticRollup.respondents.some((r) => r.overall != null) && (
+        <section className="report-page-bilingual">
+          <div className="col-en">
+            <h2 className="report-h2">Agentic-AI Readiness</h2>
+            <p className="report-body">
+              Beyond readiness to <em>use</em> AI, this assessment measured the
+              organisation&apos;s readiness to safely <em>delegate</em> work to
+              autonomous AI agents. {p.agenticRollup.completed_count}{" "}
+              respondent{p.agenticRollup.completed_count === 1 ? "" : "s"}{" "}
+              answered six governance dimensions that extend the Governance and
+              Model Management pillars to the frontier of autonomous AI.
+            </p>
+            <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "10pt" }}>
+              <thead>
+                <tr style={{ borderBottom: "2px solid #010131" }}>
+                  <th style={biCellHead}>Dimension</th>
+                  <th style={biCellHeadRight}>Score / 5</th>
+                  <th style={biCellHeadRight}>Respondents</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style={{ borderTop: "1px solid #e5e7eb", background: "#f8fafc" }}>
+                  <td style={{ ...biCell, fontWeight: 700 }}>Cohort overall</td>
+                  <td style={{ ...biCellRight, fontWeight: 700 }}>
+                    {p.agenticRollup.cohort_overall != null ? p.agenticRollup.cohort_overall.toFixed(2) : "-"}
+                  </td>
+                  <td style={biCellRight}>{p.agenticRollup.completed_count}</td>
+                </tr>
+                {ARA_AGENTIC_DIMENSIONS.map((d) => {
+                  const avg = p.agenticRollup!.dimension_averages.find((x) => x.dimension_id === d.id);
+                  return (
+                    <tr key={d.id} style={{ borderTop: "1px solid #e5e7eb" }}>
+                      <td style={biCell}>
+                        <span style={{ display: "inline-block", width: "8pt", height: "8pt", borderRadius: "4pt", background: d.color, marginRight: "6pt", verticalAlign: "middle" }} />
+                        <strong>{d.name_en}</strong>
+                      </td>
+                      <td style={biCellRight}>{avg && avg.respondent_count > 0 ? avg.average.toFixed(2) : "-"}</td>
+                      <td style={biCellRight}>{avg?.respondent_count ?? 0}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <p className="report-body report-muted" style={{ fontSize: "8.5pt", marginTop: "10pt" }}>
+              4.0 and above - mature controls; 3.0 to 3.9 - developing, tighten
+              controls before widening autonomy; below 3.0 - a significant gap
+              to close before granting agents autonomy in this area.
+            </p>
+          </div>
+          <div className="col-ar" dir="rtl">
+            <h2 className="report-h2">الجاهزية للذكاء الاصطناعي الوكيل</h2>
+            <p className="report-body">
+              إضافةً إلى الجاهزية لاستخدام الذكاء الاصطناعي، قاس هذا التقييم
+              جاهزية المنظمة لتفويض العمل بأمان إلى وكلاء ذكاء اصطناعي مستقلين.
+              أجاب {p.agenticRollup.completed_count} مشارك عن ست أبعاد حوكمة
+              تمتدّ بركيزتَي الحوكمة وإدارة النماذج إلى حدود الذكاء الاصطناعي
+              المستقل.
+            </p>
+            <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "10pt" }}>
+              <thead>
+                <tr style={{ borderBottom: "2px solid #010131" }}>
+                  <th style={{ ...biCellHead, textAlign: "right" }}>البُعد</th>
+                  <th style={{ ...biCellHead, textAlign: "right" }}>الدرجة / 5</th>
+                  <th style={{ ...biCellHead, textAlign: "right" }}>المشاركون</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style={{ borderTop: "1px solid #e5e7eb", background: "#f8fafc" }}>
+                  <td style={{ ...biCell, fontWeight: 700 }}>الإجمالي للمجموعة</td>
+                  <td style={{ ...biCell, textAlign: "right", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
+                    {p.agenticRollup.cohort_overall != null ? p.agenticRollup.cohort_overall.toFixed(2) : "-"}
+                  </td>
+                  <td style={{ ...biCell, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{p.agenticRollup.completed_count}</td>
+                </tr>
+                {ARA_AGENTIC_DIMENSIONS.map((d) => {
+                  const avg = p.agenticRollup!.dimension_averages.find((x) => x.dimension_id === d.id);
+                  return (
+                    <tr key={d.id} style={{ borderTop: "1px solid #e5e7eb" }}>
+                      <td style={{ ...biCell, textAlign: "right" }}>
+                        <strong>{d.name_ar}</strong>
+                        <span style={{ display: "inline-block", width: "8pt", height: "8pt", borderRadius: "4pt", background: d.color, marginInlineStart: "6pt", verticalAlign: "middle" }} />
+                      </td>
+                      <td style={{ ...biCell, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{avg && avg.respondent_count > 0 ? avg.average.toFixed(2) : "-"}</td>
+                      <td style={{ ...biCell, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{avg?.respondent_count ?? 0}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <p className="report-body report-muted" style={{ fontSize: "8.5pt", marginTop: "10pt" }}>
+              4.0 فأعلى - ضوابط ناضجة؛ 3.0 إلى 3.9 - قيد التطور، عزّز الضوابط
+              قبل توسيع الاستقلالية؛ أقل من 3.0 - فجوة كبيرة يجب معالجتها قبل
+              منح الوكلاء استقلاليةً في هذا المجال.
+            </p>
+          </div>
+        </section>
+      )}
+
       {/* ─── Appendix ─── */}
       <section className="report-page-bilingual">
         <div className="col-en">
@@ -1065,6 +1298,14 @@ export function BilingualReport(p: BilingualReportProps) {
     </>
   );
 }
+
+/** Arabic labels for the four VIFM AC domains the individual factors map to. */
+const AR_DOMAIN: Record<string, string> = {
+  THINKING: "التفكير",
+  RESULTS: "النتائج",
+  PEOPLE: "الأشخاص",
+  SELF: "الذات",
+};
 
 const ucCell: React.CSSProperties = { padding: "4pt 6pt", verticalAlign: "top", fontSize: "8.5pt" };
 const ucHead: React.CSSProperties = { ...ucCell, fontWeight: 600, color: "#010131", fontSize: "9pt", textAlign: "left" };

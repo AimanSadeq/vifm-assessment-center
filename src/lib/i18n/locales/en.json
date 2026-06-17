@@ -2835,6 +2835,8 @@
     "dd_toast_copy_failed": "Couldn't copy - please select and copy manually",
     "dd_issued_for": "Deep-dive issued for {{name}}",
     "dd_issued_help": "Send this magic link to the employee. They'll land directly in the respondent flow with the 48 individual-factor items. On completion, the system emails them the results URL + PDF.",
+    "dd_emailed_yes": "Invitation emailed to the employee. You can also share the link below.",
+    "dd_emailed_no": "Email not sent - share the link below with the employee directly.",
     "dd_copy": "Copy",
     "dd_open": "Open",
     "dd_issue_another": "Issue another deep-dive",

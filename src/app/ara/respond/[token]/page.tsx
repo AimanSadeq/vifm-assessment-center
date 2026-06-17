@@ -16,6 +16,11 @@ import { OfflineBanner } from "./_components/offline-banner";
 
 export const dynamic = "force-dynamic";
 
+// NOTE on the "every screen needs a back affordance" SOP: this is a token-gated,
+// magic-link respondent flow with no parent screen to return to - the respondent
+// arrives from an email link and a "back" would only abandon a partially-saved
+// assessment (re-entry is token-only). A back link is therefore intentionally
+// omitted here, consistent with the other token assessment runners.
 export default async function AraRespondPage({
   params,
 }: {

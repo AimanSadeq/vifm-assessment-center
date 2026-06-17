@@ -819,6 +819,11 @@ export default async function AraAssessmentDetailPage({
                             <div dir="rtl" className="text-right md:border-s md:ps-4">
                               <span className="font-medium me-1 text-primary">س{q.question_number}.</span>
                               {q.question_text_ar}
+                              {q.help_text_ar && (
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  {q.help_text_ar}
+                                </p>
+                              )}
                             </div>
                           </li>
                         ))}

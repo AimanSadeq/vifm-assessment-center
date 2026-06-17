@@ -27,6 +27,8 @@ function targetFromPriority(p: "high" | "medium" | "low"): number {
 export type DesignedCompetency = {
   competencyId: string;
   name: string;
+  domain: string; // THINKING / RESULTS / PEOPLE / SELF
+  domainSort: number;
   area: string; // cluster / area name
   weight: number;
   priority: "high" | "medium" | "low";
@@ -45,9 +47,23 @@ export async function extractRoleFromJdAction(input: {
   if (jd.length < 30) return { error: "Paste a longer job description (at least a few lines)." };
 
   const sb = createServiceClient();
-  const { data: cat, error } = await sb.from("competencies").select("id, name, description");
+  const { data: cat, error } = await sb.from("competencies").select("id, name, description, cluster_id");
   if (error) return { error: "Could not load the competency framework." };
   const competencies = (cat ?? []) as Competency[];
+
+  // Framework structure: competency -> cluster (area) -> domain. Loaded from the
+  // DB so the rollup uses the real mapping (THINKING / RESULTS / PEOPLE / SELF).
+  const [{ data: clusters }, { data: domains }] = await Promise.all([
+    sb.from("competency_clusters").select("id, name, domain_id"),
+    sb.from("competency_domains").select("id, name, sort_order"),
+  ]);
+  const domainById = new Map(
+    (domains ?? []).map((d) => [d.id as string, { name: d.name as string, sort: Number(d.sort_order ?? 0) }]),
+  );
+  const clusterById = new Map(
+    (clusters ?? []).map((c) => [c.id as string, { name: c.name as string, domainId: c.domain_id as string }]),
+  );
+  const compClusterId = new Map((cat ?? []).map((c) => [c.id as string, c.cluster_id as string | null]));
 
   const recs = await extractCompetenciesFromJobDescription({
     jobDescription: jd,
@@ -58,17 +74,24 @@ export async function extractRoleFromJdAction(input: {
     return { error: "AI extraction is unavailable. Set ANTHROPIC_API_KEY, or add competencies manually." };
   }
 
-  // Area (cluster) per competency, from the framework bank.
-  const areaById = new Map(BEHAVIORAL_COMPETENCIES.map((c) => [c.acCompetencyId, c.clusterNameEn]));
-  const designed: DesignedCompetency[] = recs.map((r) => ({
-    competencyId: r.competencyId,
-    name: r.competencyName,
-    area: areaById.get(r.competencyId) ?? "Other",
-    weight: r.weight,
-    priority: r.priority,
-    target: targetFromPriority(r.priority),
-    reasoning: r.reasoning,
-  }));
+  // Area fallback name from the framework bank, used only if the cluster row is missing.
+  const bankArea = new Map(BEHAVIORAL_COMPETENCIES.map((c) => [c.acCompetencyId, c.clusterNameEn]));
+  const designed: DesignedCompetency[] = recs.map((r) => {
+    const clusterId = compClusterId.get(r.competencyId) ?? null;
+    const cluster = clusterId ? clusterById.get(clusterId) : undefined;
+    const domain = cluster ? domainById.get(cluster.domainId) : undefined;
+    return {
+      competencyId: r.competencyId,
+      name: r.competencyName,
+      domain: domain?.name ?? "Other",
+      domainSort: domain?.sort ?? 99,
+      area: cluster?.name ?? bankArea.get(r.competencyId) ?? "Other",
+      weight: r.weight,
+      priority: r.priority,
+      target: targetFromPriority(r.priority),
+      reasoning: r.reasoning,
+    };
+  });
   return { ok: true, competencies: designed };
 }
 

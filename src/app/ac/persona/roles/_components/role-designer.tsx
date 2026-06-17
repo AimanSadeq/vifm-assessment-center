@@ -8,6 +8,15 @@ import { extractRoleFromJdAction, saveTargetRoleAction, type DesignedCompetency 
 
 type Region = "" | "uae" | "saudi" | "gcc" | "global";
 
+// VIFM domain palette (matches the candidate skills / JD-extractor tally chips).
+const DOMAIN_TW: Record<string, string> = {
+  THINKING: "bg-sky-100 text-sky-800 border-sky-300",
+  RESULTS: "bg-emerald-100 text-emerald-800 border-emerald-300",
+  PEOPLE: "bg-amber-100 text-amber-800 border-amber-300",
+  SELF: "bg-violet-100 text-violet-800 border-violet-300",
+};
+const domainTw = (d: string) => DOMAIN_TW[d] ?? "bg-slate-100 text-slate-700 border-slate-300";
+
 export function RoleDesigner() {
   const router = useRouter();
   const [roleName, setRoleName] = useState("");
@@ -31,13 +40,29 @@ export function RoleDesigner() {
   const remove = (id: string) =>
     setComps((prev) => (prev ? prev.filter((c) => c.competencyId !== id) : prev));
 
-  const byArea = useMemo(() => {
-    const m = new Map<string, DesignedCompetency[]>();
+  // Group by DOMAIN (THINKING/RESULTS/PEOPLE/SELF) -> area -> competencies.
+  const byDomain = useMemo(() => {
+    const dm = new Map<string, { sort: number; areas: Map<string, DesignedCompetency[]> }>();
     for (const c of comps ?? []) {
-      if (!m.has(c.area)) m.set(c.area, []);
-      m.get(c.area)!.push(c);
+      if (!dm.has(c.domain)) dm.set(c.domain, { sort: c.domainSort, areas: new Map() });
+      const d = dm.get(c.domain)!;
+      if (!d.areas.has(c.area)) d.areas.set(c.area, []);
+      d.areas.get(c.area)!.push(c);
     }
-    return [...m.entries()];
+    return [...dm.entries()]
+      .sort((a, b) => a[1].sort - b[1].sort)
+      .map(([domain, v]) => ({ domain, areas: [...v.areas.entries()] }));
+  }, [comps]);
+
+  // Domain rollup: count per domain, in framework order.
+  const rollup = useMemo(() => {
+    const m = new Map<string, { sort: number; n: number }>();
+    for (const c of comps ?? []) {
+      const e = m.get(c.domain) ?? { sort: c.domainSort, n: 0 };
+      e.n += 1;
+      m.set(c.domain, e);
+    }
+    return [...m.entries()].sort((a, b) => a[1].sort - b[1].sort).map(([domain, v]) => ({ domain, n: v.n }));
   }, [comps]);
 
   const count = comps?.length ?? 0;
@@ -111,20 +136,38 @@ export function RoleDesigner() {
       {comps !== null && (
         <section className="rounded-xl border bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold text-[#010131]">2. Review competencies, areas and targets</h2>
+            <h2 className="text-sm font-semibold text-[#010131]">2. Review by domain, area and target</h2>
             <span className="text-xs text-muted-foreground">
-              {count} competenc{count === 1 ? "y" : "ies"} across {byArea.length} area{byArea.length === 1 ? "" : "s"} · ~{count * 4} statements
+              {count} competenc{count === 1 ? "y" : "ies"} · ~{count * 4} statements
             </span>
           </div>
+
+          {/* Domain rollup */}
+          {count > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {rollup.map((d) => (
+                <span key={d.domain} className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${domainTw(d.domain)}`}>
+                  {d.domain} · {d.n}
+                </span>
+              ))}
+            </div>
+          )}
+
           {count === 0 ? (
             <p className="mt-3 text-sm text-muted-foreground">No competencies. Adjust the JD and extract again.</p>
           ) : (
-            <div className="mt-3 space-y-4">
-              {byArea.map(([area, list]) => (
-                <div key={area}>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{area}</p>
-                  <div className="mt-1.5 space-y-2">
-                    {list.map((c) => (
+            <div className="mt-3 space-y-5">
+              {byDomain.map(({ domain, areas }) => (
+                <div key={domain}>
+                  <div className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-bold tracking-wide ${domainTw(domain)}`}>
+                    {domain}
+                  </div>
+                  <div className="mt-2 space-y-4 border-l-2 border-slate-100 pl-3">
+                    {areas.map(([area, list]) => (
+                      <div key={area}>
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{area}</p>
+                        <div className="mt-1.5 space-y-2">
+                          {list.map((c) => (
                       <div key={c.competencyId} className="rounded-md border border-slate-200 p-3">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
@@ -168,6 +211,9 @@ export function RoleDesigner() {
                       </div>
                     ))}
                   </div>
+                </div>
+              ))}
+            </div>
                 </div>
               ))}
             </div>

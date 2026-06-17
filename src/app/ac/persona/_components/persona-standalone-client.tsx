@@ -89,15 +89,31 @@ export function PersonaStandaloneClient({
     flushTimer.current = setTimeout(() => { void flush(); }, 700);
   }, [flush]);
 
+  // The competency set actually served. The ROLE PROFILE is the single source
+  // of truth for scope: on the standalone path, selecting a hiring role narrows
+  // the assessment to that role's competencies (just like a voucher does), so
+  // the same designed role yields the same scoped test either way. On the
+  // voucher path the `competencies` prop is already scoped upstream and `pinned`
+  // is set, so we leave it untouched (it may carry an admin override).
+  const effectiveCompetencies = useMemo<BehavioralCompetency[]>(() => {
+    if (pinned) return competencies;
+    if (purpose !== "hiring" || !targetRoleId) return competencies;
+    const role = roleProfiles.find((r) => r.id === targetRoleId);
+    if (!role || role.comps.length === 0) return competencies;
+    const want = new Set(role.comps.map((c) => c.competencyId));
+    const scoped = competencies.filter((c) => want.has(c.acCompetencyId));
+    return scoped.length > 0 ? scoped : competencies;
+  }, [competencies, pinned, purpose, targetRoleId, roleProfiles]);
+
   // Seeded, section-hidden layouts (stable once the seed is set at begin()).
   const normItems = useMemo<FlatNormItem[]>(
-    () => (seed ? flattenNormativeItems(competencies, seed) : []),
-    [competencies, seed],
+    () => (seed ? flattenNormativeItems(effectiveCompetencies, seed) : []),
+    [effectiveCompetencies, seed],
   );
   const normPages = useMemo(() => paginate(normItems, ITEMS_PER_PAGE), [normItems]);
   const ipsBlocks = useMemo<IpsativeBlock[]>(
-    () => (seed ? buildIpsativeBlocks(competencies, seed) : []),
-    [competencies, seed],
+    () => (seed ? buildIpsativeBlocks(effectiveCompetencies, seed) : []),
+    [effectiveCompetencies, seed],
   );
 
   const totalNorm = normItems.length;
@@ -286,8 +302,8 @@ export function PersonaStandaloneClient({
             <p className="font-semibold text-[#010131]">{tx("How it works", "كيف يعمل")}</p>
             <p className="mt-1 text-xs text-muted-foreground">
               {tx(
-                `Part 1: ${totalNormPreview(competencies)} statements rated 1-5 (in random order). Part 2: a few quick "most / least like me" choices. About 12-15 minutes.`,
-                `الجزء 1: ${totalNormPreview(competencies)} عبارة تُقيَّم من 1 إلى 5 (بترتيب عشوائي). الجزء 2: اختيارات سريعة (الأكثر/الأقل انطباقًا عليّ). نحو 12-15 دقيقة.`,
+                `Part 1: ${totalNormPreview(effectiveCompetencies)} statements rated 1-5 (in random order). Part 2: a few quick "most / least like me" choices.`,
+                `الجزء 1: ${totalNormPreview(effectiveCompetencies)} عبارة تُقيَّم من 1 إلى 5 (بترتيب عشوائي). الجزء 2: اختيارات سريعة (الأكثر/الأقل انطباقًا عليّ).`,
               )}
             </p>
           </div>

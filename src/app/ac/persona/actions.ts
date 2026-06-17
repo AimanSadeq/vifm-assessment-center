@@ -7,6 +7,7 @@ import {
   submitAnonymousBehavioral,
   type BehavioralAnswer,
 } from "@/lib/scoring/behavioral";
+import { getVoucherScopeByRedemptionToken } from "@/lib/persona/vouchers";
 
 export type StartPersonaOptions = {
   /** 'development' (narrative + suggestions) or 'hiring' (fit vs a target role). */
@@ -32,6 +33,14 @@ export async function startPersonaAction(
   try {
     let organizationId: string | null = null;
     let redemptionId: string | null = null;
+    // Scope (purpose/role/competencies) defaults to whatever the client sent
+    // (standalone admin run). For a voucher delegate it is OVERRIDDEN by the
+    // admin-pinned scope on the voucher, derived server-side - the candidate
+    // can never widen or change a pinned assessment.
+    let purpose: "development" | "hiring" = opts?.purpose === "hiring" ? "hiring" : "development";
+    let targetRoleProfileId: string | null = opts?.purpose === "hiring" ? opts?.targetRoleProfileId ?? null : null;
+    let scopedCompetencyIds: string[] | null = null;
+
     if (redemptionToken) {
       try {
         const sb = createServiceClient();
@@ -44,6 +53,13 @@ export async function startPersonaAction(
           organizationId = r.organization_id;
           redemptionId = r.id;
         }
+        // Pinned scope wins over anything the client sent.
+        const scope = await getVoucherScopeByRedemptionToken(redemptionToken);
+        if (scope.purpose) {
+          purpose = scope.purpose;
+          targetRoleProfileId = scope.purpose === "hiring" ? scope.targetRoleProfileId : null;
+          scopedCompetencyIds = scope.scopedCompetencyIds;
+        }
       } catch {
         /* voucher tables not migrated - proceed as a plain anonymous run */
       }
@@ -52,9 +68,10 @@ export async function startPersonaAction(
     const session = await createAnonymousBehavioralSession(name.trim() || null, {
       organizationId,
       voucherRedemptionId: redemptionId,
-      purpose: opts?.purpose === "hiring" ? "hiring" : "development",
-      targetRoleProfileId: opts?.purpose === "hiring" ? opts?.targetRoleProfileId ?? null : null,
+      purpose,
+      targetRoleProfileId,
       seed: opts?.seed ?? null,
+      scopedCompetencyIds,
     });
 
     if (redemptionId) {

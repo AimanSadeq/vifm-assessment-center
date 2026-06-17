@@ -34,7 +34,17 @@ export type CreateBatchInput = {
   maxUses?: number;
   expiresAt?: string | null;
   createdBy?: string | null;
+  /** Admin-pinned scope (00123). purpose null = legacy/unpinned (candidate picks). */
+  purpose?: "development" | "hiring" | null;
+  targetRoleProfileId?: string | null;
+  /** Competency scope; null/empty = full bank, non-empty = serve only these. */
+  scopedCompetencyIds?: string[] | null;
 };
+
+/** Postgres undefined_column (42703) - migration 00123 not applied yet. */
+function isMissingColumnError(err: { code?: string } | null): boolean {
+  return err?.code === "42703";
+}
 
 export async function createVoucherBatch(
   input: CreateBatchInput,
@@ -43,7 +53,7 @@ export async function createVoucherBatch(
   const sb = createServiceClient();
   const batchId = globalThis.crypto.randomUUID();
 
-  const rows = Array.from({ length: count }, () => ({
+  const baseRow = () => ({
     code: generateVoucherCode(),
     label: input.label ?? null,
     batch_id: batchId,
@@ -53,11 +63,68 @@ export async function createVoucherBatch(
     max_uses: Math.max(1, input.maxUses ?? 1),
     expires_at: input.expiresAt ?? null,
     created_by: input.createdBy ?? null,
-  }));
+  });
+  const scoped = (input.scopedCompetencyIds ?? []).filter(Boolean);
+  const scopeCols = {
+    purpose: input.purpose ?? null,
+    target_role_profile_id: input.targetRoleProfileId ?? null,
+    scoped_competency_ids: scoped.length > 0 ? scoped : null,
+  };
 
-  const { data, error } = await sb.from("persona_vouchers").insert(rows).select("code");
+  const rows = Array.from({ length: count }, () => ({ ...baseRow(), ...scopeCols }));
+  let { data, error } = await sb.from("persona_vouchers").insert(rows).select("code");
+  // Tolerant of migration 00123 not applied: insert without the scope columns.
+  if (error && isMissingColumnError(error)) {
+    const plainRows = Array.from({ length: count }, () => baseRow());
+    ({ data, error } = await sb.from("persona_vouchers").insert(plainRows).select("code"));
+  }
   if (error) return { ok: false, error: error.message };
   return { ok: true, batchId, codes: (data ?? []).map((r) => r.code as string) };
+}
+
+export type VoucherScope = {
+  /** null = unpinned (legacy voucher) - the candidate picks purpose/role. */
+  purpose: "development" | "hiring" | null;
+  targetRoleProfileId: string | null;
+  /** null/empty = full bank; non-empty = serve only these competencies. */
+  scopedCompetencyIds: string[] | null;
+};
+
+/**
+ * The admin-pinned scope for the voucher behind a redemption token (00123).
+ * Read server-side so the candidate runner + session always derive scope from
+ * the voucher, never from client input. Tolerant: returns an all-null
+ * (unpinned) scope when 00123 isn't applied or anything is missing.
+ */
+export async function getVoucherScopeByRedemptionToken(token: string): Promise<VoucherScope> {
+  const unpinned: VoucherScope = { purpose: null, targetRoleProfileId: null, scopedCompetencyIds: null };
+  try {
+    const sb = createServiceClient();
+    const { data: red } = await sb
+      .from("persona_voucher_redemptions")
+      .select("voucher_id")
+      .eq("redemption_token", token)
+      .maybeSingle<{ voucher_id: string }>();
+    if (!red?.voucher_id) return unpinned;
+    const { data: v, error } = await sb
+      .from("persona_vouchers")
+      .select("purpose, target_role_profile_id, scoped_competency_ids")
+      .eq("id", red.voucher_id)
+      .maybeSingle<{
+        purpose: string | null;
+        target_role_profile_id: string | null;
+        scoped_competency_ids: string[] | null;
+      }>();
+    if (error || !v) return unpinned;
+    const scoped = Array.isArray(v.scoped_competency_ids) ? v.scoped_competency_ids.filter(Boolean) : null;
+    return {
+      purpose: v.purpose === "hiring" || v.purpose === "development" ? v.purpose : null,
+      targetRoleProfileId: v.target_role_profile_id ?? null,
+      scopedCompetencyIds: scoped && scoped.length > 0 ? scoped : null,
+    };
+  } catch {
+    return unpinned;
+  }
 }
 
 export type RedeemInput = {

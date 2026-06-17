@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
 import { loadPersonaRoleOptions } from "@/lib/scoring/persona-roles";
+import { getVoucherScopeByRedemptionToken } from "@/lib/persona/vouchers";
 import { PersonaStandaloneClient } from "../../_components/persona-standalone-client";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +26,27 @@ export default async function PersonaTakePage({ params }: { params: { token: str
 
   const roleProfiles = await loadPersonaRoleOptions();
 
+  // Admin-pinned scope (00123): when the voucher pins purpose/role/competencies,
+  // the candidate just takes the pre-configured test - the runner locks the
+  // picker and we serve only the scoped competencies' items.
+  const scope = await getVoucherScopeByRedemptionToken(redemption.redemption_token);
+  const scopedSet = scope.scopedCompetencyIds && scope.scopedCompetencyIds.length > 0
+    ? new Set(scope.scopedCompetencyIds)
+    : null;
+  const competencies = scopedSet
+    ? BEHAVIORAL_COMPETENCIES.filter((c) => scopedSet.has(c.acCompetencyId))
+    : BEHAVIORAL_COMPETENCIES;
+  // Guard against an over-narrow / stale scope leaving nothing to serve.
+  const servedCompetencies = competencies.length > 0 ? competencies : BEHAVIORAL_COMPETENCIES;
+  const pinned = scope.purpose
+    ? {
+        purpose: scope.purpose,
+        roleProfileId: scope.targetRoleProfileId,
+        roleName:
+          roleProfiles.find((r) => r.id === scope.targetRoleProfileId)?.name ?? null,
+      }
+    : null;
+
   return (
     <div className="min-h-screen bg-background">
       <header className="ara-hero relative overflow-hidden">
@@ -43,10 +65,11 @@ export default async function PersonaTakePage({ params }: { params: { token: str
 
       <main className="relative z-10 mx-auto -mt-8 max-w-3xl px-6 pb-16">
         <PersonaStandaloneClient
-          competencies={BEHAVIORAL_COMPETENCIES}
+          competencies={servedCompetencies}
           redemptionToken={redemption.redemption_token}
           prefillName={redemption.redeemer_name ?? undefined}
           roleProfiles={roleProfiles}
+          pinned={pinned}
         />
       </main>
     </div>

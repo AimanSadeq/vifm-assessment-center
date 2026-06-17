@@ -31,6 +31,7 @@ export function PersonaStandaloneClient({
   redemptionToken = null,
   prefillName,
   roleProfiles = [],
+  pinned = null,
 }: {
   competencies: BehavioralCompetency[];
   /** Voucher redemption token (delegate flow); stamps the result with the client org. */
@@ -38,12 +39,17 @@ export function PersonaStandaloneClient({
   prefillName?: string;
   /** Role profiles offered for a hiring fit read (empty = hiring picker hidden). */
   roleProfiles?: RoleProfileOption[];
+  /** Admin-pinned scope (voucher delegate). When set, the purpose + role are
+   *  fixed by the admin and the candidate cannot change them - the picker is
+   *  replaced by a read-only summary. The competency scope is already applied
+   *  upstream (the `competencies` prop is pre-filtered). */
+  pinned?: { purpose: Purpose; roleProfileId: string | null; roleName: string | null } | null;
 }) {
   const [phase, setPhase] = useState<Phase>("intro");
   const [lang, setLang] = useState<Lang>("en");
   const [name, setName] = useState(prefillName ?? "");
-  const [purpose, setPurpose] = useState<Purpose>("development");
-  const [targetRoleId, setTargetRoleId] = useState("");
+  const [purpose, setPurpose] = useState<Purpose>(pinned?.purpose ?? "development");
+  const [targetRoleId, setTargetRoleId] = useState(pinned?.roleProfileId ?? "");
   const [seed, setSeed] = useState<number>(0);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, number>>({});
@@ -182,8 +188,8 @@ export function PersonaStandaloneClient({
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {tx(
-            "Behavioural Competency Self-Assessment - self-ratings across the 38 competencies (the same framework as the 360).",
-            "التقييم الذاتي للجدارات السلوكية - تقييم ذاتي عبر الكفاءات الـ38 (الإطار نفسه المستخدم في تقييم 360).",
+            "Behavioural Competency Self-Assessment - self-ratings across the VIFM competency framework (the same framework as the 360).",
+            "التقييم الذاتي للجدارات السلوكية - تقييم ذاتي عبر إطار جدارات VIFM (الإطار نفسه المستخدم في تقييم 360).",
           )}
         </p>
       </div>
@@ -192,57 +198,88 @@ export function PersonaStandaloneClient({
 
       {phase === "intro" && (
         <div className="space-y-5 rounded-xl border bg-card p-6">
-          {/* Purpose - drives the result (development narrative vs hiring fit). */}
-          <div>
-            <p className="text-xs font-medium text-slate-500">{tx("What is this assessment for?", "ما الغرض من هذا التقييم؟")}</p>
-            <div className="mt-2 grid gap-3 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={() => setPurpose("development")}
-                className={`rounded-lg border p-4 text-start transition ${purpose === "development" ? "border-[#5391D5] bg-[#5391D5]/5 ring-1 ring-[#5391D5]" : "border-slate-200 hover:bg-slate-50"}`}
-              >
-                <span className="inline-flex items-center gap-2 font-semibold text-[#010131]">
-                  <GraduationCap className="h-4 w-4 text-[#5391D5]" /> {tx("Development", "التطوير")}
-                </span>
+          {pinned ? (
+            /* Admin-pinned (voucher delegate): purpose + role are fixed; the
+               candidate just begins. Scope is already applied to the items. */
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <span className="inline-flex items-center gap-2 font-semibold text-[#010131]">
+                {pinned.purpose === "hiring" ? (
+                  <Target className="h-4 w-4 text-[#5391D5]" />
+                ) : (
+                  <GraduationCap className="h-4 w-4 text-[#5391D5]" />
+                )}
+                {pinned.purpose === "hiring"
+                  ? tx("Hiring / selection assessment", "تقييم التوظيف / الاختيار")
+                  : tx("Development assessment", "تقييم تطويري")}
+              </span>
+              {pinned.purpose === "hiring" && pinned.roleName && (
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {tx("A growth read: per-competency explanation and suggestions.", "قراءة تطويرية: شرح واقتراحات لكل جدارة.")}
-                </p>
-              </button>
-              <button
-                type="button"
-                onClick={() => setPurpose("hiring")}
-                className={`rounded-lg border p-4 text-start transition ${purpose === "hiring" ? "border-[#5391D5] bg-[#5391D5]/5 ring-1 ring-[#5391D5]" : "border-slate-200 hover:bg-slate-50"}`}
-              >
-                <span className="inline-flex items-center gap-2 font-semibold text-[#010131]">
-                  <Target className="h-4 w-4 text-[#5391D5]" /> {tx("Hiring / selection", "التوظيف / الاختيار")}
-                </span>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {tx("A fit score against a target role profile.", "درجة ملاءمة مقابل ملف دور مستهدف.")}
-                </p>
-              </button>
-            </div>
-          </div>
-
-          {purpose === "hiring" && (
-            <div className="rounded-lg border border-slate-200 p-3">
-              <p className="text-xs font-medium text-[#010131]">{tx("Target role", "الدور المستهدف")}</p>
-              {roleProfiles.length > 0 ? (
-                <select
-                  value={targetRoleId}
-                  onChange={(e) => setTargetRoleId(e.target.value)}
-                  className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-                >
-                  <option value="">{tx("Select a role profile…", "اختر ملف دور…")}</option>
-                  {roleProfiles.map((r) => (
-                    <option key={r.id} value={r.id}>{r.name}</option>
-                  ))}
-                </select>
-              ) : (
-                <p className="mt-1 text-xs text-amber-600">
-                  {tx("No role profiles available. Create one under Role Profiles to get a fit score.", "لا تتوفّر ملفات أدوار. أنشئ ملفًا في (ملفات الأدوار) للحصول على درجة الملاءمة.")}
+                  {tx("Assessing for: ", "التقييم لدور: ")}
+                  <span className="font-medium text-[#010131]">{pinned.roleName}</span>
                 </p>
               )}
+              <p className="mt-1 text-xs text-muted-foreground">
+                {tx(
+                  `This assessment covers ${competencies.length} competenc${competencies.length === 1 ? "y" : "ies"}, set by the organization.`,
+                  `يغطي هذا التقييم ${competencies.length} جدارة، وقد حدّدتها المؤسسة.`,
+                )}
+              </p>
             </div>
+          ) : (
+            <>
+              {/* Purpose - drives the result (development narrative vs hiring fit). */}
+              <div>
+                <p className="text-xs font-medium text-slate-500">{tx("What is this assessment for?", "ما الغرض من هذا التقييم؟")}</p>
+                <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => setPurpose("development")}
+                    className={`rounded-lg border p-4 text-start transition ${purpose === "development" ? "border-[#5391D5] bg-[#5391D5]/5 ring-1 ring-[#5391D5]" : "border-slate-200 hover:bg-slate-50"}`}
+                  >
+                    <span className="inline-flex items-center gap-2 font-semibold text-[#010131]">
+                      <GraduationCap className="h-4 w-4 text-[#5391D5]" /> {tx("Development", "التطوير")}
+                    </span>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {tx("A growth read: per-competency explanation and suggestions.", "قراءة تطويرية: شرح واقتراحات لكل جدارة.")}
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPurpose("hiring")}
+                    className={`rounded-lg border p-4 text-start transition ${purpose === "hiring" ? "border-[#5391D5] bg-[#5391D5]/5 ring-1 ring-[#5391D5]" : "border-slate-200 hover:bg-slate-50"}`}
+                  >
+                    <span className="inline-flex items-center gap-2 font-semibold text-[#010131]">
+                      <Target className="h-4 w-4 text-[#5391D5]" /> {tx("Hiring / selection", "التوظيف / الاختيار")}
+                    </span>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {tx("A fit score against a target role profile.", "درجة ملاءمة مقابل ملف دور مستهدف.")}
+                    </p>
+                  </button>
+                </div>
+              </div>
+
+              {purpose === "hiring" && (
+                <div className="rounded-lg border border-slate-200 p-3">
+                  <p className="text-xs font-medium text-[#010131]">{tx("Target role", "الدور المستهدف")}</p>
+                  {roleProfiles.length > 0 ? (
+                    <select
+                      value={targetRoleId}
+                      onChange={(e) => setTargetRoleId(e.target.value)}
+                      className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                    >
+                      <option value="">{tx("Select a role profile…", "اختر ملف دور…")}</option>
+                      {roleProfiles.map((r) => (
+                        <option key={r.id} value={r.id}>{r.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="mt-1 text-xs text-amber-600">
+                      {tx("No role profiles available. Create one under Role Profiles to get a fit score.", "لا تتوفّر ملفات أدوار. أنشئ ملفًا في (ملفات الأدوار) للحصول على درجة الملاءمة.")}
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
           )}
 
           <div className="rounded-lg border border-[#5391D5] bg-[#5391D5]/5 p-4">

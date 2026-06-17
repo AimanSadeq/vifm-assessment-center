@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Ticket, Copy, Ban } from "lucide-react";
+import { Loader2, Ticket, Copy, Ban, Target, GraduationCap } from "lucide-react";
 import { fmtDate } from "@/lib/utils/format-date";
 import { copyToClipboard } from "@/lib/utils/clipboard";
 import { generatePersonaVouchersAction, disablePersonaVoucherAction } from "../actions";
@@ -27,7 +27,20 @@ export type PersonaVoucherRow = {
   created_at: string;
 };
 
-export function VouchersClient({ vouchers, clients }: { vouchers: PersonaVoucherRow[]; clients: string[] }) {
+type RoleOption = { id: string; name: string; competencyIds: string[] };
+type CompetencyOption = { id: string; name: string; clusterOrder: number; clusterName: string };
+
+export function VouchersClient({
+  vouchers,
+  clients,
+  roleOptions = [],
+  personaCompetencies = [],
+}: {
+  vouchers: PersonaVoucherRow[];
+  clients: string[];
+  roleOptions?: RoleOption[];
+  personaCompetencies?: CompetencyOption[];
+}) {
   const router = useRouter();
   const [count, setCount] = useState(1);
   const [label, setLabel] = useState("");
@@ -37,7 +50,56 @@ export function VouchersClient({ vouchers, clients }: { vouchers: PersonaVoucher
   const [busy, setBusy] = useState(false);
   const [lastCodes, setLastCodes] = useState<string[]>([]);
 
+  // SD-1 scope: the admin pins purpose + (for hiring) a target role + the
+  // competency set the assessment draws from. Default = full profile.
+  const allCompIds = useMemo(() => personaCompetencies.map((c) => c.id), [personaCompetencies]);
+  const [purpose, setPurpose] = useState<"hiring" | "development">("hiring");
+  const [targetRoleId, setTargetRoleId] = useState("");
+  const [selectedComps, setSelectedComps] = useState<Set<string>>(() => new Set(allCompIds));
+
+  const compsByCluster = useMemo(() => {
+    const m = new Map<number, { name: string; comps: CompetencyOption[] }>();
+    for (const c of personaCompetencies) {
+      if (!m.has(c.clusterOrder)) m.set(c.clusterOrder, { name: c.clusterName, comps: [] });
+      m.get(c.clusterOrder)!.comps.push(c);
+    }
+    return [...m.entries()].sort((a, b) => a[0] - b[0]).map(([, v]) => v);
+  }, [personaCompetencies]);
+
+  const total = allCompIds.length;
+  const selectedCount = selectedComps.size;
+  const isFull = selectedCount === total;
+  const estItems = selectedCount * 4; // ~4 statements per competency
+
+  const onRoleChange = (roleId: string) => {
+    setTargetRoleId(roleId);
+    const role = roleOptions.find((r) => r.id === roleId);
+    if (role) {
+      // Pre-fill the scope with the role's competencies (intersected with the
+      // Persona bank), the "default from role profile" behaviour.
+      const allowed = new Set(allCompIds);
+      const pre = role.competencyIds.filter((id) => allowed.has(id));
+      setSelectedComps(new Set(pre.length > 0 ? pre : allCompIds));
+    }
+  };
+
+  const toggleComp = (id: string) =>
+    setSelectedComps((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
   const generate = async () => {
+    if (purpose === "hiring" && !targetRoleId) {
+      toast.error("Pick a target role profile for a hiring assessment.");
+      return;
+    }
+    if (selectedCount === 0) {
+      toast.error("Select at least one competency, or choose Full profile.");
+      return;
+    }
     setBusy(true);
     const res = await generatePersonaVouchersAction({
       count,
@@ -45,6 +107,10 @@ export function VouchersClient({ vouchers, clients }: { vouchers: PersonaVoucher
       clientName: clientName || undefined,
       maxUses,
       expiresAt: expiresAt || null,
+      purpose,
+      targetRoleProfileId: purpose === "hiring" ? targetRoleId || null : null,
+      // Full selection -> empty (= full bank); a strict subset -> the chosen ids.
+      scopedCompetencyIds: isFull ? [] : [...selectedComps],
     });
     setBusy(false);
     if ("error" in res) {
@@ -81,32 +147,123 @@ export function VouchersClient({ vouchers, clients }: { vouchers: PersonaVoucher
         <CardHeader>
           <CardTitle className="text-base">Generate codes</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-wrap items-end gap-3">
-          <div className="w-24 space-y-1.5">
-            <Label className="text-xs">How many</Label>
-            <Input type="number" min={1} max={500} value={count} onChange={(e) => setCount(Number(e.target.value))} />
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="w-24 space-y-1.5">
+              <Label className="text-xs">How many</Label>
+              <Input type="number" min={1} max={500} value={count} onChange={(e) => setCount(Number(e.target.value))} />
+            </div>
+            <div className="w-28 space-y-1.5">
+              <Label className="text-xs">Seats / code</Label>
+              <Input type="number" min={1} value={maxUses} onChange={(e) => setMaxUses(Number(e.target.value))} />
+            </div>
+            <div className="flex-1 min-w-[12rem] space-y-1.5">
+              <Label className="text-xs">Client (optional)</Label>
+              <Input value={clientName} onChange={(e) => setClientName(e.target.value)} list="persona-client-list" placeholder="Tag to a client org" />
+              <datalist id="persona-client-list">
+                {clients.map((c) => (
+                  <option key={c} value={c} />
+                ))}
+              </datalist>
+            </div>
+            <div className="flex-1 min-w-[10rem] space-y-1.5">
+              <Label className="text-xs">Label (optional)</Label>
+              <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Q3 intake" />
+            </div>
+            <div className="w-44 space-y-1.5">
+              <Label className="text-xs">Expires (optional)</Label>
+              <Input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
+            </div>
           </div>
-          <div className="w-28 space-y-1.5">
-            <Label className="text-xs">Seats / code</Label>
-            <Input type="number" min={1} value={maxUses} onChange={(e) => setMaxUses(Number(e.target.value))} />
+
+          {/* SD-1 scope: the admin pins purpose + role + competency coverage. */}
+          <div className="space-y-3 rounded-lg border border-slate-200 p-3">
+            <div>
+              <Label className="text-xs">Assessment purpose</Label>
+              <div className="mt-1.5 inline-flex rounded-lg border border-slate-200 p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setPurpose("hiring")}
+                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium ${purpose === "hiring" ? "bg-[#5391D5] text-white" : "text-slate-600 hover:bg-slate-100"}`}
+                >
+                  <Target className="h-3.5 w-3.5" /> Hiring / selection
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPurpose("development")}
+                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium ${purpose === "development" ? "bg-[#5391D5] text-white" : "text-slate-600 hover:bg-slate-100"}`}
+                >
+                  <GraduationCap className="h-3.5 w-3.5" /> Development
+                </button>
+              </div>
+            </div>
+
+            {purpose === "hiring" && (
+              <div className="space-y-1.5">
+                <Label className="text-xs">Target role (required - the fit is computed against it)</Label>
+                {roleOptions.length > 0 ? (
+                  <select
+                    value={targetRoleId}
+                    onChange={(e) => onRoleChange(e.target.value)}
+                    className="w-full max-w-md rounded-md border border-slate-300 px-3 py-2 text-sm"
+                  >
+                    <option value="">Select a role profile…</option>
+                    {roleOptions.map((r) => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-xs text-amber-600">
+                    No role profiles yet. Create one under Admin -&gt; Role Profiles to scope a hiring assessment.
+                  </p>
+                )}
+              </div>
+            )}
+
+            <div>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Label className="text-xs">
+                  Competency coverage
+                  {purpose === "hiring" && targetRoleId ? " (defaults to the role's competencies)" : ""}
+                </Label>
+                <div className="flex items-center gap-2 text-xs">
+                  <button type="button" className="text-[#5391D5] hover:underline" onClick={() => setSelectedComps(new Set(allCompIds))}>
+                    Full profile (all {total})
+                  </button>
+                  <span className="text-slate-300">|</span>
+                  <button type="button" className="text-[#5391D5] hover:underline" onClick={() => setSelectedComps(new Set())}>
+                    Clear
+                  </button>
+                </div>
+              </div>
+              <div className="mt-2 max-h-56 space-y-3 overflow-y-auto rounded-md border border-slate-200 p-3">
+                {compsByCluster.map((cl) => (
+                  <div key={cl.name}>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{cl.name}</p>
+                    <div className="mt-1 grid gap-x-4 gap-y-1 sm:grid-cols-2">
+                      {cl.comps.map((c) => (
+                        <label key={c.id} className="flex cursor-pointer items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={selectedComps.has(c.id)}
+                            onChange={() => toggleComp(c.id)}
+                            className="h-3.5 w-3.5 rounded border-slate-300"
+                          />
+                          <span className="text-foreground">{c.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                {isFull
+                  ? `Full profile - all ${total} competencies (~${estItems} statements).`
+                  : `${selectedCount} of ${total} competencies (~${estItems} statements). The candidate answers only these.`}
+              </p>
+            </div>
           </div>
-          <div className="flex-1 min-w-[12rem] space-y-1.5">
-            <Label className="text-xs">Client (optional)</Label>
-            <Input value={clientName} onChange={(e) => setClientName(e.target.value)} list="persona-client-list" placeholder="Tag to a client org" />
-            <datalist id="persona-client-list">
-              {clients.map((c) => (
-                <option key={c} value={c} />
-              ))}
-            </datalist>
-          </div>
-          <div className="flex-1 min-w-[10rem] space-y-1.5">
-            <Label className="text-xs">Label (optional)</Label>
-            <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Q3 intake" />
-          </div>
-          <div className="w-44 space-y-1.5">
-            <Label className="text-xs">Expires (optional)</Label>
-            <Input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
-          </div>
+
           <Button onClick={generate} disabled={busy || count < 1} className="gap-1.5">
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ticket className="h-4 w-4" />}
             Generate

@@ -60,6 +60,8 @@ export async function createAnonymousBehavioralSession(
     targetRoleProfileId?: string | null;
     /** Seed for the reproducible item layout (migration 00110). */
     seed?: number | null;
+    /** Competency scope actually served (migration 00123); null/empty = full bank. */
+    scopedCompetencyIds?: string[] | null;
   },
 ): Promise<BehavioralSession> {
   const sb = createServiceClient();
@@ -81,12 +83,26 @@ export async function createAnonymousBehavioralSession(
     ...(opts?.targetRoleProfileId ? { target_role_profile_id: opts.targetRoleProfileId } : {}),
     ...(opts?.seed != null ? { randomization_seed: opts.seed } : {}),
   };
+  // The scope column lands with migration 00123 - its own tolerant layer so a
+  // missing 00123 doesn't also drop the 00110 purpose/target/seed columns.
+  const scoped = (opts?.scopedCompetencyIds ?? []).filter(Boolean);
+  const withScope: Record<string, unknown> = {
+    ...extended,
+    ...(scoped.length > 0 ? { scoped_competency_ids: scoped } : {}),
+  };
 
   let { data, error } = await sb
     .from("behavioral_assessment_sessions")
-    .insert(extended)
+    .insert(withScope)
     .select("id, status")
     .single();
+  if (error && /column .*scoped_competency_ids/i.test(error.message)) {
+    ({ data, error } = await sb
+      .from("behavioral_assessment_sessions")
+      .insert(extended)
+      .select("id, status")
+      .single());
+  }
   if (error && /column .*(purpose|target_role_profile_id|randomization_seed)/i.test(error.message)) {
     ({ data, error } = await sb
       .from("behavioral_assessment_sessions")

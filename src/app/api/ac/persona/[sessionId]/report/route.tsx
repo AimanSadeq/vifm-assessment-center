@@ -112,7 +112,11 @@ export async function GET(_req: Request, { params }: { params: { sessionId: stri
     if (purpose === "hiring" && session.target_role_profile_id) {
       const role = await loadPersonaRoleById(session.target_role_profile_id);
       if (role) {
-        const f = computeFit(scoreById, role.comps);
+        // Compute fit only over the role competencies that were actually served
+        // (a scoped sitting may omit some); unmeasured ones would otherwise count
+        // as a zero and understate fit. computeFit returns null if none overlap.
+        const measuredComps = role.comps.filter((c) => scoreById.has(c.competencyId));
+        const f = computeFit(scoreById, measuredComps);
         if (f) {
           const nameById = new Map(BEHAVIORAL_COMPETENCIES.map((c) => [c.acCompetencyId, c.nameEn]));
           fit = {

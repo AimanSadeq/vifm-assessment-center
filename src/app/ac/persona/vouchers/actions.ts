@@ -22,9 +22,21 @@ export async function generatePersonaVouchersAction(input: {
   clientName?: string;
   maxUses?: number;
   expiresAt?: string | null;
+  /** Admin-pinned scope (SD-1). purpose omitted = legacy/unpinned (candidate picks). */
+  purpose?: "development" | "hiring";
+  targetRoleProfileId?: string | null;
+  /** Empty / omitted = full bank; non-empty = serve only these competencies. */
+  scopedCompetencyIds?: string[];
 }): Promise<{ ok: true; codes: string[] } | { error: string }> {
   const g = await guard();
   if (!g.ok) return { error: g.error };
+
+  const purpose = input.purpose === "hiring" || input.purpose === "development" ? input.purpose : null;
+  // A hiring voucher needs a target role for the fit; reject early so an admin
+  // can't issue a hiring batch that produces no fit report.
+  if (purpose === "hiring" && !input.targetRoleProfileId) {
+    return { error: "Pick a target role profile for a hiring assessment." };
+  }
 
   let organizationId: string | null = null;
   const clientName = input.clientName?.trim() || null;
@@ -45,6 +57,9 @@ export async function generatePersonaVouchersAction(input: {
     maxUses: Math.max(1, input.maxUses ?? 1),
     expiresAt: input.expiresAt || null,
     createdBy: g.caller.isDev ? null : g.caller.uid,
+    purpose,
+    targetRoleProfileId: purpose === "hiring" ? input.targetRoleProfileId ?? null : null,
+    scopedCompetencyIds: (input.scopedCompetencyIds ?? []).filter(Boolean),
   });
   if (!res.ok) return { error: res.error };
   revalidatePath("/ac/persona/vouchers");

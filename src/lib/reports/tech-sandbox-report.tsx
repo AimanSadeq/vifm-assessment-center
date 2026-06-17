@@ -69,7 +69,9 @@ const s = StyleSheet.create({
   narrativeText: { fontSize: 9.5, color: C.text, lineHeight: 1.4 },
   sectionLabel: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.accent, letterSpacing: 1, marginTop: 16, marginBottom: 2 },
   pillarDef: { fontSize: 8, color: C.light, marginBottom: 4, lineHeight: 1.35 },
+  devFocus: { fontSize: 8, color: C.accent, marginBottom: 4, lineHeight: 1.35 },
   blockDef: { fontSize: 7.5, color: C.light, marginTop: 2, lineHeight: 1.3 },
+  purpose: { fontSize: 8, color: C.light, marginTop: 6, lineHeight: 1.35 },
   kSection: { marginTop: 6 },
   kRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderTopWidth: 1, borderTopColor: C.border, paddingVertical: 3 },
   kName: { fontSize: 9, color: C.text, flex: 1, paddingRight: 8 },
@@ -93,6 +95,11 @@ export function TechSandboxReport({ data }: { data: SessionReport }) {
         </Text>
         <Text style={s.meta}>
           {data.submittedAt ? `Completed: ${new Date(data.submittedAt).toLocaleString()}` : ""}
+        </Text>
+        <Text style={s.purpose}>
+          Development report - prepared to guide this person&apos;s development, for review by their
+          manager or learning-and-development lead. It explains what was assessed and where to focus
+          development; it is not a pass/fail or hiring decision.
         </Text>
 
         <View style={s.hr} />
@@ -147,6 +154,9 @@ export function TechSandboxReport({ data }: { data: SessionReport }) {
               </Text>
             </View>
             {p.descriptionEn ? <Text style={s.pillarDef}>{p.descriptionEn}</Text> : null}
+            {p.developmentFocusEn ? (
+              <Text style={s.devFocus}>Development focus: {p.developmentFocusEn}</Text>
+            ) : null}
             {p.blocks.map((b) => (
               <View key={b.nameEn} style={s.block} wrap={false}>
                 <View style={s.blockHead}>

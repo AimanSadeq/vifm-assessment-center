@@ -684,6 +684,9 @@ export interface ReportPillar {
   advancedCount: number;
   intermediateCount: number;
   basicCount: number;
+  /** Development guidance for this category (null when it is a strength). */
+  developmentFocusEn: string | null;
+  developmentFocusAr: string | null;
   blocks: ReportBlock[];
 }
 /** Per-subcategory breakdown of the knowledge (MCQ) section. */
@@ -727,6 +730,19 @@ function techBandLabelAr(band: string): string {
   if (band === "intermediate") return "متوسطة";
   return "أساسية";
 }
+// Development guidance per category band (this is a DEVELOPMENT report read by
+// the candidate's manager / L&D lead - not a pass/fail). Advanced areas are a
+// strength, so they carry no development focus.
+function techDevFocusEn(band: string): string | null {
+  if (band === "basic") return "Priority development area - build foundational capability here through structured training and supervised practice.";
+  if (band === "intermediate") return "Developing - strengthen through applied practice and targeted upskilling on the weaker subcategories.";
+  return null;
+}
+function techDevFocusAr(band: string): string | null {
+  if (band === "basic") return "مجال تطوير ذو أولوية - ابنِ القدرة الأساسية هنا عبر تدريب منظم وممارسة موجَّهة.";
+  if (band === "intermediate") return "قيد التطور - عزِّز عبر الممارسة التطبيقية والتأهيل الموجَّه على المجالات الفرعية الأضعف.";
+  return null;
+}
 
 export async function getSessionReport(token: string): Promise<SessionReport | null> {
   const sb = createServiceClient();
@@ -765,6 +781,8 @@ export async function getSessionReport(token: string): Promise<SessionReport | n
         checkpoints: cps,
       };
     });
+    const pMean = rBlocks.length ? Math.round(rBlocks.reduce((a, b) => a + b.scorePct, 0) / rBlocks.length) : null;
+    const pBand = pMean != null ? tierFor(pMean) : null;
     return {
       nameEn: p.name_en,
       nameAr: p.name_ar ?? null,
@@ -773,6 +791,8 @@ export async function getSessionReport(token: string): Promise<SessionReport | n
       advancedCount: rBlocks.filter((x) => x.band === "advanced").length,
       intermediateCount: rBlocks.filter((x) => x.band === "intermediate").length,
       basicCount: rBlocks.filter((x) => x.band === "basic").length,
+      developmentFocusEn: pBand ? techDevFocusEn(pBand) : null,
+      developmentFocusAr: pBand ? techDevFocusAr(pBand) : null,
       blocks: rBlocks,
     };
   });
@@ -817,11 +837,15 @@ export async function getSessionReport(token: string): Promise<SessionReport | n
   }
   const showSW = !!strongest && !!weakest && areas.length > 1 && strongest.nameEn !== weakest.nameEn;
   const narrativeEn =
-    `Overall this is a ${overallBand} result at ${overallPct}%, where ${techBandSentenceEn(overallBand)}.` +
-    (showSW ? ` Strongest area: ${strongest!.nameEn}. Most room to grow: ${weakest!.nameEn}.` : "");
+    `This is a development read of the candidate's technical skill. Overall, a ${overallBand} result at ${overallPct}%, where ${techBandSentenceEn(overallBand)}.` +
+    (showSW
+      ? ` ${strongest!.nameEn} is a relative strength to build on; prioritise development in ${weakest!.nameEn}. See the per-area development focus below.`
+      : " See the per-area development focus below.");
   const narrativeAr =
-    `بشكل عام، النتيجة ${techBandLabelAr(overallBand)} عند ${overallPct}%، حيث ${techBandSentenceAr(overallBand)}.` +
-    (showSW ? ` أقوى مجال: ${strongest!.nameAr}. أكثر مجال يحتاج إلى تطوير: ${weakest!.nameAr}.` : "");
+    `هذه قراءة تطويرية لمهارة المرشح التقنية. بشكل عام، النتيجة ${techBandLabelAr(overallBand)} عند ${overallPct}%، حيث ${techBandSentenceAr(overallBand)}.` +
+    (showSW
+      ? ` يُعدّ ${strongest!.nameAr} نقطة قوة نسبية يمكن البناء عليها؛ وتنبغي أولوية التطوير في ${weakest!.nameAr}. انظر تركيز التطوير لكل مجال أدناه.`
+      : " انظر تركيز التطوير لكل مجال أدناه.");
 
   return {
     functionName: fn?.name_en ?? "Technical Assessment",

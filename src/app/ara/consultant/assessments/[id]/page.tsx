@@ -6,6 +6,7 @@ import {
   FileDown, Eye, Cpu, Sparkles,
 } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getCurrentCaller } from "@/lib/ara/auth-guards";
 import { getServerT, type ServerT } from "@/lib/i18n/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -131,6 +132,13 @@ export default async function AraAssessmentDetailPage({
     .maybeSingle<AraAssessment & { organization: Pick<AraOrganization, "id" | "name" | "name_ar" | "region" | "sector"> | null }>();
 
   if (!assessment) return notFound();
+
+  // Ownership: the layout gates role (consultant/admin); a consultant may only
+  // open assessments they own (admins see all). Prevents cross-consultant IDOR.
+  const caller = await getCurrentCaller();
+  if (caller && caller.role !== "admin" && assessment.consultant_id !== caller.uid) {
+    return notFound();
+  }
 
   // Pillars in scope for THIS assessment (migration 00029). Honours
   // pillars_in_scope when set, falls back to the stage default. Used

@@ -59,6 +59,11 @@ export async function GET(
     browser = await launchBrowser();
     const page = await browser.newPage();
     await page.setViewport({ width: 1200, height: 900, deviceScaleFactor: 1 });
+    // The report page sits under the access-gated /ara/consultant layout; forward
+    // the (already-authorised) requester's session cookies so the SSR render
+    // authorises as the owner instead of 404ing on the cookieless Puppeteer hit.
+    const cookieHeader = req.headers.get("cookie");
+    if (cookieHeader) await page.setExtraHTTPHeaders({ cookie: cookieHeader });
     await page.goto(reportUrl, { waitUntil: "networkidle0", timeout: 60_000 });
 
     const pdf = await page.pdf({

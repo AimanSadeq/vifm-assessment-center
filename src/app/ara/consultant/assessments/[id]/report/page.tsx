@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getCurrentCaller } from "@/lib/ara/auth-guards";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { ARA_PILLARS, ARA_MATURITY_LEVELS, ARA_OVERALL_BANDS } from "@/lib/constants/ara-pillars";
 import { ARA_STAGE_MAP, getPillarsForAssessment } from "@/lib/constants/ara-stages";
@@ -73,6 +74,13 @@ export default async function AraReportPage({
     >();
 
   if (!assessment) return notFound();
+
+  // Ownership: layout gates role; a consultant may only view assessments they
+  // own (admins all). The PDF route forwards the owner's cookies to Puppeteer.
+  const caller = await getCurrentCaller();
+  if (caller && caller.role !== "admin" && assessment.consultant_id !== caller.uid) {
+    return notFound();
+  }
 
   const [
     { data: pillarScores },

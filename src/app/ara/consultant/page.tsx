@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus, FlaskConical, ClipboardList, CheckCircle2, Snowflake, User, ArrowRight } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getCurrentCaller } from "@/lib/ara/auth-guards";
 import { getServerT } from "@/lib/i18n/server";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -59,15 +60,19 @@ const statusVariant: Record<AraAssessment["status"], "default" | "secondary" | "
 export default async function AraConsultantPage() {
   const sb = createServiceClient();
   const tr = await getServerT();
+  // Role is gated by the layout; scope the pipeline to the owning consultant
+  // (admins see all). caller is always present here (layout would have 404'd).
+  const caller = await getCurrentCaller();
 
   // Org-side assessments only - personal snapshots have a separate
   // panel below so they don't inflate the consultant's pipeline.
-  const { data: rows } = await sb
+  let orgQuery = sb
     .from("ara_assessments")
     .select("*, organization:ara_organizations(id, name, name_ar)")
     .neq("engagement_stage", "individual")
-    .order("created_at", { ascending: false })
-    .returns<AssessmentRow[]>();
+    .order("created_at", { ascending: false });
+  if (caller && caller.role !== "admin") orgQuery = orgQuery.eq("consultant_id", caller.uid);
+  const { data: rows } = await orgQuery.returns<AssessmentRow[]>();
 
   // Personal snapshots in the last 30 days - fire-and-forget panel.
   // We use service-role here because consultant RLS doesn't grant

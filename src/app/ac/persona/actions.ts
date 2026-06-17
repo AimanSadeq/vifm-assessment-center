@@ -9,9 +9,7 @@ import {
 } from "@/lib/scoring/behavioral";
 import { getVoucherScopeByRedemptionToken } from "@/lib/persona/vouchers";
 import { loadPersonaRoleById } from "@/lib/scoring/persona-roles";
-import { loadCompetencyDefinitions } from "@/lib/scoring/competency-definitions";
-import { generatePersonaInsights } from "@/lib/ai/persona-insights";
-import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
+import { generatePersonaInsights, buildInsightCompetencies } from "@/lib/ai/persona-insights";
 
 export type StartPersonaOptions = {
   /** 'development' (narrative + suggestions) or 'hiring' (fit vs a target role). */
@@ -126,35 +124,8 @@ export async function submitPersonaAction(sessionId: string) {
     const role = await loadPersonaRoleById(session.target_role_profile_id);
     if (!role) return res;
 
-    // Per-statement effective ratings, grouped by competency (reverse mapped).
-    const stmtByKey = new Map<string, string>();
-    for (const c of BEHAVIORAL_COMPETENCIES) for (const it of c.items) stmtByKey.set(it.itemKey, it.textEn);
-    const { data: responses } = await sb
-      .from("behavioral_assessment_responses")
-      .select("competency_id, item_key, raw_score, is_reverse")
-      .eq("session_id", sessionId);
-    const itemsByComp = new Map<string, { statement: string; score: number }[]>();
-    for (const r of responses ?? []) {
-      const statement = stmtByKey.get(r.item_key as string);
-      if (!statement) continue;
-      const score = r.is_reverse ? 6 - Number(r.raw_score) : Number(r.raw_score);
-      const cid = r.competency_id as string;
-      if (!itemsByComp.has(cid)) itemsByComp.set(cid, []);
-      itemsByComp.get(cid)!.push({ statement, score });
-    }
-
     const selfById = new Map(res.profile.map((p) => [p.competencyId, p.selfScore]));
-    const defs = await loadCompetencyDefinitions();
-    const competencies = role.comps
-      .filter((c) => selfById.has(c.competencyId))
-      .map((c) => ({
-        competencyId: c.competencyId,
-        name: c.name,
-        definition: defs[c.competencyId],
-        self: selfById.get(c.competencyId) as number,
-        target: c.target,
-        items: itemsByComp.get(c.competencyId) ?? [],
-      }));
+    const competencies = await buildInsightCompetencies({ sessionId, roleComps: role.comps, selfById });
     if (competencies.length === 0) return res;
 
     const insights = await generatePersonaInsights({ roleName: role.name, competencies });

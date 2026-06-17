@@ -5,6 +5,7 @@ import { getCurrentCaller } from "@/lib/ara/auth-guards";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
 import { loadPersonaRoleById } from "@/lib/scoring/persona-roles";
 import { computeFit, competencyNarrative, FIT_BAND_HEX } from "@/lib/scoring/persona-fit";
+import { generatePersonaInsights, buildInsightCompetencies } from "@/lib/ai/persona-insights";
 import { PersonaProfilePdf, type PersonaPdfData, type PersonaPdfCluster } from "@/lib/reports/persona-profile";
 
 export const runtime = "nodejs";
@@ -119,6 +120,32 @@ export async function GET(_req: Request, { params }: { params: { sessionId: stri
       /* migration 00125 not applied */
     }
 
+    // Lazy generation: a hiring report with no stored insights yet (legacy
+    // session, or submit-time generation failed) generates them now from the
+    // candidate's answers and caches them, so the report is always insight-rich.
+    if (Object.keys(insightsById).length === 0 && role) {
+      try {
+        const competencies = await buildInsightCompetencies({
+          sessionId: params.sessionId,
+          roleComps: role.comps,
+          selfById: scoreById,
+        });
+        if (competencies.length > 0) {
+          insightsById = await generatePersonaInsights({ roleName: role.name, competencies });
+          try {
+            await sb
+              .from("behavioral_assessment_sessions")
+              .update({ competency_insights: insightsById })
+              .eq("id", params.sessionId);
+          } catch {
+            /* migration 00125 not applied - still used for this render */
+          }
+        }
+      } catch {
+        /* fall back to the deterministic narrative */
+      }
+    }
+
     // Group by competency cluster from the bank, enriched with definition,
     // a score-interpretation narrative, and (development) a suggestion.
     const byCluster = new Map<number, PersonaPdfCluster>();
@@ -161,6 +188,11 @@ export async function GET(_req: Request, { params }: { params: { sessionId: stri
               .filter((g) => g.self != null && g.gap > 0)
               .slice(0, 6)
               .map((g) => ({ name: nameById.get(g.competencyId) ?? g.name, self: g.self ?? 0, target: g.target, gap: g.gap })),
+            strengths: f.gaps
+              .filter((g) => g.self != null && (g.self as number) >= g.target)
+              .sort((a, b) => ((b.self as number) - b.target) - ((a.self as number) - a.target))
+              .slice(0, 6)
+              .map((g) => ({ name: nameById.get(g.competencyId) ?? g.name, self: g.self ?? 0, target: g.target })),
           };
         }
     }

@@ -7,6 +7,9 @@
 // ─────────────────────────────────────────────────────────────
 import { getAIClient, AI_MODEL } from "@/lib/ai/client";
 import { competencyNarrative } from "@/lib/scoring/persona-fit";
+import { createServiceClient } from "@/lib/supabase/server";
+import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
+import { loadCompetencyDefinitions } from "@/lib/scoring/competency-definitions";
 
 export type PersonaInsightCompetency = {
   competencyId: string;
@@ -33,6 +36,46 @@ const SYSTEM =
   "- 1-2 sentences each, specific and evidence-referenced.\n" +
   "- Self-report framing: describe what the answers indicate; do not issue verdicts.\n" +
   "- Do not fabricate anything beyond the supplied ratings. No em dashes.";
+
+/**
+ * Build the per-competency insight input for a session: the candidate's
+ * item-level effective ratings (reverse mapped) + definition + self/target,
+ * for each ROLE competency that was actually answered. Shared by the submit
+ * path and the report route (lazy generation), so they can't drift.
+ */
+export async function buildInsightCompetencies(opts: {
+  sessionId: string;
+  roleComps: { competencyId: string; name: string; target: number }[];
+  selfById: Map<string, number>;
+}): Promise<PersonaInsightCompetency[]> {
+  const sb = createServiceClient();
+  const stmtByKey = new Map<string, string>();
+  for (const c of BEHAVIORAL_COMPETENCIES) for (const it of c.items) stmtByKey.set(it.itemKey, it.textEn);
+  const { data: responses } = await sb
+    .from("behavioral_assessment_responses")
+    .select("competency_id, item_key, raw_score, is_reverse")
+    .eq("session_id", opts.sessionId);
+  const itemsByComp = new Map<string, { statement: string; score: number }[]>();
+  for (const r of responses ?? []) {
+    const statement = stmtByKey.get(r.item_key as string);
+    if (!statement) continue;
+    const score = r.is_reverse ? 6 - Number(r.raw_score) : Number(r.raw_score);
+    const cid = r.competency_id as string;
+    if (!itemsByComp.has(cid)) itemsByComp.set(cid, []);
+    itemsByComp.get(cid)!.push({ statement, score });
+  }
+  const defs = await loadCompetencyDefinitions();
+  return opts.roleComps
+    .filter((c) => opts.selfById.has(c.competencyId))
+    .map((c) => ({
+      competencyId: c.competencyId,
+      name: c.name,
+      definition: defs[c.competencyId],
+      self: opts.selfById.get(c.competencyId) as number,
+      target: c.target,
+      items: itemsByComp.get(c.competencyId) ?? [],
+    }));
+}
 
 export async function generatePersonaInsights(
   input: PersonaInsightInput,

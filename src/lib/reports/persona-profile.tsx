@@ -28,6 +28,7 @@ export type PersonaPdfFit = {
   bandLabel: string;
   bandHex: string;
   gaps: { name: string; self: number; target: number; gap: number }[];
+  strengths?: { name: string; self: number; target: number }[];
 };
 export type PersonaPdfData = {
   takerName: string | null;
@@ -98,6 +99,17 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
           <View style={s.fitPanel} wrap={false}>
             <Text style={s.fitLabel}>Role fit · {data.fit.roleName}</Text>
             <Text style={[s.fitValue, { color: data.fit.bandHex }]}>{data.fit.fitPct}%  ·  {data.fit.bandLabel}</Text>
+            {data.fit.strengths && data.fit.strengths.length > 0 ? (
+              <>
+                <Text style={[s.fitGapTitle, { color: C.emerald }]}>Biggest strengths (self / target)</Text>
+                {data.fit.strengths.map((g) => (
+                  <View key={`str-${g.name}`} style={s.fitGapRow}>
+                    <Text style={s.fitGapName}>{g.name}</Text>
+                    <Text style={[s.fitGapNum, { color: C.emerald }]}>{g.self.toFixed(1)} / {g.target.toFixed(1)}</Text>
+                  </View>
+                ))}
+              </>
+            ) : null}
             {data.fit.gaps.length > 0 ? (
               <>
                 <Text style={s.fitGapTitle}>Biggest gaps vs the role target (self / target)</Text>

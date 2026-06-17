@@ -36,6 +36,9 @@ export default async function TechSandboxAdminPage() {
           answers and banded per competency.
         </p>
         <div className="mt-2 flex flex-wrap gap-4">
+          <Link href="/admin/tech-sandbox/custom" className="text-sm font-medium text-[#5391D5] hover:underline">
+            Build a custom assessment →
+          </Link>
           <Link href="/admin/tech-sandbox/results" className="text-sm font-medium text-[#5391D5] hover:underline">
             View completed results →
           </Link>

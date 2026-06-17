@@ -68,10 +68,15 @@ export function gradeMcqTest(
  * function_id). Prefers the SME-approved certified bank; falls back to AI
  * generation. Returns the keyed TechTest (held server-side on the session) or
  * null when the function has no MCQ content (the sitting then runs sandbox-only).
+ *
+ * `skillsOverride` (a custom sitting) restricts the MCQ section to a subset of
+ * the function's skills - intersected with the blueprint skills so a stale or
+ * mistyped pick can never broaden coverage. Empty/undefined = the full blueprint.
  */
 export async function buildMcqTestForFunction(
   functionId: string,
-  language: "en" | "ar"
+  language: "en" | "ar",
+  skillsOverride?: string[] | null
 ): Promise<TechTest | null> {
   let key: string;
   let name: string;
@@ -89,6 +94,16 @@ export async function buildMcqTestForFunction(
     skillsEn = (data.skills_en ?? []).filter(Boolean);
   } catch {
     return null;
+  }
+
+  // Custom sitting: keep only the chosen skills, intersected with the blueprint.
+  // Apply the intersection unconditionally - if a stale/mistyped pick has no
+  // overlap with the current blueprint, that yields zero skills, and the guard
+  // below returns null (no knowledge section) rather than silently broadening
+  // back to the full blueprint.
+  if (skillsOverride && skillsOverride.length > 0) {
+    const want = new Set(skillsOverride);
+    skillsEn = skillsEn.filter((s) => want.has(s));
   }
   if (skillsEn.length === 0) return null;
 

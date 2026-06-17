@@ -20,7 +20,8 @@ export default async function TechSandboxPage({ params }: { params: { token: str
       </div>
     );
   }
-  const blueprint = await getPublicBlueprint(session.function_id);
+  const selectedBlockIds = (session.selected_block_ids ?? null) as string[] | null;
+  const blueprint = await getPublicBlueprint(session.function_id, selectedBlockIds);
 
   // The combined assessment carries an MCQ knowledge section. Strip the answer
   // key server-side so the browser never receives the correct options.

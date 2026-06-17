@@ -78,7 +78,7 @@ type PillarRow = {
   description_en?: string | null; description_ar?: string | null;
 };
 
-async function loadBlocks(functionId: string) {
+async function loadBlocks(functionId: string, selectedBlockIds?: string[] | null) {
   const sb = createServiceClient();
   // Prefer the wide select (with definition columns, migration 00118). If those
   // columns aren't applied yet, fall back to the base select so the report still
@@ -115,11 +115,26 @@ async function loadBlocks(functionId: string) {
     if (isMissingSchemaError(bErr)) return { pillars: pillars ?? [], blocks: [] };
     throw bErr;
   }
-  return { pillars: pillars ?? [], blocks: blocks ?? [] };
+  let outBlocks = blocks ?? [];
+  // Custom sitting: restrict the hands-on section to the chosen blocks (then
+  // drop pillars that end up with no blocks, so the report/runner don't show
+  // empty categories). An EXPLICIT array (even empty) is an intentional narrow:
+  // [] means a knowledge-only sitting (zero hands-on tasks). Only NULL/undefined
+  // - i.e. a legacy/non-custom sitting that never set the column - means "all".
+  if (Array.isArray(selectedBlockIds)) {
+    const want = new Set(selectedBlockIds);
+    outBlocks = outBlocks.filter((b) => want.has(b.id));
+    const usedPillars = new Set(outBlocks.map((b) => b.pillar_id));
+    pillars = (pillars ?? []).filter((p) => usedPillars.has(p.id));
+  }
+  return { pillars: pillars ?? [], blocks: outBlocks };
 }
 
 /** Public blueprint for the candidate runner (no answer key). */
-export async function getPublicBlueprint(functionId: string): Promise<PublicBlueprint> {
+export async function getPublicBlueprint(
+  functionId: string,
+  selectedBlockIds?: string[] | null,
+): Promise<PublicBlueprint> {
   const sb = createServiceClient();
   const { data: fn, error } = await sb
     .from("technical_functions")
@@ -127,7 +142,7 @@ export async function getPublicBlueprint(functionId: string): Promise<PublicBlue
     .eq("id", functionId)
     .single();
   if (error) throw error;
-  const { pillars, blocks } = await loadBlocks(functionId);
+  const { pillars, blocks } = await loadBlocks(functionId, selectedBlockIds);
   return {
     functionId: fn.id,
     functionKey: fn.key,
@@ -162,8 +177,11 @@ export async function getPublicBlueprint(functionId: string): Promise<PublicBlue
   };
 }
 
-async function loadScoringBlocks(functionId: string): Promise<ScoringBlock[]> {
-  const { pillars, blocks } = await loadBlocks(functionId);
+async function loadScoringBlocks(
+  functionId: string,
+  selectedBlockIds?: string[] | null,
+): Promise<ScoringBlock[]> {
+  const { pillars, blocks } = await loadBlocks(functionId, selectedBlockIds);
   const pillarById = new Map(pillars.map((p) => [p.id, p]));
   return blocks.map((b) => {
     const p = pillarById.get(b.pillar_id)!;
@@ -191,6 +209,77 @@ export interface FunctionRow {
   nameAr: string | null;
   domainKey: string | null;
   nodeStatus: "active" | "inactive";
+}
+
+// ── Custom-builder picker data: a function's knowledge skills + hands-on tasks ──
+export interface CustomBuilderBlock {
+  id: string;
+  nameEn: string;
+  nameAr: string | null;
+  engineType: EngineType;
+  reviewStatus: string;
+}
+export interface CustomBuilderPillar {
+  id: string;
+  nameEn: string;
+  blocks: CustomBuilderBlock[];
+}
+export interface CustomBuilderData {
+  functionId: string;
+  nodeId: string | null;
+  nameEn: string;
+  /** Knowledge (MCQ) skills declared on the function blueprint. */
+  skills: string[];
+  /** Hands-on tasks grouped by category (active blocks only). */
+  pillars: CustomBuilderPillar[];
+}
+
+/** Skills + hands-on tasks for the pick-and-choose custom-assessment builder. */
+export async function getCustomBuilderData(functionId: string): Promise<CustomBuilderData | null> {
+  const sb = createServiceClient();
+  const { data: fn, error } = await sb
+    .from("technical_functions")
+    .select("id, node_id, name_en, skills_en")
+    .eq("id", functionId)
+    .maybeSingle<{ id: string; node_id: string | null; name_en: string; skills_en: string[] | null }>();
+  if (error || !fn) return null;
+
+  // review_status is read tolerantly (00120). The picker shows it so the admin
+  // knows a custom sitting on unapproved tasks is fine (it is indicative anyway).
+  const { pillars, blocks } = await loadBlocks(functionId);
+  const reviewById = new Map<string, string>();
+  {
+    const ids = blocks.map((b) => b.id);
+    if (ids.length > 0) {
+      const { data: rev } = await sb
+        .from("technical_skill_blocks")
+        .select("id, review_status")
+        .in("id", ids);
+      for (const r of (rev ?? []) as Array<{ id: string; review_status?: string }>) {
+        reviewById.set(r.id, r.review_status ?? "draft");
+      }
+    }
+  }
+
+  return {
+    functionId: fn.id,
+    nodeId: fn.node_id,
+    nameEn: fn.name_en,
+    skills: (fn.skills_en ?? []).filter(Boolean),
+    pillars: pillars.map((p) => ({
+      id: p.id,
+      nameEn: p.name_en,
+      blocks: blocks
+        .filter((b) => b.pillar_id === p.id)
+        .map((b) => ({
+          id: b.id,
+          nameEn: b.name_en,
+          nameAr: b.name_ar ?? null,
+          engineType: b.engine_type as EngineType,
+          reviewStatus: reviewById.get(b.id) ?? "draft",
+        })),
+    })),
+  };
 }
 
 /** Node index for admin pickers. activeOnly = functions with seeded content. */
@@ -248,18 +337,35 @@ export interface CreateSessionInput {
   /** MCQ section weight (0-100). >0 provisions a keyed MCQ knowledge section
    *  alongside the hands-on blocks (the combined technical assessment). */
   mcqPct?: number;
+  /** Custom (pick-and-choose) sitting: a subset of ONE function's skills/tasks.
+   *  Indicative by design - a custom sitting issues no credential. */
+  isCustom?: boolean;
+  /** MCQ section restricted to these function skills (empty = all). */
+  selectedSkills?: string[];
+  /** Sandbox section restricted to these block ids (empty = all active). */
+  selectedBlockIds?: string[];
 }
 export async function createSession(input: CreateSessionInput) {
   const sb = createServiceClient();
   const mcqPct = Math.max(0, Math.min(100, Math.round(input.mcqPct ?? 0)));
+  const isCustom = input.isCustom === true;
+  const selectedSkills = (input.selectedSkills ?? []).filter(Boolean);
+  const selectedBlockIds = (input.selectedBlockIds ?? []).filter(Boolean);
 
   // Provision the keyed MCQ test up front (held server-side; stripped before it
   // reaches the browser). Built in English for v1 - the sandbox blocks keep
-  // their bilingual toggle; the MCQ section is English-only for now.
+  // their bilingual toggle; the MCQ section is English-only for now. A custom
+  // sitting narrows the MCQ to the chosen skills; a custom sitting with no
+  // chosen skills has NO knowledge section (don't fall back to the full set).
+  const wantsMcq = mcqPct > 0 && (!isCustom || selectedSkills.length > 0);
   let mcqTest: TechTest | null = null;
-  if (mcqPct > 0) {
+  if (wantsMcq) {
     try {
-      mcqTest = await buildMcqTestForFunction(input.functionId, "en");
+      mcqTest = await buildMcqTestForFunction(
+        input.functionId,
+        "en",
+        isCustom ? selectedSkills : null,
+      );
     } catch {
       mcqTest = null;
     }
@@ -276,17 +382,34 @@ export async function createSession(input: CreateSessionInput) {
   // Only carry the MCQ section when there's a usable test, so a generation
   // miss falls back to sandbox-only rather than an empty knowledge section.
   const mcqRow =
-    mcqPct > 0 && mcqTest && mcqTest.items.length > 0
+    wantsMcq && mcqTest && mcqTest.items.length > 0
       ? { mcq_pct: mcqPct, mcq_test: mcqTest }
       : {};
+  // Custom selection (migration 00121). Store the selections VERBATIM - an empty
+  // array is a meaningful "narrow to zero" (e.g. selected_block_ids=[] is a
+  // knowledge-only sitting), distinct from NULL (a legacy/full-blueprint sitting).
+  const customRow = isCustom
+    ? {
+        is_custom: true,
+        selected_skills: selectedSkills,
+        selected_block_ids: selectedBlockIds,
+      }
+    : {};
 
   let { data, error } = await sb
     .from("technical_sandbox_sessions")
-    .insert({ ...baseRow, ...mcqRow })
+    .insert({ ...baseRow, ...mcqRow, ...customRow })
     .select("id, access_token")
     .single();
-  // Tolerant of migration 00085 not applied: retry without the MCQ columns.
   if (error && isMissingSchemaError(error)) {
+    // A custom sitting's "indicative, no credential" guarantee rests on the
+    // is_custom column. NEVER silently drop it on a fallback insert - that would
+    // let a custom sitting mint a credential. Fail loud instead: custom sittings
+    // require migration 00121.
+    if (isCustom) {
+      throw new Error("Custom technical sittings require migration 00121 to be applied.");
+    }
+    // Non-custom: tolerant of migration 00085 not applied (retry without MCQ cols).
     ({ data, error } = await sb
       .from("technical_sandbox_sessions")
       .insert(baseRow)
@@ -315,8 +438,9 @@ export async function startSession(token: string) {
   if (!session) throw new Error("Invalid token");
   if (session.status === "submitted") return session;
   if (session.started_at) return session;
-  const blocks = await loadScoringBlocks(session.function_id);
-  const sandboxSeconds = (await loadBlocks(session.function_id)).blocks.reduce(
+  const selectedBlockIds = (session.selected_block_ids ?? null) as string[] | null;
+  const blocks = await loadScoringBlocks(session.function_id, selectedBlockIds);
+  const sandboxSeconds = (await loadBlocks(session.function_id, selectedBlockIds)).blocks.reduce(
     (s, b) => s + (b.time_limit_seconds ?? 1200),
     0,
   );
@@ -376,7 +500,14 @@ export async function submitSession(
   // Already finalized: never echo the raw row (it carries the keyed mcq_test).
   if (session.status === "submitted") return { alreadySubmitted: true as const };
 
-  const scoringBlocks = await loadScoringBlocks(session.function_id);
+  const selectedBlockIds = (session.selected_block_ids ?? null) as string[] | null;
+  const selectedSkills = (session.selected_skills ?? null) as string[] | null;
+  // A sitting is custom (indicative, no credential) if EITHER the explicit flag
+  // is set OR any narrowing column is present. Defense-in-depth: even if the
+  // is_custom flag were ever lost, a stored selection still blocks the credential.
+  const isCustom =
+    session.is_custom === true || selectedSkills != null || selectedBlockIds != null;
+  const scoringBlocks = await loadScoringBlocks(session.function_id, selectedBlockIds);
   const { data: responses } = await sb
     .from("technical_sandbox_responses")
     .select("skill_block_id, work")
@@ -491,8 +622,32 @@ export async function submitSession(
   // The technical_proficiency credential keeps its "bank-certified" invariant:
   // issued only for a passing combined sitting whose knowledge section was
   // assembled from SME-approved bank items (not an AI-generated fallback).
+  // Sandbox half certification (Build 2): every scored hands-on task must be
+  // SME-approved (review_status='approved') for a certified combined credential.
+  // Tolerant of migration 00120 not being applied (the review_status read fails
+  // -> rev is null -> sandboxCertified stays true, preserving prior behaviour).
+  let sandboxCertified = true;
+  {
+    const scoredBlockIds = scoringBlocks.map((b) => b.id);
+    if (scoredBlockIds.length > 0) {
+      const { data: rev } = await sb
+        .from("technical_skill_blocks")
+        .select("id, review_status")
+        .in("id", scoredBlockIds);
+      if (rev && rev.length > 0) {
+        sandboxCertified = rev.every(
+          (r) => (r as { review_status?: string }).review_status === "approved",
+        );
+      }
+    }
+  }
+
   let credentialCode: string | null = null;
-  const eligibleToCertify = hasMcqSection && !!mcqTest?.certified && combined.passed;
+  // A custom (pick-and-choose) sitting is indicative by design - a hand-picked
+  // subset of the function blueprint is not the certified whole, so it NEVER
+  // issues a credential even if the chosen tasks happen to be SME-approved.
+  const eligibleToCertify =
+    !isCustom && hasMcqSection && !!mcqTest?.certified && combined.passed && sandboxCertified;
   if (eligibleToCertify) {
     // Idempotency: reuse an existing credential for this sitting if one exists
     // (mirrors markEnrollmentComplete) so a retry can't mint a duplicate.
@@ -754,7 +909,8 @@ export async function getSessionReport(token: string): Promise<SessionReport | n
     .select("name_en, node_id")
     .eq("id", session.function_id)
     .single();
-  const { pillars, blocks } = await loadBlocks(session.function_id);
+  const selectedBlockIds = (session.selected_block_ids ?? null) as string[] | null;
+  const { pillars, blocks } = await loadBlocks(session.function_id, selectedBlockIds);
   const { data: responses } = await sb
     .from("technical_sandbox_responses")
     .select("skill_block_id, score_pct, band, checkpoint_results")

@@ -70,6 +70,45 @@ export async function createSandboxSessionAction(input: {
   return { ok: true, token: accessToken };
 }
 
+/**
+ * Issue a CUSTOM (pick-and-choose) technical sitting from one function: a chosen
+ * subset of its knowledge skills and/or hands-on tasks. Indicative by design -
+ * a hand-picked subset of the blueprint is not the certified whole, so a custom
+ * sitting issues NO credential (enforced server-side in submitSession too).
+ */
+export async function createCustomSandboxSessionAction(input: {
+  functionId: string;
+  selectedSkills: string[];
+  selectedBlockIds: string[];
+  mcqPct: number;
+  candidateName?: string;
+  candidateEmail?: string;
+  organizationName?: string;
+}): Promise<Result<{ token: string }>> {
+  const g = await guard();
+  if ("error" in g) return g;
+  if (!input.functionId) return { error: "Select a function." };
+  const skills = (input.selectedSkills ?? []).filter(Boolean);
+  const blockIds = (input.selectedBlockIds ?? []).filter(Boolean);
+  const mcqPct = Math.max(0, Math.min(100, Math.round(input.mcqPct ?? 0)));
+  // Must assess something: at least one hands-on task, or a knowledge section.
+  if (blockIds.length === 0 && !(mcqPct > 0 && skills.length > 0)) {
+    return { error: "Pick at least one hands-on task, or select knowledge skills with a knowledge weight." };
+  }
+  const { accessToken } = await createSession({
+    functionId: input.functionId,
+    candidateName: input.candidateName,
+    candidateEmail: input.candidateEmail,
+    organizationName: input.organizationName,
+    invitedBy: "userId" in g ? g.userId : undefined,
+    isCustom: true,
+    mcqPct,
+    selectedSkills: skills,
+    selectedBlockIds: blockIds,
+  });
+  return { ok: true, token: accessToken };
+}
+
 export async function generateVouchersAction(input: {
   functionId: string;
   count: number;

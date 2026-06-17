@@ -415,6 +415,24 @@ export function Runner({
         </div>
       </header>
 
+      {/* Knowledge-only custom sitting: no hands-on tasks - go straight to submit. */}
+      {blocks.length === 0 && (
+        <section className="space-y-4 rounded-lg border border-border bg-card p-6 text-center">
+          <p className="text-sm text-muted-foreground">
+            {ar
+              ? "لا توجد مهام عملية في هذا التقييم. اضغط للإنهاء والتسليم."
+              : "This assessment has no hands-on tasks. Press to finish and submit."}
+          </p>
+          <button
+            onClick={() => void submit()}
+            disabled={submitting}
+            className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+          >
+            {submitting ? (ar ? "جارٍ التسليم…" : "Submitting…") : ar ? "إنهاء وتسليم" : "Finish & submit"}
+          </button>
+        </section>
+      )}
+
       {current && (
         <section className="space-y-3 rounded-lg border border-border bg-card p-4">
           <div className="flex items-center justify-between text-sm text-muted-foreground">

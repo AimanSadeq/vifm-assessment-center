@@ -535,7 +535,11 @@ function PersonaResult({
 
   const fit: FitResult | null = useMemo(() => {
     if (purpose !== "hiring" || !role) return null;
-    return computeFit(scoreById, role.comps);
+    // Compute fit only over the role competencies that were actually served
+    // (a scoped sitting may omit some). Mirrors the PDF route so the on-screen
+    // and downloaded fit can never diverge; unmeasured comps must not count as 0.
+    const measured = role.comps.filter((c) => scoreById.has(c.competencyId));
+    return computeFit(scoreById, measured);
   }, [purpose, role, scoreById]);
 
   const nameById = useMemo(

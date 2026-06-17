@@ -41,9 +41,10 @@ export type CreateBatchInput = {
   scopedCompetencyIds?: string[] | null;
 };
 
-/** Postgres undefined_column (42703) - migration 00123 not applied yet. */
+/** Undefined column - migration 00123 not applied yet. Postgres raises 42703
+ *  on a read; PostgREST raises PGRST204 on a write (schema-cache miss). */
 function isMissingColumnError(err: { code?: string } | null): boolean {
-  return err?.code === "42703";
+  return err?.code === "42703" || err?.code === "PGRST204";
 }
 
 export async function createVoucherBatch(

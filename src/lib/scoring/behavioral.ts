@@ -44,6 +44,17 @@ export async function getOrCreateBehavioralSession(
 }
 
 /**
+ * True for an "undefined column" error from either path: Postgres raises 42703
+ * on a SELECT of a missing column; PostgREST raises PGRST204 ("Could not find
+ * the 'X' column ... in the schema cache") on a write. Used to drive the
+ * strip-and-retry fallbacks when a migration (00110 / 00123) isn't applied -
+ * a message regex misses the write-path shape, so key on the codes.
+ */
+function isMissingColumnError(err: { code?: string } | null): boolean {
+  return err?.code === "42703" || err?.code === "PGRST204";
+}
+
+/**
  * Create an anonymous Persona session - no candidate, no engagement, just a
  * name label (migration 00098). Used by the standalone runner at /ac/persona.
  * Throws if 00098 isn't applied (candidate_id/engagement_id still NOT NULL);
@@ -96,14 +107,16 @@ export async function createAnonymousBehavioralSession(
     .insert(withScope)
     .select("id, status")
     .single();
-  if (error && /column .*scoped_competency_ids/i.test(error.message)) {
+  if (error && isMissingColumnError(error)) {
+    // Strip the 00123 scope column and retry.
     ({ data, error } = await sb
       .from("behavioral_assessment_sessions")
       .insert(extended)
       .select("id, status")
       .single());
   }
-  if (error && /column .*(purpose|target_role_profile_id|randomization_seed)/i.test(error.message)) {
+  if (error && isMissingColumnError(error)) {
+    // Strip the 00110 purpose/target/seed columns and retry the base row.
     ({ data, error } = await sb
       .from("behavioral_assessment_sessions")
       .insert(base)
@@ -195,15 +208,41 @@ export async function saveBehavioralAnswers(
 ): Promise<{ ok: boolean; error?: string }> {
   if (answers.length === 0) return { ok: true };
   const sb = createServiceClient();
-  const { data: session } = await sb
-    .from("behavioral_assessment_sessions")
-    .select("id, status")
-    .eq("id", sessionId)
-    .maybeSingle();
+  // Read the session WITH its pinned scope (00123). Tolerant of the column
+  // being absent - fall back to the basic select.
+  type SessionScopeRow = { id: string; status: string; scoped_competency_ids?: string[] | null };
+  let session: SessionScopeRow | null = null;
+  {
+    const wide = await sb
+      .from("behavioral_assessment_sessions")
+      .select("id, status, scoped_competency_ids")
+      .eq("id", sessionId)
+      .maybeSingle();
+    if (wide.error && isMissingColumnError(wide.error)) {
+      const basic = await sb
+        .from("behavioral_assessment_sessions")
+        .select("id, status")
+        .eq("id", sessionId)
+        .maybeSingle();
+      session = (basic.data as SessionScopeRow) ?? null;
+    } else {
+      session = (wide.data as SessionScopeRow) ?? null;
+    }
+  }
   if (!session) return { ok: false, error: "Invalid session" };
   if (session.status === "submitted") return { ok: false, error: "Session already submitted" };
 
-  const valid = answers.filter((a) => Number.isInteger(a.rawScore) && a.rawScore >= 1 && a.rawScore <= 5);
+  // Enforce the admin-pinned competency scope at the PERSISTENCE layer, not just
+  // at render. The take page is auth-bypassed and the save action is keyed only
+  // by sessionId, so a crafted call could otherwise inject out-of-scope answers
+  // and widen a pinned assessment. Empty/null scope = full bank (no filtering).
+  const scopeSet =
+    Array.isArray(session.scoped_competency_ids) && session.scoped_competency_ids.length > 0
+      ? new Set(session.scoped_competency_ids)
+      : null;
+  const inScope = scopeSet ? answers.filter((a) => scopeSet.has(a.competencyId)) : answers;
+
+  const valid = inScope.filter((a) => Number.isInteger(a.rawScore) && a.rawScore >= 1 && a.rawScore <= 5);
   const baseRow = (a: BehavioralAnswer) => ({
     session_id: sessionId,
     item_key: a.itemKey,
@@ -224,7 +263,7 @@ export async function saveBehavioralAnswers(
   let { error } = await sb
     .from("behavioral_assessment_responses")
     .upsert(rowsExtended, { onConflict: "session_id,item_key" });
-  if (error && hasExtended && /column .*(item_type|answer_data)/i.test(error.message)) {
+  if (error && hasExtended && isMissingColumnError(error)) {
     ({ error } = await sb
       .from("behavioral_assessment_responses")
       .upsert(valid.map(baseRow), { onConflict: "session_id,item_key" }));

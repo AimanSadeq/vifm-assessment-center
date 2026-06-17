@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowLeft, Bot } from "lucide-react";
 import { AllServicesLink } from "@/components/shared/all-services-link";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getCurrentCaller, type AraCaller } from "@/lib/ara/auth-guards";
 import { getServerT } from "@/lib/i18n/server";
 import { isAIConfigured } from "@/lib/ai/client";
 import {
@@ -43,14 +45,17 @@ type MatrixRow = {
 // CBI-type assignments + the competencies mapped to each (so an assessor
 // can run the AI interview inside a real candidate/exercise context and
 // write the reviewed result back into the observation/rating pipeline).
-async function fetchCbiAssignments(): Promise<CbiAssignmentContext[]> {
+async function fetchCbiAssignments(caller: AraCaller): Promise<CbiAssignmentContext[]> {
   const sb = createServiceClient();
-  const { data: rawAssigns } = await sb
+  let query = sb
     .from("assessor_assignments")
     .select(
       "id, engagement_id, candidate_id, exercise_id, candidates(full_name), exercises!inner(name, exercise_type), engagements(name)"
     )
     .eq("exercises.exercise_type", "competency_based_interview");
+  // Assessors see only their own CBI assignments; admins see all.
+  if (caller.role !== "admin") query = query.eq("assessor_id", caller.uid);
+  const { data: rawAssigns } = await query;
 
   const assigns = (rawAssigns ?? []) as unknown as AssignmentRow[];
   if (assigns.length === 0) return [];
@@ -80,9 +85,14 @@ async function fetchCbiAssignments(): Promise<CbiAssignmentContext[]> {
 }
 
 export default async function AiInterviewPage() {
+  // Assessor (or admin) only - the CBI write-path feeds the rating pipeline.
+  const caller = await getCurrentCaller();
+  if (!caller || !["lead_assessor", "associate_assessor", "admin"].includes(caller.role)) {
+    notFound();
+  }
   const [competencies, assignments, aiConfigured, t] = await Promise.all([
     fetchCompetencies(),
-    fetchCbiAssignments(),
+    fetchCbiAssignments(caller),
     Promise.resolve(isAIConfigured()),
     getServerT(),
   ]);

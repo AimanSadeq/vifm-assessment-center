@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Aperture, FileText } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { canAccessReflectParticipant } from "@/lib/reflect/report-access";
 import { getServerT } from "@/lib/i18n/server";
 import { IdpEditor } from "./_components/idp-editor";
 import type { IdpAction, IdpPriority, ReflectIdpStatus } from "@/lib/reflect/idp-actions";
@@ -75,6 +76,7 @@ async function fetchIdpContext(participantId: string) {
 
 export default async function ReflectIdpPage({ params }: Params) {
   const { id } = await params;
+  if (!(await canAccessReflectParticipant(id))) return notFound();
   const ctx = await fetchIdpContext(id);
   if (!ctx) return notFound();
   const t = await getServerT();

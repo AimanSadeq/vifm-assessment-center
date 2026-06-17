@@ -114,6 +114,8 @@ export async function setCandidateRoleProfileAction(values: SetCandidateRoleProf
 }
 
 export async function createAssignmentAction(values: CreateAssignmentValues) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
   const parsed = createAssignmentSchema.safeParse(values);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
@@ -137,6 +139,8 @@ export async function addDemoAssessorAction(values: {
   fullName: string;
   email: string;
 }) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
   const supabase = createServiceClient();
 
   // Create auth user first, then profile
@@ -264,6 +268,8 @@ export async function inviteCandidateToPortalAction(candidateId: string) {
 }
 
 export async function removeCandidateAction(candidateId: string) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
   const supabase = await createClient();
   const { error } = await supabase.from("candidates").delete().eq("id", candidateId);
   if (error) return { error: error.message };
@@ -271,6 +277,8 @@ export async function removeCandidateAction(candidateId: string) {
 }
 
 export async function deleteAssignmentAction(assignmentId: string) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
   const supabase = await createClient();
   const { error } = await supabase.from("assessor_assignments").delete().eq("id", assignmentId);
   if (error) return { error: error.message };
@@ -278,6 +286,8 @@ export async function deleteAssignmentAction(assignmentId: string) {
 }
 
 export async function updateEngagementStatusAction(engagementId: string, status: string) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
   const supabase = await createClient();
   const validStatuses = ["draft", "active", "completed", "archived"];
   if (!validStatuses.includes(status)) return { error: "Invalid status" };
@@ -297,6 +307,79 @@ export async function updateEngagementStatusAction(engagementId: string, status:
   }
 
   return { success: true };
+}
+
+// Report release. The candidate report viewer (/candidate/report/[id]) and the
+// client results view only show a report once a candidate_reports row exists
+// with status='released' (RLS enforces this for candidates + clients). Nothing
+// else writes that table, so without this action a finalised report is never
+// visible in-app. Admin-gated; service-role write (mirrors other admin writes).
+// candidate_reports has no unique(engagement,candidate), so we update-or-insert.
+async function releaseReportsFor(engagementId: string, candidateIds: string[]): Promise<number> {
+  const sb = createServiceClient();
+  const nowIso = new Date().toISOString();
+  let released = 0;
+  for (const candidateId of candidateIds) {
+    const { data: updated } = await sb
+      .from("candidate_reports")
+      .update({ status: "released", released_at: nowIso })
+      .eq("engagement_id", engagementId)
+      .eq("candidate_id", candidateId)
+      .select("id");
+    if (updated && updated.length > 0) {
+      released += updated.length;
+    } else {
+      const { error: insErr } = await sb
+        .from("candidate_reports")
+        .insert({ engagement_id: engagementId, candidate_id: candidateId, status: "released", released_at: nowIso });
+      if (!insErr) released += 1;
+    }
+    // Best-effort: notify the candidate their report is available.
+    try {
+      const { data: cand } = await sb.from("candidates").select("profile_id, full_name").eq("id", candidateId).maybeSingle();
+      const pid = (cand as { profile_id?: string | null } | null)?.profile_id;
+      if (pid) {
+        await publishNotification({
+          profileId: pid,
+          kind: "report_released",
+          title: "Your assessment report is ready",
+          body: "Your assessment center report has been released and is now available to view.",
+          link: `/candidate/report/${candidateId}`,
+        });
+      }
+    } catch { /* notifications optional */ }
+  }
+  return released;
+}
+
+/** Release one candidate's report (admin-gated). */
+export async function releaseReportAction(engagementId: string, candidateId: string) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+  if (!engagementId || !candidateId) return { error: "Missing engagement or candidate id" };
+  try {
+    const released = await releaseReportsFor(engagementId, [candidateId]);
+    return { ok: true as const, released };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Could not release the report" };
+  }
+}
+
+/** Release all of an engagement's candidate reports (admin-gated). */
+export async function releaseAllReportsAction(engagementId: string) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+  if (!engagementId) return { error: "Missing engagement id" };
+  try {
+    const sb = createServiceClient();
+    const { data: cands } = await sb.from("candidates").select("id").eq("engagement_id", engagementId);
+    const ids = (cands ?? []).map((c) => c.id as string);
+    if (ids.length === 0) return { ok: true as const, released: 0 };
+    const released = await releaseReportsFor(engagementId, ids);
+    return { ok: true as const, released };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Could not release reports" };
+  }
 }
 
 // G7 - re-engages a cohort against the same role profile after a prior

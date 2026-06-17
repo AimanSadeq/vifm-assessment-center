@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
+import { canAccessReflectEngagement } from "@/lib/reflect/report-access";
 import { GamifiedRaterForm } from "@/app/reflect/respond/[token]/_components/gamified-rater-form";
 import { BackLink } from "@/components/shared/back-link";
 import type {
@@ -20,6 +21,7 @@ type Params = { params: Promise<{ id: string }> };
 // experience without creating raters or sending invites.
 export default async function PreviewRaterPage({ params }: Params) {
   const { id } = await params;
+  if (!(await canAccessReflectEngagement(id))) return notFound();
   const sb = createServiceClient();
 
   const { data: engagement } = await sb

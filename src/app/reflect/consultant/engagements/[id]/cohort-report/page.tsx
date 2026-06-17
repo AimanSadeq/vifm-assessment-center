@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { computeCohortScoring, type CohortScoring } from "@/lib/reflect/scoring";
+import { canAccessReflectEngagement } from "@/lib/reflect/report-access";
 import {
   recommendCoursesForReflectCohort,
   HIGH_FIT_THRESHOLD,
@@ -16,6 +17,7 @@ export default async function ReflectCohortReportPage({
   searchParams,
 }: Params & { searchParams: SearchParams }) {
   const { id } = await params;
+  if (!(await canAccessReflectEngagement(id))) return notFound();
   const sp = await searchParams;
   const scoring = await computeCohortScoring(id);
   if (!scoring) return notFound();

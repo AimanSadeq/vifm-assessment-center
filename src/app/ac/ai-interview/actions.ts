@@ -1,7 +1,37 @@
 "use server";
 
 import { createServiceClient } from "@/lib/supabase/server";
+import { requireRole, isAuthorizationError, type AraCaller } from "@/lib/ara/auth-guards";
 import { revalidatePath } from "next/cache";
+
+// Role gate: only assessors (or admin) may use the CBI write-paths. Under
+// AUTH_ENABLED=false requireRole returns a synthetic admin so dev still works;
+// under auth=on it enforces. The actions use the service client (RLS-bypassing),
+// so this app-layer gate + the ownership check below are the real enforcement.
+async function gateCbi(): Promise<{ caller: AraCaller } | { error: string }> {
+  try {
+    const caller = await requireRole(["lead_assessor", "associate_assessor", "admin"]);
+    return { caller };
+  } catch (e) {
+    if (isAuthorizationError(e)) return { error: e.message };
+    throw e;
+  }
+}
+
+// An assessor may only act on an assignment they own; admins may act on any.
+async function callerOwnsAssignment(
+  sb: ReturnType<typeof createServiceClient>,
+  caller: AraCaller,
+  assignmentId: string,
+): Promise<boolean> {
+  if (caller.role === "admin") return true;
+  const { data } = await sb
+    .from("assessor_assignments")
+    .select("assessor_id")
+    .eq("id", assignmentId)
+    .maybeSingle<{ assessor_id: string }>();
+  return !!data && data.assessor_id === caller.uid;
+}
 
 /**
  * Server actions for the AI Conversational Assessor production path.
@@ -34,9 +64,14 @@ export type PersistCbiDraftInput = {
 export async function persistCbiDraftAction(
   input: PersistCbiDraftInput
 ): Promise<{ id: string } | { error: string }> {
+  const gate = await gateCbi();
+  if ("error" in gate) return gate;
   if (!input.competencyId) return { error: "competencyId is required" };
 
   const sb = createServiceClient();
+  if (input.assessorAssignmentId && !(await callerOwnsAssignment(sb, gate.caller, input.assessorAssignmentId))) {
+    return { error: "You can only draft for your own assignment." };
+  }
   const { data, error } = await sb
     .from("cbi_sessions")
     .insert({
@@ -74,6 +109,8 @@ export async function approveCbiToPipelineAction(
   input: ApproveCbiInput
 ): Promise<{ observationsWritten: number; rating: number } | { error: string }> {
   // ── Gate validation ──
+  const gate = await gateCbi();
+  if ("error" in gate) return gate;
   if (!input.assessorAssignmentId) {
     return { error: "An assessor assignment is required to write to the pipeline." };
   }
@@ -84,6 +121,11 @@ export async function approveCbiToPipelineAction(
   }
 
   const sb = createServiceClient();
+  // Ownership: an assessor can only approve into an assignment they own. This is
+  // the gate that stops AI evidence being injected into another assessor's work.
+  if (!(await callerOwnsAssignment(sb, gate.caller, input.assessorAssignmentId))) {
+    return { error: "You can only approve evidence for your own assignment." };
+  }
 
   // 1. Write each kept evidence item as an observation (mirrors the
   //    manual saveObservationAction shape exactly).
@@ -138,6 +180,8 @@ export async function approveCbiToPipelineAction(
 export async function discardCbiSessionAction(
   sessionId: string
 ): Promise<{ success: true } | { error: string }> {
+  const gate = await gateCbi();
+  if ("error" in gate) return gate;
   if (!sessionId) return { error: "sessionId is required" };
   const sb = createServiceClient();
   const { error } = await sb

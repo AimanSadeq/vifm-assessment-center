@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowLeft, Inbox, Mail, Building2, Calendar } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getCurrentCaller } from "@/lib/ara/auth-guards";
 import { getServerT } from "@/lib/i18n/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +52,10 @@ export default async function QuoteRequestsListPage({
 }: {
   searchParams?: { status?: string };
 }) {
+  // Admin-only: the page reads lead-capture PII via the service-role client,
+  // and the admin shell has no role gate of its own, so guard here.
+  const caller = await getCurrentCaller();
+  if (!caller || caller.role !== "admin") notFound();
   const sb = createServiceClient();
   const t = await getServerT();
   const filter = (searchParams?.status ?? "").toLowerCase();

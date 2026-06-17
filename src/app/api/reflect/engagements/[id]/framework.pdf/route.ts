@@ -43,6 +43,9 @@ export async function GET(
     browser = await launchBrowser();
     const page = await browser.newPage();
     await page.setViewport({ width: 1200, height: 900, deviceScaleFactor: 1 });
+    // Preview page is access-gated; forward the requester's session cookies.
+    const cookieHeader = req.headers.get("cookie");
+    if (cookieHeader) await page.setExtraHTTPHeaders({ cookie: cookieHeader });
     await page.goto(previewUrl, { waitUntil: "networkidle0", timeout: 60_000 });
 
     const pdf = await page.pdf({

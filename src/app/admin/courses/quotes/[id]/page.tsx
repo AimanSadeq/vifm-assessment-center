@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ExternalLink, Mail, Phone, Building2, Calendar, Globe2, Users } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getCurrentCaller } from "@/lib/ara/auth-guards";
 import { getServerT } from "@/lib/i18n/server";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,8 @@ export default async function QuoteRequestDetailPage({
 }: {
   params: { id: string };
 }) {
+  const caller = await getCurrentCaller();
+  if (!caller || caller.role !== "admin") notFound();
   const sb = createServiceClient();
   const t = await getServerT();
   const { data: q } = await sb

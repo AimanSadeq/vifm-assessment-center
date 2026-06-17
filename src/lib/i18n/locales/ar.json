@@ -1845,6 +1845,7 @@
       "colActions": "إجراءات",
       "pdf": "PDF",
       "toastReportsShared": "تمت مشاركة التقارير مع {{name}}",
+      "toastReportsShareFailed": "تعذّر إصدار التقرير",
       "share": "مشاركة",
       "toastReportsAutoShared": "تمت مشاركة التقارير تلقائيًا مع {{n}} مرشّح",
       "autoShareAll": "مشاركة جميع التقارير تلقائيًا",

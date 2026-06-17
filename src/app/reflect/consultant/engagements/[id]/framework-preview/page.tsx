@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
+import { canAccessReflectEngagement } from "@/lib/reflect/report-access";
 import { loadReflectFrameworkForEngagement } from "@/lib/reflect/actions";
 import { BackLink } from "@/components/shared/back-link";
 
@@ -13,6 +14,7 @@ export default async function ReflectFrameworkPreviewPage({
   searchParams,
 }: Params & { searchParams: SearchParams }) {
   const { id } = await params;
+  if (!(await canAccessReflectEngagement(id))) return notFound();
   const sp = await searchParams;
 
   const sb = createServiceClient();

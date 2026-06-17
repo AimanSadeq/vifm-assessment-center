@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { computeParticipantScoring, type ParticipantScoring } from "@/lib/reflect/scoring";
+import { canAccessReflectParticipant } from "@/lib/reflect/report-access";
 import {
   recommendCoursesForReflectParticipant,
   HIGH_FIT_THRESHOLD,
@@ -20,6 +21,9 @@ export default async function ReflectParticipantReportPage({
   searchParams,
 }: Params & { searchParams: SearchParams }) {
   const { id } = await params;
+  // Access control: admin or the owning consultant only. The PDF route forwards
+  // the owner's cookies to Puppeteer, so server-side rendering still authorises.
+  if (!(await canAccessReflectParticipant(id))) return notFound();
   const sp = await searchParams;
   const scoring = await computeParticipantScoring(id);
   if (!scoring) return notFound();

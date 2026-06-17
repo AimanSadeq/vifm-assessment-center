@@ -15,6 +15,7 @@ import {
   FileText,
 } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { canAccessReflectEngagement } from "@/lib/reflect/report-access";
 import { getServerT, type ServerT } from "@/lib/i18n/server";
 import { cn } from "@/lib/utils";
 import { DebriefRowActions } from "./_components/debrief-row-actions";
@@ -120,6 +121,7 @@ async function fetchEngagement(id: string) {
 
 export default async function ReflectEngagementDetailPage({ params }: Params) {
   const { id } = await params;
+  if (!(await canAccessReflectEngagement(id))) notFound();
   const data = await fetchEngagement(id);
   if (!data) notFound();
   const t = await getServerT();

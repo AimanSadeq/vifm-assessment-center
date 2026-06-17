@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { addCandidateAction, createAssignmentAction, addDemoAssessorAction, updateEngagementStatusAction, removeCandidateAction, deleteAssignmentAction, setCandidateRoleProfileAction, createReengagementAction, inviteCandidateToPortalAction } from "../actions";
+import { addCandidateAction, createAssignmentAction, addDemoAssessorAction, updateEngagementStatusAction, removeCandidateAction, deleteAssignmentAction, setCandidateRoleProfileAction, createReengagementAction, inviteCandidateToPortalAction, releaseReportAction, releaseAllReportsAction } from "../actions";
 import { Trash2, Send, FileText, CheckCircle, Eye, Repeat2, Loader2, History, Grid3x3, KeyRound } from "lucide-react";
 import Link from "next/link";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -1080,7 +1080,12 @@ export function EngagementDetail({
                               size="sm"
                               variant="outline"
                               className="gap-1"
-                              onClick={() => {
+                              onClick={async () => {
+                                const res = await releaseReportAction(engagement.id as string, c.id as string);
+                                if (res && "error" in res && res.error) {
+                                  toast.error(typeof res.error === "string" ? res.error : t("adminEngagements.detail.toastReportsShareFailed"));
+                                  return;
+                                }
                                 toast.success(t("adminEngagements.detail.toastReportsShared", { name: c.full_name as string }));
                               }}
                             >
@@ -1101,8 +1106,14 @@ export function EngagementDetail({
                   <Button
                     variant="default"
                     className="gap-2"
-                    onClick={() => {
-                      toast.success(t("adminEngagements.detail.toastReportsAutoShared", { n: candidates.length }));
+                    onClick={async () => {
+                      const res = await releaseAllReportsAction(engagement.id as string);
+                      if (res && "error" in res && res.error) {
+                        toast.error(typeof res.error === "string" ? res.error : t("adminEngagements.detail.toastReportsShareFailed"));
+                        return;
+                      }
+                      const n = (res && "released" in res && typeof res.released === "number") ? res.released : candidates.length;
+                      toast.success(t("adminEngagements.detail.toastReportsAutoShared", { n }));
                     }}
                   >
                     <Send className="h-4 w-4" />

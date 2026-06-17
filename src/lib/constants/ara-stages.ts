@@ -1,4 +1,9 @@
 import type { AraEngagementStage, AraPillarId } from "@/types/ara";
+import { ARA_PILLARS } from "./ara-pillars";
+
+/** Canonical set of the 8 pillar ids - used to validate a stored
+ *  pillars_in_scope override so a stale/junk value can't slip through. */
+const ARA_PILLAR_ID_SET: ReadonlySet<AraPillarId> = new Set(ARA_PILLARS.map((p) => p.id));
 
 /**
  * Stage tiers for the AI Readiness Compass.
@@ -167,11 +172,9 @@ export function getPillarsForAssessment(args: {
   // Enterprise is always all 8 - ignore any stored override.
   if (args.engagement_stage === "enterprise") return stageDefault;
   if (!args.pillars_in_scope || args.pillars_in_scope.length === 0) return stageDefault;
-  // Sanity-filter against the canonical pillar ids so a stale value
-  // can't slip a junk string into downstream rendering.
-  const valid = args.pillars_in_scope.filter((p) =>
-    stageDefault.length === 0 || true /* validation deferred to ARA_PILLARS */
-  );
+  // Sanity-filter against the canonical pillar ids so a stale or malformed
+  // value can't slip a junk string into the scorer / renderer.
+  const valid = args.pillars_in_scope.filter((p) => ARA_PILLAR_ID_SET.has(p));
   return valid.length > 0 ? valid : stageDefault;
 }
 

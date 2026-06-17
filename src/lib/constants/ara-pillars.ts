@@ -73,6 +73,13 @@ export const ARA_MATURITY_LEVELS: ReadonlyArray<{
   min: number;
   max: number;
 }> = [
+  // The lookup (maturityLevelFromScore) is LOWER-THRESHOLD based: it picks the
+  // highest band whose min <= score, so the `max` field is display-only and a
+  // score in the 0.1 between a band's max and the next band's min still
+  // resolves to the lower band (a former-gap score like 3.95 lands in Level 3,
+  // not the old Level-1 fallthrough). The effective thresholds are the `min`
+  // values (2.0 / 3.0 / 4.0 / 4.5); maxes are kept as clean non-overlapping
+  // display bounds for the report legend.
   { level: 1, label_en: "Unaware", label_ar: "غير مدرك", min: 0.0, max: 1.9 },
   { level: 2, label_en: "Exploring", label_ar: "يستكشف", min: 2.0, max: 2.9 },
   { level: 3, label_en: "Developing", label_ar: "يطور", min: 3.0, max: 3.9 },
@@ -90,6 +97,8 @@ export const ARA_OVERALL_BANDS: ReadonlyArray<{
   max: number;
   color: string;
 }> = [
+  // Lower-threshold lookup (overallBandFromScore) - same as the maturity
+  // levels: max is display-only, the min values are the effective thresholds.
   { label_en: "Not Ready", label_ar: "غير جاهز", min: 0.0, max: 1.9, color: "#FB7185" },
   { label_en: "Early Stage", label_ar: "مرحلة مبكرة", min: 2.0, max: 2.9, color: "#FDBA74" },
   { label_en: "In Progress", label_ar: "في التقدم", min: 3.0, max: 3.9, color: "#FBBF24" },

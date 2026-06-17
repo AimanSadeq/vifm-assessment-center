@@ -160,18 +160,30 @@ export async function recalculateAssessmentCompliance(assessmentId: string): Pro
 
   if (!requirements || requirements.length === 0) return;
 
-  // Load all scored responses with their question's pillar.
+  // Load all scored responses with their question's pillar. Pillar means must
+  // reflect ONLY pillar questions - personal-layer (individual_factor_id) and
+  // Agentic-AI (agentic_dimension_id) items reuse a storage pillar_id but are
+  // separate constructs, so counting them here would contaminate the pillar
+  // (and hence compliance) means. Mirrors the exclusion in scoring.ts.
   const { data: responseRows } = await sb
     .from("ara_responses")
-    .select("question_score, question:ara_questions(pillar_id)")
+    .select("question_score, question:ara_questions(pillar_id, individual_factor_id, agentic_dimension_id)")
     .eq("assessment_id", assessmentId);
 
   type RespRow = {
     question_score: number | null;
-    question: { pillar_id: string | null } | null;
+    question: {
+      pillar_id: string | null;
+      individual_factor_id: string | null;
+      agentic_dimension_id: string | null;
+    } | null;
   };
   const responses = ((responseRows ?? []) as unknown as RespRow[]).filter(
-    (r) => r.question_score != null && r.question?.pillar_id
+    (r) =>
+      r.question_score != null &&
+      r.question?.pillar_id &&
+      r.question.individual_factor_id == null &&
+      r.question.agentic_dimension_id == null
   );
 
   // Group scored responses by pillar

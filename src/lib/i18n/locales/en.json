@@ -2655,6 +2655,7 @@
     "col_raw": "Raw",
     "col_wt": "Wt %",
     "col_weighted": "Weighted",
+    "col_weighted_title": "Contribution to the overall score. For Department/Division engagements weights are renormalized across the in-scope pillars, so this is not simply raw x configured weight %.",
     "col_maturity": "Maturity",
     "col_vs_target": "vs 4.0",
     "col_validated": "Validated",

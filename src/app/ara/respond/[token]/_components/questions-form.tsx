@@ -11,6 +11,10 @@ import {
   ARA_INDIVIDUAL_FACTORS,
   type AraIndividualFactorId,
 } from "@/lib/constants/ara-individual-factors";
+import {
+  ARA_AGENTIC_DIMENSIONS,
+  type AraAgenticDimensionId,
+} from "@/lib/constants/ara-agentic-dimensions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type {
@@ -84,11 +88,20 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
   // displayNumberById renumbers personal items 1..N in factor-then-
   // question-number order, so a Mode A respondent sees Q1..Q24 instead
   // of the org-style Q101..Q124 internal numbering.
-  const { byPillar, byFactor, displayNumberById } = useMemo(() => {
+  const { byPillar, byFactor, byAgentic, displayNumberById } = useMemo(() => {
     const byPillar = new Map<AraPillarId, AraQuestion[]>();
     const byFactor = new Map<AraIndividualFactorId, AraQuestion[]>();
+    const byAgentic = new Map<AraAgenticDimensionId, AraQuestion[]>();
     for (const q of questions) {
-      if (q.individual_factor_id) {
+      if (q.agentic_dimension_id) {
+        // Agentic-AI items reuse a storage pillar_id, so they must be routed
+        // by agentic_dimension_id FIRST or they would fall into a pillar
+        // section (e.g. Governance) instead of their own dimension section.
+        const aid = q.agentic_dimension_id as AraAgenticDimensionId;
+        const arr = byAgentic.get(aid) ?? [];
+        arr.push(q);
+        byAgentic.set(aid, arr);
+      } else if (q.individual_factor_id) {
         const fid = q.individual_factor_id as AraIndividualFactorId;
         const arr = byFactor.get(fid) ?? [];
         arr.push(q);
@@ -99,12 +112,11 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
         byPillar.set(q.pillar_id, arr);
       }
     }
-    Array.from(byPillar.values()).forEach((arr: AraQuestion[]) => {
-      arr.sort((a, b) => a.question_number - b.question_number);
-    });
-    Array.from(byFactor.values()).forEach((arr: AraQuestion[]) => {
-      arr.sort((a, b) => a.question_number - b.question_number);
-    });
+    [byPillar, byFactor, byAgentic].forEach((m) =>
+      Array.from(m.values()).forEach((arr: AraQuestion[]) =>
+        arr.sort((a, b) => a.question_number - b.question_number)
+      )
+    );
     const displayNumberById = new Map<string, number>();
     let counter = 0;
     ARA_INDIVIDUAL_FACTORS.forEach((factor) => {
@@ -114,7 +126,7 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
         displayNumberById.set(q.id, counter);
       });
     });
-    return { byPillar, byFactor, displayNumberById };
+    return { byPillar, byFactor, byAgentic, displayNumberById };
   }, [questions]);
 
   // Seed local state from existing answers.
@@ -467,6 +479,59 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
                   language={language}
                   onAnswer={updateAnswer}
                   displayNumber={displayNumberById.get(q.id)}
+                />
+              ))}
+            </div>
+          </section>
+        );
+      })}
+
+      {/* Agentic-AI Readiness sections - one per dimension, after the pillar
+           and personal-factor sections. Only present when the assessment
+           opted into the agentic layer (include_agentic_layer). */}
+      {ARA_AGENTIC_DIMENSIONS.map((dim) => {
+        const qs = byAgentic.get(dim.id) ?? [];
+        if (qs.length === 0) return null;
+
+        const dimAnswered = qs.filter((q) => {
+          const a = state[q.id];
+          return a && (a.value !== null || (q.question_type === "open_text" && a.text));
+        }).length;
+
+        return (
+          <section key={dim.id} id={`agentic-${dim.id}`} className="rounded-lg border bg-card">
+            <header className="border-b px-6 py-4 flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <span
+                  className="inline-block h-2.5 w-2.5 rounded-full mt-2 shrink-0"
+                  style={{ backgroundColor: dim.color }}
+                  aria-hidden="true"
+                />
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
+                    {rtl ? "الذكاء الاصطناعي الوكيل" : "Agentic AI"}
+                  </span>
+                  <h2 className="text-lg font-semibold text-primary">
+                    {rtl ? dim.name_ar : dim.name_en}
+                  </h2>
+                  <p className="text-sm text-muted-foreground" dir={rtl ? "ltr" : "rtl"}>
+                    {rtl ? dim.name_en : dim.name_ar}
+                  </p>
+                </div>
+              </div>
+              <Badge variant="outline" className="shrink-0">
+                {dimAnswered} / {qs.length}
+              </Badge>
+            </header>
+
+            <div className="divide-y">
+              {qs.map((q) => (
+                <QuestionRow
+                  key={q.id}
+                  question={q}
+                  answer={state[q.id]}
+                  language={language}
+                  onAnswer={updateAnswer}
                 />
               ))}
             </div>

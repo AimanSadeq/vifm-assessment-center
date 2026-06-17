@@ -51,7 +51,12 @@ interface ResponseRow {
   respondent_id: string;
   question_score: number | null;
   answered_at: string;
-  question: { pillar_id: AraPillarId | null; question_type: string | null } | null;
+  question: {
+    pillar_id: AraPillarId | null;
+    question_type: string | null;
+    individual_factor_id: string | null;
+    agentic_dimension_id: string | null;
+  } | null;
 }
 
 // Graded individual-factor items have an objective right answer, so their score
@@ -80,13 +85,21 @@ export async function computeAraDistortion(assessmentId: string): Promise<Distor
       .returns<RespondentRow[]>(),
     sb
       .from("ara_responses")
-      .select("respondent_id, question_score, answered_at, question:ara_questions(pillar_id, question_type)")
+      .select("respondent_id, question_score, answered_at, question:ara_questions(pillar_id, question_type, individual_factor_id, agentic_dimension_id)")
       .eq("assessment_id", assessmentId)
       .order("answered_at"),
   ]);
 
+  // Distortion is a PILLAR-level signal. Exclude graded items (objective
+  // answers aren't "extreme"/"straight-lining") AND personal-layer /
+  // Agentic-AI items, which reuse a storage pillar_id but are separate
+  // constructs - counting them would contaminate the pillar means (mirrors
+  // the exclusion in scoring.ts / compliance.ts).
   const allRows = ((rows ?? []) as unknown as ResponseRow[]).filter(
-    (r) => !GRADED_QUESTION_TYPES.has(r.question?.question_type ?? "")
+    (r) =>
+      !GRADED_QUESTION_TYPES.has(r.question?.question_type ?? "") &&
+      r.question?.individual_factor_id == null &&
+      r.question?.agentic_dimension_id == null
   );
 
   // Population pillar means - used as the comparison anchor for each

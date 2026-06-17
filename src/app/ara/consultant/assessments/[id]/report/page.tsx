@@ -1316,6 +1316,12 @@ export default async function AraReportPage({
               })}
             </tbody>
           </table>
+          <p className="report-body report-muted" style={{ fontSize: "8.5pt", marginTop: "4pt" }}>
+            Configured pillar weights. For Department and Division engagements the
+            overall score renormalizes these across the in-scope pillars only (so
+            the in-scope weights total 100%); pillars outside the engagement scope
+            do not contribute to the headline score.
+          </p>
 
           <h3 className="report-h3">Disclaimer</h3>
           <p className="report-body report-muted" style={{ fontSize: "9pt" }}>

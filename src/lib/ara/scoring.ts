@@ -38,23 +38,29 @@ export function calculateQuestionScore(
 // ─────────────────────────────────────────────────────────────
 // Level 3 - maturity level from raw score
 // ─────────────────────────────────────────────────────────────
+// Lower-threshold lookup: pick the HIGHEST band whose min <= score. The
+// band tables are ascending by min, so the last band that clears its lower
+// threshold wins. This is gap-proof - a score like 3.95 (which fell in a
+// former max/min gap and was mislabeled as the lowest band) now resolves to
+// its correct band. Anything below the first min falls back to band[0].
 export function maturityLevelFromScore(raw: number): {
   level: 1 | 2 | 3 | 4 | 5;
   label_en: string;
   label_ar: string;
 } {
+  let match = ARA_MATURITY_LEVELS[0];
   for (const m of ARA_MATURITY_LEVELS) {
-    if (raw >= m.min && raw <= m.max) return m;
+    if (raw >= m.min) match = m;
   }
-  // Below 1.0 - treat as Level 1
-  return ARA_MATURITY_LEVELS[0];
+  return match;
 }
 
 export function overallBandFromScore(overall: number) {
+  let match = ARA_OVERALL_BANDS[0];
   for (const b of ARA_OVERALL_BANDS) {
-    if (overall >= b.min && overall <= b.max) return b;
+    if (overall >= b.min) match = b;
   }
-  return ARA_OVERALL_BANDS[0];
+  return match;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -103,6 +109,23 @@ export async function recalculateAssessmentScores(assessmentId: string): Promise
 
   // Upsert pillar rows and accumulate the overall weighted sum.
   const weights = assessment.pillar_weights as Record<AraPillarId, number>;
+
+  // Renormalize weights over the pillars that actually scored, so the overall
+  // is a true weighted MEAN. Without this, a subset-stage run (Department=4,
+  // Division=6 pillars) under the default all-8 12.5% weights is deflated to
+  // ~50-75% of the real overall, because the unscored pillars' weight mass is
+  // never redistributed. Enterprise (all 8 scored, weights sum 100) is
+  // unchanged. Respondents are only served in-scope pillar questions, so the
+  // scored set IS the in-scope set.
+  let scoredWeightSum = 0;
+  let scoredCount = 0;
+  for (const pillar of ARA_PILLARS) {
+    if ((byPillar.get(pillar.id) ?? []).length > 0) {
+      scoredWeightSum += weights?.[pillar.id] ?? 12.5;
+      scoredCount += 1;
+    }
+  }
+
   let overallWeighted = 0;
   let anyPillarScored = false;
 
@@ -140,7 +163,10 @@ export async function recalculateAssessmentScores(assessmentId: string): Promise
     // round the per-pillar weighted value when storing it, because the
     // column is numeric(4,2) and consultants compare it against the
     // rounded raw_score in the report.
-    const rawWeighted = raw * (pillarWeight / 100);
+    // Weight normalised over the scored set (equal shares if every scored
+    // pillar somehow carries weight 0), so weighted_score sums to the overall.
+    const normWeight = scoredWeightSum > 0 ? pillarWeight / scoredWeightSum : 1 / scoredCount;
+    const rawWeighted = raw * normWeight;
     const weighted = Number(rawWeighted.toFixed(2));
     const maturity = maturityLevelFromScore(raw);
     const benchmarkGap = Number((4.0 - raw).toFixed(2));

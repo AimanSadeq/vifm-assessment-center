@@ -39,7 +39,10 @@ export async function detectAraGaps(assessmentId: string): Promise<GapAlert[]> {
 
   type Row = {
     question_score: number | null;
-    question: { id: string; pillar_id: string; question_number: number; question_text_en: string } | null;
+    question: {
+      id: string; pillar_id: string; question_number: number; question_text_en: string;
+      individual_factor_id: string | null; agentic_dimension_id: string | null;
+    } | null;
     respondent: { id: string; name: string } | null;
   };
 
@@ -47,12 +50,18 @@ export async function detectAraGaps(assessmentId: string): Promise<GapAlert[]> {
     .from("ara_responses")
     .select(`
       question_score,
-      question:ara_questions(id, pillar_id, question_number, question_text_en),
+      question:ara_questions(id, pillar_id, question_number, question_text_en, individual_factor_id, agentic_dimension_id),
       respondent:ara_respondents(id, name)
     `)
     .eq("assessment_id", assessmentId);
 
-  const typed = (rows ?? []) as unknown as Row[];
+  // Gap detection is a PILLAR-level signal - exclude personal-layer and
+  // Agentic-AI items (which reuse a storage pillar_id but are separate
+  // constructs) so they don't surface as pillar disagreement / consistency
+  // splits. Mirrors the exclusion in scoring.ts / compliance.ts.
+  const typed = ((rows ?? []) as unknown as Row[]).filter(
+    (r) => r.question?.individual_factor_id == null && r.question?.agentic_dimension_id == null
+  );
 
   const alerts: GapAlert[] = [];
 
@@ -185,7 +194,10 @@ export async function detectAraShadowAi(assessmentId: string): Promise<ShadowAiA
   type Row = {
     answer_text: string | null;
     question_score: number | null;
-    question: { pillar_id: string; question_number: number; question_text_en: string } | null;
+    question: {
+      pillar_id: string; question_number: number; question_text_en: string;
+      individual_factor_id: string | null; agentic_dimension_id: string | null;
+    } | null;
     respondent: { name: string } | null;
   };
 
@@ -194,12 +206,18 @@ export async function detectAraShadowAi(assessmentId: string): Promise<ShadowAiA
     .select(`
       answer_text,
       question_score,
-      question:ara_questions(pillar_id, question_number, question_text_en),
+      question:ara_questions(pillar_id, question_number, question_text_en, individual_factor_id, agentic_dimension_id),
       respondent:ara_respondents(name)
     `)
     .eq("assessment_id", assessmentId);
 
-  const typed = (data ?? []) as unknown as Row[];
+  // Exclude personal-layer + Agentic-AI items: a low agentic-governance
+  // answer must NOT trip the low-governance Shadow-AI alert (those items
+  // reuse pillar_id='governance' but are a separate construct). Mirrors the
+  // exclusion in scoring.ts / compliance.ts.
+  const typed = ((data ?? []) as unknown as Row[]).filter(
+    (r) => r.question?.individual_factor_id == null && r.question?.agentic_dimension_id == null
+  );
 
   const matches: ShadowAiAlert["matches"] = [];
   const lowGov: ShadowAiAlert["low_governance_scores"] = [];

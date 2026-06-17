@@ -42,17 +42,19 @@ export function MaturityGauge({ score }: { score: number | null }) {
   const needleAngle = score != null ? angleForScore(score) : angleForScore(1);
   const needleEnd = polar(needleAngle, RADIUS - 10);
 
+  // Lower-threshold lookup (highest band whose min <= score) so a score in a
+  // former band gap (e.g. 3.95) still resolves to a band instead of vanishing.
   const band = score != null
-    ? ARA_OVERALL_BANDS.find((b) => score >= b.min && score <= b.max)
+    ? [...ARA_OVERALL_BANDS].reverse().find((b) => score >= b.min) ?? null
     : null;
 
   return (
     <svg viewBox="0 0 300 180" className="w-full max-w-md mx-auto">
-      {/* Bands */}
-      {arc(1.0, 1.9, "#FB7185")}
-      {arc(2.0, 2.9, "#FDBA74")}
-      {arc(3.0, 3.9, "#FBBF24")}
-      {arc(4.0, 4.4, "#34D399")}
+      {/* Bands - contiguous segments (no visual gaps between zones) */}
+      {arc(1.0, 2.0, "#FB7185")}
+      {arc(2.0, 3.0, "#FDBA74")}
+      {arc(3.0, 4.0, "#FBBF24")}
+      {arc(4.0, 4.5, "#34D399")}
       {arc(4.5, 5.0, "#FBBF24")}
 
       {/* Needle */}

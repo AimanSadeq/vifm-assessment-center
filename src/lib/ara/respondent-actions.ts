@@ -86,9 +86,9 @@ export async function saveAraAnswer(input: z.infer<typeof saveAnswerSchema>): Pr
   // Fetch the question with its score_map so we can derive the per-answer score
   const { data: question } = await sb
     .from("ara_questions")
-    .select("id, version_id, pillar_id, individual_factor_id, question_type, score_map, layer")
+    .select("id, version_id, pillar_id, individual_factor_id, agentic_dimension_id, question_type, score_map, layer")
     .eq("id", parsed.data.questionId)
-    .maybeSingle<Pick<AraQuestion, "id" | "version_id" | "pillar_id" | "individual_factor_id" | "question_type" | "score_map" | "layer">>();
+    .maybeSingle<Pick<AraQuestion, "id" | "version_id" | "pillar_id" | "individual_factor_id" | "agentic_dimension_id" | "question_type" | "score_map" | "layer">>();
 
   if (!question) return { ok: false, error: "Question not found" };
   if (question.layer !== 1) return { ok: false, error: "Layer 2 questions are not respondent-facing" };
@@ -111,7 +111,12 @@ export async function saveAraAnswer(input: z.infer<typeof saveAnswerSchema>): Pr
     return { ok: false, error: "This assessment is closed to further answers" };
   }
 
-  if (!question.individual_factor_id) {
+  // Pillar-assignment is enforced only for org-pillar questions. Individual-
+  // factor items (Modes A/B/C) and Agentic-AI items reuse a storage pillar_id
+  // but are served by their own layer (individual_factor_id / agentic_
+  // dimension_id) without a pillar-assignment row, so a uniform check would
+  // reject every personal-snapshot and agentic answer.
+  if (!question.individual_factor_id && !question.agentic_dimension_id) {
     const { data: assignment } = await sb
       .from("ara_respondent_pillar_assignments")
       .select("id")

@@ -262,6 +262,9 @@ export default async function AraAssessmentDetailPage({
         .eq("version_id", assessment.question_bank_version_id)
         .eq("layer", 2)
         .eq("is_active", true)
+        // Agentic items are their own construct (now layer 1); keep any that
+        // are still layer 2 from leaking into the pillar consultant-guide tab.
+        .is("agentic_dimension_id", null)
         .order("pillar_id")
         .order("display_order")
     : { data: [] };
@@ -657,7 +660,7 @@ export default async function AraAssessmentDetailPage({
                   <TableHead>{t("araAssessmentDetail.col_pillar")}</TableHead>
                   <TableHead className="text-right">{t("araAssessmentDetail.col_raw")}</TableHead>
                   <TableHead className="text-right">{t("araAssessmentDetail.col_wt")}</TableHead>
-                  <TableHead className="text-right">{t("araAssessmentDetail.col_weighted")}</TableHead>
+                  <TableHead className="text-right" title={t("araAssessmentDetail.col_weighted_title")}>{t("araAssessmentDetail.col_weighted")}</TableHead>
                   <TableHead>{t("araAssessmentDetail.col_maturity")}</TableHead>
                   <TableHead className="text-right">{t("araAssessmentDetail.col_vs_target")}</TableHead>
                   <TableHead className="text-right" title={t("araAssessmentDetail.col_validated_title")}>{t("araAssessmentDetail.col_validated")}</TableHead>

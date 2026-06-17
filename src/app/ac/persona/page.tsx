@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Ticket, Users, FileClock } from "lucide-react";
+import { Ticket, Users, FileClock, ClipboardList } from "lucide-react";
 import { BackLink } from "@/components/shared/back-link";
 import { AllServicesLink } from "@/components/shared/all-services-link";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
@@ -20,6 +20,12 @@ export default async function PersonaPage() {
     <div className="mx-auto max-w-3xl px-6 py-8">
       <BackLink href="/" label="Back" history />
       <div className="mb-4 flex items-center justify-end gap-2">
+        <Link
+          href="/ac/persona/results"
+          className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted"
+        >
+          <ClipboardList className="h-3.5 w-3.5" /> Results
+        </Link>
         <Link
           href="/ac/persona/cohort"
           className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted"

@@ -1,37 +1,46 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { Ticket, Compass, BadgeCheck } from "lucide-react";
+import { Ticket, Compass, BadgeCheck, Languages, BrainCircuit, Layers } from "lucide-react";
 
 export type ServiceSummary = { codes: number; redeemed: number; outstanding: number; available: boolean };
 
-type ServiceKey = "arc" | "technical";
+export type ServiceKey = "arc" | "technical" | "fluent" | "cognitive" | "persona";
 
-const SERVICES: { key: ServiceKey; label: string; sub: string; icon: typeof Compass; tone: string }[] = [
-  { key: "arc", label: "AI Readiness Compass", sub: "VIFM-ARC codes", icon: Compass, tone: "text-violet-600" },
-  { key: "technical", label: "Technical Assessment", sub: "VIFM-TECH codes", icon: BadgeCheck, tone: "text-indigo-600" },
-];
+export type HubService = { key: ServiceKey; summary: ServiceSummary; slot: ReactNode };
+
+// Display metadata lives here (client side) so the server only passes
+// serializable data + the rendered slot - icon components can't cross the
+// server/client boundary as props.
+const SERVICE_META: Record<ServiceKey, { label: string; sub: string; icon: typeof Compass; tone: string }> = {
+  arc:       { label: "AI Readiness Compass", sub: "VIFM-ARC codes",  icon: Compass,     tone: "text-violet-600" },
+  technical: { label: "Technical Assessment", sub: "VIFM-TECH codes", icon: BadgeCheck,  tone: "text-indigo-600" },
+  fluent:    { label: "Fluent (English)",     sub: "Fluent codes",    icon: Languages,   tone: "text-sky-600" },
+  cognitive: { label: "Cognitive Ability",    sub: "Cognitive codes", icon: BrainCircuit, tone: "text-emerald-600" },
+  persona:   { label: "Persona",              sub: "Persona codes",   icon: Layers,      tone: "text-fuchsia-600" },
+};
 
 function SummaryCard({
-  s,
+  serviceKey,
   summary,
   active,
   onClick,
 }: {
-  s: (typeof SERVICES)[number];
+  serviceKey: ServiceKey;
   summary: ServiceSummary;
   active: boolean;
   onClick: () => void;
 }) {
-  const Icon = s.icon;
+  const meta = SERVICE_META[serviceKey];
+  const Icon = meta.icon;
   return (
     <button
       onClick={onClick}
       className={`rounded-xl border p-4 text-left transition-colors ${active ? "border-accent bg-accent/5" : "hover:border-accent/50"}`}
     >
       <div className="flex items-center gap-2">
-        <Icon className={`h-4 w-4 ${s.tone}`} />
-        <span className="text-sm font-semibold text-[#010131]">{s.label}</span>
+        <Icon className={`h-4 w-4 ${meta.tone}`} />
+        <span className="text-sm font-semibold text-[#010131]">{meta.label}</span>
       </div>
       {summary.available ? (
         <div className="mt-3 flex gap-5">
@@ -56,20 +65,16 @@ function Stat({ label, value }: { label: string; value: number }) {
 }
 
 export function VoucherHub({
-  araSlot,
-  techSlot,
-  araSummary,
-  techSummary,
-  initialTab = "arc",
+  services,
+  initialTab,
 }: {
-  araSlot: ReactNode;
-  techSlot: ReactNode;
-  araSummary: ServiceSummary;
-  techSummary: ServiceSummary;
+  services: HubService[];
   initialTab?: ServiceKey;
 }) {
-  const [tab, setTab] = useState<ServiceKey>(initialTab);
-  const summaryFor = (k: ServiceKey) => (k === "arc" ? araSummary : techSummary);
+  const firstKey = services[0]?.key ?? "arc";
+  const known = (k: ServiceKey | undefined): k is ServiceKey => !!k && services.some((s) => s.key === k);
+  const [tab, setTab] = useState<ServiceKey>(known(initialTab) ? initialTab : firstKey);
+  const active = services.find((s) => s.key === tab) ?? services[0];
 
   return (
     <div className="space-y-6">
@@ -87,15 +92,15 @@ export function VoucherHub({
       </div>
 
       {/* Per-service summary cards double as the tab selector */}
-      <div className="grid gap-3 sm:grid-cols-2">
-        {SERVICES.map((s) => (
-          <SummaryCard key={s.key} s={s} summary={summaryFor(s.key)} active={tab === s.key} onClick={() => setTab(s.key)} />
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        {services.map((s) => (
+          <SummaryCard key={s.key} serviceKey={s.key} summary={s.summary} active={tab === s.key} onClick={() => setTab(s.key)} />
         ))}
       </div>
 
       {/* Tab strip (mirrors the cards, for clarity on which is open) */}
-      <div className="flex gap-1 border-b">
-        {SERVICES.map((s) => (
+      <div className="flex flex-wrap gap-1 border-b">
+        {services.map((s) => (
           <button
             key={s.key}
             onClick={() => setTab(s.key)}
@@ -103,13 +108,13 @@ export function VoucherHub({
               tab === s.key ? "border-accent text-[#010131]" : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            {s.label}
+            {SERVICE_META[s.key].label}
           </button>
         ))}
       </div>
 
       {/* Active service manager (the existing per-service client, reused) */}
-      <div>{tab === "arc" ? araSlot : techSlot}</div>
+      <div>{active?.slot}</div>
     </div>
   );
 }

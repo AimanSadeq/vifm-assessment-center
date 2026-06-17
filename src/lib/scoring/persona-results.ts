@@ -98,10 +98,12 @@ export async function listPersonaResults(limit = 500): Promise<PersonaResultRow[
         : null;
 
       const purpose: "development" | "hiring" = s.purpose === "hiring" ? "hiring" : "development";
+      // A role can be bound for BOTH purposes now (hiring fit + development plan);
+      // the fit % doubles as "current alignment to target" for development rows.
       let roleName: string | null = null;
       let fitPct: number | null = null;
       let fitBand: FitBandKey | null = null;
-      if (purpose === "hiring" && s.target_role_profile_id) {
+      if (s.target_role_profile_id) {
         const role = roleById.get(s.target_role_profile_id);
         if (role) {
           roleName = role.name;

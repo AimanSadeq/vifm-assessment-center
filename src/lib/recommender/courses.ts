@@ -223,6 +223,42 @@ export async function recommendCoursesForAcCohort(args: {
 }
 
 // ──────────────────────────────────────────────────────────────
+// Persona development - from a pre-computed competency gap list
+//
+// Persona produces per-competency SELF scores + a target-role profile; the
+// development report turns the resulting gaps (target - self) into a VIFM
+// Academy training plan. Unlike recommendCoursesForAcCandidate this takes the
+// gaps DIRECTLY (a self-report has no consensus_ratings to read), so it serves
+// the anonymous standalone / voucher path too. Service-role read (mirrors
+// recommendCoursesForIndividualSnapshot): server-side only, gaps come from
+// trusted scoring code. Recommends on ANY positive gap (no MIN_MEANINGFUL_GAP
+// floor) - matching the AC behavioural recommender, not the AI-readiness ones.
+// ──────────────────────────────────────────────────────────────
+
+export async function recommendCoursesForCompetencyGaps(args: {
+  gaps: Array<{ competency_id: string; name: string; name_ar?: string | null; gap: number }>;
+  limit?: number;
+}): Promise<RecommendedCourse[]> {
+  const limit = args.limit ?? TAG_LIMIT_DEFAULT;
+  const gaps = args.gaps.filter((g) => g.gap > 0);
+  if (gaps.length === 0) return [];
+
+  const sb = createServiceClient();
+  const competencyIds = Array.from(new Set(gaps.map((g) => g.competency_id)));
+  const tagsRes = await sb
+    .from("vifm_course_competency_tags")
+    .select(
+      "course_id, competency_id, relevance_weight, rationale, " +
+      "vifm_courses(id, code, title_en, title_ar, vertical, level, " +
+      "default_duration_days, min_duration_days, max_duration_days, is_active)"
+    )
+    .in("competency_id", competencyIds);
+  const tags = (tagsRes.data ?? []) as unknown as CompetencyTagJoin[];
+
+  return rankFromCompetencyTags(tags, gaps, limit);
+}
+
+// ──────────────────────────────────────────────────────────────
 // Reflect - per-participant
 //
 // Reflect frameworks are CUSTOM per engagement (the consultant clones

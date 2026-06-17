@@ -14,8 +14,14 @@ import {
   type FlatNormItem, type IpsativeBlock, type IpsativeChoice,
 } from "@/lib/scoring/persona-format";
 import {
-  computeFit, competencyNarrative, FIT_BAND_TW, type RoleCompReq, type FitResult,
+  computeFit, competencyNarrative, developmentNarrative, FIT_BAND_TW, type RoleCompReq, type FitResult,
 } from "@/lib/scoring/persona-fit";
+import type { RecommendedCourse } from "@/lib/recommender/courses";
+import { VIFM_VERTICAL_LABELS } from "@/types/database";
+
+// Inlined from the recommender (a value import from that module would pull its
+// server-only @/lib/supabase/server dependency into this client component).
+const HIGH_FIT_THRESHOLD = 4;
 
 type Lang = "en" | "ar";
 type Phase = "intro" | "normative" | "ipsative" | "result";
@@ -62,8 +68,10 @@ export function PersonaStandaloneClient({
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [ipsChoices, setIpsChoices] = useState<Record<string, { most?: string; least?: string }>>({});
   const [profile, setProfile] = useState<BehavioralProfileRow[] | null>(null);
-  // AI per-competency insights (hiring), grounded in the candidate's answers.
+  // AI per-competency insights (hiring or development), grounded in the answers.
   const [insights, setInsights] = useState<Record<string, string>>({});
+  // VIFM Academy course plan (development result only).
+  const [courses, setCourses] = useState<RecommendedCourse[]>([]);
   const [page, setPage] = useState(0);
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -107,13 +115,13 @@ export function PersonaStandaloneClient({
   const effectiveCompetencies = useMemo<BehavioralCompetency[]>(() => {
     if (pinned) return competencies;
     // "full" override: assess the whole framework even with a role selected.
-    if (purpose !== "hiring" || !targetRoleId || scopeMode === "full") return competencies;
+    if (!targetRoleId || scopeMode === "full") return competencies;
     const role = roleProfiles.find((r) => r.id === targetRoleId);
     if (!role || role.comps.length === 0) return competencies;
     const want = new Set(role.comps.map((c) => c.competencyId));
     const scoped = competencies.filter((c) => want.has(c.acCompetencyId));
     return scoped.length > 0 ? scoped : competencies;
-  }, [competencies, pinned, purpose, targetRoleId, roleProfiles, scopeMode]);
+  }, [competencies, pinned, targetRoleId, roleProfiles, scopeMode]);
 
   // How many of the selected role's competencies exist in the served bank
   // (drives the coverage-toggle label).
@@ -147,7 +155,8 @@ export function PersonaStandaloneClient({
     try {
       const res = await startPersonaAction(name, redemptionToken, {
         purpose,
-        targetRoleProfileId: purpose === "hiring" ? targetRoleId || null : null,
+        // The target role drives scope + the report for BOTH purposes.
+        targetRoleProfileId: targetRoleId || null,
         seed: s,
       });
       if (!res.ok) { setError(res.error); return; }
@@ -198,6 +207,7 @@ export function PersonaStandaloneClient({
       const res = await submitPersonaAction(sessionId);
       if (!res.ok || !res.profile) { setError(res.error || tx("Could not score.", "تعذّر التقييم.")); return; }
       setInsights((res as { insights?: Record<string, string> }).insights ?? {});
+      setCourses((res as { courses?: RecommendedCourse[] }).courses ?? []);
       setProfile(res.profile); setPhase("result");
     } catch { setError(tx("Could not score.", "تعذّر التقييم.")); } finally { setBusy(false); }
   };
@@ -206,7 +216,7 @@ export function PersonaStandaloneClient({
     if (flushTimer.current) { clearTimeout(flushTimer.current); flushTimer.current = null; }
     pendingRef.current.clear();
     setPhase("intro"); setSessionId(null); setAnswers({}); setIpsChoices({});
-    setProfile(null); setInsights({}); setPage(0); setSeed(0); setError("");
+    setProfile(null); setInsights({}); setCourses([]); setPage(0); setSeed(0); setError("");
   };
 
   const likertLabel = (v: number) =>
@@ -248,9 +258,11 @@ export function PersonaStandaloneClient({
                   ? tx("Hiring / selection assessment", "تقييم التوظيف / الاختيار")
                   : tx("Development assessment", "تقييم تطويري")}
               </span>
-              {pinned.purpose === "hiring" && pinned.roleName && (
+              {pinned.roleName && (
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {tx("Assessing for: ", "التقييم لدور: ")}
+                  {pinned.purpose === "hiring"
+                    ? tx("Assessing for: ", "التقييم لدور: ")
+                    : tx("Developing toward: ", "التطوير نحو دور: ")}
                   <span className="font-medium text-[#010131]">{pinned.roleName}</span>
                 </p>
               )}
@@ -276,7 +288,7 @@ export function PersonaStandaloneClient({
                       <GraduationCap className="h-4 w-4 text-[#5391D5]" /> {tx("Development", "التطوير")}
                     </span>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {tx("A growth read: per-competency explanation and suggestions.", "قراءة تطويرية: شرح واقتراحات لكل جدارة.")}
+                      {tx("A growth plan vs a target role + recommended VIFM courses.", "خطة تطوير مقابل دور مستهدف + دورات VIFM الموصى بها.")}
                     </p>
                   </button>
                   <button
@@ -294,9 +306,14 @@ export function PersonaStandaloneClient({
                 </div>
               </div>
 
-              {purpose === "hiring" && (
-                <div className="rounded-lg border border-slate-200 p-3">
-                  <p className="text-xs font-medium text-[#010131]">{tx("Target role", "الدور المستهدف")}</p>
+              {/* Target role - drives scope + the report for BOTH purposes:
+                  the hiring fit and the development plan both compare against it. */}
+              <div className="rounded-lg border border-slate-200 p-3">
+                  <p className="text-xs font-medium text-[#010131]">
+                    {purpose === "hiring"
+                      ? tx("Target role", "الدور المستهدف")
+                      : tx("Role to develop toward", "الدور المستهدف للتطوير")}
+                  </p>
                   {roleProfiles.length > 0 ? (
                     <select
                       value={targetRoleId}
@@ -310,7 +327,9 @@ export function PersonaStandaloneClient({
                     </select>
                   ) : (
                     <p className="mt-1 text-xs text-amber-600">
-                      {tx("No role profiles available. Create one under Role Profiles to get a fit score.", "لا تتوفّر ملفات أدوار. أنشئ ملفًا في (ملفات الأدوار) للحصول على درجة الملاءمة.")}
+                      {purpose === "hiring"
+                        ? tx("No role profiles available. Create one under Design Target Roles to get a fit score.", "لا تتوفّر ملفات أدوار. أنشئ ملفًا في (تصميم الأدوار المستهدفة) للحصول على درجة الملاءمة.")
+                        : tx("No role profiles available. Create one under Design Target Roles to get a development plan.", "لا تتوفّر ملفات أدوار. أنشئ ملفًا في (تصميم الأدوار المستهدفة) للحصول على خطة تطوير.")}
                     </p>
                   )}
 
@@ -337,13 +356,12 @@ export function PersonaStandaloneClient({
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">
                         {scopeMode === "full"
-                          ? tx("Assessing the whole framework; fit still scores against the role.", "تقييم كامل الإطار؛ وتُحتسب الملاءمة مقابل الدور.")
+                          ? tx("Assessing the whole framework; the report still scores against the role.", "تقييم كامل الإطار؛ ويُحتسب التقرير مقابل الدور.")
                           : tx("Assessing only the role's competencies (shorter, targeted).", "تقييم جدارات الدور فقط (أقصر وأكثر استهدافًا).")}
                       </p>
                     </div>
                   )}
                 </div>
-              )}
             </>
           )}
 
@@ -579,6 +597,7 @@ export function PersonaStandaloneClient({
             role={selectedRole}
             definitions={definitions}
             insights={insights}
+            courses={courses}
           />
         )
       )}
@@ -605,7 +624,7 @@ function ProgressBar({ value, total, ar, unit }: { value: number; total: number;
 }
 
 function PersonaResult({
-  competencies, profile, name, ar, onReset, sessionId, purpose, role, definitions = {}, insights = {},
+  competencies, profile, name, ar, onReset, sessionId, purpose, role, definitions = {}, insights = {}, courses = [],
 }: {
   competencies: BehavioralCompetency[];
   profile: BehavioralProfileRow[];
@@ -616,20 +635,24 @@ function PersonaResult({
   purpose: Purpose;
   role: RoleProfileOption | null;
   definitions?: Record<string, string>;
-  /** AI per-competency insights (hiring); falls back to a deterministic narrative. */
+  /** AI per-competency insights (hiring or development); falls back to a deterministic narrative. */
   insights?: Record<string, string>;
+  /** VIFM Academy course plan (development result only). */
+  courses?: RecommendedCourse[];
 }) {
   const tx = (en: string, arabic: string) => (ar ? arabic : en);
   const scoreById = useMemo(() => new Map(profile.map((p) => [p.competencyId, p.selfScore])), [profile]);
 
+  // Fit is computed for BOTH purposes when a role is selected: hiring renders it
+  // as a fit score, development as "current alignment" + a development plan.
+  // Compute only over the role competencies that were actually served (a scoped
+  // sitting may omit some) - mirrors the PDF route so on-screen and downloaded
+  // figures can't diverge; unmeasured comps must not count as 0.
   const fit: FitResult | null = useMemo(() => {
-    if (purpose !== "hiring" || !role) return null;
-    // Compute fit only over the role competencies that were actually served
-    // (a scoped sitting may omit some). Mirrors the PDF route so the on-screen
-    // and downloaded fit can never diverge; unmeasured comps must not count as 0.
+    if (!role) return null;
     const measured = role.comps.filter((c) => scoreById.has(c.competencyId));
     return computeFit(scoreById, measured);
-  }, [purpose, role, scoreById]);
+  }, [role, scoreById]);
 
   const nameById = useMemo(
     () => new Map(competencies.map((c) => [c.acCompetencyId, ar ? c.nameAr : c.nameEn])),
@@ -748,13 +771,96 @@ function PersonaResult({
         </div>
       )}
 
+      {/* DEVELOPMENT with a target role: a growth plan against the role +
+          a VIFM Academy training plan. Same process as hiring, growth framing. */}
+      {purpose === "development" && fit && role && (
+        <div className="rounded-lg border border-slate-200 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-slate-500">{tx("Development plan", "خطة التطوير")} · {role.name}</p>
+              <span className="mt-1 inline-block rounded-lg bg-[#5391D5]/10 px-4 py-2 text-2xl font-bold text-[#010131]">
+                {fit.fitPct}% <span className="text-sm font-medium text-slate-500">{tx("aligned to the role target", "متوافق مع مستهدف الدور")}</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Strengths to leverage + development priorities */}
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-emerald-700">{tx("Strengths to leverage", "نقاط القوة للاستثمار فيها")}</p>
+              <div className="mt-1 space-y-1">
+                {fit.gaps.filter((g) => g.self != null && (g.self as number) >= g.target)
+                  .sort((a, b) => ((b.self as number) - b.target) - ((a.self as number) - a.target))
+                  .slice(0, 5).map((g) => (
+                  <div key={g.competencyId} className="flex items-center justify-between text-sm">
+                    <span className="text-[#010131]">{nameById.get(g.competencyId) ?? g.name}</span>
+                    <span className="tabular-nums font-semibold text-emerald-600">{g.self?.toFixed(1)} / {g.target.toFixed(1)}</span>
+                  </div>
+                ))}
+                {fit.gaps.filter((g) => g.self != null && (g.self as number) >= g.target).length === 0 && (
+                  <p className="text-sm text-slate-400">{tx("None at or above target yet.", "لا شيء عند المستهدف أو أعلى بعد.")}</p>
+                )}
+              </div>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-amber-700">{tx("Development priorities", "أولويات التطوير")}</p>
+              <div className="mt-1 space-y-1">
+                {fit.gaps.filter((g) => g.self != null && g.gap > 0).slice(0, 5).map((g) => (
+                  <div key={g.competencyId} className="flex items-center justify-between text-sm">
+                    <span className="text-[#010131]">{nameById.get(g.competencyId) ?? g.name}</span>
+                    <span className="tabular-nums font-semibold text-amber-600">{g.self?.toFixed(1)} / {g.target.toFixed(1)}</span>
+                  </div>
+                ))}
+                {fit.gaps.filter((g) => g.self != null && g.gap > 0).length === 0 && (
+                  <p className="text-sm text-emerald-700">{tx("Meets or exceeds every target.", "يحقّق أو يتجاوز كل المستهدفات.")}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Per-competency growth narrative: definition + a note read from the
+              person's own answers, with a target-coloured score. */}
+          <div className="mt-4">
+            <p className="text-[11px] uppercase tracking-wider text-slate-500">{tx("Per-competency development notes", "ملاحظات التطوير لكل جدارة")}</p>
+            <div className="mt-2 grid gap-3 sm:grid-cols-2">
+              {fit.gaps.filter((g) => g.self != null).map((g) => {
+                const meets = (g.self as number) >= g.target;
+                return (
+                  <div key={g.competencyId} className="flex flex-col rounded-lg border border-slate-200 p-3">
+                    <span className="text-center text-sm font-semibold text-[#010131]">{nameById.get(g.competencyId) ?? g.name}</span>
+                    <span className={`mt-1 text-center text-2xl font-bold tabular-nums ${meets ? "text-emerald-600" : "text-amber-600"}`}>
+                      {g.self?.toFixed(1)} / {g.target.toFixed(1)}
+                    </span>
+                    {definitions[g.competencyId] ? (
+                      <p className="mt-2 text-xs text-slate-500">{definitions[g.competencyId]}</p>
+                    ) : null}
+                    <p className="mt-1.5 text-xs text-[#121232]">{insights[g.competencyId] ?? developmentNarrative(g.self as number, g.target)}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* VIFM Academy connection */}
+          <AcademyCourses courses={courses} ar={ar} tx={tx} />
+
+          <p className="mt-3 rounded-md bg-[#5391D5]/10 px-3 py-2 text-[11px] text-[#010131]">
+            {tx(
+              "A self-report development plan - pair it with a Reflect 360 (others' view) and the recommended VIFM programmes to turn priorities into progress.",
+              "خطة تطوير قائمة على تقييم ذاتي - اقرنها بتقييم ريفلكت 360 (رأي الآخرين) وببرامج VIFM الموصى بها لتحويل الأولويات إلى تقدّم.",
+            )}
+          </p>
+        </div>
+      )}
+
       <div>
         <p className="text-[11px] uppercase tracking-wider text-slate-500">{tx("Overall self-rating", "متوسط التقييم الذاتي")}</p>
         <span className={`mt-1 inline-block rounded-lg px-4 py-2 text-2xl font-bold ${PERSONA_BAND_TW[personaBand(overall).key]}`}>{overall.toFixed(2)} / 5 · {personaBandLabel(overall, ar)}</span>
       </div>
 
-      {/* DEVELOPMENT: focus list with explanation + suggestion per band */}
-      {purpose === "development" && focus.length > 0 && (
+      {/* DEVELOPMENT without a target role: a generic focus list (the role-based
+          development plan above replaces this when a role is selected). */}
+      {purpose === "development" && !role && focus.length > 0 && (
         <div className="rounded-lg border border-slate-200 p-4">
           <p className="text-sm font-semibold text-[#010131]">{tx("Development focus", "أولويات التطوير")}</p>
           <div className="mt-2 space-y-2.5">
@@ -823,6 +929,79 @@ function PersonaResult({
         <button onClick={onReset} className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
           <RotateCcw className="h-4 w-4" /> {tx("Start over", "البدء من جديد")}
         </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * VIFM Academy connection for the development result - the ranked training plan
+ * from the recommender (gap × course relevance). No admin link (a voucher
+ * delegate may be viewing); the same data renders read-only in the PDF.
+ */
+function AcademyCourses({
+  courses, ar, tx,
+}: {
+  courses: RecommendedCourse[];
+  ar: boolean;
+  tx: (en: string, arabic: string) => string;
+}) {
+  if (courses.length === 0) return null;
+  const top = Math.max(0, ...courses.map((c) => c.total_score));
+  return (
+    <div className="mt-4 rounded-lg border border-[#5391D5]/30 bg-[#5391D5]/5 p-3">
+      <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#010131]">
+        <GraduationCap className="h-4 w-4 text-[#5391D5]" /> {tx("Recommended VIFM Academy programmes", "برامج أكاديمية VIFM الموصى بها")}
+      </p>
+      <p className="mt-0.5 text-[11px] text-muted-foreground">
+        {tx(
+          "Mapped to your development priorities - ranked by gap size and how strongly each programme targets it.",
+          "مرتبطة بأولويات تطويرك - مرتّبة حسب حجم الفجوة ومدى استهداف كل برنامج لها.",
+        )}
+      </p>
+      <div className="mt-2 space-y-2">
+        {courses.map((c) => {
+          const highFit = c.total_score >= HIGH_FIT_THRESHOLD;
+          return (
+            <div key={c.course_id} className="rounded-md border border-slate-200 bg-white p-2.5">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-[#010131]">
+                    {ar && c.title_ar ? c.title_ar : c.title_en}
+                    {highFit && (
+                      <span className="ms-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-900">
+                        ★ {tx("High fit", "ملاءمة عالية")}
+                      </span>
+                    )}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    {VIFM_VERTICAL_LABELS[c.vertical] ?? c.vertical} · <span className="capitalize">{c.level}</span> ·{" "}
+                    {c.min_duration_days === c.max_duration_days
+                      ? `${c.default_duration_days}d`
+                      : `${c.min_duration_days}-${c.max_duration_days}d`}
+                  </p>
+                </div>
+                {top > 0 && (
+                  <span className="shrink-0 rounded-md bg-slate-100 px-2 py-1 text-xs font-bold tabular-nums text-[#010131]">
+                    {Math.max(1, Math.round((c.total_score / top) * 10))}/10
+                  </span>
+                )}
+              </div>
+              <div className="mt-1.5 flex flex-wrap gap-1">
+                {c.drivers.slice(0, 4).map((d, i) => (
+                  <span
+                    key={`${c.course_id}-d-${i}`}
+                    title={d.rationale ?? undefined}
+                    className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] text-blue-900"
+                  >
+                    <span className="font-medium">{ar && d.label_ar ? d.label_ar : d.label}</span>
+                    <span className="tabular-nums opacity-70">{tx("gap", "فجوة")} {d.gap.toFixed(1)} · ×{d.relevance}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

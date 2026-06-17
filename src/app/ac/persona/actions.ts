@@ -10,6 +10,8 @@ import {
 import { getVoucherScopeByRedemptionToken } from "@/lib/persona/vouchers";
 import { loadPersonaRoleById } from "@/lib/scoring/persona-roles";
 import { generatePersonaInsights, buildInsightCompetencies } from "@/lib/ai/persona-insights";
+import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
+import { recommendCoursesForCompetencyGaps, type RecommendedCourse } from "@/lib/recommender/courses";
 
 export type StartPersonaOptions = {
   /** 'development' (narrative + suggestions) or 'hiring' (fit vs a target role). */
@@ -39,8 +41,10 @@ export async function startPersonaAction(
     // (standalone admin run). For a voucher delegate it is OVERRIDDEN by the
     // admin-pinned scope on the voucher, derived server-side - the candidate
     // can never widen or change a pinned assessment.
+    // The target role drives scope + the report for BOTH purposes (hiring fit
+    // and the development plan), so it is honoured regardless of purpose.
     let purpose: "development" | "hiring" = opts?.purpose === "hiring" ? "hiring" : "development";
-    let targetRoleProfileId: string | null = opts?.purpose === "hiring" ? opts?.targetRoleProfileId ?? null : null;
+    let targetRoleProfileId: string | null = opts?.targetRoleProfileId ?? null;
     let scopedCompetencyIds: string[] | null = null;
 
     if (redemptionToken) {
@@ -59,7 +63,8 @@ export async function startPersonaAction(
         const scope = await getVoucherScopeByRedemptionToken(redemptionToken);
         if (scope.purpose) {
           purpose = scope.purpose;
-          targetRoleProfileId = scope.purpose === "hiring" ? scope.targetRoleProfileId : null;
+          // A pinned role applies to both hiring and development vouchers.
+          targetRoleProfileId = scope.targetRoleProfileId;
           scopedCompetencyIds = scope.scopedCompetencyIds;
         }
       } catch {
@@ -104,10 +109,13 @@ export async function savePersonaAnswersAction(sessionId: string, answers: Behav
 }
 
 /** Finalize: score per competency and return the self-profile (no rollup write).
- *  For a HIRING sitting, also generate per-competency AI insights grounded in the
- *  candidate's actual item-level answers, store them on the session (for the PDF)
- *  and return them (for the on-screen result). Best-effort: any failure leaves the
- *  report to fall back to the deterministic narrative. */
+ *  When the sitting has a TARGET ROLE (hiring OR development), also generate
+ *  per-competency AI insights grounded in the candidate's actual item-level
+ *  answers, store them on the session (for the PDF) and return them (for the
+ *  on-screen result). Hiring insights are screening-framed; development insights
+ *  are growth-framed and the result additionally carries a VIFM Academy course
+ *  plan ranked by competency gap. Best-effort: any failure leaves the report to
+ *  fall back to the deterministic narrative. */
 export async function submitPersonaAction(sessionId: string) {
   const res = await submitAnonymousBehavioral(sessionId);
   if (!res.ok || !res.profile) return res;
@@ -119,7 +127,8 @@ export async function submitPersonaAction(sessionId: string) {
       .select("purpose, target_role_profile_id")
       .eq("id", sessionId)
       .maybeSingle<{ purpose: string | null; target_role_profile_id: string | null }>();
-    if (session?.purpose !== "hiring" || !session.target_role_profile_id) return res;
+    if (!session?.target_role_profile_id) return res;
+    const purpose: "development" | "hiring" = session.purpose === "hiring" ? "hiring" : "development";
 
     const role = await loadPersonaRoleById(session.target_role_profile_id);
     if (!role) return res;
@@ -128,14 +137,39 @@ export async function submitPersonaAction(sessionId: string) {
     const competencies = await buildInsightCompetencies({ sessionId, roleComps: role.comps, selfById });
     if (competencies.length === 0) return res;
 
-    const insights = await generatePersonaInsights({ roleName: role.name, competencies });
+    const insights = await generatePersonaInsights({ roleName: role.name, competencies, purpose });
     // Persist for the PDF (tolerant of migration 00125 not applied).
     try {
       await sb.from("behavioral_assessment_sessions").update({ competency_insights: insights }).eq("id", sessionId);
     } catch {
       /* column absent - on-screen still gets insights from the return value */
     }
-    return { ...res, insights };
+
+    // Development: turn the gaps into a VIFM Academy training plan.
+    let courses: RecommendedCourse[] = [];
+    if (purpose === "development") {
+      try {
+        const nameById = new Map(
+          BEHAVIORAL_COMPETENCIES.map((c) => [c.acCompetencyId, { en: c.nameEn, ar: c.nameAr }]),
+        );
+        const gaps = role.comps
+          .filter((c) => selfById.has(c.competencyId))
+          .map((c) => ({
+            competency_id: c.competencyId,
+            name: nameById.get(c.competencyId)?.en ?? c.name,
+            name_ar: nameById.get(c.competencyId)?.ar ?? null,
+            gap: c.target - (selfById.get(c.competencyId) as number),
+          }))
+          .filter((g) => g.gap > 0);
+        // Cap at 6 to match the PDF report's course list exactly (the on-screen
+        // plan and the downloaded plan must show the same programmes).
+        courses = await recommendCoursesForCompetencyGaps({ gaps, limit: 6 });
+      } catch {
+        /* recommender is best-effort - the report still renders without it */
+      }
+    }
+
+    return { ...res, insights, courses };
   } catch {
     return res;
   }

@@ -56,6 +56,26 @@ export function competencyNarrative(self: number, target?: number | null): strin
   return `Self-assessed as developing (${s}/5) - a likely growth area.`;
 }
 
+/**
+ * A growth-framed narrative for a DEVELOPMENT report (deterministic fallback for
+ * when AI insights aren't available). Describes the self-rating relative to the
+ * role target as a development opportunity - forward-looking, never a verdict.
+ */
+export function developmentNarrative(self: number, target?: number | null): string {
+  const s = self.toFixed(1);
+  if (target != null) {
+    const t = target.toFixed(1);
+    const gap = target - self;
+    if (gap <= 0) return `A self-assessed strength for this role (${s} vs target ${t}) - keep it sharp and use it to coach others.`;
+    if (gap <= 0.5) return `Close to the role target (${s} vs ${t}) - focused practice will close the remaining gap quickly.`;
+    if (gap <= 1.5) return `A clear growth area for this role (${s} vs ${t}) - a strong candidate for targeted training plus on-the-job stretch.`;
+    return `A priority growth area for this role (${s} vs ${t}) - build the foundations with structured learning, then apply deliberately.`;
+  }
+  if (self >= 4) return `A self-assessed strength (${s}/5) - leverage it and stretch into harder applications.`;
+  if (self >= 3) return `Self-assessed as competent (${s}/5) - deepen with focused practice toward mastery.`;
+  return `A developing area (${s}/5) - a strong candidate for structured learning.`;
+}
+
 export function fitBand(pct: number): { key: FitBandKey; label: string; labelAr: string } {
   if (pct >= 80) return { key: "strong", label: "Strong fit", labelAr: "ملاءمة قوية" };
   if (pct >= 60) return { key: "moderate", label: "Moderate fit", labelAr: "ملاءمة متوسطة" };

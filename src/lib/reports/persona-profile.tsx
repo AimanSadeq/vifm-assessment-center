@@ -30,6 +30,16 @@ export type PersonaPdfFit = {
   gaps: { name: string; self: number; target: number; gap: number }[];
   strengths?: { name: string; self: number; target: number }[];
 };
+export type PersonaPdfCourse = {
+  title: string;
+  code?: string | null;
+  vertical: string;
+  level: string;
+  durationLabel: string;
+  fitOutOfTen: number;
+  highFit: boolean;
+  drivers: { label: string; gap: number; relevance: number }[];
+};
 export type PersonaPdfData = {
   takerName: string | null;
   generatedAt: string;
@@ -37,6 +47,8 @@ export type PersonaPdfData = {
   clusters: PersonaPdfCluster[];
   purpose?: "development" | "hiring";
   fit?: PersonaPdfFit | null;
+  /** VIFM Academy training plan (development reports). */
+  courses?: PersonaPdfCourse[];
 };
 
 const s = StyleSheet.create({
@@ -73,7 +85,21 @@ const s = StyleSheet.create({
   fitGapName: { fontSize: 9 },
   fitGapNum: { fontSize: 9, color: "#b91c1c" },
   fitCaveat: { fontSize: 8, color: C.amber, marginTop: 8, lineHeight: 1.4 },
+  fitGapNumDev: { fontSize: 9, color: "#B45309" },
+  fitNote: { fontSize: 8, color: C.primary, marginTop: 8, lineHeight: 1.4 },
   sectionLabel: { fontSize: 9, fontFamily: "Helvetica-Bold", color: C.primary, marginTop: 4, marginBottom: 6 },
+
+  // VIFM Academy training plan (development)
+  academyPanel: { borderWidth: 1, borderColor: C.accent, borderRadius: 6, padding: 12, marginBottom: 14, backgroundColor: "#f5f9fe" },
+  academyTitle: { fontSize: 10, fontFamily: "Helvetica-Bold", color: C.primary },
+  academySub: { fontSize: 8, color: C.textLight, marginTop: 1, marginBottom: 6, lineHeight: 1.4 },
+  courseCard: { borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 8, marginBottom: 6, backgroundColor: "#ffffff" },
+  courseHeadRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
+  courseTitle: { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: C.text },
+  courseMeta: { fontSize: 8, color: C.textLight, marginTop: 1 },
+  courseFit: { fontSize: 9, fontFamily: "Helvetica-Bold", color: C.primary },
+  courseDriver: { fontSize: 7.5, color: C.sky, marginTop: 2, lineHeight: 1.4 },
+  highFitTag: { fontSize: 7, color: "#92400e" },
 
   caption: { marginTop: 16, borderWidth: 1, borderColor: C.border, borderRadius: 5, backgroundColor: C.bgSoft, padding: 9, fontSize: 8.5, color: C.textLight },
   footer: { position: "absolute", bottom: 22, left: 44, right: 44, borderTopWidth: 1, borderTopColor: C.border, paddingTop: 6, flexDirection: "row", justifyContent: "space-between" },
@@ -94,14 +120,26 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
           </Text>
         </View>
 
-        {/* Hiring fit panel */}
-        {data.purpose === "hiring" && data.fit && (
+        {/* Role panel - hiring fit OR the development plan (both compare the
+            self-profile against the target role; the framing differs). */}
+        {data.fit && (
           <View style={s.fitPanel} wrap={false}>
-            <Text style={s.fitLabel}>Role fit · {data.fit.roleName}</Text>
-            <Text style={[s.fitValue, { color: data.fit.bandHex }]}>{data.fit.fitPct}%  ·  {data.fit.bandLabel}</Text>
+            {data.purpose === "development" ? (
+              <>
+                <Text style={s.fitLabel}>Development plan · {data.fit.roleName}</Text>
+                <Text style={[s.fitValue, { color: C.primary }]}>{data.fit.fitPct}% aligned to the role target</Text>
+              </>
+            ) : (
+              <>
+                <Text style={s.fitLabel}>Role fit · {data.fit.roleName}</Text>
+                <Text style={[s.fitValue, { color: data.fit.bandHex }]}>{data.fit.fitPct}%  ·  {data.fit.bandLabel}</Text>
+              </>
+            )}
             {data.fit.strengths && data.fit.strengths.length > 0 ? (
               <>
-                <Text style={[s.fitGapTitle, { color: C.emerald }]}>Biggest strengths (self / target)</Text>
+                <Text style={[s.fitGapTitle, { color: C.emerald }]}>
+                  {data.purpose === "development" ? "Strengths to leverage (self / target)" : "Biggest strengths (self / target)"}
+                </Text>
                 {data.fit.strengths.map((g) => (
                   <View key={`str-${g.name}`} style={s.fitGapRow}>
                     <Text style={s.fitGapName}>{g.name}</Text>
@@ -112,20 +150,60 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
             ) : null}
             {data.fit.gaps.length > 0 ? (
               <>
-                <Text style={s.fitGapTitle}>Biggest gaps vs the role target (self / target)</Text>
+                <Text style={s.fitGapTitle}>
+                  {data.purpose === "development" ? "Development priorities (self / target)" : "Biggest gaps vs the role target (self / target)"}
+                </Text>
                 {data.fit.gaps.map((g) => (
                   <View key={g.name} style={s.fitGapRow}>
                     <Text style={s.fitGapName}>{g.name}</Text>
-                    <Text style={s.fitGapNum}>{g.self.toFixed(1)} / {g.target.toFixed(1)}  (-{g.gap.toFixed(1)})</Text>
+                    <Text style={data.purpose === "development" ? s.fitGapNumDev : s.fitGapNum}>
+                      {g.self.toFixed(1)} / {g.target.toFixed(1)}  (-{g.gap.toFixed(1)})
+                    </Text>
                   </View>
                 ))}
               </>
             ) : (
               <Text style={s.fitGapTitle}>Meets or exceeds every target competency.</Text>
             )}
-            <Text style={s.fitCaveat}>
-              A self-report screening signal - corroborate with a Reflect 360, interview and evidence before any hiring decision.
+            {data.purpose === "development" ? (
+              <Text style={s.fitNote}>
+                A self-report development plan - pair it with a Reflect 360 (others&apos; view) and the recommended VIFM programmes below to turn priorities into progress.
+              </Text>
+            ) : (
+              <Text style={s.fitCaveat}>
+                A self-report screening signal - corroborate with a Reflect 360, interview and evidence before any hiring decision.
+              </Text>
+            )}
+          </View>
+        )}
+
+        {/* VIFM Academy training plan (development) */}
+        {data.purpose === "development" && data.courses && data.courses.length > 0 && (
+          <View style={s.academyPanel}>
+            <Text style={s.academyTitle}>Recommended VIFM Academy programmes</Text>
+            <Text style={s.academySub}>
+              Mapped to your development priorities - ranked by gap size and how strongly each programme targets it.
             </Text>
+            {data.courses.map((c, i) => (
+              <View key={`course-${i}`} style={s.courseCard} wrap={false}>
+                <View style={s.courseHeadRow}>
+                  <View style={{ flex: 1, paddingRight: 6 }}>
+                    <Text style={s.courseTitle}>
+                      {c.title}{c.highFit ? <Text style={s.highFitTag}>   * High fit</Text> : null}
+                    </Text>
+                    <Text style={s.courseMeta}>
+                      {c.vertical} · {c.level} · {c.durationLabel}{c.code ? ` · ${c.code}` : ""}
+                    </Text>
+                  </View>
+                  {c.fitOutOfTen > 0 ? <Text style={s.courseFit}>{c.fitOutOfTen}/10</Text> : null}
+                </View>
+                {c.drivers.length > 0 ? (
+                  <Text style={s.courseDriver}>
+                    {c.drivers.map((d) => `${d.label} (gap ${d.gap.toFixed(1)} ×${d.relevance})`).join("   ·   ")}
+                  </Text>
+                ) : null}
+              </View>
+            ))}
           </View>
         )}
 

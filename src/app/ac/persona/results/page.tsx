@@ -30,9 +30,10 @@ export default async function PersonaResultsPage({ searchParams }: { searchParam
             <h1 className="text-xl font-semibold text-[#010131]">Completed Persona results</h1>
           </div>
           <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-            Completed sittings (voucher and self-served). Hiring sittings show the role-fit score; the
-            report PDF carries the full per-competency detail. Results are a screening signal - pair
-            Persona (self) with a 360 (others) and an interview before any decision.
+            Completed sittings (voucher and self-served). Hiring sittings show the role-fit score;
+            development sittings show alignment to the target role and carry a VIFM Academy plan in
+            the report PDF. Results are a screening signal - pair Persona (self) with a 360 (others)
+            and an interview before any decision.
           </p>
         </div>
       </header>
@@ -93,7 +94,7 @@ export default async function PersonaResultsPage({ searchParams }: { searchParam
                     <th className="px-4 py-2.5 font-medium">Client</th>
                     <th className="px-3 py-2.5 font-medium">Purpose</th>
                     <th className="px-4 py-2.5 font-medium">Target role</th>
-                    <th className="px-3 py-2.5 text-center font-medium">Fit</th>
+                    <th className="px-3 py-2.5 text-center font-medium">Fit / align</th>
                     <th className="px-3 py-2.5 text-center font-medium">Self-rating</th>
                     <th className="px-4 py-2.5 font-medium">Report</th>
                   </tr>
@@ -151,8 +152,8 @@ export default async function PersonaResultsPage({ searchParams }: { searchParam
               </table>
             </div>
             <p className="border-t px-6 py-3 text-xs text-muted-foreground">
-              Self-rating is the overall mean across the assessed competencies; Fit is the weighted
-              match against the target role.
+              Self-rating is the overall mean across the assessed competencies; Fit / align is the
+              weighted match against the target role (read as fit for hiring, alignment for development).
             </p>
           </section>
         )}

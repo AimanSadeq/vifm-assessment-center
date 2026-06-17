@@ -6,7 +6,7 @@
 // deterministic narrative when no API key (so the report always renders).
 // ─────────────────────────────────────────────────────────────
 import { getAIClient, AI_MODEL } from "@/lib/ai/client";
-import { competencyNarrative } from "@/lib/scoring/persona-fit";
+import { competencyNarrative, developmentNarrative } from "@/lib/scoring/persona-fit";
 import { createServiceClient } from "@/lib/supabase/server";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
 import { loadCompetencyDefinitions } from "@/lib/scoring/competency-definitions";
@@ -24,9 +24,11 @@ export type PersonaInsightCompetency = {
 export type PersonaInsightInput = {
   roleName: string;
   competencies: PersonaInsightCompetency[];
+  /** 'hiring' (screening read) or 'development' (growth read). Default 'hiring'. */
+  purpose?: "development" | "hiring";
 };
 
-const SYSTEM =
+const SYSTEM_HIRING =
   "You are an occupational psychologist writing concise, professional per-competency insights " +
   "for a HIRING SCREENING report, based strictly on a candidate's behavioural self-ratings.\n" +
   "Rules:\n" +
@@ -35,6 +37,18 @@ const SYSTEM =
   "- VARY the wording across competencies. Never reuse a sentence or a template.\n" +
   "- 1-2 sentences each, specific and evidence-referenced.\n" +
   "- Self-report framing: describe what the answers indicate; do not issue verdicts.\n" +
+  "- Do not fabricate anything beyond the supplied ratings. No em dashes.";
+
+const SYSTEM_DEVELOPMENT =
+  "You are an occupational psychologist writing concise, professional per-competency notes " +
+  "for a DEVELOPMENT PLAN report, based strictly on a person's behavioural self-ratings.\n" +
+  "Rules:\n" +
+  "- Ground each note in the PATTERN of the person's own answers - call out which statements " +
+  "they rated higher vs lower - and the self-score relative to the role target.\n" +
+  "- Frame it as GROWTH: what to build on, what to develop, and one concrete way to grow it " +
+  "(e.g. a stretch assignment, mentoring, or structured learning). Encouraging and forward-looking.\n" +
+  "- VARY the wording across competencies. Never reuse a sentence or a template.\n" +
+  "- 1-2 sentences each, specific and evidence-referenced. Never a verdict.\n" +
   "- Do not fabricate anything beyond the supplied ratings. No em dashes.";
 
 /**
@@ -80,9 +94,11 @@ export async function buildInsightCompetencies(opts: {
 export async function generatePersonaInsights(
   input: PersonaInsightInput,
 ): Promise<Record<string, string>> {
+  const purpose = input.purpose ?? "hiring";
+  const narrate = purpose === "development" ? developmentNarrative : competencyNarrative;
   const fallback = (): Record<string, string> => {
     const out: Record<string, string> = {};
-    for (const c of input.competencies) out[c.competencyId] = competencyNarrative(c.self, c.target);
+    for (const c of input.competencies) out[c.competencyId] = narrate(c.self, c.target);
     return out;
   };
 
@@ -99,16 +115,20 @@ export async function generatePersonaInsights(
   }));
 
   try {
+    const instruction = purpose === "development"
+      ? `For EACH competency below, write one development note grounded in the person's answers - ` +
+        `what to build on and one concrete way to grow it toward the role target. `
+      : `For EACH competency below, write one insight grounded in the candidate's answers. `;
     const res = await ai.messages.create({
       model: AI_MODEL,
       max_tokens: 2200,
-      system: SYSTEM,
+      system: purpose === "development" ? SYSTEM_DEVELOPMENT : SYSTEM_HIRING,
       messages: [
         {
           role: "user",
           content:
             `Target role: ${input.roleName}\n\n` +
-            `For EACH competency below, write one insight grounded in the candidate's answers. ` +
+            instruction +
             `Return ONLY a JSON object mapping each competency "id" to its insight string.\n\n` +
             JSON.stringify(payload),
         },
@@ -122,7 +142,7 @@ export async function generatePersonaInsights(
     const out: Record<string, string> = {};
     for (const c of input.competencies) {
       const v = parsed[c.competencyId];
-      out[c.competencyId] = typeof v === "string" && v.trim() ? v.trim() : competencyNarrative(c.self, c.target);
+      out[c.competencyId] = typeof v === "string" && v.trim() ? v.trim() : narrate(c.self, c.target);
     }
     return out;
   } catch {

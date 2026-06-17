@@ -2,7 +2,35 @@
 
 > Living checklist of open/deferred work. Claude: surface this whenever the user
 > asks "any pending actions?" (or similar), and keep it updated as items close.
-> Last updated: 2026-06-16.
+> Last updated: 2026-06-17.
+
+## ⭐ Priority 1 - SDAIA (Saudi Data & AI Authority)
+
+Live client = **SDAIA**, Saudi Arabia's national AI authority. Per the 17 Jun 2026
+"Call with Ahmad Rashid" (Ahmad = SME/client interface), the main stakeholder asked
+for **three pilot projects**; demos start Mon-Wed the week after the call (est. 22-24
+Jun 2026). **ARC orgs for SDAIA must be `region=saudi`, `sector=government`** - this
+drives the regulatory tab (surfaces the 8 government-applicable Saudi frameworks incl.
+SDAIA's own NDGF/Ethics/AAF/GenAI; excludes banking-only SAMA CSF).
+
+**Pilots (provision access codes per pilot):**
+- **Pilot 1 - Talent Acquisition** (TA Manager): 1-2 codes, Persona behavioural trial -> pre-hiring competency-fit report.
+- **Pilot 2 - L&D** (Yousef): ~15-20 codes, technical-skill assessment scoped to the HR function "2.6 Learning & Development / L&D operations / instructional design".
+- **Pilot 3 - Talent Management / Succession** (Abdullah, Mr. Alsharif): 2 codes, Persona-based succession for a critical role (e.g. HR GM) - ready-now/ready-soon/not-ready + 9-box. Client wants Persona only (not the 360) initially.
+
+**Demo-critical features (target: before Monday):**
+- [ ] **SD-1 Persona role success-profile** (highest leverage; flagged first): AI picks the critical competencies for a target role (e.g. HR GM) from the 41-competency framework + a target score per competency; tailor the assessment to that subset (not all 41); report computes gap -> ready / ready-with-development / not-ready. Likely reuses AC role-profiles (00014-00016) + JD extractor.
+- [ ] **SD-2 9-box + ready-now/ready-soon in the report** (computed but not rendered).
+- [ ] **SD-3 Technical-skill sandbox for HR "2.6 L&D / instructional design"** (you estimated ~1 hr to seed).
+- [ ] **SD-4 Cognitive subtest selection** - landing-page option to choose/combine numerical / verbal / inductive / deductive (1-4).
+- [ ] **SD-5 BUG: "Invalid UUID" on new Reflect 360 engagement creation** (recurring).
+- [ ] **SD-6 Persona report by purpose**: selection = fit score; development = development plan + Academy links.
+- [ ] **SD-7 Technical report**: subcategory definitions + candidate narrative + level definitions (basic/intermediate/advanced) + a hints option.
+
+**Meeting items (config / non-demo-critical):**
+- [ ] **SD-8 IA restructure**: two solution columns - Talent Acquisition ("Selection" tab) + Talent Management ("Development" tab), each exposing the relevant services; clean the stray Cognitive "Overview".
+- [ ] **SD-9 Persona item-format option**: ipsative (most/least describes you) vs normative (agree/disagree).
+- [ ] **SD-10 Provision the SDAIA ARC org as saudi/government** + issue the per-pilot access-code batches.
 
 ## ⭐ Priority 2 - KAFD (King Abdullah Financial District)
 
@@ -142,3 +170,31 @@ Migrations 00099 / 00100 / 00101 applied to prod this session.
 - [x] **Reflect 360 five open-ended questions** (00101): rater form (standard + gamified) + scoring + participant report, bilingual, alongside Start/Stop/Continue.
 - [x] **Consolidated voucher hub** at `/admin/vouchers` (ARC + Technical tabs + cross-service summary; Technical nav repointed; no schema change).
 - [ ] (Optional follow-up) Replace Reflect's Start/Stop/Continue with the 5 questions if 8 open prompts is too many - currently keeping both per user decision.
+
+## H. ARC audit - open findings (2026-06-17 end-to-end re-run)
+
+Full re-run: ~743 atomic checks across 13 domains, 658 PASS. The 3 highest-impact FAILs and
+their tightly-coupled siblings are **FIXED + shipped** (commits `04a5a17`, `7e0d4aa`; migrations
+00115/00116 applied):
+- [x] Band-gap mislabel (SCORE-03/07) - lower-threshold band lookup.
+- [x] Subset-stage overall deflation (SCORE-14/16) + SCOPE-03 no-op validator.
+- [x] Dead Agentic tier (AGN-* / 00116 layer flip + save bypass + form sections) + GUIDE-07 + DERIVE-04 contamination guard applied across scoring / compliance / distortion / detectors.
+- [x] (Earlier) SAMA CSF framework (00113/00114), sector binding (00115), compliance recalc-on-completion + pillar-scope gating + not-yet-calculated state, regulatory-extractor severity enum, Phase 2 Arabic help text, bilingual PDF Workforce+Agentic sections.
+
+**Open FAILs (6):**
+- [ ] **WEIGHT-04** - weight editor writes 0 into out-of-scope pillars / not scoped to the in-scope set (non-Enterprise). Pairs with the SCORE-16 renormalization (overlaps SD-1).
+- [ ] **NOTES-14** - General (pillar_id NULL) include-in-report notes render in EN-only/AR-only but drop from the bilingual report.
+- [ ] **GOV-05** - retention hardcoded 3y vs CLAUDE.md 2-year max; reconcile (drop to 2y or document carve-out). PDPL-relevant for SDAIA.
+- [ ] **AUTHZ-04** - loadRespondentByToken docstring claims it refuses frozen/archived; it doesn't. Refuse + read-only state, or fix the docstring.
+- [ ] **OFFLINE-02** - offline banner promises local persistence that doesn't exist; implement localStorage mirror or soften copy.
+- [ ] **QCRUD-08 / CMT-01** - AI-authored (is_active=false) questions have no admin activation path; stale security comment.
+
+**Open GAPs (6):**
+- [ ] **STATUS-08/09** - org assessments never transition draft->active or ->completed (happy path is draft->frozen).
+- [ ] **ORG-DELETE-02 / SANDBOX-05 / AUDIT-IMMUTABLE-01** - org hard-delete + sandbox purge write no audit row; `ara_data_management_log` has no immutability trigger.
+- [ ] **DEEPDIVE-03 / MODEB-06** - Mode B deep-dive doesn't set consultant_id -> owning consultant can't open its detail under RLS.
+- [ ] **REASSESS-09** - prior_assessment_id (00020) not surfaced as a Year N-1 baseline link.
+- [ ] **NOTES-13** - note_text_ar not hand-editable.
+- [ ] **DEFER-01** - regulatory documents have no admin approve/reject lifecycle.
+
+**Open PARTIALs (28, condensed):** TIMER-05 (time limit client-only, not server-enforced), QCSV-02/VAL-02 (CSV export doesn't round-trip; options-shape Zod mismatch), EMAIL-17 (Graph transport drops PDF attachments), ORG-ANON-03/06 (anonymize leaves residual PII + no actor), YOY-07 (YoY scan truncates below the compatible prior), DIST-04 (distortion mean not leave-one-out), REC-ARA-40 (ARA->quote leads all attributed "direct"), DOC-COUNT-02/DOC-NAMES-01 (doc framework counts/names vs seeded), NAME-01 (globals.css comment still says "ARA Compass"), I18N-03 (RTL FOUC under ar cookie on consultant/admin), AGN-REASSESS-01 (reassessment doesn't carry include_agentic/individual_layer + tier + pillars_in_scope), NOTES-07/15 (AR-authored notes no EN translation; null note_text_ar shows EN dup), PDF-07/43 (no durable PDF persisted; no version bump), PDF-17/34/38/41 (bilingual radar axis labels English; section parity; localized compliance chrome), UC-03 (use-case portfolio not suppressed for individual_only), TIMER-06 (resume doesn't auto-arm countdown), EMAIL-15/18 (personal-email gate; split origin env vars), CRON-14/18 (cron copy says Vercel; pin node runtime), VOUCHER-12 (redeem page doesn't pre-validate code), REC-ARA-46 (zero-answer factor read as max gap).

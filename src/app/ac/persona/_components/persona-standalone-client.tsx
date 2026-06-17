@@ -544,16 +544,35 @@ export function PersonaStandaloneClient({
       )}
 
       {phase === "result" && profile && (
-        <PersonaResult
-          competencies={competencies}
-          profile={profile}
-          name={name.trim()}
-          ar={ar}
-          onReset={reset}
-          sessionId={sessionId}
-          purpose={purpose}
-          role={selectedRole}
-        />
+        pinned?.purpose === "hiring" ? (
+          /* Hiring voucher (candidate) flow: results are NOT shown to the
+             taker - the fit report is a client/admin deliverable. */
+          <div className="rounded-xl border bg-card p-10 text-center" dir={ar ? "rtl" : "ltr"}>
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-2xl text-emerald-700">
+              ✓
+            </div>
+            <h2 className="text-lg font-semibold text-[#010131]">
+              {tx("Your assessment has been submitted", "تم إرسال تقييمك")}
+            </h2>
+            <p className="mt-3 text-sm text-muted-foreground">
+              {tx(
+                "Thank you. Your responses have been recorded and will be shared with the requesting organization. Results are not shown here.",
+                "شكراً لك. تم تسجيل إجاباتك وستتم مشاركتها مع المؤسسة الطالبة للتقييم، ولا تُعرض النتائج هنا.",
+              )}
+            </p>
+          </div>
+        ) : (
+          <PersonaResult
+            competencies={competencies}
+            profile={profile}
+            name={name.trim()}
+            ar={ar}
+            onReset={reset}
+            sessionId={sessionId}
+            purpose={purpose}
+            role={selectedRole}
+          />
+        )
       )}
     </div>
   );

@@ -1,6 +1,7 @@
 import { renderToBuffer } from "@react-pdf/renderer";
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getCurrentCaller } from "@/lib/ara/auth-guards";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
 import { loadPersonaRoleById } from "@/lib/scoring/persona-roles";
 import { computeFit, FIT_BAND_HEX } from "@/lib/scoring/persona-fit";
@@ -40,6 +41,17 @@ export async function GET(_req: Request, { params }: { params: { sessionId: stri
       }
     }
     if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
+
+    // A HIRING report is a client/admin deliverable - require admin auth so a
+    // candidate (voucher delegate, no account) can't pull their own fit PDF even
+    // if they know the session id. Development self-reads stay open (the taker's
+    // own growth report). Tolerant: a pre-00110 session has no purpose -> open.
+    if (session.purpose === "hiring") {
+      const caller = await getCurrentCaller();
+      if (!caller || caller.role !== "admin") {
+        return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+      }
+    }
 
     const { data: responses } = await sb
       .from("behavioral_assessment_responses")

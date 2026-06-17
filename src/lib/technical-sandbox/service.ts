@@ -913,6 +913,81 @@ export async function listSubmittedSessions(limit = 100): Promise<SubmittedSessi
   }));
 }
 
+// ── Admin: sandbox blocks for SME review (per function, grouped by pillar) ──
+export interface ReviewBlock {
+  id: string;
+  nameEn: string;
+  engineType: string;
+  status: string;        // runtime visibility (active/inactive)
+  reviewStatus: string;  // SME workflow (draft/in_review/approved/rejected/retired)
+  reviewerName: string | null;
+  reviewedAt: string | null;
+}
+export interface ReviewPillar {
+  pillarId: string;
+  pillarName: string;
+  blocks: ReviewBlock[];
+}
+
+export async function listBlocksForReview(functionId: string): Promise<ReviewPillar[]> {
+  const sb = createServiceClient();
+  const { data: pillars, error: pErr } = await sb
+    .from("technical_pillars")
+    .select("id, name_en, sort_order")
+    .eq("function_id", functionId)
+    .order("sort_order");
+  if (pErr) {
+    if (isMissingSchemaError(pErr)) return [];
+    throw pErr;
+  }
+  const pids = (pillars ?? []).map((p) => p.id);
+  if (pids.length === 0) return [];
+
+  const { data: blocks, error: bErr } = await sb
+    .from("technical_skill_blocks")
+    .select("id, pillar_id, name_en, engine_type, status, review_status, reviewer_name, reviewed_at")
+    .in("pillar_id", pids)
+    .order("sort_order");
+  // Tolerate migration 00120 not applied (review_status column absent).
+  const rows = bErr
+    ? (isMissingSchemaError(bErr) ? [] : (() => { throw bErr; })())
+    : (blocks ?? []);
+
+  return (pillars ?? []).map((p) => ({
+    pillarId: p.id,
+    pillarName: p.name_en,
+    blocks: (rows as Array<Record<string, unknown>>)
+      .filter((b) => b.pillar_id === p.id)
+      .map((b) => ({
+        id: String(b.id),
+        nameEn: String(b.name_en),
+        engineType: String(b.engine_type),
+        status: String(b.status ?? "active"),
+        reviewStatus: String(b.review_status ?? "draft"),
+        reviewerName: (b.reviewer_name as string | null) ?? null,
+        reviewedAt: (b.reviewed_at as string | null) ?? null,
+      })),
+  }));
+}
+
+export async function setBlockReviewStatus(
+  blockId: string,
+  reviewStatus: "draft" | "in_review" | "approved" | "rejected" | "retired",
+  reviewerName: string | null,
+): Promise<{ ok: boolean; error?: string }> {
+  const sb = createServiceClient();
+  const { error } = await sb
+    .from("technical_skill_blocks")
+    .update({
+      review_status: reviewStatus,
+      reviewer_name: reviewerName,
+      reviewed_at: new Date().toISOString(),
+    })
+    .eq("id", blockId);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
 // ── Framework overview (showcase): domains -> functions -> (active) pillars/blocks ──
 export interface OverviewBlock { nameEn: string; engineType: EngineType; frameworkRef: string | null }
 export interface OverviewPillar { nameEn: string; blocks: OverviewBlock[] }

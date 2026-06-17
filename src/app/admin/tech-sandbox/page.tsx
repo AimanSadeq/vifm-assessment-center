@@ -39,6 +39,9 @@ export default async function TechSandboxAdminPage() {
           <Link href="/admin/tech-sandbox/results" className="text-sm font-medium text-[#5391D5] hover:underline">
             View completed results →
           </Link>
+          <Link href="/admin/tech-sandbox/sandbox-blocks" className="text-sm text-[#5391D5] hover:underline">
+            Review sandbox tasks →
+          </Link>
           <Link href="/admin/tech-sandbox/answers" className="text-sm text-[#5391D5] hover:underline">
             View model answers (admin) →
           </Link>

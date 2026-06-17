@@ -9,7 +9,9 @@ import {
   Archive,
   Clock,
 } from "lucide-react";
+import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getCurrentCaller, type AraCaller } from "@/lib/ara/auth-guards";
 import { getServerT, type ServerT } from "@/lib/i18n/server";
 import { cn } from "@/lib/utils";
 
@@ -30,15 +32,18 @@ type EngagementRow = {
   ara_organizations: { name: string; region: string; sector: string } | null;
 };
 
-async function fetchEngagements(): Promise<EngagementRow[]> {
+async function fetchEngagements(caller: AraCaller): Promise<EngagementRow[]> {
   const sb = createServiceClient();
-  const { data, error } = await sb
+  let query = sb
     .from("reflect_engagements")
     .select(
       "id, name, status, is_sandbox, participant_target_count, field_window_start, field_window_end, launched_at, created_at, ara_organizations(name, region, sector)"
     )
     .order("created_at", { ascending: false })
     .limit(100);
+  // A consultant sees only their own engagements; admins see all.
+  if (caller.role !== "admin") query = query.eq("consultant_id", caller.uid);
+  const { data, error } = await query;
 
   if (error) return [];
   return ((data ?? []) as unknown) as EngagementRow[];
@@ -73,7 +78,10 @@ const STATUS_STYLE: Record<string, { labelKey: string; icon: typeof Clock; class
 };
 
 export default async function ReflectConsultantPage() {
-  const engagements = await fetchEngagements();
+  // Consultant or admin only - the dashboard lists engagement data.
+  const caller = await getCurrentCaller();
+  if (!caller || (caller.role !== "consultant" && caller.role !== "admin")) notFound();
+  const engagements = await fetchEngagements(caller);
   const t = await getServerT();
 
   return (

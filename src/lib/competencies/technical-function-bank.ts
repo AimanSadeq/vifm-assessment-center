@@ -46,6 +46,10 @@ export const ADAPTIVE_MIN_POOL = 10;
 export type FunctionCutScore = {
   passPct: number;
   minItemsPerSkill: number;
+  /** Approved items per skill SERVED in one sitting (exposure control). For
+   *  variation the approved pool should exceed this. Falls back to
+   *  DEFAULT_DRAW_PER_SKILL when unset / migration 00122 not applied. */
+  drawPerSkill: number;
   method: string | null;
   rationale: string | null;
 };
@@ -112,21 +116,40 @@ export async function getFunctionCutScore(functionId: string | null): Promise<Fu
   const fallback: FunctionCutScore = {
     passPct: DEFAULT_PASS_PCT,
     minItemsPerSkill: DEFAULT_MIN_PER_SKILL,
+    drawPerSkill: DEFAULT_DRAW_PER_SKILL,
     method: null,
     rationale: null,
   };
   if (!functionId) return fallback;
   try {
     const sb = createServiceClient();
-    const { data } = await sb
+    // Prefer the wide select (with draw_per_skill, migration 00122). If that
+    // column isn't applied yet, fall back to the narrow select so the rest of
+    // the cut-score (pass/floor/method) still loads instead of dropping to the
+    // all-defaults fallback.
+    let data: Record<string, unknown> | null = null;
+    const wide = await sb
       .from("technical_function_cut_scores")
-      .select("pass_pct, min_items_per_skill, method, rationale")
+      .select("pass_pct, min_items_per_skill, draw_per_skill, method, rationale")
       .eq("function_id", functionId)
       .maybeSingle();
+    if (wide.error) {
+      if (wide.error.code !== "42703") throw wide.error;
+      const narrow = await sb
+        .from("technical_function_cut_scores")
+        .select("pass_pct, min_items_per_skill, method, rationale")
+        .eq("function_id", functionId)
+        .maybeSingle();
+      if (narrow.error) throw narrow.error;
+      data = narrow.data as Record<string, unknown> | null;
+    } else {
+      data = wide.data as Record<string, unknown> | null;
+    }
     if (!data) return fallback;
     return {
       passPct: Number(data.pass_pct ?? DEFAULT_PASS_PCT),
       minItemsPerSkill: Number(data.min_items_per_skill ?? DEFAULT_MIN_PER_SKILL),
+      drawPerSkill: Number(data.draw_per_skill ?? DEFAULT_DRAW_PER_SKILL),
       method: (data.method as string | null) ?? null,
       rationale: (data.rationale as string | null) ?? null,
     };
@@ -343,7 +366,8 @@ export async function buildCertifiedFunctionTest(input: {
   if (skillsEn.length === 0) return null;
 
   const cut = await getFunctionCutScore(functionId);
-  const drawPerSkill = Math.max(cut.minItemsPerSkill, input.drawPerSkill ?? DEFAULT_DRAW_PER_SKILL);
+  // The configured per-sitting draw (exposure control), at least the floor.
+  const drawPerSkill = Math.max(cut.minItemsPerSkill, input.drawPerSkill ?? cut.drawPerSkill);
 
   let rows: AssemblyRow[] = [];
   try {

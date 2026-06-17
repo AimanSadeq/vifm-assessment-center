@@ -53,9 +53,13 @@ export function CertWorkbench({
   const [pending, startTransition] = useTransition();
   const [passPct, setPassPct] = useState(String(cut.passPct));
   const [minPer, setMinPer] = useState(String(cut.minItemsPerSkill));
+  const [drawPer, setDrawPer] = useState(String(cut.drawPerSkill));
   const [timeLimit, setTimeLimit] = useState(timerMinutes != null ? String(timerMinutes) : "");
   const [openSkill, setOpenSkill] = useState<string | null>(null);
   const [draftingSkill, setDraftingSkill] = useState<string | null>(null);
+  // Drafting target: a surplus over the per-sitting draw gives exposure control.
+  const drawNum = Math.max(1, Number(drawPer) || cut.drawPerSkill);
+  const [targetPool, setTargetPool] = useState(String(Math.max(8, drawNum * 2)));
 
   const skillLabel = (en: string) => {
     const i = fn.skillsEn.indexOf(en);
@@ -106,7 +110,7 @@ export function CertWorkbench({
         ref: fn.ref,
         skills: fn.skillsEn,
         context: fn.name,
-        perSkill: DRAFT_COUNT,
+        perSkill: Math.max(1, Number(targetPool) || DRAFT_COUNT),
       });
       setDraftingAll(false);
       if ("error" in res) {
@@ -133,6 +137,7 @@ export function CertWorkbench({
           functionId: fn.id!,
           passPct: Number(passPct),
           minItemsPerSkill: Number(minPer),
+          drawPerSkill: drawPer.trim() === "" ? null : Number(drawPer),
           timeLimitMinutes: timeLimit.trim() === "" ? null : Number(timeLimit),
         }),
       t("techFn.cert.cutSaved")
@@ -167,6 +172,10 @@ export function CertWorkbench({
           <div className="w-44 space-y-1.5">
             <Label className="text-xs">{t("techFn.cert.minPerSkill")}</Label>
             <Input type="number" min={1} max={20} value={minPer} onChange={(e) => setMinPer(e.target.value)} />
+          </div>
+          <div className="w-40 space-y-1.5">
+            <Label className="text-xs" title={t("techFn.cert.drawHint")}>{t("techFn.cert.drawPerSkill")}</Label>
+            <Input type="number" min={1} max={20} value={drawPer} onChange={(e) => setDrawPer(e.target.value)} />
           </div>
           <div className="w-44 space-y-1.5">
             <Label className="text-xs">{t("tech.sme.timeLimit")}</Label>
@@ -203,17 +212,33 @@ export function CertWorkbench({
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle className="text-base">{t("techFn.cert.certTitle")}</CardTitle>
-            <Button
-              onClick={draftAll}
-              disabled={pending || !aiOn}
-              size="sm"
-              className="gap-1.5"
-              title={t("techFn.cert.draftAllHint")}
-            >
-              {draftingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              {draftingAll ? t("techFn.cert.draftingAll") : t("techFn.cert.draftAll")}
-            </Button>
+            <div className="flex items-end gap-2">
+              <div className="w-32 space-y-1">
+                <Label className="text-[11px]" title={t("techFn.cert.draftAllTargetHint")}>
+                  {t("techFn.cert.targetPool")}
+                </Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={targetPool}
+                  onChange={(e) => setTargetPool(e.target.value)}
+                  className="h-9"
+                />
+              </div>
+              <Button
+                onClick={draftAll}
+                disabled={pending || !aiOn}
+                size="sm"
+                className="gap-1.5"
+                title={t("techFn.cert.draftAllTargetHint")}
+              >
+                {draftingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                {draftingAll ? t("techFn.cert.draftingAll") : t("techFn.cert.draftAll")}
+              </Button>
+            </div>
           </div>
+          <p className="text-xs text-muted-foreground">{t("techFn.cert.exposureLegend", { draw: drawNum })}</p>
         </CardHeader>
         <CardContent className="space-y-2">
           {fn.skillsEn.map((skill) => {
@@ -239,6 +264,16 @@ export function CertWorkbench({
                       {ok ? <Check className="h-3 w-3" /> : <AlertCircle className="h-3 w-3" />}
                       {t("techFn.cert.skillFloor", { approved, min: readiness.minItemsPerSkill })}
                     </span>
+                    {approved > 0 && approved <= drawNum && (
+                      <span className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-medium text-rose-700">
+                        {t("techFn.cert.expThin")}
+                      </span>
+                    )}
+                    {approved >= drawNum * 2 && (
+                      <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
+                        {t("techFn.cert.expGood")}
+                      </span>
+                    )}
                     {skillItems.length > 0 && (
                       <span className="text-[10px] text-slate-400">· {skillItems.length} total</span>
                     )}

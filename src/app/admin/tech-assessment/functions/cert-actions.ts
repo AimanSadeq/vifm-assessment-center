@@ -150,6 +150,8 @@ export async function setFunctionCutScoreAction(input: {
   functionId: string;
   passPct: number;
   minItemsPerSkill: number;
+  /** Per-sitting draw size (exposure control); null/undefined leaves it unset. */
+  drawPerSkill?: number | null;
   method?: string | null;
   rationale?: string | null;
   /** Per-instance time limit (minutes); null/0 = no limit. */
@@ -161,6 +163,8 @@ export async function setFunctionCutScoreAction(input: {
 
   const passPct = Math.max(1, Math.min(100, Math.round(Number(input.passPct))));
   const minItemsPerSkill = Math.max(1, Math.min(20, Math.round(Number(input.minItemsPerSkill))));
+  const drawPerSkill =
+    input.drawPerSkill == null ? null : Math.max(1, Math.min(20, Math.round(Number(input.drawPerSkill))));
 
   // Per-instance time limit, keyed by the function ref (the run scope the API reads).
   if (input.timeLimitMinutes !== undefined) {
@@ -170,19 +174,26 @@ export async function setFunctionCutScoreAction(input: {
 
   try {
     const sb = createServiceClient();
-    const { error } = await sb.from("technical_function_cut_scores").upsert(
-      {
-        function_id: input.functionId,
-        pass_pct: passPct,
-        min_items_per_skill: minItemsPerSkill,
-        method: input.method ?? null,
-        rationale: input.rationale ?? null,
-        set_by_name: reviewerName(g.caller),
-        set_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "function_id" }
-    );
+    const baseRow = {
+      function_id: input.functionId,
+      pass_pct: passPct,
+      min_items_per_skill: minItemsPerSkill,
+      method: input.method ?? null,
+      rationale: input.rationale ?? null,
+      set_by_name: reviewerName(g.caller),
+      set_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    let { error } = await sb
+      .from("technical_function_cut_scores")
+      .upsert({ ...baseRow, draw_per_skill: drawPerSkill }, { onConflict: "function_id" });
+    // Tolerant of migration 00122 not applied: persist without draw_per_skill so
+    // the rest of the standard still saves (the draw then uses the code default).
+    if (error && error.code === "42703") {
+      ({ error } = await sb
+        .from("technical_function_cut_scores")
+        .upsert(baseRow, { onConflict: "function_id" }));
+    }
     if (error) return { error: error.message };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "save failed" };

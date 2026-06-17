@@ -92,6 +92,13 @@ export async function uploadAraRegulatoryDocument(formData: FormData) {
   // Insert each requirement against the chosen framework. We swallow
   // unique-constraint collisions on requirement_code (existing requirement
   // already imported) by upserting on the unique key.
+  // Backstop the severity against the ara_severity enum (mandatory |
+  // recommended | advisory). A single off-spec value would otherwise fail the
+  // enum cast and reject the ENTIRE batch, flipping the document to 'rejected'.
+  const VALID_SEVERITY = new Set(["mandatory", "recommended", "advisory"]);
+  const clampSeverity = (s: string | null | undefined): "mandatory" | "recommended" | "advisory" =>
+    s && VALID_SEVERITY.has(s) ? (s as "mandatory" | "recommended" | "advisory") : "advisory";
+
   const rows = extracted.map((r, i) => ({
     framework_id: framework.id,
     requirement_code: r.requirement_code,
@@ -99,7 +106,7 @@ export async function uploadAraRegulatoryDocument(formData: FormData) {
     requirement_text_ar: r.requirement_text_ar,
     requirement_category: r.requirement_category,
     pillar_id: r.pillar_id,
-    severity: r.severity,
+    severity: clampSeverity(r.severity),
     display_order: i,
   }));
   const { error: reqErr } = await sb

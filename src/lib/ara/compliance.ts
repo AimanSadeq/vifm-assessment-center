@@ -1,7 +1,58 @@
 import { createServiceClient } from "@/lib/supabase/server";
+import { getPillarsForAssessment } from "@/lib/constants/ara-stages";
 import type {
-  AraAssessment, AraComplianceStatus, AraRegulatoryFramework, AraRegulatoryRequirement,
+  AraAssessment, AraComplianceStatus, AraEngagementStage, AraPillarId,
+  AraRegulatoryFramework, AraRegulatoryRequirement,
 } from "@/types/ara";
+
+// ─────────────────────────────────────────────────────────────
+// Resolve the effective scope for an assessment's compliance:
+//   - region + sector: read from the assessment row, which is the single
+//     source of truth across the module (report header, detail badges,
+//     peer-benchmark cohort matching, respondent question filtering all
+//     read it). The row is kept correct at WRITE time - the create paths
+//     (createAraAssessment / createReassessmentFromPrior) stamp it from
+//     the owning org, updateAraOrganization re-stamps draft assessments
+//     on an org edit, and a one-time backfill (migration 00115) fixes any
+//     legacy mis-pick. Deriving it from the org HERE instead would split-
+//     brain compliance against those other surfaces (and would move a
+//     historical assessment's region even though its answers were drawn
+//     from the original region's question set), so we keep it on the row.
+//   - pillarsInScope: the pillars actually measured at this stage /
+//     selection, so requirements mapped to out-of-scope pillars are
+//     neither persisted nor counted (they'd otherwise sit as permanent
+//     "unknown" and inflate the requirement total).
+// ─────────────────────────────────────────────────────────────
+type AssessmentScope = {
+  region: AraAssessment["region"];
+  sector: AraAssessment["sector"];
+  pillarsInScope: ReadonlyArray<AraPillarId>;
+};
+
+async function resolveAssessmentScope(
+  sb: ReturnType<typeof createServiceClient>,
+  assessmentId: string
+): Promise<AssessmentScope | null> {
+  const { data: a } = await sb
+    .from("ara_assessments")
+    .select("id, region, sector, engagement_stage, pillars_in_scope")
+    .eq("id", assessmentId)
+    .maybeSingle<{
+      id: string;
+      region: AraAssessment["region"];
+      sector: AraAssessment["sector"];
+      engagement_stage: AraEngagementStage;
+      pillars_in_scope: AraPillarId[] | null;
+    }>();
+  if (!a) return null;
+
+  const pillarsInScope = getPillarsForAssessment({
+    engagement_stage: a.engagement_stage,
+    pillars_in_scope: a.pillars_in_scope ?? null,
+  });
+
+  return { region: a.region, sector: a.sector, pillarsInScope };
+}
 
 // Extra type - requirements have extra fields not in AraRegulatoryFramework
 export type AraRegulatoryRequirementRow = {
@@ -81,12 +132,10 @@ export function complianceStatusLabel(status: AraComplianceStatus) {
 export async function recalculateAssessmentCompliance(assessmentId: string): Promise<void> {
   const sb = createServiceClient();
 
-  const { data: assessment } = await sb
-    .from("ara_assessments")
-    .select("id, region, sector")
-    .eq("id", assessmentId)
-    .maybeSingle<Pick<AraAssessment, "id" | "region" | "sector">>();
-  if (!assessment) return;
+  const scope = await resolveAssessmentScope(sb, assessmentId);
+  if (!scope) return;
+  // frameworkApplies / requirementApplies key off region + sector only.
+  const assessment = { region: scope.region, sector: scope.sector };
 
   // Load applicable frameworks + their requirements
   const { data: frameworks } = await sb
@@ -139,6 +188,19 @@ export async function recalculateAssessmentCompliance(assessmentId: string): Pro
   for (const req of requirements) {
     if (!requirementApplies(req, assessment)) continue;
 
+    // Pillar-scope gate: a requirement mapped to a pillar that isn't measured
+    // at this stage/selection can never be scored, so don't persist a row for
+    // it (it would sit as a permanent "unknown" and inflate the framework's
+    // requirement total). Requirements with no pillar are always kept. Skipped
+    // for the individual stage / legacy rows where the scope set is empty.
+    if (
+      scope.pillarsInScope.length > 0 &&
+      req.pillar_id &&
+      !scope.pillarsInScope.includes(req.pillar_id as AraPillarId)
+    ) {
+      continue;
+    }
+
     const { data: existing } = await sb
       .from("ara_compliance_results")
       .select("id, evidence_note")
@@ -184,6 +246,11 @@ export type FrameworkComplianceSummary = {
   not_met: number;
   unknown: number;
   percent: number | null;
+  /** False when no compliance results exist yet for this framework (the
+   *  consultant hasn't run Recalculate and no respondent has completed),
+   *  so the UI can show a "not yet calculated" state instead of a
+   *  misleading "-" / all-zero card. */
+  calculated: boolean;
 };
 
 export async function summarizeComplianceByFramework(
@@ -191,12 +258,9 @@ export async function summarizeComplianceByFramework(
 ): Promise<FrameworkComplianceSummary[]> {
   const sb = createServiceClient();
 
-  const { data: assessment } = await sb
-    .from("ara_assessments")
-    .select("id, region, sector")
-    .eq("id", assessmentId)
-    .maybeSingle<Pick<AraAssessment, "id" | "region" | "sector">>();
-  if (!assessment) return [];
+  const scope = await resolveAssessmentScope(sb, assessmentId);
+  if (!scope) return [];
+  const assessment = { region: scope.region, sector: scope.sector };
 
   const { data: frameworks } = await sb
     .from("ara_regulatory_frameworks")
@@ -213,9 +277,19 @@ export async function summarizeComplianceByFramework(
   for (const f of applicable) {
     const { data: reqs } = await sb
       .from("ara_regulatory_requirements")
-      .select("id")
+      .select("id, pillar_id")
       .eq("framework_id", f.id);
-    const reqIds = (reqs ?? []).map((r) => r.id);
+    // Count only requirements whose pillar is in scope for this stage/selection
+    // (matches recalc's gate), so the total reflects what was actually
+    // measured. Requirements with no pillar are always included.
+    const reqIds = (reqs ?? [])
+      .filter(
+        (r) =>
+          scope.pillarsInScope.length === 0 ||
+          !r.pillar_id ||
+          scope.pillarsInScope.includes(r.pillar_id as AraPillarId)
+      )
+      .map((r) => r.id);
     if (reqIds.length === 0) continue;
 
     const { data: results } = await sb
@@ -244,6 +318,8 @@ export async function summarizeComplianceByFramework(
       not_met: counts.not_met,
       unknown: counts.unknown,
       percent,
+      // No result rows at all => compliance hasn't been calculated yet.
+      calculated: (results ?? []).length > 0,
     });
   }
 

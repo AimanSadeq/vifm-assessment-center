@@ -359,9 +359,11 @@ export async function markAraRespondentComplete(token: string): Promise<void> {
       }
     }
 
-    // Consultant notification - fires for org-stage assessments (incl. Mode C,
-    // where the consultant tracks completion progress regardless of the layer).
+    // Org-stage post-completion work (incl. Mode C). Individual-stage
+    // assessments have no org pillars / regulatory frameworks, so they skip
+    // both the consultant notification and the compliance recalc.
     if (a?.engagement_stage !== "individual") {
+      // Consultant notification - the consultant tracks completion progress.
       tasks.push(
         (async () => {
           try {
@@ -369,6 +371,21 @@ export async function markAraRespondentComplete(token: string): Promise<void> {
             await notifyConsultantOnRespondentComplete(respondent.id);
           } catch (err) {
             console.error("[markAraRespondentComplete] consultant notify failed:", err);
+          }
+        })(),
+      );
+
+      // Refresh regulatory compliance so a framework's card populates as
+      // respondents finish, instead of showing a blank "-" / 0 state until
+      // the consultant manually clicks Recalculate (or freezes). Idempotent
+      // and override-preserving, so re-running per completion is safe.
+      tasks.push(
+        (async () => {
+          try {
+            const { recalculateAssessmentCompliance } = await import("@/lib/ara/compliance");
+            await recalculateAssessmentCompliance(respondent.assessment_id);
+          } catch (err) {
+            console.error("[markAraRespondentComplete] compliance recalc failed:", err);
           }
         })(),
       );

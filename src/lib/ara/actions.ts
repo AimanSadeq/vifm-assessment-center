@@ -127,6 +127,41 @@ export async function updateAraOrganization(formData: FormData) {
     .eq("id", id);
   if (error) return { ok: false, error: error.message };
 
+  // Keep not-yet-run assessments' region/sector in sync with the org so a
+  // corrected classification (e.g. a bank mis-tagged 'general' at first)
+  // propagates before the assessment runs - the assessment row is the
+  // source of truth that compliance + the report read. Scope: DRAFT
+  // assessments that have not yet collected any answers. We deliberately
+  // leave active/completed/frozen/archived rows - and any draft that
+  // already has responses - untouched, because respondent question
+  // selection keys off region/sector, so moving it after answers exist
+  // would re-filter a run mid-flight. Pre-existing divergence on those rows
+  // is left as-is (not auto-rewritten); new assessments always inherit the
+  // corrected org values at creation.
+  {
+    const { data: draftRows } = await sb
+      .from("ara_assessments")
+      .select("id")
+      .eq("organization_id", id)
+      .eq("status", "draft");
+    const draftIds = (draftRows ?? []).map((d) => d.id);
+    if (draftIds.length > 0) {
+      const { data: answered } = await sb
+        .from("ara_responses")
+        .select("assessment_id")
+        .in("assessment_id", draftIds);
+      const hasAnswers = new Set((answered ?? []).map((r) => r.assessment_id));
+      const safeIds = draftIds.filter((x) => !hasAnswers.has(x));
+      if (safeIds.length > 0) {
+        const { error: stampErr } = await sb
+          .from("ara_assessments")
+          .update({ region: parsed.data.region, sector: parsed.data.sector })
+          .in("id", safeIds);
+        if (stampErr) console.warn("[updateAraOrganization] draft re-stamp failed:", stampErr.message);
+      }
+    }
+  }
+
   // Results-visibility + send-to-client prefs (migration 00108). Separate,
   // best-effort update so org edits keep working before the migration is
   // applied (a missing column can't fail the core save above).
@@ -270,10 +305,29 @@ export async function createAraAssessment(formData: FormData) {
   }
 
   const sb = createServiceClient();
+
+  // The organisation is the source of truth for region + sector (they decide
+  // which regulatory frameworks apply). The wizard exposes both as editable
+  // fields, so a mis-pick would silently exclude sector-scoped frameworks
+  // (e.g. SAMA CSF for Saudi banking). Derive from the org so the assessment's
+  // region/sector can never diverge from the client's. Falls back to the
+  // posted values only if the org row (or its region/sector) is missing.
+  let effectiveRegion = parsed.data.region;
+  let effectiveSector = parsed.data.sector;
+  {
+    const { data: org } = await sb
+      .from("ara_organizations")
+      .select("region, sector")
+      .eq("id", parsed.data.organization_id)
+      .maybeSingle<{ region: typeof effectiveRegion | null; sector: typeof effectiveSector | null }>();
+    if (org?.region) effectiveRegion = org.region;
+    if (org?.sector) effectiveSector = org.sector;
+  }
+
   const insertPayload: Record<string, unknown> = {
     organization_id: parsed.data.organization_id,
-    region: parsed.data.region,
-    sector: parsed.data.sector,
+    region: effectiveRegion,
+    sector: effectiveSector,
     default_language: parsed.data.default_language,
     is_sandbox: parsed.data.is_sandbox,
     question_bank_version_id: parsed.data.question_bank_version_id || null,

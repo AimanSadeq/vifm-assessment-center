@@ -17,7 +17,10 @@ export type ExtractedRequirement = {
   requirement_text_ar: string;
   requirement_category: string | null;
   pillar_id: string | null;
-  severity: "mandatory" | "recommended" | "informational";
+  // Must match the ara_severity enum (mandatory | recommended | advisory).
+  // "informational" is NOT a valid enum value and would reject the whole
+  // insert batch at the DB layer (admin-actions also clamps as a backstop).
+  severity: "mandatory" | "recommended" | "advisory";
 };
 
 export async function extractRegulatoryRequirementsFromPdf(
@@ -64,7 +67,7 @@ export async function extractRegulatoryRequirementsFromPdf(
                 `  "requirement_text_ar": "...",                // formal Arabic translation, preserving numbers, dates, and proper nouns\n` +
                 `  "requirement_category": "data_protection",   // free-form short tag like "transparency", "fairness", "incident_response"\n` +
                 `  "pillar_id": "data",                         // one of: ${ARA_PILLARS.map(p => p.id).join(", ")}\n` +
-                `  "severity": "mandatory"                      // mandatory | recommended | informational\n` +
+                `  "severity": "mandatory"                      // mandatory | recommended | advisory\n` +
                 `}\n\n` +
                 `Limit to ~30 requirements maximum. Pick the most material ones if the document is large.`,
             },
@@ -89,15 +92,24 @@ export async function extractRegulatoryRequirementsFromPdf(
 
     // Validate each item against the expected shape; drop bad rows.
     const validPillarIds: Set<string> = new Set(ARA_PILLARS.map((p) => p.id));
-    const validSeverities: Set<string> = new Set(["mandatory", "recommended", "informational"]);
-    return parsed.filter((r) => {
-      if (typeof r?.requirement_code !== "string") return false;
-      if (typeof r?.requirement_text_en !== "string") return false;
-      if (typeof r?.requirement_text_ar !== "string") return false;
-      if (r.pillar_id && !validPillarIds.has(r.pillar_id)) return false;
-      if (!validSeverities.has(r.severity)) return false;
-      return true;
-    });
+    const validSeverities: Set<string> = new Set(["mandatory", "recommended", "advisory"]);
+    return parsed
+      .map((r) => ({
+        ...r,
+        // Coerce a legacy / off-spec value the model might still emit so it
+        // never reaches the ara_severity enum cast (advisory is the safe
+        // low-priority default that exists in the enum). Cast to string
+        // because the model's raw output isn't constrained to the union.
+        severity: (r?.severity as string) === "informational" ? "advisory" : r?.severity,
+      }))
+      .filter((r) => {
+        if (typeof r?.requirement_code !== "string") return false;
+        if (typeof r?.requirement_text_en !== "string") return false;
+        if (typeof r?.requirement_text_ar !== "string") return false;
+        if (r.pillar_id && !validPillarIds.has(r.pillar_id)) return false;
+        if (!validSeverities.has(r.severity)) return false;
+        return true;
+      });
   } catch (err) {
     console.error("[ara reg-extract] Failed:", err);
     return null;

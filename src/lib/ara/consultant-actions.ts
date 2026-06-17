@@ -376,13 +376,29 @@ export async function createReassessmentFromPrior(
 
   const nextYear = Math.max(prior.assessment_year + 1, new Date().getUTCFullYear());
 
+  // Re-derive region + sector from the organisation (source of truth for which
+  // regulatory frameworks apply) rather than copying the prior assessment's
+  // stored values, which could carry a stale/mis-picked sector that would
+  // silently exclude sector-scoped frameworks (e.g. SAMA CSF for Saudi banking).
+  let effectiveRegion = prior.region;
+  let effectiveSector = prior.sector;
+  {
+    const { data: org } = await sb
+      .from("ara_organizations")
+      .select("region, sector")
+      .eq("id", prior.organization_id)
+      .maybeSingle<{ region: string | null; sector: string | null }>();
+    if (org?.region) effectiveRegion = org.region;
+    if (org?.sector) effectiveSector = org.sector;
+  }
+
   const { data: created, error: insertErr } = await sb
     .from("ara_assessments")
     .insert({
       organization_id: prior.organization_id,
       consultant_id: prior.consultant_id,
-      region: prior.region,
-      sector: prior.sector,
+      region: effectiveRegion,
+      sector: effectiveSector,
       default_language: prior.default_language,
       is_sandbox: prior.is_sandbox,
       engagement_stage: prior.engagement_stage,

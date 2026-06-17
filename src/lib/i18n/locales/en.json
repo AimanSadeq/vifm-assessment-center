@@ -2731,6 +2731,7 @@
     "compliance_desc": "{{region}} frameworks applicable to your sector. Auto-derived from answers; override when you have direct evidence.",
     "recalculate": "Recalculate",
     "compliance_empty": "No frameworks apply to this region/sector combination.",
+    "compliance_not_calculated": "Not yet calculated - run Recalculate or wait for respondents to complete.",
     "tier_n": "Tier {{n}}",
     "n_met": "{{n}} met",
     "n_partial": "{{n}} partial",

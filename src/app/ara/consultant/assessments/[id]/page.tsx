@@ -1332,26 +1332,42 @@ export default async function AraAssessmentDetailPage({
                       <p className="text-xs text-muted-foreground mb-2 line-clamp-1">
                         {s.framework_name_en}
                       </p>
-                      <div className="flex items-center gap-3 text-xs">
-                        <span className="tabular-nums font-semibold">
-                          {s.percent != null ? `${s.percent}%` : "-"}
-                        </span>
-                        <span className="text-emerald-700">{t("araAssessmentDetail.n_met", { n: s.met })}</span>
-                        <span className="text-amber-700">{t("araAssessmentDetail.n_partial", { n: s.partial })}</span>
-                        <span className="text-red-700">{t("araAssessmentDetail.n_not_met", { n: s.not_met })}</span>
-                        <span className="text-muted-foreground">{t("araAssessmentDetail.n_unknown", { n: s.unknown })}</span>
-                      </div>
+                      {s.calculated ? (
+                        <div className="flex items-center gap-3 text-xs">
+                          <span className="tabular-nums font-semibold">
+                            {s.percent != null ? `${s.percent}%` : "-"}
+                          </span>
+                          <span className="text-emerald-700">{t("araAssessmentDetail.n_met", { n: s.met })}</span>
+                          <span className="text-amber-700">{t("araAssessmentDetail.n_partial", { n: s.partial })}</span>
+                          <span className="text-red-700">{t("araAssessmentDetail.n_not_met", { n: s.not_met })}</span>
+                          <span className="text-muted-foreground">{t("araAssessmentDetail.n_unknown", { n: s.unknown })}</span>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground italic">
+                          {t("araAssessmentDetail.compliance_not_calculated")}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
 
-                {/* Requirement list with override forms */}
+                {/* Requirement list with override forms. Filter out any
+                    legacy rows whose pillar is out of scope for this
+                    stage/selection (recalc no longer creates such rows, but
+                    pre-existing ones could linger until the next recalc). */}
+                {(() => {
+                  const visibleResults = (complianceResults ?? []).filter(
+                    (r) =>
+                      !r.requirement?.pillar_id ||
+                      pillarsInScope.includes(r.requirement.pillar_id as (typeof pillarsInScope)[number])
+                  );
+                  return (
                 <details className="rounded-lg border bg-muted/30">
                   <summary className="px-4 py-2 cursor-pointer text-sm font-medium">
-                    {t("araAssessmentDetail.all_requirements", { n: (complianceResults ?? []).length })}
+                    {t("araAssessmentDetail.all_requirements", { n: visibleResults.length })}
                   </summary>
                   <div className="p-4 space-y-2 max-h-[600px] overflow-auto">
-                    {(complianceResults ?? []).map((r) => {
+                    {visibleResults.map((r) => {
                       if (!r.requirement) return null;
                       return (
                         <ComplianceRequirementRow
@@ -1364,6 +1380,8 @@ export default async function AraAssessmentDetailPage({
                     })}
                   </div>
                 </details>
+                  );
+                })()}
               </>
             )}
           </CardContent>

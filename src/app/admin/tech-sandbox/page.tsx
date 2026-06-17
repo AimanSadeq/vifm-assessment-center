@@ -35,9 +35,14 @@ export default async function TechSandboxAdminPage() {
           Candidates work in live sandboxes (spreadsheet, calculation, SQL), scored against master
           answers and banded per competency.
         </p>
-        <Link href="/admin/tech-sandbox/answers" className="mt-2 inline-block text-sm text-[#5391D5] hover:underline">
-          View model answers (admin) →
-        </Link>
+        <div className="mt-2 flex flex-wrap gap-4">
+          <Link href="/admin/tech-sandbox/results" className="text-sm font-medium text-[#5391D5] hover:underline">
+            View completed results →
+          </Link>
+          <Link href="/admin/tech-sandbox/answers" className="text-sm text-[#5391D5] hover:underline">
+            View model answers (admin) →
+          </Link>
+        </div>
       </div>
 
       {/* 1) The framework showcase — demo the breadth, then preview the live one. */}

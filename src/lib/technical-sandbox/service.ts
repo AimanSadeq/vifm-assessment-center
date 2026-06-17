@@ -864,6 +864,55 @@ export async function getSessionReport(token: string): Promise<SessionReport | n
   };
 }
 
+// ── Admin: list submitted sittings (for the client/admin results view) ──
+export interface SubmittedSessionRow {
+  token: string;
+  candidateName: string | null;
+  candidateEmail: string | null;
+  organizationName: string | null;
+  functionName: string;
+  nodeId: string | null;
+  submittedAt: string | null;
+  overallPct: number | null;
+  overallBand: string | null;
+}
+
+export async function listSubmittedSessions(limit = 100): Promise<SubmittedSessionRow[]> {
+  const sb = createServiceClient();
+  const { data, error } = await sb
+    .from("technical_sandbox_sessions")
+    .select(
+      "access_token, candidate_name, candidate_email, organization_name, submitted_at, overall_score_pct, overall_band, function:technical_functions(name_en, node_id)",
+    )
+    .eq("status", "submitted")
+    .order("submitted_at", { ascending: false })
+    .limit(limit);
+  if (error) {
+    if (isMissingSchemaError(error)) return [];
+    throw error;
+  }
+  return ((data ?? []) as unknown as Array<{
+    access_token: string;
+    candidate_name: string | null;
+    candidate_email: string | null;
+    organization_name: string | null;
+    submitted_at: string | null;
+    overall_score_pct: number | null;
+    overall_band: string | null;
+    function: { name_en: string; node_id: string | null } | null;
+  }>).map((r) => ({
+    token: r.access_token,
+    candidateName: r.candidate_name,
+    candidateEmail: r.candidate_email,
+    organizationName: r.organization_name,
+    functionName: r.function?.name_en ?? "Technical Assessment",
+    nodeId: r.function?.node_id ?? null,
+    submittedAt: r.submitted_at,
+    overallPct: r.overall_score_pct != null ? Number(r.overall_score_pct) : null,
+    overallBand: r.overall_band ?? null,
+  }));
+}
+
 // ── Framework overview (showcase): domains -> functions -> (active) pillars/blocks ──
 export interface OverviewBlock { nameEn: string; engineType: EngineType; frameworkRef: string | null }
 export interface OverviewPillar { nameEn: string; blocks: OverviewBlock[] }

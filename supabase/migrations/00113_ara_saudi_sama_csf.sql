@@ -25,8 +25,13 @@ INSERT INTO ara_regulatory_frameworks (
   'https://www.sama.gov.sa/en-US/RulesInstructions/CyberSecurity/Cyber%20Security%20Framework.pdf', 250
 ) ON CONFLICT (framework_code) DO NOTHING;
 
-INSERT INTO ara_regulatory_requirements (framework_id, requirement_code, requirement_text_en, requirement_text_ar, requirement_category, pillar_id, severity, display_order)
-SELECT id, v.code, v.en, v.ar, v.cat, v.pillar, v.sev::ara_severity, v.ord
+-- applies_to_sectors is set to ["banking"] on every requirement row to mirror
+-- the 00008 convention (each sector-restricted framework propagates its sector
+-- onto its requirements for defense-in-depth). The framework-level ["banking"]
+-- gate is the effective control, but matching the rows keeps requirementApplies
+-- consistent for any future path that loads requirements directly.
+INSERT INTO ara_regulatory_requirements (framework_id, requirement_code, requirement_text_en, requirement_text_ar, requirement_category, pillar_id, severity, applies_to_sectors, display_order)
+SELECT id, v.code, v.en, v.ar, v.cat, v.pillar, v.sev::ara_severity, '["banking"]'::jsonb, v.ord
 FROM ara_regulatory_frameworks, (VALUES
   ('SAU_SAMA_01', 'Cyber security governance, with board and senior-management oversight, explicitly covers AI systems and AI-driven financial services.', 'تشمل حوكمة الأمن السيبراني، بإشراف مجلس الإدارة والإدارة العليا، أنظمة الذكاء الاصطناعي والخدمات المالية المعتمدة عليه.', 'cybersecurity', 'governance', 'mandatory', 1),
   ('SAU_SAMA_02', 'Third-party and cloud AI providers are subject to due diligence and outsourcing risk management aligned to SAMA cloud/outsourcing rules.', 'يخضع مزودو الذكاء الاصطناعي من الأطراف الثالثة والسحابة للعناية الواجبة وإدارة مخاطر الإسناد وفق قواعد ساما للسحابة والإسناد.', 'cybersecurity', 'technology', 'mandatory', 2),

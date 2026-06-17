@@ -50,6 +50,10 @@ export function PersonaStandaloneClient({
   const [name, setName] = useState(prefillName ?? "");
   const [purpose, setPurpose] = useState<Purpose>(pinned?.purpose ?? "development");
   const [targetRoleId, setTargetRoleId] = useState(pinned?.roleProfileId ?? "");
+  // Standalone coverage override: assess only the role's competencies (default,
+  // the efficient scoped test) or the full framework (to show the whole
+  // instrument). The fit is always computed against the role either way.
+  const [scopeMode, setScopeMode] = useState<"role" | "full">("role");
   const [seed, setSeed] = useState<number>(0);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, number>>({});
@@ -97,13 +101,23 @@ export function PersonaStandaloneClient({
   // is set, so we leave it untouched (it may carry an admin override).
   const effectiveCompetencies = useMemo<BehavioralCompetency[]>(() => {
     if (pinned) return competencies;
-    if (purpose !== "hiring" || !targetRoleId) return competencies;
+    // "full" override: assess the whole framework even with a role selected.
+    if (purpose !== "hiring" || !targetRoleId || scopeMode === "full") return competencies;
     const role = roleProfiles.find((r) => r.id === targetRoleId);
     if (!role || role.comps.length === 0) return competencies;
     const want = new Set(role.comps.map((c) => c.competencyId));
     const scoped = competencies.filter((c) => want.has(c.acCompetencyId));
     return scoped.length > 0 ? scoped : competencies;
-  }, [competencies, pinned, purpose, targetRoleId, roleProfiles]);
+  }, [competencies, pinned, purpose, targetRoleId, roleProfiles, scopeMode]);
+
+  // How many of the selected role's competencies exist in the served bank
+  // (drives the coverage-toggle label).
+  const roleCompCount = useMemo(() => {
+    const role = roleProfiles.find((r) => r.id === targetRoleId);
+    if (!role) return 0;
+    const bankIds = new Set(competencies.map((c) => c.acCompetencyId));
+    return role.comps.filter((c) => bankIds.has(c.competencyId)).length;
+  }, [competencies, roleProfiles, targetRoleId]);
 
   // Seeded, section-hidden layouts (stable once the seed is set at begin()).
   const normItems = useMemo<FlatNormItem[]>(
@@ -292,6 +306,35 @@ export function PersonaStandaloneClient({
                     <p className="mt-1 text-xs text-amber-600">
                       {tx("No role profiles available. Create one under Role Profiles to get a fit score.", "لا تتوفّر ملفات أدوار. أنشئ ملفًا في (ملفات الأدوار) للحصول على درجة الملاءمة.")}
                     </p>
+                  )}
+
+                  {/* Coverage override: the role's competencies (scoped) or the
+                      whole framework. Fit is computed against the role either way. */}
+                  {targetRoleId && roleCompCount > 0 && (
+                    <div className="mt-3">
+                      <p className="text-xs font-medium text-slate-500">{tx("Competency coverage", "تغطية الجدارات")}</p>
+                      <div className="mt-1.5 inline-flex rounded-lg border border-slate-200 p-0.5">
+                        <button
+                          type="button"
+                          onClick={() => setScopeMode("role")}
+                          className={`rounded-md px-3 py-1.5 text-sm font-medium ${scopeMode === "role" ? "bg-[#5391D5] text-white" : "text-slate-600 hover:bg-slate-100"}`}
+                        >
+                          {tx(`Role competencies (${roleCompCount})`, `جدارات الدور (${roleCompCount})`)}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setScopeMode("full")}
+                          className={`rounded-md px-3 py-1.5 text-sm font-medium ${scopeMode === "full" ? "bg-[#5391D5] text-white" : "text-slate-600 hover:bg-slate-100"}`}
+                        >
+                          {tx(`Full profile (${competencies.length})`, `الملف الكامل (${competencies.length})`)}
+                        </button>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {scopeMode === "full"
+                          ? tx("Assessing the whole framework; fit still scores against the role.", "تقييم كامل الإطار؛ وتُحتسب الملاءمة مقابل الدور.")
+                          : tx("Assessing only the role's competencies (shorter, targeted).", "تقييم جدارات الدور فقط (أقصر وأكثر استهدافًا).")}
+                      </p>
+                    </div>
                   )}
                 </div>
               )}

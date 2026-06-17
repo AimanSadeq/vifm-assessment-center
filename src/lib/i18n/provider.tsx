@@ -48,9 +48,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   // Sync i18next + html dir/lang on mount AND on every route change.
-  // - Locale-aware routes follow the cookie (rtl when ar).
-  // - Everything else is forced to ltr/en so the admin / login /
-  //   assessor / client portals render in their designed direction.
+  // - Locale-aware routes (the portals listed above, now incl. the bilingual
+  //   admin/assessor/client surfaces) follow the cookie (rtl when ar).
+  // - Public marketing/landing surfaces stay ltr/en.
   useEffect(() => {
     const cookieLang = readCookie(LOCALE_COOKIE);
     const aware = localeAwareRoute(pathname);

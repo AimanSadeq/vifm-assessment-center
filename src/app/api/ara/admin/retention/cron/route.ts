@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runRetentionPurge } from "@/lib/ara/admin-actions";
+import { timingSafeStrEqual } from "@/lib/utils/secret";
 
 /**
  * Daily retention-purge cron endpoint.
@@ -41,7 +42,7 @@ export async function GET(request: Request) {
   // Vercel Cron auto-attaches the bearer; manual cron runners (e.g. a
   // simple Supabase scheduled function via pg_cron) can also send it.
   const auth = request.headers.get("authorization") ?? "";
-  if (auth !== `Bearer ${expected}`) {
+  if (!timingSafeStrEqual(auth, `Bearer ${expected}`)) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
 

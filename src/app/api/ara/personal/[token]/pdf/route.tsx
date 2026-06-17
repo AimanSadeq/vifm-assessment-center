@@ -7,6 +7,7 @@ import {
 } from "@/lib/ara/respondent-access";
 import { getOrgResultsPrefs } from "@/lib/ara/results-visibility";
 import { calculateQuestionScore } from "@/lib/ara/scoring";
+import { timingSafeStrEqual } from "@/lib/utils/secret";
 import { createServiceClient } from "@/lib/supabase/server";
 import {
   ARA_INDIVIDUAL_FACTOR_IDS,
@@ -68,7 +69,7 @@ export async function GET(
     // server-only header (CRON_SECRET) to bypass.
     const prefs = await getOrgResultsPrefs(ctx.assessment.organization_id);
     const internalKey = request.headers.get("x-ara-internal");
-    const isInternal = !!process.env.CRON_SECRET && internalKey === process.env.CRON_SECRET;
+    const isInternal = timingSafeStrEqual(internalKey, process.env.CRON_SECRET);
     if (!prefs.respondentCanView && !isInternal) {
       return NextResponse.json(
         { error: "Results are not available to the respondent for this assessment." },

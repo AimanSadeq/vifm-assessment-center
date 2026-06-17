@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { sendReflectRemindersForEngagement } from "@/lib/reflect/rater-actions";
+import { timingSafeStrEqual } from "@/lib/utils/secret";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest) {
     );
   }
   const auth = req.headers.get("authorization") ?? "";
-  if (auth !== `Bearer ${secret}`) {
+  if (!timingSafeStrEqual(auth, `Bearer ${secret}`)) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 

@@ -17,4 +17,7 @@ export function isAIConfigured(): boolean {
   return !!process.env.ANTHROPIC_API_KEY;
 }
 
-export const AI_MODEL = "claude-sonnet-4-20250514";
+// claude-sonnet-4-20250514 returns 404 (not available to this account's API
+// key), which silently failed every AI call into the static fallbacks. The
+// account's available Sonnet is 4.5 (verified live against the API).
+export const AI_MODEL = "claude-sonnet-4-5-20250929";

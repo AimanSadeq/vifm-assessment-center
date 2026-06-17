@@ -14,7 +14,7 @@ import {
   type FlatNormItem, type IpsativeBlock, type IpsativeChoice,
 } from "@/lib/scoring/persona-format";
 import {
-  computeFit, FIT_BAND_TW, type RoleCompReq, type FitResult,
+  computeFit, competencyNarrative, FIT_BAND_TW, type RoleCompReq, type FitResult,
 } from "@/lib/scoring/persona-fit";
 
 type Lang = "en" | "ar";
@@ -32,6 +32,7 @@ export function PersonaStandaloneClient({
   prefillName,
   roleProfiles = [],
   pinned = null,
+  definitions = {},
 }: {
   competencies: BehavioralCompetency[];
   /** Voucher redemption token (delegate flow); stamps the result with the client org. */
@@ -39,6 +40,8 @@ export function PersonaStandaloneClient({
   prefillName?: string;
   /** Role profiles offered for a hiring fit read (empty = hiring picker hidden). */
   roleProfiles?: RoleProfileOption[];
+  /** Competency id -> framework definition, for the result's per-competency detail. */
+  definitions?: Record<string, string>;
   /** Admin-pinned scope (voucher delegate). When set, the purpose + role are
    *  fixed by the admin and the candidate cannot change them - the picker is
    *  replaced by a read-only summary. The competency scope is already applied
@@ -571,6 +574,7 @@ export function PersonaStandaloneClient({
             sessionId={sessionId}
             purpose={purpose}
             role={selectedRole}
+            definitions={definitions}
           />
         )
       )}
@@ -597,7 +601,7 @@ function ProgressBar({ value, total, ar, unit }: { value: number; total: number;
 }
 
 function PersonaResult({
-  competencies, profile, name, ar, onReset, sessionId, purpose, role,
+  competencies, profile, name, ar, onReset, sessionId, purpose, role, definitions = {},
 }: {
   competencies: BehavioralCompetency[];
   profile: BehavioralProfileRow[];
@@ -607,6 +611,7 @@ function PersonaResult({
   sessionId: string | null;
   purpose: Purpose;
   role: RoleProfileOption | null;
+  definitions?: Record<string, string>;
 }) {
   const tx = (en: string, arabic: string) => (ar ? arabic : en);
   const scoreById = useMemo(() => new Map(profile.map((p) => [p.competencyId, p.selfScore])), [profile]);
@@ -685,6 +690,25 @@ function PersonaResult({
               <p className="text-sm text-emerald-700">{tx("Meets or exceeds every target competency.", "يحقّق أو يتجاوز كل الجدارات المستهدفة.")}</p>
             )}
           </div>
+
+          {/* Per-competency detail: what each competency means + what the
+              candidate's answers suggest against the role target. */}
+          <div className="mt-4 space-y-2">
+            <p className="text-[11px] uppercase tracking-wider text-slate-500">{tx("Competency detail", "تفصيل الجدارات")}</p>
+            {fit.gaps.filter((g) => g.self != null).map((g) => (
+              <div key={g.competencyId} className="rounded-md border border-slate-200 p-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium text-[#010131]">{nameById.get(g.competencyId) ?? g.name}</span>
+                  <span className="shrink-0 tabular-nums text-xs text-slate-500">{g.self?.toFixed(1)} / {g.target.toFixed(1)}</span>
+                </div>
+                {definitions[g.competencyId] ? (
+                  <p className="mt-1 text-xs text-slate-500">{definitions[g.competencyId]}</p>
+                ) : null}
+                <p className="mt-1 text-xs text-[#121232]">{competencyNarrative(g.self as number, g.target)}</p>
+              </div>
+            ))}
+          </div>
+
           <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
             {tx(
               "A self-report screening signal - corroborate with a Reflect 360, interview and evidence before any hiring decision.",

@@ -34,6 +34,28 @@ export type FitResult = {
   totalCount: number;        // role comps total
 };
 
+/**
+ * A short, defensible narrative interpreting a self-rating for one competency.
+ * Deterministic (derived from the actual self-rating + role target, not AI), so
+ * it is safe for a hiring report. For HIRING, pass the role target to interpret
+ * the score relative to it; otherwise it gives a band read. Self-report framing
+ * throughout - it describes what the candidate's answers suggest, to corroborate.
+ */
+export function competencyNarrative(self: number, target?: number | null): string {
+  const s = self.toFixed(1);
+  if (target != null) {
+    const t = target.toFixed(1);
+    const gap = target - self;
+    if (gap <= 0) return `Self-rates at or above the role target (${s} vs ${t}) - a likely strength to leverage.`;
+    if (gap <= 0.5) return `Self-rates just below the role target (${s} vs ${t}) - broadly meets the requirement, with minor development upside.`;
+    if (gap <= 1.5) return `Self-rates below the role target (${s} vs ${t}) - a development area for this role; probe with concrete examples at interview.`;
+    return `Self-rates well below the role target (${s} vs ${t}) - a priority gap for this role; weigh carefully and corroborate at interview.`;
+  }
+  if (self >= 4) return `A self-assessed strength (${s}/5) - reported as applied consistently.`;
+  if (self >= 3) return `Self-assessed as competent (${s}/5) - solid, with room to deepen.`;
+  return `Self-assessed as developing (${s}/5) - a likely growth area.`;
+}
+
 export function fitBand(pct: number): { key: FitBandKey; label: string; labelAr: string } {
   if (pct >= 80) return { key: "strong", label: "Strong fit", labelAr: "ملاءمة قوية" };
   if (pct >= 60) return { key: "moderate", label: "Moderate fit", labelAr: "ملاءمة متوسطة" };

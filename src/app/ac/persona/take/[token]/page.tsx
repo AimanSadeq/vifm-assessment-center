@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
 import { loadPersonaRoleOptions } from "@/lib/scoring/persona-roles";
+import { loadCompetencyDefinitions } from "@/lib/scoring/competency-definitions";
 import { getVoucherScopeByRedemptionToken } from "@/lib/persona/vouchers";
 import { PersonaStandaloneClient } from "../../_components/persona-standalone-client";
 
@@ -24,7 +25,10 @@ export default async function PersonaTakePage({ params }: { params: { token: str
     .maybeSingle<{ redemption_token: string; redeemer_name: string }>();
   if (!redemption) return notFound();
 
-  const roleProfiles = await loadPersonaRoleOptions();
+  const [roleProfiles, definitions] = await Promise.all([
+    loadPersonaRoleOptions(),
+    loadCompetencyDefinitions(),
+  ]);
 
   // Admin-pinned scope (00123): when the voucher pins purpose/role/competencies,
   // the candidate just takes the pre-configured test - the runner locks the
@@ -70,6 +74,7 @@ export default async function PersonaTakePage({ params }: { params: { token: str
           prefillName={redemption.redeemer_name ?? undefined}
           roleProfiles={roleProfiles}
           pinned={pinned}
+          definitions={definitions}
         />
       </main>
     </div>

@@ -4,6 +4,7 @@ import { BackLink } from "@/components/shared/back-link";
 import { AllServicesLink } from "@/components/shared/all-services-link";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
 import { loadPersonaRoleOptions } from "@/lib/scoring/persona-roles";
+import { loadCompetencyDefinitions } from "@/lib/scoring/competency-definitions";
 import { PersonaStandaloneClient } from "./_components/persona-standalone-client";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +16,10 @@ export const dynamic = "force-dynamic";
  * needs the candidate-bound path at /candidate/behavioral/[id]).
  */
 export default async function PersonaPage() {
-  const roleProfiles = await loadPersonaRoleOptions();
+  const [roleProfiles, definitions] = await Promise.all([
+    loadPersonaRoleOptions(),
+    loadCompetencyDefinitions(),
+  ]);
   return (
     <div className="mx-auto max-w-3xl px-6 py-8">
       <BackLink href="/" label="Back" history />
@@ -52,7 +56,7 @@ export default async function PersonaPage() {
         </Link>
         <AllServicesLink />
       </div>
-      <PersonaStandaloneClient competencies={BEHAVIORAL_COMPETENCIES} roleProfiles={roleProfiles} />
+      <PersonaStandaloneClient competencies={BEHAVIORAL_COMPETENCIES} roleProfiles={roleProfiles} definitions={definitions} />
     </div>
   );
 }

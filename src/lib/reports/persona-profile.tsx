@@ -20,7 +20,7 @@ const C = {
 
 const band = (v: number) => (v >= 4 ? C.emerald : v >= 3 ? C.sky : C.amber);
 
-export type PersonaPdfRow = { name: string; score: number; definition?: string; tip?: string };
+export type PersonaPdfRow = { name: string; score: number; definition?: string; narrative?: string; tip?: string };
 export type PersonaPdfCluster = { name: string; avg: number; rows: PersonaPdfRow[] };
 export type PersonaPdfFit = {
   roleName: string;
@@ -58,6 +58,7 @@ const s = StyleSheet.create({
   rowName: { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: C.text },
   rowScore: { fontSize: 9.5, color: C.textLight },
   rowDef: { fontSize: 8, color: C.textLight, marginTop: 1, lineHeight: 1.4 },
+  rowNarr: { fontSize: 8, color: C.text, marginTop: 2, lineHeight: 1.4 },
   rowTip: { fontSize: 8, color: C.primary, marginTop: 2, lineHeight: 1.4 },
   barTrack: { height: 5, backgroundColor: "#eef0f3", borderRadius: 3, marginTop: 3 },
   barFill: { height: 5, borderRadius: 3 },
@@ -139,6 +140,7 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
                 <View style={s.barTrack}>
                   <View style={[s.barFill, { width: `${(r.score / 5) * 100}%`, backgroundColor: C.accent }]} />
                 </View>
+                {r.narrative ? <Text style={s.rowNarr}>{r.narrative}</Text> : null}
                 {r.tip ? <Text style={s.rowTip}>Suggestion: {r.tip}</Text> : null}
               </View>
             ))}

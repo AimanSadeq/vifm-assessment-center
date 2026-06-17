@@ -4,7 +4,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentCaller } from "@/lib/ara/auth-guards";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
 import { loadPersonaRoleById } from "@/lib/scoring/persona-roles";
-import { computeFit, FIT_BAND_HEX } from "@/lib/scoring/persona-fit";
+import { computeFit, competencyNarrative, FIT_BAND_HEX } from "@/lib/scoring/persona-fit";
 import { PersonaProfilePdf, type PersonaPdfData, type PersonaPdfCluster } from "@/lib/reports/persona-profile";
 
 export const runtime = "nodejs";
@@ -98,7 +98,15 @@ export async function GET(_req: Request, { params }: { params: { sessionId: stri
 
     const purpose: "development" | "hiring" = session.purpose === "hiring" ? "hiring" : "development";
 
-    // Group by competency cluster from the bank, enriched with definition + tip.
+    // For a hiring report, load the role once so per-competency targets feed both
+    // the cluster-row narratives and the fit computation.
+    const role = purpose === "hiring" && session.target_role_profile_id
+      ? await loadPersonaRoleById(session.target_role_profile_id)
+      : null;
+    const targetById = new Map((role?.comps ?? []).map((c) => [c.competencyId, c.target]));
+
+    // Group by competency cluster from the bank, enriched with definition,
+    // a score-interpretation narrative, and (development) a suggestion.
     const byCluster = new Map<number, PersonaPdfCluster>();
     for (const comp of BEHAVIORAL_COMPETENCIES) {
       const score = scoreById.get(comp.acCompetencyId);
@@ -108,6 +116,7 @@ export async function GET(_req: Request, { params }: { params: { sessionId: stri
         name: comp.nameEn,
         score,
         definition: definitionById.get(comp.acCompetencyId),
+        narrative: competencyNarrative(score, purpose === "hiring" ? targetById.get(comp.acCompetencyId) ?? null : null),
         // Development reports carry a suggestion on the rows that need it most.
         tip: purpose === "development" && score < 3.5 ? tipById.get(comp.acCompetencyId) : undefined,
       });
@@ -121,9 +130,7 @@ export async function GET(_req: Request, { params }: { params: { sessionId: stri
 
     // Hiring fit (recomputed from the role profile + the self scores).
     let fit: PersonaPdfData["fit"] = null;
-    if (purpose === "hiring" && session.target_role_profile_id) {
-      const role = await loadPersonaRoleById(session.target_role_profile_id);
-      if (role) {
+    if (purpose === "hiring" && role) {
         // Compute fit only over the role competencies that were actually served
         // (a scoped sitting may omit some); unmeasured ones would otherwise count
         // as a zero and understate fit. computeFit returns null if none overlap.
@@ -142,7 +149,6 @@ export async function GET(_req: Request, { params }: { params: { sessionId: stri
               .map((g) => ({ name: nameById.get(g.competencyId) ?? g.name, self: g.self ?? 0, target: g.target, gap: g.gap })),
           };
         }
-      }
     }
 
     const data: PersonaPdfData = {

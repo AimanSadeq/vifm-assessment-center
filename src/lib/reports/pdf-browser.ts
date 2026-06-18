@@ -17,13 +17,15 @@ import type { Browser } from "puppeteer-core";
  * Chromium binary shipped INSIDE node_modules (version-matched to puppeteer's
  * wanted Chrome 147), driven by puppeteer-core. Because it lives in
  * node_modules it survives Render's build->runtime hand-off with no install
- * step, env var, or dashboard change. In local dev we keep the bundled
- * `puppeteer` Chromium (already installed by `npm install`), so developers
- * need nothing extra and dev launches stay fast.
+ * step, env var, or dashboard change. In local dev we use the bundled
+ * `puppeteer` Chromium (already installed by `npm install`).
  *
- * Selection: @sparticuz is used when running on Render (RENDER env), in a
- * production build (NODE_ENV=production), or when USE_SPARTICUZ_CHROMIUM=1 is
- * set explicitly (handy for reproducing the prod path locally).
+ * SELF-HEALING: we prefer @sparticuz on a server (RENDER / NODE_ENV=production
+ * / USE_SPARTICUZ_CHROMIUM=1) and bundled puppeteer otherwise, but if the
+ * preferred engine fails to launch we transparently fall back to the other.
+ * This means it works even if env detection is wrong on the host (e.g. Render
+ * not exposing RENDER to the process) - the bundled "Could not find Chrome"
+ * failure is caught and @sparticuz is tried, and vice-versa in dev.
  *
  * Node runtime only (Puppeteer can't run on Edge) - callers set
  * `export const runtime = "nodejs"`.
@@ -31,30 +33,44 @@ import type { Browser } from "puppeteer-core";
 
 type Viewport = { width: number; height: number; deviceScaleFactor?: number };
 
-const useSparticuz = (): boolean =>
+const preferSparticuz = (): boolean =>
   process.env.USE_SPARTICUZ_CHROMIUM === "1" ||
   process.env.NODE_ENV === "production" ||
   !!process.env.RENDER;
 
-export async function launchPdfBrowser(opts?: { defaultViewport?: Viewport }): Promise<Browser> {
-  const defaultViewport: Viewport = opts?.defaultViewport ?? { width: 1200, height: 900, deviceScaleFactor: 1 };
+async function launchSparticuz(defaultViewport: Viewport): Promise<Browser> {
+  const chromium = (await import("@sparticuz/chromium")).default;
+  const puppeteer = (await import("puppeteer-core")).default;
+  return puppeteer.launch({
+    args: [...chromium.args, "--no-sandbox", "--disable-setuid-sandbox"],
+    executablePath: await chromium.executablePath(),
+    headless: true,
+    defaultViewport,
+  }) as unknown as Browser;
+}
 
-  if (useSparticuz()) {
-    const chromium = (await import("@sparticuz/chromium")).default;
-    const puppeteer = (await import("puppeteer-core")).default;
-    return puppeteer.launch({
-      args: [...chromium.args, "--no-sandbox", "--disable-setuid-sandbox"],
-      executablePath: await chromium.executablePath(),
-      headless: true,
-      defaultViewport,
-    }) as unknown as Browser;
-  }
-
-  // Local dev: bundled puppeteer Chromium (installed by `npm install`).
+async function launchBundled(defaultViewport: Viewport): Promise<Browser> {
   const puppeteer = (await import("puppeteer")).default;
   return puppeteer.launch({
     headless: true,
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
     defaultViewport,
   }) as unknown as Browser;
+}
+
+export async function launchPdfBrowser(opts?: { defaultViewport?: Viewport }): Promise<Browser> {
+  const defaultViewport: Viewport = opts?.defaultViewport ?? { width: 1200, height: 900, deviceScaleFactor: 1 };
+  const sparticuzFirst = preferSparticuz();
+  const primary = sparticuzFirst ? launchSparticuz : launchBundled;
+  const secondary = sparticuzFirst ? launchBundled : launchSparticuz;
+
+  try {
+    return await primary(defaultViewport);
+  } catch (err) {
+    console.warn(
+      `[pdf-browser] primary Chromium launch (${sparticuzFirst ? "@sparticuz" : "bundled"}) failed, falling back to ${sparticuzFirst ? "bundled" : "@sparticuz"}:`,
+      err instanceof Error ? err.message : err,
+    );
+    return await secondary(defaultViewport);
+  }
 }

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { listFunctions, getFrameworkOverview } from "@/lib/technical-sandbox/service";
 import { listVouchers } from "@/lib/technical-sandbox/vouchers";
+import { validateTalentLens } from "@/lib/constants/ara-individual-factors";
 import { AdminClient } from "./_components/admin-client";
 import { VouchersClient } from "./vouchers/_components/vouchers-client";
 import { FrameworkOverview } from "./_components/framework-overview";
@@ -10,13 +11,23 @@ import { CollapsibleSection } from "./_components/collapsible-section";
 
 export const dynamic = "force-dynamic";
 
-export default async function TechSandboxAdminPage() {
+export default async function TechSandboxAdminPage({
+  searchParams,
+}: {
+  searchParams?: { lens?: string };
+}) {
   try {
     await requireRole(["admin"]);
   } catch (e) {
     if (isAuthorizationError(e)) redirect("/login");
     throw e;
   }
+  // Talent lens captured from the launching pillar (00135): drives whether the
+  // technical report carries the VIFM Academy course block. NULL = development.
+  const talentLens = validateTalentLens(searchParams?.lens);
+  const customHref = talentLens
+    ? `/admin/tech-sandbox/custom?lens=${talentLens}`
+    : "/admin/tech-sandbox/custom";
   const [functions, vouchers, overview] = await Promise.all([
     listFunctions(true),
     listVouchers(),
@@ -36,7 +47,7 @@ export default async function TechSandboxAdminPage() {
           answers and banded per competency.
         </p>
         <div className="mt-2 flex flex-wrap gap-4">
-          <Link href="/admin/tech-sandbox/custom" className="text-sm font-medium text-[#5391D5] hover:underline">
+          <Link href={customHref} className="text-sm font-medium text-[#5391D5] hover:underline">
             Build a custom assessment →
           </Link>
           <Link href="/admin/tech-sandbox/results" className="text-sm font-medium text-[#5391D5] hover:underline">
@@ -74,7 +85,7 @@ export default async function TechSandboxAdminPage() {
             title="Option 1 - Direct link per delegate"
             subtitle="You know who is taking it. Issue a personal link to one candidate, or import named delegates (CSV / paste names + emails) for one personal code each."
           >
-            <AdminClient functions={functions} />
+            <AdminClient functions={functions} talentLens={talentLens} />
           </CollapsibleSection>
 
           <CollapsibleSection

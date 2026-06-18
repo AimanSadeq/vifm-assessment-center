@@ -50,7 +50,13 @@ function parseDelegates(text: string): Delegate[] {
   return out;
 }
 
-export function AdminClient({ functions }: { functions: FunctionRow[] }) {
+export function AdminClient({
+  functions,
+  talentLens = null,
+}: {
+  functions: FunctionRow[];
+  talentLens?: "acquisition" | "development" | null;
+}) {
   const [functionId, setFunctionId] = useState(functions[0]?.id ?? "");
   const [candidateName, setCandidateName] = useState("");
   const [candidateEmail, setCandidateEmail] = useState("");
@@ -154,6 +160,7 @@ export function AdminClient({ functions }: { functions: FunctionRow[] }) {
       candidateName: candidateName || undefined,
       candidateEmail: candidateEmail || undefined,
       organizationName: organizationName || undefined,
+      talentLens,
     });
     setBusy(false);
     if ("error" in res) return setError(res.error);

@@ -2,7 +2,7 @@ import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import type { SessionReport } from "@/lib/technical-sandbox/service";
 
 /**
- * Technical sandbox result report (React-PDF). English-only — React-PDF can't
+ * Technical sandbox result report (React-PDF). English-only - React-PDF can't
  * shape Arabic glyphs (same constraint as the Fluent certificate); a Puppeteer
  * port would be needed for an Arabic PDF. Data is largely numeric/neutral.
  */
@@ -96,8 +96,13 @@ export function TechSandboxReport({ data }: { data: SessionReport }) {
           {data.nodeId ? `${data.nodeId} · ` : ""}
           {data.functionName}
         </Text>
+        {data.assessmentTitle ? (
+          <Text style={[s.meta, { fontFamily: "Helvetica-Bold", color: C.text }]}>
+            {data.assessmentTitle}
+          </Text>
+        ) : null}
         <Text style={s.meta}>
-          {data.candidateName ? `Candidate: ${data.candidateName}` : "Candidate: —"}
+          {data.candidateName ? `Candidate: ${data.candidateName}` : "Candidate: -"}
           {data.candidateEmail ? `  ·  ${data.candidateEmail}` : ""}
           {data.organizationName ? `  ·  ${data.organizationName}` : ""}
         </Text>
@@ -215,6 +220,30 @@ export function TechSandboxReport({ data }: { data: SessionReport }) {
             ))}
           </View>
         ))}
+
+        {data.recommendedCourses.length > 0 ? (
+          <View wrap={false}>
+            <Text style={s.sectionLabel}>RECOMMENDED VIFM ACADEMY PROGRAMMES</Text>
+            <Text style={s.pillarDef}>
+              Suggested development programmes from the VIFM training catalogue, matched to this
+              assessment&apos;s domain and the candidate&apos;s development areas.
+            </Text>
+            {data.recommendedCourses.map((c) => (
+              <View key={c.courseId} style={s.block} wrap={false}>
+                <View style={s.blockHead}>
+                  <Text style={s.blockName}>
+                    {c.code ? `${c.code} · ` : ""}
+                    {c.titleEn}
+                  </Text>
+                  <Text style={{ fontSize: 8, color: C.light }}>
+                    {bandLabel(c.level)} · {c.durationLabel}
+                  </Text>
+                </View>
+                <Text style={s.blockDef}>{c.reasonEn}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
 
         <Text style={s.footer} fixed>
           VIFM Technical Assessment® · Bands: Basic &lt; 60 · Intermediate 60-84 · Advanced &ge; 85 ·

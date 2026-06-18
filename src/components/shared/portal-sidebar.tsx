@@ -133,7 +133,9 @@ const NAV: NavEntry[] = [
             label: "Technical Assessment",
             icon: BadgeCheck,
             items: [
-              link("/admin/tech-sandbox", "adminNav.techOverview", LayoutDashboard, true),
+              // Acquisition pillar: tag new technical sittings as a hiring lens
+              // (00135) so the report omits the development course block.
+              link("/admin/tech-sandbox?lens=acquisition", "adminNav.techOverview", LayoutDashboard, true, "/admin/tech-sandbox"),
               link("/admin/vouchers?service=technical", "adminNav.techVouchers", Award),
               link("/admin/tech-sandbox/answers", "adminNav.techAnswers", ListChecks),
               link("/admin/tech-assessment/retention", "adminNav.svcRetention", FileClock),
@@ -195,7 +197,9 @@ const NAV: NavEntry[] = [
             label: "Technical Assessment",
             icon: BadgeCheck,
             items: [
-              link("/admin/tech-sandbox", "adminNav.techOverview", LayoutDashboard, true),
+              // Management pillar: tag new technical sittings as a development
+              // lens (00135) so the report adds the VIFM Academy course block.
+              link("/admin/tech-sandbox?lens=development", "adminNav.techOverview", LayoutDashboard, true, "/admin/tech-sandbox"),
               link("/admin/vouchers?service=technical", "adminNav.techVouchers", Award),
               link("/admin/tech-sandbox/answers", "adminNav.techAnswers", ListChecks),
               link("/admin/tech-assessment/retention", "adminNav.svcRetention", FileClock),

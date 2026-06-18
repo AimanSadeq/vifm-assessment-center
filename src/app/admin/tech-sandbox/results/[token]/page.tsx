@@ -44,12 +44,15 @@ export default async function TechResultsPage({ params }: { params: { token: str
 
       <header className="space-y-1">
         <p className="text-xs font-semibold uppercase tracking-wider text-[#5391D5]">
-          VIFM · Technical development report
+          VIFM · Technical {r.talentLens === "acquisition" ? "acquisition" : "development"} report
         </p>
         <h1 className="text-2xl font-semibold text-[#010131]">
           {r.nodeId ? `${r.nodeId} · ` : ""}
           {r.functionName}
         </h1>
+        {r.assessmentTitle ? (
+          <p className="text-sm font-medium text-[#121232]">{r.assessmentTitle}</p>
+        ) : null}
         <p className="text-sm text-muted-foreground">
           {r.candidateName ?? "Candidate"}
           {r.candidateEmail ? ` · ${r.candidateEmail}` : ""}
@@ -179,6 +182,32 @@ export default async function TechResultsPage({ params }: { params: { token: str
               </div>
             </div>
           ))}
+        </section>
+      ) : null}
+
+      {r.recommendedCourses.length > 0 ? (
+        <section className="rounded-lg border bg-card p-4">
+          <h2 className="text-sm font-semibold text-[#5391D5]">RECOMMENDED VIFM ACADEMY PROGRAMMES</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Suggested development programmes from the VIFM training catalogue, matched to this
+            assessment&apos;s domain and the candidate&apos;s development areas.
+          </p>
+          <ul className="mt-3 space-y-2">
+            {r.recommendedCourses.map((c) => (
+              <li key={c.courseId} className="rounded-md border p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-sm font-medium text-[#121232]">
+                    {c.code ? `${c.code} · ` : ""}
+                    {c.titleEn}
+                  </span>
+                  <span className="shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground">
+                    {c.level} · {c.durationLabel}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">{c.reasonEn}</p>
+              </li>
+            ))}
+          </ul>
         </section>
       ) : null}
 

@@ -18,6 +18,7 @@ import {
   type TechBlockNoteContext,
   type TechBlockNote,
 } from "@/lib/ai/tech-block-notes";
+import { recommendCoursesForTechnical } from "@/lib/recommender/courses";
 import type { Checkpoint, EngineType, SandboxWork } from "./types";
 
 export interface PublicSkillBlock {
@@ -349,6 +350,11 @@ export interface CreateSessionInput {
   selectedSkills?: string[];
   /** Sandbox section restricted to these block ids (empty = all active). */
   selectedBlockIds?: string[];
+  /** Admin-facing name for a custom sitting, for later tracking (00135). */
+  assessmentTitle?: string;
+  /** Talent lens: 'acquisition' (hiring) | 'development' (growing). Drives the
+   *  VIFM Academy course block on the report. NULL = development framing (00135). */
+  talentLens?: "acquisition" | "development" | null;
 }
 export async function createSession(input: CreateSessionInput) {
   const sb = createServiceClient();
@@ -400,26 +406,47 @@ export async function createSession(input: CreateSessionInput) {
         selected_block_ids: selectedBlockIds,
       }
     : {};
+  // Title + talent lens (migration 00135). Optional metadata - peeled first on a
+  // missing-column error so a pending 00135 degrades to the prior behaviour.
+  const lens =
+    input.talentLens === "acquisition" || input.talentLens === "development"
+      ? input.talentLens
+      : null;
+  const metaRow: Record<string, unknown> = {};
+  if (input.assessmentTitle?.trim()) metaRow.assessment_title = input.assessmentTitle.trim();
+  if (lens) metaRow.talent_lens = lens;
 
-  let { data, error } = await sb
-    .from("technical_sandbox_sessions")
-    .insert({ ...baseRow, ...mcqRow, ...customRow })
-    .select("id, access_token")
-    .single();
-  if (error && isMissingSchemaError(error)) {
-    // A custom sitting's "indicative, no credential" guarantee rests on the
-    // is_custom column. NEVER silently drop it on a fallback insert - that would
-    // let a custom sitting mint a credential. Fail loud instead: custom sittings
-    // require migration 00121.
-    if (isCustom) {
-      throw new Error("Custom technical sittings require migration 00121 to be applied.");
-    }
-    // Non-custom: tolerant of migration 00085 not applied (retry without MCQ cols).
-    ({ data, error } = await sb
+  // Insert with a newest-first peel ladder: try the full row, then drop the
+  // newest optional columns one layer at a time on a missing-schema error.
+  // For a CUSTOM sitting we never drop the is_custom/selection columns (the
+  // "indicative, no credential" guarantee rests on them) - if those are missing
+  // we fail loud requiring 00121.
+  const candidates: Record<string, unknown>[] = isCustom
+    ? [
+        { ...baseRow, ...mcqRow, ...customRow, ...metaRow },
+        { ...baseRow, ...mcqRow, ...customRow },
+      ]
+    : [
+        { ...baseRow, ...mcqRow, ...metaRow },
+        { ...baseRow, ...mcqRow },
+        { ...baseRow, ...metaRow },
+        { ...baseRow },
+      ];
+  let data: { id: string; access_token: string } | null = null;
+  let error: { code?: string } | null = null;
+  for (const row of candidates) {
+    const res = await sb
       .from("technical_sandbox_sessions")
-      .insert(baseRow)
+      .insert(row)
       .select("id, access_token")
-      .single());
+      .single();
+    data = res.data as { id: string; access_token: string } | null;
+    error = res.error;
+    if (!error) break;
+    if (!isMissingSchemaError(error)) break; // a real error - stop and report it
+  }
+  if (error && isMissingSchemaError(error) && isCustom) {
+    throw new Error("Custom technical sittings require migration 00121 to be applied.");
   }
   if (error || !data) throw error ?? new Error("Could not create session");
   return { id: data.id as string, accessToken: data.access_token as string };
@@ -863,9 +890,24 @@ export interface ReportKnowledgeSkill {
   band: string;
   total: number;
 }
+/** A recommended VIFM Academy programme (development lens only - TECH-5). */
+export interface ReportCourseRec {
+  courseId: string;
+  code: string | null;
+  titleEn: string;
+  titleAr: string | null;
+  level: string;
+  durationLabel: string;
+  reasonEn: string;
+  reasonAr: string;
+}
 export interface SessionReport {
   functionName: string;
   nodeId: string | null;
+  /** Admin-facing custom-sitting title (00135), null for standard sittings. */
+  assessmentTitle: string | null;
+  /** Talent lens: 'acquisition' | 'development' | null (development framing). */
+  talentLens: "acquisition" | "development" | null;
   candidateName: string | null;
   candidateEmail: string | null;
   organizationName: string | null;
@@ -880,6 +922,9 @@ export interface SessionReport {
   narrativeEn: string;
   narrativeAr: string;
   pillars: ReportPillar[];
+  /** VIFM Academy course recommendations - populated only under the development
+   *  lens (development + null); empty under the acquisition lens (TECH-5). */
+  recommendedCourses: ReportCourseRec[];
 }
 
 function techBandSentenceEn(band: string): string {
@@ -996,7 +1041,7 @@ export async function getSessionReport(token: string): Promise<SessionReport | n
 
   const { data: fn } = await sb
     .from("technical_functions")
-    .select("name_en, node_id")
+    .select("name_en, node_id, domain_key")
     .eq("id", session.function_id)
     .single();
   const selectedBlockIds = (session.selected_block_ids ?? null) as string[] | null;
@@ -1188,9 +1233,49 @@ export async function getSessionReport(token: string): Promise<SessionReport | n
       ? ` يُعدّ ${strongest!.nameAr} نقطة قوة نسبية يمكن البناء عليها؛ وتنبغي أولوية التطوير في ${weakest!.nameAr}. انظر تركيز التطوير لكل مجال أدناه.`
       : " انظر تركيز التطوير لكل مجال أدناه.");
 
+  // Talent lens (00135): NULL = development framing (the report has always been
+  // a development read), so the course block shows for development + NULL and is
+  // suppressed only under the acquisition (hiring) lens. Tolerant of 00135 being
+  // unapplied (the column read yields undefined -> null -> development framing).
+  const rawLens = session.talent_lens as string | null | undefined;
+  const talentLens: "acquisition" | "development" | null =
+    rawLens === "acquisition" || rawLens === "development" ? rawLens : null;
+  const assessmentTitle = (session.assessment_title as string | null) ?? null;
+
+  // VIFM Academy course recommendations (TECH-5): development lens only. Driven
+  // by the function's domain (→ course vertical) and the candidate's band, with
+  // the weakest assessed area named for a gap-driven reason line. Best-effort:
+  // a recommender failure must never 500 the report.
+  let recommendedCourses: ReportCourseRec[] = [];
+  if (talentLens !== "acquisition") {
+    try {
+      const recs = await recommendCoursesForTechnical({
+        domainKey: (fn?.domain_key as string | null) ?? null,
+        overallBand,
+        weakestAreaEn: weakest?.nameEn ?? null,
+        weakestAreaAr: weakest?.nameAr ?? null,
+        limit: 5,
+      });
+      recommendedCourses = recs.map((c) => ({
+        courseId: c.course_id,
+        code: c.code,
+        titleEn: c.title_en,
+        titleAr: c.title_ar,
+        level: c.level,
+        durationLabel: c.duration_label,
+        reasonEn: c.reason_en,
+        reasonAr: c.reason_ar,
+      }));
+    } catch (e) {
+      console.warn("tech report: course recommender failed", e);
+    }
+  }
+
   return {
     functionName: fn?.name_en ?? "Technical Assessment",
     nodeId: fn?.node_id ?? null,
+    assessmentTitle,
+    talentLens,
     candidateName: session.candidate_name,
     candidateEmail: session.candidate_email,
     organizationName: session.organization_name,
@@ -1202,6 +1287,7 @@ export async function getSessionReport(token: string): Promise<SessionReport | n
     narrativeEn,
     narrativeAr,
     pillars: reportPillars,
+    recommendedCourses,
   };
 }
 

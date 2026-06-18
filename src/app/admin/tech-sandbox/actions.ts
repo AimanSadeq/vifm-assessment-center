@@ -56,6 +56,7 @@ export async function createSandboxSessionAction(input: {
   candidateName?: string;
   candidateEmail?: string;
   organizationName?: string;
+  talentLens?: "acquisition" | "development" | null;
 }): Promise<Result<{ token: string }>> {
   const g = await guard();
   if ("error" in g) return g;
@@ -65,6 +66,7 @@ export async function createSandboxSessionAction(input: {
     candidateName: input.candidateName,
     candidateEmail: input.candidateEmail,
     organizationName: input.organizationName,
+    talentLens: input.talentLens,
     invitedBy: "userId" in g ? g.userId : undefined,
   });
   return { ok: true, token: accessToken };
@@ -84,6 +86,8 @@ export async function createCustomSandboxSessionAction(input: {
   candidateName?: string;
   candidateEmail?: string;
   organizationName?: string;
+  assessmentTitle?: string;
+  talentLens?: "acquisition" | "development" | null;
 }): Promise<Result<{ token: string }>> {
   const g = await guard();
   if ("error" in g) return g;
@@ -100,6 +104,8 @@ export async function createCustomSandboxSessionAction(input: {
     candidateName: input.candidateName,
     candidateEmail: input.candidateEmail,
     organizationName: input.organizationName,
+    assessmentTitle: input.assessmentTitle,
+    talentLens: input.talentLens,
     invitedBy: "userId" in g ? g.userId : undefined,
     isCustom: true,
     mcqPct,
@@ -107,6 +113,67 @@ export async function createCustomSandboxSessionAction(input: {
     selectedBlockIds: blockIds,
   });
   return { ok: true, token: accessToken };
+}
+
+/**
+ * TECH-1: issue ONE custom sitting per delegate from a single confirmed design.
+ * The design (skills/tasks/weight/title/lens) is shared; the client + delegate
+ * roster are applied after the design is confirmed. With an empty roster a single
+ * unassigned link is created so the builder can still produce a shareable link.
+ */
+export async function createCustomSandboxSessionsAction(input: {
+  functionId: string;
+  selectedSkills: string[];
+  selectedBlockIds: string[];
+  mcqPct: number;
+  assessmentTitle?: string;
+  organizationName?: string;
+  talentLens?: "acquisition" | "development" | null;
+  delegates?: { name: string; email: string }[];
+}): Promise<Result<{ results: { name: string | null; email: string | null; token: string; link: string }[] }>> {
+  const g = await guard();
+  if ("error" in g) return g;
+  if (!input.functionId) return { error: "Select a function." };
+  const skills = (input.selectedSkills ?? []).filter(Boolean);
+  const blockIds = (input.selectedBlockIds ?? []).filter(Boolean);
+  const mcqPct = Math.max(0, Math.min(100, Math.round(input.mcqPct ?? 0)));
+  if (blockIds.length === 0 && !(mcqPct > 0 && skills.length > 0)) {
+    return { error: "Pick at least one hands-on task, or select knowledge skills with a knowledge weight." };
+  }
+
+  // Keep only delegates with a name AND email; an empty roster yields one
+  // unassigned link. Cap the batch defensively.
+  const roster = (input.delegates ?? [])
+    .map((d) => ({ name: d.name?.trim() ?? "", email: d.email?.trim() ?? "" }))
+    .filter((d) => d.name && d.email);
+  if (roster.length > 200) return { error: "Max 200 delegates per batch." };
+  const targets: { name: string | null; email: string | null }[] =
+    roster.length > 0 ? roster : [{ name: null, email: null }];
+
+  const origin = appOrigin();
+  const results: { name: string | null; email: string | null; token: string; link: string }[] = [];
+  for (const t of targets) {
+    const { accessToken } = await createSession({
+      functionId: input.functionId,
+      candidateName: t.name ?? undefined,
+      candidateEmail: t.email ?? undefined,
+      organizationName: input.organizationName,
+      assessmentTitle: input.assessmentTitle,
+      talentLens: input.talentLens,
+      invitedBy: "userId" in g ? g.userId : undefined,
+      isCustom: true,
+      mcqPct,
+      selectedSkills: skills,
+      selectedBlockIds: blockIds,
+    });
+    results.push({
+      name: t.name,
+      email: t.email,
+      token: accessToken,
+      link: `${origin}/tech-sandbox/${accessToken}`,
+    });
+  }
+  return { ok: true, results };
 }
 
 export async function generateVouchersAction(input: {

@@ -30,9 +30,10 @@ import {
   ARA_INDIVIDUAL_FACTORS,
   type AraIndividualFactorId,
 } from "@/lib/constants/ara-individual-factors";
-import type {
-  VifmCourseLevel,
-  VifmVertical,
+import {
+  VIFM_VERTICAL_LABELS,
+  type VifmCourseLevel,
+  type VifmVertical,
 } from "@/types/database";
 
 const TAG_LIMIT_DEFAULT = 8;
@@ -843,4 +844,119 @@ export async function recommendCoursesForIndividualSnapshot(args: {
 
   // AI-readiness context: float AI/data courses above generic soft-skills ones.
   return finaliseRanking(accumulator, limit, AI_RELEVANT_VERTICALS);
+}
+
+// ──────────────────────────────────────────────────────────────
+// Technical - per-sitting (TECH-5)
+//
+// A technical sitting maps to ONE function in ONE domain, and the VIFM
+// course `vertical` enum is a superset of the technical domain keys (finance,
+// investment, treasury, ... real_estate), so a domain → vertical match is the
+// strong, defensible signal for "which VIFM programmes build this skill".
+//
+// This is a DEVELOPMENT recommender: it surfaces only on the development-lens
+// report. It ranks by level-appropriateness for the candidate's overall band
+// (a basic result wants foundational courses first; an advanced result wants
+// advanced ones), then by duration and title for a stable order. The reason
+// line references the candidate's weakest assessed area when available so the
+// recommendation reads as gap-driven rather than generic.
+// ──────────────────────────────────────────────────────────────
+
+export type TechCourseRec = {
+  course_id: string;
+  code: string | null;
+  title_en: string;
+  title_ar: string | null;
+  level: VifmCourseLevel;
+  duration_label: string;
+  reason_en: string;
+  reason_ar: string;
+};
+
+const LEVEL_RANK: Record<VifmCourseLevel, number> = {
+  foundation: 0,
+  intermediate: 1,
+  advanced: 2,
+};
+
+/** The course level that best fits a candidate sitting at this technical band. */
+function preferredLevelForBand(band: string): VifmCourseLevel {
+  if (band === "advanced") return "advanced";
+  if (band === "intermediate") return "intermediate";
+  return "foundation";
+}
+
+export async function recommendCoursesForTechnical(args: {
+  domainKey: string | null;
+  /** Candidate overall band ("basic" | "intermediate" | "advanced"). */
+  overallBand?: string;
+  /** Weakest assessed category name, EN + AR, for a gap-driven reason line. */
+  weakestAreaEn?: string | null;
+  weakestAreaAr?: string | null;
+  limit?: number;
+}): Promise<TechCourseRec[]> {
+  const limit = args.limit ?? 5;
+  const domainKey = args.domainKey;
+  if (!domainKey) return [];
+
+  // The report runs server-side (and the candidate path is anonymous), so use
+  // the service client - the catalogue read isn't user-scoped.
+  const sb = createServiceClient();
+  const { data, error } = await sb
+    .from("vifm_courses")
+    .select("id, code, title_en, title_ar, vertical, level, default_duration_days, min_duration_days, max_duration_days, is_active")
+    .eq("vertical", domainKey)
+    .eq("is_active", true);
+  if (error || !data || data.length === 0) return [];
+
+  const vertLabel = VIFM_VERTICAL_LABELS[domainKey as VifmVertical] ?? domainKey;
+  const preferred = preferredLevelForBand(args.overallBand ?? "basic");
+  const preferredRank = LEVEL_RANK[preferred];
+
+  type Row = {
+    id: string; code: string | null; title_en: string; title_ar: string | null;
+    vertical: VifmVertical; level: VifmCourseLevel;
+    default_duration_days: number; min_duration_days: number; max_duration_days: number;
+  };
+  const rows = data as unknown as Row[];
+
+  const ranked = rows
+    .map((c) => ({
+      c,
+      // Closeness to the candidate's preferred level (lower is better).
+      levelDistance: Math.abs(LEVEL_RANK[c.level] - preferredRank),
+    }))
+    .sort((a, b) => {
+      if (a.levelDistance !== b.levelDistance) return a.levelDistance - b.levelDistance;
+      if (a.c.default_duration_days !== b.c.default_duration_days)
+        return a.c.default_duration_days - b.c.default_duration_days;
+      return a.c.title_en.localeCompare(b.c.title_en);
+    })
+    .slice(0, limit);
+
+  const wkEn = args.weakestAreaEn?.trim() || null;
+  const wkAr = args.weakestAreaAr?.trim() || wkEn;
+
+  return ranked.map(({ c }) => {
+    const duration_label =
+      c.min_duration_days === c.max_duration_days
+        ? `${c.default_duration_days}d`
+        : `${c.min_duration_days}-${c.max_duration_days}d`;
+    const reason_en = wkEn
+      ? `Builds ${vertLabel} capability; supports development in ${wkEn}.`
+      : `Builds ${vertLabel} capability across the assessed areas.`;
+    const reason_ar = wkAr
+      ? `يبني قدرات ${vertLabel}؛ يدعم التطوير في ${wkAr}.`
+      : `يبني قدرات ${vertLabel} عبر المجالات المُقيَّمة.`;
+    return {
+      course_id: c.id,
+      code: c.code,
+      title_en: c.title_en,
+      title_ar: c.title_ar,
+      level: c.level,
+      duration_label,
+      reason_en,
+      reason_ar,
+    };
+  });
 }

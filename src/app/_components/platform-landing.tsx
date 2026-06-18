@@ -31,9 +31,11 @@ const SERVICES: ReadonlyArray<{ key: ServiceKey; href: string; icon: typeof Comp
   // the "self" view of readiness) - individual diagnostics, dual-purpose too.
   { key: "cognitive", href: "/ac/cognitive", icon: BrainCircuit, tone: "fuchsia", pillars: ["acquire", "manage"] },
   { key: "persona", href: "/ac/persona", icon: Layers, tone: "fuchsia", pillars: ["acquire", "manage"] },
+  // Fluent (AI English placement) - dual-purpose: selection on the acquisition
+  // side, the same engine positioned for development on the management side.
+  { key: "fluent", href: "/ac/fluent", icon: Languages, tone: "gold", pillars: ["acquire", "manage"] },
   // ── Talent Acquisition only ──
   { key: "prehire", href: "/admin/prehire", icon: UserSearch, tone: "rose", pillars: ["acquire"] },
-  { key: "fluent", href: "/ac/fluent", icon: Languages, tone: "gold", pillars: ["acquire"] },
   // ── Talent Management only ──
   { key: "reflect", href: "/reflect", icon: Aperture, tone: "teal", pillars: ["manage"] },
   // Succession Readiness fuses Persona (self) + a Reflect 360 (others) vs a role.
@@ -108,6 +110,18 @@ const VARIANTS: Record<Lang, Partial<Record<ServiceKey, Partial<Record<Pillar, V
         tooltip: "Development use: self-insight feeding a development plan.",
       },
     },
+    fluent: {
+      acquire: {
+        tagline: "AI English placement · selection", badge: "For Selection",
+        description: "A four-skill, CEFR-aligned English placement - an indicative level used to screen and place candidates.",
+        tooltip: "Selection use: an indicative English level to screen and place candidates.",
+      },
+      manage: {
+        tagline: "AI English placement · development", badge: "For Development",
+        description: "The same CEFR placement run developmentally - the indicative level points each person to the right English programmes.",
+        tooltip: "Development use: an English level that guides each person to the right learning.",
+      },
+    },
   },
   ar: {
     ac: {
@@ -168,6 +182,18 @@ const VARIANTS: Record<Lang, Partial<Record<ServiceKey, Partial<Record<Pillar, V
         tagline: "تقييم سلوكي ذاتي · للتطوير", badge: "للتطوير",
         description: "رؤية ذاتية عبر الكفاءات الـ38 - تتحوّل مجالات التطوير إلى خطة ودورات من أكاديمية VIFM.",
         tooltip: "للتطوير: رؤية ذاتية تغذّي خطة التطوير.",
+      },
+    },
+    fluent: {
+      acquire: {
+        tagline: "تحديد مستوى الإنجليزية · للاختيار", badge: "للاختيار",
+        description: "تحديد مستوى الإنجليزية عبر أربع مهارات وفق إطار CEFR - مستوى استرشادي لفرز المرشّحين وتحديد مستواهم.",
+        tooltip: "للاختيار: مستوى إنجليزية استرشادي لفرز المرشّحين وتحديد مستواهم.",
+      },
+      manage: {
+        tagline: "تحديد مستوى الإنجليزية · للتطوير", badge: "للتطوير",
+        description: "التحديد نفسه بهدف التطوير - يوجّه المستوى الاسترشادي كل شخص إلى برامج الإنجليزية المناسبة.",
+        tooltip: "للتطوير: مستوى إنجليزية يوجّه كل شخص إلى التعلّم المناسب.",
       },
     },
   },

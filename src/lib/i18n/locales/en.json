@@ -4181,9 +4181,10 @@
     "heroHeading": "Browse the full programme library.",
     "heroBlurb_one": "{{count}} active programme across finance, AI readiness, leadership, governance and more - built for professional teams in the GCC. Pick any programme to see the full outline and request a tailored quote.",
     "heroBlurb_other": "{{count}} active programmes across finance, AI readiness, leadership, governance and more - built for professional teams in the GCC. Pick any programme to see the full outline and request a tailored quote.",
-    "filterLabel": "Filter",
+    "filterLabel": "Vertical",
     "filterAllVerticals": "All verticals",
     "filterAllLevels": "All levels",
+    "filterLevelLabel": "Course Level",
     "level": {
       "foundation": "Foundation",
       "intermediate": "Intermediate",

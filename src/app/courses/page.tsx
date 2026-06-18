@@ -116,38 +116,45 @@ export default async function CoursesCataloguePage({
 
       {/* Filter bar */}
       <section className="border-b bg-card/80 backdrop-blur sticky top-0 z-20">
-        <div className="max-w-6xl mx-auto px-6 py-3 flex flex-wrap items-center gap-3">
-          <span className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">
-            {t("coursesPublic.filterLabel")}
-          </span>
-          {/* Vertical filter chips */}
-          <FilterChip
-            href={withParams(searchParams, { vertical: undefined, level: filterLevel || undefined })}
-            label={t("coursesPublic.filterAllVerticals")}
-            active={!filterVertical}
-          />
-          {verticals.map((v) => (
+        <div className="max-w-6xl mx-auto px-6 py-3 space-y-2.5">
+          {/* Row 1: vertical (domain) filters */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs uppercase tracking-widest text-muted-foreground font-semibold me-1">
+              {t("coursesPublic.filterLabel")}
+            </span>
             <FilterChip
-              key={v}
-              href={withParams(searchParams, { vertical: v, level: filterLevel || undefined })}
-              label={verticalLabel(t, v)}
-              active={filterVertical === v}
+              href={withParams(searchParams, { vertical: undefined, level: filterLevel || undefined })}
+              label={t("coursesPublic.filterAllVerticals")}
+              active={!filterVertical}
             />
-          ))}
-          <span className="mx-2 h-4 w-px bg-border" />
-          <FilterChip
-            href={withParams(searchParams, { level: undefined, vertical: filterVertical || undefined })}
-            label={t("coursesPublic.filterAllLevels")}
-            active={!filterLevel}
-          />
-          {LEVELS.map((lv) => (
+            {verticals.map((v) => (
+              <FilterChip
+                key={v}
+                href={withParams(searchParams, { vertical: v, level: filterLevel || undefined })}
+                label={verticalLabel(t, v)}
+                active={filterVertical === v}
+              />
+            ))}
+          </div>
+          {/* Row 2: course-level filters (applies across the selected verticals) */}
+          <div className="flex flex-wrap items-center gap-2 border-t border-border/60 pt-2.5">
+            <span className="text-xs uppercase tracking-widest text-muted-foreground font-semibold me-1">
+              {t("coursesPublic.filterLevelLabel")}
+            </span>
             <FilterChip
-              key={lv}
-              href={withParams(searchParams, { level: lv, vertical: filterVertical || undefined })}
-              label={t(`coursesPublic.level.${lv}`)}
-              active={filterLevel === lv}
+              href={withParams(searchParams, { level: undefined, vertical: filterVertical || undefined })}
+              label={t("coursesPublic.filterAllLevels")}
+              active={!filterLevel}
             />
-          ))}
+            {LEVELS.map((lv) => (
+              <FilterChip
+                key={lv}
+                href={withParams(searchParams, { level: lv, vertical: filterVertical || undefined })}
+                label={t(`coursesPublic.level.${lv}`)}
+                active={filterLevel === lv}
+              />
+            ))}
+          </div>
         </div>
       </section>
 

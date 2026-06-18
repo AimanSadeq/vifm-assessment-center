@@ -87,8 +87,10 @@ export function methodologyMdToHtml(md: string): string {
   return out.join("\n");
 }
 
-/** Full standalone HTML document (A4 print CSS + VIFM branding). */
-export function methodologyBriefHtml(md: string): string {
+/** Full standalone HTML document (A4 print CSS + VIFM branding). The eyebrow
+ *  defaults to the ARC product line; pass a product name for other briefs
+ *  (e.g. the Persona methodology brief). */
+export function methodologyBriefHtml(md: string, eyebrow = "VIFM AI Readiness Compass®"): string {
   const body = methodologyMdToHtml(md);
   return `<!DOCTYPE html>
 <html lang="en">
@@ -121,7 +123,7 @@ export function methodologyBriefHtml(md: string): string {
 </head>
 <body>
   <div class="brandbar">
-    <div class="eyebrow">VIFM AI Readiness Compass®</div>
+    <div class="eyebrow">${eyebrow}</div>
     <div class="org">Virginia Institute of Finance and Management</div>
   </div>
   ${body}

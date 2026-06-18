@@ -242,9 +242,15 @@ export async function markAraRespondentComplete(token: string): Promise<void> {
       const { getOrgResultsPrefs } = await import("@/lib/ara/results-visibility");
       const prefs = await getOrgResultsPrefs(a?.organization_id);
 
-      // The delegate's own deliverables (credential + results email) only fire
-      // when the client lets the delegate see their results.
-      if (prefs.respondentCanView) {
+      // The delegate's own deliverables (credential + results email) fire only
+      // for a SELF-SERVE run. R1: once a client contact is configured on the org
+      // (a delegated/client engagement - the consultant sends the assessment and
+      // the CLIENT receives the results, directly via send-to-client or collected
+      // via the org "Collect all results" action), the delegate does NOT receive
+      // their own results. Mode A (anonymous, no org -> clientEmail null) keeps
+      // them, as does an explicit respondent_can_view_results=false override.
+      const delegateGetsOwnResults = prefs.respondentCanView && !prefs.clientEmail;
+      if (delegateGetsOwnResults) {
         // Verifiable AI Readiness credential (best-effort, idempotent on the
         // respondent; no-ops until migration 00102 widens the type whitelist).
         tasks.push(

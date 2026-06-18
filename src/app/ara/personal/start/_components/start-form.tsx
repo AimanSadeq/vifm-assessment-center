@@ -17,6 +17,8 @@ type StartActionResult =
 
 type Props = {
   action: (fd: FormData) => Promise<StartActionResult>;
+  /** Talent lens captured from the launching pillar (migration 00134). */
+  lens?: "acquisition" | "development" | null;
 };
 
 const COPY = {
@@ -75,7 +77,7 @@ const COPY = {
  * empty: the header, factor preview cards, form, and footnote all
  * render from here so the locale state flows everywhere.
  */
-export function StartForm({ action }: Props) {
+export function StartForm({ action, lens }: Props) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [language, setLanguage] = useState<"en" | "ar">("en");
@@ -88,6 +90,7 @@ export function StartForm({ action }: Props) {
     const fd = new FormData(e.currentTarget);
     fd.set("language", language);
     fd.set("region", region);
+    if (lens) fd.set("lens", lens);
     start(async () => {
       const result = await action(fd);
       if (!result.ok) {

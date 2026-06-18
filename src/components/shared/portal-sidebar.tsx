@@ -48,13 +48,17 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-type NavLeaf = { href: string; labelKey: string; icon: LucideIcon; exact?: boolean };
+// `match` is the pathname used for active-state + de-dup; it defaults to `href`.
+// Links whose href carries a query string (e.g. /ara?lens=acquisition) set it to
+// the plain pathname so active-highlighting (usePathname strips the query) and
+// the collapsed rail's de-dup behave exactly as they did before the query string.
+type NavLeaf = { href: string; labelKey: string; icon: LucideIcon; exact?: boolean; match?: string };
 type NavEntry = { kind: "link"; link: NavLeaf } | { kind: "group"; group: NavGroup };
 type NavGroup = { key: string; label: string; icon: LucideIcon; items: NavEntry[] };
 
-const link = (href: string, labelKey: string, icon: LucideIcon, exact?: boolean): NavEntry => ({
+const link = (href: string, labelKey: string, icon: LucideIcon, exact?: boolean, match?: string): NavEntry => ({
   kind: "link",
-  link: { href, labelKey, icon, ...(exact ? { exact } : {}) },
+  link: { href, labelKey, icon, ...(exact ? { exact } : {}), ...(match ? { match } : {}) },
 });
 
 // A self-serve instrument (Fluent / Cognitive / Persona) exposes the same
@@ -119,7 +123,9 @@ const NAV: NavEntry[] = [
             ],
           },
         },
-        link("/ara", "adminNav.aiReadiness", Sparkles),
+        // Talent lens captured from the launching pillar (migration 00134):
+        // the Acquisition pillar's ARC link tags new runs as a hiring lens.
+        link("/ara?lens=acquisition", "adminNav.aiReadiness", Sparkles, undefined, "/ara"),
         {
           kind: "group",
           group: {
@@ -179,7 +185,9 @@ const NAV: NavEntry[] = [
             ],
           },
         },
-        link("/ara", "adminNav.aiReadiness", Sparkles),
+        // Talent lens captured from the launching pillar (migration 00134):
+        // the Management pillar's ARC link tags new runs as a development lens.
+        link("/ara?lens=development", "adminNav.aiReadiness", Sparkles, undefined, "/ara"),
         {
           kind: "group",
           group: {
@@ -244,8 +252,9 @@ function collectLeaves(entries: NavEntry[]): NavLeaf[] {
   const walk = (es: NavEntry[]) => {
     for (const e of es) {
       if (e.kind === "link") {
-        if (!seen.has(e.link.href)) {
-          seen.add(e.link.href);
+        const key = e.link.match ?? e.link.href;
+        if (!seen.has(key)) {
+          seen.add(key);
           out.push(e.link);
         }
       } else {
@@ -283,7 +292,11 @@ export function SidebarBody({
       for (const e of entries) {
         if (e.kind !== "group") continue;
         const hasActiveLeaf = e.group.items.some(
-          (it) => it.kind === "link" && (it.link.exact ? pathname === it.link.href : pathname.startsWith(it.link.href)),
+          (it) => {
+            if (it.kind !== "link") return false;
+            const target = it.link.match ?? it.link.href;
+            return it.link.exact ? pathname === target : pathname.startsWith(target);
+          },
         );
         if (hasActiveLeaf) st[e.group.key] = true;
         openActive(e.group.items);
@@ -318,7 +331,7 @@ export function SidebarBody({
 
   const leaf = (l: NavLeaf, depth = 0) => {
     const Icon = l.icon;
-    const active = isActive(l.href, l.exact);
+    const active = isActive(l.match ?? l.href, l.exact);
     return (
       <Link
         key={l.href}
@@ -340,7 +353,7 @@ export function SidebarBody({
   };
 
   const anyActiveIn = (items: NavEntry[]): boolean =>
-    items.some((it) => (it.kind === "link" ? isActive(it.link.href, it.link.exact) : anyActiveIn(it.group.items)));
+    items.some((it) => (it.kind === "link" ? isActive(it.link.match ?? it.link.href, it.link.exact) : anyActiveIn(it.group.items)));
 
   // Recursive: a link renders as a leaf; a group renders a collapsible header
   // plus its (possibly nested) children at the next depth.

@@ -1,3 +1,4 @@
+import { validateTalentLens } from "@/lib/constants/ara-individual-factors";
 import { startPersonalAssessmentAction } from "./actions";
 import { StartForm } from "./_components/start-form";
 
@@ -12,11 +13,18 @@ export const dynamic = "force-dynamic";
  * reactively. Without the lift, the toggle only set the respondent's
  * downstream language preference and the start page stayed in English.
  */
-export default function PersonalAssessmentStartPage() {
+export default function PersonalAssessmentStartPage({
+  searchParams,
+}: {
+  searchParams?: { lens?: string };
+}) {
+  // Talent lens captured from the launching pillar (migration 00134) and
+  // threaded into the start form so the action can persist it on creation.
+  const lens = validateTalentLens(searchParams?.lens);
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-6 py-12">
-        <StartForm action={startPersonalAssessmentAction} />
+        <StartForm action={startPersonalAssessmentAction} lens={lens} />
       </div>
     </div>
   );

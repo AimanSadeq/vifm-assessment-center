@@ -12,6 +12,7 @@ import { timingSafeStrEqual } from "@/lib/utils/secret";
 import { createServiceClient } from "@/lib/supabase/server";
 import {
   ARA_INDIVIDUAL_FACTOR_IDS,
+  validateTalentLens,
   type AraIndividualFactorId,
 } from "@/lib/constants/ara-individual-factors";
 import { recommendCoursesForIndividualSnapshot } from "@/lib/recommender/courses";
@@ -134,12 +135,20 @@ export async function GET(
       Object.values(factorScores).reduce((s, v) => s + v, 0) /
       ARA_INDIVIDUAL_FACTOR_IDS.length;
 
-    // Recommendations.
-    const raw = await recommendCoursesForIndividualSnapshot({
-      factorScores,
-      target: TARGET,
-      limit: 5,
-    });
+    // Talent lens (migration 00134). Drives R4-R7 in both renderers. NULL =
+    // generic framing (legacy / anonymous / deep-linked), no regression.
+    const talentLens = validateTalentLens(ctx.assessment.talent_lens);
+
+    // Recommendations (R5: development-context info). Skip the compute under
+    // the acquisition lens; the renderers also omit the course block.
+    const raw =
+      talentLens === "acquisition"
+        ? []
+        : await recommendCoursesForIndividualSnapshot({
+            factorScores,
+            target: TARGET,
+            limit: 5,
+          });
 
     // Format-shared course shape (same fields for both renderers).
     const recommendedCourses = raw.map((c) => ({
@@ -183,6 +192,7 @@ export async function GET(
         overallScore,
         factorScores,
         recommendedCourses,
+        talentLens,
       };
       const html = renderPersonalSnapshotHtmlAr(arData);
       const buffer = await renderHtmlToPdfBuffer(html);
@@ -206,6 +216,7 @@ export async function GET(
       overallScore,
       factorScores,
       recommendedCourses,
+      talentLens,
     };
     const buffer = await renderToBuffer(<PersonalSnapshot data={data} />);
     return new NextResponse(new Uint8Array(buffer), {

@@ -106,6 +106,10 @@ export type AraAssessment = {
   pillars_in_scope: AraPillarId[] | null;
   /** Optional per-instance time limit in minutes (migration 00084). NULL = no limit. */
   time_limit_minutes: number | null;
+  /** Talent lens for the personal report (migration 00134). 'acquisition' (hiring)
+   *  or 'development' (growing); NULL = generic framing (legacy / anonymous /
+   *  deep-linked). Captured from the launching pillar via /ara?lens=. Drives R4-R7. */
+  talent_lens?: "acquisition" | "development" | null;
 };
 
 export type AraRespondent = {

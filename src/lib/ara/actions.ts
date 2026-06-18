@@ -17,6 +17,7 @@ import {
 import { sendAraEmail, type AraEmailLanguage } from "@/lib/ara/email";
 import { isAIConfigured } from "@/lib/ai/client";
 import { createClientOrganization, type AraRegion, type AraSector } from "@/lib/clients/registry";
+import { validateTalentLens } from "@/lib/constants/ara-individual-factors";
 
 // Uniform auth-error unwrapper - server actions return a shape the UI
 // can render as a toast instead of a Next error screen.
@@ -291,6 +292,9 @@ export async function createAraAssessment(formData: FormData) {
   const dedupedPillars = Array.from(new Set(rawPillars));
   const rawTimeLimit = formData.get("time_limit_minutes");
   const timeLimit = rawTimeLimit && String(rawTimeLimit).trim() !== "" ? Number(rawTimeLimit) : null;
+  // Talent lens (migration 00134), captured from the launching pillar via
+  // ?lens= and posted as a hidden field. Validated to acquisition/development/null.
+  const talentLens = validateTalentLens(formData.get("talent_lens"));
   const parsed = createAraAssessmentSchema.safeParse({
     organization_id: formData.get("organization_id"),
     region: formData.get("region"),
@@ -369,7 +373,25 @@ export async function createAraAssessment(formData: FormData) {
   if (parsed.data.time_limit_minutes != null) {
     insertPayload.time_limit_minutes = parsed.data.time_limit_minutes;
   }
-  const { data, error } = await sb.from("ara_assessments").insert(insertPayload).select("id").single();
+  // Talent lens (migration 00134) - only added when set, so the insert still
+  // works on a DB without the column.
+  if (talentLens) {
+    insertPayload.talent_lens = talentLens;
+  }
+  let { data, error } = await sb.from("ara_assessments").insert(insertPayload).select("id").single();
+
+  // Tolerant strip+retry: a DB without 00134 (and/or 00084) rejects the unknown
+  // column with 42703 / PGRST204. Drop the optional migration-gated columns and
+  // retry so assessment creation still succeeds (lens just isn't persisted).
+  if (error) {
+    const code = (error as { code?: string }).code;
+    if (code === "42703" || code === "PGRST204") {
+      const { talent_lens: _lens, time_limit_minutes: _limit, ...core } = insertPayload;
+      void _lens;
+      void _limit;
+      ({ data, error } = await sb.from("ara_assessments").insert(core).select("id").single());
+    }
+  }
 
   if (error) return { ok: false, error: error.message };
 

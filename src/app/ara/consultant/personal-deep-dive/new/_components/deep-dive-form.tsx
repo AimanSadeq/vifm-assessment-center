@@ -15,6 +15,8 @@ type Result =
 
 type Props = {
   action: (fd: FormData) => Promise<Result>;
+  /** Talent lens captured from the launching pillar (migration 00134). */
+  lens?: "acquisition" | "development" | null;
 };
 
 /**
@@ -23,7 +25,7 @@ type Props = {
  * the access URL inline so the consultant can copy it directly
  * to clipboard or follow it in a new tab.
  */
-export function DeepDiveForm({ action }: Props) {
+export function DeepDiveForm({ action, lens }: Props) {
   const { t } = useTranslation();
   const [pending, start] = useTransition();
   const [language, setLanguage] = useState<"en" | "ar">("en");
@@ -40,6 +42,7 @@ export function DeepDiveForm({ action }: Props) {
     const name = String(fd.get("full_name") ?? "");
     fd.set("language", language);
     fd.set("region", region);
+    if (lens) fd.set("lens", lens);
     start(async () => {
       const result = await action(fd);
       if (!result.ok) {

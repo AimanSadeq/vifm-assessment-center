@@ -12,6 +12,7 @@ import { createAraAssessment } from "@/lib/ara/actions";
 import { resolvePlanOrgId } from "@/lib/start/resolve-plan-org";
 import { ARA_STAGE_DEFINITIONS } from "@/lib/constants/ara-stages";
 import { ARA_ASSESSMENT_TEMPLATES, getAssessmentTemplate } from "@/lib/constants/ara-assessment-templates";
+import { validateTalentLens } from "@/lib/constants/ara-individual-factors";
 import type { AraEngagementStage, AraOrganization, AraQuestionBankVersion } from "@/types/ara";
 
 export const dynamic = "force-dynamic";
@@ -35,9 +36,12 @@ const TONE_MAP = {
 export default async function NewAraAssessmentPage({
   searchParams,
 }: {
-  searchParams?: { stage?: string; template?: string; org?: string; orgName?: string };
+  searchParams?: { stage?: string; template?: string; org?: string; orgName?: string; lens?: string };
 }) {
   const t = await getServerT();
+  // Talent lens captured from the launching pillar (migration 00134). Threaded
+  // through the stage pick + posted as a hidden field on the create form.
+  const lens = validateTalentLens(searchParams?.lens);
   const validStages = ARA_STAGE_DEFINITIONS.map((s) => s.id) as string[];
   const selectedStage = (searchParams?.stage && validStages.includes(searchParams.stage))
     ? (searchParams.stage as AraEngagementStage)
@@ -62,9 +66,10 @@ export default async function NewAraAssessmentPage({
 
   // Combined-plan deep link: prefill the client + preserve it across the stage pick.
   const defaultOrgId = resolvePlanOrgId((orgs ?? []) as { id: string; name: string | null }[], searchParams);
-  const orgQuery = searchParams?.org
-    ? `&org=${encodeURIComponent(searchParams.org)}&orgName=${encodeURIComponent(searchParams.orgName ?? "")}`
-    : "";
+  const orgQuery =
+    (searchParams?.org
+      ? `&org=${encodeURIComponent(searchParams.org)}&orgName=${encodeURIComponent(searchParams.orgName ?? "")}`
+      : "") + (lens ? `&lens=${lens}` : "");
 
   // ─── Step 1: stage picker ─────────────────────────────────
   if (!selectedStage) {
@@ -98,7 +103,7 @@ export default async function NewAraAssessmentPage({
               // never the org pillar wizard (?stage=individual).
               const isIndividual = stage.id === "individual";
               const href = isIndividual
-                ? "/ara/consultant/personal-deep-dive/new"
+                ? `/ara/consultant/personal-deep-dive/new${lens ? `?lens=${lens}` : ""}`
                 : `/ara/consultant/assessments/new?stage=${stage.id}${orgQuery}`;
               return (
                 <Link key={stage.id} href={href} className="group block">
@@ -373,6 +378,8 @@ export default async function NewAraAssessmentPage({
                 value={activeVersion?.id ?? ""}
               />
               <input type="hidden" name="engagement_stage" value={stage.id} />
+              {/* Talent lens (migration 00134) - carried from the launching pillar. */}
+              {lens && <input type="hidden" name="talent_lens" value={lens} />}
 
               <div className="space-y-2">
                 <Label htmlFor="organization_id">{t("araConsultant.new_field_organization")}</Label>

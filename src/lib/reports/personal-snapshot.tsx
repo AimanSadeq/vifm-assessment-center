@@ -3,8 +3,11 @@ import { formatFitScore, fitScoreOutOfTen } from "@/lib/recommender/format";
 import {
   ARA_INDIVIDUAL_FACTORS,
   getIndividualMaturityStage,
+  FACTOR_DESCRIPTIVE,
+  TALENT_LENS_LABELS,
   type AraIndividualFactorId,
   type AraIndividualMaturityStageId,
+  type AraTalentLens,
 } from "@/lib/constants/ara-individual-factors";
 import { VIFM_VERTICAL_LABELS, type VifmVertical } from "@/types/database";
 import { personalFactSheetRows } from "@/lib/reports/fact-sheet-content";
@@ -259,6 +262,8 @@ export type PersonalSnapshotData = {
   generatedAt: string;
   overallScore: number;
   factorScores: Record<AraIndividualFactorId, number>;
+  /** Talent lens (migration 00134). Drives R4-R7. null/undefined = generic. */
+  talentLens?: AraTalentLens | null;
   recommendedCourses: Array<{
     course_id: string;
     title_en: string;
@@ -376,6 +381,11 @@ const HOW_TO_USE_PANELS = {
 export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
   const stage = getIndividualMaturityStage(data.overallScore);
   const stageNext = STAGE_NEXT_STEPS[stage.id];
+  // R4-R7: under the acquisition (hiring) lens the report describes the
+  // candidate and omits development coaching, next-steps, courses, and the
+  // AC-competency mapping. development / null keep today's behaviour exactly.
+  const lens = data.talentLens ?? null;
+  const isAcquisition = lens === "acquisition";
   return (
     <Document
       title={`Personal AI Readiness Snapshot - ${data.respondentName}`}
@@ -386,7 +396,10 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
       <Page size="A4" style={s.page} wrap>
         {/* Hero */}
         <View style={s.hero}>
-          <Text style={s.heroEyebrow}>VIFM AI Readiness Compass® · Personal</Text>
+          <Text style={s.heroEyebrow}>
+            VIFM AI Readiness Compass® · Personal
+            {lens ? ` · ${TALENT_LENS_LABELS[lens].en}` : ""}
+          </Text>
           <Text style={s.heroTitle}>Personal AI Readiness Snapshot</Text>
           <Text style={s.heroIdentity}>
             {data.respondentName} · {data.respondentEmail}
@@ -417,7 +430,14 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
           {ARA_INDIVIDUAL_FACTORS.map((f) => {
             const score = data.factorScores[f.id] ?? 0;
             const tone = toneFor(score);
-            const guidance = score > 0 ? FACTOR_GUIDANCE[f.id][tone.stageId] : null;
+            // R6: development coaching only under development / null. Under the
+            // acquisition lens, describe the candidate at their measured level.
+            const guidance =
+              score > 0 && !isAcquisition ? FACTOR_GUIDANCE[f.id][tone.stageId] : null;
+            const descBody =
+              isAcquisition && score > 0
+                ? FACTOR_DESCRIPTIVE[f.id][tone.stageId].en
+                : f.description_en;
             return (
               <View key={f.id} style={s.factorCard} wrap={false}>
                 <View style={s.factorTopRow}>
@@ -436,16 +456,19 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
                   </Text>
                   <Text style={s.factorScoreOf}>/ 5</Text>
                 </View>
-                <Text style={s.factorDesc}>{f.description_en}</Text>
+                <Text style={s.factorDesc}>{descBody}</Text>
                 {guidance && (
                   <>
                     <Text style={s.factorGuidanceLabel}>Where to focus next</Text>
                     <Text style={s.factorGuidance}>{guidance}</Text>
                   </>
                 )}
-                <Text style={s.factorCompetencies}>
-                  Maps to VIFM AC: {f.ac_competency_names.join(" · ")}
-                </Text>
+                {/* R7: AC-competency mapping is development-context info. */}
+                {!isAcquisition && (
+                  <Text style={s.factorCompetencies}>
+                    Maps to VIFM AC: {f.ac_competency_names.join(" · ")}
+                  </Text>
+                )}
               </View>
             );
           })}
@@ -495,15 +518,20 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
               <Text key={i} style={s.keyPanelBullet}>• {b}</Text>
             ))}
           </View>
-          <View style={s.keyPanel}>
-            <Text style={s.keyPanelTitle}>{stageNext.title} · {stage.name_en.toUpperCase()}</Text>
-            {stageNext.bullets.map((b, i) => (
-              <Text key={i} style={s.keyPanelBullet}>• {b}</Text>
-            ))}
-          </View>
+          {/* R6: the overall "where to focus next" panel is development-only. */}
+          {!isAcquisition && (
+            <View style={s.keyPanel}>
+              <Text style={s.keyPanelTitle}>{stageNext.title} · {stage.name_en.toUpperCase()}</Text>
+              {stageNext.bullets.map((b, i) => (
+                <Text key={i} style={s.keyPanelBullet}>• {b}</Text>
+              ))}
+            </View>
+          )}
         </View>
 
-        {/* Courses */}
+        {/* Courses (R5: development / null only - omitted under acquisition). */}
+        {!isAcquisition && (
+        <>
         <Text style={s.sectionEyebrow}>Targeted training</Text>
         <Text style={s.sectionTitle}>Develop with VIFM programmes</Text>
         <View style={s.sectionRule} />
@@ -578,6 +606,8 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
               shift.
             </Text>
           </View>
+        )}
+        </>
         )}
 
         {/* Assessment fact sheet */}

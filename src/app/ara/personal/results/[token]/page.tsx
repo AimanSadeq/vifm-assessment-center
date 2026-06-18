@@ -11,6 +11,9 @@ import {
   ARA_INDIVIDUAL_FACTORS,
   ARA_INDIVIDUAL_FACTOR_IDS,
   getIndividualMaturityStage,
+  validateTalentLens,
+  TALENT_LENS_LABELS,
+  FACTOR_DESCRIPTIVE,
   type AraIndividualFactorId,
 } from "@/lib/constants/ara-individual-factors";
 import { recommendCoursesForIndividualSnapshot } from "@/lib/recommender/courses";
@@ -117,11 +120,20 @@ export default async function PersonalResultsPage({ params }: Props) {
     Object.values(factorScores).reduce((s, v) => s + v, 0) /
     ARA_INDIVIDUAL_FACTOR_IDS.length;
 
-  const recommendations = await recommendCoursesForIndividualSnapshot({
-    factorScores,
-    target: TARGET,
-    limit: 5,
-  });
+  // Talent lens (migration 00134). Drives R4-R7. NULL = generic framing
+  // (legacy / anonymous / deep-linked) and reproduces today's output exactly.
+  const talentLens = validateTalentLens(ctx.assessment.talent_lens);
+  const isAcquisition = talentLens === "acquisition";
+
+  // R5: course recommendations are development-context info. Skip the compute
+  // entirely under the acquisition (hiring) lens; show for development OR null.
+  const recommendations = isAcquisition
+    ? []
+    : await recommendCoursesForIndividualSnapshot({
+        factorScores,
+        target: TARGET,
+        limit: 5,
+      });
 
   // Percentile ranking vs the completed-snapshot norm group. Withheld until
   // the pool reaches MIN_NORM_SAMPLE (computePersonalNorms gates `ready`), so
@@ -183,6 +195,14 @@ export default async function PersonalResultsPage({ params }: Props) {
           </div>
           <div className="flex items-start justify-between gap-3">
             <div>
+              {/* R4: talent-lens eyebrow when set; generic header otherwise. */}
+              {talentLens && (
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-accent mb-1">
+                  {isAr
+                    ? TALENT_LENS_LABELS[talentLens].ar
+                    : TALENT_LENS_LABELS[talentLens].en}
+                </p>
+              )}
               <h1 className="text-2xl font-bold">
                 {isAr ? "لقطة الجاهزية الشخصية للذكاء الاصطناعي" : "Personal AI Readiness Snapshot"}
               </h1>
@@ -276,6 +296,16 @@ export default async function PersonalResultsPage({ params }: Props) {
               : delta <= -0.25 ? "text-rose-700 bg-rose-50 border-rose-200"
               : "text-muted-foreground bg-muted border-border";
             const deltaSign = delta > 0 ? "+" : delta < 0 ? "" : "±";
+            // R6: under the acquisition (hiring) lens, describe the candidate at
+            // their measured level on this factor instead of the construct blurb.
+            // Keyed by the factor's own stage. Development / null keep the
+            // construct description (no regression).
+            const factorStage = getIndividualMaturityStage(score);
+            const descriptive =
+              isAcquisition && score > 0 ? FACTOR_DESCRIPTIVE[f.id][factorStage.id] : null;
+            const cardBody = descriptive
+              ? (isAr ? descriptive.ar : descriptive.en)
+              : (isAr ? f.description_ar : f.description_en);
             return (
               <div key={f.id} className="rounded-md border bg-card p-3">
                 <div className="flex items-center gap-2 mb-1">
@@ -316,14 +346,16 @@ export default async function PersonalResultsPage({ params }: Props) {
                   )}
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-2 leading-snug">
-                  {isAr ? f.description_ar : f.description_en}
+                  {cardBody}
                 </p>
               </div>
             );
           })}
         </div>
 
-        {/* Course recommendations */}
+        {/* Course recommendations (R5: development / null only - hidden under
+            the acquisition lens, which suppresses the develop-with-VIFM block). */}
+        {!isAcquisition && (
         <RecommendedCoursesPanel
           title={isAr ? "تطوّر مع برامج VIFM" : "Develop with VIFM programmes"}
           description={
@@ -339,6 +371,7 @@ export default async function PersonalResultsPage({ params }: Props) {
           courses={recommendations}
           context="ac"
         />
+        )}
 
         {/* Browse-the-full-catalogue CTA - the recommender shows up to
              five gap-driven programmes; people with strong scores see

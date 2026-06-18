@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/server";
+import { validateTalentLens } from "@/lib/constants/ara-individual-factors";
 
 const startSchema = z.object({
   full_name: z.string().min(2).max(200),
@@ -59,6 +60,11 @@ export async function startPersonalAssessmentAction(
     };
   }
 
+  // Talent lens (migration 00134), captured from the launching pillar via
+  // ?lens=. Validated to 'acquisition' | 'development' | null; null is the
+  // generic, no-regression default for a deep-linked / direct start.
+  const talentLens = validateTalentLens(formData.get("lens"));
+
   const sb = createServiceClient();
 
   // 1. Find or create the shared "Personal AI Readiness" org.
@@ -109,27 +115,46 @@ export async function startPersonalAssessmentAction(
   //    pillar_weights is omitted so the column's DEFAULT '{}' fires;
   //    individual-stage assessments don't use pillar weighting at all
   //    (they score against four factors, not eight pillars).
-  const { data: assessment, error: assessErr } = await sb
+  const assessmentPayload: Record<string, unknown> = {
+    organization_id: orgId,
+    consultant_id: null,
+    region: parsed.data.region,
+    sector: "general",
+    default_language: parsed.data.language,
+    is_sandbox: false,
+    engagement_stage: "individual",
+    scope_label: parsed.data.full_name,
+    question_bank_version_id: activeBank.id,
+    status: "active",
+    phase: "phase1",
+    // Explicit so future schema-default changes don't accidentally
+    // up-tier the free flow into the paid 48-item bank.
+    assessment_tier: "snapshot",
+    include_individual_layer: false,
+    // Talent lens (migration 00134). Only included when set, so the
+    // insert still works on a DB without the column (stripped on retry).
+    ...(talentLens ? { talent_lens: talentLens } : {}),
+  };
+  let { data: assessment, error: assessErr } = await sb
     .from("ara_assessments")
-    .insert({
-      organization_id: orgId,
-      consultant_id: null,
-      region: parsed.data.region,
-      sector: "general",
-      default_language: parsed.data.language,
-      is_sandbox: false,
-      engagement_stage: "individual",
-      scope_label: parsed.data.full_name,
-      question_bank_version_id: activeBank.id,
-      status: "active",
-      phase: "phase1",
-      // Explicit so future schema-default changes don't accidentally
-      // up-tier the free flow into the paid 48-item bank.
-      assessment_tier: "snapshot",
-      include_individual_layer: false,
-    })
+    .insert(assessmentPayload)
     .select("id")
     .single<{ id: string }>();
+  // Tolerant: 42703 = undefined_column (raw PG), PGRST204 = column not found
+  // (PostgREST schema cache). Strip talent_lens and retry so a DB without
+  // migration 00134 still creates the assessment (lens just isn't persisted).
+  if (assessErr) {
+    const code = (assessErr as { code?: string }).code;
+    if ((code === "42703" || code === "PGRST204") && talentLens) {
+      const { talent_lens: _omit, ...withoutLens } = assessmentPayload;
+      void _omit;
+      ({ data: assessment, error: assessErr } = await sb
+        .from("ara_assessments")
+        .insert(withoutLens)
+        .select("id")
+        .single<{ id: string }>());
+    }
+  }
   if (assessErr || !assessment) {
     return {
       ok: false,

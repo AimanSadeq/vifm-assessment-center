@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { sendAraRespondentInvitation } from "@/lib/ara/actions";
+import { validateTalentLens } from "@/lib/constants/ara-individual-factors";
 
 async function requireConsultant() {
   try {
@@ -68,6 +69,10 @@ export async function createDeepDivePersonalAssessment(
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
+  // Talent lens (migration 00134), captured from the launching pillar via
+  // ?lens=. Validated to 'acquisition' | 'development' | null.
+  const talentLens = validateTalentLens(formData.get("lens"));
+
   const sb = createServiceClient();
 
   // Org: explicit UUID → reuse; explicit name → create; neither →
@@ -110,25 +115,42 @@ export async function createDeepDivePersonalAssessment(
     return { ok: false, error: "No active question bank - admin needs to publish one first." };
   }
 
-  const { data: assessment, error: assessErr } = await sb
+  const assessmentPayload: Record<string, unknown> = {
+    organization_id: orgId,
+    consultant_id: null, // Set explicitly to caller in a future hardening pass.
+    region: parsed.data.region,
+    sector: "general",
+    default_language: parsed.data.language,
+    is_sandbox: false,
+    engagement_stage: "individual",
+    assessment_tier: "deep_dive",
+    include_individual_layer: false,
+    scope_label: parsed.data.full_name,
+    question_bank_version_id: activeBank.id,
+    status: "active",
+    phase: "phase1",
+    // Talent lens (migration 00134). Only included when set, so the insert
+    // still works on a DB without the column (stripped on retry).
+    ...(talentLens ? { talent_lens: talentLens } : {}),
+  };
+  let { data: assessment, error: assessErr } = await sb
     .from("ara_assessments")
-    .insert({
-      organization_id: orgId,
-      consultant_id: null, // Set explicitly to caller in a future hardening pass.
-      region: parsed.data.region,
-      sector: "general",
-      default_language: parsed.data.language,
-      is_sandbox: false,
-      engagement_stage: "individual",
-      assessment_tier: "deep_dive",
-      include_individual_layer: false,
-      scope_label: parsed.data.full_name,
-      question_bank_version_id: activeBank.id,
-      status: "active",
-      phase: "phase1",
-    })
+    .insert(assessmentPayload)
     .select("id")
     .single<{ id: string }>();
+  // Tolerant strip+retry when migration 00134 is not applied (42703 / PGRST204).
+  if (assessErr) {
+    const code = (assessErr as { code?: string }).code;
+    if ((code === "42703" || code === "PGRST204") && talentLens) {
+      const { talent_lens: _omit, ...withoutLens } = assessmentPayload;
+      void _omit;
+      ({ data: assessment, error: assessErr } = await sb
+        .from("ara_assessments")
+        .insert(withoutLens)
+        .select("id")
+        .single<{ id: string }>());
+    }
+  }
   if (assessErr || !assessment) {
     return { ok: false, error: assessErr?.message ?? "Could not create deep-dive assessment" };
   }

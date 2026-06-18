@@ -29,8 +29,11 @@
 import {
   ARA_INDIVIDUAL_FACTORS,
   getIndividualMaturityStage,
+  FACTOR_DESCRIPTIVE,
+  TALENT_LENS_LABELS,
   type AraIndividualFactorId,
   type AraIndividualMaturityStageId,
+  type AraTalentLens,
 } from "@/lib/constants/ara-individual-factors";
 import { VIFM_VERTICAL_LABELS, type VifmVertical } from "@/types/database";
 import { fitScoreOutOfTen } from "@/lib/recommender/format";
@@ -186,6 +189,8 @@ export type PersonalSnapshotArData = {
   generatedAt: string;
   overallScore: number;
   factorScores: Record<AraIndividualFactorId, number>;
+  /** Talent lens (migration 00134). Drives R4-R7. null/undefined = generic. */
+  talentLens?: AraTalentLens | null;
   recommendedCourses: Array<{
     course_id: string;
     title_en: string;
@@ -202,11 +207,21 @@ export type PersonalSnapshotArData = {
 export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): string {
   const stage = getIndividualMaturityStage(data.overallScore);
   const stageNext = STAGE_NEXT_STEPS_AR[stage.id];
+  // R4-R7: under the acquisition (hiring) lens the report describes the
+  // candidate and omits coaching, next-steps, courses, and the AC mapping.
+  // development / null reproduce today's output exactly.
+  const lens = data.talentLens ?? null;
+  const isAcquisition = lens === "acquisition";
 
   const factorCardsHtml = ARA_INDIVIDUAL_FACTORS.map((f) => {
     const score = data.factorScores[f.id] ?? 0;
     const tone = toneForAr(score);
-    const guidance = score > 0 ? FACTOR_GUIDANCE_AR[f.id][tone.stageId] : null;
+    // R6: development coaching only under development / null.
+    const guidance = score > 0 && !isAcquisition ? FACTOR_GUIDANCE_AR[f.id][tone.stageId] : null;
+    const descBody =
+      isAcquisition && score > 0
+        ? FACTOR_DESCRIPTIVE[f.id][tone.stageId].ar
+        : f.description_ar;
     return `
       <article class="factor-card">
         <div class="factor-top">
@@ -216,17 +231,20 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
         </div>
         <h3 class="factor-name">${esc(f.name_ar)}</h3>
         <p class="factor-score"><span class="factor-score-num">${score > 0 ? score.toFixed(1) : "-"}</span><span class="factor-score-of"> / 5</span></p>
-        <p class="factor-desc">${esc(f.description_ar)}</p>
+        <p class="factor-desc">${esc(descBody)}</p>
         ${guidance ? `
           <p class="factor-guidance-label">ركّز هنا تالياً</p>
           <p class="factor-guidance">${esc(guidance)}</p>
         ` : ""}
-        <p class="factor-competencies">المرتبط بكفاءات مركز تقييم VIFM: ${f.ac_competency_names.map(esc).join(" · ")}</p>
+        ${isAcquisition ? "" : `<p class="factor-competencies">المرتبط بكفاءات مركز تقييم VIFM: ${f.ac_competency_names.map(esc).join(" · ")}</p>`}
       </article>
     `;
   }).join("");
 
-  const coursesHtml = data.recommendedCourses.length > 0
+  // R5: course recommendations are development-context info; omit under acquisition.
+  const coursesHtml = isAcquisition
+    ? ""
+    : data.recommendedCourses.length > 0
     ? data.recommendedCourses.slice(0, 5).map((c) => {
         const isHighFit = c.total_score >= 4;
         const fit = fitScoreOutOfTen(
@@ -262,7 +280,7 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
       </div>
     `;
 
-  const fitExplainerHtml = data.recommendedCourses.length > 0 ? `
+  const fitExplainerHtml = !isAcquisition && data.recommendedCourses.length > 0 ? `
     <div class="fit-explainer">
       <p>
         <strong>كيف تقرأ هذه التوصيات.</strong>
@@ -539,7 +557,7 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
   <!-- PAGE 1 - score + per-factor (first two) -->
   <section>
     <div class="hero">
-      <p class="hero-eyebrow">بوصلة VIFM للاستعداد للذكاء الاصطناعي® · شخصية</p>
+      <p class="hero-eyebrow">بوصلة VIFM للاستعداد للذكاء الاصطناعي® · شخصية${lens ? ` · ${esc(TALENT_LENS_LABELS[lens].ar)}` : ""}</p>
       <h1 class="hero-title">لقطة الجاهزية الشخصية للذكاء الاصطناعي</h1>
       <p class="hero-identity">${esc(data.respondentName)} · ${esc(data.respondentEmail)}</p>
       <div class="hero-score-row">
@@ -587,17 +605,19 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
         <h4>${esc(HOW_TO_USE_PANELS_AR.about.title)}</h4>
         <ul>${HOW_TO_USE_PANELS_AR.about.bullets.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>
       </div>
+      ${isAcquisition ? "" : `
       <div class="key-panel">
         <h4>${esc(stageNext.title)} · ${esc(stage.name_ar)}</h4>
         <ul>${stageNext.bullets.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>
-      </div>
+      </div>`}
     </div>
 
+    ${isAcquisition ? "" : `
     <p class="section-eyebrow">تدريب مستهدف</p>
     <h2 class="section-title">تطوّر مع برامج VIFM</h2>
     <div class="section-rule"></div>
     ${fitExplainerHtml}
-    ${coursesHtml}
+    ${coursesHtml}`}
 
     <div class="fact-sheet">
       <h4>بطاقة معلومات التقييم</h4>

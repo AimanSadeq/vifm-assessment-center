@@ -1,15 +1,21 @@
 import Link from "next/link";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ARA_INDIVIDUAL_FACTORS } from "@/lib/constants/ara-individual-factors";
+import { ARA_INDIVIDUAL_FACTORS, validateTalentLens } from "@/lib/constants/ara-individual-factors";
 import { getServerT } from "@/lib/i18n/server";
 import { createDeepDivePersonalAssessment } from "./actions";
 import { DeepDiveForm } from "./_components/deep-dive-form";
 
 export const dynamic = "force-dynamic";
 
-export default async function PersonalDeepDiveNewPage() {
+export default async function PersonalDeepDiveNewPage({
+  searchParams,
+}: {
+  searchParams?: { lens?: string };
+}) {
   const t = await getServerT();
+  // Talent lens captured from the launching pillar (migration 00134).
+  const lens = validateTalentLens(searchParams?.lens);
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-3xl mx-auto px-6 py-10">
@@ -63,7 +69,7 @@ export default async function PersonalDeepDiveNewPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <DeepDiveForm action={createDeepDivePersonalAssessment} />
+            <DeepDiveForm action={createDeepDivePersonalAssessment} lens={lens} />
           </CardContent>
         </Card>
       </div>

@@ -222,3 +222,103 @@ export const ARA_INDIVIDUAL_MATURITY_STAGES = [
   STAGE_PRACTISING,
   STAGE_EMBEDDED,
 ];
+
+// ────────────────────────────────────────────────────────────────
+// Talent lens (migration 00134)
+// ────────────────────────────────────────────────────────────────
+// ARC distinguishes a hiring run ("acquisition") from a development
+// run ("development"). The lens is captured from the launching pillar
+// via /ara?lens=. NULL means generic framing (legacy / anonymous /
+// deep-linked) and must reproduce today's output exactly.
+
+export type AraTalentLens = "acquisition" | "development";
+
+/**
+ * Coerce an untrusted value (query param, form field, DB read) to a
+ * valid talent lens or null. Anything that isn't exactly one of the
+ * two known strings becomes null - the generic, no-regression default.
+ */
+export function validateTalentLens(value: unknown): AraTalentLens | null {
+  return value === "acquisition" || value === "development" ? value : null;
+}
+
+/** Bilingual lens label for the report header (R4). */
+export const TALENT_LENS_LABELS: Record<AraTalentLens, { en: string; ar: string }> = {
+  acquisition: { en: "Talent Acquisition", ar: "استقطاب المواهب" },
+  development: { en: "Talent Development", ar: "تطوير المواهب" },
+};
+
+/**
+ * R6 - hiring (acquisition) per-factor narrative.
+ *
+ * For a hiring lens the report DESCRIBES how a candidate at the
+ * measured stage tends to operate on that factor, rather than coaching
+ * them on what to develop next. One descriptive read per factor per
+ * stage (4 factors x 3 stages = 12 blurbs), EN + AR.
+ *
+ * Grounded in each factor's construct (see ARA_INDIVIDUAL_FACTORS
+ * above). Descriptive, present-tense, third-person-friendly - no
+ * "you should" coaching, no next-steps. Arabic is best-effort MSA and
+ * still needs native review per project convention.
+ */
+export const FACTOR_DESCRIPTIVE: Record<
+  AraIndividualFactorId,
+  Record<AraIndividualMaturityStageId, { en: string; ar: string }>
+> = {
+  thinking_sense_check: {
+    emerging: {
+      en: "Tends to take AI output largely at face value, with limited routine checking of claims, figures, or sources before relying on them.",
+      ar: "يميل إلى قبول مخرجات الذكاء الاصطناعي كما هي إلى حد كبير، مع تدقيق محدود للادعاءات والأرقام والمصادر قبل الاعتماد عليها.",
+    },
+    practising: {
+      en: "Treats AI output as a draft to be checked - validates claims against domain knowledge in familiar areas and decides what to keep, edit, or discard.",
+      ar: "يتعامل مع مخرجات الذكاء الاصطناعي كمسودة تحتاج إلى مراجعة - يتحقق من الادعاءات في ضوء معرفته المتخصصة في المجالات المألوفة، ويقرر ما يُبقيه أو يعدّله أو يستبعده.",
+    },
+    embedded: {
+      en: "Spots fabricated citations and confidently-wrong facts readily, applies consistent verification even in unfamiliar domains, and can articulate how the checks are made.",
+      ar: "يرصد المراجع الملفقة والأخطاء المُقدَّمة بثقة بسهولة، ويطبّق تحققاً متسقاً حتى في المجالات غير المألوفة، ويستطيع توضيح كيفية إجراء هذا التحقق.",
+    },
+  },
+  results_working_practice: {
+    emerging: {
+      en: "Uses AI tools occasionally and mostly for one-off tasks; prompting and workflow integration are still ad hoc rather than part of a routine.",
+      ar: "يستخدم أدوات الذكاء الاصطناعي بين الحين والآخر وفي مهام منفردة غالباً؛ ولا تزال صياغة التعليمات ودمجها في سير العمل عشوائية لا روتيناً ثابتاً.",
+    },
+    practising: {
+      en: "Applies AI to real, recurring work - writes clear prompts, iterates when the first answer misses, and is starting to fold the tools into regular tasks.",
+      ar: "يطبّق الذكاء الاصطناعي على عمل فعلي ومتكرر - يصيغ تعليمات واضحة، ويعيد المحاولة عندما لا يصيب الجواب الأول الهدف، ويبدأ بإدخال الأدوات في المهام المعتادة.",
+    },
+    embedded: {
+      en: "Has AI built into how the work gets done, with reusable prompts and workflows that produce faster, better deliverables as a matter of routine.",
+      ar: "أدمج الذكاء الاصطناعي في طريقة إنجاز العمل، باستخدام تعليمات وسير عمل قابلة لإعادة الاستخدام تُنتج مخرجات أسرع وأفضل بشكل اعتيادي.",
+    },
+  },
+  people_collaboration: {
+    emerging: {
+      en: "Mostly uses AI individually; rarely shares prompts or guidance with colleagues or shapes how the team approaches the tools.",
+      ar: "يستخدم الذكاء الاصطناعي بشكل فردي في الغالب؛ ونادراً ما يُشارك التعليمات أو الإرشادات مع الزملاء أو يؤثر في كيفية تعامل الفريق مع الأدوات.",
+    },
+    practising: {
+      en: "Shares useful prompts and patterns, explains what the tools can and can't do without overselling, and helps colleagues use AI more soundly.",
+      ar: "يُشارك التعليمات والأنماط المفيدة، ويشرح ما تستطيعه الأدوات وما لا تستطيعه دون مبالغة، ويساعد الزملاء على استخدام الذكاء الاصطناعي بشكل أسلم.",
+    },
+    embedded: {
+      en: "Acts as a multiplier on team adoption - sets shared norms, pushes back when output is taken at face value, and lifts the wider group's AI practice.",
+      ar: "يعمل كمضاعِف لتبنّي الفريق - يرسي معايير مشتركة، ويعترض حين تُؤخذ المخرجات على ظاهرها، ويرفع مستوى ممارسة المجموعة الأوسع للذكاء الاصطناعي.",
+    },
+  },
+  self_adaptive_mindset: {
+    emerging: {
+      en: "Cautious about changing established ways of working; engages with new AI capabilities and responsible-use considerations only when prompted.",
+      ar: "حذر من تغيير طرق العمل الراسخة؛ ولا يتفاعل مع قدرات الذكاء الاصطناعي الجديدة واعتبارات الاستخدام المسؤول إلا عند الطلب.",
+    },
+    practising: {
+      en: "Stays open as AI changes the work - relearns familiar workflows when something better appears and keeps confidentiality and policy in view.",
+      ar: "يظل منفتحاً مع تغيُّر العمل بفعل الذكاء الاصطناعي - يعيد تعلّم المهام المألوفة عند ظهور ما هو أفضل، ويُبقي السرية والسياسة حاضرتين.",
+    },
+    embedded: {
+      en: "Adapts fluidly to new tools and approaches, actively asks where models can fail, and consistently weighs fairness, confidentiality, and policy.",
+      ar: "يتكيف بسلاسة مع الأدوات والأساليب الجديدة، ويسأل بنشاط أين يمكن أن تخفق النماذج، ويوازن باستمرار بين الإنصاف والسرية والسياسة.",
+    },
+  },
+};

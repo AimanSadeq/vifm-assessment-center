@@ -102,10 +102,11 @@ export async function generatePersonaInsights(
   input: PersonaInsightInput,
 ): Promise<Record<string, string>> {
   const purpose = input.purpose ?? "hiring";
+  const lang = input.lang ?? "en";
   const narrate = purpose === "development" ? developmentNarrative : competencyNarrative;
   const fallback = (): Record<string, string> => {
     const out: Record<string, string> = {};
-    for (const c of input.competencies) out[c.competencyId] = narrate(c.self, c.target);
+    for (const c of input.competencies) out[c.competencyId] = narrate(c.self, c.target, lang);
     return out;
   };
 
@@ -150,7 +151,7 @@ export async function generatePersonaInsights(
     const out: Record<string, string> = {};
     for (const c of input.competencies) {
       const v = parsed[c.competencyId];
-      out[c.competencyId] = typeof v === "string" && v.trim() ? v.trim() : narrate(c.self, c.target);
+      out[c.competencyId] = typeof v === "string" && v.trim() ? v.trim() : narrate(c.self, c.target, lang);
     }
     return out;
   } catch {

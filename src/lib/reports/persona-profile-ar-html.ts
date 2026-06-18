@@ -27,6 +27,9 @@ const C = {
 
 // Western digits inside RTL flow - wrap so bidi keeps "3.8 / 5" left-to-right.
 const num = (v: string | number) => `<span dir="ltr">${escapeHtml(String(v))}</span>`;
+// Keep the digits AND the percent sign together inside one LTR run so the bare
+// '%' (a bidi European Terminator) is not displaced in the RTL paragraph.
+const numPct = (v: string | number) => `<span dir="ltr">${escapeHtml(String(v))}%</span>`;
 const f1 = (n: number) => n.toFixed(1);
 
 function ordinalAr(n: number): string {
@@ -80,10 +83,10 @@ export function renderPersonaProfileHtmlAr(data: PersonaPdfData): string {
 
     if (dev) {
       fitBlocks.push(`<div class="fit-label">خطة التطوير · ${escapeHtml(data.fit.roleName)}</div>
-        <div class="fit-value" style="color:${C.primary}">${num(data.fit.fitPct)}% متوافق مع مستهدف الدور</div>`);
+        <div class="fit-value" style="color:${C.primary}">${numPct(data.fit.fitPct)} متوافق مع مستهدف الدور</div>`);
     } else {
       fitBlocks.push(`<div class="fit-label">ملاءمة الدور · ${escapeHtml(data.fit.roleName)}</div>
-        <div class="fit-value" style="color:${escapeHtml(data.fit.bandHex)}">${num(data.fit.fitPct)}% · ${escapeHtml(data.fit.bandLabel)}</div>`);
+        <div class="fit-value" style="color:${escapeHtml(data.fit.bandHex)}">${numPct(data.fit.fitPct)} · ${escapeHtml(data.fit.bandLabel)}</div>`);
     }
 
     if (data.fit.strengths && data.fit.strengths.length > 0) {
@@ -144,7 +147,7 @@ export function renderPersonaProfileHtmlAr(data: PersonaPdfData): string {
     parts.push(`<div class="panel">
       <div class="sec-title">دمج القرار</div>
       <div class="sec-sub">ادمج إشارة التقييم مع أدلة المقابلة في توصية موثّقة. تكملها اللجنة؛ بيرسونا لا يحسب القرار.</div>
-      <div class="dec-row"><span class="dec-label">إشارة التقييم</span><span class="dec-value">${num(data.fit.fitPct)}% · ${escapeHtml(data.fit.bandLabel)}${watch}</span></div>
+      <div class="dec-row"><span class="dec-label">إشارة التقييم</span><span class="dec-value">${numPct(data.fit.fitPct)} · ${escapeHtml(data.fit.bandLabel)}${watch}</span></div>
       <div class="dec-row"><span class="dec-label">تقييم المقابلة (1-5)</span><span class="dec-blank">____________________________________________</span></div>
       <div class="dec-row"><span class="dec-label">الأدلة / ملاحظات</span><span class="dec-blank">____________________________________________</span></div>
       <div class="dec-row"><span class="dec-label">التوصية النهائية</span><span class="dec-value">ترشيح&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;تأجيل&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;رفض</span></div>
@@ -261,7 +264,7 @@ export function renderPersonaProfileHtmlAr(data: PersonaPdfData): string {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="${AR_FONT_HREF}" rel="stylesheet" />
 <style>
-  @page { size: A4; margin: 14mm 12mm; }
+  @page { size: A4; margin: 14mm 12mm 20mm; }
   * { box-sizing: border-box; }
   body { font-family: "Noto Naskh Arabic", serif; color: ${C.text}; font-size: 11px; line-height: 1.6; margin: 0; }
   .banner { background: ${C.primary}; border-radius: 6px; padding: 16px 18px; margin-bottom: 14px; }
@@ -330,9 +333,16 @@ export function renderPersonaProfileHtmlAr(data: PersonaPdfData): string {
   .row-overuse { font-size: 8.5px; color: ${C.emerald}; margin-top: 2px; }
   .caption { margin-top: 8px; border: 1px solid ${C.border}; border-radius: 5px; background: #fafbfc; padding: 9px; font-size: 9px; color: ${C.textLight}; }
   .method-note { margin-top: 8px; font-size: 8.5px; color: ${C.textLight}; }
+  /* Repeats on every printed page in Chromium print (position:fixed), shaped
+     with the page's Arabic font - mirrors the EN per-page confidential footer. */
+  .page-footer { position: fixed; bottom: 8mm; left: 12mm; right: 12mm; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid ${C.border}; padding-top: 5px; font-size: 7.5px; color: ${C.textLight}; }
 </style>
 </head>
 <body>
+  <div class="page-footer">
+    <span>معهد فرجينيا للتمويل والإدارة - سري</span>
+    <span>أُنشئ بتاريخ ${num(data.generatedAt)}</span>
+  </div>
   ${parts.join("\n")}
 </body>
 </html>`;

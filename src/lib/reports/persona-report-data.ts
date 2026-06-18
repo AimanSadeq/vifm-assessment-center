@@ -21,7 +21,7 @@ import {
 } from "@/lib/ai/persona-insights";
 import { computePersonaConsistency, type ConsistencyResponse } from "@/lib/scoring/persona-consistency";
 import { resolveNormGroup, loadNorms, percentile } from "@/lib/scoring/persona-norms";
-import { recommendCoursesForCompetencyGaps, HIGH_FIT_THRESHOLD } from "@/lib/recommender/courses";
+import { recommendCoursesForCompetencyGaps, HIGH_FIT_THRESHOLD, type RecommendedCourse } from "@/lib/recommender/courses";
 import { VIFM_VERTICAL_LABELS } from "@/types/database";
 import type {
   PersonaPdfData,
@@ -247,7 +247,7 @@ export async function buildPersonaPdfData(sessionId: string, lang: PersonaLang =
     }
     const rowTarget = role ? targetById.get(comp.acCompetencyId) ?? null : null;
     const fallbackNarr =
-      purpose === "development" ? developmentNarrative(score, rowTarget) : competencyNarrative(score, rowTarget);
+      purpose === "development" ? developmentNarrative(score, rowTarget, lang) : competencyNarrative(score, rowTarget, lang);
     byCluster.get(comp.clusterOrder)!.rows.push({
       name: nameById.get(comp.acCompetencyId) ?? comp.nameEn,
       score,
@@ -294,6 +294,7 @@ export async function buildPersonaPdfData(sessionId: string, lang: PersonaLang =
         strengths: strengthsTop.map((g) => ({ name: nameById.get(g.competencyId) ?? g.name, self: g.self ?? 0, target: g.target })),
       };
 
+      let recs: RecommendedCourse[] = [];
       if (purpose === "development") {
         // Course plan.
         try {
@@ -306,7 +307,7 @@ export async function buildPersonaPdfData(sessionId: string, lang: PersonaLang =
               gap: g.gap,
             };
           });
-          const recs = await recommendCoursesForCompetencyGaps({ gaps: gapInput, limit: 6 });
+          recs = await recommendCoursesForCompetencyGaps({ gaps: gapInput, limit: 6 });
           const top = Math.max(0, ...recs.map((c) => c.total_score));
           courses = recs.map((c) => ({
             title: ar && c.title_ar ? c.title_ar : c.title_en,
@@ -323,12 +324,15 @@ export async function buildPersonaPdfData(sessionId: string, lang: PersonaLang =
           }));
         } catch { /* best-effort */ }
 
-        // B.2 planning scaffold: priority + a prefilled action (dev tip + matched course code).
-        const courseCodeFor = (compName: string): string | null => {
-          for (const c of courses ?? []) {
-            if (c.code && c.drivers.some((d) => d.label === compName)) return c.code;
+        // B.2 planning scaffold: priority + a prefilled action (dev tip + matched
+        // course code). Match against `recs` whose driver labels are the
+        // language-stable ENGLISH competency names (the localized `courses`
+        // labels would never match in Arabic).
+        const courseCodeFor = (enName: string): string | null => {
+          for (const c of recs) {
+            if (c.course_code && c.drivers.some((d) => d.label === enName)) return c.course_code;
           }
-          return (courses ?? [])[0]?.code ?? null;
+          return recs[0]?.course_code ?? null;
         };
         planRows = gapsTop.slice(0, 5).map((g) => {
           const enName = BEHAVIORAL_COMPETENCIES.find((c) => c.acCompetencyId === g.competencyId)?.nameEn ?? g.name;

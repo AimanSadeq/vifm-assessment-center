@@ -41,19 +41,31 @@ export type FitResult = {
  * the score relative to it; otherwise it gives a band read. Self-report framing
  * throughout - it describes what the candidate's answers suggest, to corroborate.
  */
-export function competencyNarrative(self: number, target?: number | null): string {
+export function competencyNarrative(self: number, target?: number | null, lang: "en" | "ar" = "en"): string {
   const s = self.toFixed(1);
+  const ar = lang === "ar";
   if (target != null) {
     const t = target.toFixed(1);
     const gap = target - self;
-    if (gap <= 0) return `Self-rates at or above the role target (${s} vs ${t}) - a likely strength to leverage.`;
-    if (gap <= 0.5) return `Self-rates just below the role target (${s} vs ${t}) - broadly meets the requirement, with minor development upside.`;
-    if (gap <= 1.5) return `Self-rates below the role target (${s} vs ${t}) - a development area for this role; probe with concrete examples at interview.`;
-    return `Self-rates well below the role target (${s} vs ${t}) - a priority gap for this role; weigh carefully and corroborate at interview.`;
+    if (gap <= 0)
+      return ar
+        ? `يقيّم نفسه عند المستهدف أو أعلى (${s} مقابل ${t}) - قوة محتملة للاستثمار فيها.`
+        : `Self-rates at or above the role target (${s} vs ${t}) - a likely strength to leverage.`;
+    if (gap <= 0.5)
+      return ar
+        ? `يقيّم نفسه أقل قليلاً من المستهدف (${s} مقابل ${t}) - يلبّي المتطلب عمومًا مع هامش تطوير بسيط.`
+        : `Self-rates just below the role target (${s} vs ${t}) - broadly meets the requirement, with minor development upside.`;
+    if (gap <= 1.5)
+      return ar
+        ? `يقيّم نفسه أقل من المستهدف (${s} مقابل ${t}) - مجال تطوير لهذا الدور؛ استقصِ بأمثلة محددة في المقابلة.`
+        : `Self-rates below the role target (${s} vs ${t}) - a development area for this role; probe with concrete examples at interview.`;
+    return ar
+      ? `يقيّم نفسه أقل بكثير من المستهدف (${s} مقابل ${t}) - فجوة ذات أولوية لهذا الدور؛ وازن بعناية وتحقّق في المقابلة.`
+      : `Self-rates well below the role target (${s} vs ${t}) - a priority gap for this role; weigh carefully and corroborate at interview.`;
   }
-  if (self >= 4) return `A self-assessed strength (${s}/5) - reported as applied consistently.`;
-  if (self >= 3) return `Self-assessed as competent (${s}/5) - solid, with room to deepen.`;
-  return `Self-assessed as developing (${s}/5) - a likely growth area.`;
+  if (self >= 4) return ar ? `قوة ذاتية (${s}/5) - مُطبّقة باتساق وفق التقييم الذاتي.` : `A self-assessed strength (${s}/5) - reported as applied consistently.`;
+  if (self >= 3) return ar ? `كفاءة ذاتية (${s}/5) - جيدة مع مجال للتعميق.` : `Self-assessed as competent (${s}/5) - solid, with room to deepen.`;
+  return ar ? `قيد التطوير (${s}/5) - مجال نمو محتمل.` : `Self-assessed as developing (${s}/5) - a likely growth area.`;
 }
 
 /**
@@ -61,19 +73,31 @@ export function competencyNarrative(self: number, target?: number | null): strin
  * when AI insights aren't available). Describes the self-rating relative to the
  * role target as a development opportunity - forward-looking, never a verdict.
  */
-export function developmentNarrative(self: number, target?: number | null): string {
+export function developmentNarrative(self: number, target?: number | null, lang: "en" | "ar" = "en"): string {
   const s = self.toFixed(1);
+  const ar = lang === "ar";
   if (target != null) {
     const t = target.toFixed(1);
     const gap = target - self;
-    if (gap <= 0) return `A self-assessed strength for this role (${s} vs target ${t}) - keep it sharp and use it to coach others.`;
-    if (gap <= 0.5) return `Close to the role target (${s} vs ${t}) - focused practice will close the remaining gap quickly.`;
-    if (gap <= 1.5) return `A clear growth area for this role (${s} vs ${t}) - a strong candidate for targeted training plus on-the-job stretch.`;
-    return `A priority growth area for this role (${s} vs ${t}) - build the foundations with structured learning, then apply deliberately.`;
+    if (gap <= 0)
+      return ar
+        ? `قوة ذاتية لهذا الدور (${s} مقابل المستهدف ${t}) - حافظ عليها ووظّفها في إرشاد الآخرين.`
+        : `A self-assessed strength for this role (${s} vs target ${t}) - keep it sharp and use it to coach others.`;
+    if (gap <= 0.5)
+      return ar
+        ? `قريب من مستهدف الدور (${s} مقابل ${t}) - ممارسة مركّزة ستغلق الفجوة المتبقّية سريعًا.`
+        : `Close to the role target (${s} vs ${t}) - focused practice will close the remaining gap quickly.`;
+    if (gap <= 1.5)
+      return ar
+        ? `مجال نمو واضح لهذا الدور (${s} مقابل ${t}) - مرشّح قوي لتدريب موجّه ومهام تطويرية.`
+        : `A clear growth area for this role (${s} vs ${t}) - a strong candidate for targeted training plus on-the-job stretch.`;
+    return ar
+      ? `مجال نمو ذو أولوية لهذا الدور (${s} مقابل ${t}) - ابنِ الأساسيات بتعلّم منظّم ثم طبّق بوعي.`
+      : `A priority growth area for this role (${s} vs ${t}) - build the foundations with structured learning, then apply deliberately.`;
   }
-  if (self >= 4) return `A self-assessed strength (${s}/5) - leverage it and stretch into harder applications.`;
-  if (self >= 3) return `Self-assessed as competent (${s}/5) - deepen with focused practice toward mastery.`;
-  return `A developing area (${s}/5) - a strong candidate for structured learning.`;
+  if (self >= 4) return ar ? `قوة ذاتية (${s}/5) - وظّفها وتوسّع نحو تطبيقات أصعب.` : `A self-assessed strength (${s}/5) - leverage it and stretch into harder applications.`;
+  if (self >= 3) return ar ? `كفاءة ذاتية (${s}/5) - عمّقها بممارسة مركّزة نحو الإتقان.` : `Self-assessed as competent (${s}/5) - deepen with focused practice toward mastery.`;
+  return ar ? `مجال قيد التطوير (${s}/5) - مرشّح قوي للتعلّم المنظّم.` : `A developing area (${s}/5) - a strong candidate for structured learning.`;
 }
 
 export function fitBand(pct: number): { key: FitBandKey; label: string; labelAr: string } {

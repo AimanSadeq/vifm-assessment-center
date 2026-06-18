@@ -169,6 +169,11 @@ export default async function TechResultsPage({ params }: { params: { token: str
                         ))}
                       </ul>
                     ) : null}
+                    {b.developmentNoteEn ? (
+                      <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                        {b.developmentNoteEn}
+                      </p>
+                    ) : null}
                   </div>
                 ))}
               </div>

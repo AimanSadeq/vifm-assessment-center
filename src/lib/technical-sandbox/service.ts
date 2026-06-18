@@ -13,6 +13,11 @@ import { runSqlCheckpoint, type SqlEngineConfig } from "./sql-runner";
 import { buildMcqTestForFunction, gradeMcqTest, combineScores } from "./combined";
 import { issueCredential } from "@/lib/credentials/issue";
 import { scoreTechnicalAssessment, type TechTest } from "@/lib/ai/technical-assessment";
+import {
+  generateTechBlockNotes,
+  type TechBlockNoteContext,
+  type TechBlockNote,
+} from "@/lib/ai/tech-block-notes";
 import type { Checkpoint, EngineType, SandboxWork } from "./types";
 
 export interface PublicSkillBlock {
@@ -829,6 +834,13 @@ export interface ReportBlock {
   scorePct: number;
   band: string;
   checkpoints: { label: string; passed: boolean }[];
+  /**
+   * Per-block development narrative: explains the missed competency + 1-2
+   * concrete development tips. Null when the block has no missed checkpoints
+   * (it is a strength) or when notes could not be generated.
+   */
+  developmentNoteEn: string | null;
+  developmentNoteAr: string | null;
 }
 export interface ReportPillar {
   nameEn: string;
@@ -997,6 +1009,15 @@ export async function getSessionReport(token: string): Promise<SessionReport | n
     (responses ?? []).map((r) => [r.skill_block_id, r]),
   );
 
+  // Maps a ReportBlock back to its skill_block_id, so per-block development
+  // notes can be keyed by id for the cache + the AI response map (two blocks
+  // can share a display name, so the id is the only safe key).
+  const blockIdByReport = new Map<ReportBlock, string>();
+  // Contexts for the per-block development-note generator - only blocks that
+  // actually missed at least one checkpoint (a fully-passed block is a strength
+  // and gets no note).
+  const noteContexts: TechBlockNoteContext[] = [];
+
   const reportPillars: ReportPillar[] = pillars.map((p) => {
     const pBlocks = blocks.filter((b) => b.pillar_id === p.id);
     const rBlocks: ReportBlock[] = pBlocks.map((b) => {
@@ -1004,7 +1025,7 @@ export async function getSessionReport(token: string): Promise<SessionReport | n
       const cps = ((resp?.checkpoint_results ?? []) as { label_en?: string; id?: string; passed?: boolean }[]).map(
         (c) => ({ label: c.label_en ?? c.id ?? "", passed: !!c.passed }),
       );
-      return {
+      const rb: ReportBlock = {
         nameEn: b.name_en,
         nameAr: b.name_ar ?? null,
         descriptionEn: b.description_en ?? null,
@@ -1013,7 +1034,26 @@ export async function getSessionReport(token: string): Promise<SessionReport | n
         scorePct: Number(resp?.score_pct ?? 0),
         band: String(resp?.band ?? "basic"),
         checkpoints: cps,
+        developmentNoteEn: null,
+        developmentNoteAr: null,
       };
+      blockIdByReport.set(rb, b.id);
+      const missed = cps.filter((c) => !c.passed && c.label.trim()).map((c) => c.label);
+      if (missed.length > 0) {
+        noteContexts.push({
+          id: b.id,
+          nameEn: rb.nameEn,
+          nameAr: rb.nameAr,
+          descriptionEn: rb.descriptionEn,
+          descriptionAr: rb.descriptionAr,
+          frameworkRef: rb.frameworkRef,
+          band: rb.band,
+          scorePct: rb.scorePct,
+          missedCheckpointLabels: missed,
+          passedCheckpointLabels: cps.filter((c) => c.passed && c.label.trim()).map((c) => c.label),
+        });
+      }
+      return rb;
     });
     const pMean = rBlocks.length ? Math.round(rBlocks.reduce((a, b) => a + b.scorePct, 0) / rBlocks.length) : null;
     const pBand = pMean != null ? tierFor(pMean) : null;
@@ -1053,6 +1093,50 @@ export async function getSessionReport(token: string): Promise<SessionReport | n
       blocks: rBlocks,
     };
   });
+
+  // Per-block development notes: for every block with at least one missed
+  // checkpoint, a 2-3 sentence narrative (what was missed + 1-2 dev tips). Cached
+  // on the session (00133) keyed by block id so the on-screen view + the PDF show
+  // identical copy and views do not re-spend tokens. Generate only the blocks not
+  // already cached; best-effort persist (tolerant of 00133 being unapplied).
+  if (noteContexts.length > 0) {
+    const cached =
+      (session.block_development_notes as Record<string, TechBlockNote> | null) ?? {};
+    const isValidNote = (v: unknown): v is TechBlockNote =>
+      !!v &&
+      typeof (v as TechBlockNote).en === "string" &&
+      typeof (v as TechBlockNote).ar === "string";
+    const toGenerate = noteContexts.filter((c) => !isValidNote(cached[c.id]));
+    const fresh = toGenerate.length > 0 ? await generateTechBlockNotes(toGenerate) : {};
+    const merged: Record<string, TechBlockNote> = { ...cached, ...fresh };
+
+    // Stamp the notes onto each ReportBlock by id.
+    for (const p of reportPillars) {
+      for (const rb of p.blocks) {
+        const id = blockIdByReport.get(rb);
+        const note = id ? merged[id] : undefined;
+        if (note && isValidNote(note)) {
+          rb.developmentNoteEn = note.en;
+          rb.developmentNoteAr = note.ar;
+        }
+      }
+    }
+
+    // Best-effort persist when we generated anything new. A missing column
+    // (PostgREST PGRST204 / Postgres 42703) means 00133 is unapplied - skip the
+    // write and keep the in-memory notes.
+    if (Object.keys(fresh).length > 0) {
+      const { error: persistErr } = await sb
+        .from("technical_sandbox_sessions")
+        .update({ block_development_notes: merged })
+        .eq("id", session.id);
+      if (persistErr && !isMissingSchemaError(persistErr) && persistErr.code !== "PGRST204") {
+        // Non-schema errors are non-fatal here too (the report already has the
+        // notes in memory); log and continue rather than 500 the report.
+        console.warn("tech block notes: cache persist failed", persistErr.code);
+      }
+    }
+  }
 
   // Knowledge (MCQ) section: recompute the per-subcategory breakdown from the
   // stored keyed test + the taker's answers, so the report bands EVERY knowledge

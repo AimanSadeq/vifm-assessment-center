@@ -64,6 +64,7 @@ const s = StyleSheet.create({
   cp: { flexDirection: "row", alignItems: "flex-start", marginTop: 3 },
   cpMark: { fontSize: 8, fontFamily: "Helvetica-Bold", width: 26 },
   cpLabel: { fontSize: 8, color: C.text, flex: 1 },
+  devNote: { fontSize: 8, color: C.light, marginTop: 5, lineHeight: 1.35 },
   legendBox: { borderWidth: 1, borderColor: C.border, borderRadius: 4, padding: 8, marginTop: 12 },
   legendHead: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.primary, marginBottom: 4 },
   legendRow: { flexDirection: "row", flexWrap: "wrap" },
@@ -207,6 +208,9 @@ export function TechSandboxReport({ data }: { data: SessionReport }) {
                     <Text style={s.cpLabel}>{c.label}</Text>
                   </View>
                 ))}
+                {b.developmentNoteEn ? (
+                  <Text style={s.devNote}>{b.developmentNoteEn}</Text>
+                ) : null}
               </View>
             ))}
           </View>

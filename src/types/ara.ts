@@ -53,6 +53,12 @@ export type AraOrganization = {
   data_anonymized_at: string | null;
   created_at: string;
   created_by: string | null;
+  /** Results-delivery prefs (migration 00108). Null when the migration is not applied. */
+  respondent_can_view_results: boolean | null;
+  client_contact_email: string | null;
+  send_results_to_client: boolean | null;
+  /** Named client contact who receives collected results (migration 00131). */
+  client_contact_name: string | null;
 };
 
 export type AraQuestionBankVersion = {

@@ -25,6 +25,40 @@ export default async function AraOrganizationsPage() {
   const acByName = new Map(platform.filter((c) => c.acId).map((c) => [c.name.trim().toLowerCase(), true]));
   const crossService = (name: string) => acByName.has(name.trim().toLowerCase());
 
+  // R9 - "Delegates completed" per org, computed WITHOUT N+1: one query for all
+  // listed orgs' assessments, one query for those assessments' respondents,
+  // then aggregate in JS to a Map<orgId, {completed, total}>. Mirrors the
+  // voucher rollup at /ara/admin/vouchers (page.tsx).
+  const orgIds = (orgs ?? []).map((o) => o.id);
+  const delegateStats = new Map<string, { completed: number; total: number }>();
+  if (orgIds.length > 0) {
+    const { data: assessments } = await sb
+      .from("ara_assessments")
+      .select("id, organization_id")
+      .in("organization_id", orgIds)
+      .returns<{ id: string; organization_id: string | null }[]>();
+    const assessmentToOrg = new Map<string, string>();
+    for (const a of assessments ?? []) {
+      if (a.organization_id) assessmentToOrg.set(a.id, a.organization_id);
+    }
+    const assessmentIds = Array.from(assessmentToOrg.keys());
+    if (assessmentIds.length > 0) {
+      const { data: respondents } = await sb
+        .from("ara_respondents")
+        .select("assessment_id, completed_at")
+        .in("assessment_id", assessmentIds)
+        .returns<{ assessment_id: string; completed_at: string | null }[]>();
+      for (const r of respondents ?? []) {
+        const orgId = assessmentToOrg.get(r.assessment_id);
+        if (!orgId) continue;
+        const row = delegateStats.get(orgId) ?? { completed: 0, total: 0 };
+        row.total += 1;
+        if (r.completed_at) row.completed += 1;
+        delegateStats.set(orgId, row);
+      }
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto px-6 py-10">
@@ -62,6 +96,7 @@ export default async function AraOrganizationsPage() {
                 <TableHead>{t("araAdmin.orgsColRegion")}</TableHead>
                 <TableHead>{t("araAdmin.orgsColSector")}</TableHead>
                 <TableHead>{t("araAdmin.orgsColServices")}</TableHead>
+                <TableHead>Delegates completed</TableHead>
                 <TableHead>{t("araAdmin.orgsColCreated")}</TableHead>
               </TableRow>
             </TableHeader>
@@ -94,6 +129,12 @@ export default async function AraOrganizationsPage() {
                     ) : (
                       <Badge variant="secondary">{t("araAdmin.orgsServicesArcOnly")}</Badge>
                     )}
+                  </TableCell>
+                  <TableCell className="text-sm tabular-nums">
+                    {(() => {
+                      const s = delegateStats.get(org.id);
+                      return s && s.total > 0 ? `${s.completed} / ${s.total}` : "-";
+                    })()}
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {new Date(org.created_at).toLocaleDateString()}

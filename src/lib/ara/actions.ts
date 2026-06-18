@@ -112,6 +112,8 @@ export async function updateAraOrganization(formData: FormData) {
     name_ar: formData.get("name_ar") || "",
     sector: formData.get("sector"),
     region: formData.get("region"),
+    client_contact_email: formData.get("client_contact_email") || "",
+    client_contact_name: formData.get("client_contact_name") || "",
   });
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
 
@@ -162,19 +164,39 @@ export async function updateAraOrganization(formData: FormData) {
     }
   }
 
-  // Results-visibility + send-to-client prefs (migration 00108). Separate,
-  // best-effort update so org edits keep working before the migration is
-  // applied (a missing column can't fail the core save above).
+  // Results-visibility + send-to-client prefs (migrations 00108 + 00131).
+  // Separate, best-effort update so org edits keep working before the
+  // migrations are applied (a missing column can't fail the core save above).
+  // We attempt all columns first, then strip the 00131 column and retry so a
+  // DB with 00108 but not 00131 still persists the 00108 prefs.
+  const visFull = {
+    respondent_can_view_results: formData.get("respondent_can_view_results") != null,
+    client_contact_email: parsed.data.client_contact_email || null,
+    send_results_to_client: formData.get("send_results_to_client") != null,
+    // migration 00131
+    client_contact_name: parsed.data.client_contact_name || null,
+  };
   const { error: visErr } = await sb
     .from("ara_organizations")
-    .update({
-      respondent_can_view_results: formData.get("respondent_can_view_results") != null,
-      client_contact_email: String(formData.get("client_contact_email") ?? "").trim() || null,
-      send_results_to_client: formData.get("send_results_to_client") != null,
-    })
+    .update(visFull)
     .eq("id", id);
   if (visErr) {
-    console.warn("[updateAraOrganization] results-visibility not saved (apply migration 00108):", visErr.message);
+    // 42703 = undefined_column (raw PG), PGRST204 = column not found (PostgREST
+    // schema cache). Strip the 00131 column and retry with just the 00108 set.
+    const code = (visErr as { code?: string }).code;
+    if (code === "42703" || code === "PGRST204") {
+      const { client_contact_name: _omit, ...vis108 } = visFull;
+      void _omit;
+      const { error: retryErr } = await sb
+        .from("ara_organizations")
+        .update(vis108)
+        .eq("id", id);
+      if (retryErr) {
+        console.warn("[updateAraOrganization] results-visibility not saved (apply migration 00108):", retryErr.message);
+      }
+    } else {
+      console.warn("[updateAraOrganization] results-delivery prefs not saved:", visErr.message);
+    }
   }
 
   revalidatePath("/ara/admin/organizations");
@@ -1290,6 +1312,162 @@ export async function notifyConsultantOnRespondentComplete(respondentId: string)
       totalCount: String(totalCount ?? 0),
     },
   });
+}
+
+// ─────────────────────────────────────────────────────────────
+// R10 - Collect all completed delegate results for an org and email
+// them, in one consolidated message, to the client contact. This is the
+// admin-driven "collect-and-send-once" path (the per-completion auto-send
+// is handled separately in markAraRespondentComplete).
+//
+// Only the personal-snapshot delegates qualify: respondents who completed
+// on an individual-stage assessment OR an org-stage assessment with
+// include_individual_layer=true. Each delegate's results PDF is fetched
+// via the token PDF route using the server-only x-ara-internal header so
+// the per-delegate visibility gate is bypassed for this consultant action.
+//
+// Best-effort + tolerant: a failed PDF fetch for one delegate is skipped,
+// not fatal; the email module attaches as many PDFs as were built.
+// ─────────────────────────────────────────────────────────────
+export async function collectAndSendOrgResultsAction(
+  orgId: string,
+): Promise<{ ok: boolean; sent: number; skipped: number; error?: string }> {
+  try { await requireOrgAccess(orgId); } catch (e) {
+    const handled = authErr(e); // returns { ok:false, error } for auth errors, else rethrows
+    return { ok: false, sent: 0, skipped: 0, error: handled.error };
+  }
+
+  const sb = createServiceClient();
+
+  // Resolve the client contact email - required for delivery. Tolerant of an
+  // un-applied 00131 (client_contact_name): strip that column and retry so a
+  // DB with 00108 but not 00131 still resolves the contact email.
+  type OrgContact = {
+    name: string;
+    name_ar: string | null;
+    client_contact_email: string | null;
+    client_contact_name: string | null;
+  };
+  let org: OrgContact | null = null;
+  {
+    const full = await sb
+      .from("ara_organizations")
+      .select("name, name_ar, client_contact_email, client_contact_name")
+      .eq("id", orgId)
+      .maybeSingle<OrgContact>();
+    if (full.error) {
+      const code = (full.error as { code?: string }).code;
+      if (code === "42703" || code === "PGRST204") {
+        const stripped = await sb
+          .from("ara_organizations")
+          .select("name, name_ar, client_contact_email")
+          .eq("id", orgId)
+          .maybeSingle<Omit<OrgContact, "client_contact_name">>();
+        org = stripped.data ? { ...stripped.data, client_contact_name: null } : null;
+      }
+    } else {
+      org = full.data;
+    }
+  }
+  const clientEmail = (org?.client_contact_email ?? "").trim();
+  if (!clientEmail) {
+    return { ok: false, sent: 0, skipped: 0, error: "No client contact email is set for this organisation." };
+  }
+
+  // Find this org's personal-snapshot assessments (individual stage OR the
+  // org-stage individual layer).
+  const { data: assessments } = await sb
+    .from("ara_assessments")
+    .select("id, scope_label, is_sandbox, default_language, engagement_stage, include_individual_layer")
+    .eq("organization_id", orgId)
+    .returns<{
+      id: string;
+      scope_label: string | null;
+      is_sandbox: boolean;
+      default_language: string | null;
+      engagement_stage: string;
+      include_individual_layer: boolean | null;
+    }[]>();
+  const personalAssessments = (assessments ?? []).filter(
+    (a) => a.engagement_stage === "individual" || a.include_individual_layer === true,
+  );
+  if (personalAssessments.length === 0) {
+    return { ok: false, sent: 0, skipped: 0, error: "No personal-readiness assessments for this organisation." };
+  }
+
+  // Completed delegates on those assessments.
+  const { data: respondents } = await sb
+    .from("ara_respondents")
+    .select("id, name, email, access_token, assessment_id, completed_at")
+    .in("assessment_id", personalAssessments.map((a) => a.id))
+    .not("completed_at", "is", null)
+    .returns<{
+      id: string;
+      name: string;
+      email: string;
+      access_token: string;
+      assessment_id: string;
+      completed_at: string | null;
+    }[]>();
+  const completed = respondents ?? [];
+  if (completed.length === 0) {
+    return { ok: false, sent: 0, skipped: 0, error: "No completed delegates to collect." };
+  }
+
+  // Build one PDF per completed delegate, base64-encoded for attachment.
+  const baseUrl = appBaseUrl();
+  const attachments: { filename: string; content: string }[] = [];
+  let skipped = 0;
+  for (const r of completed) {
+    try {
+      const pdfRes = await fetch(`${baseUrl}/api/ara/personal/${r.access_token}/pdf`, {
+        headers: { "x-ara-internal": process.env.CRON_SECRET ?? "" },
+        cache: "no-store",
+      });
+      if (!pdfRes.ok) { skipped += 1; continue; }
+      const buf = Buffer.from(await pdfRes.arrayBuffer());
+      if (buf.length === 0) { skipped += 1; continue; }
+      const safe = r.name.replace(/[^a-zA-Z0-9\s]/g, "").replace(/\s+/g, "-") || "respondent";
+      attachments.push({ filename: `AI-Readiness-${safe}.pdf`, content: buf.toString("base64") });
+    } catch (err) {
+      console.error("[collectAndSendOrgResultsAction] PDF fetch failed for delegate", r.id, err);
+      skipped += 1;
+    }
+  }
+
+  if (attachments.length === 0) {
+    return { ok: false, sent: 0, skipped, error: "Could not build any results PDFs to send." };
+  }
+
+  // One consolidated email to the client contact with all delegate PDFs.
+  const anySandbox = personalAssessments.some((a) => a.is_sandbox);
+  const language: AraEmailLanguage =
+    (personalAssessments[0]?.default_language === "ar") ? "ar" : "en";
+  const clientName = (org?.client_contact_name ?? "").trim() || org?.name || "your organisation";
+  const assessmentName = personalAssessments[0]?.scope_label || org?.name || "AI Readiness";
+
+  const result = await sendAraEmail({
+    to: clientEmail,
+    emailType: "ara_personal_results_to_client",
+    language,
+    isSandbox: anySandbox,
+    assessmentId: personalAssessments[0]?.id ?? null,
+    data: {
+      clientName,
+      // For a consolidated send the per-respondent fields read as a roll-up.
+      respondentName: `${attachments.length} delegate${attachments.length === 1 ? "" : "s"}`,
+      respondentEmail: "",
+      assessmentName,
+    },
+    attachments,
+  });
+
+  if (!result.ok) {
+    return { ok: false, sent: 0, skipped, error: result.error ?? "Email failed" };
+  }
+
+  revalidatePath(`/ara/admin/organizations/${orgId}`);
+  return { ok: true, sent: attachments.length, skipped };
 }
 
 // ─────────────────────────────────────────────────────────────

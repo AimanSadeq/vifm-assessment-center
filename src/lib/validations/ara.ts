@@ -20,6 +20,10 @@ export const createAraOrganizationSchema = z.object({
   name_ar: z.string().max(200).optional().or(z.literal("")),
   sector: araSectorSchema,
   region: araRegionSchema,
+  // Results-delivery contact (migrations 00108 + 00131). Both optional so the
+  // create form (which omits them) keeps validating; the edit form supplies them.
+  client_contact_email: z.string().email("Invalid email address").optional().or(z.literal("")),
+  client_contact_name: z.string().max(200).optional().or(z.literal("")),
 });
 export type CreateAraOrganizationValues = z.infer<typeof createAraOrganizationSchema>;
 

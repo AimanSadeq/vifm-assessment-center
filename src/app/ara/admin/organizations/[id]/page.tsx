@@ -12,6 +12,7 @@ import {
   updateAraOrganization, deleteAraOrganization, anonymizeAraOrganization,
 } from "@/lib/ara/actions";
 import { ConfirmAction } from "@/components/shared/confirm-action";
+import { CollectResultsButton } from "./_components/collect-results-button";
 import { getServerT } from "@/lib/i18n/server";
 import type { AraOrganization } from "@/types/ara";
 
@@ -37,6 +38,28 @@ export default async function EditAraOrganizationPage({
     .from("ara_assessments")
     .select("id", { count: "exact", head: true })
     .eq("organization_id", org.id);
+
+  // R9 - delegate completion across this org's assessments (no N+1: one
+  // assessments query feeds one respondents query).
+  let delegatesCompleted = 0;
+  let delegatesTotal = 0;
+  {
+    const { data: orgAssessments } = await sb
+      .from("ara_assessments")
+      .select("id")
+      .eq("organization_id", org.id)
+      .returns<{ id: string }[]>();
+    const assessmentIds = (orgAssessments ?? []).map((a) => a.id);
+    if (assessmentIds.length > 0) {
+      const { data: respondents } = await sb
+        .from("ara_respondents")
+        .select("completed_at")
+        .in("assessment_id", assessmentIds)
+        .returns<{ completed_at: string | null }[]>();
+      delegatesTotal = (respondents ?? []).length;
+      delegatesCompleted = (respondents ?? []).filter((r) => r.completed_at).length;
+    }
+  }
 
   const updateAction = async (fd: FormData) => {
     "use server";
@@ -78,6 +101,10 @@ export default async function EditAraOrganizationPage({
               {(assessmentCount ?? 0) === 1
                 ? t("araAdmin.orgLinkedAssessmentOne", { count: assessmentCount ?? 0 })
                 : t("araAdmin.orgLinkedAssessmentOther", { count: assessmentCount ?? 0 })}
+              {" · "}
+              <span className="tabular-nums">
+                {delegatesCompleted} / {delegatesTotal} delegates completed
+              </span>
             </p>
           </div>
           {org.data_anonymized && (
@@ -132,59 +159,60 @@ export default async function EditAraOrganizationPage({
                 </select>
               </div>
 
-              {/* Results delivery (migration 00108) - who sees the delegate's
-                  results, and whether they go to the client contact. */}
-              {(() => {
-                const o = org as AraOrganization & {
-                  respondent_can_view_results?: boolean;
-                  client_contact_email?: string | null;
-                  send_results_to_client?: boolean;
-                };
-                return (
-                  <div className="space-y-4 rounded-lg border p-4">
-                    <p className="text-sm font-medium">Results delivery</p>
-                    <label className="flex items-start gap-2.5 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        name="respondent_can_view_results"
-                        defaultChecked={o.respondent_can_view_results ?? true}
-                        className="mt-0.5 h-4 w-4"
-                      />
-                      <span className="text-sm">
-                        Delegate can view their own results
-                        <span className="block text-xs text-muted-foreground">
-                          If off, the results page, PDF download, and the auto results email are withheld from the delegate.
-                        </span>
-                      </span>
-                    </label>
-                    <div className="space-y-2">
-                      <Label htmlFor="client_contact_email">Client contact email</Label>
-                      <Input
-                        id="client_contact_email"
-                        name="client_contact_email"
-                        type="email"
-                        maxLength={200}
-                        placeholder="contact@client.com"
-                        defaultValue={o.client_contact_email ?? ""}
-                      />
-                    </div>
-                    <label className="flex items-start gap-2.5 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        name="send_results_to_client"
-                        defaultChecked={o.send_results_to_client ?? false}
-                        className="mt-0.5 h-4 w-4"
-                      />
-                      <span className="text-sm">
-                        Send results to the client contact
-                        <span className="block text-xs text-muted-foreground">
-                          On completion, email each delegate&apos;s results PDF to the contact above. Requires a contact email.
-                        </span>
-                      </span>
-                    </label>
-                  </div>
-                );
-              })()}
+              {/* Results delivery (migrations 00108 + 00131) - who sees the
+                  delegate's results, and whether they go to the client contact. */}
+              <div className="space-y-4 rounded-lg border p-4">
+                <p className="text-sm font-medium">Results delivery</p>
+                <label className="flex items-start gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="respondent_can_view_results"
+                    defaultChecked={org.respondent_can_view_results ?? true}
+                    className="mt-0.5 h-4 w-4"
+                  />
+                  <span className="text-sm">
+                    Delegate can view their own results
+                    <span className="block text-xs text-muted-foreground">
+                      If off, the results page, PDF download, and the auto results email are withheld from the delegate.
+                    </span>
+                  </span>
+                </label>
+                <div className="space-y-2">
+                  <Label htmlFor="client_contact_name">Client contact name</Label>
+                  <Input
+                    id="client_contact_name"
+                    name="client_contact_name"
+                    maxLength={200}
+                    placeholder="Contact full name"
+                    defaultValue={org.client_contact_name ?? ""}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="client_contact_email">Client contact email</Label>
+                  <Input
+                    id="client_contact_email"
+                    name="client_contact_email"
+                    type="email"
+                    maxLength={200}
+                    placeholder="contact@client.com"
+                    defaultValue={org.client_contact_email ?? ""}
+                  />
+                </div>
+                <label className="flex items-start gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="send_results_to_client"
+                    defaultChecked={org.send_results_to_client ?? false}
+                    className="mt-0.5 h-4 w-4"
+                  />
+                  <span className="text-sm">
+                    Send results to the client contact
+                    <span className="block text-xs text-muted-foreground">
+                      On completion, email each delegate&apos;s results PDF to the contact above. Requires a contact email.
+                    </span>
+                  </span>
+                </label>
+              </div>
 
               <div className="flex gap-3 pt-2">
                 <Button type="submit">{t("araAdmin.orgSaveButton")}</Button>
@@ -193,6 +221,29 @@ export default async function EditAraOrganizationPage({
                 </Link>
               </div>
             </form>
+          </CardContent>
+        </Card>
+
+        {/* R10 - collect-and-send completed delegate results to the client */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-base">Send results to client</CardTitle>
+            <CardDescription>
+              Email one consolidated message to the client contact with every
+              completed delegate&apos;s results PDF attached.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground tabular-nums">
+              {delegatesCompleted} of {delegatesTotal} delegate
+              {delegatesTotal === 1 ? "" : "s"} completed.
+              {!org.client_contact_email && " Set a client contact email above first."}
+            </p>
+            <CollectResultsButton
+              orgId={org.id}
+              clientEmail={org.client_contact_email ?? null}
+              completedCount={delegatesCompleted}
+            />
           </CardContent>
         </Card>
 

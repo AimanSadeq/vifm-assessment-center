@@ -431,27 +431,6 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
           </View>
         )}
 
-        {/* B.2 - development-planning scaffold (development) */}
-        {dev && data.planRows && data.planRows.length > 0 ? (
-          <View style={s.sectionPanel}>
-            <Text style={s.sectionTitle}>Your development plan</Text>
-            <Text style={s.sectionSub}>
-              For each priority: set a goal, apply it on the job, and decide how you will know it worked.
-              Complete the blank lines with your manager or coach.
-            </Text>
-            {data.planRows.map((p, i) => (
-              <View key={`plan-${i}`} style={s.planCard} wrap={false}>
-                <Text style={s.planComp}>{i + 1}. {p.competency}</Text>
-                <Text style={s.planAction}>Action / stretch: {p.action}</Text>
-                <View style={s.planBlankRow}><Text style={s.planBlankLabel}>Development goal</Text><View style={s.planBlankLine} /></View>
-                <View style={s.planBlankRow}><Text style={s.planBlankLabel}>On-the-job application</Text><View style={s.planBlankLine} /></View>
-                <View style={s.planBlankRow}><Text style={s.planBlankLabel}>Success measure</Text><View style={s.planBlankLine} /></View>
-                <View style={s.planBlankRow}><Text style={s.planBlankLabel}>Review by</Text><View style={s.planBlankLine} /></View>
-              </View>
-            ))}
-          </View>
-        ) : null}
-
         {/* B.3 - coaching + self-reflection prompts (development) */}
         {dev && data.coaching && (data.coaching.forConversation.length > 0 || data.coaching.forSelf.length > 0) ? (
           <View style={s.sectionPanel} wrap={false}>
@@ -520,6 +499,28 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
             ))}
           </View>
         ))}
+
+        {/* B.2 - development-planning scaffold (development) - the take-away
+            action plan, placed at the end after all the analysis. */}
+        {dev && data.planRows && data.planRows.length > 0 ? (
+          <View style={s.sectionPanel}>
+            <Text style={s.sectionTitle}>Your development plan</Text>
+            <Text style={s.sectionSub}>
+              For each priority: set a goal, apply it on the job, and decide how you will know it worked.
+              Complete the blank lines with your manager or coach.
+            </Text>
+            {data.planRows.map((p, i) => (
+              <View key={`plan-${i}`} style={s.planCard} wrap={false}>
+                <Text style={s.planComp}>{i + 1}. {p.competency}</Text>
+                <Text style={s.planAction}>Action / stretch: {p.action}</Text>
+                <View style={s.planBlankRow}><Text style={s.planBlankLabel}>Development goal</Text><View style={s.planBlankLine} /></View>
+                <View style={s.planBlankRow}><Text style={s.planBlankLabel}>On-the-job application</Text><View style={s.planBlankLine} /></View>
+                <View style={s.planBlankRow}><Text style={s.planBlankLabel}>Success measure</Text><View style={s.planBlankLine} /></View>
+                <View style={s.planBlankRow}><Text style={s.planBlankLabel}>Review by</Text><View style={s.planBlankLine} /></View>
+              </View>
+            ))}
+          </View>
+        ) : null}
 
         <Text style={s.caption}>
           {hiring

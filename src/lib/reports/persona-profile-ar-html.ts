@@ -176,27 +176,6 @@ export function renderPersonaProfileHtmlAr(data: PersonaPdfData): string {
     </div>`);
   }
 
-  // B.2 planning scaffold (development)
-  if (dev && data.planRows && data.planRows.length > 0) {
-    const rows = data.planRows
-      .map(
-        (p, i) => `<div class="plan-card">
-        <div class="plan-comp">${num(i + 1)}. ${escapeHtml(p.competency)}</div>
-        <div class="plan-action">الإجراء / التحدي: ${escapeHtml(p.action)}</div>
-        <div class="plan-blank"><span class="pb-label">هدف التطوير</span><span class="pb-line"></span></div>
-        <div class="plan-blank"><span class="pb-label">التطبيق في العمل</span><span class="pb-line"></span></div>
-        <div class="plan-blank"><span class="pb-label">مقياس النجاح</span><span class="pb-line"></span></div>
-        <div class="plan-blank"><span class="pb-label">المراجعة بحلول</span><span class="pb-line"></span></div>
-      </div>`,
-      )
-      .join("");
-    parts.push(`<div class="panel">
-      <div class="sec-title">خطة تطويرك</div>
-      <div class="sec-sub">لكل أولوية: حدّد هدفًا، طبّقه في العمل، وقرّر كيف ستعرف أنه نجح. أكمل الفراغات مع مديرك أو مرشدك.</div>
-      ${rows}
-    </div>`);
-  }
-
   // B.3 coaching (development)
   if (dev && data.coaching && (data.coaching.forConversation.length > 0 || data.coaching.forSelf.length > 0)) {
     const conv = data.coaching.forConversation.length
@@ -244,6 +223,27 @@ export function renderPersonaProfileHtmlAr(data: PersonaPdfData): string {
       .join("");
     parts.push(`<div class="cluster">
       <div class="cluster-head"><span class="cluster-name">${escapeHtml(cl.name)}</span><span class="cluster-avg" style="color:${bandColor(cl.avg)}">${num(f1(cl.avg))} · ${escapeHtml(personaBand(cl.avg).labelAr)}</span></div>
+      ${rows}
+    </div>`);
+  }
+
+  // B.2 planning scaffold (development) - the take-away action plan, at the end.
+  if (dev && data.planRows && data.planRows.length > 0) {
+    const rows = data.planRows
+      .map(
+        (p, i) => `<div class="plan-card">
+        <div class="plan-comp">${num(i + 1)}. ${escapeHtml(p.competency)}</div>
+        <div class="plan-action">الإجراء / التحدي: ${escapeHtml(p.action)}</div>
+        <div class="plan-blank"><span class="pb-label">هدف التطوير</span><span class="pb-line"></span></div>
+        <div class="plan-blank"><span class="pb-label">التطبيق في العمل</span><span class="pb-line"></span></div>
+        <div class="plan-blank"><span class="pb-label">مقياس النجاح</span><span class="pb-line"></span></div>
+        <div class="plan-blank"><span class="pb-label">المراجعة بحلول</span><span class="pb-line"></span></div>
+      </div>`,
+      )
+      .join("");
+    parts.push(`<div class="panel">
+      <div class="sec-title">خطة تطويرك</div>
+      <div class="sec-sub">لكل أولوية: حدّد هدفًا، طبّقه في العمل، وقرّر كيف ستعرف أنه نجح. أكمل الفراغات مع مديرك أو مرشدك.</div>
       ${rows}
     </div>`);
   }

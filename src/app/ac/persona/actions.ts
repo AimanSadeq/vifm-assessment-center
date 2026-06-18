@@ -8,10 +8,7 @@ import {
   type BehavioralAnswer,
 } from "@/lib/scoring/behavioral";
 import { getVoucherScopeByRedemptionToken } from "@/lib/persona/vouchers";
-import { loadPersonaRoleById } from "@/lib/scoring/persona-roles";
-import { generatePersonaInsights, buildInsightCompetencies } from "@/lib/ai/persona-insights";
-import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
-import { recommendCoursesForCompetencyGaps, type RecommendedCourse } from "@/lib/recommender/courses";
+import { buildPersonaPdfData } from "@/lib/reports/persona-report-data";
 
 export type StartPersonaOptions = {
   /** 'development' (narrative + suggestions) or 'hiring' (fit vs a target role). */
@@ -108,69 +105,21 @@ export async function savePersonaAnswersAction(sessionId: string, answers: Behav
   return saveBehavioralAnswers(sessionId, answers);
 }
 
-/** Finalize: score per competency and return the self-profile (no rollup write).
- *  When the sitting has a TARGET ROLE (hiring OR development), also generate
- *  per-competency AI insights grounded in the candidate's actual item-level
- *  answers, store them on the session (for the PDF) and return them (for the
- *  on-screen result). Hiring insights are screening-framed; development insights
- *  are growth-framed and the result additionally carries a VIFM Academy course
- *  plan ranked by competency gap. Best-effort: any failure leaves the report to
- *  fall back to the deterministic narrative. */
-export async function submitPersonaAction(sessionId: string) {
+/** Finalize: score per competency, then build the FULL report payload
+ *  (PersonaPdfData) via the same builder the PDF uses - so the on-screen result
+ *  and the downloaded PDF render identical content (interview guide, decision
+ *  block, role-critical markers, watch areas, summary, planning scaffold,
+ *  coaching, overused, consistency, percentiles, course plan). The builder
+ *  lazily generates + caches the AI artefacts and is fully tolerant; on any
+ *  failure the caller still gets the scored profile. `lang` selects EN/AR copy. */
+export async function submitPersonaAction(sessionId: string, lang: "en" | "ar" = "en") {
   const res = await submitAnonymousBehavioral(sessionId);
   if (!res.ok || !res.profile) return res;
-
   try {
-    const sb = createServiceClient();
-    const { data: session } = await sb
-      .from("behavioral_assessment_sessions")
-      .select("purpose, target_role_profile_id")
-      .eq("id", sessionId)
-      .maybeSingle<{ purpose: string | null; target_role_profile_id: string | null }>();
-    if (!session?.target_role_profile_id) return res;
-    const purpose: "development" | "hiring" = session.purpose === "hiring" ? "hiring" : "development";
-
-    const role = await loadPersonaRoleById(session.target_role_profile_id);
-    if (!role) return res;
-
-    const selfById = new Map(res.profile.map((p) => [p.competencyId, p.selfScore]));
-    const competencies = await buildInsightCompetencies({ sessionId, roleComps: role.comps, selfById });
-    if (competencies.length === 0) return res;
-
-    const insights = await generatePersonaInsights({ roleName: role.name, competencies, purpose });
-    // Persist for the PDF (tolerant of migration 00125 not applied).
-    try {
-      await sb.from("behavioral_assessment_sessions").update({ competency_insights: insights }).eq("id", sessionId);
-    } catch {
-      /* column absent - on-screen still gets insights from the return value */
-    }
-
-    // Development: turn the gaps into a VIFM Academy training plan.
-    let courses: RecommendedCourse[] = [];
-    if (purpose === "development") {
-      try {
-        const nameById = new Map(
-          BEHAVIORAL_COMPETENCIES.map((c) => [c.acCompetencyId, { en: c.nameEn, ar: c.nameAr }]),
-        );
-        const gaps = role.comps
-          .filter((c) => selfById.has(c.competencyId))
-          .map((c) => ({
-            competency_id: c.competencyId,
-            name: nameById.get(c.competencyId)?.en ?? c.name,
-            name_ar: nameById.get(c.competencyId)?.ar ?? null,
-            gap: c.target - (selfById.get(c.competencyId) as number),
-          }))
-          .filter((g) => g.gap > 0);
-        // Cap at 6 to match the PDF report's course list exactly (the on-screen
-        // plan and the downloaded plan must show the same programmes).
-        courses = await recommendCoursesForCompetencyGaps({ gaps, limit: 6 });
-      } catch {
-        /* recommender is best-effort - the report still renders without it */
-      }
-    }
-
-    return { ...res, insights, courses };
+    const built = await buildPersonaPdfData(sessionId, lang);
+    if (built.ok) return { ...res, report: built.data };
   } catch {
-    return res;
+    /* fall back to the plain scored profile */
   }
+  return res;
 }

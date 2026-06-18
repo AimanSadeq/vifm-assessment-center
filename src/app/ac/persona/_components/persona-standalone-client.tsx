@@ -18,6 +18,8 @@ import {
 } from "@/lib/scoring/persona-fit";
 import type { RecommendedCourse } from "@/lib/recommender/courses";
 import { VIFM_VERTICAL_LABELS } from "@/types/database";
+import { PersonaReportView } from "./persona-report-view";
+import type { PersonaPdfData } from "@/lib/reports/persona-profile";
 
 // Inlined from the recommender (a value import from that module would pull its
 // server-only @/lib/supabase/server dependency into this client component).
@@ -76,6 +78,9 @@ export function PersonaStandaloneClient({
   const [insights, setInsights] = useState<Record<string, string>>({});
   // VIFM Academy course plan (development result only).
   const [courses, setCourses] = useState<RecommendedCourse[]>([]);
+  // Full report payload (PersonaPdfData) - the on-screen result renders this so
+  // it matches the PDF section-for-section. Falls back to the lighter view if null.
+  const [report, setReport] = useState<PersonaPdfData | null>(null);
   const [page, setPage] = useState(0);
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -256,10 +261,9 @@ export function PersonaStandaloneClient({
     setBusy(true); setError("");
     try {
       await flush(); // persist any buffered answers before scoring
-      const res = await submitPersonaAction(sessionId);
+      const res = await submitPersonaAction(sessionId, lang);
       if (!res.ok || !res.profile) { setError(res.error || tx("Could not score.", "تعذّر التقييم.")); return; }
-      setInsights((res as { insights?: Record<string, string> }).insights ?? {});
-      setCourses((res as { courses?: RecommendedCourse[] }).courses ?? []);
+      setReport((res as { report?: PersonaPdfData }).report ?? null);
       setProfile(res.profile); setPhase("result");
     } catch { setError(tx("Could not score.", "تعذّر التقييم.")); } finally { setBusy(false); }
   };
@@ -268,7 +272,7 @@ export function PersonaStandaloneClient({
     if (flushTimer.current) { clearTimeout(flushTimer.current); flushTimer.current = null; }
     pendingRef.current.clear();
     setPhase("intro"); setSessionId(null); setAnswers({}); setIpsChoices({});
-    setProfile(null); setInsights({}); setCourses([]); setPage(0); setSeed(0); setError("");
+    setProfile(null); setInsights({}); setCourses([]); setReport(null); setPage(0); setSeed(0); setError("");
   };
 
   const likertLabel = (v: number) =>
@@ -651,6 +655,8 @@ export function PersonaStandaloneClient({
               )}
             </p>
           </div>
+        ) : report ? (
+          <PersonaReportView data={report} ar={ar} sessionId={sessionId} onReset={reset} />
         ) : (
           <PersonaResult
             competencies={competencies}

@@ -35,7 +35,15 @@ export type CreateBatchInput = {
   maxUses?: number;
   expiresAt?: string | null;
   createdBy?: string | null;
+  /** Project/cohort label (00137); groups this batch with Persona for reporting. */
+  projectLabel?: string | null;
 };
+
+/** Undefined column - migration 00137 (project_label) not applied yet. Postgres
+ *  raises 42703 on a read; PostgREST raises PGRST204 on a write (schema-cache miss). */
+function isMissingColumnError(err: { code?: string } | null): boolean {
+  return err?.code === "42703" || err?.code === "PGRST204";
+}
 
 export async function createVoucherBatch(
   input: CreateBatchInput,
@@ -44,7 +52,7 @@ export async function createVoucherBatch(
   const sb = createServiceClient();
   const batchId = globalThis.crypto.randomUUID();
 
-  const rows = Array.from({ length: count }, () => ({
+  const baseRow = () => ({
     code: generateVoucherCode(),
     label: input.label ?? null,
     batch_id: batchId,
@@ -54,10 +62,25 @@ export async function createVoucherBatch(
     max_uses: Math.max(1, input.maxUses ?? 1),
     expires_at: input.expiresAt ?? null,
     created_by: input.createdBy ?? null,
-  }));
+  });
+  // 00137 (newest) project label - only carried when set, peeled first below.
+  const projectCol = input.projectLabel?.trim() ? { project_label: input.projectLabel.trim() } : {};
 
-  const { data, error } = await sb.from("cognitive_vouchers").insert(rows).select("code");
-  if (error) return { ok: false, error: error.message };
+  // Newest-first peel: project_label (00137) -> base. Each attempt builds fresh
+  // rows (each row generates its own code).
+  const build = (extra: Record<string, unknown>) =>
+    Array.from({ length: count }, () => ({ ...baseRow(), ...extra }));
+  const attempts = [() => build(projectCol), () => build({})];
+  let data: { code: string }[] | null = null;
+  let error: { code?: string; message?: string } | null = null;
+  for (const make of attempts) {
+    const res = await sb.from("cognitive_vouchers").insert(make()).select("code");
+    data = res.data as { code: string }[] | null;
+    error = res.error;
+    if (!error) break;
+    if (!isMissingColumnError(error)) break;
+  }
+  if (error) return { ok: false, error: error.message ?? "Could not create vouchers." };
   return { ok: true, batchId, codes: (data ?? []).map((r) => r.code as string) };
 }
 
@@ -94,19 +117,43 @@ export async function redeemVoucher(
 
   const language = voucher.default_language === "ar" ? "ar" : "en";
 
-  const { data: redemption, error: redErr } = await sb
+  // Project label (00137) rides voucher -> redemption -> result, mirroring
+  // organization_id. The claim RPC doesn't return it, so read it separately
+  // (tolerant of 00137 not applied).
+  let projectLabel: string | null = null;
+  try {
+    const { data: vRow } = await sb
+      .from("cognitive_vouchers")
+      .select("project_label")
+      .eq("id", voucher.id)
+      .maybeSingle<{ project_label: string | null }>();
+    projectLabel = vRow?.project_label ?? null;
+  } catch {
+    projectLabel = null;
+  }
+
+  const redemptionBase = {
+    voucher_id: voucher.id,
+    redeemer_name: input.redeemerName.trim(),
+    redeemer_email: input.redeemerEmail.trim(),
+    company_name: input.companyName.trim(),
+    organization_id: voucher.organization_id ?? null,
+    ip: input.ip ?? null,
+    user_agent: input.userAgent ?? null,
+  };
+  let { data: redemption, error: redErr } = await sb
     .from("cognitive_voucher_redemptions")
-    .insert({
-      voucher_id: voucher.id,
-      redeemer_name: input.redeemerName.trim(),
-      redeemer_email: input.redeemerEmail.trim(),
-      company_name: input.companyName.trim(),
-      organization_id: voucher.organization_id ?? null,
-      ip: input.ip ?? null,
-      user_agent: input.userAgent ?? null,
-    })
+    .insert(projectLabel ? { ...redemptionBase, project_label: projectLabel } : redemptionBase)
     .select("redemption_token")
     .single<{ redemption_token: string }>();
+  // Tolerant of 00137 not applied on the redemptions table: retry without it.
+  if (redErr && projectLabel && isMissingColumnError(redErr)) {
+    ({ data: redemption, error: redErr } = await sb
+      .from("cognitive_voucher_redemptions")
+      .insert(redemptionBase)
+      .select("redemption_token")
+      .single<{ redemption_token: string }>());
+  }
   if (redErr || !redemption) return { ok: false, error: "Could not start your test. Please try again." };
 
   return { ok: true, redemptionToken: redemption.redemption_token, language };

@@ -116,14 +116,25 @@ export async function POST(req: Request) {
         const token = body.redemptionToken.trim();
         const { data: redemption } = await svc
           .from("cognitive_voucher_redemptions")
-          .select("id, organization_id")
+          .select("id, organization_id, project_label")
           .eq("redemption_token", token)
-          .maybeSingle<{ id: string; organization_id: string | null }>();
+          .maybeSingle<{ id: string; organization_id: string | null; project_label: string | null }>();
         if (redemption) {
+          // Org linkage first, on its own, so a pending 00137 (no
+          // psy_results.project_label column) can never drop it.
           await svc
             .from("psy_results")
             .update({ organization_id: redemption.organization_id, voucher_redemption_id: redemption.id })
             .eq("id", resRow.id);
+          // Project label (00137) ride-along - separate, best-effort write.
+          try {
+            await svc
+              .from("psy_results")
+              .update({ project_label: redemption.project_label ?? null })
+              .eq("id", resRow.id);
+          } catch {
+            /* psy_results.project_label not migrated - ignore */
+          }
           await svc.from("cognitive_voucher_redemptions").update({ result_id: resRow.id }).eq("id", redemption.id);
         }
       } catch {

@@ -50,6 +50,7 @@ export function VouchersClient({
   const [count, setCount] = useState(1);
   const [label, setLabel] = useState("");
   const [clientName, setClientName] = useState("");
+  const [projectLabel, setProjectLabel] = useState("");
   const [maxUses, setMaxUses] = useState(1);
   const [expiresAt, setExpiresAt] = useState("");
   const [language, setLanguage] = useState<"en" | "ar">("en");
@@ -116,6 +117,7 @@ export function VouchersClient({
       count,
       label: label || undefined,
       clientName: clientName || undefined,
+      projectLabel: projectLabel || undefined,
       maxUses,
       expiresAt: expiresAt || null,
       purpose,
@@ -186,6 +188,7 @@ export function VouchersClient({
       delegates: parsed,
       label: label || undefined,
       clientName: clientName || undefined,
+      projectLabel: projectLabel || undefined,
       language,
       expiresAt: expiresAt || null,
       purpose,
@@ -246,6 +249,10 @@ export function VouchersClient({
                   <option key={c} value={c} />
                 ))}
               </datalist>
+            </div>
+            <div className="flex-1 min-w-[12rem] space-y-1.5">
+              <Label className="text-xs">Project / cohort (optional)</Label>
+              <Input value={projectLabel} onChange={(e) => setProjectLabel(e.target.value)} placeholder="Groups with Cognitive for reporting" />
             </div>
             <div className="flex-1 min-w-[10rem] space-y-1.5">
               <Label className="text-xs">Label (optional)</Label>

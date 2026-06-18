@@ -75,6 +75,8 @@ export async function createAnonymousBehavioralSession(
     seed?: number | null;
     /** Competency scope actually served (migration 00123); null/empty = full bank. */
     scopedCompetencyIds?: string[] | null;
+    /** Project/cohort label (migration 00137); groups Persona + Cognitive runs. */
+    projectLabel?: string | null;
   },
 ): Promise<BehavioralSession> {
   const sb = createServiceClient();
@@ -106,15 +108,20 @@ export async function createAnonymousBehavioralSession(
     ...with110,
     ...(scoped.length > 0 ? { scoped_competency_ids: scoped } : {}),
   };
-  // 00129 (newest): taker_email.
+  // 00129: taker_email.
   const with129: Record<string, unknown> = {
     ...with123,
     ...(opts?.takerEmail ? { taker_email: opts.takerEmail } : {}),
   };
+  // 00137 (newest): project/cohort label.
+  const with137: Record<string, unknown> = {
+    ...with129,
+    ...(opts?.projectLabel ? { project_label: opts.projectLabel } : {}),
+  };
 
   // Peel the newest migration's columns first on each missing-column error:
-  // 00129 taker_email -> 00123 scope -> 00110 purpose/target/seed -> core.
-  const attempts = [with129, with123, with110, baseCore];
+  // 00137 project_label -> 00129 taker_email -> 00123 scope -> 00110 -> core.
+  const attempts = [with137, with129, with123, with110, baseCore];
   let data: { id: string; status: string } | null = null;
   let error: unknown = null;
   for (const payload of attempts) {

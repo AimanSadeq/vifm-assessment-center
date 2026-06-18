@@ -28,6 +28,8 @@ export async function generatePersonaVouchersAction(input: {
   targetRoleProfileId?: string | null;
   /** Empty / omitted = full bank; non-empty = serve only these competencies. */
   scopedCompetencyIds?: string[];
+  /** Project/cohort label (00137) - groups this batch with Cognitive for reporting. */
+  projectLabel?: string;
 }): Promise<{ ok: true; codes: string[] } | { error: string }> {
   const g = await guard();
   if (!g.ok) return { error: g.error };
@@ -61,6 +63,7 @@ export async function generatePersonaVouchersAction(input: {
     purpose,
     targetRoleProfileId: purpose === "hiring" ? input.targetRoleProfileId ?? null : null,
     scopedCompetencyIds: (input.scopedCompetencyIds ?? []).filter(Boolean),
+    projectLabel: input.projectLabel?.trim() || null,
   });
   if (!res.ok) return { error: res.error };
   revalidatePath("/ac/persona/vouchers");
@@ -105,6 +108,7 @@ export async function emailVoucherDelegatesAction(input: {
   purpose?: "development" | "hiring";
   targetRoleProfileId?: string | null;
   scopedCompetencyIds?: string[];
+  projectLabel?: string;
 }): Promise<{ ok: true; results: DelegateResult[] } | { error: string }> {
   const g = await guard();
   if (!g.ok) return { error: g.error };
@@ -155,6 +159,7 @@ export async function emailVoucherDelegatesAction(input: {
       purpose,
       targetRoleProfileId: purpose === "hiring" ? input.targetRoleProfileId ?? null : null,
       scopedCompetencyIds,
+      projectLabel: input.projectLabel?.trim() || null,
     });
     if (!batch.ok) {
       results.push({ email: d.email, ok: false, error: batch.error });

@@ -94,6 +94,9 @@ export default async function CognitiveCohortPage({ searchParams }: { searchPara
             Aggregate cognitive-ability results (numerical / verbal / inductive / deductive reasoning). Tier 1 bands are based on
             raw scores, not local norms.
           </p>
+          <Link href="/admin/cohorts" className="mt-2 inline-block text-xs font-medium text-[#5391D5] hover:underline">
+            View combined project cohorts (Persona + Cognitive) →
+          </Link>
         </div>
       </header>
 

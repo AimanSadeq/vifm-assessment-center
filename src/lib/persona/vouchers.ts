@@ -39,6 +39,8 @@ export type CreateBatchInput = {
   targetRoleProfileId?: string | null;
   /** Competency scope; null/empty = full bank, non-empty = serve only these. */
   scopedCompetencyIds?: string[] | null;
+  /** Project/cohort label (00137); groups this batch with Cognitive for reporting. */
+  projectLabel?: string | null;
 };
 
 /** Undefined column - migration 00123 not applied yet. Postgres raises 42703
@@ -71,15 +73,28 @@ export async function createVoucherBatch(
     target_role_profile_id: input.targetRoleProfileId ?? null,
     scoped_competency_ids: scoped.length > 0 ? scoped : null,
   };
+  // 00137 (newest) project label - only carried when set, peeled first below.
+  const projectCol = input.projectLabel?.trim() ? { project_label: input.projectLabel.trim() } : {};
 
-  const rows = Array.from({ length: count }, () => ({ ...baseRow(), ...scopeCols }));
-  let { data, error } = await sb.from("persona_vouchers").insert(rows).select("code");
-  // Tolerant of migration 00123 not applied: insert without the scope columns.
-  if (error && isMissingColumnError(error)) {
-    const plainRows = Array.from({ length: count }, () => baseRow());
-    ({ data, error } = await sb.from("persona_vouchers").insert(plainRows).select("code"));
+  // Newest-first peel: project_label (00137) -> scope (00123) -> base. Each
+  // attempt builds fresh rows (each row generates its own code).
+  const build = (extra: Record<string, unknown>) =>
+    Array.from({ length: count }, () => ({ ...baseRow(), ...extra }));
+  const attempts = [
+    () => build({ ...scopeCols, ...projectCol }),
+    () => build(scopeCols),
+    () => build({}),
+  ];
+  let data: { code: string }[] | null = null;
+  let error: { code?: string; message?: string } | null = null;
+  for (const make of attempts) {
+    const res = await sb.from("persona_vouchers").insert(make()).select("code");
+    data = res.data as { code: string }[] | null;
+    error = res.error;
+    if (!error) break;
+    if (!isMissingColumnError(error)) break;
   }
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: error.message ?? "Could not create vouchers." };
   return { ok: true, batchId, codes: (data ?? []).map((r) => r.code as string) };
 }
 
@@ -161,19 +176,43 @@ export async function redeemVoucher(
 
   const language = voucher.default_language === "ar" ? "ar" : "en";
 
-  const { data: redemption, error: redErr } = await sb
+  // Project label (00137) rides voucher -> redemption -> session, mirroring
+  // organization_id. The claim RPC doesn't return it, so read it separately
+  // (tolerant of 00137 not applied).
+  let projectLabel: string | null = null;
+  try {
+    const { data: vRow } = await sb
+      .from("persona_vouchers")
+      .select("project_label")
+      .eq("id", voucher.id)
+      .maybeSingle<{ project_label: string | null }>();
+    projectLabel = vRow?.project_label ?? null;
+  } catch {
+    projectLabel = null;
+  }
+
+  const redemptionBase = {
+    voucher_id: voucher.id,
+    redeemer_name: input.redeemerName.trim(),
+    redeemer_email: input.redeemerEmail.trim(),
+    company_name: input.companyName.trim(),
+    organization_id: voucher.organization_id ?? null,
+    ip: input.ip ?? null,
+    user_agent: input.userAgent ?? null,
+  };
+  let { data: redemption, error: redErr } = await sb
     .from("persona_voucher_redemptions")
-    .insert({
-      voucher_id: voucher.id,
-      redeemer_name: input.redeemerName.trim(),
-      redeemer_email: input.redeemerEmail.trim(),
-      company_name: input.companyName.trim(),
-      organization_id: voucher.organization_id ?? null,
-      ip: input.ip ?? null,
-      user_agent: input.userAgent ?? null,
-    })
+    .insert(projectLabel ? { ...redemptionBase, project_label: projectLabel } : redemptionBase)
     .select("redemption_token")
     .single<{ redemption_token: string }>();
+  // Tolerant of 00137 not applied on the redemptions table: retry without it.
+  if (redErr && projectLabel && isMissingColumnError(redErr)) {
+    ({ data: redemption, error: redErr } = await sb
+      .from("persona_voucher_redemptions")
+      .insert(redemptionBase)
+      .select("redemption_token")
+      .single<{ redemption_token: string }>());
+  }
   if (redErr || !redemption) return { ok: false, error: "Could not start your assessment. Please try again." };
 
   return { ok: true, redemptionToken: redemption.redemption_token, language };

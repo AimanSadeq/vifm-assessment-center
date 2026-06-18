@@ -23,6 +23,8 @@ export async function generateCognitiveVouchersAction(input: {
   clientName?: string;
   maxUses?: number;
   expiresAt?: string | null;
+  /** Project/cohort label (00137) - groups this batch with Persona for reporting. */
+  projectLabel?: string;
 }): Promise<{ ok: true; codes: string[] } | { error: string }> {
   const g = await guard();
   if (!g.ok) return { error: g.error };
@@ -46,6 +48,7 @@ export async function generateCognitiveVouchersAction(input: {
     maxUses: Math.max(1, input.maxUses ?? 1),
     expiresAt: input.expiresAt || null,
     createdBy: g.caller.isDev ? null : g.caller.uid,
+    projectLabel: input.projectLabel?.trim() || null,
   });
   if (!res.ok) return { error: res.error };
   revalidatePath("/ac/cognitive/vouchers");
@@ -87,6 +90,8 @@ export async function emailVoucherDelegatesAction(input: {
   clientName?: string;
   language?: "en" | "ar";
   expiresAt?: string | null;
+  /** Project/cohort label (00137) - groups this batch with Persona for reporting. */
+  projectLabel?: string;
 }): Promise<{ ok: true; results: DelegateResult[] } | { error: string }> {
   const g = await guard();
   if (!g.ok) return { error: g.error };
@@ -128,6 +133,7 @@ export async function emailVoucherDelegatesAction(input: {
       maxUses: 1,
       expiresAt: input.expiresAt || null,
       createdBy: g.caller.isDev ? null : g.caller.uid,
+      projectLabel: input.projectLabel?.trim() || null,
     });
     if (!batch.ok) {
       results.push({ email: d.email, ok: false, error: batch.error });

@@ -39,6 +39,7 @@ export function VouchersClient({ vouchers, clients }: { vouchers: CognitiveVouch
   const [count, setCount] = useState(1);
   const [label, setLabel] = useState("");
   const [clientName, setClientName] = useState("");
+  const [projectLabel, setProjectLabel] = useState("");
   const [maxUses, setMaxUses] = useState(1);
   const [expiresAt, setExpiresAt] = useState("");
   const [language, setLanguage] = useState<"en" | "ar">("en");
@@ -61,6 +62,7 @@ export function VouchersClient({ vouchers, clients }: { vouchers: CognitiveVouch
       count,
       label: label || undefined,
       clientName: clientName || undefined,
+      projectLabel: projectLabel || undefined,
       maxUses,
       expiresAt: expiresAt || null,
     });
@@ -114,6 +116,7 @@ export function VouchersClient({ vouchers, clients }: { vouchers: CognitiveVouch
       delegates: parsed,
       label: label || undefined,
       clientName: clientName || undefined,
+      projectLabel: projectLabel || undefined,
       language,
       expiresAt: expiresAt || null,
     });
@@ -170,6 +173,10 @@ export function VouchersClient({ vouchers, clients }: { vouchers: CognitiveVouch
                 <option key={c} value={c} />
               ))}
             </datalist>
+          </div>
+          <div className="flex-1 min-w-[12rem] space-y-1.5">
+            <Label className="text-xs">Project / cohort (optional)</Label>
+            <Input value={projectLabel} onChange={(e) => setProjectLabel(e.target.value)} placeholder="Groups with Persona for reporting" />
           </div>
           <div className="flex-1 min-w-[10rem] space-y-1.5">
             <Label className="text-xs">Label (optional)</Label>

@@ -37,6 +37,7 @@ export async function startPersonaAction(
   try {
     let organizationId: string | null = null;
     let redemptionId: string | null = null;
+    let projectLabel: string | null = null;
     // Scope (purpose/role/competencies) defaults to whatever the client sent
     // (standalone admin run). For a voucher delegate it is OVERRIDDEN by the
     // admin-pinned scope on the voucher, derived server-side - the candidate
@@ -58,6 +59,18 @@ export async function startPersonaAction(
         if (r) {
           organizationId = r.organization_id;
           redemptionId = r.id;
+          // Project label (00137) read separately so a pending migration can't
+          // drop the org/redemption linkage above.
+          try {
+            const { data: pr } = await sb
+              .from("persona_voucher_redemptions")
+              .select("project_label")
+              .eq("id", r.id)
+              .maybeSingle<{ project_label: string | null }>();
+            projectLabel = pr?.project_label ?? null;
+          } catch {
+            projectLabel = null;
+          }
         }
         // Pinned scope wins over anything the client sent.
         const scope = await getVoucherScopeByRedemptionToken(redemptionToken);
@@ -80,6 +93,7 @@ export async function startPersonaAction(
       targetRoleProfileId,
       seed: opts?.seed ?? null,
       scopedCompetencyIds,
+      projectLabel,
     });
 
     if (redemptionId) {

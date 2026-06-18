@@ -208,6 +208,8 @@ const NAV: NavEntry[] = [
         },
         instrumentGroup("cognitive-mng", "Cognitive", BrainCircuit, "/ac/cognitive"),
         instrumentGroup("persona-mng", "Persona", Layers, "/ac/persona"),
+        // Cross-instrument cohort view: Persona + Cognitive grouped by project label.
+        link("/admin/cohorts", "adminNav.projectCohorts", Users),
         link("/reflect", "adminNav.reflect360", Aperture),
         {
           kind: "group",

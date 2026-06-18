@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/server";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
+import { createClientOrganization } from "@/lib/clients/registry";
 import { sendEmail, isEmailConfigured } from "@/lib/integrations/email";
 import { logPrehireEvent } from "@/lib/prehire/audit";
 import { buildPrehireCandidatePdf } from "@/lib/reports/prehire-candidate-pdf";
@@ -77,6 +78,26 @@ export async function createRequisitionAction(input: unknown) {
   return { data: { id: data.id as string } };
 }
 
+/**
+ * Inline client creation from the requisition wizard (CAL-PH-504). Dual-writes
+ * to both org stores via the shared registry so the new client is selectable in
+ * every service, then returns it for immediate selection. Deduped by name.
+ */
+export async function createPrehireOrgAction(input: { name: string; industry?: string; country?: string }) {
+  const gate = await gateAdmin();
+  if (gate) return gate;
+  const name = (input?.name ?? "").trim();
+  if (name.length < 2) return { error: "Enter a client name." };
+  const res = await createClientOrganization({
+    name,
+    industry: input?.industry?.trim() || null,
+    country: input?.country?.trim() || null,
+  });
+  if (!res.ok) return { error: res.error };
+  revalidatePath("/admin/prehire/new");
+  return { data: { id: res.organizationId, name } };
+}
+
 const candidateSchema = z.object({
   requisition_id: z.string().uuid(),
   full_name: z.string().min(2, "Name is required").max(160),
@@ -97,7 +118,7 @@ export async function addCandidateAction(input: unknown) {
   }
 
   const svc = createServiceClient();
-  // Add the candidate WITHOUT inviting — the admin decides when to send the
+  // Add the candidate WITHOUT inviting - the admin decides when to send the
   // invite (they often add many candidates first). invited_at stays null = not
   // yet invited; the per-row "Send invite" / copy-link affordances do the send.
   const employeeId = (parsed.data.employee_id ?? "").trim();
@@ -119,7 +140,7 @@ export async function addCandidateAction(input: unknown) {
   // Best-effort: stash the recruiter's custom fields. Separate UPDATE (not part
   // of the insert) so a pre-00061 DB without the column still adds the candidate.
   // Supabase surfaces a missing-column as a resolved { error }, not a throw, so
-  // ignoring the result is enough — the candidate is already added either way.
+  // ignoring the result is enough - the candidate is already added either way.
   if (employeeId) {
     await svc
       .from("prehire_candidates")
@@ -173,7 +194,7 @@ export async function resendPrehireInviteAction(candidateId: string) {
     ? { data: { emailed: true } }
     : isEmailConfigured()
     ? { error: "Couldn't send the invitation email. Please try again." }
-    : { data: { emailed: false } }; // not configured — UI falls back to the copy link
+    : { data: { emailed: false } }; // not configured - UI falls back to the copy link
 }
 
 // ── Invitation email helper ──────────────────────────────────────
@@ -327,7 +348,7 @@ async function deliverReport(
   if (!ok && isEmailConfigured()) return { ok: false, error: "Couldn't send the email. Please try again." };
 
   // A "send" only counts when email is actually configured. With no Graph creds
-  // sendEmail console-mocks and returns true — so DON'T mark the report delivered
+  // sendEmail console-mocks and returns true - so DON'T mark the report delivered
   // or the UI would falsely claim it was sent (this bit us in testing).
   const emailed = isEmailConfigured() && ok;
   if (emailed) {

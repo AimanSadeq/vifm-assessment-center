@@ -85,8 +85,11 @@ export function renderPersonaProfileHtmlAr(data: PersonaPdfData): string {
       fitBlocks.push(`<div class="fit-label">خطة التطوير · ${escapeHtml(data.fit.roleName)}</div>
         <div class="fit-value" style="color:${C.primary}">${numPct(data.fit.fitPct)} متوافق مع مستهدف الدور</div>`);
     } else {
-      fitBlocks.push(`<div class="fit-label">ملاءمة الدور · ${escapeHtml(data.fit.roleName)}</div>
-        <div class="fit-value" style="color:${escapeHtml(data.fit.bandHex)}">${numPct(data.fit.fitPct)} · ${escapeHtml(data.fit.bandLabel)}</div>`);
+      fitBlocks.push(`<div class="fit-head-center">
+        <div class="fit-title-big">ملاءمة الدور</div>
+        <div class="fit-role-sub">${escapeHtml(data.fit.roleName)}</div>
+        <div class="fit-value-big" style="color:${escapeHtml(data.fit.bandHex)}">${numPct(data.fit.fitPct)} · ${escapeHtml(data.fit.bandLabel)}</div>
+      </div>`);
     }
 
     if (data.fit.strengths && data.fit.strengths.length > 0) {
@@ -278,6 +281,10 @@ export function renderPersonaProfileHtmlAr(data: PersonaPdfData): string {
   .para { font-size: 11px; color: ${C.text}; }
   .fit-label { font-size: 9px; color: ${C.textLight}; letter-spacing: 0.5px; }
   .fit-value { font-size: 20px; font-weight: 700; margin-top: 2px; }
+  .fit-head-center { text-align: center; margin-bottom: 4px; }
+  .fit-title-big { font-size: 18px; font-weight: 700; color: ${C.primary}; }
+  .fit-role-sub { font-size: 10px; color: ${C.textLight}; margin-top: 1px; }
+  .fit-value-big { font-size: 20px; font-weight: 700; margin-top: 4px; }
   .fit-gap-title { font-size: 10px; color: ${C.textLight}; margin-top: 8px; margin-bottom: 3px; }
   .gap-row { display: flex; justify-content: space-between; margin-bottom: 2px; font-size: 10px; }
   .fit-note { font-size: 9px; color: ${C.primary}; margin-top: 8px; }

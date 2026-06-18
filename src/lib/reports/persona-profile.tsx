@@ -137,6 +137,10 @@ const s = StyleSheet.create({
   fitPanel: { borderWidth: 1, borderColor: C.border, borderRadius: 6, padding: 12, marginBottom: 14, backgroundColor: C.bgSoft },
   fitLabel: { fontSize: 8, color: C.textLight, textTransform: "uppercase", letterSpacing: 0.6 },
   fitValue: { fontSize: 22, fontFamily: "Helvetica-Bold", marginTop: 2 },
+  // Big, centered "Role fit" headline (hiring).
+  fitTitleBig: { fontSize: 17, fontFamily: "Helvetica-Bold", color: C.primary, textAlign: "center", textTransform: "uppercase", letterSpacing: 0.5 },
+  fitRoleSub: { fontSize: 9, color: C.textLight, textAlign: "center", marginTop: 1 },
+  fitValueBig: { fontSize: 22, fontFamily: "Helvetica-Bold", textAlign: "center", marginTop: 4 },
   fitGapTitle: { fontSize: 8.5, color: C.textLight, marginTop: 8, marginBottom: 3 },
   fitGapRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 2 },
   fitGapName: { fontSize: 9 },
@@ -280,10 +284,11 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
                 <Text style={[s.fitValue, { color: C.primary }]}>{data.fit.fitPct}% aligned to the role target</Text>
               </>
             ) : (
-              <>
-                <Text style={s.fitLabel}>Role fit · {data.fit.roleName}</Text>
-                <Text style={[s.fitValue, { color: data.fit.bandHex }]}>{data.fit.fitPct}%  ·  {data.fit.bandLabel}</Text>
-              </>
+              <View style={{ alignItems: "center", marginBottom: 4 }}>
+                <Text style={s.fitTitleBig}>Role fit</Text>
+                <Text style={s.fitRoleSub}>{data.fit.roleName}</Text>
+                <Text style={[s.fitValueBig, { color: data.fit.bandHex }]}>{data.fit.fitPct}%  ·  {data.fit.bandLabel}</Text>
+              </View>
             )}
             {data.fit.strengths && data.fit.strengths.length > 0 ? (
               <>

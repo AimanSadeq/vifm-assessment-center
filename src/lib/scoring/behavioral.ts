@@ -251,19 +251,23 @@ export async function saveBehavioralAnswers(
     is_reverse: a.isReverse,
     answered_at: new Date().toISOString(),
   });
-  // item_type / answer_data land with migration 00110; only attach them when an
-  // answer actually carries them, and strip + retry if the columns aren't there.
-  const hasExtended = valid.some((a) => a.itemType || a.answerData != null);
+  // item_type / answer_data land with migration 00110. EVERY row must carry
+  // item_type: a mixed normative+ipsative batch (e.g. the demo "fill all answers"
+  // or a fast Submit that flushes both at once) makes PostgREST union the columns
+  // and insert NULL item_type for the rows that omitted it, violating the NOT NULL
+  // constraint and failing the WHOLE upsert (the "report came back zero" bug).
+  // Setting it explicitly ("normative" by default) keeps the batch column-uniform.
   const rowsExtended = valid.map((a) => ({
     ...baseRow(a),
-    ...(a.itemType ? { item_type: a.itemType } : {}),
-    ...(a.answerData != null ? { answer_data: a.answerData } : {}),
+    item_type: a.itemType ?? "normative",
+    answer_data: a.answerData ?? null,
   }));
 
   let { error } = await sb
     .from("behavioral_assessment_responses")
     .upsert(rowsExtended, { onConflict: "session_id,item_key" });
-  if (error && hasExtended && isMissingColumnError(error)) {
+  // Tolerant of migration 00110 not applied (item_type / answer_data absent).
+  if (error && isMissingColumnError(error)) {
     ({ error } = await sb
       .from("behavioral_assessment_responses")
       .upsert(valid.map(baseRow), { onConflict: "session_id,item_key" }));

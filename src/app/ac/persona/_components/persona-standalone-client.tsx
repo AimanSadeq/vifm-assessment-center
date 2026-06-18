@@ -92,16 +92,26 @@ export function PersonaStandaloneClient({
   // per answer produces.
   const pendingRef = useRef<Map<string, BehavioralAnswer>>(new Map());
   const flushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // The save currently hitting the server, if any. flush() always awaits it
+  // before scoring so a debounced auto-save that is still persisting cannot be
+  // skipped - the "fill all answers, then submit immediately" race that would
+  // otherwise score an empty session (zero).
+  const inflightRef = useRef<Promise<void> | null>(null);
 
   const flush = useCallback(async (): Promise<void> => {
     if (flushTimer.current) { clearTimeout(flushTimer.current); flushTimer.current = null; }
+    if (inflightRef.current) { try { await inflightRef.current; } catch { /* ignore */ } }
     if (!sessionId) return;
     const batch = [...pendingRef.current.values()];
     if (batch.length === 0) return;
     pendingRef.current.clear();
     setSaving(true);
-    try { await savePersonaAnswersAction(sessionId, batch); }
-    finally { setSaving(false); }
+    const p = (async () => {
+      try { await savePersonaAnswersAction(sessionId, batch); }
+      finally { setSaving(false); }
+    })();
+    inflightRef.current = p;
+    try { await p; } finally { if (inflightRef.current === p) inflightRef.current = null; }
   }, [sessionId]);
 
   const queue = useCallback((a: BehavioralAnswer) => {
@@ -237,6 +247,7 @@ export function PersonaStandaloneClient({
       }
     }
     setIpsChoices(nextIps);
+    void flush(); // persist all filled answers immediately (not just on the debounce)
     if (phase === "normative") { setPhase("ipsative"); window.scrollTo({ top: 0 }); }
   };
 
@@ -752,13 +763,12 @@ function PersonaResult({
       {/* HIRING: fit headline + biggest gaps */}
       {purpose === "hiring" && fit && (
         <div className="rounded-lg border border-slate-200 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <p className="text-[11px] uppercase tracking-wider text-slate-500">{tx("Role fit", "ملاءمة الدور")}{role ? ` · ${role.name}` : ""}</p>
-              <span className={`mt-1 inline-block rounded-lg px-4 py-2 text-2xl font-bold ${FIT_BAND_TW[fit.band]}`}>
-                {fit.fitPct}% · {ar ? fit.bandLabelAr : fit.bandLabel}
-              </span>
-            </div>
+          <div className="text-center">
+            <p className="text-3xl font-bold uppercase tracking-wide text-[#010131]">{tx("Role fit", "ملاءمة الدور")}</p>
+            {role ? <p className="mt-1 text-sm text-slate-500">{role.name}</p> : null}
+            <span className={`mt-2 inline-block rounded-lg px-6 py-2.5 text-3xl font-bold ${FIT_BAND_TW[fit.band]}`}>
+              {fit.fitPct}% · {ar ? fit.bandLabelAr : fit.bandLabel}
+            </span>
           </div>
           {/* Biggest strengths + biggest gaps, side by side */}
           <div className="mt-3 grid gap-3 sm:grid-cols-2">

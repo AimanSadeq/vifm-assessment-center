@@ -44,6 +44,7 @@ import {
   SlidersHorizontal,
   Ticket,
   FileClock,
+  Network,
   type LucideIcon,
 } from "lucide-react";
 
@@ -220,6 +221,7 @@ const NAV: NavEntry[] = [
       icon: Layers,
       items: [
         link("/admin/clients", "adminNav.clients", Building2),
+        link("/admin/framework", "adminNav.framework", Network),
         link("/admin/role-profiles", "adminNav.roleProfiles", Briefcase),
         link("/admin/vouchers", "adminNav.vouchers", Ticket),
         link("/admin/evidence-map", "adminNav.evidenceMap", FlaskConical),

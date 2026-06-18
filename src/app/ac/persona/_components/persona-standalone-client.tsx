@@ -3,7 +3,7 @@
 import { useMemo, useState, useRef, useCallback } from "react";
 import {
   Layers, Sparkles, Loader2, CheckCircle2, RotateCcw, ChevronLeft, ChevronRight,
-  AlertTriangle, Download, Target, GraduationCap,
+  AlertTriangle, Download, Target, GraduationCap, Shuffle,
 } from "lucide-react";
 import type { BehavioralCompetency } from "@/lib/scoring/behavioral-items";
 import type { BehavioralProfileRow, BehavioralAnswer } from "@/lib/scoring/behavioral";
@@ -39,6 +39,7 @@ export function PersonaStandaloneClient({
   roleProfiles = [],
   pinned = null,
   definitions = {},
+  demo = false,
 }: {
   competencies: BehavioralCompetency[];
   /** Voucher redemption token (delegate flow); stamps the result with the client org. */
@@ -48,6 +49,9 @@ export function PersonaStandaloneClient({
   roleProfiles?: RoleProfileOption[];
   /** Competency id -> framework definition, for the result's per-competency detail. */
   definitions?: Record<string, string>;
+  /** Demo mode (?demo=1 or dev): shows a "Fill random answers" shortcut so a
+   *  presenter can skip clicking every item live. Never shown to real candidates. */
+  demo?: boolean;
   /** Admin-pinned scope (voucher delegate). When set, the purpose + role are
    *  fixed by the admin and the candidate cannot change them - the picker is
    *  replaced by a read-only summary. The competency scope is already applied
@@ -199,6 +203,43 @@ export function PersonaStandaloneClient({
     }
   };
 
+  // Demo shortcut: fill every normative item with a random 1-5 and every
+  // ipsative block with a random distinct most/least, queue them for autosave,
+  // and jump to the ipsative phase so Submit is one click away. Demo-only (never
+  // shown to real candidates) so it cannot taint a genuine sitting.
+  const fillRandom = () => {
+    const rand5 = () => 1 + Math.floor(Math.random() * 5);
+    const nextAnswers: Record<string, number> = {};
+    for (const it of normItems) {
+      const v = rand5();
+      nextAnswers[it.itemKey] = v;
+      queue({ itemKey: it.itemKey, competencyId: it.competencyId, rawScore: v, isReverse: it.reverse });
+    }
+    setAnswers(nextAnswers);
+
+    const nextIps: Record<string, { most?: string; least?: string }> = {};
+    for (const block of ipsBlocks) {
+      const n = block.statements.length;
+      if (n === 0) continue;
+      const mostIdx = Math.floor(Math.random() * n);
+      let leastIdx = Math.floor(Math.random() * n);
+      if (n > 1) while (leastIdx === mostIdx) leastIdx = Math.floor(Math.random() * n);
+      const mostKey = block.statements[mostIdx].itemKey;
+      const leastKey = block.statements[leastIdx].itemKey;
+      nextIps[block.blockId] = { most: mostKey, least: leastKey };
+      for (const st of block.statements) {
+        const raw = st.itemKey === mostKey ? 5 : st.itemKey === leastKey ? 1 : 3;
+        const ch = st.itemKey === mostKey ? "most" : st.itemKey === leastKey ? "least" : "mid";
+        queue({
+          itemKey: st.itemKey, competencyId: st.competencyId, rawScore: raw,
+          isReverse: false, itemType: "ipsative", answerData: { block: block.blockId, choice: ch },
+        });
+      }
+    }
+    setIpsChoices(nextIps);
+    if (phase === "normative") { setPhase("ipsative"); window.scrollTo({ top: 0 }); }
+  };
+
   const submit = async () => {
     if (!sessionId) return;
     setBusy(true); setError("");
@@ -228,6 +269,20 @@ export function PersonaStandaloneClient({
 
   return (
     <div dir={ar ? "rtl" : "ltr"} className="space-y-5">
+      {/* Demo shortcut (only with ?demo=1 or in dev). Fills every answer so a
+          presenter can skip clicking each item live; hidden from real candidates. */}
+      {demo && (phase === "normative" || phase === "ipsative") && (
+        <div className="flex items-center justify-between gap-2 rounded-lg border border-dashed border-amber-400 bg-amber-50 px-3 py-2">
+          <span className="text-xs font-medium text-amber-800">{tx("Demo tools", "أدوات العرض")}</span>
+          <button
+            type="button"
+            onClick={fillRandom}
+            className="inline-flex items-center gap-1.5 rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700"
+          >
+            <Shuffle className="h-3.5 w-3.5" /> {tx("Fill random answers", "تعبئة إجابات عشوائية")}
+          </button>
+        </div>
+      )}
       <div>
         <h1 className="inline-flex items-center gap-2 text-2xl font-bold text-[#010131]">
           <Layers className="h-6 w-6 text-[#5391D5]" /> {tx("Persona®", "بيرسونا®")}

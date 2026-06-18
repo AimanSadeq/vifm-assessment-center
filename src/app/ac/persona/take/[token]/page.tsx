@@ -16,7 +16,13 @@ export const metadata = { title: "Persona assessment · VIFM" };
  * token is validated server-side; the session is stamped with the voucher's
  * client org by startPersonaAction. Public (middleware-bypassed).
  */
-export default async function PersonaTakePage({ params }: { params: { token: string } }) {
+export default async function PersonaTakePage({
+  params,
+  searchParams,
+}: {
+  params: { token: string };
+  searchParams?: { demo?: string };
+}) {
   const sb = createServiceClient();
   const { data: redemption } = await sb
     .from("persona_voucher_redemptions")
@@ -75,6 +81,7 @@ export default async function PersonaTakePage({ params }: { params: { token: str
           roleProfiles={roleProfiles}
           pinned={pinned}
           definitions={definitions}
+          demo={searchParams?.demo === "1" || process.env.NODE_ENV !== "production"}
         />
       </main>
     </div>

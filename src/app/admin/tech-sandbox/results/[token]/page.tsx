@@ -78,6 +78,30 @@ export default async function TechResultsPage({ params }: { params: { token: str
         <Badge band={r.overallBand} />
       </section>
 
+      <section className="rounded-lg border bg-card p-4">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-[#010131]">
+          Proficiency bands
+        </h2>
+        <div className="mt-2 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+          <span className="flex items-center gap-2 text-[#121232]">
+            <span className="inline-block h-2.5 w-2.5 rounded-full bg-orange-500" />
+            Basic &lt; 60%
+          </span>
+          <span className="flex items-center gap-2 text-[#121232]">
+            <span className="inline-block h-2.5 w-2.5 rounded-full bg-sky-500" />
+            Intermediate 60-84%
+          </span>
+          <span className="flex items-center gap-2 text-[#121232]">
+            <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-600" />
+            Advanced &ge; 85%
+          </span>
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          How to read: each category and subcategory below is scored 0-100% and banded against these
+          three thresholds.
+        </p>
+      </section>
+
       {r.knowledgeSkills.length > 0 ? (
         <section className="rounded-lg border bg-card p-4">
           <h2 className="text-sm font-semibold text-[#5391D5]">

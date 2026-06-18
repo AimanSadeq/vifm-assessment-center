@@ -72,7 +72,7 @@ export default async function TechSandboxAdminPage() {
             tone="blue"
             icon="link"
             title="Option 1 - Direct link per delegate"
-            subtitle="You know who is taking it. Create a personal link and email it to the candidate."
+            subtitle="You know who is taking it. Issue a personal link to one candidate, or import named delegates (CSV / paste names + emails) for one personal code each."
           >
             <AdminClient functions={functions} />
           </CollapsibleSection>

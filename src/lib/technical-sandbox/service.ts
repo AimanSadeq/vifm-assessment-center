@@ -885,18 +885,96 @@ function techBandLabelAr(band: string): string {
   if (band === "intermediate") return "متوسطة";
   return "أساسية";
 }
-// Development guidance per category band (this is a DEVELOPMENT report read by
-// the candidate's manager / L&D lead - not a pass/fail). Advanced areas are a
-// strength, so they carry no development focus.
-function techDevFocusEn(band: string): string | null {
-  if (band === "basic") return "Priority development area - build foundational capability here through structured training and supervised practice.";
-  if (band === "intermediate") return "Developing - strengthen through applied practice and targeted upskilling on the weaker subcategories.";
-  return null;
+// Development guidance per category (this is a DEVELOPMENT report read by the
+// candidate's manager / L&D lead - not a pass/fail). The focus is SECTION-
+// SPECIFIC: it names the category, its score, and the weakest sub-area (or the
+// checkpoints actually missed) so two basic categories never read identically.
+// Advanced categories are a strength, so they carry no development focus.
+export interface DevFocusContext {
+  /** Category (pillar) name - EN and AR. */
+  nameEn: string;
+  nameAr: string;
+  /** Category band: "basic" | "intermediate" | "advanced". */
+  band: string;
+  /** Category mean score %. */
+  pct: number;
+  /** Weakest sub-area (block) name within the category, EN and AR (optional). */
+  weakestSubEn?: string | null;
+  weakestSubAr?: string | null;
+  /** Weakest sub-area score % (optional - rendered alongside its name). */
+  weakestSubPct?: number | null;
+  /** Labels of checkpoints the candidate missed in the weakest sub-area (optional). */
+  failedCheckpointLabels?: string[];
 }
-function techDevFocusAr(band: string): string | null {
-  if (band === "basic") return "مجال تطوير ذو أولوية - ابنِ القدرة الأساسية هنا عبر تدريب منظم وممارسة موجَّهة.";
-  if (band === "intermediate") return "قيد التطور - عزِّز عبر الممارسة التطبيقية والتأهيل الموجَّه على المجالات الفرعية الأضعف.";
-  return null;
+
+function bandLabelEn(band: string): string {
+  if (band === "advanced") return "Advanced";
+  if (band === "intermediate") return "Intermediate";
+  return "Basic";
+}
+
+/** Join up to two checkpoint labels into a readable English phrase. */
+function checkpointPhraseEn(labels: string[]): string | null {
+  const picked = labels.filter((l) => l && l.trim()).slice(0, 2);
+  if (picked.length === 0) return null;
+  if (picked.length === 1) return picked[0];
+  return `${picked[0]} and ${picked[1]}`;
+}
+/** Join up to two checkpoint labels into a readable Arabic phrase. */
+function checkpointPhraseAr(labels: string[]): string | null {
+  const picked = labels.filter((l) => l && l.trim()).slice(0, 2);
+  if (picked.length === 0) return null;
+  if (picked.length === 1) return picked[0];
+  return `${picked[0]} و${picked[1]}`;
+}
+
+function techDevFocusEn(ctx: DevFocusContext): string | null {
+  if (ctx.band === "advanced") return null;
+  const bandWord = bandLabelEn(ctx.band);
+  const checkpoints = checkpointPhraseEn(ctx.failedCheckpointLabels ?? []);
+  const hasSub = !!(ctx.weakestSubEn && ctx.weakestSubEn.trim());
+  const subPct =
+    ctx.weakestSubPct != null ? ` (${ctx.weakestSubPct}%)` : "";
+  // Lead with the category name + its score + band so each line is distinct.
+  const lead = `${ctx.nameEn} scored ${ctx.pct}% (${bandWord})`;
+  if (checkpoints) {
+    const where = hasSub ? ` in ${ctx.weakestSubEn}` : "";
+    return ctx.band === "basic"
+      ? `${lead} - this is a priority development area; start with the checkpoints missed${where}: ${checkpoints}.`
+      : `${lead} - close the gap by working on the checkpoints missed${where}: ${checkpoints}.`;
+  }
+  if (hasSub) {
+    return ctx.band === "basic"
+      ? `${lead} - this is a priority development area; focus first on ${ctx.weakestSubEn}${subPct}, the weakest sub-area, through structured training and supervised practice.`
+      : `${lead} - strengthen through applied practice, prioritising ${ctx.weakestSubEn}${subPct}, the weakest sub-area.`;
+  }
+  return ctx.band === "basic"
+    ? `${lead} - this is a priority development area; build foundational capability here through structured training and supervised practice.`
+    : `${lead} - developing; strengthen through applied practice and targeted upskilling.`;
+}
+
+function techDevFocusAr(ctx: DevFocusContext): string | null {
+  if (ctx.band === "advanced") return null;
+  const bandWord = techBandLabelAr(ctx.band);
+  const checkpoints = checkpointPhraseAr(ctx.failedCheckpointLabels ?? []);
+  const hasSub = !!(ctx.weakestSubAr && ctx.weakestSubAr.trim());
+  const subPct =
+    ctx.weakestSubPct != null ? ` (${ctx.weakestSubPct}%)` : "";
+  const lead = `حصل ${ctx.nameAr} على ${ctx.pct}% (${bandWord})`;
+  if (checkpoints) {
+    const where = hasSub ? ` في ${ctx.weakestSubAr}` : "";
+    return ctx.band === "basic"
+      ? `${lead} - هذا مجال تطوير ذو أولوية؛ ابدأ بنقاط التحقق التي لم تُجتَز${where}: ${checkpoints}.`
+      : `${lead} - أغلق الفجوة بالعمل على نقاط التحقق التي لم تُجتَز${where}: ${checkpoints}.`;
+  }
+  if (hasSub) {
+    return ctx.band === "basic"
+      ? `${lead} - هذا مجال تطوير ذو أولوية؛ ركّز أولاً على ${ctx.weakestSubAr}${subPct}، وهو أضعف مجال فرعي، عبر تدريب منظم وممارسة موجَّهة.`
+      : `${lead} - عزِّز عبر الممارسة التطبيقية مع إعطاء الأولوية لـ ${ctx.weakestSubAr}${subPct}، وهو أضعف مجال فرعي.`;
+  }
+  return ctx.band === "basic"
+    ? `${lead} - هذا مجال تطوير ذو أولوية؛ ابنِ القدرة الأساسية هنا عبر تدريب منظم وممارسة موجَّهة.`
+    : `${lead} - قيد التطور؛ عزِّز عبر الممارسة التطبيقية والتأهيل الموجَّه.`;
 }
 
 export async function getSessionReport(token: string): Promise<SessionReport | null> {
@@ -939,6 +1017,29 @@ export async function getSessionReport(token: string): Promise<SessionReport | n
     });
     const pMean = rBlocks.length ? Math.round(rBlocks.reduce((a, b) => a + b.scorePct, 0) / rBlocks.length) : null;
     const pBand = pMean != null ? tierFor(pMean) : null;
+    // Section-specific development focus: ground it in this category's weakest
+    // sub-area (lowest-scoring block) and the checkpoints actually missed there,
+    // so two basic categories never read identically.
+    const weakest = rBlocks.length
+      ? rBlocks.reduce((lo, b) => (b.scorePct < lo.scorePct ? b : lo), rBlocks[0])
+      : null;
+    const weakestSub = weakest && weakest.nameEn !== p.name_en ? weakest : null;
+    const failedCheckpointLabels = (weakest?.checkpoints ?? [])
+      .filter((c) => !c.passed && c.label.trim())
+      .map((c) => c.label);
+    const devCtx: DevFocusContext | null =
+      pBand && pMean != null
+        ? {
+            nameEn: p.name_en,
+            nameAr: p.name_ar ?? p.name_en,
+            band: pBand,
+            pct: pMean,
+            weakestSubEn: weakestSub?.nameEn ?? null,
+            weakestSubAr: weakestSub?.nameAr ?? weakestSub?.nameEn ?? null,
+            weakestSubPct: weakestSub?.scorePct ?? null,
+            failedCheckpointLabels,
+          }
+        : null;
     return {
       nameEn: p.name_en,
       nameAr: p.name_ar ?? null,
@@ -947,8 +1048,8 @@ export async function getSessionReport(token: string): Promise<SessionReport | n
       advancedCount: rBlocks.filter((x) => x.band === "advanced").length,
       intermediateCount: rBlocks.filter((x) => x.band === "intermediate").length,
       basicCount: rBlocks.filter((x) => x.band === "basic").length,
-      developmentFocusEn: pBand ? techDevFocusEn(pBand) : null,
-      developmentFocusAr: pBand ? techDevFocusAr(pBand) : null,
+      developmentFocusEn: devCtx ? techDevFocusEn(devCtx) : null,
+      developmentFocusAr: devCtx ? techDevFocusAr(devCtx) : null,
       blocks: rBlocks,
     };
   });

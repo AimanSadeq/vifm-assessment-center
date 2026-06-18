@@ -64,6 +64,13 @@ const s = StyleSheet.create({
   cp: { flexDirection: "row", alignItems: "flex-start", marginTop: 3 },
   cpMark: { fontSize: 8, fontFamily: "Helvetica-Bold", width: 26 },
   cpLabel: { fontSize: 8, color: C.text, flex: 1 },
+  legendBox: { borderWidth: 1, borderColor: C.border, borderRadius: 4, padding: 8, marginTop: 12 },
+  legendHead: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.primary, marginBottom: 4 },
+  legendRow: { flexDirection: "row", flexWrap: "wrap" },
+  legendItem: { flexDirection: "row", alignItems: "center", marginRight: 14, marginBottom: 2 },
+  legendDot: { width: 8, height: 8, borderRadius: 4, marginRight: 5 },
+  legendText: { fontSize: 8, color: C.text },
+  legendHint: { fontSize: 7, color: C.light, marginTop: 3 },
   narrativeBox: { backgroundColor: "#f5f8fc", borderRadius: 4, padding: 10, marginTop: 12 },
   narrativeHead: { fontSize: 9, fontFamily: "Helvetica-Bold", color: C.primary, marginBottom: 3 },
   narrativeText: { fontSize: 9.5, color: C.text, lineHeight: 1.4 },
@@ -111,6 +118,28 @@ export function TechSandboxReport({ data }: { data: SessionReport }) {
           </View>
           <Text style={[s.badge, { backgroundColor: bandColor(data.overallBand) }]}>
             {bandLabel(data.overallBand)}
+          </Text>
+        </View>
+
+        <View style={s.legendBox} wrap={false}>
+          <Text style={s.legendHead}>Proficiency bands</Text>
+          <View style={s.legendRow}>
+            <View style={s.legendItem}>
+              <View style={[s.legendDot, { backgroundColor: C.basic }]} />
+              <Text style={s.legendText}>Basic &lt; 60%</Text>
+            </View>
+            <View style={s.legendItem}>
+              <View style={[s.legendDot, { backgroundColor: C.intermediate }]} />
+              <Text style={s.legendText}>Intermediate 60-84%</Text>
+            </View>
+            <View style={s.legendItem}>
+              <View style={[s.legendDot, { backgroundColor: C.advanced }]} />
+              <Text style={s.legendText}>Advanced &ge; 85%</Text>
+            </View>
+          </View>
+          <Text style={s.legendHint}>
+            How to read: each category and subcategory below is scored 0-100% and banded against these
+            three thresholds.
           </Text>
         </View>
 
@@ -184,7 +213,7 @@ export function TechSandboxReport({ data }: { data: SessionReport }) {
         ))}
 
         <Text style={s.footer} fixed>
-          VIFM Technical Assessment® · Bands: Basic &lt; 60 · Intermediate 60–84 · Advanced ≥ 85 ·
+          VIFM Technical Assessment® · Bands: Basic &lt; 60 · Intermediate 60-84 · Advanced &ge; 85 ·
           Generated {new Date().toLocaleDateString()}
         </Text>
       </Page>

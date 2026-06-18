@@ -15,13 +15,12 @@ export async function GET(req: Request, { params }: { params: { sessionId: strin
   try {
     const lang = new URL(req.url).searchParams.get("lang") === "ar" ? "ar" : "en";
 
-    // Auth gate BEFORE the heavy assembly: a HIRING report is a client/admin
-    // deliverable, so a candidate (voucher delegate, no account) cannot pull
-    // their own fit PDF even with the session id. Development self-reads stay
-    // open. Tolerant: a pre-00110 session has no purpose -> treated as development.
+    // Auth gate BEFORE the heavy assembly: BOTH the hiring and development
+    // reports are admin/client deliverables, so a candidate (voucher delegate,
+    // no account) cannot pull their own report PDF even with the session id.
     const purpose = await peekPersonaPurpose(params.sessionId);
     if (purpose === "missing") return NextResponse.json({ error: "Session not found" }, { status: 404 });
-    if (purpose === "hiring") {
+    {
       const caller = await getCurrentCaller();
       if (!caller || caller.role !== "admin") {
         return NextResponse.json({ error: "Not authorized" }, { status: 403 });

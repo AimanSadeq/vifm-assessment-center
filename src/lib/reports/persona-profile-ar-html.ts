@@ -140,27 +140,6 @@ export function renderPersonaProfileHtmlAr(data: PersonaPdfData): string {
     </div>`);
   }
 
-  // Academy (development)
-  if (dev && data.courses && data.courses.length > 0) {
-    const cards = data.courses
-      .map(
-        (c) => `<div class="course">
-        <div class="course-head">
-          <div><div class="course-title">${escapeHtml(c.title)}${c.highFit ? ` <span class="hf">ملاءمة عالية</span>` : ""}</div>
-          <div class="course-meta">${escapeHtml(c.vertical)} · ${escapeHtml(c.level)} · ${num(c.durationLabel)}${c.code ? ` · ${escapeHtml(c.code)}` : ""}</div></div>
-          ${c.fitOutOfTen > 0 ? `<div class="course-fit">${num(c.fitOutOfTen)}/10</div>` : ""}
-        </div>
-        ${c.drivers.length > 0 ? `<div class="course-driver">${c.drivers.map((d) => `${escapeHtml(d.label)} (فجوة ${num(f1(d.gap))} ×${num(d.relevance)})`).join("   ·   ")}</div>` : ""}
-      </div>`,
-      )
-      .join("");
-    parts.push(`<div class="panel academy">
-      <div class="sec-title">برامج أكاديمية VIFM الموصى بها</div>
-      <div class="sec-sub">مرتبطة بأولويات تطويرك - مرتّبة حسب حجم الفجوة ومدى استهداف كل برنامج لها.</div>
-      ${cards}
-    </div>`);
-  }
-
   // B.3 coaching (development)
   if (dev && data.coaching && (data.coaching.forConversation.length > 0 || data.coaching.forSelf.length > 0)) {
     const conv = data.coaching.forConversation.length
@@ -230,6 +209,27 @@ export function renderPersonaProfileHtmlAr(data: PersonaPdfData): string {
       <div class="sec-title">خطة تطويرك</div>
       <div class="sec-sub">لكل أولوية: حدّد هدفًا، طبّقه في العمل، وقرّر كيف ستعرف أنه نجح. أكمل الفراغات مع مديرك أو مرشدك.</div>
       ${rows}
+    </div>`);
+  }
+
+  // VIFM Academy plan (development) - at the END of the report.
+  if (dev && data.courses && data.courses.length > 0) {
+    const cards = data.courses
+      .map(
+        (c) => `<div class="course">
+        <div class="course-head">
+          <div><div class="course-title">${escapeHtml(c.title)}${c.highFit ? ` <span class="hf">ملاءمة عالية</span>` : ""}</div>
+          <div class="course-meta">${escapeHtml(c.vertical)} · ${escapeHtml(c.level)} · ${num(c.durationLabel)}${c.code ? ` · ${escapeHtml(c.code)}` : ""}</div></div>
+          ${c.fitOutOfTen > 0 ? `<div class="course-fit">${num(c.fitOutOfTen)}/10</div>` : ""}
+        </div>
+        ${c.drivers.length > 0 ? `<div class="course-driver">${c.drivers.map((d) => `${escapeHtml(d.label)} (فجوة ${num(f1(d.gap))} ×${num(d.relevance)})`).join("   ·   ")}</div>` : ""}
+      </div>`,
+      )
+      .join("");
+    parts.push(`<div class="panel academy">
+      <div class="sec-title">برامج أكاديمية VIFM الموصى بها</div>
+      <div class="sec-sub">مرتبطة بأولويات تطويرك - مرتّبة حسب حجم الفجوة ومدى استهداف كل برنامج لها.</div>
+      ${cards}
     </div>`);
   }
 

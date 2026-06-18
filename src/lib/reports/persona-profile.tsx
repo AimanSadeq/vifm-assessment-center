@@ -383,36 +383,6 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
           </View>
         ) : null}
 
-        {/* VIFM Academy training plan (development) */}
-        {dev && data.courses && data.courses.length > 0 && (
-          <View style={s.academyPanel}>
-            <Text style={s.academyTitle}>Recommended VIFM Academy programmes</Text>
-            <Text style={s.academySub}>
-              Mapped to your development priorities - ranked by gap size and how strongly each programme targets it.
-            </Text>
-            {data.courses.map((c, i) => (
-              <View key={`course-${i}`} style={s.courseCard} wrap={false}>
-                <View style={s.courseHeadRow}>
-                  <View style={{ flex: 1, paddingRight: 6 }}>
-                    <Text style={s.courseTitle}>
-                      {c.title}{c.highFit ? <Text style={s.highFitTag}>   * High fit</Text> : null}
-                    </Text>
-                    <Text style={s.courseMeta}>
-                      {c.vertical} · {c.level} · {c.durationLabel}{c.code ? ` · ${c.code}` : ""}
-                    </Text>
-                  </View>
-                  {c.fitOutOfTen > 0 ? <Text style={s.courseFit}>{c.fitOutOfTen}/10</Text> : null}
-                </View>
-                {c.drivers.length > 0 ? (
-                  <Text style={s.courseDriver}>
-                    {c.drivers.map((d) => `${d.label} (gap ${d.gap.toFixed(1)} ×${d.relevance})`).join("   ·   ")}
-                  </Text>
-                ) : null}
-              </View>
-            ))}
-          </View>
-        )}
-
         {/* B.3 - coaching + self-reflection prompts (development) */}
         {dev && data.coaching && (data.coaching.forConversation.length > 0 || data.coaching.forSelf.length > 0) ? (
           <View style={s.sectionPanel} wrap={false}>
@@ -503,6 +473,37 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
             ))}
           </View>
         ) : null}
+
+        {/* VIFM Academy training plan (development) - at the END of the report,
+            the courses that close the gaps after the analysis + the plan. */}
+        {dev && data.courses && data.courses.length > 0 && (
+          <View style={s.academyPanel}>
+            <Text style={s.academyTitle}>Recommended VIFM Academy programmes</Text>
+            <Text style={s.academySub}>
+              Mapped to your development priorities - ranked by gap size and how strongly each programme targets it.
+            </Text>
+            {data.courses.map((c, i) => (
+              <View key={`course-${i}`} style={s.courseCard} wrap={false}>
+                <View style={s.courseHeadRow}>
+                  <View style={{ flex: 1, paddingRight: 6 }}>
+                    <Text style={s.courseTitle}>
+                      {c.title}{c.highFit ? <Text style={s.highFitTag}>   * High fit</Text> : null}
+                    </Text>
+                    <Text style={s.courseMeta}>
+                      {c.vertical} · {c.level} · {c.durationLabel}{c.code ? ` · ${c.code}` : ""}
+                    </Text>
+                  </View>
+                  {c.fitOutOfTen > 0 ? <Text style={s.courseFit}>{c.fitOutOfTen}/10</Text> : null}
+                </View>
+                {c.drivers.length > 0 ? (
+                  <Text style={s.courseDriver}>
+                    {c.drivers.map((d) => `${d.label} (gap ${d.gap.toFixed(1)} ×${d.relevance})`).join("   ·   ")}
+                  </Text>
+                ) : null}
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* A.1 - structured interview guide (hiring) - the take-into-the-room
             artifact, placed at the end after the competency analysis. */}

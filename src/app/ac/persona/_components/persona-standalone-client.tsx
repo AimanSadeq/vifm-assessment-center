@@ -638,9 +638,9 @@ export function PersonaStandaloneClient({
       )}
 
       {phase === "result" && profile && (
-        pinned?.purpose === "hiring" ? (
-          /* Hiring voucher (candidate) flow: results are NOT shown to the
-             taker - the fit report is a client/admin deliverable. */
+        pinned ? (
+          /* Voucher (candidate) flow, both purposes: results are NOT shown to
+             the taker - every Persona report is an admin/client deliverable. */
           <div className="rounded-xl border bg-card p-10 text-center" dir={ar ? "rtl" : "ltr"}>
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-2xl text-emerald-700">
               ✓

@@ -198,39 +198,6 @@ export function PersonaReportView({
         </div>
       ) : null}
 
-      {/* VIFM Academy plan (development) */}
-      {dev && data.courses && data.courses.length > 0 ? (
-        <div className="rounded-lg border border-[#5391D5]/30 bg-[#5391D5]/5 p-4">
-          <p className="text-sm font-semibold text-[#010131]">{tx("Recommended VIFM Academy programmes", "برامج أكاديمية VIFM الموصى بها")}</p>
-          <p className="mt-0.5 text-xs text-slate-500">{tx("Mapped to your development priorities, ranked by gap and programme fit.", "مرتبطة بأولويات تطويرك، مرتّبة حسب الفجوة وملاءمة البرنامج.")}</p>
-          <div className="mt-2 space-y-2">
-            {data.courses.map((c, i) => (
-              <div key={`c-${i}`} className="rounded-md border border-slate-200 bg-white p-2.5">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-[#010131]">
-                      {c.title}{c.highFit ? <span className="ms-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-900">{tx("High fit", "ملاءمة عالية")}</span> : null}
-                    </p>
-                    <p className="mt-0.5 text-[11px] text-slate-500">{c.vertical} · <span className="capitalize">{c.level}</span> · {c.durationLabel}{c.code ? ` · ${c.code}` : ""}</p>
-                  </div>
-                  {c.fitOutOfTen > 0 ? <span className="shrink-0 rounded-md bg-slate-100 px-2 py-1 text-xs font-bold tabular-nums text-[#010131]">{c.fitOutOfTen}/10</span> : null}
-                </div>
-                {c.drivers.length > 0 ? (
-                  <div className="mt-1.5 flex flex-wrap gap-1">
-                    {c.drivers.map((d, j) => (
-                      <span key={`d-${i}-${j}`} className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] text-blue-900">
-                        <span className="font-medium">{d.label}</span>
-                        <span className="opacity-70 tabular-nums">{tx("gap", "فجوة")} {d.gap.toFixed(1)} · ×{d.relevance}</span>
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
       {/* B.3 - coaching prompts (development) */}
       {dev && data.coaching && (data.coaching.forConversation.length > 0 || data.coaching.forSelf.length > 0) ? (
         <div className="rounded-lg border border-slate-200 p-4">
@@ -314,6 +281,40 @@ export function PersonaReportView({
                 {[tx("Development goal", "هدف التطوير"), tx("On-the-job application", "التطبيق في العمل"), tx("Success measure", "مقياس النجاح"), tx("Review by", "المراجعة بحلول")].map((lbl) => (
                   <div key={lbl} className="mt-1 flex items-end gap-2"><span className="w-32 shrink-0 text-[11px] text-slate-500">{lbl}</span><span className="h-4 flex-1 border-b border-slate-300" /></div>
                 ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {/* VIFM Academy plan (development) - at the END of the report, the courses
+          that close the gaps after the analysis + the development plan. */}
+      {dev && data.courses && data.courses.length > 0 ? (
+        <div className="rounded-lg border border-[#5391D5]/30 bg-[#5391D5]/5 p-4">
+          <p className="text-sm font-semibold text-[#010131]">{tx("Recommended VIFM Academy programmes", "برامج أكاديمية VIFM الموصى بها")}</p>
+          <p className="mt-0.5 text-xs text-slate-500">{tx("Mapped to your development priorities, ranked by gap and programme fit.", "مرتبطة بأولويات تطويرك، مرتّبة حسب الفجوة وملاءمة البرنامج.")}</p>
+          <div className="mt-2 space-y-2">
+            {data.courses.map((c, i) => (
+              <div key={`c-${i}`} className="rounded-md border border-slate-200 bg-white p-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-[#010131]">
+                      {c.title}{c.highFit ? <span className="ms-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-900">{tx("High fit", "ملاءمة عالية")}</span> : null}
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-slate-500">{c.vertical} · <span className="capitalize">{c.level}</span> · {c.durationLabel}{c.code ? ` · ${c.code}` : ""}</p>
+                  </div>
+                  {c.fitOutOfTen > 0 ? <span className="shrink-0 rounded-md bg-slate-100 px-2 py-1 text-xs font-bold tabular-nums text-[#010131]">{c.fitOutOfTen}/10</span> : null}
+                </div>
+                {c.drivers.length > 0 ? (
+                  <div className="mt-1.5 flex flex-wrap gap-1">
+                    {c.drivers.map((d, j) => (
+                      <span key={`d-${i}-${j}`} className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] text-blue-900">
+                        <span className="font-medium">{d.label}</span>
+                        <span className="opacity-70 tabular-nums">{tx("gap", "فجوة")} {d.gap.toFixed(1)} · ×{d.relevance}</span>
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>

@@ -11,7 +11,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { AR_FONT_HREF, escapeHtml } from "@/lib/reports/html-to-pdf";
-import { personaBand } from "@/lib/scoring/persona-bands";
+import { personaBand, gapToneHex } from "@/lib/scoring/persona-bands";
 import type { PersonaPdfData } from "@/lib/reports/persona-profile";
 
 const C = {
@@ -178,7 +178,7 @@ export function renderPersonaProfileHtmlAr(data: PersonaPdfData): string {
             <span class="row-score">${num(f1(r.score))}${target}${pct} · ${escapeHtml(personaBand(r.score).labelAr)}</span>
           </div>
           ${r.definition ? `<div class="row-def">${escapeHtml(r.definition)}</div>` : ""}
-          <div class="bar-track"><div class="bar-fill" style="width:${(r.score / 5) * 100}%"></div></div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(r.score / 5) * 100}%${r.target != null ? `;background:${gapToneHex(r.score, r.target)}` : ""}"></div></div>
           ${r.narrative ? `<div class="row-narr">${escapeHtml(r.narrative)}</div>` : ""}
           ${r.tip ? `<div class="row-tip">اقتراح: ${escapeHtml(r.tip)}</div>` : ""}
           ${overuse}

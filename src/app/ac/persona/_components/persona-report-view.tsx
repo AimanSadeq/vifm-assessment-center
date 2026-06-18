@@ -1,7 +1,7 @@
 "use client";
 
 import { Download, RotateCcw, BookOpen } from "lucide-react";
-import { personaBand, personaBandLabel, PERSONA_BAND_TW } from "@/lib/scoring/persona-bands";
+import { personaBand, personaBandLabel, PERSONA_BAND_TW, gapToneTw } from "@/lib/scoring/persona-bands";
 import type { PersonaPdfData } from "@/lib/reports/persona-profile";
 
 // On-screen Persona report - a faithful HTML/Tailwind mirror of the PDF
@@ -254,7 +254,12 @@ export function PersonaReportView({
                   </div>
                   {r.definition ? <p className="mt-0.5 text-xs text-slate-500">{r.definition}</p> : null}
                   <div className="mt-1 h-2 w-full rounded-full bg-slate-100">
-                    <div className="h-2 rounded-full bg-[#5391D5]" style={{ width: `${(r.score / 5) * 100}%` }} />
+                    {/* CAL-PER-404: when a role target exists, colour the bar by
+                        the gap to target (green->red); else the brand accent. */}
+                    <div
+                      className={`h-2 rounded-full ${r.target != null ? gapToneTw(r.score, r.target) : "bg-[#5391D5]"}`}
+                      style={{ width: `${(r.score / 5) * 100}%` }}
+                    />
                   </div>
                   {r.narrative ? <p className="mt-1 text-xs text-[#121232]">{r.narrative}</p> : null}
                   {r.tip ? <p className="mt-1 text-xs text-[#010131]">{tx("Suggestion", "اقتراح")}: {r.tip}</p> : null}

@@ -1,5 +1,5 @@
 import { Document, Page, Text, View, StyleSheet, Svg, Path, Circle, Line, Polygon } from "@react-pdf/renderer";
-import { personaBand } from "@/lib/scoring/persona-bands";
+import { personaBand, gapToneHex } from "@/lib/scoring/persona-bands";
 
 // Persona - Behavioural Competency Self-Assessment profile PDF (English /
 // React-PDF). Works for any behavioral session (anonymous /ac/persona or
@@ -437,7 +437,8 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
                 </View>
                 {r.definition ? <Text style={s.rowDef}>{r.definition}</Text> : null}
                 <View style={s.barTrack}>
-                  <View style={[s.barFill, { width: `${(r.score / 5) * 100}%`, backgroundColor: C.accent }]} />
+                  {/* CAL-PER-404: gap-to-target colour when a role target exists. */}
+                  <View style={[s.barFill, { width: `${(r.score / 5) * 100}%`, backgroundColor: r.target != null ? gapToneHex(r.score, r.target) : C.accent }]} />
                 </View>
                 {r.narrative ? <Text style={s.rowNarr}>{r.narrative}</Text> : null}
                 {r.tip ? <Text style={s.rowTip}>Suggestion: {r.tip}</Text> : null}

@@ -35,12 +35,22 @@ export type PersonaInsightInput = {
 
 const AR_INSTRUCTION = "\n- Write every value in Modern Standard Arabic (Gulf-appropriate), not English.";
 
+// CAL-PER-401: the displayed self-score is authoritative. The narrative must
+// never describe a below-target score with mastery/excellence language - that
+// contradicts the number at the top of the card (the "3.2 but 'excels'" bug).
+const BAND_RULE =
+  "- The numeric self-score is AUTHORITATIVE and shown next to your text. Never describe a score " +
+  "BELOW the role target with mastery/excellence/'a strength' language; frame a below-target score " +
+  "as a developing area or a relative gap. Reserve strength/excels/strong-suit language ONLY for " +
+  "scores AT OR ABOVE the role target. Your wording must be consistent with the self-score band.\n";
+
 const SYSTEM_HIRING =
   "You are an occupational psychologist writing concise, professional per-competency insights " +
   "for a HIRING SCREENING report, based strictly on a candidate's behavioural self-ratings.\n" +
   "Rules:\n" +
   "- Ground each insight in the PATTERN of the candidate's own answers - call out which statements " +
   "they rated higher vs lower - and the overall self-score relative to the role target.\n" +
+  BAND_RULE +
   "- VARY the wording across competencies. Never reuse a sentence or a template.\n" +
   "- 1-2 sentences each, specific and evidence-referenced.\n" +
   "- Self-report framing: describe what the answers indicate; do not issue verdicts.\n" +
@@ -52,6 +62,7 @@ const SYSTEM_DEVELOPMENT =
   "Rules:\n" +
   "- Ground each note in the PATTERN of the person's own answers - call out which statements " +
   "they rated higher vs lower - and the self-score relative to the role target.\n" +
+  BAND_RULE +
   "- Frame it as GROWTH: what to build on, what to develop, and one concrete way to grow it " +
   "(e.g. a stretch assignment, mentoring, or structured learning). Encouraging and forward-looking.\n" +
   "- VARY the wording across competencies. Never reuse a sentence or a template.\n" +
@@ -59,6 +70,22 @@ const SYSTEM_DEVELOPMENT =
   "- The report is read by a manager ABOUT the person, not by the person. Refer to them in the " +
   "THIRD person (the person / they / their); never use 'you' or 'your'.\n" +
   "- Do not fabricate anything beyond the supplied ratings. No em dashes.";
+
+// CAL-PER-401 server-side guardrail: even with the prompt rule, the model can
+// over-praise a below-target score. When a competency is clearly below target
+// and the returned text uses strength/excellence language, discard it and fall
+// back to the deterministic, score-consistent narrative. EN + AR patterns.
+const PRAISE_EN = /\b(excels?|excellent|master(?:y|s|ful)?|outstanding|exceptional|exemplary|world-?class)\b|\b(a|clear|key|notable|genuine|real) strength\b|\bstrong (suit|point)\b/i;
+const PRAISE_AR = /(يتفوّق|تتفوّق|يتفوق|تتفوق|يتقن|إتقان|متميّز|متميز|ممتاز|استثنائي|نقطة قوة|نقاط القوة|من أبرز)/;
+
+function contradictsScore(text: string, self: number, target: number, lang: PersonaLang): boolean {
+  // "Clearly below" = below the role target by a meaningful margin, or below the
+  // mid bar (3.5) in absolute terms. At that level any praise/excellence claim
+  // contradicts the displayed number.
+  const isLow = self < target - 0.4 || self < 3.5;
+  if (!isLow) return false;
+  return (lang === "ar" ? PRAISE_AR : PRAISE_EN).test(text);
+}
 
 /**
  * Build the per-competency insight input for a session: the candidate's
@@ -153,7 +180,12 @@ export async function generatePersonaInsights(
     const out: Record<string, string> = {};
     for (const c of input.competencies) {
       const v = parsed[c.competencyId];
-      out[c.competencyId] = typeof v === "string" && v.trim() ? v.trim() : narrate(c.self, c.target, lang);
+      const text = typeof v === "string" && v.trim() ? v.trim() : "";
+      // CAL-PER-401: reject an over-praising narrative for a below-target score
+      // (it would contradict the number shown on the card); use the
+      // deterministic, score-consistent text instead.
+      out[c.competencyId] =
+        text && !contradictsScore(text, c.self, c.target, lang) ? text : narrate(c.self, c.target, lang);
     }
     return out;
   } catch {

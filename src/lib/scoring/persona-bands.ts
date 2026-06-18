@@ -36,3 +36,38 @@ export const PERSONA_BAND_HEX: Record<PersonaBandKey, string> = {
   requires_focus: "#EA580C",
   critical: "#E11D48",
 };
+
+// ── CAL-PER-404: gap-to-target tone (green/amber/red) ──
+// Colours a per-competency bar by the FRACTIONAL gap to the role target on the
+// 1-5 scale (gap = target - score). Do NOT use the integer-rounded
+// getCompetencyGap here - it collapses e.g. -1.6 to a 2-level integer and loses
+// the nuance. One source of truth for both hex (PDF/AR) and Tailwind (on-screen).
+export type GapToneKey = "on_target" | "slight" | "moderate" | "wide" | "severe";
+
+export function personaGapTone(gap: number): GapToneKey {
+  if (gap <= 0) return "on_target"; // at or above target
+  if (gap <= 0.5) return "slight";
+  if (gap <= 1.0) return "moderate";
+  if (gap <= 1.5) return "wide";
+  return "severe";
+}
+
+export const GAP_TONE_HEX: Record<GapToneKey, string> = {
+  on_target: "#059669", // green
+  slight: "#65A30D", // lime
+  moderate: "#D97706", // amber
+  wide: "#EA580C", // orange
+  severe: "#E11D48", // red
+};
+
+export const GAP_TONE_TW: Record<GapToneKey, string> = {
+  on_target: "bg-emerald-500",
+  slight: "bg-lime-500",
+  moderate: "bg-amber-500",
+  wide: "bg-orange-500",
+  severe: "bg-rose-500",
+};
+
+/** Convenience: tone hex straight from score + target (gap = target - score). */
+export const gapToneHex = (score: number, target: number) => GAP_TONE_HEX[personaGapTone(target - score)];
+export const gapToneTw = (score: number, target: number) => GAP_TONE_TW[personaGapTone(target - score)];

@@ -49,6 +49,12 @@ export type BuildResult =
   | { ok: true; purpose: PersonaPurpose; data: PersonaPdfData }
   | { ok: false; status: number; error: string };
 
+// CAL-PER-401: bump when the insight-generation rules change so previously
+// cached narratives (e.g. ones written before the band-consistency guardrail)
+// are treated as stale and regenerated on the next render. Stored under the
+// reserved __v key inside competency_insights.
+const INSIGHTS_VERSION = "v2-bandguard";
+
 /** Lightweight purpose peek for the auth gate (so a hiring report stays
  *  admin-only without doing the heavy assembly first). Tolerant. */
 export async function peekPersonaPurpose(sessionId: string): Promise<PersonaPurpose | "missing"> {
@@ -199,7 +205,14 @@ export async function buildPersonaPdfData(sessionId: string, lang: PersonaLang =
       .select("competency_insights")
       .eq("id", sessionId)
       .maybeSingle<{ competency_insights: Record<string, string> | null }>();
-    if (ci?.competency_insights && typeof ci.competency_insights === "object") insightsById = ci.competency_insights;
+    const raw = ci?.competency_insights;
+    // CAL-PER-401: only trust the cache when its version matches; otherwise
+    // leave insightsById empty so the narratives regenerate under the new rules.
+    if (raw && typeof raw === "object" && raw.__v === INSIGHTS_VERSION) {
+      const { __v, ...rest } = raw;
+      void __v;
+      insightsById = rest;
+    }
   } catch { /* 00125 absent */ }
 
   // Build the role-competency insight inputs once (reused for narratives + probes).
@@ -217,7 +230,7 @@ export async function buildPersonaPdfData(sessionId: string, lang: PersonaLang =
       insightsById = await generatePersonaInsights({ roleName: role.name, competencies: insightComps, purpose, lang });
       if (!ar) {
         try {
-          await sb.from("behavioral_assessment_sessions").update({ competency_insights: insightsById }).eq("id", sessionId);
+          await sb.from("behavioral_assessment_sessions").update({ competency_insights: { ...insightsById, __v: INSIGHTS_VERSION } }).eq("id", sessionId);
         } catch { /* 00125 absent */ }
       }
     } catch { /* deterministic fallback used below */ }
@@ -290,8 +303,11 @@ export async function buildPersonaPdfData(sessionId: string, lang: PersonaLang =
         fitPct: f.fitPct,
         bandLabel: ar ? f.bandLabelAr : f.bandLabel,
         bandHex: FIT_BAND_HEX[f.band],
-        gaps: gapsTop.map((g) => ({ name: nameById.get(g.competencyId) ?? g.name, self: g.self ?? 0, target: g.target, gap: g.gap })),
-        strengths: strengthsTop.map((g) => ({ name: nameById.get(g.competencyId) ?? g.name, self: g.self ?? 0, target: g.target })),
+        // CAL-PER-407: display the top 5 priorities/strengths so the fit panel
+        // matches the 5-row action plan (internal gapsTop stays 6 for course
+        // recs / drivers / watch areas).
+        gaps: gapsTop.slice(0, 5).map((g) => ({ name: nameById.get(g.competencyId) ?? g.name, self: g.self ?? 0, target: g.target, gap: g.gap })),
+        strengths: strengthsTop.slice(0, 5).map((g) => ({ name: nameById.get(g.competencyId) ?? g.name, self: g.self ?? 0, target: g.target })),
       };
 
       let recs: RecommendedCourse[] = [];

@@ -52,6 +52,10 @@ export function personaGapTone(gap: number): GapToneKey {
   return "severe";
 }
 
+// Hex only (used by React-PDF, AR HTML, and the on-screen bar via inline style).
+// A Tailwind class map was intentionally NOT added: src/lib is outside the
+// Tailwind content globs, so lib-defined class strings (e.g. bg-lime-500) would
+// be purged from the production bundle. Inline hex avoids that entirely.
 export const GAP_TONE_HEX: Record<GapToneKey, string> = {
   on_target: "#059669", // green
   slight: "#65A30D", // lime
@@ -60,14 +64,5 @@ export const GAP_TONE_HEX: Record<GapToneKey, string> = {
   severe: "#E11D48", // red
 };
 
-export const GAP_TONE_TW: Record<GapToneKey, string> = {
-  on_target: "bg-emerald-500",
-  slight: "bg-lime-500",
-  moderate: "bg-amber-500",
-  wide: "bg-orange-500",
-  severe: "bg-rose-500",
-};
-
 /** Convenience: tone hex straight from score + target (gap = target - score). */
 export const gapToneHex = (score: number, target: number) => GAP_TONE_HEX[personaGapTone(target - score)];
-export const gapToneTw = (score: number, target: number) => GAP_TONE_TW[personaGapTone(target - score)];

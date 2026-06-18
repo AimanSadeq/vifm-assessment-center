@@ -75,15 +75,21 @@ const SYSTEM_DEVELOPMENT =
 // over-praise a below-target score. When a competency is clearly below target
 // and the returned text uses strength/excellence language, discard it and fall
 // back to the deterministic, score-consistent narrative. EN + AR patterns.
-const PRAISE_EN = /\b(excels?|excellent|master(?:y|s|ful)?|outstanding|exceptional|exemplary|world-?class)\b|\b(a|clear|key|notable|genuine|real) strength\b|\bstrong (suit|point)\b/i;
-const PRAISE_AR = /(يتفوّق|تتفوّق|يتفوق|تتفوق|يتقن|إتقان|متميّز|متميز|ممتاز|استثنائي|نقطة قوة|نقاط القوة|من أبرز)/;
+// "master" matches only the praise nouns (mastery/masterful), not the bare verb
+// ("yet to master") which is legitimate below-target development language.
+const PRAISE_EN = /\b(excels?|excellent|master(?:y|ful)|outstanding|exceptional|exemplary|world-?class)\b|\b(a|clear|key|notable|genuine|real) strength\b|\bstrong (suit|point)\b/i;
+// AR mirrors EN: excellence verbs/adjectives PLUS the قوة (strength) root in a
+// praise construction (نقطة/نقاط قوة, قوة ذاتية/واضحة/كبيرة/بارزة/راسخة, قوة في,
+// مكامن القوة). Bare قوة elsewhere (e.g. تقوية) does not match.
+const PRAISE_AR = /(يتفوّق|تتفوّق|يتفوق|تتفوق|يتقن|إتقان|متميّز|متميز|ممتاز|استثنائي|نقطة قوة|نقاط ال?قوة|قوة (ذاتية|واضحة|كبيرة|بارزة|راسخة|في)|مكامن القوة|من أبرز)/;
 
 function contradictsScore(text: string, self: number, target: number, lang: PersonaLang): boolean {
-  // "Clearly below" = below the role target by a meaningful margin, or below the
-  // mid bar (3.5) in absolute terms. At that level any praise/excellence claim
-  // contradicts the displayed number.
-  const isLow = self < target - 0.4 || self < 3.5;
-  if (!isLow) return false;
+  // Praise contradicts the number only when the self-score is MEANINGFULLY
+  // below the role target (>0.4). At/above target - even on a low-target role -
+  // strength language is legitimate (matches BAND_RULE), so no absolute floor.
+  // contradictsScore only runs on AI insights, which are generated only when a
+  // role (with real targets) is bound, so target is always meaningful here.
+  if (self >= target - 0.4) return false;
   return (lang === "ar" ? PRAISE_AR : PRAISE_EN).test(text);
 }
 

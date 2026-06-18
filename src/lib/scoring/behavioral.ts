@@ -78,9 +78,11 @@ export async function createAnonymousBehavioralSession(
   },
 ): Promise<BehavioralSession> {
   const sb = createServiceClient();
-  // The always-attemptable core row (columns present since the original schema
-  // + 00106). taker_email is layered on top of this so a pre-00129 DB falls
-  // back to it cleanly.
+  // Build the insert payload in MIGRATION ORDER so the tolerant strip-and-retry
+  // can peel the NEWEST migration's columns FIRST. Each layer is a strict
+  // superset of the previous, so on a missing-column error we drop exactly the
+  // column group tied to the un-applied migration and never an older, present
+  // one (e.g. a DB at 00110+00123 but not 00129 must still keep purpose/scope).
   const baseCore: Record<string, unknown> = {
     taker_name: takerName,
     status: "in_progress",
@@ -91,30 +93,28 @@ export async function createAnonymousBehavioralSession(
     ...(opts?.organizationId ? { organization_id: opts.organizationId } : {}),
     ...(opts?.voucherRedemptionId ? { voucher_redemption_id: opts.voucherRedemptionId } : {}),
   };
-  // taker_email lands with migration 00129; stripped to baseCore if absent.
-  const base: Record<string, unknown> = {
+  // 00110: purpose/target/seed.
+  const with110: Record<string, unknown> = {
     ...baseCore,
-    ...(opts?.takerEmail ? { taker_email: opts.takerEmail } : {}),
-  };
-  // Purpose/target/seed land with migration 00110; only included when provided
-  // and stripped + retried if the columns aren't there yet (tolerant).
-  const extended: Record<string, unknown> = {
-    ...base,
     ...(opts?.purpose ? { purpose: opts.purpose } : {}),
     ...(opts?.targetRoleProfileId ? { target_role_profile_id: opts.targetRoleProfileId } : {}),
     ...(opts?.seed != null ? { randomization_seed: opts.seed } : {}),
   };
-  // The scope column lands with migration 00123 - its own tolerant layer so a
-  // missing 00123 doesn't also drop the 00110 purpose/target/seed columns.
+  // 00123: competency scope.
   const scoped = (opts?.scopedCompetencyIds ?? []).filter(Boolean);
-  const withScope: Record<string, unknown> = {
-    ...extended,
+  const with123: Record<string, unknown> = {
+    ...with110,
     ...(scoped.length > 0 ? { scoped_competency_ids: scoped } : {}),
   };
+  // 00129 (newest): taker_email.
+  const with129: Record<string, unknown> = {
+    ...with123,
+    ...(opts?.takerEmail ? { taker_email: opts.takerEmail } : {}),
+  };
 
-  // Progressively strip the newest column group on each missing-column error:
-  // 00123 scope -> 00110 purpose/target/seed -> 00129 taker_email -> core.
-  const attempts = [withScope, extended, base, baseCore];
+  // Peel the newest migration's columns first on each missing-column error:
+  // 00129 taker_email -> 00123 scope -> 00110 purpose/target/seed -> core.
+  const attempts = [with129, with123, with110, baseCore];
   let data: { id: string; status: string } | null = null;
   let error: unknown = null;
   for (const payload of attempts) {

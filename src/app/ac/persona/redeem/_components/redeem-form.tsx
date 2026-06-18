@@ -9,12 +9,22 @@ import { Label } from "@/components/ui/label";
 import { Loader2, KeyRound } from "lucide-react";
 import { redeemPersonaVoucherAction } from "../actions";
 
-export function RedeemForm({ initialCode = "" }: { initialCode?: string }) {
+export function RedeemForm({
+  initialCode = "",
+  initialEmail = "",
+  initialName = "",
+  initialCompany = "",
+}: {
+  initialCode?: string;
+  initialEmail?: string;
+  initialName?: string;
+  initialCompany?: string;
+}) {
   const router = useRouter();
   const [code, setCode] = useState(initialCode);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [company, setCompany] = useState("");
+  const [name, setName] = useState(initialName);
+  const [email, setEmail] = useState(initialEmail);
+  const [company, setCompany] = useState(initialCompany);
   const [busy, setBusy] = useState(false);
 
   const ready = code.trim() && name.trim() && email.trim() && company.trim();

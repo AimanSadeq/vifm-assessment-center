@@ -6,10 +6,13 @@ import { RedeemForm } from "./_components/redeem-form";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Redeem a code · VIFM Cognitive Ability" };
 
-type Props = { searchParams?: { code?: string } };
+type Props = { searchParams?: { code?: string; email?: string; name?: string; company?: string } };
 
 export default function CognitiveRedeemPage({ searchParams }: Props) {
   const initialCode = searchParams?.code?.trim() ?? "";
+  const initialEmail = searchParams?.email?.trim() ?? "";
+  const initialName = searchParams?.name?.trim() ?? "";
+  const initialCompany = searchParams?.company?.trim() ?? "";
   return (
     <div className="min-h-screen bg-background">
       <header className="ara-hero relative overflow-hidden">
@@ -36,7 +39,12 @@ export default function CognitiveRedeemPage({ searchParams }: Props) {
             <CardTitle className="text-base">Your details</CardTitle>
           </CardHeader>
           <CardContent>
-            <RedeemForm initialCode={initialCode} />
+            <RedeemForm
+              initialCode={initialCode}
+              initialEmail={initialEmail}
+              initialName={initialName}
+              initialCompany={initialCompany}
+            />
           </CardContent>
         </Card>
       </main>

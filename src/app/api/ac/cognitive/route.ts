@@ -114,26 +114,32 @@ export async function POST(req: Request) {
     if (resRow && typeof body.redemptionToken === "string" && body.redemptionToken.trim()) {
       try {
         const token = body.redemptionToken.trim();
+        // Org-only SELECT first: it must NOT reference project_label, or a
+        // pending 00137 (column absent on cognitive_voucher_redemptions) would
+        // error this read, null `redemption`, and drop the org linkage entirely.
         const { data: redemption } = await svc
           .from("cognitive_voucher_redemptions")
-          .select("id, organization_id, project_label")
+          .select("id, organization_id")
           .eq("redemption_token", token)
-          .maybeSingle<{ id: string; organization_id: string | null; project_label: string | null }>();
+          .maybeSingle<{ id: string; organization_id: string | null }>();
         if (redemption) {
-          // Org linkage first, on its own, so a pending 00137 (no
-          // psy_results.project_label column) can never drop it.
+          // Org linkage on its own, so a pending 00137 can never drop it.
           await svc
             .from("psy_results")
             .update({ organization_id: redemption.organization_id, voucher_redemption_id: redemption.id })
             .eq("id", resRow.id);
-          // Project label (00137) ride-along - separate, best-effort write.
-          try {
+          // Project label (00137) ride-along - read + write separately, both
+          // best-effort. A missing column on either side just no-ops.
+          const { data: pl } = await svc
+            .from("cognitive_voucher_redemptions")
+            .select("project_label")
+            .eq("id", redemption.id)
+            .maybeSingle<{ project_label: string | null }>();
+          if (pl?.project_label) {
             await svc
               .from("psy_results")
-              .update({ project_label: redemption.project_label ?? null })
+              .update({ project_label: pl.project_label })
               .eq("id", resRow.id);
-          } catch {
-            /* psy_results.project_label not migrated - ignore */
           }
           await svc.from("cognitive_voucher_redemptions").update({ result_id: resRow.id }).eq("id", redemption.id);
         }

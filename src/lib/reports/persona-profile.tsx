@@ -256,7 +256,7 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
         {/* B.1 - holistic opening narrative (development), right after the banner */}
         {dev && data.summary ? (
           <View style={s.sectionPanel} wrap={false}>
-            <Text style={s.sectionTitle}>Your profile at a glance</Text>
+            <Text style={s.sectionTitle}>Profile at a glance</Text>
             <Text style={s.para}>{data.summary}</Text>
           </View>
         ) : null}
@@ -389,7 +389,7 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
             <Text style={s.sectionTitle}>Discussion prompts</Text>
             {data.coaching.forConversation.length > 0 ? (
               <View style={s.coachCol}>
-                <Text style={s.coachHead}>For your development conversation</Text>
+                <Text style={s.coachHead}>For the development conversation</Text>
                 {data.coaching.forConversation.map((q, i) => (
                   <View key={`cv-${i}`} style={s.coachItemRow}><Bullet color={C.accent} /><Text style={s.coachItem}>{q}</Text></View>
                 ))}
@@ -397,7 +397,7 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
             ) : null}
             {data.coaching.forSelf.length > 0 ? (
               <View style={s.coachCol}>
-                <Text style={s.coachHead}>Questions to ask yourself</Text>
+                <Text style={s.coachHead}>Self-reflection questions</Text>
                 {data.coaching.forSelf.map((q, i) => (
                   <View key={`sf-${i}`} style={s.coachItemRow}><Bullet color={C.persona} /><Text style={s.coachItem}>{q}</Text></View>
                 ))}
@@ -456,10 +456,10 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
             action plan, placed at the end after all the analysis. */}
         {dev && data.planRows && data.planRows.length > 0 ? (
           <View style={s.sectionPanel}>
-            <Text style={s.sectionTitle}>Your development plan</Text>
+            <Text style={s.sectionTitle}>Development action plan</Text>
             <Text style={s.sectionSub}>
-              For each priority: set a goal, apply it on the job, and decide how you will know it worked.
-              Complete the blank lines with your manager or coach.
+              For each priority: a development goal, on-the-job application and a success measure,
+              for the person to complete with their manager or coach.
             </Text>
             {data.planRows.map((p, i) => (
               <View key={`plan-${i}`} style={s.planCard} wrap={false}>
@@ -480,7 +480,7 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
           <View style={s.academyPanel}>
             <Text style={s.academyTitle}>Recommended VIFM Academy programmes</Text>
             <Text style={s.academySub}>
-              Mapped to your development priorities - ranked by gap size and how strongly each programme targets it.
+              Mapped to the development priorities - ranked by gap size and how strongly each programme targets it.
             </Text>
             {data.courses.map((c, i) => (
               <View key={`course-${i}`} style={s.courseCard} wrap={false}>
@@ -532,7 +532,7 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
         <Text style={s.caption}>
           {hiring
             ? "This is an indicative self-report fit against the target role - a screening signal, not a hiring decision. Corroborate with a Reflect 360 (others), structured interview and work evidence."
-            : "This is an indicative self-report - how you see yourself across the competencies. To turn it into a readiness verdict, pair Persona (self) with a Reflect 360 (others) against a target role."}
+            : "This is an indicative self-report - how the person sees themselves across the competencies. To turn it into a readiness verdict, pair Persona (self) with a Reflect 360 (others) against a target role."}
         </Text>
         <Text style={s.methodNote}>
           Methodology: Persona is a 1-5 behavioural self-report scored per competency (reverse items

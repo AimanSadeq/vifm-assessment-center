@@ -67,7 +67,7 @@ export function renderPersonaProfileHtmlAr(data: PersonaPdfData): string {
 
   // B.1 summary (development)
   if (dev && data.summary) {
-    parts.push(`<div class="panel"><div class="sec-title">ملخص ملفك</div><p class="para">${escapeHtml(data.summary)}</p></div>`);
+    parts.push(`<div class="panel"><div class="sec-title">ملخص الملف</div><p class="para">${escapeHtml(data.summary)}</p></div>`);
   }
 
   // Fit / development panel
@@ -146,7 +146,7 @@ export function renderPersonaProfileHtmlAr(data: PersonaPdfData): string {
       ? `<div class="coach-col"><div class="coach-head">لمحادثة التطوير</div>${data.coaching.forConversation.map((q) => `<div class="coach-item">${bullet(C.accent)}<span>${escapeHtml(q)}</span></div>`).join("")}</div>`
       : "";
     const self = data.coaching.forSelf.length
-      ? `<div class="coach-col"><div class="coach-head">أسئلة تطرحها على نفسك</div>${data.coaching.forSelf.map((q) => `<div class="coach-item">${bullet("#c026d3")}<span>${escapeHtml(q)}</span></div>`).join("")}</div>`
+      ? `<div class="coach-col"><div class="coach-head">أسئلة للتأمّل الذاتي</div>${data.coaching.forSelf.map((q) => `<div class="coach-item">${bullet("#c026d3")}<span>${escapeHtml(q)}</span></div>`).join("")}</div>`
       : "";
     parts.push(`<div class="panel"><div class="sec-title">أسئلة للنقاش</div>${conv}${self}</div>`);
   }
@@ -206,8 +206,8 @@ export function renderPersonaProfileHtmlAr(data: PersonaPdfData): string {
       )
       .join("");
     parts.push(`<div class="panel">
-      <div class="sec-title">خطة تطويرك</div>
-      <div class="sec-sub">لكل أولوية: حدّد هدفًا، طبّقه في العمل، وقرّر كيف ستعرف أنه نجح. أكمل الفراغات مع مديرك أو مرشدك.</div>
+      <div class="sec-title">خطة العمل التطويرية</div>
+      <div class="sec-sub">لكل أولوية: هدف تطويري وتطبيق عملي ومقياس نجاح، يكملها الشخص مع مديره أو مرشده.</div>
       ${rows}
     </div>`);
   }
@@ -228,7 +228,7 @@ export function renderPersonaProfileHtmlAr(data: PersonaPdfData): string {
       .join("");
     parts.push(`<div class="panel academy">
       <div class="sec-title">برامج أكاديمية VIFM الموصى بها</div>
-      <div class="sec-sub">مرتبطة بأولويات تطويرك - مرتّبة حسب حجم الفجوة ومدى استهداف كل برنامج لها.</div>
+      <div class="sec-sub">مرتبطة بأولويات التطوير - مرتّبة حسب حجم الفجوة ومدى استهداف كل برنامج لها.</div>
       ${cards}
     </div>`);
   }
@@ -255,7 +255,7 @@ export function renderPersonaProfileHtmlAr(data: PersonaPdfData): string {
   parts.push(`<div class="caption">${
     hiring
       ? "هذا تقرير ذاتي استرشادي للملاءمة مقابل الدور - إشارة فرز وليست قرار توظيف. تحقّق منه بتقييم ريفلكت 360 (الآخرون) ومقابلة منظّمة وأدلة عمل."
-      : "هذا تقرير ذاتي استرشادي - كيف ترى نفسك عبر الجدارات. لتحويله إلى حكم على الجاهزية، اقرن بيرسونا (الذات) بتقييم ريفلكت 360 (الآخرون) مقابل دور مستهدف."
+      : "هذا تقرير ذاتي استرشادي - كيف يرى الشخص نفسه عبر الجدارات. لتحويله إلى حكم على الجاهزية، اقرن بيرسونا (الذات) بتقييم ريفلكت 360 (الآخرون) مقابل دور مستهدف."
   }</div>`);
   parts.push(`<div class="method-note">المنهجية: بيرسونا تقييم ذاتي سلوكي من 1 إلى 5 يُحتسب لكل جدارة (مع عكس العبارات السالبة)، ويُجمَّع حسب المجموعات، ويُقارن بدور مستهدف وبمجموعة معيارية عند توفّرها. هو إشارة تقييم ذاتي وليس قياسًا موضوعيًا ولا قرارًا. راجع موجز منهجية بيرسونا للتفاصيل الكاملة.</div>`);
 

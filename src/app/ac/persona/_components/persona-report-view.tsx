@@ -86,7 +86,7 @@ export function PersonaReportView({
       {/* B.1 - holistic opening narrative (development) */}
       {dev && data.summary ? (
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-          <p className="text-sm font-semibold text-[#010131]">{tx("Your profile at a glance", "ملخص ملفك")}</p>
+          <p className="text-sm font-semibold text-[#010131]">{tx("Profile at a glance", "ملخص الملف")}</p>
           <p className="mt-1.5 text-sm leading-relaxed text-[#121232]">{data.summary}</p>
         </div>
       ) : null}
@@ -204,7 +204,7 @@ export function PersonaReportView({
           <p className="text-sm font-semibold text-[#010131]">{tx("Discussion prompts", "أسئلة للنقاش")}</p>
           {data.coaching.forConversation.length > 0 ? (
             <div className="mt-2">
-              <p className="text-xs font-semibold text-[#010131]">{tx("For your development conversation", "لمحادثة التطوير")}</p>
+              <p className="text-xs font-semibold text-[#010131]">{tx("For the development conversation", "لمحادثة التطوير")}</p>
               {data.coaching.forConversation.map((q, i) => (
                 <p key={`cv-${i}`} className="mt-1 flex gap-2 text-sm text-[#121232]"><Bullet color={ACCENT} /><span>{q}</span></p>
               ))}
@@ -212,7 +212,7 @@ export function PersonaReportView({
           ) : null}
           {data.coaching.forSelf.length > 0 ? (
             <div className="mt-3">
-              <p className="text-xs font-semibold text-[#010131]">{tx("Questions to ask yourself", "أسئلة تطرحها على نفسك")}</p>
+              <p className="text-xs font-semibold text-[#010131]">{tx("Self-reflection questions", "أسئلة للتأمّل الذاتي")}</p>
               {data.coaching.forSelf.map((q, i) => (
                 <p key={`sf-${i}`} className="mt-1 flex gap-2 text-sm text-[#121232]"><Bullet color="#c026d3" /><span>{q}</span></p>
               ))}
@@ -271,8 +271,8 @@ export function PersonaReportView({
       {/* B.2 - development planning scaffold (at the end) */}
       {dev && data.planRows && data.planRows.length > 0 ? (
         <div className="rounded-lg border border-slate-200 p-4">
-          <p className="text-sm font-semibold text-[#010131]">{tx("Your development plan", "خطة تطويرك")}</p>
-          <p className="mt-0.5 text-xs text-slate-500">{tx("For each priority: set a goal, apply it on the job, and decide how you will know it worked.", "لكل أولوية: حدّد هدفًا، طبّقه في العمل، وقرّر كيف ستعرف أنه نجح.")}</p>
+          <p className="text-sm font-semibold text-[#010131]">{tx("Development action plan", "خطة العمل التطويرية")}</p>
+          <p className="mt-0.5 text-xs text-slate-500">{tx("For each priority: a development goal, on-the-job application and a success measure for the person to complete with their manager or coach.", "لكل أولوية: هدف تطويري وتطبيق عملي ومقياس نجاح يكملها الشخص مع مديره أو مرشده.")}</p>
           <div className="mt-2 space-y-2">
             {data.planRows.map((p, i) => (
               <div key={`p-${i}`} className="rounded-md border border-slate-200 bg-white p-2.5">
@@ -292,7 +292,7 @@ export function PersonaReportView({
       {dev && data.courses && data.courses.length > 0 ? (
         <div className="rounded-lg border border-[#5391D5]/30 bg-[#5391D5]/5 p-4">
           <p className="text-sm font-semibold text-[#010131]">{tx("Recommended VIFM Academy programmes", "برامج أكاديمية VIFM الموصى بها")}</p>
-          <p className="mt-0.5 text-xs text-slate-500">{tx("Mapped to your development priorities, ranked by gap and programme fit.", "مرتبطة بأولويات تطويرك، مرتّبة حسب الفجوة وملاءمة البرنامج.")}</p>
+          <p className="mt-0.5 text-xs text-slate-500">{tx("Mapped to the development priorities, ranked by gap and programme fit.", "مرتبطة بأولويات التطوير، مرتّبة حسب الفجوة وملاءمة البرنامج.")}</p>
           <div className="mt-2 space-y-2">
             {data.courses.map((c, i) => (
               <div key={`c-${i}`} className="rounded-md border border-slate-200 bg-white p-2.5">
@@ -344,7 +344,7 @@ export function PersonaReportView({
       <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
         {hiring
           ? tx("An indicative self-report fit against the target role - a screening signal, not a hiring decision. Corroborate with a Reflect 360, structured interview and work evidence.", "ملاءمة استرشادية قائمة على تقييم ذاتي - إشارة فرز وليست قرار توظيف. تحقّق منها بتقييم 360 ومقابلة منظّمة وأدلة عمل.")
-          : tx("An indicative self-report - how you see yourself across the competencies. Pair Persona (self) with a Reflect 360 (others) against a target role to turn it into a readiness verdict.", "تقرير ذاتي استرشادي - كيف ترى نفسك عبر الجدارات. اقرن بيرسونا (الذات) بتقييم 360 (الآخرون) مقابل دور مستهدف.")}
+          : tx("An indicative self-report - how the person sees themselves across the competencies. Pair Persona (self) with a Reflect 360 (others) against a target role to turn it into a readiness verdict.", "تقرير ذاتي استرشادي - كيف يرى الشخص نفسه عبر الجدارات. اقرن بيرسونا (الذات) بتقييم 360 (الآخرون) مقابل دور مستهدف.")}
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

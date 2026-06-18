@@ -56,6 +56,8 @@ const SYSTEM_DEVELOPMENT =
   "(e.g. a stretch assignment, mentoring, or structured learning). Encouraging and forward-looking.\n" +
   "- VARY the wording across competencies. Never reuse a sentence or a template.\n" +
   "- 1-2 sentences each, specific and evidence-referenced. Never a verdict.\n" +
+  "- The report is read by a manager ABOUT the person, not by the person. Refer to them in the " +
+  "THIRD person (the person / they / their); never use 'you' or 'your'.\n" +
   "- Do not fabricate anything beyond the supplied ratings. No em dashes.";
 
 /**
@@ -266,7 +268,9 @@ const SYSTEM_SUMMARY_EN =
   "- 3 to 4 sentences. Describe how this person tends to work, what to build on (their strengths), " +
   "and where to focus next (their priorities). Encouraging, forward-looking, never a verdict.\n" +
   "- Ground it only in the supplied scores and named strengths/priorities. Do not fabricate.\n" +
-  "- Self-report framing ('the answers suggest', 'you see yourself as'). No em dashes.";
+  "- The report is read by a manager ABOUT the person, not by the person. Write in the THIRD person " +
+  "(the person / they / their); never use 'you' or 'your'. Self-report framing ('the answers suggest', " +
+  "'they see themselves as'). No em dashes.";
 
 export async function generatePersonaSummary(input: {
   roleName: string | null;
@@ -282,13 +286,13 @@ export async function generatePersonaSummary(input: {
     const str = input.strengths.slice(0, 3);
     const pri = input.priorities.slice(0, 3);
     if (lang === "ar") {
-      const sPart = str.length ? `تشير إجاباتك إلى قوة ذاتية في ${str.join(" و")}.` : "";
+      const sPart = str.length ? `تشير الإجابات إلى قوة ذاتية في ${str.join(" و")}.` : "";
       const pPart = pri.length ? ` وتبرز ${pri.join(" و")} كأولويات للتطوير.` : "";
-      return `بمتوسط تقييم ذاتي ${input.overall.toFixed(1)} من 5. ${sPart}${pPart} استثمر نقاط قوتك مع التركيز على أولوياتك من خلال ممارسة موجّهة وبرامج التعلّم الموصى بها.`.trim();
+      return `متوسط التقييم الذاتي ${input.overall.toFixed(1)} من 5. ${sPart}${pPart} تبني الخطة على نقاط القوة مع التركيز على الأولويات عبر ممارسة موجّهة وبرامج التعلّم الموصى بها.`.trim();
     }
-    const sPart = str.length ? `Your answers point to self-assessed strength in ${str.join(", ")}.` : "";
+    const sPart = str.length ? `The answers point to self-assessed strength in ${str.join(", ")}.` : "";
     const pPart = pri.length ? ` ${pri.join(", ")} stand out as the priorities to develop next.` : "";
-    return `You rate yourself overall at ${input.overall.toFixed(1)} of 5 (${bandLabel}). ${sPart}${pPart} Build on your strengths while giving focused, deliberate practice to the priorities, supported by the recommended learning.`.trim();
+    return `Self-rates overall at ${input.overall.toFixed(1)} of 5 (${bandLabel}). ${sPart}${pPart} The plan builds on these strengths while giving focused, deliberate practice to the priorities, supported by the recommended learning.`.trim();
   };
 
   const ai = getAIClient();

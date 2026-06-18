@@ -88,7 +88,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
 
   const candidates = (candData ?? []) as unknown as CandidateRow[];
 
-  // Custom fields (00061) — separate best-effort read so a pre-migration DB
+  // Custom fields (00061) - separate best-effort read so a pre-migration DB
   // (no custom_fields column) can't error the select and empty the shortlist.
   const customById = new Map<string, Record<string, string>>();
   const { data: customData } = await supabase
@@ -99,7 +99,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
     if (r.custom_fields && typeof r.custom_fields === "object") customById.set(r.id, r.custom_fields);
   }
 
-  // Report delivery (00063) — separate best-effort reads (tolerant pre-migration,
+  // Report delivery (00063) - separate best-effort reads (tolerant pre-migration,
   // like custom_fields) so a missing column can't break the page or shortlist.
   const reportSentById = new Map<string, string>();
   const { data: sentData } = await supabase
@@ -195,7 +195,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                     </TableHead>
                   ))}
                   <TableHead className="text-center">{t("prehire.thComposite")}</TableHead>
-                  <TableHead>{t("prehire.thAiSignal")}</TableHead>
+                  <TableHead title={t("prehire.ttAiSignal")}>{t("prehire.thAiSignal")}</TableHead>
                   <TableHead>{t("prehire.thClientReport")}</TableHead>
                   <TableHead className="text-end">{t("prehire.thActions")}</TableHead>
                 </TableRow>
@@ -224,7 +224,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                       return (
                         <TableCell key={s.kind} className="text-center text-sm">
                           {st?.normalized == null ? (
-                            <span className="text-muted-foreground">—</span>
+                            <span className="text-muted-foreground">-</span>
                           ) : (
                             <span className={st.passed ? "text-green-700" : "text-rose-700"}>
                               {Math.round(st.normalized)}
@@ -234,7 +234,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                       );
                     })}
                     <TableCell className="text-center font-semibold">
-                      {c.composite == null ? "—" : c.composite}
+                      {c.composite == null ? "-" : c.composite}
                     </TableCell>
                     <TableCell>
                       <span
@@ -275,6 +275,25 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
           <p className="mt-4 text-xs text-muted-foreground">
             {t("prehire.signalNote")}
           </p>
+          {/* CAL-PRE-510: in-product legend for the advisory signal bands so a
+              recruiter can read the pill without opening the PDF. */}
+          <div className="mt-3 rounded-md border bg-muted/30 p-3">
+            <p className="mb-2 text-xs font-medium text-foreground">{t("prehire.signalLegendTitle")}</p>
+            <ul className="space-y-1.5">
+              {(["advance", "review", "hold", "incomplete"] as const).map((band) => (
+                <li key={band} className="flex items-start gap-2 text-xs">
+                  <span
+                    className={`mt-0.5 inline-flex shrink-0 rounded-full border px-2 py-0.5 font-medium ${
+                      RECO_TONE[band] ?? RECO_TONE.incomplete
+                    }`}
+                  >
+                    {t(`prehire.reco.${band}`)}
+                  </span>
+                  <span className="text-muted-foreground">{t(`prehire.signalBand.${band}`)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </CardContent>
       </Card>
     </div>

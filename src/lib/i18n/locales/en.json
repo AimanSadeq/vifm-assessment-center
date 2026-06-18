@@ -665,7 +665,15 @@
     "thActions": "Actions",
     "report": "Report",
     "ttReport": "Download this candidate's screening report (PDF)",
-    "signalNote": "Scores are a screening signal. A human reviews and makes the hiring decision — the pipeline never auto-rejects.",
+    "ttAiSignal": "A rule-based advisory band from the composite score - not a learned AI model, and never an auto-reject. A human makes the hiring decision.",
+    "signalNote": "Scores are a screening signal. A human reviews and makes the hiring decision - the pipeline never auto-rejects.",
+    "signalLegendTitle": "How to read the signal",
+    "signalBand": {
+      "advance": "Composite 70 or above with no required stage below its cut.",
+      "review": "Composite 50-69, or a required stage fell below its cut.",
+      "hold": "Composite below 50.",
+      "incomplete": "Not every weighted stage has been scored yet."
+    },
     "reco": {
       "advance": "Advance",
       "review": "Review",

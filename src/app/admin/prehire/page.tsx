@@ -4,6 +4,7 @@ import { getServerT } from "@/lib/i18n/server";
 import { Badge } from "@/components/ui/badge";
 import { Plus, UserSearch, Building2, Users, ArrowRight, Briefcase } from "lucide-react";
 import { BackLink } from "@/components/shared/back-link";
+import { CreateClientDialog } from "@/app/admin/clients/_components/create-client-dialog";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +61,10 @@ export default async function PreHireListPage() {
               <Plus className="h-4 w-4" /> {t("prehire.newReq")}
             </Link>
 
+            {/* CAL-PRE-501: create a client without leaving Pre-Hire. Reuses the
+                shared dual-write dialog so the org is selectable in every service. */}
+            <CreateClientDialog />
+
             {/* Stat strip */}
             <div className="flex flex-wrap items-stretch gap-3">
               <Stat value={reqs.length} label={t("prehire.statRequisitions")} />
@@ -89,12 +94,15 @@ export default async function PreHireListPage() {
             <p className="max-w-sm text-sm text-muted-foreground">
               {t("prehire.noneBody")}
             </p>
-            <Link
-              href="/admin/prehire/new"
-              className="mt-2 inline-flex items-center gap-2 rounded-lg bg-[#E11D48] px-4 py-2 text-sm font-semibold text-white hover:bg-[#be123c]"
-            >
-              <Plus className="h-4 w-4" /> {t("prehire.newReq")}
-            </Link>
+            <div className="mt-2 flex items-center gap-2">
+              <Link
+                href="/admin/prehire/new"
+                className="inline-flex items-center gap-2 rounded-lg bg-[#E11D48] px-4 py-2 text-sm font-semibold text-white hover:bg-[#be123c]"
+              >
+                <Plus className="h-4 w-4" /> {t("prehire.newReq")}
+              </Link>
+              <CreateClientDialog />
+            </div>
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -110,7 +118,7 @@ export default async function PreHireListPage() {
                   <h3 className="font-semibold text-[#010131]">{r.title}</h3>
                   <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                     <span className="inline-flex items-center gap-1">
-                      <Building2 className="h-3.5 w-3.5" /> {r.organizations?.name ?? "—"}
+                      <Building2 className="h-3.5 w-3.5" /> {r.organizations?.name ?? "-"}
                     </span>
                     {r.level && <span>· {r.level}</span>}
                   </div>

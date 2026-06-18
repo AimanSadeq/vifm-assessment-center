@@ -263,7 +263,11 @@ export function RequisitionForm({ roleProfiles, organizations: initialOrgs, defa
           </div>
           {englishRequired && (
             <p className="text-xs text-muted-foreground">
-              {t("prehire.englishOnNote", "This role is flagged as requiring English - the Fluent assessment is included.")}
+              {t("prehire.englishOnNote", "This role is flagged as requiring English - the Fluent assessment is included.")}{" "}
+              {t(
+                "prehire.englishScoringNote",
+                "The flag only controls whether the English (Fluent) stage runs; it carries no separate scoring weight. English counts toward the composite solely through the Fluent stage's own weight and cut-score above.",
+              )}
             </p>
           )}
         </div>

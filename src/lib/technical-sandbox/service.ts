@@ -70,13 +70,18 @@ interface ScoringBlock {
 }
 
 /**
- * True for Postgres "table/column does not exist" (undefined_table / undefined_column).
- * Lets callers degrade gracefully when a migration is pending instead of 500ing the
- * page - mirrors the rest of the codebase's "tolerant of migration not applied" pattern.
+ * True for a "schema element does not exist" error, on reads OR writes:
+ *  - 42P01 (undefined_table) / 42703 (undefined_column) - raw Postgres, read path
+ *  - PGRST204 - PostgREST "column not found in schema cache", returned on an
+ *    INSERT/UPDATE that references a column a pending migration hasn't added yet
+ * Lets callers degrade gracefully when a migration is pending instead of 500ing
+ * - mirrors the codebase-wide "tolerant of migration not applied" pattern (every
+ * strip-and-retry insert site ORs in PGRST204 because that is the code a missing
+ * column produces on a write).
  */
 export function isMissingSchemaError(err: unknown): boolean {
   const code = (err as { code?: string } | null)?.code;
-  return code === "42P01" || code === "42703";
+  return code === "42P01" || code === "42703" || code === "PGRST204";
 }
 
 type PillarRow = {

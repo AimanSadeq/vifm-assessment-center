@@ -41,6 +41,8 @@ export interface GenerateBatchInput {
   delegates?: Delegate[] | null;
   /** MCQ section weight (0-100) for sittings redeemed from this batch. 0 = sandbox-only. */
   mcqPct?: number | null;
+  /** Talent lens (00136) copied onto the session at redemption. NULL = development. */
+  talentLens?: "acquisition" | "development" | null;
 }
 
 /** Clamp a possibly-undefined MCQ weight into the 0-100 column range. */
@@ -60,6 +62,13 @@ export async function generateVoucherBatch(input: GenerateBatchInput) {
   const batchId = crypto.randomUUID();
   const delegates = (input.delegates ?? []).filter((d) => d.name?.trim() && d.email?.trim());
   const mcqPct = clampMcqPct(input.mcqPct);
+  const lens =
+    input.talentLens === "acquisition" || input.talentLens === "development"
+      ? input.talentLens
+      : null;
+  // Only carry talent_lens when set, so a NULL lens never references the 00136
+  // column (no PGRST204 on a pending-00136 DB) and the peel below stays a no-op.
+  const lensCol: Record<string, unknown> = lens ? { talent_lens: lens } : {};
 
   let rows: Record<string, unknown>[];
   if (delegates.length > 0) {
@@ -76,6 +85,7 @@ export async function generateVoucherBatch(input: GenerateBatchInput) {
       expires_at: input.expiresAt ?? null,
       created_by: input.createdBy ?? null,
       mcq_pct: mcqPct,
+      ...lensCol,
     }));
   } else {
     const count = Math.max(1, Math.min(500, Math.floor(input.count)));
@@ -90,23 +100,36 @@ export async function generateVoucherBatch(input: GenerateBatchInput) {
       expires_at: input.expiresAt ?? null,
       created_by: input.createdBy ?? null,
       mcq_pct: mcqPct,
+      ...lensCol,
     }));
   }
 
-  let { data, error } = await sb
-    .from("technical_sandbox_vouchers")
-    .insert(rows)
-    .select("code, assigned_name, assigned_email");
-  // Tolerant of migration 00085 not applied yet: drop the mcq_pct column and retry.
-  if (error && isMissingSchemaError(error)) {
-    const legacyRows = rows.map(({ mcq_pct, ...rest }) => {
-      void mcq_pct;
-      return rest;
-    });
-    ({ data, error } = await sb
+  // Newest-first peel: drop talent_lens (00136) then mcq_pct (00085) on a
+  // missing-column error so a pending migration degrades gracefully.
+  const stripLens = (r: Record<string, unknown>) => {
+    const { talent_lens, ...rest } = r;
+    void talent_lens;
+    return rest;
+  };
+  const stripLensMcq = (r: Record<string, unknown>) => {
+    const { talent_lens, mcq_pct, ...rest } = r;
+    void talent_lens;
+    void mcq_pct;
+    return rest;
+  };
+  const attempts = [rows, rows.map(stripLens), rows.map(stripLensMcq)];
+  type VoucherInsertRow = { code: string; assigned_name: string | null; assigned_email: string | null };
+  let data: VoucherInsertRow[] | null = null;
+  let error: { code?: string } | null = null;
+  for (const attemptRows of attempts) {
+    const res = await sb
       .from("technical_sandbox_vouchers")
-      .insert(legacyRows)
-      .select("code, assigned_name, assigned_email"));
+      .insert(attemptRows)
+      .select("code, assigned_name, assigned_email");
+    data = res.data as VoucherInsertRow[] | null;
+    error = res.error;
+    if (!error) break;
+    if (!isMissingSchemaError(error)) break;
   }
   if (error) throw error;
   const codes = (data ?? []).map((r) => r.code as string);
@@ -147,18 +170,34 @@ export async function redeemVoucher(input: RedeemInput): Promise<RedeemResult> {
     return { ok: false, error: "This code is invalid, disabled, expired, or fully used." };
   }
 
-  // The claim RPC doesn't return mcq_pct; read it separately (tolerant of 00085
-  // not applied - legacy vouchers have no MCQ section, i.e. mcq_pct 0).
+  // The claim RPC doesn't return mcq_pct / talent_lens; read them separately
+  // (tolerant of 00085 / 00136 not applied - legacy vouchers have no MCQ section
+  // i.e. mcq_pct 0, and a NULL lens = development framing).
   let mcqPct = 0;
+  let talentLens: "acquisition" | "development" | null = null;
   try {
-    const { data: vRow } = await sb
+    const { data: vRow, error: vErr } = await sb
       .from("technical_sandbox_vouchers")
-      .select("mcq_pct")
+      .select("mcq_pct, talent_lens")
       .eq("id", voucher.id as string)
-      .maybeSingle<{ mcq_pct: number | null }>();
+      .maybeSingle<{ mcq_pct: number | null; talent_lens: string | null }>();
+    if (vErr) throw vErr;
     mcqPct = clampMcqPct(vRow?.mcq_pct ?? 0);
+    const rawLens = vRow?.talent_lens;
+    talentLens = rawLens === "acquisition" || rawLens === "development" ? rawLens : null;
   } catch {
-    mcqPct = 0;
+    // 00136 pending: re-read mcq_pct alone so the MCQ section still works.
+    try {
+      const { data: vRow } = await sb
+        .from("technical_sandbox_vouchers")
+        .select("mcq_pct")
+        .eq("id", voucher.id as string)
+        .maybeSingle<{ mcq_pct: number | null }>();
+      mcqPct = clampMcqPct(vRow?.mcq_pct ?? 0);
+    } catch {
+      mcqPct = 0;
+    }
+    talentLens = null;
   }
 
   try {
@@ -168,6 +207,7 @@ export async function redeemVoucher(input: RedeemInput): Promise<RedeemResult> {
       candidateEmail: input.email.trim(),
       organizationName: (input.company || voucher.organization_name || "").trim() || undefined,
       mcqPct,
+      talentLens,
     });
     await sb.from("technical_sandbox_voucher_redemptions").insert({
       voucher_id: voucher.id,

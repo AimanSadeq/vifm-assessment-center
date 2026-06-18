@@ -94,7 +94,7 @@ export default async function TechSandboxAdminPage({
             title="Option 2 - Voucher codes (client self-distributes)"
             subtitle="The client wants a batch to hand out - generate single-use codes or one shared seat-pool code; delegates redeem at /tech-sandbox/redeem."
           >
-            <VouchersClient functions={functions} vouchers={vouchers} />
+            <VouchersClient functions={functions} vouchers={vouchers} talentLens={talentLens} />
           </CollapsibleSection>
         </section>
       )}

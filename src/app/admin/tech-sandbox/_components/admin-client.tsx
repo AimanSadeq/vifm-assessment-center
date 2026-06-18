@@ -106,6 +106,7 @@ export function AdminClient({
       organizationName: delegateOrg || undefined,
       delegates: parsedDelegates,
       mcqPct: delegateMcqPct,
+      talentLens,
     });
     setDelegateBusy(false);
     if ("error" in res) return setDelegateError(res.error);

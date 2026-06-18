@@ -14,9 +14,11 @@ type Mode = "single" | "pool";
 export function VouchersClient({
   functions,
   vouchers,
+  talentLens = null,
 }: {
   functions: FunctionRow[];
   vouchers: VoucherRow[];
+  talentLens?: "acquisition" | "development" | null;
 }) {
   const fnName = new Map(functions.map((f) => [f.id, `${f.nodeId ?? ""} ${f.nameEn}`.trim()]));
   const [functionId, setFunctionId] = useState(functions[0]?.id ?? "");
@@ -46,6 +48,7 @@ export function VouchersClient({
       maxUsesPerCode: mode === "pool" ? count : 1,
       expiresAt: expiresAt || undefined,
       mcqPct,
+      talentLens,
     });
     setBusy(false);
     if ("error" in res) return setError(res.error);

@@ -398,6 +398,76 @@ export async function buildPersonaPdfData(sessionId: string, lang: PersonaLang =
     }
   }
 
+  // Development WITHOUT a target role: still attach to VIFM Academy by deriving
+  // the gaps from the lowest self-ratings (against an aspirational target of 4),
+  // so the course plan + summary + scaffold + coaching always render. When a role
+  // IS bound the block above already did this against the role target.
+  if (purpose === "development" && !fit) {
+    const DEV_TARGET = 4;
+    type DG = { competencyId: string; nameEn: string; nameAr: string; gap: number; score: number };
+    const measured: DG[] = [];
+    for (const c of BEHAVIORAL_COMPETENCIES) {
+      const sc = scoreById.get(c.acCompetencyId);
+      if (sc == null) continue;
+      measured.push({ competencyId: c.acCompetencyId, nameEn: c.nameEn, nameAr: c.nameAr, gap: Math.max(0, DEV_TARGET - sc), score: sc });
+    }
+    const gapsTop = measured.filter((m) => m.gap > 0).sort((a, b) => b.gap - a.gap).slice(0, 6);
+    const strengthsTop = measured.filter((m) => m.score >= 4).sort((a, b) => b.score - a.score).slice(0, 6);
+    const nm = (m: DG) => (ar ? m.nameAr : m.nameEn);
+
+    let recs: RecommendedCourse[] = [];
+    try {
+      const gapInput = gapsTop.map((m) => ({ competency_id: m.competencyId, name: m.nameEn, name_ar: m.nameAr, gap: m.gap }));
+      recs = await recommendCoursesForCompetencyGaps({ gaps: gapInput, limit: 6 });
+      const top = Math.max(0, ...recs.map((c) => c.total_score));
+      courses = recs.map((c) => ({
+        title: ar && c.title_ar ? c.title_ar : c.title_en,
+        code: c.course_code,
+        vertical: VIFM_VERTICAL_LABELS[c.vertical] ?? c.vertical,
+        level: c.level,
+        durationLabel:
+          c.min_duration_days === c.max_duration_days
+            ? `${c.default_duration_days}d`
+            : `${c.min_duration_days}-${c.max_duration_days}d`,
+        fitOutOfTen: top > 0 ? Math.max(1, Math.round((c.total_score / top) * 10)) : 0,
+        highFit: c.total_score >= HIGH_FIT_THRESHOLD,
+        drivers: c.drivers.slice(0, 4).map((d) => ({ label: ar && d.label_ar ? d.label_ar : d.label, gap: d.gap, relevance: d.relevance })),
+      }));
+    } catch { /* best-effort */ }
+
+    const courseCodeFor = (enName: string): string | null => {
+      for (const c of recs) if (c.course_code && c.drivers.some((d) => d.label === enName)) return c.course_code;
+      return recs[0]?.course_code ?? null;
+    };
+    planRows = gapsTop.slice(0, 5).map((m) => {
+      const tip = tipById.get(m.competencyId);
+      const code = courseCodeFor(m.nameEn);
+      const base = tip || (ar ? "ممارسة موجّهة ومهام تطويرية" : "Targeted practice and a stretch assignment");
+      const action = code ? `${base}${ar ? " · دورة VIFM " : " · VIFM course "}${code}` : base;
+      return { competency: nm(m), action };
+    });
+
+    const strengthNames = strengthsTop.slice(0, 3).map(nm);
+    const priorityNames = gapsTop.slice(0, 3).map(nm);
+    if (langExtras.summary) {
+      summary = langExtras.summary;
+    } else {
+      try {
+        summary = await generatePersonaSummary({
+          roleName: null,
+          overall,
+          strengths: strengthNames,
+          priorities: priorityNames,
+          clusters: clusters.map((c) => ({ name: c.name, avg: c.avg })),
+          lang,
+        });
+        langExtras.summary = summary;
+        extrasDirty = true;
+      } catch { summary = null; }
+    }
+    coaching = buildCoaching(priorityNames, strengthNames, ar);
+  }
+
   // Persist any newly generated extras (tolerant of 00126 absent).
   if (extrasDirty) {
     try {

@@ -338,6 +338,13 @@ export function PlatformLanding() {
     const variant = VARIANTS[lang]?.[svc.key]?.[pillar];
     const copy = { ...t.services[svc.key], ...variant };
     const badge = variant?.badge;
+    // CAL-PER-402: Persona's purpose is set by the pillar it's launched from -
+    // Talent Acquisition (acquire) -> hiring, Talent Management (manage) ->
+    // development - so the runner opens locked to that purpose (picker hidden).
+    const href =
+      svc.key === "persona"
+        ? `/ac/persona?purpose=${pillar === "acquire" ? "hiring" : "development"}`
+        : svc.href;
     // Icon / card accent colour is keyed to the PILLAR, not the service, so the
     // two solution families read as two colours at a glance: blue = Talent
     // Acquisition (selection), emerald = Talent Management (development). Matches
@@ -350,7 +357,7 @@ export function PlatformLanding() {
     return (
       <Tooltip key={svc.key}>
         <TooltipTrigger asChild>
-          <Link href={svc.href} className="block">
+          <Link href={href} className="block">
             <div className={`launcher-card tone-${tone} flex items-center gap-4 p-4`}>
               <div className="launcher-card-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-xl">
                 <Icon className="h-6 w-6" />

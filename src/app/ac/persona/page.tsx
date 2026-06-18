@@ -15,13 +15,18 @@ export const dynamic = "force-dynamic";
  * runner. Produces a self-profile; it does not feed Succession Readiness (that
  * needs the candidate-bound path at /candidate/behavioral/[id]).
  */
-export default async function PersonaPage({ searchParams }: { searchParams?: { demo?: string } }) {
+export default async function PersonaPage({ searchParams }: { searchParams?: { demo?: string; purpose?: string } }) {
   const [roleProfiles, definitions] = await Promise.all([
     loadPersonaRoleOptions(),
     loadCompetencyDefinitions(),
   ]);
   // Demo shortcut button: shown with ?demo=1 (live client demos) or in dev.
   const demo = searchParams?.demo === "1" || process.env.NODE_ENV !== "production";
+  // CAL-PER-402: when entered from a landing tile the purpose is locked -
+  // Talent Acquisition -> hiring, Talent Management -> development. The runner
+  // then hides the purpose picker. A bare /ac/persona (admin) keeps the picker.
+  const lockedPurpose: "hiring" | "development" | null =
+    searchParams?.purpose === "hiring" ? "hiring" : searchParams?.purpose === "development" ? "development" : null;
   return (
     <div className="mx-auto max-w-3xl px-6 py-8">
       <BackLink href="/" label="Back" history />
@@ -58,7 +63,7 @@ export default async function PersonaPage({ searchParams }: { searchParams?: { d
         </Link>
         <AllServicesLink />
       </div>
-      <PersonaStandaloneClient competencies={BEHAVIORAL_COMPETENCIES} roleProfiles={roleProfiles} definitions={definitions} demo={demo} />
+      <PersonaStandaloneClient competencies={BEHAVIORAL_COMPETENCIES} roleProfiles={roleProfiles} definitions={definitions} demo={demo} lockedPurpose={lockedPurpose} />
     </div>
   );
 }

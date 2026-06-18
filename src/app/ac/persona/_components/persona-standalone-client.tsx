@@ -40,6 +40,7 @@ export function PersonaStandaloneClient({
   prefillName,
   roleProfiles = [],
   pinned = null,
+  lockedPurpose = null,
   definitions = {},
   demo = false,
 }: {
@@ -59,11 +60,17 @@ export function PersonaStandaloneClient({
    *  replaced by a read-only summary. The competency scope is already applied
    *  upstream (the `competencies` prop is pre-filtered). */
   pinned?: { purpose: Purpose; roleProfileId: string | null; roleName: string | null } | null;
+  /** CAL-PER-402: purpose locked by the landing tile (Talent Acquisition ->
+   *  hiring, Talent Management -> development). The taker still picks a target
+   *  role, but the purpose picker is hidden. Ignored when `pinned` is set. */
+  lockedPurpose?: Purpose | null;
 }) {
   const [phase, setPhase] = useState<Phase>("intro");
   const [lang, setLang] = useState<Lang>("en");
   const [name, setName] = useState(prefillName ?? "");
-  const [purpose, setPurpose] = useState<Purpose>(pinned?.purpose ?? "development");
+  // CAL-PER-403: taker email (required for hiring, optional for development).
+  const [email, setEmail] = useState("");
+  const [purpose, setPurpose] = useState<Purpose>(pinned?.purpose ?? lockedPurpose ?? "development");
   const [targetRoleId, setTargetRoleId] = useState(pinned?.roleProfileId ?? "");
   // Standalone coverage override: assess only the role's competencies (default,
   // the efficient scoped test) or the full framework (to show the whole
@@ -88,6 +95,15 @@ export function PersonaStandaloneClient({
 
   const ar = lang === "ar";
   const tx = (en: string, arabic: string) => (ar ? arabic : en);
+
+  // CAL-PER-402: from a landing tile the purpose is locked (picker hidden) but
+  // the taker still chooses a target role. A voucher (`pinned`) already locks
+  // everything, so it takes precedence.
+  const purposeLocked = !pinned && lockedPurpose != null;
+  // CAL-PER-403: email required for hiring (selection/lead capture), optional
+  // for development. Light format check; the picker is hidden under a voucher.
+  const emailRequired = purpose === "hiring" && !pinned;
+  const emailValid = !emailRequired || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
   // Autosave is debounced + batched: answers accumulate in a buffer keyed by
   // itemKey and flush in ONE server action call ~700ms after the last change
@@ -169,11 +185,16 @@ export function PersonaStandaloneClient({
   const allIpsDone = ipsBlocks.length > 0 ? blocksDone >= ipsBlocks.length : true;
 
   const begin = async () => {
+    if (emailRequired && !emailValid) {
+      setError(tx("Please enter a valid email address.", "يرجى إدخال بريد إلكتروني صحيح."));
+      return;
+    }
     setBusy(true); setError("");
     const s = freshSeed();
     try {
       const res = await startPersonaAction(name, redemptionToken, {
         purpose,
+        email: email.trim() || null,
         // The target role drives scope + the report for BOTH purposes.
         targetRoleProfileId: targetRoleId || null,
         seed: s,
@@ -345,7 +366,24 @@ export function PersonaStandaloneClient({
             </div>
           ) : (
             <>
-              {/* Purpose - drives the result (development narrative vs hiring fit). */}
+              {/* Purpose - drives the result (development narrative vs hiring fit).
+                  CAL-PER-402: from a landing tile the purpose is locked (TA->hiring,
+                  TM->development) so the picker is replaced by a read-only banner. */}
+              {purposeLocked ? (
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <span className="inline-flex items-center gap-2 font-semibold text-[#010131]">
+                    {purpose === "hiring" ? <Target className="h-4 w-4 text-[#5391D5]" /> : <GraduationCap className="h-4 w-4 text-[#5391D5]" />}
+                    {purpose === "hiring"
+                      ? tx("Hiring / selection assessment", "تقييم التوظيف / الاختيار")
+                      : tx("Development assessment", "تقييم تطويري")}
+                  </span>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {purpose === "hiring"
+                      ? tx("A fit score against a target role profile.", "درجة ملاءمة مقابل ملف دور مستهدف.")
+                      : tx("A growth plan vs a target role + recommended VIFM courses.", "خطة تطوير مقابل دور مستهدف + دورات VIFM الموصى بها.")}
+                  </p>
+                </div>
+              ) : (
               <div>
                 <p className="text-xs font-medium text-slate-500">{tx("What is this assessment for?", "ما الغرض من هذا التقييم؟")}</p>
                 <div className="mt-2 grid gap-3 sm:grid-cols-2">
@@ -375,6 +413,7 @@ export function PersonaStandaloneClient({
                   </button>
                 </div>
               </div>
+              )}
 
               {/* Target role - drives scope + the report for BOTH purposes:
                   the hiring fit and the development plan both compare against it. */}
@@ -456,6 +495,20 @@ export function PersonaStandaloneClient({
                 placeholder="e.g. Sara Al Mansoori"
               />
             </label>
+            <label className="min-w-[12rem] flex-1">
+              <span className="text-xs font-medium text-slate-500">
+                {emailRequired ? tx("Your email", "بريدك الإلكتروني") : tx("Your email (optional)", "بريدك الإلكتروني (اختياري)")}
+                {emailRequired && <span className="text-rose-500"> *</span>}
+              </span>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                dir="ltr"
+                className={`mt-1 w-full rounded-md border px-3 py-2 text-sm ${emailRequired && email.trim() && !emailValid ? "border-rose-400" : "border-slate-300"}`}
+                placeholder="e.g. sara@example.com"
+              />
+            </label>
             <div className="flex items-center gap-2">
               <span className="text-[11px] uppercase tracking-wide text-slate-400">{tx("Language", "اللغة")}</span>
               <div className="inline-flex rounded-lg border border-slate-200 p-0.5">
@@ -473,7 +526,7 @@ export function PersonaStandaloneClient({
           </div>
           <button
             onClick={begin}
-            disabled={busy}
+            disabled={busy || (emailRequired && !emailValid)}
             className="inline-flex items-center gap-2 rounded-lg bg-[#010131] px-6 py-3 text-sm font-semibold text-white hover:bg-[#121140] disabled:opacity-60"
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}

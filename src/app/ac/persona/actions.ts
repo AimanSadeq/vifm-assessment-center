@@ -17,6 +17,9 @@ export type StartPersonaOptions = {
   targetRoleProfileId?: string | null;
   /** Seed for the reproducible (randomized, section-hidden) item layout. */
   seed?: number | null;
+  /** Taker email (CAL-PER-403); lead capture + results delivery. Required by the
+   *  runner for hiring, optional for development. Persisted best-effort. */
+  email?: string | null;
 };
 
 /**
@@ -72,6 +75,7 @@ export async function startPersonaAction(
     const session = await createAnonymousBehavioralSession(name.trim() || null, {
       organizationId,
       voucherRedemptionId: redemptionId,
+      takerEmail: opts?.email?.trim() || null,
       purpose,
       targetRoleProfileId,
       seed: opts?.seed ?? null,

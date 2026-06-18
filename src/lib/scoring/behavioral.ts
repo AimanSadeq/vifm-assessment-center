@@ -65,6 +65,8 @@ export async function createAnonymousBehavioralSession(
   opts?: {
     organizationId?: string | null;
     voucherRedemptionId?: string | null;
+    /** Taker email (migration 00129); lead capture + results delivery. */
+    takerEmail?: string | null;
     /** 'development' (narrative + suggestions) or 'hiring' (fit vs a target role). */
     purpose?: "development" | "hiring";
     /** Target role profile for a hiring fit read (migration 00110). */
@@ -76,7 +78,10 @@ export async function createAnonymousBehavioralSession(
   },
 ): Promise<BehavioralSession> {
   const sb = createServiceClient();
-  const base: Record<string, unknown> = {
+  // The always-attemptable core row (columns present since the original schema
+  // + 00106). taker_email is layered on top of this so a pre-00129 DB falls
+  // back to it cleanly.
+  const baseCore: Record<string, unknown> = {
     taker_name: takerName,
     status: "in_progress",
     started_at: new Date().toISOString(),
@@ -85,6 +90,11 @@ export async function createAnonymousBehavioralSession(
     // path keeps working before the migration).
     ...(opts?.organizationId ? { organization_id: opts.organizationId } : {}),
     ...(opts?.voucherRedemptionId ? { voucher_redemption_id: opts.voucherRedemptionId } : {}),
+  };
+  // taker_email lands with migration 00129; stripped to baseCore if absent.
+  const base: Record<string, unknown> = {
+    ...baseCore,
+    ...(opts?.takerEmail ? { taker_email: opts.takerEmail } : {}),
   };
   // Purpose/target/seed land with migration 00110; only included when provided
   // and stripped + retried if the columns aren't there yet (tolerant).
@@ -102,28 +112,23 @@ export async function createAnonymousBehavioralSession(
     ...(scoped.length > 0 ? { scoped_competency_ids: scoped } : {}),
   };
 
-  let { data, error } = await sb
-    .from("behavioral_assessment_sessions")
-    .insert(withScope)
-    .select("id, status")
-    .single();
-  if (error && isMissingColumnError(error)) {
-    // Strip the 00123 scope column and retry.
-    ({ data, error } = await sb
+  // Progressively strip the newest column group on each missing-column error:
+  // 00123 scope -> 00110 purpose/target/seed -> 00129 taker_email -> core.
+  const attempts = [withScope, extended, base, baseCore];
+  let data: { id: string; status: string } | null = null;
+  let error: unknown = null;
+  for (const payload of attempts) {
+    const res = await sb
       .from("behavioral_assessment_sessions")
-      .insert(extended)
+      .insert(payload)
       .select("id, status")
-      .single());
+      .single();
+    data = res.data as { id: string; status: string } | null;
+    error = res.error;
+    if (!error) break;
+    if (!isMissingColumnError(res.error)) break;
   }
-  if (error && isMissingColumnError(error)) {
-    // Strip the 00110 purpose/target/seed columns and retry the base row.
-    ({ data, error } = await sb
-      .from("behavioral_assessment_sessions")
-      .insert(base)
-      .select("id, status")
-      .single());
-  }
-  if (error || !data) throw error ?? new Error("Could not create Persona session");
+  if (error || !data) throw (error as Error) ?? new Error("Could not create Persona session");
   return { id: data.id as string, status: data.status as BehavioralStatus };
 }
 

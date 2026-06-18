@@ -154,6 +154,9 @@ export type AraIndividualMaturityStage = {
   id: AraIndividualMaturityStageId;
   name_en: string;
   name_ar: string;
+  /** One-line "how the band is read" shown beneath the band word (R2). */
+  definition_en: string;
+  definition_ar: string;
   blurb_en: string;
   blurb_ar: string;
 };
@@ -162,6 +165,8 @@ const STAGE_EMERGING: AraIndividualMaturityStage = {
   id: "emerging",
   name_en: "Emerging",
   name_ar: "ناشئة",
+  definition_en: "building foundational habits",
+  definition_ar: "بناء العادات الأساسية",
   blurb_en:
     "Foundation-laying - early exposure to AI tools, with room to build " +
     "the core habits and judgment that turn experiments into impact.",
@@ -174,6 +179,8 @@ const STAGE_PRACTISING: AraIndividualMaturityStage = {
   id: "practising",
   name_en: "Practising",
   name_ar: "ممارَسة",
+  definition_en: "applying AI with growing judgment",
+  definition_ar: "تطبيق الذكاء الاصطناعي بحُكم متنامٍ",
   blurb_en:
     "Building rhythm - using AI on real work, sharpening prompts and " +
     "review habits, and starting to feel where the tools help and where " +
@@ -188,6 +195,8 @@ const STAGE_EMBEDDED: AraIndividualMaturityStage = {
   id: "embedded",
   name_en: "Embedded",
   name_ar: "راسخة",
+  definition_en: "AI is a confident, routine part of how you work",
+  definition_ar: "الذكاء الاصطناعي جزء واثق ومعتاد من طريقة عملك",
   blurb_en:
     "Operating fluently - AI is part of how you work, with confident " +
     "judgment about when to lean on it, when to push back on its " +

@@ -227,6 +227,12 @@ export default async function PersonalResultsPage({ params }: Props) {
                       {isAr ? stage.name_ar : stage.name_en}
                     </span>
                   )}
+                  {/* R2: how the band is read, beneath the band word. */}
+                  {overallScore > 0 && (
+                    <p className="text-[11px] mt-1 opacity-80">
+                      {isAr ? stage.definition_ar : stage.definition_en}
+                    </p>
+                  )}
                   {overallScore > 0 &&
                     (overallPct != null ? (
                       <p className="text-[11px] mt-2 opacity-80">

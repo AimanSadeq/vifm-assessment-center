@@ -547,9 +547,16 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
         <span class="hero-score-of">/ 5 إجمالي</span>
       </div>
       ${data.overallScore > 0 ? `<span class="hero-stage">${esc(stage.name_ar)}</span>` : ""}
+      ${data.overallScore > 0 ? `<div style="font-size:9px;color:#fff;opacity:0.85;margin-top:4px">${esc(stage.definition_ar)}</div>` : ""}
       <p class="hero-verdict">${data.overallScore > 0 ? esc(stage.blurb_ar) : "لا توجد بيانات بعد."}</p>
     </div>
 
+    <p class="section-eyebrow">تفصيل لكل عامل</p>
+    <h2 class="section-title">موقعك في كل عامل من عوامل VIFM</h2>
+    <div class="section-rule"></div>
+    <div class="factor-grid">${factorCardsHtml}</div>
+
+    <!-- Scale legend - below the per-factor breakdown (R3) -->
     <div class="legend">
       <p class="legend-title">${esc(HOW_TO_USE_PANELS_AR.read.title)}</p>
       <div class="legend-row">
@@ -567,11 +574,6 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
         </div>
       </div>
     </div>
-
-    <p class="section-eyebrow">تفصيل لكل عامل</p>
-    <h2 class="section-title">موقعك في كل عامل من عوامل VIFM</h2>
-    <div class="section-rule"></div>
-    <div class="factor-grid">${factorCardsHtml}</div>
   </section>
 
   <!-- PAGE 2 break -->

@@ -398,34 +398,15 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
           {data.overallScore > 0 && (
             <Text style={s.heroStagePill}>{stage.name_en}</Text>
           )}
+          {/* R2: how the band is read, beneath the band word. */}
+          {data.overallScore > 0 && (
+            <Text style={{ fontSize: 9, color: "#ffffff", opacity: 0.85, marginTop: 3 }}>
+              {stage.definition_en}
+            </Text>
+          )}
           <Text style={s.heroVerdict}>
             {data.overallScore > 0 ? stage.blurb_en : "No data yet."}
           </Text>
-        </View>
-
-        {/* Scale legend */}
-        <View style={s.legendBox}>
-          <Text style={s.legendTitle}>{HOW_TO_USE_PANELS.read.title}</Text>
-          <View style={s.legendRow}>
-            <View style={s.legendCell}>
-              <Text style={[s.legendPill, { backgroundColor: "#fee2e2", color: "#991b1b" }]}>
-                OPPORTUNITY
-              </Text>
-              <Text style={s.legendText}>1.0 - 2.9</Text>
-            </View>
-            <View style={s.legendCell}>
-              <Text style={[s.legendPill, { backgroundColor: "#fef3c7", color: "#92400e" }]}>
-                DEVELOPING
-              </Text>
-              <Text style={s.legendText}>3.0 - 3.9</Text>
-            </View>
-            <View style={s.legendCell}>
-              <Text style={[s.legendPill, { backgroundColor: "#dcfce7", color: "#166534" }]}>
-                STRONG
-              </Text>
-              <Text style={s.legendText}>4.0 - 5.0</Text>
-            </View>
-          </View>
         </View>
 
         {/* Factors */}
@@ -468,6 +449,31 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
               </View>
             );
           })}
+        </View>
+
+        {/* Scale legend - below the per-factor breakdown (R3) */}
+        <View style={s.legendBox}>
+          <Text style={s.legendTitle}>{HOW_TO_USE_PANELS.read.title}</Text>
+          <View style={s.legendRow}>
+            <View style={s.legendCell}>
+              <Text style={[s.legendPill, { backgroundColor: "#fee2e2", color: "#991b1b" }]}>
+                OPPORTUNITY
+              </Text>
+              <Text style={s.legendText}>1.0 - 2.9</Text>
+            </View>
+            <View style={s.legendCell}>
+              <Text style={[s.legendPill, { backgroundColor: "#fef3c7", color: "#92400e" }]}>
+                DEVELOPING
+              </Text>
+              <Text style={s.legendText}>3.0 - 3.9</Text>
+            </View>
+            <View style={s.legendCell}>
+              <Text style={[s.legendPill, { backgroundColor: "#dcfce7", color: "#166534" }]}>
+                STRONG
+              </Text>
+              <Text style={s.legendText}>4.0 - 5.0</Text>
+            </View>
+          </View>
         </View>
 
         <View style={s.footer} fixed>

@@ -241,7 +241,7 @@ const NAV: NavEntry[] = [
 ];
 
 /**
- * All leaf links, flattened depth-first and de-duped by href — for the collapsed
+ * All leaf links, flattened depth-first and de-duped by href - for the collapsed
  * icon rail. Dual-purpose services (e.g. /admin, /ara, /admin/tech-sandbox) are
  * listed under both pillars, so the rail would otherwise show duplicate icons /
  * collide on the React key.

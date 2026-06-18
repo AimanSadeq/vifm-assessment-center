@@ -123,24 +123,6 @@ export function renderPersonaProfileHtmlAr(data: PersonaPdfData): string {
     parts.push(`<div class="panel">${fitBlocks.join("")}</div>`);
   }
 
-  // A.1 interview guide (hiring)
-  if (hiring && data.interviewProbes && data.interviewProbes.length > 0) {
-    const groups = data.interviewProbes
-      .map(
-        (grp) => `<div class="iv-group">
-        <div class="iv-head">${roleMark("critical")}<span class="iv-name">${escapeHtml(grp.name)}</span></div>
-        ${grp.probes.map((p, i) => `<div class="iv-probe">${num(i + 1)}. ${escapeHtml(p)}</div>`).join("")}
-        <div class="iv-evidence">الأدلة / التقييم (1-5): ______________________________</div>
-      </div>`,
-      )
-      .join("");
-    parts.push(`<div class="panel">
-      <div class="sec-title">دليل المقابلة</div>
-      <div class="sec-sub">أسئلة سلوكية (STAR) للجدارات الحسّاسة للدور، مبنية على إجابات المرشّح الأقل تقييمًا. أداة فرز؛ سجّل الأدلة وتقييمك.</div>
-      ${groups}
-    </div>`);
-  }
-
   // A.2 decision integration (hiring)
   if (hiring && data.fit) {
     const watch = data.fit.gaps.length > 0 ? `. للانتباه: ${escapeHtml(data.fit.gaps.slice(0, 2).map((g) => g.name).join("، "))}` : "";
@@ -245,6 +227,24 @@ export function renderPersonaProfileHtmlAr(data: PersonaPdfData): string {
       <div class="sec-title">خطة تطويرك</div>
       <div class="sec-sub">لكل أولوية: حدّد هدفًا، طبّقه في العمل، وقرّر كيف ستعرف أنه نجح. أكمل الفراغات مع مديرك أو مرشدك.</div>
       ${rows}
+    </div>`);
+  }
+
+  // A.1 interview guide (hiring) - the take-into-the-room artifact, at the end.
+  if (hiring && data.interviewProbes && data.interviewProbes.length > 0) {
+    const groups = data.interviewProbes
+      .map(
+        (grp) => `<div class="iv-group">
+        <div class="iv-head">${roleMark("critical")}<span class="iv-name">${escapeHtml(grp.name)}</span></div>
+        ${grp.probes.map((p, i) => `<div class="iv-probe">${num(i + 1)}. ${escapeHtml(p)}</div>`).join("")}
+        <div class="iv-evidence">الأدلة / التقييم (1-5): ______________________________</div>
+      </div>`,
+      )
+      .join("");
+    parts.push(`<div class="panel">
+      <div class="sec-title">دليل المقابلة</div>
+      <div class="sec-sub">أسئلة سلوكية (STAR) للجدارات الحسّاسة للدور، مبنية على إجابات المرشّح الأقل تقييمًا. أداة فرز؛ سجّل الأدلة وتقييمك.</div>
+      ${groups}
     </div>`);
   }
 

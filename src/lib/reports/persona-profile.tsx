@@ -343,29 +343,6 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
           </View>
         )}
 
-        {/* A.1 - structured interview guide (hiring) */}
-        {hiring && data.interviewProbes && data.interviewProbes.length > 0 ? (
-          <View style={s.sectionPanel}>
-            <Text style={s.sectionTitle}>Interview guide</Text>
-            <Text style={s.sectionSub}>
-              Behavioural (STAR) probes for the role-critical competencies, grounded in the candidate&apos;s
-              lower-rated answers. A screening aid; record evidence and your own rating.
-            </Text>
-            {data.interviewProbes.map((grp) => (
-              <View key={grp.competencyId} style={s.ivGroup} wrap={false}>
-                <View style={s.ivHeadRow}>
-                  <RoleMark kind="critical" />
-                  <Text style={s.ivName}>{grp.name}</Text>
-                </View>
-                {grp.probes.map((p, i) => (
-                  <Text key={`${grp.competencyId}-p-${i}`} style={s.ivProbe}>{i + 1}. {p}</Text>
-                ))}
-                <Text style={s.ivEvidence}>Evidence / rating (1-5): ______________________________</Text>
-              </View>
-            ))}
-          </View>
-        ) : null}
-
         {/* A.2 - decision-integration worksheet (hiring, computes nothing) */}
         {hiring && data.fit ? (
           <View style={s.sectionPanel} wrap={false}>
@@ -517,6 +494,30 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
                 <View style={s.planBlankRow}><Text style={s.planBlankLabel}>On-the-job application</Text><View style={s.planBlankLine} /></View>
                 <View style={s.planBlankRow}><Text style={s.planBlankLabel}>Success measure</Text><View style={s.planBlankLine} /></View>
                 <View style={s.planBlankRow}><Text style={s.planBlankLabel}>Review by</Text><View style={s.planBlankLine} /></View>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
+        {/* A.1 - structured interview guide (hiring) - the take-into-the-room
+            artifact, placed at the end after the competency analysis. */}
+        {hiring && data.interviewProbes && data.interviewProbes.length > 0 ? (
+          <View style={s.sectionPanel}>
+            <Text style={s.sectionTitle}>Interview guide</Text>
+            <Text style={s.sectionSub}>
+              Behavioural (STAR) probes for the role-critical competencies, grounded in the candidate&apos;s
+              lower-rated answers. A screening aid; record evidence and your own rating.
+            </Text>
+            {data.interviewProbes.map((grp) => (
+              <View key={grp.competencyId} style={s.ivGroup} wrap={false}>
+                <View style={s.ivHeadRow}>
+                  <RoleMark kind="critical" />
+                  <Text style={s.ivName}>{grp.name}</Text>
+                </View>
+                {grp.probes.map((p, i) => (
+                  <Text key={`${grp.competencyId}-p-${i}`} style={s.ivProbe}>{i + 1}. {p}</Text>
+                ))}
+                <Text style={s.ivEvidence}>Evidence / rating (1-5): ______________________________</Text>
               </View>
             ))}
           </View>

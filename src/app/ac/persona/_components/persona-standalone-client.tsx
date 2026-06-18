@@ -765,7 +765,7 @@ function PersonaResult({
         <div className="rounded-lg border border-slate-200 p-4">
           <div className="text-center">
             <p className="text-3xl font-bold uppercase tracking-wide text-[#010131]">{tx("Role fit", "ملاءمة الدور")}</p>
-            {role ? <p className="mt-1 text-sm text-slate-500">{role.name}</p> : null}
+            {role ? <p className="mt-1 text-xl font-semibold text-[#010131]">{role.name}</p> : null}
             <span className={`mt-2 inline-block rounded-lg px-6 py-2.5 text-3xl font-bold ${FIT_BAND_TW[fit.band]}`}>
               {fit.fitPct}% · {ar ? fit.bandLabelAr : fit.bandLabel}
             </span>

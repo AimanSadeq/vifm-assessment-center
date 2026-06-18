@@ -36,7 +36,7 @@ All 5 development phases are **complete**. **Auth is ENABLED** (`AUTH_ENABLED = 
 - **Video:** Daily.co SDK placeholder for virtual AC sessions
 - **Font:** Open Sans (VIFM Brand Kit)
 - **Colors:** Primary Blue #010131, Accent Blue #5391D5, Off-White #FEFFF9, Dark Blue #111232, Navy Blue #121140
-- **Deployment:** Render (web service) + Supabase Cloud (backend). NOT Vercel — the production checklist PDF still says Vercel and is stale; ignore it. Render auto-deploys on push to `master`.
+- **Deployment:** Render (web service `vifm-assessment-center`, srv-d771itedqaus73dvismg, branch `master`, domain `caliber.viftraining.com`) + Supabase Cloud (backend). NOT Vercel — the production checklist PDF still says Vercel and is stale; ignore it. **Deploys are MANUAL, not automatic** — a `git push` to `master` does NOT trigger a build (the deploy history is all "Manual" triggers). To ship, trigger Render → the service → Manual Deploy → "Deploy latest commit" (the deployed code can lag `master`; check before assuming a push is live). **`next build` runs ESLint and fails the build on lint errors that `tsc --noEmit` does NOT catch** (e.g. a non-hook helper named with a `use` prefix trips `react-hooks/rules-of-hooks`); run `npx next lint --file <paths>` before deploying.
 
 ## Project Structure
 ```

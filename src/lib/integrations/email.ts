@@ -15,6 +15,7 @@
 import { ClientSecretCredential } from "@azure/identity";
 import { Client } from "@microsoft/microsoft-graph-client";
 import { TokenCredentialAuthenticationProvider } from "@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials/index.js";
+import { resendConfigured, sendViaResend } from "./resend";
 
 const graphTenantId = () => process.env.OUTLOOK_TENANT_ID ?? process.env.AZURE_TENANT_ID;
 const graphClientId = () => process.env.OUTLOOK_CLIENT_ID ?? process.env.AZURE_CLIENT_ID;
@@ -165,23 +166,23 @@ Manage this request: {{adminUrl}}
 
 You've been invited to complete a short pre-employment screening for the {{roleTitle}} role{{orgClause}}.
 
-It takes about {{duration}} and may include a brief competency check, an English placement, and a short behavioural interview. Your answers are saved as you go — you can pause and resume using the same link.
+It takes about {{duration}} and may include a brief competency check, an English placement, and a short behavioural interview. Your answers are saved as you go - you can pause and resume using the same link.
 
 Start your screening here (please don't share this link, it's unique to you):
 {{applyUrl}}
 
-Your responses are processed by VIFM on behalf of {{orgName}} for the sole purpose of evaluating your application, in line with applicable data-protection law. A person reviews the results — no decision is made automatically.
+Your responses are processed by VIFM on behalf of {{orgName}} for the sole purpose of evaluating your application, in line with applicable data-protection law. A person reviews the results - no decision is made automatically.
 
 Best regards,
 Virginia Institute of Finance and Management`,
   },
   prehire_client_report: {
-    subject: "Pre-Hire screening report — {{candidateName}} ({{roleTitle}})",
+    subject: "Pre-Hire screening report - {{candidateName}} ({{roleTitle}})",
     body: `Dear {{clientName}},
 
 Please find attached the pre-hire screening report for {{candidateName}}{{empClause}}, who completed the screening for the {{roleTitle}} role.
 
-The report summarises the advisory composite and the per-stage results. As always, this is a screening signal to support your process — VIFM does not make the hiring decision; your team does.
+The report summarises the advisory composite and the per-stage results. As always, this is a screening signal to support your process - VIFM does not make the hiring decision; your team does.
 
 Please treat the attached report as confidential.
 
@@ -224,6 +225,28 @@ function renderTemplate(template: EmailTemplate, data: Record<string, string>) {
 
 export async function sendEmail(payload: EmailPayload): Promise<boolean> {
   const { subject, body } = renderTemplate(payload.template, payload.data);
+
+  // Resend is the live production transport (RESEND_API_KEY + EMAIL_FROM on
+  // Render, viftraining.com verified). Prefer it over Graph, mirroring
+  // src/lib/ara/email.ts. Without this, an unconfigured Graph silently
+  // console-mocks and returns true, so the caller's "emailed" gate sees a
+  // success that never reached the recipient (the CAL-PRE-507 client-report bug,
+  // and the same defect on prehire invitations + AC Fluent results).
+  if (resendConfigured()) {
+    const res = await sendViaResend({
+      to: payload.to,
+      subject,
+      text: body,
+      attachments: (payload.attachments ?? []).map((a) => ({
+        filename: a.filename,
+        content: a.contentBase64,
+      })),
+    });
+    if (!res.ok) console.error(`[EMAIL] Resend failed to ${payload.to}: ${res.error}`);
+    else console.log(`[EMAIL] Sent via Resend to ${payload.to}: ${subject}`);
+    return res.ok;
+  }
+
   const fromAddress = graphFromAddress();
 
   const graphClient = getGraphClient();
@@ -275,5 +298,10 @@ export async function sendEmail(payload: EmailPayload): Promise<boolean> {
 }
 
 export function isEmailConfigured(): boolean {
-  return !!(graphTenantId() && graphClientId() && graphClientSecret() && graphFromAddress());
+  // Resend is the live transport; Graph is the legacy fallback. Either counts as
+  // configured so callers' "emailed" gating reflects a real send path.
+  return (
+    resendConfigured() ||
+    !!(graphTenantId() && graphClientId() && graphClientSecret() && graphFromAddress())
+  );
 }

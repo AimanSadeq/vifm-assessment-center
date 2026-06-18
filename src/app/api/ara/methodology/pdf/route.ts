@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import type { Browser } from "puppeteer";
+import type { Browser } from "puppeteer-core";
+import { launchPdfBrowser } from "@/lib/reports/pdf-browser";
 import { promises as fs } from "fs";
 import path from "path";
 import { methodologyBriefHtml } from "@/lib/reports/methodology-brief";
@@ -9,16 +10,11 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Launch bundled Chromium (Render runs full Linux containers). Mirrors the
- * report PDF route - same engine, same Arabic-capable font set.
+ * Launch Chromium via the shared launcher (bundled puppeteer in dev,
+ * @sparticuz/chromium in prod - see src/lib/reports/pdf-browser.ts).
  */
 async function launchBrowser(): Promise<Browser> {
-  const puppeteer = (await import("puppeteer")).default;
-  return puppeteer.launch({
-    headless: true,
-    defaultViewport: { width: 1200, height: 900, deviceScaleFactor: 1 },
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  }) as unknown as Browser;
+  return launchPdfBrowser({ defaultViewport: { width: 1200, height: 900, deviceScaleFactor: 1 } });
 }
 
 /**

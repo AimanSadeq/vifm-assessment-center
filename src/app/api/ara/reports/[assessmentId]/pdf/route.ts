@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { Browser } from "puppeteer";
+import type { Browser } from "puppeteer-core";
+import { launchPdfBrowser } from "@/lib/reports/pdf-browser";
 import { createServiceClient } from "@/lib/supabase/server";
 import { requireAssessmentOwner, isAuthorizationError } from "@/lib/ara/auth-guards";
 
@@ -8,21 +9,17 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Launch Chromium via standard puppeteer for both dev and prod.
- *
- * Render runs Node web services in full Linux containers, so we use the
- * bundled Chromium that puppeteer ships with rather than the stripped
- * @sparticuz/chromium build. Sparticuz is meant for AWS Lambda's /tmp
- * size + cold-start constraints, has a thinner font set (Arabic in
- * particular can fall through to tofu), and offers no advantage here.
+ * Launch Chromium via the shared launcher (see src/lib/reports/pdf-browser.ts):
+ * bundled puppeteer Chromium in dev, @sparticuz/chromium in production. Render
+ * does not persist puppeteer's HOME Chromium cache between build and runtime,
+ * so the bundled binary is missing in prod and every PDF route 500s with
+ * "Could not find Chrome"; @sparticuz ships its Chromium inside node_modules.
+ * Arabic shaping is unaffected - the HTML loads the Noto Naskh webfont and
+ * waits for fonts.ready, so HarfBuzz shapes from the loaded font, not system
+ * fonts.
  */
 async function launchBrowser(): Promise<Browser> {
-  const puppeteer = (await import("puppeteer")).default;
-  return puppeteer.launch({
-    headless: true,
-    defaultViewport: { width: 1200, height: 900, deviceScaleFactor: 1 },
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  }) as unknown as Browser;
+  return launchPdfBrowser({ defaultViewport: { width: 1200, height: 900, deviceScaleFactor: 1 } });
 }
 
 /**

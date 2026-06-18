@@ -1,6 +1,7 @@
 import { renderToBuffer } from "@react-pdf/renderer";
 import { NextResponse } from "next/server";
-import type { Browser } from "puppeteer";
+import type { Browser } from "puppeteer-core";
+import { launchPdfBrowser } from "@/lib/reports/pdf-browser";
 import {
   loadRespondentByToken,
   loadQuestionsForRespondent,
@@ -221,22 +222,18 @@ export async function GET(
 }
 
 /**
- * Launch Chromium, render the HTML to PDF, and clean up. Mirrors the
- * pattern in /api/ara/reports/[id]/pdf - bundled puppeteer Chromium
- * (not @sparticuz/chromium) because Render runs in full Linux
- * containers and the bundled build has the Arabic font fallbacks
- * the stripped Lambda build lacks. waitUntil:'networkidle0' lets
- * the Google Fonts stylesheet for Noto Naskh Arabic finish loading
- * before we capture; without that the Arabic falls back to a
- * generic sans-serif and the diacritics get clipped.
+ * Launch Chromium, render the HTML to PDF, and clean up. Uses the shared
+ * launcher (src/lib/reports/pdf-browser.ts): bundled puppeteer Chromium in
+ * dev, @sparticuz/chromium in production (Render doesn't persist puppeteer's
+ * HOME Chromium cache, so the bundled binary is missing at runtime). Arabic
+ * shaping is unaffected: waitUntil:'networkidle0' + fonts.ready below let the
+ * Noto Naskh Arabic webfont load before capture, so HarfBuzz shapes from the
+ * loaded font rather than relying on the Chromium build's system font set.
  */
 async function renderHtmlToPdfBuffer(html: string): Promise<Buffer> {
-  const puppeteer = (await import("puppeteer")).default;
-  const browser: Browser = (await puppeteer.launch({
-    headless: true,
+  const browser: Browser = await launchPdfBrowser({
     defaultViewport: { width: 1200, height: 900, deviceScaleFactor: 1 },
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  })) as unknown as Browser;
+  });
   try {
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0", timeout: 60_000 });

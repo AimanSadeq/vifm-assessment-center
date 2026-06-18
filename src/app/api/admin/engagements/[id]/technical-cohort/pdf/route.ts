@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { Browser } from "puppeteer";
+import type { Browser } from "puppeteer-core";
+import { launchPdfBrowser } from "@/lib/reports/pdf-browser";
 import { createServiceClient } from "@/lib/supabase/server";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { getEngagementTechProgram } from "@/lib/competencies/engagement-tech-program";
@@ -9,14 +10,9 @@ import { renderTechCohortHtml } from "@/lib/reports/tech-cohort-html";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Bundled Chromium (matches the ARA/Reflect reports) — full font set, Arabic shaping.
+// Shared launcher (bundled puppeteer in dev, @sparticuz/chromium in prod).
 async function launchBrowser(): Promise<Browser> {
-  const puppeteer = (await import("puppeteer")).default;
-  return puppeteer.launch({
-    headless: true,
-    defaultViewport: { width: 1200, height: 1400, deviceScaleFactor: 1 },
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  }) as unknown as Browser;
+  return launchPdfBrowser({ defaultViewport: { width: 1200, height: 1400, deviceScaleFactor: 1 } });
 }
 
 /**

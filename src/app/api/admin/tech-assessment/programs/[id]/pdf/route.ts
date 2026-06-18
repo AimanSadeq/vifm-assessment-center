@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { Browser } from "puppeteer";
+import type { Browser } from "puppeteer-core";
+import { launchPdfBrowser } from "@/lib/reports/pdf-browser";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { getServerLocale } from "@/lib/i18n/server";
 import { getTechnicalProgram } from "@/lib/competencies/technical-program";
@@ -9,12 +10,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 async function launchBrowser(): Promise<Browser> {
-  const puppeteer = (await import("puppeteer")).default;
-  return puppeteer.launch({
-    headless: true,
-    defaultViewport: { width: 1200, height: 1400, deviceScaleFactor: 1 },
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  }) as unknown as Browser;
+  return launchPdfBrowser({ defaultViewport: { width: 1200, height: 1400, deviceScaleFactor: 1 } });
 }
 
 /**

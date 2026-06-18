@@ -16,7 +16,8 @@
  * Node runtime only (Puppeteer can't run on Edge). Callers must set
  * `export const runtime = "nodejs"`.
  */
-import type { Browser } from "puppeteer";
+import type { Browser } from "puppeteer-core";
+import { launchPdfBrowser } from "./pdf-browser";
 
 export const AR_FONT_HREF =
   "https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap";
@@ -39,12 +40,9 @@ export async function renderHtmlToPdfBuffer(
   html: string,
   opts?: { landscape?: boolean }
 ): Promise<Buffer> {
-  const puppeteer = (await import("puppeteer")).default;
-  const browser: Browser = (await puppeteer.launch({
-    headless: true,
+  const browser: Browser = await launchPdfBrowser({
     defaultViewport: { width: 1200, height: 900, deviceScaleFactor: 1 },
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  })) as unknown as Browser;
+  });
   try {
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0", timeout: 60_000 });

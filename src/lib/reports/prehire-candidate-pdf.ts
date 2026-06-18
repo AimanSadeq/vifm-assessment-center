@@ -1,5 +1,6 @@
 import "server-only";
-import type { Browser } from "puppeteer";
+import type { Browser } from "puppeteer-core";
+import { launchPdfBrowser } from "@/lib/reports/pdf-browser";
 import { createServiceClient } from "@/lib/supabase/server";
 import { computeComposite } from "@/lib/prehire/scoring";
 import { renderPrehireCandidateHtml, type PrehireReportData } from "@/lib/reports/prehire-candidate-html";
@@ -22,12 +23,7 @@ const STAGE_LABELS: Record<string, { en: string; ar: string }> = {
 };
 
 async function launchBrowser(): Promise<Browser> {
-  const puppeteer = (await import("puppeteer")).default;
-  return puppeteer.launch({
-    headless: true,
-    defaultViewport: { width: 1200, height: 1400, deviceScaleFactor: 1 },
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  }) as unknown as Browser;
+  return launchPdfBrowser({ defaultViewport: { width: 1200, height: 1400, deviceScaleFactor: 1 } });
 }
 
 export type PrehirePdfResult =

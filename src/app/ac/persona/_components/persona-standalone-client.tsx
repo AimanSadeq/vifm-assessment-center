@@ -92,6 +92,8 @@ export function PersonaStandaloneClient({
   // Full report payload (PersonaPdfData) - the on-screen result renders this so
   // it matches the PDF section-for-section. Falls back to the lighter view if null.
   const [report, setReport] = useState<PersonaPdfData | null>(null);
+  // XP-13: only VIFM staff see the report on-screen; takers get a thank-you.
+  const [canView, setCanView] = useState(false);
   const [page, setPage] = useState(0);
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -299,6 +301,7 @@ export function PersonaStandaloneClient({
       const res = await submitPersonaAction(sessionId, lang);
       if (!res.ok || !res.profile) { setError(res.error || tx("Could not score.", "تعذّر التقييم.")); return; }
       setReport((res as { report?: PersonaPdfData }).report ?? null);
+      setCanView((res as { isStaff?: boolean }).isStaff === true);
       setProfile(res.profile); setPhase("result");
     } catch { setError(tx("Could not score.", "تعذّر التقييم.")); } finally { setBusy(false); }
   };
@@ -753,9 +756,10 @@ export function PersonaStandaloneClient({
       )}
 
       {phase === "result" && profile && (
-        pinned ? (
-          /* Voucher (candidate) flow, both purposes: results are NOT shown to
-             the taker - every Persona report is an admin/client deliverable. */
+        (pinned || !canView) ? (
+          /* XP-13: results are NOT shown to the taker (voucher delegate OR any
+             non-staff taker) - every Persona report is an admin/client
+             deliverable. Staff testing the instrument still see the report. */
           <div className="rounded-xl border bg-card p-10 text-center" dir={ar ? "rtl" : "ltr"}>
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-2xl text-emerald-700">
               ✓

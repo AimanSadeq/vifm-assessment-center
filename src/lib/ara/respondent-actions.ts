@@ -278,45 +278,11 @@ export async function markAraRespondentComplete(token: string): Promise<void> {
           })(),
         );
 
-        // Personal results email with the PDF attached (best effort; falls back
-        // to the in-email link if PDF generation fails).
-        tasks.push(
-          (async () => {
-            try {
-              const { sendAraEmail } = await import("@/lib/ara/email");
-              const resultsUrl = `${baseUrl}/ara/personal/results/${token}`;
-              const pdfUrl = `${baseUrl}/api/ara/personal/${token}/pdf`;
-
-              let attachments: { filename: string; content: string }[] | undefined;
-              try {
-                const pdfRes = await fetch(pdfUrl);
-                if (pdfRes.ok) {
-                  const buf = Buffer.from(await pdfRes.arrayBuffer());
-                  if (buf.length > 0) {
-                    attachments = [
-                      { filename: "AI-Readiness-Compass-Results.pdf", content: buf.toString("base64") },
-                    ];
-                  }
-                }
-              } catch (pdfErr) {
-                console.error("[markAraRespondentComplete] results PDF fetch failed (sending link only):", pdfErr);
-              }
-
-              await sendAraEmail({
-                to: respondent.email,
-                emailType: "ara_personal_results_link",
-                language: respondent.language_preference ?? a?.default_language ?? "en",
-                data: { respondentName: respondent.name, resultsUrl, pdfUrl },
-                attachments,
-                isSandbox: !!a?.is_sandbox,
-                respondentId: respondent.id,
-                assessmentId: respondent.assessment_id,
-              });
-            } catch (err) {
-              console.error("[markAraRespondentComplete] personal results email failed:", err);
-            }
-          })(),
-        );
+        // XP-13: the taker no longer receives a results email. Results are not
+        // shown to the taker on any portal; an admin/consultant views, downloads
+        // and sends the report (the results page + PDF route are staff-gated, so
+        // a taker-facing link/attachment would only 403 or show a thank-you).
+        // The completion credential above still issues.
       }
 
       // Send-to-client: email the delegate's results PDF to the client contact.

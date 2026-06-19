@@ -6,7 +6,7 @@ import {
   loadRespondentByToken,
   loadQuestionsForRespondent,
 } from "@/lib/ara/respondent-access";
-import { getOrgResultsPrefs, delegateCanSeeOwnResults } from "@/lib/ara/results-visibility";
+import { isStaffCaller } from "@/lib/ara/auth-guards";
 import { calculateQuestionScore } from "@/lib/ara/scoring";
 import { timingSafeStrEqual } from "@/lib/utils/secret";
 import { createServiceClient } from "@/lib/supabase/server";
@@ -65,16 +65,14 @@ export async function GET(
       return NextResponse.json({ error: "Token not found" }, { status: 404 });
     }
 
-    // Client-level visibility gate (migration 00108): if the client withheld
-    // results from delegates (explicitly, or implicitly via a configured client
-    // contact - the same delegateCanSeeOwnResults rule as the results page and
-    // completion email), block direct (token) downloads. The completion task
-    // still needs the PDF to attach to the client email, so it passes a
-    // server-only header (CRON_SECRET) to bypass.
-    const prefs = await getOrgResultsPrefs(ctx.assessment.organization_id);
+    // XP-13: the taker never downloads their own PDF. Allow the internal
+    // client-delivery path (server-only CRON_SECRET header, used by the
+    // collect-and-send-to-client flow) OR an authenticated VIFM staff member;
+    // deny token-only (taker) access.
     const internalKey = request.headers.get("x-ara-internal");
     const isInternal = timingSafeStrEqual(internalKey, process.env.CRON_SECRET);
-    if (!delegateCanSeeOwnResults(prefs) && !isInternal) {
+    const staff = await isStaffCaller();
+    if (!isInternal && !staff) {
       return NextResponse.json(
         { error: "Results are not available to the respondent for this assessment." },
         { status: 403 }

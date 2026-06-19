@@ -5,7 +5,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { loadRespondentByToken, loadQuestionsForRespondent } from "@/lib/ara/respondent-access";
-import { getOrgResultsPrefs, delegateCanSeeOwnResults } from "@/lib/ara/results-visibility";
+import { isStaffCaller } from "@/lib/ara/auth-guards";
 import { calculateQuestionScore } from "@/lib/ara/scoring";
 import {
   ARA_INDIVIDUAL_FACTORS,
@@ -61,13 +61,13 @@ export default async function PersonalResultsPage({ params }: Props) {
   const language = ctx.respondent.language_preference;
   const isAr = language === "ar";
 
-  // Client-level gate (migration 00108): a client may withhold results from
-  // delegates (results go to the client instead). Anonymous Mode A has no org
-  // and stays visible. Uses the same delegateCanSeeOwnResults rule as the
-  // completion email + PDF route, so a delegate can't be denied the email yet
-  // still see results on screen ("results still show after finishing").
-  const prefs = await getOrgResultsPrefs(ctx.assessment.organization_id);
-  if (!delegateCanSeeOwnResults(prefs)) {
+  // XP-13: results are never shown to the taker. This token page is reached by
+  // BOTH the taker (magic link, no session) and VIFM staff (consultant/admin
+  // who click "View" from the dashboard, with a session). Only staff see the
+  // results; the taker always gets a thank-you. The client-delivery flow uses
+  // the internal PDF route, not this page.
+  const staff = await isStaffCaller();
+  if (!staff) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-6">
         <Card className="max-w-md text-center">

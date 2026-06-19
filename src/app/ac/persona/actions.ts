@@ -9,6 +9,7 @@ import {
 } from "@/lib/scoring/behavioral";
 import { getVoucherScopeByRedemptionToken } from "@/lib/persona/vouchers";
 import { buildPersonaPdfData } from "@/lib/reports/persona-report-data";
+import { isStaffCaller } from "@/lib/ara/auth-guards";
 
 export type StartPersonaOptions = {
   /** 'development' (narrative + suggestions) or 'hiring' (fit vs a target role). */
@@ -139,13 +140,15 @@ export async function savePersonaAnswersAction(sessionId: string, answers: Behav
  *  lazily generates + caches the AI artefacts and is fully tolerant; on any
  *  failure the caller still gets the scored profile. `lang` selects EN/AR copy. */
 export async function submitPersonaAction(sessionId: string, lang: "en" | "ar" = "en") {
+  // XP-13: only VIFM staff see the report on-screen; a taker gets a thank-you.
+  const isStaff = await isStaffCaller();
   const res = await submitAnonymousBehavioral(sessionId);
-  if (!res.ok || !res.profile) return res;
+  if (!res.ok || !res.profile) return { ...res, isStaff };
   try {
     const built = await buildPersonaPdfData(sessionId, lang);
-    if (built.ok) return { ...res, report: built.data };
+    if (built.ok) return { ...res, report: built.data, isStaff };
   } catch {
     /* fall back to the plain scored profile */
   }
-  return res;
+  return { ...res, isStaff };
 }

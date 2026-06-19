@@ -7,6 +7,11 @@ import {
 } from "lucide-react";
 import { startBrowserStt, type BrowserSttSession } from "@/lib/speech/browser-stt";
 import { FluentDefinitions } from "./fluent-definitions";
+import {
+  computeIntegritySignal,
+  type IntegrityEvent,
+  type IntegritySignal,
+} from "@/lib/scoring/integrity";
 
 type Language = "en" | "ar";
 type Cefr = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
@@ -43,6 +48,7 @@ type FluentResult = {
   listening_correct: number; listening_total: number; listening_cefr: Cefr;
   writing: WritingScore; speaking: SpeakingScore; result_id?: string | null;
   reliability?: ConfidenceBand;
+  integrity?: IntegritySignal;
 };
 
 const bandText = (r: ConfidenceBand): string => (r.low === r.high ? r.low : `${r.low}–${r.high}`);
@@ -62,7 +68,7 @@ const T = {
     speakCrit: { fluency: "Fluency", coherence: "Coherence & cohesion", lexical_range: "Lexical resource", grammar: "Grammar range & accuracy" },
     pronunciation: "Pronunciation (acoustic)", azureNote: "Acoustic analysis",
     writeHere: "Write your response here…", pickLang: "Test language", target: "Target",
-    proctorNote: "Integrity monitoring is on - tab switches and pasting are recorded.",
+    proctorNote: "Integrity monitoring is on - tab switches, time away from the test, and pasting are recorded (advisory only; this never auto-fails your test).",
     nameLabel: "Your name (optional)", emailLabel: "Email (optional)",
     namePlaceholder: "e.g. Sara Al Mansoori", emailPlaceholder: "you@example.com",
     listenHint: "Listen, then answer. You can replay each clip up to twice.",
@@ -93,6 +99,9 @@ const T = {
     timeRemaining: "Time remaining",
     warn2min: "About 2 minutes left - the test submits automatically when time runs out.",
     warn1min: "Less than a minute left - the test will submit automatically.",
+    integrityHeading: "Integrity signal",
+    integrityNote: "Advisory only - this never affects your level or auto-fails the test.",
+    integrityTier: { clean: "Clean", minor: "Minor activity", elevated: "Elevated activity" },
   },
   ar: {
     start: "ابدأ اختبار تحديد المستوى", starting: "جارٍ إعداد اختبارك…",
@@ -106,7 +115,7 @@ const T = {
     speakCrit: { fluency: "الطلاقة", coherence: "الترابط والتماسك", lexical_range: "الثروة اللغوية", grammar: "القواعد ودقتها" },
     pronunciation: "النطق (صوتيًا)", azureNote: "تحليل صوتي",
     writeHere: "اكتب إجابتك هنا…", pickLang: "لغة الاختبار", target: "المستوى المستهدف",
-    proctorNote: "مراقبة النزاهة مُفعّلة - يتم تسجيل تبديل التبويبات واللصق.",
+    proctorNote: "مراقبة النزاهة مُفعّلة - يُسجَّل تبديل التبويبات والوقت بعيدًا عن الاختبار واللصق (استرشادية فقط؛ لا تُرسِب اختبارك تلقائيًا).",
     nameLabel: "اسمك (اختياري)", emailLabel: "البريد الإلكتروني (اختياري)",
     namePlaceholder: "مثال: سارة المنصوري", emailPlaceholder: "you@example.com",
     listenHint: "استمع ثم أجب. يمكنك إعادة تشغيل كل مقطع مرتين كحدٍّ أقصى.",
@@ -137,6 +146,9 @@ const T = {
     timeRemaining: "الوقت المتبقي",
     warn2min: "بقي نحو دقيقتين - يُرسَل الاختبار تلقائيًا عند انتهاء الوقت.",
     warn1min: "بقي أقل من دقيقة - سيُرسَل الاختبار تلقائيًا.",
+    integrityHeading: "إشارة النزاهة",
+    integrityNote: "استرشادية فقط - لا تؤثّر على مستواك ولا تُرسِب الاختبار تلقائيًا.",
+    integrityTier: { clean: "سليم", minor: "نشاط طفيف", elevated: "نشاط مرتفع" },
   },
 } as const;
 
@@ -193,9 +205,15 @@ export function FluentClient({
   const [takerName, setTakerName] = useState(prefillName ?? "");
   const [takerEmail, setTakerEmail] = useState(prefillEmail ?? "");
 
-  // Lightweight proctoring signals (advisory - surfaced to admins only).
+  // Lightweight proctoring signals (CAL-FLU-601, advisory only - never auto-fail).
+  // PDPL-safe: we keep counts, away-DURATION, and the LENGTH of pasted text only,
+  // never the pasted content itself.
   const [blurCount, setBlurCount] = useState(0);
   const [pasteCount, setPasteCount] = useState(0);
+  const [awayMs, setAwayMs] = useState(0);
+  const [pasteChars, setPasteChars] = useState(0);
+  const [events, setEvents] = useState<IntegrityEvent[]>([]);
+  const testStartRef = useRef<number>(0);
 
   // Listening playback state.
   const [plays, setPlays] = useState<Record<string, number>>({});
@@ -230,14 +248,48 @@ export function FluentClient({
     };
   }, []);
 
-  // Proctoring: count how many times the page is hidden (tab switch /
-  // minimise) while the test is in progress. Advisory signal only.
+  // Proctoring (CAL-FLU-601): capture tab-hide / window-blur AWAY DURATION while
+  // the test runs. Covers tab switch + minimise (visibilitychange) AND same-window
+  // focus loss like a second monitor or devtools (window blur/focus, which
+  // document.hidden misses). A 1.5s debounce ignores brief/benign focus loss
+  // (file pickers, alerts). visibilitychange + blur can overlap on one tab switch;
+  // a single awayStart guard prevents double counting. Advisory signal only.
   useEffect(() => {
     if (phase !== "test") return;
-    const onVis = () => { if (document.hidden) setBlurCount((c) => c + 1); };
+    testStartRef.current = Date.now();
+    const AWAY_DEBOUNCE_MS = 1500;
+    let awayStart: number | null = null;
+    const goneAway = () => { if (awayStart == null) awayStart = Date.now(); };
+    const cameBack = () => {
+      if (awayStart == null) return;
+      const dur = Date.now() - awayStart;
+      awayStart = null;
+      if (dur < AWAY_DEBOUNCE_MS) return;
+      const at = Date.now() - testStartRef.current;
+      setBlurCount((c) => c + 1);
+      setAwayMs((m) => m + dur);
+      setEvents((ev) => [...ev, { kind: "blur", at, awayMs: dur }]);
+    };
+    const onVis = () => { if (document.hidden) goneAway(); else cameBack(); };
     document.addEventListener("visibilitychange", onVis);
-    return () => document.removeEventListener("visibilitychange", onVis);
+    window.addEventListener("blur", goneAway);
+    window.addEventListener("focus", cameBack);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("blur", goneAway);
+      window.removeEventListener("focus", cameBack);
+    };
   }, [phase]);
+
+  // PDPL-safe paste capture: record that a paste happened + the LENGTH of the
+  // pasted text (never the text). Used on the writing + speaking-fallback boxes.
+  const onPasteCapture = useCallback((e: React.ClipboardEvent) => {
+    const len = e.clipboardData?.getData("text")?.length ?? 0;
+    const at = Date.now() - (testStartRef.current || Date.now());
+    setPasteCount((c) => c + 1);
+    if (len > 0) setPasteChars((n) => n + len);
+    setEvents((ev) => [...ev, { kind: "paste", at, pasteChars: len }]);
+  }, []);
 
   const playClip = useCallback((item: ListeningItem) => {
     if (!ttsAvailable() || !item.script) return;
@@ -372,7 +424,7 @@ export function FluentClient({
       setAnswers({}); setWriting(""); setResult(null);
       setPlays({}); setPlayingId(null);
       setTranscript(""); setPronunciation(null); setSpeakNote(""); setSpeakMode("record"); setRecSeconds(0);
-      setBlurCount(0); setPasteCount(0);
+      setBlurCount(0); setPasteCount(0); setAwayMs(0); setPasteChars(0); setEvents([]);
       if (hasTimeLimit) {
         setDeadline(Date.now() + limitMinutes * 60 * 1000);
         setRemaining(limitMinutes * 60);
@@ -415,7 +467,7 @@ export function FluentClient({
         action: "score" as const, language, answers,
         writingResponse: writing, speakingTranscript: transcript,
         takerName: takerName.trim() || null, takerEmail: takerEmail.trim() || null,
-        integrityFlags: { blurCount, pasteCount },
+        integrityFlags: { blurCount, pasteCount, awayMs, pasteChars, events },
         candidateId, engagementId, redemptionToken, pronunciation,
       };
       // Secure: server grades from the stored session. Legacy: post the test.
@@ -443,7 +495,7 @@ export function FluentClient({
     setPhase("intro"); setTest(null); setSessionId(null); setAnswers({}); setWriting(""); setResult(null); setError("");
     setPlays({}); setPlayingId(null);
     setTranscript(""); setPronunciation(null); setSpeakNote(""); setSpeakMode("record"); setRecSeconds(0);
-    setBlurCount(0); setPasteCount(0); setShowGaps(false);
+    setBlurCount(0); setPasteCount(0); setAwayMs(0); setPasteChars(0); setEvents([]); setShowGaps(false);
   }
 
   const wordCount = writing.trim() ? writing.trim().split(/\s+/).length : 0;
@@ -670,7 +722,7 @@ export function FluentClient({
               <p dir="rtl" className="mt-1 text-sm text-slate-600">{test.writing.prompt_ar}</p>
             )}
             <textarea value={writing} onChange={(e) => setWriting(e.target.value)} rows={7}
-              onPaste={() => setPasteCount((c) => c + 1)}
+              onPaste={onPasteCapture}
               placeholder={t.writeHere} dir="ltr"
               className="mt-3 w-full resize-y rounded-md border border-slate-300 px-3 py-2 text-sm text-[#111232] focus:border-[#5391D5] focus:outline-none" />
             <div className={`mt-1 text-[11px] ${wordCount >= test.writing.min_words ? "font-semibold text-emerald-600" : "text-slate-500"}`}>
@@ -731,7 +783,7 @@ export function FluentClient({
             ) : (
               <div className="mt-3 space-y-2">
                 <textarea value={transcript} onChange={(e) => setTranscript(e.target.value)} rows={4}
-                  onPaste={() => setPasteCount((c) => c + 1)}
+                  onPaste={onPasteCapture}
                   placeholder={t.speakTypeHere} dir="ltr"
                   className="w-full resize-y rounded-md border border-slate-300 px-3 py-2 text-sm text-[#111232] focus:border-[#5391D5] focus:outline-none" />
                 <button onClick={() => { setSpeakMode("record"); setSpeakNote(""); }}
@@ -854,6 +906,36 @@ export function FluentClient({
               <FeedbackBox text_en={result.speaking.feedback_en} text_ar={rtl ? result.speaking.feedback_ar : null} ai={result.speaking.ai_generated} label={t.feedback} />
             </div>
           )}
+
+          {/* CAL-FLU-601: advisory integrity signal, candidate-facing. Never
+              affects the level or auto-fails - framed as advisory throughout. */}
+          {(() => {
+            const integrity =
+              result.integrity ??
+              computeIntegritySignal({ blurCount, pasteCount, awayMs, pasteChars, events });
+            const tone =
+              integrity.tier === "elevated"
+                ? "border-rose-200 bg-rose-50 text-rose-800"
+                : integrity.tier === "minor"
+                  ? "border-amber-200 bg-amber-50 text-amber-800"
+                  : "border-emerald-200 bg-emerald-50 text-emerald-800";
+            return (
+              <div className={`rounded-lg border p-4 text-sm ${tone}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-semibold">
+                    {t.integrityHeading}: {t.integrityTier[integrity.tier]}
+                  </span>
+                  <span className="text-xs opacity-70 tabular-nums">{integrity.score}/100</span>
+                </div>
+                <ul className="mt-1.5 list-disc ps-5 text-xs">
+                  {integrity.reasons.map((r, i) => (
+                    <li key={i}>{r}</li>
+                  ))}
+                </ul>
+                <p className="mt-1.5 text-[11px] opacity-70">{t.integrityNote}</p>
+              </div>
+            );
+          })()}
 
           <FluentDefinitions ar={rtl} />
 

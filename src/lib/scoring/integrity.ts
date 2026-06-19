@@ -1,0 +1,138 @@
+/**
+ * Advisory integrity signal for a Fluent placement run.
+ *
+ * Fluent is an INDICATIVE placement, never a high-stakes pass/fail. This signal
+ * is ADVISORY telemetry only - it is surfaced to admins and on the candidate's
+ * own results screen for context, but it NEVER auto-fails a test, caps a score,
+ * or blocks a result. Call it an "integrity signal (advisory)" everywhere; never
+ * a "trust score" and never a pass/fail.
+ *
+ * Pure functions only (mirrors src/lib/scoring/reliability.ts): no IO, no
+ * randomness, fully unit-checkable. All weights are tunable constants here.
+ *
+ * Privacy (PDPL-safe): the input carries only COUNTS, DURATIONS and the
+ * LENGTH of any pasted text - never the pasted content itself.
+ *
+ * Back-compatibility: old rows (migration 00043 jsonb) may carry only
+ * { blurCount, pasteCount }. Every newer field is optional and read with a
+ * safe default, so a legacy row scores cleanly without throwing.
+ */
+
+/** A single captured proctoring event, time-stamped from the test start. */
+export type IntegrityEvent =
+  | { kind: "blur"; at: number; awayMs?: number }
+  | { kind: "paste"; at: number; pasteChars?: number };
+
+/**
+ * The advisory integrity telemetry persisted on a Fluent result
+ * (eng_fluent_results.integrity_flags) or a Pre-Hire stage result (flags).
+ *
+ * blurCount + pasteCount are kept for back-compat with rows written before this
+ * ticket; awayMs / pasteChars / events are the widened capture and are all
+ * optional so old rows stay valid.
+ */
+export type IntegrityFlags = {
+  /** Number of times the page was hidden or the window lost focus. */
+  blurCount?: number;
+  /** Number of paste events into a monitored field. */
+  pasteCount?: number;
+  /** Total time (ms) the test was hidden or unfocused, debounced. */
+  awayMs?: number;
+  /** Total length (chars) of all pasted text - never the text itself. */
+  pasteChars?: number;
+  /** Ordered, time-stamped event log (kind + meta). */
+  events?: IntegrityEvent[];
+};
+
+export type IntegrityTier = "clean" | "minor" | "elevated";
+
+export type IntegritySignal = {
+  /**
+   * 0-100 advisory composite. Higher = more activity worth a human glance.
+   * This is NOT a trust score and NOT a pass/fail - it is a prompt to review,
+   * never an automatic action.
+   */
+  score: number;
+  tier: IntegrityTier;
+  /** Short, human-readable reasons behind the score (advisory framing). */
+  reasons: string[];
+};
+
+// ── Tunable weights ────────────────────────────────────────────────
+// Each contributor saturates so a single very noisy dimension cannot, on its
+// own, dominate the whole 0-100 scale - the composite reads as "how much is
+// worth a glance", not "how guilty".
+
+/** Points per tab-hide / focus-loss event, capped at MAX_BLUR_POINTS. */
+const BLUR_POINTS_PER_EVENT = 8;
+const MAX_BLUR_POINTS = 40;
+
+/** Away-duration contribution: ramps to MAX_AWAY_POINTS at AWAY_MS_FOR_MAX. */
+const MAX_AWAY_POINTS = 30;
+const AWAY_MS_FOR_MAX = 120_000; // 2 minutes away reads as the full away weight
+
+/** Pasted-characters contribution: ramps to MAX_PASTE_POINTS at PASTE_CHARS_FOR_MAX. */
+const MAX_PASTE_POINTS = 40;
+const PASTE_CHARS_FOR_MAX = 600; // ~a long paragraph pasted in reads as the full paste weight
+
+/** Tier cut-offs on the 0-100 composite. */
+const MINOR_AT = 15;
+const ELEVATED_AT = 45;
+
+const clampNonNeg = (n: number | undefined): number =>
+  typeof n === "number" && Number.isFinite(n) && n > 0 ? n : 0;
+
+/**
+ * Compute the advisory integrity signal from captured (PDPL-safe) flags.
+ *
+ * Tolerant of legacy rows: when awayMs / pasteChars are absent it derives a
+ * conservative estimate from the events array where present, otherwise it
+ * scores only on the counts that the old proctor captured.
+ */
+export function computeIntegritySignal(flags: IntegrityFlags | null | undefined): IntegritySignal {
+  const f = flags ?? {};
+  const events = Array.isArray(f.events) ? f.events : [];
+
+  const blurCount = clampNonNeg(f.blurCount) || events.filter((e) => e.kind === "blur").length;
+  const pasteCount = clampNonNeg(f.pasteCount) || events.filter((e) => e.kind === "paste").length;
+
+  // Prefer the explicit totals; fall back to summing the event log for old/new
+  // rows that carry events but not the aggregate (and vice-versa).
+  const awayMs =
+    clampNonNeg(f.awayMs) ||
+    events.reduce((sum, e) => sum + (e.kind === "blur" ? clampNonNeg(e.awayMs) : 0), 0);
+  const pasteChars =
+    clampNonNeg(f.pasteChars) ||
+    events.reduce((sum, e) => sum + (e.kind === "paste" ? clampNonNeg(e.pasteChars) : 0), 0);
+
+  const blurPoints = Math.min(MAX_BLUR_POINTS, blurCount * BLUR_POINTS_PER_EVENT);
+  const awayPoints = awayMs > 0 ? Math.min(MAX_AWAY_POINTS, (awayMs / AWAY_MS_FOR_MAX) * MAX_AWAY_POINTS) : 0;
+  const pastePoints =
+    pasteChars > 0
+      ? Math.min(MAX_PASTE_POINTS, (pasteChars / PASTE_CHARS_FOR_MAX) * MAX_PASTE_POINTS)
+      : pasteCount > 0
+        ? // Legacy rows have no char length; a bare paste event still earns a
+          // small, capped nudge so it is not invisible.
+          Math.min(MAX_PASTE_POINTS, pasteCount * 6)
+        : 0;
+
+  const score = Math.min(100, Math.round(blurPoints + awayPoints + pastePoints));
+
+  const reasons: string[] = [];
+  if (blurCount > 0) {
+    reasons.push(blurCount === 1 ? "Left the test once" : `Left the test ${blurCount} times`);
+  }
+  if (awayMs >= 5_000) {
+    reasons.push(`About ${Math.round(awayMs / 1000)}s away from the test`);
+  }
+  if (pasteChars > 0) {
+    reasons.push(`Pasted about ${pasteChars} characters`);
+  } else if (pasteCount > 0) {
+    reasons.push(pasteCount === 1 ? "Pasted text once" : `Pasted text ${pasteCount} times`);
+  }
+  if (reasons.length === 0) reasons.push("No unusual activity recorded");
+
+  const tier: IntegrityTier = score >= ELEVATED_AT ? "elevated" : score >= MINOR_AT ? "minor" : "clean";
+
+  return { score, tier, reasons };
+}

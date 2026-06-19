@@ -41,11 +41,10 @@ import { AI_MODEL } from "@/lib/ai/client";
 import { overallConfidenceBand, type ConfidenceBand } from "@/lib/scoring/reliability";
 import { isAzureSpeechConfigured, type PronunciationScore } from "@/lib/integrations/speech";
 import { issueCredential } from "@/lib/credentials/issue";
+import { computeIntegritySignal, type IntegrityFlags, type IntegritySignal } from "@/lib/scoring/integrity";
 import { createHash } from "node:crypto";
 
 export const dynamic = "force-dynamic";
-
-type IntegrityFlags = { blurCount?: number; pasteCount?: number };
 
 type Body = {
   action?: "start" | "score";
@@ -92,6 +91,8 @@ async function persistResult(
     takerEmail: string | null;
     aiGenerated: boolean;
     integrityFlags: IntegrityFlags | null;
+    /** Advisory integrity signal computed from the flags (CAL-FLU-601). */
+    integrity: IntegritySignal;
     candidateId: string | null;
     engagementId: string | null;
     reliability: ConfidenceBand;
@@ -127,12 +128,15 @@ async function persistResult(
 
     // Best-effort: integrity_flags exists only after migration 00043. A
     // separate update (not part of the insert) keeps a 00042-only DB working.
-    if (meta.integrityFlags && Object.keys(meta.integrityFlags).length > 0) {
-      try {
-        await sb.from("eng_fluent_results").update({ integrity_flags: meta.integrityFlags }).eq("id", id);
-      } catch {
-        /* column not migrated - ignore */
-      }
+    // Fold the advisory signal (CAL-FLU-601) into the jsonb alongside the raw
+    // flags so the cohort view can read it without recomputing.
+    try {
+      await sb
+        .from("eng_fluent_results")
+        .update({ integrity_flags: { ...(meta.integrityFlags ?? {}), signal: meta.integrity } })
+        .eq("id", id);
+    } catch {
+      /* column not migrated - ignore */
     }
 
     // Best-effort: candidate binding columns exist only after migration 00044.
@@ -482,6 +486,8 @@ export async function POST(req: Request) {
 
     const takerName = body.takerName?.trim() ? body.takerName.trim() : null;
     const takerEmail = body.takerEmail?.trim() ? body.takerEmail.trim() : null;
+    // CAL-FLU-601: advisory integrity signal from the (PDPL-safe) flags.
+    const integrity = computeIntegritySignal(body.integrityFlags ?? null);
 
     const result_id = await persistResult(result, {
       language,
@@ -489,6 +495,7 @@ export async function POST(req: Request) {
       takerEmail,
       aiGenerated,
       integrityFlags: body.integrityFlags ?? null,
+      integrity,
       candidateId: body.candidateId?.trim() ? body.candidateId.trim() : null,
       engagementId: body.engagementId?.trim() ? body.engagementId.trim() : null,
       reliability,
@@ -526,7 +533,7 @@ export async function POST(req: Request) {
       });
     }
 
-    return NextResponse.json({ ...result, reliability, result_id });
+    return NextResponse.json({ ...result, reliability, result_id, integrity });
   }
 
   return NextResponse.json({ error: "action must be 'start' or 'score'" }, { status: 400 });

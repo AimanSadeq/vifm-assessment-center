@@ -3,6 +3,7 @@ import { ArrowLeft, Users, BookOpen, Headphones, PenLine, Mic, Award, Sparkles, 
 import { createServiceClient } from "@/lib/supabase/server";
 import { getServerT, type ServerT } from "@/lib/i18n/server";
 import { CEFR_ORDER, type CefrLevel } from "@/lib/ai/fluent-english";
+import { computeIntegritySignal, type IntegrityFlags, type IntegritySignal } from "@/lib/scoring/integrity";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,7 @@ type Row = {
   speaking_attempted: boolean;
   speaking_cefr: string | null;
   ai_scored: boolean;
-  integrity_flags?: { blurCount?: number; pasteCount?: number } | null;
+  integrity_flags?: (IntegrityFlags & { signal?: IntegritySignal }) | null;
   email_sent_at?: string | null;
   organization?: { name: string } | { name: string }[] | null;
 };
@@ -258,14 +259,26 @@ function CohortBody({ rows, t }: { rows: Row[]; t: ServerT }) {
                   <td className="px-3 py-2.5 text-center text-slate-600">{r.speaking_attempted ? r.speaking_cefr ?? "-" : "-"}</td>
                   <td className="px-3 py-2.5 text-center">
                     {(() => {
-                      const b = r.integrity_flags?.blurCount ?? 0;
-                      const p = r.integrity_flags?.pasteCount ?? 0;
-                      return b > 0 || p > 0 ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700" title={t("acFluent.integrityTooltip", { tabs: b, pastes: p })}>
-                          <Flag className="h-3 w-3" />{b}t·{p}p
+                      // CAL-FLU-601: prefer the persisted advisory signal; recompute
+                      // from raw flags for rows written before the signal was stored.
+                      const flags = r.integrity_flags;
+                      if (!flags) return <span className="text-slate-300">-</span>;
+                      const sig = flags.signal ?? computeIntegritySignal(flags);
+                      if (sig.tier === "clean" && sig.score === 0) return <span className="text-slate-300">-</span>;
+                      const tone =
+                        sig.tier === "elevated"
+                          ? "bg-rose-50 text-rose-700"
+                          : sig.tier === "minor"
+                            ? "bg-amber-50 text-amber-700"
+                            : "bg-emerald-50 text-emerald-700";
+                      return (
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${tone}`}
+                          title={sig.reasons.join(" · ")}
+                        >
+                          <Flag className="h-3 w-3" />
+                          {sig.score}
                         </span>
-                      ) : (
-                        <span className="text-slate-300">-</span>
                       );
                     })()}
                   </td>

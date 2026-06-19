@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Compass, Sparkles, ArrowLeft, FileDown, BookOpen, GraduationCap } from "lucide-react";
+import { Compass, Sparkles, ArrowLeft, FileDown, BookOpen, GraduationCap, ClipboardCheck } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { calculateQuestionScore } from "@/lib/ara/scoring";
 import {
   ARA_INDIVIDUAL_FACTORS,
   ARA_INDIVIDUAL_FACTOR_IDS,
+  ARA_INDIVIDUAL_FACTOR_MAP,
   ARA_INDIVIDUAL_MATURITY_STAGES,
   getIndividualMaturityStage,
   validateTalentLens,
@@ -18,6 +19,7 @@ import {
   type AraIndividualFactorId,
   type AraIndividualMaturityStageId,
 } from "@/lib/constants/ara-individual-factors";
+import { buildPersonalAnalysis } from "@/lib/ara/personal-analysis";
 import { recommendCoursesForIndividualSnapshot } from "@/lib/recommender/courses";
 import { RecommendedCoursesPanel } from "@/components/shared/recommended-courses-panel";
 import { computeWorkforceReadiness } from "@/lib/ara/workforce-readiness";
@@ -107,6 +109,9 @@ export default async function PersonalResultsPage({ params }: Props) {
   const answerByQuestionId = new Map(
     (answers ?? []).map((a) => [a.question_id as string, a.answer_value])
   );
+  // Split self-rating (Likert) items from objective (scenario / knowledge)
+  // items so the analysis can flag self-perception vs demonstrated calibration.
+  let selfSum = 0, selfCount = 0, objSum = 0, objCount = 0;
   for (const q of questions) {
     const factorId = q.individual_factor_id as AraIndividualFactorId | null;
     if (!factorId) continue;
@@ -115,8 +120,12 @@ export default async function PersonalResultsPage({ params }: Props) {
     if (numeric != null) {
       factorTotals[factorId].sum += numeric;
       factorTotals[factorId].count += 1;
+      if (q.question_type === "rating") { selfSum += numeric; selfCount += 1; }
+      else { objSum += numeric; objCount += 1; }
     }
   }
+  const selfAvg = selfCount > 0 ? selfSum / selfCount : 0;
+  const objectiveAvg = objCount > 0 ? objSum / objCount : 0;
 
   const factorScores = ARA_INDIVIDUAL_FACTOR_IDS.reduce<Record<AraIndividualFactorId, number>>(
     (acc, id) => {
@@ -135,6 +144,14 @@ export default async function PersonalResultsPage({ params }: Props) {
   // (legacy / anonymous / deep-linked) and reproduces today's output exactly.
   const talentLens = validateTalentLens(ctx.assessment.talent_lens);
   const isAcquisition = talentLens === "acquisition";
+
+  // Selection-lens analysis: a logical, evidence-grounded read built ONLY from
+  // the candidate's own answers (per-factor scores + self-vs-objective items).
+  // Surfaced for the hiring lens, where it replaces the development course
+  // recommendations as the "so what" of the result.
+  const analysis = isAcquisition
+    ? buildPersonalAnalysis({ factorScores, overallScore, selfAvg, objectiveAvg, objectiveCount: objCount })
+    : null;
 
   // R5: course recommendations are development-context info. Skip the compute
   // entirely under the acquisition (hiring) lens; show for development OR null.
@@ -194,11 +211,11 @@ export default async function PersonalResultsPage({ params }: Props) {
       <div className="max-w-3xl mx-auto px-6 py-10 space-y-6">
         <div>
           <Link
-            href="/ara"
+            href={talentLens ? `/ara?lens=${talentLens}` : "/ara"}
             className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-2"
           >
             <ArrowLeft className="h-3 w-3" />
-            {isAr ? "إلى الصفحة الرئيسية" : "Back to portal home"}
+            {isAr ? "العودة إلى بوصلة الجاهزية للذكاء الاصطناعي" : "Back to the AI Readiness Compass"}
           </Link>
           <div className="flex items-center gap-2 mb-1">
             <Compass className="h-6 w-6 text-accent" />
@@ -424,6 +441,109 @@ export default async function PersonalResultsPage({ params }: Props) {
             );
           })}
         </div>
+
+        {/* Candidate results analysis (acquisition / hiring lens only). A
+            deterministic, evidence-grounded read derived only from the
+            candidate's own answers - the hiring-context "so what" that replaces
+            the development course recommendations. */}
+        {analysis && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <ClipboardCheck className="h-4 w-4 text-accent" />
+                {isAr ? "تحليل نتائج المرشح" : "Candidate results analysis"}
+              </CardTitle>
+              <CardDescription>
+                {isAr
+                  ? "قراءة منطقية مبنية على إجابات المرشح وحدها - لدعم قرار الاختيار."
+                  : "A logical read built only from the candidate's own answers - to support the selection decision."}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+              {/* Verdict */}
+              <p className="leading-relaxed">{isAr ? analysis.verdict.ar : analysis.verdict.en}</p>
+
+              {/* Calibration: self-rating vs objective items */}
+              {analysis.calibration && (
+                <div className="rounded-md border-s-2 border-accent bg-accent/5 ps-3 py-2">
+                  <p className="text-xs font-semibold text-primary mb-0.5">
+                    {isAr ? "المعايرة: التقييم الذاتي مقابل الموضوعي" : "Calibration: self-rating vs objective items"}
+                  </p>
+                  <p className="text-[13px] text-muted-foreground leading-relaxed">
+                    {isAr ? analysis.calibration.ar : analysis.calibration.en}
+                  </p>
+                </div>
+              )}
+
+              {/* Strengths */}
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-emerald-700 mb-1.5">
+                  {isAr ? "نقاط القوة" : "Strengths"}
+                </p>
+                <ul className="space-y-1.5">
+                  {analysis.strengths.map((s) => {
+                    const f = ARA_INDIVIDUAL_FACTOR_MAP[s.factorId];
+                    return (
+                      <li key={s.factorId} className="text-[13px] leading-relaxed">
+                        <span className="font-semibold">
+                          {isAr ? f.name_ar : f.name_en} ({s.score.toFixed(1)}/5):
+                        </span>{" "}
+                        <span className="text-muted-foreground">{isAr ? s.read.ar : s.read.en}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+
+              {/* Development areas + interview probes */}
+              {analysis.allAtTarget ? (
+                <p className="text-[13px] text-emerald-800">
+                  {isAr
+                    ? "جميع العوامل عند المستوى المستهدف (4.0) أو أعلى - ملمح قوي بشكل متسق."
+                    : "All four factors meet or exceed the target (4.0) - a uniformly strong profile."}
+                </p>
+              ) : (
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-amber-700 mb-1.5">
+                    {isAr ? "مجالات التطوير وما يجب التحقق منه" : "Development areas & what to probe"}
+                  </p>
+                  <ul className="space-y-2.5">
+                    {analysis.developmentAreas.map((d) => {
+                      const f = ARA_INDIVIDUAL_FACTOR_MAP[d.factorId];
+                      return (
+                        <li key={d.factorId} className="text-[13px] leading-relaxed">
+                          <span className="font-semibold">
+                            {isAr ? f.name_ar : f.name_en} ({d.score.toFixed(1)}/5):
+                          </span>{" "}
+                          <span className="text-muted-foreground">{isAr ? d.read.ar : d.read.en}</span>
+                          <span className="block mt-1 text-[12px] text-accent">
+                            <span className="font-semibold">{isAr ? "للمقابلة: " : "Probe: "}</span>
+                            {isAr ? d.probe.ar : d.probe.en}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+
+              {/* Profile shape */}
+              <div className="rounded-md bg-muted/40 p-3">
+                <p className="text-xs font-semibold text-primary mb-0.5">
+                  {isAr ? "شكل الملمح" : "Profile shape"}
+                </p>
+                <p className="text-[13px] text-muted-foreground leading-relaxed">
+                  {isAr ? analysis.profileShape.ar : analysis.profileShape.en}
+                </p>
+              </div>
+
+              {/* Basis caveat */}
+              <p className="text-[11px] text-muted-foreground italic leading-relaxed border-t pt-3">
+                {isAr ? analysis.basis.ar : analysis.basis.en}
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Course recommendations (R5: development / null only - hidden under
             the acquisition lens, which suppresses the develop-with-VIFM block). */}

@@ -16,6 +16,7 @@ import {
   type AraIndividualFactorId,
 } from "@/lib/constants/ara-individual-factors";
 import { recommendCoursesForIndividualSnapshot } from "@/lib/recommender/courses";
+import { buildPersonalAnalysis } from "@/lib/ara/personal-analysis";
 import {
   PersonalSnapshot,
   type PersonalSnapshotData,
@@ -113,6 +114,9 @@ export async function GET(
     const answerByQuestionId = new Map(
       (answers ?? []).map((a) => [a.question_id as string, a.answer_value])
     );
+    // Self-rating vs objective split feeds the selection-analysis calibration
+    // read - identical to the results page.
+    let selfSum = 0, selfCount = 0, objSum = 0, objCount = 0;
     for (const q of questions) {
       const factorId = q.individual_factor_id as AraIndividualFactorId | null;
       if (!factorId) continue;
@@ -121,6 +125,8 @@ export async function GET(
       if (numeric != null) {
         factorTotals[factorId].sum += numeric;
         factorTotals[factorId].count += 1;
+        if (q.question_type === "rating") { selfSum += numeric; selfCount += 1; }
+        else { objSum += numeric; objCount += 1; }
       }
     }
     const factorScores = ARA_INDIVIDUAL_FACTOR_IDS.reduce<Record<AraIndividualFactorId, number>>(
@@ -138,6 +144,21 @@ export async function GET(
     // Talent lens (migration 00134). Drives R4-R7 in both renderers. NULL =
     // generic framing (legacy / anonymous / deep-linked), no regression.
     const talentLens = validateTalentLens(ctx.assessment.talent_lens);
+
+    // Selection-lens analysis - the same deterministic, evidence-grounded read
+    // shown on the results page, so the downloaded PDF matches the screen.
+    // Acquisition only (mirrors the page); null otherwise so EN/AR renderers
+    // simply omit the section.
+    const analysis =
+      talentLens === "acquisition"
+        ? buildPersonalAnalysis({
+            factorScores,
+            overallScore,
+            selfAvg: selfCount > 0 ? selfSum / selfCount : 0,
+            objectiveAvg: objCount > 0 ? objSum / objCount : 0,
+            objectiveCount: objCount,
+          })
+        : null;
 
     // Recommendations (R5: development-context info). Skip the compute under
     // the acquisition lens; the renderers also omit the course block.
@@ -193,6 +214,7 @@ export async function GET(
         factorScores,
         recommendedCourses,
         talentLens,
+        analysis,
       };
       const html = renderPersonalSnapshotHtmlAr(arData);
       const buffer = await renderHtmlToPdfBuffer(html);
@@ -217,6 +239,7 @@ export async function GET(
       factorScores,
       recommendedCourses,
       talentLens,
+      analysis,
     };
     const buffer = await renderToBuffer(<PersonalSnapshot data={data} />);
     return new NextResponse(new Uint8Array(buffer), {

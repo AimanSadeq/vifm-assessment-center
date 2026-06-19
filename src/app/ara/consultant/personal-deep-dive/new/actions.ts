@@ -24,17 +24,27 @@ const inputSchema = z.object({
   region: z.enum(["uae", "saudi"]).default("uae"),
   organization_id: z.string().uuid().optional(),
   organization_name: z.string().min(2).max(300).optional(),
+  // Demo runs (from the Talent-Acquisition selection landing's "Demo mode")
+  // are flagged sandbox so they show the Test badge, are purgeable, and unlock
+  // the respondent-side "Simulate answers" shortcut. Defaults false - a real
+  // consultant-issued deep-dive never sets it.
+  is_sandbox: z.coerce.boolean().optional(),
+  // When set, DON'T email the candidate their link - the issuer keeps it to
+  // themselves (e.g. a hiring manager running it privately). Only ever set to
+  // skip; absent means "email as normal", so the consultant deep-dive page
+  // (which never sends it) keeps its existing send-on-issue behaviour.
+  skip_email: z.coerce.boolean().optional(),
 });
 
 const PERSONAL_ORG_FALLBACK_NAME_EN = "Personal AI Readiness - Deep Dive";
 const PERSONAL_ORG_FALLBACK_NAME_AR = "الجاهزية الشخصية للذكاء الاصطناعي - التحليل المعمّق";
 
 /**
- * Consultant-issued 48-item Personal AI Readiness deep-dive.
+ * Consultant-issued 60-item Personal AI Readiness deep-dive.
  *
  * Used when a paying HR client wants research-grade individual reads
- * on a named employee (different from the free 24-item snapshot at
- * /ara/personal/start, which is anonymous).
+ * on a named employee (different from the free, anonymous snapshot at
+ * /ara/personal/start).
  *
  * Behaviour:
  *   - Caller must be admin or consultant (enforced via requireRole).
@@ -43,8 +53,9 @@ const PERSONAL_ORG_FALLBACK_NAME_AR = "الجاهزية الشخصية للذك�
  *     don't clutter the consultant-side org list. The consultant can
  *     supply organization_name to brand the row to a paying client.
  *   - Pins the assessment to assessment_tier='deep_dive' and the
- *     active question bank version; respondent answers the full 48
- *     individual-factor items.
+ *     active question bank version; respondent answers the full 60
+ *     individual-factor items (15 per factor: self-rating + scenario +
+ *     knowledge-check).
  *   - Returns the access URL so the consultant can copy/paste or send
  *     it directly to the employee.
  */
@@ -64,6 +75,8 @@ export async function createDeepDivePersonalAssessment(
     region: formData.get("region") ?? "uae",
     organization_id: formData.get("organization_id") || undefined,
     organization_name: formData.get("organization_name") || undefined,
+    is_sandbox: formData.get("is_sandbox") || undefined,
+    skip_email: formData.get("skip_email") || undefined,
   });
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
@@ -121,7 +134,7 @@ export async function createDeepDivePersonalAssessment(
     region: parsed.data.region,
     sector: "general",
     default_language: parsed.data.language,
-    is_sandbox: false,
+    is_sandbox: parsed.data.is_sandbox ?? false,
     engagement_stage: "individual",
     assessment_tier: "deep_dive",
     include_individual_layer: false,
@@ -173,13 +186,17 @@ export async function createDeepDivePersonalAssessment(
   // M2.1: email the respondent their secure link (best-effort - the deep-dive
   // was issued to this person's email, so send the invitation automatically).
   // Sandbox redirect / console-mock protect non-prod; the consultant also gets
-  // the URL back to share manually if the send fails.
+  // the URL back to share manually if the send fails. Skipped when skip_email
+  // is set, so a hiring manager can issue a link and keep it to themselves
+  // without notifying the candidate.
   let emailed = false;
-  try {
-    const sent = await sendAraRespondentInvitation(respondent.id);
-    emailed = !!sent && "ok" in sent && sent.ok === true;
-  } catch {
-    /* non-blocking: issuance succeeds even if email send fails */
+  if (!parsed.data.skip_email) {
+    try {
+      const sent = await sendAraRespondentInvitation(respondent.id);
+      emailed = !!sent && "ok" in sent && sent.ok === true;
+    } catch {
+      /* non-blocking: issuance succeeds even if email send fails */
+    }
   }
 
   revalidatePath("/ara/consultant");

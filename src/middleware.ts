@@ -34,6 +34,22 @@ const isAraMethodologyRoute = (pathname: string) =>
 const isAraPersonalRoute = (pathname: string) =>
   pathname.startsWith("/ara/personal/") || pathname.startsWith("/api/ara/personal/");
 
+// Public ARA top-of-funnel marketing pages - the AI Readiness landing (/ara),
+// the "how to engage" funnel (/ara/engage), and the roadmap (/ara/roadmap).
+// These are no-account marketing surfaces holding no privileged data; the only
+// truly complimentary self-serve path they lead to (the Personal Snapshot at
+// /ara/personal/*) is already public above. Without this, a lapsed Supabase
+// session bounces a signed-in user - or a genuine prospect - off the funnel to
+// /login (the already-rendered /ara page stays visible via the client router
+// cache, but clicking through to /ara/engage triggers a fresh server request
+// that the middleware redirects). Privileged ARA surfaces (/ara/consultant,
+// /ara/admin) are deliberately NOT matched and stay session-gated; the
+// consultant CTA on /ara/engage correctly hits /login when signed out.
+const isAraMarketingRoute = (pathname: string) =>
+  pathname === "/ara" ||
+  pathname.startsWith("/ara/engage") ||
+  pathname.startsWith("/ara/roadmap");
+
 // Reflect rater routes follow the same token pattern - rater identity
 // is established server-side from reflect_raters.access_token.
 const isReflectRaterRoute = (pathname: string) =>
@@ -102,6 +118,7 @@ export async function middleware(request: NextRequest) {
     isAraCohortRoute(request.nextUrl.pathname) ||
     isAraMethodologyRoute(request.nextUrl.pathname) ||
     isAraPersonalRoute(request.nextUrl.pathname) ||
+    isAraMarketingRoute(request.nextUrl.pathname) ||
     isReflectRaterRoute(request.nextUrl.pathname) ||
     isPublicCoursesRoute(request.nextUrl.pathname) ||
     isPublicVerifyRoute(request.nextUrl.pathname) ||

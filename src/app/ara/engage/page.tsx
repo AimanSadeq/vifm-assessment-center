@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   ArrowRight, Check, Minus, Sparkles, Building2, Network, Globe2, User,
 } from "lucide-react";
@@ -70,6 +71,14 @@ export default function AraEngagePage({ searchParams }: { searchParams?: { lens?
   // links so a hiring entry yields an acquisition-lensed result.
   const lens = validateTalentLens(searchParams?.lens);
   const lq = lens ? `?lens=${lens}` : "";
+
+  // For Selection (Talent Acquisition) the org engagement tiers don't apply -
+  // the only instrument is the Personal deep-dive. Send the acquisition lens to
+  // the Personal-only selection landing so Department / Division / Enterprise
+  // never surface in the selection path (even on a direct /ara/engage link).
+  if (lens === "acquisition") {
+    redirect("/ara?lens=acquisition");
+  }
   return (
     <div className="min-h-screen bg-background">
       <BackLink href="/ara" label="Back" history />

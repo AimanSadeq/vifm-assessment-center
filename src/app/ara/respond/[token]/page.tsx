@@ -1,6 +1,8 @@
 import { notFound, redirect } from "next/navigation";
-import { FlaskConical } from "lucide-react";
+import Link from "next/link";
+import { FlaskConical, ArrowLeft } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { validateTalentLens } from "@/lib/constants/ara-individual-factors";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { AnimatedCompass } from "@/components/shared/ara/animated-compass";
@@ -79,6 +81,12 @@ export default async function AraRespondPage({
     ? ctx.assessment.organization?.name_ar ?? ctx.assessment.organization?.name
     : ctx.assessment.organization?.name;
 
+  // Lens-aware route back to the ARC landing (Selection / Development). Gives a
+  // hiring manager running the assessment themselves a one-click way home, and
+  // satisfies the "every screen needs a back affordance" SOP.
+  const lens = validateTalentLens(ctx.assessment.talent_lens);
+  const backHref = lens ? `/ara?lens=${lens}` : "/ara";
+
   return (
     <div className="min-h-screen bg-background" dir={rtl ? "rtl" : "ltr"}>
       <OfflineBanner language={language} />
@@ -95,6 +103,13 @@ export default async function AraRespondPage({
         </div>
 
         <div className="max-w-3xl mx-auto px-6 pt-8 pb-14 relative z-10">
+          <Link
+            href={backHref}
+            className="inline-flex items-center gap-1 text-xs text-white/70 hover:text-white mb-6"
+          >
+            <ArrowLeft className={`h-3 w-3 ${rtl ? "rotate-180" : ""}`} />
+            {rtl ? "العودة إلى بوصلة الجاهزية للذكاء الاصطناعي" : "Back to the AI Readiness Compass"}
+          </Link>
           <div className="flex items-start justify-between gap-4 mb-10">
             <VifmLogo variant="white" size="md" />
             <LanguageToggle token={params.token} current={language} />
@@ -166,6 +181,8 @@ export default async function AraRespondPage({
           language={language}
           timeLimitMinutes={ctx.assessment.time_limit_minutes ?? null}
           startedAt={ctx.respondent.started_at ?? null}
+          isSandbox={ctx.assessment.is_sandbox}
+          backHref={backHref}
         >
           <div className="space-y-6">
             {/* AI Use Case Portfolio (optional) - org-side only. Personal /

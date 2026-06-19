@@ -8,6 +8,7 @@ import { AllServicesLink } from "@/components/shared/all-services-link";
 import { AnimatedCompass } from "@/components/shared/ara/animated-compass";
 import { CountUp } from "@/components/shared/ara/count-up";
 import { FadeIn } from "@/components/shared/ara/fade-in";
+import { SelectionLanding } from "./_components/selection-landing";
 
 export default function AraRootPage({ searchParams }: { searchParams?: { lens?: string } }) {
   // Thread the talent lens (from /ara?lens=acquisition|development, set by the
@@ -16,6 +17,14 @@ export default function AraRootPage({ searchParams }: { searchParams?: { lens?: 
   // the results page/PDF already use to suppress the development course panel.
   const lens = validateTalentLens(searchParams?.lens);
   const lq = lens ? `?lens=${lens}` : "";
+
+  // For Selection (Talent Acquisition), AI readiness is personal - you're
+  // sizing up one candidate, not an organisation. The selection landing shows
+  // only the full Personal deep-dive; the org engagement tiers (Department /
+  // Division / Enterprise) never appear in the acquisition path.
+  if (lens === "acquisition") {
+    return <SelectionLanding />;
+  }
   return (
     <div className="min-h-screen bg-background">
       {/* ─── Hero ─── */}

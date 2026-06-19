@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/server";
 import { calculateQuestionScore, recalculateAssessmentScores } from "@/lib/ara/scoring";
+import { loadRespondentByToken, loadQuestionsForRespondent } from "@/lib/ara/respondent-access";
 import type { AraLanguage, AraQuestion, AraRespondent } from "@/types/ara";
 
 // ─────────────────────────────────────────────────────────────
@@ -389,4 +390,103 @@ export async function markAraRespondentComplete(token: string): Promise<void> {
   void runPostCompletion().catch((err) =>
     console.error("[markAraRespondentComplete] background tasks failed:", err),
   );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Demo-only: fill every question with a plausible answer + complete.
+//
+// Lets a business-development rep skip the full questionnaire during a live
+// client demo and jump straight to the report. Hard-gated to SANDBOX (demo)
+// assessments - a real (is_sandbox=false) run can never be auto-filled, so this
+// can never fabricate genuine candidate/hiring data regardless of who calls it.
+// The respondent flow only surfaces the trigger when is_sandbox is true.
+//
+// Answers are sensible, not random: self-ratings land in the 3-5 band (a
+// credible, positive profile) and graded items pick the top-scoring option, so
+// the demo report reads well. Writes go through the same ara_responses shape +
+// scoring the live flow uses, then markAraRespondentComplete runs the normal
+// recalculation, so the resulting report is identical to a real submission.
+// ─────────────────────────────────────────────────────────────
+
+/** Deterministic self-rating in the 3-5 band, varied per question id. */
+function demoRatingFor(questionId: string): string {
+  let sum = 0;
+  for (let i = 0; i < questionId.length; i++) sum += questionId.charCodeAt(i);
+  return String(3 + (sum % 3));
+}
+
+export async function simulateAraAnswers(
+  token: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const ctx = await loadRespondentByToken(token);
+  if (!ctx) return { ok: false, error: "Invalid access token" };
+
+  // Hard gate: only demo (sandbox) assessments may be auto-filled.
+  if (!ctx.assessment.is_sandbox) {
+    return { ok: false, error: "Answer simulation is only available on demo (sandbox) assessments." };
+  }
+  if (ctx.assessment.status === "frozen" || ctx.assessment.status === "archived") {
+    return { ok: false, error: "This assessment is closed to further answers." };
+  }
+
+  const questions = await loadQuestionsForRespondent(ctx);
+  if (questions.length === 0) {
+    return { ok: false, error: "No questions to simulate for this respondent." };
+  }
+
+  const sb = createServiceClient();
+  const now = new Date().toISOString();
+
+  const rows = questions
+    .map((q) => {
+      let answerValue: string | null = null;
+      let answerText: string | null = null;
+
+      if (q.question_type === "rating") {
+        answerValue = demoRatingFor(q.id);
+      } else if (q.question_type === "open_text") {
+        answerText = "Sample response provided for demonstration purposes.";
+      } else {
+        // Graded item (multiple_choice / yes_no / situational_judgment /
+        // knowledge_check): pick the highest-scoring option from the key so the
+        // demo profile looks strong; fall back to the first listed option.
+        const scoreMap = (q.score_map ?? null) as Record<string, number> | null;
+        if (scoreMap && Object.keys(scoreMap).length > 0) {
+          answerValue = Object.entries(scoreMap).sort((a, b) => b[1] - a[1])[0][0];
+        } else {
+          const opts = (q.options_en ?? []) as Array<{ value: string }>;
+          answerValue = opts[0]?.value ?? null;
+        }
+      }
+
+      const score = calculateQuestionScore(
+        q.question_type,
+        answerValue,
+        (q.score_map ?? null) as Record<string, number> | null
+      );
+
+      return {
+        assessment_id: ctx.respondent.assessment_id,
+        respondent_id: ctx.respondent.id,
+        question_id: q.id,
+        answer_value: answerValue,
+        answer_text: answerText,
+        question_score: score,
+        needs_verification: false,
+        answered_at: now,
+        updated_at: now,
+      };
+    })
+    .filter((r) => r.answer_value !== null || r.answer_text !== null);
+
+  const { error } = await sb
+    .from("ara_responses")
+    .upsert(rows, { onConflict: "respondent_id,question_id" });
+  if (error) return { ok: false, error: error.message };
+
+  // Reuse the normal completion path (score recalc + downstream tasks).
+  await markAraRespondentComplete(token);
+
+  revalidatePath(`/ara/respond/${token}`);
+  return { ok: true };
 }

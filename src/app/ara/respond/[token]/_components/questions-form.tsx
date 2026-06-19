@@ -3,9 +3,9 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { Check, Loader2, AlertCircle, HelpCircle } from "lucide-react";
+import { Check, Loader2, AlertCircle, HelpCircle, Zap, Save } from "lucide-react";
 import { AssessmentIntro, type IntroPoint } from "@/components/shared/assessment-intro";
-import { saveAraAnswer, markAraRespondentStarted, markAraRespondentComplete } from "@/lib/ara/respondent-actions";
+import { saveAraAnswer, markAraRespondentStarted, markAraRespondentComplete, simulateAraAnswers } from "@/lib/ara/respondent-actions";
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
 import {
   ARA_INDIVIDUAL_FACTORS,
@@ -63,6 +63,19 @@ type QuestionsFormProps = {
   /** Persisted start (ISO) if the respondent already began; anchors the countdown. */
   startedAt?: string | null;
   /**
+   * Demo (sandbox) assessment - when true, a "Simulate answers" control is
+   * shown so a BD rep can skip the questionnaire and jump to the report during
+   * a live client demo. Always false for real runs; the simulate server action
+   * independently re-checks the sandbox flag, so this only controls visibility.
+   */
+  isSandbox?: boolean;
+  /**
+   * Lens-aware route back to the ARC landing (Selection / Development). Used by
+   * the "Save & finish later" control so leaving the assessment returns the
+   * issuer to a known home rather than a dead end. Defaults to /ara.
+   */
+  backHref?: string;
+  /**
    * Trailing content (optional sections + the Submit button) rendered ONLY
    * after the respondent has started. Kept out of the pre-start intro screen
    * so the "Submit assessment" button never appears under the Start button on
@@ -84,18 +97,75 @@ type LocalAnswer = {
 
 const DEBOUNCE_MS = 600;
 
-export function QuestionsForm({ token, questions, answers, language, timeLimitMinutes = null, startedAt = null, children }: QuestionsFormProps) {
+export function QuestionsForm({ token, questions, answers, language, timeLimitMinutes = null, startedAt = null, isSandbox = false, backHref = "/ara", children }: QuestionsFormProps) {
   const rtl = language === "ar";
   const router = useRouter();
+  // Resume: a respondent returning to their link with answers already saved
+  // skips the intro and lands straight back in the form (answers auto-save, so
+  // they continue where they left off). Computed once from the server-seeded
+  // answers; first-timers (no answers) still see the intro.
+  const hadSavedProgress = useMemo(
+    () => answers.some((a) => a.answer_value != null || (a.answer_text != null && a.answer_text.length > 0)),
+    [answers]
+  );
+  // Demo-only: auto-fill every answer and go straight to the report.
+  const [simulating, setSimulating] = useState(false);
+  const [simError, setSimError] = useState<string | null>(null);
+  // "Save & finish later" - flush pending saves, then return to the ARC landing.
+  const [exiting, setExiting] = useState(false);
+  const handleSaveAndExit = async () => {
+    if (exiting) return;
+    setExiting(true);
+    try {
+      await FORM_GATES.get(token)?.flushPendingSaves();
+    } catch {
+      /* answers already auto-save; navigate regardless so the user isn't stuck */
+    }
+    router.push(backHref);
+  };
+
+  const handleSimulate = async () => {
+    if (simulating) return;
+    setSimError(null);
+    setSimulating(true);
+    try {
+      const result = await simulateAraAnswers(token);
+      if (!result.ok) {
+        setSimError(result.error);
+        setSimulating(false);
+        return;
+      }
+      // Individual stage redirects to the personal results page once complete;
+      // a refresh re-runs the server page which performs that redirect.
+      router.push(`/ara/personal/results/${token}`);
+    } catch {
+      setSimError(rtl ? "تعذّرت محاكاة الإجابات." : "Could not simulate answers.");
+      setSimulating(false);
+    }
+  };
   // Intro is rendered in the ASSESSMENT's language (en/ar), not the UI cookie.
   const { i18n } = useTranslation();
   const at = useMemo(() => i18n.getFixedT(language === "ar" ? "ar" : "en"), [i18n, language]);
-  const [started, setStarted] = useState(false);
+  // Resume straight into the form when there are already saved answers.
+  const [started, setStarted] = useState(hadSavedProgress);
   const [starting, setStarting] = useState(false);
   // Countdown (only when a per-instance limit is set), anchored to started_at.
   const [deadline, setDeadline] = useState<number | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
   const [finishing, setFinishing] = useState(false);
+
+  // On resume into a TIMED assessment, re-anchor the countdown from the server
+  // started_at so the deadline survives leaving and returning. No-op for the
+  // untimed personal deep-dive (timeLimitMinutes null).
+  useEffect(() => {
+    if (started && timeLimitMinutes && timeLimitMinutes > 0 && startedAt && deadline == null) {
+      const dl = new Date(startedAt).getTime() + timeLimitMinutes * 60 * 1000;
+      setDeadline(dl);
+      setRemaining(Math.max(0, Math.round((dl - Date.now()) / 1000)));
+    }
+    // Mount-only: anchors once on resume; the onStart handler anchors first runs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Split questions into pillar-only and individual-factor groups.
   // Items with individual_factor_id set belong to the personal factor
@@ -413,7 +483,75 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
             style={{ width: `${progress}%` }}
           />
         </div>
+
+        {/* Save & finish later - answers already auto-save; this flushes any
+            in-flight save, then returns to the ARC landing so leaving is a
+            deliberate, reassured action rather than just closing the tab. */}
+        <div className="mt-3 flex items-center justify-between gap-3 border-t pt-3">
+          <span className="text-[11px] text-muted-foreground">
+            {rtl
+              ? "تُحفظ إجاباتك تلقائياً - عُد عبر الرابط نفسه لإكمالها لاحقاً."
+              : "Your answers save automatically - return via the same link to continue later."}
+          </span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleSaveAndExit}
+            disabled={exiting}
+            className="shrink-0 gap-1.5"
+          >
+            {exiting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+            {exiting ? (rtl ? "جارٍ الحفظ..." : "Saving...") : (rtl ? "احفظ وأكمل لاحقاً" : "Save & finish later")}
+          </Button>
+        </div>
       </div>
+
+      {/* Resume note - shown when the respondent returned to saved progress. */}
+      {hadSavedProgress && (
+        <div className="rounded-md border border-accent/30 bg-accent/5 px-3 py-2 text-[12px] text-muted-foreground">
+          {rtl
+            ? `مرحباً بعودتك - أكملت ${answeredCount} من ${questions.length}. تابع من حيث توقفت.`
+            : `Welcome back - you've answered ${answeredCount} of ${questions.length}. Pick up where you left off.`}
+        </div>
+      )}
+
+      {/* Demo-only shortcut: fill every answer and jump to the report. Only
+          rendered for sandbox/demo runs; the simulate action re-checks the
+          sandbox flag server-side, so a real assessment can never be filled. */}
+      {isSandbox && (
+        <div className="rounded-lg border-2 border-dashed border-amber-300 bg-amber-50 p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="text-sm">
+              <p className="font-semibold text-amber-900 flex items-center gap-1.5">
+                <Zap className="h-4 w-4" />
+                {rtl ? "وضع العرض التوضيحي" : "Demo mode"}
+              </p>
+              <p className="text-xs text-amber-900/80 mt-0.5">
+                {rtl
+                  ? "املأ جميع الأسئلة بإجابات نموذجية وانتقل مباشرة إلى التقرير."
+                  : "Fill every question with sample answers and jump straight to the report."}
+              </p>
+            </div>
+            <Button
+              type="button"
+              onClick={handleSimulate}
+              disabled={simulating}
+              className="shrink-0 gap-2 bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              {simulating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+              {simulating
+                ? (rtl ? "جارٍ المحاكاة..." : "Simulating...")
+                : (rtl ? "محاكاة الإجابات وعرض التقرير" : "Simulate answers & view report")}
+            </Button>
+          </div>
+          {simError && (
+            <p className="mt-2 text-xs text-destructive flex items-center gap-1.5">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0" /> {simError}
+            </p>
+          )}
+        </div>
+      )}
 
       {ARA_PILLARS.map((pillar) => {
         const qs = byPillar.get(pillar.id) ?? [];

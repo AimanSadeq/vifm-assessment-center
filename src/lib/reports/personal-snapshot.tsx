@@ -2,6 +2,7 @@ import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import { formatFitScore, fitScoreOutOfTen } from "@/lib/recommender/format";
 import {
   ARA_INDIVIDUAL_FACTORS,
+  ARA_INDIVIDUAL_FACTOR_MAP,
   ARA_INDIVIDUAL_MATURITY_STAGES,
   getIndividualMaturityStage,
   FACTOR_DESCRIPTIVE,
@@ -10,6 +11,7 @@ import {
   type AraIndividualMaturityStageId,
   type AraTalentLens,
 } from "@/lib/constants/ara-individual-factors";
+import { type PersonalAnalysis } from "@/lib/ara/personal-analysis";
 import { VIFM_VERTICAL_LABELS, type VifmVertical } from "@/types/database";
 import { personalFactSheetRows } from "@/lib/reports/fact-sheet-content";
 
@@ -168,6 +170,26 @@ const s = StyleSheet.create({
   factorGuidance: { fontSize: 8, color: C.text, lineHeight: 1.45, marginTop: 2 },
   factorCompetencies: { fontSize: 7, color: C.textMuted, marginTop: 5, fontStyle: "italic" },
 
+  // Selection-lens analysis
+  analysisVerdict: { fontSize: 9.5, color: C.text, lineHeight: 1.5, marginBottom: 8 },
+  calibBox: {
+    borderLeftWidth: 2,
+    borderLeftColor: C.accent,
+    backgroundColor: "#eff6ff",
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 3,
+    marginBottom: 8,
+  },
+  calibTitle: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.primary, marginBottom: 2 },
+  calibText: { fontSize: 8.5, color: C.textLight, lineHeight: 1.45 },
+  analysisGroupLabel: { fontSize: 7.5, fontFamily: "Helvetica-Bold", textTransform: "uppercase", letterSpacing: 1, marginTop: 6, marginBottom: 3 },
+  analysisItem: { fontSize: 8.5, color: C.text, lineHeight: 1.45, marginBottom: 4 },
+  probeText: { fontSize: 8, color: C.accent, lineHeight: 1.45, marginTop: 1 },
+  profileBox: { backgroundColor: C.bgSoft, borderRadius: 4, padding: 9, marginTop: 6, marginBottom: 8 },
+  profileTitle: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.primary, marginBottom: 2 },
+  basisText: { fontSize: 7.5, color: C.textLight, fontStyle: "italic", lineHeight: 1.45, borderTopWidth: 0.5, borderTopColor: C.border, paddingTop: 6, marginTop: 4 },
+
   // Two-column key panels
   twoCol: { flexDirection: "row", gap: 10, marginBottom: 14 },
   keyPanel: {
@@ -286,6 +308,8 @@ export type PersonalSnapshotData = {
   factorScores: Record<AraIndividualFactorId, number>;
   /** Talent lens (migration 00134). Drives R4-R7. null/undefined = generic. */
   talentLens?: AraTalentLens | null;
+  /** Selection-lens analysis (acquisition only); null/undefined omits the section. */
+  analysis?: PersonalAnalysis | null;
   recommendedCourses: Array<{
     course_id: string;
     title_en: string;
@@ -538,6 +562,74 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
 
       {/* ─── Page 2 - Context, training, methodology ─────────── */}
       <Page size="A4" style={s.page} wrap>
+        {/* Selection-lens analysis (acquisition only) - the same deterministic,
+            evidence-grounded read shown on the results page, so the PDF matches
+            the screen. Leads page 2 for the hiring lens. */}
+        {data.analysis && (
+          <>
+            <Text style={s.sectionEyebrow}>Selection analysis</Text>
+            <Text style={s.sectionTitle}>Candidate results analysis</Text>
+            <View style={s.sectionRule} />
+            <Text style={s.analysisVerdict}>{data.analysis.verdict.en}</Text>
+
+            {data.analysis.calibration && (
+              <View style={s.calibBox} wrap={false}>
+                <Text style={s.calibTitle}>Calibration: self-rating vs objective items</Text>
+                <Text style={s.calibText}>{data.analysis.calibration.en}</Text>
+              </View>
+            )}
+
+            <Text style={[s.analysisGroupLabel, { color: "#15803d" }]}>Strengths</Text>
+            {data.analysis.strengths.map((st) => {
+              const f = ARA_INDIVIDUAL_FACTOR_MAP[st.factorId];
+              return (
+                <Text key={st.factorId} style={s.analysisItem}>
+                  <Text style={{ fontFamily: "Helvetica-Bold" }}>
+                    {f.name_en} ({st.score.toFixed(1)}/5):{" "}
+                  </Text>
+                  {st.read.en}
+                </Text>
+              );
+            })}
+
+            {data.analysis.allAtTarget ? (
+              <Text style={[s.analysisItem, { color: C.positive, marginTop: 6 }]}>
+                All four factors meet or exceed the target (4.0) - a uniformly strong profile.
+              </Text>
+            ) : (
+              <>
+                <Text style={[s.analysisGroupLabel, { color: "#b45309" }]}>
+                  Development areas &amp; what to probe
+                </Text>
+                {data.analysis.developmentAreas.map((d) => {
+                  const f = ARA_INDIVIDUAL_FACTOR_MAP[d.factorId];
+                  return (
+                    <View key={d.factorId} wrap={false} style={{ marginBottom: 5 }}>
+                      <Text style={s.analysisItem}>
+                        <Text style={{ fontFamily: "Helvetica-Bold" }}>
+                          {f.name_en} ({d.score.toFixed(1)}/5):{" "}
+                        </Text>
+                        {d.read.en}
+                      </Text>
+                      <Text style={s.probeText}>
+                        <Text style={{ fontFamily: "Helvetica-Bold" }}>Probe: </Text>
+                        {d.probe.en}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </>
+            )}
+
+            <View style={s.profileBox} wrap={false}>
+              <Text style={s.profileTitle}>Profile shape</Text>
+              <Text style={s.calibText}>{data.analysis.profileShape.en}</Text>
+            </View>
+
+            <Text style={s.basisText}>{data.analysis.basis.en}</Text>
+          </>
+        )}
+
         {/* Context panels (the scale + band legend now sits under the score on
             page 1, per the client request). */}
         <Text style={s.sectionEyebrow}>How to use this snapshot</Text>

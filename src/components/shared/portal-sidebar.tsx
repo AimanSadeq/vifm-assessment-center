@@ -46,6 +46,7 @@ import {
   FileClock,
   Network,
   PlayCircle,
+  Table2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -239,6 +240,7 @@ const NAV: NavEntry[] = [
       label: "Platform",
       icon: Layers,
       items: [
+        link("/compare", "adminNav.comparePortals", Table2),
         link("/admin/clients", "adminNav.clients", Building2),
         link("/admin/framework", "adminNav.framework", Network),
         link("/admin/role-profiles", "adminNav.roleProfiles", Briefcase),

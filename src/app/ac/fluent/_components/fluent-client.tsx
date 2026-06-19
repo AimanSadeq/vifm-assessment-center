@@ -84,6 +84,12 @@ const T = {
     howSpeaking: "Speaking: allow microphone access and speak clearly when prompted.",
     prep1: "Find a quiet place; the speaking part needs a working microphone.",
     prep2: "Take your time and do your own work - it gives the most useful placement.",
+    incompleteTitle: "A few things still need an answer before you can submit:",
+    nUnanswered: "unanswered question(s)",
+    writingTooShort: "Writing response is too short",
+    speakingNeeded: "A spoken (or typed) response is required",
+    jumpToFirst: "Go to the first unanswered question",
+    notAnswered: "Not answered",
   },
   ar: {
     start: "ابدأ اختبار تحديد المستوى", starting: "جارٍ إعداد اختبارك…",
@@ -119,6 +125,12 @@ const T = {
     howSpeaking: "التحدث: اسمح باستخدام الميكروفون وتحدّث بوضوح عند الطلب.",
     prep1: "اختر مكانًا هادئًا؛ يحتاج قسم التحدث إلى ميكروفون يعمل.",
     prep2: "خذ وقتك وأجب بنفسك - فهذا يمنح أدقّ تحديد للمستوى.",
+    incompleteTitle: "بقيت بعض العناصر التي تحتاج إجابة قبل الإرسال:",
+    nUnanswered: "سؤال دون إجابة",
+    writingTooShort: "إجابة الكتابة قصيرة جدًا",
+    speakingNeeded: "مطلوب رد منطوق (أو مكتوب)",
+    jumpToFirst: "انتقل إلى أول سؤال دون إجابة",
+    notAnswered: "دون إجابة",
   },
 } as const;
 
@@ -154,6 +166,8 @@ export function FluentClient({
   const limitMinutes = timerMinutes && timerMinutes > 0 ? timerMinutes : 15;
   const [language, setLanguage] = useState<Language>("en");
   const [phase, setPhase] = useState<"intro" | "test" | "result">("intro");
+  // CAL-FLU-604: reveal which questions block submission (set on a blocked click).
+  const [showGaps, setShowGaps] = useState(false);
   // Countdown: deadline is stamped when the test starts; on expiry, auto-submit.
   const [deadline, setDeadline] = useState<number | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
@@ -189,7 +203,7 @@ export function FluentClient({
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  // Browser-native speech-to-text (primary path — free, no server, works on Render).
+  // Browser-native speech-to-text (primary path - free, no server, works on Render).
   const sttRef = useRef<BrowserSttSession | null>(null);
   const usingSttRef = useRef(false);
 
@@ -410,7 +424,7 @@ export function FluentClient({
     setPhase("intro"); setTest(null); setSessionId(null); setAnswers({}); setWriting(""); setResult(null); setError("");
     setPlays({}); setPlayingId(null);
     setTranscript(""); setPronunciation(null); setSpeakNote(""); setSpeakMode("record"); setRecSeconds(0);
-    setBlurCount(0); setPasteCount(0);
+    setBlurCount(0); setPasteCount(0); setShowGaps(false);
   }
 
   const wordCount = writing.trim() ? writing.trim().split(/\s+/).length : 0;
@@ -418,8 +432,32 @@ export function FluentClient({
   // few words is required before the test can be submitted.
   const speakWordCount = transcript.trim() ? transcript.trim().split(/\s+/).length : 0;
   const receptive = test ? [...test.reading, ...test.listening] : [];
-  const allAnswered = receptive.length > 0 && receptive.every((r) => answers[r.id] != null);
-  const canSubmit = allAnswered && wordCount >= 5 && speakWordCount >= 3 && !transcribing && !recording;
+
+  // CAL-FLU-604: rather than a silently-disabled button, validate on click and
+  // tell the candidate exactly what is incomplete + let them jump to it. The
+  // timer auto-submit path calls submit() directly and bypasses this gate.
+  const unansweredIds = receptive.filter((r) => answers[r.id] == null).map((r) => r.id);
+  const writingShort = wordCount < 5;
+  const speakingShort = speakWordCount < 3;
+  const hasGaps = unansweredIds.length > 0 || writingShort || speakingShort;
+  function scrollToGap(id: string) {
+    if (typeof document === "undefined") return;
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+  function handleSubmitClick() {
+    if (hasGaps) {
+      setShowGaps(true);
+      const firstId =
+        unansweredIds.length > 0
+          ? `fluent-q-${unansweredIds[0]}`
+          : writingShort
+            ? "fluent-writing"
+            : "fluent-speaking";
+      scrollToGap(firstId);
+      return;
+    }
+    void submit();
+  }
 
   return (
     <div dir={rtl ? "rtl" : "ltr"} className="space-y-5">
@@ -509,13 +547,25 @@ export function FluentClient({
               <BookOpen className="h-5 w-5 text-[#5391D5]" /> {t.reading}
             </h2>
             <div className="space-y-5">
-              {test.reading.map((item, i) => (
-                <div key={item.id} className="rounded-lg border border-slate-200 p-4">
-                  <p dir="ltr" className="text-sm text-[#111232]">{item.passage}</p>
-                  <p dir="ltr" className="mt-2 text-sm font-semibold text-[#010131]">{i + 1}. {item.question}</p>
-                  <Options item={item} answers={answers} setAnswers={setAnswers} />
-                </div>
-              ))}
+              {test.reading.map((item, i) => {
+                const unanswered = showGaps && answers[item.id] == null;
+                return (
+                  <div
+                    key={item.id}
+                    id={`fluent-q-${item.id}`}
+                    className={`rounded-lg border p-4 ${unanswered ? "border-rose-400 ring-1 ring-rose-300" : "border-slate-200"}`}
+                  >
+                    <p dir="ltr" className="text-sm text-[#111232]">{item.passage}</p>
+                    <p dir="ltr" className="mt-2 text-sm font-semibold text-[#010131]">{i + 1}. {item.question}</p>
+                    <Options item={item} answers={answers} setAnswers={setAnswers} />
+                    {unanswered && (
+                      <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-rose-600">
+                        <AlertCircle className="h-3.5 w-3.5" /> {t.notAnswered}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </section>
 
@@ -534,8 +584,13 @@ export function FluentClient({
               {test.listening.map((item, i) => {
                 const used = plays[item.id] ?? 0;
                 const isPlaying = playingId === item.id;
+                const unanswered = showGaps && answers[item.id] == null;
                 return (
-                  <div key={item.id} className="rounded-lg border border-slate-200 p-4">
+                  <div
+                    key={item.id}
+                    id={`fluent-q-${item.id}`}
+                    className={`rounded-lg border p-4 ${unanswered ? "border-rose-400 ring-1 ring-rose-300" : "border-slate-200"}`}
+                  >
                     <div className="flex items-center gap-3">
                       {test.tts && sessionId ? (
                         <audio
@@ -559,6 +614,11 @@ export function FluentClient({
                     </div>
                     <p dir="ltr" className="mt-3 text-sm font-semibold text-[#010131]">{i + 1}. {item.question}</p>
                     <Options item={item} answers={answers} setAnswers={setAnswers} />
+                    {unanswered && (
+                      <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-rose-600">
+                        <AlertCircle className="h-3.5 w-3.5" /> {t.notAnswered}
+                      </p>
+                    )}
                   </div>
                 );
               })}
@@ -566,7 +626,10 @@ export function FluentClient({
           </section>
 
           {/* Writing */}
-          <section className="rounded-xl border bg-white p-6 shadow-sm">
+          <section
+            id="fluent-writing"
+            className={`rounded-xl border bg-white p-6 shadow-sm ${showGaps && writingShort ? "border-rose-400 ring-1 ring-rose-300" : ""}`}
+          >
             <h2 className="mb-3 inline-flex items-center gap-2 text-lg font-semibold text-[#010131]">
               <PenLine className="h-5 w-5 text-[#5391D5]" /> {t.writing}
             </h2>
@@ -584,7 +647,10 @@ export function FluentClient({
           </section>
 
           {/* Speaking */}
-          <section className="rounded-xl border bg-white p-6 shadow-sm">
+          <section
+            id="fluent-speaking"
+            className={`rounded-xl border bg-white p-6 shadow-sm ${showGaps && speakingShort ? "border-rose-400 ring-1 ring-rose-300" : ""}`}
+          >
             <h2 className="mb-1 inline-flex items-center gap-2 text-lg font-semibold text-[#010131]">
               <Mic className="h-5 w-5 text-[#5391D5]" /> {t.speaking}
               <span className="ms-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
@@ -649,7 +715,30 @@ export function FluentClient({
             )}
           </section>
 
-          <button onClick={submit} disabled={busy || !canSubmit}
+          {/* CAL-FLU-604: when a click is blocked, say exactly what is incomplete
+              and let the candidate jump straight to the first gap - no silent block. */}
+          {showGaps && hasGaps && (
+            <div className="rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+              <p className="font-medium">{t.incompleteTitle}</p>
+              <ul className="mt-1.5 list-disc space-y-0.5 ps-5 text-xs">
+                {unansweredIds.length > 0 && (
+                  <li>{unansweredIds.length} {t.nUnanswered}</li>
+                )}
+                {writingShort && <li>{t.writingTooShort}</li>}
+                {speakingShort && <li>{t.speakingNeeded}</li>}
+              </ul>
+              {unansweredIds.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => scrollToGap(`fluent-q-${unansweredIds[0]}`)}
+                  className="mt-2 text-xs font-semibold text-rose-700 underline hover:text-rose-900"
+                >
+                  {t.jumpToFirst}
+                </button>
+              )}
+            </div>
+          )}
+          <button onClick={handleSubmitClick} disabled={busy || transcribing || recording}
             className="inline-flex items-center gap-2 rounded-md bg-[#047857] px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50">
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
             {busy ? t.scoring : t.submit}

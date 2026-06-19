@@ -1798,6 +1798,7 @@ export default async function AraAssessmentDetailPage({
                         type="checkbox"
                         name="pillar_assignments"
                         value={p.id}
+                        defaultChecked
                         className="mt-0.5 h-4 w-4 rounded border-input"
                       />
                       <span>

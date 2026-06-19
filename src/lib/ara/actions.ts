@@ -18,6 +18,7 @@ import { sendAraEmail, type AraEmailLanguage } from "@/lib/ara/email";
 import { isAIConfigured } from "@/lib/ai/client";
 import { createClientOrganization, type AraRegion, type AraSector } from "@/lib/clients/registry";
 import { validateTalentLens } from "@/lib/constants/ara-individual-factors";
+import { getPillarsForAssessment } from "@/lib/constants/ara-stages";
 
 // Uniform auth-error unwrapper - server actions return a shape the UI
 // can render as a toast instead of a Next error screen.
@@ -432,16 +433,34 @@ export async function createAraRespondent(formData: FormData) {
 
   const sb = createServiceClient();
 
-  let layerEnabled = false;
-  if (individualOnly) {
-    const { data: a } = await sb
-      .from("ara_assessments")
-      .select("include_individual_layer")
-      .eq("id", parsed.data.assessment_id)
-      .maybeSingle<{ include_individual_layer: boolean }>();
-    layerEnabled = !!a?.include_individual_layer;
+  // Fetch the parent assessment's stage + scope so we can (a) honour
+  // individual_only only when the layer is on, and (b) DEFAULT pillar
+  // assignments to the assessment's in-scope pillars when the form passed
+  // none. Without this default a respondent added without ticking pillars
+  // gets zero pillar questions -> an empty test (the "department test not
+  // working" bug): the add-respondent checkboxes are unticked by default.
+  const { data: a } = await sb
+    .from("ara_assessments")
+    .select("engagement_stage, pillars_in_scope, include_individual_layer")
+    .eq("id", parsed.data.assessment_id)
+    .maybeSingle<{
+      engagement_stage: string;
+      pillars_in_scope: string[] | null;
+      include_individual_layer: boolean;
+    }>();
+  const finalIndividualOnly = individualOnly && !!a?.include_individual_layer;
+
+  // Effective pillar set: the explicit selection if any, else the
+  // assessment's resolved in-scope pillars (department=4, division=6,
+  // enterprise=8; honours a pillars_in_scope override). Empty for an
+  // individual-only respondent or an individual-stage assessment.
+  let effectivePillars: readonly string[] = parsed.data.pillar_assignments;
+  if (!finalIndividualOnly && effectivePillars.length === 0 && a) {
+    effectivePillars = getPillarsForAssessment({
+      engagement_stage: a.engagement_stage,
+      pillars_in_scope: a.pillars_in_scope,
+    } as Parameters<typeof getPillarsForAssessment>[0]);
   }
-  const finalIndividualOnly = individualOnly && layerEnabled;
 
   const { data: respondent, error } = await sb
     .from("ara_respondents")
@@ -464,11 +483,11 @@ export async function createAraRespondent(formData: FormData) {
   // Pillar assignments are skipped for individual-only respondents -
   // they don't answer pillar questions, so a pillar row would be
   // confusing data noise.
-  if (!finalIndividualOnly && parsed.data.pillar_assignments.length > 0) {
+  if (!finalIndividualOnly && effectivePillars.length > 0) {
     const { error: paError } = await sb
       .from("ara_respondent_pillar_assignments")
       .insert(
-        parsed.data.pillar_assignments.map((pillar_id) => ({
+        effectivePillars.map((pillar_id) => ({
           respondent_id: respondent.id,
           pillar_id,
         }))

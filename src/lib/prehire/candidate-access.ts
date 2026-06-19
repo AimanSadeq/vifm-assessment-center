@@ -30,6 +30,11 @@ export type PrehireCandidateContext = {
     title: string;
     english_required: boolean;
     stage_config: PrehireStagePlanEntry[];
+    /** CAL-PRE-502: explicit quiz competency set (competencies.id[]). null = legacy
+     *  fallback (resolve from the role profile, then the synthetic competency). */
+    competency_ids: string[] | null;
+    /** Drives the role-profile fallback path + the quiz target proficiency. */
+    role_profile_id: string | null;
     clientName: string | null;
   };
   stages: PrehireStageView[];
@@ -52,10 +57,24 @@ export async function findCandidateByToken(
 
   const { data: req } = await svc
     .from("prehire_requisitions")
-    .select("id, title, english_required, stage_config, organizations(name)")
+    .select("id, title, english_required, stage_config, role_profile_id, organizations(name)")
     .eq("id", cand.requisition_id)
     .maybeSingle();
   if (!req) return null;
+
+  // Tolerant: competency_ids exists only after migration 00138. Query it on its
+  // own so a pre-migration DB doesn't error the main select (mirrors the
+  // demographics handling below). Missing column => null => legacy fallback.
+  let competencyIds: string[] | null = null;
+  const { data: compRow } = await svc
+    .from("prehire_requisitions")
+    .select("competency_ids")
+    .eq("id", req.id)
+    .maybeSingle();
+  if (compRow && "competency_ids" in compRow) {
+    const raw = (compRow as { competency_ids: unknown }).competency_ids;
+    competencyIds = Array.isArray(raw) ? (raw as string[]).filter((x) => typeof x === "string") : null;
+  }
 
   // Tolerant: the demographics column exists only after migration 00051. Query
   // it separately so a pre-migration DB doesn't break the whole apply flow
@@ -84,6 +103,8 @@ export async function findCandidateByToken(
       title: req.title as string,
       english_required: !!req.english_required,
       stage_config: (req.stage_config ?? []) as PrehireStagePlanEntry[],
+      competency_ids: competencyIds && competencyIds.length > 0 ? competencyIds : null,
+      role_profile_id: (req.role_profile_id as string | null) ?? null,
       clientName: (req.organizations as unknown as { name: string } | null)?.name ?? null,
     },
     stages: (cand.prehire_stage_results ?? []) as PrehireStageView[],

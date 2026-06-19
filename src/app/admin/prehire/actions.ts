@@ -54,6 +54,9 @@ const requisitionSchema = z.object({
   level: z.string().max(60).optional(),
   english_required: z.boolean().optional(),
   stage_config: z.array(stageEntrySchema).min(1, "Pick at least one screening stage"),
+  // CAL-PRE-502: explicit competency set for the quiz stage (competencies.id[]).
+  // Pre-filled from the role profile but editable. Optional/empty = legacy fallback.
+  competency_ids: z.array(z.string().uuid()).optional(),
 });
 
 export async function createRequisitionAction(input: unknown) {
@@ -66,19 +69,43 @@ export async function createRequisitionAction(input: unknown) {
   }
 
   const svc = createServiceClient();
-  const { data, error } = await svc
+  // Drop empties + de-dupe; an empty set is the same as "not set" (legacy fallback).
+  const competencyIds = Array.from(
+    new Set((parsed.data.competency_ids ?? []).filter((id) => typeof id === "string" && id))
+  );
+
+  const insertPayload: Record<string, unknown> = {
+    organization_id: parsed.data.organization_id,
+    title: parsed.data.title,
+    role_profile_id: parsed.data.role_profile_id ?? null,
+    level: parsed.data.level || null,
+    english_required: parsed.data.english_required ?? false,
+    stage_config: parsed.data.stage_config,
+    status: "open",
+    ...(competencyIds.length > 0 ? { competency_ids: competencyIds } : {}),
+  };
+
+  let { data, error } = await svc
     .from("prehire_requisitions")
-    .insert({
-      organization_id: parsed.data.organization_id,
-      title: parsed.data.title,
-      role_profile_id: parsed.data.role_profile_id ?? null,
-      level: parsed.data.level || null,
-      english_required: parsed.data.english_required ?? false,
-      stage_config: parsed.data.stage_config,
-      status: "open",
-    })
+    .insert(insertPayload)
     .select("id")
     .single();
+
+  // Tolerant: a pre-00138 DB rejects competency_ids with 42703 (undefined_column)
+  // or PGRST204 (PostgREST schema-cache miss). Strip it and retry so the
+  // requisition still creates (the quiz just falls back to role-profile/synthetic).
+  if (error) {
+    const code = (error as { code?: string }).code;
+    if (code === "42703" || code === "PGRST204") {
+      const { competency_ids: _omit, ...core } = insertPayload;
+      void _omit;
+      ({ data, error } = await svc
+        .from("prehire_requisitions")
+        .insert(core)
+        .select("id")
+        .single());
+    }
+  }
 
   if (error || !data) return { error: error?.message ?? "Could not create requisition" };
 

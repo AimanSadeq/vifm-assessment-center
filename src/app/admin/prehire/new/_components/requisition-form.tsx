@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -12,10 +12,29 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { createRequisitionAction, createPrehireOrgAction } from "../../actions";
 import { FLUENT_SKILLS, RECEPTIVE_FLUENT_SKILLS, type FluentSkill } from "@/types/prehire";
 
+type RoleProfileOption = {
+  id: string;
+  name_en: string;
+  competencies: {
+    competencyId: string;
+    weight: number | null;
+    priority: string | null;
+  }[];
+};
+
+type CompetencyOption = {
+  id: string;
+  name: string;
+  domainName: string;
+  domainSort: number;
+  sortOrder: number;
+};
+
 type Props = {
-  roleProfiles: { id: string; name_en: string }[];
+  roleProfiles: RoleProfileOption[];
   organizations: { id: string; name: string }[];
   defaultOrgId?: string;
+  competencies: CompetencyOption[];
 };
 
 type StageKind = "quiz" | "fluent" | "cbi";
@@ -42,7 +61,12 @@ const INITIAL_STAGES: Record<StageKind, StageState> = {
   cbi: { included: false, weight: 0.3, cut: 60 },
 };
 
-export function RequisitionForm({ roleProfiles, organizations: initialOrgs, defaultOrgId }: Props) {
+export function RequisitionForm({
+  roleProfiles,
+  organizations: initialOrgs,
+  defaultOrgId,
+  competencies,
+}: Props) {
   const router = useRouter();
   const { t } = useTranslation();
   const [title, setTitle] = useState("");
@@ -55,6 +79,61 @@ export function RequisitionForm({ roleProfiles, organizations: initialOrgs, defa
   // only attached to stage_config when the Fluent stage is included.
   const [fluentSkills, setFluentSkills] = useState<Set<FluentSkill>>(new Set(FLUENT_SKILLS));
   const [submitting, setSubmitting] = useState(false);
+
+  // CAL-PRE-502: the quiz competency set. Pre-filled from the chosen role profile
+  // but editable (add/remove from the behavioural 38). `competencyDirty` tracks
+  // whether the user has manually edited - while clean, switching role profiles
+  // re-prefills; once dirty, switching profiles leaves their edits alone (a
+  // "reset to role default" button restores the profile's set on demand).
+  const [selectedCompetencies, setSelectedCompetencies] = useState<Set<string>>(new Set());
+  const [competencyDirty, setCompetencyDirty] = useState(false);
+
+  // Competencies grouped by domain (stable order) for a readable picker.
+  const competenciesByDomain = useMemo(() => {
+    const groups = new Map<string, { domainName: string; domainSort: number; items: CompetencyOption[] }>();
+    for (const c of competencies) {
+      const g = groups.get(c.domainName);
+      if (g) g.items.push(c);
+      else groups.set(c.domainName, { domainName: c.domainName, domainSort: c.domainSort, items: [c] });
+    }
+    return Array.from(groups.values())
+      .sort((a, b) => a.domainSort - b.domainSort || a.domainName.localeCompare(b.domainName))
+      .map((g) => ({ ...g, items: g.items.slice().sort((a, b) => a.sortOrder - b.sortOrder) }));
+  }, [competencies]);
+
+  // The valid competency-id set the role profile maps to (some role_profile rows
+  // may reference a competency no longer in the catalogue - keep only real ones).
+  const competencyIdSet = useMemo(() => new Set(competencies.map((c) => c.id)), [competencies]);
+  const roleProfileDefaultIds = (profileId: string): string[] => {
+    const profile = roleProfiles.find((p) => p.id === profileId);
+    if (!profile) return [];
+    return profile.competencies.map((c) => c.competencyId).filter((id) => competencyIdSet.has(id));
+  };
+  const currentProfileDefaults = roleProfileDefaultIds(roleProfileId);
+
+  const handleRoleProfileChange = (id: string) => {
+    setRoleProfileId(id);
+    // Pre-fill the competency picker from the new profile, but only while the
+    // user hasn't manually edited the set (so a deliberate selection survives).
+    if (!competencyDirty) {
+      setSelectedCompetencies(new Set(roleProfileDefaultIds(id)));
+    }
+  };
+
+  const toggleCompetency = (id: string, on: boolean) => {
+    setCompetencyDirty(true);
+    setSelectedCompetencies((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  };
+
+  const resetCompetenciesToRoleDefault = () => {
+    setSelectedCompetencies(new Set(roleProfileDefaultIds(roleProfileId)));
+    setCompetencyDirty(false);
+  };
 
   // Inline client creation (CAL-PH-504).
   const [showNewOrg, setShowNewOrg] = useState(false);
@@ -133,6 +212,12 @@ export function RequisitionForm({ roleProfiles, organizations: initialOrgs, defa
       toast.error(t("prehire.errPickOrg"));
       return;
     }
+    // CAL-PRE-502: only carry the competency set when the quiz stage runs (it has
+    // no meaning otherwise). Keep the catalogue order for a stable, readable array.
+    const competency_ids = stages.quiz.included
+      ? competencies.map((c) => c.id).filter((id) => selectedCompetencies.has(id))
+      : [];
+
     setSubmitting(true);
     const res = await createRequisitionAction({
       organization_id: orgId,
@@ -141,6 +226,7 @@ export function RequisitionForm({ roleProfiles, organizations: initialOrgs, defa
       level: level || undefined,
       english_required: englishRequired,
       stage_config,
+      competency_ids,
     });
     setSubmitting(false);
     if ("error" in res) {
@@ -228,7 +314,7 @@ export function RequisitionForm({ roleProfiles, organizations: initialOrgs, defa
           <select
             id="rp"
             value={roleProfileId}
-            onChange={(e) => setRoleProfileId(e.target.value)}
+            onChange={(e) => handleRoleProfileChange(e.target.value)}
             className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
           >
             <option value="">{t("prehire.noneOption")}</option>
@@ -335,6 +421,59 @@ export function RequisitionForm({ roleProfiles, organizations: initialOrgs, defa
             </p>
           )}
         </div>
+
+        {/* CAL-PRE-502: quiz competency picker - only relevant when the quiz stage runs. */}
+        {stages.quiz.included && competencies.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label>{t("prehire.quizCompetenciesLabel", "Quiz competencies")}</Label>
+              {currentProfileDefaults.length > 0 && (
+                <button
+                  type="button"
+                  onClick={resetCompetenciesToRoleDefault}
+                  className="text-xs font-medium text-[#5391D5] hover:underline"
+                >
+                  {t("prehire.resetToRoleDefault", "Reset to role default")}
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {t(
+                "prehire.quizCompetenciesHint",
+                "The competency quiz draws its questions from this set, pre-filled from the role profile and editable. Leave it empty to fall back to the role profile (or a generic deck). The quiz stays about 7 questions regardless of how many you pick - the highest-weighted competencies are sampled.",
+              )}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {t("prehire.quizCompetenciesCount", "{{count}} selected", {
+                count: selectedCompetencies.size,
+              })}
+            </p>
+            <div className="space-y-3 rounded-md border p-3">
+              {competenciesByDomain.map((group) => (
+                <div key={group.domainName} className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {group.domainName}
+                  </p>
+                  <div className="grid grid-cols-1 gap-x-5 gap-y-2 sm:grid-cols-2">
+                    {group.items.map((comp) => (
+                      <label
+                        key={comp.id}
+                        className="flex cursor-pointer items-start gap-2 text-sm"
+                      >
+                        <Checkbox
+                          checked={selectedCompetencies.has(comp.id)}
+                          onCheckedChange={(c) => toggleCompetency(comp.id, c === true)}
+                          className="mt-0.5"
+                        />
+                        <span>{comp.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <Button onClick={handleSubmit} disabled={submitting || !title} className="w-full">
           {submitting ? t("prehire.creating") : t("prehire.createReq")}

@@ -65,6 +65,11 @@ export type PrehireRequisition = {
   role_profile_id: string | null;
   level: string | null;
   stage_config: PrehireStagePlanEntry[];
+  /** CAL-PRE-502: explicit competency set the quiz draws items from (competencies.id[]).
+   *  Pre-filled from the role profile but editable. NULL/empty = legacy fallback
+   *  (resolve from role_profile_competencies, then the synthetic single-competency).
+   *  Only present after migration 00138; tolerated as absent on older DBs. */
+  competency_ids?: string[] | null;
   english_required: boolean;
   status: PrehireRequisitionStatus;
   created_by: string | null;

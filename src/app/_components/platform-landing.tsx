@@ -335,34 +335,40 @@ export function PlatformLanding() {
   const rtl = lang === "ar";
   const Arrow = rtl ? ArrowLeft : ArrowRight;
 
-  // One launcher card. Shared by the flat tiles and the Psychometrics cluster.
-  // `pillar` lets a dual-purpose service show selection vs development copy.
-  const renderCard = (svc: (typeof SERVICES)[number], pillar: Pillar) => {
+  // Per-card purpose for dual-purpose services - the user toggles "For selection"
+  // vs "For development" BENEATH each box (defaults to selection).
+  const [purposeByKey, setPurposeByKey] = useState<Partial<Record<ServiceKey, Pillar>>>({});
+
+  // Where a card links, honouring the selected purpose for services that read a
+  // lens/purpose param (Persona, AR Compass, Technical). Others keep their route.
+  const hrefFor = (svc: (typeof SERVICES)[number], selected: Pillar): string => {
+    const acq = selected === "acquire";
+    switch (svc.key) {
+      case "persona": return `/ac/persona?purpose=${acq ? "hiring" : "development"}`;
+      case "ara": return `/ara?lens=${acq ? "acquisition" : "development"}`;
+      case "technical": return `/admin/tech-sandbox?lens=${acq ? "acquisition" : "development"}`;
+      default: return svc.href;
+    }
+  };
+
+  // One launcher card per service (de-duplicated). A dual-purpose service shows
+  // an interactive "For selection / For development" selector BENEATH the box;
+  // picking one updates the card's copy, accent colour and destination. A
+  // single-purpose service shows its one purpose as a static label.
+  const renderServiceCard = (svc: (typeof SERVICES)[number]) => {
     const Icon = svc.icon;
-    const variant = VARIANTS[lang]?.[svc.key]?.[pillar];
+    const dual = svc.pillars.length === 2;
+    const selected: Pillar = dual ? purposeByKey[svc.key] ?? "acquire" : svc.pillars[0];
+    const variant = VARIANTS[lang]?.[svc.key]?.[selected];
     const copy = { ...t.services[svc.key], ...variant };
-    // CAL-PER-402: Persona's purpose is set by the pillar it's launched from -
-    // Talent Acquisition (acquire) -> hiring, Talent Management (manage) ->
-    // development - so the runner opens locked to that purpose (picker hidden).
-    const href =
-      svc.key === "persona"
-        ? `/ac/persona?purpose=${pillar === "acquire" ? "hiring" : "development"}`
-        : svc.href;
-    // Icon / card accent colour is keyed to the PILLAR, not the service, so the
-    // two solution families read as two colours at a glance: blue = Talent
-    // Acquisition (selection), emerald = Talent Management (development). Matches
-    // the For Selection / For Development badges.
-    const tone = pillar === "acquire" ? "blue" : "emerald";
-    // Dual-purpose services (both pillars) carry a bottom row showing they serve
-    // BOTH lifecycle stages: "For selection" (left) and "For development" (right),
-    // with the current column's side emphasized. Single-purpose services omit it.
-    const dualPurpose = svc.pillars.length === 2;
-    const selOn = pillar === "acquire";
+    const href = hrefFor(svc, selected);
+    // Accent tracks the selected purpose: blue = selection, emerald = development.
+    const tone = selected === "acquire" ? "blue" : "emerald";
     return (
-      <Tooltip key={svc.key}>
-        <TooltipTrigger asChild>
-          <Link href={href} className="block">
-            <div className={`launcher-card tone-${tone} flex items-center gap-4 p-4`}>
+      <div key={svc.key} className={`launcher-card tone-${tone} flex flex-col`}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link href={href} className="flex items-center gap-4 p-4">
               <div className="launcher-card-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-xl">
                 <Icon className="h-6 w-6" />
               </div>
@@ -370,23 +376,43 @@ export function PlatformLanding() {
                 <div className="ara-eyebrow">{copy.tagline}</div>
                 <h4 className="text-base font-semibold text-primary">{copy.name}</h4>
                 <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-muted-foreground">{copy.description}</p>
-                {dualPurpose && (
-                  <div className="mt-2 flex items-center justify-between border-t border-border/60 pt-1.5 text-[10px] font-semibold uppercase tracking-wide">
-                    <span className={selOn ? "text-accent" : "text-muted-foreground/50"}>{t.forSelection}</span>
-                    <span className={!selOn ? "text-emerald-700" : "text-muted-foreground/50"}>{t.forDevelopment}</span>
-                  </div>
-                )}
               </div>
               <div className="launcher-card-cta shrink-0 self-center">
                 <Arrow className="h-5 w-5" />
               </div>
-            </div>
-          </Link>
-        </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-xs text-center leading-snug">
-          {copy.tooltip}
-        </TooltipContent>
-      </Tooltip>
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-xs text-center leading-snug">
+            {copy.tooltip}
+          </TooltipContent>
+        </Tooltip>
+        {/* Purpose selector beneath the box. Buttons are type=button so a tap
+            toggles the purpose instead of following the card link. Single-purpose
+            services show their one purpose as a static label. */}
+        <div className="mx-4 mb-3 mt-1 grid grid-cols-2 gap-1 rounded-lg border border-border/60 bg-muted/30 p-0.5 text-[10px] font-semibold uppercase tracking-wide">
+          {dual ? (
+            (["acquire", "manage"] as const).map((p) => {
+              const on = selected === p;
+              const activeCls = p === "acquire" ? "bg-accent text-white" : "bg-emerald-600 text-white";
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => setPurposeByKey((prev) => ({ ...prev, [svc.key]: p }))}
+                  className={`rounded-md px-2 py-1 transition-colors ${on ? activeCls : "text-muted-foreground hover:bg-background"}`}
+                >
+                  {p === "acquire" ? t.forSelection : t.forDevelopment}
+                </button>
+              );
+            })
+          ) : (
+            <span className="col-span-2 rounded-md px-2 py-1 text-center text-muted-foreground">
+              {svc.pillars[0] === "acquire" ? t.forSelection : t.forDevelopment}
+            </span>
+          )}
+        </div>
+      </div>
     );
   };
 
@@ -471,27 +497,12 @@ export function PlatformLanding() {
           <p className="mt-1 max-w-3xl text-sm text-muted-foreground">{t.servicesSub}</p>
 
           <TooltipProvider delayDuration={200}>
-            {/* Two-row subgrid: both pillar headers share row 1 (so they equalise
-                height regardless of how the sub-text wraps) and both tile stacks
-                share row 2 - keeping the columns aligned. Each column still nests
-                its own header + tiles, so it stacks correctly on mobile. */}
-            <div className="mt-6 grid gap-x-8 gap-y-10 lg:grid-cols-2 lg:grid-rows-[auto_1fr] lg:gap-y-0">
-              {(["acquire", "manage"] as const).map((pillar) => (
-                <div key={pillar} className="lg:row-span-2 lg:grid lg:grid-rows-subgrid">
-                  {/* Big pillar heading (the two solution families) */}
-                  <div className="border-b-2 border-accent/30 pb-2.5">
-                    <h3 className="ara-numeral whitespace-nowrap text-[1.45rem] font-extrabold uppercase leading-tight tracking-tight text-accent sm:text-[1.6rem]">
-                      {t.pillars[pillar].title}
-                    </h3>
-                    <p className="mt-1 text-xs text-muted-foreground">{t.pillars[pillar].sub}</p>
-                  </div>
-
-                  {/* Services stacked underneath - each instrument its own card. */}
-                  <div className="mt-4 space-y-3">
-                    {SERVICES.filter((s) => s.pillars.includes(pillar)).map((svc) => renderCard(svc, pillar))}
-                  </div>
-                </div>
-              ))}
+            {/* One box per service (de-duplicated). Each dual-purpose service
+                carries its own "For selection / For development" selector
+                beneath, so a service is no longer shown twice (once per column
+                with the off-side dimmed). */}
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              {SERVICES.map((svc) => renderServiceCard(svc))}
             </div>
           </TooltipProvider>
         </section>

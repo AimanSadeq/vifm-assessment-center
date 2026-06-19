@@ -353,7 +353,7 @@ export function PlatformLanding() {
 
   // One launcher card per service (de-duplicated). Beneath the box, each purpose
   // is its own distinctly-coloured entry button, both in VIFM brand blues -
-  // white/accent blue (#5391D5) = For selection (Talent Acquisition), dark blue
+  // light/accent blue (#5391D5) = For selection (Talent Acquisition), dark blue
   // (#111232) = For development (Talent Development). Neither is pre-highlighted:
   // the two levels are shown as two equal, distinct choices. A single-purpose
   // service shows just its one entry.
@@ -383,10 +383,10 @@ export function PlatformLanding() {
         <div className={`mt-3 grid gap-2 ${svc.pillars.length === 2 ? "grid-cols-2" : "grid-cols-1"}`}>
           {svc.pillars.map((p) => {
             const acq = p === "acquire";
-            // VIFM brand pair: For selection = white/accent blue (#5391D5),
-            // For development = dark blue (#111232) with off-white text.
+            // VIFM brand pair: For selection = light/accent blue (#5391D5) fill,
+            // For development = dark blue (#111232) fill, both with readable text.
             const cls = acq
-              ? "border-[#5391D5]/50 bg-[#5391D5]/15 text-[#010131] hover:bg-[#5391D5]/25"
+              ? "border-[#5391D5] bg-[#5391D5] text-[#010131] hover:bg-[#5391D5]/90"
               : "border-[#111232] bg-[#111232] text-[#FEFFF9] hover:bg-[#121140]";
             return (
               <Link

@@ -183,11 +183,11 @@ their tightly-coupled siblings are **FIXED + shipped** (commits `04a5a17`, `7e0d
 - [x] Dead Agentic tier (AGN-* / 00116 layer flip + save bypass + form sections) + GUIDE-07 + DERIVE-04 contamination guard applied across scoring / compliance / distortion / detectors.
 - [x] (Earlier) SAMA CSF framework (00113/00114), sector binding (00115), compliance recalc-on-completion + pillar-scope gating + not-yet-calculated state, regulatory-extractor severity enum, Phase 2 Arabic help text, bilingual PDF Workforce+Agentic sections.
 
-**Open FAILs (6):**
+**Open FAILs (3 left; 3 fixed 2026-06-19, commit `0e33fc5`):**
 - [ ] **WEIGHT-04** - weight editor writes 0 into out-of-scope pillars / not scoped to the in-scope set (non-Enterprise). Pairs with the SCORE-16 renormalization (overlaps SD-1).
-- [ ] **NOTES-14** - General (pillar_id NULL) include-in-report notes render in EN-only/AR-only but drop from the bilingual report.
-- [ ] **GOV-05** - retention hardcoded 3y vs CLAUDE.md 2-year max; reconcile (drop to 2y or document carve-out). PDPL-relevant for SDAIA.
-- [ ] **AUTHZ-04** - loadRespondentByToken docstring claims it refuses frozen/archived; it doesn't. Refuse + read-only state, or fix the docstring.
+- [x] **NOTES-14** - general (pillar_id NULL) report notes now render as an "Overall observations" bilingual section (were dropped from the bilingual report).
+- [x] **GOV-05** - retention dropped 3y -> 2y (CLAUDE.md / PDPL) via shared `ARA_RETENTION_YEARS` constant. SDAIA-relevant.
+- [x] **AUTHZ-04** - docstring corrected (loadRespondentByToken loads regardless of status, by design, to keep results viewable); frozen/archived write-lock confirmed in saveAraAnswer + added to markAraRespondentComplete.
 - [ ] **OFFLINE-02** - offline banner promises local persistence that doesn't exist; implement localStorage mirror or soften copy.
 - [ ] **QCRUD-08 / CMT-01** - AI-authored (is_active=false) questions have no admin activation path; stale security comment.
 

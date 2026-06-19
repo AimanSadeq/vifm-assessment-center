@@ -80,12 +80,12 @@ const isFluentPublicRoute = (pathname: string) =>
   pathname === "/api/ac/fluent/tts";
 
 // Cognitive voucher delegate flow - same pattern as Fluent: redeem page,
-// token-gated runner, start/score API, and the result-report PDF.
+// token-gated runner, start/score API. The result-report PDF is NOT public
+// (XP-13: results are not shown to the taker - only an admin downloads/sends).
 const isCognitivePublicRoute = (pathname: string) =>
   pathname === "/ac/cognitive/redeem" ||
   pathname.startsWith("/ac/cognitive/take/") ||
-  pathname === "/api/ac/cognitive" ||
-  (pathname.startsWith("/api/ac/cognitive/") && pathname.endsWith("/report"));
+  pathname === "/api/ac/cognitive";
 
 // Persona voucher delegate flow. The runner is driven by server actions (which
 // POST to the take-page route), so only the redeem page, the token runner, and

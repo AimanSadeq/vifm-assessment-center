@@ -4,6 +4,7 @@ import { generatePsyTest, stripAnswerKey } from "@/lib/psychometrics/generate";
 import { computePsyResult, type PsyTest, type CognitiveItem } from "@/lib/psychometrics/scoring";
 import { applyNorms, type ScaleNorm } from "@/lib/psychometrics/calibration";
 import { COGNITIVE_INSTRUMENT, sanitizeSubtests } from "@/lib/psychometrics/framework";
+import { isStaffCaller } from "@/lib/ara/auth-guards";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -152,7 +153,14 @@ export async function POST(req: Request) {
     }
 
     await svc.from("psy_sessions").update({ consumed: true }).eq("id", sessionId);
-    return NextResponse.json({ result: finalResult, result_id: resRow?.id ?? null });
+    // XP-13: staff see results + can download; takers get a thank-you, so only
+    // staff receive result_id (the report-route key).
+    const isStaff = await isStaffCaller();
+    return NextResponse.json({
+      result: finalResult,
+      result_id: isStaff ? resRow?.id ?? null : null,
+      isStaff,
+    });
   }
 
   return NextResponse.json({ error: "Unknown action" }, { status: 400 });

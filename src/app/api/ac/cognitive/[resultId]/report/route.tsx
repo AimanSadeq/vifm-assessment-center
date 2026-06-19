@@ -11,6 +11,7 @@
 
 import { NextResponse } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
+import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { createServiceClient } from "@/lib/supabase/server";
 import { PsychometricReport, type PsyReportData, type PsyReportScale } from "@/lib/reports/psychometric-report";
 import {
@@ -44,6 +45,15 @@ function notFound(): Response {
 type Row = { kind: string; taker_name: string | null; created_at: string; result: PsyResult | null };
 
 export async function GET(_req: Request, { params }: { params: { resultId: string } }) {
+  // XP-13: staff-only. Takers never see their cognitive result; an admin
+  // downloads/sends it from the cohort view.
+  try {
+    await requireRole(["admin", "consultant", "lead_assessor", "associate_assessor"]);
+  } catch (e) {
+    if (isAuthorizationError(e)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    throw e;
+  }
+
   let row: Row | null = null;
   try {
     const svc = createServiceClient();

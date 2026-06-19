@@ -71,6 +71,8 @@ export function PsychometricsClient({
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [result, setResult] = useState<PsyResult | null>(null);
   const [resultId, setResultId] = useState<string | null>(null);
+  // XP-13: only VIFM staff see results on-screen; a taker gets a thank-you.
+  const [canView, setCanView] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -102,7 +104,7 @@ export function PsychometricsClient({
       });
       const d = await res.json();
       if (!res.ok || !d.result) { setError(d.error || "Could not score."); return; }
-      setResult(d.result as PsyResult); setResultId(d.result_id ?? null); setPhase("result");
+      setResult(d.result as PsyResult); setResultId(d.result_id ?? null); setCanView(d.isStaff === true); setPhase("result");
     } catch { setError("Could not score."); } finally { setBusy(false); }
   };
 
@@ -294,7 +296,25 @@ export function PsychometricsClient({
         </div>
       )}
 
-      {phase === "result" && result && (
+      {/* XP-13: takers do not see results - a thank-you only. Staff see scores. */}
+      {phase === "result" && result && !canView && (
+        <div className="rounded-xl border bg-white p-8 text-center">
+          <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-600" />
+          <h2 className="mt-3 text-xl font-bold text-[#010131]">
+            {lang === "ar" ? "تم إرسال تقييمك" : "Your assessment has been submitted"}
+          </h2>
+          <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
+            {lang === "ar"
+              ? "تمت مشاركة نتائجك مع الجهة الطالبة ولا تُعرض هنا. شكرًا لك."
+              : "Your results have been shared with the requesting organisation and are not shown here. Thank you."}
+          </p>
+          <button onClick={reset} className="mt-5 inline-flex items-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
+            <RotateCcw className="h-4 w-4" /> {lang === "ar" ? "البدء من جديد" : "Start over"}
+          </button>
+        </div>
+      )}
+
+      {phase === "result" && result && canView && (
         <div className="space-y-5 rounded-xl border bg-white p-6">
           <div className="flex flex-wrap items-center justify-between gap-2">
             {takerName.trim()

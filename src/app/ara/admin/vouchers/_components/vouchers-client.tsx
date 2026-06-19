@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
-import { Ticket, Copy, Download, Check, Ban, RotateCcw, Plus, X, Link2, Upload } from "lucide-react";
+import Link from "next/link";
+import { Ticket, Copy, Download, Check, Ban, RotateCcw, Plus, X, Link2, Upload, BarChart3 } from "lucide-react";
 import { fmtDate } from "@/lib/utils/format-date";
 import { copyToClipboard } from "@/lib/utils/clipboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -465,21 +466,28 @@ export function VouchersClient({
               <CardDescription>How each company&apos;s delegates are progressing through the Compass.</CardDescription>
             </div>
             {companies.length > 0 && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1"
-                onClick={() =>
-                  downloadCsv([
-                    "company,delegates,started,completed,last_redeemed",
-                    ...companies.map((c) =>
-                      [c.company, c.delegates, c.started, c.completed, c.lastRedeemed ?? ""].join(",")
-                    ),
-                  ])
-                }
-              >
-                <Download className="h-3.5 w-3.5" /> CSV
-              </Button>
+              <div className="flex items-center gap-2">
+                <Link href="/ara/admin/vouchers/insights">
+                  <Button size="sm" variant="outline" className="gap-1">
+                    <BarChart3 className="h-3.5 w-3.5" /> Cohort insights
+                  </Button>
+                </Link>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1"
+                  onClick={() =>
+                    downloadCsv([
+                      "company,delegates,started,completed,last_redeemed",
+                      ...companies.map((c) =>
+                        [c.company, c.delegates, c.started, c.completed, c.lastRedeemed ?? ""].join(",")
+                      ),
+                    ])
+                  }
+                >
+                  <Download className="h-3.5 w-3.5" /> CSV
+                </Button>
+              </div>
             )}
           </div>
         </CardHeader>
@@ -496,7 +504,8 @@ export function VouchersClient({
                     <th className="py-2 pe-3 font-medium">Started</th>
                     <th className="py-2 pe-3 font-medium">Completed</th>
                     <th className="py-2 pe-3 font-medium">Completion</th>
-                    <th className="py-2 font-medium">Last redeemed</th>
+                    <th className="py-2 pe-3 font-medium">Last redeemed</th>
+                    <th className="py-2 font-medium text-right">Insights</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -509,8 +518,16 @@ export function VouchersClient({
                         <td className="py-2 pe-3 tabular-nums">{c.started}</td>
                         <td className="py-2 pe-3 tabular-nums">{c.completed}</td>
                         <td className="py-2 pe-3 tabular-nums">{pct}%</td>
-                        <td className="py-2 text-muted-foreground">
+                        <td className="py-2 pe-3 text-muted-foreground">
                           {c.lastRedeemed ? fmtDate(c.lastRedeemed) : "-"}
+                        </td>
+                        <td className="py-2 text-right">
+                          <Link
+                            href={`/ara/admin/vouchers/insights?company=${encodeURIComponent(c.company)}`}
+                            className="inline-flex items-center gap-1 text-accent hover:underline"
+                          >
+                            <BarChart3 className="h-3.5 w-3.5" /> View
+                          </Link>
                         </td>
                       </tr>
                     );

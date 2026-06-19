@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { BackLink } from "@/components/shared/back-link";
 import type { DomainIconKey, BarsLevel } from "@/lib/competencies/framework-definitions";
-import type { DomainNode } from "../page";
+import type { DomainNode, FrameworkCounts } from "@/lib/competencies/framework-tree";
 
 // Branded, read-only render of the VIFM competency framework grid. Owns search,
 // per-domain filter and EN/AR language state (useState only - no storage). The
@@ -13,7 +13,7 @@ import type { DomainNode } from "../page";
 
 type Lang = "en" | "ar";
 
-type Counts = { domains: number; clusters: number; competencies: number; scalePoints: number };
+type Counts = FrameworkCounts;
 
 // ── Domain glyphs (SVG only, inherit currentColor = white header text) ──
 function DomainIcon({ icon }: { icon: DomainIconKey }) {
@@ -79,6 +79,21 @@ function SearchIcon() {
   );
 }
 
+function Tick() {
+  return (
+    <svg width={11} height={11} viewBox="0 0 10 10" className="mt-[3px] inline-block shrink-0">
+      <path d="M1.5 5 L4 7.5 L8.5 2.5" fill="none" stroke="#059669" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function Cross() {
+  return (
+    <svg width={11} height={11} viewBox="0 0 10 10" className="mt-[3px] inline-block shrink-0">
+      <path d="M2.2 2.2 L7.8 7.8 M7.8 2.2 L2.2 7.8" fill="none" stroke="#e11d48" strokeWidth={1.5} strokeLinecap="round" />
+    </svg>
+  );
+}
+
 const STRINGS = {
   en: {
     back: "Back",
@@ -98,6 +113,15 @@ const STRINGS = {
     allDomains: "All domains",
     count: (shown: number, total: number) => `Showing ${shown} of ${total} competencies`,
     noResults: "No competencies match your search.",
+    tabGrid: "Framework grid",
+    tabIndicators: "Behavioural indicators",
+    downloadPdf: "Download PDF",
+    statIndicators: "Indicators",
+    positiveLabel: "Positive indicators",
+    negativeLabel: "Negative indicators",
+    noIndicators: "No indicators recorded for this competency.",
+    indicatorsLede:
+      "Positive and negative behavioural indicators per competency - what strong looks like, and the warning signs. The detailed level beneath the framework grid.",
     comps: (n: number) => `${n} ${n === 1 ? "competency" : "competencies"}`,
     clusters: (n: number) => `${n} ${n === 1 ? "cluster" : "clusters"}`,
     provenance:
@@ -122,6 +146,15 @@ const STRINGS = {
     allDomains: "كل المجالات",
     count: (shown: number, total: number) => `عرض ${shown} من ${total} كفاءة`,
     noResults: "لا توجد كفاءات مطابقة لبحثك.",
+    tabGrid: "شبكة الإطار",
+    tabIndicators: "المؤشرات السلوكية",
+    downloadPdf: "تنزيل PDF",
+    statIndicators: "المؤشرات",
+    positiveLabel: "مؤشرات إيجابية",
+    negativeLabel: "مؤشرات سلبية",
+    noIndicators: "لا توجد مؤشرات مسجّلة لهذه الكفاءة.",
+    indicatorsLede:
+      "مؤشرات سلوكية إيجابية وسلبية لكل كفاءة - كيف يبدو الأداء القوي وما العلامات التحذيرية. المستوى التفصيلي أسفل شبكة الإطار.",
     comps: (n: number) => `${n} كفاءة`,
     clusters: (n: number) => `${n} مجموعة`,
     provenance:
@@ -146,6 +179,7 @@ export function FrameworkGrid({
   const [lang, setLang] = useState<Lang>("en");
   const [query, setQuery] = useState("");
   const [activeDomain, setActiveDomain] = useState<string>("all");
+  const [tab, setTab] = useState<"grid" | "indicators">("grid");
   const t = STRINGS[lang];
   const ar = lang === "ar";
 
@@ -171,7 +205,7 @@ export function FrameworkGrid({
       })
       .filter((d) => d.clusters.length > 0);
     return { view: v, shown: count };
-  }, [domains, query, activeDomain, lang]);
+  }, [domains, query, activeDomain]);
 
   return (
     <div className="-m-4 lg:-m-8" dir={ar ? "rtl" : "ltr"}>
@@ -203,7 +237,17 @@ export function FrameworkGrid({
               </button>
             ))}
           </div>
-          <span className="inline-flex items-center gap-2 rounded-full border border-[#DCEAF8] bg-[#EFF5FC] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.13em] text-[#5391D5]">
+          <a
+            href="/api/admin/framework/pdf"
+            className={`inline-flex items-center gap-2 rounded-full border border-[#010131] bg-[#010131] px-3.5 py-1.5 text-[12px] font-bold text-white transition-colors hover:bg-[#121140] ${FOCUS_RING}`}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+              <path d="M12 3v12m0 0 4-4m-4 4-4-4" />
+              <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+            </svg>
+            {t.downloadPdf}
+          </a>
+          <span className="inline-flex items-center gap-2 rounded-full border border-[#DCEAF8] bg-[#EFF5FC] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.13em] text-[#5391D5] max-[640px]:hidden">
             <span className="h-1.5 w-1.5 rounded-full bg-[#5391D5]" />
             {t.tag}
           </span>
@@ -217,7 +261,7 @@ export function FrameworkGrid({
           <h1 className="text-[32px] font-extrabold leading-[1.12] tracking-[-0.01em] text-[#010131] max-[640px]:text-[25px]">
             {t.h1}
           </h1>
-          <p className="mt-[11px] max-w-[62ch] text-[15px] text-[#64748B]">{t.lede}</p>
+          <p className="mt-[11px] max-w-[62ch] text-[15px] text-[#64748B]">{tab === "indicators" ? t.indicatorsLede : t.lede}</p>
 
           {/* Stats */}
           <div className="mt-5 flex flex-wrap gap-2.5">
@@ -226,6 +270,7 @@ export function FrameworkGrid({
                 [counts.domains, t.statDomains],
                 [counts.clusters, t.statClusters],
                 [counts.competencies, t.statCompetencies],
+                [counts.indicators, t.statIndicators],
                 [counts.scalePoints, t.statScale],
               ] as const
             ).map(([v, label]) => (
@@ -240,7 +285,23 @@ export function FrameworkGrid({
           </div>
         </section>
 
-        {/* Proficiency scale */}
+        {/* Tab toggle: framework grid <-> behavioural indicators */}
+        <div className={`mb-[22px] inline-flex overflow-hidden rounded-full border border-[#E6EBF2] bg-white text-[13px] font-bold ${CARD_SHADOW_SM}`}>
+          {([["grid", t.tabGrid], ["indicators", t.tabIndicators]] as const).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setTab(key)}
+              aria-pressed={tab === key}
+              className={`px-4 py-2 transition-colors motion-reduce:transition-none ${FOCUS_RING} ${tab === key ? "bg-[#010131] text-white" : "text-[#1A3A6B] hover:bg-[#F5F7FA]"}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Proficiency scale (grid view only) */}
+        {tab === "grid" ? (
         <section aria-label="Proficiency scale" className={`mb-[26px] rounded-[14px] border border-[#E6EBF2] bg-white px-[22px] py-5 ${CARD_SHADOW}`}>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <span className="text-[13px] font-extrabold uppercase tracking-[0.04em] text-[#1E293B]">{t.scaleTitle}</span>
@@ -274,6 +335,7 @@ export function FrameworkGrid({
             ))}
           </div>
         </section>
+        ) : null}
 
         {/* Toolbar */}
         <div className="mb-5 flex flex-wrap items-center gap-3.5">
@@ -311,7 +373,7 @@ export function FrameworkGrid({
           <div className="rounded-[14px] border border-dashed border-[#E6EBF2] bg-white px-5 py-[46px] text-center text-[14px] text-[#64748B]">
             {t.noResults}
           </div>
-        ) : (
+        ) : tab === "grid" ? (
           <section aria-label="Competency grid" className="grid grid-cols-1 items-start gap-[18px] sm:grid-cols-2 min-[1100px]:grid-cols-4">
             {view.map(({ domain: d, clusters }) => {
               const caption = ar ? d.visual.captionAr : d.visual.captionEn;
@@ -365,6 +427,60 @@ export function FrameworkGrid({
                         </div>
                       );
                     })}
+                  </div>
+                </div>
+              );
+            })}
+          </section>
+        ) : (
+          /* Behavioural indicators view (level 2): positive + negative per competency */
+          <section aria-label="Behavioural indicators" className="space-y-[18px]">
+            {view.map(({ domain: d, clusters }) => {
+              const comps = clusters.flatMap(({ comps: cs }) => cs);
+              return (
+                <div key={d.id} className={`overflow-hidden rounded-[14px] border border-[#E6EBF2] bg-white ${CARD_SHADOW}`}>
+                  <div className="flex items-center gap-3 px-[18px] py-3 text-white" style={{ background: d.visual.color }}>
+                    <span className="grid h-[30px] w-[30px] place-items-center rounded-[9px] border border-white/20 bg-white/[0.16]">
+                      <DomainIcon icon={d.visual.icon} />
+                    </span>
+                    <span className="text-[16px] font-extrabold">{ar ? d.nameAr : d.displayEn}</span>
+                  </div>
+                  <div className="divide-y divide-[#EEF2F7]">
+                    {comps.map((k) => (
+                      <div key={k.id} className="px-[18px] py-3.5">
+                        <div className="flex items-center gap-[11px]">
+                          <span className="grid h-[22px] w-[26px] flex-none place-items-center rounded-md text-[11px] font-extrabold tabular-nums" style={{ background: d.visual.tint, color: d.visual.color }}>
+                            {k.seq}
+                          </span>
+                          <span className="text-[14px] font-bold text-[#1E293B]">{ar ? k.nameAr : k.nameEn}</span>
+                        </div>
+                        {(ar ? k.descAr : k.descEn) ? (
+                          <p className="mt-1 text-[12px] text-[#64748B] ltr:ml-[37px] rtl:mr-[37px]">{ar ? k.descAr : k.descEn}</p>
+                        ) : null}
+                        {k.positives.length > 0 || k.negatives.length > 0 ? (
+                          <div className="mt-2.5 grid gap-3 sm:grid-cols-2 ltr:ml-[37px] rtl:mr-[37px]">
+                            <div>
+                              <div className="mb-1 text-[11px] font-extrabold uppercase tracking-[0.06em] text-emerald-700">{t.positiveLabel}</div>
+                              <ul className="space-y-1">
+                                {k.positives.length > 0 ? k.positives.map((p, i) => (
+                                  <li key={`p-${i}`} className="flex gap-1.5 text-[12.5px] leading-[1.4] text-[#1E293B]"><Tick /><span>{p}</span></li>
+                                )) : <li className="text-[12px] text-[#9AA8BC]">-</li>}
+                              </ul>
+                            </div>
+                            <div>
+                              <div className="mb-1 text-[11px] font-extrabold uppercase tracking-[0.06em] text-rose-700">{t.negativeLabel}</div>
+                              <ul className="space-y-1">
+                                {k.negatives.length > 0 ? k.negatives.map((n, i) => (
+                                  <li key={`n-${i}`} className="flex gap-1.5 text-[12.5px] leading-[1.4] text-[#1E293B]"><Cross /><span>{n}</span></li>
+                                )) : <li className="text-[12px] text-[#9AA8BC]">-</li>}
+                              </ul>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="mt-2 text-[12px] text-[#9AA8BC] ltr:ml-[37px] rtl:mr-[37px]">{t.noIndicators}</p>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
               );

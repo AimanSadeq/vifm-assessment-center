@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
+import { ARA_RETENTION_YEARS } from "@/lib/constants/ara-retention";
 
 function authErr(e: unknown) {
   if (isAuthorizationError(e)) return { ok: false as const, error: e.message };
@@ -182,7 +183,8 @@ export async function clearAraSandboxData(formData: FormData) {
 // Hard-deletes archived assessments whose archived_at is older than
 // RETENTION_YEARS. Generated reports are NOT deleted (§15.3).
 // ─────────────────────────────────────────────────────────────
-const RETENTION_YEARS = 3;
+// GOV-05: 2-year max per CLAUDE.md / PDPL (was 3). Single source of truth.
+const RETENTION_YEARS = ARA_RETENTION_YEARS;
 
 /**
  * Core retention-purge logic - no auth check inside, so it can be

@@ -9,11 +9,13 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { purgeAraExpiredAssessments } from "@/lib/ara/admin-actions";
+import { ARA_RETENTION_YEARS } from "@/lib/constants/ara-retention";
 import { getServerT, type ServerT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
-const RETENTION_YEARS = 3;
+// GOV-05: 2-year max per CLAUDE.md / PDPL (was 3). Shared single source of truth.
+const RETENTION_YEARS = ARA_RETENTION_YEARS;
 
 export default async function AraRetentionPage() {
   const sb = createServiceClient();

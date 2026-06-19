@@ -188,6 +188,18 @@ export async function setAraRespondentLanguage(token: string, language: AraLangu
 export async function markAraRespondentComplete(token: string): Promise<void> {
   const sb = createServiceClient();
   const respondent = await requireRespondent(token);
+
+  // AUTHZ-04 (defense-in-depth): refuse completion on a frozen/archived
+  // assessment, matching saveAraAnswer. A consultant freeze locks the run to
+  // further answers, so it must also lock the completion stamp. Silent no-op
+  // (not a throw) so an auto-submit-on-expiry that races a freeze fails safe.
+  const { data: lockCheck } = await sb
+    .from("ara_assessments")
+    .select("status")
+    .eq("id", respondent.assessment_id)
+    .maybeSingle<{ status: string }>();
+  if (lockCheck?.status === "frozen" || lockCheck?.status === "archived") return;
+
   const now = new Date().toISOString();
   await sb
     .from("ara_respondents")

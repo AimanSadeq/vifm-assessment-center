@@ -661,6 +661,49 @@ export function BilingualReport(p: BilingualReportProps) {
           );
         })}
 
+      {/* ─── General observations (notes not tied to a pillar) ─── *
+       * NOTES-14: general (pillar_id NULL) include-in-report notes were
+       * collected under "_general" but never rendered in the bilingual report
+       * (only per-pillar notes were). Render them as their own bilingual
+       * findings section so they reach the client report, matching the
+       * single-language report's flat "Key findings". Only when present. */}
+      {(() => {
+        const generalNotes = p.notesByPillar.get("_general") ?? [];
+        if (generalNotes.length === 0) return null;
+        return (
+          <section className="report-page-bilingual">
+            <div className="col-en">
+              <h2 className="report-h2">{tr("en", "key_findings")}</h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6pt", marginTop: "4pt" }}>
+                {generalNotes.map((n, i) => (
+                  <FindingCard
+                    key={i}
+                    lang="en"
+                    index={i + 1}
+                    type={inferFindingType(n.note_text)}
+                    text={n.note_text}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="col-ar" dir="rtl">
+              <h2 className="report-h2">{tr("ar", "key_findings")}</h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6pt", marginTop: "4pt" }}>
+                {generalNotes.map((n, i) => (
+                  <FindingCard
+                    key={i}
+                    lang="ar"
+                    index={i + 1}
+                    type={inferFindingType(n.note_text)}
+                    text={n.note_text_ar ?? n.note_text}
+                  />
+                ))}
+              </div>
+            </div>
+          </section>
+        );
+      })()}
+
       {/* ─── Gap Heatmap ─── */}
       <section className="report-page-bilingual-with-visual">
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", marginBottom: "6mm" }}>

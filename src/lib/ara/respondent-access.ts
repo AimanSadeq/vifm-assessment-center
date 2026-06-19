@@ -18,8 +18,15 @@ export type AraRespondentContext = {
 
 /**
  * Look up a respondent by their access token and return the full context
- * needed to render their assessment form. Returns null if the token is
- * invalid or the assessment is archived / frozen / locked to further answers.
+ * needed to render their assessment form (or their results page).
+ *
+ * Returns null only when the token is invalid or the assessment row is missing.
+ * It deliberately does NOT gate on assessment status: a completed respondent on
+ * a frozen/archived assessment must still load to VIEW their results/PDF.
+ * Write-locking for frozen/archived is enforced at the write paths instead
+ * (saveAraAnswer + markAraRespondentComplete both refuse those statuses), which
+ * is the correct place to stop further answers without breaking results access.
+ * (AUTHZ-04: docstring corrected to match behaviour.)
  */
 export async function loadRespondentByToken(
   token: string

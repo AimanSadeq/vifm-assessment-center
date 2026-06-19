@@ -91,43 +91,59 @@ export type IpsativeBlock = { blockId: string; statements: IpsativeStatement[] }
 
 export const IPSATIVE_BLOCK_SIZE = 4;
 
+/** How many forward statements per competency the forced-choice section draws
+ *  (PER-10). The bank carries 3 forward items per competency; 2 roughly doubles
+ *  the block count vs the original one-per-competency design. */
+export const IPSATIVE_STATEMENTS_PER_COMPETENCY = 2;
+
 /**
- * Build forced-choice blocks - one forward (non-reverse) statement per
- * competency, shuffled by seed, chunked into blocks of four drawn from
- * different competencies. A final short block (size 2-3) is kept rather than
- * padded, so every competency appears exactly once.
+ * Build forced-choice blocks. Each competency contributes up to
+ * `statementsPerCompetency` FORWARD (non-reverse) statements, slotted one-per-
+ * round; each round is shuffled by a round-specific seed and chunked into blocks
+ * of four. Because a round holds at most one statement per competency, every
+ * block is four DIFFERENT competencies (no same-competency collision). More
+ * rounds => more blocks (PER-10), so a competency can be ranked in several
+ * blocks.
+ *
+ * SCORING NOTE: a competency's forced-choice signal is collapsed to ONE value
+ * (rollupSelfScores in behavioral.ts: 3 + #most - #least, clamped 1-5), so
+ * appearing in several blocks SHARPENS the signal without diluting the average
+ * toward the mid. Reverse items are excluded (forced-choice rows are keyed
+ * is_reverse=false).
  */
 export function buildIpsativeBlocks(
   competencies: BehavioralCompetency[],
   seed: number,
+  statementsPerCompetency: number = IPSATIVE_STATEMENTS_PER_COMPETENCY,
 ): IpsativeBlock[] {
-  // One representative FORWARD item per competency. Forced-choice statements are
-  // stored with is_reverse=false, so a reverse item here would be mis-keyed -
-  // skip any competency with no forward item rather than fall back to a reverse.
-  const statements: IpsativeStatement[] = [];
-  for (const c of competencies) {
-    const fwd = c.items.find((i) => !i.reverse);
-    if (!fwd) continue;
-    statements.push({
-      itemKey: `ips:${fwd.itemKey}`,
-      baseItemKey: fwd.itemKey,
-      competencyId: c.acCompetencyId,
-      textEn: fwd.textEn,
-      textAr: fwd.textAr,
-    });
-  }
-  // Shuffle with a derived seed so blocks differ from the normative order.
-  const shuffled = shuffleSeeded(statements, (seed ^ 0x9e3779b9) >>> 0);
+  const rounds = Math.max(1, Math.floor(statementsPerCompetency));
   const blocks: IpsativeBlock[] = [];
-  for (let i = 0; i < shuffled.length; i += IPSATIVE_BLOCK_SIZE) {
-    const slice = shuffled.slice(i, i + IPSATIVE_BLOCK_SIZE);
-    if (slice.length < 2) {
-      // Merge a lone trailing statement into the previous block.
-      if (blocks.length > 0) blocks[blocks.length - 1].statements.push(...slice);
-      else blocks.push({ blockId: `blk-${blocks.length + 1}`, statements: slice });
-      continue;
+  let blockNo = 1;
+  for (let round = 0; round < rounds; round++) {
+    const statements: IpsativeStatement[] = [];
+    for (const c of competencies) {
+      const forwards = c.items.filter((i) => !i.reverse);
+      const fwd = forwards[round]; // the round-th forward item, if the competency has one
+      if (!fwd) continue;
+      statements.push({
+        itemKey: `ips:${fwd.itemKey}`,
+        baseItemKey: fwd.itemKey,
+        competencyId: c.acCompetencyId,
+        textEn: fwd.textEn,
+        textAr: fwd.textAr,
+      });
     }
-    blocks.push({ blockId: `blk-${blocks.length + 1}`, statements: slice });
+    // A round holds <= 1 statement per competency, so a chunk of four is four
+    // different competencies. Shuffle per round so block composition varies.
+    const shuffled = shuffleSeeded(statements, (seed ^ (0x9e3779b9 + round * 0x85ebca6b)) >>> 0);
+    for (let i = 0; i < shuffled.length; i += IPSATIVE_BLOCK_SIZE) {
+      const slice = shuffled.slice(i, i + IPSATIVE_BLOCK_SIZE);
+      // Keep blocks of 2-4; drop a lone trailing statement (its competency is
+      // covered by the round's other blocks / the other round). Never merge it
+      // into another block, which could repeat a competency within a block.
+      if (slice.length < 2) continue;
+      blocks.push({ blockId: `blk-${blockNo++}`, statements: slice });
+    }
   }
   return blocks;
 }

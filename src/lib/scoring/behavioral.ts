@@ -155,6 +155,67 @@ export type BehavioralProfileRow = {
   itemCount: number;
 };
 
+type ScoreRow = {
+  competency_id: string;
+  raw_score: number | string;
+  is_reverse: boolean;
+  item_type?: string | null;
+  answer_data?: { choice?: string } | null;
+};
+
+/**
+ * Per-competency self-score rollup shared by the anonymous + candidate paths.
+ *
+ * - Normative (Likert) rows: averaged, reverse-mapped (6 - raw).
+ * - Ipsative (forced-choice) rows: collapsed to ONE value per competency =
+ *   3 (neutral) + (#most - #least), clamped 1-5. One value regardless of how
+ *   many blocks the competency appears in, so PER-10's extra blocks SHARPEN the
+ *   preference signal instead of diluting the average toward the mid (which a
+ *   naive per-statement average of most=5/least=1/mid=3 would do). Unpicked
+ *   ("mid") statements carry no signal; a competency that appears in blocks but
+ *   is never picked stays neutral (3), so coverage is never lost.
+ * The single ipsative value is averaged together with the normative values.
+ */
+export function rollupSelfScores(responses: ScoreRow[]): BehavioralProfileRow[] {
+  const normByComp = new Map<string, number[]>();
+  const ipsByComp = new Map<string, { most: number; least: number; seen: boolean }>();
+  const order: string[] = [];
+  const seenComp = new Set<string>();
+  for (const r of responses) {
+    const cid = r.competency_id;
+    if (!seenComp.has(cid)) { seenComp.add(cid); order.push(cid); }
+    if (r.item_type === "ipsative") {
+      const agg = ipsByComp.get(cid) ?? { most: 0, least: 0, seen: true };
+      agg.seen = true;
+      const choice = r.answer_data?.choice;
+      if (choice === "most") agg.most += 1;
+      else if (choice === "least") agg.least += 1;
+      ipsByComp.set(cid, agg);
+    } else {
+      const raw = Number(r.raw_score);
+      const scored = r.is_reverse ? 6 - raw : raw;
+      const arr = normByComp.get(cid) ?? [];
+      arr.push(scored);
+      normByComp.set(cid, arr);
+    }
+  }
+  const profile: BehavioralProfileRow[] = [];
+  for (const cid of order) {
+    const vals = [...(normByComp.get(cid) ?? [])];
+    const ips = ipsByComp.get(cid);
+    if (ips?.seen) {
+      vals.push(Math.max(1, Math.min(5, 3 + (ips.most - ips.least))));
+    }
+    if (vals.length === 0) continue;
+    profile.push({
+      competencyId: cid,
+      selfScore: Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 100) / 100,
+      itemCount: vals.length,
+    });
+  }
+  return profile;
+}
+
 /**
  * Finalize an anonymous session: compute per-competency self scores (reverse
  * mapped 6 - raw), mark the session submitted, and RETURN the profile. Unlike
@@ -174,23 +235,10 @@ export async function submitAnonymousBehavioral(
 
   const { data: responses } = await sb
     .from("behavioral_assessment_responses")
-    .select("competency_id, raw_score, is_reverse")
+    .select("competency_id, raw_score, is_reverse, item_type, answer_data")
     .eq("session_id", sessionId);
 
-  const byComp = new Map<string, number[]>();
-  for (const r of responses ?? []) {
-    const raw = Number(r.raw_score);
-    const scored = r.is_reverse ? 6 - raw : raw; // reverse mapping
-    const cid = r.competency_id as string;
-    if (!byComp.has(cid)) byComp.set(cid, []);
-    byComp.get(cid)!.push(scored);
-  }
-
-  const profile: BehavioralProfileRow[] = Array.from(byComp.entries()).map(([competencyId, vals]) => ({
-    competencyId,
-    selfScore: Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 100) / 100,
-    itemCount: vals.length,
-  }));
+  const profile = rollupSelfScores((responses ?? []) as ScoreRow[]);
 
   await sb
     .from("behavioral_assessment_sessions")
@@ -321,24 +369,15 @@ export async function submitBehavioralAssessment(
 
   const { data: responses } = await sb
     .from("behavioral_assessment_responses")
-    .select("competency_id, raw_score, is_reverse")
+    .select("competency_id, raw_score, is_reverse, item_type, answer_data")
     .eq("session_id", session.id);
 
-  const byComp = new Map<string, number[]>();
-  for (const r of responses ?? []) {
-    const raw = Number(r.raw_score);
-    const scored = r.is_reverse ? 6 - raw : raw; // reverse mapping
-    const cid = r.competency_id as string;
-    if (!byComp.has(cid)) byComp.set(cid, []);
-    byComp.get(cid)!.push(scored);
-  }
-
-  const rows = Array.from(byComp.entries()).map(([competencyId, vals]) => ({
+  const rows = rollupSelfScores((responses ?? []) as ScoreRow[]).map((p) => ({
     engagement_id: engagementId,
     candidate_id: candidateId,
-    competency_id: competencyId,
-    self_score: Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 100) / 100,
-    item_count: vals.length,
+    competency_id: p.competencyId,
+    self_score: p.selfScore,
+    item_count: p.itemCount,
     computed_at: new Date().toISOString(),
   }));
 

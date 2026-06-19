@@ -28,6 +28,7 @@ const HIGH_FIT_THRESHOLD = 4;
 type Lang = "en" | "ar";
 type Phase = "intro" | "normative" | "ipsative" | "result";
 type Purpose = "development" | "hiring";
+type ItemFormat = "normative" | "ipsative" | "both";
 
 const LIKERT = [1, 2, 3, 4, 5];
 const ITEMS_PER_PAGE = 12;
@@ -59,7 +60,7 @@ export function PersonaStandaloneClient({
    *  fixed by the admin and the candidate cannot change them - the picker is
    *  replaced by a read-only summary. The competency scope is already applied
    *  upstream (the `competencies` prop is pre-filtered). */
-  pinned?: { purpose: Purpose; roleProfileId: string | null; roleName: string | null } | null;
+  pinned?: { purpose: Purpose; roleProfileId: string | null; roleName: string | null; itemFormat?: ItemFormat } | null;
   /** CAL-PER-402: purpose locked by the landing tile (Talent Acquisition ->
    *  hiring, Talent Management -> development). The taker still picks a target
    *  role, but the purpose picker is hidden. Ignored when `pinned` is set. */
@@ -76,6 +77,9 @@ export function PersonaStandaloneClient({
   // the efficient scoped test) or the full framework (to show the whole
   // instrument). The fit is always computed against the role either way.
   const [scopeMode, setScopeMode] = useState<"role" | "full">("role");
+  // SD-9: which item format(s) to run. Pinned by a voucher, else taker-chosen.
+  const itemFormatLocked = pinned?.itemFormat != null;
+  const [itemFormat, setItemFormat] = useState<ItemFormat>(pinned?.itemFormat ?? "both");
   const [seed, setSeed] = useState<number>(0);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, number>>({});
@@ -198,9 +202,14 @@ export function PersonaStandaloneClient({
         // The target role drives scope + the report for BOTH purposes.
         targetRoleProfileId: targetRoleId || null,
         seed: s,
+        itemFormat,
       });
       if (!res.ok) { setError(res.error); return; }
-      setSeed(s); setSessionId(res.sessionId); setPhase("normative"); setPage(0);
+      // SD-9: open on the first format actually being served (skip the section
+      // the chosen format omits). A voucher pin already set itemFormat.
+      setSeed(s); setSessionId(res.sessionId);
+      setPhase(itemFormat === "ipsative" ? "ipsative" : "normative");
+      setPage(0);
     } catch { setError(tx("Could not start the Persona assessment.", "تعذّر بدء تقييم بيرسونا.")); }
     finally { setBusy(false); }
   };
@@ -246,15 +255,18 @@ export function PersonaStandaloneClient({
   const fillRandom = () => {
     const rand5 = () => 1 + Math.floor(Math.random() * 5);
     const nextAnswers: Record<string, number> = {};
-    for (const it of normItems) {
-      const v = rand5();
-      nextAnswers[it.itemKey] = v;
-      queue({ itemKey: it.itemKey, competencyId: it.competencyId, rawScore: v, isReverse: it.reverse });
+    // Only fill the sections the chosen format actually serves (SD-9).
+    if (itemFormat !== "ipsative") {
+      for (const it of normItems) {
+        const v = rand5();
+        nextAnswers[it.itemKey] = v;
+        queue({ itemKey: it.itemKey, competencyId: it.competencyId, rawScore: v, isReverse: it.reverse });
+      }
     }
     setAnswers(nextAnswers);
 
     const nextIps: Record<string, { most?: string; least?: string }> = {};
-    for (const block of ipsBlocks) {
+    for (const block of (itemFormat === "normative" ? [] : ipsBlocks)) {
       const n = block.statements.length;
       if (n === 0) continue;
       const mostIdx = Math.floor(Math.random() * n);
@@ -274,7 +286,9 @@ export function PersonaStandaloneClient({
     }
     setIpsChoices(nextIps);
     void flush(); // persist all filled answers immediately (not just on the debounce)
-    if (phase === "normative") { setPhase("ipsative"); window.scrollTo({ top: 0 }); }
+    // 'both' jumps to the ipsative phase so Submit is one click away; the
+    // single-format runs already sit on their only phase.
+    if (itemFormat === "both" && phase === "normative") { setPhase("ipsative"); window.scrollTo({ top: 0 }); }
   };
 
   const submit = async () => {
@@ -524,6 +538,39 @@ export function PersonaStandaloneClient({
               </div>
             </div>
           </div>
+
+          {/* SD-9: item-format chooser (hidden when a voucher pins it). */}
+          {!itemFormatLocked && (
+            <div className="rounded-lg border border-slate-200 p-3">
+              <p className="text-xs font-medium text-[#010131]">{tx("Question format", "صيغة الأسئلة")}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {tx(
+                  "Both sections give the most robust read. Choose a single format for a shorter run.",
+                  "يمنح القسمان القراءة الأكثر موثوقية. اختر صيغة واحدة لتقييم أقصر.",
+                )}
+              </p>
+              <div className="mt-2 inline-flex flex-wrap gap-2">
+                {([
+                  ["both", tx("Both (recommended)", "كلاهما (موصى به)")],
+                  ["normative", tx("Rating only", "تقييم فقط")],
+                  ["ipsative", tx("Most / least only", "الأكثر / الأقل فقط")],
+                ] as [ItemFormat, string][]).map(([val, label]) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setItemFormat(val)}
+                    aria-pressed={itemFormat === val}
+                    className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+                      itemFormat === val ? "border-[#5391D5] bg-[#5391D5] text-white" : "border-slate-300 text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <button
             onClick={begin}
             disabled={busy || (emailRequired && !emailValid)}
@@ -585,6 +632,16 @@ export function PersonaStandaloneClient({
                 className="inline-flex items-center gap-1 rounded-md bg-[#010131] px-4 py-2 text-sm font-semibold text-white hover:bg-[#121140]"
               >
                 {tx("Next", "التالي")} <ChevronRight className="h-4 w-4" />
+              </button>
+            ) : itemFormat === "normative" ? (
+              // Normative-only: the last page submits (no ipsative phase to follow).
+              <button
+                onClick={submit}
+                disabled={!allNormAnswered || busy}
+                className="inline-flex items-center gap-2 rounded-md bg-[#047857] px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
+              >
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                {busy ? tx("Scoring…", "جارٍ التقييم…") : tx("Submit", "إرسال")}
               </button>
             ) : (
               <button
@@ -660,18 +717,23 @@ export function PersonaStandaloneClient({
           })}
 
           <div className="flex items-center justify-between gap-3">
-            <button
-              onClick={() => { setPhase("normative"); setPage(normPages.length - 1); }}
-              className="inline-flex items-center gap-1 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
-            >
-              <ChevronLeft className="h-4 w-4" /> {tx("Back", "رجوع")}
-            </button>
+            {itemFormat === "ipsative" ? (
+              // Ipsative-only: there is no normative phase to go back to.
+              <span />
+            ) : (
+              <button
+                onClick={() => { setPhase("normative"); setPage(normPages.length - 1); }}
+                className="inline-flex items-center gap-1 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+              >
+                <ChevronLeft className="h-4 w-4" /> {tx("Back", "رجوع")}
+              </button>
+            )}
             <span className="text-[11px] text-muted-foreground">
               {saving ? tx("Saving…", "جارٍ الحفظ…") : tx("Answers save automatically", "تُحفظ الإجابات تلقائيًا")}
             </span>
             <button
               onClick={submit}
-              disabled={!allNormAnswered || !allIpsDone || busy}
+              disabled={(itemFormat !== "ipsative" && !allNormAnswered) || !allIpsDone || busy}
               className="inline-flex items-center gap-2 rounded-md bg-[#047857] px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
             >
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}

@@ -77,6 +77,8 @@ export async function createAnonymousBehavioralSession(
     scopedCompetencyIds?: string[] | null;
     /** Project/cohort label (migration 00137); groups Persona + Cognitive runs. */
     projectLabel?: string | null;
+    /** Item format (migration 00140, SD-9): 'normative' / 'ipsative' / 'both'. */
+    itemFormat?: "normative" | "ipsative" | "both";
   },
 ): Promise<BehavioralSession> {
   const sb = createServiceClient();
@@ -113,15 +115,23 @@ export async function createAnonymousBehavioralSession(
     ...with123,
     ...(opts?.takerEmail ? { taker_email: opts.takerEmail } : {}),
   };
-  // 00137 (newest): project/cohort label.
+  // 00137: project/cohort label.
   const with137: Record<string, unknown> = {
     ...with129,
     ...(opts?.projectLabel ? { project_label: opts.projectLabel } : {}),
   };
+  // 00140 (newest): item format. Only carried when narrowed - 'both' is the
+  // column DEFAULT, so omitting it preserves today's behaviour.
+  const with140: Record<string, unknown> = {
+    ...with137,
+    ...(opts?.itemFormat === "normative" || opts?.itemFormat === "ipsative"
+      ? { item_format: opts.itemFormat }
+      : {}),
+  };
 
   // Peel the newest migration's columns first on each missing-column error:
-  // 00137 project_label -> 00129 taker_email -> 00123 scope -> 00110 -> core.
-  const attempts = [with137, with129, with123, with110, baseCore];
+  // 00140 item_format -> 00137 project_label -> 00129 taker_email -> 00123 scope -> 00110 -> core.
+  const attempts = [with140, with137, with129, with123, with110, baseCore];
   let data: { id: string; status: string } | null = null;
   let error: unknown = null;
   for (const payload of attempts) {

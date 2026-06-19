@@ -68,6 +68,8 @@ export function VouchersClient({
   const [purpose, setPurpose] = useState<"hiring" | "development">("hiring");
   const [targetRoleId, setTargetRoleId] = useState("");
   const [selectedComps, setSelectedComps] = useState<Set<string>>(() => new Set(allCompIds));
+  // SD-9: item-format pin for the delegate run (default 'both').
+  const [itemFormat, setItemFormat] = useState<"normative" | "ipsative" | "both">("both");
 
   const compsByCluster = useMemo(() => {
     const m = new Map<number, { name: string; comps: CompetencyOption[] }>();
@@ -124,6 +126,7 @@ export function VouchersClient({
       targetRoleProfileId: purpose === "hiring" ? targetRoleId || null : null,
       // Full selection -> empty (= full bank); a strict subset -> the chosen ids.
       scopedCompetencyIds: isFull ? [] : [...selectedComps],
+      itemFormat,
     });
     setBusy(false);
     if ("error" in res) {
@@ -194,6 +197,7 @@ export function VouchersClient({
       purpose,
       targetRoleProfileId: purpose === "hiring" ? targetRoleId || null : null,
       scopedCompetencyIds: isFull ? [] : [...selectedComps],
+      itemFormat,
     });
     setEmailing(false);
     if ("error" in res) {
@@ -294,6 +298,27 @@ export function VouchersClient({
                 >
                   <GraduationCap className="h-3.5 w-3.5" /> Development
                 </button>
+              </div>
+            </div>
+
+            {/* SD-9: pin which item format(s) the delegate sees. */}
+            <div>
+              <Label className="text-xs">Question format</Label>
+              <div className="mt-1.5 inline-flex flex-wrap gap-1.5">
+                {([
+                  ["both", "Both (recommended)"],
+                  ["normative", "Rating only"],
+                  ["ipsative", "Most / least only"],
+                ] as ["normative" | "ipsative" | "both", string][]).map(([val, lbl]) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setItemFormat(val)}
+                    className={`rounded-md border px-3 py-1.5 text-sm font-medium ${itemFormat === val ? "border-[#5391D5] bg-[#5391D5] text-white" : "border-slate-300 text-slate-600 hover:bg-slate-100"}`}
+                  >
+                    {lbl}
+                  </button>
+                ))}
               </div>
             </div>
 

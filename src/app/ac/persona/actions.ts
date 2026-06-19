@@ -20,6 +20,9 @@ export type StartPersonaOptions = {
   /** Taker email (CAL-PER-403); lead capture + results delivery. Required by the
    *  runner for hiring, optional for development. Persisted best-effort. */
   email?: string | null;
+  /** SD-9: which item format(s) to serve - 'normative' (Likert), 'ipsative'
+   *  (most/least), or 'both' (default). Overridden by a voucher pin. */
+  itemFormat?: "normative" | "ipsative" | "both";
 };
 
 /**
@@ -47,6 +50,8 @@ export async function startPersonaAction(
     let purpose: "development" | "hiring" = opts?.purpose === "hiring" ? "hiring" : "development";
     let targetRoleProfileId: string | null = opts?.targetRoleProfileId ?? null;
     let scopedCompetencyIds: string[] | null = null;
+    let itemFormat: "normative" | "ipsative" | "both" =
+      opts?.itemFormat === "normative" || opts?.itemFormat === "ipsative" ? opts.itemFormat : "both";
 
     if (redemptionToken) {
       try {
@@ -80,6 +85,8 @@ export async function startPersonaAction(
           targetRoleProfileId = scope.targetRoleProfileId;
           scopedCompetencyIds = scope.scopedCompetencyIds;
         }
+        // Item format is pinned by the voucher when set (server-authoritative).
+        if (scope.itemFormat) itemFormat = scope.itemFormat;
       } catch {
         /* voucher tables not migrated - proceed as a plain anonymous run */
       }
@@ -94,6 +101,7 @@ export async function startPersonaAction(
       seed: opts?.seed ?? null,
       scopedCompetencyIds,
       projectLabel,
+      itemFormat,
     });
 
     if (redemptionId) {

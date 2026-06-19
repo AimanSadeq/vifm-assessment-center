@@ -30,11 +30,15 @@ export async function generatePersonaVouchersAction(input: {
   scopedCompetencyIds?: string[];
   /** Project/cohort label (00137) - groups this batch with Cognitive for reporting. */
   projectLabel?: string;
+  /** Item format pin (00140, SD-9): 'normative' / 'ipsative' / 'both' (default). */
+  itemFormat?: "normative" | "ipsative" | "both";
 }): Promise<{ ok: true; codes: string[] } | { error: string }> {
   const g = await guard();
   if (!g.ok) return { error: g.error };
 
   const purpose = input.purpose === "hiring" || input.purpose === "development" ? input.purpose : null;
+  const itemFormat =
+    input.itemFormat === "normative" || input.itemFormat === "ipsative" ? input.itemFormat : "both";
   // A hiring voucher needs a target role for the fit; reject early so an admin
   // can't issue a hiring batch that produces no fit report.
   if (purpose === "hiring" && !input.targetRoleProfileId) {
@@ -64,6 +68,7 @@ export async function generatePersonaVouchersAction(input: {
     targetRoleProfileId: purpose === "hiring" ? input.targetRoleProfileId ?? null : null,
     scopedCompetencyIds: (input.scopedCompetencyIds ?? []).filter(Boolean),
     projectLabel: input.projectLabel?.trim() || null,
+    itemFormat,
   });
   if (!res.ok) return { error: res.error };
   revalidatePath("/ac/persona/vouchers");
@@ -109,9 +114,12 @@ export async function emailVoucherDelegatesAction(input: {
   targetRoleProfileId?: string | null;
   scopedCompetencyIds?: string[];
   projectLabel?: string;
+  itemFormat?: "normative" | "ipsative" | "both";
 }): Promise<{ ok: true; results: DelegateResult[] } | { error: string }> {
   const g = await guard();
   if (!g.ok) return { error: g.error };
+  const itemFormat =
+    input.itemFormat === "normative" || input.itemFormat === "ipsative" ? input.itemFormat : "both";
 
   // Dedupe + validate the delegate list.
   const seen = new Set<string>();
@@ -160,6 +168,7 @@ export async function emailVoucherDelegatesAction(input: {
       targetRoleProfileId: purpose === "hiring" ? input.targetRoleProfileId ?? null : null,
       scopedCompetencyIds,
       projectLabel: input.projectLabel?.trim() || null,
+      itemFormat,
     });
     if (!batch.ok) {
       results.push({ email: d.email, ok: false, error: batch.error });

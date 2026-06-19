@@ -41,6 +41,8 @@ export type CreateBatchInput = {
   scopedCompetencyIds?: string[] | null;
   /** Project/cohort label (00137); groups this batch with Cognitive for reporting. */
   projectLabel?: string | null;
+  /** Item format pin (00140, SD-9): 'normative' / 'ipsative' / 'both' (default). */
+  itemFormat?: "normative" | "ipsative" | "both" | null;
 };
 
 /** Undefined column - migration 00123 not applied yet. Postgres raises 42703
@@ -75,12 +77,19 @@ export async function createVoucherBatch(
   };
   // 00137 (newest) project label - only carried when set, peeled first below.
   const projectCol = input.projectLabel?.trim() ? { project_label: input.projectLabel.trim() } : {};
+  // 00140 item format - only carried when narrowed (default 'both' applies via
+  // the column DEFAULT otherwise), peeled first so a pending 00140 still inserts.
+  const formatCol =
+    input.itemFormat === "normative" || input.itemFormat === "ipsative"
+      ? { item_format: input.itemFormat }
+      : {};
 
-  // Newest-first peel: project_label (00137) -> scope (00123) -> base. Each
-  // attempt builds fresh rows (each row generates its own code).
+  // Newest-first peel: item_format (00140) -> project_label (00137) -> scope
+  // (00123) -> base. Each attempt builds fresh rows (each generates its own code).
   const build = (extra: Record<string, unknown>) =>
     Array.from({ length: count }, () => ({ ...baseRow(), ...extra }));
   const attempts = [
+    () => build({ ...scopeCols, ...projectCol, ...formatCol }),
     () => build({ ...scopeCols, ...projectCol }),
     () => build(scopeCols),
     () => build({}),
@@ -104,6 +113,8 @@ export type VoucherScope = {
   targetRoleProfileId: string | null;
   /** null/empty = full bank; non-empty = serve only these competencies. */
   scopedCompetencyIds: string[] | null;
+  /** Pinned item format (00140); null = candidate chooses (default 'both'). */
+  itemFormat: "normative" | "ipsative" | "both" | null;
 };
 
 /**
@@ -113,7 +124,7 @@ export type VoucherScope = {
  * (unpinned) scope when 00123 isn't applied or anything is missing.
  */
 export async function getVoucherScopeByRedemptionToken(token: string): Promise<VoucherScope> {
-  const unpinned: VoucherScope = { purpose: null, targetRoleProfileId: null, scopedCompetencyIds: null };
+  const unpinned: VoucherScope = { purpose: null, targetRoleProfileId: null, scopedCompetencyIds: null, itemFormat: null };
   try {
     const sb = createServiceClient();
     const { data: red } = await sb
@@ -133,10 +144,26 @@ export async function getVoucherScopeByRedemptionToken(token: string): Promise<V
       }>();
     if (error || !v) return unpinned;
     const scoped = Array.isArray(v.scoped_competency_ids) ? v.scoped_competency_ids.filter(Boolean) : null;
+    // item_format (00140) read separately so a pending migration can't drop the
+    // scope above (mirrors the project_label pattern in the start action).
+    let itemFormat: "normative" | "ipsative" | "both" | null = null;
+    try {
+      const { data: f } = await sb
+        .from("persona_vouchers")
+        .select("item_format")
+        .eq("id", red.voucher_id)
+        .maybeSingle<{ item_format: string | null }>();
+      if (f?.item_format === "normative" || f?.item_format === "ipsative" || f?.item_format === "both") {
+        itemFormat = f.item_format;
+      }
+    } catch {
+      /* 00140 not applied - leave null (candidate default 'both') */
+    }
     return {
       purpose: v.purpose === "hiring" || v.purpose === "development" ? v.purpose : null,
       targetRoleProfileId: v.target_role_profile_id ?? null,
       scopedCompetencyIds: scoped && scoped.length > 0 ? scoped : null,
+      itemFormat,
     };
   } catch {
     return unpinned;

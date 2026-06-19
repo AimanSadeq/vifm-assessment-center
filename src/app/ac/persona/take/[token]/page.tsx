@@ -54,6 +54,9 @@ export default async function PersonaTakePage({
         roleProfileId: scope.targetRoleProfileId,
         roleName:
           roleProfiles.find((r) => r.id === scope.targetRoleProfileId)?.name ?? null,
+        // SD-9: pin the item format too so the runner serves exactly the
+        // admin-chosen section(s) and the picker stays hidden.
+        itemFormat: scope.itemFormat ?? undefined,
       }
     : null;
 

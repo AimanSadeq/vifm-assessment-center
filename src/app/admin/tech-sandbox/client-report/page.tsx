@@ -141,12 +141,15 @@ async function CompanyReport({ company }: { company: string }) {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link
-            href={`/api/tech-sandbox/client-report?company=${encodeURIComponent(report.company_label)}&format=json`}
-            className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm hover:bg-muted/40"
-          >
-            <Download className="h-3.5 w-3.5" /> JSON
-          </Link>
+          {(["pdf", "json", "csv"] as const).map((fmt) => (
+            <Link
+              key={fmt}
+              href={`/api/tech-sandbox/client-report?company=${encodeURIComponent(report.company_label)}&format=${fmt}`}
+              className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm hover:bg-muted/40"
+            >
+              <Download className="h-3.5 w-3.5" /> {fmt.toUpperCase()}
+            </Link>
+          ))}
           <Link href="/admin/tech-sandbox/client-report" className="text-sm text-accent hover:underline">
             All companies
           </Link>

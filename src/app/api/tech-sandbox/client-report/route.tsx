@@ -1,15 +1,18 @@
 /**
- * Technical client report - structured payload export (admin-gated).
+ * Technical client report - structured payload + document export (admin-gated).
  *
- *   GET /api/tech-sandbox/client-report?company=<name>&format=json|csv
+ *   GET /api/tech-sandbox/client-report?company=<name>&format=json|csv|pdf
  *
- * Returns the full Company -> Project aggregation payload as JSON (the shape a
- * reporting template consumes), or a flat CSV of the company-level skill
- * profiles for Excel. Admin-only (service-role reads), force-dynamic.
+ * json (default): the full Company -> Project aggregation payload a reporting
+ * template consumes. csv: a flat table of the company + project skill profiles
+ * for Excel. pdf: the rendered client report (React-PDF). Admin-only
+ * (service-role reads), force-dynamic.
  */
 import { NextResponse } from "next/server";
+import { renderToBuffer } from "@react-pdf/renderer";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { buildClientReport } from "@/lib/reports/tech-aggregation/aggregate";
+import { TechClientReportPdf } from "@/lib/reports/tech-client-report";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -31,6 +34,16 @@ export async function GET(req: Request) {
   if (!report) return NextResponse.json({ error: "No data for this company" }, { status: 404 });
 
   const safe = report.company_label.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase() || "company";
+
+  if (format === "pdf") {
+    const buffer = await renderToBuffer(<TechClientReportPdf data={report} />);
+    return new NextResponse(new Uint8Array(buffer), {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="tech-client-report-${safe}.pdf"`,
+      },
+    });
+  }
 
   if (format === "csv") {
     const esc = (v: string | number) => {

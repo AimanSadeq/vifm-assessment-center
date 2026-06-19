@@ -205,6 +205,8 @@ const T = {
     catalogue: "Training catalogue",
     admin: "Admin",
     enter: "Enter",
+    forSelection: "For selection",
+    forDevelopment: "For development",
     eyebrow: "VIFM Talent Intelligence Platform",
     h1a: "Build the talent the",
     h1b: "future demands.",
@@ -257,6 +259,8 @@ const T = {
     catalogue: "دليل البرامج التدريبية",
     admin: "الإدارة",
     enter: "الدخول",
+    forSelection: "للاختيار",
+    forDevelopment: "للتطوير",
     eyebrow: "منصّة VIFM لذكاء المواهب",
     h1a: "ابنِ المواهب التي",
     h1b: "يتطلّبها المستقبل.",
@@ -337,7 +341,6 @@ export function PlatformLanding() {
     const Icon = svc.icon;
     const variant = VARIANTS[lang]?.[svc.key]?.[pillar];
     const copy = { ...t.services[svc.key], ...variant };
-    const badge = variant?.badge;
     // CAL-PER-402: Persona's purpose is set by the pillar it's launched from -
     // Talent Acquisition (acquire) -> hiring, Talent Management (manage) ->
     // development - so the runner opens locked to that purpose (picker hidden).
@@ -350,10 +353,11 @@ export function PlatformLanding() {
     // Acquisition (selection), emerald = Talent Management (development). Matches
     // the For Selection / For Development badges.
     const tone = pillar === "acquire" ? "blue" : "emerald";
-    const badgeClass =
-      pillar === "acquire"
-        ? "border-accent/30 bg-accent/10 text-accent"
-        : "border-emerald-300/60 bg-emerald-50 text-emerald-700";
+    // Dual-purpose services (both pillars) carry a bottom row showing they serve
+    // BOTH lifecycle stages: "For selection" (left) and "For development" (right),
+    // with the current column's side emphasized. Single-purpose services omit it.
+    const dualPurpose = svc.pillars.length === 2;
+    const selOn = pillar === "acquire";
     return (
       <Tooltip key={svc.key}>
         <TooltipTrigger asChild>
@@ -364,15 +368,14 @@ export function PlatformLanding() {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="ara-eyebrow">{copy.tagline}</div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h4 className="text-base font-semibold text-primary">{copy.name}</h4>
-                  {badge && (
-                    <span className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${badgeClass}`}>
-                      {badge}
-                    </span>
-                  )}
-                </div>
+                <h4 className="text-base font-semibold text-primary">{copy.name}</h4>
                 <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-muted-foreground">{copy.description}</p>
+                {dualPurpose && (
+                  <div className="mt-2 flex items-center justify-between border-t border-border/60 pt-1.5 text-[10px] font-semibold uppercase tracking-wide">
+                    <span className={selOn ? "text-accent" : "text-muted-foreground/50"}>{t.forSelection}</span>
+                    <span className={!selOn ? "text-emerald-700" : "text-muted-foreground/50"}>{t.forDevelopment}</span>
+                  </div>
+                )}
               </div>
               <div className="launcher-card-cta shrink-0 self-center">
                 <Arrow className="h-5 w-5" />

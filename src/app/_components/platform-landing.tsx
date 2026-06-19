@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight, ArrowLeft, ClipboardCheck, Compass, Aperture, Languages, UserSearch,
-  GraduationCap, BadgeCheck, BrainCircuit, Layers, ShieldCheck, TrendingUp,
+  GraduationCap, BadgeCheck, BrainCircuit, Layers, ShieldCheck, TrendingUp, Table2,
 } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
@@ -203,6 +203,7 @@ const T = {
   en: {
     pickLang: "Language",
     catalogue: "Training catalogue",
+    compare: "Compare portals",
     admin: "Admin",
     enter: "Enter",
     forSelection: "For selection",
@@ -259,6 +260,7 @@ const T = {
   ar: {
     pickLang: "اللغة",
     catalogue: "دليل البرامج التدريبية",
+    compare: "مقارنة البوّابات",
     admin: "الإدارة",
     enter: "الدخول",
     forSelection: "للاختيار",
@@ -425,6 +427,12 @@ export function PlatformLanding() {
                 <GraduationCap className="h-3.5 w-3.5" /> {t.catalogue}
               </Link>
               <Link
+                href="/compare"
+                className="hidden items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/85 backdrop-blur transition-colors hover:border-white/35 hover:bg-white/15 sm:inline-flex"
+              >
+                <Table2 className="h-3.5 w-3.5" /> {t.compare}
+              </Link>
+              <Link
                 href="/admin"
                 className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/85 backdrop-blur transition-colors hover:border-white/35 hover:bg-white/15"
               >
@@ -510,6 +518,8 @@ export function PlatformLanding() {
           </div>
           <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
             <Link href="/courses" className="hover:text-foreground">{t.catalogue}</Link>
+            <span className="h-3 w-px bg-border" />
+            <Link href="/compare" className="hover:text-foreground">{t.compare}</Link>
             <span className="h-3 w-px bg-border" />
             <span>{t.footerGcc}</span>
           </div>

@@ -1,4 +1,5 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { NINE_BOX, type TalentBand } from "@/lib/scoring/talent-map";
 
 // Succession Readiness verdict PDF (English / React-PDF, Helvetica - no font
 // registration needed). Mirrors the on-screen report at
@@ -73,6 +74,14 @@ export type ReadinessPdfData = {
   yearLabel: string | null;
   lowAgreementCount: number;
   competencies: ReadinessPdfCompetency[];
+  // 9-box (SD-2). Null when no covered evidence.
+  evidenceSource?: "others_360" | "persona_self";
+  performanceMean?: number | null;
+  potentialMean?: number | null;
+  performanceBand?: TalentBand | null;
+  potentialBand?: TalentBand | null;
+  nineBoxLabel?: string | null;
+  nineBoxAction?: string | null;
 };
 
 const s = StyleSheet.create({
@@ -113,6 +122,14 @@ const s = StyleSheet.create({
 
   footer: { position: "absolute", bottom: 24, left: 44, right: 44, borderTopWidth: 1, borderTopColor: C.border, paddingTop: 6, flexDirection: "row", justifyContent: "space-between" },
   footerText: { fontSize: 7.5, color: C.textLight },
+
+  // 9-box
+  nineWrap: { flexDirection: "row", gap: 14, marginBottom: 14, alignItems: "flex-start" },
+  nineGrid: { gap: 2 },
+  nineGridRow: { flexDirection: "row", gap: 2 },
+  nineCell: { width: 70, height: 40, borderRadius: 3, padding: 3, justifyContent: "center", alignItems: "center" },
+  nineCellText: { fontSize: 6.5, textAlign: "center" },
+  nineAxis: { fontSize: 7, color: C.textLight, marginTop: 3, textAlign: "center" },
 });
 
 const fmt = (n: number | null, d = 2) => (n == null ? "-" : n.toFixed(d));
@@ -146,6 +163,50 @@ export function ReadinessReportPdf({ data }: { data: ReadinessPdfData }) {
           <View style={s.stat}><Text style={s.statLabel}>Gap</Text><Text style={[s.statValue, { color: (data.overallGap ?? 0) >= 0 ? C.emerald : C.rose }]}>{signed(data.overallGap)}</Text></View>
           <View style={s.stat}><Text style={s.statLabel}>Coverage</Text><Text style={s.statValue}>{`${(data.coveragePct * 100).toFixed(0)}% (${data.coveredCount}/${data.totalCount})`}</Text></View>
         </View>
+
+        {data.performanceBand && data.potentialBand ? (
+          <View wrap={false}>
+            <Text style={s.sectionTitle}>9-box placement</Text>
+            <View style={s.nineWrap}>
+              <View style={s.nineGrid}>
+                {(["high", "med", "low"] as TalentBand[]).map((pot) => (
+                  <View key={pot} style={s.nineGridRow}>
+                    {(["low", "med", "high"] as TalentBand[]).map((perf) => {
+                      const cell = NINE_BOX[pot][perf];
+                      const active = data.potentialBand === pot && data.performanceBand === perf;
+                      return (
+                        <View
+                          key={perf}
+                          style={[
+                            s.nineCell,
+                            { backgroundColor: active ? C.accent : C.bgSoft, borderWidth: active ? 0 : 0.5, borderColor: C.border },
+                          ]}
+                        >
+                          <Text style={[s.nineCellText, { color: active ? "#ffffff" : C.textLight, fontFamily: active ? "Helvetica-Bold" : "Helvetica" }]}>
+                            {cell.label}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                ))}
+                <Text style={s.nineAxis}>Performance -&gt;  (Potential up)</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 11, fontFamily: "Helvetica-Bold", color: C.primary }}>{data.nineBoxLabel}</Text>
+                {data.nineBoxAction ? <Text style={{ fontSize: 9, color: C.text, marginTop: 2 }}>{data.nineBoxAction}</Text> : null}
+                <Text style={{ fontSize: 8.5, color: C.textLight, marginTop: 6 }}>
+                  Performance (Results + People): {fmt(data.performanceMean ?? null)}   ·   Potential (Thinking + Self): {fmt(data.potentialMean ?? null)}
+                </Text>
+                <Text style={{ fontSize: 7.5, color: C.textLight, marginTop: 4 }}>
+                  {data.evidenceSource === "persona_self"
+                    ? "Axes from the candidate's Persona self-ratings. Self-reported - corroborate with a 360 before a final decision."
+                    : "Axes from the 360 Others view."}
+                </Text>
+              </View>
+            </View>
+          </View>
+        ) : null}
 
         {data.knockoutApplied ? (
           <Text style={s.knockout}>Tier capped by a high-priority knockout on a must-have competency.</Text>

@@ -74,9 +74,24 @@
  *      at or above `raterAgreementSpreadMax`. Surface both as caveats.
  */
 
+import {
+  scoreBand,
+  nineBoxCell,
+  PERFORMANCE_DOMAINS,
+  POTENTIAL_DOMAINS,
+  meanOrNull,
+  type TalentBand,
+  type NineBoxCell,
+} from "@/lib/scoring/talent-map";
+
 export type ReadinessTier = "ready_now" | "ready_soon" | "developing" | "not_ready";
 export type ReadinessStatus = ReadinessTier | "insufficient_data";
 export type RoleCompetencyPriority = "high" | "medium" | "low";
+
+/** Where the readiness signal came from. The tier is normally driven by the
+ *  360 "Others" view; in a Persona-only succession run (no 360) the candidate's
+ *  Persona self-ratings drive it instead, and the report must say so. */
+export type ReadinessEvidenceSource = "others_360" | "persona_self";
 
 /** Tunable parameters. Persisted by the admin panel; see DEFAULT below. */
 export type ReadinessConfig = {
@@ -184,6 +199,9 @@ export type RoleCompetencyReq = {
   priority: RoleCompetencyPriority;
   /** Target proficiency 1–5 (defaults to role_profiles.default_target_proficiency). */
   target: number;
+  /** VIFM domain (RESULTS / PEOPLE / THINKING / SELF) for the 9-box axes.
+   *  Optional: when absent the 9-box falls back to the overall mean per axis. */
+  domain?: string | null;
 };
 
 /** Per-competency observed evidence, already aggregated from the 360. */
@@ -206,6 +224,7 @@ export type CompetencyReadiness = {
   weight: number;
   priority: RoleCompetencyPriority;
   target: number;
+  domain: string | null;
   othersMean: number | null;
   /** othersMean − target. */
   gap: number | null;
@@ -241,12 +260,70 @@ export type ReadinessResult = {
   borderlineNote: string | null;
   nearestCutoffDistance: number | null;
   lowAgreementCount: number;
+  /** Where the signal came from (360 vs Persona-only). */
+  evidenceSource: ReadinessEvidenceSource;
+  /** 9-box placement (SD-2). Performance = RESULTS+PEOPLE mean, Potential =
+   *  THINKING+SELF mean, banded low/med/high. Null when no covered evidence. */
+  performanceMean: number | null;
+  potentialMean: number | null;
+  performanceBand: TalentBand | null;
+  potentialBand: TalentBand | null;
+  nineBoxLabel: string | null;
+  nineBoxAction: string | null;
+  nineBoxTone: NineBoxCell["tone"] | null;
 };
 
 function weightedMean(pairs: Array<{ value: number; weight: number }>): number | null {
   const wsum = pairs.reduce((a, p) => a + p.weight, 0);
   if (wsum <= 0) return null;
   return pairs.reduce((a, p) => a + p.value * p.weight, 0) / wsum;
+}
+
+type NineBox = {
+  performanceMean: number | null;
+  potentialMean: number | null;
+  performanceBand: TalentBand | null;
+  potentialBand: TalentBand | null;
+  nineBoxLabel: string | null;
+  nineBoxAction: string | null;
+  nineBoxTone: NineBoxCell["tone"] | null;
+};
+const EMPTY_NINE_BOX: NineBox = {
+  performanceMean: null, potentialMean: null, performanceBand: null, potentialBand: null,
+  nineBoxLabel: null, nineBoxAction: null, nineBoxTone: null,
+};
+
+/**
+ * 9-box placement from the covered competencies' driver means (SD-2). Reuses
+ * the AC talent-map axes: Performance = RESULTS+PEOPLE, Potential = THINKING+
+ * SELF. When a domain has no covered competency, that axis falls back to the
+ * overall driver mean so the candidate still plots (mirrors talent-map.ts).
+ */
+function computeNineBox(
+  covered: CompetencyReadiness[],
+  overallDriverMean: number | null
+): NineBox {
+  const perf = covered
+    .filter((c) => c.domain != null && (PERFORMANCE_DOMAINS as readonly string[]).includes(c.domain))
+    .map((c) => c.othersMean as number);
+  const pot = covered
+    .filter((c) => c.domain != null && (POTENTIAL_DOMAINS as readonly string[]).includes(c.domain))
+    .map((c) => c.othersMean as number);
+  const performanceMean = meanOrNull(perf) ?? overallDriverMean;
+  const potentialMean = meanOrNull(pot) ?? overallDriverMean;
+  if (performanceMean == null || potentialMean == null) return EMPTY_NINE_BOX;
+  const performanceBand = scoreBand(performanceMean);
+  const potentialBand = scoreBand(potentialMean);
+  const cell = nineBoxCell(potentialBand, performanceBand);
+  return {
+    performanceMean,
+    potentialMean,
+    performanceBand,
+    potentialBand,
+    nineBoxLabel: cell.label,
+    nineBoxAction: cell.action,
+    nineBoxTone: cell.tone,
+  };
 }
 
 function tierFromGap(gap: number, cfg: ReadinessConfig): ReadinessTier {
@@ -287,7 +364,8 @@ function selfAwarenessFlag(
 export function computeReadiness(
   role: RoleCompetencyReq[],
   observed: ObservedCompetency[],
-  config: ReadinessConfig = DEFAULT_READINESS_CONFIG
+  config: ReadinessConfig = DEFAULT_READINESS_CONFIG,
+  evidenceSource: ReadinessEvidenceSource = "others_360"
 ): ReadinessResult {
   const obsById = new Map(observed.map((o) => [o.competencyId, o]));
   const totalCount = role.length;
@@ -312,6 +390,7 @@ export function computeReadiness(
       weight: req.weight,
       priority: req.priority,
       target: req.target,
+      domain: req.domain ?? null,
       othersMean,
       gap,
       covered,
@@ -353,6 +432,8 @@ export function computeReadiness(
       borderlineNote: null,
       nearestCutoffDistance: null,
       lowAgreementCount,
+      evidenceSource,
+      ...EMPTY_NINE_BOX,
     };
   }
 
@@ -394,6 +475,9 @@ export function computeReadiness(
   }
   const borderline = nearestCutoffDistance !== null && nearestCutoffDistance <= config.borderlineBand;
 
+  // 9-box placement from the covered driver means (SD-2).
+  const nineBox = computeNineBox(covered, weightedOthers);
+
   return {
     status: tier,
     tier,
@@ -412,5 +496,7 @@ export function computeReadiness(
     borderlineNote: borderline ? borderlineNote : null,
     nearestCutoffDistance,
     lowAgreementCount,
+    evidenceSource,
+    ...nineBox,
   };
 }

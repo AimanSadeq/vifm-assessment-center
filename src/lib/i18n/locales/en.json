@@ -357,6 +357,14 @@
     "title": "Succession Readiness",
     "downloadPdf": "Download PDF",
     "horizon": "Horizon",
+    "evidencePersonaTag": "Self-reported (Persona)",
+    "nineBox": {
+      "title": "9-box placement",
+      "performance": "Performance",
+      "potential": "Potential",
+      "evidence360": "Axes from the 360 Others view (Performance = Results + People, Potential = Thinking + Self).",
+      "evidencePersona": "Axes from the candidate's Persona self-ratings (Performance = Results + People, Potential = Thinking + Self). Self-reported - corroborate with a 360 before a final decision."
+    },
     "weightedOthers": "Weighted Others",
     "target": "Role target",
     "gap": "Gap",

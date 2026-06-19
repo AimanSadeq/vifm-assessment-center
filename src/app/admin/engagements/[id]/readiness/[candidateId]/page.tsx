@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Target, Gauge, ShieldAlert, Eye, EyeOff, Clock, AlertTriangle, Users, Download } from "lucide-react";
 import { computeCandidateReadiness } from "@/lib/scoring/readiness-data";
 import { READINESS_TIER_META, type SelfAwarenessFlag } from "@/lib/scoring/readiness";
+import { NINE_BOX, type TalentBand } from "@/lib/scoring/talent-map";
 import { GenerateIdpButton } from "./_components/generate-idp-button";
 
 type Props = { params: { id: string; candidateId: string } };
@@ -95,6 +96,11 @@ export default async function ReadinessReportPage({ params }: Props) {
                 <AlertTriangle className="h-3.5 w-3.5" /> {t("readinessReport.borderline")}
               </span>
             )}
+            {r.evidenceSource === "persona_self" && r.status !== "insufficient_data" && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-800">
+                {t("readinessReport.evidencePersonaTag")}
+              </span>
+            )}
           </div>
           <p className="pt-2 text-sm text-muted-foreground">{meta.blurb}</p>
           {r.borderline && r.borderlineNote && (
@@ -123,6 +129,71 @@ export default async function ReadinessReportPage({ params }: Props) {
           )}
         </CardContent>
       </Card>
+
+      {/* 9-box placement (SD-2) */}
+      {r.performanceBand && r.potentialBand && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">{t("readinessReport.nineBox.title")}</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              {r.nineBoxLabel}
+              {r.nineBoxAction ? ` - ${r.nineBoxAction}` : ""}
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap items-start gap-6">
+              {/* The grid: rows = potential high->low (top->bottom), cols = performance low->high */}
+              <div>
+                <div className="grid grid-cols-[auto_repeat(3,4.5rem)] gap-1 text-[10px]">
+                  {(["high", "med", "low"] as TalentBand[]).map((pot) => (
+                    <div key={pot} className="contents">
+                      <div className="flex items-center justify-end pe-1 text-muted-foreground">
+                        {pot === "high" ? t("readinessReport.nineBox.potential") : ""}
+                      </div>
+                      {(["low", "med", "high"] as TalentBand[]).map((perf) => {
+                        const cell = NINE_BOX[pot][perf];
+                        const active = r.potentialBand === pot && r.performanceBand === perf;
+                        return (
+                          <div
+                            key={perf}
+                            className={`flex h-16 w-[4.5rem] flex-col items-center justify-center rounded p-1 text-center leading-tight ${
+                              active
+                                ? "ring-2 ring-offset-1 ring-[#010131] bg-[#5391D5]/15 font-semibold text-[#010131]"
+                                : "bg-muted/40 text-muted-foreground"
+                            }`}
+                            title={cell.label}
+                          >
+                            <span>{cell.label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                  <div />
+                  <div className="col-span-3 text-center text-[10px] text-muted-foreground">
+                    {t("readinessReport.nineBox.performance")} →
+                  </div>
+                </div>
+              </div>
+              <div className="min-w-[12rem] flex-1 space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">{t("readinessReport.nineBox.performance")}</span>
+                  <span className="font-semibold tabular-nums">{num(r.performanceMean)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">{t("readinessReport.nineBox.potential")}</span>
+                  <span className="font-semibold tabular-nums">{num(r.potentialMean)}</span>
+                </div>
+                <p className="pt-1 text-[11px] text-muted-foreground">
+                  {r.evidenceSource === "persona_self"
+                    ? t("readinessReport.nineBox.evidencePersona")
+                    : t("readinessReport.nineBox.evidence360")}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Self-awareness callouts */}
       {(blindSpots.length > 0 || hiddenStrengths.length > 0) && (

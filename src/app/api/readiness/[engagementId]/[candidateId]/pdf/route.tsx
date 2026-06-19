@@ -56,6 +56,14 @@ export async function GET(
       borderlineNote: r.borderlineNote,
       yearLabel: r.yearLabel,
       lowAgreementCount: r.lowAgreementCount,
+      // 9-box (SD-2)
+      evidenceSource: r.evidenceSource,
+      performanceMean: r.performanceMean,
+      potentialMean: r.potentialMean,
+      performanceBand: r.performanceBand,
+      potentialBand: r.potentialBand,
+      nineBoxLabel: r.nineBoxLabel,
+      nineBoxAction: r.nineBoxAction,
       competencies: r.competencies.map((c) => ({
         competencyId: c.competencyId,
         name: c.name,

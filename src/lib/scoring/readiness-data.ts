@@ -26,6 +26,7 @@ import {
   type RoleCompetencyReq,
   type ObservedCompetency,
   type ReadinessResult,
+  type ReadinessEvidenceSource,
 } from "@/lib/scoring/readiness";
 
 type Sb = ReturnType<typeof createServiceClient>;
@@ -218,9 +219,27 @@ export async function computeCandidateReadiness(
     }
     const compIds = (rpcs ?? []).map((r) => r.competency_id as string);
     const nameById = new Map<string, string>();
+    // Domain (RESULTS / PEOPLE / THINKING / SELF) per competency, for the 9-box
+    // axes. competencies -> competency_clusters -> competency_domains(name).
+    const domainById = new Map<string, string | null>();
     if (compIds.length) {
-      const { data: comps } = await sb.from("competencies").select("id, name").in("id", compIds);
-      for (const c of comps ?? []) nameById.set(c.id as string, (c.name as string) ?? "");
+      const { data: comps } = await sb
+        .from("competencies")
+        .select("id, name, competency_clusters(competency_domains(name))")
+        .in("id", compIds);
+      for (const c of comps ?? []) {
+        nameById.set(c.id as string, (c.name as string) ?? "");
+        // PostgREST embeds to-one relations as arrays under some configs; guard both.
+        const cluster = Array.isArray((c as Record<string, unknown>).competency_clusters)
+          ? ((c as Record<string, unknown>).competency_clusters as Array<Record<string, unknown>>)[0]
+          : ((c as Record<string, unknown>).competency_clusters as Record<string, unknown> | null);
+        const domainRel = cluster
+          ? Array.isArray(cluster.competency_domains)
+            ? (cluster.competency_domains as Array<Record<string, unknown>>)[0]
+            : (cluster.competency_domains as Record<string, unknown> | null)
+          : null;
+        domainById.set(c.id as string, (domainRel?.name as string | undefined) ?? null);
+      }
     }
     for (const r of rpcs ?? []) {
       const priority = (["high", "medium", "low"].includes(r.priority as string) ? r.priority : "medium") as RoleCompetencyPriority;
@@ -231,6 +250,7 @@ export async function computeCandidateReadiness(
         weight: Number(r.weight ?? 1) || 1,
         priority,
         target: perComp != null && Number.isFinite(perComp) ? perComp : defaultTarget,
+        domain: domainById.get(r.competency_id as string) ?? null,
       });
     }
   }
@@ -265,18 +285,19 @@ export async function computeCandidateReadiness(
   // self-assessment (Slice 4: behavioral_competency_scores, keyed by AC
   // competency). In standalone mode we use the 360 self-rater. Tolerant of the
   // table not being migrated (map stays empty -> self flags just won't render).
+  // Load the candidate's Persona (behavioral) self-scores unconditionally: they
+  // serve as the self source in combined mode AND as the readiness DRIVER in a
+  // Persona-only succession run where no 360 exists (SD-2 / Pilot 3).
   const behavioralSelfByAc = new Map<string, number>();
-  if (assessmentMode === "combined") {
-    try {
-      const { data: bx } = await sb
-        .from("behavioral_competency_scores")
-        .select("competency_id, self_score")
-        .eq("engagement_id", engagementId)
-        .eq("candidate_id", candidateId);
-      for (const row of bx ?? []) behavioralSelfByAc.set(row.competency_id as string, Number(row.self_score));
-    } catch {
-      /* behavioral_competency_scores not migrated yet */
-    }
+  try {
+    const { data: bx } = await sb
+      .from("behavioral_competency_scores")
+      .select("competency_id, self_score")
+      .eq("engagement_id", engagementId)
+      .eq("candidate_id", candidateId);
+    for (const row of bx ?? []) behavioralSelfByAc.set(row.competency_id as string, Number(row.self_score));
+  } catch {
+    /* behavioral_competency_scores not migrated yet */
   }
 
   // 5) Map Reflect competencies -> AC catalogue competencies; build observed[].
@@ -320,8 +341,28 @@ export async function computeCandidateReadiness(
     }
   }
 
+  // 6b) Persona-as-driver fallback (SD-2 / Pilot 3). When there is no 360
+  // "Others" evidence, drive the tier from the candidate's Persona self-ratings
+  // over the role competencies. The report labels this as self-reported so it
+  // is never mistaken for multi-rater 360 evidence.
+  let evidenceSource: ReadinessEvidenceSource = "others_360";
+  if (observed.length === 0 && behavioralSelfByAc.size > 0) {
+    for (const req of role) {
+      const self = behavioralSelfByAc.get(req.competencyId);
+      if (self == null || !Number.isFinite(self)) continue;
+      observed.push({
+        competencyId: req.competencyId,
+        othersMean: self, // Persona self drives the tier when no 360 exists
+        selfMean: null, // no separate "others" to difference against
+        othersCount: 1,
+        othersSpread: null,
+      });
+    }
+    if (observed.length > 0) evidenceSource = "persona_self";
+  }
+
   // 7) Run the engine.
-  const result = computeReadiness(role, observed, config);
+  const result = computeReadiness(role, observed, config, evidenceSource);
 
   // 8) Best-effort snapshot (tolerant of readiness_results not being migrated).
   if (!persist) return result;

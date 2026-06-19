@@ -45,6 +45,7 @@ import {
   Ticket,
   FileClock,
   Network,
+  PlayCircle,
   type LucideIcon,
 } from "lucide-react";
 
@@ -78,7 +79,11 @@ const instrumentGroup = (
     label,
     icon,
     items: [
-      link(base, "adminNav.svcOverview", LayoutDashboard, true),
+      // The first leaf is the instrument's RUNNER (e.g. /ac/cognitive), not a
+      // dashboard - label it "Take assessment" so it doesn't read as an
+      // Overview (SD-8 stray-Overview cleanup). Fixes Cognitive + Persona +
+      // Fluent at once since they all flow through here.
+      link(base, "adminNav.svcRunner", PlayCircle, true),
       link(`${base}/cohort`, "adminNav.svcCohort", Users),
       link(`${base}/vouchers`, "adminNav.svcVouchers", Ticket),
       ...(opts?.calibration ? [link(`${base}/calibration`, "adminNav.svcCalibration", SlidersHorizontal)] : []),

@@ -5,7 +5,7 @@
 //                 stripAnswerKey() removes the keys before anything reaches the client.
 
 import { getAIClient, AI_MODEL } from "@/lib/ai/client";
-import { MINI_IPIP, COGNITIVE_SUBTESTS, LIKERT_ANCHORS_EN, LIKERT_ANCHORS_AR } from "./framework";
+import { MINI_IPIP, COGNITIVE_SUBTESTS, COGNITIVE_SUBTEST_KEYS, LIKERT_ANCHORS_EN, LIKERT_ANCHORS_AR } from "./framework";
 import { assembleFromBank } from "./bank";
 import type { PsyTest, PsyTestPublic, CognitiveItem, PersonalityItem } from "./scoring";
 
@@ -33,15 +33,17 @@ const COGNITIVE_DECK: DeckItem[] = [
   { scale: "deductive", stem_en: "Three desks in a row: A is left of B; C is right of B. Who is in the middle?", stem_ar: "ثلاثة مكاتب في صف: A على يسار B؛ C على يمين B. من في الوسط؟", options_en: ["A", "B", "C", "Cannot say"], options_ar: ["A", "B", "C", "لا يمكن تحديده"], correct: 1, difficulty: "easy" },
 ];
 
-function staticCognitive(lang: Lang): CognitiveItem[] {
-  return COGNITIVE_DECK.map((d, i) => ({
-    id: `cog-${i + 1}`,
-    scale: d.scale,
-    stem: lang === "ar" ? d.stem_ar : d.stem_en,
-    options: lang === "ar" ? d.options_ar : d.options_en,
-    correct: d.correct,
-    difficulty: d.difficulty,
-  }));
+function staticCognitive(lang: Lang, subtests: string[]): CognitiveItem[] {
+  return COGNITIVE_DECK
+    .filter((d) => subtests.includes(d.scale))
+    .map((d, i) => ({
+      id: `cog-${i + 1}`,
+      scale: d.scale,
+      stem: lang === "ar" ? d.stem_ar : d.stem_en,
+      options: lang === "ar" ? d.options_ar : d.options_en,
+      correct: d.correct,
+      difficulty: d.difficulty,
+    }));
 }
 
 const COG_SYSTEM =
@@ -50,23 +52,30 @@ const COG_SYSTEM =
   "defensible correct answer, suitable for GCC banking and government professionals. " +
   "No trick questions; each is solvable in under a minute.";
 
-function cognitivePrompt(lang: Lang, perSubtest: number): string {
+// Per-subtest item-writing guidance, keyed so we can prompt for only the
+// selected subtests (SD-4).
+const SUBTEST_GUIDANCE: Record<string, string> = {
+  numerical: `numerical = data / ratio / percentage / table-and-chart interpretation;`,
+  verbal: `verbal = reading comprehension, verbal analogies, or vocabulary-in-context;`,
+  inductive: `inductive = infer the rule from examples: number/figure series, odd-one-out, next-in-sequence (text-described, culture-fair);`,
+  deductive: `deductive = apply given rules/premises to a necessarily valid conclusion: syllogisms, if-then (conditional) logic, or simple arrangements.`,
+};
+
+function cognitivePrompt(lang: Lang, perSubtest: number, subtests: string[]): string {
   const langName = lang === "ar" ? "Arabic (Modern Standard Arabic)" : "English";
+  const list = subtests.map((s) => `"${s}"`).join(", ");
   return [
     `Write cognitive-ability multiple-choice items in ${langName}.`,
-    `Produce ${perSubtest} items for EACH subtest: "numerical", "verbal", "inductive", "deductive".`,
-    `numerical = data / ratio / percentage / table-and-chart interpretation;`,
-    `verbal = reading comprehension, verbal analogies, or vocabulary-in-context;`,
-    `inductive = infer the rule from examples: number/figure series, odd-one-out, next-in-sequence (text-described, culture-fair);`,
-    `deductive = apply given rules/premises to a necessarily valid conclusion: syllogisms, if-then (conditional) logic, or simple arrangements.`,
+    `Produce ${perSubtest} items for EACH of these subtests: ${list}.`,
+    ...subtests.map((s) => SUBTEST_GUIDANCE[s]).filter(Boolean),
     `Return ONE JSON array (no markdown fences). Each element:`,
-    `{ "scale": "numerical"|"verbal"|"inductive"|"deductive", "stem": "<text>", "options": ["a","b","c","d"],`,
+    `{ "scale": ${subtests.map((s) => `"${s}"`).join("|")}, "stem": "<text>", "options": ["a","b","c","d"],`,
     `  "correct": <0-based index>, "difficulty": "easy"|"medium"|"hard" }`,
-    `Provide 3–4 options each, exactly one correct.`,
+    `Provide 3–4 options each, exactly one correct. Use ONLY the listed subtests for "scale".`,
   ].join("\n");
 }
 
-async function aiCognitive(lang: Lang, perSubtest: number): Promise<CognitiveItem[] | null> {
+async function aiCognitive(lang: Lang, perSubtest: number, subtests: string[]): Promise<CognitiveItem[] | null> {
   const ai = getAIClient();
   if (!ai) return null;
   try {
@@ -74,14 +83,14 @@ async function aiCognitive(lang: Lang, perSubtest: number): Promise<CognitiveIte
       model: AI_MODEL,
       max_tokens: 4000,
       system: COG_SYSTEM,
-      messages: [{ role: "user", content: cognitivePrompt(lang, perSubtest) }],
+      messages: [{ role: "user", content: cognitivePrompt(lang, perSubtest, subtests) }],
     });
     const block = res.content[0];
     if (block?.type !== "text") return null;
     const jsonText = block.text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
     const parsed = JSON.parse(jsonText) as unknown;
     if (!Array.isArray(parsed)) return null;
-    const valid = new Set(["numerical", "verbal", "inductive", "deductive"]);
+    const valid = new Set(subtests);
     const items: CognitiveItem[] = [];
     parsed.forEach((r, i) => {
       const q = r as Record<string, unknown>;
@@ -91,9 +100,11 @@ async function aiCognitive(lang: Lang, perSubtest: number): Promise<CognitiveIte
       const difficulty = (["easy", "medium", "hard"] as const).includes(q.difficulty as never) ? (q.difficulty as CognitiveItem["difficulty"]) : "medium";
       items.push({ id: `cog-${i + 1}`, scale: q.scale, stem: q.stem, options: (q.options as unknown[]).map(String), correct: q.correct, difficulty });
     });
-    // Require at least one item per subtest, else fall back.
-    const haveAll = Array.from(valid).every((s) => items.some((it) => it.scale === s));
-    return haveAll && items.length >= 8 ? items : null;
+    // Require at least one item per requested subtest, and scale the floor to
+    // the selection (>= subtests.length * 2) so a 1- or 2-subtest test still
+    // passes the AI path; else fall back to the static deck.
+    const haveAll = subtests.every((s) => items.some((it) => it.scale === s));
+    return haveAll && items.length >= subtests.length * 2 ? items : null;
   } catch {
     return null;
   }
@@ -108,20 +119,35 @@ function personalityItems(lang: Lang): PersonalityItem[] {
   }));
 }
 
-/** Build a full keyed test (held server-side). */
-export async function generatePsyTest(kind: "cognitive" | "personality", lang: Lang = "en"): Promise<PsyTest> {
+/**
+ * Build a full keyed test (held server-side). For cognitive, `subtests`
+ * restricts which of numerical/verbal/inductive/deductive are generated (SD-4);
+ * omitted/empty defaults to all four (back-compat for every existing caller).
+ */
+export async function generatePsyTest(
+  kind: "cognitive" | "personality",
+  lang: Lang = "en",
+  subtests?: string[]
+): Promise<PsyTest> {
+  // Normalize: only cognitive honours subtests; default to all four.
+  const cogSubtests =
+    subtests && subtests.length > 0
+      ? COGNITIVE_SUBTEST_KEYS.filter((k) => subtests.includes(k))
+      : [...COGNITIVE_SUBTEST_KEYS];
+  const effectiveCog = cogSubtests.length > 0 ? cogSubtests : [...COGNITIVE_SUBTEST_KEYS];
+
   // Tier 2: assemble from the SME-approved bank when every scale is sufficiently
   // populated (item ids are real psy_items uuids → the response log is calibratable).
   // Otherwise fall back to the Tier-1 source (Mini-IPIP / AI / static deck).
-  const fromBank = await assembleFromBank(kind, lang);
+  const fromBank = await assembleFromBank(kind, lang, kind === "cognitive" ? effectiveCog : undefined);
   if (fromBank) return fromBank;
 
   if (kind === "personality") {
     return { kind: "personality", items: personalityItems(lang) };
   }
-  const ai = await aiCognitive(lang, 4);
+  const ai = await aiCognitive(lang, 4, effectiveCog);
   if (ai) return { kind: "cognitive", items: ai, ai_generated: true };
-  return { kind: "cognitive", items: staticCognitive(lang), ai_generated: false };
+  return { kind: "cognitive", items: staticCognitive(lang, effectiveCog), ai_generated: false };
 }
 
 /** Remove the answer key before the test reaches the browser. */

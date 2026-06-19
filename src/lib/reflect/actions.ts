@@ -186,7 +186,15 @@ export async function createReflectEngagement(
 
   const parsed = createEngagementSchema.safeParse(payload);
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
+    const issue = parsed.error.issues[0];
+    // Backstop: never echo a raw "Invalid UUID" token at the user if a future
+    // caller passes an un-coerced id (the schema now carries friendly messages,
+    // but this keeps the whole class of SD-5 regressions from reaching the UI).
+    const friendly =
+      issue?.message && issue.message !== "Invalid UUID"
+        ? issue.message
+        : "Please check the client organisation and framework selections.";
+    return { ok: false, error: friendly };
   }
   const p = parsed.data;
 

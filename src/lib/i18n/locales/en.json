@@ -330,6 +330,7 @@
     "readinessConfig": "Scoring config",
     "fluent": "Fluent",
     "svcOverview": "Overview",
+    "svcRunner": "Take assessment",
     "svcCohort": "Cohort report",
     "projectCohorts": "Project cohorts",
     "svcVouchers": "Vouchers",

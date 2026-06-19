@@ -159,7 +159,9 @@ export function ReflectWizard({ orgs: initialOrgs, templates, defaultOrgId }: Pr
     startTransition(async () => {
       const result = await createReflectEngagement({
         name: state.name.trim(),
-        organization_id: state.organization_id,
+        // Coerce an unselected org ("") to null - mirrors the guided-start
+        // contract and prevents the "Invalid UUID" rejection (SD-5).
+        organization_id: state.organization_id || null,
         region: state.region || null,
         sector: state.sector || null,
         default_language: state.default_language,

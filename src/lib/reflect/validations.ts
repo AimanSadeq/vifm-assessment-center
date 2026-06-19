@@ -54,7 +54,13 @@ export const SECTOR = ["government", "banking", "general"] as const;
 
 export const createEngagementSchema = z.object({
   name: z.string().trim().min(2).max(120),
-  organization_id: z.string().uuid().nullable().optional(),
+  // A blank string from an unselected <select> must coerce to null (the column
+  // is nullable) rather than fail .uuid() with the raw "Invalid UUID" token
+  // surfaced to the user. SD-5 recurring bug.
+  organization_id: z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? null : v),
+    z.string().uuid("Please pick a valid client organisation.").nullable().optional()
+  ),
   region: z.enum(REGION).nullable().optional(),
   sector: z.enum(SECTOR).nullable().optional(),
   default_language: z.enum(REFLECT_DEFAULT_LANGUAGE).default("en"),
@@ -73,7 +79,7 @@ export const createEngagementSchema = z.object({
   //   { kind: 'manual', name }
   //   { kind: 'ai',    name, sourceText }  -- AI extraction triggered later, schema covers creation only
   framework: z.discriminatedUnion("kind", [
-    z.object({ kind: z.literal("clone"), templateId: z.string().uuid() }),
+    z.object({ kind: z.literal("clone"), templateId: z.string().uuid("Please choose a library template before continuing.") }),
     z.object({
       kind: z.literal("manual"),
       name_en: z.string().trim().min(2).max(120),

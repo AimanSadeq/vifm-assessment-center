@@ -330,6 +330,7 @@
     "readinessConfig": "إعداد الدرجات",
     "fluent": "فلوينت",
     "svcOverview": "نظرة عامة",
+    "svcRunner": "بدء التقييم",
     "svcCohort": "تقرير المجموعة",
     "projectCohorts": "مجموعات المشاريع",
     "svcVouchers": "القسائم",

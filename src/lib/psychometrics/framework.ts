@@ -67,6 +67,24 @@ export const COGNITIVE_SUBTESTS: CognitiveSubtest[] = [
   },
 ];
 
+/** The four cognitive subtest keys, in canonical order. */
+export const COGNITIVE_SUBTEST_KEYS = COGNITIVE_SUBTESTS.map((s) => s.key);
+
+/**
+ * Validate a requested subtest selection: keep only known keys, dedupe, and
+ * preserve canonical order. An empty / missing / all-invalid selection defaults
+ * to all four (back-compat). Single source of truth shared by the runner UI and
+ * the generation API so a client can never request an unknown or empty set.
+ */
+export function sanitizeSubtests(keys: unknown): string[] {
+  const valid = new Set(COGNITIVE_SUBTEST_KEYS);
+  const requested = Array.isArray(keys) ? keys : [];
+  const picked = COGNITIVE_SUBTEST_KEYS.filter((k) =>
+    requested.some((r) => typeof r === "string" && r === k)
+  );
+  return picked.length > 0 ? picked : [...COGNITIVE_SUBTEST_KEYS];
+}
+
 /** Score-band narrative per subtest (indicative; non-clinical). */
 export function cognitiveNarrative(scorePct: number, ar: boolean): string {
   if (scorePct >= 75) {

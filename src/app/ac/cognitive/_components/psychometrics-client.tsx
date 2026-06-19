@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { BrainCircuit, Sparkles, Loader2, CheckCircle2, RotateCcw, AlertTriangle, Download, Clock } from "lucide-react";
 import type { PsyTestPublic, PsyResult, ScaleScore } from "@/lib/psychometrics/scoring";
-import { COGNITIVE_SUBTESTS, cognitiveNarrative } from "@/lib/psychometrics/framework";
+import { COGNITIVE_SUBTESTS, COGNITIVE_SUBTEST_KEYS, cognitiveNarrative } from "@/lib/psychometrics/framework";
 
 type Lang = "en" | "ar";
 
@@ -29,7 +29,7 @@ const scaleDefinition = (key: string): string =>
   COGNITIVE_SUBTESTS.find((s) => s.key === key)?.definition_en ?? "";
 
 export function PsychometricsClient({
-  candidateId, engagementId, engagements = [], redemptionToken = null, prefillName, timerMinutes,
+  candidateId, engagementId, engagements = [], redemptionToken = null, prefillName, timerMinutes, lockedSubtests = null,
 }: {
   candidateId: string | null;
   engagementId: string | null;
@@ -39,10 +39,26 @@ export function PsychometricsClient({
   prefillName?: string;
   /** Admin-configurable time limit (minutes); null/0 = no limit. */
   timerMinutes?: number | null;
+  /** When set (e.g. an admin-pinned voucher), the subtest set is fixed and the
+   *  picker is hidden. null = taker chooses. */
+  lockedSubtests?: string[] | null;
 }) {
   const limitMinutes = timerMinutes && timerMinutes > 0 ? timerMinutes : null;
   const [phase, setPhase] = useState<"intro" | "test" | "result">("intro");
   const [lang, setLang] = useState<Lang>("en");
+  // SD-4: which cognitive subtests to run. Defaults to all four; the taker can
+  // narrow on the intro screen unless an admin has locked the set.
+  const lockedSet =
+    lockedSubtests && lockedSubtests.length > 0
+      ? COGNITIVE_SUBTEST_KEYS.filter((k) => lockedSubtests.includes(k))
+      : null;
+  const [selectedSubtests, setSelectedSubtests] = useState<string[]>(
+    lockedSet && lockedSet.length > 0 ? lockedSet : [...COGNITIVE_SUBTEST_KEYS]
+  );
+  const toggleSubtest = (key: string) =>
+    setSelectedSubtests((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...COGNITIVE_SUBTEST_KEYS.filter((k) => prev.includes(k) || k === key)]
+    );
   // Countdown: deadline stamped when the test starts; on expiry, auto-submit.
   const [deadline, setDeadline] = useState<number | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
@@ -66,7 +82,7 @@ export function PsychometricsClient({
       const boundEngagementId = engagementId ?? (cogEng || null);
       const res = await fetch("/api/ac/cognitive", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "start", language: lang, candidateId: boundCandidateId, engagementId: boundEngagementId, takerEmail: null }),
+        body: JSON.stringify({ action: "start", language: lang, candidateId: boundCandidateId, engagementId: boundEngagementId, takerEmail: null, subtests: selectedSubtests }),
       });
       const d = await res.json();
       if (!res.ok || !d.test) { setError(d.error || "Could not start."); return; }
@@ -140,6 +156,45 @@ export function PsychometricsClient({
             <p className="font-semibold text-[#010131]">Cognitive ability</p>
             <p className="mt-1 text-xs text-muted-foreground">Numerical · verbal · inductive · deductive reasoning (timed-style MCQs).</p>
           </div>
+
+          {/* SD-4: subtest selection. Hidden when an admin has locked the set. */}
+          {!lockedSet && (
+            <div className="rounded-lg border border-slate-200 p-3">
+              <p className="text-xs font-medium text-[#010131]">
+                {lang === "ar" ? "اختر الاختبارات الفرعية" : "Choose subtests"}
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {lang === "ar"
+                  ? "اختر اختبارًا واحدًا أو أكثر. الافتراضي هو الأربعة جميعًا."
+                  : "Pick one or more. The default is all four."}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {COGNITIVE_SUBTESTS.map((s) => {
+                  const on = selectedSubtests.includes(s.key);
+                  return (
+                    <button
+                      key={s.key}
+                      type="button"
+                      onClick={() => toggleSubtest(s.key)}
+                      aria-pressed={on}
+                      className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+                        on
+                          ? "border-[#5391D5] bg-[#5391D5] text-white"
+                          : "border-slate-300 text-slate-600 hover:bg-slate-100"
+                      }`}
+                    >
+                      {lang === "ar" ? s.name_ar : s.name_en}
+                    </button>
+                  );
+                })}
+              </div>
+              {selectedSubtests.length === 0 && (
+                <p className="mt-2 text-xs text-rose-600">
+                  {lang === "ar" ? "اختر اختبارًا فرعيًا واحدًا على الأقل." : "Select at least one subtest."}
+                </p>
+              )}
+            </div>
+          )}
           {!candidateId && engagements.length > 0 && (
             <div className="rounded-lg border border-slate-200 p-3">
               <p className="text-xs font-medium text-[#010131]">Run for a specific candidate (optional)</p>
@@ -193,7 +248,7 @@ export function PsychometricsClient({
               </div>
             </div>
           </div>
-          <button onClick={start} disabled={busy}
+          <button onClick={start} disabled={busy || selectedSubtests.length === 0}
             className="inline-flex items-center gap-2 rounded-lg bg-[#010131] px-6 py-3 text-sm font-semibold text-white hover:bg-[#121140] disabled:opacity-60">
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             {busy ? "Preparing…" : "Begin cognitive assessment"}

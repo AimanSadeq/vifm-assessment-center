@@ -314,7 +314,8 @@ export async function resolveScaleId(kind: PsyKind, scaleKey: string): Promise<s
  */
 export async function assembleFromBank(
   kind: PsyKind,
-  lang: "en" | "ar"
+  lang: "en" | "ar",
+  subtests?: string[]
 ): Promise<
   | { kind: "cognitive"; items: { id: string; scale: string; stem: string; options: string[]; correct: number; difficulty: "easy" | "medium" | "hard" }[]; ai_generated: boolean }
   | { kind: "personality"; items: { id: string; scale: "O" | "C" | "E" | "A" | "S"; text: string; reverse: boolean }[] }
@@ -348,7 +349,14 @@ export async function assembleFromBank(
       arr.push(it);
       byKey.set(k, arr);
     }
-    const framework = SCALE_DEFS[kind].map((s) => s.key);
+    // Restrict to the requested subtests (SD-4 cognitive subset); default to
+    // the full framework. Both the readiness gate and the emission loop key off
+    // `framework`, so narrowing it here honours the subset end-to-end.
+    let framework = SCALE_DEFS[kind].map((s) => s.key);
+    if (kind === "cognitive" && subtests && subtests.length > 0) {
+      framework = framework.filter((k) => subtests.includes(k));
+    }
+    if (framework.length === 0) return null;
     if (!framework.every((k) => (byKey.get(k)?.length ?? 0) >= ASSEMBLE_MIN)) return null;
 
     const cap = kind === "cognitive" ? 5 : 8;

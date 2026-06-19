@@ -3,7 +3,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { generatePsyTest, stripAnswerKey } from "@/lib/psychometrics/generate";
 import { computePsyResult, type PsyTest, type CognitiveItem } from "@/lib/psychometrics/scoring";
 import { applyNorms, type ScaleNorm } from "@/lib/psychometrics/calibration";
-import { COGNITIVE_INSTRUMENT } from "@/lib/psychometrics/framework";
+import { COGNITIVE_INSTRUMENT, sanitizeSubtests } from "@/lib/psychometrics/framework";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,7 +30,10 @@ export async function POST(req: Request) {
   if (action === "start") {
     // Cognitive ability only - personality/OCEAN retired in favour of Persona.
     const kind = "cognitive" as const;
-    const test = await generatePsyTest(kind, lang);
+    // SD-4: optional subtest selection (numerical/verbal/inductive/deductive).
+    // Sanitized server-side; empty/invalid defaults to all four.
+    const subtests = sanitizeSubtests(body.subtests);
+    const test = await generatePsyTest(kind, lang, subtests);
     const { data, error } = await svc
       .from("psy_sessions")
       .insert({

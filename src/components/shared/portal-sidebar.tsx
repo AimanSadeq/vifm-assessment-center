@@ -37,7 +37,6 @@ import {
   BrainCircuit,
   BadgeCheck,
   ListChecks,
-  Award,
   ShieldCheck,
   FlaskConical,
   TrendingUp,
@@ -132,22 +131,11 @@ const NAV: NavEntry[] = [
         // Talent lens captured from the launching pillar (migration 00134):
         // the Acquisition pillar's ARC link tags new runs as a hiring lens.
         link("/ara?lens=acquisition", "adminNav.aiReadiness", Sparkles, undefined, "/ara"),
-        {
-          kind: "group",
-          group: {
-            key: "technical",
-            label: "Technical Assessment",
-            icon: BadgeCheck,
-            items: [
-              // Acquisition pillar: tag new technical sittings as a hiring lens
-              // (00135) so the report omits the development course block.
-              link("/admin/tech-sandbox?lens=acquisition", "adminNav.techOverview", LayoutDashboard, true, "/admin/tech-sandbox"),
-              link("/admin/vouchers?service=technical", "adminNav.techVouchers", Award),
-              link("/admin/tech-sandbox/answers", "adminNav.techAnswers", ListChecks),
-              link("/admin/tech-assessment/retention", "adminNav.svcRetention", FileClock),
-            ],
-          },
-        },
+        // Technical Assessment - the section links (vouchers, model answers,
+        // retention) now live on the landing page's top bar, so the sidebar
+        // carries a single link to the overview. Acquisition lens (00135) omits
+        // the development course block on the report.
+        link("/admin/tech-sandbox?lens=acquisition", "adminNav.techAssessment", BadgeCheck, undefined, "/admin/tech-sandbox"),
         instrumentGroup("cognitive-acq", "Cognitive", BrainCircuit, "/ac/cognitive"),
         instrumentGroup("persona-acq", "Persona", Layers, "/ac/persona"),
         {
@@ -196,22 +184,9 @@ const NAV: NavEntry[] = [
         // Talent lens captured from the launching pillar (migration 00134):
         // the Management pillar's ARC link tags new runs as a development lens.
         link("/ara?lens=development", "adminNav.aiReadiness", Sparkles, undefined, "/ara"),
-        {
-          kind: "group",
-          group: {
-            key: "technical-mng",
-            label: "Technical Assessment",
-            icon: BadgeCheck,
-            items: [
-              // Management pillar: tag new technical sittings as a development
-              // lens (00135) so the report adds the VIFM Academy course block.
-              link("/admin/tech-sandbox?lens=development", "adminNav.techOverview", LayoutDashboard, true, "/admin/tech-sandbox"),
-              link("/admin/vouchers?service=technical", "adminNav.techVouchers", Award),
-              link("/admin/tech-sandbox/answers", "adminNav.techAnswers", ListChecks),
-              link("/admin/tech-assessment/retention", "adminNav.svcRetention", FileClock),
-            ],
-          },
-        },
+        // Technical Assessment - single link (section nav now on the landing
+        // top bar). Development lens (00135) adds the VIFM Academy course block.
+        link("/admin/tech-sandbox?lens=development", "adminNav.techAssessment", BadgeCheck, undefined, "/admin/tech-sandbox"),
         instrumentGroup("cognitive-mng", "Cognitive", BrainCircuit, "/ac/cognitive"),
         instrumentGroup("persona-mng", "Persona", Layers, "/ac/persona"),
         // Cross-instrument cohort view: Persona + Cognitive grouped by project label.
@@ -299,7 +274,7 @@ export function SidebarBody({
   const [open, setOpen] = useState<Record<string, boolean>>(() => {
     const st: Record<string, boolean> = {
       acquire: true, manage: true, platform: true,
-      "ac-acq": false, ac: false, technical: false, "technical-mng": false, readiness: false,
+      "ac-acq": false, ac: false, readiness: false,
     };
     const openActive = (entries: NavEntry[]) => {
       for (const e of entries) {

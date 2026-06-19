@@ -1,6 +1,10 @@
 import Link from "next/link";
-import { SlidersHorizontal, BarChart3, ClipboardList, BookOpen, ArrowRight } from "lucide-react";
+import {
+  SlidersHorizontal, BarChart3, ClipboardList, BookOpen, ArrowRight,
+  LayoutDashboard, Award, ListChecks, FileClock,
+} from "lucide-react";
 import { redirect } from "next/navigation";
+import { cn } from "@/lib/utils";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { listFunctions, getFrameworkOverview } from "@/lib/technical-sandbox/service";
 import { listVouchers } from "@/lib/technical-sandbox/vouchers";
@@ -29,6 +33,17 @@ export default async function TechSandboxAdminPage({
   const customHref = talentLens
     ? `/admin/tech-sandbox/custom?lens=${talentLens}`
     : "/admin/tech-sandbox/custom";
+  const overviewHref = talentLens
+    ? `/admin/tech-sandbox?lens=${talentLens}`
+    : "/admin/tech-sandbox";
+  // Portal sections - moved off the sidebar onto this landing's top bar so the
+  // technical portal navigates from here rather than nested sidebar items.
+  const sections = [
+    { href: overviewHref, label: "Overview", icon: LayoutDashboard, active: true },
+    { href: "/admin/vouchers?service=technical", label: "Voucher codes", icon: Award, active: false },
+    { href: "/admin/tech-sandbox/answers", label: "Model answers", icon: ListChecks, active: false },
+    { href: "/admin/tech-assessment/retention", label: "Retention", icon: FileClock, active: false },
+  ];
   const quickActions = [
     {
       href: customHref,
@@ -63,9 +78,29 @@ export default async function TechSandboxAdminPage({
 
   return (
     <div className="mx-auto max-w-4xl space-y-5 p-6">
-      <Link href="/admin" className="text-sm text-[#5391D5] hover:underline">
-        Back to admin
-      </Link>
+      {/* Portal section nav - the links that used to live in the sidebar's
+          Technical Assessment group. Overview is the current page. */}
+      <nav className="flex flex-wrap items-center gap-2 border-b border-border pb-4">
+        {sections.map((sct) => {
+          const Icon = sct.icon;
+          return (
+            <Link
+              key={sct.href}
+              href={sct.href}
+              aria-current={sct.active ? "page" : undefined}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition",
+                sct.active
+                  ? "border-[#5391D5] bg-[#5391D5]/10 text-[#5391D5]"
+                  : "border-border bg-card text-muted-foreground hover:border-[#5391D5] hover:text-foreground"
+              )}
+            >
+              <Icon className="h-4 w-4" />
+              {sct.label}
+            </Link>
+          );
+        })}
+      </nav>
       <div>
         <h1 className="text-xl font-semibold text-foreground">Technical Assessment</h1>
         <p className="text-sm text-muted-foreground">
@@ -79,7 +114,7 @@ export default async function TechSandboxAdminPage({
       <section className="space-y-3">
         <h2 className="text-base font-semibold text-foreground">Quick actions</h2>
         <div className="grid gap-3 sm:grid-cols-2">
-          {quickActions.map((a) => {
+          {quickActions.map((a, i) => {
             const Icon = a.icon;
             return (
               <Link
@@ -87,6 +122,9 @@ export default async function TechSandboxAdminPage({
                 href={a.href}
                 className="group flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition hover:border-[#5391D5] hover:shadow-sm"
               >
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#010131] text-xs font-bold text-white">
+                  {i + 1}
+                </span>
                 <span className="inline-flex shrink-0 rounded-lg bg-[#5391D5]/10 p-2 text-[#5391D5]">
                   <Icon className="h-5 w-5" />
                 </span>

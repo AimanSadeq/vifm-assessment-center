@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { getSessionReport } from "@/lib/technical-sandbox/service";
+import { proficiencyTierMeaning } from "@/lib/competencies/proficiency-tier";
 import { BackLink } from "@/components/shared/back-link";
 
 export const dynamic = "force-dynamic";
@@ -99,6 +100,12 @@ export default async function TechResultsPage({ params }: { params: { token: str
             Advanced &ge; 85%
           </span>
         </div>
+        {/* SD-7 ask (c): what each band MEANS, not just the threshold. */}
+        <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
+          <li><span className="font-semibold text-orange-700">Basic</span> - {proficiencyTierMeaning("basic", "en")}</li>
+          <li><span className="font-semibold text-sky-700">Intermediate</span> - {proficiencyTierMeaning("intermediate", "en")}</li>
+          <li><span className="font-semibold text-emerald-700">Advanced</span> - {proficiencyTierMeaning("advanced", "en")}</li>
+        </ul>
         <p className="mt-2 text-xs text-muted-foreground">
           How to read: each category and subcategory below is scored 0-100% and banded against these
           three thresholds.

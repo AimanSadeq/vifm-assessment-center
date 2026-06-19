@@ -36,3 +36,22 @@ export function proficiencyTierLabel(tier: ProficiencyTier, locale: "en" | "ar")
   const en: Record<ProficiencyTier, string> = { basic: "Basic", intermediate: "Intermediate", advanced: "Advanced" };
   return locale === "ar" ? ar[tier] : en[tier];
 }
+
+/**
+ * SD-7 (ask c): a one-line capability MEANING per band, so the report legend
+ * defines what Basic / Intermediate / Advanced actually mean, not just the
+ * numeric thresholds. Single source of truth for the PDF + on-screen legend.
+ */
+export function proficiencyTierMeaning(tier: ProficiencyTier, locale: "en" | "ar"): string {
+  const en: Record<ProficiencyTier, string> = {
+    basic: "Foundational ability with significant room to develop - core concepts in place, application still building.",
+    intermediate: "Solid, working proficiency with clear areas to strengthen - performs reliably on routine demands.",
+    advanced: "Strong and consistent across the assessed areas - handles complex demands with little support.",
+  };
+  const ar: Record<ProficiencyTier, string> = {
+    basic: "قدرة تأسيسية مع مجال واسع للتطوير - المفاهيم الأساسية موجودة والتطبيق قيد البناء.",
+    intermediate: "إتقان عملي جيّد مع مجالات واضحة للتعزيز - أداء موثوق في المتطلبات الاعتيادية.",
+    advanced: "قوي ومتسق عبر المجالات المقيّمة - يتعامل مع المتطلبات المعقدة بدعم محدود.",
+  };
+  return locale === "ar" ? ar[tier] : en[tier];
+}

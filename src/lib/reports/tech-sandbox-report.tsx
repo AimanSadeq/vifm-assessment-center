@@ -1,5 +1,6 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import type { SessionReport } from "@/lib/technical-sandbox/service";
+import { proficiencyTierMeaning } from "@/lib/competencies/proficiency-tier";
 
 /**
  * Technical sandbox result report (React-PDF). English-only - React-PDF can't
@@ -142,6 +143,18 @@ export function TechSandboxReport({ data }: { data: SessionReport }) {
               <View style={[s.legendDot, { backgroundColor: C.advanced }]} />
               <Text style={s.legendText}>Advanced &ge; 85%</Text>
             </View>
+          </View>
+          {/* SD-7 ask (c): what each band MEANS, not just the threshold. */}
+          <View style={{ marginTop: 5, gap: 2 }}>
+            <Text style={s.legendText}>
+              <Text style={{ color: C.basic, fontFamily: "Helvetica-Bold" }}>Basic</Text> - {proficiencyTierMeaning("basic", "en")}
+            </Text>
+            <Text style={s.legendText}>
+              <Text style={{ color: C.intermediate, fontFamily: "Helvetica-Bold" }}>Intermediate</Text> - {proficiencyTierMeaning("intermediate", "en")}
+            </Text>
+            <Text style={s.legendText}>
+              <Text style={{ color: C.advanced, fontFamily: "Helvetica-Bold" }}>Advanced</Text> - {proficiencyTierMeaning("advanced", "en")}
+            </Text>
           </View>
           <Text style={s.legendHint}>
             How to read: each category and subcategory below is scored 0-100% and banded against these

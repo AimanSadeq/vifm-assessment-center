@@ -207,6 +207,8 @@ const T = {
     enter: "Enter",
     forSelection: "For selection",
     forDevelopment: "For development",
+    familyAcquisition: "Talent Acquisition",
+    familyDevelopment: "Talent Development",
     eyebrow: "VIFM Talent Intelligence Platform",
     h1a: "Build the talent the",
     h1b: "future demands.",
@@ -261,6 +263,8 @@ const T = {
     enter: "الدخول",
     forSelection: "للاختيار",
     forDevelopment: "للتطوير",
+    familyAcquisition: "استقطاب المواهب",
+    familyDevelopment: "تطوير المواهب",
     eyebrow: "منصّة VIFM لذكاء المواهب",
     h1a: "ابنِ المواهب التي",
     h1b: "يتطلّبها المستقبل.",
@@ -335,14 +339,10 @@ export function PlatformLanding() {
   const rtl = lang === "ar";
   const Arrow = rtl ? ArrowLeft : ArrowRight;
 
-  // Per-card purpose for dual-purpose services - the user toggles "For selection"
-  // vs "For development" BENEATH each box (defaults to selection).
-  const [purposeByKey, setPurposeByKey] = useState<Partial<Record<ServiceKey, Pillar>>>({});
-
-  // Where a card links, honouring the selected purpose for services that read a
-  // lens/purpose param (Persona, AR Compass, Technical). Others keep their route.
-  const hrefFor = (svc: (typeof SERVICES)[number], selected: Pillar): string => {
-    const acq = selected === "acquire";
+  // Where a purpose entry links: Persona / AR Compass / Technical read a
+  // lens/purpose param; others keep their base route.
+  const hrefFor = (svc: (typeof SERVICES)[number], pillar: Pillar): string => {
+    const acq = pillar === "acquire";
     switch (svc.key) {
       case "persona": return `/ac/persona?purpose=${acq ? "hiring" : "development"}`;
       case "ara": return `/ara?lens=${acq ? "acquisition" : "development"}`;
@@ -351,24 +351,19 @@ export function PlatformLanding() {
     }
   };
 
-  // One launcher card per service (de-duplicated). A dual-purpose service shows
-  // an interactive "For selection / For development" selector BENEATH the box;
-  // picking one updates the card's copy, accent colour and destination. A
-  // single-purpose service shows its one purpose as a static label.
+  // One launcher card per service (de-duplicated). Beneath the box, each purpose
+  // is its own distinctly-coloured entry button - blue = For selection (Talent
+  // Acquisition), emerald = For development (Talent Development). Neither is
+  // pre-highlighted: the two levels are shown as two equal, distinct choices. A
+  // single-purpose service shows just its one entry.
   const renderServiceCard = (svc: (typeof SERVICES)[number]) => {
     const Icon = svc.icon;
-    const dual = svc.pillars.length === 2;
-    const selected: Pillar = dual ? purposeByKey[svc.key] ?? "acquire" : svc.pillars[0];
-    const variant = VARIANTS[lang]?.[svc.key]?.[selected];
-    const copy = { ...t.services[svc.key], ...variant };
-    const href = hrefFor(svc, selected);
-    // Accent tracks the selected purpose: blue = selection, emerald = development.
-    const tone = selected === "acquire" ? "blue" : "emerald";
+    const copy = t.services[svc.key];
     return (
-      <div key={svc.key} className={`launcher-card tone-${tone} flex flex-col`}>
+      <div key={svc.key} className="launcher-card tone-blue flex flex-col p-4">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Link href={href} className="flex items-center gap-4 p-4">
+            <div className="flex items-center gap-4">
               <div className="launcher-card-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-xl">
                 <Icon className="h-6 w-6" />
               </div>
@@ -377,40 +372,35 @@ export function PlatformLanding() {
                 <h4 className="text-base font-semibold text-primary">{copy.name}</h4>
                 <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-muted-foreground">{copy.description}</p>
               </div>
-              <div className="launcher-card-cta shrink-0 self-center">
-                <Arrow className="h-5 w-5" />
-              </div>
-            </Link>
+            </div>
           </TooltipTrigger>
           <TooltipContent side="top" className="max-w-xs text-center leading-snug">
             {copy.tooltip}
           </TooltipContent>
         </Tooltip>
-        {/* Purpose selector beneath the box. Buttons are type=button so a tap
-            toggles the purpose instead of following the card link. Single-purpose
-            services show their one purpose as a static label. */}
-        <div className="mx-4 mb-3 mt-1 grid grid-cols-2 gap-1 rounded-lg border border-border/60 bg-muted/30 p-0.5 text-[10px] font-semibold uppercase tracking-wide">
-          {dual ? (
-            (["acquire", "manage"] as const).map((p) => {
-              const on = selected === p;
-              const activeCls = p === "acquire" ? "bg-accent text-white" : "bg-emerald-600 text-white";
-              return (
-                <button
-                  key={p}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => setPurposeByKey((prev) => ({ ...prev, [svc.key]: p }))}
-                  className={`rounded-md px-2 py-1 transition-colors ${on ? activeCls : "text-muted-foreground hover:bg-background"}`}
-                >
-                  {p === "acquire" ? t.forSelection : t.forDevelopment}
-                </button>
-              );
-            })
-          ) : (
-            <span className="col-span-2 rounded-md px-2 py-1 text-center text-muted-foreground">
-              {svc.pillars[0] === "acquire" ? t.forSelection : t.forDevelopment}
-            </span>
-          )}
+        {/* Two distinct-coloured level entries (no default highlight). */}
+        <div className={`mt-3 grid gap-2 ${svc.pillars.length === 2 ? "grid-cols-2" : "grid-cols-1"}`}>
+          {svc.pillars.map((p) => {
+            const acq = p === "acquire";
+            const cls = acq
+              ? "border-[#5391D5]/40 bg-[#5391D5]/10 text-[#0b3b66] hover:bg-[#5391D5]/20"
+              : "border-emerald-300 bg-emerald-50 text-emerald-900 hover:bg-emerald-100";
+            return (
+              <Link
+                key={p}
+                href={hrefFor(svc, p)}
+                className={`flex flex-col rounded-lg border px-3 py-2 transition-colors ${cls}`}
+              >
+                <span className="text-[9px] font-semibold uppercase tracking-wide opacity-70">
+                  {acq ? t.forSelection : t.forDevelopment}
+                </span>
+                <span className="inline-flex items-center gap-1 text-xs font-bold">
+                  {acq ? t.familyAcquisition : t.familyDevelopment}
+                  <Arrow className="h-3 w-3" />
+                </span>
+              </Link>
+            );
+          })}
         </div>
       </div>
     );

@@ -53,7 +53,7 @@ export function renderPersonaProfileHtmlAr(data: PersonaPdfData): string {
   const hiring = data.purpose === "hiring";
 
   const subtitle = hiring
-    ? "قراءة ملاءمة الدور عبر إطار جدارات VIFM (الإطار نفسه المستخدم في تقييم 360)"
+    ? "قراءة ملاءمة الدور عبر إطار جدارات VIFM"
     : "قراءة تطويرية عبر إطار جدارات VIFM (الإطار نفسه المستخدم في تقييم 360)";
 
   const parts: string[] = [];
@@ -87,7 +87,7 @@ export function renderPersonaProfileHtmlAr(data: PersonaPdfData): string {
     } else {
       const verdictHtml = data.fit.verdictLabel
         ? `<div style="margin-top:6px;display:inline-block;font-weight:700;font-size:12px;color:#fff;background:${escapeHtml(data.fit.verdictHex ?? C.primary)};padding:3px 10px;border-radius:4px">${escapeHtml(data.fit.verdictLabel)}</div>
-        <div style="font-size:7.5px;color:${C.textLight};margin-top:3px">إشارة استرشادية (تقييم ذاتي) - ادمجها مع تقييم Reflect 360 للحصول على حكم جاهزية مُتحقَّق منه.</div>`
+        <div style="font-size:7.5px;color:${C.textLight};margin-top:3px">إشارة استرشادية (تقييم ذاتي) - تحقّق منها بمقابلة منظّمة وأدلة عمل قبل القرار.</div>`
         : "";
       fitBlocks.push(`<div class="fit-head-center">
         <div class="fit-title-big">ملاءمة الدور</div>
@@ -100,13 +100,13 @@ export function renderPersonaProfileHtmlAr(data: PersonaPdfData): string {
     if (data.fit.strengths && data.fit.strengths.length > 0) {
       fitBlocks.push(`<div class="fit-gap-title" style="color:${C.emerald}">${dev ? "نقاط القوة للاستثمار (ذاتي / مستهدف)" : "أبرز نقاط القوة (ذاتي / مستهدف)"}</div>`);
       for (const g of data.fit.strengths) {
-        fitBlocks.push(`<div class="gap-row"><span>${escapeHtml(g.name)}</span><span style="color:${C.emerald}">${num(f1(g.self))} / ${num(f1(g.target))}</span></div>`);
+        fitBlocks.push(`<div class="gap-row"><span>${escapeHtml(g.name)}</span><span style="color:${C.emerald}">${num(f1(g.self))} / ${num(f1(g.target))} <svg width="7" height="7" viewBox="0 0 10 10" style="vertical-align:middle"><polygon points="5,1 9.5,8 0.5,8" fill="${C.emerald}"/></svg></span></div>`);
       }
     }
     if (data.fit.gaps.length > 0) {
       fitBlocks.push(`<div class="fit-gap-title">${dev ? "أولويات التطوير (ذاتي / مستهدف)" : "أكبر الفجوات مقابل المستهدف (ذاتي / مستهدف)"}</div>`);
       for (const g of data.fit.gaps) {
-        fitBlocks.push(`<div class="gap-row"><span>${escapeHtml(g.name)}</span><span style="color:${dev ? C.amber : C.rose}">${num(f1(g.self))} / ${num(f1(g.target))} (-${num(f1(g.gap))})</span></div>`);
+        fitBlocks.push(`<div class="gap-row"><span>${escapeHtml(g.name)}</span><span style="color:${dev ? C.amber : C.rose}">${num(f1(g.self))} / ${num(f1(g.target))} <svg width="7" height="7" viewBox="0 0 10 10" style="vertical-align:middle"><polygon points="5,9 9.5,2 0.5,2" fill="#e11d48"/></svg> <span style="color:#e11d48">${num(f1(g.gap))}</span></span></div>`);
       }
     } else {
       fitBlocks.push(`<div class="fit-gap-title">يحقّق أو يتجاوز كل المستهدفات.</div>`);
@@ -115,7 +115,7 @@ export function renderPersonaProfileHtmlAr(data: PersonaPdfData): string {
     fitBlocks.push(
       dev
         ? `<div class="fit-note">خطة تطوير قائمة على تقييم ذاتي - اقرنها بتقييم ريفلكت 360 (رأي الآخرين) وببرامج VIFM الموصى بها أدناه لتحويل الأولويات إلى تقدّم.</div>`
-        : `<div class="fit-caveat">إشارة فرز قائمة على تقييم ذاتي - تحقّق منها بتقييم 360 ومقابلة وأدلة قبل أي قرار توظيف.</div>`,
+        : `<div class="fit-caveat">إشارة فرز قائمة على تقييم ذاتي - تحقّق منها بمقابلة منظّمة وأدلة عمل قبل أي قرار توظيف.</div>`,
     );
 
     if (data.consistency) {
@@ -141,7 +141,7 @@ export function renderPersonaProfileHtmlAr(data: PersonaPdfData): string {
       <div class="dec-row"><span class="dec-label">تقييم المقابلة (1-5)</span><span class="dec-blank">____________________________________________</span></div>
       <div class="dec-row"><span class="dec-label">الأدلة / ملاحظات</span><span class="dec-blank">____________________________________________</span></div>
       <div class="dec-row"><span class="dec-label">التوصية النهائية</span><span class="dec-value">ترشيح&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;تأجيل&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;رفض</span></div>
-      <div class="fit-caveat">إشارة فرز قائمة على تقييم ذاتي - تحقّق منها بتقييم 360 ومقابلة وأدلة قبل أي قرار توظيف.</div>
+      <div class="fit-caveat">إشارة فرز قائمة على تقييم ذاتي - تحقّق منها بمقابلة منظّمة وأدلة عمل قبل أي قرار توظيف.</div>
     </div>`);
   }
 
@@ -259,7 +259,7 @@ export function renderPersonaProfileHtmlAr(data: PersonaPdfData): string {
   // Caption + methodology
   parts.push(`<div class="caption">${
     hiring
-      ? "هذا تقرير ذاتي استرشادي للملاءمة مقابل الدور - إشارة فرز وليست قرار توظيف. تحقّق منه بتقييم ريفلكت 360 (الآخرون) ومقابلة منظّمة وأدلة عمل."
+      ? "هذا تقرير ذاتي استرشادي للملاءمة مقابل الدور - إشارة فرز وليست قرار توظيف. تحقّق منه بمقابلة منظّمة وأدلة عمل."
       : "هذا تقرير ذاتي استرشادي - كيف يرى الشخص نفسه عبر الجدارات. لتحويله إلى حكم على الجاهزية، اقرن بيرسونا (الذات) بتقييم ريفلكت 360 (الآخرون) مقابل دور مستهدف."
   }</div>`);
   parts.push(`<div class="method-note">المنهجية: بيرسونا تقييم ذاتي سلوكي من 1 إلى 5 يُحتسب لكل جدارة (مع عكس العبارات السالبة)، ويُجمَّع حسب المجموعات، ويُقارن بدور مستهدف وبمجموعة معيارية عند توفّرها. هو إشارة تقييم ذاتي وليس قياسًا موضوعيًا ولا قرارًا. راجع موجز منهجية بيرسونا للتفاصيل الكاملة.</div>`);

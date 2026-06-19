@@ -309,7 +309,7 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
                       {data.fit.verdictLabel}
                     </Text>
                     <Text style={{ fontSize: 7.5, color: C.textLight, marginTop: 3 }}>
-                      Indicative (self-report) - pair with a Reflect 360 for a validated readiness verdict.
+                      Indicative (self-report) - corroborate with a structured interview and work evidence before deciding.
                     </Text>
                   </>
                 ) : null}
@@ -323,7 +323,12 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
                 {data.fit.strengths.map((g) => (
                   <View key={`str-${g.name}`} style={s.fitGapRow}>
                     <Text style={s.fitGapName}>{g.name}</Text>
-                    <Text style={[s.fitGapNum, { color: C.emerald }]}>{g.self.toFixed(1)} / {g.target.toFixed(1)}</Text>
+                    <View style={{ flexDirection: "row", alignItems: "center" }}>
+                      <Text style={[s.fitGapNum, { color: C.emerald }]}>{g.self.toFixed(1)} / {g.target.toFixed(1)}</Text>
+                      <Svg width={7} height={7} viewBox="0 0 10 10" style={{ marginLeft: 4 }}>
+                        <Polygon points="5,1 9.5,8 0.5,8" fill={C.emerald} />
+                      </Svg>
+                    </View>
                   </View>
                 ))}
               </>
@@ -336,9 +341,13 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
                 {data.fit.gaps.map((g) => (
                   <View key={g.name} style={s.fitGapRow}>
                     <Text style={s.fitGapName}>{g.name}</Text>
-                    <Text style={dev ? s.fitGapNumDev : s.fitGapNum}>
-                      {g.self.toFixed(1)} / {g.target.toFixed(1)}  (-{g.gap.toFixed(1)})
-                    </Text>
+                    <View style={{ flexDirection: "row", alignItems: "center" }}>
+                      <Text style={dev ? s.fitGapNumDev : s.fitGapNum}>{g.self.toFixed(1)} / {g.target.toFixed(1)}</Text>
+                      <Svg width={7} height={7} viewBox="0 0 10 10" style={{ marginLeft: 4, marginRight: 2 }}>
+                        <Polygon points="5,9 9.5,2 0.5,2" fill="#e11d48" />
+                      </Svg>
+                      <Text style={[dev ? s.fitGapNumDev : s.fitGapNum, { color: "#e11d48" }]}>{g.gap.toFixed(1)}</Text>
+                    </View>
                   </View>
                 ))}
               </>
@@ -351,7 +360,7 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
               </Text>
             ) : (
               <Text style={s.fitCaveat}>
-                A self-report screening signal - corroborate with a Reflect 360, interview and evidence before any hiring decision.
+                A self-report screening signal - corroborate with a structured interview and work evidence before any hiring decision.
               </Text>
             )}
 
@@ -403,7 +412,7 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
               <Text style={s.decValue}>Advance        /        Hold        /        Decline</Text>
             </View>
             <Text style={s.fitCaveat}>
-              A self-report screening signal - corroborate with a Reflect 360, interview and evidence before any hiring decision.
+              A self-report screening signal - corroborate with a structured interview and work evidence before any hiring decision.
             </Text>
           </View>
         ) : null}
@@ -557,7 +566,7 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
 
         <Text style={s.caption}>
           {hiring
-            ? "This is an indicative self-report fit against the target role - a screening signal, not a hiring decision. Corroborate with a Reflect 360 (others), structured interview and work evidence."
+            ? "This is an indicative self-report fit against the target role - a screening signal, not a hiring decision. Corroborate with a structured interview and work evidence."
             : "This is an indicative self-report - how the person sees themselves across the competencies. To turn it into a readiness verdict, pair Persona (self) with a Reflect 360 (others) against a target role."}
         </Text>
         <Text style={s.methodNote}>

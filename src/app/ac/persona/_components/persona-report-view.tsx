@@ -52,6 +52,15 @@ function Check() {
     </svg>
   );
 }
+// Directional gap arrow: up/green = at or above target, down/red = below target.
+function GapArrow({ dir }: { dir: "up" | "down" }) {
+  const up = dir === "up";
+  return (
+    <svg width={10} height={10} viewBox="0 0 10 10" className="inline-block shrink-0" aria-hidden>
+      <path d={up ? "M5 1 L9.5 8 L0.5 8 Z" : "M5 9 L9.5 2 L0.5 2 Z"} fill={up ? EMERALD : "#e11d48"} />
+    </svg>
+  );
+}
 
 export function PersonaReportView({
   data,
@@ -134,8 +143,8 @@ export function PersonaReportView({
                 </span>
                 <p className="mt-1 text-[11px] text-slate-500">
                   {tx(
-                    "Indicative (self-report) - pair with a Reflect 360 for a validated readiness verdict.",
-                    "إشارة استرشادية (تقييم ذاتي) - ادمجها مع تقييم Reflect 360 للحصول على حكم جاهزية مُتحقَّق منه."
+                    "Indicative (self-report) - corroborate with a structured interview and work evidence before deciding.",
+                    "إشارة استرشادية (تقييم ذاتي) - تحقّق منها بمقابلة منظّمة وأدلة عمل قبل القرار."
                   )}
                 </p>
               </div>
@@ -151,7 +160,11 @@ export function PersonaReportView({
                 {(data.fit.strengths ?? []).map((g) => (
                   <div key={`s-${g.name}`} className="flex items-center justify-between text-sm">
                     <span className="text-[#010131]">{g.name}</span>
-                    <span className="font-semibold tabular-nums text-emerald-600">{g.self.toFixed(1)} / {g.target.toFixed(1)}</span>
+                    <span className="flex items-center gap-1.5 font-semibold tabular-nums text-emerald-600">
+                      {g.self.toFixed(1)} / {g.target.toFixed(1)}
+                      <GapArrow dir="up" />
+                      {(g.self - g.target) > 0 ? <span>+{(g.self - g.target).toFixed(1)}</span> : null}
+                    </span>
                   </div>
                 ))}
                 {(data.fit.strengths ?? []).length === 0 ? (
@@ -167,7 +180,11 @@ export function PersonaReportView({
                 {data.fit.gaps.length > 0 ? data.fit.gaps.map((g) => (
                   <div key={`g-${g.name}`} className="flex items-center justify-between text-sm">
                     <span className="text-[#010131]">{g.name}</span>
-                    <span className={`font-semibold tabular-nums ${dev ? "text-amber-600" : "text-rose-600"}`}>{g.self.toFixed(1)} / {g.target.toFixed(1)}</span>
+                    <span className={`flex items-center gap-1.5 font-semibold tabular-nums ${dev ? "text-amber-600" : "text-rose-600"}`}>
+                      {g.self.toFixed(1)} / {g.target.toFixed(1)}
+                      <GapArrow dir="down" />
+                      <span>{(g.target - g.self).toFixed(1)}</span>
+                    </span>
                   </div>
                 )) : (
                   <p className="text-sm text-emerald-700">{tx("Meets or exceeds every target.", "يحقّق أو يتجاوز كل المستهدفات.")}</p>
@@ -179,7 +196,7 @@ export function PersonaReportView({
           <p className={`mt-3 rounded-md px-3 py-2 text-[11px] ${dev ? "bg-[#5391D5]/10 text-[#010131]" : "bg-amber-50 text-amber-800"}`}>
             {dev
               ? tx("A self-report development plan - pair it with a Reflect 360 (others) and the recommended VIFM programmes to turn priorities into progress.", "خطة تطوير قائمة على تقييم ذاتي - اقرنها بتقييم ريفلكت 360 وببرامج VIFM الموصى بها لتحويل الأولويات إلى تقدّم.")
-              : tx("A self-report screening signal - corroborate with a Reflect 360, interview and evidence before any hiring decision.", "إشارة فرز قائمة على تقييم ذاتي - تحقّق منها بتقييم 360 ومقابلة وأدلة قبل أي قرار توظيف.")}
+              : tx("A self-report screening signal - corroborate with a structured interview and work evidence before any hiring decision.", "إشارة فرز قائمة على تقييم ذاتي - تحقّق منها بمقابلة منظّمة وأدلة عمل قبل أي قرار توظيف.")}
           </p>
 
           {/* C - response style */}
@@ -366,7 +383,7 @@ export function PersonaReportView({
       {/* Caption + methodology */}
       <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
         {hiring
-          ? tx("An indicative self-report fit against the target role - a screening signal, not a hiring decision. Corroborate with a Reflect 360, structured interview and work evidence.", "ملاءمة استرشادية قائمة على تقييم ذاتي - إشارة فرز وليست قرار توظيف. تحقّق منها بتقييم 360 ومقابلة منظّمة وأدلة عمل.")
+          ? tx("An indicative self-report fit against the target role - a screening signal, not a hiring decision. Corroborate with a structured interview and work evidence.", "ملاءمة استرشادية قائمة على تقييم ذاتي - إشارة فرز وليست قرار توظيف. تحقّق منها بمقابلة منظّمة وأدلة عمل.")
           : tx("An indicative self-report - how the person sees themselves across the competencies. Pair Persona (self) with a Reflect 360 (others) against a target role to turn it into a readiness verdict.", "تقرير ذاتي استرشادي - كيف يرى الشخص نفسه عبر الجدارات. اقرن بيرسونا (الذات) بتقييم 360 (الآخرون) مقابل دور مستهدف.")}
       </div>
 

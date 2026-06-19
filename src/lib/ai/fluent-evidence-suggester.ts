@@ -22,7 +22,7 @@ const MENU: AnchorMenuEntry[] = [
   { tags: ["*"], name: "Common European Framework of Reference (CEFR)",
     citation: "Council of Europe (2001). Common European Framework of Reference for Languages: Learning, teaching, assessment. Cambridge University Press." },
   { tags: ["*"], name: "CEFR Companion Volume",
-    citation: "Council of Europe (2020). Common European Framework of Reference for Languages: Learning, teaching, assessment — Companion volume. Council of Europe Publishing." },
+    citation: "Council of Europe (2020). Common European Framework of Reference for Languages: Learning, teaching, assessment - Companion volume. Council of Europe Publishing." },
   { tags: ["*"], name: "Developing common reference levels (North)",
     citation: "North, B. (2000). The development of a common framework scale of language proficiency. Peter Lang." },
   { tags: ["*"], name: "Fundamental Considerations in Language Testing (Bachman)",
@@ -58,7 +58,7 @@ export async function suggestFluentValidationEvidence(
   const menu = relevantMenu(MENU, [skill]);
   const user = buildUserPrompt({
     contextLines: [
-      { k: "Instrument", v: "Fluent (English) proficiency — adaptive reading/listening test" },
+      { k: "Instrument", v: "Fluent (English) proficiency - adaptive reading/listening test" },
       { k: "Skill", v: input.skill || "(unspecified)" },
       { k: "CEFR band", v: input.cefr || "(not yet calibrated)" },
     ],

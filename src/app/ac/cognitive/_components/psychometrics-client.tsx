@@ -145,7 +145,7 @@ export function PsychometricsClient({
           <BrainCircuit className="h-6 w-6 text-[#5391D5]" /> Cognitive Ability
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Numerical, verbal, inductive and deductive reasoning — an <strong>indicative</strong> developmental read,
+          Numerical, verbal, inductive and deductive reasoning - an <strong>indicative</strong> developmental read,
           not a norm-referenced or high-stakes score.
         </p>
       </div>
@@ -363,17 +363,17 @@ export function PsychometricsClient({
           {result.validity?.flag && (
             <div className="inline-flex items-start gap-2 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              Response-style check: the profile shows {result.validity.socialDesirability >= 4.5 ? "uniformly high self-ratings" : "high inconsistency"} — interpret with care.
+              Response-style check: the profile shows {result.validity.socialDesirability >= 4.5 ? "uniformly high self-ratings" : "high inconsistency"} - interpret with care.
             </div>
           )}
 
           {result.tier === "calibrated" ? (
             <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900">
-              <strong>Norm-referenced</strong> result — scored against the VIFM reference group (percentiles + sten). A screening signal to inform a human decision, never an automatic one.
+              <strong>Norm-referenced</strong> result - scored against the VIFM reference group (percentiles + sten). A screening signal to inform a human decision, never an automatic one.
             </p>
           ) : (
             <p className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
-              This is an <strong>indicative</strong> result based on raw scores, not local norms or IRT calibration — for development and self-insight, not a standalone hiring decision.
+              This is an <strong>indicative</strong> result based on raw scores, not local norms or IRT calibration - for development and self-insight, not a standalone hiring decision.
             </p>
           )}
 

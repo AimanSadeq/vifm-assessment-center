@@ -14,7 +14,7 @@ import { createServiceClient } from "@/lib/supabase/server";
  *   - anything else      → denied
  *
  * A candidate's auth identity is profiles.id (= auth.uid()), linked to the
- * candidate record via candidates.profile_id — NOT candidates.id — so we
+ * candidate record via candidates.profile_id - NOT candidates.id - so we
  * resolve the row's profile_id before comparing. Assessor access to candidate
  * pages is intentionally not granted here (assessors use the assessor portal);
  * add it if a real flow needs it.

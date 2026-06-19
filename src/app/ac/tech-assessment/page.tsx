@@ -47,7 +47,7 @@ export default async function TechAssessmentPage({ searchParams }: Props) {
   const adaptiveRefs = Array.from(adaptiveSet);
 
   // Optional org-assigned run: bind the sitting to a candidate (+ engagement) and
-  // optionally lock it to one domain. Tolerant — anonymous self-serve if absent.
+  // optionally lock it to one domain. Tolerant - anonymous self-serve if absent.
   const candidateId = searchParams?.candidateId?.trim() || null;
   let engagementId = searchParams?.engagementId?.trim() || null;
   let candidateName: string | null = null;
@@ -84,7 +84,7 @@ export default async function TechAssessmentPage({ searchParams }: Props) {
         engagementId = engagementId ?? ((data.engagement_id as string) ?? null);
       }
     } catch {
-      /* candidate lookup failed — fall back to anonymous mode */
+      /* candidate lookup failed - fall back to anonymous mode */
     }
   }
   const reqDomain = searchParams?.domainKey?.trim() || null;

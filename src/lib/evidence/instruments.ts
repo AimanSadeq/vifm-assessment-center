@@ -61,7 +61,7 @@ function truncate(s: string | null | undefined, n = 90): string {
   return t.length > n ? `${t.slice(0, n - 1)}…` : t;
 }
 
-// ── Fluent (English) — eng_fluent_items ───────────────────────────────
+// ── Fluent (English) - eng_fluent_items ───────────────────────────────
 type FluentRow = {
   id: string;
   skill: string;
@@ -124,7 +124,7 @@ const fluentAdapter: EvidenceAdapter = {
   },
 };
 
-// ── Technical Cert — tech_assessment_items ────────────────────────────
+// ── Technical Cert - tech_assessment_items ────────────────────────────
 type TechRow = {
   id: string;
   domain_key: string;
@@ -193,7 +193,7 @@ const technicalAdapter: EvidenceAdapter = {
   },
 };
 
-// ── Reflect 360 — reflect_competencies ────────────────────────────────
+// ── Reflect 360 - reflect_competencies ────────────────────────────────
 type ReflectRow = {
   id: string;
   name_en: string;
@@ -260,7 +260,7 @@ const reflectAdapter: EvidenceAdapter = {
   },
 };
 
-// ── Psychometrics — psy_scales ────────────────────────────────────────
+// ── Psychometrics - psy_scales ────────────────────────────────────────
 type PsyRow = {
   id: string;
   key: string;

@@ -249,7 +249,7 @@ export async function getTechnicalProgram(
       if (!latest.has(key)) latest.set(key, r);
     }
   } catch {
-    /* results table missing the program columns — everyone shows not-started */
+    /* results table missing the program columns - everyone shows not-started */
   }
 
   const candidates: TechProgramCandidate[] = participants.map((p) => {
@@ -301,7 +301,7 @@ export async function getTechnicalProgram(
         if (!latestFn.has(r.participant_id)) latestFn.set(r.participant_id, r);
       }
     } catch {
-      /* 00058 columns absent — everyone shows not-started */
+      /* 00058 columns absent - everyone shows not-started */
     }
 
     const results: FunctionParticipantResult[] = participants.map((p) => {

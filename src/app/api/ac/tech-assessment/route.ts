@@ -8,11 +8,11 @@
  *   -> TechResult            (server reloads the stored test and grades it)
  *
  * Two assembly modes:
- *   • CERTIFIED — assembled entirely from SME-approved bank items (Tier 2).
+ *   • CERTIFIED - assembled entirely from SME-approved bank items (Tier 2).
  *     When the result clears the domain's documented cut-score, a
  *     'technical_proficiency' credential is issued. This is the defensible,
  *     sellable path.
- *   • INDICATIVE — live AI-authored items (no human review). Renders a 1–5
+ *   • INDICATIVE - live AI-authored items (no human review). Renders a 1–5
  *     band but NEVER issues a credential. The honest fallback when a domain's
  *     approved bank is too thin to certify (or ANTHROPIC_API_KEY is absent).
  *
@@ -67,7 +67,7 @@ async function techTimeLimitSeconds(scopes: string[], { sum }: { sum: boolean })
 
 // A session stores the full test PLUS the bank item ids it drew (so a certified
 // sitting can post administration stats back to the bank on scoring) and, for a
-// function run, the function binding (its key/id — domain_key no longer applies).
+// function run, the function binding (its key/id - domain_key no longer applies).
 type StoredTest = TechTest & {
   item_ids?: string[];
   function_key?: string | null;
@@ -97,7 +97,7 @@ type Body = {
 const SESSION_TTL_MS = 1000 * 60 * 60 * 3;
 
 // The self-answering placeholder deck exists so the dev flow renders without an
-// API key — it must never be administered in production.
+// API key - it must never be administered in production.
 const isPlaceholderTest = (t: TechTest) => !t.certified && !t.ai_generated;
 
 const generationFailedResponse = () =>
@@ -120,7 +120,7 @@ async function createSession(
   try {
     const sb = createServiceClient();
     // For a function run, domain_key no longer applies (the test spans several
-    // domains' skills) — store NULL there + the function binding instead. For a
+    // domains' skills) - store NULL there + the function binding instead. For a
     // domain run we omit the function columns entirely, so the insert is byte-for-
     // byte the legacy shape and keeps working before 00058 is applied.
     const row: Record<string, unknown> = {
@@ -187,7 +187,7 @@ export async function POST(req: Request) {
     const engagementId = body.engagementId?.trim() || null;
 
     // ── Combined (mix & match) run: skills picked ad hoc in the runner across
-    //    one or more functions — the selection (or the full merged blueprints
+    //    one or more functions - the selection (or the full merged blueprints
     //    when none given) becomes ONE sitting. Nothing is persisted. ──
     const mixRefs = Array.isArray(body.functionKeys)
       ? Array.from(new Set(body.functionKeys.map((r) => String(r).trim()).filter(Boolean)))
@@ -203,7 +203,7 @@ export async function POST(req: Request) {
       if (fns.length === 0) {
         return NextResponse.json({ error: "valid functionKeys required" }, { status: 400 });
       }
-      // Merge the blueprints (deduped), then narrow to the picked skills — only
+      // Merge the blueprints (deduped), then narrow to the picked skills - only
       // canonical blueprint skills are accepted (the selection can't inject
       // arbitrary strings into assembly/generation).
       let skillsEn = Array.from(new Set(fns.flatMap((f) => f.skillsEn)));
@@ -371,7 +371,7 @@ export async function POST(req: Request) {
     const result = scoreTechnicalAssessment({ test, answers });
 
     // A function run spans several domains' skills, so domain_key no longer
-    // applies — the result is bound to the function instead (key + id).
+    // applies - the result is bound to the function instead (key + id).
     const isFunctionRun = !!test.function_key;
 
     const takerName = body.takerName?.trim() || null;
@@ -445,7 +445,7 @@ export async function POST(req: Request) {
         resultId = (full.data?.id as string | undefined) ?? null;
       }
     } catch {
-      /* table not migrated / older schema — return the result anyway */
+      /* table not migrated / older schema - return the result anyway */
     }
 
     // Bind the result to a standalone certification-program participant (00057).
@@ -460,7 +460,7 @@ export async function POST(req: Request) {
           .update({ program_id: programId, participant_id: participantId })
           .eq("id", resultId);
       } catch {
-        /* 00057 columns absent — non-fatal */
+        /* 00057 columns absent - non-fatal */
       }
     }
 

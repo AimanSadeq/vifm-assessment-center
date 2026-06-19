@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────
-// Behavioral self-assessment — server lib (Slice 4).
+// Behavioral self-assessment - server lib (Slice 4).
 //
 // Sessions + item responses + per-competency self rollup. The rollup
 // (behavioral_competency_scores) is what the readiness engine reads in

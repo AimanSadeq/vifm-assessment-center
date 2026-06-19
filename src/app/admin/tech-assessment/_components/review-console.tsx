@@ -435,7 +435,7 @@ function ItemEditor({
       const arr = [...prev].sort((a, b) => a - b);
       if (next === "multi") return new Set(arr);
       if (next === "true_false") return new Set([arr[0] === 1 ? 1 : 0]);
-      return new Set([arr.find((n) => n < 4) ?? 0]); // single / scenario — one correct, < 4
+      return new Set([arr.find((n) => n < 4) ?? 0]); // single / scenario - one correct, < 4
     });
   }
 

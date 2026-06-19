@@ -2,7 +2,7 @@
  * Adaptive (CAT) layer for the technical item bank (Phase-3 #2).
  *
  * Thin, PURE wrapper over the generic Rasch engine in ./irt.ts (reused verbatim
- * from Fluent): it adds the technical-specific pieces — seeding a difficulty
+ * from Fluent): it adds the technical-specific pieces - seeding a difficulty
  * from the easy/medium/hard label, mapping a θ estimate onto the 1–5
  * proficiency scale with a confidence band, and a maximum-information adaptive
  * SIMULATION used to prove the flow converges with fewer items than a fixed

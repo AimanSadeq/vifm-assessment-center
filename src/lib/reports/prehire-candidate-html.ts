@@ -178,7 +178,7 @@ export function renderPrehireCandidateHtml(data: PrehireReportData, lang: Lang):
     })
     .join("");
 
-  // "How this score is calculated" — the band methodology, so the client
+  // "How this score is calculated" - the band methodology, so the client
   // understands the automatically-derived advisory signal.
   const bandOrder: PrehireRecommendation[] = ["advance", "review", "hold", "incomplete"];
   const bandRows = bandOrder

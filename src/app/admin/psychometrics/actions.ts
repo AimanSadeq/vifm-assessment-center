@@ -182,7 +182,7 @@ export async function computePilotNormsAction(input: { kind: PsyKind }): Promise
 }
 
 /** Seed the public-domain IPIP-50 (10 items × 5 traits) into the personality bank
- *  as APPROVED items — the longer validated form. Idempotent (skips if present). */
+ *  as APPROVED items - the longer validated form. Idempotent (skips if present). */
 export async function seedIpip50IntoBankAction(): Promise<ActionResult> {
   const gate = await ensureAdmin();
   if (!gate.ok) return gate;

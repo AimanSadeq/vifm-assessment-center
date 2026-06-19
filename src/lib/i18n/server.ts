@@ -59,7 +59,7 @@ export type ServerT = (key: string, vars?: Record<string, string | number>) => s
 /**
  * Server-side translator. Reads the `vifm-locale` cookie by default, mirroring
  * the client provider. Pass `localeOverride` to pin a locale regardless of the
- * cookie — used by Fluent, the English-language placement, whose server-rendered
+ * cookie - used by Fluent, the English-language placement, whose server-rendered
  * chrome must stay English even when the rest of the portal is Arabic (the client
  * provider already forces /ac/fluent to en/ltr; this keeps SSR consistent).
  */

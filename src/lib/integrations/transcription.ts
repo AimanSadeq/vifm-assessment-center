@@ -4,14 +4,14 @@
  * English screen so both go through ONE code path.
  *
  * Transcript backend, in order of preference:
- *   1. OpenAI Whisper API (OPENAI_API_KEY) — hosted; the only path that works on
+ *   1. OpenAI Whisper API (OPENAI_API_KEY) - hosted; the only path that works on
  *      Render, where Python/faster-whisper/ffmpeg aren't installed. Accepts the
  *      browser's WebM/Opus blob directly (no transcode).
- *   2. Local Whisper subprocess (scripts/whisper-transcribe.py) — dev fallback
+ *   2. Local Whisper subprocess (scripts/whisper-transcribe.py) - dev fallback
  *      when no hosted key is set.
  * Pronunciation (Azure) is best-effort and needs a 16 kHz WAV via ffmpeg; it
  * degrades to transcript-only when ffmpeg/Azure aren't available. No audio
- * persisted — temp files are cleaned up.
+ * persisted - temp files are cleaned up.
  */
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
@@ -50,7 +50,7 @@ async function transcribeWithOpenAI(file: Blob): Promise<{ transcript?: string; 
     // Filename extension lets the API infer the container (webm/ogg/mp4/wav…).
     form.append("file", file, `speech.${ext}`);
     form.append("model", OPENAI_STT_MODEL);
-    form.append("language", "en"); // Fluent content is English — bias the decode
+    form.append("language", "en"); // Fluent content is English - bias the decode
     form.append("response_format", "json");
 
     const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
@@ -184,7 +184,7 @@ export async function transcribeSpeechFile(file: Blob): Promise<TranscriptionRes
       return { error: lastError || "transcription failed", status: 422 };
     }
 
-    // ── 2) Pronunciation (Azure) — best-effort ──
+    // ── 2) Pronunciation (Azure) - best-effort ──
     // Needs a 16 kHz WAV (ffmpeg). On Render without ffmpeg this returns null
     // and we ship transcript-only, exactly as before.
     let pronunciation: PronunciationScore | null = null;

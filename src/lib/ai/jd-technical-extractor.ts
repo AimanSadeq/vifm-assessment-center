@@ -5,7 +5,7 @@ import { TECH_FUNCTION_CATEGORIES } from "@/lib/competencies/technical-function"
 // ── JD → technical function blueprint ────────────────────────────────────────
 //
 // The Phase-2 generative extractor: read a finance job description and propose a
-// FUNCTION BLUEPRINT — the technical skills that function is assessed on. Unlike
+// FUNCTION BLUEPRINT - the technical skills that function is assessed on. Unlike
 // the behavioural JD-competency extractor (which only picks from a fixed menu),
 // this is generative: it MATCHES the supplied technical skill library where it
 // can (so item banks are reused) but may also PROPOSE new skills the JD requires
@@ -34,7 +34,7 @@ const SYSTEM_PROMPT =
   `matching the supplied skill library so item banks are reused, and you PROPOSE a new skill ` +
   `only when the JD genuinely requires a technical skill not in the library. You may receive ` +
   `English or Arabic job descriptions; respond in English. Focus on technical skills, NOT ` +
-  `behavioural traits (leadership, communication) — those are assessed separately.`;
+  `behavioural traits (leadership, communication) - those are assessed separately.`;
 
 function buildInstructions(skillLibrary: string[], targetRole: string | undefined, jdInline: string | null) {
   const menu = skillLibrary.map((s) => `- ${s}`).join("\n");

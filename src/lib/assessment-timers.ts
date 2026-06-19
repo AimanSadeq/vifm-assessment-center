@@ -50,7 +50,7 @@ export async function getTimersMap(scopes: string[]): Promise<Record<string, Tim
       out[r.scope] = r.minutes == null ? null : Number(r.minutes);
     }
   } catch {
-    /* not migrated — empty, callers fall back to defaults */
+    /* not migrated - empty, callers fall back to defaults */
   }
   return out;
 }

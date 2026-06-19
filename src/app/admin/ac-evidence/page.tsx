@@ -95,7 +95,7 @@ export default async function AcEvidencePage() {
       <BackLink href="/admin" label="Back" history />
       <div className="flex items-center gap-2 mb-1">
         <ShieldCheck className="h-5 w-5 text-accent" />
-        <h1 className="text-xl font-bold">Assessment Center — Evidence Console</h1>
+        <h1 className="text-xl font-bold">Assessment Center - Evidence Console</h1>
       </div>
       <p className="text-sm text-muted-foreground mb-5">
         Per-competency research provenance. Anchor each competency to the published

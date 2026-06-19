@@ -42,7 +42,7 @@ export async function draftFunctionSkillItemsAction(input: {
 }
 
 /** One-click: AI-draft items for EVERY skill in the function that is still short
- *  of `perSkill` existing items (draft/in_review/approved). The simple path —
+ *  of `perSkill` existing items (draft/in_review/approved). The simple path -
  *  the reviewer just approves afterwards instead of clicking skill-by-skill. */
 export async function draftAllFunctionSkillItemsAction(input: {
   ref: string;
@@ -130,7 +130,7 @@ export async function setFunctionItemStatusAction(input: {
   return { ok: true };
 }
 
-/** Calibrate the function's per-skill bank — write each item's Rasch difficulty
+/** Calibrate the function's per-skill bank - write each item's Rasch difficulty
  *  (CAT groundwork). Uses the p-value substrate or the difficulty prior. */
 export async function calibrateFunctionBankAction(input: {
   ref: string;

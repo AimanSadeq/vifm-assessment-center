@@ -1,4 +1,4 @@
-// Guided Start — the requirement resolver (the "brain").
+// Guided Start - the requirement resolver (the "brain").
 //
 // resolveProcess(answers) maps the user's plain-language selections to the
 // diagnosed requirement + the process that meets it. Pure + deterministic. The

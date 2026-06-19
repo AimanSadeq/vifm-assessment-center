@@ -21,7 +21,7 @@ function readCookie(name: string): string | null {
  */
 function localeAwareRoute(pathname: string | null): boolean {
   if (!pathname) return false;
-  // Fluent is the English-language placement — its UI stays English/LTR even
+  // Fluent is the English-language placement - its UI stays English/LTR even
   // though the rest of /ac is locale-aware.
   if (pathname.startsWith("/ac/fluent")) return false;
   return (

@@ -268,7 +268,7 @@ export function FunctionsClient({
           <p className="text-sm text-muted-foreground">{t("techFn.composeIntro")}</p>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Pick functions — across any competency */}
+          {/* Pick functions - across any competency */}
           <div className="space-y-3">
             {grouped.map(([label, fns]) => (
               <div key={label}>

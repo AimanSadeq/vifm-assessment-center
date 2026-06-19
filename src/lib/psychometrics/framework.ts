@@ -1,10 +1,10 @@
-// VIFM Psychometrics — the Foundations layer (cognitive ability + Big-Five
+// VIFM Psychometrics - the Foundations layer (cognitive ability + Big-Five
 // personality). Code-side framework + the public-domain Mini-IPIP item set, so
 // the Tier-1 indicative runner works without seeded DB items or an AI key.
 //
 // Each scale declares the behavioural competencies it PREDICTS (layered model);
 // P8 seeds these as `predicts`/`foundations` rows in construct_competency_links
-// (resolved by competency name; non-matches are skipped). Tier 1 is INDICATIVE —
+// (resolved by competency name; non-matches are skipped). Tier 1 is INDICATIVE -
 // no local norms, no IRT calibration, no credential.
 
 export type PsyKind = "cognitive" | "personality";
@@ -102,7 +102,7 @@ export function cognitiveNarrative(scorePct: number, ar: boolean): string {
     : "Developing performance: targeted practice on this reasoning type will build the foundation.";
 }
 
-/** General mental ability (g) — the composite — predicts broadly. */
+/** General mental ability (g) - the composite - predicts broadly. */
 export const COGNITIVE_G_COMPETENCIES = ["Critical Analysis", "Sound Judgement", "Navigating Complexity"];
 
 // ── Big-Five (OCEAN) personality ─────────────────────────────────
@@ -121,7 +121,7 @@ export const BIG_FIVE: BigFiveTrait[] = [
   { key: "S", name_en: "Emotional Stability", name_ar: "الاتزان الانفعالي", desc_en: "Calm and resilience under pressure (low neuroticism).", competencies: ["Resilience Under Pressure", "Operating Through Uncertainty", "Self-Insight"] },
 ];
 
-// ── Mini-IPIP (Donnellan, Oswald, Baird & Lucas, 2006) — public domain ──
+// ── Mini-IPIP (Donnellan, Oswald, Baird & Lucas, 2006) - public domain ──
 // 20 items, 4 per factor. High score = more of the trait; for S (Emotional
 // Stability) high = calmer / more stable. `reverse` flips the item for its scale.
 export type IpipItem = { scale: BigFiveTrait["key"]; text_en: string; text_ar: string; reverse: boolean };
@@ -151,7 +151,7 @@ export const MINI_IPIP: IpipItem[] = [
 export const LIKERT_ANCHORS_EN = ["Strongly disagree", "Disagree", "Neutral", "Agree", "Strongly agree"];
 export const LIKERT_ANCHORS_AR = ["أعارض بشدة", "أعارض", "محايد", "أوافق", "أوافق بشدة"];
 
-// ── Bands (Tier 1 INDICATIVE — based on raw scores, not local norms) ──
+// ── Bands (Tier 1 INDICATIVE - based on raw scores, not local norms) ──
 export type PsyBand = "low" | "below" | "average" | "above" | "high";
 
 /** Cognitive: % correct → indicative band. */

@@ -10,7 +10,7 @@ import type { ValidationEvidence } from "@/types/evidence";
  * Takes a competency + its domain context and returns 1–3 anchor
  * instruments from a CLOSED, curated menu so Claude has to pick from
  * known, spot-checkable citations rather than fabricate paper-level
- * details. Output is always `review_status: 'ai_proposed'` — an admin
+ * details. Output is always `review_status: 'ai_proposed'` - an admin
  * must verify before it appears on any client-facing surface.
  *
  * Returns null when ANTHROPIC_API_KEY isn't set (graceful fallback) or
@@ -29,7 +29,7 @@ export type AcEvidenceSuggesterInput = {
 // Citations are deliberately limited to seminal / textbook-stable works
 // to keep the bibliography defensible against client spot-checks.
 const ANCHOR_MENU: Array<{ domains: string[]; name: string; citation: string }> = [
-  // ── General — assessment-centre method & competency-modelling validity ──
+  // ── General - assessment-centre method & competency-modelling validity ──
   { domains: ["*"], name: "ITAG Assessment Center Guidelines (6th ed.)",
     citation: "International Taskforce on Assessment Center Guidelines (2015). Guidelines and ethical considerations for assessment center operations (6th ed.). Journal of Management, 41(4), 1244–1273." },
   { domains: ["*"], name: "Assessment Centers in HRM (Thornton & Rupp)",
@@ -49,27 +49,27 @@ const ANCHOR_MENU: Array<{ domains: string[]; name: string; citation: string }> 
   { domains: ["*"], name: "Standards for Educational and Psychological Testing",
     citation: "American Educational Research Association, American Psychological Association, & National Council on Measurement in Education (2014). Standards for educational and psychological testing. AERA." },
   { domains: ["*"], name: "ISO 10667 assessment service delivery",
-    citation: "ISO 10667-1/2 (2020). Assessment service delivery — Procedures and methods to assess people in work and organizational settings. International Organization for Standardization." },
+    citation: "ISO 10667-1/2 (2020). Assessment service delivery - Procedures and methods to assess people in work and organizational settings. International Organization for Standardization." },
 
-  // ── THINKING — reasoning, problem-solving, judgement, strategy ──
+  // ── THINKING - reasoning, problem-solving, judgement, strategy ──
   { domains: ["THINKING"], name: "Validity of selection methods (Schmidt & Hunter)",
     citation: "Schmidt, F. L., & Hunter, J. E. (1998). The validity and utility of selection methods in personnel psychology. Psychological Bulletin, 124(2), 262–274." },
   { domains: ["THINKING"], name: "Leadership skills / complex problem solving (Mumford et al.)",
     citation: "Mumford, M. D., Zaccaro, S. J., Harding, F. D., Jacobs, T. O., & Fleishman, E. A. (2000). Leadership skills for a changing world: Solving complex social problems. Leadership Quarterly, 11(1), 11–35." },
 
-  // ── RESULTS — achievement, drive, execution, accountability ──
+  // ── RESULTS - achievement, drive, execution, accountability ──
   { domains: ["RESULTS"], name: "Testing for competence (McClelland)",
     citation: "McClelland, D. C. (1973). Testing for competence rather than for intelligence. American Psychologist, 28(1), 1–14." },
   { domains: ["RESULTS"], name: "Goal-setting theory (Locke & Latham)",
     citation: "Locke, E. A., & Latham, G. P. (2002). Building a practically useful theory of goal setting and task motivation. American Psychologist, 57(9), 705–717." },
 
-  // ── PEOPLE — interpersonal, leadership, influence, communication ──
+  // ── PEOPLE - interpersonal, leadership, influence, communication ──
   { domains: ["PEOPLE"], name: "Emotional intelligence (Mayer, Salovey & Caruso)",
     citation: "Mayer, J. D., Salovey, P., & Caruso, D. R. (2008). Emotional intelligence: New ability or eclectic traits? American Psychologist, 63(6), 503–517." },
   { domains: ["PEOPLE"], name: "Effective leadership behavior (Yukl)",
     citation: "Yukl, G. (2012). Effective leadership behavior: What we know and what questions need more attention. Academy of Management Perspectives, 26(4), 66–85." },
 
-  // ── SELF — integrity, adaptability, resilience, self-management ──
+  // ── SELF - integrity, adaptability, resilience, self-management ──
   { domains: ["SELF"], name: "Big Five and job performance (Barrick & Mount)",
     citation: "Barrick, M. R., & Mount, M. K. (1991). The Big Five personality dimensions and job performance: A meta-analysis. Personnel Psychology, 44(1), 1–26." },
   { domains: ["SELF"], name: "Adaptive performance taxonomy (Pulakos et al.)",
@@ -83,14 +83,14 @@ const SYSTEM_PROMPT =
   `menu the competency construct most closely content-aligns with.\n\n` +
   `Hard rules:\n` +
   `1. Pick ONLY from the supplied menu. Do NOT invent citations or paraphrase a citation ` +
-  `   you don't see in the menu — even if you know the work — because every citation ` +
+  `   you don't see in the menu - even if you know the work - because every citation ` +
   `   shipping to clients is spot-checked, and a hallucinated reference breaks credibility.\n` +
-  `2. Return 1 to 3 instruments — usually 2 is right (one method-level anchor + one ` +
+  `2. Return 1 to 3 instruments - usually 2 is right (one method-level anchor + one ` +
   `   construct-specific anchor). Don't pad.\n` +
   `3. Confidence:\n` +
   `   - 'direct_adaptation': competency is a close match to a named model/dimension in the work\n` +
   `   - 'construct_aligned': competency measures the same construct family, different framing\n` +
-  `   - 'novel': no good anchor in the menu — return [] for anchor_instruments\n` +
+  `   - 'novel': no good anchor in the menu - return [] for anchor_instruments\n` +
   `4. Reply ONLY with raw JSON. No prose, no markdown fence.`;
 
 function buildPrompt(input: AcEvidenceSuggesterInput): string {
@@ -125,7 +125,7 @@ function buildPrompt(input: AcEvidenceSuggesterInput): string {
 
 /**
  * Suggest validation evidence for a single competency. Returns null when
- * AI isn't configured or Claude's reply can't be parsed — the caller
+ * AI isn't configured or Claude's reply can't be parsed - the caller
  * should treat null as "leave validation_evidence unchanged".
  */
 export async function suggestCompetencyValidationEvidence(

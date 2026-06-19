@@ -1,7 +1,7 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 
 /**
- * VIFM Psychometrics — professional result report (React-PDF, English).
+ * VIFM Psychometrics - professional result report (React-PDF, English).
  *
  * Renders one completed cognitive or personality result. When the instrument is
  * CALIBRATED (a norm group ≥ the minimum exists for every scale) each scale shows
@@ -9,7 +9,7 @@ import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
  * band only and says so plainly. Personality results carry a validity statement.
  * Every page states the tier so the report can never over-claim its own rigour.
  *
- * English-only for now (same stance as the Personal Snapshot — React-PDF doesn't
+ * English-only for now (same stance as the Personal Snapshot - React-PDF doesn't
  * shape Arabic; a Puppeteer port can follow when bilingual is prioritised).
  */
 
@@ -159,7 +159,7 @@ function StenBand({ sten }: { sten: number }) {
 export function PsychometricReport({ data }: { data: PsyReportData }) {
   const calibrated = data.tier === "calibrated";
   return (
-    <Document title={`VIFM Psychometric Report — ${data.takerName}`} author="VIFM Assessment Center" subject={data.instrumentName}>
+    <Document title={`VIFM Psychometric Report - ${data.takerName}`} author="VIFM Assessment Center" subject={data.instrumentName}>
       <Page size="A4" style={s.page} wrap>
         {/* Hero */}
         <View style={s.hero}>
@@ -177,7 +177,7 @@ export function PsychometricReport({ data }: { data: PsyReportData }) {
           <Text style={s.legendTitle}>How to read this report</Text>
           <Text style={s.legendBody}>
             {calibrated
-              ? `Each scale is reported as a percentile and a sten (standard-ten) score relative to the VIFM reference group${data.normSource ? ` (${data.normSource})` : ""}. A percentile of 70 means the result is at or above 70% of that group; stens run 1–10 with 5–6 as the average band. ${data.kind === "cognitive" ? "Higher is stronger." : "Scores reflect typical disposition, not ability — there is no 'good' or 'bad' profile."}`
+              ? `Each scale is reported as a percentile and a sten (standard-ten) score relative to the VIFM reference group${data.normSource ? ` (${data.normSource})` : ""}. A percentile of 70 means the result is at or above 70% of that group; stens run 1–10 with 5–6 as the average band. ${data.kind === "cognitive" ? "Higher is stronger." : "Scores reflect typical disposition, not ability - there is no 'good' or 'bad' profile."}`
               : `This is an INDICATIVE result: scales are reported as raw-score bands, not norm-referenced percentiles. Percentiles and stens become available once a calibrated norm group is established. ${data.kind === "cognitive" ? "Bands reflect % correct." : "Bands reflect the 1–5 self-report mean per trait."}`}
           </Text>
         </View>
@@ -259,7 +259,7 @@ export function PsychometricReport({ data }: { data: PsyReportData }) {
         </View>
       </Page>
 
-      {/* Page 2 — validity, interpretation, methodology */}
+      {/* Page 2 - validity, interpretation, methodology */}
       <Page size="A4" style={s.page} wrap>
         <Text style={s.sectionEyebrow}>Interpretation</Text>
         <Text style={s.sectionTitle}>Reading this result responsibly</Text>
@@ -287,18 +287,18 @@ export function PsychometricReport({ data }: { data: PsyReportData }) {
             <Text style={s.panelBody}>
               {data.validity.flag
                 ? "One or more validity indicators are elevated (uniformly high self-ratings, or inconsistent answers to similar items). Treat the profile with caution and corroborate it in conversation before relying on it."
-                : "Validity indicators are within the normal range — no evidence of uniformly inflated self-ratings or careless responding. The profile can be read at face value, alongside other evidence."}
+                : "Validity indicators are within the normal range - no evidence of uniformly inflated self-ratings or careless responding. The profile can be read at face value, alongside other evidence."}
             </Text>
           </View>
         )}
 
         <View style={s.panel}>
-          <Text style={s.panelTitle}>What this is — and isn&apos;t</Text>
+          <Text style={s.panelTitle}>What this is - and isn&apos;t</Text>
           <Text style={s.panelBody}>
             This instrument sits in the Foundations layer of the VIFM measurement model: {data.kind === "cognitive" ? "cognitive ability" : "personality"} is a
-            disposition that <Text style={{ fontFamily: "Helvetica-Bold" }}>predicts</Text> behavioural competency — it does not measure it directly. Use this result as
+            disposition that <Text style={{ fontFamily: "Helvetica-Bold" }}>predicts</Text> behavioural competency - it does not measure it directly. Use this result as
             one input that informs a human judgement (development planning, selection short-listing, succession discussion), never as an automatic decision. It
-            yields a score and a profile — <Text style={{ fontFamily: "Helvetica-Bold" }}>not</Text> a pass/fail credential.
+            yields a score and a profile - <Text style={{ fontFamily: "Helvetica-Bold" }}>not</Text> a pass/fail credential.
           </Text>
         </View>
 
@@ -310,7 +310,7 @@ export function PsychometricReport({ data }: { data: PsyReportData }) {
               : "Personality is measured with public-domain Big-Five (IPIP) self-report items on a 1–5 Likert scale, reverse-keyed and averaged per trait, with social-desirability and inconsistency validity checks. "}
             {calibrated
               ? `Scores are norm-referenced against a calibrated reference sample${data.normSource ? ` (${data.normSource})` : ""}; percentiles and stens are derived from that distribution. Local norms should still be reviewed periodically for representativeness and fairness.`
-              : "This run is INDICATIVE — there is no local norm group yet, so results are reported as raw-score bands rather than percentiles. As a representative sample accumulates, the same instrument becomes norm-referenced (Tier 2) without re-testing."}
+              : "This run is INDICATIVE - there is no local norm group yet, so results are reported as raw-score bands rather than percentiles. As a representative sample accumulates, the same instrument becomes norm-referenced (Tier 2) without re-testing."}
             {" "}Validated high-stakes use additionally requires a criterion-validity study, adverse-impact (fairness) analysis, and a qualified psychometrician&apos;s sign-off.
           </Text>
         </View>

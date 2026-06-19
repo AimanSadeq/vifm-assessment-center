@@ -32,7 +32,7 @@ export default async function ClientsPage() {
           <div className="rounded-lg border border-dashed p-12 text-center">
             <p className="text-muted-foreground">{t("adminClients.emptyTitle")}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Use <span className="font-medium">Add Client</span> to create one — it&apos;s saved once and connected across every service.
+              Use <span className="font-medium">Add Client</span> to create one - it&apos;s saved once and connected across every service.
             </p>
           </div>
         ) : (

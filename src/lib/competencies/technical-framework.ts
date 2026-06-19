@@ -1,4 +1,4 @@
-// Technical Competency Framework — the third pillar (with behavioural + language).
+// Technical Competency Framework - the third pillar (with behavioural + language).
 //
 // A curated 2-level taxonomy (Domain → Skill) of the hard, functional capabilities
 // VIFM trains, kept SEPARATE from the 41 behavioural competencies and the 4
@@ -7,7 +7,7 @@
 // leadership / strategy / project_management stay in the behavioural framework.
 //
 // Pure constants + helpers (no DB, no AI) so the taxonomy is stable, auditable,
-// and free of hallucination — the assessment + Academy evidence measure AGAINST
+// and free of hallucination - the assessment + Academy evidence measure AGAINST
 // this fixed framework.
 
 export type TechDomainKey =

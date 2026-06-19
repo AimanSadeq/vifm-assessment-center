@@ -10,7 +10,7 @@ import type { ValidationEvidence, EvidenceConfidence } from "@/types/evidence";
  * Reflect, Psychometrics): a CLOSED, curated citation menu, a strict
  * "pick only from the menu" prompt, a Claude call, JSON parsing, and a
  * menu cross-check so a confabulated paraphrase can never ship. Every
- * result is review_status='ai_proposed' — a human must verify before it
+ * result is review_status='ai_proposed' - a human must verify before it
  * reaches any client surface.
  *
  * Returns null when ANTHROPIC_API_KEY isn't set or the reply can't be
@@ -27,14 +27,14 @@ export function buildSystemPrompt(expertRole: string): string {
     `content-aligns with.\n\n` +
     `Hard rules:\n` +
     `1. Pick ONLY from the supplied menu. Do NOT invent citations or paraphrase a citation ` +
-    `   you don't see in the menu — even if you know the work — because every citation ` +
+    `   you don't see in the menu - even if you know the work - because every citation ` +
     `   shipping to clients is spot-checked, and a hallucinated reference breaks credibility.\n` +
-    `2. Return 1 to 3 instruments — usually 2 is right (one method/standards-level anchor + ` +
+    `2. Return 1 to 3 instruments - usually 2 is right (one method/standards-level anchor + ` +
     `   one construct-specific anchor). Don't pad.\n` +
     `3. Confidence:\n` +
     `   - 'direct_adaptation': construct is a close match to a named model/dimension in the work\n` +
     `   - 'construct_aligned': construct measures the same construct family, different framing\n` +
-    `   - 'novel': no good anchor in the menu — return [] for anchor_instruments\n` +
+    `   - 'novel': no good anchor in the menu - return [] for anchor_instruments\n` +
     `4. Reply ONLY with raw JSON. No prose, no markdown fence.`
   );
 }
@@ -106,7 +106,7 @@ export async function runEvidenceSuggester(args: {
       .slice(0, 3)
       .map((a) => {
         // Cross-check against the menu so we never ship a Claude-confabulated
-        // paraphrase even by accident — substitute the canonical strings.
+        // paraphrase even by accident - substitute the canonical strings.
         const menuMatch = args.menu.find((mm) => mm.name === a.name || mm.citation === a.citation);
         const confidence = (
           ["direct_adaptation", "construct_aligned", "novel"] as const

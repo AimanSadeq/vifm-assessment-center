@@ -28,7 +28,7 @@ export default async function PsychometricsBankPage() {
               The SME workflow that promotes the indicative runner to a norm-referenced instrument.
               Build a reviewed item bank per scale, accumulate responses for reliability, load a norm
               group, and each scale flips from Tier&nbsp;1 (indicative) to Tier&nbsp;2 (calibrated).
-              Psychometrics yields scores and a defensible report — never a pass/fail credential.
+              Psychometrics yields scores and a defensible report - never a pass/fail credential.
             </p>
             <p className="text-xs text-indigo-100/80 mt-2">
               {calibratedScales} of {totalScales} scales calibrated

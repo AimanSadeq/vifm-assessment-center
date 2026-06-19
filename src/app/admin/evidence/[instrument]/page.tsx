@@ -60,7 +60,7 @@ export default async function InstrumentEvidencePage({ params }: Props) {
       <BackLink href="/admin" label="Back" history />
       <div className="flex items-center gap-2 mb-1">
         <ShieldCheck className="h-5 w-5 text-accent" />
-        <h1 className="text-xl font-bold">{adapter.label} — Evidence Console</h1>
+        <h1 className="text-xl font-bold">{adapter.label} - Evidence Console</h1>
       </div>
       <p className="text-sm text-muted-foreground mb-5">
         {adapter.blurb} Only <strong>Documented</strong> (human-verified) anchors are surfaced in

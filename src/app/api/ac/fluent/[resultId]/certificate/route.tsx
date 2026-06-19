@@ -34,7 +34,7 @@ const CEFR_LABEL: Record<string, string> = {
   C2: "Proficient / Mastery",
 };
 
-// Arabic CEFR band labels — parallel to CEFR_LABEL. Level codes stay
+// Arabic CEFR band labels - parallel to CEFR_LABEL. Level codes stay
 // verbatim (A1…C2); only the descriptive band is translated.
 const CEFR_LABEL_AR: Record<string, string> = {
   A1: "مبتدئ",

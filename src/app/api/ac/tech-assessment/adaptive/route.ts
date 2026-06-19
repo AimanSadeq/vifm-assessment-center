@@ -1,5 +1,5 @@
 /**
- * Adaptive (CAT) technical assessment — turn-based flow.
+ * Adaptive (CAT) technical assessment - turn-based flow.
  *
  * POST { action: "start", functionKey, language, … }
  *   -> { session_id, item, progress }      (one item; answer key held server-side)
@@ -10,9 +10,9 @@
  * Maximum-information selection over a calibrated APPROVED pool (irt_b set):
  * serve the item whose Rasch difficulty is most informative at the running
  * ability estimate, re-estimate θ after each answer, and stop once the standard
- * error drops to the target — a shorter, ability-matched sitting than the fixed
+ * error drops to the target - a shorter, ability-matched sitting than the fixed
  * form. INDICATIVE (no credential): the certified credential stays on the
- * coverage-guaranteed fixed-form path. Integrity mirrors the fixed flow — the
+ * coverage-guaranteed fixed-form path. Integrity mirrors the fixed flow - the
  * key never leaves the server; the session is consumed only when the run ends.
  */
 
@@ -218,13 +218,13 @@ async function persistResult(state: AdaptiveState, result: TechResult): Promise<
     };
     const full = await sb.from("tech_assessment_results").insert(row);
     if (full.error) {
-      // Older schema without function/program columns — drop them and retry.
+      // Older schema without function/program columns - drop them and retry.
       const { function_key, function_id, program_id, participant_id, ...legacy } = row;
       void function_key; void function_id; void program_id; void participant_id;
       await sb.from("tech_assessment_results").insert(legacy);
     }
   } catch {
-    /* result table absent — still return the result to the client */
+    /* result table absent - still return the result to the client */
   }
 }
 

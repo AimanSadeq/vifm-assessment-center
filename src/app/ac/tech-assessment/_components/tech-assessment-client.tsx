@@ -54,7 +54,7 @@ export function TechAssessmentClient({
   /** Function refs whose calibrated bank is deep enough for an adaptive sitting. */
   adaptiveRefs?: string[];
   skillLabels: Record<string, string>;
-  /** UI language — also the language the test content is served/generated in. */
+  /** UI language - also the language the test content is served/generated in. */
   language?: "en" | "ar";
   /** When set, the sitting binds to this candidate (AC-engagement run). */
   candidateId?: string | null;
@@ -62,7 +62,7 @@ export function TechAssessmentClient({
   /** When set, the sitting binds to this standalone-program participant. */
   programId?: string | null;
   participantId?: string | null;
-  /** Participant name/email — the credential is issued to them on a pass. */
+  /** Participant name/email - the credential is issued to them on a pass. */
   takerName?: string | null;
   takerEmail?: string | null;
   /** When set, the runner starts this domain immediately and hides the picker. */
@@ -73,7 +73,7 @@ export function TechAssessmentClient({
   const { t } = useTranslation();
   const skillLabel = (s: string) => skillLabels[s] ?? s;
   // A run's display name: localized domain name when the key is a domain, else
-  // the test/result's own (already-localized) name — which is the function name.
+  // the test/result's own (already-localized) name - which is the function name.
   const displayName = (key: string, fallback: string) => domains.find((d) => d.key === key)?.name ?? fallback;
   const locked = !!(lockedDomain || lockedFunction);
 
@@ -429,7 +429,7 @@ export function TechAssessmentClient({
           {/* Primary: functions (the job-level unit of assessment). */}
           <div className="rounded-2xl border bg-card p-6 shadow-sm">
             {!selectedGroup ? (
-              /* Level 1 — pick a competency */
+              /* Level 1 - pick a competency */
               <>
                 <h2 className="text-lg font-semibold text-[#010131]">{t("tech.take.chooseFunctionTitle")}</h2>
                 <p className="mt-1 text-sm text-muted-foreground">{t("tech.take.chooseFunctionIntro")}</p>
@@ -450,7 +450,7 @@ export function TechAssessmentClient({
                 </div>
               </>
             ) : (
-              /* Level 2 — pick a function within the chosen competency */
+              /* Level 2 - pick a function within the chosen competency */
               <>
                 <button
                   onClick={() => setSelectedCategory(null)}
@@ -823,7 +823,7 @@ export function TechAssessmentClient({
             </div>
           )}
 
-          {/* Per-competency breakdown (00074 tier) — only when the function has competencies */}
+          {/* Per-competency breakdown (00074 tier) - only when the function has competencies */}
           {(() => {
             const fn = functions.find((f) => f.ref === result.domain_key);
             const groups = (fn?.competencies ?? []).map((c) => ({ nameEn: c.nameEn, name: c.name, skillsEn: c.skillsEn }));

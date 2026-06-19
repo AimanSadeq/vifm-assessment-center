@@ -181,7 +181,7 @@ export async function createOrganizationAction(values: NewOrganizationValues) {
     throw e;
   }
 
-  // Write through the shared registry (service-role — fixes the RLS-denied insert
+  // Write through the shared registry (service-role - fixes the RLS-denied insert
   // on `organizations`) so the new client also lands in the AR Compass / Reflect
   // store and is selectable across every service, not just this engagement.
   const res = await createClientOrganization({

@@ -151,7 +151,7 @@ export async function updateItemAction(itemId: string, fields: EditItemFields) {
     const sb = createServiceClient();
     const { error } = await sb.from("tech_assessment_items").update(patch).eq("id", itemId);
     if (error) {
-      // migration 00082 not applied — retry with only the legacy columns so
+      // migration 00082 not applied - retry with only the legacy columns so
       // editing a classic single-answer item still works pre-migration.
       const NEW_COLS = ["question_type", "correct_indices", "scenario_en", "scenario_ar"];
       const legacy = Object.fromEntries(Object.entries(patch).filter(([k]) => !NEW_COLS.includes(k)));
@@ -239,7 +239,7 @@ export async function updateDomainMetaAction(input: { domainKey: string; nameEn:
 }
 
 /** Map a behavioural competency to a domain (the domain ENABLES it). Idempotent
- *  on (domain_key, competency_id) — re-adding just updates the weight. */
+ *  on (domain_key, competency_id) - re-adding just updates the weight. */
 export async function addBridgeAction(input: { domainKey: string; competencyId: string; weight: number }) {
   const g = await guard();
   if ("error" in g) return g;

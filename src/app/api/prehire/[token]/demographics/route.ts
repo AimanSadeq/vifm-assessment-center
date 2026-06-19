@@ -1,10 +1,10 @@
 /**
- * Pre-Hire — voluntary demographic self-identification.
+ * Pre-Hire - voluntary demographic self-identification.
  *
  * POST { gender?, age_band?, nationality_group? } -> { ok: true }
  *
  * Used ONLY for aggregate adverse-impact monitoring; never in scoring, never
- * shown to assessors. All fields optional — a "skip" posts an empty body and
+ * shown to assessors. All fields optional - a "skip" posts an empty body and
  * still stamps demographics_submitted_at so the candidate isn't re-asked.
  * Best-effort + tolerant: returns ok even if migration 00051 isn't applied yet.
  */
@@ -36,7 +36,7 @@ export async function POST(req: Request, { params }: { params: { token: string }
   const nationality_group = pick(body?.nationality_group, NATIONALITY);
 
   const svc = createServiceClient();
-  // Tolerant: if 00051 isn't applied the columns don't exist — swallow the error
+  // Tolerant: if 00051 isn't applied the columns don't exist - swallow the error
   // so an optional step never blocks the candidate.
   await svc
     .from("prehire_candidates")
@@ -48,7 +48,7 @@ export async function POST(req: Request, { params }: { params: { token: string }
     })
     .eq("id", ctx.candidate.id);
 
-  // Never log the values (the audit trail is client-readable) — only whether
+  // Never log the values (the audit trail is client-readable) - only whether
   // the candidate disclosed anything.
   await logPrehireEvent({
     action: "demographics_submitted",

@@ -29,7 +29,7 @@ type AcCompetency = { id: string; name: string; domain: string; domainSort: numb
 type AcExercise = { id: string; name: string; exercise_type: string };
 type AcRoleProfile = { id: string; name_en: string; competencyIds: string[] };
 
-// Icons + tone + data only — all copy comes from the start.* i18n namespace.
+// Icons + tone + data only - all copy comes from the start.* i18n namespace.
 type Tone = "blue" | "violet" | "teal" | "gold" | "rose" | "indigo" | "fuchsia" | "emerald";
 const GOAL_ICON: Record<string, LucideIcon> = {
   UserCheck, Sprout, TrendingUp, BadgeCheck, BrainCircuit, Users,
@@ -124,7 +124,7 @@ export function GuidedStart({
     );
   }
 
-  // ── "Set it up myself" — open a single module directly (click the card), or
+  // ── "Set it up myself" - open a single module directly (click the card), or
   //    tick the checkbox on several to combine them into one plan. Grouped into
   //    the two solution families (mirrors the landing/sidebar). ──
   if (mode === "myself") {
@@ -142,7 +142,7 @@ export function GuidedStart({
                 const isPicked = picked.has(m.key);
                 return (
                   <Link key={m.href} href={m.href} className={`launcher-card tone-${m.tone} relative block h-full p-4 ${isPicked ? "is-selected" : ""}`}>
-                    {/* Multi-select toggle — tick several to combine into a plan. */}
+                    {/* Multi-select toggle - tick several to combine into a plan. */}
                     <button
                       type="button"
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); togglePick(m.key); }}
@@ -170,7 +170,7 @@ export function GuidedStart({
           </div>
         ))}
 
-        {/* Sticky action bar — appears once one or more services are ticked. */}
+        {/* Sticky action bar - appears once one or more services are ticked. */}
         {picked.size > 0 && (
           <div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-3 shadow-lg">
             <span className="inline-flex items-center gap-2 text-sm font-medium text-[#010131]">
@@ -186,7 +186,7 @@ export function GuidedStart({
     );
   }
 
-  // ── Combined plan — set up several services under one client, tracked here. ──
+  // ── Combined plan - set up several services under one client, tracked here. ──
   if (mode === "plan") {
     const items = MODULE_MENU.filter((m) => picked.has(m.key));
     // Clients live in two tables (organizations for AC/Pre-Hire, ara_organizations
@@ -204,7 +204,7 @@ export function GuidedStart({
       <div className="space-y-6">
         <StartHero compact onBack={() => setMode("myself")} />
 
-        {/* Shared client — everything in the plan is tagged to it. */}
+        {/* Shared client - everything in the plan is tagged to it. */}
         <div className="space-y-2 rounded-xl border p-4">
           <Label htmlFor="plan-org">{t("start.plan.orgLabel")}</Label>
           <select
@@ -582,7 +582,7 @@ function AraOrgInline({ araOrgs, araVersionId }: { araOrgs: AraOrg[]; araVersion
         <select id="ara-org" name="organization_id" required defaultValue="" className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
           <option value="" disabled>{t("start.select")}</option>
           {araOrgs.map((o) => (
-            <option key={o.id} value={o.id}>{o.name} — {o.region.toUpperCase()} / {o.sector}</option>
+            <option key={o.id} value={o.id}>{o.name} - {o.region.toUpperCase()} / {o.sector}</option>
           ))}
         </select>
       </div>
@@ -875,7 +875,7 @@ function AcEngagementInline({
 
 // ── Small presentational helpers ──
 
-// The landing hero — the ara-hero aurora banner, shared across all modes. Full
+// The landing hero - the ara-hero aurora banner, shared across all modes. Full
 // height on the fork/manual screens; compact (one-line) inside the wizard so the
 // steps stay the focus. Carries the optional Back / "set it up myself" chips.
 function StartHero({ compact, onBack, onManual }: { compact?: boolean; onBack?: () => void; onManual?: () => void }) {

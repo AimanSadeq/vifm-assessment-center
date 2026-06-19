@@ -45,7 +45,7 @@ export async function emailAccessLink(opts: {
   `);
   return sendViaResend({
     to: opts.to,
-    subject: `VIFM Technical Assessment — ${opts.functionName}`,
+    subject: `VIFM Technical Assessment - ${opts.functionName}`,
     html,
   });
 }
@@ -72,7 +72,7 @@ export async function emailResults(opts: {
   `);
   return sendViaResend({
     to: opts.to,
-    subject: `Your VIFM Technical Assessment results — ${opts.functionName}`,
+    subject: `Your VIFM Technical Assessment results - ${opts.functionName}`,
     html,
     attachments: [{ filename: opts.fileName, content: opts.pdfBase64 }],
   });

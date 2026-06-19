@@ -13,7 +13,7 @@ import { generateAllEvidence } from "@/lib/evidence/actions";
  * batched server action repeatedly (6 items/round) until nothing is
  * left, showing live progress. Batching keeps every request well under a
  * hosted serverless timeout, so this works from the deployed site on a
- * phone. Everything is saved as 'ai_proposed' — a human still verifies
+ * phone. Everything is saved as 'ai_proposed' - a human still verifies
  * in the console before anything reaches a client.
  */
 
@@ -21,12 +21,12 @@ type Kind = "ac" | "arc" | "fluent" | "technical" | "reflect" | "psy";
 type Result = { ok: boolean; processed?: number; failed?: number; remaining?: number; error?: string };
 
 const LABEL: Record<Kind, string> = {
-  ac: "Generate AI drafts — AC competencies",
-  arc: "Generate AI drafts — ARC questions",
-  fluent: "Generate AI drafts — Fluent (English)",
-  technical: "Generate AI drafts — Technical Cert",
-  reflect: "Generate AI drafts — Reflect 360",
-  psy: "Generate AI drafts — Psychometrics",
+  ac: "Generate AI drafts - AC competencies",
+  arc: "Generate AI drafts - ARC questions",
+  fluent: "Generate AI drafts - Fluent (English)",
+  technical: "Generate AI drafts - Technical Cert",
+  reflect: "Generate AI drafts - Reflect 360",
+  psy: "Generate AI drafts - Psychometrics",
 };
 
 function runBatch(kind: Kind): Promise<Result> {
@@ -68,12 +68,12 @@ export function BulkEvidenceButtons({ show = ["ac"] }: { show?: Kind[] }) {
           if (remaining > 0 && (r.failed ?? 0) > 0) {
             setMsg(`Stopped after ${total}: ${r.failed} failed this round (check the server's ANTHROPIC_API_KEY). ${remaining} left.`);
           } else {
-            setMsg(total > 0 ? `Done — ${total} drafted. Review & verify below.` : "Nothing to draft — all items already have evidence.");
+            setMsg(total > 0 ? `Done - ${total} drafted. Review & verify below.` : "Nothing to draft - all items already have evidence.");
           }
           break;
         }
         if (remaining <= 0) {
-          setMsg(`Done — ${total} drafted. Review & verify below.`);
+          setMsg(`Done - ${total} drafted. Review & verify below.`);
           break;
         }
       }
@@ -89,7 +89,7 @@ export function BulkEvidenceButtons({ show = ["ac"] }: { show?: Kind[] }) {
     <div className="rounded-lg border bg-card p-4 mb-6">
       <p className="text-sm font-semibold mb-1">Bulk draft generation</p>
       <p className="text-xs text-muted-foreground mb-3">
-        One tap drafts research anchors for every item that has none (saved as <strong>AI proposed</strong> —
+        One tap drafts research anchors for every item that has none (saved as <strong>AI proposed</strong> -
         nothing reaches a client until you verify it). Runs in small batches with live progress; keep this page
         open until it says <em>Done</em>.
       </p>

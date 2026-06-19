@@ -1,8 +1,8 @@
-// VIFM Psychometrics — pilot norm-group computation. Reads the distribution of
+// VIFM Psychometrics - pilot norm-group computation. Reads the distribution of
 // completed results for an instrument and writes per-scale {n, mean, sd} into
 // psy_norms (migration 00067), so raw scores can be standardized to percentiles.
 //
-// These are PILOT norms — provisional, computed from whatever has accumulated.
+// These are PILOT norms - provisional, computed from whatever has accumulated.
 // applyNorms() ignores a scale's norm until n ≥ PSY_TIER.minNormN, so pilot norms
 // never leak premature percentiles to takers; they simply accumulate until the
 // sample is adequate. Validated norms still need a representative sample + a

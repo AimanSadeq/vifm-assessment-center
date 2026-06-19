@@ -1,13 +1,13 @@
-// Unified competency profile — the "golden thread", as a small GRAPH of
+// Unified competency profile - the "golden thread", as a small GRAPH of
 // frameworks rather than one flat list.
 //
-//   • Behavioural Competencies (the AC 41) — how someone acts. Measured
+//   • Behavioural Competencies (the AC 41) - how someone acts. Measured
 //     behaviourally; the caller owns these "current" ratings (consensus_ratings).
-//   • Language Skills (Fluent's own framework) — Reading / Listening / Writing /
+//   • Language Skills (Fluent's own framework) - Reading / Listening / Writing /
 //     Speaking, CEFR-scored. A DIFFERENT construct (language proficiency), kept
 //     separate from the 41.
 //
-// Bridge: each language skill ENABLES (contributes to — not equals) specific
+// Bridge: each language skill ENABLES (contributes to - not equals) specific
 // behavioural competencies. So a CEFR level is never silently treated as a
 // behavioural competency; it shows as a labelled "enables" signal on the
 // competencies it supports, and also as its own skill in the Language Skills
@@ -32,11 +32,11 @@ export type CompetencySignalKind =
   | "personality";
 
 /**
- * How a signal relates to the competency — the spine of the layered model, in
+ * How a signal relates to the competency - the spine of the layered model, in
  * rising order of evidence strength:
  *   • manifests = a DIRECT measure (this IS the competency: AC / CBI / 360)
  *   • enables   = an attainment the competency draws on (technical, language)
- *   • predicts  = a foundation that forecasts it (cognitive, personality) — a
+ *   • predicts  = a foundation that forecasts it (cognitive, personality) - a
  *                 propensity, not a measurement; validate before high-stakes use.
  */
 export type CompetencyRelation = "manifests" | "enables" | "predicts";
@@ -95,7 +95,7 @@ export type TechnicalSignal = {
 export type UnifiedProfile = {
   /** Fluent's own competency family (only the skills that were assessed). */
   languageSkills: LanguageSkillScore[];
-  /** Technical Competency framework — domain proficiency from assessments + Academy evidence. */
+  /** Technical Competency framework - domain proficiency from assessments + Academy evidence. */
   technical: TechnicalSignal[];
   /** Enabler/contributor signals, keyed by behavioural competency name (lowercased). */
   competencySignals: Map<string, CompetencySignal[]>;
@@ -158,7 +158,7 @@ export async function buildUnifiedProfile(input: {
       }
     }
   } catch {
-    /* eng_fluent_results not migrated / no placement — tolerant */
+    /* eng_fluent_results not migrated / no placement - tolerant */
   }
 
   // ── Technical Competency framework: assessment results (leveled 1–5) +
@@ -194,7 +194,7 @@ export async function buildUnifiedProfile(input: {
       });
     }
   } catch {
-    /* tech_assessment_results not migrated — tolerant */
+    /* tech_assessment_results not migrated - tolerant */
   }
   // Academy completions = softer evidence (only where no assessment yet).
   try {
@@ -222,14 +222,14 @@ export async function buildUnifiedProfile(input: {
       });
     }
   } catch {
-    /* vifm_enrollments not migrated — tolerant */
+    /* vifm_enrollments not migrated - tolerant */
   }
   technical.push(...Array.from(techByDomain.values()));
 
   // ── Bridge: a MEASURED technical domain ENABLES specific behavioural
   //    competencies, mirroring Fluent's language→behavioural map. Reads the
   //    generalised construct_competency_links table (00064) first and falls back
-  //    to technical_domain_competencies (00054) when 00064 isn't applied — so the
+  //    to technical_domain_competencies (00054) when 00064 isn't applied - so the
   //    same path serves both. Surfaces as an attainments-layer "enables" signal;
   //    Academy-evidence domains (no measured level) are too soft to enable.
   try {
@@ -267,14 +267,14 @@ export async function buildUnifiedProfile(input: {
       });
     }
   } catch {
-    /* bridge tables not migrated — tolerant */
+    /* bridge tables not migrated - tolerant */
   }
 
   // ── Foundations: cognitive ability + personality PREDICT competencies. Reads
   //    the candidate's latest psy_results (one per kind), maps each scale (+ the
   //    cognitive g composite) to its normalized value, then folds
   //    construct_competency_links (source_kind cognitive|personality) into
-  //    per-competency `predicts`/`foundations` signals — the same principled path
+  //    per-competency `predicts`/`foundations` signals - the same principled path
   //    as the technical bridge, but the weakest evidence tier (a propensity, not a
   //    measurement; rendered with the "predicts" caveat). Reflect / ARA / Pre-Hire
   //    align to the same spine and slot in here the same way as they land.
@@ -338,7 +338,7 @@ export async function buildUnifiedProfile(input: {
       }
     }
   } catch {
-    /* psy_results / construct_competency_links not migrated — tolerant */
+    /* psy_results / construct_competency_links not migrated - tolerant */
   }
 
   return { languageSkills, technical, competencySignals };
@@ -361,7 +361,7 @@ export function signalToneClass(kind: CompetencySignalKind): string {
 }
 
 /**
- * Presentation for a relation — glyph + label + whether it carries the
+ * Presentation for a relation - glyph + label + whether it carries the
  * "predicted, not measured" caveat. Lets surfaces render the three relation
  * types honestly: a `predicts` chip must never read like a direct measurement.
  */

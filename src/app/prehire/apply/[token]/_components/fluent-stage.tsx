@@ -15,7 +15,7 @@ import { type IntegrityEvent } from "@/lib/scoring/integrity";
  *
  * Reading + Listening are auto-scored MCQs; Writing + Speaking are Claude-scored
  * (speaking via Whisper transcription, optionally blended with Azure
- * pronunciation). The answer key never reaches the browser — the server holds
+ * pronunciation). The answer key never reaches the browser - the server holds
  * the full test and grades it. Like the quiz + CBI stages, the candidate sees no
  * score here: on submit the server scores it, rolls it into the composite, and
  * we call onDone() to advance. The recruiter sees the result, not the candidate.
@@ -78,7 +78,7 @@ export function FluentStage({ token, onDone }: { token: string; onDone: () => vo
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  // Browser-native speech-to-text (primary path — free, no server, works on Render).
+  // Browser-native speech-to-text (primary path - free, no server, works on Render).
   const sttRef = useRef<BrowserSttSession | null>(null);
   const usingSttRef = useRef(false);
 
@@ -325,7 +325,7 @@ export function FluentStage({ token, onDone }: { token: string; onDone: () => vo
           <CardContent className="space-y-4 pt-6">
             <h2 className="font-semibold text-[#010131]">English placement</h2>
             <p className="text-sm text-muted-foreground">
-              A short English test across four skills — reading, listening, writing and speaking.
+              A short English test across four skills - reading, listening, writing and speaking.
               About 15 minutes. You&apos;ll read short passages, listen to clips and answer, write a
               brief response, and speak for about 45 seconds. Integrity monitoring is on (tab
               switches and pasting are recorded).
@@ -369,7 +369,7 @@ export function FluentStage({ token, onDone }: { token: string; onDone: () => vo
             {!test.tts && !ttsAvailable() && (
               <div className="mb-3 inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-3 py-1.5 text-xs text-amber-800">
                 <AlertCircle className="h-3.5 w-3.5" />
-                Audio playback isn&apos;t available here — the script is shown so you can still answer.
+                Audio playback isn&apos;t available here - the script is shown so you can still answer.
               </div>
             )}
             <div className="space-y-5">
@@ -512,7 +512,7 @@ export function FluentStage({ token, onDone }: { token: string; onDone: () => vo
             {busy ? "Submitting…" : "Submit & continue"}
           </Button>
           <p className="text-center text-[11px] text-slate-400">
-            Integrity monitoring is on — tab switches and pasting are recorded.
+            Integrity monitoring is on - tab switches and pasting are recorded.
           </p>
         </>
       )}

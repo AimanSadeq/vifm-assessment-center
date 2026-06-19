@@ -2,7 +2,7 @@
 // SQL sandbox runner (server-only). Executes a candidate's query for a
 // `sql` skill block and hash-matches the result against the master.
 //
-// Safety (Decision 12 — read-only, contained):
+// Safety (Decision 12 - read-only, contained):
 //   1. Runs against a DEDICATED throwaway database (SANDBOX_DATABASE_URL),
 //      NEVER the app/Supabase DB.
 //   2. The candidate query is guarded to a single SELECT/WITH statement.

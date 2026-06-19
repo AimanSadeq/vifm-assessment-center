@@ -10,7 +10,7 @@ import type { Cell, CellStatus, EvidenceMetrics, MatrixRow } from "@/lib/evidenc
 import { BulkEvidenceButtons } from "@/components/admin/bulk-evidence-buttons";
 
 /**
- * Evidence & Validity Map — client view. Two tabs: a live Dashboard of
+ * Evidence & Validity Map - client view. Two tabs: a live Dashboard of
  * per-instrument data counts, and the tabulated Coverage Matrix. Plain
  * English (admin portal is not localized).
  */
@@ -23,7 +23,7 @@ type Props = {
 
 // Fixed locale so the thousands separator is identical on server + client
 // (avoids a React hydration mismatch).
-const fmt = (n: number | null) => (n === null ? "—" : n.toLocaleString("en-US"));
+const fmt = (n: number | null) => (n === null ? "-" : n.toLocaleString("en-US"));
 
 const STATUS_STYLE: Record<CellStatus, { cell: string; dot: string; label: string }> = {
   documented: { cell: "bg-emerald-50 text-emerald-900", dot: "bg-emerald-500", label: "Documented" },
@@ -116,7 +116,7 @@ function Dashboard({ metrics }: { metrics: EvidenceMetrics }) {
         bars={[bar("Evidence coverage", metrics.ac.competenciesVerified, metrics.ac.competenciesTotal)]}
       />
       <InstrumentCard
-        title="ARC — AI Readiness Compass"
+        title="ARC - AI Readiness Compass"
         href="/ara/admin/questions"
         stats={[
           { label: "Questions", value: fmt(metrics.arc.questionsTotal) },
@@ -220,7 +220,7 @@ function InstrumentCard({
               <div className="flex items-center justify-between text-[11px] mb-1">
                 <span className="text-muted-foreground">{b.label}</span>
                 <span className="font-medium">
-                  {b.n === null ? "—" : b.threshold ? `${b.pct}%` : b.n}
+                  {b.n === null ? "-" : b.threshold ? `${b.pct}%` : b.n}
                 </span>
               </div>
               <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">

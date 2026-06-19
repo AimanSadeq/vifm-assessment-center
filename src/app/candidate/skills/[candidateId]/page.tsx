@@ -309,7 +309,7 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
         </Link>
       </div>
 
-      {/* Language Skills (Fluent) — a framework of its own; each skill enables
+      {/* Language Skills (Fluent) - a framework of its own; each skill enables
           specific behavioural competencies (shown as ↳ chips on the cards below). */}
       {(latestFluent || unified.languageSkills.length > 0) && (
         <div className="space-y-3 rounded-md border bg-card p-4">
@@ -347,7 +347,7 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
         </div>
       )}
 
-      {/* Technical Capabilities — the third framework (assessment + Academy evidence) */}
+      {/* Technical Capabilities - the third framework (assessment + Academy evidence) */}
       {unified.technical.length > 0 && (
         <div className="space-y-2 rounded-md border bg-card p-4">
           <div className="flex items-center gap-2">
@@ -366,7 +366,7 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
             ))}
           </div>
           <p className="text-[11px] text-muted-foreground">
-            Indicative technical proficiency — measured by the technical assessment, with Academy completions as evidence.
+            Indicative technical proficiency - measured by the technical assessment, with Academy completions as evidence.
           </p>
         </div>
       )}
@@ -455,7 +455,7 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
                         </span>
                       </div>
 
-                      {/* Unified signals — behavioural rating (AC, ●) + cross-framework
+                      {/* Unified signals - behavioural rating (AC, ●) + cross-framework
                           enablers (↳ enables) + foundation predictors (⤳ predicts). */}
                       {(comp.score != null || (unified.competencySignals.get(comp.name.toLowerCase())?.length ?? 0) > 0) && (
                         <div className="flex flex-wrap gap-1">
@@ -472,7 +472,7 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
                             return (
                               <span
                                 key={i}
-                                title={`${s.sourceLabel} — ${rel.label} this competency${rel.predicted ? " (predicted, not measured)" : ""}`}
+                                title={`${s.sourceLabel} - ${rel.label} this competency${rel.predicted ? " (predicted, not measured)" : ""}`}
                                 className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${signalToneClass(s.kind)}`}
                               >
                                 {rel.glyph} {s.sourceLabel} · {s.display}

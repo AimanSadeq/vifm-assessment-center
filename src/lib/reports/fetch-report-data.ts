@@ -148,7 +148,7 @@ export async function fetchReportData(
   // No formal recommendations recorded for this candidate? Derive a development
   // plan from the below-target competencies (consensus below Strength) + their
   // development tips, so the report always offers concrete next steps. Fully
-  // deterministic — needs no AI key, works on every environment.
+  // deterministic - needs no AI key, works on every environment.
   if (developmentRecommendations.length === 0) {
     developmentRecommendations = competencies
       .filter((c) => c.consensusScore != null && c.consensusScore < 4)

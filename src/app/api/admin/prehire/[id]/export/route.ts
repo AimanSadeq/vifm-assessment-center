@@ -1,5 +1,5 @@
 /**
- * Pre-Hire ATS export — requisition + ranked shortlist as JSON or CSV.
+ * Pre-Hire ATS export - requisition + ranked shortlist as JSON or CSV.
  *
  * GET /api/admin/prehire/[id]/export?format=json|csv
  *
@@ -80,7 +80,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
   const candidates = (candData ?? []) as unknown as CandidateRow[];
 
-  // Custom fields (00061) — separate best-effort read so a pre-migration DB
+  // Custom fields (00061) - separate best-effort read so a pre-migration DB
   // (no custom_fields column) can't error the export's candidate select.
   const empIdById = new Map<string, string>();
   const { data: customData } = await svc

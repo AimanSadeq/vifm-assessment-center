@@ -140,7 +140,7 @@ export function CompetencyEvidencePanel({ competencyId, reviewerEmail, initialEv
       <div className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-1">
         Construct summary
       </div>
-      <p className="text-sm mb-4">{evidence.construct_summary || <span className="italic text-muted-foreground">—</span>}</p>
+      <p className="text-sm mb-4">{evidence.construct_summary || <span className="italic text-muted-foreground">-</span>}</p>
 
       <div className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-2">
         Anchor instruments ({evidence.anchor_instruments.length})
@@ -251,7 +251,7 @@ function EditorForm({
 }) {
   return (
     <div className="mt-5 rounded-md border border-sky-300 bg-sky-50/60 p-4 space-y-3">
-      <p className="text-xs font-semibold text-sky-900">Editing — saves as human-reviewed (edited)</p>
+      <p className="text-xs font-semibold text-sky-900">Editing - saves as human-reviewed (edited)</p>
       <div>
         <label className="block text-[11px] font-semibold text-muted-foreground mb-1">Construct summary</label>
         <input

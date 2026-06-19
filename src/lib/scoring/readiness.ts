@@ -23,7 +23,7 @@
  *     (Others spread at or above `raterAgreementSpreadMax`).
  *
  * ──────────────────────────────────────────────────────────────────────────
- * THE READINESS INDEX — how it is calculated
+ * THE READINESS INDEX - how it is calculated
  * ──────────────────────────────────────────────────────────────────────────
  * Computed over the target role's competencies (role_profile_competencies),
  * each carrying a weight (0.5–10), a priority (high/medium/low), and a target
@@ -206,7 +206,7 @@ export type RoleCompetencyReq = {
 
 /** Per-competency observed evidence, already aggregated from the 360. */
 export type ObservedCompetency = {
-  /** competencies.id (mapped from the Reflect competency — see handover §5). */
+  /** competencies.id (mapped from the Reflect competency - see handover §5). */
   competencyId: string;
   /** 360 Others-mean (excludes self). Null when no/too-few Others raters. */
   othersMean: number | null;

@@ -1,11 +1,11 @@
 /**
  * Browser-native speech-to-text (Web Speech API). Free, no API key, runs
- * entirely in the candidate's browser — so Fluent/Pre-Hire speaking transcription
+ * entirely in the candidate's browser - so Fluent/Pre-Hire speaking transcription
  * works on Render without any server-side Whisper/Python/ffmpeg. Chrome, Edge and
  * Safari support it (`SpeechRecognition` / `webkitSpeechRecognition`); Firefox
  * does not, so callers fall back to server transcription or type-mode.
  *
- * The recognised text flows straight into the existing Claude CEFR scoring — no
+ * The recognised text flows straight into the existing Claude CEFR scoring - no
  * audio leaves through our server on this path (Chrome streams to its own free
  * recognition service). This is purely a client module: it must only be invoked
  * from `"use client"` components / browser code.

@@ -9,7 +9,7 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import type { PrehireAuditEntry } from "@/types/prehire";
 
-/** Canonical action names — keep these stable; the trail is a permanent record. */
+/** Canonical action names - keep these stable; the trail is a permanent record. */
 export type PrehireAuditAction =
   | "requisition_created"
   | "candidate_added"
@@ -43,7 +43,7 @@ export async function logPrehireEvent(e: LogPrehireEvent): Promise<void> {
       detail: e.detail ?? null,
     });
   } catch {
-    /* table not migrated, or transient write failure — never block the caller */
+    /* table not migrated, or transient write failure - never block the caller */
   }
 }
 

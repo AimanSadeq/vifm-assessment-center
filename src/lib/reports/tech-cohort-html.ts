@@ -13,7 +13,7 @@ type Lang = "en" | "ar";
 const L: Record<Lang, Record<string, string>> = {
   en: {
     brand: "Virginia Institute of Finance and Management",
-    title: "Technical Certification — Cohort Report",
+    title: "Technical Certification - Cohort Report",
     organization: "Organization",
     engagement: "Engagement",
     generated: "Generated",
@@ -35,12 +35,12 @@ const L: Record<Lang, Record<string, string>> = {
     thCredential: "Credential",
     rosterEmpty: "No certifications issued yet.",
     noScope: "No domains are in scope for this engagement yet.",
-    confidential: "Confidential — for VIFM and the engaged client only.",
-    indicativeCaption: "Indicative only — bank below the certification floor; no credentials are issued for this domain.",
+    confidential: "Confidential - for VIFM and the engaged client only.",
+    indicativeCaption: "Indicative only - bank below the certification floor; no credentials are issued for this domain.",
   },
   ar: {
     brand: "معهد فرجينيا للتمويل والإدارة",
-    title: "الاعتماد التقني — تقرير المجموعة",
+    title: "الاعتماد التقني - تقرير المجموعة",
     organization: "المؤسسة",
     engagement: "المشروع",
     generated: "تاريخ الإصدار",
@@ -62,8 +62,8 @@ const L: Record<Lang, Record<string, string>> = {
     thCredential: "الاعتماد",
     rosterEmpty: "لم تُصدَر أي اعتمادات بعد.",
     noScope: "لا توجد مجالات ضمن نطاق هذا المشروع بعد.",
-    confidential: "سري — لمعهد VIFM والعميل المتعاقد فقط.",
-    indicativeCaption: "استرشادي فقط — البنك دون حد الاعتماد؛ لا تُصدَر اعتمادات لهذا المجال.",
+    confidential: "سري - لمعهد VIFM والعميل المتعاقد فقط.",
+    indicativeCaption: "استرشادي فقط - البنك دون حد الاعتماد؛ لا تُصدَر اعتمادات لهذا المجال.",
   },
 };
 
@@ -102,7 +102,7 @@ export function renderTechCohortHtml(data: TechCohortReportData, lang: Lang): st
         <td>${badge}</td>
         <td class="num">${taken} / ${program.candidates.length}</td>
         <td class="num">${certified}</td>
-        <td class="num">${d.certifiable ? `${rate}%` : "—"}</td>
+        <td class="num">${d.certifiable ? `${rate}%` : "-"}</td>
       </tr>`;
     })
     .join("");
@@ -116,8 +116,8 @@ export function renderTechCohortHtml(data: TechCohortReportData, lang: Lang): st
         rosterRows.push(`<tr>
           <td class="strong">${esc(c.name)}</td>
           <td>${esc(d.name)}</td>
-          <td class="num">${s.level ?? "—"}/5${s.levelLabel ? ` · ${esc(s.levelLabel)}` : ""}</td>
-          <td class="mono">${s.credentialCode ? esc(s.credentialCode) : "—"}</td>
+          <td class="num">${s.level ?? "-"}/5${s.levelLabel ? ` · ${esc(s.levelLabel)}` : ""}</td>
+          <td class="mono">${s.credentialCode ? esc(s.credentialCode) : "-"}</td>
         </tr>`);
       }
     }
@@ -223,7 +223,7 @@ export type TechFunctionCohortData = {
 const FL: Record<Lang, Record<string, string>> = {
   en: {
     brand: "Virginia Institute of Finance and Management",
-    title: "Technical Assessment® — Function Cohort Report",
+    title: "Technical Assessment® - Function Cohort Report",
     organization: "Organization",
     program: "Programme",
     func: "Function",
@@ -242,12 +242,12 @@ const FL: Record<Lang, Record<string, string>> = {
     rosterEmpty: "No participants have completed the assessment yet.",
     notTaken: "Not started",
     indicative:
-      "Indicative — this function assessment signals proficiency for development. Items are AI-authored; it is not a certified qualification.",
-    confidential: "Confidential — for VIFM and the engaged client only.",
+      "Indicative - this function assessment signals proficiency for development. Items are AI-authored; it is not a certified qualification.",
+    confidential: "Confidential - for VIFM and the engaged client only.",
   },
   ar: {
     brand: "معهد فرجينيا للتمويل والإدارة",
-    title: "التقييم التقني® — تقرير مجموعة الوظيفة",
+    title: "التقييم التقني® - تقرير مجموعة الوظيفة",
     organization: "المؤسسة",
     program: "البرنامج",
     func: "الوظيفة",
@@ -266,8 +266,8 @@ const FL: Record<Lang, Record<string, string>> = {
     rosterEmpty: "لم يُكمل أي مشارك التقييم بعد.",
     notTaken: "لم يبدأ",
     indicative:
-      "استرشادي — يشير تقييم الوظيفة هذا إلى الكفاءة لأغراض التطوير. البنود مُولَّدة بالذكاء الاصطناعي؛ وهو ليس مؤهلًا معتمَدًا.",
-    confidential: "سري — لمعهد VIFM والعميل المتعاقد فقط.",
+      "استرشادي - يشير تقييم الوظيفة هذا إلى الكفاءة لأغراض التطوير. البنود مُولَّدة بالذكاء الاصطناعي؛ وهو ليس مؤهلًا معتمَدًا.",
+    confidential: "سري - لمعهد VIFM والعميل المتعاقد فقط.",
   },
 };
 
@@ -302,7 +302,7 @@ export function renderTechFunctionCohortHtml(data: TechFunctionCohortData, lang:
       return `<tr>
         <td class="strong">${esc(view.skills[i] ?? en)}</td>
         <td class="num">${correct} / ${total}</td>
-        <td class="num">${total > 0 ? `${pct}%` : "—"}</td>
+        <td class="num">${total > 0 ? `${pct}%` : "-"}</td>
       </tr>`;
     })
     .join("");
@@ -310,12 +310,12 @@ export function renderTechFunctionCohortHtml(data: TechFunctionCohortData, lang:
   const rosterRows = view.results
     .map((r) => {
       const score = r.taken
-        ? `${r.level ?? "—"}/5${r.levelLabel ? ` · ${esc(r.levelLabel)}` : ""}`
+        ? `${r.level ?? "-"}/5${r.levelLabel ? ` · ${esc(r.levelLabel)}` : ""}`
         : `<span style="color:#999">${t.notTaken}</span>`;
       return `<tr>
         <td class="strong">${esc(r.name)}</td>
         <td class="num">${score}</td>
-        <td class="num">${r.taken && r.pct != null ? `${r.pct}%` : "—"}</td>
+        <td class="num">${r.taken && r.pct != null ? `${r.pct}%` : "-"}</td>
       </tr>`;
     })
     .join("");
@@ -362,7 +362,7 @@ export function renderTechFunctionCohortHtml(data: TechFunctionCohortData, lang:
   <div class="stats">
     <div class="stat"><div class="v">${view.results.length}</div><div class="l">${t.participants}</div></div>
     <div class="stat"><div class="v">${completed}</div><div class="l">${t.completed}</div></div>
-    <div class="stat"><div class="v">${completed ? avgLevel.toFixed(1) : "—"}</div><div class="l">${t.avgLevel}</div></div>
+    <div class="stat"><div class="v">${completed ? avgLevel.toFixed(1) : "-"}</div><div class="l">${t.avgLevel}</div></div>
   </div>
 
   <h2>${t.perSkill}</h2>

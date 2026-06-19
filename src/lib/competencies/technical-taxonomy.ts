@@ -18,7 +18,7 @@ type SkillRow = { domain_key: string; name: string; name_ar: string | null; sort
  * bilingual technical_domains / technical_skills tables. The runner is public and
  * those tables are RLS auth-only, so we read with the service client (matches the
  * assessment API). Falls back to the English code framework when the tables/columns
- * aren't there yet — so the runner works before migrations 00054 / 00055 land.
+ * aren't there yet - so the runner works before migrations 00054 / 00055 land.
  */
 export async function getLocalizedTechTaxonomy(locale: "en" | "ar"): Promise<TechTaxonomy> {
   const fallback: TechTaxonomy = {
@@ -35,7 +35,7 @@ export async function getLocalizedTechTaxonomy(locale: "en" | "ar"): Promise<Tec
       .order("sort_order");
     if (domRes.error || !domRes.data || domRes.data.length === 0) return fallback;
 
-    // name_ar on skills only exists after 00055 — retry without it if absent.
+    // name_ar on skills only exists after 00055 - retry without it if absent.
     let skills: SkillRow[] = [];
     const withAr = await sb
       .from("technical_skills")

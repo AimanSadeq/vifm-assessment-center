@@ -1,10 +1,10 @@
-// Technical-function COMPETENCY taxonomy — pure constants + helpers, with NO
+// Technical-function COMPETENCY taxonomy - pure constants + helpers, with NO
 // server imports. This lives apart from technical-function.ts (which pulls in
-// the Supabase service client → next/headers) so CLIENT components — the runner
-// picker and the admin functions library — can import categoryRank / labels
+// the Supabase service client → next/headers) so CLIENT components - the runner
+// picker and the admin functions library - can import categoryRank / labels
 // without dragging server-only code into the browser bundle.
 
-// The competency a function belongs to — the top-level grouping the runner shows
+// The competency a function belongs to - the top-level grouping the runner shows
 // ("Select a competency"), with the functions listed underneath. Order here is
 // the display order in the picker.
 export const TECH_FUNCTION_CATEGORIES = [
@@ -40,7 +40,7 @@ const CATEGORY_LABELS: Record<string, { en: string; ar: string }> = {
   business_intelligence: { en: "Business Intelligence", ar: "ذكاء الأعمال" },
   artificial_intelligence: { en: "Artificial Intelligence", ar: "الذكاء الاصطناعي" },
   human_resources: { en: "Human Resources", ar: "الموارد البشرية" },
-  // Legacy categories — kept so any pre-existing JD-derived functions still label.
+  // Legacy categories - kept so any pre-existing JD-derived functions still label.
   reporting: { en: "Reporting", ar: "التقارير" },
   fpa: { en: "FP&A", ar: "التخطيط والتحليل المالي" },
   tax: { en: "Tax", ar: "الضرائب" },

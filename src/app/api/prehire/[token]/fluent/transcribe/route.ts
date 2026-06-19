@@ -1,5 +1,5 @@
 /**
- * Pre-Hire Fluent — speaking-audio transcription (Whisper + optional Azure
+ * Pre-Hire Fluent - speaking-audio transcription (Whisper + optional Azure
  * pronunciation). Token-gated sibling of /api/ac/fluent/transcribe; both share
  * the same engine in @/lib/integrations/transcription. No audio is persisted.
  *

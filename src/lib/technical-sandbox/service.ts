@@ -4,7 +4,7 @@
 // sittings, autosaves work, and scores on submit.
 //
 // SECURITY: the public (candidate) blueprint NEVER includes
-// master_solution or checkpoints — those stay server-side for scoring.
+// master_solution or checkpoints - those stay server-side for scoring.
 // ─────────────────────────────────────────────────────────────
 import { createServiceClient } from "@/lib/supabase/server";
 import { scoreBlock, tierFor } from "./validators";

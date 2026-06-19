@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────
-// Succession Readiness — server integration layer (Slice 1, §4.3).
+// Succession Readiness - server integration layer (Slice 1, §4.3).
 //
 // Assembles the inputs for the pure `computeReadiness` engine and runs it:
 //   1. Resolve the admin config (per-org override -> global default).
@@ -176,7 +176,7 @@ export async function computeCandidateReadiness(
     organizationId = (eng?.organization_id as string | null) ?? null;
     if (eng?.assessment_mode === "combined") assessmentMode = "combined";
   } catch {
-    /* assessment_mode column may not be migrated yet — default standalone */
+    /* assessment_mode column may not be migrated yet - default standalone */
   }
 
   // 1) Config.
@@ -266,7 +266,7 @@ export async function computeCandidateReadiness(
       .limit(1);
     if (byCand && byCand.length) participantId = byCand[0].id as string;
   } catch {
-    /* candidate_id column not migrated yet — fall back to email below */
+    /* candidate_id column not migrated yet - fall back to email below */
   }
   if (!participantId && cand?.email) {
     const { data: byEmail } = await sb
@@ -317,7 +317,7 @@ export async function computeCandidateReadiness(
         if (!ac) needNameFallback = true;
       }
     } catch {
-      // ac_competency_id column not migrated yet — use name fallback for all.
+      // ac_competency_id column not migrated yet - use name fallback for all.
       needNameFallback = true;
     }
     let acByName = new Map<string, string>();
@@ -328,7 +328,7 @@ export async function computeCandidateReadiness(
     for (const cs of scoring.competencies) {
       let acId = acById.get(cs.competency_id) ?? null;
       if (!acId) acId = acByName.get((cs.name_en ?? "").trim().toLowerCase()) ?? null;
-      if (!acId) continue; // unmapped Reflect competency — not part of the role match
+      if (!acId) continue; // unmapped Reflect competency - not part of the role match
       const selfMean =
         assessmentMode === "combined" ? behavioralSelfByAc.get(acId) ?? null : cs.self_mean;
       observed.push({
@@ -390,7 +390,7 @@ export async function computeCandidateReadiness(
       { onConflict: "engagement_id,candidate_id" },
     );
   } catch {
-    /* readiness_results not migrated — the computed result is still returned */
+    /* readiness_results not migrated - the computed result is still returned */
   }
 
   return result;

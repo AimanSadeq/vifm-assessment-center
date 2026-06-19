@@ -1,10 +1,10 @@
 /**
- * Pre-Hire Fluent — neural TTS for listening items (Azure).
+ * Pre-Hire Fluent - neural TTS for listening items (Azure).
  *
  * GET ?item=<listeningItemId> -> audio/mpeg of that item's script.
  *
  * The listening script lives only server-side (in detail.fullTest); voicing it
- * here means the candidate hears it without ever seeing the text — it stays a
+ * here means the candidate hears it without ever seeing the text - it stays a
  * listening test, not a reading one. 503 when Azure isn't configured (the
  * client then falls back to browser speech synthesis or shows the script).
  */

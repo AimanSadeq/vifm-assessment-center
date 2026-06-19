@@ -1,11 +1,11 @@
 // ─────────────────────────────────────────────────────────────
-// JD parsing engine — pluggable, vector-ready matcher (Decision 7).
+// JD parsing engine - pluggable, vector-ready matcher (Decision 7).
 //
 // `JdMatcher` is the stable interface every caller uses. The keyword
 // matcher ships now; a vector/hybrid matcher can drop in behind the
 // same interface later with no re-authoring (it reads the same
 // per-function descriptors). The engine ALWAYS returns a ranked
-// shortlist for admin confirmation — never silent auto-deploy.
+// shortlist for admin confirmation - never silent auto-deploy.
 // ─────────────────────────────────────────────────────────────
 
 export interface FunctionDescriptor {

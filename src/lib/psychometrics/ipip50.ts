@@ -1,4 +1,4 @@
-// VIFM Psychometrics — IPIP-50 (International Personality Item Pool, 50-item
+// VIFM Psychometrics - IPIP-50 (International Personality Item Pool, 50-item
 // Big-Five Factor Markers; Goldberg, 1992). Public domain. 10 items per factor
 // vs the Mini-IPIP's 4 → materially higher internal-consistency reliability, so
 // this is the "longer validated form" for the personality bank.
@@ -9,7 +9,7 @@
 //
 // The SME seeds these into the bank as APPROVED psy_items via the console, after
 // which bank-driven assembly serves the 50-item form and the response log makes
-// each item calibratable. Arabic is best-effort MSA — human-review before live use
+// each item calibratable. Arabic is best-effort MSA - human-review before live use
 // (project convention for all Arabic content).
 
 import type { IpipItem } from "./framework";
@@ -51,7 +51,7 @@ export const IPIP_50: IpipItem[] = [
   { scale: "C", text_en: "Follow a schedule.", text_ar: "ألتزم بجدول.", reverse: false },
   { scale: "C", text_en: "Am exacting in my work.", text_ar: "أكون دقيقًا في عملي.", reverse: false },
 
-  // ── Emotional Stability (S) — IPIP Neuroticism, keyed for stability ──
+  // ── Emotional Stability (S) - IPIP Neuroticism, keyed for stability ──
   { scale: "S", text_en: "Get stressed out easily.", text_ar: "أتوتّر بسهولة.", reverse: true },
   { scale: "S", text_en: "Am relaxed most of the time.", text_ar: "أكون مسترخيًا معظم الوقت.", reverse: false },
   { scale: "S", text_en: "Worry about things.", text_ar: "أقلق بشأن الأمور.", reverse: true },

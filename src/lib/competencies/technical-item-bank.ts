@@ -1,17 +1,17 @@
 /**
- * Technical Assessment — SME-reviewed item bank (Tier 2, server-only).
+ * Technical Assessment - SME-reviewed item bank (Tier 2, server-only).
  *
  * This is the defensibility substrate behind a 'technical_proficiency'
  * credential. A certified test is assembled ONLY from items an SME has
- * reviewed and APPROVED (status='approved') — never raw AI output. Items are
+ * reviewed and APPROVED (status='approved') - never raw AI output. Items are
  * AI-drafted into the bank (status='draft') for human review; assembly,
  * grading, and the answer key all stay server-side (the 00052 sessions model).
  *
- *   • buildCertifiedTest()  — assemble a key-bearing TechTest from approved
+ *   • buildCertifiedTest()  - assemble a key-bearing TechTest from approved
  *     items, or return null when the bank is too thin to certify.
- *   • getCutScore()         — the documented passing standard for a domain.
- *   • approvedCountByDomain / bankReadiness — power the review console summary.
- *   • draftAiItemsToBank()  — AI authors candidate items for SME review.
+ *   • getCutScore()         - the documented passing standard for a domain.
+ *   • approvedCountByDomain / bankReadiness - power the review console summary.
+ *   • draftAiItemsToBank()  - AI authors candidate items for SME review.
  *
  * Tolerant: every path no-ops (returns empty / null) if migration 00053 isn't
  * applied yet, mirroring the rest of the credentials/academy stack.
@@ -99,7 +99,7 @@ export type AssemblyRow = {
 /** The column list for the type-aware (00082) assembly select. */
 export const ASSEMBLY_COLS =
   "id, skill, question_en, question_ar, options_en, options_ar, correct_index, correct_indices, question_type, scenario_en, scenario_ar, difficulty";
-/** Legacy column list (pre-00082) — used as a fallback so a bank that predates
+/** Legacy column list (pre-00082) - used as a fallback so a bank that predates
  *  the richer-types migration still certifies as single-answer MCQ. */
 export const ASSEMBLY_COLS_LEGACY =
   "id, skill, question_en, question_ar, options_en, options_ar, correct_index, difficulty";
@@ -200,7 +200,7 @@ export async function approvedCountByDomain(): Promise<Record<string, number>> {
       out[r.domain_key] = (out[r.domain_key] ?? 0) + 1;
     }
   } catch {
-    /* not migrated — empty */
+    /* not migrated - empty */
   }
   return out;
 }
@@ -230,7 +230,7 @@ export async function bankReadiness(): Promise<DomainReadiness[]> {
   return out;
 }
 
-/** All bank items for a domain (any status), newest first — for the console. */
+/** All bank items for a domain (any status), newest first - for the console. */
 export async function listBankItems(domainKey: TechDomainKey): Promise<BankItem[]> {
   try {
     const sb = createServiceClient();
@@ -249,7 +249,7 @@ export async function listBankItems(domainKey: TechDomainKey): Promise<BankItem[
   }
 }
 
-// ── Taxonomy + bridge data access (migration 00054) — for the admin editor ──
+// ── Taxonomy + bridge data access (migration 00054) - for the admin editor ──
 
 export type DomainMeta = { key: string; nameEn: string; nameAr: string | null };
 
@@ -288,7 +288,7 @@ export async function listDomainBridge(domainKey: string): Promise<BridgeRow[]> 
     }>;
     return rows.map((r) => {
       const c = Array.isArray(r.competencies) ? r.competencies[0] : r.competencies;
-      return { id: r.id, competencyId: r.competency_id, competencyName: c?.name ?? "—", weight: Number(r.weight) };
+      return { id: r.id, competencyId: r.competency_id, competencyName: c?.name ?? "-", weight: Number(r.weight) };
     });
   } catch {
     return [];
@@ -403,7 +403,7 @@ export async function getTechPipelineStats(): Promise<TechPipelineStats> {
       credentials: credsBy.get(d.domainKey) ?? 0,
     }));
   } catch {
-    /* tables not migrated — readiness-only base */
+    /* tables not migrated - readiness-only base */
   }
   return stats;
 }
@@ -413,7 +413,7 @@ export type CertifiedAssembly = { test: TechTest; itemIds: string[] };
 /**
  * Assemble a certified TechTest from APPROVED bank items. Returns null when the
  * approved pool is below the domain's min_items floor (caller then falls back
- * to the indicative AI path — no credential). Option positions are
+ * to the indicative AI path - no credential). Option positions are
  * re-randomised per administration.
  */
 export async function buildCertifiedTest(
@@ -434,7 +434,7 @@ export async function buildCertifiedTest(
       .eq("domain_key", domainKey)
       .eq("status", "approved");
     if (full.error) {
-      // migration 00082 not applied — certify single-answer MCQ from legacy cols.
+      // migration 00082 not applied - certify single-answer MCQ from legacy cols.
       const legacy = await sb
         .from("tech_assessment_items")
         .select(ASSEMBLY_COLS_LEGACY)
@@ -650,7 +650,7 @@ export async function insertBankDrafts(drafts: BankDraft[], domainKey: string | 
     );
     if (!ins.error) return { inserted: drafts.length };
 
-    // migration 00082 not applied — store only the single-type drafts (legacy cols).
+    // migration 00082 not applied - store only the single-type drafts (legacy cols).
     const singles = drafts.filter((d) => d.question_type === "single");
     if (singles.length === 0) return { inserted: 0, error: ins.error.message };
     const ins2 = await sb.from("tech_assessment_items").insert(
@@ -774,7 +774,7 @@ export async function translateItemsToArabic(
 }
 
 /**
- * Fill missing Arabic on existing bank items (any status) — translates
+ * Fill missing Arabic on existing bank items (any status) - translates
  * question_en/options_en for rows whose question_ar/options_ar are absent and
  * writes them back. Idempotent (only touches rows missing Arabic). Closes the
  * gap for any legacy / manually-authored / import English-only items so the

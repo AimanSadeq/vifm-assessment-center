@@ -16,10 +16,10 @@ export type { CellStatus, Cell, InstrumentKey, MatrixRow } from "./types";
  * norms). Computed cells are marked `live: true`.
  *
  * Status meaning:
- *   documented — defensible evidence exists today
- *   partial    — some evidence / in progress / computable but not signed off
- *   missing    — gap; nothing yet (the honest red cells)
- *   na         — not applicable to this instrument's design/use
+ *   documented - defensible evidence exists today
+ *   partial    - some evidence / in progress / computable but not signed off
+ *   missing    - gap; nothing yet (the honest red cells)
+ *   na         - not applicable to this instrument's design/use
  */
 
 const d = (note?: string): Cell => ({ status: "documented", note });
@@ -42,7 +42,7 @@ function anchorCell(verified: number | null, total: number | null): Cell {
 /** Sample-size cell: can we yet compute a statistic (alpha/CFA) from accrued data? */
 function sampleCell(n: number | null, threshold: number, noun: string): Cell {
   if (n === null) return { status: "missing", note: "no data", live: true };
-  if (n >= threshold) return { status: "partial", note: `N=${n} — ${noun} computable`, live: true };
+  if (n >= threshold) return { status: "partial", note: `N=${n} - ${noun} computable`, live: true };
   return { status: "missing", note: `N=${n}/${threshold} for ${noun}`, live: true };
 }
 
@@ -68,8 +68,8 @@ export function buildMatrix(metrics: EvidenceMetrics): MatrixRow[] {
       blurb: "Each construct is explicitly defined before items are written.",
       cells: {
         ac: d(`${COMPETENCY_COUNT} competencies + 249 indicators`),
-        arc_org: d("8 pillars — methodology brief §2"),
-        arc_ind: d("4 factors — methodology brief §2"),
+        arc_org: d("8 pillars - methodology brief §2"),
+        arc_ind: d("4 factors - methodology brief §2"),
         fluent: d("CEFR descriptors"),
         technical: d("Domain taxonomy"),
         reflect: d("Framework + behaviours"),
@@ -145,7 +145,7 @@ export function buildMatrix(metrics: EvidenceMetrics): MatrixRow[] {
       category: "Inter-rater reliability",
       blurb: "Independent raters agree (ICC / consensus).",
       cells: {
-        ac: presenceCell(metrics.ac.ratings, "ICC computable — {n} ratings", "no ratings yet"),
+        ac: presenceCell(metrics.ac.ratings, "ICC computable - {n} ratings", "no ratings yet"),
         arc_org: p("Phase 2 consultant validation logged"),
         arc_ind: na("single self-report"),
         fluent: p("human–AI QWK ≥ .70 logged"),
@@ -172,8 +172,8 @@ export function buildMatrix(metrics: EvidenceMetrics): MatrixRow[] {
       blurb: "Predicts an outcome (job performance). Selection gold standard.",
       cells: {
         ac: p("AC method meta-analytic support (literature)"),
-        arc_org: m("not claimed — developmental tool"),
-        arc_ind: m("not claimed — developmental tool"),
+        arc_org: m("not claimed - developmental tool"),
+        arc_ind: m("not claimed - developmental tool"),
         fluent: na("proficiency measure"),
         technical: p("cut-scores via standard-setting"),
         reflect: na("developmental feedback"),
@@ -190,7 +190,7 @@ export function buildMatrix(metrics: EvidenceMetrics): MatrixRow[] {
         fluent: na("CEFR criterion-referenced"),
         technical: na("cut-score referenced"),
         reflect: na("self-referenced"),
-        psy: presenceCell(metrics.psy.norms, "{n} norm row(s) loaded", "no norms loaded — stays indicative"),
+        psy: presenceCell(metrics.psy.norms, "{n} norm row(s) loaded", "no norms loaded - stays indicative"),
       },
     },
     {

@@ -51,7 +51,7 @@ export async function suggestTechnicalValidationEvidence(
   const menu = relevantMenu(MENU, [input.domain_key, input.skill]);
   const user = buildUserPrompt({
     contextLines: [
-      { k: "Instrument", v: "Technical Certification — job-knowledge MCQ test" },
+      { k: "Instrument", v: "Technical Certification - job-knowledge MCQ test" },
       { k: "Domain", v: input.domain_key || "(unspecified)" },
       { k: "Skill", v: input.skill || "(unspecified)" },
       { k: "Item stem", v: input.question_excerpt || "(not provided)" },
@@ -65,7 +65,7 @@ export async function suggestTechnicalValidationEvidence(
     ),
     user,
     menu,
-    constructFallback: `Technical job knowledge — ${input.domain_key || "domain"} / ${input.skill || "skill"}`,
+    constructFallback: `Technical job knowledge - ${input.domain_key || "domain"} / ${input.skill || "skill"}`,
     tag: "technical-evidence",
   });
 }

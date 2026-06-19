@@ -9,7 +9,7 @@
  * human review of AI-suggested citations.
  *
  * The `review_status` field is the hallucination guard: only `verified` or
- * `edited` anchors are ever surfaced in a client-facing deliverable —
+ * `edited` anchors are ever surfaced in a client-facing deliverable -
  * `ai_proposed` anchors stay internal until a human signs off.
  */
 export type EvidenceConfidence = "direct_adaptation" | "construct_aligned" | "novel";
@@ -32,7 +32,7 @@ export type EvidenceAnchorInstrument = {
 export type ValidationEvidence = {
   /** One or more published instruments this construct content-aligns with. */
   anchor_instruments: EvidenceAnchorInstrument[];
-  /** Short label of the broader construct, e.g. "Results orientation — achievement drive". */
+  /** Short label of the broader construct, e.g. "Results orientation - achievement drive". */
   construct_summary: string;
   /** Gate that decides whether this evidence shows in a client-facing report. */
   review_status: EvidenceReviewStatus;

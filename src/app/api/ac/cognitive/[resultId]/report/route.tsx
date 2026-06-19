@@ -1,5 +1,5 @@
 /**
- * VIFM Cognitive Ability — professional result report (PDF).
+ * VIFM Cognitive Ability - professional result report (PDF).
  *
  *   GET /api/ac/cognitive/[resultId]/report  → downloadable PDF
  *

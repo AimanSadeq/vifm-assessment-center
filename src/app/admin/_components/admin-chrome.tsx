@@ -13,7 +13,7 @@ import { AllServicesLink } from "@/components/shared/all-services-link";
 export function AdminChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  // Pre-Hire is a standalone service with its own immersive shell — step the
+  // Pre-Hire is a standalone service with its own immersive shell - step the
   // admin chrome aside for its subtree (see src/app/admin/prehire/layout.tsx).
   if (pathname?.startsWith("/admin/prehire")) {
     return <>{children}</>;

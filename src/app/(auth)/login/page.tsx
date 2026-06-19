@@ -21,7 +21,7 @@ import { Separator } from "@/components/ui/separator";
 
 // Pre-seeded test logins, one per user_role (all password admin123). These
 // accounts must exist in Supabase (run scripts/create-test-accounts.ts +
-// scripts/create-admin.ts) before they work — the quick-login does a real
+// scripts/create-admin.ts) before they work - the quick-login does a real
 // signInWithPassword. Demo-only: gate behind NODE_ENV !== "production"
 // before real go-live.
 const DEMO_ROLES = [

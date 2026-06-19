@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { createClientOrganization, type CreateClientInput, type CreateClientResult } from "@/lib/clients/registry";
 
-/** Create a client from the Platform Clients page — written to every service's
+/** Create a client from the Platform Clients page - written to every service's
  *  org store. Admin-gated (synthetic admin under AUTH_ENABLED=false). */
 export async function createClientAction(input: CreateClientInput): Promise<CreateClientResult> {
   try {

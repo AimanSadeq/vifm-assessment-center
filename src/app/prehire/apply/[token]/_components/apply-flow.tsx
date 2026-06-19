@@ -91,7 +91,7 @@ export function ApplyFlow({ token, ctx }: { token: string; ctx: PrehireCandidate
                 and results are processed by VIFM on behalf of{" "}
                 {ctx.requisition.clientName ?? "the hiring organization"} for the sole purpose of
                 evaluating your application, in line with applicable data-protection law. Results
-                are reviewed by a person — no decision is made automatically.
+                are reviewed by a person - no decision is made automatically.
               </p>
               <div className="flex items-start gap-3">
                 <Checkbox id="agree" checked={agree} onCheckedChange={(c) => setAgree(c === true)} />
@@ -106,7 +106,7 @@ export function ApplyFlow({ token, ctx }: { token: string; ctx: PrehireCandidate
           </Card>
         )}
 
-        {/* Voluntary equal-opportunity monitoring — BEFORE the assessment */}
+        {/* Voluntary equal-opportunity monitoring - BEFORE the assessment */}
         {agreed && !demoComplete && (
           <DemographicsCard token={token} onDone={() => setDemoDone(true)} />
         )}

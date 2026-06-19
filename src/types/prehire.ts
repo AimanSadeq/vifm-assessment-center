@@ -100,7 +100,7 @@ export type PrehireCandidate = {
   decision_reason: string | null;
   decided_by: string | null;
   decided_at: string | null;
-  // Recruiter-supplied metadata (00061) — e.g. { employee_id: "E-1234" }.
+  // Recruiter-supplied metadata (00061) - e.g. { employee_id: "E-1234" }.
   // Never scored, never candidate-visible, never in adverse-impact.
   custom_fields: Record<string, string> | null;
   created_at: string;
@@ -136,7 +136,7 @@ export type PrehireStageResult = {
   updated_at: string;
 };
 
-/** Candidate joined with their stage results — the shape the recruiter dashboard renders. */
+/** Candidate joined with their stage results - the shape the recruiter dashboard renders. */
 export type PrehireCandidateWithStages = PrehireCandidate & {
   stages: PrehireStageResult[];
 };

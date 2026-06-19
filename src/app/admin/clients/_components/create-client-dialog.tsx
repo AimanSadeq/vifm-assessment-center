@@ -57,7 +57,7 @@ export function CreateClientDialog() {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2"><Building2 className="h-5 w-5 text-accent" /> Create Client</DialogTitle>
           <DialogDescription>
-            Saved once and connected across every service — Assessment Center, Pre-Hire, AI Readiness, and Reflect 360.
+            Saved once and connected across every service - Assessment Center, Pre-Hire, AI Readiness, and Reflect 360.
           </DialogDescription>
         </DialogHeader>
 

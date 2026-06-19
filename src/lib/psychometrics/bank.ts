@@ -1,4 +1,4 @@
-// VIFM Psychometrics — Tier 2 item bank (SME-reviewed) loader + readiness.
+// VIFM Psychometrics - Tier 2 item bank (SME-reviewed) loader + readiness.
 //
 // Tier 1 runs from code (Mini-IPIP + AI), so the bank starts EMPTY. This module
 // is the SME workflow that fills it: each scale accumulates reviewed items, the
@@ -7,7 +7,7 @@
 // INDICATIVE (Tier 1) or fully CALIBRATED (Tier 2). The dashboard always lists
 // every framework scale (even with zero bank rows) so the SME sees the target.
 //
-// Everything is tolerant of migrations 00065/00067 not being applied — a missing
+// Everything is tolerant of migrations 00065/00067 not being applied - a missing
 // table simply reads as "0 items / no norms / indicative".
 
 import { createServiceClient } from "@/lib/supabase/server";
@@ -24,7 +24,7 @@ export type PsyItemKind = "mcq" | "likert";
 /** Minimum approved items per scale before the bank can drive an administration. */
 export const ASSEMBLE_MIN = 4;
 
-// Framework scale list per instrument — the dashboard's spine (always shown).
+// Framework scale list per instrument - the dashboard's spine (always shown).
 type ScaleDef = { key: string; nameEn: string; nameAr: string };
 const SCALE_DEFS: Record<PsyKind, ScaleDef[]> = {
   cognitive: COGNITIVE_SUBTESTS.map((s) => ({ key: s.key, nameEn: s.name_en, nameAr: s.name_ar })),
@@ -104,7 +104,7 @@ const asStrArr = (v: unknown): string[] | null => (Array.isArray(v) ? v.map(Stri
 
 /**
  * Cronbach's α for one scale from bank-item responses only (Tier-1 code items,
- * whose ids don't match bank rows, are excluded — α reflects the BANK). mcq is
+ * whose ids don't match bank rows, are excluded - α reflects the BANK). mcq is
  * scored 0/1 from `correct`; likert is reverse-keyed (6−x) per the item's flag.
  */
 function alphaForScale(
@@ -199,7 +199,7 @@ export async function loadPsyBank(): Promise<PsyBankView> {
     tablesReady = false;
   }
 
-  // response log (for α) — only rows referencing a known bank item matter
+  // response log (for α) - only rows referencing a known bank item matter
   const kindByScaleKey = new Map<string, PsyKind>(); // scaleKey → kind (no key collisions across instruments)
   for (const { kind, scaleKey } of Array.from(scaleById.values())) kindByScaleKey.set(scaleKey, kind);
   const respByScaleKind = new Map<string, RespRow[]>(); // `${kind}:${scaleKey}` → rows
@@ -218,7 +218,7 @@ export async function loadPsyBank(): Promise<PsyBankView> {
       respByScaleKind.set(key, arr);
     }
   } catch {
-    /* response log unavailable — α stays null */
+    /* response log unavailable - α stays null */
   }
 
   // norms (per kind+scale)
@@ -270,7 +270,7 @@ export async function loadPsyBank(): Promise<PsyBankView> {
 /**
  * Resolve (upsert) the psy_scales row id for a framework scale, creating the
  * parent psy_instruments row on first use. Lets the bank self-bootstrap its
- * structure the first time an admin drafts/adds an item — no structure-only
+ * structure the first time an admin drafts/adds an item - no structure-only
  * migration needed. Service-role; server-only.
  */
 export async function resolveScaleId(kind: PsyKind, scaleKey: string): Promise<string | null> {
@@ -309,7 +309,7 @@ export async function resolveScaleId(kind: PsyKind, scaleKey: string): Promise<s
 
 /**
  * Assemble a full keyed test from APPROVED bank items when every scale has
- * ≥ASSEMBLE_MIN — else return null so the caller falls back to Tier-1 (code/AI).
+ * ≥ASSEMBLE_MIN - else return null so the caller falls back to Tier-1 (code/AI).
  * Item ids are the real psy_items uuids, so the response log is calibratable.
  */
 export async function assembleFromBank(

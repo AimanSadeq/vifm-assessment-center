@@ -69,7 +69,7 @@ export async function POST(req: Request) {
     const result = computePsyResult(test, answers, lang);
 
     // Tier 2: norm-reference the scores when a norm group exists for this kind
-    // (tolerant — no psy_norms table / no rows ⇒ result stays Tier-1 indicative).
+    // (tolerant - no psy_norms table / no rows ⇒ result stays Tier-1 indicative).
     let finalResult = result;
     try {
       const { data: norms } = await svc.from("psy_norms").select("scale_key, n, mean, sd").eq("kind", test.kind);
@@ -81,7 +81,7 @@ export async function POST(req: Request) {
         finalResult = applyNorms(result, map);
       }
     } catch {
-      /* psy_norms not migrated yet — stays Tier-1 indicative */
+      /* psy_norms not migrated yet - stays Tier-1 indicative */
     }
 
     const { data: resRow } = await svc

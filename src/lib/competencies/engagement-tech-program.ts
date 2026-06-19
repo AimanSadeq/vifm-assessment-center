@@ -84,7 +84,7 @@ export async function getEngagementTechProgram(
       .eq("engagement_id", engagementId);
     inScopeKeys = (data ?? []).map((r) => r.domain_key as string);
   } catch {
-    /* 00056 not applied — empty program */
+    /* 00056 not applied - empty program */
   }
 
   const inScope: TechProgramDomain[] = inScopeKeys
@@ -107,7 +107,7 @@ export async function getEngagementTechProgram(
     .order("full_name");
   const candidates = (candData ?? []) as { id: string; full_name: string }[];
 
-  // Latest result per (candidate, domain) — rows arrive newest-first.
+  // Latest result per (candidate, domain) - rows arrive newest-first.
   const latest = new Map<string, ResultRow>();
   try {
     const { data: resData } = await sb
@@ -120,7 +120,7 @@ export async function getEngagementTechProgram(
       if (!latest.has(k)) latest.set(k, r);
     }
   } catch {
-    /* results table absent — everyone shows "not started" */
+    /* results table absent - everyone shows "not started" */
   }
 
   const programCandidates: TechProgramCandidate[] = candidates.map((c) => {

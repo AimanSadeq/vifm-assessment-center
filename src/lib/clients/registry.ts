@@ -1,9 +1,9 @@
-// Platform-wide client registry. The portal keeps two organization stores —
+// Platform-wide client registry. The portal keeps two organization stores -
 // `organizations` (Assessment Center + Pre-Hire) and `ara_organizations`
 // (AI Readiness + Reflect 360). A "client" should be usable in EVERY service, so
 // creating one writes to both stores (deduped by case-insensitive name) and the
 // Platform Clients page reads a union of the two. Service-role throughout
-// (bypasses RLS — this is the admin-only registry surface).
+// (bypasses RLS - this is the admin-only registry surface).
 
 import { createServiceClient } from "@/lib/supabase/server";
 

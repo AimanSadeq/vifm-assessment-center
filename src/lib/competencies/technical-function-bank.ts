@@ -3,15 +3,15 @@
  *
  * The defensibility substrate behind a function-titled 'technical_proficiency'
  * credential. A function certifies when every blueprint skill has enough
- * SME-APPROVED items (status='approved') — items keyed by SKILL with
+ * SME-APPROVED items (status='approved') - items keyed by SKILL with
  * domain_key NULL, so one approved pool for "Invoice Processing & 3-Way Match"
  * serves every function that lists that skill (standard or JD-derived).
  *
- *   • functionBankReadiness() — per-skill approved counts vs the coverage floor.
- *   • getFunctionCutScore()   — the documented passing standard for a function.
- *   • buildCertifiedFunctionTest() — assemble a key-bearing TechTest from
+ *   • functionBankReadiness() - per-skill approved counts vs the coverage floor.
+ *   • getFunctionCutScore()   - the documented passing standard for a function.
+ *   • buildCertifiedFunctionTest() - assemble a key-bearing TechTest from
  *     approved per-skill items, or null when any skill is below the floor.
- *   • draftFunctionSkillItems() — AI-author candidate items for ONE skill.
+ *   • draftFunctionSkillItems() - AI-author candidate items for ONE skill.
  *
  * Certified items are classic 4-option single MCQ (the richer multi/scenario
  * types live only on the indicative path). Tolerant of migration 00059 / 00053
@@ -106,7 +106,7 @@ export async function approvedCountBySkill(skills: string[]): Promise<Record<str
       if (r.skill in out) out[r.skill] += 1;
     }
   } catch {
-    /* 00059 not applied — all zero */
+    /* 00059 not applied - all zero */
   }
   return out;
 }
@@ -197,7 +197,7 @@ export async function functionBankReadiness(skillsEn: string[], functionId: stri
 /**
  * The calibrated, key-bearing pool for an adaptive (CAT) sitting: APPROVED items
  * across the function's skills that carry a Rasch difficulty (irt_b). Returns
- * null when fewer than ADAPTIVE_MIN_POOL — the caller then serves a fixed form.
+ * null when fewer than ADAPTIVE_MIN_POOL - the caller then serves a fixed form.
  * Held server-side only (the answer key never reaches the browser).
  */
 export async function adaptiveReadyRefs(
@@ -220,7 +220,7 @@ export async function adaptiveReadyRefs(
       if (total >= ADAPTIVE_MIN_POOL) ready.add(f.ref);
     }
   } catch {
-    /* uncalibrated / not migrated — none ready */
+    /* uncalibrated / not migrated - none ready */
   }
   return ready;
 }
@@ -233,7 +233,7 @@ export async function buildAdaptivePool(input: {
   try {
     const sb = createServiceClient();
     // CAT is single-best-answer only (scenario needs its stem; multi isn't
-    // dichotomous; true/false is 2-option) — fetch question_type to exclude them,
+    // dichotomous; true/false is 2-option) - fetch question_type to exclude them,
     // with a legacy fallback so the pool still builds pre-00082 (all single then).
     const full = await sb
       .from("tech_assessment_items")
@@ -291,7 +291,7 @@ export async function buildAdaptivePool(input: {
 
 /**
  * Calibrate the function-skill bank for the given skills: write each item's
- * Rasch difficulty (irt_b) — from its proportion-correct once it has enough
+ * Rasch difficulty (irt_b) - from its proportion-correct once it has enough
  * administrations, else the difficulty prior. Powers the CAT candidate set.
  * Tolerant of migration 00060 being absent (no-op).
  */
@@ -324,7 +324,7 @@ export async function calibrateFunctionBank(skillsEn: string[]): Promise<{ calib
   }
 }
 
-/** All function-skill bank items (any status) for the given skills — the console. */
+/** All function-skill bank items (any status) for the given skills - the console. */
 export async function listFunctionBankItems(skillsEn: string[]): Promise<BankItem[]> {
   if (skillsEn.length === 0) return [];
   try {
@@ -351,7 +351,7 @@ export type CertifiedAssembly = { test: TechTest; itemIds: string[] };
  * Assemble a certified TechTest for a function from APPROVED per-skill items.
  * Draws up to `drawPerSkill` items for EACH blueprint skill; returns null when
  * any skill is below the function's per-skill floor (caller falls back to the
- * indicative AI path — no credential). Option positions re-randomised per sitting.
+ * indicative AI path - no credential). Option positions re-randomised per sitting.
  */
 export async function buildCertifiedFunctionTest(input: {
   functionKey: string;
@@ -379,7 +379,7 @@ export async function buildCertifiedFunctionTest(input: {
       .eq("status", "approved")
       .in("skill", skillsEn);
     if (full.error) {
-      // migration 00082 not applied — certify single-answer MCQ from legacy cols.
+      // migration 00082 not applied - certify single-answer MCQ from legacy cols.
       const legacy = await sb
         .from("tech_assessment_items")
         .select(ASSEMBLY_COLS_LEGACY)

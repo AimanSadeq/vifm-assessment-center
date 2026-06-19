@@ -29,7 +29,7 @@ const CATEGORY_SET = new Set<string>(TECH_FUNCTION_CATEGORIES);
 
 /**
  * Read a JD (pasted text OR an uploaded PDF/TXT) and return a proposed function
- * blueprint — matched library skills + proposed-new skills + suggested name and
+ * blueprint - matched library skills + proposed-new skills + suggested name and
  * category. The admin reviews/edits before createTechnicalFunctionAction.
  */
 export async function extractFunctionFromJdAction(

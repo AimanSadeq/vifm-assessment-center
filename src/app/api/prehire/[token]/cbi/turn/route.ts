@@ -8,7 +8,7 @@ type CbiDetail = { history?: CbiMessage[] } | null;
 function competencyFor(title: string) {
   return {
     id: "prehire-cbi",
-    name: `${title} — behavioural competency`,
+    name: `${title} - behavioural competency`,
     description: `Behavioural competency for the ${title} role.`,
     positiveIndicators: [] as string[],
     negativeIndicators: [] as string[],

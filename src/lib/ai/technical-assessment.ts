@@ -5,7 +5,7 @@
  * domain's skills from the Technical Competency Framework. Mirrors the Fluent
  * engine's integrity model:
  *   • generateTechnicalAssessment() authors items WITH an answer key (held
- *     server-side; never sent to the browser — see stripAnswerKey()).
+ *     server-side; never sent to the browser - see stripAnswerKey()).
  *   • scoreTechnicalAssessment() grades server-side and maps the score to a
  *     1–5 proficiency band + per-skill breakdown.
  *
@@ -14,7 +14,7 @@
  * calibrated before any high-stakes use. Falls back to a small generic set when
  * ANTHROPIC_API_KEY is absent so the dev flow still renders end-to-end; when a
  * key IS configured but generation fails, TechGenerationError is thrown so the
- * route can surface it — a taker is never silently served the placeholder deck.
+ * route can surface it - a taker is never silently served the placeholder deck.
  */
 
 import type Anthropic from "@anthropic-ai/sdk";
@@ -56,7 +56,7 @@ export type TechTest = {
   domain_name: string;
   items: TechItem[];
   ai_generated: boolean;
-  /** True when assembled entirely from SME-approved bank items (Tier 2) — the
+  /** True when assembled entirely from SME-approved bank items (Tier 2) - the
    *  only path eligible to issue a technical_proficiency credential. */
   certified?: boolean;
 };
@@ -106,7 +106,7 @@ export type TechResult = {
 };
 
 /** Thrown when AI generation was attempted (an API key IS configured) but no
- *  usable test could be produced — API failure, truncated/malformed output, or
+ *  usable test could be produced - API failure, truncated/malformed output, or
  *  the model under-delivering. The route maps this to an explicit 5xx so a
  *  taker is never silently administered the placeholder deck. */
 export class TechGenerationError extends Error {
@@ -171,7 +171,7 @@ const arabicLangLines = (language: "en" | "ar"): string[] =>
 
 /** Fisher–Yates shuffle of the 4 options → new option order + the index the
  *  correct answer moved to. LLMs bias the correct answer toward option A;
- *  re-randomising per administration defeats "always pick A" + position memo —
+ *  re-randomising per administration defeats "always pick A" + position memo -
  *  a defensibility/integrity must-fix. */
 function shuffleMcq(origOptions: string[], origCorrect: number): { options: string[]; correct_index: number } {
   const order = [0, 1, 2, 3];
@@ -272,7 +272,7 @@ function normalizeRichItem(raw: RawRichItem, i: number, skills: string[], skillS
     return { ...base, type: "multi", options, correct_index: correct[0], correct_indices: correct };
   }
 
-  // single / scenario — exactly 4 options, one correct
+  // single / scenario - exactly 4 options, one correct
   if (opts.length !== 4) return null;
   const idx = typeof raw.correct_index === "number" ? raw.correct_index : Number(raw.correct_index);
   if (!Number.isInteger(idx) || idx < 0 || idx >= 4) return null;
@@ -350,7 +350,7 @@ export async function generateTechnicalAssessment(input: {
       console.error(`[technical-assessment] domain generate attempt ${attempt} failed:`, err);
     }
   }
-  // The key is configured but the model couldn't deliver — surface the failure
+  // The key is configured but the model couldn't deliver - surface the failure
   // rather than silently administering the placeholder deck.
   throw new TechGenerationError(`AI generation failed for domain "${domain.name}"`);
 }
@@ -358,8 +358,8 @@ export async function generateTechnicalAssessment(input: {
 // ── Function (blueprint) assessment ──────────────────────────────────────────
 // A function is a weighted selection of technical skills (Accounts Payable =
 // invoice match + vendor recon + payment controls + …). Unlike the domain run's
-// 8 generic items, this assembles a DEEP, multi-skill test — ~itemsPerSkill
-// items per blueprint skill — so the per-skill breakdown is real. Items are
+// 8 generic items, this assembles a DEEP, multi-skill test - ~itemsPerSkill
+// items per blueprint skill - so the per-skill breakdown is real. Items are
 // tagged by the EXACT English skill name (the grading/rollup axis), the test
 // carries the function key in domain_key + the function name in domain_name.
 
@@ -425,14 +425,14 @@ async function generateSkillItems(
     `SKILL: ${skill}`,
     ``,
     `EXACT TYPE MIX:`,
-    `  • ${singleN} × "single"   — one question, four options, exactly ONE correct (correct_index).`,
+    `  • ${singleN} × "single"   - one question, four options, exactly ONE correct (correct_index).`,
     ...(multiN > 0
       ? [
-          `  • ${multiN} × "multi"    — select-all-that-apply: 4-6 options with 2-3 correct`,
+          `  • ${multiN} × "multi"    - select-all-that-apply: 4-6 options with 2-3 correct`,
           `                 (correct_indices array). At least one option must be wrong.`,
         ]
       : []),
-    `  • ${scenarioN} × "scenario" — a short realistic case in "scenario" (2-4 sentences with`,
+    `  • ${scenarioN} × "scenario" - a short realistic case in "scenario" (2-4 sentences with`,
     `                 figures), then a single-best-answer question (four options,`,
     `                 correct_index).`,
     ``,
@@ -441,7 +441,7 @@ async function generateSkillItems(
     `recall toward analyze; pair the scenario item with apply/analyze.`,
     ``,
     `Ramp "difficulty" easy→medium→hard across the ${perSkill} items. Set every`,
-    `item's "skill" to EXACTLY this English string — even when the text is Arabic:`,
+    `item's "skill" to EXACTLY this English string - even when the text is Arabic:`,
     `${skill}`,
     ``,
     `Return JSON ONLY (no markdown fences):`,
@@ -498,7 +498,7 @@ export async function generateFunctionAssessment(input: {
 
   // One small call per skill instead of one giant call for the whole blueprint:
   // a 6-skill × 4-item single request overruns its output budget (truncated
-  // JSON) and streams longer than proxy timeouts — both of which used to fall
+  // JSON) and streams longer than proxy timeouts - both of which used to fall
   // back, silently, to the placeholder deck. Chunks also fail independently,
   // so one bad skill can't void five good ones.
   const perSkillItems = await Promise.all(
@@ -513,7 +513,7 @@ export async function generateFunctionAssessment(input: {
   const target = skills.length * perSkill;
 
   // Need enough coverage to be meaningful; the key IS configured here, so an
-  // under-delivery is surfaced — never swapped for the placeholder deck.
+  // under-delivery is surfaced - never swapped for the placeholder deck.
   if (items.length < Math.max(4, Math.ceil(target / 2))) {
     const failed = skills.filter((_, i) => perSkillItems[i].length === 0);
     throw new TechGenerationError(

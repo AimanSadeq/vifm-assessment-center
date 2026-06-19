@@ -1,6 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 
-// ── Functions — the job-level unit of technical assessment ───────────────────
+// ── Functions - the job-level unit of technical assessment ───────────────────
 //
 // Technical competency is role/function-specific, not department-wide: the AR
 // team shares one body of knowledge; a Finance division (AP + AR + audit +
@@ -26,7 +26,7 @@ export type StandardFunction = {
   skills_ar: string[];
 };
 
-/** Canonical fallback — mirrors the 00058 + 00060 + 00073 seed (48 standard
+/** Canonical fallback - mirrors the 00058 + 00060 + 00073 seed (48 standard
  *  functions across 9 competencies: Finance, Accounting, Banking, Investment,
  *  Treasury, Data Analytics, Business Intelligence, Artificial Intelligence, HR). */
 export const STANDARD_FUNCTIONS: StandardFunction[] = [
@@ -461,11 +461,11 @@ export type LocalizedTechFunction = {
   nameEn: string;
   category: string | null;
   categoryLabel: string; // localized
-  /** Canonical English skill names — the tag/grading axis (never localized). */
+  /** Canonical English skill names - the tag/grading axis (never localized). */
   skillsEn: string[];
   /** Localized skill labels, index-aligned with skillsEn. */
   skills: string[];
-  /** The Competency tier (00074). Empty when none are seeded for this function —
+  /** The Competency tier (00074). Empty when none are seeded for this function -
    *  consumers fall back to the flat skillsEn list. */
   competencies: LocalizedTechCompetency[];
   source: TechFunctionSource;
@@ -574,7 +574,7 @@ async function attachCompetencies(
       if (f.id && compsByFn.has(f.id)) f.competencies = compsByFn.get(f.id)!;
     }
   } catch {
-    /* tolerant — leave competencies empty, callers fall back to flat skills */
+    /* tolerant - leave competencies empty, callers fall back to flat skills */
   }
 }
 
@@ -617,7 +617,7 @@ export async function getTechnicalFunctionByRef(
   };
   try {
     const sb = createServiceClient();
-    // ref may be a standard key or a uuid id — try key first, then id.
+    // ref may be a standard key or a uuid id - try key first, then id.
     let row: FunctionRow | null = null;
     const byKey = await sb
       .from("technical_functions")
@@ -652,7 +652,7 @@ export function functionSkillLabels(fn: LocalizedTechFunction): Record<string, s
   return map;
 }
 
-/** Distinct English skill names across the given functions — the reuse menu the
+/** Distinct English skill names across the given functions - the reuse menu the
  *  JD extractor matches against (so a custom function reuses existing skills). */
 export function skillLibraryFrom(functions: LocalizedTechFunction[]): string[] {
   const set = new Set<string>();

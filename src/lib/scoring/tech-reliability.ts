@@ -4,7 +4,7 @@ import { proficiencyFromPercent } from "@/lib/competencies/technical-framework";
  * Reliability + confidence band for a technical assessment result.
  *
  * A single 1–5 proficiency level reads as point-certain, but a short MCQ test
- * carries real uncertainty — from few items (binomial standard error) and from
+ * carries real uncertainty - from few items (binomial standard error) and from
  * disagreement ACROSS the in-scope skills. We surface an indicative RANGE
  * (e.g. "Working–Proficient") + an underpowered flag rather than implying false
  * precision. This is classical (works on every run, calibrated or not); a fully

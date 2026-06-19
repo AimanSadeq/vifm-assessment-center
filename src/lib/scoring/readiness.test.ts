@@ -4,7 +4,7 @@
  * Written against node:test + node:assert (zero dependencies) so they run
  * with `node --test` (Node 18+; on a TS file, via the repo's TS test setup or
  * `node --experimental-strip-types --test`). Convert to vitest/jest if that is
- * the repo standard — the cases and expectations are the same.
+ * the repo standard - the cases and expectations are the same.
  */
 import test from "node:test";
 import assert from "node:assert/strict";

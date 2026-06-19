@@ -1,4 +1,4 @@
-// VIFM Psychometrics — AI item drafter (Tier 2 bank). Drafts bilingual items for
+// VIFM Psychometrics - AI item drafter (Tier 2 bank). Drafts bilingual items for
 // ONE scale at a time; the SME reviews → approves into the bank. Returns [] when
 // no ANTHROPIC_API_KEY is set (the console then offers manual authoring instead).
 //
@@ -24,7 +24,7 @@ export type DraftedItem = {
 const SYSTEM =
   "You are a senior psychometric item writer for VIFM, authoring assessment items " +
   "for GCC banking and government professionals. You write clean, fair, single-construct " +
-  "items in parallel English + Modern Standard Arabic. Output STRICT JSON only — no prose, " +
+  "items in parallel English + Modern Standard Arabic. Output STRICT JSON only - no prose, " +
   "no markdown fences.";
 
 function cognitivePrompt(scaleKey: string, scaleName: string, count: number): string {

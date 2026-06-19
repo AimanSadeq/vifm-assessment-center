@@ -65,7 +65,7 @@ export function QuizStage({ token, onDone }: { token: string; onDone: () => void
           <CardContent className="space-y-4 pt-6">
             <h2 className="font-semibold text-[#010131]">Competency assessment</h2>
             <p className="text-sm text-muted-foreground">
-              A short set of questions about the competencies for this role. Answer honestly —
+              A short set of questions about the competencies for this role. Answer honestly -
               there are no trick questions. It takes only a few minutes.
             </p>
             <Button onClick={start} disabled={busy} className="w-full">

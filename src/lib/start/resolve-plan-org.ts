@@ -1,8 +1,8 @@
-// Guided Start — combined-plan deep-link helper.
+// Guided Start - combined-plan deep-link helper.
 //
 // The plan's "Set up →" links carry the chosen client as `?org=<id>&orgName=<name>`.
 // Each create page loads its OWN client list (Pre-Hire/AC read `organizations`;
-// ARA/Reflect read `ara_organizations` — different id spaces), so we resolve the
+// ARA/Reflect read `ara_organizations` - different id spaces), so we resolve the
 // link to an id that exists in *this* page's list: match by id first, then by
 // name (case-insensitive). Returns "" when there's no match (picker stays empty).
 

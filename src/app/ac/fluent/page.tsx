@@ -151,7 +151,7 @@ export default async function FluentPage({ searchParams }: Props) {
               <span>{t("acFluent.trustIndicativePlacement")}</span>
             </div>
 
-            {/* CEFR reference — spell out the acronym used throughout */}
+            {/* CEFR reference - spell out the acronym used throughout */}
             <p className="mt-4 max-w-2xl text-[11px] leading-relaxed text-white/45">
               <span className="font-medium text-white/70">CEFR</span> {t("acFluent.cefrReference")}
             </p>

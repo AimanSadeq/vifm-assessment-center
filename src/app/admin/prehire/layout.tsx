@@ -6,7 +6,7 @@ import { getServerT, getServerLocale, getServerDir } from "@/lib/i18n/server";
 export const dynamic = "force-dynamic";
 
 /**
- * Pre-Hire service shell — a standalone immersive chrome (its own top bar +
+ * Pre-Hire service shell - a standalone immersive chrome (its own top bar +
  * rose identity + footer), distinct from the admin portal. The admin layout
  * steps aside for /admin/prehire/* (see src/app/admin/layout.tsx), so this
  * layout fully owns the page. Navigation back to the rest of the platform is

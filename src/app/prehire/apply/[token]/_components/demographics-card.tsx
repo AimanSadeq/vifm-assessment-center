@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
  * Voluntary equal-opportunity self-identification, shown after consent and
  * BEFORE the assessment so it's visibly decoupled from scoring. Every field is
  * optional; "Skip" and "prefer not to say" are first-class. Used by VIFM only in
- * aggregate to monitor fairness (the 4/5ths rule) — never per-individual, never
+ * aggregate to monitor fairness (the 4/5ths rule) - never per-individual, never
  * by assessors, never in the score.
  */
 
@@ -41,7 +41,7 @@ function Field({ label, value, onChange, options }: { label: string; value: stri
         onChange={(e) => onChange(e.target.value)}
         className="mt-1 w-full rounded-md border border-input bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5391D5]"
       >
-        <option value="">—</option>
+        <option value="">-</option>
         {options.map((o) => (
           <option key={o.value} value={o.value}>{o.label}</option>
         ))}
@@ -65,7 +65,7 @@ export function DemographicsCard({ token, onDone }: { token: string; onDone: () 
         body: JSON.stringify(body),
       });
     } catch {
-      /* optional step — never block on failure */
+      /* optional step - never block on failure */
     } finally {
       setBusy(false);
       onDone();

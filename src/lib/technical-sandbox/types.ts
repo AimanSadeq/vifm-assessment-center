@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────
-// Technical sandbox portal — shared types (engine payloads, work,
+// Technical sandbox portal - shared types (engine payloads, work,
 // checkpoints, results). Mirrors the jsonb columns on
 // technical_skill_blocks and technical_sandbox_responses (00077).
 // ─────────────────────────────────────────────────────────────

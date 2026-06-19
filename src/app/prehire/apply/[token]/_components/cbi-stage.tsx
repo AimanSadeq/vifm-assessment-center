@@ -79,7 +79,7 @@ export function CbiStage({ token, onDone }: { token: string; onDone: () => void 
             <h2 className="font-semibold text-[#010131]">Behavioural interview</h2>
             <p className="text-sm text-muted-foreground">
               A short conversational interview. You&apos;ll be asked about real situations
-              you&apos;ve handled — describe what happened, what you personally did, and the
+              you&apos;ve handled - describe what happened, what you personally did, and the
               outcome. Answer in your own words; take your time.
             </p>
             <Button onClick={start} disabled={busy} className="w-full">

@@ -1,7 +1,7 @@
 "use client";
 
-// Gamified rater experience for Reflect 360 — opt-in via engagement.gamified_mode.
-// Same items, same server actions, same reflect_responses rows as RaterForm — the
+// Gamified rater experience for Reflect 360 - opt-in via engagement.gamified_mode.
+// Same items, same server actions, same reflect_responses rows as RaterForm - the
 // ONLY difference is the rater UX: one focused card at a time, progress + momentum,
 // mobile-first. Scoring/reporting/anonymity downstream are byte-for-byte identical.
 
@@ -73,12 +73,12 @@ const G = {
     notePlaceholder: "Anything you'd add in your own words…",
     saving: "Saving…",
     saved: "Saved",
-    failed: "Save failed — will retry",
-    offline: "You're offline — answers save when you reconnect",
+    failed: "Save failed - will retry",
+    offline: "You're offline - answers save when you reconnect",
     milestoneQuarter: "Great start! 🎯",
     milestoneHalf: "Halfway there 🔥",
     milestoneThree: "Almost done 💪",
-    finalTitle: "Last step — in your own words",
+    finalTitle: "Last step - in your own words",
     finalLead: "The most valuable part of any 360. Skip any you'd rather not answer.",
     startQ: "What should they START doing?",
     stopQ: "What should they STOP doing?",
@@ -86,10 +86,10 @@ const G = {
     startQSelf: "What do you want to START doing?",
     stopQSelf: "What do you want to STOP doing?",
     continueQSelf: "What do you want to CONTINUE doing?",
-    openPlaceholder: "Optional — write as much or as little as you like.",
+    openPlaceholder: "Optional - write as much or as little as you like.",
     criticalTitle: "Which competencies matter most for this role?",
     tenureTitle: "How long have you worked with this person?",
-    tenureLead: "Optional — adds context to your feedback.",
+    tenureLead: "Optional - adds context to your feedback.",
     tenure: { less_than_6mo: "< 6 months", six_mo_to_2yr: "6 mo – 2 yr", two_to_5yr: "2 – 5 yr", over_5yr: "5 yr +" },
     submit: "Submit my feedback",
     submitting: "Submitting…",
@@ -107,12 +107,12 @@ const G = {
     notePlaceholder: "أي شيء تودّ إضافته بكلماتك…",
     saving: "جارٍ الحفظ…",
     saved: "تم الحفظ",
-    failed: "تعذّر الحفظ — ستتم إعادة المحاولة",
-    offline: "أنت غير متصل — ستُحفظ الإجابات عند عودة الاتصال",
+    failed: "تعذّر الحفظ - ستتم إعادة المحاولة",
+    offline: "أنت غير متصل - ستُحفظ الإجابات عند عودة الاتصال",
     milestoneQuarter: "بداية رائعة! 🎯",
     milestoneHalf: "في منتصف الطريق 🔥",
     milestoneThree: "أوشكت على الانتهاء 💪",
-    finalTitle: "الخطوة الأخيرة — بكلماتك الخاصة",
+    finalTitle: "الخطوة الأخيرة - بكلماتك الخاصة",
     finalLead: "أهم جزء في أي تقييم 360. يمكنك تجاوز أي سؤال.",
     startQ: "ما الذي ينبغي أن يبدأ بفعله؟",
     stopQ: "ما الذي ينبغي أن يتوقّف عن فعله؟",
@@ -120,10 +120,10 @@ const G = {
     startQSelf: "ما الذي تريد أن تبدأ بفعله؟",
     stopQSelf: "ما الذي تريد أن تتوقّف عن فعله؟",
     continueQSelf: "ما الذي تريد أن تستمر في فعله؟",
-    openPlaceholder: "اختياري — اكتب بقدر ما تشاء.",
+    openPlaceholder: "اختياري - اكتب بقدر ما تشاء.",
     criticalTitle: "ما الكفايات الأكثر أهمية لهذا الدور؟",
     tenureTitle: "منذ متى تعمل مع هذا الشخص؟",
-    tenureLead: "اختياري — يضيف سياقًا لرأيك.",
+    tenureLead: "اختياري - يضيف سياقًا لرأيك.",
     tenure: { less_than_6mo: "< 6 أشهر", six_mo_to_2yr: "6 أشهر – سنتان", two_to_5yr: "سنتان – 5 سنوات", over_5yr: "5 سنوات +" },
     submit: "إرسال رأيي",
     submitting: "جارٍ الإرسال…",
@@ -418,7 +418,7 @@ export function GamifiedRaterForm({ ctx, preview = false }: { ctx: RaterContext;
       )}
       {preview && (
         <div className="bg-primary/10 text-primary px-4 py-2 text-xs text-center border-b border-primary/20 font-medium">
-          {rtl ? "معاينة — لا يُحفظ أي شيء تنقر عليه هنا" : "Preview — nothing you tap here is saved"}
+          {rtl ? "معاينة - لا يُحفظ أي شيء تنقر عليه هنا" : "Preview - nothing you tap here is saved"}
         </div>
       )}
 

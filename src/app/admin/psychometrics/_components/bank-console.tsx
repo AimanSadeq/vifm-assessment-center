@@ -271,7 +271,7 @@ function ScaleCard({ scale }: { scale: ScaleReadiness }) {
         <span><strong className="text-dark">{scale.approved}</strong> approved</span>
         <span>· {scale.counts.draft} draft</span>
         <span>· {scale.counts.in_review} in review</span>
-        <span>· α {scale.alpha == null ? "—" : scale.alpha.toFixed(2)}{scale.alphaN ? ` (n=${scale.alphaN})` : ""}</span>
+        <span>· α {scale.alpha == null ? "-" : scale.alpha.toFixed(2)}{scale.alphaN ? ` (n=${scale.alphaN})` : ""}</span>
         <span>· norm n {scale.normN}</span>
       </div>
       <div className="flex flex-wrap gap-1.5">
@@ -306,7 +306,7 @@ function ScaleCard({ scale }: { scale: ScaleReadiness }) {
         </ul>
       )}
       {scale.items.length === 0 && (
-        <p className="text-xs text-slate-400">No bank items yet — AI-draft a batch or author them manually. Until a scale clears all three gates it stays Tier-1 indicative.</p>
+        <p className="text-xs text-slate-400">No bank items yet - AI-draft a batch or author them manually. Until a scale clears all three gates it stays Tier-1 indicative.</p>
       )}
     </div>
   );
@@ -362,7 +362,7 @@ function Ipip50Banner({ seeded }: { seeded: boolean }) {
         <span className="text-slate-500">
           {seeded
             ? "· seeded into the bank (10 items × 5 traits, approved)"
-            : "· public-domain Big-Five markers, 10 items/trait — higher reliability than the 20-item short form"}
+            : "· public-domain Big-Five markers, 10 items/trait - higher reliability than the 20-item short form"}
         </span>
       </div>
       {seeded ? (

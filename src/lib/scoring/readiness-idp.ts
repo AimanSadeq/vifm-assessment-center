@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────
-// Slice 5 — readiness → IDP linkage.
+// Slice 5 - readiness → IDP linkage.
 //
 // Turns a readiness verdict into a development-plan draft on Reflect's
 // reflect_idps (keyed by reflect_participants.id, resolved via the
@@ -34,7 +34,7 @@ async function resolveParticipantId(
       .limit(1);
     if (data && data.length) return data[0].id as string;
   } catch {
-    /* candidate_id column not migrated — fall back to email */
+    /* candidate_id column not migrated - fall back to email */
   }
   if (email) {
     const { data } = await sb

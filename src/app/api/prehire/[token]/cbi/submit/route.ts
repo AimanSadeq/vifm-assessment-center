@@ -29,7 +29,7 @@ export async function POST(_req: Request, { params }: { params: { token: string 
   const score = await scoreCbiInterview({
     competency: {
       id: "prehire-cbi",
-      name: `${ctx.requisition.title} — behavioural competency`,
+      name: `${ctx.requisition.title} - behavioural competency`,
       description: `Behavioural competency for the ${ctx.requisition.title} role.`,
       positiveIndicators: [],
       negativeIndicators: [],

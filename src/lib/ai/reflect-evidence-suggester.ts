@@ -52,7 +52,7 @@ export async function suggestReflectValidationEvidence(
   const menu = relevantMenu(MENU, ["*"]);
   const user = buildUserPrompt({
     contextLines: [
-      { k: "Instrument", v: "Reflect 360 — multi-rater behavioural feedback" },
+      { k: "Instrument", v: "Reflect 360 - multi-rater behavioural feedback" },
       { k: "Framework", v: input.framework_name || "(unspecified)" },
       { k: "Competency", v: input.competency_name || "(unspecified)" },
       { k: "Definition", v: input.competency_description || "(no description on file)" },

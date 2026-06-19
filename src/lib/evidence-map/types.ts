@@ -21,8 +21,8 @@ export type InstrumentMeta = { key: InstrumentKey; label: string; href?: string 
 
 export const INSTRUMENTS: readonly InstrumentMeta[] = [
   { key: "ac", label: "Assessment Center", href: "/admin/ac-evidence" },
-  { key: "arc_org", label: "ARC — Org", href: "/ara/admin/questions" },
-  { key: "arc_ind", label: "ARC — Individual", href: "/ara/admin/questions" },
+  { key: "arc_org", label: "ARC - Org", href: "/ara/admin/questions" },
+  { key: "arc_ind", label: "ARC - Individual", href: "/ara/admin/questions" },
   { key: "fluent", label: "Fluent (English)", href: "/admin/evidence/fluent" },
   { key: "technical", label: "Technical Cert", href: "/admin/evidence/technical" },
   { key: "reflect", label: "Reflect 360", href: "/admin/evidence/reflect" },

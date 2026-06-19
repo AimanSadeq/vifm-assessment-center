@@ -27,7 +27,7 @@ export default async function AdminDashboardPage() {
   const rel = repR.data?.filter((x) => x.status === "released").length ?? 0;
 
   // "Add candidates" / "Assign assessors" must land on a page that actually has
-  // those controls — an engagement DETAIL (its candidates table + Add Candidate
+  // those controls - an engagement DETAIL (its candidates table + Add Candidate
   // dialog), not the engagements LIST (whose CTA is "+ New project", which read
   // as "add a new project"). Deep-link to the most-recent engagement whenever any
   // exist; only fall back to the list when there are none (create the first).

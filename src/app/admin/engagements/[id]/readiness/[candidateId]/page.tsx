@@ -49,7 +49,7 @@ export default async function ReadinessReportPage({ params }: Props) {
   const tone = TIER_TONE[meta.tone];
 
   const flagLabel = (f: SelfAwarenessFlag) => (f ? t(`readinessReport.flag.${f}`) : "");
-  const num = (n: number | null, d = 2) => (n == null ? "—" : n.toFixed(d));
+  const num = (n: number | null, d = 2) => (n == null ? "-" : n.toFixed(d));
 
   const blindSpots = r.competencies.filter((c) => c.selfFlag === "blind_spot");
   const hiddenStrengths = r.competencies.filter((c) => c.selfFlag === "hidden_strength");
@@ -114,7 +114,7 @@ export default async function ReadinessReportPage({ params }: Props) {
             <Stat
               icon={<TrendingUp className="h-4 w-4" />}
               label={t("readinessReport.gap")}
-              value={r.overallGap == null ? "—" : (r.overallGap >= 0 ? "+" : "") + r.overallGap.toFixed(2)}
+              value={r.overallGap == null ? "-" : (r.overallGap >= 0 ? "+" : "") + r.overallGap.toFixed(2)}
             />
             <Stat
               icon={<Eye className="h-4 w-4" />}
@@ -261,7 +261,7 @@ export default async function ReadinessReportPage({ params }: Props) {
                         c.gap == null ? "" : c.gap >= 0 ? "text-emerald-700" : c.gap <= -1 ? "text-rose-700" : "text-amber-700"
                       }`}
                     >
-                      {c.gap == null ? "—" : (c.gap >= 0 ? "+" : "") + c.gap.toFixed(2)}
+                      {c.gap == null ? "-" : (c.gap >= 0 ? "+" : "") + c.gap.toFixed(2)}
                     </td>
                     <td className="px-2 py-2 text-end tabular-nums text-muted-foreground">{num(c.selfMean)}</td>
                     <td className="px-2 py-2">
@@ -274,7 +274,7 @@ export default async function ReadinessReportPage({ params }: Props) {
                           {flagLabel(c.selfFlag)}
                         </span>
                       ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
+                        <span className="text-xs text-muted-foreground">-</span>
                       )}
                     </td>
                   </tr>
@@ -290,7 +290,7 @@ export default async function ReadinessReportPage({ params }: Props) {
         </CardContent>
       </Card>
 
-      {/* Slice 5 — readiness → IDP */}
+      {/* Slice 5 - readiness → IDP */}
       {r.status !== "insufficient_data" && (
         <Card>
           <CardHeader>

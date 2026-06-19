@@ -36,7 +36,7 @@ type TierKey = "single" | "programme" | "partnership";
 
 // User-facing strings carry i18n key suffixes resolved against
 // acTools.engage.* in the component body (where the server `tr` binding
-// is available — named `tr` because `t` is used as the .map() iterator
+// is available - named `tr` because `t` is used as the .map() iterator
 // variable throughout this file). Non-text fields (href, tone, icon) stay.
 const TIERS: Array<{
   key: TierKey;

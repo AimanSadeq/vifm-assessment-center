@@ -62,7 +62,7 @@ export async function RecommendedCoursesPanel({
     );
   }
 
-  // Top match = 100%; the rest are shown relative to it (display only — the
+  // Top match = 100%; the rest are shown relative to it (display only - the
   // ranking and the ★ High-fit badge still use the raw fit score).
   const topScore = Math.max(0, ...courses.map((c) => c.total_score));
 

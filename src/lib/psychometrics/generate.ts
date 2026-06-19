@@ -1,4 +1,4 @@
-// VIFM Psychometrics — test generation (Tier 1 indicative).
+// VIFM Psychometrics - test generation (Tier 1 indicative).
 //   personality → public-domain Mini-IPIP (always available, no AI/seed needed).
 //   cognitive   → Claude-generated MCQs when ANTHROPIC_API_KEY is set, else a
 //                 deterministic bilingual fallback deck. Items are server-held;
@@ -23,11 +23,11 @@ const COGNITIVE_DECK: DeckItem[] = [
   { scale: "verbal", stem_en: "All managers attended. Some managers are directors. Therefore: some directors attended.", stem_ar: "حضر جميع المديرين. بعض المديرين هم رؤساء أقسام. إذن: بعض رؤساء الأقسام حضروا.", options_en: ["True", "False", "Cannot say"], options_ar: ["صحيح", "خطأ", "لا يمكن تحديده"], correct: 0, difficulty: "medium" },
   { scale: "verbal", stem_en: "The policy applies only to full-time staff. Sara is part-time. Therefore the policy applies to Sara.", stem_ar: "تنطبق السياسة على الموظفين المتفرّغين فقط. سارة موظفة بدوام جزئي. إذن تنطبق عليها السياسة.", options_en: ["True", "False", "Cannot say"], options_ar: ["صحيح", "خطأ", "لا يمكن تحديده"], correct: 1, difficulty: "hard" },
   { scale: "verbal", stem_en: "Choose the word closest in meaning to \"mitigate\":", stem_ar: "اختر الكلمة الأقرب معنى إلى «mitigate» (يخفّف):", options_en: ["worsen", "reduce", "ignore", "delay"], options_ar: ["يزيد سوءًا", "يقلّل", "يتجاهل", "يؤجّل"], correct: 1, difficulty: "easy" },
-  // Inductive — infer the underlying rule from a pattern / series.
+  // Inductive - infer the underlying rule from a pattern / series.
   { scale: "inductive", stem_en: "What comes next? 2, 4, 8, 16, ?", stem_ar: "ما العدد التالي؟ 2، 4، 8، 16، ؟", options_en: ["24", "32", "20", "18"], options_ar: ["24", "32", "20", "18"], correct: 1, difficulty: "easy" },
   { scale: "inductive", stem_en: "What comes next? 1, 4, 9, 16, ?", stem_ar: "ما العدد التالي؟ 1، 4، 9، 16، ؟", options_en: ["20", "25", "24", "36"], options_ar: ["20", "25", "24", "36"], correct: 1, difficulty: "medium" },
   { scale: "inductive", stem_en: "Which number does NOT fit the pattern? 4, 9, 16, 20, 25", stem_ar: "أي رقم لا يتبع النمط؟ 4، 9، 16، 20، 25", options_en: ["9", "16", "20", "25"], options_ar: ["9", "16", "20", "25"], correct: 2, difficulty: "hard" },
-  // Deductive — apply the given rules/premises to a necessarily valid conclusion.
+  // Deductive - apply the given rules/premises to a necessarily valid conclusion.
   { scale: "deductive", stem_en: "All auditors are analysts. No analyst is a trainee. Therefore: no auditor is a trainee.", stem_ar: "كل المدققين محللون. لا أحد من المحللين متدرّب. إذن: لا أحد من المدققين متدرّب.", options_en: ["Valid", "Invalid", "Cannot say"], options_ar: ["صحيح", "غير صحيح", "لا يمكن تحديده"], correct: 0, difficulty: "medium" },
   { scale: "deductive", stem_en: "If the report is late, the bonus is withheld. The bonus was paid. Therefore: the report was not late.", stem_ar: "إذا تأخّر التقرير، يُحجب المكافأة. دُفعت المكافأة. إذن: لم يتأخّر التقرير.", options_en: ["Valid", "Invalid", "Cannot say"], options_ar: ["صحيح", "غير صحيح", "لا يمكن تحديده"], correct: 0, difficulty: "hard" },
   { scale: "deductive", stem_en: "Three desks in a row: A is left of B; C is right of B. Who is in the middle?", stem_ar: "ثلاثة مكاتب في صف: A على يسار B؛ C على يمين B. من في الوسط؟", options_en: ["A", "B", "C", "Cannot say"], options_ar: ["A", "B", "C", "لا يمكن تحديده"], correct: 1, difficulty: "easy" },

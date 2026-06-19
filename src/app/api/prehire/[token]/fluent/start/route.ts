@@ -1,10 +1,10 @@
 /**
- * Pre-Hire Fluent — start the English placement stage.
+ * Pre-Hire Fluent - start the English placement stage.
  *
  * POST -> { test, tts } where `test` is the answer-key-STRIPPED placement test
  * for the browser. The full test (with the answer key + listening scripts) is
  * persisted server-side in prehire_stage_results.detail.fullTest and never
- * reaches the client — integrity matters for a hiring screen.
+ * reaches the client - integrity matters for a hiring screen.
  *
  * Mirrors the quiz/start contract: returns { done: true } if already completed,
  * resumes an in-progress attempt with the SAME test (no regeneration), or

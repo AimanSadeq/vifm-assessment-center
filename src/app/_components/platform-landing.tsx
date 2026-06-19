@@ -221,14 +221,14 @@ const T = {
     eyebrow: "VIFM Talent Intelligence Platform",
     h1a: "Build the talent the",
     h1b: "future demands.",
-    sub: "VIFM is a finance & management institute for the GCC. Our platform spans the full talent lifecycle — Talent Acquisition to screen and select, Talent Management to develop and retain — with bilingual assessments, verifiable credentials, and learning mapped to the gaps our diagnostics reveal.",
+    sub: "VIFM is a finance & management institute for the GCC. Our platform spans the full talent lifecycle - Talent Acquisition to screen and select, Talent Management to develop and retain - with bilingual assessments, verifiable credentials, and learning mapped to the gaps our diagnostics reveal.",
     ctaBrowse: "Browse the catalogue",
     ctaLearning: "My learning",
     trust: ["Bilingual English / Arabic", "Verifiable credentials", "AI-supported learning"],
     features: {
       catalogue: {
         title: "Self-paced programmes",
-        body: "A catalogue spanning finance, investment, leadership, analytics and AI — learn at your own pace, in English or Arabic.",
+        body: "A catalogue spanning finance, investment, leadership, analytics and AI - learn at your own pace, in English or Arabic.",
       },
       checks: {
         title: "AI knowledge-checks",
@@ -236,7 +236,7 @@ const T = {
       },
       credentials: {
         title: "Verifiable credentials",
-        body: "Finish a programme and earn a credential anyone can verify by its code — no account required.",
+        body: "Finish a programme and earn a credential anyone can verify by its code - no account required.",
       },
       mapped: {
         title: "Mapped to your gaps",
@@ -244,10 +244,10 @@ const T = {
       },
     },
     servicesHeading: "Start with a diagnosis",
-    servicesSub: "Two solution families cover the full talent lifecycle — pick where to focus, and the platform takes it from diagnosis to development.",
+    servicesSub: "Two solution families cover the full talent lifecycle - pick where to focus, and the platform takes it from diagnosis to development.",
     pillars: {
-      acquire: { title: "Talent Acquisition Solutions", sub: "Assess the people you bring in — screen, place, and select with defensible, bilingual instruments." },
-      manage: { title: "Talent Management Solutions", sub: "Grow the people you have — develop, benchmark, and certify across the organisation." },
+      acquire: { title: "Talent Acquisition Solutions", sub: "Assess the people you bring in - screen, place, and select with defensible, bilingual instruments." },
+      manage: { title: "Talent Management Solutions", sub: "Grow the people you have - develop, benchmark, and certify across the organisation." },
     },
     footerOrg: "Virginia Institute of Finance and Management",
     footerConfidential: "Confidential - for VIFM and engaged clients only.",
@@ -261,8 +261,8 @@ const T = {
       cognitive: { tagline: "Cognitive ability", name: "Cognitive", description: "Indicative numerical, verbal, inductive and deductive reasoning - a foundational read on aptitude. Server-scored, admin-run and bilingual.", tooltip: "Best for a foundational read on reasoning and aptitude." },
       persona: { tagline: "Behavioural self-assessment", name: "Persona", description: `Self-ratings across the ${COMPETENCY_COUNT} competencies - the same framework as the 360. The 'self' view that feeds Succession Readiness.`, tooltip: `Best for fast behavioural self-insight on the ${COMPETENCY_COUNT} competencies.` },
       readiness: { tagline: "Self + 360 vs the role", name: "Succession Readiness", description: "Combines Persona (self) and a Reflect 360 (others) against a target role to produce a readiness tier, gaps, blind spots and a development plan.", tooltip: "Best for judging whether someone is ready for a target role." },
-      prehire: { tagline: "Pre-employment screening", name: "Pre-Hire", description: "Screen and shortlist applicants before you hire: a configurable funnel of competency quiz, English placement and an AI behavioural interview, with a weighted composite, adverse-impact monitoring and an audit trail. The score is a signal — a person always decides.", tooltip: "Best for shortlisting applicants at scale, defensibly." },
-      academy: { tagline: "Learning & delivery", name: "VIFM Academy", description: "Self-paced finance & management programmes that turn each diagnosis into action — AI knowledge-checks per lesson and a verifiable completion credential, in English or Arabic.", tooltip: "Best for closing development gaps with guided, credentialed learning." },
+      prehire: { tagline: "Pre-employment screening", name: "Pre-Hire", description: "Screen and shortlist applicants before you hire: a configurable funnel of competency quiz, English placement and an AI behavioural interview, with a weighted composite, adverse-impact monitoring and an audit trail. The score is a signal - a person always decides.", tooltip: "Best for shortlisting applicants at scale, defensibly." },
+      academy: { tagline: "Learning & delivery", name: "VIFM Academy", description: "Self-paced finance & management programmes that turn each diagnosis into action - AI knowledge-checks per lesson and a verifiable completion credential, in English or Arabic.", tooltip: "Best for closing development gaps with guided, credentialed learning." },
     },
   },
   ar: {
@@ -278,14 +278,14 @@ const T = {
     eyebrow: "منصّة VIFM لذكاء المواهب",
     h1a: "ابنِ المواهب التي",
     h1b: "يتطلّبها المستقبل.",
-    sub: "VIFM معهد متخصّص في التمويل والإدارة لمنطقة الخليج. تغطّي منصّتنا دورة المواهب الكاملة — استقطاب المواهب للفرز والاختيار، وإدارة المواهب للتطوير والاستبقاء — مع تقييمات ثنائية اللغة، وشهادات قابلة للتحقّق، وتعلّم مرتبط بالفجوات التي تكشفها أدواتنا.",
+    sub: "VIFM معهد متخصّص في التمويل والإدارة لمنطقة الخليج. تغطّي منصّتنا دورة المواهب الكاملة - استقطاب المواهب للفرز والاختيار، وإدارة المواهب للتطوير والاستبقاء - مع تقييمات ثنائية اللغة، وشهادات قابلة للتحقّق، وتعلّم مرتبط بالفجوات التي تكشفها أدواتنا.",
     ctaBrowse: "تصفّح دليل البرامج",
     ctaLearning: "مساحة التعلّم",
     trust: ["ثنائية اللغة: الإنجليزية / العربية", "شهادات قابلة للتحقّق", "تعلّم مدعوم بالذكاء الاصطناعي"],
     features: {
       catalogue: {
         title: "برامج ذاتية الوتيرة",
-        body: "دليل يغطّي التمويل والاستثمار والقيادة والتحليلات والذكاء الاصطناعي — تعلّم بالوتيرة التي تناسبك، بالعربية أو الإنجليزية.",
+        body: "دليل يغطّي التمويل والاستثمار والقيادة والتحليلات والذكاء الاصطناعي - تعلّم بالوتيرة التي تناسبك، بالعربية أو الإنجليزية.",
       },
       checks: {
         title: "اختبارات معرفية بالذكاء الاصطناعي",
@@ -293,7 +293,7 @@ const T = {
       },
       credentials: {
         title: "شهادات قابلة للتحقّق",
-        body: "أكمل برنامجًا واحصل على شهادة يمكن لأي شخص التحقّق منها برمزها — دون حساب.",
+        body: "أكمل برنامجًا واحصل على شهادة يمكن لأي شخص التحقّق منها برمزها - دون حساب.",
       },
       mapped: {
         title: "مرتبطة بفجواتك",
@@ -301,10 +301,10 @@ const T = {
       },
     },
     servicesHeading: "ابدأ بالتشخيص",
-    servicesSub: "عائلتا حلول تغطّيان دورة المواهب الكاملة — اختر أين تركّز، وتتولّى المنصّة الباقي من التشخيص إلى التطوير.",
+    servicesSub: "عائلتا حلول تغطّيان دورة المواهب الكاملة - اختر أين تركّز، وتتولّى المنصّة الباقي من التشخيص إلى التطوير.",
     pillars: {
-      acquire: { title: "حلول استقطاب المواهب", sub: "قيّم من تستقطبهم — فرز وتحديد مستوى واختيار بأدوات موثوقة وثنائية اللغة." },
-      manage: { title: "حلول إدارة المواهب", sub: "طوّر من لديك — تطوير ومقارنة مرجعية واعتماد على مستوى المؤسسة." },
+      acquire: { title: "حلول استقطاب المواهب", sub: "قيّم من تستقطبهم - فرز وتحديد مستوى واختيار بأدوات موثوقة وثنائية اللغة." },
+      manage: { title: "حلول إدارة المواهب", sub: "طوّر من لديك - تطوير ومقارنة مرجعية واعتماد على مستوى المؤسسة." },
     },
     footerOrg: "معهد فرجينيا للتمويل والإدارة",
     footerConfidential: "سري - لـ VIFM والعملاء المتعاقدين فقط.",
@@ -314,12 +314,12 @@ const T = {
       ara: { tagline: "تشخيص بوصلة الجاهزية", name: "الجاهزية للذكاء الاصطناعي", description: "تشخيص لجاهزية المؤسسة للذكاء الاصطناعي عبر ثماني ركائز، مُعايَر وفق أُطُر الإمارات والسعودية، مع تقارير ثنائية اللغة جاهزة للعرض على مجلس الإدارة، ولمحة شخصية مجانية.", tooltip: "الأنسب لقياس جاهزية مؤسستك للذكاء الاصطناعي قبل الاستثمار." },
       reflect: { tagline: "تغذية راجعة قيادية", name: "ريفلكت 360", description: "تغذية راجعة قيادية بزاوية 360 درجة مبنية على قيمكم وكفاءاتكم، مع خطة تطوير لكل قائد وعرض شامل لثقافة المؤسسة بأكملها.", tooltip: "الأنسب لتطوير القادة عبر تغذية راجعة صريحة ومتعددة المصادر." },
       fluent: { tagline: "تحديد مستوى الإنجليزية بالذكاء الاصطناعي", name: "فلوينت", description: "اختبار لتحديد مستوى الإنجليزية عبر أربع مهارات وفق إطار CEFR: قراءة واستماع مُولّدان بالذكاء الاصطناعي، وكتابة وتحدّث يُقيّمان وفق معايير محدّدة، مع مستوى تقريبي وملاحظات خلال دقائق.", tooltip: "الأنسب لتحديد مستوى الإنجليزية بسرعة وموثوقية وعلى نطاق واسع." },
-      technical: { tagline: "الكفاءة التقنية", name: "التقييم التقني", description: "قياس الكفاءة التقنية عبر عشرة مجالات مالية — من النمذجة المالية إلى الخزينة والمصارف والتحليلات والذكاء الاصطناعي. بنود مُراجَعة من الخبراء ودرجات قطع موثّقة تمنح اعتماد كفاءة قابلاً للتحقق، مع تصنيف استرشادي ريثما يكتمل بنك أسئلة المجال.", tooltip: "الأنسب لاعتماد المهارات المالية الوظيفية بموثوقية." },
+      technical: { tagline: "الكفاءة التقنية", name: "التقييم التقني", description: "قياس الكفاءة التقنية عبر عشرة مجالات مالية - من النمذجة المالية إلى الخزينة والمصارف والتحليلات والذكاء الاصطناعي. بنود مُراجَعة من الخبراء ودرجات قطع موثّقة تمنح اعتماد كفاءة قابلاً للتحقق، مع تصنيف استرشادي ريثما يكتمل بنك أسئلة المجال.", tooltip: "الأنسب لاعتماد المهارات المالية الوظيفية بموثوقية." },
       cognitive: { tagline: "القدرة الذهنية", name: "القدرات الذهنية", description: "مقاييس استرشادية للاستدلال العددي واللفظي والمجرّد - قراءة تأسيسية للقدرات. تُصحَّح على الخادم، يُجريها المسؤول، وثنائية اللغة.", tooltip: "الأنسب لقراءة تأسيسية للاستدلال والقدرات." },
       persona: { tagline: "تقييم سلوكي ذاتي", name: "بيرسونا", description: `تقييم ذاتي عبر الكفاءات الـ${COMPETENCY_COUNT} - الإطار نفسه المستخدم في تقييم 360. تمثّل رؤية «الذات» التي تغذّي جاهزية التعاقب.`, tooltip: `الأنسب لرؤية ذاتية سلوكية سريعة عبر الكفاءات الـ${COMPETENCY_COUNT}.` },
       readiness: { tagline: "الذات + 360 مقابل الدور", name: "جاهزية التعاقب", description: "تجمع بيرسونا (الذات) وتقييم ريفلكت 360 (الآخرون) مقابل دور مستهدف لإنتاج مستوى جاهزية وفجوات ونقاط عمياء وخطة تطوير.", tooltip: "الأنسب للحكم على جاهزية الشخص لدور مستهدف." },
-      prehire: { tagline: "الفرز قبل التوظيف", name: "ما قبل التوظيف", description: "افرز المرشّحين وأعدّ القائمة المختصرة قبل التوظيف: مسار قابل للتخصيص يجمع اختبار الكفاءات وتحديد مستوى الإنجليزية ومقابلة سلوكية بالذكاء الاصطناعي، مع درجة مركّبة مرجّحة، ومراقبة الأثر التمييزي، وسجل تدقيق كامل. الدرجة إشارة استرشادية — والقرار النهائي لإنسان دائمًا.", tooltip: "الأنسب لإعداد القائمة المختصرة للمتقدّمين على نطاق واسع وبموثوقية." },
-      academy: { tagline: "التعلّم والتقديم", name: "أكاديمية VIFM", description: "برامج ذاتية الوتيرة في التمويل والإدارة تُحوّل كل تشخيص إلى إجراء — اختبارات معرفية بالذكاء الاصطناعي لكل درس وشهادة إتمام قابلة للتحقّق، بالعربية أو الإنجليزية.", tooltip: "الأنسب لمعالجة فجوات التطوير عبر تعلّم موجّه وموثّق بشهادة." },
+      prehire: { tagline: "الفرز قبل التوظيف", name: "ما قبل التوظيف", description: "افرز المرشّحين وأعدّ القائمة المختصرة قبل التوظيف: مسار قابل للتخصيص يجمع اختبار الكفاءات وتحديد مستوى الإنجليزية ومقابلة سلوكية بالذكاء الاصطناعي، مع درجة مركّبة مرجّحة، ومراقبة الأثر التمييزي، وسجل تدقيق كامل. الدرجة إشارة استرشادية - والقرار النهائي لإنسان دائمًا.", tooltip: "الأنسب لإعداد القائمة المختصرة للمتقدّمين على نطاق واسع وبموثوقية." },
+      academy: { tagline: "التعلّم والتقديم", name: "أكاديمية VIFM", description: "برامج ذاتية الوتيرة في التمويل والإدارة تُحوّل كل تشخيص إلى إجراء - اختبارات معرفية بالذكاء الاصطناعي لكل درس وشهادة إتمام قابلة للتحقّق، بالعربية أو الإنجليزية.", tooltip: "الأنسب لمعالجة فجوات التطوير عبر تعلّم موجّه وموثّق بشهادة." },
     },
   },
 } as const;

@@ -20,10 +20,10 @@ async function loadEngagementOptions(): Promise<EngagementOption[]> {
     for (const c of cands ?? []) {
       const eid = c.engagement_id as string;
       if (!byEng.has(eid)) byEng.set(eid, []);
-      byEng.get(eid)!.push({ id: c.id as string, full_name: (c.full_name as string) ?? "—" });
+      byEng.get(eid)!.push({ id: c.id as string, full_name: (c.full_name as string) ?? "-" });
     }
     return (engs ?? [])
-      .map((e) => ({ id: e.id as string, name: (e.name as string) ?? "—", candidates: byEng.get(e.id as string) ?? [] }))
+      .map((e) => ({ id: e.id as string, name: (e.name as string) ?? "-", candidates: byEng.get(e.id as string) ?? [] }))
       .filter((e) => e.candidates.length > 0);
   } catch {
     return [];
@@ -31,7 +31,7 @@ async function loadEngagementOptions(): Promise<EngagementOption[]> {
 }
 
 /**
- * Cognitive Ability runner (Tier 1 indicative) — numerical / verbal / inductive /
+ * Cognitive Ability runner (Tier 1 indicative) - numerical / verbal / inductive /
  * deductive reasoning. A standalone service. Self-served; an admin can bind a result to a
  * candidate/engagement via ?candidateId=…&engagementId=… (mirrors Fluent) or the
  * inline picker.

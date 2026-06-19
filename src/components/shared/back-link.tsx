@@ -9,7 +9,7 @@ type Props = {
   label: string;
   /**
    * When true, go back to the previous page in history instead of always
-   * navigating to `href` — so "Back" returns wherever the user came from
+   * navigating to `href` - so "Back" returns wherever the user came from
    * (e.g. an assessment results page), not a fixed destination. Falls back to
    * `href` when there's no in-app history (page opened directly / in a new tab).
    */

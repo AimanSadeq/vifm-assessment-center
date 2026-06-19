@@ -265,7 +265,7 @@ export async function createReflectEngagement(
       return { ok: false, error: fwErr?.message ?? "Could not create framework" };
     }
 
-    // Run Claude. extractBehaviorsFromValues never throws — it returns null
+    // Run Claude. extractBehaviorsFromValues never throws - it returns null
     // (no AI key / AI error) or [] (empty/unparseable). Track how many
     // competencies we actually seed so we can detect a no-op.
     const proposals = await extractBehaviorsFromValues({

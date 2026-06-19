@@ -1,9 +1,9 @@
-// VIFM Psychometrics Tier 2 — calibration math (pure, dependency-free).
+// VIFM Psychometrics Tier 2 - calibration math (pure, dependency-free).
 //
 // The Tier-1 → Tier-2 substrate: internal-consistency reliability (Cronbach's α),
 // norm-referencing (raw → z → percentile → sten against a norm group), and the
 // honest gate that decides whether an instrument is still INDICATIVE (Tier 1) or
-// CALIBRATED (Tier 2). None of this runs until pilot/norm data exists — with no
+// CALIBRATED (Tier 2). None of this runs until pilot/norm data exists - with no
 // norms, results stay exactly Tier-1 indicative.
 
 import type { PsyResult, ScaleScore } from "./scoring";
@@ -74,7 +74,7 @@ export function instrumentTier(ev: { approvedPerScale: number; minAlpha: number;
 
 /**
  * Norm-reference a computed result. A norm is only APPLIED when its sample clears
- * the minimum (PSY_TIER.minNormN) — sub-threshold pilot norms are ignored, so
+ * the minimum (PSY_TIER.minNormN) - sub-threshold pilot norms are ignored, so
  * they can accumulate in psy_norms without ever leaking premature percentiles to
  * a taker. A scale with an adequate norm gets z + percentile + norm-referenced
  * sten; the result is `calibrated` only when EVERY scale (and g, if present) is

@@ -1,8 +1,8 @@
-// VIFM Psychometrics — scoring. Pure + dependency-free (server + client safe).
+// VIFM Psychometrics - scoring. Pure + dependency-free (server + client safe).
 // Cognitive: % correct per subtest → indicative band + a g composite.
 // Personality: 1–5 Likert mean per trait (reverse-scored) → band + sten, with
 // lightweight validity flags (social desirability + inconsistency). Tier 1 is
-// INDICATIVE — bands are based on raw scores, not local norms.
+// INDICATIVE - bands are based on raw scores, not local norms.
 
 import {
   type PsyKind, type PsyBand,
@@ -41,8 +41,8 @@ export type ScaleScore = {
   band: PsyBand;
   bandLabel: string;
   sten?: number;        // personality (Tier 1) / norm-referenced (Tier 2)
-  z?: number;           // Tier 2 — standard score vs the norm group
-  percentile?: number;  // Tier 2 — percentile within the norm group
+  z?: number;           // Tier 2 - standard score vs the norm group
+  percentile?: number;  // Tier 2 - percentile within the norm group
 };
 
 export type PsyValidity = { socialDesirability: number; inconsistency: number; flag: boolean };
@@ -54,7 +54,7 @@ export type PsyResult = {
   validity?: PsyValidity;
   answeredCount: number;
   totalCount: number;
-  /** Tier 2 — set to "calibrated" once norm-referenced; absent/"indicative" otherwise. */
+  /** Tier 2 - set to "calibrated" once norm-referenced; absent/"indicative" otherwise. */
   tier?: "indicative" | "calibrated";
 };
 

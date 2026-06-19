@@ -5,7 +5,7 @@ import { GuidedStart } from "./_components/guided-start";
 export const dynamic = "force-dynamic";
 
 /**
- * Guided Start — the additive "front door". It does NOT replace any module's own
+ * Guided Start - the additive "front door". It does NOT replace any module's own
  * create flow; it offers a choice at the top (guided wizard vs. set it up myself)
  * and, in the wizard branch, diagnoses the requirement and creates inline
  * (reusing the module's server action) or hands off to that module's create page.
@@ -14,7 +14,7 @@ export default async function StartPage() {
   const supabase = await createClient();
   const svc = createServiceClient();
   // Loaded for the inline create paths. Each is best-effort so a missing
-  // module/table can't break the wizard — that path just degrades to a handoff.
+  // module/table can't break the wizard - that path just degrades to a handoff.
   const [
     orgsRes, profilesRes, araOrgsRes, araVersionRes, reflectTplRes,
     domainsRes, clustersRes, compsRes, exercisesRes,

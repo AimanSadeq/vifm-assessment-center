@@ -28,8 +28,10 @@ type ReadingItem = { id: string; passage: string; question: string; options: str
 type ListeningItem = { id: string; script?: string; question: string; options: string[]; cefr: Cefr };
 type WritingTask = { id: string; prompt_en: string; prompt_ar: string | null; cefr_target: Cefr; min_words: number };
 type SpeakingTask = { id: string; prompt_en: string; prompt_ar: string | null; cefr_target: Cefr; min_seconds: number };
+// writing / speaking are optional: a requisition can drop a productive skill
+// (CAL-PRE-503), so the served test omits them. Sections render conditionally.
 type FluentTest = {
-  reading: ReadingItem[]; listening: ListeningItem[]; writing: WritingTask; speaking: SpeakingTask;
+  reading: ReadingItem[]; listening: ListeningItem[]; writing?: WritingTask; speaking?: SpeakingTask;
   ai_generated: boolean; tts?: boolean;
 };
 
@@ -264,10 +266,14 @@ export function FluentStage({ token, onDone }: { token: string; onDone: () => vo
 
   const receptive = test ? [...test.reading, ...test.listening] : [];
   const allAnswered = receptive.length > 0 && receptive.every((r) => answers[r.id] != null);
+  // Only require a productive response when that skill was actually served
+  // (CAL-PRE-503 partial placement).
+  const writingOk = !test?.writing || wordCount(writing) >= MIN_WORDS;
+  const speakingOk = !test?.speaking || wordCount(transcript) >= MIN_WORDS;
   const canSubmit =
     allAnswered &&
-    wordCount(writing) >= MIN_WORDS &&
-    wordCount(transcript) >= MIN_WORDS &&
+    writingOk &&
+    speakingOk &&
     !transcribing &&
     !recording;
 
@@ -296,7 +302,8 @@ export function FluentStage({ token, onDone }: { token: string; onDone: () => vo
 
       {phase === "test" && test && (
         <>
-          {/* Reading */}
+          {/* Reading (rendered only when the skill was administered) */}
+          {test.reading.length > 0 && (
           <section className="rounded-xl border bg-white p-6 shadow-sm">
             <h2 className="mb-4 inline-flex items-center gap-2 text-lg font-semibold text-[#010131]">
               <BookOpen className="h-5 w-5 text-[#5391D5]" /> Reading
@@ -311,8 +318,10 @@ export function FluentStage({ token, onDone }: { token: string; onDone: () => vo
               ))}
             </div>
           </section>
+          )}
 
-          {/* Listening */}
+          {/* Listening (rendered only when the skill was administered) */}
+          {test.listening.length > 0 && (
           <section className="rounded-xl border bg-white p-6 shadow-sm">
             <h2 className="mb-1 inline-flex items-center gap-2 text-lg font-semibold text-[#010131]">
               <Headphones className="h-5 w-5 text-[#5391D5]" /> Listening
@@ -363,8 +372,10 @@ export function FluentStage({ token, onDone }: { token: string; onDone: () => vo
               })}
             </div>
           </section>
+          )}
 
-          {/* Writing */}
+          {/* Writing (rendered only when the skill was administered) */}
+          {test.writing && (
           <section className="rounded-xl border bg-white p-6 shadow-sm">
             <h2 className="mb-3 inline-flex items-center gap-2 text-lg font-semibold text-[#010131]">
               <PenLine className="h-5 w-5 text-[#5391D5]" /> Writing
@@ -382,8 +393,10 @@ export function FluentStage({ token, onDone }: { token: string; onDone: () => vo
               {wordCount(writing)} words · min {test.writing.min_words}
             </div>
           </section>
+          )}
 
-          {/* Speaking */}
+          {/* Speaking (rendered only when the skill was administered) */}
+          {test.speaking && (
           <section className="rounded-xl border bg-white p-6 shadow-sm">
             <h2 className="mb-1 inline-flex items-center gap-2 text-lg font-semibold text-[#010131]">
               <Mic className="h-5 w-5 text-[#5391D5]" /> Speaking
@@ -455,6 +468,7 @@ export function FluentStage({ token, onDone }: { token: string; onDone: () => vo
               </p>
             )}
           </section>
+          )}
 
           <Button onClick={submit} disabled={busy || !canSubmit} className="w-full" size="lg">
             {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}

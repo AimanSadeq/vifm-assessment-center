@@ -18,6 +18,8 @@ export type PrehireReportStage = {
   passed: boolean | null;
   weightPct: number;
   required: boolean;
+  /** Optional sub-line under the stage label (e.g. which sub-skills ran). */
+  note?: string | null;
 };
 
 export type PrehireReportData = {
@@ -56,6 +58,8 @@ const L: Record<Lang, Record<string, string>> = {
     pass: "Pass",
     below: "Below cut",
     notTaken: "Not taken",
+    partialPlacement: "Partial placement",
+    skillsAssessed: "Skills assessed",
     disclaimer:
       "This is an advisory screening SIGNAL, not a hiring decision. A qualified VIFM reviewer interprets it alongside other evidence; no decision is ever made automatically.",
     confidential: "Confidential — for VIFM and the engaged client only.",
@@ -98,6 +102,8 @@ const L: Record<Lang, Record<string, string>> = {
     pass: "اجتياز",
     below: "دون الحد",
     notTaken: "لم تُؤدَّ",
+    partialPlacement: "تقييم جزئي",
+    skillsAssessed: "المهارات المُقيّمة",
     disclaimer:
       "هذه إشارة فرز استرشادية، وليست قرار توظيف. يفسّرها مراجع مؤهّل في VIFM مع أدلة أخرى؛ ولا يُتّخذ أي قرار تلقائيًا.",
     confidential: "سري — لمعهد VIFM والعميل المتعاقد فقط.",
@@ -152,8 +158,9 @@ export function renderPrehireCandidateHtml(data: PrehireReportData, lang: Lang):
           : s.passed === false
             ? `<span class="badge warn">${t.below}</span>`
             : `<span class="badge ok">${t.pass}</span>`;
+      const note = s.note ? `<div class="substage">${esc(s.note)}</div>` : "";
       return `<tr>
-        <td class="strong">${esc(s.label)}${s.required ? ` <span class="req">${t.required}</span>` : ""}</td>
+        <td class="strong">${esc(s.label)}${s.required ? ` <span class="req">${t.required}</span>` : ""}${note}</td>
         <td class="num">${Math.round(s.weightPct)}%</td>
         <td class="num">${s.normalized == null ? "—" : Math.round(s.normalized)}</td>
         <td class="num">${s.cutScore == null ? "—" : s.cutScore}</td>
@@ -203,6 +210,7 @@ export function renderPrehireCandidateHtml(data: PrehireReportData, lang: Lang):
   td.num, th.num { text-align: center; font-variant-numeric: tabular-nums; }
   td.strong { font-weight: 600; color: #010131; }
   .req { font-size: 8.5px; color: #b45309; border: 1px solid #fde68a; background: #fffbeb; border-radius: 4px; padding: 0 4px; }
+  .substage { font-size: 9px; font-weight: 400; color: #b45309; margin-top: 3px; }
   .muted { color: #999; }
   .badge { display: inline-block; border-radius: 999px; padding: 1px 8px; font-size: 9px; font-weight: 600; }
   .badge.ok { background: #d1fae5; color: #065f46; }

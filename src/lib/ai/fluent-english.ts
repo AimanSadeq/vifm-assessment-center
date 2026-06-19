@@ -87,11 +87,15 @@ export type PublicReadingItem = Omit<ReadingItem, "correct_index">;
 // `script` is optional: present for browser-TTS fallback, omitted when Azure
 // neural TTS is on (the client plays audio via /api/ac/fluent/tts instead).
 export type PublicListeningItem = Omit<ListeningItem, "correct_index" | "script"> & { script?: string };
+// `writing` / `speaking` are optional so a Pre-Hire requisition can drop a
+// productive skill from the served test (CAL-PRE-503). The standalone AC runner
+// always emits all four, so this widening is back-compatible there. `stripAnswerKey`
+// always populates them, so its return is still assignable.
 export type PublicFluentTest = {
   reading: PublicReadingItem[];
   listening: PublicListeningItem[];
-  writing: WritingTask;
-  speaking: SpeakingTask;
+  writing?: WritingTask;
+  speaking?: SpeakingTask;
   ai_generated: boolean;
 };
 
@@ -475,6 +479,23 @@ const SPEAKING_NOT_ATTEMPTED: SpeakingScore = {
   grammar: 0,
   transcript: "",
   feedback_en: "Speaking task was not attempted.",
+  feedback_ar: null,
+  ai_generated: false,
+};
+
+// Placeholder writing score for when the writing skill was not administered
+// (CAL-PRE-503 partial placement). Kept off the overall blend; only populated so
+// FluentResult.writing stays a defined shape for every consumer.
+const WRITING_NOT_ASSESSED: WritingScore = {
+  cefr: "A1",
+  task_achievement: 0,
+  coherence: 0,
+  lexical_range: 0,
+  grammar: 0,
+  register: 0,
+  etiquette: 0,
+  mechanics: 0,
+  feedback_en: "Writing task was not administered.",
   feedback_ar: null,
   ai_generated: false,
 };
@@ -956,7 +977,8 @@ export function computeFluentResult(input: {
   reading: ReadingItem[];
   listening?: ListeningItem[];
   answers: Record<string, number>; // itemId -> chosen index
-  writing: WritingScore;
+  /** Omitted/undefined = writing skill was not administered (partial placement). */
+  writing?: WritingScore;
   speaking?: SpeakingScore;
 }): FluentResult {
   const r = receptiveCefrWeighted(input.reading, input.answers);
@@ -969,13 +991,17 @@ export function computeFluentResult(input: {
   const listeningTotal = l.total;
   const listening_cefr = l.cefr;
 
+  const writing = input.writing ?? WRITING_NOT_ASSESSED;
+  const writingAssessed = input.writing != null;
   const speaking = input.speaking ?? SPEAKING_NOT_ATTEMPTED;
 
-  // Weighted blend over the skills that were actually assessed.
+  // Weighted blend over the skills that were actually assessed. Skills that were
+  // not administered (no receptive items, writing/speaking absent) are excluded
+  // rather than dragging the band down.
   const parts: Array<{ num: number; weight: number }> = [];
   if (readingTotal > 0) parts.push({ num: cefrToNum(reading_cefr), weight: 1 });
   if (listeningTotal > 0) parts.push({ num: cefrToNum(listening_cefr), weight: 1 });
-  parts.push({ num: cefrToNum(input.writing.cefr), weight: 1.2 });
+  if (writingAssessed) parts.push({ num: cefrToNum(writing.cefr), weight: 1.2 });
   if (speaking.attempted) parts.push({ num: cefrToNum(speaking.cefr), weight: 1.2 });
 
   const wSum = parts.reduce((a, p) => a + p.weight, 0);
@@ -989,7 +1015,7 @@ export function computeFluentResult(input: {
     listening_correct: listeningCorrect,
     listening_total: listeningTotal,
     listening_cefr,
-    writing: input.writing,
+    writing,
     speaking,
   };
 }

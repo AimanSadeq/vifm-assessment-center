@@ -25,14 +25,17 @@ import {
   computeFluentResult,
   CEFR_ORDER,
   type FluentTest,
+  type WritingScore,
+  type SpeakingScore,
 } from "@/lib/ai/fluent-english";
 import type { PronunciationScore } from "@/lib/integrations/speech";
+import { resolveFluentSkills, FLUENT_SKILLS, type FluentSkill } from "@/types/prehire";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-type StoredDetail = { fullTest?: FluentTest; tts?: boolean } | null;
+type StoredDetail = { fullTest?: FluentTest; tts?: boolean; skills?: FluentSkill[] } | null;
 type IntegrityFlags = { blurCount?: number; pasteCount?: number };
 type Body = {
   answers?: Record<string, number>;
@@ -56,28 +59,39 @@ export async function POST(req: Request, { params }: { params: { token: string }
     .eq("kind", "fluent")
     .maybeSingle();
 
-  const fullTest = (stage?.detail as StoredDetail)?.fullTest;
-  if (!stage || !fullTest || !fullTest.reading?.length) {
+  const storedDetail = stage?.detail as StoredDetail;
+  const fullTest = storedDetail?.fullTest;
+  // A receptive-only test legitimately has an empty reading array (CAL-PRE-503),
+  // so gate on the stored test existing rather than on reading length.
+  if (!stage || !fullTest) {
     return NextResponse.json({ error: "Start the English test first." }, { status: 400 });
   }
   if (stage.status === "completed") {
     return NextResponse.json({ error: "Already submitted." }, { status: 409 });
   }
 
+  // Which sub-skills were administered. Omitted/empty = all four (back-compat).
+  const skills = resolveFluentSkills({ skills: storedDetail?.skills ?? null });
+
   const answers = body?.answers ?? {};
   // Self-consistency: average over FLUENT_SCORE_SAMPLES model calls (default 1).
   const samples = Math.max(1, Math.min(5, Number(process.env.FLUENT_SCORE_SAMPLES) || 1));
 
-  const writing = await scoreFluentWritingEnsemble({
-    task: fullTest.writing,
-    response: String(body?.writingResponse ?? ""),
-    language: "en",
-    samples,
-  });
+  // Only score the writing skill if it was administered; otherwise leave it
+  // undefined so computeFluentResult excludes it from the overall band.
+  const writing: WritingScore | undefined =
+    skills.includes("writing") && fullTest.writing
+      ? await scoreFluentWritingEnsemble({
+          task: fullTest.writing,
+          response: String(body?.writingResponse ?? ""),
+          language: "en",
+          samples,
+        })
+      : undefined;
 
   const speakingTranscript = String(body?.speakingTranscript ?? "").trim();
-  const speakingBase =
-    fullTest.speaking && speakingTranscript
+  const speakingBase: SpeakingScore | undefined =
+    skills.includes("speaking") && fullTest.speaking && speakingTranscript
       ? await scoreFluentSpeakingEnsemble({
           task: fullTest.speaking,
           transcript: speakingTranscript,
@@ -89,6 +103,8 @@ export async function POST(req: Request, { params }: { params: { token: string }
   const speaking = speakingBase ? blendPronunciation(speakingBase, body?.pronunciation ?? null) : undefined;
 
   const result = computeFluentResult({
+    // The stored test is already filtered to the selected receptive skills, so
+    // an unselected reading/listening array is [] and scores as "not assessed".
     reading: fullTest.reading,
     listening: fullTest.listening ?? [],
     answers,
@@ -102,6 +118,11 @@ export async function POST(req: Request, { params }: { params: { token: string }
   const cut = ctx.requisition.stage_config.find((s) => s.kind === "fluent")?.cut_score ?? null;
   const passed = cut == null ? true : normalized >= cut;
 
+  // Partial placement = fewer than all four skills administered (CAL-PRE-503).
+  // Persist the assessed-skills list so the report can label it and decline to
+  // present a full Overall CEFR.
+  const partial = skills.length < FLUENT_SKILLS.length;
+
   const { error } = await svc
     .from("prehire_stage_results")
     .update({
@@ -109,7 +130,7 @@ export async function POST(req: Request, { params }: { params: { token: string }
       raw_score: idx + 1,
       normalized_score: normalized,
       passed,
-      detail: { result, answers },
+      detail: { result, answers, skills, partial },
       flags: body?.integrityFlags ?? {},
       completed_at: new Date().toISOString(),
     })
@@ -124,8 +145,8 @@ export async function POST(req: Request, { params }: { params: { token: string }
     requisitionId: ctx.requisition.id,
     candidateId: ctx.candidate.id,
     actorLabel: "candidate",
-    detail: { kind: "fluent", normalized, passed, cefr: result.overall_cefr },
+    detail: { kind: "fluent", normalized, passed, cefr: result.overall_cefr, skills, partial },
   });
 
-  return NextResponse.json({ normalized, cefr: result.overall_cefr });
+  return NextResponse.json({ normalized, cefr: result.overall_cefr, partial });
 }

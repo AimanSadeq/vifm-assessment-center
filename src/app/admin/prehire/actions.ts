@@ -25,12 +25,27 @@ async function gateAdmin(): Promise<{ error: string } | null> {
   }
 }
 
-const stageEntrySchema = z.object({
-  kind: z.enum(["fluent", "quiz", "cbi", "assessment_center"]),
-  weight: z.coerce.number().min(0).max(1),
-  cut_score: z.coerce.number().min(0).max(100).nullable(),
-  required: z.boolean(),
-});
+const stageEntrySchema = z
+  .object({
+    kind: z.enum(["fluent", "quiz", "cbi", "assessment_center"]),
+    weight: z.coerce.number().min(0).max(1),
+    cut_score: z.coerce.number().min(0).max(100).nullable(),
+    required: z.boolean(),
+    // Fluent stage only (CAL-PRE-503): which CEFR sub-skills to administer.
+    // Omitted/empty = all four (back-compat). Persisted in stage_config jsonb.
+    skills: z.array(z.enum(["reading", "listening", "writing", "speaking"])).optional(),
+  })
+  // Server-side enforce the receptive-skill rule (the wizard guards it too, but a
+  // crafted request must not persist an indefensible writing/speaking-only Fluent
+  // stage). Omitted/empty skills = all four, so they pass.
+  .refine(
+    (s) =>
+      s.kind !== "fluent" ||
+      !s.skills ||
+      s.skills.length === 0 ||
+      s.skills.some((k) => k === "reading" || k === "listening"),
+    { message: "The Fluent stage needs at least one receptive skill (Reading or Listening)." },
+  );
 
 const requisitionSchema = z.object({
   organization_id: z.string().uuid("Select a client organization"),

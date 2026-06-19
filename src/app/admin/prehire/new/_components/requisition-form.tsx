@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { createRequisitionAction, createPrehireOrgAction } from "../../actions";
+import { FLUENT_SKILLS, RECEPTIVE_FLUENT_SKILLS, type FluentSkill } from "@/types/prehire";
 
 type Props = {
   roleProfiles: { id: string; name_en: string }[];
@@ -19,6 +20,13 @@ type Props = {
 
 type StageKind = "quiz" | "fluent" | "cbi";
 type StageState = { included: boolean; weight: number; cut: number };
+
+const FLUENT_SKILL_LABELS: Record<FluentSkill, string> = {
+  reading: "Reading",
+  listening: "Listening",
+  writing: "Writing",
+  speaking: "Speaking",
+};
 
 // Starting weights + cut-scores per stage; all now editable in the wizard
 // (CAL-PH-505). Weights are normalized over the included stages at scoring time,
@@ -43,6 +51,9 @@ export function RequisitionForm({ roleProfiles, organizations: initialOrgs, defa
   const [roleProfileId, setRoleProfileId] = useState("");
   const [level, setLevel] = useState("");
   const [stages, setStages] = useState<Record<StageKind, StageState>>(INITIAL_STAGES);
+  // CAL-PRE-503: which Fluent CEFR sub-skills to administer. Defaults to all four;
+  // only attached to stage_config when the Fluent stage is included.
+  const [fluentSkills, setFluentSkills] = useState<Set<FluentSkill>>(new Set(FLUENT_SKILLS));
   const [submitting, setSubmitting] = useState(false);
 
   // Inline client creation (CAL-PH-504).
@@ -52,6 +63,14 @@ export function RequisitionForm({ roleProfiles, organizations: initialOrgs, defa
 
   const setStage = (kind: StageKind, patch: Partial<StageState>) =>
     setStages((s) => ({ ...s, [kind]: { ...s[kind], ...patch } }));
+
+  const toggleFluentSkill = (skill: FluentSkill, on: boolean) =>
+    setFluentSkills((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(skill);
+      else next.delete(skill);
+      return next;
+    });
 
   // CAL-PH-503: English requirement DRIVES the Fluent stage. The single Fluent
   // toggle both includes the English assessment and flags the requisition's
@@ -84,6 +103,19 @@ export function RequisitionForm({ roleProfiles, organizations: initialOrgs, defa
   const handleSubmit = async () => {
     const clamp = (v: number, lo: number, hi: number) =>
       Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : lo;
+    // CAL-PRE-503: a placement with any skill dropped must still keep at least
+    // one receptive skill (reading or listening) to stay defensible.
+    if (stages.fluent.included && !RECEPTIVE_FLUENT_SKILLS.some((s) => fluentSkills.has(s))) {
+      toast.error(
+        t(
+          "prehire.errFluentReceptive",
+          "Select at least one receptive English skill (Reading or Listening).",
+        ),
+      );
+      return;
+    }
+    // Preserve the canonical skill order; attach skills to the Fluent entry only.
+    const orderedFluentSkills = FLUENT_SKILLS.filter((s) => fluentSkills.has(s));
     const stage_config = (Object.keys(stages) as StageKind[])
       .filter((k) => stages[k].included)
       .map((k) => ({
@@ -91,6 +123,7 @@ export function RequisitionForm({ roleProfiles, organizations: initialOrgs, defa
         weight: clamp(stages[k].weight, 0, 1),
         cut_score: clamp(stages[k].cut, 0, 100),
         required: false,
+        ...(k === "fluent" ? { skills: orderedFluentSkills } : {}),
       }));
     if (stage_config.length === 0) {
       toast.error(t("prehire.errPickStage"));
@@ -217,46 +250,77 @@ export function RequisitionForm({ roleProfiles, organizations: initialOrgs, defa
             {(Object.keys(stages) as StageKind[]).map((kind) => {
               const st = stages[kind];
               return (
-                <div key={kind} className="flex flex-wrap items-center gap-3 rounded-md border p-3">
-                  <Checkbox
-                    id={`stage-${kind}`}
-                    checked={st.included}
-                    onCheckedChange={(c) => setStage(kind, { included: c === true })}
-                  />
-                  <Label htmlFor={`stage-${kind}`} className="flex-1 min-w-[8rem] cursor-pointer">
-                    {t(`prehire.stageLabels.${kind}`, STAGE_LABELS[kind])}
-                    {kind === "fluent" && (
-                      <span className="ml-2 text-xs font-normal text-muted-foreground">
-                        {t("prehire.fluentDriver", "English required")}
-                      </span>
-                    )}
-                  </Label>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-muted-foreground">{t("prehire.weightShort", "Weight")}</span>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={1}
-                      step={0.05}
-                      value={st.weight}
-                      disabled={!st.included}
-                      onChange={(e) => setStage(kind, { weight: Number(e.target.value) })}
-                      className="h-8 w-20"
+                <div key={kind} className="rounded-md border p-3">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Checkbox
+                      id={`stage-${kind}`}
+                      checked={st.included}
+                      onCheckedChange={(c) => setStage(kind, { included: c === true })}
                     />
+                    <Label htmlFor={`stage-${kind}`} className="flex-1 min-w-[8rem] cursor-pointer">
+                      {t(`prehire.stageLabels.${kind}`, STAGE_LABELS[kind])}
+                      {kind === "fluent" && (
+                        <span className="ml-2 text-xs font-normal text-muted-foreground">
+                          {t("prehire.fluentDriver", "English required")}
+                        </span>
+                      )}
+                    </Label>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-muted-foreground">{t("prehire.weightShort", "Weight")}</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={1}
+                        step={0.05}
+                        value={st.weight}
+                        disabled={!st.included}
+                        onChange={(e) => setStage(kind, { weight: Number(e.target.value) })}
+                        className="h-8 w-20"
+                      />
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-muted-foreground">{t("prehire.cutShort", "Cut")}</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={st.cut}
+                        disabled={!st.included}
+                        onChange={(e) => setStage(kind, { cut: Number(e.target.value) })}
+                        className="h-8 w-20"
+                      />
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-muted-foreground">{t("prehire.cutShort", "Cut")}</span>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={100}
-                      step={1}
-                      value={st.cut}
-                      disabled={!st.included}
-                      onChange={(e) => setStage(kind, { cut: Number(e.target.value) })}
-                      className="h-8 w-20"
-                    />
-                  </div>
+
+                  {/* CAL-PRE-503: pick which CEFR sub-skills run for the English stage. */}
+                  {kind === "fluent" && st.included && (
+                    <div className="mt-3 border-t pt-3">
+                      <p className="mb-2 text-xs font-medium text-muted-foreground">
+                        {t("prehire.fluentSkillsLabel", "English sub-skills to assess")}
+                      </p>
+                      <div className="flex flex-wrap gap-x-5 gap-y-2">
+                        {FLUENT_SKILLS.map((skill) => (
+                          <label
+                            key={skill}
+                            className="flex cursor-pointer items-center gap-2 text-sm"
+                          >
+                            <Checkbox
+                              checked={fluentSkills.has(skill)}
+                              onCheckedChange={(c) => toggleFluentSkill(skill, c === true)}
+                            />
+                            <span>{t(`prehire.fluentSkills.${skill}`, FLUENT_SKILL_LABELS[skill])}</span>
+                          </label>
+                        ))}
+                      </div>
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        {t(
+                          "prehire.fluentSkillsHint",
+                          "Keep at least one receptive skill (Reading or Listening). Dropping any skill produces a partial placement, not a full Overall CEFR.",
+                        )}
+                      </p>
+                    </div>
+                  )}
                 </div>
               );
             })}

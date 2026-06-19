@@ -4,7 +4,13 @@ import { launchPdfBrowser } from "@/lib/reports/pdf-browser";
 import { createServiceClient } from "@/lib/supabase/server";
 import { computeComposite } from "@/lib/prehire/scoring";
 import { renderPrehireCandidateHtml, type PrehireReportData } from "@/lib/reports/prehire-candidate-html";
-import type { PrehireStagePlanEntry, PrehireStageKind } from "@/types/prehire";
+import {
+  FLUENT_SKILLS,
+  resolveFluentSkills,
+  type PrehireStagePlanEntry,
+  type PrehireStageKind,
+  type FluentSkill,
+} from "@/types/prehire";
 
 /**
  * Shared builder for the per-candidate Pre-Hire screening PDF. Used by BOTH the
@@ -21,6 +27,37 @@ const STAGE_LABELS: Record<string, { en: string; ar: string }> = {
   cbi: { en: "Behavioural Interview", ar: "المقابلة السلوكية" },
   assessment_center: { en: "Assessment Center", ar: "مركز التقييم" },
 };
+
+const FLUENT_SKILL_LABELS: Record<FluentSkill, { en: string; ar: string }> = {
+  reading: { en: "Reading", ar: "القراءة" },
+  listening: { en: "Listening", ar: "الاستماع" },
+  writing: { en: "Writing", ar: "الكتابة" },
+  speaking: { en: "Speaking", ar: "التحدث" },
+};
+
+const PARTIAL_LABEL: Record<Lang, string> = {
+  en: "Partial placement",
+  ar: "تقييم جزئي",
+};
+
+// Build the "which sub-skills ran" note for the Fluent row. Returns null for a
+// full four-skill placement (no note needed). Reads the assessed-skills list
+// persisted on the stage detail at submit time (CAL-PRE-503), falling back to
+// the requisition's configured skills for older completed rows that predate the
+// detail.skills write. A four-skill run is never flagged partial.
+function fluentSkillsNote(
+  detail: Record<string, unknown> | null | undefined,
+  fluentEntry: PrehireStagePlanEntry | undefined,
+  lang: Lang
+): string | null {
+  const fromDetail = Array.isArray(detail?.skills) ? (detail?.skills as FluentSkill[]) : null;
+  const skills = fromDetail
+    ? resolveFluentSkills({ skills: fromDetail })
+    : resolveFluentSkills(fluentEntry);
+  if (skills.length >= FLUENT_SKILLS.length) return null;
+  const names = skills.map((s) => FLUENT_SKILL_LABELS[s][lang]).join(lang === "ar" ? "، " : ", ");
+  return `${PARTIAL_LABEL[lang]} - ${names}`;
+}
 
 async function launchBrowser(): Promise<Browser> {
   return launchPdfBrowser({ defaultViewport: { width: 1200, height: 1400, deviceScaleFactor: 1 } });
@@ -47,7 +84,7 @@ export async function buildPrehireCandidatePdf(params: {
       .maybeSingle(),
     sb
       .from("prehire_candidates")
-      .select("full_name, email, prehire_stage_results(kind, normalized_score)")
+      .select("full_name, email, prehire_stage_results(kind, normalized_score, detail)")
       .eq("id", candidateId)
       .eq("requisition_id", requisitionId)
       .maybeSingle(),
@@ -70,11 +107,17 @@ export async function buildPrehireCandidatePdf(params: {
   }
 
   const plan = (reqRes.data.stage_config ?? []) as PrehireStagePlanEntry[];
-  const results = (candRes.data.prehire_stage_results ?? []) as {
+  const rawResults = (candRes.data.prehire_stage_results ?? []) as {
     kind: PrehireStageKind;
     normalized_score: number | null;
+    detail: Record<string, unknown> | null;
   }[];
+  // computeComposite only needs kind + normalized_score; detail is read separately.
+  const results = rawResults.map(({ kind, normalized_score }) => ({ kind, normalized_score }));
   const composite = computeComposite(plan, results);
+
+  const fluentEntry = plan.find((s) => s.kind === "fluent");
+  const fluentDetail = rawResults.find((r) => r.kind === "fluent")?.detail ?? null;
 
   const stages = composite.perStage.map((s) => ({
     label: STAGE_LABELS[s.kind]?.[lang] ?? s.kind,
@@ -83,6 +126,13 @@ export async function buildPrehireCandidatePdf(params: {
     passed: s.passed,
     weightPct: s.weight * 100,
     required: s.required,
+    // CAL-PRE-503: surface a "partial placement - <skills>" note on the Fluent
+    // row when fewer than four sub-skills ran. Only computed once the stage has
+    // a score (a not-taken Fluent stage gets no note).
+    note:
+      s.kind === "fluent" && s.normalized != null
+        ? fluentSkillsNote(fluentDetail, fluentEntry, lang)
+        : null,
   }));
 
   const data: PrehireReportData = {

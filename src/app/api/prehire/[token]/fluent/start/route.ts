@@ -21,17 +21,35 @@ import {
   type PublicFluentTest,
 } from "@/lib/ai/fluent-english";
 import { isAzureSpeechConfigured } from "@/lib/integrations/speech";
+import { resolveFluentSkills, type FluentSkill } from "@/types/prehire";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
-type StoredDetail = { fullTest?: FluentTest; tts?: boolean } | null;
+// `skills` records which CEFR sub-skills this stage administers (CAL-PRE-503).
+// Stored alongside the full test so submit scores exactly the same set.
+type StoredDetail = { fullTest?: FluentTest; tts?: boolean; skills?: FluentSkill[] } | null;
 
-// Build the browser payload: strip the answer key, and when neural TTS is on
-// also drop the listening scripts (the client plays audio via /fluent/tts so
-// it never needs the text — a reading-the-script shortcut is closed off).
-function clientPayload(test: FluentTest, tts: boolean): PublicFluentTest {
+// Filter the FULL test (still server-side, key intact) to the selected skills:
+// drop unselected receptive arrays to [] (they then score as "not assessed");
+// productive tasks (writing/speaking) stay on the stored object but submit only
+// scores them when selected. Receptive filtering happens here so the stored
+// fullTest mirrors exactly what the candidate sees.
+function filterFullTest(test: FluentTest, skills: FluentSkill[]): FluentTest {
+  return {
+    ...test,
+    reading: skills.includes("reading") ? test.reading : [],
+    listening: skills.includes("listening") ? test.listening : [],
+  };
+}
+
+// Build the browser payload: strip the answer key, drop the productive tasks that
+// were not selected, and when neural TTS is on also drop the listening scripts
+// (the client plays audio via /fluent/tts so it never needs the text - a
+// reading-the-script shortcut is closed off). The full test is already filtered
+// to the selected receptive skills before reaching here.
+function clientPayload(test: FluentTest, tts: boolean, skills: FluentSkill[]): PublicFluentTest {
   const pub = stripAnswerKey(test);
   if (tts) {
     pub.listening = pub.listening.map((it) => ({
@@ -41,15 +59,20 @@ function clientPayload(test: FluentTest, tts: boolean): PublicFluentTest {
       cefr: it.cefr,
     }));
   }
+  if (!skills.includes("writing")) pub.writing = undefined;
+  if (!skills.includes("speaking")) pub.speaking = undefined;
   return pub;
 }
 
 export async function POST(_req: Request, { params }: { params: { token: string } }) {
   const ctx = await findCandidateByToken(params.token);
   if (!ctx) return NextResponse.json({ error: "Invalid link" }, { status: 404 });
-  if (!ctx.requisition.stage_config.some((s) => s.kind === "fluent")) {
+  const fluentEntry = ctx.requisition.stage_config.find((s) => s.kind === "fluent");
+  if (!fluentEntry) {
     return NextResponse.json({ error: "English test not configured for this role" }, { status: 400 });
   }
+  // Omitted/empty skills = all four (back-compat with legacy requisitions).
+  const skills = resolveFluentSkills(fluentEntry);
 
   const svc = createServiceClient();
   const { data: existing } = await svc
@@ -65,24 +88,32 @@ export async function POST(_req: Request, { params }: { params: { token: string 
 
   const tts = isAzureSpeechConfigured();
 
-  // Resume an in-progress attempt with the same test (no regeneration).
-  const stored = (existing?.detail as StoredDetail)?.fullTest;
-  if (stored && stored.reading?.length) {
-    return NextResponse.json({ test: clientPayload(stored, tts), tts });
+  // Resume an in-progress attempt with the same test (no regeneration). Use the
+  // skills stored at first start so a mid-flight requisition edit can't change
+  // an in-progress test; fall back to the resolved set for pre-CAL-PRE-503 rows.
+  const storedDetail = existing?.detail as StoredDetail;
+  const stored = storedDetail?.fullTest;
+  if (stored) {
+    // A receptive-only (e.g. listening-only) test legitimately has an empty
+    // reading array, so resume whenever a stored full test is present rather
+    // than gating on reading length (the pre-CAL-PRE-503 check).
+    const storedSkills = resolveFluentSkills({ skills: storedDetail?.skills ?? null });
+    return NextResponse.json({ test: clientPayload(stored, tts, storedSkills), tts });
   }
 
-  const test = await generateFluentTest({ language: "en" });
+  const generated = await generateFluentTest({ language: "en" });
+  const test = filterFullTest(generated, skills);
 
   await svc.from("prehire_stage_results").upsert(
     {
       prehire_candidate_id: ctx.candidate.id,
       kind: "fluent",
       status: "in_progress",
-      detail: { fullTest: test, tts },
+      detail: { fullTest: test, tts, skills },
       started_at: existing?.started_at ?? new Date().toISOString(),
     },
     { onConflict: "prehire_candidate_id,kind" }
   );
 
-  return NextResponse.json({ test: clientPayload(test, tts), tts });
+  return NextResponse.json({ test: clientPayload(test, tts, skills), tts });
 }

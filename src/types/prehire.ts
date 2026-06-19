@@ -13,6 +13,25 @@ export type PrehireCandidateStatus =
 export type PrehireStageKind = "fluent" | "quiz" | "cbi" | "assessment_center";
 export type PrehireStageStatus = "pending" | "in_progress" | "completed" | "skipped";
 
+/** CEFR sub-skills for the Fluent stage (CAL-PRE-503). */
+export type FluentSkill = "reading" | "listening" | "writing" | "speaking";
+export const FLUENT_SKILLS: FluentSkill[] = ["reading", "listening", "writing", "speaking"];
+/** Receptive skills - at least one must run to keep the placement defensible (CAL-PRE-503). */
+export const RECEPTIVE_FLUENT_SKILLS: FluentSkill[] = ["reading", "listening"];
+
+/**
+ * Resolve which Fluent sub-skills a requisition's fluent stage administers.
+ * Omitted or empty `skills` means all four (airtight back-compat with legacy
+ * requisitions that predate CAL-PRE-503). Always validated against the canonical
+ * set so a stray persisted value can never widen or corrupt the served test.
+ */
+export function resolveFluentSkills(entry?: { skills?: FluentSkill[] | null } | null): FluentSkill[] {
+  const raw = entry?.skills;
+  if (!Array.isArray(raw) || raw.length === 0) return [...FLUENT_SKILLS];
+  const picked = FLUENT_SKILLS.filter((s) => raw.includes(s));
+  return picked.length > 0 ? picked : [...FLUENT_SKILLS];
+}
+
 // ── Defensibility (migration 00051) ──────────────────────────────
 // Voluntary self-ID, collected only for aggregate adverse-impact monitoring;
 // never used in scoring, never shown to assessors. "prefer_not_to_say" is a
@@ -34,6 +53,9 @@ export type PrehireStagePlanEntry = {
   cut_score: number | null;
   /** If true, a fail on this stage flags the candidate for review (never auto-rejects). */
   required: boolean;
+  /** Fluent stage only (CAL-PRE-503): which CEFR sub-skills to administer + score.
+   *  Omitted or empty = all four (back-compat with existing requisitions). */
+  skills?: FluentSkill[];
 };
 
 export type PrehireRequisition = {
@@ -64,7 +86,7 @@ export type PrehireCandidate = {
   consent_at: string | null;
   invited_at: string | null;
   completed_at: string | null;
-  // Defensibility (00051) — voluntary self-ID + human decision.
+  // Defensibility (00051) - voluntary self-ID + human decision.
   gender: PrehireGender | null;
   age_band: PrehireAgeBand | null;
   nationality_group: PrehireNationalityGroup | null;

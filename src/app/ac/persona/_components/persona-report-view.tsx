@@ -124,6 +124,22 @@ export function PersonaReportView({
                 {data.fit.fitPct}% · {data.fit.bandLabel}
               </span>
             )}
+            {!dev && data.fit.verdictLabel ? (
+              <div className="mt-3">
+                <span
+                  className="inline-block rounded-md px-4 py-1.5 text-base font-bold text-white"
+                  style={{ backgroundColor: data.fit.verdictHex ?? "#010131" }}
+                >
+                  {data.fit.verdictLabel}
+                </span>
+                <p className="mt-1 text-[11px] text-slate-500">
+                  {tx(
+                    "Indicative (self-report) - pair with a Reflect 360 for a validated readiness verdict.",
+                    "إشارة استرشادية (تقييم ذاتي) - ادمجها مع تقييم Reflect 360 للحصول على حكم جاهزية مُتحقَّق منه."
+                  )}
+                </p>
+              </div>
+            ) : null}
           </div>
 
           <div className="mt-3 grid gap-3 sm:grid-cols-2">

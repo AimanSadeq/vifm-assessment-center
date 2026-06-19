@@ -9,7 +9,7 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
 import { loadPersonaRoleById, type PersonaRoleOption } from "@/lib/scoring/persona-roles";
-import { computeFit, competencyNarrative, developmentNarrative, FIT_BAND_HEX } from "@/lib/scoring/persona-fit";
+import { computeFit, competencyNarrative, developmentNarrative, FIT_BAND_HEX, readinessVerdict, READINESS_VERDICT_HEX } from "@/lib/scoring/persona-fit";
 import { personaBand } from "@/lib/scoring/persona-bands";
 import {
   generatePersonaInsights,
@@ -298,11 +298,16 @@ export async function buildPersonaPdfData(sessionId: string, lang: PersonaLang =
         .filter((g) => g.self != null && (g.self as number) >= g.target)
         .sort((a, b) => ((b.self as number) - b.target) - ((a.self as number) - a.target))
         .slice(0, 6);
+      // SD-1: additive Ready/Ready-with-Development/Not-Ready verdict on the
+      // hiring/succession report (indicative - self-report only).
+      const verdict = purpose === "hiring" ? readinessVerdict(f.fitPct) : null;
       fit = {
         roleName: role.name,
         fitPct: f.fitPct,
         bandLabel: ar ? f.bandLabelAr : f.bandLabel,
         bandHex: FIT_BAND_HEX[f.band],
+        verdictLabel: verdict ? (ar ? verdict.labelAr : verdict.label) : null,
+        verdictHex: verdict ? READINESS_VERDICT_HEX[verdict.key] : null,
         // CAL-PER-407: display the top 5 priorities/strengths so the fit panel
         // matches the 5-row action plan (internal gapsTop stays 6 for course
         // recs / drivers / watch areas).

@@ -56,6 +56,10 @@ export type PersonaPdfFit = {
   fitPct: number;
   bandLabel: string;
   bandHex: string;
+  /** SD-1: explicit Ready / Ready with Development / Not Ready verdict (hiring),
+   *  additive to the fit %, labelled indicative (self-report). */
+  verdictLabel?: string | null;
+  verdictHex?: string | null;
   gaps: { name: string; self: number; target: number; gap: number }[];
   strengths?: { name: string; self: number; target: number }[];
 };
@@ -288,6 +292,27 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
                 <Text style={s.fitTitleBig}>Role fit</Text>
                 <Text style={s.fitRoleSub}>{data.fit.roleName}</Text>
                 <Text style={[s.fitValueBig, { color: data.fit.bandHex }]}>{data.fit.fitPct}%  ·  {data.fit.bandLabel}</Text>
+                {data.fit.verdictLabel ? (
+                  <>
+                    <Text
+                      style={{
+                        marginTop: 6,
+                        fontSize: 12,
+                        fontFamily: "Helvetica-Bold",
+                        color: "#ffffff",
+                        backgroundColor: data.fit.verdictHex ?? C.primary,
+                        paddingVertical: 3,
+                        paddingHorizontal: 10,
+                        borderRadius: 4,
+                      }}
+                    >
+                      {data.fit.verdictLabel}
+                    </Text>
+                    <Text style={{ fontSize: 7.5, color: C.textLight, marginTop: 3 }}>
+                      Indicative (self-report) - pair with a Reflect 360 for a validated readiness verdict.
+                    </Text>
+                  </>
+                ) : null}
               </View>
             )}
             {data.fit.strengths && data.fit.strengths.length > 0 ? (

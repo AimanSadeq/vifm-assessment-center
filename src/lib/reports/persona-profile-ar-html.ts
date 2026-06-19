@@ -85,10 +85,15 @@ export function renderPersonaProfileHtmlAr(data: PersonaPdfData): string {
       fitBlocks.push(`<div class="fit-label">خطة التطوير · ${escapeHtml(data.fit.roleName)}</div>
         <div class="fit-value" style="color:${C.primary}">${numPct(data.fit.fitPct)} متوافق مع مستهدف الدور</div>`);
     } else {
+      const verdictHtml = data.fit.verdictLabel
+        ? `<div style="margin-top:6px;display:inline-block;font-weight:700;font-size:12px;color:#fff;background:${escapeHtml(data.fit.verdictHex ?? C.primary)};padding:3px 10px;border-radius:4px">${escapeHtml(data.fit.verdictLabel)}</div>
+        <div style="font-size:7.5px;color:${C.textLight};margin-top:3px">إشارة استرشادية (تقييم ذاتي) - ادمجها مع تقييم Reflect 360 للحصول على حكم جاهزية مُتحقَّق منه.</div>`
+        : "";
       fitBlocks.push(`<div class="fit-head-center">
         <div class="fit-title-big">ملاءمة الدور</div>
         <div class="fit-role-sub">${escapeHtml(data.fit.roleName)}</div>
         <div class="fit-value-big" style="color:${escapeHtml(data.fit.bandHex)}">${numPct(data.fit.fitPct)} · ${escapeHtml(data.fit.bandLabel)}</div>
+        ${verdictHtml}
       </div>`);
     }
 

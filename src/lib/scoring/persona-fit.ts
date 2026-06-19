@@ -106,6 +106,36 @@ export function fitBand(pct: number): { key: FitBandKey; label: string; labelAr:
   return { key: "limited", label: "Limited fit", labelAr: "ملاءمة محدودة" };
 }
 
+// ── Readiness verdict (SD-1 / SDAIA Succession) ───────────────────
+// The client expects the explicit "Ready / Ready with Development / Not Ready"
+// vocabulary on the hiring/succession report. This is an ADDITIVE label on top
+// of the fit %; it is INDICATIVE (self-report only) - a validated readiness
+// verdict pairs this Persona self-rating with a Reflect 360 (others) view.
+export type ReadinessVerdictKey = "ready" | "ready_with_development" | "not_ready";
+export type ReadinessVerdict = {
+  key: ReadinessVerdictKey;
+  label: string;
+  labelAr: string;
+};
+
+export function readinessVerdict(fitPct: number): ReadinessVerdict {
+  if (fitPct >= 80) return { key: "ready", label: "Ready", labelAr: "جاهز" };
+  if (fitPct >= 55)
+    return { key: "ready_with_development", label: "Ready with Development", labelAr: "جاهز مع التطوير" };
+  return { key: "not_ready", label: "Not Ready", labelAr: "غير جاهز" };
+}
+
+export const READINESS_VERDICT_HEX: Record<ReadinessVerdictKey, string> = {
+  ready: "#059669",
+  ready_with_development: "#D97706",
+  not_ready: "#E11D48",
+};
+export const READINESS_VERDICT_TW: Record<ReadinessVerdictKey, string> = {
+  ready: "bg-emerald-100 text-emerald-800",
+  ready_with_development: "bg-amber-100 text-amber-800",
+  not_ready: "bg-rose-100 text-rose-800",
+};
+
 export const FIT_BAND_TW: Record<FitBandKey, string> = {
   strong: "bg-emerald-100 text-emerald-800",
   moderate: "bg-amber-100 text-amber-800",

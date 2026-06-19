@@ -90,6 +90,9 @@ const T = {
     speakingNeeded: "A spoken (or typed) response is required",
     jumpToFirst: "Go to the first unanswered question",
     notAnswered: "Not answered",
+    timeRemaining: "Time remaining",
+    warn2min: "About 2 minutes left - the test submits automatically when time runs out.",
+    warn1min: "Less than a minute left - the test will submit automatically.",
   },
   ar: {
     start: "ابدأ اختبار تحديد المستوى", starting: "جارٍ إعداد اختبارك…",
@@ -131,6 +134,9 @@ const T = {
     speakingNeeded: "مطلوب رد منطوق (أو مكتوب)",
     jumpToFirst: "انتقل إلى أول سؤال دون إجابة",
     notAnswered: "دون إجابة",
+    timeRemaining: "الوقت المتبقي",
+    warn2min: "بقي نحو دقيقتين - يُرسَل الاختبار تلقائيًا عند انتهاء الوقت.",
+    warn1min: "بقي أقل من دقيقة - سيُرسَل الاختبار تلقائيًا.",
   },
 } as const;
 
@@ -163,6 +169,10 @@ export function FluentClient({
   /** Admin-configurable time limit (minutes); defaults to 15. */
   timerMinutes?: number;
 } = {}) {
+  // CAL-FLU-605: undefined = default 15 min; an explicit 0 (or negative) = NO
+  // limit (no countdown, no auto-submit) - the old `|| 15` silently forced a
+  // deliberate no-limit back to 15.
+  const hasTimeLimit = timerMinutes === undefined || timerMinutes > 0;
   const limitMinutes = timerMinutes && timerMinutes > 0 ? timerMinutes : 15;
   const [language, setLanguage] = useState<Language>("en");
   const [phase, setPhase] = useState<"intro" | "test" | "result">("intro");
@@ -363,8 +373,13 @@ export function FluentClient({
       setPlays({}); setPlayingId(null);
       setTranscript(""); setPronunciation(null); setSpeakNote(""); setSpeakMode("record"); setRecSeconds(0);
       setBlurCount(0); setPasteCount(0);
-      setDeadline(Date.now() + limitMinutes * 60 * 1000);
-      setRemaining(limitMinutes * 60);
+      if (hasTimeLimit) {
+        setDeadline(Date.now() + limitMinutes * 60 * 1000);
+        setRemaining(limitMinutes * 60);
+      } else {
+        setDeadline(null);
+        setRemaining(null);
+      }
       setPhase("test");
     } catch {
       setError("Could not build the test. Please try again.");
@@ -379,13 +394,17 @@ export function FluentClient({
       setRemaining(secs);
       if (secs <= 0) {
         clearInterval(id);
+        // CAL-FLU-605: flush an in-flight recording first so the spoken response
+        // (browser STT streams interim text into `transcript` live) is captured
+        // and the mic is released, rather than auto-submitting mid-recording.
+        if (recording) stopRecording();
         if (!busy) void submit();
       }
     }, 1000);
     return () => clearInterval(id);
-    // submit is a hoisted function declaration; deadline/phase drive the timer.
+    // submit/stopRecording are hoisted; deadline/phase/recording drive the timer.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, deadline, busy]);
+  }, [phase, deadline, busy, recording]);
 
   async function submit() {
     if (!test) return;
@@ -530,15 +549,28 @@ export function FluentClient({
       {phase === "test" && test && (
         <>
           {remaining != null && (
-            <div
-              className={`sticky top-0 z-10 flex items-center justify-between rounded-lg border px-4 py-2 text-sm shadow-sm ${
-                remaining <= 60 ? "border-rose-200 bg-rose-50 text-rose-700" : "border-slate-200 bg-white text-slate-600"
-              }`}
-            >
-              <span>{language === "ar" ? "الوقت المتبقي" : "Time remaining"}</span>
-              <span className="font-mono font-semibold tabular-nums">
-                {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, "0")}
-              </span>
+            <div className="sticky top-0 z-10 space-y-1.5">
+              <div
+                className={`flex items-center justify-between rounded-lg border px-4 py-2 text-sm shadow-sm ${
+                  remaining <= 60 ? "border-rose-300 bg-rose-50 text-rose-700" : remaining <= 120 ? "border-amber-300 bg-amber-50 text-amber-800" : "border-slate-200 bg-white text-slate-600"
+                }`}
+              >
+                <span>{t.timeRemaining}</span>
+                <span className="font-mono font-semibold tabular-nums">
+                  {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, "0")}
+                </span>
+              </div>
+              {/* CAL-FLU-605: stable per-threshold warning (no ticking seconds), so
+                  the aria-live region announces once at 2 min and once at 1 min. */}
+              {remaining > 0 && remaining <= 120 && (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="rounded-md border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-800"
+                >
+                  {remaining <= 60 ? t.warn1min : t.warn2min}
+                </div>
+              )}
             </div>
           )}
           {/* Reading */}

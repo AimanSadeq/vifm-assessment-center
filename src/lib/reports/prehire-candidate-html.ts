@@ -5,7 +5,7 @@ import type { PrehireRecommendation } from "@/lib/prehire/scoring";
  * assessor, not the client, so this is the deliverable VIFM downloads or emails
  * to the client per candidate. It surfaces the advisory composite + per-stage
  * scores, a "How this score is calculated" methodology section (the composite
- * formula + the four advisory bands and their triggers — since the signal is
+ * formula + the four advisory bands and their triggers - since the signal is
  * derived automatically, the client is told exactly how), and an explicit
  * "screening signal, not a hiring decision" line (the module's core guardrail).
  * Bilingual EN/AR.
@@ -20,6 +20,8 @@ export type PrehireReportStage = {
   required: boolean;
   /** Optional sub-line under the stage label (e.g. which sub-skills ran). */
   note?: string | null;
+  /** One-line definition of what this stage measures. */
+  definition?: string | null;
 };
 
 export type PrehireReportData = {
@@ -48,7 +50,10 @@ const L: Record<Lang, Record<string, string>> = {
     generated: "Generated",
     advisory: "Advisory signal",
     composite: "Composite",
+    compositeDef:
+      "A weighted average (0-100) of the stage scores below, each counting in proportion to its Weight. It is a screening signal, not a hiring decision.",
     perStage: "By stage",
+    stagesDefTitle: "What each stage measures",
     thStage: "Stage",
     thWeight: "Weight",
     thScore: "Score",
@@ -62,24 +67,24 @@ const L: Record<Lang, Record<string, string>> = {
     skillsAssessed: "Skills assessed",
     disclaimer:
       "This is an advisory screening SIGNAL, not a hiring decision. A qualified VIFM reviewer interprets it alongside other evidence; no decision is ever made automatically.",
-    confidential: "Confidential — for VIFM and the engaged client only.",
+    confidential: "Confidential - for VIFM and the engaged client only.",
     reco_advance: "Advance",
     reco_review: "Review",
     reco_hold: "Hold for review",
     reco_incomplete: "In progress",
     howTitle: "How this score is calculated",
     howComposite:
-      "The Composite is a weighted average (0–100) of the stage scores above — each stage counts in proportion to its Weight — shown only once the candidate has completed every weighted stage. The Advisory signal is then derived automatically from the Composite; it is a screening signal, not a hiring decision:",
+      "The Composite is a weighted average (0-100) of the stage scores above; each stage counts in proportion to its Weight, and it is shown only once the candidate has completed every weighted stage. The Advisory signal is then derived automatically from the Composite; it is a screening signal, not a hiring decision:",
     thBand: "Signal",
     thWhen: "When",
     thMeaning: "What it means",
     when_advance: "Composite 70+ and every required stage at or above its cut-score",
-    when_review: "Composite 50–69, or a required stage below its cut-score (which caps the signal here)",
+    when_review: "Composite 50-69, or a required stage below its cut-score (which caps the signal here)",
     when_hold: "Composite below 50",
     when_incomplete: "The candidate hasn't completed every stage yet",
     mean_advance: "Strong screening signal",
-    mean_review: "Middling — worth a closer look",
-    mean_hold: "Low signal — a person should review",
+    mean_review: "Middling - worth a closer look",
+    mean_hold: "Low signal - a person should review",
     mean_incomplete: "No composite is available yet",
   },
   ar: {
@@ -92,7 +97,10 @@ const L: Record<Lang, Record<string, string>> = {
     generated: "تاريخ الإصدار",
     advisory: "إشارة استرشادية",
     composite: "الدرجة الكلية",
+    compositeDef:
+      "متوسط مرجّح (0-100) لدرجات المراحل أدناه، تُسهم كل مرحلة بحسب وزنها. وهي إشارة فرز وليست قرار توظيف.",
     perStage: "حسب المرحلة",
+    stagesDefTitle: "ما الذي تقيسه كل مرحلة",
     thStage: "المرحلة",
     thWeight: "الوزن",
     thScore: "الدرجة",
@@ -106,24 +114,24 @@ const L: Record<Lang, Record<string, string>> = {
     skillsAssessed: "المهارات المُقيّمة",
     disclaimer:
       "هذه إشارة فرز استرشادية، وليست قرار توظيف. يفسّرها مراجع مؤهّل في VIFM مع أدلة أخرى؛ ولا يُتّخذ أي قرار تلقائيًا.",
-    confidential: "سري — لمعهد VIFM والعميل المتعاقد فقط.",
+    confidential: "سري - لمعهد VIFM والعميل المتعاقد فقط.",
     reco_advance: "ترشيح للمرحلة التالية",
     reco_review: "مراجعة",
     reco_hold: "إيقاف للمراجعة",
     reco_incomplete: "قيد التنفيذ",
     howTitle: "كيف تُحتسب هذه الدرجة",
     howComposite:
-      "الدرجة الكلية هي متوسط مرجّح (0–100) لدرجات المراحل أعلاه — تُسهم كل مرحلة بحسب وزنها — وتظهر فقط بعد أن يُكمل المرشّح جميع المراحل المرجّحة. ثم تُشتق الإشارة الاسترشادية تلقائيًا من الدرجة الكلية؛ وهي إشارة فرز وليست قرار توظيف:",
+      "الدرجة الكلية هي متوسط مرجّح (0-100) لدرجات المراحل أعلاه؛ تُسهم كل مرحلة بحسب وزنها، وتظهر فقط بعد أن يُكمل المرشّح جميع المراحل المرجّحة. ثم تُشتق الإشارة الاسترشادية تلقائيًا من الدرجة الكلية؛ وهي إشارة فرز وليست قرار توظيف:",
     thBand: "الإشارة",
     thWhen: "متى",
     thMeaning: "ماذا تعني",
     when_advance: "الدرجة الكلية 70 فأعلى وكل مرحلة إلزامية عند حد القطع أو أعلى",
-    when_review: "الدرجة الكلية 50–69، أو مرحلة إلزامية دون حد القطع (ما يحدّ الإشارة هنا)",
+    when_review: "الدرجة الكلية 50-69، أو مرحلة إلزامية دون حد القطع (ما يحدّ الإشارة هنا)",
     when_hold: "الدرجة الكلية دون 50",
     when_incomplete: "لم يُكمل المرشّح جميع المراحل بعد",
     mean_advance: "إشارة فرز قوية",
-    mean_review: "متوسطة — تستحق نظرة أدق",
-    mean_hold: "إشارة منخفضة — ينبغي أن يراجعها شخص",
+    mean_review: "متوسطة - تستحق نظرة أدق",
+    mean_hold: "إشارة منخفضة - ينبغي أن يراجعها شخص",
     mean_incomplete: "لا تتوفر درجة كلية بعد",
   },
 };
@@ -159,11 +167,12 @@ export function renderPrehireCandidateHtml(data: PrehireReportData, lang: Lang):
             ? `<span class="badge warn">${t.below}</span>`
             : `<span class="badge ok">${t.pass}</span>`;
       const note = s.note ? `<div class="substage">${esc(s.note)}</div>` : "";
+      const def = s.definition ? `<div class="stage-def">${esc(s.definition)}</div>` : "";
       return `<tr>
-        <td class="strong">${esc(s.label)}${s.required ? ` <span class="req">${t.required}</span>` : ""}${note}</td>
+        <td class="strong">${esc(s.label)}${s.required ? ` <span class="req">${t.required}</span>` : ""}${def}${note}</td>
         <td class="num">${Math.round(s.weightPct)}%</td>
-        <td class="num">${s.normalized == null ? "—" : Math.round(s.normalized)}</td>
-        <td class="num">${s.cutScore == null ? "—" : s.cutScore}</td>
+        <td class="num">${s.normalized == null ? "-" :Math.round(s.normalized)}</td>
+        <td class="num">${s.cutScore == null ? "-" :s.cutScore}</td>
         <td>${outcome}</td>
       </tr>`;
     })
@@ -202,6 +211,8 @@ export function renderPrehireCandidateHtml(data: PrehireReportData, lang: Lang):
   .stat { flex: 1; border: 1px solid #e3e6ee; border-radius: 8px; padding: 12px 14px; }
   .stat .v { font-size: 26px; font-weight: 700; color: #010131; }
   .stat .l { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: #777; margin-top: 2px; }
+  .stat-def { font-size: 9.5px; color: #667085; margin-top: 6px; line-height: 1.45; }
+  .stage-def { font-size: 9px; font-weight: 400; color: #667085; margin-top: 2px; line-height: 1.4; }
   .reco { display: inline-block; border-radius: 999px; padding: 4px 12px; font-weight: 700; font-size: 13px; }
   h2 { font-size: 13px; color: #010131; margin: 18px 0 8px; border-${rtl ? "right" : "left"}: 3px solid #5391D5; padding-${rtl ? "right" : "left"}: 8px; }
   table { width: 100%; border-collapse: collapse; }
@@ -232,8 +243,9 @@ export function renderPrehireCandidateHtml(data: PrehireReportData, lang: Lang):
 
   <div class="stats">
     <div class="stat">
-      <div class="v">${data.composite == null ? "—" : data.composite}</div>
+      <div class="v">${data.composite == null ? "-" : data.composite}</div>
       <div class="l">${t.composite}</div>
+      <div class="stat-def">${t.compositeDef}</div>
     </div>
     <div class="stat">
       <div class="l" style="margin-bottom:6px">${t.advisory}</div>

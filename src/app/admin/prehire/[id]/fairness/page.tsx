@@ -72,7 +72,7 @@ function DimensionTable({ dim, t }: { dim: DimensionResult; t: ServerT }) {
                   {g.isReference ? (
                     <span className="text-xs text-muted-foreground">{t("prehire.reference")}</span>
                   ) : g.impactRatio == null ? (
-                    "—"
+                    "-"
                   ) : (
                     <span className={g.adverseImpact ? "font-semibold text-rose-700" : ""}>
                       {g.impactRatio.toFixed(2)}
@@ -219,7 +219,7 @@ export default async function FairnessPage({ params }: { params: { id: string } 
                     <TableRow key={a.id}>
                       <TableCell className="whitespace-nowrap text-xs text-muted-foreground">{fmtWhen(a.created_at)}</TableCell>
                       <TableCell className="text-sm">{auditLabel(a.action, t)}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{a.actor_label ?? "—"}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{a.actor_label ?? "-"}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{detailSummary(a.action, a.detail, t)}</TableCell>
                     </TableRow>
                   ))}

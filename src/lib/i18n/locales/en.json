@@ -694,7 +694,7 @@
     "sentOn": "Sent {{date}}",
     "reportSent": "Report emailed to {{to}}.",
     "reportNotConfigured": "Email isn't set up on this server, so nothing was sent to {{to}}. Download the report and send it yourself, or configure email on the server.",
-    "reportsNotConfigured": "Email isn't set up on this server — no reports were sent. Configure email on the server (or download each report and send it manually).",
+    "reportsNotConfigured": "Email isn't set up on this server, so no reports were sent. Configure email on the server (or download each report and send it manually).",
     "setRecipientFirst": "Set a client recipient email first.",
     "clientRecipientLabel": "Client report recipient",
     "clientRecipientPh": "client@company.com",
@@ -711,7 +711,7 @@
       "filled": "Filled"
     },
     "addedEmailed": "Candidate added and invitation emailed to {{email}}.",
-    "addedCopied": "Candidate added — not invited yet. Apply link copied; use “Email” on the row to send the invite when you're ready.",
+    "addedCopied": "Candidate added, not invited yet. Apply link copied; use “Email” on the row to send the invite when you're ready.",
     "inviteAll": "Invite all uninvited",
     "invitingAll": "Sending invites…",
     "invitedAllResult": "Sent {{sent}} of {{total}} invitations.",

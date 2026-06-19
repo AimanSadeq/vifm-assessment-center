@@ -1,4 +1,4 @@
-// Pre-Hire adverse-impact (disparate-impact) analysis — the 4/5ths rule.
+// Pre-Hire adverse-impact (disparate-impact) analysis - the 4/5ths rule.
 //
 // For each demographic dimension we compute the selection rate per group, take
 // the highest-selected group as the reference, and flag any group whose
@@ -9,7 +9,7 @@
 // IMPORTANT framing:
 //   • This is a MONITORING signal, not proof of discrimination. A flag warrants
 //     review of the instrument's job-relatedness, not an automatic change.
-//   • Small samples make the ratio unstable — we surface n and an `underpowered`
+//   • Small samples make the ratio unstable - we surface n and an `underpowered`
 //     caveat rather than implying false precision.
 //   • Demographics are voluntary self-ID; 'prefer_not_to_say' / null are counted
 //     as "not disclosed" and excluded from group rates (never imputed).
@@ -73,9 +73,9 @@ export type AdverseImpactReport = {
 const GENDER_LABELS: Record<string, string> = { male: "Male", female: "Female" };
 const AGE_LABELS: Record<string, string> = {
   under_25: "Under 25",
-  "25_34": "25–34",
-  "35_44": "35–44",
-  "45_54": "45–54",
+  "25_34": "25-34",
+  "35_44": "35-44",
+  "45_54": "45-54",
   "55_plus": "55+",
 };
 const NATIONALITY_LABELS: Record<string, string> = { national: "National / citizen", expatriate: "Expatriate / resident" };

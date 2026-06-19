@@ -22,10 +22,31 @@ import {
 type Lang = "en" | "ar";
 
 const STAGE_LABELS: Record<string, { en: string; ar: string }> = {
-  quiz: { en: "Aptitude & Knowledge", ar: "المعرفة والقدرات" },
+  quiz: { en: "Competency Quiz", ar: "اختبار الكفاءات" },
   fluent: { en: "English (Fluent)", ar: "الإنجليزية (Fluent)" },
   cbi: { en: "Behavioural Interview", ar: "المقابلة السلوكية" },
   assessment_center: { en: "Assessment Center", ar: "مركز التقييم" },
+};
+
+// One-line definition of what each stage measures, shown under the stage label
+// so the client report explains every row.
+const STAGE_DEFINITIONS: Record<string, { en: string; ar: string }> = {
+  quiz: {
+    en: "Role-relevant knowledge and competency questions, drawn from the requisition's competency set.",
+    ar: "أسئلة معرفية وكفاءات متصلة بالوظيفة، مأخوذة من مجموعة كفاءات الطلب الوظيفي.",
+  },
+  fluent: {
+    en: "AI-scored English placement against the CEFR scale (reading, listening, writing, speaking).",
+    ar: "تقييم للإنجليزية مصحَّح بالذكاء الاصطناعي وفق مقياس CEFR (قراءة، استماع، كتابة، تحدث).",
+  },
+  cbi: {
+    en: "A structured behavioural interview, AI-led and reviewed by a qualified assessor.",
+    ar: "مقابلة سلوكية منظَّمة يقودها الذكاء الاصطناعي ويراجعها مقيّم مؤهّل.",
+  },
+  assessment_center: {
+    en: "Assessment-centre exercises observed and scored by trained assessors.",
+    ar: "تمارين مركز تقييم يلاحظها ويصحّحها مقيّمون مدرَّبون.",
+  },
 };
 
 const FLUENT_SKILL_LABELS: Record<FluentSkill, { en: string; ar: string }> = {
@@ -94,7 +115,7 @@ export async function buildPrehireCandidatePdf(params: {
     return { ok: false, status: 404, error: "Candidate or requisition not found" };
   }
 
-  // Custom fields (00061) — separate best-effort read (tolerant pre-migration).
+  // Custom fields (00061) - separate best-effort read (tolerant pre-migration).
   let employeeId: string | null = null;
   const { data: customRow } = await sb
     .from("prehire_candidates")
@@ -121,6 +142,7 @@ export async function buildPrehireCandidatePdf(params: {
 
   const stages = composite.perStage.map((s) => ({
     label: STAGE_LABELS[s.kind]?.[lang] ?? s.kind,
+    definition: STAGE_DEFINITIONS[s.kind]?.[lang] ?? null,
     normalized: s.normalized,
     cutScore: s.cutScore,
     passed: s.passed,

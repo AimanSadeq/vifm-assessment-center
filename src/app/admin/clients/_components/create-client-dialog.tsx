@@ -80,14 +80,14 @@ export function CreateClientDialog() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="cl-region">Region <span className="text-slate-400">(AI Readiness / Reflect)</span></Label>
+              <Label htmlFor="cl-region">Region</Label>
               <select id="cl-region" className={selectCls} value={region} onChange={(e) => setRegion(e.target.value as "uae" | "saudi")}>
                 <option value="uae">UAE</option>
                 <option value="saudi">Saudi Arabia</option>
               </select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="cl-sector">Sector <span className="text-slate-400">(AI Readiness / Reflect)</span></Label>
+              <Label htmlFor="cl-sector">Sector</Label>
               <select id="cl-sector" className={selectCls} value={sector} onChange={(e) => setSector(e.target.value as "government" | "banking" | "general")}>
                 <option value="general">General</option>
                 <option value="banking">Banking</option>

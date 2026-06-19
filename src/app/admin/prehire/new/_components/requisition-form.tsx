@@ -8,8 +8,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Sparkles, Loader2, Upload } from "lucide-react";
 import { createRequisitionAction, createPrehireOrgAction } from "../../actions";
+// Reuse the SAME job-design backend as the AC engagement wizard - paste/upload a
+// JD, Claude maps it to the behavioural 38, and we pre-fill the quiz competency
+// set (the "designed role").
+import {
+  extractCompetenciesFromJdAction,
+  extractCompetenciesFromJdFileAction,
+} from "../../../engagements/new/actions";
 import { FLUENT_SKILLS, RECEPTIVE_FLUENT_SKILLS, type FluentSkill } from "@/types/prehire";
 
 type RoleProfileOption = {
@@ -134,6 +143,55 @@ export function RequisitionForm({
     setSelectedCompetencies(new Set(roleProfileDefaultIds(roleProfileId)));
     setCompetencyDirty(false);
   };
+
+  // Design-the-role-from-a-JD panel (reuses the AC wizard's extractor backend).
+  const [showJd, setShowJd] = useState(false);
+  const [jdText, setJdText] = useState("");
+  const [jdFile, setJdFile] = useState<File | null>(null);
+  const [extractingJd, setExtractingJd] = useState(false);
+
+  async function handleExtractJd() {
+    setExtractingJd(true);
+    try {
+      const res = jdFile
+        ? await (async () => {
+            const fd = new FormData();
+            fd.set("file", jdFile);
+            if (title.trim()) fd.set("targetRole", title.trim());
+            return extractCompetenciesFromJdFileAction(fd);
+          })()
+        : await extractCompetenciesFromJdAction({
+            jobDescription: jdText,
+            targetRole: title.trim() || undefined,
+          });
+      if ("error" in res) {
+        toast.error(res.error);
+        return;
+      }
+      // Map the AI's recommendations to catalogue competency ids we can score.
+      const ids = res.recommendations
+        .map((r) => r.competencyId)
+        .filter((id) => competencyIdSet.has(id));
+      if (ids.length === 0) {
+        toast.error(t("prehire.jdNoMatch", "No matching competencies were found in this JD."));
+        return;
+      }
+      setSelectedCompetencies(new Set(ids));
+      setCompetencyDirty(true);
+      // The designed set drives the quiz, so make sure that stage is on.
+      setStage("quiz", { included: true });
+      toast.success(
+        t("prehire.jdDesigned", "Designed {{count}} competencies from the job description.", {
+          count: ids.length,
+        }),
+      );
+      setShowJd(false);
+      setJdText("");
+      setJdFile(null);
+    } finally {
+      setExtractingJd(false);
+    }
+  }
 
   // Inline client creation (CAL-PH-504).
   const [showNewOrg, setShowNewOrg] = useState(false);
@@ -310,7 +368,19 @@ export function RequisitionForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="rp">{t("prehire.roleProfileLabel")}</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="rp">{t("prehire.roleProfileLabel")}</Label>
+            <button
+              type="button"
+              onClick={() => setShowJd((v) => !v)}
+              className="inline-flex items-center gap-1 text-xs font-medium text-[#5391D5] hover:underline"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              {showJd
+                ? t("prehire.cancelJd", "Cancel")
+                : t("prehire.designFromJd", "Design from a job description")}
+            </button>
+          </div>
           <select
             id="rp"
             value={roleProfileId}
@@ -322,6 +392,61 @@ export function RequisitionForm({
               <option key={p.id} value={p.id}>{p.name_en}</option>
             ))}
           </select>
+
+          {/* Design the role from a JD - reuses the AC engagement extractor. The
+              extracted competencies pre-fill the quiz competency set below. */}
+          {showJd && (
+            <div className="rounded-md border bg-muted/20 p-3 space-y-2">
+              <p className="text-xs text-muted-foreground">
+                {t(
+                  "prehire.designFromJdHint",
+                  "Paste a job description (or upload a PDF/TXT). VIFM's AI maps it to the behavioural competency framework and pre-fills the quiz competency set below - the same engine the Assessment Center uses.",
+                )}
+              </p>
+              <Textarea
+                value={jdText}
+                onChange={(e) => setJdText(e.target.value)}
+                placeholder={t("prehire.jdPlaceholder", "Paste the job description here (at least 50 characters)...")}
+                className="min-h-[120px] text-sm"
+                disabled={!!jdFile}
+              />
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="inline-flex items-center gap-1.5 text-xs font-medium text-[#5391D5] cursor-pointer hover:underline">
+                  <Upload className="h-3.5 w-3.5" />
+                  {jdFile ? jdFile.name : t("prehire.jdUpload", "Upload PDF / TXT")}
+                  <input
+                    type="file"
+                    accept=".pdf,.txt,application/pdf,text/plain"
+                    className="hidden"
+                    onChange={(e) => setJdFile(e.target.files?.[0] ?? null)}
+                  />
+                </label>
+                {jdFile && (
+                  <button
+                    type="button"
+                    onClick={() => setJdFile(null)}
+                    className="text-xs text-muted-foreground hover:underline"
+                  >
+                    {t("prehire.jdClearFile", "Remove file")}
+                  </button>
+                )}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  className="ms-auto"
+                  onClick={handleExtractJd}
+                  disabled={extractingJd || (!jdFile && jdText.trim().length < 50)}
+                >
+                  {extractingJd ? (
+                    <><Loader2 className="h-3.5 w-3.5 animate-spin" /> {t("prehire.jdExtracting", "Designing...")}</>
+                  ) : (
+                    <><Sparkles className="h-3.5 w-3.5" /> {t("prehire.jdExtract", "Extract competencies")}</>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="space-y-3">

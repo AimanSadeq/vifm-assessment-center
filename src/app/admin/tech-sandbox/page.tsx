@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SlidersHorizontal, BarChart3, ClipboardList, BookOpen, ArrowRight } from "lucide-react";
 import { redirect } from "next/navigation";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { listFunctions, getFrameworkOverview } from "@/lib/technical-sandbox/service";
@@ -28,6 +29,32 @@ export default async function TechSandboxAdminPage({
   const customHref = talentLens
     ? `/admin/tech-sandbox/custom?lens=${talentLens}`
     : "/admin/tech-sandbox/custom";
+  const quickActions = [
+    {
+      href: customHref,
+      icon: SlidersHorizontal,
+      title: "Build a custom assessment",
+      desc: "Pick a function, skills and tasks, then assign delegates.",
+    },
+    {
+      href: "/admin/tech-sandbox/results",
+      icon: BarChart3,
+      title: "View completed results",
+      desc: "Scored sittings with per-competency bands.",
+    },
+    {
+      href: "/admin/tech-sandbox/sandbox-blocks",
+      icon: ClipboardList,
+      title: "Review sandbox tasks",
+      desc: "The live spreadsheet, calculation and SQL tasks.",
+    },
+    {
+      href: "/admin/tech-sandbox/answers",
+      icon: BookOpen,
+      title: "View model answers (admin)",
+      desc: "The master answers used to score each task.",
+    },
+  ];
   const [functions, vouchers, overview] = await Promise.all([
     listFunctions(true),
     listVouchers(),
@@ -46,23 +73,35 @@ export default async function TechSandboxAdminPage({
           Candidates work in live sandboxes (spreadsheet, calculation, SQL), scored against master
           answers and banded per competency.
         </p>
-        <div className="mt-2 flex flex-wrap gap-4">
-          <Link href={customHref} className="text-sm font-medium text-[#5391D5] hover:underline">
-            Build a custom assessment →
-          </Link>
-          <Link href="/admin/tech-sandbox/results" className="text-sm font-medium text-[#5391D5] hover:underline">
-            View completed results →
-          </Link>
-          <Link href="/admin/tech-sandbox/sandbox-blocks" className="text-sm text-[#5391D5] hover:underline">
-            Review sandbox tasks →
-          </Link>
-          <Link href="/admin/tech-sandbox/answers" className="text-sm text-[#5391D5] hover:underline">
-            View model answers (admin) →
-          </Link>
-        </div>
       </div>
 
-      {/* 1) The framework showcase — demo the breadth, then preview the live one. */}
+      {/* Quick actions - titled card grid so the key tasks are obvious. */}
+      <section className="space-y-3">
+        <h2 className="text-base font-semibold text-foreground">Quick actions</h2>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {quickActions.map((a) => {
+            const Icon = a.icon;
+            return (
+              <Link
+                key={a.href}
+                href={a.href}
+                className="group flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition hover:border-[#5391D5] hover:shadow-sm"
+              >
+                <span className="inline-flex shrink-0 rounded-lg bg-[#5391D5]/10 p-2 text-[#5391D5]">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold text-foreground">{a.title}</span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">{a.desc}</span>
+                </span>
+                <ArrowRight className="ms-auto h-4 w-4 shrink-0 text-muted-foreground transition group-hover:text-[#5391D5]" />
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* 1) The framework showcase - demo the breadth, then preview the live one. */}
       <section className="space-y-2">
         <h2 className="text-base font-semibold text-foreground">Competency framework</h2>
         {overview.length === 0 ? (
@@ -74,7 +113,7 @@ export default async function TechSandboxAdminPage({
         )}
       </section>
 
-      {/* 2) Distribution — both options, collapsible. */}
+      {/* 2) Distribution - both options, collapsible. */}
       {functions.length > 0 && (
         <section className="space-y-3">
           <h2 className="text-base font-semibold text-foreground">Give delegates access</h2>

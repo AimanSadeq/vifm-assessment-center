@@ -42,6 +42,7 @@ import { overallConfidenceBand, type ConfidenceBand } from "@/lib/scoring/reliab
 import { isAzureSpeechConfigured, type PronunciationScore } from "@/lib/integrations/speech";
 import { issueCredential } from "@/lib/credentials/issue";
 import { computeIntegritySignal, type IntegrityFlags, type IntegritySignal } from "@/lib/scoring/integrity";
+import { isStaffCaller } from "@/lib/ara/auth-guards";
 import { createHash } from "node:crypto";
 
 export const dynamic = "force-dynamic";
@@ -514,10 +515,10 @@ export async function POST(req: Request) {
     // Log receptive responses into the item bank (best-effort; CAT groundwork).
     await logItemResponses(reading, listening, body.answers ?? {}, body.sessionId ?? null);
 
-    // Email the taker their result + certificate link (best-effort).
-    if (result_id && takerEmail) {
-      await emailFluentResult(result_id, takerEmail, takerName, result);
-    }
+    // Results are not shown to the taker (XP-13: every assessment hides results
+    // from the taker; an admin downloads/sends the report). So we no longer email
+    // the taker their certificate. Admin views/sends from /ac/fluent/cohort.
+    void emailFluentResult;
 
     // Issue a verifiable CEFR credential (best-effort; VIFM Verify).
     if (result_id) {
@@ -533,7 +534,17 @@ export async function POST(req: Request) {
       });
     }
 
-    return NextResponse.json({ ...result, reliability, result_id, integrity });
+    // Staff (admin/consultant/assessor) see results on-screen; takers get a
+    // thank-you. result_id is only returned to staff so a taker can never fetch
+    // the certificate even by guessing the API shape (XP-13).
+    const isStaff = await isStaffCaller();
+    return NextResponse.json({
+      ...result,
+      reliability,
+      result_id: isStaff ? result_id : null,
+      integrity,
+      isStaff,
+    });
   }
 
   return NextResponse.json({ error: "action must be 'start' or 'score'" }, { status: 400 });

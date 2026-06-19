@@ -70,6 +70,20 @@ export async function getCurrentCaller(): Promise<AraCaller | null> {
 }
 
 /**
+ * True when the caller is VIFM staff (admin / consultant / assessor) - i.e. NOT
+ * an anonymous taker, delegate, candidate or client. Used to decide whether to
+ * show on-screen assessment results: staff see results, takers see a thank-you.
+ * Returns false for unauthenticated callers (when auth is on).
+ */
+export async function isStaffCaller(): Promise<boolean> {
+  const c = await getCurrentCaller();
+  return (
+    !!c &&
+    (c.role === "admin" || c.role === "consultant" || c.role === "lead_assessor" || c.role === "associate_assessor")
+  );
+}
+
+/**
  * Throws AuthorizationError unless the caller's role is in `allowed`.
  * Accepts a single role or an array.
  */

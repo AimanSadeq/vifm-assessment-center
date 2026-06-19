@@ -68,16 +68,16 @@ const isTechSandboxRoute = (pathname: string) =>
 
 // Fluent voucher delegate flow - a no-account delegate redeems a code and takes
 // the English placement via a redemption token. Precise paths only: the redeem
-// page, the token-gated runner, the start/score + speech APIs, and the
-// certificate. The bare /ac/fluent runner and admin surfaces (cohort,
-// calibration, vouchers) stay session-gated.
+// page, the token-gated runner, and the start/score + speech APIs. The
+// certificate is NOT public (XP-13: results are not shown to the taker - only an
+// admin downloads/sends the report). The bare /ac/fluent runner and admin
+// surfaces (cohort, calibration, vouchers) stay session-gated.
 const isFluentPublicRoute = (pathname: string) =>
   pathname === "/ac/fluent/redeem" ||
   pathname.startsWith("/ac/fluent/take/") ||
   pathname === "/api/ac/fluent" ||
   pathname === "/api/ac/fluent/transcribe" ||
-  pathname === "/api/ac/fluent/tts" ||
-  (pathname.startsWith("/api/ac/fluent/") && pathname.endsWith("/certificate"));
+  pathname === "/api/ac/fluent/tts";
 
 // Cognitive voucher delegate flow - same pattern as Fluent: redeem page,
 // token-gated runner, start/score API, and the result-report PDF.

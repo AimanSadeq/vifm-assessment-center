@@ -198,6 +198,9 @@ export function FluentClient({
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [writing, setWriting] = useState("");
   const [result, setResult] = useState<FluentResult | null>(null);
+  // XP-13: only VIFM staff (admin/consultant/assessor) see results on-screen;
+  // a delegate/anonymous taker gets a thank-you. Server-decided via isStaff.
+  const [canView, setCanView] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -483,8 +486,8 @@ export function FluentClient({
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = (await res.json()) as FluentResult;
-      setResult(data); setPhase("result");
+      const data = (await res.json()) as FluentResult & { isStaff?: boolean };
+      setResult(data); setCanView(data.isStaff === true); setPhase("result");
     } catch {
       setError("Scoring failed. Please try again.");
     } finally { setBusy(false); }
@@ -831,8 +834,26 @@ export function FluentClient({
         </>
       )}
 
-      {/* ── Result ── */}
-      {phase === "result" && result && (
+      {/* ── Taker thank-you (XP-13: results are not shown to the taker) ── */}
+      {phase === "result" && result && !canView && (
+        <div className="rounded-xl border bg-white p-8 text-center shadow-sm">
+          <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-600" />
+          <h2 className="mt-3 text-xl font-bold text-[#010131]">
+            {rtl ? "تم إرسال تقييمك" : "Your assessment has been submitted"}
+          </h2>
+          <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
+            {rtl
+              ? "تمت مشاركة نتائجك مع الجهة الطالبة ولا تُعرض هنا. شكرًا لك."
+              : "Your results have been shared with the requesting organisation and are not shown here. Thank you."}
+          </p>
+          <button onClick={reset} className="mt-5 inline-flex items-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
+            <RotateCcw className="h-4 w-4" /> {t.startOver}
+          </button>
+        </div>
+      )}
+
+      {/* ── Result (staff only) ── */}
+      {phase === "result" && result && canView && (
         <div className="rounded-xl border bg-white p-6 shadow-sm space-y-5">
           {takerName.trim() && (
             <p className="text-sm text-slate-500">{t.resultFor} <span className="font-semibold text-[#010131]">{takerName.trim()}</span></p>

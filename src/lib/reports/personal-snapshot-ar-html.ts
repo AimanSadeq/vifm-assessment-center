@@ -28,6 +28,7 @@
 
 import {
   ARA_INDIVIDUAL_FACTORS,
+  ARA_INDIVIDUAL_MATURITY_STAGES,
   getIndividualMaturityStage,
   FACTOR_DESCRIPTIVE,
   TALENT_LENS_LABELS,
@@ -35,6 +36,13 @@ import {
   type AraIndividualMaturityStageId,
   type AraTalentLens,
 } from "@/lib/constants/ara-individual-factors";
+
+/** Score range shown beside each overall maturity stage in the legend (AR). */
+const STAGE_RANGE_AR: Record<AraIndividualMaturityStageId, string> = {
+  emerging: "أقل من 3",
+  practising: "من 3 إلى أقل من 4",
+  embedded: "4 فأكثر",
+};
 import { VIFM_VERTICAL_LABELS, type VifmVertical } from "@/types/database";
 import { fitScoreOutOfTen } from "@/lib/recommender/format";
 import { personalFactSheetRows } from "@/lib/reports/fact-sheet-content";
@@ -565,23 +573,18 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
         <span class="hero-score-num">${data.overallScore.toFixed(1)}</span>
         <span class="hero-score-of">/ 5 إجمالي</span>
       </div>
+      <div style="display:inline-block;font-size:8pt;font-weight:700;color:#fff;background:rgba(255,255,255,0.14);padding:3px 8px;border-radius:6px;margin-top:10px">نوع التقييم: ${lens ? esc(TALENT_LENS_LABELS[lens].ar) : "عام"}</div>
       ${data.overallScore > 0 ? `<span class="hero-stage">${esc(stage.name_ar)}</span>` : ""}
       ${data.overallScore > 0 ? `<div style="font-size:9px;color:#fff;opacity:0.85;margin-top:4px">${esc(stage.definition_ar)}</div>` : ""}
       <p class="hero-verdict">${data.overallScore > 0 ? esc(stage.blurb_ar) : "لا توجد بيانات بعد."}</p>
     </div>
 
-    <p class="section-eyebrow">تفصيل لكل عامل</p>
-    <h2 class="section-title">موقعك في كل عامل من عوامل VIFM</h2>
-    <div class="section-rule"></div>
-    <div class="factor-grid">${factorCardsHtml}</div>
-  </section>
-
-  <!-- PAGE 2 break -->
-  <section class="page-break-before">
-    <!-- Scale legend (R3) - opens page 2 so it never orphans onto a blank page
-         when the per-factor cards fill page 1. -->
+    <!-- A2 + A4: how to read the scores, directly under the overall score. -->
     <div class="legend">
-      <p class="legend-title">${esc(HOW_TO_USE_PANELS_AR.read.title)}</p>
+      <p class="legend-title">قراءة الدرجة</p>
+      <p style="font-size:8pt;font-weight:700;color:${C.textLight};margin:6px 0 2px">المرحلة الإجمالية</p>
+      ${ARA_INDIVIDUAL_MATURITY_STAGES.map((st) => `<p style="font-size:8pt;color:${C.textLight};line-height:1.45;margin:1.5px 0"><span style="font-weight:700">${esc(st.name_ar)} (${esc(STAGE_RANGE_AR[st.id])}):</span> ${esc(st.definition_ar)}.</p>`).join("")}
+      <p style="font-size:8pt;font-weight:700;color:${C.textLight};margin:6px 0 2px">نطاقات كل عامل</p>
       <div class="legend-row">
         <div class="legend-cell">
           <span class="legend-pill" style="background:#fee2e2;color:#991b1b">فرصة</span>
@@ -598,6 +601,14 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
       </div>
     </div>
 
+    <p class="section-eyebrow">تفصيل لكل عامل</p>
+    <h2 class="section-title">موقعك في كل عامل من عوامل الجاهزية للذكاء الاصطناعي</h2>
+    <div class="section-rule"></div>
+    <div class="factor-grid">${factorCardsHtml}</div>
+  </section>
+
+  <!-- PAGE 2 break -->
+  <section class="page-break-before">
     <p class="section-eyebrow">كيف تستخدم هذه اللقطة</p>
     <h2 class="section-title">قراءة نتيجتك في سياقها</h2>
     <div class="section-rule"></div>

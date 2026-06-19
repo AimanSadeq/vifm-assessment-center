@@ -2,6 +2,7 @@ import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import { formatFitScore, fitScoreOutOfTen } from "@/lib/recommender/format";
 import {
   ARA_INDIVIDUAL_FACTORS,
+  ARA_INDIVIDUAL_MATURITY_STAGES,
   getIndividualMaturityStage,
   FACTOR_DESCRIPTIVE,
   TALENT_LENS_LABELS,
@@ -35,6 +36,13 @@ import { personalFactSheetRows } from "@/lib/reports/fact-sheet-content";
  * Puppeteer for that reason; we'll bring the personal PDF onto the
  * same pipeline when bilingual is prioritised.
  */
+
+/** Score range shown beside each overall maturity stage in the legend. */
+const STAGE_RANGE_EN: Record<AraIndividualMaturityStageId, string> = {
+  emerging: "below 3",
+  practising: "3 to below 4",
+  embedded: "4 and above",
+};
 
 const C = {
   primary: "#010131",
@@ -115,6 +123,20 @@ const s = StyleSheet.create({
   legendCell: { flex: 1, flexDirection: "row", alignItems: "center", gap: 5 },
   legendPill: { fontSize: 7, fontFamily: "Helvetica-Bold", paddingHorizontal: 5, paddingVertical: 1.5, borderRadius: 6 },
   legendText: { fontSize: 8, color: C.textLight, flex: 1, lineHeight: 1.4 },
+  legendSub: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.textLight, marginTop: 6, marginBottom: 2 },
+  legendStageLine: { fontSize: 8, color: C.textLight, lineHeight: 1.45, marginTop: 1.5 },
+  heroType: {
+    fontSize: 8,
+    fontFamily: "Helvetica-Bold",
+    color: "#fff",
+    backgroundColor: "rgba(255,255,255,0.14)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    marginTop: 10,
+    alignSelf: "flex-start",
+    letterSpacing: 0.5,
+  },
 
   // Factor grid
   factorRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14 },
@@ -408,6 +430,10 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
             <Text style={s.heroScoreNum}>{data.overallScore.toFixed(1)}</Text>
             <Text style={s.heroScoreOf}>/ 5 overall</Text>
           </View>
+          {/* A3: the assessment type (which portal issued it), beneath the score. */}
+          <Text style={s.heroType}>
+            Assessment type: {lens ? TALENT_LENS_LABELS[lens].en : "General"}
+          </Text>
           {data.overallScore > 0 && (
             <Text style={s.heroStagePill}>{stage.name_en}</Text>
           )}
@@ -422,9 +448,39 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
           </Text>
         </View>
 
+        {/* A2 + A4: how to read the scores, directly under the overall score -
+            the overall maturity stage legend AND the per-factor band legend. */}
+        <View style={s.legendBox} wrap={false}>
+          <Text style={s.legendTitle}>Reading the score</Text>
+          <Text style={s.legendSub}>Overall maturity stage</Text>
+          {ARA_INDIVIDUAL_MATURITY_STAGES.map((st) => (
+            <Text key={st.id} style={s.legendStageLine}>
+              <Text style={{ fontFamily: "Helvetica-Bold" }}>
+                {st.name_en} ({STAGE_RANGE_EN[st.id]}):
+              </Text>{" "}
+              {st.definition_en}.
+            </Text>
+          ))}
+          <Text style={s.legendSub}>Per-factor bands</Text>
+          <View style={s.legendRow}>
+            <View style={s.legendCell}>
+              <Text style={[s.legendPill, { backgroundColor: "#fee2e2", color: "#991b1b" }]}>OPPORTUNITY</Text>
+              <Text style={s.legendText}>1.0 - 2.9</Text>
+            </View>
+            <View style={s.legendCell}>
+              <Text style={[s.legendPill, { backgroundColor: "#fef3c7", color: "#92400e" }]}>DEVELOPING</Text>
+              <Text style={s.legendText}>3.0 - 3.9</Text>
+            </View>
+            <View style={s.legendCell}>
+              <Text style={[s.legendPill, { backgroundColor: "#dcfce7", color: "#166534" }]}>STRONG</Text>
+              <Text style={s.legendText}>4.0 - 5.0</Text>
+            </View>
+          </View>
+        </View>
+
         {/* Factors */}
         <Text style={s.sectionEyebrow}>Per-factor breakdown</Text>
-        <Text style={s.sectionTitle}>Where you stand on each VIFM factor</Text>
+        <Text style={s.sectionTitle}>Where you stand on each AI readiness factor</Text>
         <View style={s.sectionRule} />
         <View style={s.factorRow}>
           {ARA_INDIVIDUAL_FACTORS.map((f) => {
@@ -482,34 +538,8 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
 
       {/* ─── Page 2 - Context, training, methodology ─────────── */}
       <Page size="A4" style={s.page} wrap>
-        {/* Scale legend (R3) - opens page 2 so it never orphans onto a blank
-            page when the four per-factor cards fill page 1. wrap={false} keeps
-            it whole. */}
-        <View style={s.legendBox} wrap={false}>
-          <Text style={s.legendTitle}>{HOW_TO_USE_PANELS.read.title}</Text>
-          <View style={s.legendRow}>
-            <View style={s.legendCell}>
-              <Text style={[s.legendPill, { backgroundColor: "#fee2e2", color: "#991b1b" }]}>
-                OPPORTUNITY
-              </Text>
-              <Text style={s.legendText}>1.0 - 2.9</Text>
-            </View>
-            <View style={s.legendCell}>
-              <Text style={[s.legendPill, { backgroundColor: "#fef3c7", color: "#92400e" }]}>
-                DEVELOPING
-              </Text>
-              <Text style={s.legendText}>3.0 - 3.9</Text>
-            </View>
-            <View style={s.legendCell}>
-              <Text style={[s.legendPill, { backgroundColor: "#dcfce7", color: "#166534" }]}>
-                STRONG
-              </Text>
-              <Text style={s.legendText}>4.0 - 5.0</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Context panels */}
+        {/* Context panels (the scale + band legend now sits under the score on
+            page 1, per the client request). */}
         <Text style={s.sectionEyebrow}>How to use this snapshot</Text>
         <Text style={s.sectionTitle}>Reading your result in context</Text>
         <View style={s.sectionRule} />

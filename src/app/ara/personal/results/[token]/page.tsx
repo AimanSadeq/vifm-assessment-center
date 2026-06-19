@@ -10,11 +10,13 @@ import { calculateQuestionScore } from "@/lib/ara/scoring";
 import {
   ARA_INDIVIDUAL_FACTORS,
   ARA_INDIVIDUAL_FACTOR_IDS,
+  ARA_INDIVIDUAL_MATURITY_STAGES,
   getIndividualMaturityStage,
   validateTalentLens,
   TALENT_LENS_LABELS,
   FACTOR_DESCRIPTIVE,
   type AraIndividualFactorId,
+  type AraIndividualMaturityStageId,
 } from "@/lib/constants/ara-individual-factors";
 import { recommendCoursesForIndividualSnapshot } from "@/lib/recommender/courses";
 import { RecommendedCoursesPanel } from "@/components/shared/recommended-courses-panel";
@@ -31,6 +33,13 @@ export const dynamic = "force-dynamic";
 type Props = { params: { token: string } };
 
 const TARGET = 4;
+
+/** Score range shown beside each overall maturity stage in the legend. */
+const STAGE_RANGE: Record<AraIndividualMaturityStageId, { en: string; ar: string }> = {
+  emerging: { en: "below 3", ar: "أقل من 3" },
+  practising: { en: "3 to below 4", ar: "من 3 إلى أقل من 4" },
+  embedded: { en: "4 and above", ar: "4 فأكثر" },
+};
 
 export default async function PersonalResultsPage({ params }: Props) {
   const ctx = await loadRespondentByToken(params.token);
@@ -242,9 +251,16 @@ export default async function PersonalResultsPage({ params }: Props) {
                     {overallScore.toFixed(1)}
                     <span className="text-sm opacity-60 font-normal"> / 5</span>
                   </p>
+                  {/* A3: assessment type (which portal issued it), beneath the score. */}
+                  <p className="inline-block mt-2 text-[11px] font-semibold px-2 py-0.5 rounded bg-white/10">
+                    {isAr ? "نوع التقييم: " : "Assessment type: "}
+                    {talentLens
+                      ? (isAr ? TALENT_LENS_LABELS[talentLens].ar : TALENT_LENS_LABELS[talentLens].en)
+                      : (isAr ? "عام" : "General")}
+                  </p>
                   {overallScore > 0 && (
                     <span
-                      className={`inline-block mt-2 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${stageBadgeTone}`}
+                      className={`inline-block mt-2 ms-2 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${stageBadgeTone}`}
                     >
                       {isAr ? stage.name_ar : stage.name_en}
                     </span>
@@ -280,7 +296,61 @@ export default async function PersonalResultsPage({ params }: Props) {
           );
         })()}
 
+        {/* A2 + A4: how to read the scores, directly under the overall score. */}
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <div>
+              <p className="text-xs font-bold text-primary mb-1">
+                {isAr ? "قراءة الدرجة - المرحلة الإجمالية" : "Reading the score - overall stage"}
+              </p>
+              <div className="space-y-0.5">
+                {ARA_INDIVIDUAL_MATURITY_STAGES.map((st) => (
+                  <p key={st.id} className="text-[11px] text-muted-foreground leading-snug">
+                    <span className="font-semibold text-foreground">
+                      {(isAr ? st.name_ar : st.name_en)} ({isAr ? STAGE_RANGE[st.id].ar : STAGE_RANGE[st.id].en}):
+                    </span>{" "}
+                    {isAr ? st.definition_ar : st.definition_en}.
+                  </p>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-primary mb-1.5">
+                {isAr ? "نطاقات كل عامل" : "Per-factor bands"}
+              </p>
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5">
+                <span className="inline-flex items-center gap-1.5 text-[11px]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full border bg-rose-100 text-rose-900 border-rose-200">
+                    {isAr ? "فرصة" : "Opportunity"}
+                  </span>
+                  <span className="text-muted-foreground tabular-nums">1.0 - 2.9</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-[11px]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full border bg-amber-100 text-amber-900 border-amber-200">
+                    {isAr ? "قيد التطوير" : "Developing"}
+                  </span>
+                  <span className="text-muted-foreground tabular-nums">3.0 - 3.9</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-[11px]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full border bg-emerald-100 text-emerald-900 border-emerald-200">
+                    {isAr ? "قوي" : "Strong"}
+                  </span>
+                  <span className="text-muted-foreground tabular-nums">4.0 - 5.0</span>
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Per-factor breakdown */}
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-accent mb-1">
+            {isAr ? "تفصيل حسب العامل" : "Per-factor breakdown"}
+          </p>
+          <h2 className="text-lg font-bold mb-3">
+            {isAr ? "موقعك في كل عامل من عوامل الجاهزية للذكاء الاصطناعي" : "Where you stand on each AI readiness factor"}
+          </h2>
+        </div>
         <div className="grid gap-3 sm:grid-cols-2">
           {ARA_INDIVIDUAL_FACTORS.map((f) => {
             const score = factorScores[f.id];

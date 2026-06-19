@@ -264,8 +264,8 @@
   }
   .launcher-card:hover::before { transform: scaleX(1); }
 
-  /* Eyebrow tagline picks up the card hue */
-  .launcher-card .ara-eyebrow { color: rgb(var(--tone)); }
+  /* Eyebrow tagline picks up the card hue, extra-bold for emphasis */
+  .launcher-card .ara-eyebrow { color: rgb(var(--tone)); font-weight: 800; }
 
   /* Big faint service glyph, bottom-right */
   .launcher-card-glyph {

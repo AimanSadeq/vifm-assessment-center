@@ -966,10 +966,16 @@ export function FluentClient({
               <RotateCcw className="h-4 w-4" /> {t.startOver}
             </button>
             {result.result_id && (
-              <a href={`/api/ac/fluent/${result.result_id}/certificate?format=pdf`} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-md bg-[#5391D5] px-4 py-2 text-sm font-semibold text-white hover:bg-[#4380c4]">
-                <Award className="h-4 w-4" /> {t.certificate}
-              </a>
+              <>
+                <a href={`/api/ac/fluent/${result.result_id}/report`} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-md bg-[#010131] px-4 py-2 text-sm font-semibold text-white hover:bg-[#121140]">
+                  <Award className="h-4 w-4" /> {rtl ? "تنزيل التقرير الكامل" : "Download full report"}
+                </a>
+                <a href={`/api/ac/fluent/${result.result_id}/certificate?format=pdf`} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-md border border-[#5391D5] px-4 py-2 text-sm font-semibold text-[#5391D5] hover:bg-[#5391D5]/10">
+                  {rtl ? "الشهادة" : "Certificate"}
+                </a>
+              </>
             )}
           </div>
         </div>

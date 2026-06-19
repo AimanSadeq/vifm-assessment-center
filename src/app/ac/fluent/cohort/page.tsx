@@ -283,14 +283,24 @@ function CohortBody({ rows, t }: { rows: Row[]; t: ServerT }) {
                     })()}
                   </td>
                   <td className="px-4 py-2.5">
-                    <a
-                      href={`/api/ac/fluent/${r.id}/certificate`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs font-medium text-[#5391D5] hover:underline"
-                    >
-                      <Award className="h-3.5 w-3.5" /> {t("acFluent.openCertificate")}
-                    </a>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <a
+                        href={`/api/ac/fluent/${r.id}/report`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-[#010131] hover:underline"
+                      >
+                        <Award className="h-3.5 w-3.5" /> Full report
+                      </a>
+                      <a
+                        href={`/api/ac/fluent/${r.id}/certificate`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs font-medium text-[#5391D5] hover:underline"
+                      >
+                        {t("acFluent.openCertificate")}
+                      </a>
+                    </div>
                   </td>
                 </tr>
               ))}

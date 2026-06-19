@@ -121,6 +121,16 @@ export function stripAnswerKey(test: FluentTest): PublicFluentTest {
   };
 }
 
+/** A specific writing issue the scorer flagged (CAL-FLU / FLU-4). */
+export type WritingIssueCategory = "grammar" | "spelling" | "punctuation" | "vocabulary" | "etiquette" | "structure";
+export type WritingIssue = {
+  category: WritingIssueCategory;
+  /** The offending phrase from the response (verbatim, short). */
+  quote: string;
+  /** A suggested correction or better phrasing. */
+  suggestion: string;
+};
+
 export type WritingScore = {
   cefr: CefrLevel;
   task_achievement: number; // 1–5
@@ -132,6 +142,8 @@ export type WritingScore = {
   mechanics: number; // 1–5 - spelling & punctuation
   feedback_en: string;
   feedback_ar: string | null;
+  /** Specific grammar / spelling / etiquette issues with corrections (FLU-4). */
+  issues?: WritingIssue[];
   ai_generated: boolean;
 };
 
@@ -161,6 +173,28 @@ export type FluentResult = {
   writing: WritingScore;
   speaking: SpeakingScore;
 };
+
+const WRITING_ISSUE_CATEGORIES: WritingIssueCategory[] = [
+  "grammar", "spelling", "punctuation", "vocabulary", "etiquette", "structure",
+];
+/** Validate + clamp the AI's writing-issues array (FLU-4). Tolerant of junk. */
+function parseWritingIssues(raw: unknown): WritingIssue[] {
+  if (!Array.isArray(raw)) return [];
+  const out: WritingIssue[] = [];
+  for (const r of raw) {
+    if (!r || typeof r !== "object") continue;
+    const o = r as Record<string, unknown>;
+    const category = WRITING_ISSUE_CATEGORIES.includes(o.category as WritingIssueCategory)
+      ? (o.category as WritingIssueCategory)
+      : "grammar";
+    const quote = typeof o.quote === "string" ? o.quote.trim().slice(0, 200) : "";
+    const suggestion = typeof o.suggestion === "string" ? o.suggestion.trim().slice(0, 300) : "";
+    if (!quote && !suggestion) continue;
+    out.push({ category, quote, suggestion });
+    if (out.length >= 8) break;
+  }
+  return out;
+}
 
 // ── Difficulty-weighted receptive scoring (IRT-lite) ─────────────
 // A correct answer earns weight = its CEFR rank (A1=1 … C2=6), so
@@ -726,12 +760,18 @@ export async function scoreFluentWriting(input: {
     sanitizeResponse(trimmed) || "(empty)",
     `</response>`,
     ``,
+    `Also list up to 6 SPECIFIC issues in the response - grammatical errors,`,
+    `spelling/punctuation mistakes, etiquette/register lapses, weak vocabulary or`,
+    `structure - each quoting the exact phrase and giving a correction. Use an`,
+    `empty array if the writing is essentially error-free.`,
+    ``,
     `Return JSON ONLY:`,
     `{`,
     `  "cefr":"B1",`,
     `  "task_achievement":<1-5>, "coherence":<1-5>, "lexical_range":<1-5>, "grammar":<1-5>,`,
     `  "register":<1-5>, "etiquette":<1-5>, "mechanics":<1-5>,`,
     `  "feedback_en":"<2-3 sentences>",`,
+    `  "issues":[{"category":"grammar|spelling|punctuation|vocabulary|etiquette|structure","quote":"<short verbatim phrase>","suggestion":"<correction>"}],`,
     `  "feedback_ar":${wantsAr ? '"<same feedback in Modern Standard Arabic>"' : "null"}`,
     `}`,
   ].join("\n");
@@ -759,6 +799,7 @@ export async function scoreFluentWriting(input: {
       mechanics: clamp(p.mechanics),
       feedback_en: typeof p.feedback_en === "string" ? p.feedback_en.trim() : "No feedback produced.",
       feedback_ar: typeof p.feedback_ar === "string" && p.feedback_ar.trim() ? p.feedback_ar.trim() : null,
+      issues: parseWritingIssues(p.issues),
       ai_generated: true,
     };
   } catch (err) {
@@ -905,6 +946,7 @@ export async function scoreFluentWritingEnsemble(input: {
     mechanics: medianInt(runs.map((r) => r.mechanics)),
     feedback_en: pick.feedback_en,
     feedback_ar: pick.feedback_ar,
+    issues: pick.issues ?? [],
     ai_generated: runs.some((r) => r.ai_generated),
   };
 }

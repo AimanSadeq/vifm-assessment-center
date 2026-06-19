@@ -21,7 +21,7 @@ export default async function NewRequisitionPage({
       .select("id, name_en, role_profile_competencies(competency_id, weight, priority)")
       .order("name_en"),
     supabase.from("organizations").select("id, name").order("name"),
-    // Full behavioural-38 catalogue, grouped by domain in the picker.
+    // Full behavioural-41 catalogue, grouped by domain in the picker.
     supabase
       .from("competencies")
       .select(

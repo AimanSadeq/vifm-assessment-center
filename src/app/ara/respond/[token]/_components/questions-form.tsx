@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { Check, Loader2, AlertCircle, HelpCircle } from "lucide-react";
@@ -35,6 +35,16 @@ type FormSaveGate = {
   flushPendingSaves: () => Promise<void>;
 };
 const FORM_GATES = new Map<string, FormSaveGate>();
+
+/**
+ * Whether every required (scored) question has an answer. QuestionsForm owns the
+ * answer state; CompleteButton is passed in as a child (from the server page) so
+ * it reads this through context to dim/disable Submit until the form is complete.
+ * Default true so the button is never permanently stuck if a provider is absent.
+ * Optional open_text reflections are NOT required (they would otherwise block
+ * submission forever).
+ */
+const CompletionContext = createContext<boolean>(true);
 
 type ExistingAnswer = {
   question_id: string;
@@ -323,6 +333,15 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
   }).length;
   const progress = questions.length === 0 ? 0 : Math.round((answeredCount / questions.length) * 100);
 
+  // Submit stays dimmed until every REQUIRED (scored) question is answered.
+  // Optional open_text reflections do not gate submission.
+  const requiredUnanswered = questions.filter((q) => {
+    if (q.question_type === "open_text") return false;
+    const a = state[q.id];
+    return !(a && a.value !== null);
+  }).length;
+  const allRequiredAnswered = questions.length > 0 && requiredUnanswered === 0;
+
   if (!started) {
     const present = new Set<AraQuestionType>(questions.map((q) => q.question_type));
     const order: Array<[AraQuestionType, string]> = [
@@ -558,8 +577,12 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
       )}
 
       {/* Trailing content (optional sections + Submit) - only after Start, so it
-          never shows on the intro/landing screen (the stray-submit bug). */}
-      {children}
+          never shows on the intro/landing screen (the stray-submit bug). The
+          CompletionContext lets the (server-passed) CompleteButton dim Submit
+          until every required question is answered. */}
+      <CompletionContext.Provider value={allRequiredAnswered}>
+        {children}
+      </CompletionContext.Provider>
     </div>
   );
 }
@@ -845,6 +868,9 @@ export function CompleteButton({
   onComplete: () => Promise<void>;
 }) {
   const rtl = language === "ar";
+  // Dim Submit until every required question is answered (read from the form
+  // via context). Default true so a missing provider never traps the button.
+  const allAnswered = useContext(CompletionContext);
   const [pending, start] = useTransition();
   // Distinct flushing state so the button label can show a more
   // honest "saving your answers" before it flips to "submitting"
@@ -886,12 +912,19 @@ export function CompleteButton({
     : (rtl ? "إرسال التقييم" : "Submit assessment");
 
   return (
-    <Button
-      onClick={handleClick}
-      disabled={pending}
-      className="w-full"
-    >
-      {label}
-    </Button>
+    <div className="space-y-2">
+      <Button
+        onClick={handleClick}
+        disabled={pending || !allAnswered}
+        className="w-full"
+      >
+        {label}
+      </Button>
+      {!allAnswered && (
+        <p className="text-center text-xs text-muted-foreground">
+          {rtl ? "أجب عن جميع الأسئلة لتفعيل الإرسال." : "Answer all questions to enable submit."}
+        </p>
+      )}
+    </div>
   );
 }

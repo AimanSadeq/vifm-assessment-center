@@ -1,5 +1,5 @@
 // AUTO-GENERATED - behavioural self-assessment item bank (Slice 4).
-// 38 competencies x 4 first-person Likert items (EN + AR), with reverse flags,
+// 41 competencies x 4 first-person Likert items (EN + AR), with reverse flags,
 // grouped by cluster. Source: docs/competency-self-report-*.md. Regenerate via
 // the Slice 4 build step; do not hand-edit. Arabic is best-effort pending review.
 

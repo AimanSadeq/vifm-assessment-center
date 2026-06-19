@@ -7,6 +7,7 @@ import {
   GraduationCap, BadgeCheck, BrainCircuit, Layers, TrendingUp, Layout,
 } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
+import { COMPETENCY_COUNT } from "@/lib/competencies/framework-meta";
 
 type Lang = "en" | "ar";
 type Cell = { en: string; ar: string };
@@ -84,14 +85,14 @@ const PORTALS: ReadonlyArray<Portal> = [
     name: { en: "Assessment Center", ar: "مركز التقييم" },
     tagline: { en: "Competency assessment", ar: "تقييم الكفاءات" },
     acquire: {
-      measures: { en: "Behaviour across the 38 competencies, observed in exercises.", ar: "السلوك عبر الكفاءات الـ38، مُلاحَظًا في التمارين." },
+      measures: { en: `Behaviour across the ${COMPETENCY_COUNT} competencies, observed in exercises.`, ar: `السلوك عبر الكفاءات الـ${COMPETENCY_COUNT}، مُلاحَظًا في التمارين.` },
       method: { en: "Assessment-center exercises + assessor observation + live wash-up consensus.", ar: "تمارين مركز التقييم + ملاحظة المقيّمين + توافق عبر المراجعة المباشرة." },
       who: { en: "Candidates, by cohort; assessor-run.", ar: "المرشّحون، بحسب الدفعة؛ يُجريها المقيّمون." },
       reporting: { en: "Competency fit-score + OAR recommendation (Ready Now / with Development / Not Ready); 6-page report.", ar: "درجة ملاءمة الكفاءات + توصية التقييم العام (جاهز الآن / مع تطوير / غير جاهز)؛ تقرير من 6 صفحات." },
       credential: { en: "AC Ready-Now (when the finalised OAR is Ready Now).", ar: "جاهز الآن (عند اعتماد التقييم العام كـ«جاهز الآن»)." },
     },
     manage: {
-      measures: { en: "The same 38 competencies, read for growth.", ar: "الكفاءات الـ38 نفسها، بهدف النمو." },
+      measures: { en: `The same ${COMPETENCY_COUNT} competencies, read for growth.`, ar: `الكفاءات الـ${COMPETENCY_COUNT} نفسها، بهدف النمو.` },
       method: { en: "Same framework run developmentally.", ar: "الإطار نفسه بهدف التطوير." },
       who: { en: "Employees; individual + cohort.", ar: "الموظفون؛ فرديًا وبالدفعة." },
       reporting: { en: "Strengths/gaps + 30/60/90 learning plan + matched VIFM Academy courses.", ar: "نقاط القوة/الفجوات + خطة تعلّم 30/60/90 + دورات أكاديمية VIFM المطابقة." },
@@ -164,14 +165,14 @@ const PORTALS: ReadonlyArray<Portal> = [
     name: { en: "Persona", ar: "بيرسونا" },
     tagline: { en: "Behavioural self-assessment", ar: "تقييم سلوكي ذاتي" },
     acquire: {
-      measures: { en: "Self-ratings across the 38 competencies (the 'self' view).", ar: "تقييم ذاتي عبر الكفاءات الـ38 (رؤية «الذات»)." },
+      measures: { en: `Self-ratings across the ${COMPETENCY_COUNT} competencies (the 'self' view).`, ar: `تقييم ذاتي عبر الكفاءات الـ${COMPETENCY_COUNT} (رؤية «الذات»).` },
       method: { en: "Likert + forced-choice (most/least) self-report; bilingual.", ar: "ليكرت + اختيار إجباري (الأكثر/الأقل) تقييم ذاتي؛ ثنائي اللغة." },
       who: { en: "Candidates; individual.", ar: "المرشّحون؛ فرديًا." },
       reporting: { en: "Behavioural fit signal vs a target role (fit %, prioritised gaps).", ar: "إشارة ملاءمة سلوكية مقابل دور مستهدف (نسبة ملاءمة، فجوات مرتّبة)." },
       credential: { en: "None.", ar: "لا توجد." },
     },
     manage: {
-      measures: { en: "The same 38 competencies, for self-insight.", ar: "الكفاءات الـ38 نفسها، للرؤية الذاتية." },
+      measures: { en: `The same ${COMPETENCY_COUNT} competencies, for self-insight.`, ar: `الكفاءات الـ${COMPETENCY_COUNT} نفسها، للرؤية الذاتية.` },
       method: { en: "Same self-report, developmental framing.", ar: "التقييم الذاتي نفسه، بإطار تطويري." },
       who: { en: "Employees; individual.", ar: "الموظفون؛ فرديًا." },
       reporting: { en: "Self-insight -> development plan + matched VIFM Academy courses.", ar: "رؤية ذاتية -> خطة تطوير + دورات أكاديمية VIFM المطابقة." },

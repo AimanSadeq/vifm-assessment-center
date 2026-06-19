@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 /**
  * Assessment Center per-competency evidence console.
  *
- * Lists all 38 AC behavioural competencies grouped by domain → cluster,
+ * Lists all 41 AC behavioural competencies grouped by domain → cluster,
  * each with its validation-evidence review status. This is the AC
  * counterpart to the ARC question-bank evidence workflow, and the place
  * an admin closes the "where does this competency come from

@@ -9,6 +9,7 @@ import { FadeIn } from "@/components/shared/ara/fade-in";
 import { CountUp } from "@/components/shared/ara/count-up";
 import { getServerT, type ServerT } from "@/lib/i18n/server";
 import { BackLink } from "@/components/shared/back-link";
+import { COMPETENCY_COUNT } from "@/lib/competencies/framework-meta";
 
 export const metadata = {
   title: "Roadmap · VIFM Assessment Center",
@@ -93,7 +94,7 @@ const CANDIDATE_ITEMS = [
 ];
 
 const NUMBERS: Array<{ value: number; labelKey: string; tone: Tone }> = [
-  { value: 38, labelKey: "competencies",   tone: "blue" },
+  { value: COMPETENCY_COUNT, labelKey: "competencies",   tone: "blue" },
   { value: 4,  labelKey: "domains",        tone: "violet" },
   { value: 8,  labelKey: "clusters",       tone: "teal" },
   { value: 249,labelKey: "indicators",     tone: "gold" },

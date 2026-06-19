@@ -297,7 +297,7 @@ export async function listDomainBridge(domainKey: string): Promise<BridgeRow[]> 
 
 export type CompetencyLite = { id: string; name: string; domain: string };
 
-/** All 38 behavioural competencies (id + name + AC domain), for the bridge picker. */
+/** All 41 behavioural competencies (id + name + AC domain), for the bridge picker. */
 export async function listBehaviouralCompetencies(): Promise<CompetencyLite[]> {
   try {
     const sb = createServiceClient();

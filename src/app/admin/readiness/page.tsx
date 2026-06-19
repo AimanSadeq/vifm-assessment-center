@@ -24,7 +24,7 @@ const INPUTS: {
     tone: "text-[#c026d3]",
     lens: "Self",
     name: "Persona",
-    body: "The person rates themselves across the 38 competencies - the same framework as the 360. This is the self view of readiness.",
+    body: "The person rates themselves across the 41 competencies - the same framework as the 360. This is the self view of readiness.",
     href: "/ac/persona",
     cta: "Open Persona",
   },

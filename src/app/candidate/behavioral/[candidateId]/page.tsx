@@ -22,7 +22,7 @@ export default async function BehavioralAssessmentPage({ params }: Props) {
 
   // Scope Persona to the engagement's agreed competencies (engagement_competencies).
   // This is the set the consultant agreed with the client; if none were chosen,
-  // fall back to the full 38-competency bank.
+  // fall back to the full 41-competency bank.
   const { data: engComps } = await sb
     .from("engagement_competencies")
     .select("competency_id")

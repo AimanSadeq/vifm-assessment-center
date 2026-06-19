@@ -27,7 +27,7 @@ export default function PersonaRedeemPage({ searchParams }: Props) {
             </h1>
             <p className="mt-3 text-base leading-relaxed text-white/75">
               Enter the voucher code your organisation gave you, then complete a short
-              behavioural self-assessment across the 38 competencies. No account needed.
+              behavioural self-assessment across the 41 competencies. No account needed.
             </p>
           </div>
         </div>

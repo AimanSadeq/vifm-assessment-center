@@ -105,7 +105,7 @@ export default async function TechAssessmentReviewPage({ searchParams }: Props) 
         </CardContent>
       </Card>
 
-      {/* Selected domain: behavioural bridge (technical → AC 38) */}
+      {/* Selected domain: behavioural bridge (technical → AC 41) */}
       <BridgeEditor
         domainKey={selected}
         domainName={domain.name}

@@ -8,9 +8,17 @@ import {
 } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+import { COMPETENCY_COUNT } from "@/lib/competencies/framework-meta";
 
 type Lang = "en" | "ar";
 type Tone = "blue" | "violet" | "teal" | "gold" | "rose" | "indigo" | "fuchsia" | "emerald" | "amber";
+// Concrete hue per tone (mirrors the --tone CSS vars in globals.css) for the
+// inline tile border colour. The tone-<hue> class drives the tagline + accent
+// line; the border needs an explicit value.
+const TONE_HEX: Record<Tone, string> = {
+  blue: "#5391D5", violet: "#7c3aed", teal: "#0d9488", gold: "#d97706",
+  rose: "#e11d48", indigo: "#4f46e5", fuchsia: "#c026d3", emerald: "#059669", amber: "#f59e0b",
+};
 type ServiceKey = "ac" | "ara" | "reflect" | "fluent" | "prehire" | "technical" | "cognitive" | "persona" | "readiness" | "academy";
 // The two solution families (the colleague's talent-lifecycle model).
 type Pillar = "acquire" | "manage";
@@ -27,7 +35,7 @@ const SERVICES: ReadonlyArray<{ key: ServiceKey; href: string; icon: typeof Comp
   { key: "ac", href: "/admin", icon: ClipboardCheck, tone: "blue", pillars: ["acquire", "manage"] },
   { key: "ara", href: "/ara", icon: Compass, tone: "violet", pillars: ["acquire", "manage"] },
   { key: "technical", href: "/admin/tech-sandbox", icon: BadgeCheck, tone: "indigo", pillars: ["acquire", "manage"] },
-  // Cognitive (aptitude) + Persona (the 38-competency behavioural self-assessment,
+  // Cognitive (aptitude) + Persona (the 41-competency behavioural self-assessment,
   // the "self" view of readiness) - individual diagnostics, dual-purpose too.
   { key: "cognitive", href: "/ac/cognitive", icon: BrainCircuit, tone: "fuchsia", pillars: ["acquire", "manage"] },
   { key: "persona", href: "/ac/persona", icon: Layers, tone: "fuchsia", pillars: ["acquire", "manage"] },
@@ -101,12 +109,12 @@ const VARIANTS: Record<Lang, Partial<Record<ServiceKey, Partial<Record<Pillar, V
     persona: {
       acquire: {
         tagline: "Behavioural self-assessment · selection", badge: "For Selection",
-        description: "Self-ratings across the 38 competencies - a behavioural fit signal alongside the rest of the screen.",
+        description: `Self-ratings across the ${COMPETENCY_COUNT} competencies - a behavioural fit signal alongside the rest of the screen.`,
         tooltip: "Selection use: a behavioural self-view to complement screening.",
       },
       manage: {
         tagline: "Behavioural self-assessment · development", badge: "For Development",
-        description: "Self-insight across the 38 competencies - development areas become a plan and matched VIFM Academy courses.",
+        description: `Self-insight across the ${COMPETENCY_COUNT} competencies - development areas become a plan and matched VIFM Academy courses.`,
         tooltip: "Development use: self-insight feeding a development plan.",
       },
     },
@@ -175,12 +183,12 @@ const VARIANTS: Record<Lang, Partial<Record<ServiceKey, Partial<Record<Pillar, V
     persona: {
       acquire: {
         tagline: "تقييم سلوكي ذاتي · للاختيار", badge: "للاختيار",
-        description: "تقييم ذاتي عبر الكفاءات الـ38 - إشارة ملاءمة سلوكية إلى جانب بقية الفرز.",
+        description: `تقييم ذاتي عبر الكفاءات الـ${COMPETENCY_COUNT} - إشارة ملاءمة سلوكية إلى جانب بقية الفرز.`,
         tooltip: "للاختيار: رؤية ذاتية سلوكية تكمّل الفرز.",
       },
       manage: {
         tagline: "تقييم سلوكي ذاتي · للتطوير", badge: "للتطوير",
-        description: "رؤية ذاتية عبر الكفاءات الـ38 - تتحوّل مجالات التطوير إلى خطة ودورات من أكاديمية VIFM.",
+        description: `رؤية ذاتية عبر الكفاءات الـ${COMPETENCY_COUNT} - تتحوّل مجالات التطوير إلى خطة ودورات من أكاديمية VIFM.`,
         tooltip: "للتطوير: رؤية ذاتية تغذّي خطة التطوير.",
       },
     },
@@ -251,7 +259,7 @@ const T = {
       fluent: { tagline: "AI English placement", name: "Fluent", description: "A four-skill, CEFR-aligned English placement: AI-generated reading and listening, rubric-scored writing and speaking, with an indicative level and feedback in minutes.", tooltip: "Best for fast, defensible English placement at any scale." },
       technical: { tagline: "Technical proficiency", name: "Technical Assessment", description: "Performance-based, function-specific assessment: candidates do real work in live sandboxes (build a 3-statement model, a variance breakdown, write SQL) graded against master answers and banded Basic / Intermediate / Advanced per competency. Issue a direct link per delegate, or hand a client voucher codes to self-distribute.", tooltip: "Best for screening and developing functional skills with hands-on tasks." },
       cognitive: { tagline: "Cognitive ability", name: "Cognitive", description: "Indicative numerical, verbal, inductive and deductive reasoning - a foundational read on aptitude. Server-scored, admin-run and bilingual.", tooltip: "Best for a foundational read on reasoning and aptitude." },
-      persona: { tagline: "Behavioural self-assessment", name: "Persona", description: "Self-ratings across the 38 competencies - the same framework as the 360. The 'self' view that feeds Succession Readiness.", tooltip: "Best for fast behavioural self-insight on the 38 competencies." },
+      persona: { tagline: "Behavioural self-assessment", name: "Persona", description: `Self-ratings across the ${COMPETENCY_COUNT} competencies - the same framework as the 360. The 'self' view that feeds Succession Readiness.`, tooltip: `Best for fast behavioural self-insight on the ${COMPETENCY_COUNT} competencies.` },
       readiness: { tagline: "Self + 360 vs the role", name: "Succession Readiness", description: "Combines Persona (self) and a Reflect 360 (others) against a target role to produce a readiness tier, gaps, blind spots and a development plan.", tooltip: "Best for judging whether someone is ready for a target role." },
       prehire: { tagline: "Pre-employment screening", name: "Pre-Hire", description: "Screen and shortlist applicants before you hire: a configurable funnel of competency quiz, English placement and an AI behavioural interview, with a weighted composite, adverse-impact monitoring and an audit trail. The score is a signal — a person always decides.", tooltip: "Best for shortlisting applicants at scale, defensibly." },
       academy: { tagline: "Learning & delivery", name: "VIFM Academy", description: "Self-paced finance & management programmes that turn each diagnosis into action — AI knowledge-checks per lesson and a verifiable completion credential, in English or Arabic.", tooltip: "Best for closing development gaps with guided, credentialed learning." },
@@ -308,7 +316,7 @@ const T = {
       fluent: { tagline: "تحديد مستوى الإنجليزية بالذكاء الاصطناعي", name: "فلوينت", description: "اختبار لتحديد مستوى الإنجليزية عبر أربع مهارات وفق إطار CEFR: قراءة واستماع مُولّدان بالذكاء الاصطناعي، وكتابة وتحدّث يُقيّمان وفق معايير محدّدة، مع مستوى تقريبي وملاحظات خلال دقائق.", tooltip: "الأنسب لتحديد مستوى الإنجليزية بسرعة وموثوقية وعلى نطاق واسع." },
       technical: { tagline: "الكفاءة التقنية", name: "التقييم التقني", description: "قياس الكفاءة التقنية عبر عشرة مجالات مالية — من النمذجة المالية إلى الخزينة والمصارف والتحليلات والذكاء الاصطناعي. بنود مُراجَعة من الخبراء ودرجات قطع موثّقة تمنح اعتماد كفاءة قابلاً للتحقق، مع تصنيف استرشادي ريثما يكتمل بنك أسئلة المجال.", tooltip: "الأنسب لاعتماد المهارات المالية الوظيفية بموثوقية." },
       cognitive: { tagline: "القدرة الذهنية", name: "القدرات الذهنية", description: "مقاييس استرشادية للاستدلال العددي واللفظي والمجرّد - قراءة تأسيسية للقدرات. تُصحَّح على الخادم، يُجريها المسؤول، وثنائية اللغة.", tooltip: "الأنسب لقراءة تأسيسية للاستدلال والقدرات." },
-      persona: { tagline: "تقييم سلوكي ذاتي", name: "بيرسونا", description: "تقييم ذاتي عبر الكفاءات الـ38 - الإطار نفسه المستخدم في تقييم 360. تمثّل رؤية «الذات» التي تغذّي جاهزية التعاقب.", tooltip: "الأنسب لرؤية ذاتية سلوكية سريعة عبر الكفاءات الـ38." },
+      persona: { tagline: "تقييم سلوكي ذاتي", name: "بيرسونا", description: `تقييم ذاتي عبر الكفاءات الـ${COMPETENCY_COUNT} - الإطار نفسه المستخدم في تقييم 360. تمثّل رؤية «الذات» التي تغذّي جاهزية التعاقب.`, tooltip: `الأنسب لرؤية ذاتية سلوكية سريعة عبر الكفاءات الـ${COMPETENCY_COUNT}.` },
       readiness: { tagline: "الذات + 360 مقابل الدور", name: "جاهزية التعاقب", description: "تجمع بيرسونا (الذات) وتقييم ريفلكت 360 (الآخرون) مقابل دور مستهدف لإنتاج مستوى جاهزية وفجوات ونقاط عمياء وخطة تطوير.", tooltip: "الأنسب للحكم على جاهزية الشخص لدور مستهدف." },
       prehire: { tagline: "الفرز قبل التوظيف", name: "ما قبل التوظيف", description: "افرز المرشّحين وأعدّ القائمة المختصرة قبل التوظيف: مسار قابل للتخصيص يجمع اختبار الكفاءات وتحديد مستوى الإنجليزية ومقابلة سلوكية بالذكاء الاصطناعي، مع درجة مركّبة مرجّحة، ومراقبة الأثر التمييزي، وسجل تدقيق كامل. الدرجة إشارة استرشادية — والقرار النهائي لإنسان دائمًا.", tooltip: "الأنسب لإعداد القائمة المختصرة للمتقدّمين على نطاق واسع وبموثوقية." },
       academy: { tagline: "التعلّم والتقديم", name: "أكاديمية VIFM", description: "برامج ذاتية الوتيرة في التمويل والإدارة تُحوّل كل تشخيص إلى إجراء — اختبارات معرفية بالذكاء الاصطناعي لكل درس وشهادة إتمام قابلة للتحقّق، بالعربية أو الإنجليزية.", tooltip: "الأنسب لمعالجة فجوات التطوير عبر تعلّم موجّه وموثّق بشهادة." },
@@ -362,8 +370,20 @@ export function PlatformLanding() {
   const renderServiceCard = (svc: (typeof SERVICES)[number]) => {
     const Icon = svc.icon;
     const copy = t.services[svc.key];
+    // Tile border: dark blue for the dual-purpose diagnostics; the four
+    // single-purpose portals each get their own distinct hue (Pre-Hire rose,
+    // Reflect 360 teal, Succession Readiness amber, VIFM Academy emerald). The
+    // tone-<hue> class also colours the tagline to match the border (globals.css
+    // .launcher-card .ara-eyebrow), so the title reads in its border colour.
+    const single = svc.pillars.length === 1;
+    const toneClass = single ? svc.tone : "blue";
+    const borderColor = single ? TONE_HEX[svc.tone] : "#111232";
     return (
-      <div key={svc.key} className="launcher-card tone-blue flex flex-col p-4">
+      <div
+        key={svc.key}
+        className={`launcher-card tone-${toneClass} flex flex-col p-4`}
+        style={{ borderColor }}
+      >
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="flex items-center gap-4">
@@ -388,7 +408,7 @@ export function PlatformLanding() {
             // VIFM brand pair: For selection = light/accent blue (#5391D5) fill,
             // For development = dark blue (#111232) fill, both with readable text.
             const cls = acq
-              ? "border-[#5391D5] bg-[#5391D5] text-[#010131] hover:bg-[#5391D5]/90"
+              ? "border-[#5391D5] bg-[#5391D5] text-white hover:bg-[#5391D5]/90"
               : "border-[#111232] bg-[#111232] text-[#FEFFF9] hover:bg-[#121140]";
             return (
               <Link

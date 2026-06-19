@@ -32,7 +32,7 @@ const SCALE_DEFS: Record<PsyKind, ScaleDef[]> = {
 };
 const ITEM_KIND: Record<PsyKind, PsyItemKind> = { cognitive: "mcq", personality: "likert" };
 // Personality/OCEAN retired - the behavioural instrument is now Persona (the
-// 38-competency self-assessment), so the bank console manages cognitive only.
+// 41-competency self-assessment), so the bank console manages cognitive only.
 const INSTRUMENTS: { kind: PsyKind; code: string; nameEn: string; nameAr: string }[] = [
   { kind: "cognitive", code: COGNITIVE_INSTRUMENT.code, nameEn: COGNITIVE_INSTRUMENT.name_en, nameAr: COGNITIVE_INSTRUMENT.name_ar },
 ];

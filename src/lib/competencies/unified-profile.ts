@@ -1,11 +1,11 @@
 // Unified competency profile — the "golden thread", as a small GRAPH of
 // frameworks rather than one flat list.
 //
-//   • Behavioural Competencies (the AC 38) — how someone acts. Measured
+//   • Behavioural Competencies (the AC 41) — how someone acts. Measured
 //     behaviourally; the caller owns these "current" ratings (consensus_ratings).
 //   • Language Skills (Fluent's own framework) — Reading / Listening / Writing /
 //     Speaking, CEFR-scored. A DIFFERENT construct (language proficiency), kept
-//     separate from the 38.
+//     separate from the 41.
 //
 // Bridge: each language skill ENABLES (contributes to — not equals) specific
 // behavioural competencies. So a CEFR level is never silently treated as a
@@ -58,7 +58,7 @@ export type LanguageSkillKey = "reading" | "listening" | "writing" | "speaking";
 export type LanguageSkillScore = { key: LanguageSkillKey; label: string; cefr: string; value: number };
 
 // Fluent's own framework + the cross-framework bridge: which behavioural
-// competencies each language skill enables. (Names match the seeded 38.)
+// competencies each language skill enables. (Names match the seeded 41.)
 export const LANGUAGE_SKILLS: {
   key: LanguageSkillKey;
   label: string;

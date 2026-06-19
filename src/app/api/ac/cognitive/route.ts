@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
  *   { action:"start", language, candidateId?, engagementId?, takerEmail? }
  *     → { session_id, kind, instrument, test }   (cognitive ability; answer-key-stripped)
  *   (Personality/OCEAN was retired - the behavioural instrument is now Persona,
- *    the 38-competency self-assessment under /candidate/behavioral.)
+ *    the 41-competency self-assessment under /candidate/behavioral.)
  *   { action:"score", session_id, answers, takerName?, takerEmail? }
  *     → { result, result_id }
  */

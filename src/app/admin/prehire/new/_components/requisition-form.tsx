@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Sparkles, Loader2, Upload } from "lucide-react";
 import { createRequisitionAction, createPrehireOrgAction } from "../../actions";
 // Reuse the SAME job-design backend as the AC engagement wizard - paste/upload a
-// JD, Claude maps it to the behavioural 38, and we pre-fill the quiz competency
+// JD, Claude maps it to the behavioural 41, and we pre-fill the quiz competency
 // set (the "designed role").
 import {
   extractCompetenciesFromJdAction,
@@ -90,7 +90,7 @@ export function RequisitionForm({
   const [submitting, setSubmitting] = useState(false);
 
   // CAL-PRE-502: the quiz competency set. Pre-filled from the chosen role profile
-  // but editable (add/remove from the behavioural 38). `competencyDirty` tracks
+  // but editable (add/remove from the behavioural 41). `competencyDirty` tracks
   // whether the user has manually edited - while clean, switching role profiles
   // re-prefills; once dirty, switching profiles leaves their edits alone (a
   // "reset to role default" button restores the profile's set on demand).

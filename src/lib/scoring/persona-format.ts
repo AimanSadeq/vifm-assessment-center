@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────
 // Persona item-presentation helpers (pure, no DB).
 //
-// Two presentation models over the same 38-competency bank:
+// Two presentation models over the same 41-competency bank:
 //   - NORMATIVE  - the existing 1-5 Likert statements, but presented in a
 //                  seeded-random flat order with section/cluster labels HIDDEN
 //                  (reduces section priming + ordering effects).

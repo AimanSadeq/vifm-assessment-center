@@ -3,12 +3,19 @@ import {
   ArrowRight, Shield, Users, Link2, Sparkles, CheckCircle2, BarChart3, Globe, Route, User, GraduationCap,
 } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
+import { validateTalentLens } from "@/lib/constants/ara-individual-factors";
 import { AllServicesLink } from "@/components/shared/all-services-link";
 import { AnimatedCompass } from "@/components/shared/ara/animated-compass";
 import { CountUp } from "@/components/shared/ara/count-up";
 import { FadeIn } from "@/components/shared/ara/fade-in";
 
-export default function AraRootPage() {
+export default function AraRootPage({ searchParams }: { searchParams?: { lens?: string } }) {
+  // Thread the talent lens (from /ara?lens=acquisition|development, set by the
+  // landing's For Selection / For Development entries) into the snapshot +
+  // engage links, so a hiring entry yields an acquisition-lensed result - which
+  // the results page/PDF already use to suppress the development course panel.
+  const lens = validateTalentLens(searchParams?.lens);
+  const lq = lens ? `?lens=${lens}` : "";
   return (
     <div className="min-h-screen bg-background">
       {/* ─── Hero ─── */}
@@ -28,7 +35,7 @@ export default function AraRootPage() {
             <div className="flex items-center gap-3">
               <AllServicesLink variant="onDark" />
               <Link
-                href="/ara/engage"
+                href={`/ara/engage${lq}`}
                 className="inline-flex items-center gap-1.5 text-xs font-medium text-white px-3.5 py-1.5 rounded-full border border-white/25 bg-white/5 hover:bg-white/15 hover:border-white/40 backdrop-blur transition-colors"
               >
                 <Sparkles className="h-3.5 w-3.5" />
@@ -139,7 +146,7 @@ export default function AraRootPage() {
           </FadeIn>
           <FadeIn delay={240}>
             <EntryCard
-              href="/ara/personal/start"
+              href={`/ara/personal/start${lq}`}
               icon={User}
               tone="teal"
               title="Personal snapshot"

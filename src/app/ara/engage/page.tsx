@@ -9,6 +9,7 @@ import {
   ARA_STAGE_DEFINITIONS, ARA_STAGE_CAPABILITIES,
 } from "@/lib/constants/ara-stages";
 import type { AraEngagementStage } from "@/types/ara";
+import { validateTalentLens } from "@/lib/constants/ara-individual-factors";
 import { BackLink } from "@/components/shared/back-link";
 
 export const metadata = {
@@ -64,7 +65,11 @@ const STAGES_IN_DISPLAY_ORDER = DISPLAY_ORDER.map(
   (id) => ARA_STAGE_DEFINITIONS.find((s) => s.id === id)!
 );
 
-export default function AraEngagePage() {
+export default function AraEngagePage({ searchParams }: { searchParams?: { lens?: string } }) {
+  // Carry the talent lens (from /ara/engage?lens=) into the personal-snapshot
+  // links so a hiring entry yields an acquisition-lensed result.
+  const lens = validateTalentLens(searchParams?.lens);
+  const lq = lens ? `?lens=${lens}` : "";
   return (
     <div className="min-h-screen bg-background">
       <BackLink href="/ara" label="Back" history />
@@ -199,7 +204,7 @@ export default function AraEngagePage() {
                   {stage.is_pro_bono ? (
                     <Link
                       href={stage.id === "individual"
-                        ? "/ara/personal/start"
+                        ? `/ara/personal/start${lq}`
                         : "/ara/consultant/assessments/new"}
                       className="ara-pulse inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium text-white transition-colors w-full"
                       style={{ background: tone.fg }}
@@ -261,7 +266,7 @@ export default function AraEngagePage() {
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Link
-            href="/ara/personal/start"
+            href={`/ara/personal/start${lq}`}
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-5 py-3 text-sm font-medium text-foreground hover:bg-muted transition-colors"
           >
             Take the complimentary snapshot

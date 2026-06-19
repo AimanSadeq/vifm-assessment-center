@@ -42,6 +42,12 @@ export type IntegrityFlags = {
   pasteChars?: number;
   /** Ordered, time-stamped event log (kind + meta). */
   events?: IntegrityEvent[];
+  /**
+   * Server-detected: the request IP at scoring differed from the IP at test
+   * start (possible hand-off, VPN switch, or location change). Authoritative -
+   * set server-side, never trusted from the client. Advisory only.
+   */
+  ipChanged?: boolean;
 };
 
 export type IntegrityTier = "clean" | "minor" | "elevated";
@@ -74,6 +80,11 @@ const AWAY_MS_FOR_MAX = 120_000; // 2 minutes away reads as the full away weight
 /** Pasted-characters contribution: ramps to MAX_PASTE_POINTS at PASTE_CHARS_FOR_MAX. */
 const MAX_PASTE_POINTS = 40;
 const PASTE_CHARS_FOR_MAX = 600; // ~a long paragraph pasted in reads as the full paste weight
+
+/** A mid-test IP change (server-detected) is a meaningful integrity signal -
+ *  enough to clear the "minor" bar on its own and to read as elevated alongside
+ *  other activity. Advisory only (a legitimate network switch also changes IP). */
+const IP_CHANGE_POINTS = 30;
 
 /** Tier cut-offs on the 0-100 composite. */
 const MINOR_AT = 15;
@@ -116,9 +127,13 @@ export function computeIntegritySignal(flags: IntegrityFlags | null | undefined)
           Math.min(MAX_PASTE_POINTS, pasteCount * 6)
         : 0;
 
-  const score = Math.min(100, Math.round(blurPoints + awayPoints + pastePoints));
+  const ipPoints = f.ipChanged ? IP_CHANGE_POINTS : 0;
+  const score = Math.min(100, Math.round(blurPoints + awayPoints + pastePoints + ipPoints));
 
   const reasons: string[] = [];
+  if (f.ipChanged) {
+    reasons.push("IP address changed during the test");
+  }
   if (blurCount > 0) {
     reasons.push(blurCount === 1 ? "Left the test once" : `Left the test ${blurCount} times`);
   }

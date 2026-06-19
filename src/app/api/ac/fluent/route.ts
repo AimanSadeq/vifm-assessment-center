@@ -336,6 +336,16 @@ async function linkRedemption(resultId: string, redemptionToken: string): Promis
 
 const SESSION_TTL_MS = 1000 * 60 * 60 * 3; // 3 hours
 
+/** Best-effort client IP from the proxy headers (Render sets x-forwarded-for). */
+function clientIp(req: Request): string | null {
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) {
+    const first = xff.split(",")[0]?.trim();
+    if (first) return first;
+  }
+  return req.headers.get("x-real-ip")?.trim() || null;
+}
+
 /**
  * Persist the full generated test (with answer key) server-side and return a
  * session id. Best-effort: returns null if eng_fluent_sessions isn't migrated,
@@ -343,46 +353,61 @@ const SESSION_TTL_MS = 1000 * 60 * 60 * 3; // 3 hours
  */
 async function createSession(
   test: FluentTest,
-  meta: { language: FluentLanguage; candidateId: string | null; engagementId: string | null }
+  meta: { language: FluentLanguage; candidateId: string | null; engagementId: string | null; startIp: string | null }
 ): Promise<string | null> {
   try {
     const sb = createServiceClient();
-    const { data, error } = await sb
-      .from("eng_fluent_sessions")
-      .insert({
-        ui_language: meta.language,
-        test,
-        candidate_id: meta.candidateId,
-        engagement_id: meta.engagementId,
-        expires_at: new Date(Date.now() + SESSION_TTL_MS).toISOString(),
-      })
-      .select("id")
-      .single();
-    if (error || !data) return null;
-    return data.id as string;
+    const base = {
+      ui_language: meta.language,
+      test,
+      candidate_id: meta.candidateId,
+      engagement_id: meta.engagementId,
+      expires_at: new Date(Date.now() + SESSION_TTL_MS).toISOString(),
+    };
+    // start_ip (00142) is appended only when known; peel it on a missing-column
+    // error so a pending migration degrades to no IP-change detection.
+    const withIp = meta.startIp ? { ...base, start_ip: meta.startIp } : base;
+    let res = await sb.from("eng_fluent_sessions").insert(withIp).select("id").single();
+    if (res.error && meta.startIp) {
+      res = await sb.from("eng_fluent_sessions").insert(base).select("id").single();
+    }
+    if (res.error || !res.data) return null;
+    return res.data.id as string;
   } catch {
     return null;
   }
 }
 
-/** Load the full server-stored test by session id; null if missing/expired. */
-async function loadSession(id: string): Promise<FluentTest | null> {
+type SessionRow = { test: FluentTest; expires_at: string | null; start_ip: string | null };
+
+/** Load the full server-stored test (+ start IP) by session id; null if missing/expired. */
+async function loadSession(id: string): Promise<{ test: FluentTest; startIp: string | null } | null> {
   try {
     const sb = createServiceClient();
-    const { data, error } = await sb
+    // Try with start_ip (00142); fall back without it on a missing column. Same
+    // row generic on both so the result type stays consistent.
+    let res = await sb
       .from("eng_fluent_sessions")
-      .select("test, expires_at")
+      .select("test, expires_at, start_ip")
       .eq("id", id)
-      .single();
-    if (error || !data || !data.test) return null;
-    if (data.expires_at && new Date(data.expires_at as string).getTime() < Date.now()) return null;
+      .maybeSingle<SessionRow>();
+    if (res.error) {
+      res = await sb
+        .from("eng_fluent_sessions")
+        .select("test, expires_at")
+        .eq("id", id)
+        .maybeSingle<SessionRow>();
+    }
+    const row = res.data;
+    if (res.error || !row || !row.test) return null;
+    if (row.expires_at && new Date(row.expires_at).getTime() < Date.now()) return null;
     // Record consumption (best-effort; re-scoring is allowed).
     try {
       await sb.from("eng_fluent_sessions").update({ consumed_at: new Date().toISOString() }).eq("id", id);
     } catch {
       /* ignore */
     }
-    return data.test as FluentTest;
+    return { test: row.test, startIp: row.start_ip ?? null };
   } catch {
     return null;
   }
@@ -402,7 +427,7 @@ export async function POST(req: Request) {
     const test = await generateFluentTest({ language });
     const candidateId = body.candidateId?.trim() ? body.candidateId.trim() : null;
     const engagementId = body.engagementId?.trim() ? body.engagementId.trim() : null;
-    const session_id = await createSession(test, { language, candidateId, engagementId });
+    const session_id = await createSession(test, { language, candidateId, engagementId, startIp: clientIp(req) });
     const tts = isAzureSpeechConfigured();
     if (session_id) {
       // Secure flow: the answer key stays server-side.
@@ -432,11 +457,14 @@ export async function POST(req: Request) {
     let speakingTask: SpeakingTask | null = null;
     let aiGenerated = body.aiGenerated === true;
 
+    let startIp: string | null = null;
     if (body.sessionId) {
-      const test = await loadSession(body.sessionId);
-      if (!test) {
+      const loaded = await loadSession(body.sessionId);
+      if (!loaded) {
         return NextResponse.json({ error: "invalid or expired session" }, { status: 400 });
       }
+      const test = loaded.test;
+      startIp = loaded.startIp;
       reading = test.reading;
       listening = test.listening ?? [];
       writingTask = test.writing;
@@ -487,15 +515,21 @@ export async function POST(req: Request) {
 
     const takerName = body.takerName?.trim() ? body.takerName.trim() : null;
     const takerEmail = body.takerEmail?.trim() ? body.takerEmail.trim() : null;
-    // CAL-FLU-601: advisory integrity signal from the (PDPL-safe) flags.
-    const integrity = computeIntegritySignal(body.integrityFlags ?? null);
+    // FLU-1: server-detected mid-test IP change. Compare the IP captured at
+    // start with the IP now; both must be known and differ. Merged into the
+    // (PDPL-safe) flags so it rides into the persisted integrity_flags + signal.
+    const scoreIp = clientIp(req);
+    const ipChanged = !!startIp && !!scoreIp && startIp !== scoreIp;
+    const integrityFlags: IntegrityFlags = { ...(body.integrityFlags ?? {}), ...(ipChanged ? { ipChanged: true } : {}) };
+    // CAL-FLU-601 + FLU-1: advisory integrity signal from the flags.
+    const integrity = computeIntegritySignal(integrityFlags);
 
     const result_id = await persistResult(result, {
       language,
       takerName,
       takerEmail,
       aiGenerated,
-      integrityFlags: body.integrityFlags ?? null,
+      integrityFlags,
       integrity,
       candidateId: body.candidateId?.trim() ? body.candidateId.trim() : null,
       engagementId: body.engagementId?.trim() ? body.engagementId.trim() : null,

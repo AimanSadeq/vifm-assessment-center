@@ -2,7 +2,7 @@
 
 > Living checklist of open/deferred work. Claude: surface this whenever the user
 > asks "any pending actions?" (or similar), and keep it updated as items close.
-> Last updated: 2026-06-17.
+> Last updated: 2026-06-19.
 
 ## ⭐ Priority 1 - SDAIA (Saudi Data & AI Authority)
 
@@ -18,19 +18,21 @@ SDAIA's own NDGF/Ethics/AAF/GenAI; excludes banking-only SAMA CSF).
 - **Pilot 2 - L&D** (Yousef): ~15-20 codes, technical-skill assessment scoped to the HR function "2.6 Learning & Development / L&D operations / instructional design".
 - **Pilot 3 - Talent Management / Succession** (Abdullah, Mr. Alsharif): 2 codes, Persona-based succession for a critical role (e.g. HR GM) - ready-now/ready-soon/not-ready + 9-box. Client wants Persona only (not the 360) initially.
 
+> **SD-1..SD-10 all shipped 2026-06-19** (commits `26b6ff6`..`19e0b1b`; migrations 00139 + 00140 applied). Recon found SD-1/SD-3/SD-6 were already built; the rest were built this session. Verified: tsc + lint on every item; SD-4 live-verified. Only remaining: SD-2 not yet smoke-tested with a live Persona-scored candidate, and SD-10 code issuance (run `scripts/seed-sdaia-pilots.ts --apply`).
+
 **Demo-critical features (target: before Monday):**
-- [ ] **SD-1 Persona role success-profile** (highest leverage; flagged first): AI picks the critical competencies for a target role (e.g. HR GM) from the 41-competency framework + a target score per competency; tailor the assessment to that subset (not all 41); report computes gap -> ready / ready-with-development / not-ready. Likely reuses AC role-profiles (00014-00016) + JD extractor.
-- [ ] **SD-2 9-box + ready-now/ready-soon in the report** (computed but not rendered).
-- [ ] **SD-3 Technical-skill sandbox for HR "2.6 L&D / instructional design"** (you estimated ~1 hr to seed).
-- [ ] **SD-4 Cognitive subtest selection** - landing-page option to choose/combine numerical / verbal / inductive / deductive (1-4).
-- [ ] **SD-5 BUG: "Invalid UUID" on new Reflect 360 engagement creation** (recurring).
-- [ ] **SD-6 Persona report by purpose**: selection = fit score; development = development plan + Academy links.
-- [ ] **SD-7 Technical report**: subcategory definitions + candidate narrative + level definitions (basic/intermediate/advanced) + a hints option.
+- [x] **SD-1 Persona role success-profile** - was already shipped (00123/00124 + role designer + scoped runner + fit report). Added the explicit "Ready / Ready-with-Development / Not-Ready" verdict badge (additive, indicative/self-report) on the hiring report (EN PDF + AR + on-screen).
+- [x] **SD-2 9-box + ready-now/ready-soon in the report** - 9-box placement on the individual readiness page + PDF (reuses talent-map axes), PLUS Persona-only mode now drives the tier (was 360-only -> "insufficient data" for Pilot 3). Tagged "Self-reported (Persona)". *(Not yet smoke-tested with a real Persona-scored candidate.)*
+- [x] **SD-3 Technical-skill sandbox for HR "2.6 L&D / instructional design"** - was already shipped (00117-00120, L&D node active with 3 pillars + 4 logic_input blocks).
+- [x] **SD-4 Cognitive subtest selection** - bilingual chip picker (any 1-4 of numerical/verbal/inductive/deductive); generation/scoring/bank subset-aware. Live-verified.
+- [x] **SD-5 BUG: "Invalid UUID" on new Reflect 360 engagement creation** - Zod schema coerces ""->null + friendly messages; wizard passes organization_id || null; action backstop.
+- [x] **SD-6 Persona report by purpose** - was already shipped (hiring=fit, development=dev plan + VIFM Academy recommendations, fully branched EN/AR/on-screen). Academy items render as recommendation cards (not deep links).
+- [x] **SD-7 Technical report** - per-band capability MEANINGS in the legend (proficiencyTierMeaning) + FP&A pillar definitions (migration 00139). Narrative + band legend were already done (TECH-6). **Deferred: in-assessment "hints" toggle** (gold-plating; report already carries rich explanatory text).
 
 **Meeting items (config / non-demo-critical):**
-- [ ] **SD-8 IA restructure**: two solution columns - Talent Acquisition ("Selection" tab) + Talent Management ("Development" tab), each exposing the relevant services; clean the stray Cognitive "Overview".
-- [ ] **SD-9 Persona item-format option**: ipsative (most/least describes you) vs normative (agree/disagree).
-- [ ] **SD-10 Provision the SDAIA ARC org as saudi/government** + issue the per-pilot access-code batches.
+- [x] **SD-8 IA restructure** - two-column Selection/Development IA was already shipped (commit c367822). Remaining cleanup done: sidebar instrument-runner leaf relabelled "Overview" -> "Take assessment" (Cognitive/Persona/Fluent).
+- [x] **SD-9 Persona item-format option** - admin/voucher-pinnable + standalone chooser: normative / ipsative / both (migration 00140). **Deferred: true ipsative SCORING** (Thurstonian IRT - multi-week psychometric build); this is forced-choice presentation, documented honestly in the methodology brief.
+- [x] **SD-10 Provision the SDAIA ARC org as saudi/government** - org provisioned (verified live). Idempotent `scripts/seed-sdaia-pilots.ts` ready (dry-run verified). **OPERATOR ACTION: run `npx tsx scripts/seed-sdaia-pilots.ts --apply` to issue the per-pilot codes** (Pilots 1+3 = Persona codes, Pilot 2 = Technical L&D code - NOT ARC questionnaire codes).
 
 ## ⭐ Priority 2 - KAFD (King Abdullah Financial District)
 

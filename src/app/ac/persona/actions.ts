@@ -144,11 +144,18 @@ export async function submitPersonaAction(sessionId: string, lang: "en" | "ar" =
   const isStaff = await isStaffCaller();
   const res = await submitAnonymousBehavioral(sessionId);
   if (!res.ok || !res.profile) return { ...res, isStaff };
-  try {
-    const built = await buildPersonaPdfData(sessionId, lang);
-    if (built.ok) return { ...res, report: built.data, isStaff };
-  } catch {
-    /* fall back to the plain scored profile */
+  // PER-11: building the report runs several AI calls (insights, summary,
+  // courses, interview probes) - the cause of "scoring takes a long time". Only
+  // staff see the report on submit, so skip that build for takers (their submit
+  // is then near-instant). An admin builds it on demand from the report route /
+  // cohort view (insights are cached on the session for reuse).
+  if (isStaff) {
+    try {
+      const built = await buildPersonaPdfData(sessionId, lang);
+      if (built.ok) return { ...res, report: built.data, isStaff };
+    } catch {
+      /* fall back to the plain scored profile */
+    }
   }
   return { ...res, isStaff };
 }

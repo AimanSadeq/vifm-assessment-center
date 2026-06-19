@@ -95,6 +95,8 @@ export function PersonaStandaloneClient({
   // XP-13: only VIFM staff see the report on-screen; takers get a thank-you.
   const [canView, setCanView] = useState(false);
   const [page, setPage] = useState(0);
+  // PER-9: transient highlight on the item we just jumped to.
+  const [flashKey, setFlashKey] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -187,6 +189,26 @@ export function PersonaStandaloneClient({
   const totalNorm = normItems.length;
   const answeredNorm = Object.keys(answers).length;
   const allNormAnswered = answeredNorm >= totalNorm && totalNorm > 0;
+  // PER-9: find the first unanswered normative item (+ which page it's on) so a
+  // blocked taker can jump straight to it instead of hunting page by page.
+  const firstUnansweredNorm = useMemo(() => {
+    for (let pi = 0; pi < normPages.length; pi++) {
+      for (const it of normPages[pi]) {
+        if (answers[it.itemKey] === undefined) return { page: pi, itemKey: it.itemKey };
+      }
+    }
+    return null;
+  }, [normPages, answers]);
+  function jumpToUnanswered() {
+    const target = firstUnansweredNorm;
+    if (!target || typeof window === "undefined") return;
+    setPage(target.page);
+    setFlashKey(target.itemKey);
+    setTimeout(() => {
+      document.getElementById(`norm-item-${target.itemKey}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 80);
+    setTimeout(() => setFlashKey(null), 2500);
+  }
   const blocksDone = ipsBlocks.filter((b) => ipsChoices[b.blockId]?.most && ipsChoices[b.blockId]?.least).length;
   const allIpsDone = ipsBlocks.length > 0 ? blocksDone >= ipsBlocks.length : true;
 
@@ -594,7 +616,13 @@ export function PersonaStandaloneClient({
 
           <section className="space-y-3 rounded-lg border bg-white p-4">
             {(normPages[page] ?? []).map((it) => (
-              <div key={it.itemKey} className="space-y-1.5 border-b border-slate-100 pb-3 last:border-0 last:pb-0">
+              <div
+                key={it.itemKey}
+                id={`norm-item-${it.itemKey}`}
+                className={`space-y-1.5 border-b border-slate-100 pb-3 last:border-0 last:pb-0 ${
+                  flashKey === it.itemKey ? "-mx-2 rounded-md bg-amber-50 px-2 ring-2 ring-amber-300 transition" : ""
+                }`}
+              >
                 <p className="text-sm">{ar ? it.textAr : it.textEn}</p>
                 <div className="flex flex-wrap gap-1.5">
                   {LIKERT.map((v) => {
@@ -657,13 +685,20 @@ export function PersonaStandaloneClient({
             )}
           </div>
           {!allNormAnswered && page === normPages.length - 1 && (
-            <p className="flex items-center justify-end gap-1 text-end text-[11px] text-amber-600">
-              <AlertTriangle className="h-3.5 w-3.5" />
-              {tx(
-                `Answer all ${totalNorm} statements to continue (${totalNorm - answeredNorm} left).`,
-                `أجب عن جميع العبارات (${totalNorm}) للمتابعة (تبقّى ${totalNorm - answeredNorm}).`,
+            <div className="flex flex-wrap items-center justify-end gap-2 text-end text-[11px] text-amber-600">
+              <span className="inline-flex items-center gap-1">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                {tx(
+                  `Answer all ${totalNorm} statements to continue (${totalNorm - answeredNorm} left).`,
+                  `أجب عن جميع العبارات (${totalNorm}) للمتابعة (تبقّى ${totalNorm - answeredNorm}).`,
+                )}
+              </span>
+              {firstUnansweredNorm && (
+                <button type="button" onClick={jumpToUnanswered} className="font-semibold text-[#5391D5] underline">
+                  {tx("Jump to the unanswered question", "انتقل إلى السؤال غير المُجاب")}
+                </button>
               )}
-            </p>
+            </div>
           )}
         </div>
       )}

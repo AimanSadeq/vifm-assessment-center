@@ -1,17 +1,17 @@
 /**
- * Pre-Hire Fluent — score the English placement stage.
+ * Pre-Hire Fluent - score the English placement stage.
  *
  * POST { answers, writingResponse, speakingTranscript, pronunciation,
  *        integrityFlags } -> { normalized, cefr }
  *
  * The full test (with the answer key) is reloaded server-side from
- * prehire_stage_results.detail.fullTest — the client never submits the key.
+ * prehire_stage_results.detail.fullTest - the client never submits the key.
  * Receptive skills are auto-scored; writing + speaking are Claude-scored
  * (ensemble), with Azure pronunciation blended into speaking when available.
  *
  * The overall CEFR band maps to 0–100 (A1→0 … C2→100) so it sits on the same
  * normalized scale as the quiz and CBI stages and rolls into the composite.
- * A failed cut never auto-rejects — it only flags the candidate for review.
+ * A failed cut never auto-rejects - it only flags the candidate for review.
  */
 
 import { NextResponse } from "next/server";
@@ -30,13 +30,13 @@ import {
 } from "@/lib/ai/fluent-english";
 import type { PronunciationScore } from "@/lib/integrations/speech";
 import { resolveFluentSkills, FLUENT_SKILLS, type FluentSkill } from "@/types/prehire";
+import { computeIntegritySignal, type IntegrityFlags } from "@/lib/scoring/integrity";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
 type StoredDetail = { fullTest?: FluentTest; tts?: boolean; skills?: FluentSkill[] } | null;
-type IntegrityFlags = { blurCount?: number; pasteCount?: number };
 type Body = {
   answers?: Record<string, number>;
   writingResponse?: string;
@@ -131,7 +131,9 @@ export async function POST(req: Request, { params }: { params: { token: string }
       normalized_score: normalized,
       passed,
       detail: { result, answers, skills, partial },
-      flags: body?.integrityFlags ?? {},
+      // CAL-FLU-601: persist the widened flags + the advisory signal for the
+      // recruiter/fairness view (never auto-fails the candidate).
+      flags: { ...(body?.integrityFlags ?? {}), signal: computeIntegritySignal(body?.integrityFlags ?? null) },
       completed_at: new Date().toISOString(),
     })
     .eq("id", stage.id);

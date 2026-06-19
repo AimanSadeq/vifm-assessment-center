@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { startBrowserStt, type BrowserSttSession } from "@/lib/speech/browser-stt";
+import { type IntegrityEvent } from "@/lib/scoring/integrity";
 
 /**
  * Full 4-skill English placement stage for the self-served pre-hire flow.
@@ -52,9 +53,14 @@ export function FluentStage({ token, onDone }: { token: string; onDone: () => vo
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [writing, setWriting] = useState("");
 
-  // Lightweight, advisory proctoring (surfaced to recruiters, never auto-fails).
+  // Lightweight, advisory proctoring (CAL-FLU-601; surfaced to recruiters, never
+  // auto-fails). PDPL-safe: counts, away-DURATION, and pasted-text LENGTH only.
   const [blurCount, setBlurCount] = useState(0);
   const [pasteCount, setPasteCount] = useState(0);
+  const [awayMs, setAwayMs] = useState(0);
+  const [pasteChars, setPasteChars] = useState(0);
+  const [events, setEvents] = useState<IntegrityEvent[]>([]);
+  const testStartRef = useRef<number>(0);
 
   // Listening playback (browser-TTS fallback path).
   const [plays, setPlays] = useState<Record<string, number>>({});
@@ -86,13 +92,44 @@ export function FluentStage({ token, onDone }: { token: string; onDone: () => vo
     };
   }, []);
 
-  // Count tab switches / minimises while the test is open (advisory signal).
+  // Proctoring (CAL-FLU-601): capture tab-hide / window-blur AWAY DURATION
+  // (covers tab switch + minimise AND same-window focus loss like a 2nd monitor),
+  // debounced 1.5s, deduped so a tab switch isn't double-counted. Advisory only.
   useEffect(() => {
     if (phase !== "test") return;
-    const onVis = () => { if (document.hidden) setBlurCount((c) => c + 1); };
+    testStartRef.current = Date.now();
+    const AWAY_DEBOUNCE_MS = 1500;
+    let awayStart: number | null = null;
+    const goneAway = () => { if (awayStart == null) awayStart = Date.now(); };
+    const cameBack = () => {
+      if (awayStart == null) return;
+      const dur = Date.now() - awayStart;
+      awayStart = null;
+      if (dur < AWAY_DEBOUNCE_MS) return;
+      const at = Date.now() - testStartRef.current;
+      setBlurCount((c) => c + 1);
+      setAwayMs((m) => m + dur);
+      setEvents((ev) => [...ev, { kind: "blur", at, awayMs: dur }]);
+    };
+    const onVis = () => { if (document.hidden) goneAway(); else cameBack(); };
     document.addEventListener("visibilitychange", onVis);
-    return () => document.removeEventListener("visibilitychange", onVis);
+    window.addEventListener("blur", goneAway);
+    window.addEventListener("focus", cameBack);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("blur", goneAway);
+      window.removeEventListener("focus", cameBack);
+    };
   }, [phase]);
+
+  // PDPL-safe paste capture: record the paste + the LENGTH of pasted text only.
+  const onPasteCapture = useCallback((e: React.ClipboardEvent) => {
+    const len = e.clipboardData?.getData("text")?.length ?? 0;
+    const at = Date.now() - (testStartRef.current || Date.now());
+    setPasteCount((c) => c + 1);
+    if (len > 0) setPasteChars((n) => n + len);
+    setEvents((ev) => [...ev, { kind: "paste", at, pasteChars: len }]);
+  }, []);
 
   const playClip = useCallback((item: ListeningItem) => {
     if (!ttsAvailable() || !item.script) return;
@@ -249,7 +286,7 @@ export function FluentStage({ token, onDone }: { token: string; onDone: () => vo
           writingResponse: writing,
           speakingTranscript: transcript,
           pronunciation,
-          integrityFlags: { blurCount, pasteCount },
+          integrityFlags: { blurCount, pasteCount, awayMs, pasteChars, events },
         }),
       });
       if (!res.ok) {
@@ -384,7 +421,7 @@ export function FluentStage({ token, onDone }: { token: string; onDone: () => vo
             <textarea
               value={writing}
               onChange={(e) => setWriting(e.target.value)}
-              onPaste={() => setPasteCount((c) => c + 1)}
+              onPaste={onPasteCapture}
               rows={7}
               placeholder="Write your response here…"
               className="mt-3 w-full resize-y rounded-md border border-slate-300 px-3 py-2 text-sm text-[#111232] focus:border-[#5391D5] focus:outline-none focus:ring-2 focus:ring-[#5391D5]/20"
@@ -449,7 +486,7 @@ export function FluentStage({ token, onDone }: { token: string; onDone: () => vo
                 <textarea
                   value={transcript}
                   onChange={(e) => setTranscript(e.target.value)}
-                  onPaste={() => setPasteCount((c) => c + 1)}
+                  onPaste={onPasteCapture}
                   rows={4}
                   placeholder="Type roughly what you would say…"
                   className="w-full resize-y rounded-md border border-slate-300 px-3 py-2 text-sm text-[#111232] focus:border-[#5391D5] focus:outline-none focus:ring-2 focus:ring-[#5391D5]/20"

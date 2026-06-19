@@ -150,6 +150,10 @@ export default async function AraRespondPage({
             before it reaches the browser - graded items (situational_judgment /
             knowledge_check) must never expose their correct answer client-side.
             Scoring re-fetches score_map server-side in saveAraAnswer. */}
+        {/* The optional sections + Submit button are passed as children so
+            QuestionsForm can gate them behind its internal `started` state -
+            none of this should appear on the pre-start intro/landing screen
+            (the stray "Submit assessment" button under Start was the bug). */}
         <QuestionsForm
           token={params.token}
           questions={questions.map((q) => ({ ...q, score_map: null, validation_evidence: null }))}
@@ -162,48 +166,50 @@ export default async function AraRespondPage({
           language={language}
           timeLimitMinutes={ctx.assessment.time_limit_minutes ?? null}
           startedAt={ctx.respondent.started_at ?? null}
-        />
+        >
+          <div className="space-y-6">
+            {/* AI Use Case Portfolio (optional) - org-side only. Personal /
+                 individual-stage respondents (Mode A snapshot, Mode B deep-dive)
+                 are answering about their own behaviours, not their org's
+                 portfolio, so the section is suppressed and the "your
+                 consultant" copy doesn't leak into the self-served flow. */}
+            {ctx.assessment.engagement_stage !== "individual" && (
+              <UseCasesSection
+                token={params.token}
+                language={language}
+                useCases={(useCases ?? []) as any}
+              />
+            )}
 
-        {/* AI Use Case Portfolio (optional) - org-side only. Personal /
-             individual-stage respondents (Mode A snapshot, Mode B deep-dive)
-             are answering about their own behaviours, not their org's
-             portfolio, so the section is suppressed and the "your
-             consultant" copy doesn't leak into the self-served flow. */}
-        {ctx.assessment.engagement_stage !== "individual" && (
-          <UseCasesSection
-            token={params.token}
-            language={language}
-            useCases={(useCases ?? []) as any}
-          />
-        )}
+            {/* Supporting Materials (optional) - org-side only. Personal /
+                 individual-stage respondents are submitting a self-assessment,
+                 not org-level evidence, so the regulatory-docs upload affordance
+                 is suppressed. */}
+            {ctx.assessment.engagement_stage !== "individual" && !ctx.respondent.individual_only && (
+              <MaterialsSection
+                token={params.token}
+                language={language}
+                materials={(materials ?? []).map((m) => ({
+                  id: m.id,
+                  material_type: m.material_type,
+                  material_name: m.material_name,
+                  file_name: m.file_name,
+                  link_url: m.link_url,
+                }))}
+              />
+            )}
 
-        {/* Supporting Materials (optional) - org-side only. Personal /
-             individual-stage respondents are submitting a self-assessment,
-             not org-level evidence, so the regulatory-docs upload affordance
-             is suppressed. */}
-        {ctx.assessment.engagement_stage !== "individual" && !ctx.respondent.individual_only && (
-          <MaterialsSection
-            token={params.token}
-            language={language}
-            materials={(materials ?? []).map((m) => ({
-              id: m.id,
-              material_type: m.material_type,
-              material_name: m.material_name,
-              file_name: m.file_name,
-              link_url: m.link_url,
-            }))}
-          />
-        )}
-
-        {/* Complete button */}
-        {questions.length > 0 && (
-          <CompleteButton
-            token={params.token}
-            alreadyComplete={completed}
-            language={language}
-            onComplete={completeAction}
-          />
-        )}
+            {/* Complete button */}
+            {questions.length > 0 && (
+              <CompleteButton
+                token={params.token}
+                alreadyComplete={completed}
+                language={language}
+                onComplete={completeAction}
+              />
+            )}
+          </div>
+        </QuestionsForm>
       </div>
     </div>
   );

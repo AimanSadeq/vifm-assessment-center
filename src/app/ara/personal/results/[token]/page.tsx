@@ -5,7 +5,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { loadRespondentByToken, loadQuestionsForRespondent } from "@/lib/ara/respondent-access";
-import { getOrgResultsPrefs } from "@/lib/ara/results-visibility";
+import { getOrgResultsPrefs, delegateCanSeeOwnResults } from "@/lib/ara/results-visibility";
 import { calculateQuestionScore } from "@/lib/ara/scoring";
 import {
   ARA_INDIVIDUAL_FACTORS,
@@ -54,9 +54,11 @@ export default async function PersonalResultsPage({ params }: Props) {
 
   // Client-level gate (migration 00108): a client may withhold results from
   // delegates (results go to the client instead). Anonymous Mode A has no org
-  // and stays visible.
+  // and stays visible. Uses the same delegateCanSeeOwnResults rule as the
+  // completion email + PDF route, so a delegate can't be denied the email yet
+  // still see results on screen ("results still show after finishing").
   const prefs = await getOrgResultsPrefs(ctx.assessment.organization_id);
-  if (!prefs.respondentCanView) {
+  if (!delegateCanSeeOwnResults(prefs)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-6">
         <Card className="max-w-md text-center">

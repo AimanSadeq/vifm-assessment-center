@@ -20,6 +20,25 @@ const PERMISSIVE: OrgResultsPrefs = {
   sendToClient: false,
 };
 
+/**
+ * Single source of truth for "may this delegate see their OWN results"
+ * (on-screen results page, personal PDF, and the auto results email).
+ *
+ * R1 rule: once a client contact is configured on the org, this is a
+ * delegated/client engagement - the consultant sends the assessment and the
+ * CLIENT receives the results (directly via send-to-client or collected via the
+ * org "Collect all results" action), so the delegate does NOT see their own
+ * results. Anonymous Mode A has no org (clientEmail null) and keeps them, as
+ * does an org with an explicit respondent_can_view_results=false override.
+ *
+ * The on-screen page, the PDF route, and the completion email MUST all use this
+ * helper so a delegate can't be denied the email yet still see results on
+ * screen (the inconsistency behind "results still show after finishing").
+ */
+export function delegateCanSeeOwnResults(prefs: OrgResultsPrefs): boolean {
+  return prefs.respondentCanView && !prefs.clientEmail;
+}
+
 export async function getOrgResultsPrefs(
   organizationId: string | null | undefined,
 ): Promise<OrgResultsPrefs> {

@@ -6,7 +6,7 @@ import {
   loadRespondentByToken,
   loadQuestionsForRespondent,
 } from "@/lib/ara/respondent-access";
-import { getOrgResultsPrefs } from "@/lib/ara/results-visibility";
+import { getOrgResultsPrefs, delegateCanSeeOwnResults } from "@/lib/ara/results-visibility";
 import { calculateQuestionScore } from "@/lib/ara/scoring";
 import { timingSafeStrEqual } from "@/lib/utils/secret";
 import { createServiceClient } from "@/lib/supabase/server";
@@ -66,13 +66,15 @@ export async function GET(
     }
 
     // Client-level visibility gate (migration 00108): if the client withheld
-    // results from delegates, block direct (token) downloads. The completion
-    // task still needs the PDF to attach to the client email, so it passes a
+    // results from delegates (explicitly, or implicitly via a configured client
+    // contact - the same delegateCanSeeOwnResults rule as the results page and
+    // completion email), block direct (token) downloads. The completion task
+    // still needs the PDF to attach to the client email, so it passes a
     // server-only header (CRON_SECRET) to bypass.
     const prefs = await getOrgResultsPrefs(ctx.assessment.organization_id);
     const internalKey = request.headers.get("x-ara-internal");
     const isInternal = timingSafeStrEqual(internalKey, process.env.CRON_SECRET);
-    if (!prefs.respondentCanView && !isInternal) {
+    if (!delegateCanSeeOwnResults(prefs) && !isInternal) {
       return NextResponse.json(
         { error: "Results are not available to the respondent for this assessment." },
         { status: 403 }

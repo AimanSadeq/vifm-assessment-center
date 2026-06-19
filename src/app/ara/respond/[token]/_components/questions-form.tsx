@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { Check, Loader2, AlertCircle, HelpCircle } from "lucide-react";
@@ -52,6 +52,14 @@ type QuestionsFormProps = {
   timeLimitMinutes?: number | null;
   /** Persisted start (ISO) if the respondent already began; anchors the countdown. */
   startedAt?: string | null;
+  /**
+   * Trailing content (optional sections + the Submit button) rendered ONLY
+   * after the respondent has started. Kept out of the pre-start intro screen
+   * so the "Submit assessment" button never appears under the Start button on
+   * the landing page (the stray-submit bug). The page passes server-rendered
+   * children; this component just gates their visibility on `started`.
+   */
+  children?: ReactNode;
 };
 
 type SaveState = "idle" | "saving" | "saved" | "error";
@@ -66,7 +74,7 @@ type LocalAnswer = {
 
 const DEBOUNCE_MS = 600;
 
-export function QuestionsForm({ token, questions, answers, language, timeLimitMinutes = null, startedAt = null }: QuestionsFormProps) {
+export function QuestionsForm({ token, questions, answers, language, timeLimitMinutes = null, startedAt = null, children }: QuestionsFormProps) {
   const rtl = language === "ar";
   const router = useRouter();
   // Intro is rendered in the ASSESSMENT's language (en/ar), not the UI cookie.
@@ -548,6 +556,10 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
           </p>
         </div>
       )}
+
+      {/* Trailing content (optional sections + Submit) - only after Start, so it
+          never shows on the intro/landing screen (the stray-submit bug). */}
+      {children}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/server";
+import { getPillarsForAssessment } from "@/lib/constants/ara-stages";
 import type {
   AraAssessment,
   AraOrganization,
@@ -98,8 +99,22 @@ export async function loadQuestionsForRespondent(
 
   if (!wantsPillar && !wantsIndividual && !wantsAgentic) return [];
 
+  // Effective pillar set. Defense-in-depth: a respondent should normally have
+  // explicit assignment rows (the add / bulk-import paths set them), but legacy
+  // rows or a missed path can leave them empty - which would serve a blank test
+  // (the "department test not working" bug). When pillar questions are wanted
+  // and no assignments exist, fall back to the assessment's resolved in-scope
+  // pillars (department=4, division=6, enterprise=8; honours pillars_in_scope).
+  const effectivePillars: AraPillarId[] =
+    ctx.assignedPillars.length > 0
+      ? ctx.assignedPillars
+      : (getPillarsForAssessment({
+          engagement_stage: ctx.assessment.engagement_stage,
+          pillars_in_scope: ctx.assessment.pillars_in_scope,
+        } as Parameters<typeof getPillarsForAssessment>[0]) as AraPillarId[]);
+
   // Pillar assignment is required when serving pillar questions.
-  if (wantsPillar && ctx.assignedPillars.length === 0) {
+  if (wantsPillar && effectivePillars.length === 0) {
     // No pillar questions; if also no individual layer there's nothing to serve.
     if (!wantsIndividual) return [];
   }
@@ -107,14 +122,14 @@ export async function loadQuestionsForRespondent(
   const collected: AraQuestion[] = [];
 
   // ── Pillar questions (Mode B without individual_only, Mode C) ──
-  if (wantsPillar && ctx.assignedPillars.length > 0) {
+  if (wantsPillar && effectivePillars.length > 0) {
     const { data } = await sb
       .from("ara_questions")
       .select("*")
       .eq("version_id", versionId)
       .eq("layer", 1)
       .eq("is_active", true)
-      .in("pillar_id", ctx.assignedPillars)
+      .in("pillar_id", effectivePillars)
       .is("individual_factor_id", null)
       .is("agentic_dimension_id", null)
       .returns<AraQuestion[]>();

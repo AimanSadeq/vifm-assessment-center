@@ -474,8 +474,18 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
           })}
         </View>
 
-        {/* Scale legend - below the per-factor breakdown (R3) */}
-        <View style={s.legendBox}>
+        <View style={s.footer} fixed>
+          <Text style={s.footerText}>VIFM AI Readiness Compass® · Personal Snapshot</Text>
+          <Text style={s.footerText} render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
+        </View>
+      </Page>
+
+      {/* ─── Page 2 - Context, training, methodology ─────────── */}
+      <Page size="A4" style={s.page} wrap>
+        {/* Scale legend (R3) - opens page 2 so it never orphans onto a blank
+            page when the four per-factor cards fill page 1. wrap={false} keeps
+            it whole. */}
+        <View style={s.legendBox} wrap={false}>
           <Text style={s.legendTitle}>{HOW_TO_USE_PANELS.read.title}</Text>
           <View style={s.legendRow}>
             <View style={s.legendCell}>
@@ -499,14 +509,6 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
           </View>
         </View>
 
-        <View style={s.footer} fixed>
-          <Text style={s.footerText}>VIFM AI Readiness Compass® · Personal Snapshot</Text>
-          <Text style={s.footerText} render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
-        </View>
-      </Page>
-
-      {/* ─── Page 2 - Context, training, methodology ─────────── */}
-      <Page size="A4" style={s.page} wrap>
         {/* Context panels */}
         <Text style={s.sectionEyebrow}>How to use this snapshot</Text>
         <Text style={s.sectionTitle}>Reading your result in context</Text>

@@ -371,6 +371,7 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
       padding: 12px;
       margin-bottom: 16px;
       background: ${C.bgSoft};
+      page-break-inside: avoid;
     }
     .legend-title { font-size: 10pt; font-weight: 700; color: ${C.primary}; margin: 0 0 6px; }
     .legend-row { display: flex; gap: 10px; }
@@ -573,8 +574,12 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
     <h2 class="section-title">موقعك في كل عامل من عوامل VIFM</h2>
     <div class="section-rule"></div>
     <div class="factor-grid">${factorCardsHtml}</div>
+  </section>
 
-    <!-- Scale legend - below the per-factor breakdown (R3) -->
+  <!-- PAGE 2 break -->
+  <section class="page-break-before">
+    <!-- Scale legend (R3) - opens page 2 so it never orphans onto a blank page
+         when the per-factor cards fill page 1. -->
     <div class="legend">
       <p class="legend-title">${esc(HOW_TO_USE_PANELS_AR.read.title)}</p>
       <div class="legend-row">
@@ -592,10 +597,7 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
         </div>
       </div>
     </div>
-  </section>
 
-  <!-- PAGE 2 break -->
-  <section class="page-break-before">
     <p class="section-eyebrow">كيف تستخدم هذه اللقطة</p>
     <h2 class="section-title">قراءة نتيجتك في سياقها</h2>
     <div class="section-rule"></div>

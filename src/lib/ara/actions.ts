@@ -598,14 +598,27 @@ export async function bulkImportAraRespondents(formData: FormData) {
 
   const sb = createServiceClient();
 
-  // Look up the parent assessment's include_individual_layer flag once
-  // - we only honour individual_only when the layer is actually on.
+  // Look up the parent assessment once: include_individual_layer (we only
+  // honour individual_only when the layer is on) plus the stage + scope, so a
+  // row that omits the optional `pillars` column still defaults to the
+  // assessment's in-scope pillars (else the respondent gets an empty test -
+  // the "department test not working" bug, same as the single-add path).
   const { data: parentAssessment } = await sb
     .from("ara_assessments")
-    .select("include_individual_layer")
+    .select("include_individual_layer, engagement_stage, pillars_in_scope")
     .eq("id", assessmentId)
-    .maybeSingle<{ include_individual_layer: boolean }>();
+    .maybeSingle<{
+      include_individual_layer: boolean;
+      engagement_stage: string;
+      pillars_in_scope: string[] | null;
+    }>();
   const layerOn = !!parentAssessment?.include_individual_layer;
+  const defaultPillars: readonly string[] = parentAssessment
+    ? getPillarsForAssessment({
+        engagement_stage: parentAssessment.engagement_stage,
+        pillars_in_scope: parentAssessment.pillars_in_scope,
+      } as Parameters<typeof getPillarsForAssessment>[0])
+    : [];
 
   // Pre-fetch existing emails on this assessment for duplicate detection.
   const { data: existing } = await sb
@@ -679,10 +692,24 @@ export async function bulkImportAraRespondents(formData: FormData) {
 
   if (error) return { ok: false, error: error.message };
 
-  // Wire up pillar assignments for any rows that supplied them.
+  // Wire up pillar assignments. A row that supplied an explicit `pillars`
+  // value uses it; any other (non-individual-only) row defaults to the
+  // assessment's in-scope pillars so it gets a real test rather than zero
+  // questions. individual-only rows are intentionally absent from the map.
+  const individualOnlyEmails = new Set(
+    toInsert
+      .filter((r) => r.individual_only === true)
+      .map((r) => String(r.email).toLowerCase())
+  );
   const assignmentRows: Array<{ respondent_id: string; pillar_id: string }> = [];
   for (const row of inserted ?? []) {
-    const pillars = pillarsByEmail.get(row.email.toLowerCase()) ?? [];
+    const email = row.email.toLowerCase();
+    const explicit = pillarsByEmail.get(email);
+    const pillars = explicit && explicit.length > 0
+      ? explicit
+      : individualOnlyEmails.has(email)
+        ? []
+        : defaultPillars;
     for (const p of pillars) assignmentRows.push({ respondent_id: row.id, pillar_id: p });
   }
   if (assignmentRows.length > 0) {

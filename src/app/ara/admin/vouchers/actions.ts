@@ -24,6 +24,23 @@ function inviteEmailHtml(link: string, code: string): string {
   </div>`;
 }
 
+/**
+ * The expiry picker is an `<input type="date">`, so it yields a date-only
+ * string ("2026-06-30"). `new Date("2026-06-30")` parses as UTC midnight, which
+ * makes the voucher expire at the *start* of that day - so a code is rejected
+ * for the whole day the admin picked. Treat a picked date as valid through the
+ * end of that UTC day. Strings that already carry a time component (contain "T")
+ * are passed through unchanged.
+ */
+function toEndOfDayIso(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const raw = value.trim();
+  if (!raw) return null;
+  const iso = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? `${raw}T23:59:59.999Z` : raw;
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
 async function requireAdmin() {
   try {
     await requireRole(["admin"]);
@@ -93,7 +110,7 @@ export async function createVoucherBatchAction(formData: FormData) {
     language: parsed.data.language,
     maxUses: parsed.data.maxUses,
     isPractice: true,
-    expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt).toISOString() : null,
+    expiresAt: toEndOfDayIso(parsed.data.expiresAt),
     createdBy: caller?.uid ?? null,
   });
   if (!res.ok) return res;
@@ -155,7 +172,7 @@ export async function emailVouchersToDelegatesAction(formData: FormData) {
   }
 
   const caller = await requireRole(["admin"]).catch(() => null);
-  const expiresAt = parsed.data.expiresAt ? new Date(parsed.data.expiresAt).toISOString() : null;
+  const expiresAt = toEndOfDayIso(parsed.data.expiresAt);
   const results: Array<{ email: string; ok: boolean; error?: string }> = [];
 
   for (const email of emails) {

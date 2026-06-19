@@ -186,6 +186,8 @@ export async function generateVouchersAction(input: {
   delegates?: { name: string; email: string }[];
   mcqPct?: number;
   talentLens?: "acquisition" | "development" | null;
+  /** Custom (pick-and-choose) sitting design carried to the redeemed session (00141). */
+  customConfig?: { skills: string[]; blockIds: string[]; title?: string | null } | null;
 }): Promise<Result<{ codes: string[]; assignments: { name: string; email: string; code: string }[] }>> {
   const g = await guard();
   if ("error" in g) return g;
@@ -198,13 +200,16 @@ export async function generateVouchersAction(input: {
     functionId: input.functionId,
     count: input.count,
     organizationName: input.organizationName || null,
-    label: input.label || null,
+    // Carry the custom title as the batch label so it is recognisable in the
+    // voucher list when the builder issued it.
+    label: input.label || input.customConfig?.title || null,
     maxUsesPerCode: input.maxUsesPerCode ?? 1,
     expiresAt: input.expiresAt || null,
     delegates: named.length > 0 ? named : null,
     createdBy: "userId" in g ? g.userId : undefined,
     mcqPct: input.mcqPct ?? 0,
     talentLens: input.talentLens ?? null,
+    customConfig: input.customConfig ?? null,
   });
   revalidatePath("/admin/tech-sandbox/vouchers");
   revalidatePath("/admin/tech-sandbox");

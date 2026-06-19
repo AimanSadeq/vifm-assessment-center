@@ -43,6 +43,12 @@ export interface GenerateBatchInput {
   mcqPct?: number | null;
   /** Talent lens (00136) copied onto the session at redemption. NULL = development. */
   talentLens?: "acquisition" | "development" | null;
+  /**
+   * Custom (pick-and-choose) sitting design (00141), carried to the redeemed
+   * session so the delegate sits the SAME custom assessment instead of the
+   * function default. NULL/empty = ordinary voucher (full function default).
+   */
+  customConfig?: { skills: string[]; blockIds: string[]; title?: string | null } | null;
 }
 
 /** Clamp a possibly-undefined MCQ weight into the 0-100 column range. */
@@ -69,6 +75,13 @@ export async function generateVoucherBatch(input: GenerateBatchInput) {
   // Only carry talent_lens when set, so a NULL lens never references the 00136
   // column (no PGRST204 on a pending-00136 DB) and the peel below stays a no-op.
   const lensCol: Record<string, unknown> = lens ? { talent_lens: lens } : {};
+  // Only carry custom_config (00141) when the sitting is actually customised, so
+  // an ordinary voucher never references the column on a pending-00141 DB.
+  const cc = input.customConfig;
+  const hasCustom = !!cc && (((cc.skills?.length ?? 0) > 0) || ((cc.blockIds?.length ?? 0) > 0));
+  const customCol: Record<string, unknown> = hasCustom
+    ? { custom_config: { skills: cc!.skills ?? [], blockIds: cc!.blockIds ?? [], title: cc!.title ?? null } }
+    : {};
 
   let rows: Record<string, unknown>[];
   if (delegates.length > 0) {
@@ -86,6 +99,7 @@ export async function generateVoucherBatch(input: GenerateBatchInput) {
       created_by: input.createdBy ?? null,
       mcq_pct: mcqPct,
       ...lensCol,
+      ...customCol,
     }));
   } else {
     const count = Math.max(1, Math.min(500, Math.floor(input.count)));
@@ -101,23 +115,32 @@ export async function generateVoucherBatch(input: GenerateBatchInput) {
       created_by: input.createdBy ?? null,
       mcq_pct: mcqPct,
       ...lensCol,
+      ...customCol,
     }));
   }
 
-  // Newest-first peel: drop talent_lens (00136) then mcq_pct (00085) on a
-  // missing-column error so a pending migration degrades gracefully.
-  const stripLens = (r: Record<string, unknown>) => {
-    const { talent_lens, ...rest } = r;
+  // Newest-first peel: drop custom_config (00141), then talent_lens (00136),
+  // then mcq_pct (00085) on a missing-column error so a pending migration
+  // degrades gracefully.
+  const stripCustom = (r: Record<string, unknown>) => {
+    const { custom_config, ...rest } = r;
+    void custom_config;
+    return rest;
+  };
+  const stripCustomLens = (r: Record<string, unknown>) => {
+    const { custom_config, talent_lens, ...rest } = r;
+    void custom_config;
     void talent_lens;
     return rest;
   };
-  const stripLensMcq = (r: Record<string, unknown>) => {
-    const { talent_lens, mcq_pct, ...rest } = r;
+  const stripCustomLensMcq = (r: Record<string, unknown>) => {
+    const { custom_config, talent_lens, mcq_pct, ...rest } = r;
+    void custom_config;
     void talent_lens;
     void mcq_pct;
     return rest;
   };
-  const attempts = [rows, rows.map(stripLens), rows.map(stripLensMcq)];
+  const attempts = [rows, rows.map(stripCustom), rows.map(stripCustomLens), rows.map(stripCustomLensMcq)];
   type VoucherInsertRow = { code: string; assigned_name: string | null; assigned_email: string | null };
   let data: VoucherInsertRow[] | null = null;
   let error: { code?: string } | null = null;
@@ -170,34 +193,30 @@ export async function redeemVoucher(input: RedeemInput): Promise<RedeemResult> {
     return { ok: false, error: "This code is invalid, disabled, expired, or fully used." };
   }
 
-  // The claim RPC doesn't return mcq_pct / talent_lens; read them separately
-  // (tolerant of 00085 / 00136 not applied - legacy vouchers have no MCQ section
-  // i.e. mcq_pct 0, and a NULL lens = development framing).
+  // The claim RPC doesn't return mcq_pct / talent_lens / custom_config; read
+  // them separately. Progressive column set so a pending 00141 / 00136 / 00085
+  // degrades gracefully (newest column first; first successful read wins).
   let mcqPct = 0;
   let talentLens: "acquisition" | "development" | null = null;
-  try {
+  let customConfig: { skills: string[]; blockIds: string[]; title: string | null } | null = null;
+  for (const cols of ["mcq_pct, talent_lens, custom_config", "mcq_pct, talent_lens", "mcq_pct"]) {
     const { data: vRow, error: vErr } = await sb
       .from("technical_sandbox_vouchers")
-      .select("mcq_pct, talent_lens")
+      .select(cols)
       .eq("id", voucher.id as string)
-      .maybeSingle<{ mcq_pct: number | null; talent_lens: string | null }>();
-    if (vErr) throw vErr;
-    mcqPct = clampMcqPct(vRow?.mcq_pct ?? 0);
+      .maybeSingle<Record<string, unknown>>();
+    if (vErr) continue; // column missing on this DB - try a smaller column set
+    mcqPct = clampMcqPct((vRow?.mcq_pct as number) ?? 0);
     const rawLens = vRow?.talent_lens;
     talentLens = rawLens === "acquisition" || rawLens === "development" ? rawLens : null;
-  } catch {
-    // 00136 pending: re-read mcq_pct alone so the MCQ section still works.
-    try {
-      const { data: vRow } = await sb
-        .from("technical_sandbox_vouchers")
-        .select("mcq_pct")
-        .eq("id", voucher.id as string)
-        .maybeSingle<{ mcq_pct: number | null }>();
-      mcqPct = clampMcqPct(vRow?.mcq_pct ?? 0);
-    } catch {
-      mcqPct = 0;
+    const cc = vRow?.custom_config as
+      | { skills?: string[]; blockIds?: string[]; title?: string | null }
+      | null
+      | undefined;
+    if (cc && (Array.isArray(cc.skills) || Array.isArray(cc.blockIds))) {
+      customConfig = { skills: cc.skills ?? [], blockIds: cc.blockIds ?? [], title: cc.title ?? null };
     }
-    talentLens = null;
+    break;
   }
 
   try {
@@ -208,6 +227,15 @@ export async function redeemVoucher(input: RedeemInput): Promise<RedeemResult> {
       organizationName: (input.company || voucher.organization_name || "").trim() || undefined,
       mcqPct,
       talentLens,
+      // A custom-builder voucher provisions the SAME custom sitting (00141).
+      ...(customConfig
+        ? {
+            isCustom: true,
+            selectedSkills: customConfig.skills,
+            selectedBlockIds: customConfig.blockIds,
+            assessmentTitle: customConfig.title ?? undefined,
+          }
+        : {}),
     });
     await sb.from("technical_sandbox_voucher_redemptions").insert({
       voucher_id: voucher.id,

@@ -66,6 +66,34 @@ export async function loadRespondentByToken(
 }
 
 /**
+ * Cap each factor's individual items to `perFactor`, keeping the objective
+ * (scenario / knowledge) items first - so a shorter, per-client ARC still
+ * carries the objective items the calibration / risk-flag reads depend on,
+ * then fills the rest with self-rating items. Deterministic (by question
+ * number). Used by the voucher question-count lever (migration 00143).
+ */
+function capPerFactor(items: AraQuestion[], perFactor: number): AraQuestion[] {
+  const byFactor = new Map<string, AraQuestion[]>();
+  for (const q of items) {
+    const f = (q.individual_factor_id ?? "") as string;
+    const arr = byFactor.get(f);
+    if (arr) arr.push(q);
+    else byFactor.set(f, [q]);
+  }
+  const byNum = (a: AraQuestion, b: AraQuestion) =>
+    (a.question_number ?? 0) - (b.question_number ?? 0);
+  const out: AraQuestion[] = [];
+  for (const arr of byFactor.values()) {
+    const objective = arr.filter((q) => q.question_type !== "rating").sort(byNum);
+    const rating = arr.filter((q) => q.question_type === "rating").sort(byNum);
+    const keepObjective = objective.slice(0, perFactor);
+    const keepRating = rating.slice(0, Math.max(0, perFactor - keepObjective.length));
+    out.push(...keepObjective, ...keepRating);
+  }
+  return out;
+}
+
+/**
  * Load the Layer-1 question set applicable to this respondent.
  *
  * Three deployment modes:
@@ -159,7 +187,13 @@ export async function loadQuestionsForRespondent(
     // 'deep_dive' includes both 'snapshot' and 'deep_dive_extra'
 
     const { data } = await q.returns<AraQuestion[]>();
-    collected.push(...(data ?? []));
+    let individual = data ?? [];
+    // Per-client length lever (migration 00143): cap each factor to N items,
+    // keeping the objective items first so a shorter ARC still calibrates.
+    // NULL/undefined = no cap (the full deep-dive).
+    const cap = ctx.assessment.items_per_factor;
+    if (typeof cap === "number" && cap > 0) individual = capPerFactor(individual, cap);
+    collected.push(...individual);
   }
 
   // ── Agentic-AI Readiness layer (org opt-in via include_agentic_layer) ──

@@ -53,6 +53,9 @@ export function VouchersClient({
   const [error, setError] = useState<string | null>(null);
   const [generated, setGenerated] = useState<string[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
+  // Per-client ARC length - applies to BOTH generation forms. "" = the full
+  // deep-dive (60); otherwise the max individual-layer questions per factor.
+  const [itemsPerFactor, setItemsPerFactor] = useState("");
 
   // Live origin for shareable redeem links (window is client-only).
   const [origin, setOrigin] = useState("");
@@ -88,6 +91,7 @@ export function VouchersClient({
     setEmailingDelegates(true);
     const fd = new FormData();
     fd.set("emails", delegateEmails);
+    fd.set("itemsPerFactor", itemsPerFactor);
     if (selectedOrg) fd.set("organizationId", selectedOrg);
     const res = await emailVouchersToDelegatesAction(fd);
     setEmailingDelegates(false);
@@ -173,6 +177,7 @@ export function VouchersClient({
     e.preventDefault();
     setError(null);
     const fd = new FormData(e.currentTarget);
+    fd.set("itemsPerFactor", itemsPerFactor);
     startTransition(async () => {
       const res = await createVoucherBatchAction(fd);
       if (!res.ok) {
@@ -201,11 +206,34 @@ export function VouchersClient({
         </p>
       </div>
 
+      {/* Assessment length - governs BOTH generation forms below (migration 00143). */}
+      <Card>
+        <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-[#010131]">Assessment length</p>
+            <p className="text-xs text-muted-foreground">
+              How many questions a redeemed code serves - set it per client need.
+            </p>
+          </div>
+          <select
+            value={itemsPerFactor}
+            onChange={(e) => setItemsPerFactor(e.target.value)}
+            className={`${selectClass} sm:w-72`}
+            aria-label="Assessment length"
+          >
+            <option value="">Full ARC - 60 questions</option>
+            <option value="12">48 questions (12 per factor)</option>
+            <option value="9">36 questions (9 per factor)</option>
+            <option value="6">24 questions (6 per factor)</option>
+          </select>
+        </CardContent>
+      </Card>
+
       {/* Generate */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Generate codes</CardTitle>
-          <CardDescription>Full Personal ARC (60 questions) · seat pool via &ldquo;uses per code&rdquo;.</CardDescription>
+          <CardDescription>Personal ARC · length set above · seat pool via &ldquo;uses per code&rdquo;.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={onGenerate} className="grid gap-4 sm:grid-cols-2">

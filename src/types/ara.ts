@@ -96,6 +96,8 @@ export type AraAssessment = {
   scope_label_ar: string | null;
   /** 'snapshot' (24 individual items) or 'deep_dive' (48 items). Defaults to snapshot. */
   assessment_tier: "snapshot" | "deep_dive";
+  /** Per-client ARC length cap: max individual-layer questions per factor (migration 00143). NULL = no cap (full). */
+  items_per_factor?: number | null;
   /** Org-stage assessments can opt-in to also serving the individual factor items to all respondents. */
   include_individual_layer: boolean;
   /** Org-stage assessments can opt-in to the Agentic-AI Readiness layer (18 items, 6 dimensions; migration 00041). */

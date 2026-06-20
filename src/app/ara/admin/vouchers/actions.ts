@@ -51,9 +51,11 @@ async function requireAdmin() {
   }
 }
 
-// Every voucher provisions the complete 60-question Personal ARC deep-dive as a
-// real run. (The earlier "practice snapshot" scope was removed - vouchers are
-// always Full ARC now.)
+// Every voucher provisions the Personal ARC deep-dive as a real run. The
+// "practice snapshot" scope was removed (vouchers are always the ARC). A voucher
+// MAY cap the length per client via itemsPerFactor (max questions per factor);
+// omitted = the full 60-question deep-dive. Migration 00143.
+const itemsPerFactorSchema = z.coerce.number().int().min(1).max(15).optional();
 const batchSchema = z.object({
   count: z.coerce.number().int().min(1).max(500),
   label: z.string().max(200).optional(),
@@ -62,6 +64,7 @@ const batchSchema = z.object({
   maxUses: z.coerce.number().int().min(1).max(10000).default(1),
   region: z.enum(["uae", "saudi"]).default("uae"),
   language: z.enum(["en", "ar"]).default("en"),
+  itemsPerFactor: itemsPerFactorSchema,
   expiresAt: z.string().optional(),
 });
 
@@ -77,6 +80,7 @@ export async function createVoucherBatchAction(formData: FormData) {
     maxUses: formData.get("maxUses") || 1,
     region: formData.get("region") || "uae",
     language: formData.get("language") || "en",
+    itemsPerFactor: formData.get("itemsPerFactor") || undefined,
     expiresAt: formData.get("expiresAt") || undefined,
   });
   if (!parsed.success) {
@@ -108,11 +112,12 @@ export async function createVoucherBatchAction(formData: FormData) {
     label: parsed.data.label ?? null,
     organizationId: parsed.data.organizationId ?? null,
     clientName,
-    tier: "deep_dive", // always the full 60-question Personal ARC (a real run)
+    tier: "deep_dive", // always the full Personal ARC tier (a real run)
     region,
     language: parsed.data.language,
     maxUses: parsed.data.maxUses,
     isPractice: false,
+    itemsPerFactor: parsed.data.itemsPerFactor ?? null,
     expiresAt: toEndOfDayIso(parsed.data.expiresAt),
     createdBy: caller?.uid ?? null,
   });
@@ -126,6 +131,7 @@ const emailDelegatesSchema = z.object({
   emails: z.string().min(3),
   organizationId: z.string().uuid().optional(),
   clientName: z.string().max(300).optional(),
+  itemsPerFactor: itemsPerFactorSchema,
   expiresAt: z.string().optional(),
 });
 
@@ -142,6 +148,7 @@ export async function emailVouchersToDelegatesAction(formData: FormData) {
     emails: formData.get("emails"),
     organizationId: formData.get("organizationId") || undefined,
     clientName: formData.get("clientName") || undefined,
+    itemsPerFactor: formData.get("itemsPerFactor") || undefined,
     expiresAt: formData.get("expiresAt") || undefined,
   });
   if (!parsed.success) return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Invalid input" };
@@ -184,10 +191,11 @@ export async function emailVouchersToDelegatesAction(formData: FormData) {
       label: email, // track which delegate this code is for
       organizationId: parsed.data.organizationId ?? null,
       clientName,
-      tier: "deep_dive", // always the full 60-question Personal ARC (a real run)
+      tier: "deep_dive", // always the full Personal ARC tier (a real run)
       region,
       maxUses: 1,
       isPractice: false,
+      itemsPerFactor: parsed.data.itemsPerFactor ?? null,
       expiresAt,
       createdBy: caller?.uid ?? null,
     });

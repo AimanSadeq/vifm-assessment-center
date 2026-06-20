@@ -43,6 +43,9 @@ export type CreateBatchInput = {
   isPractice?: boolean;
   expiresAt?: string | null; // ISO
   createdBy?: string | null;
+  /** Per-client ARC length: max individual-layer questions per factor a redeemed
+   *  code serves. NULL/undefined = the full deep-dive (no cap). Migration 00143. */
+  itemsPerFactor?: number | null;
 };
 
 /**
@@ -57,6 +60,9 @@ export async function createVoucherBatch(
   const sb = createServiceClient();
   const batchId = globalThis.crypto.randomUUID();
 
+  // Only touch items_per_factor when a cap is set, so the common full-length
+  // case still works on a DB where migration 00143 hasn't been applied yet.
+  const ipf = input.itemsPerFactor ?? null;
   const rows = Array.from({ length: count }, () => ({
     code: generateVoucherCode(),
     label: input.label ?? null,
@@ -70,6 +76,7 @@ export async function createVoucherBatch(
     is_practice: input.isPractice ?? true,
     expires_at: input.expiresAt ?? null,
     created_by: input.createdBy ?? null,
+    ...(ipf != null ? { items_per_factor: ipf } : {}),
   }));
 
   const { data, error } = await sb.from("ara_vouchers").insert(rows).select("code");
@@ -126,6 +133,20 @@ export async function redeemVoucher(
   const region = voucher.region === "saudi" ? "saudi" : "uae";
   const language = voucher.default_language === "ar" ? "ar" : "en";
 
+  // Per-client length cap (migration 00143). The claim RPC doesn't return it, so
+  // fetch by id; tolerant of the column not existing yet (treated as no cap).
+  let itemsPerFactor: number | null = null;
+  try {
+    const { data: vrow } = await sb
+      .from("ara_vouchers")
+      .select("items_per_factor")
+      .eq("id", voucher.id)
+      .maybeSingle<{ items_per_factor: number | null }>();
+    itemsPerFactor = vrow?.items_per_factor ?? null;
+  } catch {
+    /* column absent pre-migration - no cap */
+  }
+
   // 2. Org: the voucher's tagged client org, else the shared practice org.
   let orgId: string | null = voucher.organization_id ?? null;
   if (!orgId) {
@@ -168,6 +189,7 @@ export async function redeemVoucher(
       engagement_stage: "individual",
       assessment_tier: tier,
       include_individual_layer: false,
+      ...(itemsPerFactor != null ? { items_per_factor: itemsPerFactor } : {}),
       scope_label: `${input.redeemerName.trim()} · ${input.companyName.trim()}`,
       question_bank_version_id: activeBank.id,
       status: "active",

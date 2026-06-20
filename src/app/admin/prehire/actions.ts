@@ -8,7 +8,18 @@ import { createClientOrganization } from "@/lib/clients/registry";
 import { sendEmail, isEmailConfigured } from "@/lib/integrations/email";
 import { logPrehireEvent } from "@/lib/prehire/audit";
 import { buildPrehireCandidatePdf } from "@/lib/reports/prehire-candidate-pdf";
+import { uuidish } from "@/lib/validations/ids";
 import type { PrehireStagePlanEntry, PrehireStageKind } from "@/types/prehire";
+
+/** Flatten a Zod error into a readable message (field errors included, not just
+ *  top-level formErrors - otherwise a field failure shows the useless fallback). */
+function zodMessage(error: z.ZodError, fallback: string): string {
+  const fl = error.flatten();
+  const fields = Object.entries(fl.fieldErrors)
+    .filter((e): e is [string, string[]] => Array.isArray(e[1]) && e[1].length > 0)
+    .map(([k, v]) => `${k}: ${v.join(", ")}`);
+  return [...fl.formErrors, ...fields].filter(Boolean).join("; ") || fallback;
+}
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -47,16 +58,21 @@ const stageEntrySchema = z
     { message: "The Fluent stage needs at least one receptive skill (Reading or Listening)." },
   );
 
+// NOTE: organization_id / role_profile_id / competency_ids use uuidish (a
+// permissive UUID-shape check), NOT z.string().uuid(). The seed competencies +
+// role profiles carry synthetic UUIDs (version nibble 0) that Zod 4's strict
+// .uuid() rejects - which silently failed every requisition that involved a
+// role profile or quiz competencies ("Invalid requisition"). See lib/validations/ids.
 const requisitionSchema = z.object({
-  organization_id: z.string().uuid("Select a client organization"),
+  organization_id: uuidish("Select a client organization"),
   title: z.string().min(2, "Title is required").max(160),
-  role_profile_id: z.string().uuid().nullable().optional(),
+  role_profile_id: uuidish().nullable().optional(),
   level: z.string().max(60).optional(),
   english_required: z.boolean().optional(),
   stage_config: z.array(stageEntrySchema).min(1, "Pick at least one screening stage"),
   // CAL-PRE-502: explicit competency set for the quiz stage (competencies.id[]).
   // Pre-filled from the role profile but editable. Optional/empty = legacy fallback.
-  competency_ids: z.array(z.string().uuid()).optional(),
+  competency_ids: z.array(uuidish()).optional(),
 });
 
 export async function createRequisitionAction(input: unknown) {
@@ -65,7 +81,7 @@ export async function createRequisitionAction(input: unknown) {
 
   const parsed = requisitionSchema.safeParse(input);
   if (!parsed.success) {
-    return { error: parsed.error.flatten().formErrors.join("; ") || "Invalid requisition" };
+    return { error: zodMessage(parsed.error, "Invalid requisition") };
   }
 
   const svc = createServiceClient();
@@ -141,7 +157,7 @@ export async function createPrehireOrgAction(input: { name: string; industry?: s
 }
 
 const candidateSchema = z.object({
-  requisition_id: z.string().uuid(),
+  requisition_id: uuidish(),
   full_name: z.string().min(2, "Name is required").max(160),
   email: z.string().email("Valid email required"),
   phone: z.string().max(40).optional(),
@@ -156,7 +172,7 @@ export async function addCandidateAction(input: unknown) {
 
   const parsed = candidateSchema.safeParse(input);
   if (!parsed.success) {
-    return { error: parsed.error.flatten().formErrors.join("; ") || "Invalid candidate" };
+    return { error: zodMessage(parsed.error, "Invalid candidate") };
   }
 
   const svc = createServiceClient();

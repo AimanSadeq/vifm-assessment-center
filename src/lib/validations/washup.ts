@@ -1,9 +1,13 @@
 import { z } from "zod";
+import { uuidish } from "@/lib/validations/ids";
 
+// competencyId is a seed id (synthetic UUID, version nibble 0) that Zod 4's
+// strict .uuid() rejects - so use uuidish here. engagementId/candidateId are
+// app-generated but uuidish is a safe superset. See lib/validations/ids.
 export const saveConsensusRatingSchema = z.object({
-  engagementId: z.string().uuid(),
-  candidateId: z.string().uuid(),
-  competencyId: z.string().uuid(),
+  engagementId: uuidish(),
+  candidateId: uuidish(),
+  competencyId: uuidish(),
   finalScore: z.number().int().min(1).max(5),
   discussionNotes: z.string().optional(),
 });
@@ -11,8 +15,8 @@ export const saveConsensusRatingSchema = z.object({
 export type SaveConsensusRatingValues = z.infer<typeof saveConsensusRatingSchema>;
 
 export const saveOarSchema = z.object({
-  engagementId: z.string().uuid(),
-  candidateId: z.string().uuid(),
+  engagementId: uuidish(),
+  candidateId: uuidish(),
   overallScore: z.number().int().min(1).max(5),
   recommendation: z.enum(["ready_now", "ready_with_development", "not_ready"]),
   summary: z.string().optional(),

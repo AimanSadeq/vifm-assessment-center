@@ -1,7 +1,12 @@
 import { z } from "zod";
+import { uuidish } from "@/lib/validations/ids";
 
+// organizationId / competencyId / exerciseId use uuidish (permissive UUID-shape),
+// NOT z.string().uuid(): the seed competencies + role profiles + (some) orgs carry
+// synthetic UUIDs whose version nibble is 0, which Zod 4's strict .uuid() rejects.
+// Validating them strictly silently failed engagement creation. See lib/validations/ids.
 export const basicInfoSchema = z.object({
-  organizationId: z.string().uuid("Organization is required"),
+  organizationId: uuidish("Organization is required"),
   name: z.string().min(1, "Engagement name is required").max(200),
   targetRole: z.string().optional(),
   startDate: z.string().optional(),
@@ -34,7 +39,7 @@ export const newExerciseSchema = z.object({
 export type NewExerciseValues = z.infer<typeof newExerciseSchema>;
 
 export const createEngagementSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: uuidish(),
   name: z.string().min(1),
   targetRole: z.string().optional(),
   startDate: z.string().optional(),
@@ -42,17 +47,17 @@ export const createEngagementSchema = z.object({
   competencies: z
     .array(
       z.object({
-        competencyId: z.string().uuid(),
+        competencyId: uuidish(),
         weight: z.number().nullable(),
       })
     )
     .min(4, "Select at least 4 competencies")
     .max(15, "Maximum 15 competencies per engagement"),
-  exercises: z.array(z.string().uuid()).min(1, "Select at least 1 exercise"),
+  exercises: z.array(uuidish()).min(1, "Select at least 1 exercise"),
   matrix: z.array(
     z.object({
-      exerciseId: z.string().uuid(),
-      competencyId: z.string().uuid(),
+      exerciseId: uuidish(),
+      competencyId: uuidish(),
     })
   ),
 }).refine((data) => {

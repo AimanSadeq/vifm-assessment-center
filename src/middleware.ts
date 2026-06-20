@@ -68,6 +68,14 @@ const isPublicCoursesRoute = (pathname: string) =>
 const isPublicEvidenceRoute = (pathname: string) =>
   pathname === "/evidence" || pathname.startsWith("/evidence/");
 
+// Public methodology briefs - one branded PDF per service via the generic route
+// /api/methodology/[service]/pdf. Static methodology content with no PII, linked
+// from the public /evidence hub and the no-account report/results surfaces.
+// Bypass auth in dev and prod so a prospect or regulator can open any service's
+// brief without an account (mirrors the ARC methodology + evidence routes).
+const isPublicMethodologyRoute = (pathname: string) =>
+  pathname.startsWith("/api/methodology/");
+
 // Public credential verification - anyone can verify a credential by its
 // code, no account needed. The /verify page and its API read only
 // non-sensitive fields via a service-role helper.
@@ -115,6 +123,7 @@ const isCognitivePublicRoute = (pathname: string) =>
 const isPersonaPublicRoute = (pathname: string) =>
   pathname === "/ac/persona/redeem" ||
   pathname.startsWith("/ac/persona/take/") ||
+  pathname === "/api/ac/persona/methodology/pdf" ||
   (pathname.startsWith("/api/ac/persona/") && pathname.endsWith("/report"));
 
 export async function middleware(request: NextRequest) {
@@ -128,6 +137,7 @@ export async function middleware(request: NextRequest) {
     isReflectRaterRoute(request.nextUrl.pathname) ||
     isPublicCoursesRoute(request.nextUrl.pathname) ||
     isPublicEvidenceRoute(request.nextUrl.pathname) ||
+    isPublicMethodologyRoute(request.nextUrl.pathname) ||
     isPublicVerifyRoute(request.nextUrl.pathname) ||
     isPreHireApplyRoute(request.nextUrl.pathname) ||
     isTechSandboxRoute(request.nextUrl.pathname) ||

@@ -34,7 +34,7 @@ const STORAGE_KEY = "vifm-landing-locale";
 const SERVICES: ReadonlyArray<{ key: ServiceKey; href: string; icon: typeof Compass; tone: Tone; pillars: Pillar[] }> = [
   // ── Dual-purpose diagnostics (lead both columns, same order on each side):
   //    each serves selection (Talent Acquisition) and development (Talent Management). ──
-  { key: "ac", href: "/admin", icon: ClipboardCheck, tone: "blue", pillars: ["acquire", "manage"] },
+  { key: "ac", href: "/admin/assessment-center", icon: ClipboardCheck, tone: "blue", pillars: ["acquire", "manage"] },
   { key: "ara", href: "/ara", icon: Compass, tone: "violet", pillars: ["acquire", "manage"] },
   { key: "technical", href: "/admin/tech-sandbox", icon: BadgeCheck, tone: "indigo", pillars: ["acquire", "manage"] },
   // Cognitive (aptitude) + Persona (the 41-competency behavioural self-assessment,

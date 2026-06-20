@@ -1,108 +1,120 @@
 export const dynamic = "force-dynamic";
 import Link from "next/link";
-import { ArrowRight, Sparkles, Compass, Map, FlaskConical } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
-import { getServerT } from "@/lib/i18n/server";
-import { ProcessMap, type ProcessStep } from "@/components/shared/process-map";
+import {
+  Sparkles, ArrowRight, ArrowUpRight,
+  ClipboardCheck, Compass, UserSearch, BadgeCheck, BrainCircuit, Layers, Languages,
+  Aperture, TrendingUp, GraduationCap, Building2, Briefcase, Ticket, Network,
+  Table2, BookOpen, ListChecks, Settings, LayoutGrid,
+} from "lucide-react";
 
-export default async function AdminDashboardPage() {
-  const supabase = await createClient();
-  const t = await getServerT();
+/**
+ * Platform admin home - the front door for VIFM staff. Lands here from the
+ * landing "Admin" button (and the admin-chrome logo). Shows EVERY service the
+ * platform offers, grouped by pillar, instead of dropping straight into one
+ * service. The Assessment Center workflow dashboard now lives at
+ * /admin/assessment-center (linked below + from the sidebar's "Dashboard").
+ */
 
-  const [engR, candR, assignR, obsR, ratR, conR, oarR, repR, wsR] = await Promise.all([
-    supabase.from("engagements").select("id").order("created_at", { ascending: false }),
-    supabase.from("candidates").select("id"),
-    supabase.from("assessor_assignments").select("id"),
-    supabase.from("observations").select("id"),
-    supabase.from("ratings").select("id"),
-    supabase.from("consensus_ratings").select("id"),
-    supabase.from("overall_assessment_ratings").select("id"),
-    supabase.from("candidate_reports").select("id, status"),
-    supabase.from("integration_worksheets").select("id"),
-  ]);
+type Svc = { name: string; desc: string; href: string; icon: typeof Compass; tone: string };
 
-  const e = engR.data?.length ?? 0, c = candR.data?.length ?? 0, a = assignR.data?.length ?? 0;
-  const o = obsR.data?.length ?? 0, r = ratR.data?.length ?? 0, con = conR.data?.length ?? 0;
-  const oar = oarR.data?.length ?? 0, rep = repR.data?.length ?? 0, ws = wsR.data?.length ?? 0;
-  const rel = repR.data?.filter((x) => x.status === "released").length ?? 0;
+const ACQUIRE: Svc[] = [
+  { name: "Assessment Center", desc: "Exercises, assessors, wash-up, OAR.", href: "/admin/assessment-center", icon: ClipboardCheck, tone: "text-[#5391D5]" },
+  { name: "AI Readiness Compass", desc: "Individual + org AI-readiness diagnostics.", href: "/ara?lens=acquisition", icon: Compass, tone: "text-violet-600" },
+  { name: "Pre-Hire screening", desc: "Quiz + English + AI interview, ranked.", href: "/admin/prehire", icon: UserSearch, tone: "text-rose-600" },
+  { name: "Technical Assessment", desc: "Hands-on, function-specific proficiency.", href: "/admin/tech-sandbox?lens=acquisition", icon: BadgeCheck, tone: "text-indigo-600" },
+  { name: "Reason", desc: "Indicative reasoning aptitude (psychometrics).", href: "/ac/cognitive", icon: BrainCircuit, tone: "text-emerald-600" },
+  { name: "Persona", desc: "Behavioural self-assessment across the framework.", href: "/ac/persona", icon: Layers, tone: "text-fuchsia-600" },
+  { name: "Fluent (English)", desc: "Four-skill CEFR English placement.", href: "/ac/fluent", icon: Languages, tone: "text-sky-600" },
+];
 
-  // "Add candidates" / "Assign assessors" must land on a page that actually has
-  // those controls - an engagement DETAIL (its candidates table + Add Candidate
-  // dialog), not the engagements LIST (whose CTA is "+ New project", which read
-  // as "add a new project"). Deep-link to the most-recent engagement whenever any
-  // exist; only fall back to the list when there are none (create the first).
-  const engDetailHref = e >= 1 && engR.data?.[0]?.id
-    ? `/admin/engagements/${engR.data[0].id}`
-    : "/admin/engagements";
+const MANAGE: Svc[] = [
+  { name: "Development Center", desc: "The AC run developmentally - gaps + IDP.", href: "/admin/assessment-center", icon: ClipboardCheck, tone: "text-[#5391D5]" },
+  { name: "AI Readiness Compass", desc: "Grow individual + team AI readiness.", href: "/ara?lens=development", icon: Compass, tone: "text-violet-600" },
+  { name: "Reflect 360", desc: "Multi-rater leadership feedback.", href: "/reflect", icon: Aperture, tone: "text-teal-600" },
+  { name: "Succession Readiness", desc: "Persona + 360 vs a target role.", href: "/admin/readiness", icon: TrendingUp, tone: "text-amber-600" },
+  { name: "Technical Assessment", desc: "Function skill gaps mapped to courses.", href: "/admin/tech-sandbox?lens=development", icon: BadgeCheck, tone: "text-indigo-600" },
+  { name: "VIFM Academy", desc: "Training catalogue + course recommender.", href: "/admin/courses", icon: GraduationCap, tone: "text-orange-600" },
+];
 
-  const steps: ProcessStep[] = [
-    { id: "engagements", number: 1, title: t("adminDashboard.steps.createProjects"), href: "/admin/engagements", iconName: "ClipboardList", metric: e, metricLabel: t("adminDashboard.metrics.projects"), isComplete: e > 0, isActive: e === 0 },
-    { id: "candidates", number: 2, title: t("adminDashboard.steps.addCandidates"), href: engDetailHref, iconName: "Users", metric: c, metricLabel: t("adminDashboard.metrics.candidates"), isComplete: c > 0, isActive: e > 0 && c === 0 },
-    { id: "assessors", number: 3, title: t("adminDashboard.steps.assignAssessors"), href: engDetailHref, iconName: "UserCheck", metric: a, metricLabel: t("adminDashboard.metrics.assignments"), isComplete: a > 0, isActive: c > 0 && a === 0 },
-    { id: "observations", number: 4, title: t("adminDashboard.steps.projectAnalytics"), href: "/admin/analytics", iconName: "BarChart3", metric: o, metricLabel: t("adminDashboard.metrics.observations"), isComplete: o > 0, isActive: a > 0 && o === 0 },
-    { id: "integration", number: 5, title: t("adminDashboard.steps.integrationWashup"), href: "/admin/analytics", iconName: "GitMerge", metric: ws, metricLabel: t("adminDashboard.metrics.worksheets"), isComplete: con > 0, isActive: r > 0 && con === 0 },
-    { id: "oar", number: 6, title: t("adminDashboard.steps.finalizeOar"), href: "/admin/analytics", iconName: "Award", metric: oar, metricLabel: t("adminDashboard.metrics.oars"), isComplete: oar > 0, isActive: con > 0 && oar === 0 },
-    { id: "reports", number: 7, title: t("adminDashboard.steps.releaseReports"), href: "/admin/engagements", iconName: "FileText", metric: rep, metricLabel: t("adminDashboard.metrics.reports"), isComplete: rel > 0, isActive: oar > 0 && rel === 0 },
-  ];
+const PLATFORM: Svc[] = [
+  { name: "Clients", desc: "Unified client registry across services.", href: "/admin/clients", icon: Building2, tone: "text-slate-600" },
+  { name: "Role profiles", desc: "Reusable target-role competency packs.", href: "/admin/role-profiles", icon: Briefcase, tone: "text-cyan-700" },
+  { name: "Vouchers", desc: "Issue + track redeemable access codes.", href: "/admin/vouchers", icon: Ticket, tone: "text-[#5391D5]" },
+  { name: "Competency framework", desc: "The behavioural competencies + indicators.", href: "/admin/framework", icon: Network, tone: "text-fuchsia-700" },
+  { name: "Compare portals", desc: "Talent Acquisition vs Talent Development.", href: "/compare", icon: Table2, tone: "text-indigo-600" },
+  { name: "Research & validity", desc: "Evidence behind every instrument.", href: "/evidence", icon: BookOpen, tone: "text-emerald-700" },
+  { name: "Psychometrics bank", desc: "SME item bank + calibration.", href: "/admin/psychometrics", icon: ListChecks, tone: "text-violet-700" },
+  { name: "Settings", desc: "Integrations, compliance, environment.", href: "/admin/settings", icon: Settings, tone: "text-slate-600" },
+];
 
+function ServiceGrid({ title, accent, items }: { title: string; accent: string; items: Svc[] }) {
   return (
-    <>
-      {/* ─── Compass-aligned hero strip ─── *
-       * Brings the AC admin dashboard into visual parity with /ara/consultant
-       * by giving it the same dark navy aurora hero treatment + headline +
-       * lightweight call-to-action chips. Deliberately placed ABOVE the
-       * existing ProcessMap so the workflow visualisation stays intact. */}
-      <section className="ara-hero relative overflow-hidden rounded-2xl mb-6">
-        <div className="px-6 py-8 sm:px-8 sm:py-10 relative z-10">
+    <section className="space-y-3">
+      <div className="flex items-center gap-2">
+        <span className="h-4 w-1.5 rounded-full" style={{ backgroundColor: accent }} />
+        <h2 className="text-sm font-bold uppercase tracking-wider text-[#010131]">{title}</h2>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map((s) => {
+          const Icon = s.icon;
+          return (
+            <Link
+              key={s.name + s.href}
+              href={s.href}
+              className="group relative flex items-start gap-3 rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#5391D5]/60 hover:shadow-md"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted/60">
+                <Icon className={`h-5 w-5 ${s.tone}`} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-[#010131]">{s.name}</p>
+                <p className="mt-0.5 text-xs leading-snug text-muted-foreground">{s.desc}</p>
+              </div>
+              <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground/50 transition-all group-hover:text-[#5391D5] group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+export default function AdminHomePage() {
+  return (
+    <div className="space-y-8">
+      {/* Hero */}
+      <section className="ara-hero relative overflow-hidden rounded-2xl">
+        <div className="relative z-10 px-6 py-8 sm:px-8 sm:py-10">
           <span className="ara-eyebrow text-accent">
-            <Sparkles className="h-3 w-3" />
-            {t("adminDashboard.eyebrow")}
+            <Sparkles className="h-3 w-3" /> VIFM Platform · Admin
           </span>
-          <h1 className="ara-numeral text-2xl sm:text-3xl font-semibold text-white leading-[1.1] mt-3 mb-3 max-w-2xl">
-            {t("adminDashboard.title")}
+          <h1 className="ara-numeral mt-3 mb-2 max-w-2xl text-2xl font-semibold leading-[1.1] text-white sm:text-3xl">
+            Every VIFM service, in one place
           </h1>
-          <p className="text-sm text-white/75 max-w-2xl">
-            {t("adminDashboard.intro")}
+          <p className="max-w-2xl text-sm text-white/75">
+            Your admin home across the platform. Pick a service to run it, or jump to the workflow dashboard
+            for the Assessment Center.
           </p>
-          <div className="flex flex-wrap items-center gap-2.5 mt-5">
+          <div className="mt-5 flex flex-wrap items-center gap-2.5">
             <Link
-              href="/ac/engage"
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-white px-3.5 py-1.5 rounded-full border border-white/25 bg-white/10 hover:bg-white/15 hover:border-white/40 backdrop-blur transition-colors"
+              href="/admin/assessment-center"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white backdrop-blur transition-colors hover:border-white/40 hover:bg-white/15"
             >
-              <Compass className="h-3.5 w-3.5" />
-              {t("adminDashboard.chips.engagementTiers")}
+              <LayoutGrid className="h-3.5 w-3.5" /> Assessment Center dashboard
             </Link>
             <Link
-              href="/ac/roadmap"
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-white/85 px-3.5 py-1.5 rounded-full border border-white/15 bg-white/0 hover:bg-white/10 hover:border-white/30 backdrop-blur transition-colors"
+              href="/"
+              className="inline-flex items-center gap-1 text-xs text-white/70 transition-colors hover:text-white"
             >
-              <Map className="h-3.5 w-3.5" />
-              {t("adminDashboard.chips.platformRoadmap")}
-            </Link>
-            <Link
-              href="/admin/tech-sandbox"
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-white/85 px-3.5 py-1.5 rounded-full border border-white/15 bg-white/0 hover:bg-white/10 hover:border-white/30 backdrop-blur transition-colors"
-            >
-              <FlaskConical className="h-3.5 w-3.5" />
-              Technical Sandbox
-            </Link>
-            <Link
-              href="/ara"
-              className="hidden sm:inline-flex items-center gap-1 text-xs text-white/70 hover:text-white transition-colors ms-2"
-            >
-              {t("adminDashboard.chips.aiReadinessCompass")} <ArrowRight className="h-3 w-3" />
+              All services launcher <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
         </div>
       </section>
 
-      <ProcessMap
-        title={t("adminDashboard.title")}
-        subtitle={t("adminDashboard.mapSubtitle")}
-        steps={steps}
-        completedCount={steps.filter((s) => s.isComplete).length}
-        totalSteps={steps.length}
-      />
-    </>
+      <ServiceGrid title="Talent Acquisition" accent="#5391D5" items={ACQUIRE} />
+      <ServiceGrid title="Talent Management" accent="#059669" items={MANAGE} />
+      <ServiceGrid title="Platform" accent="#7c3aed" items={PLATFORM} />
+    </div>
   );
 }

@@ -40,7 +40,6 @@ import {
   ShieldCheck,
   FlaskConical,
   TrendingUp,
-  SlidersHorizontal,
   Ticket,
   FileClock,
   Network,
@@ -88,7 +87,7 @@ const NAV: NavEntry[] = [
             label: "Assessment Center",
             icon: ClipboardCheck,
             items: [
-              link("/admin", "adminNav.dashboard", LayoutDashboard, true),
+              link("/admin/assessment-center", "adminNav.dashboard", LayoutDashboard, true),
               link("/admin/engagements", "adminNav.projects", ClipboardList),
               link("/admin/exercises", "adminNav.exercises", Target),
               link("/admin/assessors", "adminNav.assessors", Users),
@@ -136,7 +135,7 @@ const NAV: NavEntry[] = [
             label: "Development Center",
             icon: ClipboardCheck,
             items: [
-              link("/admin", "adminNav.dashboard", LayoutDashboard, true),
+              link("/admin/assessment-center", "adminNav.dashboard", LayoutDashboard, true),
               link("/admin/engagements", "adminNav.projects", ClipboardList),
               link("/admin/exercises", "adminNav.exercises", Target),
               link("/admin/assessors", "adminNav.assessors", Users),
@@ -159,18 +158,10 @@ const NAV: NavEntry[] = [
         // Cross-instrument cohort view: Persona + Cognitive grouped by project label.
         link("/admin/cohorts", "adminNav.projectCohorts", Users),
         link("/reflect", "adminNav.reflect360", Aperture),
-        {
-          kind: "group",
-          group: {
-            key: "readiness",
-            label: "Succession Readiness",
-            icon: TrendingUp,
-            items: [
-              link("/admin/readiness", "adminNav.readinessOverview", LayoutDashboard, true),
-              link("/admin/readiness/config", "adminNav.readinessConfig", SlidersHorizontal),
-            ],
-          },
-        },
+        // Succession Readiness - single link. The overview IS this page, and the
+        // scoring config is reachable from a card on it, so the sidebar no longer
+        // nests separate Overview / Scoring Config sub-items.
+        link("/admin/readiness", "adminNav.successionReadiness", TrendingUp),
         link("/admin/courses", "adminNav.academy", GraduationCap),
       ],
     },

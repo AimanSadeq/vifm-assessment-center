@@ -400,7 +400,7 @@ export function Runner({
         <div className="flex items-center justify-between">
           <div>
             <div className="text-xs uppercase tracking-wide text-muted-foreground">
-              {ar ? "تقييم تقني" : "Technical Assessment"}
+              {ar ? "تكنو" : "Techno"}
               {hasMcq ? (ar ? " · القسم الثاني · العملي" : " · Section 2 · Hands-on") : ""}
               {blueprint.nodeId ? ` · ${blueprint.nodeId}` : ""}
             </div>

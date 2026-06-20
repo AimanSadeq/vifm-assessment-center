@@ -14,7 +14,7 @@ import { BackLink } from "@/components/shared/back-link";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Technical Assessment · VIFM",
+  title: "Techno · VIFM",
 };
 
 type Props = {

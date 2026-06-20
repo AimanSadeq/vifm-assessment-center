@@ -86,12 +86,12 @@ const VARIANTS: Record<Lang, Partial<Record<ServiceKey, Partial<Record<Pillar, V
     },
     technical: {
       acquire: {
-        name: "Technical Assessment", tagline: "Technical proficiency · selection", badge: "For Selection",
+        name: "Techno", tagline: "Technical proficiency · selection", badge: "For Selection",
         description: "Hands-on, function-specific tasks graded against master answers - a technical fit-score for shortlisting and selection.",
         tooltip: "Selection use: a hands-on technical fit-score for shortlisting.",
       },
       manage: {
-        name: "Technical Assessment", tagline: "Technical proficiency · development", badge: "For Development",
+        name: "Techno", tagline: "Technical proficiency · development", badge: "For Development",
         description: "The same hands-on tasks run developmentally - results map to VIFM Academy courses that close each skill gap.",
         tooltip: "Development use: skill gaps mapped to technical courses.",
       },
@@ -160,12 +160,12 @@ const VARIANTS: Record<Lang, Partial<Record<ServiceKey, Partial<Record<Pillar, V
     },
     technical: {
       acquire: {
-        name: "التقييم التقني", tagline: "الكفاءة التقنية · للاختيار", badge: "للاختيار",
+        name: "تكنو", tagline: "الكفاءة التقنية · للاختيار", badge: "للاختيار",
         description: "مهام عملية خاصة بالوظيفة تُصحَّح وفق إجابات نموذجية - درجة ملاءمة تقنية للفرز والاختيار.",
         tooltip: "للاختيار: درجة ملاءمة تقنية عملية للفرز.",
       },
       manage: {
-        name: "التقييم التقني", tagline: "الكفاءة التقنية · للتطوير", badge: "للتطوير",
+        name: "تكنو", tagline: "الكفاءة التقنية · للتطوير", badge: "للتطوير",
         description: "المهام العملية نفسها بهدف التطوير - تُربط النتائج بدورات من أكاديمية VIFM تعالج كل فجوة مهارة.",
         tooltip: "للتطوير: فجوات المهارات مرتبطة بالدورات التقنية.",
       },
@@ -262,7 +262,7 @@ const T = {
       ara: { tagline: "AR Compass diagnostic", name: "AI Readiness", description: "An eight-pillar organisational AI-readiness diagnostic, calibrated to UAE and Saudi frameworks, with bilingual board-ready reports and a complimentary personal snapshot.", tooltip: "Best for sizing up your organisation's AI readiness before you invest." },
       reflect: { tagline: "Leadership feedback", name: "Reflect 360", description: "360-degree leadership feedback built from your own values and competencies, with a development plan per leader and an organisation-wide cohort culture view.", tooltip: "Best for developing leaders with candid, multi-rater feedback." },
       fluent: { tagline: "AI English placement", name: "Fluent", description: "A four-skill, CEFR-aligned English placement: AI-generated reading and listening, rubric-scored writing and speaking, with an indicative level and feedback in minutes.", tooltip: "Best for fast, defensible English placement at any scale." },
-      technical: { tagline: "Technical proficiency", name: "Technical Assessment", description: "Performance-based, function-specific assessment: candidates do real work in live sandboxes (build a 3-statement model, a variance breakdown, write SQL) graded against master answers and banded Basic / Intermediate / Advanced per competency. Issue a direct link per delegate, or hand a client voucher codes to self-distribute.", tooltip: "Best for screening and developing functional skills with hands-on tasks." },
+      technical: { tagline: "Technical proficiency", name: "Techno", description: "Performance-based, function-specific assessment: candidates do real work in live sandboxes (build a 3-statement model, a variance breakdown, write SQL) graded against master answers and banded Basic / Intermediate / Advanced per competency. Issue a direct link per delegate, or hand a client voucher codes to self-distribute.", tooltip: "Best for screening and developing functional skills with hands-on tasks." },
       cognitive: { tagline: "Reasoning aptitude", name: "Reason", description: "Indicative numerical, verbal, inductive and deductive reasoning - a foundational read on aptitude. Server-scored, admin-run and bilingual.", tooltip: "Best for a foundational read on reasoning and aptitude." },
       persona: { tagline: "Behavioural self-assessment", name: "Persona", description: `Self-ratings across the ${COMPETENCY_COUNT} competencies - the same framework as the 360. The 'self' view that feeds Succession Readiness.`, tooltip: `Best for fast behavioural self-insight on the ${COMPETENCY_COUNT} competencies.` },
       readiness: { tagline: "Self + 360 vs the role", name: "Succession Readiness", description: "Combines Persona (self) and a Reflect 360 (others) against a target role to produce a readiness tier, gaps, blind spots and a development plan.", tooltip: "Best for judging whether someone is ready for a target role." },
@@ -322,7 +322,7 @@ const T = {
       ara: { tagline: "تشخيص بوصلة الجاهزية", name: "الجاهزية للذكاء الاصطناعي", description: "تشخيص لجاهزية المؤسسة للذكاء الاصطناعي عبر ثماني ركائز، مُعايَر وفق أُطُر الإمارات والسعودية، مع تقارير ثنائية اللغة جاهزة للعرض على مجلس الإدارة، ولمحة شخصية مجانية.", tooltip: "الأنسب لقياس جاهزية مؤسستك للذكاء الاصطناعي قبل الاستثمار." },
       reflect: { tagline: "تغذية راجعة قيادية", name: "ريفلكت 360", description: "تغذية راجعة قيادية بزاوية 360 درجة مبنية على قيمكم وكفاءاتكم، مع خطة تطوير لكل قائد وعرض شامل لثقافة المؤسسة بأكملها.", tooltip: "الأنسب لتطوير القادة عبر تغذية راجعة صريحة ومتعددة المصادر." },
       fluent: { tagline: "تحديد مستوى الإنجليزية بالذكاء الاصطناعي", name: "فلوينت", description: "اختبار لتحديد مستوى الإنجليزية عبر أربع مهارات وفق إطار CEFR: قراءة واستماع مُولّدان بالذكاء الاصطناعي، وكتابة وتحدّث يُقيّمان وفق معايير محدّدة، مع مستوى تقريبي وملاحظات خلال دقائق.", tooltip: "الأنسب لتحديد مستوى الإنجليزية بسرعة وموثوقية وعلى نطاق واسع." },
-      technical: { tagline: "الكفاءة التقنية", name: "التقييم التقني", description: "قياس الكفاءة التقنية عبر عشرة مجالات مالية - من النمذجة المالية إلى الخزينة والمصارف والتحليلات والذكاء الاصطناعي. بنود مُراجَعة من الخبراء ودرجات قطع موثّقة تمنح اعتماد كفاءة قابلاً للتحقق، مع تصنيف استرشادي ريثما يكتمل بنك أسئلة المجال.", tooltip: "الأنسب لاعتماد المهارات المالية الوظيفية بموثوقية." },
+      technical: { tagline: "الكفاءة التقنية", name: "تكنو", description: "قياس الكفاءة التقنية عبر عشرة مجالات مالية - من النمذجة المالية إلى الخزينة والمصارف والتحليلات والذكاء الاصطناعي. بنود مُراجَعة من الخبراء ودرجات قطع موثّقة تمنح اعتماد كفاءة قابلاً للتحقق، مع تصنيف استرشادي ريثما يكتمل بنك أسئلة المجال.", tooltip: "الأنسب لاعتماد المهارات المالية الوظيفية بموثوقية." },
       cognitive: { tagline: "القدرة على الاستدلال", name: "الاستدلال", description: "مقاييس استرشادية للاستدلال العددي واللفظي والمجرّد - قراءة تأسيسية للقدرات. تُصحَّح على الخادم، يُجريها المسؤول، وثنائية اللغة.", tooltip: "الأنسب لقراءة تأسيسية للاستدلال والقدرات." },
       persona: { tagline: "تقييم سلوكي ذاتي", name: "بيرسونا", description: `تقييم ذاتي عبر الكفاءات الـ${COMPETENCY_COUNT} - الإطار نفسه المستخدم في تقييم 360. تمثّل رؤية «الذات» التي تغذّي جاهزية التعاقب.`, tooltip: `الأنسب لرؤية ذاتية سلوكية سريعة عبر الكفاءات الـ${COMPETENCY_COUNT}.` },
       readiness: { tagline: "الذات + 360 مقابل الدور", name: "جاهزية التعاقب", description: "تجمع بيرسونا (الذات) وتقييم ريفلكت 360 (الآخرون) مقابل دور مستهدف لإنتاج مستوى جاهزية وفجوات ونقاط عمياء وخطة تطوير.", tooltip: "الأنسب للحكم على جاهزية الشخص لدور مستهدف." },

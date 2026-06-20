@@ -223,7 +223,7 @@ export type TechFunctionCohortData = {
 const FL: Record<Lang, Record<string, string>> = {
   en: {
     brand: "Virginia Institute of Finance and Management",
-    title: "Technical Assessment® - Function Cohort Report",
+    title: "Techno® - Function Cohort Report",
     organization: "Organization",
     program: "Programme",
     func: "Function",
@@ -247,7 +247,7 @@ const FL: Record<Lang, Record<string, string>> = {
   },
   ar: {
     brand: "معهد فرجينيا للتمويل والإدارة",
-    title: "التقييم التقني® - تقرير مجموعة الوظيفة",
+    title: "تكنو® - تقرير مجموعة الوظيفة",
     organization: "المؤسسة",
     program: "البرنامج",
     func: "الوظيفة",

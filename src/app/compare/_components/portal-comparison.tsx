@@ -122,7 +122,7 @@ const PORTALS: ReadonlyArray<Portal> = [
   {
     key: "technical",
     icon: BadgeCheck,
-    name: { en: "Technical Assessment", ar: "التقييم التقني" },
+    name: { en: "Techno", ar: "تكنو" },
     tagline: { en: "Technical proficiency", ar: "الكفاءة التقنية" },
     acquire: {
       measures: { en: "Technical proficiency per finance domain (10 domains).", ar: "الكفاءة التقنية لكل مجال مالي (10 مجالات)." },

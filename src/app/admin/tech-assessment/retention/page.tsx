@@ -25,10 +25,10 @@ export default async function TechnicalRetentionPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
-      <BackLink href="/admin/tech-assessment" label="Technical Assessment" />
+      <BackLink href="/admin/tech-assessment" label="Techno" />
       <div className="mt-4 mb-2 flex items-center gap-2">
         <FileClock className="h-5 w-5 text-[#5391D5]" />
-        <h1 className="text-2xl font-semibold text-[#010131]">Technical retention</h1>
+        <h1 className="text-2xl font-semibold text-[#010131]">Techno retention</h1>
       </div>
       <p className="text-sm text-muted-foreground mb-6">
         Candidate data is retained for a maximum of {RETENTION_MONTHS / 12} years. Purge technical-assessment

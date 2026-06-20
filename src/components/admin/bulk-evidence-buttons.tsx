@@ -24,7 +24,7 @@ const LABEL: Record<Kind, string> = {
   ac: "Generate AI drafts - AC competencies",
   arc: "Generate AI drafts - ARC questions",
   fluent: "Generate AI drafts - Fluent (English)",
-  technical: "Generate AI drafts - Technical Cert",
+  technical: "Generate AI drafts - Techno",
   reflect: "Generate AI drafts - Reflect 360",
   psy: "Generate AI drafts - Psychometrics",
 };

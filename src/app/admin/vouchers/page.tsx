@@ -108,7 +108,7 @@ export default async function VouchersHubPage({
     techSlot =
       functions.length === 0 ? (
         <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
-          No active functions yet. Add functions in the Technical Assessment item bank before issuing vouchers.
+          No active functions yet. Add functions in the Techno item bank before issuing vouchers.
         </p>
       ) : (
         <TechVouchersClient functions={functions} vouchers={vouchers} />

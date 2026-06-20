@@ -64,7 +64,7 @@ export function TimerSettings({ quiz, fluent, cognitive }: { quiz: number; fluen
       <TimerRow scope="fluent" label="Fluent English placement" hint="Time limit for the four-skill placement test." initial={fluent} />
       <TimerRow scope="cognitive" label="Reason" hint="Time limit for the numerical / verbal / inductive / deductive reasoning test." initial={cognitive} />
       <p className="text-[11px] text-muted-foreground">
-        ARC and Technical assessments are timed per assessment / per domain where they are configured. The Sandbox
+        ARC and Techno assessments are timed per assessment / per domain where they are configured. The Sandbox
         uses its own per-blueprint time.
       </p>
     </div>

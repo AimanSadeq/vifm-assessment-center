@@ -27,7 +27,7 @@ export default async function SandboxBlocksReviewPage({
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-6">
-      <BackLink href="/admin/tech-sandbox" label="Technical Assessment" history />
+      <BackLink href="/admin/tech-sandbox" label="Techno" history />
       <header>
         <h1 className="text-2xl font-semibold text-[#010131]">Sandbox task review &amp; editor</h1>
         <p className="text-sm text-muted-foreground">

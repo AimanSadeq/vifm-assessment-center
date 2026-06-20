@@ -259,7 +259,7 @@ export function TechSandboxReport({ data }: { data: SessionReport }) {
         ) : null}
 
         <Text style={s.footer} fixed>
-          VIFM Technical Assessment® · Bands: Basic &lt; 60 · Intermediate 60-84 · Advanced &ge; 85 ·
+          VIFM Techno® · Bands: Basic &lt; 60 · Intermediate 60-84 · Advanced &ge; 85 ·
           Generated {new Date().toLocaleDateString()}
         </Text>
       </Page>

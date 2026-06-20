@@ -14,7 +14,7 @@ export type HubService = { key: ServiceKey; summary: ServiceSummary; slot: React
 // server/client boundary as props.
 const SERVICE_META: Record<ServiceKey, { label: string; sub: string; icon: typeof Compass; tone: string }> = {
   arc:       { label: "AI Readiness Compass", sub: "VIFM-ARC codes",  icon: Compass,     tone: "text-violet-600" },
-  technical: { label: "Technical Assessment", sub: "VIFM-TECH codes", icon: BadgeCheck,  tone: "text-indigo-600" },
+  technical: { label: "Techno", sub: "VIFM-TECH codes", icon: BadgeCheck,  tone: "text-indigo-600" },
   fluent:    { label: "Fluent (English)",     sub: "Fluent codes",    icon: Languages,   tone: "text-sky-600" },
   cognitive: { label: "Reason",               sub: "Reason codes",    icon: BrainCircuit, tone: "text-emerald-600" },
   persona:   { label: "Persona",              sub: "Persona codes",   icon: Layers,      tone: "text-fuchsia-600" },

@@ -102,7 +102,7 @@ export default async function TechSandboxAdminPage({
         })}
       </nav>
       <div>
-        <h1 className="text-xl font-semibold text-foreground">Technical Assessment</h1>
+        <h1 className="text-xl font-semibold text-foreground">Techno</h1>
         <p className="text-sm text-muted-foreground">
           Performance-based, function-specific assessment across the competency framework below.
           Candidates work in live sandboxes (spreadsheet, calculation, SQL), scored against master

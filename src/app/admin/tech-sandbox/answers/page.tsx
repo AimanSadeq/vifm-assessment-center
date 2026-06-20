@@ -17,7 +17,7 @@ export default async function ModelAnswersPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-5 p-6">
       <Link href="/admin/tech-sandbox" className="text-sm text-[#5391D5] hover:underline">
-        Back to Technical Sandbox
+        Back to Techno Sandbox
       </Link>
       <div>
         <h1 className="text-xl font-semibold text-foreground">Model Answers (admin only)</h1>

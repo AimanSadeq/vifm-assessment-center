@@ -1277,7 +1277,7 @@ export async function getSessionReport(token: string): Promise<SessionReport | n
   }
 
   return {
-    functionName: fn?.name_en ?? "Technical Assessment",
+    functionName: fn?.name_en ?? "Techno",
     nodeId: fn?.node_id ?? null,
     assessmentTitle,
     talentLens,
@@ -1337,7 +1337,7 @@ export async function listSubmittedSessions(limit = 100): Promise<SubmittedSessi
     candidateName: r.candidate_name,
     candidateEmail: r.candidate_email,
     organizationName: r.organization_name,
-    functionName: r.function?.name_en ?? "Technical Assessment",
+    functionName: r.function?.name_en ?? "Techno",
     nodeId: r.function?.node_id ?? null,
     submittedAt: r.submitted_at,
     overallPct: r.overall_score_pct != null ? Number(r.overall_score_pct) : null,

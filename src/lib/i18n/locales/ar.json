@@ -218,7 +218,7 @@
     "instrument": {
       "quiz": "اختبار الكفاءة", "fluent": "Fluent (إنجليزي)", "cbi": "مقابلة بالذكاء الاصطناعي (CBI)",
       "ac_exercises": "تمارين مركز التقييم", "talent_map": "خريطة المواهب", "reflect_360": "Reflect 360",
-      "technical": "التقييم التقني", "ara_org": "AR Compass (مؤسسة)", "ara_personal": "AR Compass (شخصي)",
+      "technical": "تكنو", "ara_org": "AR Compass (مؤسسة)", "ara_personal": "AR Compass (شخصي)",
       "cognitive": "بطارية القدرات الذهنية", "personality": "مقياس الشخصية"
     },
     "module": {
@@ -346,8 +346,8 @@
     "psyPersona": "بيرسونا",
     "psychometricsBank": "بنك الأسئلة والمعايرة",
     "academy": "أكاديمية VIFM",
-    "techCertification": "التقني",
-    "techAssessment": "التقييم التقني",
+    "techCertification": "تكنو",
+    "techAssessment": "تكنو",
     "techOverview": "نظرة عامة",
     "techTakeAssessment": "إجراء التقييم",
     "techFunctions": "الوظائف",
@@ -420,7 +420,7 @@
   "tech": {
     "cert": "الاعتماد التقني",
     "cmd": {
-      "title": "مركز التقييم التقني",
+      "title": "مركز تكنو",
       "intro": "تابِع مسار الاعتماد عبر كل مجال - من بنك البنود إلى الاعتمادات الصادرة. لا يُعتمَد المجال إلا بعد اعتماد بنكه من خبراء الاختصاص وضبط درجة القطع.",
       "takeAssessment": "إجراء التقييم",
       "itemReview": "مراجعة البنود",
@@ -461,7 +461,7 @@
       "intro": "تقييم استرشادي للكفاءة التقنية عبر مجالات المال والإدارة في VIFM - المالية والخزينة والمحاسبة والمصارف والتحليلات وغيرها. الركيزة الثالثة للقدرات إلى جانب الكفاءات السلوكية والإنجليزية. لأغراض التطوير، لا الاعتماد.",
       "aiWarnTitle": "مفتاح الذكاء الاصطناعي غير مُعدّ.",
       "aiWarnBody": "اضبط ANTHROPIC_API_KEY للحصول على بنود حقيقية خاصة بالمجال - وإلا تُعرَض مجموعة بديلة.",
-      "forCandidate": "التقييم التقني لـ {{name}}"
+      "forCandidate": "تكنو لـ {{name}}"
     },
     "bridge": {
       "title": "الجسر السلوكي - {{domain}}",

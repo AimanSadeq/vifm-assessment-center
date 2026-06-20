@@ -218,7 +218,7 @@
     "instrument": {
       "quiz": "Competency quiz", "fluent": "Fluent (English)", "cbi": "AI interview (CBI)",
       "ac_exercises": "AC exercises", "talent_map": "Talent Map", "reflect_360": "Reflect 360",
-      "technical": "Technical assessment", "ara_org": "AR Compass (org)", "ara_personal": "AR Compass (personal)",
+      "technical": "Techno", "ara_org": "AR Compass (org)", "ara_personal": "AR Compass (personal)",
       "cognitive": "Reason battery", "personality": "Personality inventory"
     },
     "module": {
@@ -346,8 +346,8 @@
     "psyPersona": "Persona",
     "psychometricsBank": "Item bank & calibration",
     "academy": "VIFM Academy",
-    "techCertification": "Technical",
-    "techAssessment": "Technical Assessment",
+    "techCertification": "Techno",
+    "techAssessment": "Techno",
     "techOverview": "Overview",
     "techTakeAssessment": "Take assessment",
     "techFunctions": "Functions",
@@ -420,7 +420,7 @@
   "tech": {
     "cert": "Technical Certification",
     "cmd": {
-      "title": "Technical Assessment Command",
+      "title": "Techno Command",
       "intro": "Track the certification pipeline across every domain - from item bank to issued credentials. A domain certifies only once its bank is SME-approved and a cut-score is set.",
       "takeAssessment": "Take assessment",
       "itemReview": "Item review",
@@ -461,7 +461,7 @@
       "intro": "An indicative assessment of technical proficiency across VIFM's finance & management domains - finance, treasury, accounting, banking, analytics and more. The third capability pillar, beside behavioural competencies and English. For development, not certification.",
       "aiWarnTitle": "AI key not set.",
       "aiWarnBody": "Set ANTHROPIC_API_KEY for real, domain-specific items - a placeholder set is shown otherwise.",
-      "forCandidate": "Technical assessment for {{name}}"
+      "forCandidate": "Techno for {{name}}"
     },
     "bridge": {
       "title": "Behavioural bridge - {{domain}}",

@@ -18,7 +18,7 @@ import { emailAccessLink, appOrigin } from "@/lib/technical-sandbox/email";
 import { revalidatePath } from "next/cache";
 
 function functionLabel(fn?: { nodeId: string | null; nameEn: string }): string {
-  if (!fn) return "Technical Assessment";
+  if (!fn) return "Techno";
   return [fn.nodeId, fn.nameEn].filter(Boolean).join(" · ");
 }
 

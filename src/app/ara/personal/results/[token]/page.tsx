@@ -19,7 +19,7 @@ import {
   type AraIndividualFactorId,
   type AraIndividualMaturityStageId,
 } from "@/lib/constants/ara-individual-factors";
-import { buildPersonalAnalysis } from "@/lib/ara/personal-analysis";
+import { buildPersonalAnalysis, buildDevelopmentAnalysis } from "@/lib/ara/personal-analysis";
 import { recommendCoursesForIndividualSnapshot } from "@/lib/recommender/courses";
 import { RecommendedCoursesPanel } from "@/components/shared/recommended-courses-panel";
 import { computeWorkforceReadiness } from "@/lib/ara/workforce-readiness";
@@ -151,6 +151,13 @@ export default async function PersonalResultsPage({ params }: Props) {
   // recommendations as the "so what" of the result.
   const analysis = isAcquisition
     ? buildPersonalAnalysis({ factorScores, overallScore, selfAvg, objectiveAvg, objectiveCount: objCount })
+    : null;
+
+  // Development (growth) lens analysis - a DIFFERENT report for a different
+  // reader. Built for the development lens OR the generic (null) run; per the
+  // research, the generic snapshot defaults to the developmental experience.
+  const devAnalysis = !isAcquisition
+    ? buildDevelopmentAnalysis({ factorScores, overallScore, selfAvg, objectiveAvg, objectiveCount: objCount })
     : null;
 
   // R5: course recommendations are development-context info. Skip the compute
@@ -460,6 +467,33 @@ export default async function PersonalResultsPage({ params }: Props) {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
+              {/* Advisory band - lead the hiring report with the decision + guardrail */}
+              {(() => {
+                const b = analysis.band;
+                const tone =
+                  b.id === "advance" ? "bg-emerald-50 border-emerald-300 text-emerald-900"
+                  : b.id === "review" ? "bg-amber-50 border-amber-300 text-amber-900"
+                  : "bg-rose-50 border-rose-300 text-rose-900";
+                const dot =
+                  b.id === "advance" ? "bg-emerald-500" : b.id === "review" ? "bg-amber-500" : "bg-rose-500";
+                return (
+                  <div className={`rounded-md border p-3 ${tone}`}>
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-block h-2.5 w-2.5 rounded-full ${dot}`} />
+                      <span className="text-xs font-bold uppercase tracking-wider">
+                        {isAr ? "التوصية الاسترشادية" : "Advisory"}: {isAr ? b.label.ar : b.label.en}
+                      </span>
+                    </div>
+                    <p className="text-[13px] mt-1.5 leading-relaxed">
+                      {isAr ? b.rationale.ar : b.rationale.en}
+                    </p>
+                  </div>
+                );
+              })()}
+              <p className="text-[11px] text-muted-foreground italic leading-relaxed">
+                {isAr ? analysis.guardrail.ar : analysis.guardrail.en}
+              </p>
+
               {/* Verdict */}
               <p className="leading-relaxed">{isAr ? analysis.verdict.ar : analysis.verdict.en}</p>
 
@@ -537,9 +571,167 @@ export default async function PersonalResultsPage({ params }: Props) {
                 </p>
               </div>
 
+              {/* AI-specific risk flags - each a signal to probe, never auto-reject */}
+              {analysis.riskFlags.length > 0 && (
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-rose-700 mb-1.5">
+                    {isAr ? "إشارات للاستقصاء" : "Risk flags to probe"}
+                  </p>
+                  <ul className="space-y-2">
+                    {analysis.riskFlags.map((r) => (
+                      <li key={r.id} className="rounded-md border-s-2 border-rose-300 bg-rose-50/50 ps-3 py-1.5">
+                        <p className="text-[13px] font-semibold text-rose-900">{isAr ? r.title.ar : r.title.en}</p>
+                        <p className="text-[12px] text-muted-foreground leading-relaxed mt-0.5">
+                          {isAr ? r.detail.ar : r.detail.en}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Freshness - AI readiness ages fast */}
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                {isAr ? analysis.freshness.ar : analysis.freshness.en}
+              </p>
+
               {/* Basis caveat */}
               <p className="text-[11px] text-muted-foreground italic leading-relaxed border-t pt-3">
                 {isAr ? analysis.basis.ar : analysis.basis.en}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Your development plan (development / null lens). A growth report -
+            strengths-first, ipsative, sequenced priorities with a first action,
+            manager guide, reflection, and a re-measure cadence. No verdict /
+            cut-score / hire language. Built only from the respondent's answers. */}
+        {devAnalysis && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-accent" />
+                {isAr ? "خطة تطويرك" : "Your development plan"}
+              </CardTitle>
+              <CardDescription>
+                {isAr
+                  ? "خطة نمو مبنية على إجاباتك - للعمل عليها مع شريك تطويرك."
+                  : "A growth plan built from your answers - to work through with your development partner."}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+              {/* Framing - what this is and isn't */}
+              <div className="rounded-md border-s-2 border-accent bg-accent/5 ps-3 py-2">
+                <p className="text-[13px] text-muted-foreground leading-relaxed">
+                  {isAr ? devAnalysis.framing.ar : devAnalysis.framing.en}
+                </p>
+              </div>
+
+              {/* Start from strength */}
+              <p className="leading-relaxed">{isAr ? devAnalysis.headline.ar : devAnalysis.headline.en}</p>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-emerald-700 mb-1.5">
+                  {isAr ? "نقاط قوة لتبني عليها" : "Strengths to build on"}
+                </p>
+                <ul className="space-y-1.5">
+                  {devAnalysis.strengths.map((s) => {
+                    const f = ARA_INDIVIDUAL_FACTOR_MAP[s.factorId];
+                    return (
+                      <li key={s.factorId} className="text-[13px] leading-relaxed">
+                        <span className="font-semibold">
+                          {isAr ? f.name_ar : f.name_en} ({s.score.toFixed(1)}/5):
+                        </span>{" "}
+                        <span className="text-muted-foreground">{isAr ? s.read.ar : s.read.en}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+
+              {/* Constructive calibration */}
+              {devAnalysis.calibration && (
+                <div className="rounded-md bg-muted/40 p-3">
+                  <p className="text-xs font-semibold text-primary mb-0.5">
+                    {isAr ? "تصوّرك الذاتي مقابل إجاباتك" : "Your self-view vs your answers"}
+                  </p>
+                  <p className="text-[13px] text-muted-foreground leading-relaxed">
+                    {isAr ? devAnalysis.calibration.ar : devAnalysis.calibration.en}
+                  </p>
+                </div>
+              )}
+
+              {/* Sequenced priorities */}
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-amber-700 mb-1">
+                  {isAr ? "أولوياتك التطويرية" : "Your development priorities"}
+                </p>
+                <p className="text-[11px] text-muted-foreground mb-2 leading-snug">
+                  {isAr ? devAnalysis.sequencingNote.ar : devAnalysis.sequencingNote.en}
+                </p>
+                <ol className="space-y-3">
+                  {devAnalysis.priorities.map((p, i) => {
+                    const f = ARA_INDIVIDUAL_FACTOR_MAP[p.factorId];
+                    return (
+                      <li key={p.factorId} className="rounded-md border p-3">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-accent text-[11px] font-bold text-accent-foreground">
+                            {i + 1}
+                          </span>
+                          <span className="text-[13px] font-semibold">{isAr ? f.name_ar : f.name_en}</span>
+                          <span className="ms-auto text-[11px] text-muted-foreground tabular-nums">
+                            {p.score.toFixed(1)} / 5
+                            {p.gapToTarget > 0
+                              ? (isAr ? ` · الفجوة ${p.gapToTarget.toFixed(1)}` : ` · gap ${p.gapToTarget.toFixed(1)}`)
+                              : ""}
+                          </span>
+                        </div>
+                        <p className="text-[12px] text-muted-foreground mt-1.5 leading-relaxed">
+                          <span className="font-semibold text-foreground">{isAr ? "لماذا الآن: " : "Why now: "}</span>
+                          {isAr ? p.whyNow.ar : p.whyNow.en}
+                        </p>
+                        <p className="text-[12px] text-foreground mt-1.5 leading-relaxed">
+                          <span className="font-semibold">{isAr ? "خطوة أولى: " : "First step: "}</span>
+                          {isAr ? p.action.ar : p.action.en}
+                        </p>
+                        {p.acCompetencies.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {p.acCompetencies.map((c) => (
+                              <span key={c} className="text-[10px] px-1.5 py-0.5 rounded-full border bg-muted text-muted-foreground">
+                                {c}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ol>
+              </div>
+
+              {/* Reflect & commit */}
+              <div className="rounded-md border bg-accent/5 p-3">
+                <p className="text-xs font-semibold text-primary mb-0.5">
+                  {isAr ? "تأمّل والتزِم" : "Reflect & commit"}
+                </p>
+                <p className="text-[13px] text-muted-foreground leading-relaxed">
+                  {isAr ? devAnalysis.reflection.ar : devAnalysis.reflection.en}
+                </p>
+              </div>
+
+              {/* Manager conversation guide */}
+              <div className="rounded-md bg-muted/40 p-3">
+                <p className="text-xs font-semibold text-primary mb-0.5">
+                  {isAr ? "دليل المدير للمحادثة" : "Manager conversation guide"}
+                </p>
+                <p className="text-[13px] text-muted-foreground leading-relaxed">
+                  {isAr ? devAnalysis.managerPrompts.ar : devAnalysis.managerPrompts.en}
+                </p>
+              </div>
+
+              {/* Re-measure cadence */}
+              <p className="text-[11px] text-muted-foreground italic leading-relaxed border-t pt-3">
+                {isAr ? devAnalysis.cadence.ar : devAnalysis.cadence.en}
               </p>
             </CardContent>
           </Card>

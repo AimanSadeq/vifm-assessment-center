@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { FlaskConical, ArrowLeft } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { isStaffCaller } from "@/lib/ara/auth-guards";
 import { validateTalentLens } from "@/lib/constants/ara-individual-factors";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { VifmLogo } from "@/components/shared/vifm-logo";
@@ -86,6 +87,12 @@ export default async function AraRespondPage({
   // satisfies the "every screen needs a back affordance" SOP.
   const lens = validateTalentLens(ctx.assessment.talent_lens);
   const backHref = lens ? `/ara?lens=${lens}` : "/ara";
+
+  // The "Simulate answers" demo shortcut is for STAFF only - an admin demoing to
+  // a client - never the candidate actually sitting the assessment. Gate on the
+  // viewer being signed-in staff, not just on the sandbox flag (the candidate
+  // opens the same token URL with no account).
+  const canSimulate = ctx.assessment.is_sandbox && (await isStaffCaller());
 
   return (
     <div className="min-h-screen bg-background" dir={rtl ? "rtl" : "ltr"}>
@@ -181,7 +188,7 @@ export default async function AraRespondPage({
           language={language}
           timeLimitMinutes={ctx.assessment.time_limit_minutes ?? null}
           startedAt={ctx.respondent.started_at ?? null}
-          isSandbox={ctx.assessment.is_sandbox}
+          canSimulate={canSimulate}
           backHref={backHref}
         >
           <div className="space-y-6">

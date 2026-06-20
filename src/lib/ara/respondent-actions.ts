@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/server";
 import { calculateQuestionScore, recalculateAssessmentScores } from "@/lib/ara/scoring";
 import { loadRespondentByToken, loadQuestionsForRespondent } from "@/lib/ara/respondent-access";
+import { isStaffCaller } from "@/lib/ara/auth-guards";
 import type { AraLanguage, AraQuestion, AraRespondent } from "@/types/ara";
 
 // ─────────────────────────────────────────────────────────────
@@ -421,6 +422,12 @@ export async function simulateAraAnswers(
   const ctx = await loadRespondentByToken(token);
   if (!ctx) return { ok: false, error: "Invalid access token" };
 
+  // Staff-only: the candidate sitting the assessment must never be able to
+  // auto-fill it - only signed-in VIFM staff demoing to a client. Defence in
+  // depth behind the UI gate (the button is hidden from the candidate).
+  if (!(await isStaffCaller())) {
+    return { ok: false, error: "Answer simulation is restricted to VIFM staff." };
+  }
   // Hard gate: only demo (sandbox) assessments may be auto-filled.
   if (!ctx.assessment.is_sandbox) {
     return { ok: false, error: "Answer simulation is only available on demo (sandbox) assessments." };

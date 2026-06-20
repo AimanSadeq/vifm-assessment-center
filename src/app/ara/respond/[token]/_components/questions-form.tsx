@@ -63,12 +63,12 @@ type QuestionsFormProps = {
   /** Persisted start (ISO) if the respondent already began; anchors the countdown. */
   startedAt?: string | null;
   /**
-   * Demo (sandbox) assessment - when true, a "Simulate answers" control is
-   * shown so a BD rep can skip the questionnaire and jump to the report during
-   * a live client demo. Always false for real runs; the simulate server action
-   * independently re-checks the sandbox flag, so this only controls visibility.
+   * Staff-only demo control. True ONLY when this is a sandbox/demo assessment
+   * AND the viewer is signed-in staff - so the "Simulate answers" shortcut never
+   * reaches the candidate actually sitting the assessment. The simulate server
+   * action independently re-checks both, so this only controls visibility.
    */
-  isSandbox?: boolean;
+  canSimulate?: boolean;
   /**
    * Lens-aware route back to the ARC landing (Selection / Development). Used by
    * the "Save & finish later" control so leaving the assessment returns the
@@ -97,7 +97,7 @@ type LocalAnswer = {
 
 const DEBOUNCE_MS = 600;
 
-export function QuestionsForm({ token, questions, answers, language, timeLimitMinutes = null, startedAt = null, isSandbox = false, backHref = "/ara", children }: QuestionsFormProps) {
+export function QuestionsForm({ token, questions, answers, language, timeLimitMinutes = null, startedAt = null, canSimulate = false, backHref = "/ara", children }: QuestionsFormProps) {
   const rtl = language === "ar";
   const router = useRouter();
   // Resume: a respondent returning to their link with answers already saved
@@ -516,10 +516,10 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
         </div>
       )}
 
-      {/* Demo-only shortcut: fill every answer and jump to the report. Only
-          rendered for sandbox/demo runs; the simulate action re-checks the
-          sandbox flag server-side, so a real assessment can never be filled. */}
-      {isSandbox && (
+      {/* Staff-only demo shortcut: fill every answer and jump to the report.
+          Rendered only when the viewer is signed-in staff on a sandbox/demo run
+          (never the candidate); the simulate action re-checks both server-side. */}
+      {canSimulate && (
         <div className="rounded-lg border-2 border-dashed border-amber-300 bg-amber-50 p-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="text-sm">

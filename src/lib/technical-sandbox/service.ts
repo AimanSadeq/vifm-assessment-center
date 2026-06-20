@@ -1354,6 +1354,19 @@ export interface ReviewBlock {
   reviewStatus: string;  // SME workflow (draft/in_review/approved/rejected/retired)
   reviewerName: string | null;
   reviewedAt: string | null;
+  // Editable content (sandbox-task content editor on the review page).
+  nameAr: string | null;
+  descriptionEn: string | null;
+  descriptionAr: string | null;
+  frameworkRef: string | null;
+  promptEn: string | null;
+  promptAr: string | null;
+  instructionsEn: string | null;
+  instructionsAr: string | null;
+  timeLimitSeconds: number;
+  engineConfig: unknown;    // jsonb - grid seed / fields / sql schema
+  masterSolution: unknown;  // jsonb - expected cells / values / master query
+  checkpoints: unknown;     // jsonb - weighted validation checks
 }
 export interface ReviewPillar {
   pillarId: string;
@@ -1377,7 +1390,9 @@ export async function listBlocksForReview(functionId: string): Promise<ReviewPil
 
   const { data: blocks, error: bErr } = await sb
     .from("technical_skill_blocks")
-    .select("id, pillar_id, name_en, engine_type, status, review_status, reviewer_name, reviewed_at")
+    .select(
+      "id, pillar_id, name_en, name_ar, description_en, description_ar, framework_ref, engine_type, status, review_status, reviewer_name, reviewed_at, time_limit_seconds, prompt_en, prompt_ar, instructions_en, instructions_ar, engine_config, master_solution, checkpoints, sort_order"
+    )
     .in("pillar_id", pids)
     .order("sort_order");
   // Tolerate migration 00120 not applied (review_status column absent).
@@ -1398,8 +1413,55 @@ export async function listBlocksForReview(functionId: string): Promise<ReviewPil
         reviewStatus: String(b.review_status ?? "draft"),
         reviewerName: (b.reviewer_name as string | null) ?? null,
         reviewedAt: (b.reviewed_at as string | null) ?? null,
+        nameAr: (b.name_ar as string | null) ?? null,
+        descriptionEn: (b.description_en as string | null) ?? null,
+        descriptionAr: (b.description_ar as string | null) ?? null,
+        frameworkRef: (b.framework_ref as string | null) ?? null,
+        promptEn: (b.prompt_en as string | null) ?? null,
+        promptAr: (b.prompt_ar as string | null) ?? null,
+        instructionsEn: (b.instructions_en as string | null) ?? null,
+        instructionsAr: (b.instructions_ar as string | null) ?? null,
+        timeLimitSeconds: Number(b.time_limit_seconds ?? 1200),
+        engineConfig: b.engine_config ?? {},
+        masterSolution: b.master_solution ?? {},
+        checkpoints: b.checkpoints ?? [],
       })),
   }));
+}
+
+/**
+ * Update a sandbox task's editable content (the review-page content editor).
+ * Service-role; the caller (action) enforces requireRole(["admin"]). The jsonb
+ * fields (engine_config / master_solution / checkpoints) are passed already
+ * parsed - the action validates the JSON before calling this.
+ */
+export interface BlockContentUpdate {
+  name_en: string;
+  name_ar: string | null;
+  description_en: string | null;
+  description_ar: string | null;
+  framework_ref: string | null;
+  prompt_en: string | null;
+  prompt_ar: string | null;
+  instructions_en: string | null;
+  instructions_ar: string | null;
+  time_limit_seconds: number;
+  engine_config: unknown;
+  master_solution: unknown;
+  checkpoints: unknown;
+}
+
+export async function updateBlockContent(
+  blockId: string,
+  content: BlockContentUpdate,
+): Promise<{ ok: boolean; error?: string }> {
+  const sb = createServiceClient();
+  const { error } = await sb
+    .from("technical_skill_blocks")
+    .update(content)
+    .eq("id", blockId);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
 }
 
 export async function setBlockReviewStatus(

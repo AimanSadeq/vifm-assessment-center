@@ -29,11 +29,12 @@ export default async function SandboxBlocksReviewPage({
     <div className="mx-auto max-w-4xl space-y-6 p-6">
       <BackLink href="/admin/tech-sandbox" label="Technical Assessment" history />
       <header>
-        <h1 className="text-2xl font-semibold text-[#010131]">Sandbox task review</h1>
+        <h1 className="text-2xl font-semibold text-[#010131]">Sandbox task review &amp; editor</h1>
         <p className="text-sm text-muted-foreground">
-          SME approval workflow for the hands-on (performance) tasks. A certified combined credential
-          requires SME-approved tasks; unapproved tasks still run as an indicative result. (The MCQ
-          knowledge bank is reviewed separately under Functions.)
+          Review, edit, and approve the hands-on (performance) tasks. Use <span className="font-medium text-foreground">Edit content</span> to
+          change a task&apos;s prompt, instructions, master answer and scoring; set its review status with the
+          buttons. A certified combined credential requires SME-approved tasks; unapproved tasks still run as an
+          indicative result. (The MCQ knowledge bank is reviewed separately under Functions.)
         </p>
       </header>
 

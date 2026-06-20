@@ -44,7 +44,6 @@ import {
   Ticket,
   FileClock,
   Network,
-  PlayCircle,
   Table2,
   type LucideIcon,
 } from "lucide-react";
@@ -60,36 +59,6 @@ type NavGroup = { key: string; label: string; icon: LucideIcon; items: NavEntry[
 const link = (href: string, labelKey: string, icon: LucideIcon, exact?: boolean, match?: string): NavEntry => ({
   kind: "link",
   link: { href, labelKey, icon, ...(exact ? { exact } : {}), ...(match ? { match } : {}) },
-});
-
-// A self-serve instrument (Fluent / Cognitive / Persona) exposes the same
-// management surfaces - runner, cohort report, vouchers, retention (+ Fluent's
-// calibration). Group them so every admin surface is reachable from the sidebar,
-// not just via the runner page's chips. `key` must be unique per pillar section.
-const instrumentGroup = (
-  key: string,
-  label: string,
-  icon: LucideIcon,
-  base: string,
-  opts?: { calibration?: boolean },
-): NavEntry => ({
-  kind: "group",
-  group: {
-    key,
-    label,
-    icon,
-    items: [
-      // The first leaf is the instrument's RUNNER (e.g. /ac/cognitive), not a
-      // dashboard - label it "Take assessment" so it doesn't read as an
-      // Overview (SD-8 stray-Overview cleanup). Fixes Cognitive + Persona +
-      // Fluent at once since they all flow through here.
-      link(base, "adminNav.svcRunner", PlayCircle, true),
-      link(`${base}/cohort`, "adminNav.svcCohort", Users),
-      link(`${base}/vouchers`, "adminNav.svcVouchers", Ticket),
-      ...(opts?.calibration ? [link(`${base}/calibration`, "adminNav.svcCalibration", SlidersHorizontal)] : []),
-      link(`${base}/retention`, "adminNav.svcRetention", FileClock),
-    ],
-  },
 });
 
 // The portal navigation, mirroring the landing launcher's two talent-lifecycle
@@ -136,21 +105,16 @@ const NAV: NavEntry[] = [
         // carries a single link to the overview. Acquisition lens (00135) omits
         // the development course block on the report.
         link("/admin/tech-sandbox?lens=acquisition", "adminNav.techAssessment", BadgeCheck, undefined, "/admin/tech-sandbox"),
-        instrumentGroup("cognitive-acq", "Cognitive", BrainCircuit, "/ac/cognitive"),
-        instrumentGroup("persona-acq", "Persona", Layers, "/ac/persona"),
-        {
-          kind: "group",
-          group: {
-            key: "prehire-acq",
-            label: "Pre-Hire",
-            icon: UserSearch,
-            items: [
-              link("/admin/prehire", "adminNav.svcOverview", LayoutDashboard, true),
-              link("/admin/prehire/retention", "adminNav.svcRetention", FileClock),
-            ],
-          },
-        },
-        instrumentGroup("fluent-acq", "Fluent", Languages, "/ac/fluent", { calibration: true }),
+        // Cognitive + Persona: the section links (cohort / vouchers / retention)
+        // live on each runner page's own top bar, so the sidebar carries a single
+        // link to each rather than a nested group of sub-items.
+        link("/ac/cognitive", "adminNav.psyCognitive", BrainCircuit),
+        link("/ac/persona", "adminNav.psyPersona", Layers),
+        // Pre-Hire + Fluent: the section links (retention, and Fluent's cohort /
+        // vouchers / calibration) live on each portal's own top bar, so the
+        // sidebar carries a single link to each rather than a nested group.
+        link("/admin/prehire", "adminNav.preHire", UserSearch),
+        link("/ac/fluent", "adminNav.fluent", Languages),
       ],
     },
   },
@@ -187,8 +151,10 @@ const NAV: NavEntry[] = [
         // Technical Assessment - single link (section nav now on the landing
         // top bar). Development lens (00135) adds the VIFM Academy course block.
         link("/admin/tech-sandbox?lens=development", "adminNav.techAssessment", BadgeCheck, undefined, "/admin/tech-sandbox"),
-        instrumentGroup("cognitive-mng", "Cognitive", BrainCircuit, "/ac/cognitive"),
-        instrumentGroup("persona-mng", "Persona", Layers, "/ac/persona"),
+        // Cognitive + Persona: single links (section nav lives on each runner's
+        // own top bar) rather than nested sub-item groups.
+        link("/ac/cognitive", "adminNav.psyCognitive", BrainCircuit),
+        link("/ac/persona", "adminNav.psyPersona", Layers),
         // Cross-instrument cohort view: Persona + Cognitive grouped by project label.
         link("/admin/cohorts", "adminNav.projectCohorts", Users),
         link("/reflect", "adminNav.reflect360", Aperture),

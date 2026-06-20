@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { UserSearch, LayoutGrid, GraduationCap, ClipboardList } from "lucide-react";
+import { UserSearch, LayoutGrid, GraduationCap, ClipboardList, FileClock } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { getServerT, getServerLocale, getServerDir } from "@/lib/i18n/server";
 
@@ -34,6 +34,12 @@ export default async function PrehireLayout({ children }: { children: React.Reac
               className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-white/85 backdrop-blur transition-colors hover:border-white/35 hover:bg-white/15"
             >
               <ClipboardList className="h-3.5 w-3.5" /> {t("prehire.navRequisitions")}
+            </Link>
+            <Link
+              href="/admin/prehire/retention"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-white/85 backdrop-blur transition-colors hover:border-white/35 hover:bg-white/15"
+            >
+              <FileClock className="h-3.5 w-3.5" /> {t("adminNav.svcRetention")}
             </Link>
             <Link
               href="/courses"

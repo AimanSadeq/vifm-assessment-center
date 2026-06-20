@@ -37,7 +37,7 @@ import {
   type AraIndividualMaturityStageId,
   type AraTalentLens,
 } from "@/lib/constants/ara-individual-factors";
-import { type PersonalAnalysis } from "@/lib/ara/personal-analysis";
+import { type PersonalAnalysis, type DevelopmentAnalysis } from "@/lib/ara/personal-analysis";
 
 /** Score range shown beside each overall maturity stage in the legend (AR). */
 const STAGE_RANGE_AR: Record<AraIndividualMaturityStageId, string> = {
@@ -203,6 +203,8 @@ export type PersonalSnapshotArData = {
   talentLens?: AraTalentLens | null;
   /** Selection-lens analysis (acquisition only); null/undefined omits the section. */
   analysis?: PersonalAnalysis | null;
+  /** Development-lens growth analysis (development / generic); null omits it. */
+  devAnalysis?: DevelopmentAnalysis | null;
   recommendedCourses: Array<{
     course_id: string;
     title_en: string;
@@ -299,6 +301,11 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
     <p class="section-eyebrow">تحليل الاختيار</p>
     <h2 class="section-title">تحليل نتائج المرشح</h2>
     <div class="section-rule"></div>
+    <div class="band-box" style="border-color:${a.band.id === "advance" ? "#86efac" : a.band.id === "review" ? "#fcd34d" : "#fda4af"};background:${a.band.id === "advance" ? "#f0fdf4" : a.band.id === "review" ? "#fffbeb" : "#fff1f2"}">
+      <p class="band-label" style="color:${a.band.id === "advance" ? "#166534" : a.band.id === "review" ? "#92400e" : "#9f1239"}">التوصية الاسترشادية: ${esc(a.band.label.ar)}</p>
+      <p class="band-text" style="color:${a.band.id === "advance" ? "#166534" : a.band.id === "review" ? "#92400e" : "#9f1239"}">${esc(a.band.rationale.ar)}</p>
+    </div>
+    <p class="guardrail-text">${esc(a.guardrail.ar)}</p>
     <p class="analysis-verdict">${esc(a.verdict.ar)}</p>
     ${a.calibration ? `
       <div class="calib-box">
@@ -311,11 +318,39 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
       ? `<p class="analysis-item" style="color:#166534;margin-top:6px">جميع العوامل عند المستوى المستهدف (4.0) أو أعلى - ملمح قوي بشكل متسق.</p>`
       : `<p class="analysis-group-label" style="color:#b45309">مجالات التطوير وما يجب التحقق منه</p>
          ${a.developmentAreas.map((d) => `<div class="analysis-dev"><p class="analysis-item"><strong>${esc(ARA_INDIVIDUAL_FACTOR_MAP[d.factorId].name_ar)} (${d.score.toFixed(1)}/5):</strong> ${esc(d.read.ar)}</p><p class="probe-text"><strong>للمقابلة: </strong>${esc(d.probe.ar)}</p></div>`).join("")}`}
+    ${a.riskFlags.length > 0 ? `<p class="analysis-group-label" style="color:#9f1239">إشارات للاستقصاء</p>${a.riskFlags.map((r) => `<div class="risk-item"><p class="risk-title">${esc(r.title.ar)}</p><p class="risk-detail">${esc(r.detail.ar)}</p></div>`).join("")}` : ""}
     <div class="profile-box">
       <p class="profile-title">شكل الملمح</p>
       <p class="calib-text">${esc(a.profileShape.ar)}</p>
     </div>
+    <p class="freshness-text">${esc(a.freshness.ar)}</p>
     <p class="basis-text">${esc(a.basis.ar)}</p>
+  ` : "";
+
+  // Development (growth) analysis - the development / generic Arabic report.
+  // Mutually exclusive with analysisHtml (acquisition); only one renders.
+  const dev = data.devAnalysis;
+  const devHtml = dev ? `
+    <p class="section-eyebrow">خطة التطوير</p>
+    <h2 class="section-title">خطة تطويرك</h2>
+    <div class="section-rule"></div>
+    <div class="framing-box"><p class="framing-text">${esc(dev.framing.ar)}</p></div>
+    <p class="analysis-verdict">${esc(dev.headline.ar)}</p>
+    <p class="analysis-group-label" style="color:#15803d">نقاط قوة لتبني عليها</p>
+    ${dev.strengths.map((st) => `<p class="analysis-item"><strong>${esc(ARA_INDIVIDUAL_FACTOR_MAP[st.factorId].name_ar)} (${st.score.toFixed(1)}/5):</strong> ${esc(st.read.ar)}</p>`).join("")}
+    ${dev.calibration ? `<div class="dev-box"><p class="dev-box-title">تصوّرك الذاتي مقابل إجاباتك</p><p class="calib-text">${esc(dev.calibration.ar)}</p></div>` : ""}
+    <p class="analysis-group-label" style="color:#b45309">أولوياتك التطويرية</p>
+    <p class="factor-desc" style="margin-bottom:4px">${esc(dev.sequencingNote.ar)}</p>
+    ${dev.priorities.map((p, i) => `
+      <div class="priority-card">
+        <p class="priority-name">${i + 1}. ${esc(ARA_INDIVIDUAL_FACTOR_MAP[p.factorId].name_ar)} <span class="priority-meta">${p.score.toFixed(1)} / 5${p.gapToTarget > 0 ? ` · الفجوة ${p.gapToTarget.toFixed(1)}` : ""}</span></p>
+        <p class="priority-text"><strong>لماذا الآن: </strong>${esc(p.whyNow.ar)}</p>
+        <p class="priority-text"><strong>خطوة أولى: </strong>${esc(p.action.ar)}</p>
+        ${p.acCompetencies.length > 0 ? `<p class="ac-chip">يبني: ${p.acCompetencies.map(esc).join(" · ")}</p>` : ""}
+      </div>`).join("")}
+    <div class="dev-box"><p class="dev-box-title">تأمّل والتزِم</p><p class="calib-text">${esc(dev.reflection.ar)}</p></div>
+    <div class="dev-box"><p class="dev-box-title">دليل المدير للمحادثة</p><p class="calib-text">${esc(dev.managerPrompts.ar)}</p></div>
+    <p class="freshness-text">${esc(dev.cadence.ar)}</p>
   ` : "";
 
   const fitExplainerHtml = !isAcquisition && data.recommendedCourses.length > 0 ? `
@@ -486,6 +521,28 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
     .profile-title { font-size: 8pt; font-weight: 700; color: ${C.primary}; margin: 0 0 2px; }
     .basis-text { font-size: 7.5pt; color: ${C.textLight}; font-style: italic; line-height: 1.55; border-top: 0.5pt solid ${C.border}; padding-top: 6px; margin-top: 4px; }
 
+    /* Acquisition advisory band + risk flags */
+    .band-box { border: 1px solid; border-radius: 6px; padding: 9px 11px; margin-bottom: 6px; break-inside: avoid; }
+    .band-label { font-size: 9pt; font-weight: 700; letter-spacing: 0.04em; margin: 0 0 3px; }
+    .band-text { font-size: 9pt; line-height: 1.55; margin: 0; }
+    .guardrail-text { font-size: 7.5pt; color: ${C.textLight}; font-style: italic; line-height: 1.55; margin: 0 0 8px; }
+    .risk-item { border-inline-start: 2px solid #e11d48; background: #fff1f2; padding: 5px 9px; border-radius: 4px; margin-bottom: 4px; break-inside: avoid; }
+    .risk-title { font-size: 8.5pt; font-weight: 700; color: #9f1239; margin: 0 0 1px; }
+    .risk-detail { font-size: 8pt; color: ${C.textLight}; line-height: 1.5; margin: 0; }
+    .freshness-text { font-size: 8pt; color: ${C.textLight}; line-height: 1.55; margin: 4px 0; }
+
+    /* Development growth plan */
+    .framing-box { border-inline-start: 2px solid ${C.accent}; background: #eff6ff; padding: 6px 9px; border-radius: 4px; margin-bottom: 8px; }
+    .framing-text { font-size: 8.5pt; color: ${C.textLight}; line-height: 1.6; margin: 0; }
+    .priority-card { border: 0.5pt solid ${C.border}; border-radius: 6px; padding: 9px 11px; margin-bottom: 6px; background: ${C.bgSoft}; break-inside: avoid; }
+    .priority-name { font-size: 9.5pt; font-weight: 700; color: ${C.primary}; margin: 0 0 3px; }
+    .priority-meta { font-size: 7.5pt; font-weight: 400; color: ${C.textLight}; }
+    .priority-text { font-size: 8.5pt; color: ${C.textLight}; line-height: 1.55; margin: 1px 0; }
+    .priority-text strong { color: ${C.text}; }
+    .ac-chip { font-size: 7.5pt; color: ${C.textMuted}; font-style: italic; margin: 3px 0 0; }
+    .dev-box { background: ${C.bgSoft}; border-radius: 4px; padding: 9px; margin: 6px 0 8px; }
+    .dev-box-title { font-size: 8pt; font-weight: 700; color: ${C.primary}; margin: 0 0 2px; }
+
     /* Two-col context panels */
     .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
     .key-panel {
@@ -652,7 +709,7 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
 
   <!-- PAGE 2 break -->
   <section class="page-break-before">
-    ${analysisHtml}
+    ${analysisHtml}${devHtml}
     <p class="section-eyebrow">كيف تستخدم هذه اللقطة</p>
     <h2 class="section-title">قراءة نتيجتك في سياقها</h2>
     <div class="section-rule"></div>

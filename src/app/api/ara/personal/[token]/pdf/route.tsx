@@ -16,7 +16,7 @@ import {
   type AraIndividualFactorId,
 } from "@/lib/constants/ara-individual-factors";
 import { recommendCoursesForIndividualSnapshot } from "@/lib/recommender/courses";
-import { buildPersonalAnalysis } from "@/lib/ara/personal-analysis";
+import { buildPersonalAnalysis, buildDevelopmentAnalysis } from "@/lib/ara/personal-analysis";
 import {
   PersonalSnapshot,
   type PersonalSnapshotData,
@@ -160,6 +160,19 @@ export async function GET(
           })
         : null;
 
+    // Development (growth) analysis - the development / generic report. Built
+    // for any non-acquisition lens so the PDF matches the on-screen report.
+    const devAnalysis =
+      talentLens !== "acquisition"
+        ? buildDevelopmentAnalysis({
+            factorScores,
+            overallScore,
+            selfAvg: selfCount > 0 ? selfSum / selfCount : 0,
+            objectiveAvg: objCount > 0 ? objSum / objCount : 0,
+            objectiveCount: objCount,
+          })
+        : null;
+
     // Recommendations (R5: development-context info). Skip the compute under
     // the acquisition lens; the renderers also omit the course block.
     const raw =
@@ -215,6 +228,7 @@ export async function GET(
         recommendedCourses,
         talentLens,
         analysis,
+        devAnalysis,
       };
       const html = renderPersonalSnapshotHtmlAr(arData);
       const buffer = await renderHtmlToPdfBuffer(html);
@@ -240,6 +254,7 @@ export async function GET(
       recommendedCourses,
       talentLens,
       analysis,
+      devAnalysis,
     };
     const buffer = await renderToBuffer(<PersonalSnapshot data={data} />);
     return new NextResponse(new Uint8Array(buffer), {

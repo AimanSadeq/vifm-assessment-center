@@ -11,7 +11,7 @@ import {
   type AraIndividualMaturityStageId,
   type AraTalentLens,
 } from "@/lib/constants/ara-individual-factors";
-import { type PersonalAnalysis } from "@/lib/ara/personal-analysis";
+import { type PersonalAnalysis, type DevelopmentAnalysis } from "@/lib/ara/personal-analysis";
 import { VIFM_VERTICAL_LABELS, type VifmVertical } from "@/types/database";
 import { personalFactSheetRows } from "@/lib/reports/fact-sheet-content";
 
@@ -189,6 +189,26 @@ const s = StyleSheet.create({
   profileBox: { backgroundColor: C.bgSoft, borderRadius: 4, padding: 9, marginTop: 6, marginBottom: 8 },
   profileTitle: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.primary, marginBottom: 2 },
   basisText: { fontSize: 7.5, color: C.textLight, fontStyle: "italic", lineHeight: 1.45, borderTopWidth: 0.5, borderTopColor: C.border, paddingTop: 6, marginTop: 4 },
+  // Acquisition advisory band + risk flags
+  bandBox: { borderWidth: 1, borderRadius: 4, padding: 9, marginBottom: 6 },
+  bandLabel: { fontSize: 9, fontFamily: "Helvetica-Bold", letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 3 },
+  bandText: { fontSize: 9, lineHeight: 1.45 },
+  guardrailText: { fontSize: 7.5, color: C.textLight, fontStyle: "italic", lineHeight: 1.45, marginBottom: 8 },
+  riskItem: { borderLeftWidth: 2, borderLeftColor: C.negative, backgroundColor: "#fff1f2", paddingHorizontal: 8, paddingVertical: 5, borderRadius: 3, marginBottom: 4 },
+  riskTitle: { fontSize: 8.5, fontFamily: "Helvetica-Bold", color: "#9f1239", marginBottom: 1 },
+  riskDetail: { fontSize: 8, color: C.textLight, lineHeight: 1.4 },
+  freshnessText: { fontSize: 8, color: C.textLight, lineHeight: 1.45, marginTop: 2, marginBottom: 4 },
+  // Development growth plan
+  framingBox: { borderLeftWidth: 2, borderLeftColor: C.accent, backgroundColor: "#eff6ff", paddingHorizontal: 8, paddingVertical: 6, borderRadius: 3, marginBottom: 8 },
+  framingText: { fontSize: 8.5, color: C.textLight, lineHeight: 1.5 },
+  priorityCard: { borderWidth: 0.5, borderColor: C.border, borderRadius: 4, padding: 8, marginBottom: 6, backgroundColor: C.bgSoft },
+  priorityName: { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: C.primary, marginBottom: 2 },
+  priorityMeta: { fontSize: 7.5, color: C.textLight, fontFamily: "Helvetica" },
+  priorityLabel: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.text },
+  priorityText: { fontSize: 8, color: C.textLight, lineHeight: 1.45, marginTop: 1, marginBottom: 1 },
+  acChip: { fontSize: 7, color: C.textMuted, marginTop: 3, fontStyle: "italic" },
+  devBox: { backgroundColor: C.bgSoft, borderRadius: 4, padding: 9, marginTop: 4, marginBottom: 8 },
+  devBoxTitle: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.primary, marginBottom: 2 },
 
   // Two-column key panels
   twoCol: { flexDirection: "row", gap: 10, marginBottom: 14 },
@@ -310,6 +330,8 @@ export type PersonalSnapshotData = {
   talentLens?: AraTalentLens | null;
   /** Selection-lens analysis (acquisition only); null/undefined omits the section. */
   analysis?: PersonalAnalysis | null;
+  /** Development-lens growth analysis (development / generic); null omits it. */
+  devAnalysis?: DevelopmentAnalysis | null;
   recommendedCourses: Array<{
     course_id: string;
     title_en: string;
@@ -570,6 +592,26 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
             <Text style={s.sectionEyebrow}>Selection analysis</Text>
             <Text style={s.sectionTitle}>Candidate results analysis</Text>
             <View style={s.sectionRule} />
+
+            {/* Advisory band - lead the hiring report with the decision + guardrail */}
+            <View
+              style={[
+                s.bandBox,
+                data.analysis.band.id === "advance" ? { borderColor: "#86efac", backgroundColor: "#f0fdf4" }
+                : data.analysis.band.id === "review" ? { borderColor: "#fcd34d", backgroundColor: "#fffbeb" }
+                : { borderColor: "#fda4af", backgroundColor: "#fff1f2" },
+              ]}
+              wrap={false}
+            >
+              <Text style={[s.bandLabel, { color: data.analysis.band.id === "advance" ? "#166534" : data.analysis.band.id === "review" ? "#92400e" : "#9f1239" }]}>
+                Advisory: {data.analysis.band.label.en}
+              </Text>
+              <Text style={[s.bandText, { color: data.analysis.band.id === "advance" ? "#166534" : data.analysis.band.id === "review" ? "#92400e" : "#9f1239" }]}>
+                {data.analysis.band.rationale.en}
+              </Text>
+            </View>
+            <Text style={s.guardrailText}>{data.analysis.guardrail.en}</Text>
+
             <Text style={s.analysisVerdict}>{data.analysis.verdict.en}</Text>
 
             {data.analysis.calibration && (
@@ -621,12 +663,96 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
               </>
             )}
 
+            {data.analysis.riskFlags.length > 0 && (
+              <>
+                <Text style={[s.analysisGroupLabel, { color: "#9f1239" }]}>Risk flags to probe</Text>
+                {data.analysis.riskFlags.map((r) => (
+                  <View key={r.id} style={s.riskItem} wrap={false}>
+                    <Text style={s.riskTitle}>{r.title.en}</Text>
+                    <Text style={s.riskDetail}>{r.detail.en}</Text>
+                  </View>
+                ))}
+              </>
+            )}
+
             <View style={s.profileBox} wrap={false}>
               <Text style={s.profileTitle}>Profile shape</Text>
               <Text style={s.calibText}>{data.analysis.profileShape.en}</Text>
             </View>
 
+            <Text style={s.freshnessText}>{data.analysis.freshness.en}</Text>
             <Text style={s.basisText}>{data.analysis.basis.en}</Text>
+          </>
+        )}
+
+        {/* Development growth plan (development / generic lens) - a DIFFERENT
+            report: strengths-first, ipsative, sequenced priorities with a first
+            action, manager guide, reflection, cadence. No verdict / risk / hire
+            language. Leads page 2 for the development lens. */}
+        {data.devAnalysis && (
+          <>
+            <Text style={s.sectionEyebrow}>Development plan</Text>
+            <Text style={s.sectionTitle}>Your development plan</Text>
+            <View style={s.sectionRule} />
+            <View style={s.framingBox} wrap={false}>
+              <Text style={s.framingText}>{data.devAnalysis.framing.en}</Text>
+            </View>
+            <Text style={s.analysisVerdict}>{data.devAnalysis.headline.en}</Text>
+
+            <Text style={[s.analysisGroupLabel, { color: "#15803d" }]}>Strengths to build on</Text>
+            {data.devAnalysis.strengths.map((st) => {
+              const f = ARA_INDIVIDUAL_FACTOR_MAP[st.factorId];
+              return (
+                <Text key={st.factorId} style={s.analysisItem}>
+                  <Text style={{ fontFamily: "Helvetica-Bold" }}>
+                    {f.name_en} ({st.score.toFixed(1)}/5):{" "}
+                  </Text>
+                  {st.read.en}
+                </Text>
+              );
+            })}
+
+            {data.devAnalysis.calibration && (
+              <View style={s.devBox} wrap={false}>
+                <Text style={s.devBoxTitle}>Your self-view vs your answers</Text>
+                <Text style={s.calibText}>{data.devAnalysis.calibration.en}</Text>
+              </View>
+            )}
+
+            <Text style={[s.analysisGroupLabel, { color: "#b45309" }]}>Your development priorities</Text>
+            <Text style={[s.factorDesc, { marginBottom: 4 }]}>{data.devAnalysis.sequencingNote.en}</Text>
+            {data.devAnalysis.priorities.map((p, i) => {
+              const f = ARA_INDIVIDUAL_FACTOR_MAP[p.factorId];
+              return (
+                <View key={p.factorId} style={s.priorityCard} wrap={false}>
+                  <Text style={s.priorityName}>
+                    {i + 1}. {f.name_en}{"  "}
+                    <Text style={s.priorityMeta}>
+                      {p.score.toFixed(1)} / 5{p.gapToTarget > 0 ? ` · gap ${p.gapToTarget.toFixed(1)}` : ""}
+                    </Text>
+                  </Text>
+                  <Text style={s.priorityText}>
+                    <Text style={s.priorityLabel}>Why now: </Text>{p.whyNow.en}
+                  </Text>
+                  <Text style={s.priorityText}>
+                    <Text style={s.priorityLabel}>First step: </Text>{p.action.en}
+                  </Text>
+                  {p.acCompetencies.length > 0 && (
+                    <Text style={s.acChip}>Builds: {p.acCompetencies.join(" · ")}</Text>
+                  )}
+                </View>
+              );
+            })}
+
+            <View style={s.devBox} wrap={false}>
+              <Text style={s.devBoxTitle}>Reflect &amp; commit</Text>
+              <Text style={s.calibText}>{data.devAnalysis.reflection.en}</Text>
+            </View>
+            <View style={s.devBox} wrap={false}>
+              <Text style={s.devBoxTitle}>Manager conversation guide</Text>
+              <Text style={s.calibText}>{data.devAnalysis.managerPrompts.en}</Text>
+            </View>
+            <Text style={s.freshnessText}>{data.devAnalysis.cadence.en}</Text>
           </>
         )}
 

@@ -136,9 +136,14 @@ export default async function PersonalResultsPage({ params }: Props) {
     {} as Record<AraIndividualFactorId, number>
   );
 
+  // Overall = mean of the factors that actually have answers. A factor with no
+  // answered items scores 0; including it in the divisor silently drags the
+  // overall (and the maturity stage) down - so exclude unanswered factors.
+  const scoredFactors = ARA_INDIVIDUAL_FACTOR_IDS.map((id) => factorScores[id]).filter((v) => v > 0);
   const overallScore =
-    Object.values(factorScores).reduce((s, v) => s + v, 0) /
-    ARA_INDIVIDUAL_FACTOR_IDS.length;
+    scoredFactors.length > 0
+      ? scoredFactors.reduce((s, v) => s + v, 0) / scoredFactors.length
+      : 0;
 
   // Talent lens (migration 00134). Drives R4-R7. NULL = generic framing
   // (legacy / anonymous / deep-linked) and reproduces today's output exactly.

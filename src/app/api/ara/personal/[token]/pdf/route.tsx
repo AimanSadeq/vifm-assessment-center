@@ -137,9 +137,13 @@ export async function GET(
       },
       {} as Record<AraIndividualFactorId, number>
     );
+    // Overall = mean of factors that actually have answers (exclude unanswered
+    // factors, which score 0 and would otherwise drag the overall down).
+    const scoredFactors = ARA_INDIVIDUAL_FACTOR_IDS.map((id) => factorScores[id]).filter((v) => v > 0);
     const overallScore =
-      Object.values(factorScores).reduce((s, v) => s + v, 0) /
-      ARA_INDIVIDUAL_FACTOR_IDS.length;
+      scoredFactors.length > 0
+        ? scoredFactors.reduce((s, v) => s + v, 0) / scoredFactors.length
+        : 0;
 
     // Talent lens (migration 00134). Drives R4-R7 in both renderers. NULL =
     // generic framing (legacy / anonymous / deep-linked), no regression.

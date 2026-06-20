@@ -63,10 +63,10 @@ type QuestionsFormProps = {
   /** Persisted start (ISO) if the respondent already began; anchors the countdown. */
   startedAt?: string | null;
   /**
-   * Staff-only demo control. True ONLY when this is a sandbox/demo assessment
-   * AND the viewer is signed-in staff - so the "Simulate answers" shortcut never
-   * reaches the candidate actually sitting the assessment. The simulate server
-   * action independently re-checks both, so this only controls visibility.
+   * Staff-only demo control. True when the viewer is signed-in staff (any run) -
+   * so the "Randomize answers" shortcut reaches an admin demoing to a client but
+   * never the candidate sitting the assessment. The server action re-checks staff
+   * and the button confirms before overwriting, so this only controls visibility.
    */
   canSimulate?: boolean;
   /**
@@ -126,6 +126,17 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
 
   const handleSimulate = async () => {
     if (simulating) return;
+    // Confirm first - this overwrites any existing answers and works on real
+    // (non-sandbox) runs now, so an accidental click shouldn't wipe a session.
+    if (
+      !window.confirm(
+        rtl
+          ? "تعبئة جميع الإجابات بقيم عشوائية والانتقال إلى التقرير؟ سيستبدل ذلك أي إجابات حالية - لأغراض العرض الإداري فقط."
+          : "Randomize all answers and jump to the report? This overwrites any existing answers - for admin demos only."
+      )
+    ) {
+      return;
+    }
     setSimError(null);
     setSimulating(true);
     try {
@@ -516,9 +527,9 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
         </div>
       )}
 
-      {/* Staff-only demo shortcut: fill every answer and jump to the report.
-          Rendered only when the viewer is signed-in staff on a sandbox/demo run
-          (never the candidate); the simulate action re-checks both server-side. */}
+      {/* Staff-only demo shortcut: randomize every answer and jump to the report.
+          Rendered only when the viewer is signed-in staff (never the candidate),
+          on any run; the action re-checks staff + confirms before overwriting. */}
       {canSimulate && (
         <div className="rounded-lg border-2 border-dashed border-amber-300 bg-amber-50 p-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -529,8 +540,8 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
               </p>
               <p className="text-xs text-amber-900/80 mt-0.5">
                 {rtl
-                  ? "املأ جميع الأسئلة بإجابات نموذجية وانتقل مباشرة إلى التقرير."
-                  : "Fill every question with sample answers and jump straight to the report."}
+                  ? "للمسؤول فقط: عبّئ جميع الأسئلة بإجابات عشوائية وانتقل مباشرة إلى التقرير."
+                  : "Admin only: randomize every answer and jump straight to the report."}
               </p>
             </div>
             <Button
@@ -541,8 +552,8 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
             >
               {simulating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
               {simulating
-                ? (rtl ? "جارٍ المحاكاة..." : "Simulating...")
-                : (rtl ? "محاكاة الإجابات وعرض التقرير" : "Simulate answers & view report")}
+                ? (rtl ? "جارٍ التعبئة..." : "Randomizing...")
+                : (rtl ? "عشوِ الإجابات وعرض التقرير" : "Randomize answers & view report")}
             </Button>
           </div>
           {simError && (

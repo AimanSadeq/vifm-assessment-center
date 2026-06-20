@@ -88,11 +88,12 @@ export default async function AraRespondPage({
   const lens = validateTalentLens(ctx.assessment.talent_lens);
   const backHref = lens ? `/ara?lens=${lens}` : "/ara";
 
-  // The "Simulate answers" demo shortcut is for STAFF only - an admin demoing to
-  // a client - never the candidate actually sitting the assessment. Gate on the
-  // viewer being signed-in staff, not just on the sandbox flag (the candidate
-  // opens the same token URL with no account).
-  const canSimulate = ctx.assessment.is_sandbox && (await isStaffCaller());
+  // The "Randomize answers" demo shortcut is for STAFF only - an admin demoing
+  // to a client - never the candidate sitting the assessment (who opens the same
+  // token URL with no account). Shown on ANY run: Full-ARC voucher runs are real
+  // (not sandbox), so it can't be gated on the sandbox flag. The action confirms
+  // before overwriting and independently re-checks staff.
+  const canSimulate = await isStaffCaller();
 
   return (
     <div className="min-h-screen bg-background" dir={rtl ? "rtl" : "ltr"}>

@@ -394,26 +394,22 @@ export async function markAraRespondentComplete(token: string): Promise<void> {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Demo-only: fill every question with a plausible answer + complete.
+// Admin demo: randomize every answer + complete, so a signed-in admin can skip
+// the full questionnaire during a live client demo and jump straight to the
+// report. STAFF-ONLY (isStaffCaller below) - the candidate sitting the
+// assessment never sees the trigger and can never call this. Works on ANY run
+// (no sandbox requirement), so a Full-ARC voucher run can be demoed too; because
+// it OVERWRITES answers, the UI confirms first.
 //
-// Lets a business-development rep skip the full questionnaire during a live
-// client demo and jump straight to the report. Hard-gated to SANDBOX (demo)
-// assessments - a real (is_sandbox=false) run can never be auto-filled, so this
-// can never fabricate genuine candidate/hiring data regardless of who calls it.
-// The respondent flow only surfaces the trigger when is_sandbox is true.
-//
-// Answers are sensible, not random: self-ratings land in the 3-5 band (a
-// credible, positive profile) and graded items pick the top-scoring option, so
-// the demo report reads well. Writes go through the same ara_responses shape +
-// scoring the live flow uses, then markAraRespondentComplete runs the normal
-// recalculation, so the resulting report is identical to a real submission.
+// Answers are randomized: self-ratings fall in the 3-5 band (credible + varied)
+// and graded items pick a random option, so the report looks like a real, mixed
+// submission. Writes go through the same ara_responses shape + scoring the live
+// flow uses, then markAraRespondentComplete runs the normal recalculation.
 // ─────────────────────────────────────────────────────────────
 
-/** Deterministic self-rating in the 3-5 band, varied per question id. */
-function demoRatingFor(questionId: string): string {
-  let sum = 0;
-  for (let i = 0; i < questionId.length; i++) sum += questionId.charCodeAt(i);
-  return String(3 + (sum % 3));
+/** Random self-rating in the 3-5 band - a credible but varied demo profile. */
+function randomRating(): string {
+  return String(3 + Math.floor(Math.random() * 3));
 }
 
 export async function simulateAraAnswers(
@@ -427,10 +423,6 @@ export async function simulateAraAnswers(
   // depth behind the UI gate (the button is hidden from the candidate).
   if (!(await isStaffCaller())) {
     return { ok: false, error: "Answer simulation is restricted to VIFM staff." };
-  }
-  // Hard gate: only demo (sandbox) assessments may be auto-filled.
-  if (!ctx.assessment.is_sandbox) {
-    return { ok: false, error: "Answer simulation is only available on demo (sandbox) assessments." };
   }
   if (ctx.assessment.status === "frozen" || ctx.assessment.status === "archived") {
     return { ok: false, error: "This assessment is closed to further answers." };
@@ -450,20 +442,20 @@ export async function simulateAraAnswers(
       let answerText: string | null = null;
 
       if (q.question_type === "rating") {
-        answerValue = demoRatingFor(q.id);
+        answerValue = randomRating();
       } else if (q.question_type === "open_text") {
         answerText = "Sample response provided for demonstration purposes.";
       } else {
         // Graded item (multiple_choice / yes_no / situational_judgment /
-        // knowledge_check): pick the highest-scoring option from the key so the
-        // demo profile looks strong; fall back to the first listed option.
+        // knowledge_check): pick a RANDOM option from the key (or the listed
+        // options), so the demo's objective score is mixed - which reads like a
+        // real submission and exercises the calibration / risk-flag features.
         const scoreMap = (q.score_map ?? null) as Record<string, number> | null;
-        if (scoreMap && Object.keys(scoreMap).length > 0) {
-          answerValue = Object.entries(scoreMap).sort((a, b) => b[1] - a[1])[0][0];
-        } else {
-          const opts = (q.options_en ?? []) as Array<{ value: string }>;
-          answerValue = opts[0]?.value ?? null;
-        }
+        const keys =
+          scoreMap && Object.keys(scoreMap).length > 0
+            ? Object.keys(scoreMap)
+            : ((q.options_en ?? []) as Array<{ value: string }>).map((o) => o.value);
+        answerValue = keys.length > 0 ? keys[Math.floor(Math.random() * keys.length)] : null;
       }
 
       const score = calculateQuestionScore(

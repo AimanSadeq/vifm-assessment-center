@@ -57,6 +57,33 @@ export type BlockContentFormInput = {
   checkpointsJson: string;
 };
 
+// Strict per-kind checkpoint schema (the scoring contract - see
+// src/lib/technical-sandbox/types.ts). Enforced server-side so a malformed
+// checkpoint can't reach the scorer even if a client bypasses the editor.
+const checkpointSchema = z.discriminatedUnion("kind", [
+  z.object({
+    id: z.string().min(1), kind: z.literal("cell_value"), weight: z.number().positive(),
+    label_en: z.string().optional(), label_ar: z.string().optional(),
+    target: z.string().min(1), expected: z.number(), tolerance: z.number().nonnegative().optional(),
+  }),
+  z.object({
+    id: z.string().min(1), kind: z.literal("is_array_formula"), weight: z.number().positive(),
+    label_en: z.string().optional(), label_ar: z.string().optional(),
+    target: z.string().min(1),
+  }),
+  z.object({
+    id: z.string().min(1), kind: z.literal("logic_value"), weight: z.number().positive(),
+    label_en: z.string().optional(), label_ar: z.string().optional(),
+    field: z.string().min(1), expected: z.number(), tolerance: z.number().nonnegative().optional(),
+  }),
+  z.object({
+    id: z.string().min(1), kind: z.literal("sql_result_match"), weight: z.number().positive(),
+    label_en: z.string().optional(), label_ar: z.string().optional(),
+    ordered: z.boolean().optional(),
+  }),
+]);
+const checkpointsSchema = z.array(checkpointSchema);
+
 const contentSchema = z.object({
   nameEn: z.string().trim().min(1, "Name (EN) is required").max(300),
   nameAr: z.string().max(300),
@@ -110,13 +137,24 @@ export async function updateBlockContentAction(
   const cp = parseJson("Checkpoints", d.checkpointsJson, []);
   if (!cp.ok) return cp;
 
-  // Light shape checks so a mistyped value can't corrupt the scoring engine.
-  if (!Array.isArray(cp.value)) return { ok: false, error: "Checkpoints must be a JSON array" };
+  // Master answer + engine config: object shape (the structured editor owns
+  // the per-engine detail; here we just guard against a stray array/scalar).
   if (typeof ms.value !== "object" || ms.value === null || Array.isArray(ms.value)) {
     return { ok: false, error: "Master answer must be a JSON object" };
   }
   if (typeof ec.value !== "object" || ec.value === null || Array.isArray(ec.value)) {
     return { ok: false, error: "Engine config must be a JSON object" };
+  }
+  // Checkpoints: strict per-kind schema (the scoring contract).
+  const cpParsed = checkpointsSchema.safeParse(cp.value);
+  if (!cpParsed.success) {
+    const issue = cpParsed.error.issues[0];
+    const where = issue?.path?.length ? ` (checkpoint ${issue.path.join(".")})` : "";
+    return { ok: false, error: `Invalid checkpoint${where}: ${issue?.message ?? "bad shape"}` };
+  }
+  const ids = cpParsed.data.map((c) => c.id);
+  if (new Set(ids).size !== ids.length) {
+    return { ok: false, error: "Checkpoint ids must be unique" };
   }
 
   const blank = (s: string) => (s.trim() === "" ? null : s);
@@ -133,7 +171,7 @@ export async function updateBlockContentAction(
     time_limit_seconds: d.timeLimitSeconds,
     engine_config: ec.value,
     master_solution: ms.value,
-    checkpoints: cp.value,
+    checkpoints: cpParsed.data,
   };
 
   const res = await updateBlockContent(blockId, content);

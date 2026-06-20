@@ -184,5 +184,5 @@ export const BAND_LABEL_AR: Record<PsyBand, string> = {
   low: "منخفض", below: "دون المتوسط", average: "متوسط", above: "فوق المتوسط", high: "مرتفع",
 };
 
-export const COGNITIVE_INSTRUMENT = { code: "cog_v1", name_en: "Cognitive Ability (indicative)", name_ar: "القدرة الذهنية (استرشادي)" };
+export const COGNITIVE_INSTRUMENT = { code: "cog_v1", name_en: "Reason (indicative)", name_ar: "الاستدلال (استرشادي)" };
 export const PERSONALITY_INSTRUMENT = { code: "big5_ipip_v1", name_en: "Big Five Personality (Mini-IPIP)", name_ar: "الشخصية بالعوامل الخمسة (Mini-IPIP)" };

@@ -5,7 +5,7 @@ import { COGNITIVE_SUBTESTS, BAND_LABEL_EN, type PsyBand } from "@/lib/psychomet
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Cognitive · Cohort report" };
+export const metadata = { title: "Reason · Cohort report" };
 
 type ScaleJson = { key: string; raw: number; normalized: number; band: PsyBand; bandLabel?: string };
 type Row = {
@@ -81,21 +81,21 @@ export default async function CognitiveCohortPage({ searchParams }: { searchPara
             href="/ac/cognitive"
             className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-1"
           >
-            <ArrowLeft className="h-3 w-3" /> Back to Cognitive
+            <ArrowLeft className="h-3 w-3" /> Back to Reason
           </Link>
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5 text-[#5391D5]" />
-            <h1 className="text-xl font-semibold text-[#010131]">Cognitive cohort report</h1>
+            <h1 className="text-xl font-semibold text-[#010131]">Reason cohort report</h1>
             <span className="ml-2 rounded-full bg-[#5391D5]/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[#5391D5]">
               Indicative
             </span>
           </div>
           <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-            Aggregate cognitive-ability results (numerical / verbal / inductive / deductive reasoning). Tier 1 bands are based on
+            Aggregate reasoning-ability results (numerical / verbal / inductive / deductive reasoning). Tier 1 bands are based on
             raw scores, not local norms.
           </p>
           <Link href="/admin/cohorts" className="mt-2 inline-block text-xs font-medium text-[#5391D5] hover:underline">
-            View combined project cohorts (Persona + Cognitive) →
+            View combined project cohorts (Persona + Reason) →
           </Link>
         </div>
       </header>

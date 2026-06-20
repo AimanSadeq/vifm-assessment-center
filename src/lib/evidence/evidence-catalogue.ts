@@ -106,10 +106,10 @@ export const EVIDENCE_INSTRUMENTS: EvidenceInstrument[] = [
   },
   {
     key: "cognitive",
-    name: "Cognitive ability",
+    name: "Reason",
     href: "/ac/cognitive",
     itemTypes: "MCQ numerical, verbal, inductive and deductive reasoning subtests, with a general mental ability (g) composite.",
-    construct: "Cognitive ability / reasoning aptitude (a foundational predictor).",
+    construct: "Reasoning aptitude / general mental ability (a foundational predictor).",
     validity:
       "Construct framing from the g / CHC literature. Tier 1 is INDICATIVE: AI-generated items, no local norms or IRT calibration yet, and it issues no credential.",
     reliability: "Classical scoring; Cronbach's alpha and Rasch/IRT calibration are the documented Tier-2 path (not yet met).",

@@ -6,7 +6,7 @@ import { VifmLogo } from "@/components/shared/vifm-logo";
 import { PsychometricsClient } from "../../_components/psychometrics-client";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Cognitive assessment · VIFM" };
+export const metadata = { title: "Reason assessment · VIFM" };
 
 /**
  * Token-gated Cognitive runner for voucher delegates (no account). The
@@ -31,7 +31,7 @@ export default async function CognitiveTakePage({ params }: { params: { token: s
           <VifmLogo variant="white" size="sm" />
           <div className="mt-8 max-w-2xl">
             <span className="ara-eyebrow text-accent">
-              <BrainCircuit className="h-3 w-3" /> VIFM Cognitive Ability
+              <BrainCircuit className="h-3 w-3" /> VIFM Reason
             </span>
             <h1 className="ara-numeral mt-3 text-2xl font-semibold leading-tight text-white sm:text-3xl">
               Welcome{redemption.redeemer_name ? `, ${redemption.redeemer_name}` : ""}

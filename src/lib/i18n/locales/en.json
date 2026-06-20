@@ -172,7 +172,7 @@
       "certify": {
         "technical": { "label": "Technical / finance knowledge", "desc": "Domain knowledge certification." },
         "english": { "label": "English language", "desc": "CEFR placement (reading/listening/writing/speaking)." },
-        "ability": { "label": "Cognitive ability / aptitude", "desc": "Reasoning + personality (psychometrics)." }
+        "ability": { "label": "Reasoning aptitude", "desc": "Reasoning + personality (psychometrics)." }
       },
       "ai_readiness": {
         "organization": { "label": "A whole organization", "desc": "Pillar-based org AI-readiness diagnostic." },
@@ -209,7 +209,7 @@
       "technical": "Domain-knowledge items with a documented cut-score for a certifiable result.",
       "ara_org": "Pillar-based maturity across the organization, with peer benchmarks.",
       "ara_personal": "Four-factor individual AI readiness, self-served or consultant-issued.",
-      "psychometric": "Cognitive ability + Big-Five personality - the foundational 'potential' layer that predicts the behavioural competencies."
+      "psychometric": "Reasoning aptitude + Big-Five personality - the foundational 'potential' layer that predicts the behavioural competencies."
     },
     "construct": {
       "knowledge": "Knowledge", "language": "Language", "behaviour": "Behaviour",
@@ -219,7 +219,7 @@
       "quiz": "Competency quiz", "fluent": "Fluent (English)", "cbi": "AI interview (CBI)",
       "ac_exercises": "AC exercises", "talent_map": "Talent Map", "reflect_360": "Reflect 360",
       "technical": "Technical assessment", "ara_org": "AR Compass (org)", "ara_personal": "AR Compass (personal)",
-      "cognitive": "Cognitive battery", "personality": "Personality inventory"
+      "cognitive": "Reason battery", "personality": "Personality inventory"
     },
     "module": {
       "prehire": { "label": "Pre-Hire screening", "desc": "Quiz + English + AI interview, ranked." },
@@ -228,7 +228,7 @@
       "reflect": { "label": "Reflect 360", "desc": "Multi-rater leadership feedback." },
       "fluent": { "label": "Fluent (English)", "desc": "CEFR placement test." },
       "technical": { "label": "Technical certification", "desc": "Finance-domain knowledge." },
-      "psychometric": { "label": "Psychometrics", "desc": "Cognitive ability + Big-Five personality (indicative)." },
+      "psychometric": { "label": "Psychometrics", "desc": "Reasoning aptitude + Big-Five personality (indicative)." },
       "academy": { "label": "VIFM Academy", "desc": "Self-paced training courses + verifiable credential." }
     },
     "rec": {
@@ -339,7 +339,7 @@
     "svcRetention": "Retention",
     "svcCalibration": "Calibration",
     "psychometrics": "Psychometrics",
-    "psyCognitive": "Cognitive",
+    "psyCognitive": "Reason",
     "psyPersona": "Persona",
     "psychometricsBank": "Item bank & calibration",
     "academy": "VIFM Academy",

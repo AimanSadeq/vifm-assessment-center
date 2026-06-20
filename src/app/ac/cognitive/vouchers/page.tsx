@@ -6,7 +6,7 @@ import { BackLink } from "@/components/shared/back-link";
 import { VouchersClient, type CognitiveVoucherRow } from "./_components/vouchers-client";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Cognitive vouchers · VIFM" };
+export const metadata = { title: "Reason vouchers · VIFM" };
 
 export default async function CognitiveVouchersPage() {
   const caller = await getCurrentCaller();
@@ -22,11 +22,11 @@ export default async function CognitiveVouchersPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-8">
-      <BackLink href="/ac/cognitive" label="Cognitive Ability" />
+      <BackLink href="/ac/cognitive" label="Reason" />
       <div className="mt-4 mb-6">
-        <h1 className="text-2xl font-semibold text-[#010131]">Cognitive vouchers</h1>
+        <h1 className="text-2xl font-semibold text-[#010131]">Reason vouchers</h1>
         <p className="text-sm text-muted-foreground">
-          Generate redeemable cognitive-assessment access codes, tag them to a client, and track seats.
+          Generate redeemable Reason assessment access codes, tag them to a client, and track seats.
           Delegates redeem at <code className="text-xs">/ac/cognitive/redeem</code> - no account needed.
         </p>
       </div>

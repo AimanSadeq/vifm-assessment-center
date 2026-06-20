@@ -142,8 +142,8 @@ const PORTALS: ReadonlyArray<Portal> = [
   {
     key: "cognitive",
     icon: BrainCircuit,
-    name: { en: "Cognitive", ar: "القدرات الذهنية" },
-    tagline: { en: "Cognitive ability", ar: "القدرة الذهنية" },
+    name: { en: "Reason", ar: "الاستدلال" },
+    tagline: { en: "Reasoning aptitude", ar: "القدرة على الاستدلال" },
     acquire: {
       measures: { en: "Numerical, verbal, inductive and deductive reasoning (+ g composite).", ar: "الاستدلال العددي واللفظي والاستقرائي والاستنتاجي (+ مؤشّر القدرة العامة)." },
       method: { en: "Server-scored MCQ, admin-run, bilingual; indicative bands.", ar: "اختيار من متعدد يُصحَّح على الخادم، يُجريه المسؤول، ثنائي اللغة؛ تصنيفات استرشادية." },

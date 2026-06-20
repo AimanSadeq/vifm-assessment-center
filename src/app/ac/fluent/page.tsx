@@ -77,9 +77,9 @@ export default async function FluentPage({ searchParams }: Props) {
       <header className="fluent-hero">
         <div className="mx-auto max-w-5xl px-6 pt-7 pb-24">
           {/* Top bar: logo + module nav */}
-          <div className="mb-12 flex items-center justify-between gap-4">
+          <div className="mb-12 flex flex-wrap items-center justify-between gap-3">
             <VifmLogo variant="white" size="sm" />
-            <nav className="flex items-center gap-2">
+            <nav className="flex flex-wrap items-center justify-end gap-2">
               <AllServicesLink variant="onDark" />
               <Link
                 href="/ac/fluent/cohort"

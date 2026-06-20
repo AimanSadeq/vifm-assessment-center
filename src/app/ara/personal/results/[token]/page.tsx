@@ -32,7 +32,7 @@ import {
 
 export const dynamic = "force-dynamic";
 
-type Props = { params: { token: string } };
+type Props = { params: { token: string }; searchParams?: { present?: string } };
 
 const TARGET = 4;
 
@@ -43,7 +43,7 @@ const STAGE_RANGE: Record<AraIndividualMaturityStageId, { en: string; ar: string
   embedded: { en: "4 and above", ar: "4 فأكثر" },
 };
 
-export default async function PersonalResultsPage({ params }: Props) {
+export default async function PersonalResultsPage({ params, searchParams }: Props) {
   const ctx = await loadRespondentByToken(params.token);
   if (!ctx) return notFound();
 
@@ -147,7 +147,13 @@ export default async function PersonalResultsPage({ params }: Props) {
 
   // Talent lens (migration 00134). Drives R4-R7. NULL = generic framing
   // (legacy / anonymous / deep-linked) and reproduces today's output exactly.
-  const talentLens = validateTalentLens(ctx.assessment.talent_lens);
+  const sittingLens = validateTalentLens(ctx.assessment.talent_lens);
+  // BD presentation override: only staff ever reach this render (the taker got a
+  // thank-you above), so ?present=acquisition|development lets BD show a client
+  // both report framings of the SAME sitting when presenting. It never changes
+  // the stored lens - the candidate's own report stays the sitting's lens.
+  const presentOverride = validateTalentLens(searchParams?.present ?? null);
+  const talentLens = presentOverride ?? sittingLens;
   const isAcquisition = talentLens === "acquisition";
 
   // Selection-lens analysis: a logical, evidence-grounded read built ONLY from
@@ -221,6 +227,45 @@ export default async function PersonalResultsPage({ params }: Props) {
   return (
     <div className="min-h-screen bg-background" dir={isAr ? "rtl" : "ltr"}>
       <div className="max-w-3xl mx-auto px-6 py-10 space-y-6">
+        {/* BD presentation toggle - staff only (the taker never reaches this
+            render; they get the thank-you page above). Flips between the two
+            report framings of THIS sitting so BD can show a client the
+            difference. It does not change the stored sitting or the candidate's
+            own report. */}
+        <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span className="text-[11px] font-bold uppercase tracking-wide text-amber-800">
+              Presentation view · staff
+            </span>
+            <span className="text-xs text-amber-700">
+              Show a client how the two reports differ. This view only; it does not change the stored sitting.
+            </span>
+            <div className="ms-auto inline-flex overflow-hidden rounded-md border border-amber-300">
+              <Link
+                href={`/ara/personal/results/${params.token}?present=acquisition`}
+                className={`px-3 py-1 text-xs font-semibold ${
+                  talentLens === "acquisition" ? "bg-[#5391D5] text-white" : "bg-white text-[#1e40af] hover:bg-[#5391D5]/10"
+                }`}
+              >
+                Talent Acquisition
+              </Link>
+              <Link
+                href={`/ara/personal/results/${params.token}?present=development`}
+                className={`border-s border-amber-300 px-3 py-1 text-xs font-semibold ${
+                  talentLens === "development" ? "bg-emerald-600 text-white" : "bg-white text-emerald-800 hover:bg-emerald-50"
+                }`}
+              >
+                Talent Development
+              </Link>
+            </div>
+          </div>
+          {sittingLens && sittingLens !== talentLens && (
+            <p className="mt-1.5 text-[11px] text-amber-700">
+              This sitting was started as{" "}
+              <strong>{sittingLens === "acquisition" ? "Talent Acquisition" : "Talent Development"}</strong>; you are previewing the other framing.
+            </p>
+          )}
+        </div>
         <div>
           <Link
             href={talentLens ? `/ara?lens=${talentLens}` : "/ara"}

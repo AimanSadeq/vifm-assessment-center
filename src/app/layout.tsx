@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { I18nProvider } from "@/lib/i18n/provider";
 import { Toaster } from "sonner";
 import { RecoveryRedirect } from "@/components/shared/recovery-redirect";
+import { SessionIndicator } from "@/components/shared/session-indicator";
 import "./globals.css";
 
 const openSans = Open_Sans({ subsets: ["latin"], variable: "--font-sans" });
@@ -34,6 +35,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <RecoveryRedirect />
+        <SessionIndicator />
         <I18nProvider>{children}</I18nProvider>
         <Toaster richColors position="top-right" />
       </body>

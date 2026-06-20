@@ -49,7 +49,13 @@ export function CountUp({
     };
 
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+      // Reset the run-once guard so a React StrictMode remount (dev) - which
+      // cancels the first frame via this cleanup before any tick lands - can
+      // re-schedule the animation instead of being blocked at 0.
+      started.current = false;
+    };
   }, [targetNumeric, duration]);
 
   if (targetNumeric === null) {

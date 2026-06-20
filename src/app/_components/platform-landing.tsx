@@ -7,6 +7,8 @@ import {
   GraduationCap, BadgeCheck, BrainCircuit, Layers, ShieldCheck, TrendingUp, Table2,
 } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
+import { CountUp } from "@/components/shared/ara/count-up";
+import { FadeIn } from "@/components/shared/ara/fade-in";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { COMPETENCY_COUNT } from "@/lib/competencies/framework-meta";
 
@@ -225,6 +227,8 @@ const T = {
     ctaBrowse: "Browse the catalogue",
     ctaLearning: "My learning",
     trust: ["Bilingual English / Arabic", "Verifiable credentials", "AI-supported learning"],
+    stats: { services: "Assessment services", competencies: "Competencies measured", programmes: "Training programmes", languages: "Languages" },
+    servicesEyebrow: "Two solution families",
     features: {
       catalogue: {
         title: "Self-paced programmes",
@@ -282,6 +286,8 @@ const T = {
     ctaBrowse: "تصفّح دليل البرامج",
     ctaLearning: "مساحة التعلّم",
     trust: ["ثنائية اللغة: الإنجليزية / العربية", "شهادات قابلة للتحقّق", "تعلّم مدعوم بالذكاء الاصطناعي"],
+    stats: { services: "خدمات التقييم", competencies: "الكفاءات المقاسة", programmes: "برامج تدريبية", languages: "اللغات" },
+    servicesEyebrow: "عائلتا حلول",
     features: {
       catalogue: {
         title: "برامج ذاتية الوتيرة",
@@ -349,6 +355,14 @@ export function PlatformLanding() {
   const rtl = lang === "ar";
   const Arrow = rtl ? ArrowLeft : ArrowRight;
 
+  // Animated platform-credibility stats shown in the hero.
+  const stats: Array<{ value: number; suffix?: string; label: string }> = [
+    { value: SERVICES.length, label: t.stats.services },
+    { value: COMPETENCY_COUNT, label: t.stats.competencies },
+    { value: 100, suffix: "+", label: t.stats.programmes },
+    { value: 2, label: t.stats.languages },
+  ];
+
   // Where a purpose entry links: Persona / AR Compass / Technical read a
   // lens/purpose param; others keep their base route.
   const hrefFor = (svc: (typeof SERVICES)[number], pillar: Pillar): string => {
@@ -381,12 +395,15 @@ export function PlatformLanding() {
     return (
       <div
         key={svc.key}
-        className={`launcher-card tone-${toneClass} flex flex-col p-4`}
+        className={`launcher-card tone-${toneClass} flex h-full flex-col p-4`}
         style={{ borderColor }}
       >
+        {/* Large faint service glyph, bottom-corner - adds depth (the
+            .launcher-card-glyph rule positions + tints it by the card tone). */}
+        <Icon className="launcher-card-glyph h-28 w-28" aria-hidden="true" />
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="flex items-center gap-4">
+            <div className="relative z-[1] flex items-center gap-4">
               <div className="launcher-card-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-xl">
                 <Icon className="h-6 w-6" />
               </div>
@@ -402,7 +419,7 @@ export function PlatformLanding() {
           </TooltipContent>
         </Tooltip>
         {/* Two distinct-coloured level entries (no default highlight). */}
-        <div className={`mt-3 grid gap-2 ${svc.pillars.length === 2 ? "grid-cols-2" : "grid-cols-1"}`}>
+        <div className={`relative z-[1] mt-auto grid gap-2 pt-3 ${svc.pillars.length === 2 ? "grid-cols-2" : "grid-cols-1"}`}>
           {svc.pillars.map((p) => {
             const acq = p === "acquire";
             // VIFM brand pair: For selection = light/accent blue (#5391D5) fill,
@@ -507,6 +524,22 @@ export function PlatformLanding() {
                 </span>
               ))}
             </div>
+
+            {/* Animated stat strip - hard numbers for credibility at a glance. */}
+            <dl className="mt-6 flex flex-wrap items-end gap-x-6 gap-y-4">
+              {stats.map((stat) => (
+                <div
+                  key={stat.label}
+                  className="border-white/15 ps-6 first:border-s-0 first:ps-0 [&:not(:first-child)]:border-s"
+                >
+                  <dd className="ara-numeral text-2xl font-semibold leading-none text-white sm:text-3xl">
+                    <CountUp value={stat.value} />
+                    {stat.suffix ? <span className="text-accent">{stat.suffix}</span> : null}
+                  </dd>
+                  <dt className="mt-1.5 text-[10px] uppercase tracking-[0.14em] text-white/50">{stat.label}</dt>
+                </div>
+              ))}
+            </dl>
           </div>
         </div>
       </header>
@@ -514,7 +547,10 @@ export function PlatformLanding() {
       <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-6">
         {/* ─── Solutions as two vertical columns, one per talent-lifecycle family ─── */}
         <section>
-          <h2 className="text-lg font-semibold text-[#010131]">{t.servicesHeading}</h2>
+          <span className="ara-eyebrow text-accent">
+            <Layers className="h-3 w-3" /> {t.servicesEyebrow}
+          </span>
+          <h2 className="mt-2 text-lg font-semibold text-[#010131]">{t.servicesHeading}</h2>
           <p className="mt-1 max-w-3xl text-sm text-muted-foreground">{t.servicesSub}</p>
 
           <TooltipProvider delayDuration={200}>
@@ -523,7 +559,11 @@ export function PlatformLanding() {
                 beneath, so a service is no longer shown twice (once per column
                 with the off-side dimmed). */}
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              {SERVICES.map((svc) => renderServiceCard(svc))}
+              {SERVICES.map((svc, i) => (
+                <FadeIn key={svc.key} delay={i * 50} className="h-full">
+                  {renderServiceCard(svc)}
+                </FadeIn>
+              ))}
             </div>
           </TooltipProvider>
         </section>

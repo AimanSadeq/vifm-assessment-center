@@ -8,6 +8,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getServerT } from "@/lib/i18n/server";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { AllServicesLink } from "@/components/shared/all-services-link";
+import { DesignTargetRolesLink } from "@/components/shared/design-target-roles-link";
 import { FluentClient } from "./_components/fluent-client";
 import { BackLink } from "@/components/shared/back-link";
 import { getTimerMinutes, TIMER_DEFAULTS } from "@/lib/assessment-timers";
@@ -81,6 +82,7 @@ export default async function FluentPage({ searchParams }: Props) {
             <VifmLogo variant="white" size="sm" />
             <nav className="flex flex-wrap items-center justify-end gap-2">
               <AllServicesLink variant="onDark" />
+              <DesignTargetRolesLink variant="onDark" />
               <Link
                 href="/ac/fluent/cohort"
                 className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/85 backdrop-blur transition-colors hover:border-white/35 hover:bg-white/15"

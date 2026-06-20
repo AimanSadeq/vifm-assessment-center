@@ -5,6 +5,7 @@ import {
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { validateTalentLens } from "@/lib/constants/ara-individual-factors";
 import { AllServicesLink } from "@/components/shared/all-services-link";
+import { DesignTargetRolesLink } from "@/components/shared/design-target-roles-link";
 import { AnimatedCompass } from "@/components/shared/ara/animated-compass";
 import { CountUp } from "@/components/shared/ara/count-up";
 import { FadeIn } from "@/components/shared/ara/fade-in";
@@ -43,6 +44,7 @@ export default function AraRootPage({ searchParams }: { searchParams?: { lens?: 
             <VifmLogo variant="white" size="sm" />
             <div className="flex items-center gap-3">
               <AllServicesLink variant="onDark" />
+              <DesignTargetRolesLink variant="onDark" />
               <Link
                 href={`/ara/engage${lq}`}
                 className="inline-flex items-center gap-1.5 text-xs font-medium text-white px-3.5 py-1.5 rounded-full border border-white/25 bg-white/5 hover:bg-white/15 hover:border-white/40 backdrop-blur transition-colors"

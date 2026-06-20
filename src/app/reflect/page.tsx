@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { AllServicesLink } from "@/components/shared/all-services-link";
+import { DesignTargetRolesLink } from "@/components/shared/design-target-roles-link";
 
 export const metadata = {
   title: "Reflect 360 · Leadership feedback",
@@ -29,6 +30,7 @@ export default function ReflectRootPage() {
             <VifmLogo variant="white" size="sm" />
             <div className="flex items-center gap-3">
               <AllServicesLink variant="onDark" />
+              <DesignTargetRolesLink variant="onDark" />
               <Link
                 href="/courses"
                 className="inline-flex items-center gap-1.5 text-xs font-medium text-white/85 px-3.5 py-1.5 rounded-full border border-white/15 bg-white/0 hover:bg-white/10 hover:border-white/30 backdrop-blur transition-colors"

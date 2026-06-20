@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Ticket, Users, FileClock, ClipboardList, Layers } from "lucide-react";
 import { BackLink } from "@/components/shared/back-link";
 import { AllServicesLink } from "@/components/shared/all-services-link";
+import { DesignTargetRolesLink } from "@/components/shared/design-target-roles-link";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
 import { loadPersonaRoleOptions } from "@/lib/scoring/persona-roles";
 import { loadCompetencyDefinitions } from "@/lib/scoring/competency-definitions";
@@ -61,6 +62,7 @@ export default async function PersonaPage({ searchParams }: { searchParams?: { d
         >
           <FileClock className="h-3.5 w-3.5" /> Retention
         </Link>
+        <DesignTargetRolesLink />
         <AllServicesLink />
       </div>
       <PersonaStandaloneClient competencies={BEHAVIORAL_COMPETENCIES} roleProfiles={roleProfiles} definitions={definitions} demo={demo} lockedPurpose={lockedPurpose} />

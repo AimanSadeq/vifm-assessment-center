@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Bot } from "lucide-react";
 import { AllServicesLink } from "@/components/shared/all-services-link";
+import { DesignTargetRolesLink } from "@/components/shared/design-target-roles-link";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentCaller, type AraCaller } from "@/lib/ara/auth-guards";
 import { getServerT } from "@/lib/i18n/server";
@@ -108,6 +109,7 @@ export default async function AiInterviewPage() {
             >
               <ArrowLeft className="h-3 w-3" /> {t("acTools.interview.backLink")}
             </Link>
+            <DesignTargetRolesLink />
             <AllServicesLink />
           </div>
           <div className="flex items-center gap-2">

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Ticket, Users, FileClock } from "lucide-react";
 import { PsychometricsClient, type EngagementOption } from "./_components/psychometrics-client";
 import { AllServicesLink } from "@/components/shared/all-services-link";
+import { DesignTargetRolesLink } from "@/components/shared/design-target-roles-link";
 import { BackLink } from "@/components/shared/back-link";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getTimerMinutes, TIMER_DEFAULTS } from "@/lib/assessment-timers";
@@ -65,6 +66,7 @@ export default async function CognitivePage({
         >
           <FileClock className="h-3.5 w-3.5" /> Retention
         </Link>
+        <DesignTargetRolesLink />
         <AllServicesLink />
       </div>
       <PsychometricsClient

@@ -1,6 +1,7 @@
 import { Sparkles, UserCheck, CheckCircle2, Languages, FileText, ShieldCheck } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { AllServicesLink } from "@/components/shared/all-services-link";
+import { DesignTargetRolesLink } from "@/components/shared/design-target-roles-link";
 import { AnimatedCompass } from "@/components/shared/ara/animated-compass";
 import { FadeIn } from "@/components/shared/ara/fade-in";
 import { ARA_INDIVIDUAL_FACTORS } from "@/lib/constants/ara-individual-factors";
@@ -33,6 +34,7 @@ export function SelectionLanding() {
             <VifmLogo variant="white" size="sm" />
             <div className="flex items-center gap-3">
               <AllServicesLink variant="onDark" />
+              <DesignTargetRolesLink variant="onDark" />
               <span className="inline-flex items-center gap-1.5 text-xs font-medium text-white/85 px-3.5 py-1.5 rounded-full border border-white/15 bg-white/5 backdrop-blur">
                 <UserCheck className="h-3.5 w-3.5" /> Talent Acquisition
               </span>

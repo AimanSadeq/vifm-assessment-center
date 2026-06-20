@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight, ArrowLeft, ClipboardCheck, Compass, Aperture, Languages, UserSearch,
-  GraduationCap, BadgeCheck, BrainCircuit, Layers, ShieldCheck, TrendingUp, Table2,
+  GraduationCap, BadgeCheck, BrainCircuit, Layers, ShieldCheck, TrendingUp, Table2, Target,
 } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { CountUp } from "@/components/shared/ara/count-up";
@@ -213,6 +213,7 @@ const T = {
   en: {
     pickLang: "Language",
     catalogue: "Training catalogue",
+    designRoles: "Design target roles",
     compare: "Compare portals",
     admin: "Admin",
     enter: "Enter",
@@ -272,6 +273,7 @@ const T = {
   ar: {
     pickLang: "اللغة",
     catalogue: "دليل البرامج التدريبية",
+    designRoles: "تصميم الأدوار المستهدفة",
     compare: "مقارنة البوّابات",
     admin: "الإدارة",
     enter: "الدخول",
@@ -468,6 +470,12 @@ export function PlatformLanding() {
                 className="hidden items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/85 backdrop-blur transition-colors hover:border-white/35 hover:bg-white/15 sm:inline-flex"
               >
                 <Table2 className="h-3.5 w-3.5" /> {t.compare}
+              </Link>
+              <Link
+                href="/admin/role-profiles"
+                className="hidden items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/85 backdrop-blur transition-colors hover:border-white/35 hover:bg-white/15 sm:inline-flex"
+              >
+                <Target className="h-3.5 w-3.5" /> {t.designRoles}
               </Link>
               <Link
                 href="/admin"

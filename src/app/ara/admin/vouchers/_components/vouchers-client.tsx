@@ -53,6 +53,10 @@ export function VouchersClient({
   const [error, setError] = useState<string | null>(null);
   const [generated, setGenerated] = useState<string[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
+  // Which assessment a redeemed code provisions - applies to both generation
+  // forms. "full" = the complete 60-question Personal ARC (a real run, for
+  // selection / job applicants); "practice" = the 36-question snapshot sandbox.
+  const [scope, setScope] = useState<"full" | "practice">("full");
 
   // Live origin for shareable redeem links (window is client-only).
   const [origin, setOrigin] = useState("");
@@ -88,6 +92,7 @@ export function VouchersClient({
     setEmailingDelegates(true);
     const fd = new FormData();
     fd.set("emails", delegateEmails);
+    fd.set("scope", scope);
     if (selectedOrg) fd.set("organizationId", selectedOrg);
     const res = await emailVouchersToDelegatesAction(fd);
     setEmailingDelegates(false);
@@ -173,6 +178,7 @@ export function VouchersClient({
     e.preventDefault();
     setError(null);
     const fd = new FormData(e.currentTarget);
+    fd.set("scope", scope);
     startTransition(async () => {
       const res = await createVoucherBatchAction(fd);
       if (!res.ok) {
@@ -196,9 +202,40 @@ export function VouchersClient({
           <Ticket className="h-6 w-6 text-[#5391D5]" /> AI Readiness Compass - Vouchers
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Generate practice-access codes for clients. Each code provisions a sandbox (practice) Compass run.
+          Issue access codes for clients - one code per person, or a single seat-pool code the client
+          distributes to many applicants. Pick what each redeemed code provisions below.
         </p>
       </div>
+
+      {/* Assessment scope - governs BOTH generation forms below. */}
+      <Card>
+        <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-[#010131]">Assessment scope</p>
+            <p className="text-xs text-muted-foreground">What each redeemed code provisions.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:flex">
+            {([
+              { v: "full", title: "Full ARC", sub: "60 questions · real run" },
+              { v: "practice", title: "Practice snapshot", sub: "36 questions · sandbox" },
+            ] as const).map((o) => (
+              <button
+                key={o.v}
+                type="button"
+                onClick={() => setScope(o.v)}
+                className={`rounded-lg border px-3 py-2 text-left transition ${
+                  scope === o.v
+                    ? "border-[#5391D5] bg-[#5391D5]/10 text-[#010131]"
+                    : "border-border bg-card text-muted-foreground hover:border-[#5391D5]/50"
+                }`}
+              >
+                <span className="block text-sm font-semibold">{o.title}</span>
+                <span className="block text-[11px]">{o.sub}</span>
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Generate */}
       <Card>

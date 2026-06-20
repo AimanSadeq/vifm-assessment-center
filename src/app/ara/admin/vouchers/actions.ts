@@ -51,6 +51,14 @@ async function requireAdmin() {
   }
 }
 
+// scope = which assessment a redeemed code provisions:
+//   "full"     -> the complete 60-question Personal ARC deep-dive, a REAL run
+//                 (what selection / job-applicant vouchers need). Default.
+//   "practice" -> the 36-question snapshot as a sandbox practice run (sampling).
+const voucherScopeSchema = z.enum(["full", "practice"]).default("full");
+const scopeToTier = (scope: "full" | "practice") =>
+  ({ tier: scope === "practice" ? ("snapshot" as const) : ("deep_dive" as const), isPractice: scope === "practice" });
+
 const batchSchema = z.object({
   count: z.coerce.number().int().min(1).max(500),
   label: z.string().max(200).optional(),
@@ -59,6 +67,7 @@ const batchSchema = z.object({
   maxUses: z.coerce.number().int().min(1).max(10000).default(1),
   region: z.enum(["uae", "saudi"]).default("uae"),
   language: z.enum(["en", "ar"]).default("en"),
+  scope: voucherScopeSchema,
   expiresAt: z.string().optional(),
 });
 
@@ -74,12 +83,14 @@ export async function createVoucherBatchAction(formData: FormData) {
     maxUses: formData.get("maxUses") || 1,
     region: formData.get("region") || "uae",
     language: formData.get("language") || "en",
+    scope: formData.get("scope") || "full",
     expiresAt: formData.get("expiresAt") || undefined,
   });
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
+  const { tier, isPractice } = scopeToTier(parsed.data.scope);
   const caller = await requireRole(["admin"]).catch(() => null);
 
   // Region (and client_name) are inherited from the tagged client org when one
@@ -105,11 +116,11 @@ export async function createVoucherBatchAction(formData: FormData) {
     label: parsed.data.label ?? null,
     organizationId: parsed.data.organizationId ?? null,
     clientName,
-    tier: "snapshot", // snapshot-only by decision; column stays flexible
+    tier, // "deep_dive" (full 60) for selection, "snapshot" (36) for practice
     region,
     language: parsed.data.language,
     maxUses: parsed.data.maxUses,
-    isPractice: true,
+    isPractice,
     expiresAt: toEndOfDayIso(parsed.data.expiresAt),
     createdBy: caller?.uid ?? null,
   });
@@ -123,6 +134,7 @@ const emailDelegatesSchema = z.object({
   emails: z.string().min(3),
   organizationId: z.string().uuid().optional(),
   clientName: z.string().max(300).optional(),
+  scope: voucherScopeSchema,
   expiresAt: z.string().optional(),
 });
 
@@ -139,9 +151,11 @@ export async function emailVouchersToDelegatesAction(formData: FormData) {
     emails: formData.get("emails"),
     organizationId: formData.get("organizationId") || undefined,
     clientName: formData.get("clientName") || undefined,
+    scope: formData.get("scope") || "full",
     expiresAt: formData.get("expiresAt") || undefined,
   });
   if (!parsed.success) return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  const { tier, isPractice } = scopeToTier(parsed.data.scope);
 
   // Parse the email list (one per line; tolerate commas/semicolons).
   const emails = Array.from(
@@ -181,10 +195,10 @@ export async function emailVouchersToDelegatesAction(formData: FormData) {
       label: email, // track which delegate this code is for
       organizationId: parsed.data.organizationId ?? null,
       clientName,
-      tier: "snapshot",
+      tier,
       region,
       maxUses: 1,
-      isPractice: true,
+      isPractice,
       expiresAt,
       createdBy: caller?.uid ?? null,
     });

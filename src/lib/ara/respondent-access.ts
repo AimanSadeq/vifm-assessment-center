@@ -73,12 +73,12 @@ export async function loadRespondentByToken(
  *   A) Individual stage (engagement_stage === 'individual')
  *      Personal AI Readiness only - no pillar assignments needed.
  *      Filter by individual_factor_id IS NOT NULL.
- *      assessment_tier='snapshot' → only tier='snapshot' (24 items)
- *      assessment_tier='deep_dive' → all individual items (48 items)
+ *      assessment_tier='snapshot' → only tier='snapshot' (36 items in the active bank)
+ *      assessment_tier='deep_dive' → all individual items (60 items in the active bank)
  *
  *   B) Org stage with include_individual_layer=true
  *      Respondent answers their assigned pillar questions PLUS the
- *      individual-factor items (24 or 48 depending on assessment_tier).
+ *      individual-factor items (36 or 60 depending on assessment_tier).
  *      Unless respondent.individual_only=true - then they skip pillar
  *      questions and only do the individual layer.
  *

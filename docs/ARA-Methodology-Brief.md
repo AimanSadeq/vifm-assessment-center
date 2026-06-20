@@ -1,4 +1,4 @@
-# VIFM AI Readiness Compass — Methodology Brief
+# VIFM AI Readiness Compass - Methodology Brief
 
 How the assessment was built, where the items come from, and what we're doing about validity.
 
@@ -22,7 +22,7 @@ The Compass measures AI readiness on two distinct planes:
 
 ### Why two planes
 
-The org-side instrument fits widely-used GCC regulatory and industry frameworks (UAE PDPL, NCA ECC, SDAIA NDGF, etc.) — readiness here is largely a property of policy, capability, and governance. The individual-side instrument captures the behavioural skills literature on workplace AI adoption — readiness here is a property of how a person engages with the tools in front of them. The two planes inform each other but answer different questions.
+The org-side instrument fits widely-used GCC regulatory and industry frameworks (UAE PDPL, NCA ECC, SDAIA NDGF, etc.) - readiness here is largely a property of policy, capability, and governance. The individual-side instrument captures the behavioural skills literature on workplace AI adoption - readiness here is a property of how a person engages with the tools in front of them. The two planes inform each other but answer different questions.
 
 ---
 
@@ -32,19 +32,19 @@ The org-side instrument fits widely-used GCC regulatory and industry frameworks 
 
 The current production bank (v1.1, 218 items) was developed through three rounds:
 
-1. **Initial drafting.** Items were authored by VIFM consultants drawing on (a) the VIFM-AC behavioural framework — 38 competencies × 249 indicators — for face validity to consultants who already use that framework with clients, (b) reference frameworks listed in §6, and (c) field questions consultants frequently ask in pre-assessment workshops.
-2. **AI-assisted expansion.** A subset of items was generated with the assistance of large language models against a structured prompt that supplied the construct definition and forced specific answer-anchor patterns. Every AI-suggested item was reviewed by at least one consultant before inclusion. Items that didn't pass review were discarded — no AI-only items shipped.
+1. **Initial drafting.** Items were authored by VIFM consultants drawing on (a) the VIFM-AC behavioural framework - 38 competencies × 249 indicators - for face validity to consultants who already use that framework with clients, (b) reference frameworks listed in §6, and (c) field questions consultants frequently ask in pre-assessment workshops.
+2. **AI-assisted expansion.** A subset of items was generated with the assistance of large language models against a structured prompt that supplied the construct definition and forced specific answer-anchor patterns. Every AI-suggested item was reviewed by at least one consultant before inclusion. Items that didn't pass review were discarded - no AI-only items shipped.
 3. **Bilingual rewrite.** Every item was authored or rewritten in Gulf Arabic (not pan-Arabic) to keep idiom and register suitable for the GCC audience. Arabic is the source of truth for the AR field, not a back-translation.
 
 ### Coverage
 
-Items are tagged at the database level to a pillar (org-side) or a factor (individual-side). The mapping is enforced as a foreign-key constraint, so every active item has a known target construct — no orphan items.
+Items are tagged at the database level to a pillar (org-side) or a factor (individual-side). The mapping is enforced as a foreign-key constraint, so every active item has a known target construct - no orphan items.
 
 For the individual-side, the four factors map onto the existing VIFM-AC four-domain framework (THINKING / RESULTS / PEOPLE / SELF), and each factor lists the 3–4 behavioural competencies it draws from. This explicit competency lineage lets a consultant trace any factor score back to the development tips that exist for those AC competencies (the same tips that drive the AC Learning Plan PDF).
 
 ### Format
 
-All items are 5-point Likert (`1 — Strongly Disagree` through `5 — Strongly Agree`) for the individual-side, and a 5-point capability rubric (initial · developing · defined · managed · optimised) for the organisational-side. Score maps live in the same `ara_questions` row as the option labels, so scoring is reproducible from the question bank version snapshot taken at assessment creation.
+All items are 5-point Likert (`1 - Strongly Disagree` through `5 - Strongly Agree`) for the individual-side, and a 5-point capability rubric (initial · developing · defined · managed · optimised) for the organisational-side. Score maps live in the same `ara_questions` row as the option labels, so scoring is reproducible from the question bank version snapshot taken at assessment creation.
 
 ---
 
@@ -60,7 +60,7 @@ Items use observable behaviours (e.g., "I check AI-generated content for factual
 
 ### Construct validity
 
-Construct validity (does the four-factor model actually carve nature at its joints?) requires a confirmatory factor analysis with N ≥ 200 completed responses on the individual-side bank. We are accumulating responses passively through the free Personal Snapshot at `/ara/personal/start` and will run the CFA — and publish the loadings, fit indices, and any item revisions that result — once the threshold is met. Pre-CFA, the four-factor model is treated as a content-validated heuristic, not an empirically validated structure. Deep-dive (Mode B) and Mode C reports already note this disclosure.
+Construct validity (does the four-factor model actually carve nature at its joints?) requires a confirmatory factor analysis with N ≥ 200 completed responses on the individual-side bank. We are accumulating responses passively through the free Personal Snapshot at `/ara/personal/start` and will run the CFA - and publish the loadings, fit indices, and any item revisions that result - once the threshold is met. Pre-CFA, the four-factor model is treated as a content-validated heuristic, not an empirically validated structure. Deep-dive (Mode B) and Mode C reports already note this disclosure.
 
 ### Criterion validity
 
@@ -96,15 +96,15 @@ Each framework is mapped to specific organisational pillars; the report's Compli
 
 ### Underlying assessment-design standards
 
-- ISO 10667 — Assessment of People in Work and Organisational Settings (Parts 1 and 2)
-- International Taskforce on Assessment Center Guidelines (6th Edition) — applied to the related VIFM-AC product, framework consistency carries forward
-- Standards for Educational and Psychological Testing (AERA / APA / NCME, 2014) — referenced for evidence-based item development
+- ISO 10667 - Assessment of People in Work and Organisational Settings (Parts 1 and 2)
+- International Taskforce on Assessment Center Guidelines (6th Edition) - applied to the related VIFM-AC product, framework consistency carries forward
+- Standards for Educational and Psychological Testing (AERA / APA / NCME, 2014) - referenced for evidence-based item development
 
 ### Published instruments the items content-align with
 
-For every construct the Compass measures, items were authored to content-align with one or more established measurement instruments from the published research literature. This is *content alignment* — items adapt the construct, not the wording — so we do not claim the same psychometric coefficients as the source instruments. The list below is what every per-item validation-evidence trail anchors back to. Citations are deliberately limited to seminal / textbook-stable works to keep the bibliography defensible against spot-checks.
+For every construct the Compass measures, items were authored to content-align with one or more established measurement instruments from the published research literature. This is *content alignment* - items adapt the construct, not the wording - so we do not claim the same psychometric coefficients as the source instruments. The list below is what every per-item validation-evidence trail anchors back to. Citations are deliberately limited to seminal / textbook-stable works to keep the bibliography defensible against spot-checks.
 
-#### Individual layer — four factors
+#### Individual layer - four factors
 
 **AI Sense-Check (THINKING).** Critical evaluation of AI output, hallucination detection, domain validation.
 - Long, D., & Magerko, B. (2020). *What is AI literacy? Competencies and design considerations.* Proceedings of the 2020 CHI Conference on Human Factors in Computing Systems, 1–16.
@@ -113,17 +113,17 @@ For every construct the Compass measures, items were authored to content-align w
 **AI Working Practice (RESULTS).** Productive hands-on use of AI in real workflows.
 - Davis, F. D. (1989). *Perceived usefulness, perceived ease of use, and user acceptance of information technology.* MIS Quarterly, 13(3), 319–340.
 - Venkatesh, V., Morris, M. G., Davis, G. B., & Davis, F. D. (2003). *User acceptance of information technology: Toward a unified view (UTAUT).* MIS Quarterly, 27(3), 425–478.
-- Brynjolfsson, E., Li, D., & Raymond, L. R. (2025). *Generative AI at work.* Quarterly Journal of Economics. — productivity outcomes from real-world AI use.
+- Brynjolfsson, E., Li, D., & Raymond, L. R. (2025). *Generative AI at work.* Quarterly Journal of Economics. - productivity outcomes from real-world AI use.
 
 **AI Collaboration (PEOPLE).** Helping the team move with AI; shaping shared norms.
-- Venkatesh, V., Thong, J. Y. L., & Xu, X. (2012). *Consumer acceptance and use of information technology: Extending the unified theory of acceptance and use of technology (UTAUT2).* MIS Quarterly, 36(1), 157–178. — social influence in tech adoption.
-- Wenger, E. (1998). *Communities of practice: Learning, meaning, and identity.* Cambridge University Press. — knowledge sharing within practice communities.
+- Venkatesh, V., Thong, J. Y. L., & Xu, X. (2012). *Consumer acceptance and use of information technology: Extending the unified theory of acceptance and use of technology (UTAUT2).* MIS Quarterly, 36(1), 157–178. - social influence in tech adoption.
+- Wenger, E. (1998). *Communities of practice: Learning, meaning, and identity.* Cambridge University Press. - knowledge sharing within practice communities.
 
 **AI Adaptive Mindset (SELF).** Curiosity, openness to relearning, responsible posture.
 - Parasuraman, A., & Colby, C. L. (2015). *An updated and streamlined Technology Readiness Index: TRI 2.0.* Journal of Service Research, 18(1), 59–74.
-- Dweck, C. S. (2006). *Mindset: The new psychology of success.* Random House. — growth-mindset theory.
+- Dweck, C. S. (2006). *Mindset: The new psychology of success.* Random House. - growth-mindset theory.
 
-#### Organisational layer — eight pillars
+#### Organisational layer - eight pillars
 
 **Strategy.** AI vision, business alignment, executive sponsorship.
 - Davenport, T. H., & Ronanki, R. (2018). *Artificial intelligence for the real world.* Harvard Business Review, 96(1), 108–116.
@@ -138,7 +138,7 @@ For every construct the Compass measures, items were authored to content-align w
 - Lwakatare, L. E., Raj, A., Bosch, J., Olsson, H. H., & Crnkovic, I. (2019). *A taxonomy of software engineering challenges for machine learning systems: An empirical investigation.* International Conference on Agile Software Development (XP).
 
 **Talent.** Skills inventory, hiring, retention, training programmes.
-- World Economic Forum (2025). *Future of Jobs Report 2025.* WEF, Geneva. — workforce skills demand projections.
+- World Economic Forum (2025). *Future of Jobs Report 2025.* WEF, Geneva. - workforce skills demand projections.
 - OECD (2024). *AI, data governance and privacy: Synergies and areas of international co-operation.* OECD Publishing.
 
 **Culture.** Adoption mindset, change readiness, psychological safety with AI.
@@ -147,11 +147,11 @@ For every construct the Compass measures, items were authored to content-align w
 
 **Governance.** Ethics, risk frameworks, model cards, audit trail.
 - National Institute of Standards and Technology (2023). *AI Risk Management Framework 1.0 (AI RMF 1.0).* NIST AI 100-1.
-- ISO/IEC 42001:2023. *Information technology — Artificial intelligence — Management system.* International Organization for Standardization.
+- ISO/IEC 42001:2023. *Information technology - Artificial intelligence - Management system.* International Organization for Standardization.
 
 **Operations.** Day-to-day AI deployment patterns; incident response.
 - Software Engineering Institute, Carnegie Mellon (2010). *CMMI for Services, Version 1.3.*
-- Forsgren, N., Humble, J., & Kim, G. (2018). *Accelerate: The Science of Lean Software and DevOps.* IT Revolution Press. — DORA metrics on delivery performance.
+- Forsgren, N., Humble, J., & Kim, G. (2018). *Accelerate: The Science of Lean Software and DevOps.* IT Revolution Press. - DORA metrics on delivery performance.
 
 **Model Management.** Version control, monitoring, retraining, drift detection.
 - Breck, E., Cai, S., Nielsen, E., Salib, M., & Sculley, D. (2017). *The ML test score: A rubric for ML production readiness and technical debt reduction.* IEEE International Conference on Big Data, 1123–1132.

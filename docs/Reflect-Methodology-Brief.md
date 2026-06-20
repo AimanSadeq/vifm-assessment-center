@@ -1,4 +1,4 @@
-# VIFM Reflect 360 — Methodology Brief
+# VIFM Reflect 360 - Methodology Brief
 
 How the 360-degree feedback instrument was built, where the competencies and behaviours come from, and what we're doing about validity.
 
@@ -6,7 +6,7 @@ How the 360-degree feedback instrument was built, where the competencies and beh
 
 ## 1. Why this exists
 
-Clients ask three questions about any 360 feedback tool: *Where do the competencies and behaviour items come from? How do you protect rater anonymity and data quality? What can — and can't — a 360 score be used for?* This brief answers those questions for VIFM Reflect 360. It follows the structure of the AI Readiness Compass, Assessment Center, Fluent and Technical briefs so the product family reads consistently.
+Clients ask three questions about any 360 feedback tool: *Where do the competencies and behaviour items come from? How do you protect rater anonymity and data quality? What can - and can't - a 360 score be used for?* This brief answers those questions for VIFM Reflect 360. It follows the structure of the AI Readiness Compass, Assessment Center, Fluent and Technical briefs so the product family reads consistently.
 
 ---
 
@@ -14,11 +14,11 @@ Clients ask three questions about any 360 feedback tool: *Where do the competenc
 
 Reflect 360 measures **observable workplace behaviour** as seen by multiple rater perspectives (self, manager, peers, direct reports). The content model is a **framework → competency → behaviour** hierarchy:
 
-- **Frameworks** (`reflect_frameworks`) — a competency set, either a reusable library template or an engagement-specific framework.
-- **Competencies** (`reflect_competencies`) — the behavioural dimensions being rated.
-- **Behaviours** (`reflect_behaviors`) — the concrete, observable items raters respond to, each tied to one competency and optionally scoped to a level tier.
+- **Frameworks** (`reflect_frameworks`) - a competency set, either a reusable library template or an engagement-specific framework.
+- **Competencies** (`reflect_competencies`) - the behavioural dimensions being rated.
+- **Behaviours** (`reflect_behaviors`) - the concrete, observable items raters respond to, each tied to one competency and optionally scoped to a level tier.
 
-Reflect is explicitly a **developmental feedback** instrument. It tells a participant how their behaviour is perceived across rater groups, to drive an individual development plan — not to rank or select people.
+Reflect is explicitly a **developmental feedback** instrument. It tells a participant how their behaviour is perceived across rater groups, to drive an individual development plan - not to rank or select people.
 
 ---
 
@@ -50,7 +50,7 @@ Behavioural anchors give raters concrete statements to respond to; we mark this 
 
 ### Construct validity
 
-A formal construct-validity study (factor structure of the competency model; convergent/discriminant patterns across rater sources — multitrait–multimethod) has **not** been run. The framework is content-validated, not empirically confirmed — an honest, disclosed gap.
+A formal construct-validity study (factor structure of the competency model; convergent/discriminant patterns across rater sources - multitrait–multimethod) has **not** been run. The framework is content-validated, not empirically confirmed - an honest, disclosed gap.
 
 ### Criterion validity
 
@@ -70,7 +70,7 @@ Per-competency internal consistency is **not currently computed**; it can be der
 
 ### Test–retest reliability
 
-Stability across repeated 360 cycles is **not currently tracked** — a disclosed gap (re-survey cycles make it computable in future).
+Stability across repeated 360 cycles is **not currently tracked** - a disclosed gap (re-survey cycles make it computable in future).
 
 ---
 
@@ -106,7 +106,7 @@ Competencies and behaviours content-align with the works below; this is content 
 - **Self-report and rater perception.** Scores reflect *perceptions* of behaviour; rater leniency, politics and halo are real. Anonymity gating and behavioural anchors mitigate but do not eliminate them.
 - **No empirical factor structure or internal-consistency report yet.** Both are computable as response volume grows; neither is published today.
 - **No test–retest evidence yet.**
-- **No fairness/DIF analysis** — marked *n/a* given the non-selection use, but group-difference reporting would need care if use ever changed.
+- **No fairness/DIF analysis** - marked *n/a* given the non-selection use, but group-difference reporting would need care if use ever changed.
 
 ---
 

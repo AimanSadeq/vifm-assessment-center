@@ -1,4 +1,4 @@
-# VIFM Fluent (English) — Methodology Brief
+# VIFM Fluent (English) - Methodology Brief
 
 How the English proficiency test was built, where the items come from, and what we're doing about validity.
 
@@ -14,8 +14,8 @@ Clients ask three questions about any proficiency test: *Where did the items com
 
 Fluent measures **receptive English proficiency** on two skills:
 
-- **Reading** — comprehension of written passages (main idea, detail, inference, vocabulary in context).
-- **Listening** — comprehension of spoken scripts at natural register.
+- **Reading** - comprehension of written passages (main idea, detail, inference, vocabulary in context).
+- **Listening** - comprehension of spoken scripts at natural register.
 
 Proficiency is reported against the **Common European Framework of Reference (CEFR)** bands (A1–C2). CEFR is a *criterion-referenced* scale: a level describes what a learner can do ("can-do" descriptors), not a percentile against other test-takers. Each item is tagged to a skill and carries an assigned CEFR band (`eng_fluent_items.skill`, `cefr_label`).
 
@@ -25,7 +25,7 @@ Proficiency is reported against the **Common European Framework of Reference (CE
 
 ### Sourcing & format
 
-Items are stored as structured stems (`eng_fluent_items.stem` — passage/script + question + options + correct index) tagged by skill and CEFR band. Each item is a single-best-answer multiple-choice question keyed to one correct option, the standard objective format for receptive-skill testing.
+Items are stored as structured stems (`eng_fluent_items.stem` - passage/script + question + options + correct index) tagged by skill and CEFR band. Each item is a single-best-answer multiple-choice question keyed to one correct option, the standard objective format for receptive-skill testing.
 
 ### CEFR alignment
 
@@ -73,7 +73,7 @@ Where items or scoring are quality-checked against human ratings (`eng_fluent_hu
 
 ### Test–retest reliability
 
-Stability across repeated administrations is **not currently tracked** — a disclosed gap.
+Stability across repeated administrations is **not currently tracked** - a disclosed gap.
 
 ---
 
@@ -84,7 +84,7 @@ Items content-align with the works below; this is content alignment, not republi
 ### Frameworks & general language-testing validity
 
 - Council of Europe (2001). *Common European Framework of Reference for Languages: Learning, teaching, assessment.* Cambridge University Press.
-- Council of Europe (2020). *CEFR — Companion volume.* Council of Europe Publishing.
+- Council of Europe (2020). *CEFR - Companion volume.* Council of Europe Publishing.
 - North, B. (2000). *The development of a common framework scale of language proficiency.* Peter Lang.
 - Bachman, L. F. (1990). *Fundamental considerations in language testing.* Oxford University Press.
 - Bachman, L. F., & Palmer, A. S. (2010). *Language assessment in practice.* Oxford University Press.

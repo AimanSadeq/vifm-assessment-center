@@ -1,4 +1,4 @@
-# VIFM Technical Certification — Methodology Brief
+# VIFM Technical Certification - Methodology Brief
 
 How the technical certification test was built, where the items come from, and how the passing standard is set.
 
@@ -14,7 +14,7 @@ Clients ask three questions about any certification test: *Where did the items c
 
 Technical Certification measures **job-relevant knowledge and applied skill** within a defined technical domain. The content model is a taxonomy of **domains** (`tech_assessment_items.domain_key`), each broken into **skills** (`skill`). Every item targets exactly one domain and one skill, so a certificate maps to an explicit blueprint of what was tested.
 
-The construct here is *content-defined*: the test claims to measure mastery of the domain's specified knowledge, not a latent psychological trait. That framing determines which validity evidence matters most — content validity and a defensible standard, rather than factor structure.
+The construct here is *content-defined*: the test claims to measure mastery of the domain's specified knowledge, not a latent psychological trait. That framing determines which validity evidence matters most - content validity and a defensible standard, rather than factor structure.
 
 ---
 
@@ -26,7 +26,7 @@ Items are four-option single-best-answer multiple-choice questions (`question_en
 
 ### Review workflow
 
-Items move through an explicit SME review workflow — `draft → in_review → approved → rejected → retired` (`status`) — with the reviewer, reviewer name and timestamp recorded (`reviewed_by`, `reviewer_name`, `reviewed_at`, `review_notes`). Only `approved` items are eligible for a live certification test. `source` distinguishes `ai_generated` from `human_authored`; AI-generated items are never administered without passing human review.
+Items move through an explicit SME review workflow - `draft → in_review → approved → rejected → retired` (`status`) - with the reviewer, reviewer name and timestamp recorded (`reviewed_by`, `reviewer_name`, `reviewed_at`, `review_notes`). Only `approved` items are eligible for a live certification test. `source` distinguishes `ai_generated` from `human_authored`; AI-generated items are never administered without passing human review.
 
 ### Research anchors (new)
 
@@ -50,7 +50,7 @@ Items are reviewed by subject-matter experts for realism and relevance; we mark 
 
 ### Criterion validity & the passing standard
 
-The passing standard is documented per domain in `tech_assessment_cut_scores`: a minimum passing percentage (`pass_pct`), a defensibility floor on test length (`min_items` — a 3-item "test" cannot certify), and the **method and rationale** for how the standard was set (e.g., a modified-Angoff SME panel). A documented, criterion-referenced standard is the appropriate validity claim for a certification decision; we do not make a separate predictive claim against downstream job performance.
+The passing standard is documented per domain in `tech_assessment_cut_scores`: a minimum passing percentage (`pass_pct`), a defensibility floor on test length (`min_items` - a 3-item "test" cannot certify), and the **method and rationale** for how the standard was set (e.g., a modified-Angoff SME panel). A documented, criterion-referenced standard is the appropriate validity claim for a certification decision; we do not make a separate predictive claim against downstream job performance.
 
 ### Construct validity
 
@@ -70,7 +70,7 @@ Scoring is **automated** (keyed MCQ), so inter-rater reliability is *n/a* for sc
 
 ### Test–retest reliability
 
-Stability across repeated administrations is **not currently tracked** — a disclosed gap (mitigated in practice by drawing fresh items from the bank per attempt).
+Stability across repeated administrations is **not currently tracked** - a disclosed gap (mitigated in practice by drawing fresh items from the bank per attempt).
 
 ---
 

@@ -1,4 +1,4 @@
-# VIFM Succession Readiness — Methodology Brief
+# VIFM Succession Readiness - Methodology Brief
 
 **Owner:** VIFM Assessment Center · **Status:** Draft for client review ·
 **Companion engine:** `src/lib/scoring/readiness.ts` (config-driven, unit-verified).

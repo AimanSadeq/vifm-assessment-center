@@ -1,4 +1,4 @@
-# VIFM Assessment Center — Methodology Brief
+# VIFM Assessment Center - Methodology Brief
 
 How the assessment-centre framework was built, where the competencies come from, and what we're doing about validity.
 
@@ -18,10 +18,10 @@ It is the AC counterpart to the AI Readiness Compass methodology brief (`docs/AR
 
 VIFM-AC measures behaviour against **38 competencies**, each elaborated by behavioural indicators (**249 in total**), organised into **clusters** under **four domains**:
 
-- **THINKING** — reasoning, problem-solving, judgement, strategy.
-- **RESULTS** — achievement, drive, execution, accountability.
-- **PEOPLE** — interpersonal effectiveness, leadership, influence, communication.
-- **SELF** — integrity, adaptability, resilience, self-management.
+- **THINKING** - reasoning, problem-solving, judgement, strategy.
+- **RESULTS** - achievement, drive, execution, accountability.
+- **PEOPLE** - interpersonal effectiveness, leadership, influence, communication.
+- **SELF** - integrity, adaptability, resilience, self-management.
 
 The domain → cluster → competency → indicator hierarchy is held in the database (`competency_domains`, `competency_clusters`, `competencies`, `behavioral_indicators`), so every competency has an explicit place in the model and every behavioural indicator rolls up to exactly one competency.
 
@@ -43,7 +43,7 @@ Exercises are linked to the competencies they are designed to elicit through an 
 
 ### Research anchors (new)
 
-Every competency now carries a per-competency **validation-evidence trail** in the database (`competencies.validation_evidence`, migration 00068). Each trail anchors the competency to one or more published instruments / works from a curated, closed bibliography (§6), records a confidence level (`direct adaptation` / `construct-aligned` / `novel`), and is **human-verified** before it is surfaced on any client-facing deliverable. AI-proposed anchors stay internal until an admin signs off — the hallucination guard. Coverage is tracked live in the admin Evidence & Validity Map (`/admin/evidence-map`) and managed at `/admin/ac-evidence`.
+Every competency now carries a per-competency **validation-evidence trail** in the database (`competencies.validation_evidence`, migration 00068). Each trail anchors the competency to one or more published instruments / works from a curated, closed bibliography (§6), records a confidence level (`direct adaptation` / `construct-aligned` / `novel`), and is **human-verified** before it is surfaced on any client-facing deliverable. AI-proposed anchors stay internal until an admin signs off - the hallucination guard. Coverage is tracked live in the admin Evidence & Validity Map (`/admin/evidence-map`) and managed at `/admin/ac-evidence`.
 
 ### Rating format
 
@@ -63,11 +63,11 @@ Competencies are expressed as observable behaviours (the indicators) rather than
 
 ### Construct validity
 
-A formal construct-validity study (e.g., confirmatory factor analysis or a multitrait–multimethod analysis testing whether assessors rate *competencies* rather than *exercises* — the classic AC "exercise effect") has **not** been run. The framework is treated as a content-validated model, not an empirically confirmed factor structure, until that work is done. This is an honest, disclosed gap.
+A formal construct-validity study (e.g., confirmatory factor analysis or a multitrait–multimethod analysis testing whether assessors rate *competencies* rather than *exercises* - the classic AC "exercise effect") has **not** been run. The framework is treated as a content-validated model, not an empirically confirmed factor structure, until that work is done. This is an honest, disclosed gap.
 
 ### Criterion validity
 
-We rely on the published **meta-analytic** evidence for the criterion-related validity of the assessment-centre method (Gaugler et al., 1987; Arthur et al., 2003 — §6) rather than a local predictive study against VIFM client outcomes. We do not yet make a site-specific predictive-validity claim.
+We rely on the published **meta-analytic** evidence for the criterion-related validity of the assessment-centre method (Gaugler et al., 1987; Arthur et al., 2003 - §6) rather than a local predictive study against VIFM client outcomes. We do not yet make a site-specific predictive-validity claim.
 
 ---
 
@@ -97,7 +97,7 @@ Items, competencies and exercises were authored to content-align with establishe
 - Thornton, G. C., III, & Rupp, D. E. (2006). *Assessment centers in human resource management: Strategies for prediction, diagnosis, and development.* Lawrence Erlbaum.
 - Gaugler, B. B., Rosenthal, D. B., Thornton, G. C., & Bentson, C. (1987). *Meta-analysis of assessment center validity.* Journal of Applied Psychology, 72(3), 493–511.
 - Arthur, W., Jr., Day, E. A., McNelly, T. L., & Edens, P. S. (2003). *A meta-analysis of the criterion-related validity of assessment center dimensions.* Personnel Psychology, 56(1), 125–153.
-- ISO 10667-1/2 (2020). *Assessment service delivery — Procedures and methods to assess people in work and organizational settings.* International Organization for Standardization.
+- ISO 10667-1/2 (2020). *Assessment service delivery - Procedures and methods to assess people in work and organizational settings.* International Organization for Standardization.
 - American Educational Research Association, American Psychological Association, & National Council on Measurement in Education (2014). *Standards for educational and psychological testing.* AERA.
 
 ### Competency modelling
@@ -109,10 +109,10 @@ Items, competencies and exercises were authored to content-align with establishe
 
 ### Domain-specific anchors
 
-- **THINKING** — Schmidt, F. L., & Hunter, J. E. (1998). *The validity and utility of selection methods in personnel psychology.* Psychological Bulletin, 124(2), 262–274; Mumford, M. D., et al. (2000). *Leadership skills for a changing world.* Leadership Quarterly, 11(1), 11–35.
-- **RESULTS** — McClelland, D. C. (1973). *Testing for competence rather than for intelligence.* American Psychologist, 28(1), 1–14; Locke, E. A., & Latham, G. P. (2002). *Building a practically useful theory of goal setting and task motivation.* American Psychologist, 57(9), 705–717.
-- **PEOPLE** — Mayer, J. D., Salovey, P., & Caruso, D. R. (2008). *Emotional intelligence: New ability or eclectic traits?* American Psychologist, 63(6), 503–517; Yukl, G. (2012). *Effective leadership behavior.* Academy of Management Perspectives, 26(4), 66–85.
-- **SELF** — Barrick, M. R., & Mount, M. K. (1991). *The Big Five personality dimensions and job performance: A meta-analysis.* Personnel Psychology, 44(1), 1–26; Pulakos, E. D., et al. (2000). *Adaptability in the workplace.* Journal of Applied Psychology, 85(4), 612–624.
+- **THINKING** - Schmidt, F. L., & Hunter, J. E. (1998). *The validity and utility of selection methods in personnel psychology.* Psychological Bulletin, 124(2), 262–274; Mumford, M. D., et al. (2000). *Leadership skills for a changing world.* Leadership Quarterly, 11(1), 11–35.
+- **RESULTS** - McClelland, D. C. (1973). *Testing for competence rather than for intelligence.* American Psychologist, 28(1), 1–14; Locke, E. A., & Latham, G. P. (2002). *Building a practically useful theory of goal setting and task motivation.* American Psychologist, 57(9), 705–717.
+- **PEOPLE** - Mayer, J. D., Salovey, P., & Caruso, D. R. (2008). *Emotional intelligence: New ability or eclectic traits?* American Psychologist, 63(6), 503–517; Yukl, G. (2012). *Effective leadership behavior.* Academy of Management Perspectives, 26(4), 66–85.
+- **SELF** - Barrick, M. R., & Mount, M. K. (1991). *The Big Five personality dimensions and job performance: A meta-analysis.* Personnel Psychology, 44(1), 1–26; Pulakos, E. D., et al. (2000). *Adaptability in the workplace.* Journal of Applied Psychology, 85(4), 612–624.
 
 > **A note on confidence.** Every competency was authored against its definition, not by lifting wording from these sources. The per-competency validation-evidence trail flags each anchor as `direct adaptation` vs `construct-aligned` vs `novel`, and is human-reviewed before publication.
 

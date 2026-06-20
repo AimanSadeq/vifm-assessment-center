@@ -6,6 +6,7 @@ import { BackLink } from "@/components/shared/back-link";
 import { COMPETENCY_COUNT } from "@/lib/competencies/framework-meta";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
 import { EVIDENCE_INSTRUMENTS } from "@/lib/evidence/evidence-catalogue";
+import { METHODOLOGY_BRIEFS } from "@/lib/reports/methodology-briefs-registry";
 
 export const dynamic = "force-dynamic";
 
@@ -187,6 +188,37 @@ export default async function EvidencePage() {
           })}
         </div>
 
+        {/* Methodology briefs - one branded PDF per service */}
+        <div className="mt-8">
+          <div className="flex items-center gap-2">
+            <FileDown className="h-4 w-4 text-accent" />
+            <h2 className="text-lg font-semibold text-[#010131]">Methodology briefs</h2>
+          </div>
+          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+            A plain-language methodology brief for every VIFM service - what it measures, how it is
+            scored, what the deliverables are, and what it is honestly not. Branded PDF, no account needed.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {METHODOLOGY_BRIEFS.map((b) => (
+              <a
+                key={b.slug}
+                href={`/api/methodology/${b.slug}/pdf`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-start justify-between gap-3 rounded-xl border bg-card p-4 shadow-sm transition hover:border-accent"
+              >
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold text-[#010131]">{b.service}</span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">{b.tagline}</span>
+                </span>
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium text-[#010131] group-hover:border-accent group-hover:text-accent">
+                  <FileDown className="h-3 w-3" /> PDF
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+
         {/* Honest framing footer */}
         <div className="mt-6 rounded-xl border bg-muted/20 p-4 text-xs leading-relaxed text-muted-foreground">
           <p className="flex items-start gap-2">
@@ -201,11 +233,8 @@ export default async function EvidencePage() {
           </p>
         </div>
 
-        <div className="mt-4 flex items-center justify-between text-[11px] text-muted-foreground">
+        <div className="mt-4 text-[11px] text-muted-foreground">
           <span>Virginia Institute of Finance and Management - VIFM Caliber</span>
-          <span className="inline-flex items-center gap-1 opacity-60">
-            <FileDown className="h-3 w-3" /> PDF export coming soon
-          </span>
         </div>
       </div>
     </div>

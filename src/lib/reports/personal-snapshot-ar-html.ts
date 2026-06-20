@@ -408,6 +408,8 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
       text-transform: uppercase;
       margin-bottom: 6px;
     }
+    /* Prominent talent-lens badge at the top of the hero - acquisition vs development. */
+    .hero-lens-badge { display: inline-block; font-size: 8.5pt; font-weight: 700; color: #fff; padding: 3px 10px; border-radius: 4px; letter-spacing: 0.05em; margin-bottom: 9px; }
     .hero-title { font-size: 22pt; font-weight: 700; margin: 0 0 4px 0; }
     .hero-identity { font-size: 11pt; opacity: 0.85; margin: 0 0 14px 0; }
     .hero-score-row { display: flex; align-items: baseline; gap: 12px; }
@@ -666,6 +668,7 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
   <!-- PAGE 1 - score + per-factor (first two) -->
   <section>
     <div class="hero">
+      ${lens ? `<span class="hero-lens-badge" style="background:${lens === "acquisition" ? "#2563eb" : "#059669"}">${esc(TALENT_LENS_LABELS[lens].ar)}</span>` : ""}
       <p class="hero-eyebrow">بوصلة VIFM للاستعداد للذكاء الاصطناعي® · شخصية${lens ? ` · ${esc(TALENT_LENS_LABELS[lens].ar)}` : ""}</p>
       <h1 class="hero-title">لقطة الجاهزية الشخصية للذكاء الاصطناعي</h1>
       <p class="hero-identity">${esc(data.respondentName)} · ${esc(data.respondentEmail)}</p>

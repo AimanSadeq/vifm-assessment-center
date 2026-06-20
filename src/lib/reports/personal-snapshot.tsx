@@ -139,6 +139,20 @@ const s = StyleSheet.create({
     alignSelf: "flex-start",
     letterSpacing: 0.5,
   },
+  // Prominent talent-lens badge at the very top of the hero (acquisition vs
+  // development), so the report type is unmistakable.
+  heroLensBadge: {
+    fontSize: 8.5,
+    fontFamily: "Helvetica-Bold",
+    color: "#fff",
+    paddingHorizontal: 9,
+    paddingVertical: 3.5,
+    borderRadius: 4,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    marginBottom: 9,
+    alignSelf: "flex-start",
+  },
 
   // Factor grid
   factorRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14 },
@@ -464,6 +478,11 @@ export function PersonalSnapshot({ data }: { data: PersonalSnapshotData }) {
       <Page size="A4" style={s.page} wrap>
         {/* Hero */}
         <View style={s.hero}>
+          {lens && (
+            <Text style={[s.heroLensBadge, { backgroundColor: lens === "acquisition" ? "#2563eb" : "#059669" }]}>
+              {TALENT_LENS_LABELS[lens].en}
+            </Text>
+          )}
           <Text style={s.heroEyebrow}>
             VIFM AI Readiness Compass® · Personal
             {lens ? ` · ${TALENT_LENS_LABELS[lens].en}` : ""}

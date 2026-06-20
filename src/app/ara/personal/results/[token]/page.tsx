@@ -230,13 +230,19 @@ export default async function PersonalResultsPage({ params }: Props) {
           </div>
           <div className="flex items-start justify-between gap-3">
             <div>
-              {/* R4: talent-lens eyebrow when set; generic header otherwise. */}
+              {/* Talent-lens indicator - a prominent badge at the top of the
+                  report so it is unmistakable whether this is a hiring (Talent
+                  Acquisition) or a growth (Talent Development) report. */}
               {talentLens && (
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-accent mb-1">
-                  {isAr
-                    ? TALENT_LENS_LABELS[talentLens].ar
-                    : TALENT_LENS_LABELS[talentLens].en}
-                </p>
+                <span
+                  className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wide mb-2 ${
+                    talentLens === "acquisition"
+                      ? "border-[#5391D5]/40 bg-[#5391D5]/15 text-[#1e40af]"
+                      : "border-emerald-300 bg-emerald-100 text-emerald-800"
+                  }`}
+                >
+                  {isAr ? TALENT_LENS_LABELS[talentLens].ar : TALENT_LENS_LABELS[talentLens].en}
+                </span>
               )}
               <h1 className="text-2xl font-bold">
                 {isAr ? "لقطة الجاهزية الشخصية للذكاء الاصطناعي" : "Personal AI Readiness Snapshot"}

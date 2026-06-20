@@ -106,7 +106,7 @@ export default async function PersonaCohortPage({ searchParams }: { searchParams
             self-reports; pair Persona (self) with Reflect 360 (others) against a target role for a readiness verdict.
           </p>
           <Link href="/admin/cohorts" className="mt-2 inline-block text-xs font-medium text-[#5391D5] hover:underline">
-            View combined project cohorts (Persona + Reason) →
+            View combined project cohorts (Persona + Mentium) →
           </Link>
         </div>
       </header>

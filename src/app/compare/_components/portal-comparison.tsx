@@ -142,7 +142,7 @@ const PORTALS: ReadonlyArray<Portal> = [
   {
     key: "cognitive",
     icon: BrainCircuit,
-    name: { en: "Reason", ar: "الاستدلال" },
+    name: { en: "Mentium", ar: "مينتيوم" },
     tagline: { en: "Reasoning aptitude", ar: "القدرة على الاستدلال" },
     acquire: {
       measures: { en: "Numerical, verbal, inductive and deductive reasoning (+ g composite).", ar: "الاستدلال العددي واللفظي والاستقرائي والاستنتاجي (+ مؤشّر القدرة العامة)." },

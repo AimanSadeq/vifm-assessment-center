@@ -170,7 +170,7 @@ export default async function ProjectCohortsPage({ searchParams }: { searchParam
           <h1 className="text-2xl font-semibold text-[#010131]">Project cohorts</h1>
         </div>
         <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-          Persona (behavioural self-report) and Reason (ability) results for one cohort, grouped by
+          Persona (behavioural self-report) and Mentium (ability) results for one cohort, grouped by
           the project label set when the voucher batch was issued and matched across instruments by email.
         </p>
       </header>
@@ -178,7 +178,7 @@ export default async function ProjectCohortsPage({ searchParams }: { searchParam
       {!migrated && (
         <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <strong>Project labels not enabled yet.</strong> Apply migration{" "}
-          <code className="text-xs">00137_project_cohort_label.sql</code>, then issue Persona / Reason
+          <code className="text-xs">00137_project_cohort_label.sql</code>, then issue Persona / Mentium
           voucher batches with a project name to populate this view.
         </div>
       )}
@@ -186,7 +186,7 @@ export default async function ProjectCohortsPage({ searchParams }: { searchParam
       {migrated && labels.length === 0 && (
         <div className="rounded-lg border bg-white px-4 py-10 text-center text-sm text-muted-foreground shadow-sm">
           No project cohorts yet. Set a <strong>Project / cohort</strong> name when issuing a Persona or
-          Reason voucher batch to group those runs here.
+          Mentium voucher batch to group those runs here.
         </div>
       )}
 
@@ -210,7 +210,7 @@ export default async function ProjectCohortsPage({ searchParams }: { searchParam
           <div className="grid gap-4 sm:grid-cols-4">
             <StatCard label="People in cohort" value={String(combined.length)} />
             <StatCard label="Persona taken" value={String(persona.length)} />
-            <StatCard label="Reason taken" value={String(cognitive.length)} />
+            <StatCard label="Mentium taken" value={String(cognitive.length)} />
             <StatCard
               label="Both instruments"
               value={String(combined.filter((c) => c.persona && c.cognitive).length)}
@@ -233,7 +233,7 @@ export default async function ProjectCohortsPage({ searchParams }: { searchParam
             </div>
             <div className="rounded-xl border bg-white p-4 shadow-sm">
               <p className="inline-flex items-center gap-2 text-[11px] uppercase tracking-wider text-slate-500">
-                <BrainCircuit className="h-3.5 w-3.5 text-[#5391D5]" /> Reason avg (g)
+                <BrainCircuit className="h-3.5 w-3.5 text-[#5391D5]" /> Mentium avg (g)
               </p>
               <p className="mt-1 text-2xl font-bold text-[#010131]">
                 {cogAvg != null ? `${cogAvg}%` : <span className="text-slate-300">-</span>}
@@ -250,7 +250,7 @@ export default async function ProjectCohortsPage({ searchParams }: { searchParam
                     <th className="px-4 py-2.5 font-medium">Name</th>
                     <th className="px-4 py-2.5 font-medium">Email</th>
                     <th className="px-3 py-2.5 text-center font-medium">Persona</th>
-                    <th className="px-3 py-2.5 text-center font-medium">Reason (g)</th>
+                    <th className="px-3 py-2.5 text-center font-medium">Mentium (g)</th>
                     <th className="px-4 py-2.5 font-medium">Reports</th>
                   </tr>
                 </thead>
@@ -296,7 +296,7 @@ export default async function ProjectCohortsPage({ searchParams }: { searchParam
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-1 text-xs font-medium text-[#5391D5] hover:underline"
                             >
-                              <FileText className="h-3.5 w-3.5" /> Reason
+                              <FileText className="h-3.5 w-3.5" /> Mentium
                             </a>
                           )}
                         </div>
@@ -308,7 +308,7 @@ export default async function ProjectCohortsPage({ searchParams }: { searchParam
             </div>
           </section>
           <p className="text-xs text-muted-foreground">
-            These are indicative self-served instruments. Persona is a behavioural self-report; Reason
+            These are indicative self-served instruments. Persona is a behavioural self-report; Mentium
             Tier 1 bands are raw-score based, not local norms. Pair with Reflect 360 (others) and a target
             role for a readiness verdict.
           </p>

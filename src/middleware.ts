@@ -62,6 +62,12 @@ const isReflectRaterRoute = (pathname: string) =>
 const isPublicCoursesRoute = (pathname: string) =>
   pathname === "/courses" || pathname.startsWith("/courses/");
 
+// Public research & validity evidence page - no account; static instrument
+// metadata + live item counts (no PII). Shareable with a client / regulator as
+// proof the questions are grounded in established research.
+const isPublicEvidenceRoute = (pathname: string) =>
+  pathname === "/evidence" || pathname.startsWith("/evidence/");
+
 // Public credential verification - anyone can verify a credential by its
 // code, no account needed. The /verify page and its API read only
 // non-sensitive fields via a service-role helper.
@@ -121,6 +127,7 @@ export async function middleware(request: NextRequest) {
     isAraMarketingRoute(request.nextUrl.pathname) ||
     isReflectRaterRoute(request.nextUrl.pathname) ||
     isPublicCoursesRoute(request.nextUrl.pathname) ||
+    isPublicEvidenceRoute(request.nextUrl.pathname) ||
     isPublicVerifyRoute(request.nextUrl.pathname) ||
     isPreHireApplyRoute(request.nextUrl.pathname) ||
     isTechSandboxRoute(request.nextUrl.pathname) ||

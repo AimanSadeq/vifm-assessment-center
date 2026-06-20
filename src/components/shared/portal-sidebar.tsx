@@ -45,6 +45,7 @@ import {
   FileClock,
   Network,
   Table2,
+  BookOpen,
   type LucideIcon,
 } from "lucide-react";
 
@@ -182,6 +183,7 @@ const NAV: NavEntry[] = [
       icon: Layers,
       items: [
         link("/compare", "adminNav.comparePortals", Table2),
+        link("/evidence", "adminNav.researchValidity", BookOpen),
         link("/admin/clients", "adminNav.clients", Building2),
         link("/admin/framework", "adminNav.framework", Network),
         link("/admin/role-profiles", "adminNav.roleProfiles", Briefcase),

@@ -10,6 +10,8 @@ import { VouchersClient as TechVouchersClient } from "@/app/admin/tech-sandbox/v
 import { VouchersClient as FluentVouchersClient, type FluentVoucherRow } from "@/app/ac/fluent/vouchers/_components/vouchers-client";
 import { VouchersClient as CognitiveVouchersClient, type CognitiveVoucherRow } from "@/app/ac/cognitive/vouchers/_components/vouchers-client";
 import { VouchersClient as PersonaVouchersClient, type PersonaVoucherRow } from "@/app/ac/persona/vouchers/_components/vouchers-client";
+import { listPrehireVouchers, listPrehireRequisitionsForVoucher } from "@/lib/prehire/vouchers";
+import { PrehireVouchersClient } from "./_components/prehire-vouchers-client";
 import { VoucherHub, type ServiceSummary, type ServiceKey, type HubService } from "./_components/voucher-hub";
 
 export const dynamic = "force-dynamic";
@@ -151,15 +153,30 @@ export default async function VouchersHubPage({
     <PersonaVouchersClient vouchers={rows} clients={clientNames} />
   ));
 
+  // ── Pre-Hire (vouchers tied to a requisition; redeem provisions a candidate) ──
+  let prehireSlot: React.ReactNode = null;
+  let prehireSummary: ServiceSummary = UNAVAILABLE;
+  try {
+    const [phVouchers, phReqs] = await Promise.all([
+      listPrehireVouchers(),
+      listPrehireRequisitionsForVoucher(),
+    ]);
+    prehireSummary = summarize(phVouchers.map((v) => ({ max: v.max_uses, used: v.used_count })));
+    prehireSlot = <PrehireVouchersClient requisitions={phReqs} vouchers={phVouchers} />;
+  } catch {
+    prehireSummary = UNAVAILABLE;
+  }
+
   const services: HubService[] = [
     { key: "arc", summary: araSummary, slot: araSlot },
     { key: "technical", summary: techSummary, slot: techSlot },
     { key: "fluent", summary: fluent.summary, slot: fluent.slot },
     { key: "cognitive", summary: cognitive.summary, slot: cognitive.slot },
     { key: "persona", summary: persona.summary, slot: persona.slot },
+    { key: "prehire", summary: prehireSummary, slot: prehireSlot },
   ];
 
-  const valid: ServiceKey[] = ["arc", "technical", "fluent", "cognitive", "persona"];
+  const valid: ServiceKey[] = ["arc", "technical", "fluent", "cognitive", "persona", "prehire"];
   const initialTab = valid.includes(searchParams?.service as ServiceKey)
     ? (searchParams?.service as ServiceKey)
     : "arc";

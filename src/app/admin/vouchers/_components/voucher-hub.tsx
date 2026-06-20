@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { Ticket, Compass, BadgeCheck, Languages, BrainCircuit, Layers } from "lucide-react";
+import { Ticket, Compass, BadgeCheck, Languages, BrainCircuit, Layers, UserSearch } from "lucide-react";
 
 export type ServiceSummary = { codes: number; redeemed: number; outstanding: number; available: boolean };
 
-export type ServiceKey = "arc" | "technical" | "fluent" | "cognitive" | "persona";
+export type ServiceKey = "arc" | "technical" | "fluent" | "cognitive" | "persona" | "prehire";
 
 export type HubService = { key: ServiceKey; summary: ServiceSummary; slot: ReactNode };
 
@@ -18,6 +18,7 @@ const SERVICE_META: Record<ServiceKey, { label: string; sub: string; icon: typeo
   fluent:    { label: "Fluent (English)",     sub: "Fluent codes",    icon: Languages,   tone: "text-sky-600" },
   cognitive: { label: "Mentium",               sub: "Mentium codes",    icon: BrainCircuit, tone: "text-emerald-600" },
   persona:   { label: "Persona",              sub: "Persona codes",   icon: Layers,      tone: "text-fuchsia-600" },
+  prehire:   { label: "Pre-Hire",             sub: "VIFM-HIRE codes", icon: UserSearch,  tone: "text-rose-600" },
 };
 
 function SummaryCard({

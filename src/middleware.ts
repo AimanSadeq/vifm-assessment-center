@@ -90,6 +90,13 @@ const isPublicVerifyRoute = (pathname: string) =>
 const isPreHireApplyRoute = (pathname: string) =>
   pathname.startsWith("/prehire/apply/") || pathname.startsWith("/api/prehire/");
 
+// Pre-Hire voucher redemption - a no-account applicant redeems a code at
+// /prehire/redeem; the redeem server action provisions a candidate and forwards
+// to /prehire/apply/[token] (already bypassed). This page is NOT under
+// /prehire/apply/, so it needs its own bypass.
+const isPreHireRedeemRoute = (pathname: string) =>
+  pathname === "/prehire/redeem" || pathname.startsWith("/prehire/redeem/");
+
 // Technical sandbox candidate flow - a candidate reaches the performance-based
 // assessment via technical_sandbox_sessions.access_token (no account). Identity
 // is derived server-side from the token. Bypass auth in dev and prod.
@@ -140,6 +147,7 @@ export async function middleware(request: NextRequest) {
     isPublicMethodologyRoute(request.nextUrl.pathname) ||
     isPublicVerifyRoute(request.nextUrl.pathname) ||
     isPreHireApplyRoute(request.nextUrl.pathname) ||
+    isPreHireRedeemRoute(request.nextUrl.pathname) ||
     isTechSandboxRoute(request.nextUrl.pathname) ||
     isFluentPublicRoute(request.nextUrl.pathname) ||
     isCognitivePublicRoute(request.nextUrl.pathname) ||

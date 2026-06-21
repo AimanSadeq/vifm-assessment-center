@@ -195,6 +195,12 @@ supabase/
     00055_technical_skills_arabic.sql          # technical_skills.name_ar (50 Arabic skill names) — the runner reads bilingual domains+skills from the DB so the picker, item skill badges, and per-skill result localize
     00056_engagement_technical_domains.sql     # engagement → technical certification program: which domains are in scope per AC engagement (the paid org-certify layer; results/credentials already bind via candidate_id+engagement_id)
     00057_technical_programs.sql               # standalone (ARA-style) technical certification: technical_programs (org + dept/division/enterprise tier) + program_domains + token-based program_participants + program_id/participant_id on tech_assessment_results/sessions
+    # NOTE: the list above is illustrative through 00057. Migrations continue well
+    # beyond it (Reflect 360, AP competency framework, psychometrics, prehire +
+    # technical/prehire vouchers, ARC talent-lens / question-count, etc.) through
+    # 00144 - see supabase/migrations/ for the authoritative set. All are applied
+    # on the production DB; code reading newer columns is written tolerant of an
+    # un-applied migration on a fresh environment.
 scripts/
   seed-test-data.ts       # Creates full test dataset (engagement + candidates + assessor + observations)
   seed-tags-qa.py         # Populates tags and Q&A questions for competencies

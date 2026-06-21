@@ -10,6 +10,7 @@ import { VifmLogo } from "@/components/shared/vifm-logo";
 import { AllServicesLink } from "@/components/shared/all-services-link";
 import { DesignTargetRolesLink } from "@/components/shared/design-target-roles-link";
 import { FluentClient } from "./_components/fluent-client";
+import { ProctorCapture } from "@/components/proctor/proctor-capture";
 import { BackLink } from "@/components/shared/back-link";
 import { getTimerMinutes, TIMER_DEFAULTS } from "@/lib/assessment-timers";
 
@@ -20,7 +21,7 @@ export const metadata = {
 };
 
 type Props = {
-  searchParams?: { candidateId?: string; engagementId?: string };
+  searchParams?: { candidateId?: string; engagementId?: string; proctor?: string };
 };
 
 // Hero skill chips. The note on each names *how* the skill is scored, which
@@ -178,6 +179,13 @@ export default async function FluentPage({ searchParams }: Props) {
             <code className="text-xs">ANTHROPIC_API_KEY</code> {t("acFluent.aiKeyNotSetBodySuffix")}
           </div>
         )}
+        <ProctorCapture
+          enabled={searchParams?.proctor === "1"}
+          context="fluent"
+          refId={candidateId ?? null}
+          subjectName={candidateName ?? null}
+          subjectEmail={candidateEmail ?? null}
+        />
         <FluentClient
           candidateId={candidateId}
           engagementId={engagementId}

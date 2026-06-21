@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Users, BookOpen, Headphones, PenLine, Mic, Award, Sparkles, Flag, MailCheck } from "lucide-react";
+import { ArrowLeft, Users, BookOpen, Headphones, PenLine, Mic, Award, Sparkles, Flag, MailCheck, Camera } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getServerT, type ServerT } from "@/lib/i18n/server";
 import { CEFR_ORDER, type CefrLevel } from "@/lib/ai/fluent-english";
@@ -105,6 +105,9 @@ export default async function FluentCohortPage({ searchParams }: { searchParams?
           </p>
           <Link href="/admin/fluent/partner-courses" className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-[#5391D5] hover:underline">
             <BookOpen className="h-3.5 w-3.5" /> Manage partner English courses (report recommendations)
+          </Link>
+          <Link href="/admin/proctor" className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-[#5391D5] hover:underline">
+            <Camera className="h-3.5 w-3.5" /> Proctoring sessions
           </Link>
         </div>
       </header>

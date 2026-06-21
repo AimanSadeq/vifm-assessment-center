@@ -133,8 +133,17 @@ const isPersonaPublicRoute = (pathname: string) =>
   pathname === "/api/ac/persona/methodology/pdf" ||
   (pathname.startsWith("/api/ac/persona/") && pathname.endsWith("/report"));
 
+// Camera-proctoring capture endpoints - a (no-account) taker's browser posts
+// consent + periodic webcam snapshots while taking a proctored test; identity is
+// the unguessable session UUID created server-side. The retention cron (Bearer
+// CRON_SECRET) also lives here. The admin report (/admin/proctor) is NOT matched
+// and stays session-gated.
+const isProctorApiRoute = (pathname: string) =>
+  pathname.startsWith("/api/proctor/");
+
 export async function middleware(request: NextRequest) {
   if (
+    isProctorApiRoute(request.nextUrl.pathname) ||
     isAraRespondentRoute(request.nextUrl.pathname) ||
     isAraRedeemRoute(request.nextUrl.pathname) ||
     isAraCohortRoute(request.nextUrl.pathname) ||

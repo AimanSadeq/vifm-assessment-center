@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getTimerMinutes, TIMER_DEFAULTS } from "@/lib/assessment-timers";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { FluentClient } from "../../_components/fluent-client";
+import { ProctorCapture } from "@/components/proctor/proctor-capture";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "English placement · VIFM Fluent®" };
@@ -13,7 +14,13 @@ export const metadata = { title: "English placement · VIFM Fluent®" };
  * token is validated server-side; the completed result is stamped with the
  * voucher's client org (via the score route). Public (middleware-bypassed).
  */
-export default async function FluentTakePage({ params }: { params: { token: string } }) {
+export default async function FluentTakePage({
+  params,
+  searchParams,
+}: {
+  params: { token: string };
+  searchParams?: { proctor?: string };
+}) {
   const sb = createServiceClient();
   const { data: redemption } = await sb
     .from("eng_fluent_voucher_redemptions")
@@ -45,6 +52,13 @@ export default async function FluentTakePage({ params }: { params: { token: stri
       </header>
 
       <main className="relative z-10 mx-auto -mt-10 max-w-5xl px-6 pb-16">
+        <ProctorCapture
+          enabled={searchParams?.proctor === "1"}
+          context="fluent"
+          refId={redemption.redemption_token}
+          subjectName={redemption.redeemer_name ?? null}
+          subjectEmail={redemption.redeemer_email ?? null}
+        />
         <FluentClient
           redemptionToken={redemption.redemption_token}
           prefillName={redemption.redeemer_name ?? undefined}

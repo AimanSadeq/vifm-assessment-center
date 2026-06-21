@@ -1,0 +1,61 @@
+name: Proctor · retention purge
+
+# Daily unattended cron for the camera-proctoring retention-purge endpoint
+# (90-day policy, migration 00147). Deletes proctor_sessions past expires_at and
+# their snapshot images from the private `proctor` Storage bucket.
+#
+# Reuses the SAME CRON_SECRET as the ARA retention purge (already set as a Render
+# env var + a GitHub Actions secret). No additional setup beyond this file if
+# CRON_SECRET is already configured.
+#
+# Behaviour: fires daily at 03:30 UTC (offset from the ARA purge at 03:00 so the
+# two cascade deletes don't overlap). On any non-2xx the workflow fails and is
+# surfaced on the Actions tab.
+
+on:
+  schedule:
+    # 03:30 UTC daily = 07:30 GST (UAE) / 06:30 AST (Saudi)
+    - cron: "30 3 * * *"
+  workflow_dispatch: # allow manual trigger from the Actions tab
+
+permissions:
+  contents: read
+
+concurrency:
+  group: proctor-retention-purge
+  cancel-in-progress: false
+
+jobs:
+  purge:
+    name: Hit proctor retention-purge endpoint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Fire proctor retention-purge endpoint
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "::error::CRON_SECRET secret is not set on this repo. See ara-retention-purge.yml header for setup."
+            exit 1
+          fi
+
+          ENDPOINT="https://caliber.viftraining.com/api/proctor/retention/cron"
+          echo "Calling $ENDPOINT"
+
+          BODY=$(curl -fsS \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Accept: application/json" \
+            --max-time 120 \
+            "$ENDPOINT")
+
+          echo "Response body:"
+          echo "$BODY"
+
+          echo "$BODY" | grep -q '"ok":true' || {
+            echo "::error::Response did not include ok:true"
+            exit 1
+          }

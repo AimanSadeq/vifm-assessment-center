@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Ticket, Copy, Ban, Link2 } from "lucide-react";
+import { Loader2, Ticket, Copy, Ban, Link2, Camera } from "lucide-react";
 import { fmtDate } from "@/lib/utils/format-date";
 import { copyToClipboard } from "@/lib/utils/clipboard";
 import { generateFluentVouchersAction, disableFluentVoucherAction } from "../actions";
@@ -25,6 +25,7 @@ export type FluentVoucherRow = {
   status: "active" | "disabled";
   expires_at: string | null;
   created_at: string;
+  proctor_enabled: boolean;
 };
 
 export function VouchersClient({ vouchers, clients }: { vouchers: FluentVoucherRow[]; clients: string[] }) {
@@ -34,6 +35,7 @@ export function VouchersClient({ vouchers, clients }: { vouchers: FluentVoucherR
   const [clientName, setClientName] = useState("");
   const [maxUses, setMaxUses] = useState(1);
   const [expiresAt, setExpiresAt] = useState("");
+  const [proctor, setProctor] = useState(false);
   const [busy, setBusy] = useState(false);
   const [lastCodes, setLastCodes] = useState<string[]>([]);
   // The deployed origin the admin is on (caliber.viftraining.com in prod). Set
@@ -52,6 +54,7 @@ export function VouchersClient({ vouchers, clients }: { vouchers: FluentVoucherR
       clientName: clientName || undefined,
       maxUses,
       expiresAt: expiresAt || null,
+      proctorEnabled: proctor,
     });
     setBusy(false);
     if ("error" in res) {
@@ -114,6 +117,17 @@ export function VouchersClient({ vouchers, clients }: { vouchers: FluentVoucherR
             <Label className="text-xs">Expires (optional)</Label>
             <Input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
           </div>
+          <label className="flex cursor-pointer items-center gap-2 self-center pt-4" title="Candidates redeeming these vouchers will be camera-proctored">
+            <input
+              type="checkbox"
+              checked={proctor}
+              onChange={(e) => setProctor(e.target.checked)}
+              className="h-4 w-4 rounded border-input accent-[#5391D5]"
+            />
+            <span className="inline-flex items-center gap-1 text-xs text-foreground">
+              <Camera className="h-3.5 w-3.5 text-[#5391D5]" /> Require camera proctoring
+            </span>
+          </label>
           <Button onClick={generate} disabled={busy || count < 1} className="gap-1.5">
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ticket className="h-4 w-4" />}
             Generate
@@ -175,7 +189,14 @@ export function VouchersClient({ vouchers, clients }: { vouchers: FluentVoucherR
                   return (
                     <TableRow key={v.id}>
                       <TableCell className="font-mono text-xs">{v.code}</TableCell>
-                      <TableCell className="text-sm">{v.client_name ?? "-"}</TableCell>
+                      <TableCell className="text-sm">
+                        {v.client_name ?? "-"}
+                        {v.proctor_enabled && (
+                          <span className="ml-1.5 inline-flex items-center gap-0.5 rounded bg-[#5391D5]/10 px-1.5 py-0.5 text-[10px] font-medium text-[#5391D5]" title="Camera-proctored">
+                            <Camera className="h-3 w-3" /> Proctored
+                          </span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-sm text-muted-foreground">{v.label ?? "-"}</TableCell>
                       <TableCell className="text-sm tabular-nums">
                         {v.used_count}/{v.max_uses}

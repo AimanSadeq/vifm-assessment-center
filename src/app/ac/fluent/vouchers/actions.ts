@@ -23,6 +23,7 @@ export async function generateFluentVouchersAction(input: {
   language?: "en" | "ar";
   maxUses?: number;
   expiresAt?: string | null;
+  proctorEnabled?: boolean;
 }): Promise<{ ok: true; codes: string[] } | { error: string }> {
   const g = await guard();
   if (!g.ok) return { error: g.error };
@@ -49,6 +50,7 @@ export async function generateFluentVouchersAction(input: {
     maxUses: Math.max(1, input.maxUses ?? 1),
     expiresAt: input.expiresAt || null,
     createdBy: g.caller.isDev ? null : g.caller.uid,
+    proctorEnabled: input.proctorEnabled ?? false,
   });
   if (!res.ok) return { error: res.error };
   revalidatePath("/ac/fluent/vouchers");

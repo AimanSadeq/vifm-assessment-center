@@ -24,10 +24,26 @@ export default async function FluentTakePage({
   const sb = createServiceClient();
   const { data: redemption } = await sb
     .from("eng_fluent_voucher_redemptions")
-    .select("redemption_token, redeemer_name, redeemer_email")
+    .select("redemption_token, redeemer_name, redeemer_email, voucher_id")
     .eq("redemption_token", params.token)
-    .maybeSingle<{ redemption_token: string; redeemer_name: string; redeemer_email: string }>();
+    .maybeSingle<{ redemption_token: string; redeemer_name: string; redeemer_email: string; voucher_id: string }>();
   if (!redemption) return notFound();
+
+  // Proctoring is enforced per-voucher (migration 00149): if the redeemed
+  // voucher requires it, the camera turns on regardless of any URL flag. The
+  // ?proctor=1 param still works for the admin-run path. Tolerant of an
+  // un-applied 00149 (defaults to off).
+  let proctorRequired = false;
+  try {
+    const { data: voucher } = await sb
+      .from("eng_fluent_vouchers")
+      .select("proctor_enabled")
+      .eq("id", redemption.voucher_id)
+      .maybeSingle<{ proctor_enabled: boolean }>();
+    proctorRequired = voucher?.proctor_enabled ?? false;
+  } catch {
+    /* 00149 not applied yet - proctoring stays off */
+  }
 
   const fluentMinutes = (await getTimerMinutes("fluent", TIMER_DEFAULTS.fluent)) ?? TIMER_DEFAULTS.fluent;
 
@@ -53,7 +69,7 @@ export default async function FluentTakePage({
 
       <main className="relative z-10 mx-auto -mt-10 max-w-5xl px-6 pb-16">
         <ProctorCapture
-          enabled={searchParams?.proctor === "1"}
+          enabled={proctorRequired || searchParams?.proctor === "1"}
           context="fluent"
           refId={redemption.redemption_token}
           subjectName={redemption.redeemer_name ?? null}

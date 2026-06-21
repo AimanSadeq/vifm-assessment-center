@@ -16,7 +16,7 @@ export default async function FluentVouchersPage() {
   const sb = createServiceClient();
   const { data: vouchers } = await sb
     .from("eng_fluent_vouchers")
-    .select("id, code, label, client_name, default_language, max_uses, used_count, status, expires_at, created_at")
+    .select("id, code, label, client_name, default_language, max_uses, used_count, status, expires_at, created_at, proctor_enabled")
     .order("created_at", { ascending: false })
     .returns<FluentVoucherRow[]>();
   const clients = await loadPlatformClients();

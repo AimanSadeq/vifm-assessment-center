@@ -37,6 +37,8 @@ export type CreateBatchInput = {
   maxUses?: number;
   expiresAt?: string | null;
   createdBy?: string | null;
+  /** When true, candidates redeeming this voucher are camera-proctored (migration 00149). */
+  proctorEnabled?: boolean;
 };
 
 export async function createVoucherBatch(
@@ -56,6 +58,7 @@ export async function createVoucherBatch(
     max_uses: Math.max(1, input.maxUses ?? 1),
     expires_at: input.expiresAt ?? null,
     created_by: input.createdBy ?? null,
+    proctor_enabled: input.proctorEnabled ?? false,
   }));
 
   const { data, error } = await sb.from("eng_fluent_vouchers").insert(rows).select("code");

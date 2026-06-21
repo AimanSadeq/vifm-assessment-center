@@ -168,7 +168,7 @@ export function PsychometricReport({ data }: { data: PsyReportData }) {
           <Text style={s.heroIdentity}>{data.takerName} · {data.date}</Text>
           <View style={s.heroPillRow}>
             <Text style={s.heroPill}>{calibrated ? "Tier 2 · Norm-referenced" : "Tier 1 · Indicative"}</Text>
-            <Text style={s.heroPill}>{data.kind === "cognitive" ? "Mentium®" : "Personality · Big Five"}</Text>
+            <Text style={s.heroPill}>{data.kind === "cognitive" ? "Logical®" : "Personality · Big Five"}</Text>
           </View>
         </View>
 
@@ -306,7 +306,7 @@ export function PsychometricReport({ data }: { data: PsyReportData }) {
           <Text style={s.disclaimerTitle}>Methodology &amp; limits</Text>
           <Text style={s.disclaimerBody}>
             {data.kind === "cognitive"
-              ? "Mentium is estimated from numerical, verbal, inductive and deductive reasoning items, scored as % correct per subtest with a general (g) composite. "
+              ? "Logical is estimated from numerical, verbal, inductive and deductive reasoning items, scored as % correct per subtest with a general (g) composite. "
               : "Personality is measured with public-domain Big-Five (IPIP) self-report items on a 1–5 Likert scale, reverse-keyed and averaged per trait, with social-desirability and inconsistency validity checks. "}
             {calibrated
               ? `Scores are norm-referenced against a calibrated reference sample${data.normSource ? ` (${data.normSource})` : ""}; percentiles and stens are derived from that distribution. Local norms should still be reviewed periodically for representativeness and fairness.`

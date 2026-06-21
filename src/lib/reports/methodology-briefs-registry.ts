@@ -50,12 +50,12 @@ export const METHODOLOGY_BRIEFS: readonly MethodologyBrief[] = [
     pillar: "both",
   },
   {
-    slug: "mentium",
-    service: "Mentium",
+    slug: "logical",
+    service: "Logical",
     tagline: "Indicative cognitive reasoning aptitude",
-    eyebrow: "VIFM Mentium®",
-    file: "Mentium-Methodology-Brief.md",
-    filename: "VIFM-Mentium-Methodology-Brief.pdf",
+    eyebrow: "VIFM Logical®",
+    file: "Logical-Methodology-Brief.md",
+    filename: "VIFM-Logical-Methodology-Brief.pdf",
     pillar: "both",
   },
   {

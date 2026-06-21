@@ -10,7 +10,7 @@ import { countExpiredCognitiveResults, purgeCognitiveResults } from "./actions";
 import { RETENTION_MONTHS, PURGE_CONFIRMATION } from "./constants";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Mentium® retention · VIFM" };
+export const metadata = { title: "Logical® retention · VIFM" };
 
 export default async function CognitiveRetentionPage() {
   const caller = await getCurrentCaller();
@@ -25,13 +25,13 @@ export default async function CognitiveRetentionPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
-      <BackLink href="/ac/cognitive" label="Mentium®" />
+      <BackLink href="/ac/cognitive" label="Logical®" />
       <div className="mt-4 mb-2 flex items-center gap-2">
         <FileClock className="h-5 w-5 text-[#5391D5]" />
-        <h1 className="text-2xl font-semibold text-[#010131]">Mentium® retention</h1>
+        <h1 className="text-2xl font-semibold text-[#010131]">Logical® retention</h1>
       </div>
       <p className="text-sm text-muted-foreground mb-6">
-        Candidate data is retained for a maximum of {RETENTION_MONTHS / 12} years. Purge Mentium
+        Candidate data is retained for a maximum of {RETENTION_MONTHS / 12} years. Purge Logical
         results past that window to stay compliant. This is irreversible.
       </p>
 

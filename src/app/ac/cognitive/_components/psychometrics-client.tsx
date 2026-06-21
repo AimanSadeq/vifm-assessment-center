@@ -142,7 +142,7 @@ export function PsychometricsClient({
     <div dir={lang === "ar" ? "rtl" : "ltr"} className="space-y-5">
       <div>
         <h1 className="inline-flex items-center gap-2 text-2xl font-bold text-[#010131]">
-          <BrainCircuit className="h-6 w-6 text-[#5391D5]" /> Mentium®
+          <BrainCircuit className="h-6 w-6 text-[#5391D5]" /> Logical®
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Numerical, verbal, inductive and deductive reasoning - an <strong>indicative</strong> developmental read,
@@ -155,7 +155,7 @@ export function PsychometricsClient({
       {phase === "intro" && (
         <div className="space-y-5 rounded-xl border bg-card p-6">
           <div className="rounded-lg border border-[#5391D5] bg-[#5391D5]/5 p-4">
-            <p className="font-semibold text-[#010131]">Mentium®</p>
+            <p className="font-semibold text-[#010131]">Logical®</p>
             <p className="mt-1 text-xs text-muted-foreground">Numerical · verbal · inductive · deductive reasoning (timed-style MCQs).</p>
           </div>
 

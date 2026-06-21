@@ -22,7 +22,7 @@ const ACQUIRE: Svc[] = [
   { name: "AI Readiness Compass®", desc: "Individual + org AI-readiness diagnostics.", href: "/ara?lens=acquisition", icon: Compass, tone: "text-violet-600" },
   { name: "Pre-Hire® screening", desc: "Quiz + English + AI interview, ranked.", href: "/admin/prehire", icon: UserSearch, tone: "text-rose-600" },
   { name: "Techno®", desc: "Hands-on, function-specific proficiency.", href: "/admin/tech-sandbox?lens=acquisition", icon: BadgeCheck, tone: "text-indigo-600" },
-  { name: "Mentium®", desc: "Indicative reasoning aptitude (psychometrics).", href: "/ac/cognitive", icon: BrainCircuit, tone: "text-emerald-600" },
+  { name: "Logical®", desc: "Indicative reasoning aptitude (psychometrics).", href: "/ac/cognitive", icon: BrainCircuit, tone: "text-emerald-600" },
   { name: "Persona®", desc: "Behavioural self-assessment across the framework.", href: "/ac/persona", icon: Layers, tone: "text-fuchsia-600" },
   { name: "Fluent® (English)", desc: "Four-skill CEFR English placement.", href: "/ac/fluent", icon: Languages, tone: "text-sky-600" },
 ];

@@ -11,7 +11,7 @@ import { Target } from "lucide-react";
  * every standalone service landing gets a consistent way to reach the designer.
  *  - default: light top bars (matches the ghost controls).
  *  - onDark:  white/translucent pill for the dark service heroes (ARC / Reflect
- *    / Fluent / Mentium / Persona).
+ *    / Fluent / Logical / Persona).
  */
 export function DesignTargetRolesLink({ variant = "default" }: { variant?: "default" | "onDark" }) {
   const { t } = useTranslation();

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VIFM Caliber - Landing draft</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css" />
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Open Sans", system-ui, Arial, sans-serif; background: #FEFFF9; color: #111232; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 28px 48px; }
+  .hero { background: #010131; border-radius: 20px; padding: 30px 34px; color: #fff; }
+  .hero .eyebrow { color: #5391D5; font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+  .hero h1 { margin: 8px 0 6px; font-size: 30px; font-weight: 800; }
+  .hero p { margin: 0; color: rgba(255,255,255,.72); font-size: 14px; max-width: 640px; line-height: 1.6; }
+  .pillars { display: flex; gap: 8px; margin: 22px 0 14px; flex-wrap: wrap; }
+  .pill { font-size: 12px; font-weight: 700; color: #010131; background: #fff; border: 1px solid #e5e7eb; border-radius: 999px; padding: 6px 14px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(178px, 1fr)); gap: 16px; }
+  .tile {
+    aspect-ratio: 1 / 1;
+    background: color-mix(in srgb, var(--c) 7%, #fff);
+    border: 1px solid color-mix(in srgb, var(--c) 30%, transparent);
+    border-radius: 18px;
+    padding: 18px;
+    display: flex; flex-direction: column; gap: 10px;
+    text-decoration: none;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .tile:hover { transform: translateY(-4px); box-shadow: 0 14px 30px -16px var(--c); }
+  .chip {
+    width: 54px; height: 54px; border-radius: 15px;
+    background: var(--c); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 27px;
+  }
+  .name { margin-top: auto; font-weight: 800; font-size: 15px; color: #111232; line-height: 1.2; }
+  .tag { font-size: 12px; color: #5b6577; line-height: 1.45; }
+  .dot { display:inline-block; width:8px; height:8px; border-radius:50%; background: var(--c); margin-inline-end:6px; vertical-align: 1px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <div class="eyebrow">VIFM Caliber</div>
+      <h1>Talent Intelligence Platform</h1>
+      <p>One platform across the talent lifecycle - ten services, each a distinct, defensible instrument. Draft: every tile is a square and every service has its own colour.</p>
+    </div>
+
+    <div class="pillars">
+      <span class="pill">Talent Acquisition</span>
+      <span class="pill">Talent Management</span>
+      <span class="pill">10 services</span>
+    </div>
+
+    <div class="grid">
+      <a class="tile" style="--c:#2563EB"><span class="chip"><i class="ti ti-clipboard-check"></i></span><span class="name">Assessment Center</span><span class="tag">Observed competency assessment</span></a>
+      <a class="tile" style="--c:#7C3AED"><span class="chip"><i class="ti ti-compass"></i></span><span class="name">AI Readiness (ARC)</span><span class="tag">Org and individual AI readiness</span></a>
+      <a class="tile" style="--c:#0891B2"><span class="chip"><i class="ti ti-cpu"></i></span><span class="name">Techno</span><span class="tag">Function-specific technical proficiency</span></a>
+      <a class="tile" style="--c:#C026D3"><span class="chip"><i class="ti ti-brain"></i></span><span class="name">Mentium</span><span class="tag">Cognitive reasoning aptitude</span></a>
+      <a class="tile" style="--c:#DB2777"><span class="chip"><i class="ti ti-stack-2"></i></span><span class="name">Persona</span><span class="tag">Behavioural self-assessment</span></a>
+      <a class="tile" style="--c:#D97706"><span class="chip"><i class="ti ti-language"></i></span><span class="name">Fluent</span><span class="tag">AI English placement</span></a>
+      <a class="tile" style="--c:#DC2626"><span class="chip"><i class="ti ti-user-search"></i></span><span class="name">Pre-Hire</span><span class="tag">Pre-employment screening</span></a>
+      <a class="tile" style="--c:#0D9488"><span class="chip"><i class="ti ti-aperture"></i></span><span class="name">Reflect 360</span><span class="tag">Multi-rater leadership feedback</span></a>
+      <a class="tile" style="--c:#4F46E5"><span class="chip"><i class="ti ti-trending-up"></i></span><span class="name">Succession Readiness</span><span class="tag">Self and 360 vs a target role</span></a>
+      <a class="tile" style="--c:#059669"><span class="chip"><i class="ti ti-school"></i></span><span class="name">VIFM Academy</span><span class="tag">Course delivery and certification</span></a>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VIFM Caliber - Landing colour scheme options</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css" />
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Open Sans",system-ui,Arial,sans-serif;background:#F1F0EA;color:#0F172A}
+  .wrap{max-width:1100px;margin:0 auto;padding:24px}
+  .dir{background:#FEFFF9;border:1px solid #E6EBF2;border-radius:18px;padding:0;overflow:hidden;margin-bottom:34px}
+  .dir-head{padding:18px 24px;border-bottom:1px solid #EEF1F5}
+  .dir-head h2{margin:0 0 4px;font-size:20px}
+  .dir-head p{margin:0;font-size:13px;color:#64748B;line-height:1.5;max-width:760px}
+  .swatches{display:flex;flex-wrap:wrap;gap:10px;padding:16px 24px;border-bottom:1px solid #EEF1F5}
+  .sw{display:flex;align-items:center;gap:8px;font-size:11px;color:#475569}
+  .chip{width:30px;height:30px;border-radius:8px;border:1px solid rgba(0,0,0,.08)}
+  .demo{padding:24px}
+  .hero{border-radius:16px;padding:30px 30px 34px;color:#fff;position:relative;overflow:hidden}
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+  .hero h1{margin:10px 0 8px;font-size:30px;font-weight:800;line-height:1.08}
+  .hero p{margin:0;font-size:14px;line-height:1.6;max-width:560px}
+  .cta{display:inline-flex;align-items:center;gap:8px;margin-top:18px;padding:11px 20px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-top:18px}
+  .card{background:#fff;border-radius:14px;padding:16px;border:1px solid #E6EBF2}
+  .ic{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;margin-bottom:12px}
+  .card h3{margin:0;font-size:14px;font-weight:800;color:#0F172A}
+  .card span{font-size:11.5px;color:#64748B}
+  .note{font-size:11px;color:#94A3B8;padding:0 24px 18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============ DIRECTION A ============ -->
+  <div class="dir">
+    <div class="dir-head">
+      <h2>Direction A &middot; Institutional (recommended for a finance/government audience)</h2>
+      <p>Disciplined and premium: the brand navy + azure carry everything, with a single restrained <strong>gold signature</strong> for emphasis. Services are distinguished by icon, not by colour - calm, trustworthy, "Big-4" feel.</p>
+    </div>
+    <div class="swatches">
+      <div class="sw"><span class="chip" style="background:#010131"></span> Navy #010131</div>
+      <div class="sw"><span class="chip" style="background:#5391D5"></span> Azure #5391D5</div>
+      <div class="sw"><span class="chip" style="background:#C99700"></span> Gold #C99700</div>
+      <div class="sw"><span class="chip" style="background:#FEFFF9"></span> Off-white #FEFFF9</div>
+      <div class="sw"><span class="chip" style="background:#0F172A"></span> Ink #0F172A</div>
+      <div class="sw"><span class="chip" style="background:#64748B"></span> Slate #64748B</div>
+      <div class="sw"><span class="chip" style="background:#E6EBF2"></span> Hairline #E6EBF2</div>
+    </div>
+    <div class="demo">
+      <div class="hero" style="background:linear-gradient(135deg,#010131 0%,#0a0a3a 60%,#121140 100%)">
+        <div class="eyebrow" style="color:#E4B53C">Virginia Institute of Finance and Management</div>
+        <h1>Talent Intelligence Platform</h1>
+        <p style="color:rgba(255,255,255,.78)">One platform across the talent lifecycle - assess, develop, and certify, with defensible bilingual instruments built for the GCC.</p>
+        <a class="cta" style="background:#5391D5;color:#fff">Explore the platform <i class="ti ti-arrow-right"></i></a>
+      </div>
+      <div class="grid">
+        <div class="card"><div class="ic" style="background:#010131"><i class="ti ti-clipboard-check"></i></div><h3>Assessment Center</h3><span>Observed competency assessment</span></div>
+        <div class="card"><div class="ic" style="background:#1E3A6B"><i class="ti ti-compass"></i></div><h3>AI Readiness</h3><span>Org + individual readiness</span></div>
+        <div class="card"><div class="ic" style="background:#5391D5"><i class="ti ti-cpu"></i></div><h3>Techno</h3><span>Technical proficiency</span></div>
+        <div class="card"><div class="ic" style="background:#2C6FB0"><i class="ti ti-language"></i></div><h3>Fluent</h3><span>English placement</span></div>
+        <div class="card"><div class="ic" style="background:#C99700"><i class="ti ti-aperture"></i></div><h3>Reflect 360</h3><span>Multi-rater feedback</span></div>
+      </div>
+    </div>
+    <div class="note">Accent ramp is one family (navy → azure) + gold reserved for one highlight per view. Quietest, most corporate.</div>
+  </div>
+
+  <!-- ============ DIRECTION B ============ -->
+  <div class="dir">
+    <div class="dir-head">
+      <h2>Direction B &middot; Modern jewel (distinct colour per service, harmonised)</h2>
+      <p>Keeps the navy/off-white foundation but gives each service its own <strong>deep jewel tone</strong> - distinct at a glance, yet curated to sit together (muted, not neon). Cards carry a soft tint of their hue + a solid chip. Lively but still premium.</p>
+    </div>
+    <div class="swatches">
+      <div class="sw"><span class="chip" style="background:#010131"></span> Navy</div>
+      <div class="sw"><span class="chip" style="background:#2563EB"></span> Sapphire</div>
+      <div class="sw"><span class="chip" style="background:#4F46E5"></span> Indigo</div>
+      <div class="sw"><span class="chip" style="background:#7C3AED"></span> Violet</div>
+      <div class="sw"><span class="chip" style="background:#0E8C7F"></span> Teal</div>
+      <div class="sw"><span class="chip" style="background:#1E9E6A"></span> Emerald</div>
+      <div class="sw"><span class="chip" style="background:#C28A00"></span> Gold</div>
+      <div class="sw"><span class="chip" style="background:#C2553D"></span> Terracotta</div>
+      <div class="sw"><span class="chip" style="background:#BE3B6B"></span> Rose</div>
+    </div>
+    <div class="demo">
+      <div class="hero" style="background:linear-gradient(135deg,#010131 0%,#1b1856 100%)">
+        <div class="eyebrow" style="color:#7FB0EA">Virginia Institute of Finance and Management</div>
+        <h1>Talent Intelligence Platform</h1>
+        <p style="color:rgba(255,255,255,.78)">Ten instruments, one cohesive system - each service its own colour, so the platform reads as a confident, organised whole.</p>
+        <a class="cta" style="background:#2563EB;color:#fff">Explore the platform <i class="ti ti-arrow-right"></i></a>
+      </div>
+      <div class="grid">
+        <div class="card" style="background:#2563EB12;border-color:#2563EB30"><div class="ic" style="background:#2563EB"><i class="ti ti-clipboard-check"></i></div><h3>Assessment Center</h3><span>Observed competency assessment</span></div>
+        <div class="card" style="background:#7C3AED12;border-color:#7C3AED30"><div class="ic" style="background:#7C3AED"><i class="ti ti-compass"></i></div><h3>AI Readiness</h3><span>Org + individual readiness</span></div>
+        <div class="card" style="background:#0E8C7F12;border-color:#0E8C7F30"><div class="ic" style="background:#0E8C7F"><i class="ti ti-cpu"></i></div><h3>Techno</h3><span>Technical proficiency</span></div>
+        <div class="card" style="background:#C28A0012;border-color:#C28A0030"><div class="ic" style="background:#C28A00"><i class="ti ti-language"></i></div><h3>Fluent</h3><span>English placement</span></div>
+        <div class="card" style="background:#BE3B6B12;border-color:#BE3B6B30"><div class="ic" style="background:#BE3B6B"><i class="ti ti-aperture"></i></div><h3>Reflect 360</h3><span>Multi-rater feedback</span></div>
+      </div>
+    </div>
+    <div class="note">Same hues used consistently everywhere a service appears. More colourful than A, still disciplined (deep/muted tones, soft tints).</div>
+  </div>
+
+</div>
+</body>
+</html>

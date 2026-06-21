@@ -246,6 +246,7 @@
   .launcher-card.tone-fuchsia { --tone: 192 38 211; }
   .launcher-card.tone-emerald { --tone: 5 150 105; }
   .launcher-card.tone-amber  { --tone: 245 158 11; }
+  .launcher-card.tone-cyan   { --tone: 8 145 178; }
 
   .launcher-card::before {
     content: "";

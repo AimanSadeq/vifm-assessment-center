@@ -1,5 +1,6 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import type { FluentResult, WritingIssue } from "@/lib/ai/fluent-english";
+import type { IntegritySignal } from "@/lib/scoring/integrity";
 
 /**
  * Fluent - comprehensive English placement REPORT (PDF, EN, React-PDF). Unlike
@@ -48,6 +49,40 @@ const SPEAK_CRIT: Array<[keyof FluentResult["speaking"], string]> = [
   ["grammar", "Grammar range & accuracy"],
 ];
 
+// What each productive-skill criterion measures (CAL-FLU report-parity): the
+// report shows a 1-5 bar per criterion; these one-line definitions tell the
+// reader what that criterion is actually rating.
+const WRITE_DEF: Record<string, string> = {
+  task_achievement: "Addresses every part of the prompt with relevant, on-topic content.",
+  coherence: "Organises ideas logically and links them with clear connectors.",
+  lexical_range: "Range and precision of vocabulary, including word choice and collocation.",
+  grammar: "Variety and correctness of sentence structures and grammatical forms.",
+  register: "Maintains an appropriate, business-like tone for the audience and purpose.",
+  etiquette: "Observes professional conventions - greeting, polite requests, sign-off.",
+  mechanics: "Accuracy of spelling, punctuation and capitalisation.",
+};
+const SPEAK_DEF: Record<string, string> = {
+  fluency: "Speaks at a natural pace with limited hesitation or self-correction.",
+  coherence: "Organises spoken ideas logically so they are easy to follow.",
+  lexical_range: "Range and precision of vocabulary used when speaking.",
+  grammar: "Variety and correctness of the structures used in speech.",
+};
+const PRON_DEF = "Clarity of individual sounds, word stress and intonation.";
+
+// Receptive skills (reading + listening) are auto-scored MCQs, so the report has
+// no per-criterion bars to show - instead it narrates the sub-skills each one
+// measures and what the band reflects (CAL-FLU receptive-detail).
+const READING_NARRATIVE =
+  "Reading measures comprehension of written English across four sub-skills: gist (the overall point of a passage), specific detail (locating explicit facts), inference (meaning that is implied rather than stated), and vocabulary in context (working out unfamiliar words from how they are used). Items are auto-scored multiple-choice; the band reflects the level of text the candidate can reliably understand.";
+const LISTENING_NARRATIVE =
+  "Listening measures comprehension of spoken English from a single hearing, across four sub-skills: gist, specific detail, inference, and following discourse and flow (how ideas connect across a passage). Items are auto-scored multiple-choice; the band reflects the level of speech the candidate can reliably follow without replaying it.";
+
+const INTEGRITY_TIER_LABEL: Record<IntegritySignal["tier"], string> = {
+  clean: "Clean",
+  minor: "Minor activity",
+  elevated: "Elevated activity",
+};
+
 const s = StyleSheet.create({
   page: { paddingTop: 40, paddingBottom: 48, paddingHorizontal: 40, fontFamily: "Helvetica", fontSize: 9.5, color: C.text },
   banner: { backgroundColor: C.primary, borderRadius: 6, paddingVertical: 16, paddingHorizontal: 18, marginBottom: 14 },
@@ -64,6 +99,8 @@ const s = StyleSheet.create({
   skillName: { fontSize: 7.5, color: C.light, textTransform: "uppercase", letterSpacing: 0.4 },
   skillCefr: { fontSize: 15, fontFamily: "Helvetica-Bold", color: C.primary, marginTop: 2 },
   skillNote: { fontSize: 8, color: C.light, marginTop: 1 },
+  skillScoreLine: { fontSize: 9, fontFamily: "Helvetica-Bold", color: C.primary, marginBottom: 3 },
+  narrative: { fontSize: 8.5, color: C.text, lineHeight: 1.45 },
 
   block: { borderWidth: 1, borderColor: C.border, borderRadius: 5, padding: 10, marginBottom: 8 },
   critRow: { flexDirection: "row", alignItems: "center", marginBottom: 3 },
@@ -94,6 +131,11 @@ function issueColor(cat: WritingIssue["category"]): string {
   if (cat === "vocabulary" || cat === "structure") return C.accent;
   return C.rose;
 }
+function integrityTone(tier: IntegritySignal["tier"]): { borderColor: string; backgroundColor: string } {
+  if (tier === "elevated") return { borderColor: "#fda4af", backgroundColor: "#fff1f2" };
+  if (tier === "minor") return { borderColor: "#fcd34d", backgroundColor: "#fffbeb" };
+  return { borderColor: "#6ee7b7", backgroundColor: "#ecfdf5" };
+}
 
 function Criterion({ label, value }: { label: string; value: number }) {
   return (
@@ -107,7 +149,11 @@ function Criterion({ label, value }: { label: string; value: number }) {
   );
 }
 
-export function FluentReport({ data }: { data: { name: string; date: string; result: FluentResult; rangeText: string | null } }) {
+export function FluentReport({
+  data,
+}: {
+  data: { name: string; date: string; result: FluentResult; rangeText: string | null; integrity?: IntegritySignal | null };
+}) {
   const r = data.result;
   const w = r.writing;
   const sp = r.speaking;
@@ -154,6 +200,28 @@ export function FluentReport({ data }: { data: { name: string; date: string; res
           </View>
         </View>
 
+        {/* Reading detail - receptive skill: narrate the sub-skills measured */}
+        <Text style={s.sectionTitle}>Reading</Text>
+        <View style={s.block}>
+          <Text style={s.skillScoreLine}>
+            Band {r.reading_cefr} ({CEFR_LABEL[r.reading_cefr] ?? ""}) · {r.reading_correct}/{r.reading_total} correct
+          </Text>
+          <Text style={s.narrative}>{READING_NARRATIVE}</Text>
+        </View>
+
+        {/* Listening detail - only when the test included listening items */}
+        {r.listening_total > 0 && (
+          <>
+            <Text style={s.sectionTitle}>Listening</Text>
+            <View style={s.block}>
+              <Text style={s.skillScoreLine}>
+                Band {r.listening_cefr} ({CEFR_LABEL[r.listening_cefr] ?? ""}) · {r.listening_correct}/{r.listening_total} correct
+              </Text>
+              <Text style={s.narrative}>{LISTENING_NARRATIVE}</Text>
+            </View>
+          </>
+        )}
+
         {/* Writing detail */}
         <Text style={s.sectionTitle}>Writing</Text>
         <View style={s.block} wrap={false}>
@@ -161,6 +229,15 @@ export function FluentReport({ data }: { data: { name: string; date: string; res
             <Criterion key={k as string} label={label} value={w[k] as number} />
           ))}
           {w.feedback_en ? <Text style={s.feedback}>{w.feedback_en}</Text> : null}
+        </View>
+        <View style={s.block}>
+          <Text style={s.defTitle}>What each writing criterion means</Text>
+          {WRITE_CRIT.map(([k, label]) => (
+            <Text key={k as string} style={s.defLine}>
+              <Text style={{ fontFamily: "Helvetica-Bold" }}>{label}: </Text>
+              {WRITE_DEF[k as string]}
+            </Text>
+          ))}
         </View>
         {issues.length > 0 && (
           <View style={s.block}>
@@ -195,17 +272,48 @@ export function FluentReport({ data }: { data: { name: string; date: string; res
               ) : null}
               {sp.feedback_en ? <Text style={s.feedback}>{sp.feedback_en}</Text> : null}
             </View>
+            <View style={s.block}>
+              <Text style={s.defTitle}>What each speaking criterion means</Text>
+              {SPEAK_CRIT.map(([k, label]) => (
+                <Text key={k as string} style={s.defLine}>
+                  <Text style={{ fontFamily: "Helvetica-Bold" }}>{label}: </Text>
+                  {SPEAK_DEF[k as string]}
+                </Text>
+              ))}
+              {typeof sp.pronunciation === "number" && (
+                <Text style={s.defLine}>
+                  <Text style={{ fontFamily: "Helvetica-Bold" }}>Pronunciation: </Text>
+                  {PRON_DEF}
+                </Text>
+              )}
+            </View>
           </>
         )}
 
-        {/* What we measure */}
-        <Text style={s.sectionTitle}>What we measure</Text>
+        {/* Integrity signal (advisory) - mirrors the on-screen post-test signal
+            (CAL-FLU-601). Review telemetry only; never affects the level. */}
+        {data.integrity && (
+          <>
+            <Text style={s.sectionTitle}>Integrity signal (advisory)</Text>
+            <View style={[s.block, integrityTone(data.integrity.tier)]}>
+              <Text style={{ fontSize: 9.5, fontFamily: "Helvetica-Bold", color: C.primary }}>
+                {INTEGRITY_TIER_LABEL[data.integrity.tier]} · {data.integrity.score}/100
+              </Text>
+              <View style={{ marginTop: 3 }}>
+                {data.integrity.reasons.map((reason, i) => (
+                  <Text key={i} style={s.defLine}>{"• "}{reason}</Text>
+                ))}
+              </View>
+              <Text style={{ fontSize: 8, color: C.light, lineHeight: 1.4, marginTop: 4, fontStyle: "italic" }}>
+                Advisory only - this is review telemetry from the test administration. It never affects the CEFR level, caps a score, or auto-fails the test.
+              </Text>
+            </View>
+          </>
+        )}
+
+        {/* Scale + indicative-placement note */}
+        <Text style={s.sectionTitle}>Scale</Text>
         <View style={s.block}>
-          <Text style={s.defLine}><Text style={{ fontFamily: "Helvetica-Bold" }}>Reading:</Text> understanding written English - gist, detail, inference, vocabulary in context.</Text>
-          <Text style={s.defLine}><Text style={{ fontFamily: "Helvetica-Bold" }}>Listening:</Text> understanding spoken English from a single hearing - gist, detail, inference, flow.</Text>
-          <Text style={s.defLine}><Text style={{ fontFamily: "Helvetica-Bold" }}>Writing:</Text> producing written English that completes a workplace task, on the seven criteria above.</Text>
-          <Text style={s.defLine}><Text style={{ fontFamily: "Helvetica-Bold" }}>Speaking:</Text> producing spoken English in response to a prompt, on the criteria above.</Text>
-          <Text style={s.defTitle}>Scale</Text>
           <Text style={s.defLine}>Each criterion is rated 1-5. Skill bands map to CEFR (A1 to C2). This is an indicative placement to inform a human decision, not a certified high-stakes score.</Text>
         </View>
 

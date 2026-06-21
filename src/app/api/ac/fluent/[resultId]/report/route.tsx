@@ -14,6 +14,7 @@ import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { createServiceClient } from "@/lib/supabase/server";
 import { FluentReport } from "@/lib/reports/fluent-report";
 import type { FluentResult } from "@/lib/ai/fluent-english";
+import { computeIntegritySignal, type IntegrityFlags, type IntegritySignal } from "@/lib/scoring/integrity";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -23,6 +24,9 @@ type Row = {
   created_at: string;
   taker_name: string | null;
   result: (FluentResult & { reliability?: { low?: string; high?: string } }) | null;
+  // Advisory integrity telemetry (migration 00043). Persisted as the raw flags
+  // plus a `signal` (CAL-FLU-601); absent on a 00042-only DB.
+  integrity_flags: (IntegrityFlags & { signal?: IntegritySignal }) | null;
 };
 
 export async function GET(_req: Request, { params }: { params: { resultId: string } }) {
@@ -39,7 +43,7 @@ export async function GET(_req: Request, { params }: { params: { resultId: strin
     const sb = createServiceClient();
     const { data } = await sb
       .from("eng_fluent_results")
-      .select("id, created_at, taker_name, result")
+      .select("id, created_at, taker_name, result, integrity_flags")
       .eq("id", params.resultId)
       .single();
     row = (data as Row) ?? null;
@@ -55,7 +59,13 @@ export async function GET(_req: Request, { params }: { params: { resultId: strin
   const band = row.result.reliability;
   const rangeText = band?.low && band?.high ? (band.low === band.high ? band.low : `${band.low}-${band.high}`) : null;
 
-  const buffer = await renderToBuffer(<FluentReport data={{ name, date, result: row.result, rangeText }} />);
+  // Surface the advisory integrity signal in the report (CAL-FLU-601): prefer the
+  // stored signal; recompute from the raw flags for older rows that predate it;
+  // null on a 00042-only DB so the section is simply omitted.
+  const integrity: IntegritySignal | null =
+    row.integrity_flags?.signal ?? (row.integrity_flags ? computeIntegritySignal(row.integrity_flags) : null);
+
+  const buffer = await renderToBuffer(<FluentReport data={{ name, date, result: row.result, rangeText, integrity }} />);
   const safe = name.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase() || "candidate";
   return new NextResponse(new Uint8Array(buffer), {
     headers: {

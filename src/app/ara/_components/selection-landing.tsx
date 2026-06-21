@@ -1,4 +1,5 @@
-import { Sparkles, UserCheck, CheckCircle2, Languages, FileText, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { Sparkles, UserCheck, CheckCircle2, Languages, FileText, ShieldCheck, Users, Shield, User, ArrowRight } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { AllServicesLink } from "@/components/shared/all-services-link";
 import { DesignTargetRolesLink } from "@/components/shared/design-target-roles-link";
@@ -88,6 +89,33 @@ export function SelectionLanding() {
               </div>
             </FadeIn>
           </div>
+        </div>
+      </section>
+
+      {/* ─── Entry points - parity with the development funnel so the selection
+             path also reaches the consultant dashboard, the admin console, and
+             the complimentary personal snapshot (acquisition-lensed). ─── */}
+      <section className="max-w-6xl mx-auto px-6 -mt-12 relative z-10">
+        <div className="grid gap-5 md:grid-cols-3">
+          {[
+            { href: "/ara/consultant", icon: Users, iconCls: "ara-icon-blue", linkCls: "text-accent", subtitle: "Run engagements", title: "Consultant", description: "Create assessments, invite respondents, validate Phase 2 findings, freeze scores, and generate bilingual reports.", cta: "Open dashboard" },
+            { href: "/ara/admin", icon: Shield, iconCls: "ara-icon-violet", linkCls: "text-[#7C3AED]", subtitle: "Curate content", title: "VIFM Admin", description: "Manage question bank versions, regulatory frameworks, sandbox data, and retention lifecycle.", cta: "Open console" },
+            { href: "/ara/personal/start?lens=acquisition", icon: User, iconCls: "ara-icon-teal", linkCls: "text-[#0D9488]", subtitle: "Self-served, complimentary", title: "Personal snapshot", description: "A short bilingual self-assessment for individuals - 5-7 minutes, four VIFM factors, plus personalised VIFM training recommendations to act on the gaps.", cta: "Take the snapshot" },
+          ].map((e, i) => (
+            <FadeIn key={e.href} delay={i * 120}>
+              <Link href={e.href} className="ara-tile p-6 h-full flex flex-col">
+                <div className={`ara-tile-icon h-10 w-10 rounded-lg flex items-center justify-center mb-4 ${e.iconCls}`}>
+                  <e.icon className="h-5 w-5" />
+                </div>
+                <div className="ara-eyebrow text-muted-foreground mb-1">{e.subtitle}</div>
+                <h3 className="text-xl font-semibold text-primary">{e.title}</h3>
+                <p className="text-sm text-muted-foreground mt-2 flex-1">{e.description}</p>
+                <div className={`mt-4 inline-flex items-center gap-1 text-sm font-medium ${e.linkCls}`}>
+                  {e.cta} <ArrowRight className="h-3.5 w-3.5" />
+                </div>
+              </Link>
+            </FadeIn>
+          ))}
         </div>
       </section>
 

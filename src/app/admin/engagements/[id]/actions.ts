@@ -292,6 +292,30 @@ export async function updateEngagementStatusAction(engagementId: string, status:
   const validStatuses = ["draft", "active", "completed", "archived"];
   if (!validStatuses.includes(status)) return { error: "Invalid status" };
 
+  // Guard: an engagement may only go 'active' once it has observable content -
+  // at least one competency AND one exercise. Without this, an engagement
+  // created outside the validated wizard (or edited down to empty) could be
+  // flipped active and then present candidates a blank schedule with nothing to
+  // observe or score - producing meaningless (or null) OARs downstream.
+  if (status === "active") {
+    const [{ count: compCount }, { count: exCount }] = await Promise.all([
+      supabase
+        .from("engagement_competencies")
+        .select("competency_id", { count: "exact", head: true })
+        .eq("engagement_id", engagementId),
+      supabase
+        .from("engagement_exercises")
+        .select("id", { count: "exact", head: true })
+        .eq("engagement_id", engagementId),
+    ]);
+    if (!compCount || compCount === 0 || !exCount || exCount === 0) {
+      return {
+        error:
+          "This engagement has no competencies or exercises yet. Add at least one competency and one exercise before activating it.",
+      };
+    }
+  }
+
   const { error } = await supabase
     .from("engagements")
     .update({ status })

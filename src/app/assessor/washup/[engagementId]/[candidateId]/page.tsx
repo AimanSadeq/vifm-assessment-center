@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { WashupForm } from "./_components/washup-form";
 import { BackLink } from "@/components/shared/back-link";
 
@@ -49,6 +50,34 @@ export default async function WashupCandidatePage({ params }: Props) {
     ...(c.competencies as unknown as { id: string; name: string; description: string | null }),
     weight: c.weight,
   }));
+
+  // Guard: wash-up consolidates the assessors' integration worksheets into
+  // consensus ratings and an OAR. If competencies exist but NO worksheet has
+  // been submitted, there is nothing to consolidate - show a clear "no
+  // observations yet" state instead of a blank consensus grid that would invite
+  // a baseless overall rating.
+  if (competencies.length > 0 && (worksheetsResult.data ?? []).length === 0) {
+    return (
+      <div>
+        <BackLink href="/assessor" label="Back" history />
+        <div className="mx-auto mt-6 max-w-xl rounded-lg border border-amber-300 bg-amber-50 p-6">
+          <h2 className="text-base font-semibold text-amber-900">No observations recorded yet</h2>
+          <p className="mt-2 text-sm leading-relaxed text-amber-800">
+            No assessor integration worksheets have been submitted for {candResult.data.full_name} yet.
+            Wash-up consolidates those worksheets into the consensus ratings and the overall rating, so
+            please wait until at least one assessor has completed their observations and integration
+            worksheet before running the wash-up.
+          </p>
+          <Link
+            href={`/assessor/assignments/${engagementId}`}
+            className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline"
+          >
+            Go to assessor assignments
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>

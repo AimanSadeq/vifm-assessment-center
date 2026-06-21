@@ -62,6 +62,20 @@ export async function saveOarAction(values: SaveOarValues) {
 
   const supabase = createServiceClient();
 
+  // Guard: the OAR is the synthesis of the per-competency consensus ratings, so
+  // it is meaningless with none. Refuse to finalise the overall rating until at
+  // least one consensus rating exists for this candidate - which also blocks the
+  // degenerate "engagement with zero competencies -> zero consensus -> OAR
+  // anyway" path the audit flagged.
+  const { count: consensusCount } = await supabase
+    .from("consensus_ratings")
+    .select("id", { count: "exact", head: true })
+    .eq("engagement_id", parsed.data.engagementId)
+    .eq("candidate_id", parsed.data.candidateId);
+  if (!consensusCount || consensusCount === 0) {
+    return { error: "Record at least one competency consensus rating before saving the overall rating." };
+  }
+
   // Upsert: one OAR per (engagement, candidate)
   const { data, error } = await supabase
     .from("overall_assessment_ratings")

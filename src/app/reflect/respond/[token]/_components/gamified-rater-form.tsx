@@ -95,6 +95,8 @@ const G = {
     submitting: "Submitting…",
     needAll: "Rate every card to submit",
     doneBadge: "All cards done",
+    remaining: (n: number) => `${n} card${n === 1 ? "" : "s"} still need a rating`,
+    goToRemaining: "Rate the remaining cards",
   },
   ar: {
     estimate: (n: number) => `${n} بطاقة سريعة · نحو ${Math.max(2, Math.round(n * 0.25))} دقيقة`,
@@ -129,6 +131,8 @@ const G = {
     submitting: "جارٍ الإرسال…",
     needAll: "قيّم كل البطاقات قبل الإرسال",
     doneBadge: "اكتملت كل البطاقات",
+    remaining: (n: number) => `${n} بطاقة بحاجة إلى تقييم`,
+    goToRemaining: "قيّم البطاقات المتبقّية",
   },
 } as const;
 
@@ -265,7 +269,19 @@ export function GamifiedRaterForm({ ctx, preview = false }: { ctx: RaterContext;
       persistOne(behaviorId, next);
       return { ...prev, [behaviorId]: next };
     });
-    if (autoAdvance) setTimeout(advance, 220);
+    // Auto-advance, but guard against a DOUBLE advance: if the rater also taps
+    // "Next" (or rates quickly - this is mobile-first), `index` may already have
+    // moved past this card by the time the 220ms timer fires. Advancing again
+    // would SKIP the next card, leaving it unrated while the rater still reaches
+    // the end - the "All cards done but can't submit" bug. Only advance if we're
+    // still on the card that was just answered.
+    if (autoAdvance) {
+      const from = index;
+      setTimeout(() => {
+        setShowNote(false);
+        setIndex((i) => (i === from ? Math.min(i + 1, total) : i));
+      }, 220);
+    }
   };
 
   const setComment = (behaviorId: string, value: string) => {
@@ -570,12 +586,41 @@ export function GamifiedRaterForm({ ctx, preview = false }: { ctx: RaterContext;
         {started && index >= total && (
           <div className="pt-2 space-y-6">
             <div className="text-center">
-              <div className="h-12 w-12 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center mx-auto mb-2">
-                <Trophy className="h-6 w-6 text-emerald-600" />
-              </div>
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700">
-                <CheckCircle2 className="h-3.5 w-3.5" /> {t.doneBadge}
-              </span>
+              {allRated ? (
+                <>
+                  <div className="h-12 w-12 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center mx-auto mb-2">
+                    <Trophy className="h-6 w-6 text-emerald-600" />
+                  </div>
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> {t.doneBadge}
+                  </span>
+                </>
+              ) : (
+                /* Recovery: a card was left unrated (e.g. skipped on a fast tap).
+                   Surface it and jump straight to the first unrated card so the
+                   rater is never stuck at a "done"-looking screen that won't submit. */
+                <>
+                  <div className="h-12 w-12 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto mb-2">
+                    <Sparkles className="h-6 w-6 text-amber-600" />
+                  </div>
+                  <p className="text-sm font-medium text-amber-700">{t.remaining(total - completed)}</p>
+                  <button
+                    onClick={() => {
+                      const firstUnrated = items.findIndex((it) => {
+                        const a = answers[it.behavior.id];
+                        return !(a && (a.score !== null || a.is_na));
+                      });
+                      if (firstUnrated !== -1) {
+                        setShowNote(false);
+                        setIndex(firstUnrated);
+                      }
+                    }}
+                    className="mt-2 inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-100"
+                  >
+                    {t.goToRemaining} <ChevronRight className={cn("h-3.5 w-3.5", rtl && "rotate-180")} />
+                  </button>
+                </>
+              )}
             </div>
 
             {showCritical && (

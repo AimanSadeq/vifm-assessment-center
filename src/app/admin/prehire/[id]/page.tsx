@@ -195,7 +195,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                     </TableHead>
                   ))}
                   <TableHead className="text-center">{t("prehire.thComposite")}</TableHead>
-                  <TableHead title={t("prehire.ttAiSignal")}>{t("prehire.thAiSignal")}</TableHead>
+                  <TableHead title={t("prehire.ttAiSignal")} className="text-center">{t("prehire.thAiSignal")}</TableHead>
                   <TableHead>{t("prehire.thClientReport")}</TableHead>
                   <TableHead className="text-end">{t("prehire.thActions")}</TableHead>
                 </TableRow>
@@ -236,7 +236,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                     <TableCell className="text-center font-semibold">
                       {c.composite == null ? "-" : c.composite}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-center">
                       <span
                         className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${
                           RECO_TONE[c.recommendation] ?? RECO_TONE.incomplete

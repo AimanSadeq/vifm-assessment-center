@@ -16,6 +16,27 @@ import { createServiceClient } from "@/lib/supabase/server";
 const BUCKET = "proctor";
 const SIGNED_URL_TTL_SECONDS = 60 * 30; // 30 min - enough to review the report
 
+/** Per-snapshot flags (Phase 2). motion is client-side; the rest are AI-derived. */
+export type SnapshotFlags = {
+  motion?: number; // 0-100 frame-difference score (client-side)
+  faces?: number; // AI: visible face count
+  looking_away?: boolean; // AI: gaze/head clearly turned away (or absent)
+  device_or_screen?: boolean; // AI: phone / second screen visible
+  ai_note?: string | null; // AI: short note
+};
+
+/** Session-level AI review summary (Phase 2). */
+export type ProctorReviewSummary = {
+  analyzed: number; // frames sent to the vision model
+  total: number; // total snapshots in the session
+  no_face: number;
+  multiple_faces: number;
+  looking_away: number;
+  device_or_screen: number;
+  high_motion: number;
+  configured: boolean; // false when no AI key (AI flags not computed)
+};
+
 export type ProctorSessionRow = {
   id: string;
   context: string;
@@ -31,6 +52,8 @@ export type ProctorSessionRow = {
   status: string;
   expires_at: string;
   created_at: string;
+  ai_review: ProctorReviewSummary | null;
+  ai_reviewed_at: string | null;
 };
 
 export type ProctorSnapshotView = {
@@ -38,6 +61,7 @@ export type ProctorSnapshotView = {
   sequence: number;
   captured_at: string;
   signedUrl: string | null;
+  flags: SnapshotFlags | null;
 };
 
 export type ProctorSessionView = {
@@ -81,6 +105,8 @@ export async function recordSnapshot(input: {
   sessionId: string;
   bytes: Buffer;
   contentType: string;
+  /** Client-side motion score (0-100) vs the previous frame. */
+  motion?: number;
 }): Promise<{ ok: true; sequence: number } | { ok: false; error: string }> {
   try {
     const sb = createServiceClient();
@@ -105,6 +131,7 @@ export async function recordSnapshot(input: {
       storage_path: path,
       sequence: seq,
       captured_at: new Date().toISOString(),
+      flags: typeof input.motion === "number" ? { motion: Math.round(input.motion) } : null,
     });
     await sb.from("proctor_sessions").update({ snapshot_count: seq }).eq("id", input.sessionId);
     return { ok: true, sequence: seq };
@@ -134,10 +161,16 @@ export async function getSessionWithSnapshots(sessionId: string): Promise<Procto
     if (!session) return null;
     const { data: snaps } = await sb
       .from("proctor_snapshots")
-      .select("id, sequence, captured_at, storage_path")
+      .select("id, sequence, captured_at, storage_path, flags")
       .eq("session_id", sessionId)
       .order("sequence", { ascending: true });
-    const rows = (snaps ?? []) as Array<{ id: string; sequence: number; captured_at: string; storage_path: string }>;
+    const rows = (snaps ?? []) as Array<{
+      id: string;
+      sequence: number;
+      captured_at: string;
+      storage_path: string;
+      flags: SnapshotFlags | null;
+    }>;
     const snapshots: ProctorSnapshotView[] = [];
     for (const s of rows) {
       const signed = await sb.storage.from(BUCKET).createSignedUrl(s.storage_path, SIGNED_URL_TTL_SECONDS);
@@ -146,6 +179,7 @@ export async function getSessionWithSnapshots(sessionId: string): Promise<Procto
         sequence: s.sequence,
         captured_at: s.captured_at,
         signedUrl: signed.data?.signedUrl ?? null,
+        flags: s.flags ?? null,
       });
     }
     return { session: session as ProctorSessionRow, snapshots };

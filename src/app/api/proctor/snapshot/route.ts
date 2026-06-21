@@ -36,7 +36,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "image size" }, { status: 400 });
   }
 
-  const res = await recordSnapshot({ sessionId, bytes, contentType });
+  const motion =
+    typeof body.motion === "number" && Number.isFinite(body.motion)
+      ? Math.max(0, Math.min(100, body.motion))
+      : undefined;
+
+  const res = await recordSnapshot({ sessionId, bytes, contentType, motion });
   if (!res.ok) return NextResponse.json({ ok: false, error: res.error });
   return NextResponse.json({ ok: true, sequence: res.sequence });
 }

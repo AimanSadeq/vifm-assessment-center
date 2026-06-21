@@ -40,6 +40,11 @@ export function ProctorCapture({
   const streamRef = useRef<MediaStream | null>(null);
   const sessionRef = useRef<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Phase 2 motion: a tiny offscreen frame + the previous frame's pixels, for a
+  // cheap frame-difference "room movement" score (temporal - the one signal a
+  // single image can't give).
+  const motionCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const prevMotionRef = useRef<Uint8ClampedArray | null>(null);
 
   const cleanup = useCallback(() => {
     if (timerRef.current) {
@@ -67,11 +72,38 @@ export function ProctorCapture({
     if (!ctx) return;
     ctx.drawImage(video, 0, 0, W, H);
     const dataUrl = canvas.toDataURL("image/jpeg", 0.6);
+
+    // Cheap motion score: mean abs diff of a 32x24 frame vs the previous one.
+    let motion: number | undefined;
+    try {
+      const MW = 32;
+      const MH = 24;
+      const mc = motionCanvasRef.current ?? (motionCanvasRef.current = document.createElement("canvas"));
+      mc.width = MW;
+      mc.height = MH;
+      const mctx = mc.getContext("2d", { willReadFrequently: true });
+      if (mctx) {
+        mctx.drawImage(video, 0, 0, MW, MH);
+        const cur = mctx.getImageData(0, 0, MW, MH).data;
+        const prev = prevMotionRef.current;
+        if (prev && prev.length === cur.length) {
+          let diff = 0;
+          for (let p = 0; p < cur.length; p += 4) diff += Math.abs(cur[p] - prev[p]);
+          const pixels = cur.length / 4;
+          // normalise to 0-100 with a x3 sensitivity bump (typical idle diff is small).
+          motion = Math.min(100, Math.round(((diff / pixels) / 255) * 100 * 3));
+        }
+        prevMotionRef.current = cur;
+      }
+    } catch {
+      /* motion is best-effort */
+    }
+
     try {
       await fetch("/api/proctor/snapshot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ session_id: sid, image: dataUrl }),
+        body: JSON.stringify({ session_id: sid, image: dataUrl, motion }),
         keepalive: true,
       });
     } catch {

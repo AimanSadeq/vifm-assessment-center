@@ -102,7 +102,7 @@ const PORTALS: ReadonlyArray<Portal> = [
   {
     key: "ara",
     icon: Compass,
-    name: { en: "AI Readiness (AR Compass)", ar: "الجاهزية للذكاء الاصطناعي (بوصلة الجاهزية)" },
+    name: { en: "AI Readiness (AR Compass®)", ar: "الجاهزية للذكاء الاصطناعي (بوصلة الجاهزية)" },
     tagline: { en: "AI-readiness diagnostic", ar: "تشخيص الجاهزية للذكاء الاصطناعي" },
     acquire: {
       measures: { en: "How ready a person is to work with AI (four individual factors).", ar: "مدى جاهزية الشخص للعمل مع الذكاء الاصطناعي (أربعة عوامل فردية)." },
@@ -122,7 +122,7 @@ const PORTALS: ReadonlyArray<Portal> = [
   {
     key: "technical",
     icon: BadgeCheck,
-    name: { en: "Techno", ar: "تكنو" },
+    name: { en: "Techno®", ar: "تكنو" },
     tagline: { en: "Technical proficiency", ar: "الكفاءة التقنية" },
     acquire: {
       measures: { en: "Technical proficiency per finance domain (10 domains).", ar: "الكفاءة التقنية لكل مجال مالي (10 مجالات)." },
@@ -142,7 +142,7 @@ const PORTALS: ReadonlyArray<Portal> = [
   {
     key: "cognitive",
     icon: BrainCircuit,
-    name: { en: "Mentium", ar: "مينتيوم" },
+    name: { en: "Mentium®", ar: "مينتيوم" },
     tagline: { en: "Reasoning aptitude", ar: "القدرة على الاستدلال" },
     acquire: {
       measures: { en: "Numerical, verbal, inductive and deductive reasoning (+ g composite).", ar: "الاستدلال العددي واللفظي والاستقرائي والاستنتاجي (+ مؤشّر القدرة العامة)." },
@@ -162,7 +162,7 @@ const PORTALS: ReadonlyArray<Portal> = [
   {
     key: "persona",
     icon: Layers,
-    name: { en: "Persona", ar: "بيرسونا" },
+    name: { en: "Persona®", ar: "بيرسونا" },
     tagline: { en: "Behavioural self-assessment", ar: "تقييم سلوكي ذاتي" },
     acquire: {
       measures: { en: `Self-ratings across the ${COMPETENCY_COUNT} competencies (the 'self' view).`, ar: `تقييم ذاتي عبر الكفاءات الـ${COMPETENCY_COUNT} (رؤية «الذات»).` },
@@ -182,7 +182,7 @@ const PORTALS: ReadonlyArray<Portal> = [
   {
     key: "fluent",
     icon: Languages,
-    name: { en: "Fluent", ar: "فلوينت" },
+    name: { en: "Fluent®", ar: "فلوينت" },
     tagline: { en: "AI English placement", ar: "تحديد مستوى الإنجليزية بالذكاء الاصطناعي" },
     acquire: {
       measures: { en: "English across four skills, CEFR A1-C2.", ar: "الإنجليزية عبر أربع مهارات، إطار CEFR من A1 إلى C2." },
@@ -202,7 +202,7 @@ const PORTALS: ReadonlyArray<Portal> = [
   {
     key: "prehire",
     icon: UserSearch,
-    name: { en: "Pre-Hire", ar: "ما قبل التوظيف" },
+    name: { en: "Pre-Hire®", ar: "ما قبل التوظيف" },
     tagline: { en: "Pre-employment screening", ar: "الفرز قبل التوظيف" },
     acquire: {
       measures: { en: "A weighted composite screen: competency quiz + English + AI interview.", ar: "فرز مركّب مرجّح: اختبار كفاءات + إنجليزية + مقابلة بالذكاء الاصطناعي." },
@@ -216,7 +216,7 @@ const PORTALS: ReadonlyArray<Portal> = [
   {
     key: "reflect",
     icon: Aperture,
-    name: { en: "Reflect 360", ar: "ريفلكت 360" },
+    name: { en: "Reflect 360®", ar: "ريفلكت 360" },
     tagline: { en: "360 leadership feedback", ar: "تغذية راجعة قيادية 360" },
     acquire: { na: naDevelopmentOnly },
     manage: {

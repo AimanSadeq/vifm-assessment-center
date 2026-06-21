@@ -6,7 +6,7 @@ import { BackLink } from "@/components/shared/back-link";
 import { VouchersClient, type FluentVoucherRow } from "./_components/vouchers-client";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Fluent vouchers · VIFM" };
+export const metadata = { title: "Fluent® vouchers · VIFM" };
 
 export default async function FluentVouchersPage() {
   // Admin-only surface (middleware guarantees a session; gate the role here too).
@@ -23,9 +23,9 @@ export default async function FluentVouchersPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-8">
-      <BackLink href="/ac/fluent" label="Fluent" />
+      <BackLink href="/ac/fluent" label="Fluent®" />
       <div className="mt-4 mb-6">
-        <h1 className="text-2xl font-semibold text-[#010131]">Fluent vouchers</h1>
+        <h1 className="text-2xl font-semibold text-[#010131]">Fluent® vouchers</h1>
         <p className="text-sm text-muted-foreground">
           Generate redeemable English-placement access codes, tag them to a client, and track seats.
           Delegates redeem at <code className="text-xs">/ac/fluent/redeem</code> - no account needed.

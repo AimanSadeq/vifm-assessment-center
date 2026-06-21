@@ -427,7 +427,7 @@ export function GamifiedRaterForm({ ctx, preview = false }: { ctx: RaterContext;
         <div className="max-w-xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Aperture className="h-3.5 w-3.5" /> Reflect 360
+              <Aperture className="h-3.5 w-3.5" /> Reflect 360®
             </span>
             <button
               onClick={() => setLanguage((l) => (l === "en" ? "ar" : "en"))}

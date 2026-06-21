@@ -8,7 +8,7 @@ import { BackLink } from "@/components/shared/back-link";
 import { VouchersClient, type PersonaVoucherRow } from "./_components/vouchers-client";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Persona vouchers · VIFM" };
+export const metadata = { title: "Persona® vouchers · VIFM" };
 
 export default async function PersonaVouchersPage() {
   const caller = await getCurrentCaller();
@@ -38,9 +38,9 @@ export default async function PersonaVouchersPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-8">
-      <BackLink href="/ac/persona" label="Persona" />
+      <BackLink href="/ac/persona" label="Persona®" />
       <div className="mt-4 mb-6">
-        <h1 className="text-2xl font-semibold text-[#010131]">Persona vouchers</h1>
+        <h1 className="text-2xl font-semibold text-[#010131]">Persona® vouchers</h1>
         <p className="text-sm text-muted-foreground">
           Generate redeemable Persona self-assessment access codes, tag them to a client, and track seats.
           Delegates redeem at <code className="text-xs">/ac/persona/redeem</code> - no account needed.

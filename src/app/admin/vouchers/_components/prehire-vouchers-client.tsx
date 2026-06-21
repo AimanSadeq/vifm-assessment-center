@@ -93,7 +93,7 @@ export function PrehireVouchersClient({
         <form onSubmit={onCreate} className="rounded-xl border bg-card p-4">
           <div className="mb-3 flex items-center gap-2">
             <Ticket className="h-4 w-4 text-accent" />
-            <h3 className="text-sm font-semibold text-[#010131]">Issue Pre-Hire vouchers</h3>
+            <h3 className="text-sm font-semibold text-[#010131]">Issue Pre-Hire® vouchers</h3>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <div className="space-y-1 lg:col-span-2">

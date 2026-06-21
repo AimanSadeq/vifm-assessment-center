@@ -65,7 +65,7 @@ export const EVIDENCE_INSTRUMENTS: EvidenceInstrument[] = [
   },
   {
     key: "ara",
-    name: "AI Readiness Compass (ARA)",
+    name: "AI Readiness Compass® (ARA)",
     href: "/ara",
     itemTypes:
       "Layer-1 self-assessment maturity items (Likert 1-5), plus situational-judgment and knowledge-check items; mapped to 8 organisational pillars and 4 individual factors.",
@@ -88,7 +88,7 @@ export const EVIDENCE_INSTRUMENTS: EvidenceInstrument[] = [
   },
   {
     key: "persona",
-    name: "Persona (behavioural self-assessment)",
+    name: "Persona® (behavioural self-assessment)",
     href: "/ac/persona",
     itemTypes: "Likert self-ratings across the behavioural competencies - the 'self' view that feeds Succession Readiness.",
     construct: "Self-perceived standing on the VIFM behavioural competencies.",
@@ -106,7 +106,7 @@ export const EVIDENCE_INSTRUMENTS: EvidenceInstrument[] = [
   },
   {
     key: "cognitive",
-    name: "Mentium",
+    name: "Mentium®",
     href: "/ac/cognitive",
     itemTypes: "MCQ numerical, verbal, inductive and deductive reasoning subtests, with a general mental ability (g) composite.",
     construct: "Reasoning aptitude / general mental ability (a foundational predictor).",
@@ -145,7 +145,7 @@ export const EVIDENCE_INSTRUMENTS: EvidenceInstrument[] = [
   },
   {
     key: "fluent",
-    name: "Fluent (English placement)",
+    name: "Fluent® (English placement)",
     href: "/ac/fluent",
     itemTypes:
       "Four CEFR-aligned skills - reading + listening (auto-scored MCQ) and writing + speaking (rubric-scored against the CEFR), from a calibrated item bank.",
@@ -186,7 +186,7 @@ export const EVIDENCE_INSTRUMENTS: EvidenceInstrument[] = [
   },
   {
     key: "reflect",
-    name: "Reflect 360",
+    name: "Reflect 360®",
     href: "/reflect",
     itemTypes:
       "Multi-rater behavioural items on a 5-point frequency scale, decomposed from the client's own values/competencies; rated by Self, Manager, Peer and Direct Report.",
@@ -205,7 +205,7 @@ export const EVIDENCE_INSTRUMENTS: EvidenceInstrument[] = [
   },
   {
     key: "prehire",
-    name: "Pre-Hire (screening composite)",
+    name: "Pre-Hire® (screening composite)",
     href: "/admin/prehire",
     itemTypes:
       "An orchestration layer - a weighted composite of a competency quiz, the Fluent placement and an AI behavioural interview (CBI). It adds no items of its own.",

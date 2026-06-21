@@ -65,7 +65,7 @@ export function ReadinessSetupPanel({ engagementId, setup }: { engagementId: str
       </CardHeader>
       <CardContent className="space-y-5">
         <p className="text-sm text-muted-foreground">
-          Combined readiness fuses <strong>Persona</strong> (self) with a <strong>Reflect 360</strong> (others) against each
+          Combined readiness fuses <strong>Persona®</strong> (self) with a <strong>Reflect 360®</strong> (others) against each
           candidate&rsquo;s target role. Set the mode, link the 360, then open each candidate&rsquo;s readiness report.
         </p>
 

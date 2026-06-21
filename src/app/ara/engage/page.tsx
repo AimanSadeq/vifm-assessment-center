@@ -323,7 +323,7 @@ export default function AraEngagePage({ searchParams }: { searchParams?: { lens?
       <footer className="border-t bg-card/50">
         <div className="max-w-6xl mx-auto px-6 py-8 text-center text-xs text-muted-foreground">
           <div className="font-medium text-foreground mb-1">
-            VIFM AI Readiness Compass
+            VIFM AI Readiness Compass®
           </div>
           Know where you stand. Know where to go.
         </div>

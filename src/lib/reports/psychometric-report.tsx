@@ -168,7 +168,7 @@ export function PsychometricReport({ data }: { data: PsyReportData }) {
           <Text style={s.heroIdentity}>{data.takerName} · {data.date}</Text>
           <View style={s.heroPillRow}>
             <Text style={s.heroPill}>{calibrated ? "Tier 2 · Norm-referenced" : "Tier 1 · Indicative"}</Text>
-            <Text style={s.heroPill}>{data.kind === "cognitive" ? "Mentium" : "Personality · Big Five"}</Text>
+            <Text style={s.heroPill}>{data.kind === "cognitive" ? "Mentium®" : "Personality · Big Five"}</Text>
           </View>
         </View>
 

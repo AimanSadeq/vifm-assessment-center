@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    default: "VIFM AI Readiness Compass",
+    default: "VIFM AI Readiness Compass®",
     template: "%s · VIFM AI Readiness Compass",
   },
   description:

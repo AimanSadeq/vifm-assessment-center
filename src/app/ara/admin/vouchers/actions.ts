@@ -12,7 +12,7 @@ const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://caliber.viftraini
 function inviteEmailHtml(link: string, code: string): string {
   return `
   <div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#111">
-    <h2 style="color:#010131">VIFM AI Readiness Compass</h2>
+    <h2 style="color:#010131">VIFM AI Readiness Compass®</h2>
     <p>You have been invited to take the AI Readiness Compass - a short, confidential assessment.</p>
     <p style="margin:24px 0">
       <a href="${link}" style="background:#5391D5;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:bold">Start your assessment</a>
@@ -207,7 +207,7 @@ export async function emailVouchersToDelegatesAction(formData: FormData) {
     const link = `${SITE_URL}/ara/redeem?code=${encodeURIComponent(code)}&email=${encodeURIComponent(email)}`;
     const sent = await sendViaResend({
       to: email,
-      subject: "Your VIFM AI Readiness Compass access",
+      subject: "Your VIFM AI Readiness Compass® access",
       html: inviteEmailHtml(link, code),
     });
     results.push({ email, ok: sent.ok, error: sent.error });

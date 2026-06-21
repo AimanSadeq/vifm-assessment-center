@@ -41,7 +41,7 @@ const COPY = {
     submit: "Start the snapshot",
     submitting: "Starting…",
     footnote:
-      "The Personal Snapshot is one of three diagnostic tiers in the VIFM AI Readiness Compass. The org-level tiers (Department, Division, Enterprise) are consultant-led and run separately.",
+      "The Personal Snapshot is one of three diagnostic tiers in the VIFM AI Readiness Compass®. The org-level tiers (Department, Division, Enterprise) are consultant-led and run separately.",
   },
   ar: {
     h1: "لقطة الجاهزية الشخصية للذكاء الاصطناعي",

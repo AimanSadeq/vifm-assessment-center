@@ -225,7 +225,7 @@ export function renderFluentCertificateHtmlAr(data: FluentCertificateArData): st
     </div>
 
     <p class="disclaimer">
-      تعكس هذه الشهادة تحديد مستوى <strong>تقديري</strong> مُعَدّ بمساعدة الذكاء الاصطناعي ومتوافق مع الإطار الأوروبي المرجعي للغات (CEFR)، أُنتج عبر VIFM Fluent. وهي مخصّصة لأغراض تحديد المستوى والتطوير، <strong>وليست</strong> مؤهلاً لغوياً معتمداً عالي المخاطر.${data.range ? ` النطاق التقديري وفق CEFR: ${escapeHtml(data.range)}.` : ""}
+      تعكس هذه الشهادة تحديد مستوى <strong>تقديري</strong> مُعَدّ بمساعدة الذكاء الاصطناعي ومتوافق مع الإطار الأوروبي المرجعي للغات (CEFR)، أُنتج عبر VIFM Fluent®. وهي مخصّصة لأغراض تحديد المستوى والتطوير، <strong>وليست</strong> مؤهلاً لغوياً معتمداً عالي المخاطر.${data.range ? ` النطاق التقديري وفق CEFR: ${escapeHtml(data.range)}.` : ""}
     </p>
     <p class="verify">Verification ID: ${escapeHtml(data.id)}</p>
   </div>

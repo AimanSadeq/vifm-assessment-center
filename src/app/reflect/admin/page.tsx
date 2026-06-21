@@ -15,7 +15,7 @@ import { ReflectAdminPurgeButtons } from "./_components/purge-buttons";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Reflect 360 · Admin",
+  title: "Reflect 360® · Admin",
 };
 
 async function fetchCounts() {
@@ -52,7 +52,7 @@ export default async function ReflectAdminPage() {
               href="/reflect"
               className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-1"
             >
-              <ArrowLeft className="h-3 w-3" /> Reflect 360
+              <ArrowLeft className="h-3 w-3" /> Reflect 360®
             </Link>
             <div className="flex items-center gap-2">
               <Aperture className="h-5 w-5 text-accent" />

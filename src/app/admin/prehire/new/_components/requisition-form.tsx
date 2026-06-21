@@ -61,7 +61,7 @@ const FLUENT_SKILL_LABELS: Record<FluentSkill, string> = {
 // so they need not sum to 1.
 const STAGE_LABELS: Record<StageKind, string> = {
   quiz: "Competency Quiz",
-  fluent: "English (Fluent)",
+  fluent: "English (Fluent®)",
   cbi: "AI Interview",
 };
 const INITIAL_STAGES: Record<StageKind, StageState> = {

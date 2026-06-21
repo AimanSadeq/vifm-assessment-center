@@ -14,9 +14,9 @@ import { AllServicesLink } from "@/components/shared/all-services-link";
 import { DesignTargetRolesLink } from "@/components/shared/design-target-roles-link";
 
 export const metadata = {
-  title: "Reflect 360 · Leadership feedback",
+  title: "Reflect 360® · Leadership feedback",
   description:
-    "Reflect 360 - a bilingual leadership feedback platform that turns Corporate Values and Leadership Competencies into actionable insight for the GCC.",
+    "Reflect 360® - a bilingual leadership feedback platform that turns Corporate Values and Leadership Competencies into actionable insight for the GCC.",
 };
 
 export default function ReflectRootPage() {
@@ -50,7 +50,7 @@ export default function ReflectRootPage() {
           <div className="max-w-3xl relative z-10">
             <span className="ara-eyebrow text-accent">
               <Aperture className="h-3 w-3" />
-              Reflect 360
+              Reflect 360®
             </span>
             <h1 className="ara-numeral text-4xl sm:text-5xl lg:text-6xl font-semibold text-white leading-[1.05] mt-4 mb-5">
               See yourself

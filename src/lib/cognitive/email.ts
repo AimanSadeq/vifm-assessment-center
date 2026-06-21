@@ -16,7 +16,7 @@ const wrap = (inner: string, rtl: boolean) => `
   <div dir="${rtl ? "rtl" : "ltr"}" style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;color:#121232;text-align:${rtl ? "right" : "left"}">
     <div style="background:#010131;color:#fff;padding:16px 20px;border-radius:8px 8px 0 0">
       <div style="font-size:12px;letter-spacing:2px;color:#5391D5">VIFM</div>
-      <div style="font-size:18px;font-weight:700">${rtl ? "تقييم مينتيوم" : "Mentium Assessment"}</div>
+      <div style="font-size:18px;font-weight:700">${rtl ? "تقييم مينتيوم" : "Mentium® Assessment"}</div>
     </div>
     <div style="border:1px solid #dbe3ec;border-top:0;border-radius:0 0 8px 8px;padding:20px">${inner}</div>
   </div>`;
@@ -62,5 +62,5 @@ export async function emailVoucherLink(opts: {
   `,
     false
   );
-  return sendViaResend({ to: opts.to, subject: "Your VIFM Mentium assessment access", html });
+  return sendViaResend({ to: opts.to, subject: "Your VIFM Mentium® assessment access", html });
 }

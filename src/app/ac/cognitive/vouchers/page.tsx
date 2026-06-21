@@ -6,7 +6,7 @@ import { BackLink } from "@/components/shared/back-link";
 import { VouchersClient, type CognitiveVoucherRow } from "./_components/vouchers-client";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Mentium vouchers · VIFM" };
+export const metadata = { title: "Mentium® vouchers · VIFM" };
 
 export default async function CognitiveVouchersPage() {
   const caller = await getCurrentCaller();
@@ -22,9 +22,9 @@ export default async function CognitiveVouchersPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-8">
-      <BackLink href="/ac/cognitive" label="Mentium" />
+      <BackLink href="/ac/cognitive" label="Mentium®" />
       <div className="mt-4 mb-6">
-        <h1 className="text-2xl font-semibold text-[#010131]">Mentium vouchers</h1>
+        <h1 className="text-2xl font-semibold text-[#010131]">Mentium® vouchers</h1>
         <p className="text-sm text-muted-foreground">
           Generate redeemable Mentium assessment access codes, tag them to a client, and track seats.
           Delegates redeem at <code className="text-xs">/ac/cognitive/redeem</code> - no account needed.

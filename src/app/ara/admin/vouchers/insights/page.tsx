@@ -27,7 +27,7 @@ import { CohortCsvButton } from "./_components/cohort-csv-button";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Cohort insights · AI Readiness Compass" };
+export const metadata = { title: "Cohort insights · AI Readiness Compass®" };
 
 type Props = { searchParams: { company?: string } };
 

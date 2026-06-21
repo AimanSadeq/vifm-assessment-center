@@ -8,7 +8,7 @@ import { computeIntegritySignal, type IntegrityFlags, type IntegritySignal } fro
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Fluent · Cohort report (prototype)",
+  title: "Fluent® · Cohort report (prototype)",
 };
 
 type Row = {

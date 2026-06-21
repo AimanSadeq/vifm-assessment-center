@@ -47,7 +47,7 @@ const TEMPLATES: Record<AraEmailType, Record<AraEmailLanguage, TemplateRenderer>
   ara_respondent_invitation: {
     en: (d) => ({
       contentType: "Text",
-      subject: `You've been invited to the ${d.assessmentName} AI Readiness Compass`,
+      subject: `You've been invited to the ${d.assessmentName} AI Readiness Compass®`,
       body: `Hello ${d.respondentName},
 
 ${d.consultantName ? `${d.consultantName} has invited you` : "You have been invited"} to participate in the AI Readiness Compass for ${d.organizationName}: ${d.assessmentName}.
@@ -81,7 +81,7 @@ ${d.respondentUrl}
     }),
     bilingual: (d) => ({
       contentType: "HTML",
-      subject: `${d.assessmentName} - AI Readiness Compass / بوصلة الجاهزية للذكاء الاصطناعي`,
+      subject: `${d.assessmentName} - AI Readiness Compass® / بوصلة الجاهزية للذكاء الاصطناعي`,
       body: `<div style="font-family:'Open Sans',Arial,sans-serif;line-height:1.55;color:#121232;">
         <p>Hello ${d.respondentName},</p>
         <p>${d.consultantName ? `${d.consultantName} has invited you` : "You have been invited"} to participate in the AI Readiness Compass for <strong>${d.organizationName}</strong>: ${d.assessmentName}.</p>
@@ -112,7 +112,7 @@ ${d.assessmentUrl}
 Status snapshot:
   Completed: ${d.completedCount} of ${d.totalCount}
 
-- VIFM ARC`,
+- VIFM ARC®`,
     }),
     ar: (d) => ({
       contentType: "Text",
@@ -127,7 +127,7 @@ ${d.assessmentUrl}
 ملخص الحالة:
   المُكتمل: ${d.completedCount} من ${d.totalCount}
 
-- VIFM ARC`,
+- VIFM ARC®`,
     }),
     bilingual: (d) => ({
       contentType: "Text",

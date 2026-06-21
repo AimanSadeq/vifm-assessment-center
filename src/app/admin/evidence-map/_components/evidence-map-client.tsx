@@ -116,7 +116,7 @@ function Dashboard({ metrics }: { metrics: EvidenceMetrics }) {
         bars={[bar("Evidence coverage", metrics.ac.competenciesVerified, metrics.ac.competenciesTotal)]}
       />
       <InstrumentCard
-        title="ARC - AI Readiness Compass"
+        title="ARC - AI Readiness Compass®"
         href="/ara/admin/questions"
         stats={[
           { label: "Questions", value: fmt(metrics.arc.questionsTotal) },
@@ -133,7 +133,7 @@ function Dashboard({ metrics }: { metrics: EvidenceMetrics }) {
         ]}
       />
       <InstrumentCard
-        title="Fluent (English)"
+        title="Fluent® (English)"
         stats={[
           { label: "Items", value: fmt(metrics.fluent.items) },
           { label: "Live", value: fmt(metrics.fluent.live), accent: "text-emerald-700" },
@@ -156,7 +156,7 @@ function Dashboard({ metrics }: { metrics: EvidenceMetrics }) {
         bars={[bar("Items approved", metrics.technical.approved, metrics.technical.items)]}
       />
       <InstrumentCard
-        title="Reflect 360"
+        title="Reflect 360®"
         stats={[
           { label: "Competencies", value: fmt(metrics.reflect.competencies) },
           { label: "Behaviours", value: fmt(metrics.reflect.behaviors) },

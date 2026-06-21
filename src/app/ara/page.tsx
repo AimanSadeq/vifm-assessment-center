@@ -72,7 +72,7 @@ export default function AraRootPage({ searchParams }: { searchParams?: { lens?: 
           <div className="max-w-3xl relative z-10">
             <span className="ara-eyebrow text-accent">
               <Sparkles className="h-3 w-3" />
-              VIFM AI Readiness Compass
+              VIFM AI Readiness Compass®
             </span>
             <h1 className="ara-numeral text-4xl sm:text-5xl lg:text-6xl font-semibold text-white leading-[1.05] mt-4 mb-5">
               Know where you stand. <br className="hidden sm:block" />

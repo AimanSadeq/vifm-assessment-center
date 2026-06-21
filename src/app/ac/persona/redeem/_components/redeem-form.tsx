@@ -70,7 +70,7 @@ export function RedeemForm({
       </div>
       <Button onClick={submit} disabled={busy || !ready} className="w-full gap-2">
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
-        Start my Persona assessment
+        Start my Persona® assessment
       </Button>
     </div>
   );

@@ -39,7 +39,7 @@ export default async function TechClientReportPage({ searchParams }: Props) {
   return (
     <div className="mx-auto max-w-5xl px-6 py-8">
       <div className="mb-4">
-        <BackLink href="/admin/tech-sandbox" label="Back to Techno" history />
+        <BackLink href="/admin/tech-sandbox" label="Back to Techno®" history />
       </div>
       {company ? <CompanyReport company={company} /> : <CompanyPicker />}
     </div>

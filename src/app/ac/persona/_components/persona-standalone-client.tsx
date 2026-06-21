@@ -602,7 +602,7 @@ export function PersonaStandaloneClient({
             className="inline-flex items-center gap-2 rounded-lg bg-[#010131] px-6 py-3 text-sm font-semibold text-white hover:bg-[#121140] disabled:opacity-60"
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            {busy ? tx("Preparing…", "جارٍ التحضير…") : tx("Begin Persona assessment", "ابدأ تقييم بيرسونا")}
+            {busy ? tx("Preparing…", "جارٍ التحضير…") : tx("Begin Persona® assessment", "ابدأ تقييم بيرسونا")}
           </button>
         </div>
       )}

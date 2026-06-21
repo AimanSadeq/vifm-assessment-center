@@ -23,11 +23,11 @@ export default async function PersonaResultsPage({ searchParams }: { searchParam
       <header className="border-b bg-white">
         <div className="mx-auto max-w-6xl px-6 py-5">
           <Link href="/ac/persona" className="mb-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-3 w-3" /> Back to Persona
+            <ArrowLeft className="h-3 w-3" /> Back to Persona®
           </Link>
           <div className="flex items-center gap-2">
             <ClipboardList className="h-5 w-5 text-[#5391D5]" />
-            <h1 className="text-xl font-semibold text-[#010131]">Completed Persona results</h1>
+            <h1 className="text-xl font-semibold text-[#010131]">Completed Persona® results</h1>
           </div>
           <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
             Completed sittings (voucher and self-served). Hiring sittings show the role-fit score;

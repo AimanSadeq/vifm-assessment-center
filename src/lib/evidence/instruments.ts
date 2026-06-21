@@ -72,7 +72,7 @@ type FluentRow = {
 
 const fluentAdapter: EvidenceAdapter = {
   key: "fluent",
-  label: "Fluent (English)",
+  label: "Fluent® (English)",
   unitNoun: "item",
   table: "eng_fluent_items",
   basePath: "/admin/evidence/fluent",
@@ -204,7 +204,7 @@ type ReflectRow = {
 
 const reflectAdapter: EvidenceAdapter = {
   key: "reflect",
-  label: "Reflect 360",
+  label: "Reflect 360®",
   unitNoun: "competency",
   table: "reflect_competencies",
   basePath: "/admin/evidence/reflect",

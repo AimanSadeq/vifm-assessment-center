@@ -272,7 +272,7 @@ export default async function PersonalResultsPage({ params, searchParams }: Prop
             className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-2"
           >
             <ArrowLeft className="h-3 w-3" />
-            {isAr ? "العودة إلى بوصلة الجاهزية للذكاء الاصطناعي" : "Back to the AI Readiness Compass"}
+            {isAr ? "العودة إلى بوصلة الجاهزية للذكاء الاصطناعي" : "Back to the AI Readiness Compass®"}
           </Link>
           <div className="flex items-center gap-2 mb-1">
             <Compass className="h-6 w-6 text-accent" />

@@ -131,7 +131,7 @@ export default async function AraRespondPage({
           )}
 
           <span className="ara-eyebrow text-accent">
-            {rtl ? "بوصلة الاستعداد للذكاء الاصطناعي" : "AI Readiness Compass"}
+            {rtl ? "بوصلة الاستعداد للذكاء الاصطناعي" : "AI Readiness Compass®"}
           </span>
           <h1 className="ara-numeral text-3xl sm:text-4xl font-semibold text-white mt-3 mb-2 leading-tight">
             {rtl

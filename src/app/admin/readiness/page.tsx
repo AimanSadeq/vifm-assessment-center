@@ -23,19 +23,19 @@ const INPUTS: {
     icon: Layers,
     tone: "text-[#c026d3]",
     lens: "Self",
-    name: "Persona",
+    name: "Persona®",
     body: "The person rates themselves across the 41 competencies - the same framework as the 360. This is the self view of readiness.",
     href: "/ac/persona",
-    cta: "Open Persona",
+    cta: "Open Persona®",
   },
   {
     icon: Aperture,
     tone: "text-teal-600",
     lens: "Others",
-    name: "Reflect 360",
+    name: "Reflect 360®",
     body: "Manager, peers and direct reports rate the same competencies. This is the observed, multi-rater view of readiness.",
     href: "/reflect",
-    cta: "Open Reflect 360",
+    cta: "Open Reflect 360®",
   },
 ];
 
@@ -68,8 +68,8 @@ export default async function ReadinessHomePage() {
         <div>
           <h1 className="text-2xl font-bold">Succession Readiness</h1>
           <p className="mt-1 max-w-2xl text-muted-foreground">
-            The combined service. It fuses <strong>Persona</strong> (the person&rsquo;s self-assessment) and a{" "}
-            <strong>Reflect 360</strong> (how others rate them) against a target role, and returns a readiness
+            The combined service. It fuses <strong>Persona®</strong> (the person&rsquo;s self-assessment) and a{" "}
+            <strong>Reflect 360®</strong> (how others rate them) against a target role, and returns a readiness
             tier, competency gaps, blind spots and a development plan.
           </p>
         </div>

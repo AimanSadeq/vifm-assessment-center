@@ -62,7 +62,7 @@ export default async function ClientsPage() {
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
                       {c.acId ? (
-                        <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">AC · Pre-Hire</Badge>
+                        <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">AC · Pre-Hire®</Badge>
                       ) : null}
                       {c.araId ? (
                         <Badge className="bg-violet-100 text-violet-800 hover:bg-violet-100">AI Readiness · Reflect</Badge>

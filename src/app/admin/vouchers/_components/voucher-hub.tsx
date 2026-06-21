@@ -13,12 +13,12 @@ export type HubService = { key: ServiceKey; summary: ServiceSummary; slot: React
 // serializable data + the rendered slot - icon components can't cross the
 // server/client boundary as props.
 const SERVICE_META: Record<ServiceKey, { label: string; sub: string; icon: typeof Compass; tone: string }> = {
-  arc:       { label: "AI Readiness Compass", sub: "VIFM-ARC codes",  icon: Compass,     tone: "text-violet-600" },
-  technical: { label: "Techno", sub: "VIFM-TECH codes", icon: BadgeCheck,  tone: "text-indigo-600" },
-  fluent:    { label: "Fluent (English)",     sub: "Fluent codes",    icon: Languages,   tone: "text-sky-600" },
-  cognitive: { label: "Mentium",               sub: "Mentium codes",    icon: BrainCircuit, tone: "text-emerald-600" },
-  persona:   { label: "Persona",              sub: "Persona codes",   icon: Layers,      tone: "text-fuchsia-600" },
-  prehire:   { label: "Pre-Hire",             sub: "VIFM-HIRE codes", icon: UserSearch,  tone: "text-rose-600" },
+  arc:       { label: "AI Readiness Compass®", sub: "VIFM-ARC codes",  icon: Compass,     tone: "text-violet-600" },
+  technical: { label: "Techno®", sub: "VIFM-TECH codes", icon: BadgeCheck,  tone: "text-indigo-600" },
+  fluent:    { label: "Fluent® (English)",     sub: "Fluent® codes",    icon: Languages,   tone: "text-sky-600" },
+  cognitive: { label: "Mentium®",               sub: "Mentium® codes",    icon: BrainCircuit, tone: "text-emerald-600" },
+  persona:   { label: "Persona®",              sub: "Persona® codes",   icon: Layers,      tone: "text-fuchsia-600" },
+  prehire:   { label: "Pre-Hire®",             sub: "VIFM-HIRE codes", icon: UserSearch,  tone: "text-rose-600" },
 };
 
 function SummaryCard({

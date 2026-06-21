@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RedeemForm } from "./_components/redeem-form";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Redeem your screening code · VIFM Pre-Hire" };
+export const metadata = { title: "Redeem your screening code · VIFM Pre-Hire®" };
 
 type Props = {
   searchParams?: { code?: string; name?: string; email?: string; company?: string };
@@ -24,7 +24,7 @@ export default function PrehireRedeemPage({ searchParams }: Props) {
           <VifmLogo variant="white" size="sm" />
           <div className="mt-10 max-w-2xl">
             <span className="ara-eyebrow text-accent">
-              <UserSearch className="h-3 w-3" /> VIFM Pre-Hire
+              <UserSearch className="h-3 w-3" /> VIFM Pre-Hire®
             </span>
             <h1 className="ara-numeral mt-4 text-3xl font-semibold leading-tight text-white sm:text-4xl">
               Redeem your screening code

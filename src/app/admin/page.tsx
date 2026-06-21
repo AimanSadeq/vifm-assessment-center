@@ -19,20 +19,20 @@ type Svc = { name: string; desc: string; href: string; icon: typeof Compass; ton
 
 const ACQUIRE: Svc[] = [
   { name: "Assessment Center", desc: "Exercises, assessors, wash-up, OAR.", href: "/admin/assessment-center", icon: ClipboardCheck, tone: "text-[#5391D5]" },
-  { name: "AI Readiness Compass", desc: "Individual + org AI-readiness diagnostics.", href: "/ara?lens=acquisition", icon: Compass, tone: "text-violet-600" },
-  { name: "Pre-Hire screening", desc: "Quiz + English + AI interview, ranked.", href: "/admin/prehire", icon: UserSearch, tone: "text-rose-600" },
-  { name: "Techno", desc: "Hands-on, function-specific proficiency.", href: "/admin/tech-sandbox?lens=acquisition", icon: BadgeCheck, tone: "text-indigo-600" },
-  { name: "Mentium", desc: "Indicative reasoning aptitude (psychometrics).", href: "/ac/cognitive", icon: BrainCircuit, tone: "text-emerald-600" },
-  { name: "Persona", desc: "Behavioural self-assessment across the framework.", href: "/ac/persona", icon: Layers, tone: "text-fuchsia-600" },
-  { name: "Fluent (English)", desc: "Four-skill CEFR English placement.", href: "/ac/fluent", icon: Languages, tone: "text-sky-600" },
+  { name: "AI Readiness Compass®", desc: "Individual + org AI-readiness diagnostics.", href: "/ara?lens=acquisition", icon: Compass, tone: "text-violet-600" },
+  { name: "Pre-Hire® screening", desc: "Quiz + English + AI interview, ranked.", href: "/admin/prehire", icon: UserSearch, tone: "text-rose-600" },
+  { name: "Techno®", desc: "Hands-on, function-specific proficiency.", href: "/admin/tech-sandbox?lens=acquisition", icon: BadgeCheck, tone: "text-indigo-600" },
+  { name: "Mentium®", desc: "Indicative reasoning aptitude (psychometrics).", href: "/ac/cognitive", icon: BrainCircuit, tone: "text-emerald-600" },
+  { name: "Persona®", desc: "Behavioural self-assessment across the framework.", href: "/ac/persona", icon: Layers, tone: "text-fuchsia-600" },
+  { name: "Fluent® (English)", desc: "Four-skill CEFR English placement.", href: "/ac/fluent", icon: Languages, tone: "text-sky-600" },
 ];
 
 const MANAGE: Svc[] = [
   { name: "Development Center", desc: "The AC run developmentally - gaps + IDP.", href: "/admin/assessment-center", icon: ClipboardCheck, tone: "text-[#5391D5]" },
-  { name: "AI Readiness Compass", desc: "Grow individual + team AI readiness.", href: "/ara?lens=development", icon: Compass, tone: "text-violet-600" },
-  { name: "Reflect 360", desc: "Multi-rater leadership feedback.", href: "/reflect", icon: Aperture, tone: "text-teal-600" },
-  { name: "Succession Readiness", desc: "Persona + 360 vs a target role.", href: "/admin/readiness", icon: TrendingUp, tone: "text-amber-600" },
-  { name: "Techno", desc: "Function skill gaps mapped to courses.", href: "/admin/tech-sandbox?lens=development", icon: BadgeCheck, tone: "text-indigo-600" },
+  { name: "AI Readiness Compass®", desc: "Grow individual + team AI readiness.", href: "/ara?lens=development", icon: Compass, tone: "text-violet-600" },
+  { name: "Reflect 360®", desc: "Multi-rater leadership feedback.", href: "/reflect", icon: Aperture, tone: "text-teal-600" },
+  { name: "Succession Readiness", desc: "Persona® + 360 vs a target role.", href: "/admin/readiness", icon: TrendingUp, tone: "text-amber-600" },
+  { name: "Techno®", desc: "Function skill gaps mapped to courses.", href: "/admin/tech-sandbox?lens=development", icon: BadgeCheck, tone: "text-indigo-600" },
   { name: "VIFM Academy", desc: "Training catalogue + course recommender.", href: "/admin/courses", icon: GraduationCap, tone: "text-orange-600" },
 ];
 

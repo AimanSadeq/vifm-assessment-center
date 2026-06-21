@@ -4,7 +4,7 @@ import { VouchersClient } from "./_components/vouchers-client";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Vouchers · AI Readiness Compass" };
+export const metadata = { title: "Vouchers · AI Readiness Compass®" };
 
 type VoucherRow = {
   id: string;

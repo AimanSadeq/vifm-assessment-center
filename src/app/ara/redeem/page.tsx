@@ -3,7 +3,7 @@ import { RedeemForm } from "./_components/redeem-form";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Redeem Voucher · AI Readiness Compass" };
+export const metadata = { title: "Redeem Voucher · AI Readiness Compass®" };
 
 type Props = { searchParams?: { code?: string; email?: string; name?: string } };
 

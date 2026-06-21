@@ -358,7 +358,7 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
             {unified.technical.map((tech) => (
               <span
                 key={tech.domainKey}
-                title={tech.source === "assessment" ? "Techno" : "Academy completion (evidence)"}
+                title={tech.source === "assessment" ? "Techno®" : "Academy completion (evidence)"}
                 className="inline-flex items-center gap-1 rounded-full border border-indigo-300 bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-800"
               >
                 {tech.domainName} · {tech.display}

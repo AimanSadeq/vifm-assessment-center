@@ -16,7 +16,7 @@ import { getTimerMinutes, TIMER_DEFAULTS } from "@/lib/assessment-timers";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Fluent · English placement (prototype)",
+  title: "Fluent® · English placement (prototype)",
 };
 
 type Props = {

@@ -43,7 +43,7 @@ export function RedeemForm({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-xl">
-          <Compass className="h-5 w-5 text-[#5391D5]" /> AI Readiness Compass
+          <Compass className="h-5 w-5 text-[#5391D5]" /> AI Readiness Compass®
         </CardTitle>
         <CardDescription>Confirm your details to start your assessment.</CardDescription>
       </CardHeader>

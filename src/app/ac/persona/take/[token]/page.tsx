@@ -9,7 +9,7 @@ import { getVoucherScopeByRedemptionToken } from "@/lib/persona/vouchers";
 import { PersonaStandaloneClient } from "../../_components/persona-standalone-client";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Persona assessment · VIFM" };
+export const metadata = { title: "Persona® assessment · VIFM" };
 
 /**
  * Token-gated Persona runner for voucher delegates (no account). The redemption

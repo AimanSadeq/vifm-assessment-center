@@ -6,7 +6,7 @@ import { getServerT } from "@/lib/i18n/server";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Reflect 360 · Library templates",
+  title: "Reflect 360® · Library templates",
 };
 
 type TemplateRow = {

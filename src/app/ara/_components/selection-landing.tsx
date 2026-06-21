@@ -48,7 +48,7 @@ export function SelectionLanding() {
             <div>
               <span className="ara-eyebrow text-accent">
                 <Sparkles className="h-3 w-3" />
-                AI Readiness Compass · For Selection
+                AI Readiness Compass® · For Selection
               </span>
               <h1 className="ara-numeral text-4xl sm:text-5xl font-semibold text-white leading-[1.05] mt-4 mb-5">
                 Hire people who are <span className="ara-accent-sweep">AI-ready</span>.
@@ -192,7 +192,7 @@ export function SelectionLanding() {
           </div>
           <div className="text-xs text-muted-foreground flex items-center gap-1.5">
             <CheckCircle2 className="h-3.5 w-3.5 text-accent" />
-            <span>AI Readiness Compass · Talent Acquisition</span>
+            <span>AI Readiness Compass® · Talent Acquisition</span>
           </div>
         </div>
       </footer>

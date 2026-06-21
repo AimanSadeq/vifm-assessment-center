@@ -9,7 +9,7 @@ import { CEFR_ORDER, type CefrLevel } from "@/lib/ai/fluent-english";
 import { quadraticWeightedKappa, QWK_ACCEPTABLE } from "@/lib/scoring/qwk";
 import { RatingForm } from "./_components/rating-form";
 
-export const metadata = { title: "Fluent · Scoring calibration" };
+export const metadata = { title: "Fluent® · Scoring calibration" };
 
 type SkillScore = { cefr?: string; transcript?: string; attempted?: boolean };
 type ResultRow = {

@@ -6,7 +6,7 @@ import { loadPersonaRoleOptions } from "@/lib/scoring/persona-roles";
 import { RoleDesigner } from "./_components/role-designer";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Persona · Design target roles" };
+export const metadata = { title: "Persona® · Design target roles" };
 
 export default async function DesignTargetRolesPage() {
   const caller = await getCurrentCaller();
@@ -19,7 +19,7 @@ export default async function DesignTargetRolesPage() {
       <header className="border-b bg-white">
         <div className="mx-auto max-w-4xl px-6 py-5">
           <Link href="/ac/persona" className="mb-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-3 w-3" /> Back to Persona
+            <ArrowLeft className="h-3 w-3" /> Back to Persona®
           </Link>
           <div className="flex items-center gap-2">
             <Layers className="h-5 w-5 text-[#5391D5]" />

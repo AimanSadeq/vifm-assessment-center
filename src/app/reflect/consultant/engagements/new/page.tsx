@@ -6,7 +6,7 @@ import { resolvePlanOrgId } from "@/lib/start/resolve-plan-org";
 import { ReflectWizard, type WizardOrg, type WizardTemplate } from "./_components/wizard";
 
 export const metadata = {
-  title: "New Reflect 360 engagement",
+  title: "New Reflect 360® engagement",
 };
 
 async function fetchWizardData(): Promise<{ orgs: WizardOrg[]; templates: WizardTemplate[] }> {

@@ -5,7 +5,7 @@ import { personaBand, personaBandLabel, PERSONA_BAND_TW, type PersonaBandKey } f
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Persona · Cohort report" };
+export const metadata = { title: "Persona® · Cohort report" };
 
 type Session = {
   id: string;
@@ -92,11 +92,11 @@ export default async function PersonaCohortPage({ searchParams }: { searchParams
             href="/ac/persona"
             className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-1"
           >
-            <ArrowLeft className="h-3 w-3" /> Back to Persona
+            <ArrowLeft className="h-3 w-3" /> Back to Persona®
           </Link>
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5 text-[#5391D5]" />
-            <h1 className="text-xl font-semibold text-[#010131]">Persona cohort report</h1>
+            <h1 className="text-xl font-semibold text-[#010131]">Persona® cohort report</h1>
             <span className="ml-2 rounded-full bg-[#5391D5]/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[#5391D5]">
               Self-report
             </span>

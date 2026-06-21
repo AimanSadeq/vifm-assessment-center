@@ -45,7 +45,7 @@ export default async function TechResultsPage({ params }: { params: { token: str
 
       <header className="space-y-1">
         <p className="text-xs font-semibold uppercase tracking-wider text-[#5391D5]">
-          VIFM · Techno {r.talentLens === "acquisition" ? "acquisition" : "development"} report
+          VIFM · Techno® {r.talentLens === "acquisition" ? "acquisition" : "development"} report
         </p>
         <h1 className="text-2xl font-semibold text-[#010131]">
           {r.nodeId ? `${r.nodeId} · ` : ""}

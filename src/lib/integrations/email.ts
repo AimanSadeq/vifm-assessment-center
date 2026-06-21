@@ -177,7 +177,7 @@ Best regards,
 Virginia Institute of Finance and Management`,
   },
   prehire_client_report: {
-    subject: "Pre-Hire screening report - {{candidateName}} ({{roleTitle}})",
+    subject: "Pre-Hire® screening report - {{candidateName}} ({{roleTitle}})",
     body: `Dear {{clientName}},
 
 Please find attached the pre-hire screening report for {{candidateName}}{{empClause}}, who completed the screening for the {{roleTitle}} role.
@@ -190,7 +190,7 @@ Best regards,
 Virginia Institute of Finance and Management`,
   },
   fluent_result: {
-    subject: "Your Fluent result - {{level}}",
+    subject: "Your Fluent® result - {{level}}",
     body: `Dear {{takerName}},
 
 Thank you for completing the Fluent English placement test.

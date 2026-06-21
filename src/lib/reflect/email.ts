@@ -127,7 +127,7 @@ ${d.respondentUrl}
 
 Field window closes ${d.fieldWindowEnd}.
 
-- Reflect 360`,
+- Reflect 360®`,
     }),
     ar: (d) => ({
       contentType: "Text",
@@ -141,7 +141,7 @@ ${d.respondentUrl}
 
 تُغلق نافذة التقييم في ${d.fieldWindowEnd}.
 
-- Reflect 360`,
+- Reflect 360®`,
     }),
     bilingual: (d) => ({
       contentType: "HTML",
@@ -172,7 +172,7 @@ Status: ${d.completedCount} of ${d.totalCount} raters complete for ${d.participa
 
 Open the engagement: ${d.engagementUrl}
 
-- Reflect 360`,
+- Reflect 360®`,
     }),
     ar: (d) => ({
       contentType: "Text",
@@ -185,7 +185,7 @@ Open the engagement: ${d.engagementUrl}
 
 افتح المشروع: ${d.engagementUrl}
 
-- Reflect 360`,
+- Reflect 360®`,
     }),
     bilingual: (d) => ({
       contentType: "HTML",

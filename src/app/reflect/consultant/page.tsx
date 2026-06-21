@@ -16,7 +16,7 @@ import { getServerT, type ServerT } from "@/lib/i18n/server";
 import { cn } from "@/lib/utils";
 
 export const metadata = {
-  title: "Reflect 360 · Consultant",
+  title: "Reflect 360® · Consultant",
 };
 
 type EngagementRow = {

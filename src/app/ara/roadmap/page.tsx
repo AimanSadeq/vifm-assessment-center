@@ -187,7 +187,7 @@ export default function AraRoadmapPage() {
             <p className="text-lg text-white/75 max-w-2xl leading-relaxed">
               From the moment a consultant creates an assessment to the moment a
               client opens their bilingual PDF, this is the full journey of the
-              AI Readiness Compass - and every component that powers it.
+              AI Readiness Compass® - and every component that powers it.
             </p>
           </div>
         </div>
@@ -455,7 +455,7 @@ export default function AraRoadmapPage() {
       <footer className="border-t bg-card/50">
         <div className="max-w-6xl mx-auto px-6 py-8 text-center text-xs text-muted-foreground">
           <div className="font-medium text-foreground mb-1">
-            VIFM AI Readiness Compass
+            VIFM AI Readiness Compass®
           </div>
           Know where you stand. Know where to go.
         </div>

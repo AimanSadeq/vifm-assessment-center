@@ -23,7 +23,7 @@ type Lang = "en" | "ar";
 
 const STAGE_LABELS: Record<string, { en: string; ar: string }> = {
   quiz: { en: "Competency Quiz", ar: "اختبار الكفاءات" },
-  fluent: { en: "English (Fluent)", ar: "الإنجليزية (Fluent)" },
+  fluent: { en: "English (Fluent®)", ar: "الإنجليزية (Fluent®)" },
   cbi: { en: "Behavioural Interview", ar: "المقابلة السلوكية" },
   assessment_center: { en: "Assessment Center", ar: "مركز التقييم" },
 };

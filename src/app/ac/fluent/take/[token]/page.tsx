@@ -6,7 +6,7 @@ import { VifmLogo } from "@/components/shared/vifm-logo";
 import { FluentClient } from "../../_components/fluent-client";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "English placement · VIFM Fluent" };
+export const metadata = { title: "English placement · VIFM Fluent®" };
 
 /**
  * Token-gated Fluent runner for voucher delegates (no account). The redemption
@@ -31,7 +31,7 @@ export default async function FluentTakePage({ params }: { params: { token: stri
           <VifmLogo variant="white" size="sm" />
           <div className="mt-8 max-w-2xl">
             <span className="ara-eyebrow text-[#9CC4EC]">
-              <Languages className="h-3 w-3" /> VIFM Fluent · English placement
+              <Languages className="h-3 w-3" /> VIFM Fluent® · English placement
             </span>
             <h1 className="ara-numeral mt-4 text-3xl font-semibold leading-tight text-white sm:text-4xl">
               Welcome{redemption.redeemer_name ? `, ${redemption.redeemer_name}` : ""}

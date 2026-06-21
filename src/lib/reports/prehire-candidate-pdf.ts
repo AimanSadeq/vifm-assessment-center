@@ -3,7 +3,11 @@ import type { Browser } from "puppeteer-core";
 import { launchPdfBrowser } from "@/lib/reports/pdf-browser";
 import { createServiceClient } from "@/lib/supabase/server";
 import { computeComposite } from "@/lib/prehire/scoring";
-import { renderPrehireCandidateHtml, type PrehireReportData } from "@/lib/reports/prehire-candidate-html";
+import {
+  renderPrehireCandidateHtml,
+  renderPrehireSummaryHtml,
+  type PrehireReportData,
+} from "@/lib/reports/prehire-candidate-html";
 import {
   FLUENT_SKILLS,
   resolveFluentSkills,
@@ -93,8 +97,10 @@ export async function buildPrehireCandidatePdf(params: {
   requisitionId: string;
   candidateId: string;
   lang: Lang;
+  /** "full" = the detailed report (default); "summary" = the 1-page sheet. */
+  mode?: "full" | "summary";
 }): Promise<PrehirePdfResult> {
-  const { requisitionId, candidateId, lang } = params;
+  const { requisitionId, candidateId, lang, mode = "full" } = params;
   const sb = createServiceClient();
 
   const [reqRes, candRes] = await Promise.all([
@@ -201,7 +207,7 @@ export async function buildPrehireCandidatePdf(params: {
     generatedAt: new Date(),
   };
 
-  const html = renderPrehireCandidateHtml(data, lang);
+  const html = mode === "summary" ? renderPrehireSummaryHtml(data, lang) : renderPrehireCandidateHtml(data, lang);
 
   let browser: Browser | null = null;
   try {
@@ -210,7 +216,7 @@ export async function buildPrehireCandidatePdf(params: {
     await page.setContent(html, { waitUntil: "networkidle0", timeout: 60_000 });
     const out = await page.pdf({ format: "A4", printBackground: true, preferCSSPageSize: true });
     const pdf = Buffer.from(out);
-    const filename = `prehire-${candidateId.slice(0, 8)}-${lang}.pdf`;
+    const filename = `prehire-${mode === "summary" ? "summary-" : ""}${candidateId.slice(0, 8)}-${lang}.pdf`;
     return { ok: true, pdf, filename, data };
   } catch (err) {
     return { ok: false, status: 500, error: err instanceof Error ? err.message : "PDF generation failed" };

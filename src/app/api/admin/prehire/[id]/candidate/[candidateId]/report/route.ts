@@ -25,13 +25,16 @@ export async function GET(
     throw err;
   }
 
-  const urlLang = new URL(req.url).searchParams.get("lang");
+  const sp = new URL(req.url).searchParams;
+  const urlLang = sp.get("lang");
   const lang = urlLang === "ar" ? "ar" : urlLang === "en" ? "en" : await getServerLocale();
+  const mode = sp.get("view") === "summary" ? "summary" : "full";
 
   const result = await buildPrehireCandidatePdf({
     requisitionId: params.id,
     candidateId: params.candidateId,
     lang,
+    mode,
   });
 
   if (!result.ok) {

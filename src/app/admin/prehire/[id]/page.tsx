@@ -256,6 +256,15 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                     <TableCell className="text-end">
                       <div className="inline-flex items-center gap-1">
                         <a
+                          href={`/api/admin/prehire/${req.id}/candidate/${c.id}/report?lang=${locale}&view=summary`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 rounded-md border border-input bg-background px-2 py-1 text-xs font-medium hover:bg-accent"
+                          title={locale === "ar" ? "ورقة ملخّص من صفحة واحدة" : "One-page summary sheet"}
+                        >
+                          <FileText className="h-3.5 w-3.5" /> {locale === "ar" ? "ملخّص" : "Summary"}
+                        </a>
+                        <a
                           href={`/api/admin/prehire/${req.id}/candidate/${c.id}/report?lang=${locale}`}
                           target="_blank"
                           rel="noopener noreferrer"

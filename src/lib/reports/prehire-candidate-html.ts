@@ -55,6 +55,7 @@ const L: Record<Lang, Record<string, string>> = {
   en: {
     brand: "Virginia Institute of Finance and Management",
     title: "Pre-Hire® Screening Report",
+    summaryTitle: "Pre-Hire® Screening Summary",
     candidate: "Candidate",
     employeeId: "Employee ID",
     role: "Role",
@@ -113,6 +114,7 @@ const L: Record<Lang, Record<string, string>> = {
   ar: {
     brand: "معهد فرجينيا للتمويل والإدارة",
     title: "تقرير فرز ما قبل التوظيف",
+    summaryTitle: "ملخّص فرز ما قبل التوظيف",
     candidate: "المرشّح",
     employeeId: "الرقم الوظيفي",
     role: "الوظيفة",
@@ -179,6 +181,91 @@ const TONE: Record<PrehireRecommendation, { bg: string; fg: string }> = {
 
 const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+/**
+ * One-page condensed SUMMARY sheet (a quick at-a-glance read): header, the
+ * composite + advisory band, a compact per-stage table, and the guardrail line.
+ * No methodology, transcript, or band table - that's the full report.
+ */
+export function renderPrehireSummaryHtml(data: PrehireReportData, lang: Lang): string {
+  const t = L[lang];
+  const rtl = lang === "ar";
+  const tone = TONE[data.recommendation];
+  const recoLabel = t[`reco_${data.recommendation}`];
+  const dateStr = data.generatedAt.toLocaleDateString(lang === "ar" ? "ar" : "en-GB", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const rows = data.stages
+    .map((s) => {
+      const outcome =
+        s.normalized == null
+          ? `<span class="muted">${t.notTaken}</span>`
+          : s.passed === false
+            ? `<span class="badge warn">${t.below}</span>`
+            : `<span class="badge ok">${t.pass}</span>`;
+      return `<tr><td class="strong">${esc(s.label)}${s.required ? ` <span class="req">${t.required}</span>` : ""}</td><td class="num">${Math.round(s.weightPct)}%</td><td class="num">${s.normalized == null ? "-" : Math.round(s.normalized)}</td><td class="num">${s.cutScore == null ? "-" : s.cutScore}</td><td>${outcome}</td></tr>`;
+    })
+    .join("");
+
+  return `<!doctype html>
+<html lang="${lang}" dir="${rtl ? "rtl" : "ltr"}">
+<head>
+<meta charset="utf-8" />
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+<style>
+  @page { size: A4; margin: 20mm 16mm; }
+  * { box-sizing: border-box; }
+  body { font-family: ${rtl ? "'Cairo'," : ""} 'Open Sans', 'Segoe UI', Tahoma, sans-serif; color: #111232; margin: 0; font-size: 12.5px; line-height: 1.5; }
+  .head { border-bottom: 3px solid #010131; padding-bottom: 10px; margin-bottom: 18px; }
+  .brand { color: #5391D5; font-size: 11px; font-weight: 600; letter-spacing: .04em; }
+  h1 { font-size: 21px; margin: 4px 0 2px; color: #010131; }
+  .meta { color: #555; font-size: 11px; }
+  .hero { display: flex; gap: 14px; margin: 18px 0; align-items: stretch; }
+  .hero .box { flex: 1; border: 1px solid #e3e6ee; border-radius: 10px; padding: 16px 18px; }
+  .hero .v { font-size: 40px; font-weight: 700; color: #010131; line-height: 1; }
+  .hero .l { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: #777; margin-top: 4px; }
+  .reco { display: inline-block; border-radius: 999px; padding: 6px 16px; font-weight: 700; font-size: 15px; }
+  h2 { font-size: 13px; color: #010131; margin: 18px 0 8px; border-${rtl ? "right" : "left"}: 3px solid #5391D5; padding-${rtl ? "right" : "left"}: 8px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: ${rtl ? "right" : "left"}; padding: 8px; border-bottom: 1px solid #eceef4; font-size: 12px; }
+  th { background: #f6f8fc; color: #444; font-weight: 600; text-transform: uppercase; font-size: 9.5px; letter-spacing: .04em; }
+  td.num, th.num { text-align: center; font-variant-numeric: tabular-nums; }
+  td.strong { font-weight: 600; color: #010131; }
+  .req { font-size: 8.5px; color: #b45309; border: 1px solid #fde68a; background: #fffbeb; border-radius: 4px; padding: 0 4px; }
+  .muted { color: #999; }
+  .badge { display: inline-block; border-radius: 999px; padding: 1px 8px; font-size: 9.5px; font-weight: 600; }
+  .badge.ok { background: #d1fae5; color: #065f46; }
+  .badge.warn { background: #ffe4e6; color: #9f1239; }
+  .disclaimer { font-size: 10.5px; color: #475569; background: #f8fafc; border: 1px solid #e3e6ee; border-radius: 8px; padding: 10px 12px; margin-top: 18px; }
+  .foot { margin-top: 24px; border-top: 1px solid #e3e6ee; padding-top: 8px; color: #888; font-size: 9.5px; display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+  <div class="head">
+    <div class="brand">${t.brand}</div>
+    <h1>${t.summaryTitle}</h1>
+    <div class="meta">${t.candidate}: <b>${esc(data.candidateName)}</b>${
+      data.employeeId ? ` · ${t.employeeId}: ${esc(data.employeeId)}` : ""
+    } · ${t.role}: ${esc(data.requisitionTitle)}${data.level ? ` (${esc(data.level)})` : ""}${
+      data.orgName ? ` · ${esc(data.orgName)}` : ""
+    } · ${t.generated}: ${dateStr}</div>
+  </div>
+  <div class="hero">
+    <div class="box"><div class="v">${data.composite == null ? "-" : data.composite}</div><div class="l">${t.composite}</div></div>
+    <div class="box"><div class="l" style="margin-bottom:8px">${t.advisory}</div><span class="reco" style="background:${tone.bg};color:${tone.fg}">${recoLabel}</span></div>
+  </div>
+  <h2>${t.perStage}</h2>
+  <table>
+    <thead><tr><th>${t.thStage}</th><th class="num">${t.thWeight}</th><th class="num">${t.thScore}</th><th class="num">${t.thCut}</th><th>${t.thOutcome}</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="disclaimer">${t.disclaimer}</div>
+  <div class="foot"><span>${t.confidential}</span><span>${esc(data.candidateName)}</span></div>
+</body>
+</html>`;
+}
 
 export function renderPrehireCandidateHtml(data: PrehireReportData, lang: Lang): string {
   const t = L[lang];

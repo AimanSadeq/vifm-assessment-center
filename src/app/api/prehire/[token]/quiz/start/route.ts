@@ -17,6 +17,14 @@ const MAX_COMPETENCIES = 4;
 // neutral mid weight so it ranks below explicitly high-priority picks but above
 // low-priority ones.
 const DEFAULT_WEIGHT = 3;
+// Per-generation timeout. Each competency's deck is one Claude round-trip; bound
+// it so a slow/stalled call can't leave the candidate stuck on "Preparing" (the
+// Anthropic SDK's own default timeout is minutes). On timeout the call yields
+// null and that competency simply contributes no items.
+const GEN_TIMEOUT_MS = 35_000;
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T | null> {
+  return Promise.race([p, new Promise<null>((resolve) => setTimeout(() => resolve(null), ms))]);
+}
 
 // Send the candidate everything EXCEPT the answer key (correct_index,
 // explanations, points) - integrity matters for a hiring screen.
@@ -195,36 +203,43 @@ export async function POST(_req: Request, { params }: { params: { token: string 
       indicatorsByComp.set(row.competency_id, list);
     }
 
-    const collected: QuizQuestion[] = [];
-    for (let i = 0; i < top.length; i++) {
-      const wanted = allocation[i];
-      if (wanted <= 0) continue;
-      const comp = compById.get(top[i].id);
-      if (!comp) continue;
+    // Generate each competency's deck IN PARALLEL (was sequential - up to 4
+    // serial Claude calls, which presents to the candidate as a stuck
+    // "Preparing"). Each call is timeout-guarded; a slow one just yields no items.
+    const decks = await Promise.all(
+      top.map(async (c, i): Promise<QuizQuestion[]> => {
+        const wanted = allocation[i];
+        if (wanted <= 0) return [];
+        const comp = compById.get(c.id);
+        if (!comp) return [];
 
-      // Behavioural indicators carry both real BIs and "[DEV TIP] "-prefixed
-      // development tips (migration 00004). Split them so the generator treats
-      // tips as suggestions and BIs as observed behaviours.
-      const all = indicatorsByComp.get(comp.id) ?? [];
-      const indicators = all.filter((r) => !r.description.startsWith("[DEV TIP]"));
-      const developmentTips = all
-        .filter((r) => r.description.startsWith("[DEV TIP]"))
-        .map((r) => r.description.replace(/^\[DEV TIP\]\s*/, ""))
-        .slice(0, 3);
+        // Behavioural indicators carry both real BIs and "[DEV TIP] "-prefixed
+        // development tips (migration 00004). Split them so the generator treats
+        // tips as suggestions and BIs as observed behaviours.
+        const all = indicatorsByComp.get(comp.id) ?? [];
+        const indicators = all.filter((r) => !r.description.startsWith("[DEV TIP]"));
+        const developmentTips = all
+          .filter((r) => r.description.startsWith("[DEV TIP]"))
+          .map((r) => r.description.replace(/^\[DEV TIP\]\s*/, ""))
+          .slice(0, 3);
 
-      // The generator returns ~7 items per competency; we keep only `wanted` of
-      // them. Cheap relative to a hiring screen and keeps each competency's items
-      // grounded in that competency's own indicators.
-      const deck = await generateQuizQuestions({
-        competency: comp,
-        indicators,
-        developmentTips,
-        currentScore: null,
-        targetScore,
-        bilingual: true,
-      });
-      if (deck && deck.length > 0) collected.push(...deck.slice(0, wanted));
-    }
+        // The generator returns ~7 items per competency; keep only `wanted` of
+        // them, grounded in that competency's own indicators.
+        const deck = await withTimeout(
+          generateQuizQuestions({
+            competency: comp,
+            indicators,
+            developmentTips,
+            currentScore: null,
+            targetScore,
+            bilingual: true,
+          }),
+          GEN_TIMEOUT_MS
+        );
+        return deck && deck.length > 0 ? deck.slice(0, wanted) : [];
+      })
+    );
+    const collected: QuizQuestion[] = decks.flat();
 
     if (collected.length > 0) {
       // Re-id sequentially so ids are unique across competencies, and hard-cap to
@@ -238,17 +253,20 @@ export async function POST(_req: Request, { params }: { params: { token: string 
   // (c) Synthetic single-competency fallback - keeps legacy requisitions (no
   // competency set, no role profile, or an AI/DB miss above) producing a quiz.
   if (!questions || questions.length === 0) {
-    questions = await generateQuizQuestions({
-      competency: {
-        id: "prehire",
-        name: `${ctx.requisition.title} - core competency`,
-        description: `Core professional competencies for the ${ctx.requisition.title} role.`,
-      },
-      indicators: [],
-      currentScore: null,
-      targetScore,
-      bilingual: true,
-    });
+    questions = await withTimeout(
+      generateQuizQuestions({
+        competency: {
+          id: "prehire",
+          name: `${ctx.requisition.title} - core competency`,
+          description: `Core professional competencies for the ${ctx.requisition.title} role.`,
+        },
+        indicators: [],
+        currentScore: null,
+        targetScore,
+        bilingual: true,
+      }),
+      GEN_TIMEOUT_MS
+    );
   }
 
   if (!questions || questions.length === 0) {

@@ -103,6 +103,9 @@ export default async function FluentCohortPage({ searchParams }: { searchParams?
           <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
             {t("acFluent.cohortSubtitle")}
           </p>
+          <Link href="/admin/fluent/partner-courses" className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-[#5391D5] hover:underline">
+            <BookOpen className="h-3.5 w-3.5" /> Manage partner English courses (report recommendations)
+          </Link>
         </div>
       </header>
 

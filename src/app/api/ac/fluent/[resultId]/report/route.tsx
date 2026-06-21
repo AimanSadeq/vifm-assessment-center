@@ -15,6 +15,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { FluentReport } from "@/lib/reports/fluent-report";
 import type { FluentResult } from "@/lib/ai/fluent-english";
 import { computeIntegritySignal, type IntegrityFlags, type IntegritySignal } from "@/lib/scoring/integrity";
+import { recommendEnglishDevelopment, type EnglishRecommendations } from "@/lib/recommender/english";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -65,7 +66,18 @@ export async function GET(_req: Request, { params }: { params: { resultId: strin
   const integrity: IntegritySignal | null =
     row.integrity_flags?.signal ?? (row.integrity_flags ? computeIntegritySignal(row.integrity_flags) : null);
 
-  const buffer = await renderToBuffer(<FluentReport data={{ name, date, result: row.result, rangeText, integrity }} />);
+  // English-development recommendations (VIFM catalogue + pluggable partner
+  // courses). Best-effort: a recommender failure must never block the report.
+  let recommendations: EnglishRecommendations | null = null;
+  try {
+    recommendations = await recommendEnglishDevelopment({ result: row.result });
+  } catch {
+    recommendations = null;
+  }
+
+  const buffer = await renderToBuffer(
+    <FluentReport data={{ name, date, result: row.result, rangeText, integrity, recommendations }} />
+  );
   const safe = name.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase() || "candidate";
   return new NextResponse(new Uint8Array(buffer), {
     headers: {

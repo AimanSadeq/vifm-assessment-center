@@ -1,6 +1,7 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import type { FluentResult, WritingIssue } from "@/lib/ai/fluent-english";
 import type { IntegritySignal } from "@/lib/scoring/integrity";
+import type { EnglishRecommendations, EnglishCourseRec } from "@/lib/recommender/english";
 
 /**
  * Fluent - comprehensive English placement REPORT (PDF, EN, React-PDF). Unlike
@@ -117,6 +118,13 @@ const s = StyleSheet.create({
 
   defTitle: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.primary, marginTop: 6, marginBottom: 2 },
   defLine: { fontSize: 8, color: C.light, lineHeight: 1.4, marginBottom: 1 },
+
+  recProvider: { fontSize: 8.5, fontFamily: "Helvetica-Bold", color: C.accent, textTransform: "uppercase", letterSpacing: 0.5, marginTop: 7, marginBottom: 3 },
+  recRow: { borderTopWidth: 1, borderTopColor: C.border, paddingTop: 4, marginTop: 4 },
+  recTitle: { fontSize: 9, fontFamily: "Helvetica-Bold", color: C.primary },
+  recMeta: { fontSize: 7.5, color: C.light, marginTop: 1 },
+  recReason: { fontSize: 8, color: C.text, lineHeight: 1.35, marginTop: 1 },
+
   foot: { position: "absolute", bottom: 22, left: 40, right: 40, borderTopWidth: 1, borderTopColor: C.border, paddingTop: 5, fontSize: 7.5, color: C.light },
 });
 
@@ -149,15 +157,40 @@ function Criterion({ label, value }: { label: string; value: number }) {
   );
 }
 
+const SKILL_LABEL: Record<string, string> = {
+  reading: "reading", listening: "listening", writing: "writing", speaking: "speaking",
+};
+
+function RecRow({ c }: { c: EnglishCourseRec }) {
+  const meta = [c.code, c.level_label].filter(Boolean).join(" · ");
+  return (
+    <View style={s.recRow} wrap={false}>
+      <Text style={s.recTitle}>{c.title_en}</Text>
+      {meta ? <Text style={s.recMeta}>{meta}</Text> : null}
+      <Text style={s.recReason}>{c.reason_en}</Text>
+      {c.url ? <Text style={s.recMeta}>{c.url}</Text> : null}
+    </View>
+  );
+}
+
 export function FluentReport({
   data,
 }: {
-  data: { name: string; date: string; result: FluentResult; rangeText: string | null; integrity?: IntegritySignal | null };
+  data: {
+    name: string;
+    date: string;
+    result: FluentResult;
+    rangeText: string | null;
+    integrity?: IntegritySignal | null;
+    recommendations?: EnglishRecommendations | null;
+  };
 }) {
   const r = data.result;
   const w = r.writing;
   const sp = r.speaking;
   const issues = w.issues ?? [];
+  const recs = data.recommendations ?? null;
+  const hasRecs = !!recs && (recs.vifm.length > 0 || recs.partner.length > 0);
   return (
     <Document title={`English Placement Report - ${data.name}`}>
       <Page size="A4" style={s.page}>
@@ -306,6 +339,40 @@ export function FluentReport({
               </View>
               <Text style={{ fontSize: 8, color: C.light, lineHeight: 1.4, marginTop: 4, fontStyle: "italic" }}>
                 Advisory only - this is review telemetry from the test administration. It never affects the CEFR level, caps a score, or auto-fails the test.
+              </Text>
+            </View>
+          </>
+        )}
+
+        {/* Recommended development programmes (FLU course recs) - VIFM catalogue
+            + pluggable partner (e.g. SE Training Academy) English courses.
+            Omitted entirely when neither source returns a match. */}
+        {hasRecs && recs && (
+          <>
+            <Text style={s.sectionTitle}>Recommended development programmes</Text>
+            <View style={s.block}>
+              <Text style={s.narrative}>
+                Programmes to strengthen the English measured here
+                {recs.weakest ? `, with a focus on ${SKILL_LABEL[recs.weakest.skill] ?? recs.weakest.skill}` : ""}.
+              </Text>
+              {recs.vifm.length > 0 && (
+                <>
+                  <Text style={s.recProvider}>From VIFM</Text>
+                  {recs.vifm.map((c, i) => (
+                    <RecRow key={`v${i}`} c={c} />
+                  ))}
+                </>
+              )}
+              {recs.partner.length > 0 && (
+                <>
+                  <Text style={s.recProvider}>From {recs.partner[0].provider_label}</Text>
+                  {recs.partner.map((c, i) => (
+                    <RecRow key={`p${i}`} c={c} />
+                  ))}
+                </>
+              )}
+              <Text style={{ fontSize: 7.5, color: C.light, marginTop: 6, fontStyle: "italic" }}>
+                Suggested next steps to develop English and workplace communication. Not part of the assessment score.
               </Text>
             </View>
           </>

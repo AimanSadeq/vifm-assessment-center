@@ -8,6 +8,7 @@ import { FadeIn } from "@/components/shared/ara/fade-in";
 import { ARA_INDIVIDUAL_FACTORS } from "@/lib/constants/ara-individual-factors";
 import { createDeepDivePersonalAssessment } from "../consultant/personal-deep-dive/new/actions";
 import { SelectionIssueForm } from "./selection-issue-form";
+import { TaRecentCandidates } from "./ta-recent-candidates";
 
 /**
  * AI Readiness Compass - For Selection (Talent Acquisition lens).
@@ -118,6 +119,9 @@ export function SelectionLanding() {
           ))}
         </div>
       </section>
+
+      {/* ─── Review your issued candidates (staff-only; /ara is public) ─── */}
+      <TaRecentCandidates />
 
       {/* ─── What the candidate is measured on ─── */}
       <section className="max-w-6xl mx-auto px-6 py-16">

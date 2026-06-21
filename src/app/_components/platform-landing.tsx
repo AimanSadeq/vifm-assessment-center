@@ -13,14 +13,10 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/comp
 import { COMPETENCY_COUNT } from "@/lib/competencies/framework-meta";
 
 type Lang = "en" | "ar";
+// Tone is retained on the SERVICES data for potential future use, but the
+// landing now renders every card in one institutional navy/azure family (see
+// renderServiceCard), so the per-tone border hue map is no longer needed.
 type Tone = "blue" | "violet" | "teal" | "gold" | "rose" | "indigo" | "fuchsia" | "emerald" | "amber";
-// Concrete hue per tone (mirrors the --tone CSS vars in globals.css) for the
-// inline tile border colour. The tone-<hue> class drives the tagline + accent
-// line; the border needs an explicit value.
-const TONE_HEX: Record<Tone, string> = {
-  blue: "#5391D5", violet: "#7c3aed", teal: "#0d9488", gold: "#d97706",
-  rose: "#e11d48", indigo: "#4f46e5", fuchsia: "#c026d3", emerald: "#059669", amber: "#f59e0b",
-};
 type ServiceKey = "ac" | "ara" | "reflect" | "fluent" | "prehire" | "technical" | "cognitive" | "persona" | "readiness" | "academy";
 // The two solution families (the colleague's talent-lifecycle model).
 type Pillar = "acquire" | "manage";
@@ -386,14 +382,13 @@ export function PlatformLanding() {
   const renderServiceCard = (svc: (typeof SERVICES)[number]) => {
     const Icon = svc.icon;
     const copy = t.services[svc.key];
-    // Tile border: dark blue for the dual-purpose diagnostics; the four
-    // single-purpose portals each get their own distinct hue (Pre-Hire rose,
-    // Reflect 360 teal, Succession Readiness amber, VIFM Academy emerald). The
-    // tone-<hue> class also colours the tagline to match the border (globals.css
-    // .launcher-card .ara-eyebrow), so the title reads in its border colour.
-    const single = svc.pillars.length === 1;
-    const toneClass = single ? svc.tone : "blue";
-    const borderColor = single ? TONE_HEX[svc.tone] : "#111232";
+    // Institutional scheme: every service card uses one disciplined navy/azure
+    // family - an azure icon chip + tagline on a navy-bordered white card.
+    // Services are told apart by ICON and copy, not by colour (the former
+    // per-service hues are retired). tone-blue drives the icon + tagline; the
+    // border is the brand navy.
+    const toneClass: Tone = "blue";
+    const borderColor = "#111232";
     return (
       <div
         key={svc.key}
@@ -501,7 +496,9 @@ export function PlatformLanding() {
 
           {/* Headline */}
           <div className="max-w-3xl">
-            <span className="ara-eyebrow text-accent">
+            {/* Single gold signature accent (institutional scheme) - everything
+                else stays navy/azure; gold appears once, here. */}
+            <span className="ara-eyebrow" style={{ color: "#E4B53C" }}>
               <Layers className="h-3 w-3" /> {t.eyebrow}
             </span>
             <h1 className="ara-numeral mt-2 mb-3 text-2xl font-semibold leading-[1.1] text-white sm:text-3xl lg:text-4xl">

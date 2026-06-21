@@ -687,6 +687,35 @@ export async function launchReflectEngagement(engagementId: string) {
     return { ok: false, error: `Engagement is already '${eng.status}' - cannot relaunch` };
   }
 
+  // Guard: refuse to launch an engagement that nobody can respond to. The raters
+  // answer the questions, so an engagement with 0 participants or 0 raters goes
+  // "live" but produces no assessment and no questions for anyone - the exact
+  // failure mode that left launched engagements empty. Block it with a clear,
+  // actionable message instead of silently flipping the status.
+  const { data: parts } = await sb
+    .from("reflect_participants")
+    .select("id")
+    .eq("engagement_id", engagementId);
+  const partIds = (parts ?? []).map((p) => p.id as string);
+  if (partIds.length === 0) {
+    return {
+      ok: false,
+      error:
+        "Add at least one participant and their raters before launching. Raters answer the questions, so an engagement with nobody has no assessment to run.",
+    };
+  }
+  const { count: raterCount } = await sb
+    .from("reflect_raters")
+    .select("id", { count: "exact", head: true })
+    .in("participant_id", partIds);
+  if (!raterCount || raterCount === 0) {
+    return {
+      ok: false,
+      error:
+        "This engagement has participants but no raters yet. Add raters (Self / Manager / Peers / Direct reports) before launching - they are who complete the questionnaire.",
+    };
+  }
+
   const { error: updErr } = await sb
     .from("reflect_engagements")
     .update({ status: "live", launched_at: new Date().toISOString() })

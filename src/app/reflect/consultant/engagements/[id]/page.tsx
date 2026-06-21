@@ -13,6 +13,7 @@ import {
   Archive,
   FileDown,
   FileText,
+  AlertTriangle,
 } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { canAccessReflectEngagement } from "@/lib/reflect/report-access";
@@ -200,6 +201,24 @@ export default async function ReflectEngagementDetailPage({ params }: Params) {
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+        {/* No-raters warning - the #1 reason an engagement shows "no questions":
+            the raters are who answer, so 0 raters = nothing to respond to. */}
+        {raterCount === 0 && (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="text-sm text-amber-900">
+              <div className="font-medium">No raters yet - nobody can respond to this engagement.</div>
+              <div className="text-amber-800 mt-1">
+                Reflect questions are answered by raters (Self / Manager / Peers / Direct reports). Add participants
+                and their raters in the engagement wizard, People step.{" "}
+                {engagement.status === "live"
+                  ? "This engagement is live but will collect no responses until raters are added."
+                  : "An engagement cannot be launched until it has at least one participant and rater."}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Top stats */}
         <div className="grid gap-3 md:grid-cols-4">
           <Stat

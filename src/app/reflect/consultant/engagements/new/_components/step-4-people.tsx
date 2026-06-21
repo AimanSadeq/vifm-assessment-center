@@ -2,8 +2,9 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useTranslation } from "react-i18next";
-import { Users, Loader2, CheckCircle2, AlertTriangle, Upload } from "lucide-react";
+import { Users, Loader2, CheckCircle2, AlertTriangle, Upload, UserPlus, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
@@ -86,6 +87,78 @@ export function StepPeople({ engagementId }: Props) {
   // <Button>, so we use refs to fire .click() from the visible buttons.
   const pFileRef = useRef<HTMLInputElement | null>(null);
   const rFileRef = useRef<HTMLInputElement | null>(null);
+
+  // ── Quick add: one participant + their raters, no CSV needed ──
+  const LEVELS = ["exec", "senior_mgr", "manager", "individual_contributor"] as const;
+  const ROLES = ["self", "manager", "peer", "direct_report", "skip_level", "other"] as const;
+  const blankRaters = () => [
+    { role: "manager", name: "", email: "" },
+    { role: "peer", name: "", email: "" },
+    { role: "direct_report", name: "", email: "" },
+  ];
+  const [qName, setQName] = useState("");
+  const [qEmail, setQEmail] = useState("");
+  const [qLevel, setQLevel] = useState<string>("manager");
+  const [qLang, setQLang] = useState<string>("en");
+  const [qRaters, setQRaters] = useState<Array<{ role: string; name: string; email: string }>>(blankRaters());
+  const [qResult, setQResult] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [qPending, startQTransition] = useTransition();
+
+  const setRater = (i: number, patch: Partial<{ role: string; name: string; email: string }>) =>
+    setQRaters((rs) => rs.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+
+  const submitQuickAdd = () => {
+    setQResult(null);
+    if (!qName.trim() || !qEmail.trim()) {
+      setQResult({ ok: false, msg: "Participant name and email are required." });
+      return;
+    }
+    const email = qEmail.trim().toLowerCase();
+    const raters = qRaters.filter((r) => r.email.trim());
+    startQTransition(async () => {
+      const pRes = await bulkUpsertReflectParticipants({
+        engagement_id: engagementId,
+        rows: [
+          {
+            full_name: qName.trim(),
+            email,
+            role_title: null,
+            business_unit: null,
+            level_tier: qLevel,
+            manager_email: null,
+            language_preference: qLang,
+          },
+        ],
+      });
+      if (!pRes.ok) {
+        setQResult({ ok: false, msg: pRes.error ?? t("reflectWizard.step4.importFailed") });
+        return;
+      }
+      let raterMsg = "";
+      if (raters.length > 0) {
+        const rRes = await bulkUpsertReflectRaters({
+          engagement_id: engagementId,
+          rows: raters.map((r) => ({
+            participant_email: email,
+            rater_role: r.role,
+            full_name: r.name.trim() || r.email.trim(),
+            email: r.email.trim().toLowerCase(),
+            language_preference: qLang,
+          })),
+        });
+        if (!rRes.ok) {
+          setQResult({ ok: false, msg: `Participant added, but the raters could not be saved: ${rRes.error ?? ""}`.trim() });
+          return;
+        }
+        raterMsg = ` + ${rRes.inserted ?? raters.length} rater(s)`;
+      }
+      const addedName = qName.trim();
+      setQName("");
+      setQEmail("");
+      setQRaters(blankRaters());
+      setQResult({ ok: true, msg: `Added ${addedName}${raterMsg}. Add another, or continue.` });
+    });
+  };
 
   const readFileIntoTextarea = async (
     file: File,
@@ -178,6 +251,96 @@ export function StepPeople({ engagementId }: Props) {
           {t("reflectWizard.step4.intro")}
         </p>
       </div>
+
+      {/* Quick add: one person + their raters, no spreadsheet needed */}
+      <section className="rounded-lg border bg-card p-5 space-y-3">
+        <div>
+          <h3 className="text-sm font-semibold text-primary flex items-center gap-2">
+            <UserPlus className="h-4 w-4 text-accent" /> Add a person
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            Add one participant and their raters directly - no spreadsheet needed. Repeat for each person being assessed.
+          </p>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <Input placeholder="Participant full name" value={qName} onChange={(e) => setQName(e.target.value)} />
+          <Input placeholder="Participant email" type="email" value={qEmail} onChange={(e) => setQEmail(e.target.value)} />
+          <select
+            value={qLevel}
+            onChange={(e) => setQLevel(e.target.value)}
+            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+          >
+            {LEVELS.map((l) => (
+              <option key={l} value={l}>{l}</option>
+            ))}
+          </select>
+          <select
+            value={qLang}
+            onChange={(e) => setQLang(e.target.value)}
+            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+          >
+            <option value="en">English</option>
+            <option value="ar">Arabic</option>
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs">Raters (who gives this person feedback)</Label>
+          {qRaters.map((r, i) => (
+            <div key={i} className="grid gap-2 sm:grid-cols-[150px_1fr_1fr_auto] items-center">
+              <select
+                value={r.role}
+                onChange={(e) => setRater(i, { role: e.target.value })}
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+              >
+                {ROLES.map((role) => (
+                  <option key={role} value={role}>{role.replace(/_/g, " ")}</option>
+                ))}
+              </select>
+              <Input placeholder="Rater name" value={r.name} onChange={(e) => setRater(i, { name: e.target.value })} />
+              <Input placeholder="Rater email" type="email" value={r.email} onChange={(e) => setRater(i, { email: e.target.value })} />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setQRaters((rs) => rs.filter((_, idx) => idx !== i))}
+                className="text-muted-foreground"
+                aria-label="Remove rater"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setQRaters((rs) => [...rs, { role: "peer", name: "", email: "" }])}
+            className="text-xs"
+          >
+            <Plus className="h-3.5 w-3.5 me-1.5" /> Add rater
+          </Button>
+        </div>
+        <div className="flex items-center gap-3 flex-wrap">
+          <Button onClick={submitQuickAdd} disabled={qPending || !qName.trim() || !qEmail.trim()}>
+            {qPending ? (
+              <>
+                <Loader2 className="h-4 w-4 me-2 animate-spin" /> Adding...
+              </>
+            ) : (
+              "Add participant + raters"
+            )}
+          </Button>
+          {qResult && (
+            <span className={`inline-flex items-center gap-1.5 text-xs ${qResult.ok ? "text-emerald-700" : "text-rose-700"}`}>
+              {qResult.ok ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}
+              {qResult.msg}
+            </span>
+          )}
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Tip: include a <strong>Self</strong> rater (the participant rating themselves) for a self-vs-others comparison. For large cohorts, use the CSV import below.
+        </p>
+      </section>
 
       {/* Participants */}
       <section className="rounded-lg border bg-card p-5 space-y-3">

@@ -50,12 +50,12 @@ export const METHODOLOGY_BRIEFS: readonly MethodologyBrief[] = [
     pillar: "both",
   },
   {
-    slug: "logical",
-    service: "Logical",
+    slug: "logica",
+    service: "Logica",
     tagline: "Indicative cognitive reasoning aptitude",
-    eyebrow: "VIFM Logical®",
-    file: "Logical-Methodology-Brief.md",
-    filename: "VIFM-Logical-Methodology-Brief.pdf",
+    eyebrow: "VIFM Logica®",
+    file: "Logica-Methodology-Brief.md",
+    filename: "VIFM-Logica-Methodology-Brief.pdf",
     pillar: "both",
   },
   {

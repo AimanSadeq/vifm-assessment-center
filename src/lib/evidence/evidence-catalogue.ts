@@ -106,7 +106,7 @@ export const EVIDENCE_INSTRUMENTS: EvidenceInstrument[] = [
   },
   {
     key: "cognitive",
-    name: "Logical®",
+    name: "Logica®",
     href: "/ac/cognitive",
     itemTypes: "MCQ numerical, verbal, inductive and deductive reasoning subtests, with a general mental ability (g) composite.",
     construct: "Reasoning aptitude / general mental ability (a foundational predictor).",

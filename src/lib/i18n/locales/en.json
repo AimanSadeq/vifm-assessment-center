@@ -219,7 +219,7 @@
       "quiz": "Competency quiz", "fluent": "Fluent (English)", "cbi": "AI interview (CBI)",
       "ac_exercises": "AC exercises", "talent_map": "Talent Map", "reflect_360": "Reflect 360®",
       "technical": "Techno®", "ara_org": "AR Compass (org)", "ara_personal": "AR Compass (personal)",
-      "cognitive": "Logical battery", "personality": "Personality inventory"
+      "cognitive": "Logica battery", "personality": "Personality inventory"
     },
     "module": {
       "prehire": { "label": "Pre-Hire screening", "desc": "Quiz + English + AI interview, ranked." },
@@ -342,7 +342,7 @@
     "svcRetention": "Retention",
     "svcCalibration": "Calibration",
     "psychometrics": "Psychometrics",
-    "psyCognitive": "Logical®",
+    "psyCognitive": "Logica®",
     "psyPersona": "Persona®",
     "psychometricsBank": "Item bank & calibration",
     "academy": "VIFM Academy",

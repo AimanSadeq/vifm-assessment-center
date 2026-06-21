@@ -256,7 +256,7 @@ export function VouchersClient({
             </div>
             <div className="flex-1 min-w-[12rem] space-y-1.5">
               <Label className="text-xs">Project / cohort (optional)</Label>
-              <Input value={projectLabel} onChange={(e) => setProjectLabel(e.target.value)} placeholder="Groups with Logical for reporting" />
+              <Input value={projectLabel} onChange={(e) => setProjectLabel(e.target.value)} placeholder="Groups with Logica for reporting" />
             </div>
             <div className="flex-1 min-w-[10rem] space-y-1.5">
               <Label className="text-xs">Label (optional)</Label>

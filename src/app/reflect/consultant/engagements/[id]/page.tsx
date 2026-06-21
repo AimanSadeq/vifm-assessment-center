@@ -21,6 +21,7 @@ import { getServerT, type ServerT } from "@/lib/i18n/server";
 import { cn } from "@/lib/utils";
 import { DebriefRowActions } from "./_components/debrief-row-actions";
 import { ReflectReassessButton } from "./_components/reassess-button";
+import { LaunchButton } from "./_components/launch-button";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -191,6 +192,7 @@ export default async function ReflectEngagementDetailPage({ params }: Params) {
               {(engagement.status === "complete" || engagement.status === "archived" || engagement.status === "live") && (
                 <ReflectReassessButton engagementId={engagement.id} />
               )}
+              {engagement.status === "draft" && <LaunchButton engagementId={engagement.id} />}
               <div className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs", status.className)}>
                 <StatusIcon className="h-3 w-3" />
                 {t(status.labelKey)}

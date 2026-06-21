@@ -1,4 +1,5 @@
 import type { PrehireRecommendation } from "@/lib/prehire/scoring";
+import type { PrehireCertification } from "@/lib/prehire/certification";
 
 /**
  * Per-candidate Pre-Hire screening report (HTML → Puppeteer PDF). VIFM is the
@@ -46,6 +47,7 @@ export type PrehireReportData = {
   recommendation: PrehireRecommendation;
   stages: PrehireReportStage[];
   cbi?: PrehireCbiBlock | null;
+  certification?: PrehireCertification | null;
   generatedAt: Date;
 };
 
@@ -81,6 +83,9 @@ const L: Record<Lang, Record<string, string>> = {
     disclaimer:
       "This is an advisory screening SIGNAL, not a hiring decision. A qualified VIFM reviewer interprets it alongside other evidence; no decision is ever made automatically.",
     confidential: "Confidential - for VIFM and the engaged client only.",
+    certifiedTitle: "Certified - SME-reviewed",
+    certifiedBy: "Reviewed & certified by",
+    reviewerNotesLabel: "Reviewer notes",
     reco_advance: "Advance",
     reco_review: "Review",
     reco_hold: "Hold for review",
@@ -140,6 +145,9 @@ const L: Record<Lang, Record<string, string>> = {
     disclaimer:
       "هذه إشارة فرز استرشادية، وليست قرار توظيف. يفسّرها مراجع مؤهّل في VIFM مع أدلة أخرى؛ ولا يُتّخذ أي قرار تلقائيًا.",
     confidential: "سري - لمعهد VIFM والعميل المتعاقد فقط.",
+    certifiedTitle: "معتمد - تمت مراجعته من قبل مقيّم",
+    certifiedBy: "روجِع واعتُمد بواسطة",
+    reviewerNotesLabel: "ملاحظات المراجع",
     reco_advance: "ترشيح للمرحلة التالية",
     reco_review: "مراجعة",
     reco_hold: "إيقاف للمراجعة",
@@ -181,6 +189,22 @@ const TONE: Record<PrehireRecommendation, { bg: string; fg: string }> = {
 
 const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+/** "Certified - SME-reviewed by X on date" banner, shown on both report views
+ *  once the candidate is certified (Pre-Hire #3). Inline-styled so it works in
+ *  both renderers without touching either <style> block. */
+function certBannerHtml(data: PrehireReportData, t: Record<string, string>, lang: Lang): string {
+  if (!data.certification) return "";
+  const d = new Date(data.certification.certifiedAt).toLocaleDateString(
+    lang === "ar" ? "ar" : "en-GB",
+    { year: "numeric", month: "long", day: "numeric" }
+  );
+  const who = data.certification.certifiedBy ? esc(data.certification.certifiedBy) : "-";
+  const notes = data.certification.notes
+    ? `<div style="font-size:10.5px;color:#065f46;margin-top:4px"><strong>${t.reviewerNotesLabel}:</strong> ${esc(data.certification.notes)}</div>`
+    : "";
+  return `<div style="display:flex;gap:10px;align-items:flex-start;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:8px;padding:10px 14px;margin:0 0 16px"><span style="font-size:18px;color:#047857;font-weight:700;line-height:1.1">&#10003;</span><div><div style="font-size:12.5px;font-weight:700;color:#065f46">${t.certifiedTitle}</div><div style="font-size:11px;color:#047857;margin-top:1px">${t.certifiedBy} <b>${who}</b> &middot; ${d}</div>${notes}</div></div>`;
+}
 
 /**
  * One-page condensed SUMMARY sheet (a quick at-a-glance read): header, the
@@ -252,6 +276,7 @@ export function renderPrehireSummaryHtml(data: PrehireReportData, lang: Lang): s
       data.orgName ? ` · ${esc(data.orgName)}` : ""
     } · ${t.generated}: ${dateStr}</div>
   </div>
+  ${certBannerHtml(data, t, lang)}
   <div class="hero">
     <div class="box"><div class="v">${data.composite == null ? "-" : data.composite}</div><div class="l">${t.composite}</div></div>
     <div class="box"><div class="l" style="margin-bottom:8px">${t.advisory}</div><span class="reco" style="background:${tone.bg};color:${tone.fg}">${recoLabel}</span></div>
@@ -397,6 +422,8 @@ export function renderPrehireCandidateHtml(data: PrehireReportData, lang: Lang):
       data.orgName ? ` · ${t.organization}: ${esc(data.orgName)}` : ""
     } · ${t.generated}: ${dateStr}</div>
   </div>
+
+  ${certBannerHtml(data, t, lang)}
 
   <div class="stats">
     <div class="stat">

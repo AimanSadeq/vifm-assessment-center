@@ -36,6 +36,64 @@ async function gateAdmin(): Promise<{ error: string } | null> {
   }
 }
 
+// ── SME review + certification (Pre-Hire #3) ──────────────────────
+// A VIFM assessor reviews the candidate's AI-scored responses and certifies the
+// screening result. Stamps certified_at/by + notes (migration 00145). Best-
+// effort on the audit log; tolerant of the migration not being applied (the
+// update simply errors and we surface it).
+const certifySchema = z.object({
+  requisitionId: uuidish,
+  candidateId: uuidish,
+  reviewerName: z.string().trim().min(1, "Reviewer name is required").max(120),
+  notes: z.string().trim().max(4000).optional(),
+});
+
+export async function certifyPrehireCandidateAction(input: {
+  requisitionId: string;
+  candidateId: string;
+  reviewerName: string;
+  notes?: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const gate = await gateAdmin();
+  if (gate) return { ok: false, error: gate.error };
+  const parsed = certifySchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: zodMessage(parsed.error, "Invalid certification") };
+  // ids from the typed input (uuidish validates but its output widens to unknown);
+  // text fields from the parsed/trimmed result.
+  const { requisitionId, candidateId } = input;
+  const { reviewerName, notes } = parsed.data;
+
+  const sb = createServiceClient();
+  const { error } = await sb
+    .from("prehire_candidates")
+    .update({
+      certified_at: new Date().toISOString(),
+      certified_by: reviewerName,
+      certification_notes: notes?.trim() || null,
+    })
+    .eq("id", candidateId)
+    .eq("requisition_id", requisitionId);
+  if (error) {
+    return {
+      ok: false,
+      error: /column .* does not exist/i.test(error.message)
+        ? "Certification needs migration 00145 applied."
+        : error.message,
+    };
+  }
+
+  await logPrehireEvent({
+    action: "candidate_certified",
+    requisitionId,
+    candidateId,
+    actorLabel: "admin",
+    detail: { reviewer: reviewerName },
+  });
+  revalidatePath(`/admin/prehire/${requisitionId}`);
+  revalidatePath(`/admin/prehire/${requisitionId}/candidate/${candidateId}/review`);
+  return { ok: true };
+}
+
 const stageEntrySchema = z
   .object({
     kind: z.enum(["fluent", "quiz", "cbi", "assessment_center"]),

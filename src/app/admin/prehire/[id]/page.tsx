@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Download, ShieldCheck, FileText } from "lucide-react";
+import { Download, ShieldCheck, FileText, BadgeCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { BackLink } from "@/components/shared/back-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -109,6 +109,16 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
   for (const r of (sentData ?? []) as { id: string; report_sent_at: string | null }[]) {
     if (r.report_sent_at) reportSentById.set(r.id, r.report_sent_at);
   }
+
+  // Certification (00145) - separate best-effort read (tolerant pre-migration).
+  const certifiedById = new Set<string>();
+  const { data: certData } = await supabase
+    .from("prehire_candidates")
+    .select("id, certified_at")
+    .eq("requisition_id", params.id);
+  for (const r of (certData ?? []) as { id: string; certified_at: string | null }[]) {
+    if (r.certified_at) certifiedById.add(r.id);
+  }
   let clientEmail: string | null = null;
   const { data: reqEmail } = await supabase
     .from("prehire_requisitions")
@@ -211,6 +221,11 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                             {t("prehire.notInvited")}
                           </span>
                         )}
+                        {certifiedById.has(c.id) && (
+                          <span className="inline-flex items-center gap-0.5 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
+                            <BadgeCheck className="h-3 w-3" /> Certified
+                          </span>
+                        )}
                       </div>
                       <div className="text-xs text-muted-foreground">{c.email}</div>
                       {customById.get(c.id)?.employee_id && (
@@ -272,6 +287,13 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                           title={t("prehire.ttReport")}
                         >
                           <FileText className="h-3.5 w-3.5" /> {t("prehire.report")}
+                        </a>
+                        <a
+                          href={`/admin/prehire/${req.id}/candidate/${c.id}/review`}
+                          className="inline-flex items-center gap-1 rounded-md border border-input bg-background px-2 py-1 text-xs font-medium hover:bg-accent"
+                          title="SME review & certify"
+                        >
+                          <BadgeCheck className="h-3.5 w-3.5" /> Review
                         </a>
                         <InviteLink token={c.access_token} candidateId={c.id} />
                       </div>

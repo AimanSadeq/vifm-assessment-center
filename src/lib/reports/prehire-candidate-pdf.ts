@@ -3,6 +3,7 @@ import type { Browser } from "puppeteer-core";
 import { launchPdfBrowser } from "@/lib/reports/pdf-browser";
 import { createServiceClient } from "@/lib/supabase/server";
 import { computeComposite } from "@/lib/prehire/scoring";
+import { getPrehireCertification } from "@/lib/prehire/certification";
 import {
   renderPrehireCandidateHtml,
   renderPrehireSummaryHtml,
@@ -193,6 +194,8 @@ export async function buildPrehireCandidatePdf(params: {
         : null,
   }));
 
+  const certification = await getPrehireCertification(candidateId);
+
   const data: PrehireReportData = {
     candidateName: (candRes.data.full_name as string) ?? "Candidate",
     candidateEmail: (candRes.data.email as string) ?? "",
@@ -204,6 +207,7 @@ export async function buildPrehireCandidatePdf(params: {
     recommendation: composite.recommendation,
     stages,
     cbi,
+    certification,
     generatedAt: new Date(),
   };
 

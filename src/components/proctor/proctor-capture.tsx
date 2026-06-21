@@ -115,7 +115,12 @@ export function ProctorCapture({
     setPhase("starting");
     let stream: MediaStream;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
+      stream = await navigator.mediaDevices.getUserMedia({
+        // Prefer the front/selfie camera so a phone doesn't grab the rear lens;
+        // `ideal` (not exact) so a single-camera laptop/webcam still works.
+        video: { width: 640, height: 480, facingMode: { ideal: "user" } },
+        audio: false,
+      });
     } catch {
       setPhase("denied");
       return;

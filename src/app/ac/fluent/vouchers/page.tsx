@@ -27,8 +27,9 @@ export default async function FluentVouchersPage() {
       <div className="mt-4 mb-6">
         <h1 className="text-2xl font-semibold text-[#010131]">Fluent® vouchers</h1>
         <p className="text-sm text-muted-foreground">
-          Generate redeemable English-placement access codes, tag them to a client, and track seats.
-          Delegates redeem at <code className="text-xs">/ac/fluent/redeem</code> - no account needed.
+          Generate redeemable English-placement codes, tag them to a client, and track seats. Copy the
+          complete redemption link to send to a client - they forward it to the candidate, who starts
+          straight away (no account; the result is tagged to the client).
         </p>
       </div>
       <VouchersClient vouchers={vouchers ?? []} clients={clients.map((c) => c.name)} />

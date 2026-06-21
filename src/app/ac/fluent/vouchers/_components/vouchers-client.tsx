@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Ticket, Copy, Ban } from "lucide-react";
+import { Loader2, Ticket, Copy, Ban, Link2 } from "lucide-react";
 import { fmtDate } from "@/lib/utils/format-date";
 import { copyToClipboard } from "@/lib/utils/clipboard";
 import { generateFluentVouchersAction, disableFluentVoucherAction } from "../actions";
@@ -36,6 +36,13 @@ export function VouchersClient({ vouchers, clients }: { vouchers: FluentVoucherR
   const [expiresAt, setExpiresAt] = useState("");
   const [busy, setBusy] = useState(false);
   const [lastCodes, setLastCodes] = useState<string[]>([]);
+  // The deployed origin the admin is on (caliber.viftraining.com in prod). Set
+  // client-side so the copied link works in whatever environment generated it.
+  const [origin, setOrigin] = useState("");
+  useEffect(() => setOrigin(window.location.origin), []);
+  // The complete redemption link to send to the client -> candidate. The redeem
+  // page pre-fills the code; the result is stamped with the voucher's client.
+  const fullLink = (code: string) => `${origin}/ac/fluent/redeem?code=${encodeURIComponent(code)}`;
 
   const generate = async () => {
     setBusy(true);
@@ -118,14 +125,24 @@ export function VouchersClient({ vouchers, clients }: { vouchers: FluentVoucherR
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base">Just generated ({lastCodes.length})</CardTitle>
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => copy(lastCodes.join("\n"))}>
-              <Copy className="h-3.5 w-3.5" /> Copy all
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => copy(lastCodes.map(fullLink).join("\n"))}>
+              <Link2 className="h-3.5 w-3.5" /> Copy all links
             </Button>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-2">
+            <p className="mb-3 text-xs text-muted-foreground">
+              Send the full link to the client - they forward it to the candidate, who starts the assessment directly
+              (the code is pre-filled and the result is tagged to {clientName.trim() || "the client"}).
+            </p>
+            <div className="space-y-2">
               {lastCodes.map((c) => (
-                <code key={c} className="rounded border bg-muted/40 px-2 py-1 font-mono text-xs">{c}</code>
+                <div key={c} className="flex items-center gap-2 rounded border bg-muted/40 px-2.5 py-1.5">
+                  <code className="shrink-0 font-mono text-xs text-[#010131]">{c}</code>
+                  <span className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">{fullLink(c)}</span>
+                  <Button variant="ghost" size="sm" className="h-7 shrink-0 gap-1 px-2 text-xs" onClick={() => copy(fullLink(c))}>
+                    <Link2 className="h-3 w-3" /> Copy link
+                  </Button>
+                </div>
               ))}
             </div>
           </CardContent>
@@ -177,7 +194,10 @@ export function VouchersClient({ vouchers, clients }: { vouchers: FluentVoucherR
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Copy code" onClick={() => copy(v.code)}>
+                          <Button variant="ghost" size="sm" className="h-8 gap-1 px-2 text-xs" title="Copy redemption link (send to client)" onClick={() => copy(fullLink(v.code))}>
+                            <Link2 className="h-3.5 w-3.5" /> Link
+                          </Button>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Copy code only" onClick={() => copy(v.code)}>
                             <Copy className="h-3.5 w-3.5" />
                           </Button>
                           {v.status === "active" && (

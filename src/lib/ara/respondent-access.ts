@@ -117,7 +117,25 @@ export async function loadQuestionsForRespondent(
   ctx: AraRespondentContext
 ): Promise<AraQuestion[]> {
   const sb = createServiceClient();
-  const versionId = ctx.assessment.question_bank_version_id;
+  // Resolve the question-bank version. It is normally pinned on the assessment,
+  // but a legacy row - or a reassessment copied from a prior whose version was
+  // null - can leave it null, which would silently serve ZERO questions (the
+  // respondent opens the form and sees nothing). Fall back to the currently-
+  // active bank version on demand so the respondent still gets their form.
+  let versionId = ctx.assessment.question_bank_version_id;
+  if (!versionId) {
+    const { data: activeVersion } = await sb
+      .from("ara_question_bank_versions")
+      .select("id")
+      .eq("is_active", true)
+      .maybeSingle<{ id: string }>();
+    versionId = activeVersion?.id ?? null;
+    if (!versionId) {
+      console.warn(
+        `[ara] assessment ${ctx.assessment.id} has no question_bank_version_id and no active bank version exists - serving no questions`,
+      );
+    }
+  }
   if (!versionId) return [];
 
   const isIndividualStage = ctx.assessment.engagement_stage === "individual";
@@ -148,8 +166,14 @@ export async function loadQuestionsForRespondent(
           pillars_in_scope: ctx.assessment.pillars_in_scope,
         } as Parameters<typeof getPillarsForAssessment>[0]) as AraPillarId[]);
 
-  // Pillar assignment is required when serving pillar questions.
+  // Pillar assignment is required when serving pillar questions. After the
+  // fallback above this should be non-empty for any valid stage; if it is still
+  // empty the assessment is misconfigured (bad stage / empty pillars_in_scope),
+  // so surface it in the logs rather than silently serving a blank form.
   if (wantsPillar && effectivePillars.length === 0) {
+    console.warn(
+      `[ara] assessment ${ctx.assessment.id} wants pillar questions but resolved zero in-scope pillars (no assignments and empty stage fallback)`,
+    );
     // No pillar questions; if also no individual layer there's nothing to serve.
     if (!wantsIndividual) return [];
   }

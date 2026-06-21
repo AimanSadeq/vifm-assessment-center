@@ -53,7 +53,19 @@ export async function GET(
 
   let browser: Browser | null = null;
   try {
-    browser = await launchBrowser();
+    try {
+      browser = await launchBrowser();
+    } catch (launchErr) {
+      // Chromium launch failure (e.g. @sparticuz/chromium missing or
+      // version-mismatched in production) is a transient/infra problem, not a
+      // bad request. Return 503 with a clear retry message so the consultant
+      // knows the renderer is down - not that the assessment is broken.
+      console.error("[ara pdf] browser launch failed", launchErr);
+      return NextResponse.json(
+        { ok: false, error: "The PDF renderer is temporarily unavailable. Please try again in a moment." },
+        { status: 503 }
+      );
+    }
     const page = await browser.newPage();
     await page.setViewport({ width: 1200, height: 900, deviceScaleFactor: 1 });
     // The report page sits under the access-gated /ara/consultant layout; forward

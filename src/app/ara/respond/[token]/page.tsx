@@ -177,6 +177,22 @@ export default async function AraRespondPage({
             QuestionsForm can gate them behind its internal `started` state -
             none of this should appear on the pre-start intro/landing screen
             (the stray "Submit assessment" button under Start was the bug). */}
+        {questions.length === 0 ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">
+                {rtl ? "لا توجد أسئلة متاحة بعد" : "No questions available yet"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                {rtl
+                  ? "لا تتوفر أسئلة لهذا التقييم حالياً. يرجى التواصل مع مسؤول التقييم في مؤسستك."
+                  : "This assessment does not have any questions available yet. Please contact your assessment administrator - this usually means the assessment is still being set up."}
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
         <QuestionsForm
           token={params.token}
           questions={questions.map((q) => ({ ...q, score_map: null, validation_evidence: null }))}
@@ -235,6 +251,7 @@ export default async function AraRespondPage({
             )}
           </div>
         </QuestionsForm>
+        )}
       </div>
     </div>
   );

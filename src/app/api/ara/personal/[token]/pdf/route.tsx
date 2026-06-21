@@ -269,6 +269,12 @@ export async function GET(
     });
   } catch (error) {
     console.error("Personal snapshot PDF error:", error);
+    if (error instanceof Error && error.message === "PDF_RENDERER_UNAVAILABLE") {
+      return NextResponse.json(
+        { error: "The PDF renderer is temporarily unavailable. Please try again in a moment." },
+        { status: 503 }
+      );
+    }
     const message = error instanceof Error ? error.message : "Failed to generate PDF";
     return NextResponse.json({ error: message }, { status: 500 });
   }
@@ -284,9 +290,18 @@ export async function GET(
  * loaded font rather than relying on the Chromium build's system font set.
  */
 async function renderHtmlToPdfBuffer(html: string): Promise<Buffer> {
-  const browser: Browser = await launchPdfBrowser({
-    defaultViewport: { width: 1200, height: 900, deviceScaleFactor: 1 },
-  });
+  let browser: Browser;
+  try {
+    browser = await launchPdfBrowser({
+      defaultViewport: { width: 1200, height: 900, deviceScaleFactor: 1 },
+    });
+  } catch (launchErr) {
+    // Surface a Chromium launch failure as a distinct, friendly 503 upstream
+    // (see the GET catch) rather than a raw 500. @sparticuz/chromium missing or
+    // version-mismatched in production is transient/infra, not a bad request.
+    console.error("[ara personal pdf] browser launch failed", launchErr);
+    throw new Error("PDF_RENDERER_UNAVAILABLE");
+  }
   try {
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0", timeout: 60_000 });

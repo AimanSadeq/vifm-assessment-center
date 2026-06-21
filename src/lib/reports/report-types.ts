@@ -58,6 +58,12 @@ export type ReportData = {
   // Meta
   generatedAt: string;
   assessorNames: string[];
+  // Data-quality signals for a report caveat. hasAssessorData=false when no
+  // observations/ratings underpin the scores; raterCount = distinct assessors
+  // on the candidate (a single rater means reduced inter-rater reliability).
+  // Optional so other ReportData builders need not set them (no caveat then).
+  hasAssessorData?: boolean;
+  raterCount?: number;
   // Day 3f - VIFM training-course recommendations driven by this
   // candidate's competency gaps. Optional - renders an extra Learning
   // Plan PDF page when populated, omitted gracefully when empty.

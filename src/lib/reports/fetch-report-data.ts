@@ -267,6 +267,11 @@ export async function fetchReportData(
     developmentRecommendations,
     generatedAt: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }),
     assessorNames: Array.from(assessorNameSet),
+    // Data-quality signals (drive the report caveat banner). hasAssessorData is
+    // false when no observations/ratings back the scores; raterCount is the
+    // number of distinct assessors on this candidate (1 = single-rater).
+    hasAssessorData: (obsResult.data ?? []).length > 0 || (ratingsResult.data ?? []).length > 0,
+    raterCount: assessorNameSet.size,
     recommendedCourses,
     technicalCertifications,
   };

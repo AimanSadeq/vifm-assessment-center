@@ -353,6 +353,18 @@ function SummaryPage({ d }: { d: ReportData }) {
         )}
       </View>
 
+      {/* Data-quality caveat - flags a report built on thin or single-rater
+          evidence, so a reader never mistakes a sparse report for a complete one. */}
+      {(d.hasAssessorData === false || (d.raterCount != null && d.raterCount < 2)) && (
+        <View style={{ marginTop: 8, padding: 8, backgroundColor: "#FEF7E6", borderRadius: 4, borderLeftWidth: 3, borderLeftColor: "#D97706" }}>
+          <Text style={{ fontSize: 8.5, color: "#92400E", lineHeight: 1.4 }}>
+            {d.hasAssessorData === false
+              ? "Note: this report was generated with limited observation data - some competencies may show no recorded evidence. Treat the scores as indicative."
+              : "Note: ratings reflect a single assessor, so inter-rater reliability is reduced. Treat the scores as indicative."}
+          </Text>
+        </View>
+      )}
+
       {/* Competency score bars */}
       <Text style={s.subSection}>Competency Ratings</Text>
       {d.competencies.map((c) => {

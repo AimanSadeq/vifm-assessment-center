@@ -231,9 +231,15 @@ export async function POST(req: Request) {
         drawPerSkill: perSkill,
         language,
       });
-      const stored: StoredTest = certified
-        ? { ...certified.test, item_ids: certified.itemIds, function_key: compositeKey, function_id: null }
-        : {
+      let stored: StoredTest;
+      if (certified) {
+        stored = { ...certified.test, item_ids: certified.itemIds, function_key: compositeKey, function_id: null };
+      } else {
+        // Mirror the function/domain paths: a generation failure (e.g. no
+        // ANTHROPIC_API_KEY and no approved bank to fall back on) returns a clean
+        // 503 instead of an unhandled 500.
+        try {
+          stored = {
             ...(await generateFunctionAssessment({
               functionKey: compositeKey,
               functionName,
@@ -244,6 +250,17 @@ export async function POST(req: Request) {
             function_key: compositeKey,
             function_id: null,
           };
+        } catch (err) {
+          if (err instanceof TechGenerationError) {
+            console.error("[tech-assessment] mix start failed:", err.message);
+            return generationFailedResponse();
+          }
+          throw err;
+        }
+      }
+      if (process.env.NODE_ENV === "production" && isPlaceholderTest(stored)) {
+        return engineNotConfiguredResponse();
+      }
       const session_id = await createSession(
         stored,
         { candidateId, engagementId, language },

@@ -233,7 +233,17 @@ export function renderCandidateReportHtmlAr(data: ReportData): string {
       )}
     </div>`;
 
-  const oarBoxHtml = d.overallScore
+  // Data-quality caveat (parity with the EN report) - flags a report built on
+  // thin or single-rater evidence so a reader never mistakes it for complete.
+  const showCaveatAr = d.hasAssessorData === false || (d.raterCount != null && d.raterCount < 2);
+  const caveatHtml = showCaveatAr
+    ? `<div style="margin-top:8px;padding:8px 10px;background:#FEF7E6;border-right:3px solid #D97706;border-radius:4px;font-size:9px;color:#92400E;line-height:1.6">${
+        d.hasAssessorData === false
+          ? "ملاحظة: أُعدّ هذا التقرير ببيانات ملاحظة محدودة، وقد لا تظهر أدلة مسجّلة لبعض الكفاءات. تُعامَل الدرجات كمؤشّر استرشادي."
+          : "ملاحظة: تستند الدرجات إلى مُقيّم واحد، ما يقلّل من موثوقية الاتفاق بين المُقيّمين. تُعامَل الدرجات كمؤشّر استرشادي."
+      }</div>`
+    : "";
+  const oarBoxHtml = (d.overallScore
     ? `
       <div class="oar-box">
         <div class="oar-row">
@@ -250,7 +260,7 @@ export function renderCandidateReportHtmlAr(data: ReportData): string {
     : `
       <div class="oar-box">
         <p class="oar-pending">لم يُعتمَد التقييم الإجمالي بعد.</p>
-      </div>`;
+      </div>`) + caveatHtml;
 
   const competencyBarsHtml = d.competencies
     .map((c) => {

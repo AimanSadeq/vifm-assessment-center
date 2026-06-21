@@ -38,10 +38,29 @@ export async function guardCandidateReportAccess(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  if (caller.role === "candidate") {
-    return cand.profile_id === caller.uid
+  // For the candidate + client consumers, the report must ALSO be released.
+  // Admins (returned at the top) generate/preview any status; candidates and
+  // clients only ever see a released report. Without this, a self-candidate or
+  // own-org client could pull an unreleased (draft) report straight from the
+  // API even though the in-app viewer hides it. Covers the learning-plan route
+  // too (it shares this guard).
+  const requireReleased = async (): Promise<NextResponse | null> => {
+    const { count } = await sv
+      .from("candidate_reports")
+      .select("id", { count: "exact", head: true })
+      .eq("engagement_id", engagementId)
+      .eq("candidate_id", candidateId)
+      .eq("status", "released");
+    return count && count > 0
       ? null
-      : NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      : NextResponse.json({ error: "Report not available" }, { status: 403 });
+  };
+
+  if (caller.role === "candidate") {
+    if (cand.profile_id !== caller.uid) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    return requireReleased();
   }
 
   if (caller.role === "client") {
@@ -49,9 +68,10 @@ export async function guardCandidateReportAccess(
     const engOrg = Array.isArray(cand.engagements)
       ? cand.engagements[0]?.organization_id
       : cand.engagements?.organization_id;
-    return orgId && engOrg === orgId
-      ? null
-      : NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (!orgId || engOrg !== orgId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    return requireReleased();
   }
 
   // assessors / consultants are not consumers of candidate client reports

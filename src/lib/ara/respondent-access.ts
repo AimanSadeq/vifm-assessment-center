@@ -224,13 +224,22 @@ export async function loadQuestionsForRespondent(
   // Identified purely by agentic_dimension_id, so it is layer-agnostic and
   // the layer-1 pillar query above never picks these items up.
   if (wantsAgentic) {
-    const { data } = await sb
+    const { data, error } = await sb
       .from("ara_questions")
       .select("*")
       .eq("version_id", versionId)
       .eq("is_active", true)
       .not("agentic_dimension_id", "is", null)
       .returns<AraQuestion[]>();
+    if (error) {
+      // Tolerant: a fresh environment without migration 00041 lacks the
+      // agentic_dimension_id column. Log it (so the cause is visible) rather
+      // than failing the whole form - the pillar + individual layers still load
+      // and the assessment just serves no agentic items.
+      console.warn(
+        `[ara] agentic question query failed (migration 00041 may be unapplied): ${error.message}`,
+      );
+    }
     collected.push(...(data ?? []));
   }
 

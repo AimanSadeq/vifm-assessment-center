@@ -338,7 +338,7 @@ export function StepPeople({ engagementId }: Props) {
           )}
         </div>
         <p className="text-[11px] text-muted-foreground">
-          Tip: include a <strong>Self</strong> rater (the participant rating themselves) for a self-vs-others comparison. For large cohorts, use the CSV import below.
+          The participant is added as a <strong>Self</strong> rater automatically (they rate themselves for the self-vs-others comparison) - just add the other raters above. For large cohorts, use the CSV import below.
         </p>
       </section>
 

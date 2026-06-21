@@ -572,15 +572,56 @@ export async function bulkUpsertReflectParticipants(input: {
     manager_email: r.manager_email ? r.manager_email.toLowerCase() : null,
     language_preference: r.language_preference,
   }));
-  const { error, count } = await sb
+  const { data: insertedParts, error } = await sb
     .from("reflect_participants")
-    .insert(rows, { count: "exact" });
+    .insert(rows)
+    .select("id");
   if (error) return { ok: false, error: error.message };
+  const newIds = (insertedParts ?? []).map((p) => p.id as string);
+
+  // A 360 always includes the participant rating themselves - auto-create a
+  // self-rater for each new participant so the self-assessment exists (and is
+  // invited on launch) without the consultant adding a "self" row by hand.
+  await ensureSelfRatersForParticipants(sb, newIds);
 
   revalidatePath(`/reflect/consultant/engagements/${parsed.data.engagement_id}`);
-  return { ok: true, inserted: count ?? rows.length };
+  return { ok: true, inserted: newIds.length };
 }
 
+
+// ──────────────────────────────────────────────────────────────
+// Ensure every participant has a self-rater. A 360 includes the
+// participant rating themselves; idempotent (skips any that already
+// have one), so it's safe to call both on participant-add and at launch.
+// ──────────────────────────────────────────────────────────────
+async function ensureSelfRatersForParticipants(
+  sb: ReturnType<typeof createServiceClient>,
+  participantIds: string[]
+): Promise<number> {
+  if (participantIds.length === 0) return 0;
+  const { data: existing } = await sb
+    .from("reflect_raters")
+    .select("participant_id")
+    .eq("rater_role", "self")
+    .in("participant_id", participantIds);
+  const haveSelf = new Set((existing ?? []).map((r) => r.participant_id as string));
+  const missing = participantIds.filter((id) => !haveSelf.has(id));
+  if (missing.length === 0) return 0;
+  const { data: parts } = await sb
+    .from("reflect_participants")
+    .select("id, full_name, email, language_preference")
+    .in("id", missing);
+  const rows = (parts ?? []).map((p) => ({
+    participant_id: p.id as string,
+    rater_role: "self" as const,
+    full_name: p.full_name as string,
+    email: p.email as string,
+    language_preference: p.language_preference as string,
+  }));
+  if (rows.length === 0) return 0;
+  const { count } = await sb.from("reflect_raters").insert(rows, { count: "exact" });
+  return count ?? rows.length;
+}
 
 // ──────────────────────────────────────────────────────────────
 // Bulk import: raters
@@ -644,15 +685,33 @@ export async function bulkUpsertReflectRaters(input: {
     return { ok: false, error: `No raters matched a known participant.${hint}` };
   }
 
+  // A self-rater is auto-created when a participant is added, so drop any
+  // explicit "self" rows that would duplicate it (double-counting the self
+  // view would skew the self-vs-others comparison).
+  let rowsToInsert = resolved;
+  const selfPids = resolved.filter((r) => r.rater_role === "self").map((r) => r.participant_id);
+  if (selfPids.length > 0) {
+    const { data: existingSelf } = await sb
+      .from("reflect_raters")
+      .select("participant_id")
+      .eq("rater_role", "self")
+      .in("participant_id", selfPids);
+    const haveSelf = new Set((existingSelf ?? []).map((r) => r.participant_id as string));
+    rowsToInsert = resolved.filter((r) => r.rater_role !== "self" || !haveSelf.has(r.participant_id));
+  }
+  if (rowsToInsert.length === 0) {
+    return { ok: true, inserted: 0, unmatched_count: unmatched.length, unmatched_emails: unmatched.slice(0, 10) };
+  }
+
   const { error, count } = await sb
     .from("reflect_raters")
-    .insert(resolved, { count: "exact" });
+    .insert(rowsToInsert, { count: "exact" });
   if (error) return { ok: false, error: error.message };
 
   revalidatePath(`/reflect/consultant/engagements/${parsed.data.engagement_id}`);
   return {
     ok: true,
-    inserted: count ?? resolved.length,
+    inserted: count ?? rowsToInsert.length,
     unmatched_count: unmatched.length,
     unmatched_emails: unmatched.slice(0, 10),
   };
@@ -704,6 +763,12 @@ export async function launchReflectEngagement(engagementId: string) {
         "Add at least one participant and their raters before launching. Raters answer the questions, so an engagement with nobody has no assessment to run.",
     };
   }
+
+  // Backfill: guarantee every participant has a self-rater before going live
+  // (covers participants added before self-raters were auto-created). The
+  // self-assessment is an inherent part of a 360.
+  await ensureSelfRatersForParticipants(sb, partIds);
+
   const { count: raterCount } = await sb
     .from("reflect_raters")
     .select("id", { count: "exact", head: true })

@@ -40,8 +40,8 @@ const STAGE_DEFINITIONS: Record<string, { en: string; ar: string }> = {
     ar: "تقييم للإنجليزية مصحَّح بالذكاء الاصطناعي وفق مقياس CEFR (قراءة، استماع، كتابة، تحدث).",
   },
   cbi: {
-    en: "A structured behavioural interview, AI-led and reviewed by a qualified assessor.",
-    ar: "مقابلة سلوكية منظَّمة يقودها الذكاء الاصطناعي ويراجعها مقيّم مؤهّل.",
+    en: "An AI-led structured behavioural (STAR) interview, AI-scored. The full transcript and the AI's assessment are included below for your review.",
+    ar: "مقابلة سلوكية منظَّمة (STAR) يقودها الذكاء الاصطناعي ويصحّحها آليًا. النص الكامل وتقييم الذكاء الاصطناعي مُدرَجان أدناه للمراجعة.",
   },
   assessment_center: {
     en: "Assessment-centre exercises observed and scored by trained assessors.",
@@ -140,6 +140,36 @@ export async function buildPrehireCandidatePdf(params: {
   const fluentEntry = plan.find((s) => s.kind === "fluent");
   const fluentDetail = rawResults.find((r) => r.kind === "fluent")?.detail ?? null;
 
+  // CBI (AI interview) transcript + AI assessment. The stage detail stores
+  // { history, score }; surface BOTH so the client can read the candidate's
+  // actual responses, not just a score - the interview is AI-scored (not
+  // human-reviewed), so the transcript is what the client validates.
+  type CbiDetailShape = {
+    history?: { role?: string; text?: string }[];
+    score?: {
+      bars_rating?: number; rating_label?: string; rationale?: string;
+      strengths?: string[]; development_areas?: string[]; ai_generated?: boolean;
+    };
+  };
+  const cbiD = (rawResults.find((r) => r.kind === "cbi")?.detail ?? null) as unknown as CbiDetailShape | null;
+  const cbiHistory = Array.isArray(cbiD?.history) ? cbiD!.history! : [];
+  const cbiScore = cbiD?.score ?? null;
+  const cbi =
+    cbiHistory.length > 0
+      ? {
+          bars: typeof cbiScore?.bars_rating === "number" ? cbiScore.bars_rating : null,
+          ratingLabel: cbiScore?.rating_label ?? null,
+          rationale: cbiScore?.rationale ?? null,
+          strengths: Array.isArray(cbiScore?.strengths) ? cbiScore!.strengths! : [],
+          developmentAreas: Array.isArray(cbiScore?.development_areas) ? cbiScore!.development_areas! : [],
+          aiGenerated: cbiScore?.ai_generated ?? true,
+          exchanges: cbiHistory.map((m) => ({
+            who: (m.role === "candidate" ? "candidate" : "interviewer") as "candidate" | "interviewer",
+            text: String(m.text ?? ""),
+          })),
+        }
+      : null;
+
   const stages = composite.perStage.map((s) => ({
     label: STAGE_LABELS[s.kind]?.[lang] ?? s.kind,
     definition: STAGE_DEFINITIONS[s.kind]?.[lang] ?? null,
@@ -167,6 +197,7 @@ export async function buildPrehireCandidatePdf(params: {
     composite: composite.composite,
     recommendation: composite.recommendation,
     stages,
+    cbi,
     generatedAt: new Date(),
   };
 

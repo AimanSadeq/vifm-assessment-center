@@ -24,6 +24,17 @@ export type PrehireReportStage = {
   definition?: string | null;
 };
 
+/** AI interview (CBI) transcript + the AI's assessment, for client review. */
+export type PrehireCbiBlock = {
+  bars: number | null;
+  ratingLabel: string | null;
+  rationale: string | null;
+  strengths: string[];
+  developmentAreas: string[];
+  aiGenerated: boolean;
+  exchanges: { who: "interviewer" | "candidate"; text: string }[];
+};
+
 export type PrehireReportData = {
   candidateName: string;
   candidateEmail: string;
@@ -34,6 +45,7 @@ export type PrehireReportData = {
   composite: number | null;
   recommendation: PrehireRecommendation;
   stages: PrehireReportStage[];
+  cbi?: PrehireCbiBlock | null;
   generatedAt: Date;
 };
 
@@ -86,6 +98,17 @@ const L: Record<Lang, Record<string, string>> = {
     mean_review: "Middling - worth a closer look",
     mean_hold: "Low signal - a person should review",
     mean_incomplete: "No composite is available yet",
+    cbiTitle: "AI Interview - transcript & assessment",
+    cbiIntro:
+      "This behavioural interview was conducted and scored by AI. The full exchange and the AI's assessment are below for your review - the rating is an advisory signal, not a decision.",
+    cbiAiRating: "AI rating",
+    cbiRationale: "AI rationale",
+    cbiStrengths: "Strengths noted",
+    cbiDev: "Development areas",
+    cbiTranscript: "Interview transcript",
+    cbiInterviewer: "Interviewer (AI)",
+    cbiCandidate: "Candidate",
+    cbiAiNote: "AI-generated from the transcript above; a human reviewer should validate it.",
   },
   ar: {
     brand: "معهد فرجينيا للتمويل والإدارة",
@@ -133,6 +156,17 @@ const L: Record<Lang, Record<string, string>> = {
     mean_review: "متوسطة - تستحق نظرة أدق",
     mean_hold: "إشارة منخفضة - ينبغي أن يراجعها شخص",
     mean_incomplete: "لا تتوفر درجة كلية بعد",
+    cbiTitle: "المقابلة بالذكاء الاصطناعي - النص والتقييم",
+    cbiIntro:
+      "أُجريت هذه المقابلة السلوكية وصُحِّحت بالذكاء الاصطناعي. النص الكامل وتقييم الذكاء الاصطناعي أدناه لمراجعتك - والتقييم إشارة استرشادية وليس قرارًا.",
+    cbiAiRating: "تقييم الذكاء الاصطناعي",
+    cbiRationale: "مبرّر الذكاء الاصطناعي",
+    cbiStrengths: "نقاط القوة المرصودة",
+    cbiDev: "مجالات التطوير",
+    cbiTranscript: "نص المقابلة",
+    cbiInterviewer: "المُحاوِر (ذكاء اصطناعي)",
+    cbiCandidate: "المرشّح",
+    cbiAiNote: "مُولّد بالذكاء الاصطناعي من النص أعلاه؛ وينبغي أن يتحقّق منه مراجع بشري.",
   },
 };
 
@@ -192,6 +226,32 @@ export function renderPrehireCandidateHtml(data: PrehireReportData, lang: Lang):
     })
     .join("");
 
+  // CBI (AI interview) transcript + AI assessment - only when the candidate
+  // completed the interview. Lets the client read the actual responses, since
+  // the rating is AI-generated (a signal), not a human verdict.
+  const sep = lang === "ar" ? "؛ " : "; ";
+  const cbiSection = data.cbi
+    ? `
+  <h2>${t.cbiTitle}</h2>
+  <p class="muted" style="margin:0 0 10px;color:#555;font-size:11px">${t.cbiIntro}</p>
+  <div class="cbi-assess">
+    ${data.cbi.ratingLabel ? `<div><span class="cbi-k">${t.cbiAiRating}:</span> <b>${esc(data.cbi.ratingLabel)}</b>${data.cbi.bars != null ? ` (${data.cbi.bars}/5)` : ""}</div>` : ""}
+    ${data.cbi.rationale ? `<div style="margin-top:6px"><span class="cbi-k">${t.cbiRationale}:</span> ${esc(data.cbi.rationale)}</div>` : ""}
+    ${data.cbi.strengths.length ? `<div style="margin-top:6px"><span class="cbi-k">${t.cbiStrengths}:</span> ${data.cbi.strengths.map(esc).join(sep)}</div>` : ""}
+    ${data.cbi.developmentAreas.length ? `<div style="margin-top:6px"><span class="cbi-k">${t.cbiDev}:</span> ${data.cbi.developmentAreas.map(esc).join(sep)}</div>` : ""}
+  </div>
+  <div class="cbi-tx-title">${t.cbiTranscript}</div>
+  <div class="cbi-tx">
+    ${data.cbi.exchanges
+      .map(
+        (m) =>
+          `<div class="cbi-turn ${m.who}"><div class="cbi-who">${m.who === "candidate" ? t.cbiCandidate : t.cbiInterviewer}</div><div class="cbi-text">${esc(m.text)}</div></div>`
+      )
+      .join("")}
+  </div>
+  <p class="muted" style="margin-top:8px;font-size:9.5px;font-style:italic">${t.cbiAiNote}</p>`
+    : "";
+
   return `<!doctype html>
 <html lang="${lang}" dir="${rtl ? "rtl" : "ltr"}">
 <head>
@@ -226,6 +286,16 @@ export function renderPrehireCandidateHtml(data: PrehireReportData, lang: Lang):
   .badge { display: inline-block; border-radius: 999px; padding: 1px 8px; font-size: 9px; font-weight: 600; }
   .badge.ok { background: #d1fae5; color: #065f46; }
   .badge.warn { background: #ffe4e6; color: #9f1239; }
+  .cbi-assess { background: #f6f8fc; border: 1px solid #e3e6ee; border-radius: 8px; padding: 10px 12px; font-size: 11px; line-height: 1.5; }
+  .cbi-k { color: #5391D5; font-weight: 600; }
+  .cbi-tx-title { font-size: 9.5px; text-transform: uppercase; letter-spacing: .05em; color: #777; margin: 12px 0 6px; font-weight: 600; }
+  .cbi-tx { border: 1px solid #eceef4; border-radius: 8px; overflow: hidden; }
+  .cbi-turn { padding: 7px 12px; border-bottom: 1px solid #f0f2f7; }
+  .cbi-turn:last-child { border-bottom: none; }
+  .cbi-turn.interviewer { background: #fafbfe; }
+  .cbi-who { font-size: 8.5px; text-transform: uppercase; letter-spacing: .05em; font-weight: 700; color: #9aa3b2; }
+  .cbi-turn.candidate .cbi-who { color: #010131; }
+  .cbi-text { font-size: 11px; margin-top: 2px; white-space: pre-wrap; }
   .disclaimer { font-size: 10.5px; color: #475569; background: #f8fafc; border: 1px solid #e3e6ee; border-radius: 8px; padding: 10px 12px; margin-top: 16px; }
   .foot { margin-top: 24px; border-top: 1px solid #e3e6ee; padding-top: 8px; color: #888; font-size: 9.5px; display: flex; justify-content: space-between; }
 </style>
@@ -261,6 +331,8 @@ export function renderPrehireCandidateHtml(data: PrehireReportData, lang: Lang):
     </tr></thead>
     <tbody>${stageRows}</tbody>
   </table>
+
+  ${cbiSection}
 
   <h2>${t.howTitle}</h2>
   <p class="muted" style="margin:0 0 8px; color:#555; font-size:11px">${t.howComposite}</p>

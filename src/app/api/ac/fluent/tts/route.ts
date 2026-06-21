@@ -12,6 +12,7 @@
 
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { isStaffCaller } from "@/lib/ara/auth-guards";
 import { isAzureSpeechConfigured, synthesizeSpeech } from "@/lib/integrations/speech";
 import type { FluentTest } from "@/lib/ai/fluent-english";
 
@@ -27,6 +28,24 @@ export async function GET(req: Request) {
   const itemId = url.searchParams.get("item");
   if (!sessionId || !itemId) {
     return NextResponse.json({ error: "session and item are required" }, { status: 400 });
+  }
+
+  // Defense-in-depth: the unguessable session id alone must NOT serve audio. A
+  // voucher taker presents their redemption token (validated against the
+  // redemptions table); the admin-run /ac/fluent flow carries no token but is
+  // staff-authenticated. Reject anyone who is neither - so a leaked/guessed
+  // session id is useless without the caller's own credential.
+  const token = url.searchParams.get("token");
+  if (token) {
+    const sbAuth = createServiceClient();
+    const { data: redemption } = await sbAuth
+      .from("eng_fluent_voucher_redemptions")
+      .select("id")
+      .eq("redemption_token", token)
+      .maybeSingle<{ id: string }>();
+    if (!redemption) return NextResponse.json({ error: "Invalid link" }, { status: 403 });
+  } else if (!(await isStaffCaller())) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   let script: string | null = null;

@@ -684,7 +684,7 @@ export function FluentClient({
                           controls
                           preload="none"
                           className="h-9 w-full max-w-xs"
-                          src={`/api/ac/fluent/tts?session=${sessionId}&item=${encodeURIComponent(item.id)}`}
+                          src={`/api/ac/fluent/tts?session=${sessionId}&item=${encodeURIComponent(item.id)}${redemptionToken ? `&token=${encodeURIComponent(redemptionToken)}` : ""}`}
                         />
                       ) : ttsAvailable() ? (
                         <>

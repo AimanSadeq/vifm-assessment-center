@@ -188,7 +188,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t("prehire.thCandidate")}</TableHead>
+                  <TableHead className="text-center">{t("prehire.thCandidate")}</TableHead>
                   {plan.map((s) => (
                     <TableHead key={s.kind} className="text-center">
                       {t(`prehire.stageLabels.${s.kind}`)}
@@ -203,8 +203,8 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
               <TableBody>
                 {ranked.map((c) => (
                   <TableRow key={c.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center gap-2">
                         <span className="font-medium">{c.full_name}</span>
                         {!c.invited_at && (
                           <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700">

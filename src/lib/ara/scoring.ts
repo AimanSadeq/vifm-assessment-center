@@ -1,5 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { ARA_MATURITY_LEVELS, ARA_OVERALL_BANDS, ARA_PILLARS } from "@/lib/constants/ara-pillars";
+import { getIndividualMaturityStage } from "@/lib/constants/ara-individual-factors";
 import type {
   AraAssessment, AraPillarId, AraQuestion, AraQuestionType,
 } from "@/types/ara";
@@ -194,8 +195,43 @@ export async function recalculateAssessmentScores(assessmentId: string): Promise
   // Level 5 - overall score. Sum of weighted scores. Only publish a
   // non-null overall once at least one pillar has been scored, otherwise
   // the cover page shows 0.00 prematurely.
-  const overall = anyPillarScored ? Number(overallWeighted.toFixed(2)) : null;
-  const band = overall != null ? overallBandFromScore(overall) : null;
+  let overall = anyPillarScored ? Number(overallWeighted.toFixed(2)) : null;
+  let overallLabelEn: string | null = null;
+  let overallLabelAr: string | null = null;
+
+  if (overall != null) {
+    const band = overallBandFromScore(overall);
+    overallLabelEn = band.label_en;
+    overallLabelAr = band.label_ar;
+  } else {
+    // Individual-stage assessments serve ONLY individual-factor items, so no
+    // pillar ever scores - which left overall_score null and the consultant
+    // dashboard / org views blank, even though the taker's results page
+    // recomputes a real score from the same responses. When there are no pillar
+    // scores but the assessment has scored individual-factor responses, derive
+    // the overall as the mean of the four factor means (the exact logic the
+    // personal results page uses) and label it with the individual maturity
+    // stage. Mode C (pillar + individual layer) is unaffected: its pillars
+    // score, so anyPillarScored is true and this branch never runs.
+    const byFactor = new Map<string, number[]>();
+    for (const r of typed) {
+      const fid = r.question?.individual_factor_id;
+      if (r.question_score == null || !fid) continue;
+      const arr = byFactor.get(fid) ?? [];
+      arr.push(Number(r.question_score));
+      byFactor.set(fid, arr);
+    }
+    const factorMeans: number[] = [];
+    for (const arr of byFactor.values()) {
+      if (arr.length > 0) factorMeans.push(arr.reduce((a, b) => a + b, 0) / arr.length);
+    }
+    if (factorMeans.length > 0) {
+      overall = Number((factorMeans.reduce((a, b) => a + b, 0) / factorMeans.length).toFixed(2));
+      const stage = getIndividualMaturityStage(overall);
+      overallLabelEn = stage.name_en;
+      overallLabelAr = stage.name_ar;
+    }
+  }
 
   await sb
     .from("ara_assessment_scores")
@@ -203,8 +239,8 @@ export async function recalculateAssessmentScores(assessmentId: string): Promise
       {
         assessment_id: assessmentId,
         overall_score: overall,
-        overall_label_en: band?.label_en ?? null,
-        overall_label_ar: band?.label_ar ?? null,
+        overall_label_en: overallLabelEn,
+        overall_label_ar: overallLabelAr,
         calculated_at: new Date().toISOString(),
       },
       { onConflict: "assessment_id" }

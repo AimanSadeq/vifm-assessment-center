@@ -21,7 +21,7 @@ const DEFAULT_WEIGHT = 3;
 // it so a slow/stalled call can't leave the candidate stuck on "Preparing" (the
 // Anthropic SDK's own default timeout is minutes). On timeout the call yields
 // null and that competency simply contributes no items.
-const GEN_TIMEOUT_MS = 35_000;
+const GEN_TIMEOUT_MS = 60_000;
 function withTimeout<T>(p: Promise<T>, ms: number): Promise<T | null> {
   return Promise.race([p, new Promise<null>((resolve) => setTimeout(() => resolve(null), ms))]);
 }
@@ -233,6 +233,9 @@ export async function POST(_req: Request, { params }: { params: { token: string 
             currentScore: null,
             targetScore,
             bilingual: true,
+            // Only generate the items we actually keep for this competency
+            // (was generating 7 and discarding ~5) - far faster per call.
+            count: wanted,
           }),
           GEN_TIMEOUT_MS
         );
@@ -264,6 +267,7 @@ export async function POST(_req: Request, { params }: { params: { token: string 
         currentScore: null,
         targetScore,
         bilingual: true,
+        count: TARGET_DECK_SIZE,
       }),
       GEN_TIMEOUT_MS
     );

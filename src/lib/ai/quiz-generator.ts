@@ -30,6 +30,11 @@ export type QuizGeneratorInput = {
   targetScore: number;
   /** Output language (Arabic optional alongside English) */
   bilingual?: boolean;
+  /** How many questions to generate. Defaults to 7 (the full self-serve deck).
+   *  Callers that only keep a few (Pre-Hire samples 1-2 per competency across
+   *  several competencies) pass a small count so the model generates only what
+   *  is actually used - dramatically faster per call. */
+  count?: number;
 };
 
 const SYSTEM_PROMPT = (
@@ -42,6 +47,8 @@ const SYSTEM_PROMPT = (
 );
 
 function buildInstructions(input: QuizGeneratorInput) {
+  const n = Math.max(1, Math.round(input.count ?? 7));
+  const richMix = n >= 6;
   const positives = input.indicators
     .filter((i) => i.indicator_type === "positive")
     .map((i) => `+ ${i.description}`)
@@ -79,12 +86,10 @@ function buildInstructions(input: QuizGeneratorInput) {
     negatives ? `NEGATIVE INDICATORS (anti-patterns):\n${negatives}` : "",
     tips ? `DEVELOPMENT TIPS:\n${tips}` : "",
     "",
-    `TASK: Write exactly 7 quiz questions. Mix:`,
-    `  - 4 multiple_choice (4 options each, exactly one correct)`,
-    `  - 2 true_false`,
-    `  - 1 pattern_recognition (a numeric or logical sequence with one`,
-    `    placeholder cell shown as "?" - 4 options for what fills the "?")`,
-    `Difficulty mix: ~2 easy, ~3 medium, ~2 hard.`,
+    `TASK: Write exactly ${n} quiz question${n === 1 ? "" : "s"}.`,
+    richMix
+      ? `Mix: 4 multiple_choice (4 options each, exactly one correct), 2 true_false, and 1 pattern_recognition (a numeric or logical sequence with one placeholder cell shown as "?" - 4 options for what fills the "?"). Difficulty ~2 easy, ~3 medium, ~2 hard.`
+      : `Use multiple_choice (4 options each, exactly one correct); at most one true_false; do NOT use pattern_recognition. Mix difficulty sensibly.`,
     `Points by difficulty: easy=10, medium=15, hard=20.`,
     "",
     `For pattern_recognition the sequence MUST be 4–6 cells, with exactly one`,
@@ -96,10 +101,10 @@ function buildInstructions(input: QuizGeneratorInput) {
     `submitting an answer to understand the right answer - 2–3 sentences,`,
     `concrete, references the competency by name when natural.`,
     "",
-    `Return ONE JSON array with exactly 7 elements. No markdown fences. Each`,
-    `element matches:`,
+    `Return ONE JSON array with exactly ${n} element${n === 1 ? "" : "s"}. No markdown`,
+    `fences. Each element matches:`,
     `{`,
-    `  "id": "q-1" through "q-7",`,
+    `  "id": "q-1" through "q-${n}",`,
     `  "type": "true_false" | "multiple_choice" | "pattern_recognition",`,
     `  "prompt_en": "<question text>",`,
     `  "prompt_ar": ${input.bilingual ? '"<Arabic translation>"' : "null"},`,

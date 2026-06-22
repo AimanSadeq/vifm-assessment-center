@@ -25,12 +25,15 @@ type Row = {
   created_at: string;
   taker_name: string | null;
   result: (FluentResult & { reliability?: { low?: string; high?: string } }) | null;
+  // Voucher redemption this result is stamped with (00044) - the link to a
+  // camera-proctoring session (proctor_sessions.ref_id = the redemption token).
+  voucher_redemption_id: string | null;
   // Advisory integrity telemetry (migration 00043). Persisted as the raw flags
   // plus a `signal` (CAL-FLU-601); absent on a 00042-only DB.
   integrity_flags: (IntegrityFlags & { signal?: IntegritySignal }) | null;
 };
 
-export async function GET(_req: Request, { params }: { params: { resultId: string } }) {
+export async function GET(req: Request, { params }: { params: { resultId: string } }) {
   // XP-13: staff-only deliverable.
   try {
     await requireRole(["admin", "consultant", "lead_assessor", "associate_assessor"]);
@@ -44,7 +47,7 @@ export async function GET(_req: Request, { params }: { params: { resultId: strin
     const sb = createServiceClient();
     const { data } = await sb
       .from("eng_fluent_results")
-      .select("id, created_at, taker_name, result, integrity_flags")
+      .select("id, created_at, taker_name, result, integrity_flags, voucher_redemption_id")
       .eq("id", params.resultId)
       .single();
     row = (data as Row) ?? null;
@@ -75,8 +78,39 @@ export async function GET(_req: Request, { params }: { params: { resultId: strin
     recommendations = null;
   }
 
+  // Camera-proctoring attestation: link this placement report to its Proctoring &
+  // Integrity Report when the sitting was proctored. result -> redemption ->
+  // proctor session (ref_id = the redemption token). Best-effort + tolerant of an
+  // un-applied proctoring migration (no proctor_sessions table -> no attestation).
+  let proctoring: { sessionId: string; reportUrl: string | null } | null = null;
+  try {
+    if (row.voucher_redemption_id) {
+      const sbp = createServiceClient();
+      const { data: red } = await sbp
+        .from("eng_fluent_voucher_redemptions")
+        .select("redemption_token")
+        .eq("id", row.voucher_redemption_id)
+        .maybeSingle<{ redemption_token: string }>();
+      if (red?.redemption_token) {
+        const { data: ps } = await sbp
+          .from("proctor_sessions")
+          .select("id, snapshot_count")
+          .eq("context", "fluent")
+          .eq("ref_id", red.redemption_token)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle<{ id: string; snapshot_count: number }>();
+        if (ps && ps.snapshot_count > 0) {
+          proctoring = { sessionId: ps.id, reportUrl: `${new URL(req.url).origin}/api/admin/proctor/${ps.id}/report` };
+        }
+      }
+    }
+  } catch {
+    proctoring = null;
+  }
+
   const buffer = await renderToBuffer(
-    <FluentReport data={{ name, date, result: row.result, rangeText, integrity, recommendations }} />
+    <FluentReport data={{ name, date, result: row.result, rangeText, integrity, recommendations, proctoring }} />
   );
   const safe = name.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase() || "candidate";
   return new NextResponse(new Uint8Array(buffer), {

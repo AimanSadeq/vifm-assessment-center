@@ -1,4 +1,4 @@
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Link } from "@react-pdf/renderer";
 import type { FluentResult, WritingIssue } from "@/lib/ai/fluent-english";
 import type { IntegritySignal } from "@/lib/scoring/integrity";
 import type { EnglishRecommendations, EnglishCourseRec } from "@/lib/recommender/english";
@@ -183,6 +183,7 @@ export function FluentReport({
     rangeText: string | null;
     integrity?: IntegritySignal | null;
     recommendations?: EnglishRecommendations | null;
+    proctoring?: { sessionId: string; reportUrl: string | null } | null;
   };
 }) {
   const r = data.result;
@@ -340,6 +341,27 @@ export function FluentReport({
               <Text style={{ fontSize: 8, color: C.light, lineHeight: 1.4, marginTop: 4, fontStyle: "italic" }}>
                 Advisory only - this is review telemetry from the test administration. It never affects the CEFR level, caps a score, or auto-fails the test.
               </Text>
+            </View>
+          </>
+        )}
+
+        {/* Camera-proctoring attestation: when the sitting was camera-proctored,
+            acknowledge it and link to the separate Proctoring & Integrity Report
+            (kept distinct as it carries face snapshots). Staff-only report. */}
+        {data.proctoring && (
+          <>
+            <Text style={s.sectionTitle}>Camera proctoring</Text>
+            <View style={s.block}>
+              <Text style={s.narrative}>
+                This session was camera-proctored with the candidate&apos;s consent. A separate Proctoring &amp;
+                Integrity Report - timestamped snapshots and an AI integrity review - is available to authorised VIFM
+                staff.
+              </Text>
+              {data.proctoring.reportUrl ? (
+                <Link src={data.proctoring.reportUrl} style={{ fontSize: 8.5, color: C.accent, marginTop: 5 }}>
+                  Open the Proctoring &amp; Integrity Report
+                </Link>
+              ) : null}
             </View>
           </>
         )}

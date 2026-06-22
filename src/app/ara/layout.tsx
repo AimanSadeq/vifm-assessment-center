@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { GuidedDemoRail } from "./_components/guided-demo-rail";
 
 export const metadata: Metadata = {
   title: {
@@ -14,5 +15,10 @@ export default function AraLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <GuidedDemoRail />
+    </>
+  );
 }

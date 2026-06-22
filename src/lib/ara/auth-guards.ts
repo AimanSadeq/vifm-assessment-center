@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { AUTH_ENABLED } from "@/lib/auth/config";
+import { getClientAraOrgId } from "@/lib/auth/get-org-id";
 
 // ─────────────────────────────────────────────────────────────
 // ARA-specific auth helpers for server actions and API routes.
@@ -111,19 +112,25 @@ export async function requireRole(
 export async function requireAssessmentOwner(
   assessmentId: string
 ): Promise<AraCaller> {
-  const caller = await requireRole(["admin", "consultant"]);
+  const caller = await requireRole(["admin", "consultant", "client_manager"]);
   if (caller.role === "admin") return caller;
 
-  // Dev mode admin stub already returned above; this branch is only
-  // consultant role in real auth.
   const sv = createServiceClient();
   const { data: assessment } = await sv
     .from("ara_assessments")
-    .select("consultant_id")
+    .select("consultant_id, organization_id")
     .eq("id", assessmentId)
-    .maybeSingle<{ consultant_id: string | null }>();
+    .maybeSingle<{ consultant_id: string | null; organization_id: string | null }>();
 
   if (!assessment) throw new AuthorizationError("Assessment not found");
+
+  // Additive: a client_manager may access an assessment owned by their org.
+  if (caller.role === "client_manager") {
+    const araOrgId = await getClientAraOrgId();
+    if (araOrgId && assessment.organization_id === araOrgId) return caller;
+    throw new AuthorizationError("Not permitted on this assessment");
+  }
+
   if (assessment.consultant_id !== caller.uid) {
     throw new AuthorizationError("Not the assessment owner");
   }

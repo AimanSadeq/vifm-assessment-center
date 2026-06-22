@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentCaller } from "@/lib/ara/auth-guards";
+import { getClientAraOrgId } from "@/lib/auth/get-org-id";
 import { createServiceClient } from "@/lib/supabase/server";
 
 /**
@@ -20,17 +21,25 @@ export async function guardReflectEngagementAccess(
   const caller = await getCurrentCaller();
   if (!caller) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (caller.role === "admin") return null;
-  if (caller.role !== "consultant") {
+  if (caller.role !== "consultant" && caller.role !== "client_manager") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const sv = createServiceClient();
   const { data: eng } = await sv
     .from("reflect_engagements")
-    .select("consultant_id")
+    .select("consultant_id, organization_id")
     .eq("id", engagementId)
-    .maybeSingle<{ consultant_id: string | null }>();
+    .maybeSingle<{ consultant_id: string | null; organization_id: string | null }>();
   if (!eng) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // Additive: a client_manager may access an engagement owned by their org.
+  if (caller.role === "client_manager") {
+    const araOrgId = await getClientAraOrgId();
+    return araOrgId && eng.organization_id === araOrgId
+      ? null
+      : NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   return eng.consultant_id === caller.uid
     ? null
@@ -51,21 +60,26 @@ export async function canAccessReflectEngagement(engagementId: string): Promise<
   const caller = await getCurrentCaller();
   if (!caller) return false;
   if (caller.role === "admin") return true;
-  if (caller.role !== "consultant") return false;
+  if (caller.role !== "consultant" && caller.role !== "client_manager") return false;
   const sv = createServiceClient();
   const { data: eng } = await sv
     .from("reflect_engagements")
-    .select("consultant_id")
+    .select("consultant_id, organization_id")
     .eq("id", engagementId)
-    .maybeSingle<{ consultant_id: string | null }>();
-  return !!eng && eng.consultant_id === caller.uid;
+    .maybeSingle<{ consultant_id: string | null; organization_id: string | null }>();
+  if (!eng) return false;
+  if (caller.role === "client_manager") {
+    const araOrgId = await getClientAraOrgId();
+    return !!araOrgId && eng.organization_id === araOrgId;
+  }
+  return eng.consultant_id === caller.uid;
 }
 
 export async function canAccessReflectParticipant(participantId: string): Promise<boolean> {
   const caller = await getCurrentCaller();
   if (!caller) return false;
   if (caller.role === "admin") return true;
-  if (caller.role !== "consultant") return false;
+  if (caller.role !== "consultant" && caller.role !== "client_manager") return false;
   const sv = createServiceClient();
   const { data: p } = await sv
     .from("reflect_participants")
@@ -75,8 +89,13 @@ export async function canAccessReflectParticipant(participantId: string): Promis
   if (!p?.engagement_id) return false;
   const { data: eng } = await sv
     .from("reflect_engagements")
-    .select("consultant_id")
+    .select("consultant_id, organization_id")
     .eq("id", p.engagement_id)
-    .maybeSingle<{ consultant_id: string | null }>();
-  return !!eng && eng.consultant_id === caller.uid;
+    .maybeSingle<{ consultant_id: string | null; organization_id: string | null }>();
+  if (!eng) return false;
+  if (caller.role === "client_manager") {
+    const araOrgId = await getClientAraOrgId();
+    return !!araOrgId && eng.organization_id === araOrgId;
+  }
+  return eng.consultant_id === caller.uid;
 }

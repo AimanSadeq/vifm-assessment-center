@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
+import { requireRole, isAuthorizationError, getCurrentCaller } from "@/lib/ara/auth-guards";
+import { getClientOrgId } from "@/lib/auth/get-org-id";
+import { createServiceClient } from "@/lib/supabase/server";
 import { getServerLocale } from "@/lib/i18n/server";
 import { buildPrehireCandidatePdf } from "@/lib/reports/prehire-candidate-pdf";
 
@@ -18,11 +20,30 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { id: string; candidateId: string } }
 ) {
+  // Admin-only, plus an additive client_manager branch scoped to their own org.
+  let clientMgrOrgId: string | null = null;
   try {
     await requireRole(["admin"]);
   } catch (err) {
-    if (isAuthorizationError(err)) return NextResponse.json({ ok: false, error: err.message }, { status: 403 });
-    throw err;
+    if (!isAuthorizationError(err)) throw err;
+    const caller = await getCurrentCaller();
+    if (caller?.role === "client_manager") {
+      clientMgrOrgId = await getClientOrgId();
+      if (!clientMgrOrgId) return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+    } else {
+      return NextResponse.json({ ok: false, error: err.message }, { status: 403 });
+    }
+  }
+
+  if (clientMgrOrgId) {
+    const { data: reqRow } = await createServiceClient()
+      .from("prehire_requisitions")
+      .select("organization_id")
+      .eq("id", params.id)
+      .maybeSingle<{ organization_id: string | null }>();
+    if (!reqRow || reqRow.organization_id !== clientMgrOrgId) {
+      return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+    }
   }
 
   const sp = new URL(req.url).searchParams;

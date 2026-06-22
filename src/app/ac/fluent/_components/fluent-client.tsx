@@ -3,7 +3,7 @@
 import { type Dispatch, type SetStateAction, useCallback, useEffect, useRef, useState } from "react";
 import {
   Loader2, Sparkles, RotateCcw, BookOpen, PenLine, CheckCircle2,
-  Headphones, Mic, Square, Play, Volume2, Award, AlertCircle,
+  Headphones, Mic, Square, Play, Volume2, AlertCircle,
 } from "lucide-react";
 import { startBrowserStt, type BrowserSttSession } from "@/lib/speech/browser-stt";
 import { FluentDefinitions } from "./fluent-definitions";
@@ -965,17 +965,13 @@ export function FluentClient({
               className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
               <RotateCcw className="h-4 w-4" /> {t.startOver}
             </button>
+            {/* XP-13: the detailed placement report is a staff deliverable; the
+                taker gets only their own certificate here, never the full report. */}
             {result.result_id && (
-              <>
-                <a href={`/api/ac/fluent/${result.result_id}/report`} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-md bg-[#010131] px-4 py-2 text-sm font-semibold text-white hover:bg-[#121140]">
-                  <Award className="h-4 w-4" /> {rtl ? "تنزيل التقرير الكامل" : "Download full report"}
-                </a>
-                <a href={`/api/ac/fluent/${result.result_id}/certificate?format=pdf`} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-md border border-[#5391D5] px-4 py-2 text-sm font-semibold text-[#5391D5] hover:bg-[#5391D5]/10">
-                  {rtl ? "الشهادة" : "Certificate"}
-                </a>
-              </>
+              <a href={`/api/ac/fluent/${result.result_id}/certificate?format=pdf`} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-md border border-[#5391D5] px-4 py-2 text-sm font-semibold text-[#5391D5] hover:bg-[#5391D5]/10">
+                {rtl ? "الشهادة" : "Certificate"}
+              </a>
             )}
           </div>
         </div>

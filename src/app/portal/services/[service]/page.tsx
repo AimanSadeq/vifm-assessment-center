@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { resolvePortalAccess } from "@/lib/clients/portal-access";
 import { getAllocationsForOrg } from "@/lib/clients/allocations";
 import { portalService } from "@/lib/clients/portal-services";
@@ -43,6 +43,12 @@ export default async function PortalServicePage({
 
   const allocs = await getAllocationsForOrg(orgId);
   const alloc = allocs.find((a) => a.service === svc.id) ?? null;
+  // Block direct access to a service the org was not allocated (dim + block):
+  // un-allocated services are not linked from the Home, and a hand-typed URL
+  // bounces back to the portal grid.
+  if (!alloc) {
+    redirect(access.viewingAsAdmin && orgId ? `/portal?org=${orgId}` : "/portal");
+  }
   const remaining = alloc?.seats_remaining ?? 0;
   const voucherSvc = isVoucherService(svc.id);
   const seatSvc = isSeatService(svc.id);

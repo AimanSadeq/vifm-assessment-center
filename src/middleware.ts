@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { updateSession } from "@/lib/supabase/middleware";
+import { updateSession, redirectIfClientManager } from "@/lib/supabase/middleware";
 import { AUTH_ENABLED } from "@/lib/auth/config";
 
 // ARA respondent routes use token-based access (no Supabase session).
@@ -149,10 +149,7 @@ export async function middleware(request: NextRequest) {
     isAraCohortRoute(request.nextUrl.pathname) ||
     isAraMethodologyRoute(request.nextUrl.pathname) ||
     isAraPersonalRoute(request.nextUrl.pathname) ||
-    isAraMarketingRoute(request.nextUrl.pathname) ||
     isReflectRaterRoute(request.nextUrl.pathname) ||
-    isPublicCoursesRoute(request.nextUrl.pathname) ||
-    isPublicEvidenceRoute(request.nextUrl.pathname) ||
     isPublicMethodologyRoute(request.nextUrl.pathname) ||
     isPublicVerifyRoute(request.nextUrl.pathname) ||
     isPreHireApplyRoute(request.nextUrl.pathname) ||
@@ -163,6 +160,19 @@ export async function middleware(request: NextRequest) {
     isPersonaPublicRoute(request.nextUrl.pathname)
   ) {
     return NextResponse.next();
+  }
+
+  // Public marketing pages (the AI Readiness landing, /courses, /evidence):
+  // anonymous prospects and VIFM staff see them unchanged, but a signed-in
+  // client_manager is bounced to their own /portal so they stay confined.
+  if (
+    isAraMarketingRoute(request.nextUrl.pathname) ||
+    isPublicCoursesRoute(request.nextUrl.pathname) ||
+    isPublicEvidenceRoute(request.nextUrl.pathname)
+  ) {
+    if (!AUTH_ENABLED) return NextResponse.next();
+    const bounce = await redirectIfClientManager(request);
+    return bounce ?? NextResponse.next();
   }
 
   if (!AUTH_ENABLED) {

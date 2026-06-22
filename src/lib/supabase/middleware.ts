@@ -1,6 +1,45 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+/**
+ * For otherwise-public PAGE routes (the marketing landings) that are bypassed
+ * before updateSession: anonymous prospects and VIFM staff see them unchanged,
+ * but a signed-in client_manager is bounced to their own /portal. Returns a
+ * redirect response for a client_manager, or null to let the request continue.
+ */
+export async function redirectIfClientManager(request: NextRequest): Promise<NextResponse | null> {
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll() {
+          /* read-only role probe - no cookie writes */
+        },
+      },
+    }
+  );
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null; // anonymous - keep the public route public
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle<{ role: string }>();
+  if (profile?.role === "client_manager") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/portal";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+  return null;
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,

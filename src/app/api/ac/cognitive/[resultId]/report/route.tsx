@@ -11,7 +11,8 @@
 
 import { NextResponse } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
-import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
+import { requireRole, isAuthorizationError, getCurrentCaller } from "@/lib/ara/auth-guards";
+import { getClientOrgId } from "@/lib/auth/get-org-id";
 import { createServiceClient } from "@/lib/supabase/server";
 import { PsychometricReport, type PsyReportData, type PsyReportScale } from "@/lib/reports/psychometric-report";
 import {
@@ -42,16 +43,24 @@ function notFound(): Response {
   );
 }
 
-type Row = { kind: string; taker_name: string | null; created_at: string; result: PsyResult | null };
+type Row = { kind: string; taker_name: string | null; created_at: string; result: PsyResult | null; organization_id: string | null };
 
 export async function GET(_req: Request, { params }: { params: { resultId: string } }) {
   // XP-13: staff-only. Takers never see their cognitive result; an admin
-  // downloads/sends it from the cohort view.
+  // downloads/sends it from the cohort view. Additive: a client_manager may also
+  // download, but only for a result in their own organisation.
+  let clientMgrOrgId: string | null = null;
   try {
     await requireRole(["admin", "consultant", "lead_assessor", "associate_assessor"]);
   } catch (e) {
-    if (isAuthorizationError(e)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    throw e;
+    if (!isAuthorizationError(e)) throw e;
+    const caller = await getCurrentCaller();
+    if (caller?.role === "client_manager") {
+      clientMgrOrgId = await getClientOrgId();
+      if (!clientMgrOrgId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    } else {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
   }
 
   let row: Row | null = null;
@@ -59,7 +68,7 @@ export async function GET(_req: Request, { params }: { params: { resultId: strin
     const svc = createServiceClient();
     const { data } = await svc
       .from("psy_results")
-      .select("kind, taker_name, created_at, result")
+      .select("kind, taker_name, created_at, result, organization_id")
       .eq("id", params.resultId)
       .single();
     row = (data as Row) ?? null;
@@ -67,6 +76,9 @@ export async function GET(_req: Request, { params }: { params: { resultId: strin
     row = null;
   }
   if (!row || !row.result) return notFound();
+  if (clientMgrOrgId && row.organization_id !== clientMgrOrgId) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const result = row.result;
   const isCog = row.kind === "cognitive";

@@ -1,6 +1,8 @@
 import { renderToBuffer } from "@react-pdf/renderer";
 import { NextResponse } from "next/server";
 import { getCurrentCaller } from "@/lib/ara/auth-guards";
+import { getClientOrgId } from "@/lib/auth/get-org-id";
+import { createServiceClient } from "@/lib/supabase/server";
 import { PersonaProfilePdf } from "@/lib/reports/persona-profile";
 import { buildPersonaPdfData, peekPersonaPurpose } from "@/lib/reports/persona-report-data";
 import { renderPersonaProfileHtmlAr } from "@/lib/reports/persona-profile-ar-html";
@@ -22,8 +24,24 @@ export async function GET(req: Request, { params }: { params: { sessionId: strin
     if (purpose === "missing") return NextResponse.json({ error: "Session not found" }, { status: 404 });
     {
       const caller = await getCurrentCaller();
-      if (!caller || caller.role !== "admin") {
+      if (!caller) {
         return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+      }
+      if (caller.role !== "admin") {
+        // Additive: a client_manager may pull a report for a session in their own org.
+        if (caller.role === "client_manager") {
+          const orgId = await getClientOrgId();
+          const { data: sess } = await createServiceClient()
+            .from("behavioral_assessment_sessions")
+            .select("organization_id")
+            .eq("id", params.sessionId)
+            .maybeSingle<{ organization_id: string | null }>();
+          if (!orgId || !sess || sess.organization_id !== orgId) {
+            return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+          }
+        } else {
+          return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+        }
       }
     }
 

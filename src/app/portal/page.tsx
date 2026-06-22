@@ -43,7 +43,7 @@ const T = {
 
 type Lang = "en" | "ar";
 
-function ServiceCard({ svc, alloc, t, lang }: { svc: PortalServiceMeta; alloc: Allocation | undefined; t: (typeof T)["en"]; lang: Lang }) {
+function ServiceCard({ svc, alloc, t, lang, href }: { svc: PortalServiceMeta; alloc: Allocation | undefined; t: (typeof T)["en"]; lang: Lang; href?: string }) {
   const name = lang === "ar" ? svc.labelAr : svc.label;
   if (!alloc) {
     return (
@@ -64,8 +64,8 @@ function ServiceCard({ svc, alloc, t, lang }: { svc: PortalServiceMeta; alloc: A
     : daysLeft !== null && daysLeft <= 30
     ? "bg-amber-100 text-amber-800"
     : "bg-muted text-muted-foreground";
-  return (
-    <div className="rounded-xl border bg-card p-4" style={{ borderColor: `${svc.accent}55` }}>
+  const card = (
+    <div className="h-full rounded-xl border bg-card p-4" style={{ borderColor: `${svc.accent}55` }}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: svc.accent }} />
@@ -92,6 +92,11 @@ function ServiceCard({ svc, alloc, t, lang }: { svc: PortalServiceMeta; alloc: A
       </div>
     </div>
   );
+  return href ? (
+    <Link href={href} className="block transition hover:shadow-md">
+      {card}
+    </Link>
+  ) : card;
 }
 
 export default async function PortalHomePage({ searchParams }: { searchParams?: { org?: string } }) {
@@ -102,6 +107,9 @@ export default async function PortalHomePage({ searchParams }: { searchParams?: 
 
   const access = await resolvePortalAccess(searchParams?.org);
   const orgId = access.ok ? access.orgId : null;
+  const viewingAsAdmin = access.ok ? access.viewingAsAdmin : false;
+  const svcHref = (id: string, allocated: boolean) =>
+    allocated ? `/portal/services/${id}${viewingAsAdmin ? `?org=${orgId}` : ""}` : undefined;
 
   if (!orgId) {
     if (access.ok && access.viewingAsAdmin) {
@@ -145,7 +153,7 @@ export default async function PortalHomePage({ searchParams }: { searchParams?: 
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t.voucher}</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {voucherServices.map((s) => (
-            <ServiceCard key={s.id} svc={s} alloc={byService.get(s.id)} t={t} lang={lang} />
+            <ServiceCard key={s.id} svc={s} alloc={byService.get(s.id)} t={t} lang={lang} href={svcHref(s.id, byService.has(s.id))} />
           ))}
         </div>
       </section>
@@ -154,7 +162,7 @@ export default async function PortalHomePage({ searchParams }: { searchParams?: 
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t.seat}</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {seatServices.map((s) => (
-            <ServiceCard key={s.id} svc={s} alloc={byService.get(s.id)} t={t} lang={lang} />
+            <ServiceCard key={s.id} svc={s} alloc={byService.get(s.id)} t={t} lang={lang} href={svcHref(s.id, byService.has(s.id))} />
           ))}
         </div>
       </section>

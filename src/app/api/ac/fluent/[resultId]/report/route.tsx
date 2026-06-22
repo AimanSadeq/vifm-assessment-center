@@ -10,7 +10,8 @@
  */
 import { NextResponse } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
-import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
+import { requireRole, isAuthorizationError, getCurrentCaller } from "@/lib/ara/auth-guards";
+import { getClientOrgId } from "@/lib/auth/get-org-id";
 import { createServiceClient } from "@/lib/supabase/server";
 import { FluentReport } from "@/lib/reports/fluent-report";
 import type { FluentResult } from "@/lib/ai/fluent-english";
@@ -31,15 +32,24 @@ type Row = {
   // Advisory integrity telemetry (migration 00043). Persisted as the raw flags
   // plus a `signal` (CAL-FLU-601); absent on a 00042-only DB.
   integrity_flags: (IntegrityFlags & { signal?: IntegritySignal }) | null;
+  organization_id: string | null;
 };
 
 export async function GET(req: Request, { params }: { params: { resultId: string } }) {
-  // XP-13: staff-only deliverable.
+  // XP-13: staff-only deliverable. Additive: a client_manager may also download a
+  // report, but only for a result belonging to their own organisation.
+  let clientMgrOrgId: string | null = null;
   try {
     await requireRole(["admin", "consultant", "lead_assessor", "associate_assessor"]);
   } catch (e) {
-    if (isAuthorizationError(e)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    throw e;
+    if (!isAuthorizationError(e)) throw e;
+    const caller = await getCurrentCaller();
+    if (caller?.role === "client_manager") {
+      clientMgrOrgId = await getClientOrgId();
+      if (!clientMgrOrgId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    } else {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
   }
 
   let row: Row | null = null;
@@ -47,7 +57,7 @@ export async function GET(req: Request, { params }: { params: { resultId: string
     const sb = createServiceClient();
     const { data } = await sb
       .from("eng_fluent_results")
-      .select("id, created_at, taker_name, result, integrity_flags, voucher_redemption_id")
+      .select("id, created_at, taker_name, result, integrity_flags, voucher_redemption_id, organization_id")
       .eq("id", params.resultId)
       .single();
     row = (data as Row) ?? null;
@@ -56,6 +66,9 @@ export async function GET(req: Request, { params }: { params: { resultId: string
   }
   if (!row || !row.result) {
     return NextResponse.json({ error: "Result not found" }, { status: 404 });
+  }
+  if (clientMgrOrgId && row.organization_id !== clientMgrOrgId) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const name = row.taker_name?.trim() || "Candidate";

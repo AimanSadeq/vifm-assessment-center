@@ -105,7 +105,11 @@ export async function GET(req: Request, { params }: { params: { resultId: string
           // new URL(req.url).origin is the INTERNAL host, so the link baked into
           // the PDF would be unreachable - prefer the configured public base and
           // fall back to the request origin only in local dev.
-          const base = (process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || new URL(req.url).origin).replace(/\/+$/, "");
+          const base = (
+            process.env.NEXT_PUBLIC_SITE_URL ||
+            process.env.NEXT_PUBLIC_APP_URL ||
+            (process.env.NODE_ENV === "production" ? "https://caliber.viftraining.com" : new URL(req.url).origin)
+          ).replace(/\/+$/, "");
           proctoring = { sessionId: ps.id, reportUrl: `${base}/api/admin/proctor/${ps.id}/report` };
         }
       }

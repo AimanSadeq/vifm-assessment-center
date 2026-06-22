@@ -60,8 +60,8 @@ export default async function TechSandboxAdminPage({
     {
       href: "/admin/tech-sandbox/sandbox-blocks",
       icon: ClipboardList,
-      title: "Review sandbox tasks",
-      desc: "The live spreadsheet, calculation and SQL tasks.",
+      title: "Review & edit sandbox tasks",
+      desc: "Edit a task's prompt, instructions, master answer and scoring, then approve it.",
     },
     {
       href: "/admin/tech-sandbox/answers",

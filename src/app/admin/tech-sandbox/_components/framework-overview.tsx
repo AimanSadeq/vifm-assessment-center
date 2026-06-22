@@ -219,10 +219,10 @@ function DomainDetail({ domain }: { domain: OverviewDomain }) {
                       {p.blocks.map((b) => (
                         <li
                           key={b.nameEn}
-                          className="flex items-center justify-between gap-2 text-xs text-muted-foreground"
+                          className="flex flex-col gap-0.5 text-xs text-muted-foreground sm:flex-row sm:items-start sm:justify-between sm:gap-3"
                         >
-                          <span>• {b.nameEn}</span>
-                          <span className="shrink-0 text-[10px]">
+                          <span className="min-w-0 break-words">• {b.nameEn}</span>
+                          <span className="min-w-0 break-words text-[10px] sm:shrink-0 sm:text-end">
                             {ENGINE_LABEL[b.engineType] ?? b.engineType}
                             {b.frameworkRef ? ` · ${b.frameworkRef}` : ""}
                           </span>

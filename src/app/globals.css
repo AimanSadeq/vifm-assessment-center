@@ -86,8 +86,16 @@
   * {
     @apply border-border;
   }
+  /* Pin the document to the viewport width so a stray wide element can never
+     make the whole page pan sideways on mobile. `clip` (not `hidden`) avoids
+     creating a scroll container, so sticky headers/sidebars keep working and
+     intentional inner horizontal scroll (e.g. wide tables) is unaffected. */
+  html {
+    overflow-x: clip;
+  }
   body {
     @apply bg-background text-foreground;
+    overflow-x: clip;
   }
 
   /* ─── ARA extended palette ───────────────────────────────────────

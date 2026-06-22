@@ -45,6 +45,7 @@ import {
   Network,
   Table2,
   BookOpen,
+  Database,
   type LucideIcon,
 } from "lucide-react";
 
@@ -176,6 +177,7 @@ const NAV: NavEntry[] = [
         link("/compare", "adminNav.comparePortals", Table2),
         link("/evidence", "adminNav.researchValidity", BookOpen),
         link("/admin/clients", "adminNav.clients", Building2),
+        link("/admin/demo", "Demo data", Database),
         link("/admin/framework", "adminNav.framework", Network),
         link("/admin/role-profiles", "adminNav.roleProfiles", Briefcase),
         link("/admin/vouchers", "adminNav.vouchers", Ticket),

@@ -21,7 +21,8 @@ export type AraCallerRole =
   | "lead_assessor"
   | "associate_assessor"
   | "candidate"
-  | "client";
+  | "client"
+  | "client_manager";
 
 export type AraCaller = {
   uid: string;

@@ -1,5 +1,7 @@
 export const dynamic = "force-dynamic";
 
+import Link from "next/link";
+import { Layers } from "lucide-react";
 import { getServerT } from "@/lib/i18n/server";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -24,7 +26,15 @@ export default async function ClientsPage() {
           <h1 className="text-2xl font-bold">{t("adminClients.title")}</h1>
           <p className="mt-1 text-muted-foreground">{t("adminClients.subtitle")}</p>
         </div>
-        <CreateClientDialog />
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/clients/allocations"
+            className="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
+          >
+            <Layers className="h-4 w-4" /> Client allocations
+          </Link>
+          <CreateClientDialog />
+        </div>
       </div>
 
       <div className="mt-6">

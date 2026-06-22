@@ -15,6 +15,7 @@ import {
   DEMO_TAG,
   type DemoSeedOutcome,
 } from "./constants";
+import { DEMO_SERVICE_MODULES } from "./services";
 
 type Sb = ReturnType<typeof createServiceClient>;
 
@@ -254,7 +255,8 @@ async function seedFluent(sb: Sb, orgId: string): Promise<DemoSeedOutcome> {
 }
 
 export async function seedDemoData(): Promise<DemoSeedOutcome[]> {
-  const { organizationId } = await ensureDemoOrg();
+  const org = await ensureDemoOrg();
+  const { organizationId } = org;
   const sb = createServiceClient();
   const out: DemoSeedOutcome[] = [];
   const run = async (fn: () => Promise<DemoSeedOutcome>) => {
@@ -267,5 +269,6 @@ export async function seedDemoData(): Promise<DemoSeedOutcome[]> {
   await run(() => seedAssessmentCenter(sb, organizationId));
   await run(() => seedPrehire(sb, organizationId));
   await run(() => seedFluent(sb, organizationId));
+  for (const m of DEMO_SERVICE_MODULES) await run(() => m.seed(sb, org));
   return out;
 }

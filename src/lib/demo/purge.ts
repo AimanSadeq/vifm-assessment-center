@@ -6,6 +6,7 @@
 
 import { createServiceClient } from "@/lib/supabase/server";
 import { DEMO_ORG_NAME, DEMO_TAG, DEMO_EMAIL_DOMAIN } from "./constants";
+import { DEMO_SERVICE_MODULES } from "./services";
 
 type Sb = ReturnType<typeof createServiceClient>;
 
@@ -111,8 +112,12 @@ export async function purgeDemoData(): Promise<DemoPurgeOutcome[]> {
   };
 
   if (organizationId) {
-    // Children of the org first (Fluent results FK to candidates we are about to
-    // delete; Pre-Hire and AC are independent subtrees).
+    // Per-service modules first - some (e.g. Academy enrolments, Readiness) point
+    // at the AC candidates we are about to delete.
+    const org = { organizationId, araOrganizationId: araOrganizationId ?? "" };
+    for (const m of [...DEMO_SERVICE_MODULES].reverse()) await step(m.label, () => m.purge(sb, org));
+    // Then the inline subtrees. Children of the org first (Fluent results FK to
+    // candidates we are about to delete; Pre-Hire and AC are independent subtrees).
     await step("Fluent", () => purgeFluent(sb, organizationId));
     await step("Pre-Hire", () => purgePrehire(sb, organizationId));
     await step("Assessment Center", () => purgeAssessmentCenter(sb, organizationId));

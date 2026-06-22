@@ -9,6 +9,7 @@ import { sendEmail, isEmailConfigured } from "@/lib/integrations/email";
 import { logPrehireEvent } from "@/lib/prehire/audit";
 import { buildPrehireCandidatePdf } from "@/lib/reports/prehire-candidate-pdf";
 import { uuidish } from "@/lib/validations/ids";
+import { DEMO_ORG_NAME, DEMO_ORG_NAME_AR } from "@/lib/demo/constants";
 import type { PrehireStagePlanEntry, PrehireStageKind } from "@/types/prehire";
 
 /** Flatten a Zod error into a readable message (field errors included, not just
@@ -273,6 +274,80 @@ export async function addCandidateAction(input: unknown) {
 
   revalidatePath(`/admin/prehire/${parsed.data.requisition_id}`);
   return { data: { id: data.id as string, access_token: data.access_token as string, emailed: false } };
+}
+
+// ── Self-serve demo screening ────────────────────────────────────
+// Start the candidate experience with one click - no requisition wizard, no
+// invite link/voucher (the same front-and-centre entry the other instruments
+// have). Reuses the shared demo org + a find-or-create "Demo Screening"
+// requisition, then mints a fresh anonymous candidate and returns its token so
+// the caller drops straight into the real apply flow. Everything lands under the
+// demo org, so the Demo-data purge removes it.
+const DEMO_REQ_TITLE = "Demo Screening (self-serve)";
+const DEMO_STAGE_PLAN: PrehireStagePlanEntry[] = [
+  { kind: "quiz", weight: 0.4, cut_score: 60, required: true },
+  { kind: "fluent", weight: 0.3, cut_score: 50, required: true },
+  { kind: "cbi", weight: 0.3, cut_score: 60, required: false },
+];
+
+export async function startPrehireDemoAction(): Promise<{ data: { token: string } } | { error: string }> {
+  const gate = await gateAdmin();
+  if (gate) return gate;
+  try {
+    const org = await createClientOrganization({
+      name: DEMO_ORG_NAME,
+      nameAr: DEMO_ORG_NAME_AR,
+      industry: "Banking",
+      country: "Saudi Arabia",
+    });
+    if (!org.ok) return { error: org.error };
+    const svc = createServiceClient();
+
+    let reqId: string;
+    const existing = await svc
+      .from("prehire_requisitions")
+      .select("id")
+      .eq("organization_id", org.organizationId)
+      .eq("title", DEMO_REQ_TITLE)
+      .limit(1)
+      .maybeSingle();
+    if (existing.data?.id) {
+      reqId = existing.data.id as string;
+    } else {
+      const ins = await svc
+        .from("prehire_requisitions")
+        .insert({
+          organization_id: org.organizationId,
+          title: DEMO_REQ_TITLE,
+          level: "Manager",
+          english_required: true,
+          stage_config: DEMO_STAGE_PLAN,
+          status: "open",
+        })
+        .select("id")
+        .single();
+      if (ins.error || !ins.data) return { error: ins.error?.message ?? "Could not create the demo requisition" };
+      reqId = ins.data.id as string;
+    }
+
+    const stamp = Date.now().toString(36);
+    const cand = await svc
+      .from("prehire_candidates")
+      .insert({
+        requisition_id: reqId,
+        full_name: "Demo Candidate",
+        email: `demo-${stamp}@caliber-demo.local`,
+        status: "invited",
+        invited_at: null,
+      })
+      .select("access_token")
+      .single();
+    if (cand.error || !cand.data?.access_token) return { error: cand.error?.message ?? "Could not start the demo" };
+
+    return { data: { token: cand.data.access_token as string } };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Could not start the demo screening" };
+  }
 }
 
 /** Invite every not-yet-invited candidate on a requisition (admin "send all"). */

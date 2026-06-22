@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {
   SlidersHorizontal, BarChart3, ClipboardList, BookOpen, ArrowRight,
-  LayoutDashboard, Award, ListChecks, FileClock,
+  LayoutDashboard, Award, ListChecks, FileClock, Rocket,
 } from "lucide-react";
 import { redirect } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -108,6 +108,17 @@ export default async function TechSandboxAdminPage({
           Candidates work in live sandboxes (spreadsheet, calculation, SQL), scored against master
           answers and banded per competency.
         </p>
+        {/* Self-serve start - no link or voucher needed (ideal for demos), the same
+            front-and-centre entry the other instruments have. */}
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Link
+            href="/ac/tech-assessment"
+            className="inline-flex items-center gap-2 rounded-lg bg-[#010131] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#121140]"
+          >
+            <Rocket className="h-4 w-4" /> Start an assessment now
+          </Link>
+          <span className="text-xs text-muted-foreground">No link or voucher needed - launches the live runner. Ideal for demos.</span>
+        </div>
       </div>
 
       {/* Quick actions - titled card grid so the key tasks are obvious. */}

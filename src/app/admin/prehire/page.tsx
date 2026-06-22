@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, UserSearch, Building2, Users, ArrowRight, Briefcase } from "lucide-react";
 import { BackLink } from "@/components/shared/back-link";
 import { CreateClientDialog } from "@/app/admin/clients/_components/create-client-dialog";
+import { DemoStartButton } from "./_components/demo-start-button";
 
 export const dynamic = "force-dynamic";
 
@@ -64,6 +65,9 @@ export default async function PreHireListPage() {
             {/* CAL-PRE-501: create a client without leaving Pre-Hire. Reuses the
                 shared dual-write dialog so the org is selectable in every service. */}
             <CreateClientDialog />
+
+            {/* Self-serve start - no requisition/voucher needed (demo aid). */}
+            <DemoStartButton />
 
             {/* Stat strip */}
             <div className="flex flex-wrap items-stretch gap-3">

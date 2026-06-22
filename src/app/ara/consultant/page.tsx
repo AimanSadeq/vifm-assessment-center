@@ -9,7 +9,6 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { AraTopBar } from "@/components/shared/ara-top-bar";
-import { GuidedDemoToggle } from "../_components/guided-demo-toggle";
 import { ARA_STAGE_MAP } from "@/lib/constants/ara-stages";
 import type { AraAssessment, AraOrganization } from "@/types/ara";
 
@@ -140,9 +139,6 @@ export default async function AraConsultantPage() {
             <p className="text-sm text-muted-foreground mt-1">
               {tr("araConsultant.list_subtitle")}
             </p>
-            <div className="mt-3">
-              <GuidedDemoToggle />
-            </div>
           </div>
           <div className="flex items-center gap-3">
             <StatChip icon={ClipboardList} label={tr("araConsultant.list_stat_total")}     value={total}     tone="blue" />

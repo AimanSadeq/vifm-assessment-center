@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { ShieldCheck, ScanFace } from "lucide-react";
+import { ShieldCheck, ScanFace, FileDown } from "lucide-react";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { getSessionWithSnapshots, type SnapshotFlags } from "@/lib/proctor/access";
 import { BackLink } from "@/components/shared/back-link";
@@ -88,7 +88,15 @@ export default async function ProctorReportPage({ params }: { params: { sessionI
             {session.subject_email ? ` · ${session.subject_email}` : ""} · {session.context}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <a
+            href={`/api/admin/proctor/${session.id}/report`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-md border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+          >
+            <FileDown className="h-3.5 w-3.5" /> Download report (PDF)
+          </a>
           <ReviewButton sessionId={session.id} reviewed={!!session.ai_reviewed_at} />
           <span
             className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${

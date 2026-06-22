@@ -1,4 +1,4 @@
-import { findCandidateByToken } from "@/lib/prehire/candidate-access";
+import { findCandidateByToken, DEMO_REQ_TITLE } from "@/lib/prehire/candidate-access";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { ApplyFlow } from "./_components/apply-flow";
 
@@ -21,5 +21,5 @@ export default async function PreHireApplyPage({ params }: { params: { token: st
     );
   }
 
-  return <ApplyFlow token={params.token} ctx={ctx} />;
+  return <ApplyFlow token={params.token} ctx={ctx} demo={ctx.requisition.title === DEMO_REQ_TITLE} />;
 }

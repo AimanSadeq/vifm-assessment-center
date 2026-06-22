@@ -9,6 +9,12 @@ import type { PrehireStagePlanEntry, PrehireStageKind } from "@/types/prehire";
 
 const TOKEN_RE = /^[0-9a-fA-F-]{36}$/;
 
+// Title of the self-serve DEMO requisition (created by startPrehireDemoAction).
+// Only a candidate sitting under this requisition may pull their own results +
+// report on-screen - real screenings keep the "results go to the hiring team,
+// not the candidate" guardrail.
+export const DEMO_REQ_TITLE = "Demo Screening (self-serve)";
+
 export type PrehireStageView = {
   kind: PrehireStageKind;
   status: string;

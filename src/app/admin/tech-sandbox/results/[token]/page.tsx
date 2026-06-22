@@ -1,5 +1,7 @@
 import { notFound, redirect } from "next/navigation";
-import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
+import { requireRole, isAuthorizationError, getCurrentCaller } from "@/lib/ara/auth-guards";
+import { getClientOrgId } from "@/lib/auth/get-org-id";
+import { createServiceClient } from "@/lib/supabase/server";
 import { getSessionReport } from "@/lib/technical-sandbox/service";
 import { proficiencyTierMeaning } from "@/lib/competencies/proficiency-tier";
 import { BackLink } from "@/components/shared/back-link";
@@ -29,15 +31,29 @@ function Badge({ band }: { band: string }) {
 }
 
 export default async function TechResultsPage({ params }: { params: { token: string } }) {
+  // Additive: a client_manager may view a sitting from their own organisation
+  // (name-bridge match on organization_name). Admin keeps full access.
+  let clientMgrOrgName: string | null = null;
   try {
     await requireRole(["admin"]);
   } catch (e) {
-    if (isAuthorizationError(e)) redirect("/login");
-    throw e;
+    if (!isAuthorizationError(e)) throw e;
+    const caller = await getCurrentCaller();
+    if (caller?.role === "client_manager") {
+      const orgId = await getClientOrgId();
+      const { data: org } = orgId
+        ? await createServiceClient().from("organizations").select("name").eq("id", orgId).maybeSingle<{ name: string }>()
+        : { data: null };
+      clientMgrOrgName = org?.name ?? null;
+      if (!clientMgrOrgName) redirect("/login");
+    } else {
+      redirect("/login");
+    }
   }
 
   const r = await getSessionReport(params.token);
   if (!r) notFound();
+  if (clientMgrOrgName && (r.organizationName ?? null) !== clientMgrOrgName) notFound();
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-6">

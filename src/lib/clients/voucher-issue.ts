@@ -8,11 +8,14 @@
 
 import { drawAllocation, releaseAllocation, type Allocation } from "./allocations";
 import type { CaliberService } from "./portal-services";
+import { createServiceClient } from "@/lib/supabase/server";
 import { createVoucherBatch as createFluentBatch } from "@/lib/fluent/vouchers";
 import { createVoucherBatch as createLogicaBatch } from "@/lib/cognitive/vouchers";
 import { createVoucherBatch as createPersonaBatch } from "@/lib/persona/vouchers";
+import { generateVoucherBatch as generateTechnoBatch } from "@/lib/technical-sandbox/vouchers";
 import { emailVoucherLink as emailLogicaLink, appOrigin } from "@/lib/cognitive/email";
 import { emailVoucherLink as emailPersonaLink } from "@/lib/persona/email";
+import { emailAccessLink as emailTechnoLink } from "@/lib/technical-sandbox/email";
 
 export type Delegate = { email: string; name?: string };
 
@@ -26,7 +29,7 @@ export type IssueResult = {
   codes?: { email: string; name?: string; code: string; url: string; emailed: boolean }[];
 };
 
-const VOUCHER_SERVICES: CaliberService[] = ["fluent", "logica", "persona"];
+const VOUCHER_SERVICES: CaliberService[] = ["fluent", "logica", "persona", "techno"];
 export function isVoucherService(s: CaliberService): boolean {
   return VOUCHER_SERVICES.includes(s);
 }
@@ -35,7 +38,35 @@ const REDEEM_PATH: Record<string, string> = {
   fluent: "/ac/fluent/redeem",
   logica: "/ac/cognitive/redeem",
   persona: "/ac/persona/redeem",
+  techno: "/tech-sandbox/redeem",
 };
+
+/** Resolve which technical function a Techno allocation assesses: the admin-pinned
+ *  service_config.functionId, else the first catalogue function (MVP default). */
+async function resolveTechnoFunction(alloc: Allocation): Promise<{ id: string; name: string } | null> {
+  const cfg = (alloc.service_config ?? {}) as { functionId?: string };
+  const sb = createServiceClient();
+  try {
+    if (cfg.functionId) {
+      const { data } = await sb
+        .from("technical_functions")
+        .select("id, name_en")
+        .eq("id", cfg.functionId)
+        .maybeSingle<{ id: string; name_en: string }>();
+      if (data) return { id: data.id, name: data.name_en };
+    }
+    const { data } = await sb
+      .from("technical_functions")
+      .select("id, name_en")
+      .order("name_en")
+      .limit(1)
+      .maybeSingle<{ id: string; name_en: string }>();
+    if (data) return { id: data.id, name: data.name_en };
+  } catch {
+    /* catalogue table absent */
+  }
+  return null;
+}
 
 /** Issue one single-use code per delegate for a voucher service, drawing seats
  *  from the allocation and emailing each delegate their link (best-effort). */
@@ -68,6 +99,7 @@ export async function issueClientVouchers(opts: {
 
   // 2. Generate the codes via the service's own engine.
   let codes: string[] = [];
+  let technoFunctionName = "Technical Assessment";
   try {
     if (service === "fluent") {
       const r = await createFluentBatch({ count, organizationId: orgId, clientName, language: lang, maxUses: 1, expiresAt: alloc.expires_at });
@@ -77,7 +109,7 @@ export async function issueClientVouchers(opts: {
       const r = await createLogicaBatch({ count, organizationId: orgId, clientName, language: lang, maxUses: 1, expiresAt: alloc.expires_at });
       if (!r.ok) throw new Error(r.error);
       codes = r.codes;
-    } else {
+    } else if (service === "persona") {
       const cfg = (alloc.service_config ?? {}) as {
         purpose?: "development" | "hiring" | null;
         targetRoleProfileId?: string | null;
@@ -98,6 +130,20 @@ export async function issueClientVouchers(opts: {
       });
       if (!r.ok) throw new Error(r.error);
       codes = r.codes;
+    } else if (service === "techno") {
+      // Name-bridge MVP: Techno keys on organization_name (no org id FK yet).
+      const fn = await resolveTechnoFunction(alloc);
+      if (!fn) throw new Error("VIFM has not configured a technical function for this allocation.");
+      technoFunctionName = fn.name;
+      const r = await generateTechnoBatch({
+        functionId: fn.id,
+        count,
+        organizationName: clientName,
+        expiresAt: alloc.expires_at,
+        delegates: delegates.map((d) => ({ name: d.name?.trim() || d.email, email: d.email })),
+      });
+      const byEmail = new Map(r.assignments.map((a) => [a.email.toLowerCase(), a.code]));
+      codes = delegates.map((d) => byEmail.get(d.email.toLowerCase()) ?? "");
     }
   } catch (e) {
     await releaseAllocation(orgId, service, count); // give the seats back
@@ -117,6 +163,7 @@ export async function issueClientVouchers(opts: {
     try {
       if (service === "logica") sent = !!(await emailLogicaLink({ to: d.email, name: d.name, code, url, lang })).ok;
       else if (service === "persona") sent = !!(await emailPersonaLink({ to: d.email, name: d.name, code, url, lang })).ok;
+      else if (service === "techno") sent = !!(await emailTechnoLink({ to: d.email, name: d.name, functionName: technoFunctionName, url, code })).ok;
       // fluent: no delegate email function - the manager copies the link below.
     } catch {
       sent = false;

@@ -336,11 +336,9 @@ export async function invitePrehire(opts: {
     for (const d of clean) {
       const c = await provisionCandidate(svc, shell.shellId, d);
       if ("error" in c) {
-        // Release every seat we drew; rows already created stay (they consumed a
-        // seat each, but we cannot partially trust the ledger mid-batch, so we
-        // keep behaviour conservative: release the full draw and report failure).
-        await releaseAllocation(orgId, "prehire", count);
-        return { error: c.error };
+        // Skip this one and keep the batch going; its seat is reclaimed below so
+        // the ledger matches exactly the candidates that actually landed.
+        continue;
       }
       createdIds.push(c.id);
       await logPrehireEvent({
@@ -349,6 +347,15 @@ export async function invitePrehire(opts: {
         candidateId: c.id,
         actorLabel: "client_manager",
       });
+    }
+
+    // Reclaim seats for any candidate that did not land (release only the
+    // difference, never the whole draw - the created ones keep their seat).
+    if (createdIds.length < count) {
+      await releaseAllocation(orgId, "prehire", count - createdIds.length);
+    }
+    if (createdIds.length === 0) {
+      return { error: "Could not add any candidates." };
     }
 
     let emailed = 0;

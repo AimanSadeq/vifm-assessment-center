@@ -30,10 +30,12 @@ export function AllocationsClient({
   clients,
   services,
   allocations,
+  techFunctions = [],
 }: {
   clients: ClientOpt[];
   services: PortalServiceMeta[];
   allocations: AllocationRow[];
+  techFunctions?: { id: string; name: string }[];
 }) {
   const [pending, start] = useTransition();
   const serviceLabel = (id: string) => services.find((s) => s.id === id)?.label ?? id;
@@ -43,6 +45,7 @@ export function AllocationsClient({
   const [gSeats, setGSeats] = useState(10);
   const [gExpiry, setGExpiry] = useState("");
   const [gNotes, setGNotes] = useState("");
+  const [gFunctionId, setGFunctionId] = useState("");
 
   const [pOrg, setPOrg] = useState(clients[0]?.id ?? "");
   const [pEmail, setPEmail] = useState("");
@@ -57,6 +60,7 @@ export function AllocationsClient({
         seatsTotal: gSeats,
         expiresAt: gExpiry || null,
         notes: gNotes,
+        serviceConfig: gService === "techno" && gFunctionId ? { functionId: gFunctionId } : undefined,
       });
       if ("error" in res) {
         toast.error(res.error);
@@ -115,6 +119,18 @@ export function AllocationsClient({
                 <input className={input} type="number" min={0} value={gSeats} onChange={(e) => setGSeats(Number(e.target.value))} />
               </div>
             </div>
+            {gService === "techno" && (
+              <div>
+                <label className={label}>Technical function (Techno)</label>
+                <select className={input} value={gFunctionId} onChange={(e) => setGFunctionId(e.target.value)}>
+                  <option value="">First catalogue function (default)</option>
+                  {techFunctions.map((f) => (
+                    <option key={f.id} value={f.id}>{f.name}</option>
+                  ))}
+                </select>
+                <p className="mt-1 text-[11px] text-muted-foreground">Which technical domain this client&apos;s Techno vouchers assess.</p>
+              </div>
+            )}
             <div>
               <label className={label}>Expiry (optional)</label>
               <input className={input} type="date" value={gExpiry} onChange={(e) => setGExpiry(e.target.value)} />

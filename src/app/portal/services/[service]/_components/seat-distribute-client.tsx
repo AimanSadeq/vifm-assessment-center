@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ export function SeatDistributeClient({
   remaining: number;
   kindLabel: string;
 }) {
+  const router = useRouter();
   const [pending, start] = useTransition();
   const [text, setText] = useState("");
   const [result, setResult] = useState<{ invited: number; emailed: number } | null>(null);
@@ -33,6 +35,7 @@ export function SeatDistributeClient({
       setResult(res);
       setText("");
       toast.success(`Invited ${res.invited} - emailed ${res.emailed}`);
+      router.refresh(); // re-render the server page so remaining + monitor update
     });
 
   if (!hasAllocation) {
@@ -62,6 +65,11 @@ export function SeatDistributeClient({
         <Button onClick={invite} disabled={pending || !text.trim()} className="mt-2 gap-2">
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Invite
         </Button>
+        {service === "reflect" && (
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Setting up a 360 (framework + raters + invitations) can take a few seconds per batch.
+          </p>
+        )}
       </div>
       {result && (
         <div className="rounded-xl border bg-card p-5 text-sm font-medium text-foreground">

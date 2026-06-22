@@ -376,22 +376,30 @@ export async function arcSeatActivity(orgId: string, araOrgId: string | null): P
     let invited = 0;
     let started = 0;
     let completed = 0;
-    const rows: SeatActivityRow[] = [];
+    let lastCompletedAt = "";
 
     for (const r of list) {
       invited += 1;
       if (r.first_opened_at) started += 1;
       if (r.completed_at) {
         completed += 1;
-        rows.push({
-          id: r.id,
-          name: r.name || r.email || "Respondent",
-          date: r.completed_at,
-          summary: "Completed the AI Readiness Compass",
-          reportPath,
-        });
+        if (r.completed_at > lastCompletedAt) lastCompletedAt = r.completed_at;
       }
     }
+
+    // ARC reports are organisation-level (a single cohort PDF), so surface ONE
+    // cohort-report row once anyone has completed - not one row per respondent
+    // (which would misleadingly imply individual reports).
+    const rows: SeatActivityRow[] =
+      completed > 0
+        ? [{
+            id: shell.id,
+            name: "Cohort AI Readiness report",
+            date: lastCompletedAt,
+            summary: `${completed} of ${invited} respondent(s) completed - organisation-level report`,
+            reportPath,
+          }]
+        : [];
 
     return { shellId: shell.id, invited, started, completed, rows };
   } catch {

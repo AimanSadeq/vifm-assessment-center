@@ -31,6 +31,16 @@ export default async function ClientAllocationsPage() {
   }
   rows.sort((a, b) => a.orgName.localeCompare(b.orgName) || a.service.localeCompare(b.service));
 
+  // Technical functions, so the admin can pin which one a Techno allocation assesses.
+  let techFunctions: { id: string; name: string }[] = [];
+  try {
+    const sb = createServiceClient();
+    const { data } = await sb.from("technical_functions").select("id, name_en").order("name_en");
+    techFunctions = ((data ?? []) as { id: string; name_en: string }[]).map((f) => ({ id: f.id, name: f.name_en }));
+  } catch {
+    techFunctions = [];
+  }
+
   return (
     <div className="mx-auto max-w-5xl px-6 py-8">
       <BackLink href="/admin/clients" label="Back to Clients" history />
@@ -46,7 +56,7 @@ export default async function ClientAllocationsPage() {
           </p>
         </div>
       </div>
-      <AllocationsClient clients={clientOptions} services={PORTAL_SERVICES} allocations={rows} />
+      <AllocationsClient clients={clientOptions} services={PORTAL_SERVICES} allocations={rows} techFunctions={techFunctions} />
     </div>
   );
 }

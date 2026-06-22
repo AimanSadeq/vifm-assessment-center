@@ -15,6 +15,7 @@ import { createVoucherBatch as createPersonaBatch } from "@/lib/persona/vouchers
 import { generateVoucherBatch as generateTechnoBatch } from "@/lib/technical-sandbox/vouchers";
 import { emailVoucherLink as emailLogicaLink, appOrigin } from "@/lib/cognitive/email";
 import { emailVoucherLink as emailPersonaLink } from "@/lib/persona/email";
+import { emailVoucherLink as emailFluentLink } from "@/lib/fluent/email";
 import { emailAccessLink as emailTechnoLink } from "@/lib/technical-sandbox/email";
 
 export type Delegate = { email: string; name?: string };
@@ -24,8 +25,8 @@ export type IssueResult = {
   issued: number;
   emailed: number;
   error?: string;
-  /** When email is unavailable (Fluent has no email fn, or Resend unconfigured),
-   *  the codes are returned so the manager can copy/share them. */
+  /** When email is unavailable (Resend unconfigured), the codes are returned so
+   *  the manager can copy/share them. */
   codes?: { email: string; name?: string; code: string; url: string; emailed: boolean }[];
 };
 
@@ -161,10 +162,10 @@ export async function issueClientVouchers(opts: {
     const url = `${origin}${path}?code=${encodeURIComponent(code)}&email=${encodeURIComponent(d.email)}`;
     let sent = false;
     try {
-      if (service === "logica") sent = !!(await emailLogicaLink({ to: d.email, name: d.name, code, url, lang })).ok;
+      if (service === "fluent") sent = !!(await emailFluentLink({ to: d.email, name: d.name, code, url, lang })).ok;
+      else if (service === "logica") sent = !!(await emailLogicaLink({ to: d.email, name: d.name, code, url, lang })).ok;
       else if (service === "persona") sent = !!(await emailPersonaLink({ to: d.email, name: d.name, code, url, lang })).ok;
       else if (service === "techno") sent = !!(await emailTechnoLink({ to: d.email, name: d.name, functionName: technoFunctionName, url, code })).ok;
-      // fluent: no delegate email function - the manager copies the link below.
     } catch {
       sent = false;
     }

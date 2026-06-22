@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Send, Loader2, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ export function VoucherServiceClient({
   hasAllocation: boolean;
   remaining: number;
 }) {
+  const router = useRouter();
   const [pending, start] = useTransition();
   const [text, setText] = useState("");
   const [result, setResult] = useState<Issued | null>(null);
@@ -33,6 +35,7 @@ export function VoucherServiceClient({
       setResult(res);
       setText("");
       toast.success(`Issued ${res.issued} - emailed ${res.emailed}`);
+      router.refresh(); // re-render the server page so remaining + monitor update
     });
 
   if (!hasAllocation) {

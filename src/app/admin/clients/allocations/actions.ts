@@ -25,6 +25,9 @@ export async function grantAllocationAction(input: {
   seatsTotal: number;
   expiresAt?: string | null;
   notes?: string;
+  /** Admin-pinned per-service config the client cannot override (e.g. Techno
+   *  { functionId }). Only written when provided, so a top-up preserves it. */
+  serviceConfig?: Record<string, unknown>;
 }): Promise<{ ok: true } | { error: string }> {
   const g = await gateAdmin();
   if ("error" in g) return { error: g.error };
@@ -45,19 +48,22 @@ export async function grantAllocationAction(input: {
   const araOrgId = reg.ok ? reg.araOrganizationId : null;
 
   // Upsert WITHOUT seats_used so a top-up preserves seats already consumed.
-  const { error } = await sb.from("client_service_allocations").upsert(
-    {
-      organization_id: input.organizationId,
-      ara_organization_id: araOrgId,
-      service: input.service,
-      seats_total: seats,
-      expires_at: input.expiresAt || null,
-      notes: input.notes?.trim() || null,
-      status: "active",
-      granted_by: g.caller.isDev ? null : g.caller.uid,
-    },
-    { onConflict: "organization_id,service" }
-  );
+  const row: Record<string, unknown> = {
+    organization_id: input.organizationId,
+    ara_organization_id: araOrgId,
+    service: input.service,
+    seats_total: seats,
+    expires_at: input.expiresAt || null,
+    notes: input.notes?.trim() || null,
+    status: "active",
+    granted_by: g.caller.isDev ? null : g.caller.uid,
+  };
+  // Only write service_config when the admin provided one, so a plain top-up
+  // does not wipe an existing pinned config.
+  if (input.serviceConfig && Object.keys(input.serviceConfig).length > 0) {
+    row.service_config = input.serviceConfig;
+  }
+  const { error } = await sb.from("client_service_allocations").upsert(row, { onConflict: "organization_id,service" });
   if (error) {
     if (/seats_within_total/.test(error.message)) return { error: "New total is below the seats already used." };
     if (/relation .* does not exist|client_service_allocations/i.test(error.message))

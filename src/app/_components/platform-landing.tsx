@@ -21,7 +21,16 @@ const TONE_HEX: Record<Tone, string> = {
   blue: "#5391D5", violet: "#7c3aed", teal: "#0d9488", gold: "#d97706", rose: "#e11d48",
   indigo: "#4f46e5", fuchsia: "#c026d3", emerald: "#059669", amber: "#f59e0b", cyan: "#0891b2",
 };
-type ServiceKey = "ac" | "ara" | "reflect" | "fluent" | "prehire" | "technical" | "cognitive" | "persona" | "readiness" | "academy";
+export type ServiceKey = "ac" | "ara" | "reflect" | "fluent" | "prehire" | "technical" | "cognitive" | "persona" | "readiness" | "academy";
+
+// Client-portal mode: render the exact platform landing for a signed-in client
+// manager, but dim services their org was not allocated and route the allocated
+// ones into the portal. Default (undefined) => the public marketing landing,
+// unchanged.
+export type ClientPortalMode = {
+  orgName: string;
+  allowed: Partial<Record<ServiceKey, { href: string; summaryEn: string; summaryAr: string }>>;
+};
 // The two solution families (the colleague's talent-lifecycle model).
 type Pillar = "acquire" | "manage";
 
@@ -332,7 +341,7 @@ const T = {
   },
 } as const;
 
-export function PlatformLanding() {
+export function PlatformLanding({ clientMode }: { clientMode?: ClientPortalMode } = {}) {
   const [lang, setLang] = useState<Lang>("en");
   useEffect(() => {
     try {
@@ -392,10 +401,12 @@ export function PlatformLanding() {
     // same hue (full hue on hover via the CSS rule).
     const toneClass: Tone = svc.tone;
     const borderColor = `${TONE_HEX[svc.tone]}55`;
+    const entry = clientMode?.allowed[svc.key];
+    const dimmed = !!clientMode && !entry;
     return (
       <div
         key={svc.key}
-        className={`launcher-card tone-${toneClass} flex h-full flex-col p-4`}
+        className={`launcher-card tone-${toneClass} flex h-full flex-col p-4 ${dimmed ? "pointer-events-none opacity-40 grayscale" : ""}`}
         style={{ borderColor }}
       >
         {/* Large faint service glyph, bottom-corner - adds depth (the
@@ -418,32 +429,55 @@ export function PlatformLanding() {
             {copy.tooltip}
           </TooltipContent>
         </Tooltip>
-        {/* Two distinct-coloured level entries (no default highlight). */}
-        <div className={`relative z-[1] mt-auto grid gap-2 pt-3 ${svc.pillars.length === 2 ? "grid-cols-2" : "grid-cols-1"}`}>
-          {svc.pillars.map((p) => {
-            const acq = p === "acquire";
-            // VIFM brand pair: For selection = light/accent blue (#5391D5) fill,
-            // For development = dark blue (#111232) fill, both with readable text.
-            const cls = acq
-              ? "border-[#5391D5] bg-[#5391D5] text-white hover:bg-[#5391D5]/90"
-              : "border-[#111232] bg-[#111232] text-[#FEFFF9] hover:bg-[#121140]";
-            return (
+        {clientMode ? (
+          /* Client portal: one "Open portal" entry for an allocated service
+             (with its seats summary); a dimmed "Not assigned" otherwise. */
+          <div className="relative z-[1] mt-auto pt-3">
+            {entry ? (
               <Link
-                key={p}
-                href={hrefFor(svc, p)}
-                className={`flex flex-col rounded-lg border px-3 py-2 transition-colors ${cls}`}
+                href={entry.href}
+                className="flex items-center justify-between rounded-lg border border-[#5391D5] bg-[#5391D5] px-3 py-2 text-white transition-colors hover:bg-[#5391D5]/90"
               >
-                <span className="text-[9px] font-semibold uppercase tracking-wide opacity-70">
-                  {acq ? t.forSelection : t.forDevelopment}
-                </span>
                 <span className="inline-flex items-center gap-1 text-xs font-bold">
-                  {acq ? t.familyAcquisition : t.familyDevelopment}
+                  {lang === "ar" ? "افتح البوابة" : "Open portal"}
                   <Arrow className="h-3 w-3" />
                 </span>
+                <span className="text-[10px] opacity-85">{lang === "ar" ? entry.summaryAr : entry.summaryEn}</span>
               </Link>
-            );
-          })}
-        </div>
+            ) : (
+              <div className="rounded-lg border border-dashed px-3 py-2 text-center text-[11px] text-muted-foreground">
+                {lang === "ar" ? "غير مخصص" : "Not assigned"}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Two distinct-coloured level entries (no default highlight). */
+          <div className={`relative z-[1] mt-auto grid gap-2 pt-3 ${svc.pillars.length === 2 ? "grid-cols-2" : "grid-cols-1"}`}>
+            {svc.pillars.map((p) => {
+              const acq = p === "acquire";
+              // VIFM brand pair: For selection = light/accent blue (#5391D5) fill,
+              // For development = dark blue (#111232) fill, both with readable text.
+              const cls = acq
+                ? "border-[#5391D5] bg-[#5391D5] text-white hover:bg-[#5391D5]/90"
+                : "border-[#111232] bg-[#111232] text-[#FEFFF9] hover:bg-[#121140]";
+              return (
+                <Link
+                  key={p}
+                  href={hrefFor(svc, p)}
+                  className={`flex flex-col rounded-lg border px-3 py-2 transition-colors ${cls}`}
+                >
+                  <span className="text-[9px] font-semibold uppercase tracking-wide opacity-70">
+                    {acq ? t.forSelection : t.forDevelopment}
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-xs font-bold">
+                    {acq ? t.familyAcquisition : t.familyDevelopment}
+                    <Arrow className="h-3 w-3" />
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </div>
     );
   };
@@ -453,7 +487,8 @@ export function PlatformLanding() {
       {/* ─── Academy hero ─── */}
       <header className="ara-hero relative overflow-hidden">
         <div className="mx-auto max-w-6xl px-6 pt-3 pb-6">
-          {/* Top bar */}
+          {/* Top bar (hidden in client mode - the portal chrome provides it) */}
+          {!clientMode && (
           <div className="mb-5 flex items-center justify-between gap-4">
             <VifmLogo variant="white" size="sm" />
             <div className="flex items-center gap-2">
@@ -496,6 +531,7 @@ export function PlatformLanding() {
               </div>
             </div>
           </div>
+          )}
 
           {/* Headline */}
           <div className="max-w-3xl">
@@ -503,10 +539,18 @@ export function PlatformLanding() {
               <Layers className="h-3 w-3" /> {t.eyebrow}
             </span>
             <h1 className="ara-numeral mt-2 mb-3 text-2xl font-semibold leading-[1.1] text-white sm:text-3xl lg:text-4xl">
-              {t.h1a} <span className="ara-accent-sweep">{t.h1b}</span>
+              {clientMode ? clientMode.orgName : (<>{t.h1a} <span className="ara-accent-sweep">{t.h1b}</span></>)}
             </h1>
-            <p className="max-w-2xl text-sm leading-relaxed text-white/75">{t.sub}</p>
+            <p className="max-w-2xl text-sm leading-relaxed text-white/75">
+              {clientMode
+                ? lang === "ar"
+                  ? "تقييماتك المخصصة - وزّعها على موظفيك، وراقب التقدّم، وأصدر التقارير. الخدمات غير المخصصة معطّلة."
+                  : "Your allocated assessments - distribute to your staff, monitor progress, and run reports. Services not assigned to you are dimmed."
+                : t.sub}
+            </p>
 
+            {!clientMode && (
+            <>
             <div className="mt-5 flex flex-wrap items-center gap-3">
               <Link
                 href="/courses"
@@ -546,6 +590,8 @@ export function PlatformLanding() {
                 </div>
               ))}
             </dl>
+            </>
+            )}
           </div>
         </div>
       </header>
@@ -575,7 +621,8 @@ export function PlatformLanding() {
         </section>
       </main>
 
-      {/* ─── Footer ─── */}
+      {/* ─── Footer (hidden in client mode) ─── */}
+      {!clientMode && (
       <footer className="border-t bg-card/50">
         <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-2 px-6 py-3 sm:flex-row sm:items-center">
           <div className="text-xs text-muted-foreground">
@@ -591,6 +638,7 @@ export function PlatformLanding() {
           </div>
         </div>
       </footer>
+      )}
     </div>
   );
 }

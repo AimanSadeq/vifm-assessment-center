@@ -24,6 +24,9 @@ const TARGET_HELP =
   "Target proficiency on the VIFM BARS scale (1-5): 1 Significant Development Needed · 2 Development Needed · 3 Competent · 4 Strength · 5 Significant Strength. A candidate meets the competency when their Persona self-rating is at or above this target.";
 // Total distinct framework "building blocks" (clusters) the competencies group into.
 const TOTAL_BLOCKS = new Set(BEHAVIORAL_COMPETENCIES.map((c) => c.clusterNameEn)).size;
+// Sort by clusterOrder so the grid's section headers are correct even if the
+// (auto-generated) source array is ever reordered.
+const SORTED_COMPETENCIES = [...BEHAVIORAL_COMPETENCIES].sort((a, b) => a.clusterOrder - b.clusterOrder);
 const priorityToTarget = (p: "high" | "medium" | "low") => (p === "high" ? 4 : p === "medium" ? 3 : 3);
 
 type JdRec = { competencyId: string; competencyName: string; priority: "high" | "medium" | "low"; reasoning: string };
@@ -157,9 +160,9 @@ export function RoleEditor({ config, published, clients, assignedOrgId }: { conf
 
         {/* All competencies on one screen, grouped + labelled by cluster (building block). */}
         <div className="mt-3 grid grid-cols-1 gap-x-4 gap-y-0.5 rounded-lg border p-2 sm:grid-cols-2 xl:grid-cols-3">
-          {BEHAVIORAL_COMPETENCIES.map((c, i) => {
+          {SORTED_COMPETENCIES.map((c, i) => {
             const on = comps[c.acCompetencyId] != null;
-            const newCluster = i === 0 || BEHAVIORAL_COMPETENCIES[i - 1].clusterNameEn !== c.clusterNameEn;
+            const newCluster = i === 0 || SORTED_COMPETENCIES[i - 1].clusterNameEn !== c.clusterNameEn;
             return (
               <Fragment key={c.acCompetencyId}>
                 {newCluster && (

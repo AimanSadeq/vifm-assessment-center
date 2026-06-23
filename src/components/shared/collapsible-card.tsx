@@ -11,14 +11,12 @@ export function CollapsibleCard({
   icon: Icon,
   defaultOpen = true,
   subtitle,
-  right,
   children,
 }: {
   title: string;
   icon?: LucideIcon;
   defaultOpen?: boolean;
   subtitle?: ReactNode;
-  right?: ReactNode;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -36,10 +34,7 @@ export function CollapsibleCard({
           </span>
           {subtitle && <span className="mt-0.5 block text-xs text-muted-foreground">{subtitle}</span>}
         </span>
-        <span className="inline-flex shrink-0 items-center gap-2">
-          {right}
-          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
-        </span>
+        <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && <div className="px-5 pb-5 pt-0">{children}</div>}
     </div>

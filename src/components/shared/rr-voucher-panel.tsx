@@ -14,22 +14,38 @@ type IssueResult = { ok: true; vouchers: IssuedVoucher[] } | { error: string };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Parse a delegate list (.xlsx / .csv / .txt) into {name, email}. Picks the email
-// cell per row + the longest other cell as the name; skips header/blank rows.
+// Split one line into cells, honouring tab/semicolon separators and double-quoted
+// CSV fields that contain commas (e.g. "Smith, John",jane@org.com -> 2 cells).
+function splitLine(line: string): string[] {
+  if (line.includes("\t")) return line.split("\t").map((c) => c.trim());
+  const cells: string[] = [];
+  let cur = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQuotes) {
+      if (c === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+      else if (c === '"') inQuotes = false;
+      else cur += c;
+    } else if (c === '"') inQuotes = true;
+    else if (c === "," || c === ";") { cells.push(cur.trim()); cur = ""; }
+    else cur += c;
+  }
+  cells.push(cur.trim());
+  return cells;
+}
+
+// Parse a delegate list (.csv / .txt) into {name, email}. Per row: the cell that
+// looks like an email is the email; the FIRST other non-empty cell is the name
+// (names lead in typical "Name, Email[, Role, Dept]" sheets). Header/blank rows
+// (no email) are skipped; duplicate emails are de-duped.
 async function parseDelegateFile(file: File): Promise<{ delegates: Delegate[]; error?: string }> {
-  const lower = file.name.toLowerCase();
   let rows: string[][] = [];
   try {
-    if (lower.endsWith(".xlsx")) {
-      const readXlsxFile = (await import("read-excel-file/browser")).default;
-      const raw = (await readXlsxFile(file)) as unknown as unknown[][];
-      rows = raw.map((r) => (r as unknown[]).map((c) => (c == null ? "" : String(c))));
-    } else {
-      const text = await file.text();
-      rows = text.split(/\r?\n/).map((line) => line.split(/[,;\t]/));
-    }
+    const text = (await file.text()).replace(/^﻿/, ""); // strip UTF-8 BOM
+    rows = text.split(/\r?\n/).map(splitLine);
   } catch {
-    return { delegates: [], error: "Could not read that file. Use .xlsx, .csv, or a plain text file." };
+    return { delegates: [], error: "Could not read that file. Use a CSV or plain text file." };
   }
   const out: Delegate[] = [];
   const seen = new Set<string>();
@@ -40,7 +56,7 @@ async function parseDelegateFile(file: File): Promise<{ delegates: Delegate[]; e
     const key = email.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
-    const name = trimmed.filter((c) => c !== email).sort((a, b) => b.length - a.length)[0] || "";
+    const name = trimmed.find((c) => c !== email) || "";
     out.push({ email: key, name });
   }
   if (out.length === 0) return { delegates: [], error: "No rows with a valid email found. Use a name + email per row." };
@@ -123,9 +139,9 @@ export function RrVoucherPanel({ onIssue }: { onIssue: (input: IssueInput) => Pr
               <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => fileRef.current?.click()}>
                 <Upload className="h-3.5 w-3.5" /> Upload delegate list
               </Button>
-              <input ref={fileRef} type="file" accept=".xlsx,.csv,.txt,text/csv,text/plain" className="hidden"
+              <input ref={fileRef} type="file" accept=".csv,.txt,text/csv,text/plain" className="hidden"
                 onChange={(e) => onFile(e.target.files?.[0])} />
-              <span className="text-[11px] text-muted-foreground">Excel (.xlsx), CSV or text - a name + email per row.</span>
+              <span className="text-[11px] text-muted-foreground">CSV or text - a name + email per row (in Excel, Save As CSV).</span>
             </div>
             {delegates.length > 0 && (
               <div className="mt-2">

@@ -6,7 +6,7 @@
 
 import { randomBytes } from "node:crypto";
 import { createServiceClient } from "@/lib/supabase/server";
-import { sendEmail } from "@/lib/integrations/email";
+import { sendEmail, isEmailConfigured } from "@/lib/integrations/email";
 
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // no ambiguous 0/O/1/I/L
 function genCode(): string {
@@ -99,14 +99,17 @@ export async function createRoleReadinessVouchers(input: {
       const origin = input.emailOrigin;
       const { data: rc } = await sb.from("rr_role_configs").select("name_en").eq("id", input.roleConfigId).maybeSingle();
       const roleName = (rc?.name_en as string | undefined) ?? "Role Readiness";
+      // Only report "emailed" when a real transport is configured - a console-mock
+      // (unconfigured) send returns true but never reaches the recipient.
+      const configured = isEmailConfigured();
       const sendOne = async (v: IssuedVoucher): Promise<IssuedVoucher> => {
         if (!v.email) return v;
-        const emailed = await sendEmail({
+        const ok = await sendEmail({
           to: v.email,
           template: "role_readiness_invitation",
           data: { candidateName: v.name ?? "there", roleName, redeemUrl: redeemUrlFor(origin, v) },
         }).catch(() => false);
-        return { ...v, emailed };
+        return { ...v, emailed: configured && ok };
       };
       const CHUNK = 8;
       const sent: IssuedVoucher[] = [];
@@ -148,28 +151,24 @@ export async function redeemRoleReadinessVoucher(input: {
   if (name.length < 2 || !EMAIL_RE.test(email)) return { error: "Enter your name and a valid email." };
 
   const sb = createServiceClient();
-  const { data: voucher } = await sb
-    .from("rr_vouchers")
-    .select("id, role_config_id, organization_id, max_uses, uses")
-    .eq("code", code)
-    .maybeSingle();
-  if (!voucher) return { error: "Invalid voucher code." };
-
-  // Atomic claim: only succeeds while uses < max_uses.
-  const { data: claimed } = await sb
-    .from("rr_vouchers")
-    .update({ uses: (voucher.uses as number) + 1 })
-    .eq("id", voucher.id as string)
-    .lt("uses", voucher.max_uses as number)
-    .select("id")
-    .maybeSingle();
-  if (!claimed) return { error: "This voucher has already been fully redeemed." };
+  // Atomically claim a seat in the DB (UPDATE ... SET uses = uses + 1 WHERE
+  // uses < max_uses), so concurrent redeems of a shared voucher can never
+  // over-redeem (the increment + bound are evaluated together under the row lock).
+  const { data: claimed, error: claimErr } = await sb.rpc("rr_claim_voucher_seat", { p_code: code });
+  const row = (Array.isArray(claimed) ? claimed[0] : claimed) as
+    | { role_config_id: string; organization_id: string | null }
+    | undefined;
+  if (claimErr || !row) {
+    // Distinguish "no such code" from "fully redeemed" for a clearer message.
+    const { data: exists } = await sb.from("rr_vouchers").select("id").eq("code", code).maybeSingle();
+    return { error: exists ? "This voucher has already been fully redeemed." : "Invalid voucher code." };
+  }
 
   const { data: cand, error: candErr } = await sb
     .from("rr_candidates")
     .insert({
-      role_config_id: voucher.role_config_id as string,
-      organization_id: (voucher.organization_id as string | null) ?? null,
+      role_config_id: row.role_config_id,
+      organization_id: row.organization_id ?? null,
       full_name: name,
       email,
       invited_at: new Date().toISOString(),
@@ -177,8 +176,8 @@ export async function redeemRoleReadinessVoucher(input: {
     .select("access_token")
     .single();
   if (candErr || !cand) {
-    // Hand the seat back so the code isn't silently burned.
-    await sb.from("rr_vouchers").update({ uses: voucher.uses as number }).eq("id", voucher.id as string);
+    // Atomically hand the seat back (SET uses = greatest(uses - 1, 0)).
+    await sb.rpc("rr_release_voucher_seat", { p_code: code });
     return { error: candErr?.message ?? "Could not start the assessment." };
   }
   return { ok: true, token: cand.access_token as string };

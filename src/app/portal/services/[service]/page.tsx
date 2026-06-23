@@ -9,6 +9,7 @@ import { getServerLocale, getServerDir } from "@/lib/i18n/server";
 import { BackLink } from "@/components/shared/back-link";
 import { VoucherServiceClient } from "./_components/voucher-service-client";
 import { SeatDistributeClient } from "./_components/seat-distribute-client";
+import { ArcIndividualVoucher } from "./_components/arc-individual-voucher";
 
 const SEAT_KIND: Record<string, string> = { arc: "respondents", reflect: "participants", prehire: "candidates" };
 
@@ -81,13 +82,20 @@ export default async function PortalServicePage({
           remaining={remaining}
         />
       ) : seatSvc ? (
-        <SeatDistributeClient
-          service={svc.id}
-          orgParam={access.viewingAsAdmin ? orgId : undefined}
-          hasAllocation={!!alloc}
-          remaining={remaining}
-          kindLabel={SEAT_KIND[svc.id] ?? "people"}
-        />
+        <div className="space-y-4">
+          {/* ARC also measures an individual - offer it as a voucher (the other
+              levels: Department / Division / Organization stay on the cohort invite). */}
+          {svc.id === "arc" && (
+            <ArcIndividualVoucher orgParam={access.viewingAsAdmin ? orgId : undefined} remaining={remaining} />
+          )}
+          <SeatDistributeClient
+            service={svc.id}
+            orgParam={access.viewingAsAdmin ? orgId : undefined}
+            hasAllocation={!!alloc}
+            remaining={remaining}
+            kindLabel={SEAT_KIND[svc.id] ?? "people"}
+          />
+        </div>
       ) : (
         <div className="rounded-xl border bg-card p-5 text-sm text-muted-foreground">
           {name} is set up with your VIFM consultant.

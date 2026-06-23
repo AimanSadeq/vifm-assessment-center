@@ -17,6 +17,7 @@ import { drawAllocation, releaseAllocation, type Allocation } from "../allocatio
 import { createServiceClient } from "@/lib/supabase/server";
 import { sendAraEmail, type AraEmailLanguage } from "@/lib/ara/email";
 import { getPillarsForAssessment } from "@/lib/constants/ara-stages";
+import { createVoucherBatch as createArcVoucherBatch, type VoucherTier } from "@/lib/ara/vouchers";
 import type { AraEngagementStage, AraLanguage, AraPillarId, AraRegion, AraSector } from "@/types/ara";
 
 // ─────────────────────────────────────────────────────────────
@@ -405,4 +406,82 @@ export async function arcSeatActivity(orgId: string, araOrgId: string | null): P
   } catch {
     return { ...empty, shellId: null };
   }
+}
+
+// ─────────────────────────────────────────────────────────────
+// issueArcVouchers - the INDIVIDUAL track. ARC also measures an individual (the
+// personal AI readiness), so the portal offers it as a voucher exactly like the
+// other code-based services: N individual single-use codes (one per recipient),
+// OR one shared code with N seats. Each draws from the same ARC allocation and
+// mints ara_vouchers via the existing engine; the recipient redeems at
+// /ara/redeem?code=... (self-identifies there) and gets an individual-stage run.
+// The Department/Division/Organization cohort flow stays on inviteArc.
+// The caller builds the absolute redeem URL from the request origin.
+// ─────────────────────────────────────────────────────────────
+export type ArcVoucherCode = { code: string; email?: string };
+export type IssueArcVouchersResult =
+  | { ok: true; mode: "individual" | "pool"; codes: ArcVoucherCode[]; seats: number }
+  | { error: string };
+
+export async function issueArcVouchers(opts: {
+  orgId: string;
+  araOrgId: string | null;
+  alloc: Allocation;
+  mode: "individual" | "pool";
+  delegates?: SeatDelegate[];
+  seats?: number;
+}): Promise<IssueArcVouchersResult> {
+  if (!opts.araOrgId) {
+    return { error: "This client is not set up for AI Readiness yet. Ask VIFM to link an AI Readiness organisation." };
+  }
+  const cfg = resolveShellConfig(opts.alloc.service_config ?? {});
+  // Individual ARC readiness defaults to the snapshot tier; a paid allocation
+  // can pin the deep-dive via service_config.assessment_tier.
+  const tierRaw = asString((opts.alloc.service_config as Record<string, unknown> | null)?.assessment_tier);
+  const tier: VoucherTier = tierRaw === "deep_dive" ? "deep_dive" : "snapshot";
+
+  const emails =
+    opts.mode === "individual"
+      ? (opts.delegates ?? []).map((d) => asString(d.email)).filter((e): e is string => !!e)
+      : [];
+  const n = opts.mode === "individual" ? emails.length : Math.floor(opts.seats ?? 0);
+  if (!Number.isFinite(n) || n < 1) {
+    return { error: opts.mode === "individual" ? "Add at least one recipient email." : "Enter at least 1 seat." };
+  }
+  if (n > 500) return { error: "Up to 500 per batch." };
+
+  // Draw all N seats up front; release on failure so a seat is never lost.
+  const draw = await drawAllocation(opts.orgId, "arc", n);
+  if (!draw.ok) {
+    return {
+      error:
+        draw.reason === "over_quota"
+          ? "Not enough AI Readiness seats remaining (or the allocation has expired)."
+          : draw.message ?? "Could not reserve seats.",
+    };
+  }
+
+  const res = await createArcVoucherBatch({
+    count: opts.mode === "individual" ? n : 1,
+    organizationId: opts.araOrgId,
+    tier,
+    region: cfg.region,
+    language: cfg.default_language,
+    maxUses: opts.mode === "individual" ? 1 : n,
+    isPractice: false, // a real client run, not a practice sandbox
+  });
+  if (!res.ok) {
+    await releaseAllocation(opts.orgId, "arc", n);
+    return { error: res.error };
+  }
+
+  if (opts.mode === "individual") {
+    return {
+      ok: true,
+      mode: "individual",
+      codes: res.codes.map((code, i) => ({ code, email: emails[i] })),
+      seats: n,
+    };
+  }
+  return { ok: true, mode: "pool", codes: [{ code: res.codes[0] }], seats: n };
 }

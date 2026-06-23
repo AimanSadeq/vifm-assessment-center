@@ -346,7 +346,10 @@ async function sendShellInvitations(
         respondentUrl: `${baseUrl}/reflect/respond/${r.access_token}`,
       },
     });
-    if (res.ok) {
+    // Only a REAL send counts + stamps invited_at: a console-mock returns
+    // ok:true/delivered:false, and stamping invited_at on a mock would wrongly
+    // mark the rater "invited" and make the resend sweep skip them later.
+    if (res.delivered) {
       emailed += 1;
       await sb.from("reflect_raters").update({ invited_at: now }).eq("id", r.id);
     }
@@ -392,7 +395,10 @@ export async function inviteReflect(opts: {
     };
   }
 
-  // 3. Create the people + send invitations. Any failure releases the seats.
+  // 3. Create the people + send invitations. A PRE-commit failure releases the
+  // full draw; once participants are committed `created` tracks them so the
+  // catch never claws back seats for rows that persisted.
+  let created = 0;
   try {
     const sb = createServiceClient();
     const cfg = cfgOf(alloc);
@@ -414,6 +420,7 @@ export async function inviteReflect(opts: {
     if (partErr) throw new Error(partErr.message);
     const newIds = ((inserted ?? []) as Array<{ id: string }>).map((p) => p.id);
     if (newIds.length === 0) throw new Error("No participants were created");
+    created = newIds.length; // participants are now committed; their seats are consumed
 
     // Self-rater per participant (reuses the service's derivation rule).
     await ensureSelfRaters(sb, newIds);
@@ -441,7 +448,11 @@ export async function inviteReflect(opts: {
 
     return { ok: true, invited: newIds.length, emailed };
   } catch (e) {
-    await releaseAllocation(orgId, SERVICE, clean.length); // give the seats back
+    console.error("[reflect-seat] inviteReflect failed:", e instanceof Error ? e.message : e);
+    // Release only the seats whose participant never committed. After the atomic
+    // insert, created === clean.length, so this is 0 - committed participants keep
+    // their (legitimately consumed) seats instead of being wrongly clawed back.
+    await releaseAllocation(orgId, SERVICE, clean.length - created);
     return { error: e instanceof Error ? e.message : "Could not create Reflect participants" };
   }
 }

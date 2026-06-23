@@ -903,7 +903,11 @@ export async function sendInvitationsForEngagement(
         respondentUrl: `${baseUrl}/reflect/respond/${r.access_token}`,
       },
     });
-    if (res.ok) {
+    // Count + stamp invited_at ONLY on a real delivery. A console-mock (no email
+    // transport) returns ok:true/delivered:false; counting it would report
+    // "re-sent N" when nothing was sent, and stamping invited_at would make this
+    // (onlyUninvited) sweep skip the rater forever once a transport is configured.
+    if (res.delivered) {
       count += 1;
       await sb
         .from("reflect_raters")

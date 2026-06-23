@@ -265,6 +265,7 @@ export async function inviteArc(opts: {
         .select("id, access_token")
         .single<{ id: string; access_token: string }>();
       if (respErr || !respondent) {
+        console.error("[arc-seat] respondent insert failed:", respErr?.message);
         // A single failed respondent rolls back to free its seat below; keep
         // the loop going so partial success still lands the good ones.
         continue;
@@ -276,9 +277,16 @@ export async function inviteArc(opts: {
           .from("ara_respondent_pillar_assignments")
           .insert(pillars.map((pillar_id) => ({ respondent_id: respondent.id, pillar_id })));
         if (paErr) {
+          console.error("[arc-seat] pillar-assignment insert failed:", paErr.message);
           // Could not derive the test; remove the orphan respondent so its seat
-          // is genuinely free, then skip.
-          await sb.from("ara_respondents").delete().eq("id", respondent.id);
+          // is genuinely free. If the delete ITSELF fails the respondent persists,
+          // so count it (created += 1) to keep its seat charged rather than
+          // releasing a seat for a row that still exists (silent under-charge).
+          const { error: delErr } = await sb.from("ara_respondents").delete().eq("id", respondent.id);
+          if (delErr) {
+            console.error("[arc-seat] orphan respondent delete failed; keeping seat charged:", delErr.message);
+            created += 1;
+          }
           continue;
         }
       }
@@ -304,7 +312,9 @@ export async function inviteArc(opts: {
             respondentUrl,
           },
         });
-        if (sent.ok) emailed += 1;
+        // Count ONLY a real send - a console-mock (no transport) returns ok:true
+        // but delivered:false, so we must not report it as emailed.
+        if (sent.delivered) emailed += 1;
       } catch {
         /* email is a nicety, never a blocker */
       }
@@ -321,7 +331,8 @@ export async function inviteArc(opts: {
     }
     return { ok: true, invited: created, emailed };
   } catch (e) {
-    // Total failure - hand every drawn seat back.
+    console.error("[arc-seat] inviteArc failed:", e instanceof Error ? e.message : e);
+    // Total failure - hand back the seats whose respondent never landed.
     await releaseAllocation(opts.orgId, "arc", delegates.length - created);
     if (created === 0) {
       return { error: e instanceof Error ? e.message : "Could not issue AI Readiness seats." };
@@ -483,5 +494,12 @@ export async function issueArcVouchers(opts: {
       seats: n,
     };
   }
-  return { ok: true, mode: "pool", codes: [{ code: res.codes[0] }], seats: n };
+  // Pool: guard the single code so an empty batch can't yield a `?code=undefined`
+  // shared link (release the drawn seats rather than hand out a dead link).
+  const poolCode = res.codes[0];
+  if (!poolCode) {
+    await releaseAllocation(opts.orgId, "arc", n);
+    return { error: "No code was generated. Please try again." };
+  }
+  return { ok: true, mode: "pool", codes: [{ code: poolCode }], seats: n };
 }

@@ -8,6 +8,7 @@ import { issueArcVouchers, type IssueArcVouchersResult } from "@/lib/clients/sea
 import { PORTAL_SERVICE_IDS, type CaliberService } from "@/lib/clients/portal-services";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const UUID_RE = /^[0-9a-fA-F-]{36}$/;
 
 function parseDelegates(text: string): SeatDelegate[] {
   const out: SeatDelegate[] = [];
@@ -40,6 +41,7 @@ async function resolveActorOrg(orgParam?: string): Promise<{ orgId: string } | {
     return { orgId };
   }
   if (!orgParam) return { error: "Select a client organisation." };
+  if (!UUID_RE.test(orgParam)) return { error: "Invalid organisation id." };
   return { orgId: orgParam };
 }
 

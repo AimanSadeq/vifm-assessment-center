@@ -271,9 +271,14 @@ export type SendAraEmailInput = {
   attachments?: EmailAttachment[];
 };
 
-export async function sendAraEmail(input: SendAraEmailInput): Promise<{ ok: boolean; error?: string }> {
+// `delivered` is true ONLY when a real transport accepted the message (status
+// "sent"). Console-mock (no transport) and failed sends are NOT delivered, so
+// callers that report an "emailed N" count must gate on `delivered`, not `ok`.
+export async function sendAraEmail(
+  input: SendAraEmailInput
+): Promise<{ ok: boolean; delivered: boolean; error?: string }> {
   const renderer = TEMPLATES[input.emailType]?.[input.language] ?? TEMPLATES[input.emailType]?.en;
-  if (!renderer) return { ok: false, error: "Unknown email type/language combination" };
+  if (!renderer) return { ok: false, delivered: false, error: "Unknown email type/language combination" };
 
   const rendered = renderer(input.data);
 
@@ -343,6 +348,6 @@ export async function sendAraEmail(input: SendAraEmailInput): Promise<{ ok: bool
     console.error("[ara-email] log insert failed:", logErr);
   }
 
-  if (status === "failed") return { ok: false, error: errorMsg ?? "Send failed" };
-  return { ok: true };
+  if (status === "failed") return { ok: false, delivered: false, error: errorMsg ?? "Send failed" };
+  return { ok: true, delivered: status === "sent" };
 }

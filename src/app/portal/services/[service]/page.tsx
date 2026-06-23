@@ -5,7 +5,7 @@ import { portalService } from "@/lib/clients/portal-services";
 import { isVoucherService } from "@/lib/clients/voucher-issue";
 import { isSeatService, getSeatActivity } from "@/lib/clients/seat-issue";
 import { getServiceActivity } from "@/lib/clients/monitor";
-import { getServerLocale, getServerDir } from "@/lib/i18n/server";
+import { getServerLocale } from "@/lib/i18n/server";
 import { BackLink } from "@/components/shared/back-link";
 import { VoucherServiceClient } from "./_components/voucher-service-client";
 import { SeatDistributeClient } from "./_components/seat-distribute-client";
@@ -28,14 +28,16 @@ export default async function PortalServicePage({
   if (!access.ok) notFound();
 
   const locale = await getServerLocale();
-  const dir = getServerDir(locale);
+  // This surface's body copy is English-only, so pin LTR rather than flip to RTL
+  // from the locale cookie (which produced a mixed RTL-layout / English-text
+  // screen). The service name still localizes below. Full AR localization TODO.
   const name = locale === "ar" ? svc.labelAr : svc.label;
   const orgId = access.orgId;
   const backHref = access.viewingAsAdmin && orgId ? `/portal?org=${orgId}` : "/portal";
 
   if (!orgId) {
     return (
-      <div dir={dir}>
+      <div dir="ltr">
         <BackLink href="/portal" label="Portal" />
         <p className="mt-4 text-sm text-muted-foreground">Open this from the portal home (pick a client first).</p>
       </div>
@@ -57,7 +59,7 @@ export default async function PortalServicePage({
   const seatActivity = seatSvc && alloc ? await getSeatActivity(svc.id, orgId, alloc.ara_organization_id) : null;
 
   return (
-    <div dir={dir} className="space-y-5">
+    <div dir="ltr" className="space-y-5">
       <BackLink href={backHref} label="Portal" />
       <header className="flex items-center gap-3">
         <span className="h-3 w-3 rounded-full" style={{ backgroundColor: svc.accent }} />

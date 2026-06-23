@@ -223,11 +223,15 @@ export type SendReflectEmailInput = {
   raterId?: string | null;
 };
 
+// `delivered` is true ONLY when Graph actually accepted the message (status
+// "sent"). Console-mock (no transport) and failed sends are NOT delivered, so
+// callers that count "invitations sent" or stamp invited_at must gate on
+// `delivered`, not `ok` (mock returns ok:true).
 export async function sendReflectEmail(
   input: SendReflectEmailInput
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<{ ok: boolean; delivered: boolean; error?: string }> {
   const renderer = TEMPLATES[input.emailType]?.[input.language] ?? TEMPLATES[input.emailType]?.en;
-  if (!renderer) return { ok: false, error: "Unknown email type/language combination" };
+  if (!renderer) return { ok: false, delivered: false, error: "Unknown email type/language combination" };
 
   const rendered = renderer(input.data);
 
@@ -284,8 +288,8 @@ export async function sendReflectEmail(
     console.error("[reflect-email] log insert failed:", logErr);
   }
 
-  if (status === "failed") return { ok: false, error: errorMsg ?? "Send failed" };
-  return { ok: true };
+  if (status === "failed") return { ok: false, delivered: false, error: errorMsg ?? "Send failed" };
+  return { ok: true, delivered: status === "sent" };
 }
 
 export function roleLabel(

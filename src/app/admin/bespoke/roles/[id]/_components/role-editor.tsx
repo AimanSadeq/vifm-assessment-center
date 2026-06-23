@@ -3,17 +3,28 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Save, Plus, Trash2, Send, Copy, CheckCircle2, Boxes, ClipboardList, Rocket } from "lucide-react";
+import { Save, Plus, Trash2, Send, Copy, CheckCircle2, Boxes, ClipboardList, Rocket, Info, FileText, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
 import type { RoleReadinessConfig } from "@/lib/role-readiness/config";
 import {
   updateRoleAction, setCompetenciesAction, addAreaAction, removeAreaAction,
   addItemAction, removeItemAction, publishRoleAction, unpublishRoleAction, inviteRoleCandidateAction,
+  matchCompetenciesFromJdAction,
 } from "../../actions";
+
+// VIFM BARS 1-5 target scale - shown on hover next to the competency targets.
+const TARGET_HELP =
+  "Target proficiency on the VIFM BARS scale (1-5): 1 Significant Development Needed · 2 Development Needed · 3 Competent · 4 Strength · 5 Significant Strength. A candidate meets the competency when their Persona self-rating is at or above this target.";
+// Total distinct framework "building blocks" (clusters) the competencies group into.
+const TOTAL_BLOCKS = new Set(BEHAVIORAL_COMPETENCIES.map((c) => c.clusterNameEn)).size;
+const priorityToTarget = (p: "high" | "medium" | "low") => (p === "high" ? 4 : p === "medium" ? 3 : 3);
+
+type JdRec = { competencyId: string; competencyName: string; priority: "high" | "medium" | "low"; reasoning: string };
 
 export function RoleEditor({ config, published, clients }: { config: RoleReadinessConfig; published: boolean; clients: { id: string; name: string }[] }) {
   const router = useRouter();
@@ -33,6 +44,21 @@ export function RoleEditor({ config, published, clients }: { config: RoleReadine
       else n[id] = 3;
       return n;
     });
+
+  // JD matching: recommendations from the AI extractor (pre-selects competencies).
+  const [matched, setMatched] = useState<JdRec[] | null>(null);
+  const applyMatched = (recs: JdRec[]) => {
+    setMatched(recs);
+    setComps((prev) => {
+      const n = { ...prev };
+      for (const r of recs) n[r.competencyId] = priorityToTarget(r.priority);
+      return n;
+    });
+  };
+  // Distinct framework "building blocks" (clusters) the currently-selected competencies cover.
+  const blocksCovered = new Set(
+    BEHAVIORAL_COMPETENCIES.filter((c) => comps[c.acCompetencyId] != null).map((c) => c.clusterNameEn),
+  ).size;
 
   const run = (fn: () => Promise<{ ok?: true; error?: string } | { error: string } | { ok: true }>, ok: string) =>
     start(async () => {
@@ -93,8 +119,40 @@ export function RoleEditor({ config, published, clients }: { config: RoleReadine
 
       {/* Competencies */}
       <div className="rounded-xl border bg-card p-5">
-        <h2 className="inline-flex items-center gap-1.5 text-sm font-semibold"><ClipboardList className="h-4 w-4 text-[#5391D5]" /> Behavioural competencies + targets</h2>
-        <p className="mt-1 text-xs text-muted-foreground">Tick the competencies this role requires and set each target level (1-5). {Object.keys(comps).length} selected.</p>
+        <h2 className="inline-flex items-center gap-1.5 text-sm font-semibold">
+          <ClipboardList className="h-4 w-4 text-[#5391D5]" /> Behavioural competencies + targets
+          <TooltipProvider delayDuration={150}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="cursor-help text-muted-foreground"><Info className="h-3.5 w-3.5" /></span>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs text-xs leading-snug">{TARGET_HELP}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Tick the competencies this role requires and set each target level (1-5) - hover the info icon for the scale.{" "}
+          {Object.keys(comps).length} selected across {blocksCovered}/{TOTAL_BLOCKS} building blocks.
+        </p>
+
+        <JdMatchBox onMatched={applyMatched} />
+        {matched && matched.length > 0 && (
+          <div className="mt-3 rounded-lg border border-[#5391D5]/30 bg-[#5391D5]/5 p-3">
+            <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#010131]">
+              <Sparkles className="h-3.5 w-3.5 text-[#5391D5]" /> Matched {matched.length} competencies from the job description
+            </div>
+            <ul className="mt-1.5 space-y-1 text-[11px] text-muted-foreground">
+              {matched.map((m) => (
+                <li key={m.competencyId}>
+                  <span className="font-medium text-foreground">{m.competencyName}</span>{" "}
+                  <span className="rounded bg-muted px-1 py-0.5 uppercase">{m.priority}</span> - {m.reasoning}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-1.5 text-[11px] text-muted-foreground">Pre-selected below - review the targets, then Save competencies.</p>
+          </div>
+        )}
+
         <div className="mt-3 max-h-80 space-y-1 overflow-y-auto rounded-lg border p-2">
           {BEHAVIORAL_COMPETENCIES.map((c) => {
             const on = comps[c.acCompetencyId] != null;
@@ -104,6 +162,7 @@ export function RoleEditor({ config, published, clients }: { config: RoleReadine
                 <span className="min-w-0 flex-1 truncate text-sm">{c.nameEn} <span className="text-[10px] text-muted-foreground">· {c.clusterNameEn}</span></span>
                 {on && (
                   <select value={comps[c.acCompetencyId]} onChange={(e) => setComps((p) => ({ ...p, [c.acCompetencyId]: Number(e.target.value) }))}
+                    title={TARGET_HELP}
                     className="rounded border border-border bg-background px-1.5 py-1 text-xs">
                     {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>Target {n}</option>)}
                   </select>
@@ -238,6 +297,73 @@ function InviteCard({ roleId, disabled }: { roleId: string; disabled: boolean })
           <button onClick={() => { navigator.clipboard.writeText(link); toast.success("Copied"); }} className="inline-flex items-center gap-1 rounded border px-2 py-1.5 text-xs hover:bg-muted"><Copy className="h-3 w-3" /> Copy</button>
         </div>
       )}
+    </div>
+  );
+}
+
+// Match a job description to the VIFM framework: paste text or upload a PDF/text
+// file, then the AI extractor pre-selects the important competencies (request).
+function JdMatchBox({ onMatched }: { onMatched: (recs: JdRec[]) => void }) {
+  const [text, setText] = useState("");
+  const [fileName, setFileName] = useState("");
+  const [pdfBase64, setPdfBase64] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const onFile = (f: File | null) => {
+    if (!f) { setFileName(""); setPdfBase64(null); return; }
+    setFileName(f.name);
+    const reader = new FileReader();
+    if (f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf")) {
+      reader.onload = () => {
+        const res = String(reader.result || "");
+        setPdfBase64(res.includes(",") ? res.split(",")[1] : res);
+        setText("");
+      };
+      reader.readAsDataURL(f);
+    } else {
+      reader.onload = () => { setText(String(reader.result || "")); setPdfBase64(null); };
+      reader.readAsText(f);
+    }
+  };
+
+  const match = async () => {
+    setBusy(true);
+    try {
+      const res = await matchCompetenciesFromJdAction(pdfBase64 ? { pdfBase64 } : { jobDescription: text });
+      if ("error" in res) { toast.error(res.error); return; }
+      if (res.recommendations.length === 0) { toast.error("No competencies matched - try a fuller description."); return; }
+      onMatched(res.recommendations.map((r) => ({
+        competencyId: r.competencyId, competencyName: r.competencyName, priority: r.priority, reasoning: r.reasoning,
+      })));
+      toast.success(`Matched ${res.recommendations.length} competencies`);
+    } finally { setBusy(false); }
+  };
+
+  const canMatch = !!pdfBase64 || text.trim().length > 30;
+  return (
+    <div className="mt-3 rounded-lg border border-dashed border-[#5391D5]/40 bg-[#5391D5]/5 p-3">
+      <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#010131]">
+        <Sparkles className="h-3.5 w-3.5 text-[#5391D5]" /> Match from a job description
+      </div>
+      <p className="mt-0.5 text-[11px] text-muted-foreground">
+        Paste or upload a JD - AI identifies the important competencies across the VIFM framework ({TOTAL_BLOCKS} building blocks · {BEHAVIORAL_COMPETENCIES.length} competencies) and pre-selects them below.
+      </p>
+      <Textarea
+        value={pdfBase64 ? "" : text}
+        onChange={(e) => { setText(e.target.value); if (e.target.value) { setPdfBase64(null); setFileName(""); } }}
+        rows={3}
+        placeholder="Paste the job description here (English or Arabic), or upload a file below..."
+        className="mt-2 text-xs"
+      />
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs hover:bg-muted">
+          <FileText className="h-3.5 w-3.5" /> {fileName || "Upload PDF / text"}
+          <input type="file" accept=".pdf,.txt,application/pdf,text/plain" className="hidden" onChange={(e) => onFile(e.target.files?.[0] ?? null)} />
+        </label>
+        <Button size="sm" className="gap-1.5" disabled={busy || !canMatch} onClick={match}>
+          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />} Identify competencies
+        </Button>
+      </div>
     </div>
   );
 }

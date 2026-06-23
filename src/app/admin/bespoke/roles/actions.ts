@@ -4,6 +4,12 @@ import { revalidatePath } from "next/cache";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { createServiceClient } from "@/lib/supabase/server";
 import { publishRoleReadinessService, unpublishRoleReadinessService } from "@/lib/bespoke/services";
+import {
+  extractCompetenciesFromJobDescription,
+  extractCompetenciesFromJdPdf,
+  type ExtractedCompetencyRecommendation,
+} from "@/lib/ai/jd-competency-extractor";
+import type { Competency } from "@/types/database";
 
 type Res = { ok: true; id?: string } | { error: string };
 
@@ -241,4 +247,30 @@ export async function inviteRoleCandidateAction(input: {
     .single();
   if (error || !data) return { error: error?.message ?? "Could not create candidate." };
   return { ok: true, token: data.access_token as string };
+}
+
+// Match a job description to the VIFM 41-competency framework. Reuses the existing
+// P0.1 extractor (Claude picks the 6-12 most relevant competencies, with priority
+// + reasoning). Accepts pasted text OR an uploaded PDF (base64).
+export async function matchCompetenciesFromJdAction(input: {
+  jobDescription?: string;
+  pdfBase64?: string;
+  targetRole?: string;
+}): Promise<{ ok: true; recommendations: ExtractedCompetencyRecommendation[] } | { error: string }> {
+  if (!(await requireAdmin())) return { error: "Not authorized." };
+  const sb = createServiceClient();
+  const { data } = await sb.from("competencies").select("id, name, description").order("sort_order");
+  const competencies = (data ?? []) as unknown as Competency[];
+  if (competencies.length === 0) return { error: "No competency framework found." };
+
+  let recs: ExtractedCompetencyRecommendation[] | null = null;
+  if (input.pdfBase64) {
+    recs = await extractCompetenciesFromJdPdf({ pdfBase64: input.pdfBase64, targetRole: input.targetRole, competencies });
+  } else if (input.jobDescription?.trim()) {
+    recs = await extractCompetenciesFromJobDescription({ jobDescription: input.jobDescription, targetRole: input.targetRole, competencies });
+  } else {
+    return { error: "Paste a job description or upload a file first." };
+  }
+  if (recs === null) return { error: "AI matching is unavailable right now - select competencies manually." };
+  return { ok: true, recommendations: recs };
 }

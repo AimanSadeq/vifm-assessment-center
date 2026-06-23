@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { findCandidateByToken } from "@/lib/prehire/candidate-access";
-import { generateQuizQuestions } from "@/lib/ai/quiz-generator";
+import { generateQuizQuestions, buildFallbackQuizDeck } from "@/lib/ai/quiz-generator";
 import type { BehavioralIndicator, QuizQuestion } from "@/types/database";
 
 type StoredDetail = { questions?: QuizQuestion[] } | null;
@@ -167,6 +167,8 @@ export async function POST(_req: Request, { params }: { params: { token: string 
   }
 
   let questions: QuizQuestion[] | null = null;
+  // Grounding for the deterministic fallback (used only if the AI is down).
+  const fallbackComps: { name: string; positives: string[]; negatives: string[] }[] = [];
 
   if (ranked.length > 0) {
     // Take the top-N highest-weighted competencies and split TARGET_DECK_SIZE
@@ -201,6 +203,22 @@ export async function POST(_req: Request, { params }: { params: { token: string 
       const list = indicatorsByComp.get(row.competency_id) ?? [];
       list.push({ indicator_type: row.indicator_type, description: row.description });
       indicatorsByComp.set(row.competency_id, list);
+    }
+
+    // Collect real indicators per competency for the deterministic fallback
+    // (positive => an effective behaviour, negative => an anti-pattern), so a
+    // fallback deck is grounded in the role's actual competencies when possible.
+    for (const c of top) {
+      const comp = compById.get(c.id);
+      if (!comp) continue;
+      const all = (indicatorsByComp.get(c.id) ?? []).filter(
+        (r) => !r.description.startsWith("[DEV TIP]")
+      );
+      fallbackComps.push({
+        name: comp.name,
+        positives: all.filter((r) => r.indicator_type === "positive").map((r) => r.description),
+        negatives: all.filter((r) => r.indicator_type === "negative").map((r) => r.description),
+      });
     }
 
     // Generate each competency's deck IN PARALLEL (was sequential - up to 4
@@ -271,6 +289,13 @@ export async function POST(_req: Request, { params }: { params: { token: string 
       }),
       GEN_TIMEOUT_MS
     );
+  }
+
+  // Deterministic fallback: if the AI produced nothing (no key, quota, overload,
+  // timeout), never dead-end the candidate - serve a usable deck grounded in the
+  // role's behavioural indicators when we have them, else role-agnostic items.
+  if (!questions || questions.length === 0) {
+    questions = buildFallbackQuizDeck({ competencies: fallbackComps, count: TARGET_DECK_SIZE });
   }
 
   if (!questions || questions.length === 0) {

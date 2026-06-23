@@ -491,6 +491,9 @@ export function FluentStage({ token, onDone }: { token: string; onDone: () => vo
                   placeholder="Type roughly what you would say…"
                   className="w-full resize-y rounded-md border border-slate-300 px-3 py-2 text-sm text-[#111232] focus:border-[#5391D5] focus:outline-none focus:ring-2 focus:ring-[#5391D5]/20"
                 />
+                <div className={`text-[11px] ${wordCount(transcript) >= MIN_WORDS ? "font-semibold text-emerald-600" : "text-slate-500"}`}>
+                  {wordCount(transcript)} words · min {MIN_WORDS} to submit
+                </div>
                 <button
                   onClick={() => { setSpeakMode("record"); setSpeakNote(""); }}
                   className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700"

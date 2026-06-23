@@ -211,3 +211,148 @@ export async function generateQuizQuestions(
     return null;
   }
 }
+
+// ── Deterministic fallback ────────────────────────────────────────────────
+// When the AI is unavailable (no key, quota, overload, timeout) generateQuiz
+// questions returns null. For a screening that must never dead-end on
+// "Couldn't generate the assessment", build a usable deck WITHOUT the AI:
+// grounded True/False items from the competency's own behavioural indicators
+// when we have them, padded with role-agnostic professional items.
+
+function tf(prompt: string, isTrue: boolean, explanation: string): QuizQuestion {
+  return {
+    id: "q",
+    type: "true_false",
+    prompt_en: prompt,
+    prompt_ar: null,
+    options_en: ["True", "False"],
+    options_ar: null,
+    correct_index: isTrue ? 0 : 1,
+    points: 10,
+    difficulty: "medium",
+    explanation_en: explanation,
+    explanation_ar: null,
+    sequence: undefined,
+  };
+}
+
+function mcq(
+  prompt: string,
+  options: string[],
+  correctIndex: number,
+  explanation: string
+): QuizQuestion {
+  return {
+    id: "q",
+    type: "multiple_choice",
+    prompt_en: prompt,
+    prompt_ar: null,
+    options_en: options,
+    options_ar: null,
+    correct_index: correctIndex,
+    points: 15,
+    difficulty: "medium",
+    explanation_en: explanation,
+    explanation_ar: null,
+    sequence: undefined,
+  };
+}
+
+// Role-agnostic professional items - valid for any competency; used to pad the
+// fallback deck (and as the whole deck when no indicators are available).
+const GENERIC_FALLBACK_ITEMS: QuizQuestion[] = [
+  tf(
+    "Clarifying the goal and success criteria before starting work reduces rework later.",
+    true,
+    "Confirming expectations up front prevents wasted effort and misaligned delivery."
+  ),
+  tf(
+    "Once a decision has been made, the professional approach is to commit to it while raising any concerns through the right channel.",
+    true,
+    "Disagreeing respectfully and then committing keeps the team moving without suppressing valid concerns."
+  ),
+  tf(
+    "Withholding relevant information from a teammate is an effective way to get ahead at work.",
+    false,
+    "Withholding information undermines trust and collaboration - the opposite of effective teamwork."
+  ),
+  mcq(
+    "You receive conflicting instructions from two managers. What is the best first step?",
+    [
+      "Pick the one you prefer and proceed quietly",
+      "Do nothing until someone notices",
+      "Surface the conflict to both and align on priorities",
+      "Escalate to HR immediately",
+    ],
+    2,
+    "Surfacing the conflict early and aligning on priorities resolves it without guesswork or unnecessary escalation."
+  ),
+  mcq(
+    "A stakeholder gives vague requirements. The most effective response is to:",
+    [
+      "Guess and build something",
+      "Ask focused questions to clarify scope and intent",
+      "Delay the work indefinitely",
+      "Build the largest possible version to be safe",
+    ],
+    1,
+    "Asking targeted clarifying questions defines the real need before effort is spent."
+  ),
+  mcq(
+    "Which response best demonstrates accountability for a missed deadline?",
+    [
+      "Blame the tools or process",
+      "Acknowledge it, explain the cause, and propose a recovery plan",
+      "Avoid mentioning it",
+      "Wait until someone asks about it",
+    ],
+    1,
+    "Owning the miss and proposing a concrete recovery plan is the hallmark of accountability."
+  ),
+  tf(
+    "Listening to understand before responding improves collaboration and decision quality.",
+    true,
+    "Understanding others' input first leads to better-informed responses and stronger working relationships."
+  ),
+];
+
+export function buildFallbackQuizDeck(input: {
+  competencies?: { name: string; positives: string[]; negatives: string[] }[];
+  count?: number;
+}): QuizQuestion[] {
+  const count = Math.max(1, Math.round(input.count ?? 7));
+  const items: QuizQuestion[] = [];
+
+  // Grounded items from real behavioural indicators (positive => True,
+  // negative => False), spread across the supplied competencies.
+  for (const c of input.competencies ?? []) {
+    for (const pos of c.positives.slice(0, 2)) {
+      items.push(
+        tf(
+          `In the context of "${c.name}", is the following an effective professional behaviour?\n\n"${pos}"`,
+          true,
+          `This is a positive indicator of ${c.name} - it reflects the competency well.`
+        )
+      );
+    }
+    for (const neg of c.negatives.slice(0, 1)) {
+      items.push(
+        tf(
+          `In the context of "${c.name}", is the following an effective professional behaviour?\n\n"${neg}"`,
+          false,
+          `This is a negative indicator (anti-pattern) of ${c.name} - it works against the competency.`
+        )
+      );
+    }
+  }
+
+  // Pad to the target with role-agnostic items (and use them wholesale when no
+  // indicators were available).
+  for (const g of GENERIC_FALLBACK_ITEMS) {
+    if (items.length >= count) break;
+    items.push(g);
+  }
+
+  // Re-id sequentially + cap.
+  return items.slice(0, count).map((q, i) => ({ ...q, id: `q-${i + 1}` }));
+}

@@ -651,10 +651,9 @@ export function PlatformLanding({
             single diagnostic. Hidden in client mode (VIFM designs these). */}
         {!clientMode && (
           <section className="mt-8">
-            <Link
-              href="/admin/bespoke"
-              className="group block overflow-hidden rounded-2xl border border-[#5391D5]/30 bg-gradient-to-br from-[#010131] to-[#121140] p-6 text-white transition-all hover:border-[#5391D5]/60 hover:shadow-xl"
-            >
+            {/* Single dark box. It's a container (not a link), so the CTA and each
+                configured product can be their own links nested INSIDE the box. */}
+            <div className="overflow-hidden rounded-2xl border border-[#5391D5]/30 bg-gradient-to-br from-[#010131] to-[#121140] p-6 text-white">
               <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-4">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#5391D5]/15 text-[#5391D5]">
@@ -666,10 +665,14 @@ export function PlatformLanding({
                     <p className="mt-1 max-w-2xl text-sm leading-relaxed text-white/70">{t.bespoke.desc}</p>
                   </div>
                 </div>
-                <span className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-[#5391D5] px-5 py-3 text-sm font-semibold text-white transition-colors group-hover:bg-[#5391D5]/90">
+                <Link
+                  href="/admin/bespoke"
+                  className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-[#5391D5] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#5391D5]/90"
+                >
                   {t.bespoke.cta} <Arrow className="h-4 w-4" />
-                </span>
+                </Link>
               </div>
+
               <div className="mt-4 flex flex-wrap items-center gap-1.5 border-t border-white/10 pt-4">
                 <span className="text-[11px] font-medium uppercase tracking-wide text-white/45">{t.bespoke.combine}</span>
                 {PORTAL_SERVICES.map((svc) => (
@@ -681,27 +684,27 @@ export function PlatformLanding({
                   </span>
                 ))}
               </div>
-            </Link>
 
-            {/* Configured products (e.g. Role Readiness) - launchable from the section. */}
-            {bespokeProducts.length > 0 && (
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                {bespokeProducts.map((p) => (
-                  <Link
-                    key={p.id}
-                    href={p.href ?? (p.roleConfigId ? `/admin/bespoke/roles/${p.roleConfigId}` : "/admin/bespoke/roles")}
-                    className="flex items-center justify-between gap-2 rounded-xl border border-[#5391D5]/30 bg-card p-3 transition-colors hover:border-[#5391D5]"
-                  >
-                    <span className="inline-flex items-center gap-2 text-sm font-medium text-[#010131]">
-                      <Boxes className="h-4 w-4 text-[#5391D5]" /> {rtl && p.nameAr ? p.nameAr : p.nameEn}
-                    </span>
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#5391D5]">
-                      {lang === "ar" ? "فتح" : "Open"} <Arrow className="h-3 w-3" />
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            )}
+              {/* Configured products (e.g. Role Readiness) - INSIDE the box, dark-on-dark. */}
+              {bespokeProducts.length > 0 && (
+                <div className="mt-4 grid gap-2 border-t border-white/10 pt-4 sm:grid-cols-2">
+                  {bespokeProducts.map((p) => (
+                    <Link
+                      key={p.id}
+                      href={p.href ?? (p.roleConfigId ? `/admin/bespoke/roles/${p.roleConfigId}` : "/admin/bespoke/roles")}
+                      className="flex items-center justify-between gap-2 rounded-xl border border-white/15 bg-white/5 p-3 transition-colors hover:border-[#5391D5] hover:bg-white/10"
+                    >
+                      <span className="inline-flex items-center gap-2 text-sm font-medium text-white">
+                        <Boxes className="h-4 w-4 text-[#5391D5]" /> {rtl && p.nameAr ? p.nameAr : p.nameEn}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#5391D5]">
+                        {lang === "ar" ? "فتح" : "Open"} <Arrow className="h-3 w-3" />
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           </section>
         )}
 

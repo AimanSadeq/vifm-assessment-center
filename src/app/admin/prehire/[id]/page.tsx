@@ -17,6 +17,7 @@ import { computeComposite, rankByComposite } from "@/lib/prehire/scoring";
 import { getServerT, getServerLocale } from "@/lib/i18n/server";
 import type { PrehireStagePlanEntry, PrehireStageKind } from "@/types/prehire";
 import { AddCandidateForm } from "./_components/add-candidate-form";
+import { EditStages } from "./_components/edit-stages";
 import { InviteLink } from "./_components/invite-link";
 import { ClientReportCell } from "./_components/client-report-cell";
 import { ClientReportControls } from "./_components/client-report-controls";
@@ -176,6 +177,8 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
           </a>
         </div>
       </div>
+
+      <EditStages requisitionId={req.id as string} initialPlan={plan} />
 
       <AddCandidateForm requisitionId={req.id as string} />
 

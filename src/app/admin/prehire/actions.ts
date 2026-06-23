@@ -7,6 +7,7 @@ import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { createClientOrganization } from "@/lib/clients/registry";
 import { sendEmail, isEmailConfigured } from "@/lib/integrations/email";
 import { logPrehireEvent } from "@/lib/prehire/audit";
+import { rescoreCandidate } from "@/lib/prehire/candidate-access";
 import { buildPrehireCandidatePdf } from "@/lib/reports/prehire-candidate-pdf";
 import { uuidish } from "@/lib/validations/ids";
 import { DEMO_ORG_NAME, DEMO_ORG_NAME_AR } from "@/lib/demo/constants";
@@ -193,6 +194,55 @@ export async function createRequisitionAction(input: unknown) {
 
   revalidatePath("/admin/prehire");
   return { data: { id: data.id as string } };
+}
+
+// Edit the stage plan of an existing requisition (add/remove Competency Quiz /
+// Fluent / AI Interview, adjust weights, cut-scores, Fluent sub-skills). Reuses
+// the same stageEntrySchema + receptive-skill rule as create. On save we
+// re-score every candidate from the new plan: a removed stage drops out of the
+// composite, an added stage makes it incomplete until taken.
+const updateStagesSchema = z.object({
+  requisition_id: uuidish("Invalid requisition"),
+  stage_config: z.array(stageEntrySchema).min(1, "Pick at least one screening stage"),
+});
+
+export async function updateRequisitionStagesAction(input: unknown) {
+  const gate = await gateAdmin();
+  if (gate) return gate;
+
+  const parsed = updateStagesSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: zodMessage(parsed.error, "Invalid stage plan") };
+  }
+
+  const svc = createServiceClient();
+  // english_required follows the Fluent stage, exactly as on create.
+  const englishRequired = parsed.data.stage_config.some((s) => s.kind === "fluent");
+
+  const { error } = await svc
+    .from("prehire_requisitions")
+    .update({ stage_config: parsed.data.stage_config, english_required: englishRequired })
+    .eq("id", parsed.data.requisition_id);
+  if (error) return { error: error.message };
+
+  // Re-score every candidate from the new plan (best-effort, per candidate).
+  const { data: cands } = await svc
+    .from("prehire_candidates")
+    .select("id")
+    .eq("requisition_id", parsed.data.requisition_id);
+  for (const c of (cands ?? []) as { id: string }[]) {
+    await rescoreCandidate(c.id);
+  }
+
+  await logPrehireEvent({
+    action: "requisition_updated",
+    requisitionId: parsed.data.requisition_id,
+    actorLabel: "admin",
+    detail: { stages: parsed.data.stage_config.map((s) => s.kind) },
+  });
+
+  revalidatePath(`/admin/prehire/${parsed.data.requisition_id}`);
+  return { ok: true as const };
 }
 
 /**

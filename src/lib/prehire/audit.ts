@@ -12,6 +12,7 @@ import type { PrehireAuditEntry } from "@/types/prehire";
 /** Canonical action names - keep these stable; the trail is a permanent record. */
 export type PrehireAuditAction =
   | "requisition_created"
+  | "requisition_updated"
   | "candidate_added"
   | "invitation_sent"
   | "consent_given"

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Browser } from "puppeteer-core";
-import { launchPdfBrowser } from "@/lib/reports/pdf-browser";
+import { launchPdfBrowser, selfOrigin } from "@/lib/reports/pdf-browser";
 import { createServiceClient } from "@/lib/supabase/server";
 import { requireAssessmentOwner, isAuthorizationError } from "@/lib/ara/auth-guards";
 
@@ -49,7 +49,7 @@ export async function GET(
   const language: "en" | "ar" | "bilingual" =
     langRaw === "ar" ? "ar" : langRaw === "bilingual" ? "bilingual" : "en";
   const reportUrl =
-    `${url.origin}/ara/consultant/assessments/${params.assessmentId}/report?bare=1&lang=${language}`;
+    `${selfOrigin(req.url)}/ara/consultant/assessments/${params.assessmentId}/report?bare=1&lang=${language}`;
 
   let browser: Browser | null = null;
   try {

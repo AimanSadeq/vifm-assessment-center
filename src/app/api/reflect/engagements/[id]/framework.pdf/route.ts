@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Browser } from "puppeteer-core";
-import { launchPdfBrowser } from "@/lib/reports/pdf-browser";
+import { launchPdfBrowser, selfOrigin } from "@/lib/reports/pdf-browser";
 import { guardReflectEngagementAccess } from "@/lib/reflect/report-access";
 
 export const runtime = "nodejs";
@@ -32,7 +32,7 @@ export async function GET(
   const langRaw = url.searchParams.get("language") ?? "en";
   const language: "en" | "ar" | "bilingual" =
     langRaw === "ar" ? "ar" : langRaw === "bilingual" ? "bilingual" : "en";
-  const previewUrl = `${url.origin}/reflect/consultant/engagements/${id}/framework-preview?bare=1&lang=${language}`;
+  const previewUrl = `${selfOrigin(req.url)}/reflect/consultant/engagements/${id}/framework-preview?bare=1&lang=${language}`;
 
   let browser: Browser | null = null;
   try {

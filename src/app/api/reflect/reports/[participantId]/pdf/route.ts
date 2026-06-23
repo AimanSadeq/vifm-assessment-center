@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Browser } from "puppeteer-core";
-import { launchPdfBrowser } from "@/lib/reports/pdf-browser";
+import { launchPdfBrowser, selfOrigin } from "@/lib/reports/pdf-browser";
 import { createServiceClient } from "@/lib/supabase/server";
 import { computeParticipantScoring } from "@/lib/reflect/scoring";
 import { guardReflectEngagementAccess } from "@/lib/reflect/report-access";
@@ -33,7 +33,7 @@ export async function GET(
   const langRaw = url.searchParams.get("language") ?? "en";
   const language: "en" | "ar" | "bilingual" =
     langRaw === "ar" ? "ar" : langRaw === "bilingual" ? "bilingual" : "en";
-  const reportUrl = `${url.origin}/reflect/consultant/participants/${participantId}/report?bare=1&lang=${language}`;
+  const reportUrl = `${selfOrigin(req.url)}/reflect/consultant/participants/${participantId}/report?bare=1&lang=${language}`;
 
   // Compute scoring first so we can persist the snapshot alongside the file.
   const scoring = await computeParticipantScoring(participantId);

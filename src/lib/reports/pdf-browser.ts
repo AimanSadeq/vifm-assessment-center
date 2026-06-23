@@ -74,3 +74,22 @@ export async function launchPdfBrowser(opts?: { defaultViewport?: Viewport }): P
     return await secondary(defaultViewport);
   }
 }
+
+/**
+ * The origin Puppeteer should use to navigate back to THIS server to render a
+ * report page (`page.goto(...)`).
+ *
+ * WHY: on Render, TLS terminates at the edge and the app speaks plain HTTP on
+ * $PORT. A server route's `new URL(req.url).origin` therefore comes back as
+ * `https://localhost:<port>` (https scheme from x-forwarded-proto + the internal
+ * loopback host). Pointing Puppeteer at that HTTPS URL hits an HTTP port and
+ * fails with `net::ERR_SSL_PROTOCOL_ERROR`, 500-ing every Puppeteer PDF route.
+ *
+ * FIX: downgrade the scheme to http for loopback hosts only. Public hosts
+ * (a real domain) and local dev (already http://localhost:3000) are unchanged,
+ * so this is safe everywhere and only rewrites the broken internal case.
+ */
+export function selfOrigin(reqUrl: string): string {
+  const origin = new URL(reqUrl).origin;
+  return origin.replace(/^https:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)\b/i, "http://$1");
+}

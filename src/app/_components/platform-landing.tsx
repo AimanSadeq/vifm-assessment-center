@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight, ArrowLeft, ClipboardCheck, Compass, Aperture, Languages, UserSearch,
-  GraduationCap, BadgeCheck, BrainCircuit, Layers, ShieldCheck, TrendingUp, Table2, Target,
+  GraduationCap, BadgeCheck, BrainCircuit, Layers, ShieldCheck, TrendingUp, Table2, Target, Boxes,
 } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { CountUp } from "@/components/shared/ara/count-up";
 import { FadeIn } from "@/components/shared/ara/fade-in";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { COMPETENCY_COUNT } from "@/lib/competencies/framework-meta";
+import { PORTAL_SERVICES } from "@/lib/clients/portal-services";
 
 type Lang = "en" | "ar";
 type Tone = "blue" | "violet" | "teal" | "gold" | "rose" | "indigo" | "fuchsia" | "emerald" | "amber" | "cyan";
@@ -259,6 +260,13 @@ const T = {
     },
     servicesHeading: "Start with a diagnosis",
     servicesSub: "Two solution families cover the full talent lifecycle - pick where to focus, and the platform takes it from diagnosis to development.",
+    bespoke: {
+      eyebrow: "Tailored packages",
+      title: "Bespoke Services",
+      desc: "Combine any of our services into a single tailored package and assign it to a client - design exactly the engagement they need.",
+      cta: "Design a bespoke service",
+      combine: "Combine",
+    },
     pillars: {
       acquire: { title: "Talent Acquisition Solutions", sub: "Assess the people you bring in - screen, place, and select with defensible, bilingual instruments." },
       manage: { title: "Talent Management Solutions", sub: "Grow the people you have - develop, benchmark, and certify across the organisation." },
@@ -319,6 +327,13 @@ const T = {
     },
     servicesHeading: "ابدأ بالتشخيص",
     servicesSub: "عائلتا حلول تغطّيان دورة المواهب الكاملة - اختر أين تركّز، وتتولّى المنصّة الباقي من التشخيص إلى التطوير.",
+    bespoke: {
+      eyebrow: "باقات مخصّصة",
+      title: "الخدمات المخصّصة",
+      desc: "اجمع أيًّا من خدماتنا في باقة واحدة مخصّصة وخصّصها لعميل - صمّم التجربة التي يحتاجها تمامًا.",
+      cta: "صمّم خدمة مخصّصة",
+      combine: "اجمع",
+    },
     pillars: {
       acquire: { title: "حلول استقطاب المواهب", sub: "قيّم من تستقطبهم - فرز وتحديد مستوى واختيار بأدوات موثوقة وثنائية اللغة." },
       manage: { title: "حلول إدارة المواهب", sub: "طوّر من لديك - تطوير ومقارنة مرجعية واعتماد على مستوى المؤسسة." },
@@ -619,6 +634,46 @@ export function PlatformLanding({ clientMode }: { clientMode?: ClientPortalMode 
             </div>
           </TooltipProvider>
         </section>
+
+        {/* ─── Bespoke Services: VIFM composes a tailored package per client ───
+            A meta-service - it bundles any of the above into one package and
+            assigns it to a client, so it opens the composer rather than a
+            single diagnostic. Hidden in client mode (VIFM designs these). */}
+        {!clientMode && (
+          <section className="mt-8">
+            <Link
+              href="/admin/bespoke"
+              className="group block overflow-hidden rounded-2xl border border-[#5391D5]/30 bg-gradient-to-br from-[#010131] to-[#121140] p-6 text-white transition-all hover:border-[#5391D5]/60 hover:shadow-xl"
+            >
+              <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#5391D5]/15 text-[#5391D5]">
+                    <Boxes className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <span className="ara-eyebrow text-accent">{t.bespoke.eyebrow}</span>
+                    <h3 className="mt-0.5 text-lg font-semibold text-white">{t.bespoke.title}</h3>
+                    <p className="mt-1 max-w-2xl text-sm leading-relaxed text-white/70">{t.bespoke.desc}</p>
+                  </div>
+                </div>
+                <span className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-[#5391D5] px-5 py-3 text-sm font-semibold text-white transition-colors group-hover:bg-[#5391D5]/90">
+                  {t.bespoke.cta} <Arrow className="h-4 w-4" />
+                </span>
+              </div>
+              <div className="mt-4 flex flex-wrap items-center gap-1.5 border-t border-white/10 pt-4">
+                <span className="text-[11px] font-medium uppercase tracking-wide text-white/45">{t.bespoke.combine}</span>
+                {PORTAL_SERVICES.map((svc) => (
+                  <span
+                    key={svc.id}
+                    className="rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-[11px] text-white/80"
+                  >
+                    {rtl ? svc.labelAr : svc.label}
+                  </span>
+                ))}
+              </div>
+            </Link>
+          </section>
+        )}
       </main>
 
       {/* ─── Footer (hidden in client mode) ─── */}

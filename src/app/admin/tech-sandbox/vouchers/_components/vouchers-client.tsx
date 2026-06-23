@@ -84,16 +84,33 @@ export function VouchersClient({
               ))}
             </select>
           </label>
-          <label className="flex flex-col gap-1 text-sm sm:col-span-2">
+          <div className="flex flex-col gap-1 text-sm sm:col-span-2">
             <span className="text-muted-foreground">Method</span>
-            <select value={mode} onChange={(e) => setMode(e.target.value as Mode)} className="rounded-md border border-border bg-card px-3 py-2 text-foreground">
-              <option value="single">Anonymous single-use codes (one per delegate)</option>
-              <option value="pool">One shared code (seat pool)</option>
-            </select>
-          </label>
+            <div className="inline-flex rounded-md border border-border p-0.5">
+              <button
+                type="button"
+                onClick={() => setMode("single")}
+                className={`flex-1 rounded px-3 py-1.5 text-sm font-medium ${mode === "single" ? "bg-[#010131] text-white" : "text-muted-foreground hover:bg-muted"}`}
+              >
+                Individual codes (one per person)
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("pool")}
+                className={`flex-1 rounded px-3 py-1.5 text-sm font-medium ${mode === "pool" ? "bg-[#010131] text-white" : "text-muted-foreground hover:bg-muted"}`}
+              >
+                One shared link (many seats)
+              </button>
+            </div>
+            <span className="text-xs text-muted-foreground">
+              {mode === "single"
+                ? "Generates N anonymous single-use codes - one per person."
+                : "Generates ONE code with N seats - share the same redeem link with everyone in the group."}
+            </span>
+          </div>
 
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-muted-foreground">{mode === "single" ? "How many codes" : "Seats in the pool"}</span>
+            <span className="text-muted-foreground">{mode === "single" ? "How many codes" : "Seats in the shared link"}</span>
             <input type="number" min={1} max={500} value={count} onChange={(e) => setCount(Number(e.target.value))} className="rounded-md border border-border bg-card px-3 py-2 text-foreground" />
           </label>
 

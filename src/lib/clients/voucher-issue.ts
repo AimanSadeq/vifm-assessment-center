@@ -175,3 +175,99 @@ export async function issueClientVouchers(opts: {
 
   return { ok: true, issued: codes.length, emailed, codes: out };
 }
+
+export type PoolResult = {
+  ok: boolean;
+  error?: string;
+  /** The single shared code + its redeem link (the manager shares this with the group). */
+  code?: string;
+  url?: string;
+  seats?: number;
+};
+
+/** Issue ONE shared code carrying N seats (a single link the manager hands to a
+ *  whole group), drawing N seats from the allocation up-front. No per-recipient
+ *  email - the manager copies the one link. Mirrors issueClientVouchers' draw ->
+ *  generate -> release-on-failure contract, and carries the same admin-pinned
+ *  Persona scope / Techno function as the individual path. */
+export async function issueClientPoolVoucher(opts: {
+  service: CaliberService;
+  orgId: string;
+  clientName: string | null;
+  lang: "en" | "ar";
+  seats: number;
+  alloc: Allocation;
+}): Promise<PoolResult> {
+  const { service, orgId, clientName, lang, alloc } = opts;
+  if (!isVoucherService(service)) return { ok: false, error: "Not a self-serve voucher service" };
+  const seats = Math.floor(Number(opts.seats));
+  if (!Number.isFinite(seats) || seats < 1) return { ok: false, error: "Enter at least 1 seat." };
+
+  // 1. Reserve all N seats atomically (over-quota / expired -> refused).
+  const draw = await drawAllocation(orgId, service, seats);
+  if (!draw.ok) {
+    return {
+      ok: false,
+      error:
+        draw.reason === "over_quota"
+          ? "Not enough seats remaining (or the allocation has expired)."
+          : draw.message || "Could not reserve seats.",
+    };
+  }
+
+  // 2. Mint a SINGLE code with max_uses = N via the service's own engine.
+  let code = "";
+  try {
+    if (service === "fluent") {
+      const r = await createFluentBatch({ count: 1, organizationId: orgId, clientName, language: lang, maxUses: seats, expiresAt: alloc.expires_at });
+      if (!r.ok) throw new Error(r.error);
+      code = r.codes[0] ?? "";
+    } else if (service === "logica") {
+      const r = await createLogicaBatch({ count: 1, organizationId: orgId, clientName, language: lang, maxUses: seats, expiresAt: alloc.expires_at });
+      if (!r.ok) throw new Error(r.error);
+      code = r.codes[0] ?? "";
+    } else if (service === "persona") {
+      const cfg = (alloc.service_config ?? {}) as {
+        purpose?: "development" | "hiring" | null;
+        targetRoleProfileId?: string | null;
+        itemFormat?: "normative" | "ipsative" | "both";
+        scopedCompetencyIds?: string[] | null;
+      };
+      const r = await createPersonaBatch({
+        count: 1,
+        organizationId: orgId,
+        clientName,
+        language: lang,
+        maxUses: seats,
+        expiresAt: alloc.expires_at,
+        purpose: cfg.purpose ?? "development",
+        targetRoleProfileId: cfg.targetRoleProfileId ?? null,
+        itemFormat: cfg.itemFormat ?? "normative",
+        scopedCompetencyIds: cfg.scopedCompetencyIds ?? null,
+      });
+      if (!r.ok) throw new Error(r.error);
+      code = r.codes[0] ?? "";
+    } else if (service === "techno") {
+      // No delegates[] -> the engine mints one anonymous code; maxUsesPerCode = N seats.
+      const fn = await resolveTechnoFunction(alloc);
+      if (!fn) throw new Error("VIFM has not configured a technical function for this allocation.");
+      const r = await generateTechnoBatch({
+        functionId: fn.id,
+        count: 1,
+        organizationName: clientName,
+        expiresAt: alloc.expires_at,
+        maxUsesPerCode: seats,
+      });
+      code = r.codes[0] ?? "";
+    }
+    if (!code) throw new Error("No code was generated.");
+  } catch (e) {
+    await releaseAllocation(orgId, service, seats); // give the seats back
+    return { ok: false, error: e instanceof Error ? e.message : "Could not generate the shared link" };
+  }
+
+  // 3. Return the single shareable redeem link (no per-recipient email).
+  const origin = appOrigin();
+  const url = `${origin}${REDEEM_PATH[service]}?code=${encodeURIComponent(code)}`;
+  return { ok: true, code, url, seats };
+}

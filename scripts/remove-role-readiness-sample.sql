@@ -3,7 +3,8 @@
 -- sample and nothing real. Run in the Supabase SQL editor.
 --
 -- Deleting rr_role_configs cascades to rr_technical_areas, rr_technical_items,
--- rr_candidates, rr_section_results and bespoke_services (role_config_id). The
+-- rr_candidates, rr_section_results, rr_vouchers and bespoke_services
+-- (role_config_id). The
 -- sample role_profile (1:1) is removed by its distinctive name (cascades
 -- role_profile_competencies); job_families by is_sample.
 begin;

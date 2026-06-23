@@ -141,6 +141,13 @@ const isPersonaPublicRoute = (pathname: string) =>
 const isProctorApiRoute = (pathname: string) =>
   pathname.startsWith("/api/proctor/");
 
+// Role Readiness candidate flow (Bespoke Services) - a no-account candidate takes
+// the combined Persona + Techno sitting via rr_candidates.access_token. Identity
+// is derived server-side from the token. Bypass auth in dev and prod, like the
+// Pre-Hire applicant flow.
+const isRoleReadinessRoute = (pathname: string) =>
+  pathname.startsWith("/role-readiness/apply/") || pathname.startsWith("/api/role-readiness/");
+
 export async function middleware(request: NextRequest) {
   if (
     isProctorApiRoute(request.nextUrl.pathname) ||
@@ -157,7 +164,8 @@ export async function middleware(request: NextRequest) {
     isTechSandboxRoute(request.nextUrl.pathname) ||
     isFluentPublicRoute(request.nextUrl.pathname) ||
     isCognitivePublicRoute(request.nextUrl.pathname) ||
-    isPersonaPublicRoute(request.nextUrl.pathname)
+    isPersonaPublicRoute(request.nextUrl.pathname) ||
+    isRoleReadinessRoute(request.nextUrl.pathname)
   ) {
     return NextResponse.next();
   }

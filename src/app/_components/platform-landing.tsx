@@ -358,7 +358,7 @@ const T = {
 
 // Configured bespoke products (e.g. Role Readiness) persisted in bespoke_services
 // and surfaced as launchable cards inside the Bespoke Services section.
-export type BespokeProduct = { id: string; nameEn: string; nameAr: string | null; roleConfigId: string | null };
+export type BespokeProduct = { id: string; nameEn: string; nameAr: string | null; roleConfigId: string | null; href?: string };
 
 export function PlatformLanding({
   clientMode,
@@ -689,7 +689,7 @@ export function PlatformLanding({
                 {bespokeProducts.map((p) => (
                   <Link
                     key={p.id}
-                    href={p.roleConfigId ? `/admin/bespoke/roles/${p.roleConfigId}` : "/admin/bespoke/roles"}
+                    href={p.href ?? (p.roleConfigId ? `/admin/bespoke/roles/${p.roleConfigId}` : "/admin/bespoke/roles")}
                     className="flex items-center justify-between gap-2 rounded-xl border border-[#5391D5]/30 bg-card p-3 transition-colors hover:border-[#5391D5]"
                   >
                     <span className="inline-flex items-center gap-2 text-sm font-medium text-[#010131]">
@@ -702,6 +702,38 @@ export function PlatformLanding({
                 ))}
               </div>
             )}
+          </section>
+        )}
+
+        {/* ─── Client portal: the org's assigned bespoke programmes as tiles ─── */}
+        {clientMode && bespokeProducts.length > 0 && (
+          <section className="mt-8">
+            <span className="ara-eyebrow text-accent">
+              <Boxes className="h-3 w-3" /> {lang === "ar" ? "برامج مخصّصة" : "Bespoke programmes"}
+            </span>
+            <h2 className="mt-2 text-lg font-semibold text-[#010131]">
+              {lang === "ar" ? "البرامج المخصّصة لمؤسستك" : "Your tailored programmes"}
+            </h2>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {bespokeProducts.map((p) => (
+                <Link
+                  key={p.id}
+                  href={p.href ?? "#"}
+                  className="launcher-card tone-blue flex items-center justify-between gap-2 p-4"
+                  style={{ borderColor: `${TONE_HEX.blue}55` }}
+                >
+                  <span className="relative z-[1] inline-flex items-center gap-2.5">
+                    <span className="launcher-card-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
+                      <Boxes className="h-5 w-5" />
+                    </span>
+                    <span className="text-sm font-semibold text-primary">{rtl && p.nameAr ? p.nameAr : p.nameEn}</span>
+                  </span>
+                  <span className="relative z-[1] inline-flex items-center gap-1 text-xs font-bold text-[#5391D5]">
+                    {lang === "ar" ? "افتح" : "Open"} <Arrow className="h-3.5 w-3.5" />
+                  </span>
+                </Link>
+              ))}
+            </div>
           </section>
         )}
       </main>

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { loadRoleConfig } from "@/lib/role-readiness/config";
+import { loadPlatformClients } from "@/lib/clients/registry";
 import { createServiceClient } from "@/lib/supabase/server";
 import { BackLink } from "@/components/shared/back-link";
 import { RoleEditor } from "./_components/role-editor";
@@ -29,10 +30,14 @@ export default async function RoleEditorPage({ params }: { params: { id: string 
     .maybeSingle();
   const published = !!pub && (pub.status as string) === "active";
 
+  const clients = (await loadPlatformClients())
+    .filter((c) => c.acId)
+    .map((c) => ({ id: c.acId as string, name: c.name }));
+
   return (
     <div className="space-y-6">
       <BackLink href="/admin/bespoke/roles" label="Roles" history />
-      <RoleEditor config={config} published={published} />
+      <RoleEditor config={config} published={published} clients={clients} />
     </div>
   );
 }

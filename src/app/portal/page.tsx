@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { resolvePortalAccess } from "@/lib/clients/portal-access";
 import { getAllocationsForOrg } from "@/lib/clients/allocations";
 import { loadPlatformClients } from "@/lib/clients/registry";
+import { loadBespokeServices } from "@/lib/bespoke/services";
 import type { CaliberService } from "@/lib/clients/portal-services";
 import { PlatformLanding, type ClientPortalMode, type ServiceKey } from "@/app/_components/platform-landing";
 
@@ -64,5 +65,22 @@ export default async function PortalHomePage({ searchParams }: { searchParams?: 
     };
   }
 
-  return <PlatformLanding clientMode={{ orgName: org?.name ?? "Client portal", allowed }} />;
+  // The org's assigned bespoke programmes (Role Readiness) surface as portal
+  // tiles - org-assigned only (organization_id === this org), not global templates.
+  const bespokeProducts = (await loadBespokeServices({ organizationId: orgId }))
+    .filter((s) => s.kind === "role_readiness" && s.organization_id === orgId && s.role_config_id)
+    .map((s) => ({
+      id: s.id,
+      nameEn: s.name_en,
+      nameAr: s.name_ar,
+      roleConfigId: s.role_config_id,
+      href: `/portal/bespoke/${s.role_config_id}${orgSuffix}`,
+    }));
+
+  return (
+    <PlatformLanding
+      clientMode={{ orgName: org?.name ?? "Client portal", allowed }}
+      bespokeProducts={bespokeProducts}
+    />
+  );
 }

@@ -15,9 +15,10 @@ import {
   addItemAction, removeItemAction, publishRoleAction, unpublishRoleAction, inviteRoleCandidateAction,
 } from "../../actions";
 
-export function RoleEditor({ config, published }: { config: RoleReadinessConfig; published: boolean }) {
+export function RoleEditor({ config, published, clients }: { config: RoleReadinessConfig; published: boolean; clients: { id: string; name: string }[] }) {
   const router = useRouter();
   const [pending, start] = useTransition();
+  const [assignOrg, setAssignOrg] = useState("");
   const [personaPct, setPersonaPct] = useState(config.persona_pass_pct);
   const [techPct, setTechPct] = useState(config.technical_pass_pct);
 
@@ -59,10 +60,17 @@ export function RoleEditor({ config, published }: { config: RoleReadinessConfig;
             Unpublish
           </Button>
         ) : (
-          <Button className="gap-1.5" disabled={pending}
-            onClick={() => run(() => publishRoleAction({ roleId: config.id, nameEn: config.name_en, nameAr: config.name_ar ?? undefined, description: config.description ?? undefined }), "Published to Bespoke Services")}>
-            <Rocket className="h-4 w-4" /> Publish to Bespoke
-          </Button>
+          <div className="flex items-center gap-2">
+            <select value={assignOrg} onChange={(e) => setAssignOrg(e.target.value)}
+              className="rounded-md border border-border bg-background px-2 py-2 text-xs" title="Assign to a client (or leave as a template visible to all)">
+              <option value="">All clients (template)</option>
+              {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            <Button className="gap-1.5" disabled={pending}
+              onClick={() => run(() => publishRoleAction({ roleId: config.id, nameEn: config.name_en, nameAr: config.name_ar ?? undefined, description: config.description ?? undefined, organizationId: assignOrg || null }), "Published to Bespoke Services")}>
+              <Rocket className="h-4 w-4" /> Publish to Bespoke
+            </Button>
+          </div>
         )}
       </div>
 

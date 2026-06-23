@@ -6,6 +6,7 @@
 
 import { randomBytes } from "node:crypto";
 import { createServiceClient } from "@/lib/supabase/server";
+import { sendEmail } from "@/lib/integrations/email";
 
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // no ambiguous 0/O/1/I/L
 function genCode(): string {
@@ -17,7 +18,16 @@ function genCode(): string {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export type IssuedVoucher = { code: string; email: string | null; maxUses: number };
+export type Delegate = { email: string; name?: string | null };
+export type IssuedVoucher = { code: string; email: string | null; name: string | null; maxUses: number; emailed?: boolean };
+
+/** Build the public redeem URL for a voucher (prefills email + name when known). */
+export function redeemUrlFor(origin: string, v: { code: string; email?: string | null; name?: string | null }): string {
+  const params = new URLSearchParams({ code: v.code });
+  if (v.email) params.set("email", v.email);
+  if (v.name) params.set("name", v.name);
+  return `${origin.replace(/\/$/, "")}/role-readiness/redeem?${params.toString()}`;
+}
 
 export type VoucherRow = {
   id: string;
@@ -32,10 +42,15 @@ export async function createRoleReadinessVouchers(input: {
   roleConfigId: string;
   organizationId: string | null;
   mode: "individual" | "pool";
+  /** Paste path: emails only (no names). */
   emails?: string[];
+  /** Upload path: name + email per delegate. Takes precedence over `emails`. */
+  delegates?: Delegate[];
   seats?: number;
   isSample?: boolean;
   createdBy?: string | null;
+  /** When set (individual mode), email each delegate their redeem link from this origin. */
+  emailOrigin?: string | null;
 }): Promise<{ ok: true; vouchers: IssuedVoucher[] } | { error: string }> {
   const sb = createServiceClient();
   const base = {
@@ -46,22 +61,61 @@ export async function createRoleReadinessVouchers(input: {
   };
 
   if (input.mode === "individual") {
-    const emails = Array.from(
-      new Set((input.emails ?? []).map((e) => e.trim().toLowerCase()).filter((e) => EMAIL_RE.test(e))),
-    );
-    if (emails.length === 0) return { error: "Add at least one valid email address." };
-    if (emails.length > 500) return { error: "Up to 500 recipients per batch." };
-    const rows = emails.map((email) => ({ ...base, code: genCode(), max_uses: 1, recipient_email: email }));
-    const { data, error } = await sb.from("rr_vouchers").insert(rows).select("code, recipient_email, max_uses");
+    // Normalise to {email, name}, deduped by email (first name wins).
+    const raw: Delegate[] =
+      input.delegates && input.delegates.length > 0
+        ? input.delegates
+        : (input.emails ?? []).map((e) => ({ email: e }));
+    const byEmail = new Map<string, string | null>();
+    for (const d of raw) {
+      const email = (d.email || "").trim().toLowerCase();
+      if (!EMAIL_RE.test(email) || byEmail.has(email)) continue;
+      const name = (d.name || "").trim();
+      byEmail.set(email, name.length > 0 ? name : null);
+    }
+    if (byEmail.size === 0) return { error: "Add at least one valid email address." };
+    if (byEmail.size > 500) return { error: "Up to 500 recipients per batch." };
+
+    const rows = Array.from(byEmail.entries()).map(([email, name]) => ({
+      ...base,
+      code: genCode(),
+      max_uses: 1,
+      recipient_email: email,
+      recipient_name: name,
+    }));
+    const { data, error } = await sb
+      .from("rr_vouchers")
+      .insert(rows)
+      .select("code, recipient_email, recipient_name, max_uses");
     if (error || !data) return { error: error?.message ?? "Could not create vouchers." };
-    return {
-      ok: true,
-      vouchers: (data as Array<{ code: string; recipient_email: string | null; max_uses: number }>).map((v) => ({
-        code: v.code,
-        email: v.recipient_email,
-        maxUses: v.max_uses,
-      })),
-    };
+
+    let vouchers: IssuedVoucher[] = (
+      data as Array<{ code: string; recipient_email: string | null; recipient_name: string | null; max_uses: number }>
+    ).map((v) => ({ code: v.code, email: v.recipient_email, name: v.recipient_name, maxUses: v.max_uses }));
+
+    // Optionally email each delegate their complete redeem link. Send in small
+    // batches so a large list doesn't fire hundreds of concurrent requests.
+    if (input.emailOrigin) {
+      const origin = input.emailOrigin;
+      const { data: rc } = await sb.from("rr_role_configs").select("name_en").eq("id", input.roleConfigId).maybeSingle();
+      const roleName = (rc?.name_en as string | undefined) ?? "Role Readiness";
+      const sendOne = async (v: IssuedVoucher): Promise<IssuedVoucher> => {
+        if (!v.email) return v;
+        const emailed = await sendEmail({
+          to: v.email,
+          template: "role_readiness_invitation",
+          data: { candidateName: v.name ?? "there", roleName, redeemUrl: redeemUrlFor(origin, v) },
+        }).catch(() => false);
+        return { ...v, emailed };
+      };
+      const CHUNK = 8;
+      const sent: IssuedVoucher[] = [];
+      for (let i = 0; i < vouchers.length; i += CHUNK) {
+        sent.push(...(await Promise.all(vouchers.slice(i, i + CHUNK).map(sendOne))));
+      }
+      vouchers = sent;
+    }
+    return { ok: true, vouchers };
   }
 
   // pool
@@ -74,7 +128,10 @@ export async function createRoleReadinessVouchers(input: {
     .select("code, max_uses")
     .single();
   if (error || !data) return { error: error?.message ?? "Could not create the shared voucher." };
-  return { ok: true, vouchers: [{ code: (data as { code: string }).code, email: null, maxUses: (data as { max_uses: number }).max_uses }] };
+  return {
+    ok: true,
+    vouchers: [{ code: (data as { code: string }).code, email: null, name: null, maxUses: (data as { max_uses: number }).max_uses }],
+  };
 }
 
 /** Redeem a code: atomically claim a seat, provision an rr_candidate, return its

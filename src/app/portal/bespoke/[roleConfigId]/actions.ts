@@ -57,7 +57,10 @@ export async function clientIssueRoleVouchersAction(input: {
   roleConfigId: string;
   mode: "individual" | "pool";
   emails?: string[];
+  delegates?: { email: string; name?: string | null }[];
   seats?: number;
+  sendEmails?: boolean;
+  origin?: string;
   orgParam?: string;
 }): Promise<{ ok: true; vouchers: IssuedVoucher[] } | { error: string }> {
   const access = await resolvePortalAccess(input.orgParam);
@@ -80,6 +83,8 @@ export async function clientIssueRoleVouchersAction(input: {
     organizationId: orgId,
     mode: input.mode,
     emails: input.emails,
+    delegates: input.delegates,
     seats: input.seats,
+    emailOrigin: input.sendEmails && input.origin ? input.origin : null,
   });
 }

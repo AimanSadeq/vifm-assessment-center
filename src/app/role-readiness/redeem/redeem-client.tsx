@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { redeemVoucherAction } from "./actions";
 
-export function RedeemClient({ code, emailPrefill }: { code: string; emailPrefill: string }) {
-  const [name, setName] = useState("");
+export function RedeemClient({ code, emailPrefill, namePrefill = "" }: { code: string; emailPrefill: string; namePrefill?: string }) {
+  const [name, setName] = useState(namePrefill);
   const [email, setEmail] = useState(emailPrefill);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();

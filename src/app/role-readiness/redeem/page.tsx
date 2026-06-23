@@ -6,7 +6,13 @@ export const metadata = { title: "Redeem · Role Readiness · VIFM" };
 export default function RoleReadinessRedeemPage({
   searchParams,
 }: {
-  searchParams?: { code?: string; email?: string };
+  searchParams?: { code?: string; email?: string; name?: string };
 }) {
-  return <RedeemClient code={searchParams?.code ?? ""} emailPrefill={searchParams?.email ?? ""} />;
+  return (
+    <RedeemClient
+      code={searchParams?.code ?? ""}
+      emailPrefill={searchParams?.email ?? ""}
+      namePrefill={searchParams?.name ?? ""}
+    />
+  );
 }

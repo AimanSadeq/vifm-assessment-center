@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { Fragment, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Save, Plus, Trash2, Boxes, ClipboardList, Rocket, Info, FileText, Loader2, Sparkles } from "lucide-react";
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { RrVoucherPanel } from "@/components/shared/rr-voucher-panel";
+import { CollapsibleCard } from "@/components/shared/collapsible-card";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
 import type { RoleReadinessConfig } from "@/lib/role-readiness/config";
 import {
@@ -102,9 +103,8 @@ export function RoleEditor({ config, published, clients, assignedOrgId }: { conf
       </div>
 
       {/* Settings */}
-      <div className="rounded-xl border bg-card p-5">
-        <h2 className="text-sm font-semibold">Pass thresholds</h2>
-        <div className="mt-3 flex flex-wrap items-end gap-4">
+      <CollapsibleCard title="Pass thresholds" icon={Save} defaultOpen>
+        <div className="flex flex-wrap items-end gap-4">
           <label className="text-xs">Behavioural (Persona) pass %
             <Input type="number" min={0} max={100} value={personaPct} onChange={(e) => setPersonaPct(Number(e.target.value) || 0)} className="mt-1 w-32" />
           </label>
@@ -116,12 +116,17 @@ export function RoleEditor({ config, published, clients, assignedOrgId }: { conf
             <Save className="h-3.5 w-3.5" /> Save
           </Button>
         </div>
-      </div>
+      </CollapsibleCard>
 
       {/* Competencies */}
-      <div className="rounded-xl border bg-card p-5">
-        <h2 className="inline-flex items-center gap-1.5 text-sm font-semibold">
-          <ClipboardList className="h-4 w-4 text-[#5391D5]" /> Behavioural competencies + targets
+      <CollapsibleCard
+        title="Behavioural competencies + targets"
+        icon={ClipboardList}
+        defaultOpen
+        subtitle={`${Object.keys(comps).length} selected across ${blocksCovered}/${TOTAL_BLOCKS} building blocks`}
+      >
+        <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+          Tick the competencies this role requires and set each target level (1-5).
           <TooltipProvider delayDuration={150}>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -130,10 +135,6 @@ export function RoleEditor({ config, published, clients, assignedOrgId }: { conf
               <TooltipContent className="max-w-xs text-xs leading-snug">{TARGET_HELP}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
-        </h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Tick the competencies this role requires and set each target level (1-5) - hover the info icon for the scale.{" "}
-          {Object.keys(comps).length} selected across {blocksCovered}/{TOTAL_BLOCKS} building blocks.
         </p>
 
         <JdMatchBox onMatched={applyMatched} />
@@ -154,22 +155,30 @@ export function RoleEditor({ config, published, clients, assignedOrgId }: { conf
           </div>
         )}
 
-        {/* All competencies on one screen: 2-3 compact columns, no scroll. */}
+        {/* All competencies on one screen, grouped + labelled by cluster (building block). */}
         <div className="mt-3 grid grid-cols-1 gap-x-4 gap-y-0.5 rounded-lg border p-2 sm:grid-cols-2 xl:grid-cols-3">
-          {BEHAVIORAL_COMPETENCIES.map((c) => {
+          {BEHAVIORAL_COMPETENCIES.map((c, i) => {
             const on = comps[c.acCompetencyId] != null;
+            const newCluster = i === 0 || BEHAVIORAL_COMPETENCIES[i - 1].clusterNameEn !== c.clusterNameEn;
             return (
-              <div key={c.acCompetencyId} className={`flex items-center gap-1.5 rounded px-1.5 py-0.5 text-[11px] ${on ? "bg-[#5391D5]/5" : ""}`}>
-                <input type="checkbox" checked={on} onChange={() => toggleComp(c.acCompetencyId)} className="h-3.5 w-3.5 shrink-0" />
-                <span className="min-w-0 flex-1 truncate" title={`${c.nameEn} · ${c.clusterNameEn}`}>{c.nameEn}</span>
-                {on && (
-                  <select value={comps[c.acCompetencyId]} onChange={(e) => setComps((p) => ({ ...p, [c.acCompetencyId]: Number(e.target.value) }))}
-                    title={TARGET_HELP}
-                    className="shrink-0 rounded border border-border bg-background px-1 py-0.5 text-[10px]">
-                    {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>Target {n}</option>)}
-                  </select>
+              <Fragment key={c.acCompetencyId}>
+                {newCluster && (
+                  <div className="col-span-full mt-2 border-b border-[#5391D5]/20 pb-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#5391D5] first:mt-0">
+                    {c.clusterNameEn}
+                  </div>
                 )}
-              </div>
+                <div className={`flex items-center gap-1.5 rounded px-1.5 py-0.5 text-[11px] ${on ? "bg-[#5391D5]/5" : ""}`}>
+                  <input type="checkbox" checked={on} onChange={() => toggleComp(c.acCompetencyId)} className="h-3.5 w-3.5 shrink-0" />
+                  <span className="min-w-0 flex-1 truncate" title={`${c.nameEn} · ${c.clusterNameEn}`}>{c.nameEn}</span>
+                  {on && (
+                    <select value={comps[c.acCompetencyId]} onChange={(e) => setComps((p) => ({ ...p, [c.acCompetencyId]: Number(e.target.value) }))}
+                      title={TARGET_HELP}
+                      className="shrink-0 rounded border border-border bg-background px-1 py-0.5 text-[10px]">
+                      {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>Target {n}</option>)}
+                    </select>
+                  )}
+                </div>
+              </Fragment>
             );
           })}
         </div>
@@ -177,12 +186,12 @@ export function RoleEditor({ config, published, clients, assignedOrgId }: { conf
           onClick={() => run(() => setCompetenciesAction({ roleId: config.id, items: Object.entries(comps).map(([competencyId, target]) => ({ competencyId, target })) }), "Competencies saved")}>
           <Save className="h-3.5 w-3.5" /> Save competencies
         </Button>
-      </div>
+      </CollapsibleCard>
 
       {/* Technical areas + items */}
-      <div className="rounded-xl border bg-card p-5">
-        <h2 className="inline-flex items-center gap-1.5 text-sm font-semibold"><Boxes className="h-4 w-4 text-[#5391D5]" /> Technical areas + items</h2>
-        <div className="mt-3 space-y-4">
+      <CollapsibleCard title="Technical areas + items" icon={Boxes} defaultOpen
+        subtitle={`${config.technicalAreas.length} area(s)`}>
+        <div className="space-y-4">
           {config.technicalAreas.map((area) => (
             <div key={area.id} className="rounded-lg border p-3">
               <div className="flex items-center justify-between">
@@ -213,9 +222,9 @@ export function RoleEditor({ config, published, clients, assignedOrgId }: { conf
           ))}
         </div>
         <AddAreaForm roleId={config.id} disabled={pending} onAdded={() => router.refresh()} />
-      </div>
+      </CollapsibleCard>
 
-      {/* Vouchers (individual links or one shared multi-seat link) */}
+      {/* Vouchers (individual links or one shared multi-seat link) - collapsible */}
       <RrVoucherPanel
         onIssue={(input) =>
           issueRoleVouchersAction({
@@ -223,7 +232,10 @@ export function RoleEditor({ config, published, clients, assignedOrgId }: { conf
             organizationId: assignedOrgId,
             mode: input.mode,
             emails: input.emails,
+            delegates: input.delegates,
             seats: input.seats,
+            sendEmails: input.sendEmails,
+            origin: input.origin,
           })
         }
       />

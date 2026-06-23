@@ -32,7 +32,8 @@ export type EmailTemplate =
   | "course_quote_request"
   | "fluent_result"
   | "prehire_invitation"
-  | "prehire_client_report";
+  | "prehire_client_report"
+  | "role_readiness_invitation";
 
 /** Optional file attachment (e.g. a generated PDF report). */
 export type EmailAttachment = {
@@ -185,6 +186,20 @@ Please find attached the pre-hire screening report for {{candidateName}}{{empCla
 The report summarises the advisory composite and the per-stage results. As always, this is a screening signal to support your process - VIFM does not make the hiring decision; your team does.
 
 Please treat the attached report as confidential.
+
+Best regards,
+Virginia Institute of Finance and Management`,
+  },
+  role_readiness_invitation: {
+    subject: "Your VIFM Role Readiness assessment: {{roleName}}",
+    body: `Dear {{candidateName}},
+
+You've been invited to complete the {{roleName}} readiness assessment.
+
+It takes one sitting and covers two short sections. Start here (this link is unique to you):
+{{redeemUrl}}
+
+If the link doesn't open, copy and paste it into your browser.
 
 Best regards,
 Virginia Institute of Finance and Management`,

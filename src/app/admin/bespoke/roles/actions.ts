@@ -258,7 +258,10 @@ export async function issueRoleVouchersAction(input: {
   organizationId?: string | null;
   mode: "individual" | "pool";
   emails?: string[];
+  delegates?: { email: string; name?: string | null }[];
   seats?: number;
+  sendEmails?: boolean;
+  origin?: string;
 }): Promise<{ ok: true; vouchers: IssuedVoucher[] } | { error: string }> {
   if (!(await requireAdmin())) return { error: "Not authorized." };
   return createRoleReadinessVouchers({
@@ -266,7 +269,9 @@ export async function issueRoleVouchersAction(input: {
     organizationId: input.organizationId ?? null,
     mode: input.mode,
     emails: input.emails,
+    delegates: input.delegates,
     seats: input.seats,
+    emailOrigin: input.sendEmails && input.origin ? input.origin : null,
   });
 }
 

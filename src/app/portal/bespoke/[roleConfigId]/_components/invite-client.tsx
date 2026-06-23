@@ -13,7 +13,10 @@ export function InviteClient({ roleConfigId, orgParam }: { roleConfigId: string;
           roleConfigId,
           mode: input.mode,
           emails: input.emails,
+          delegates: input.delegates,
           seats: input.seats,
+          sendEmails: input.sendEmails,
+          origin: input.origin,
           orgParam,
         })
       }

@@ -10,6 +10,7 @@ import {
   type ExtractedCompetencyRecommendation,
 } from "@/lib/ai/jd-competency-extractor";
 import { generateTechnicalItems } from "@/lib/role-readiness/tech-generator";
+import { createRoleReadinessVouchers, type IssuedVoucher } from "@/lib/role-readiness/vouchers";
 import type { Competency } from "@/types/database";
 
 type Res = { ok: true; id?: string } | { error: string };
@@ -248,6 +249,25 @@ export async function inviteRoleCandidateAction(input: {
     .single();
   if (error || !data) return { error: error?.message ?? "Could not create candidate." };
   return { ok: true, token: data.access_token as string };
+}
+
+// Issue vouchers for a role (admin). Targets the assigned client org when the
+// product is assigned, else a global/template voucher (organizationId null).
+export async function issueRoleVouchersAction(input: {
+  roleId: string;
+  organizationId?: string | null;
+  mode: "individual" | "pool";
+  emails?: string[];
+  seats?: number;
+}): Promise<{ ok: true; vouchers: IssuedVoucher[] } | { error: string }> {
+  if (!(await requireAdmin())) return { error: "Not authorized." };
+  return createRoleReadinessVouchers({
+    roleConfigId: input.roleId,
+    organizationId: input.organizationId ?? null,
+    mode: input.mode,
+    emails: input.emails,
+    seats: input.seats,
+  });
 }
 
 // Match a job description to the VIFM 41-competency framework. Reuses the existing

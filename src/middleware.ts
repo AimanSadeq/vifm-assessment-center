@@ -146,7 +146,9 @@ const isProctorApiRoute = (pathname: string) =>
 // is derived server-side from the token. Bypass auth in dev and prod, like the
 // Pre-Hire applicant flow.
 const isRoleReadinessRoute = (pathname: string) =>
-  pathname.startsWith("/role-readiness/apply/") || pathname.startsWith("/api/role-readiness/");
+  pathname.startsWith("/role-readiness/apply/") ||
+  pathname.startsWith("/role-readiness/redeem") ||
+  pathname.startsWith("/api/role-readiness/");
 
 export async function middleware(request: NextRequest) {
   if (

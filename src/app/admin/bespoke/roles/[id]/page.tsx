@@ -24,11 +24,12 @@ export default async function RoleEditorPage({ params }: { params: { id: string 
   const sb = createServiceClient();
   const { data: pub } = await sb
     .from("bespoke_services")
-    .select("id, status")
+    .select("id, status, organization_id")
     .eq("role_config_id", params.id)
     .eq("kind", "role_readiness")
     .maybeSingle();
   const published = !!pub && (pub.status as string) === "active";
+  const assignedOrgId = (pub?.organization_id as string | null) ?? null;
 
   const clients = (await loadPlatformClients())
     .filter((c) => c.acId)
@@ -37,7 +38,7 @@ export default async function RoleEditorPage({ params }: { params: { id: string 
   return (
     <div className="space-y-6">
       <BackLink href="/admin/bespoke/roles" label="Roles" history />
-      <RoleEditor config={config} published={published} clients={clients} />
+      <RoleEditor config={config} published={published} clients={clients} assignedOrgId={assignedOrgId} />
     </div>
   );
 }

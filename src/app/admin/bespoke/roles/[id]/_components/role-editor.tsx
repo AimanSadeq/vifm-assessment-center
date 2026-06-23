@@ -3,18 +3,19 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Save, Plus, Trash2, Send, Copy, CheckCircle2, Boxes, ClipboardList, Rocket, Info, FileText, Loader2, Sparkles } from "lucide-react";
+import { Save, Plus, Trash2, Boxes, ClipboardList, Rocket, Info, FileText, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+import { RrVoucherPanel } from "@/components/shared/rr-voucher-panel";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
 import type { RoleReadinessConfig } from "@/lib/role-readiness/config";
 import {
   updateRoleAction, setCompetenciesAction, addAreaAction, removeAreaAction,
-  addItemAction, removeItemAction, publishRoleAction, unpublishRoleAction, inviteRoleCandidateAction,
-  matchCompetenciesFromJdAction, generateTechnicalItemsAction,
+  addItemAction, removeItemAction, publishRoleAction, unpublishRoleAction,
+  matchCompetenciesFromJdAction, generateTechnicalItemsAction, issueRoleVouchersAction,
 } from "../../actions";
 
 // VIFM BARS 1-5 target scale - shown on hover next to the competency targets.
@@ -26,7 +27,7 @@ const priorityToTarget = (p: "high" | "medium" | "low") => (p === "high" ? 4 : p
 
 type JdRec = { competencyId: string; competencyName: string; priority: "high" | "medium" | "low"; reasoning: string };
 
-export function RoleEditor({ config, published, clients }: { config: RoleReadinessConfig; published: boolean; clients: { id: string; name: string }[] }) {
+export function RoleEditor({ config, published, clients, assignedOrgId }: { config: RoleReadinessConfig; published: boolean; clients: { id: string; name: string }[]; assignedOrgId: string | null }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [assignOrg, setAssignOrg] = useState("");
@@ -214,8 +215,18 @@ export function RoleEditor({ config, published, clients }: { config: RoleReadine
         <AddAreaForm roleId={config.id} disabled={pending} onAdded={() => router.refresh()} />
       </div>
 
-      {/* Invite */}
-      <InviteCard roleId={config.id} disabled={pending} />
+      {/* Vouchers (individual links or one shared multi-seat link) */}
+      <RrVoucherPanel
+        onIssue={(input) =>
+          issueRoleVouchersAction({
+            roleId: config.id,
+            organizationId: assignedOrgId,
+            mode: input.mode,
+            emails: input.emails,
+            seats: input.seats,
+          })
+        }
+      />
     </div>
   );
 }
@@ -275,38 +286,6 @@ function AddItemForm({ roleId, areaId, disabled, onAdded }: { roleId: string; ar
           })}>Add</Button>
         <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
       </div>
-    </div>
-  );
-}
-
-function InviteCard({ roleId, disabled }: { roleId: string; disabled: boolean }) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [link, setLink] = useState("");
-  const [pending, start] = useTransition();
-  return (
-    <div className="rounded-xl border bg-card p-5">
-      <h2 className="inline-flex items-center gap-1.5 text-sm font-semibold"><Send className="h-4 w-4 text-[#5391D5]" /> Invite a candidate</h2>
-      <div className="mt-3 flex flex-wrap items-end gap-2">
-        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" className="min-w-40 flex-1" />
-        <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@org.com" className="min-w-48 flex-1" />
-        <Button size="sm" className="gap-1.5" disabled={pending || disabled}
-          onClick={() => start(async () => {
-            const res = await inviteRoleCandidateAction({ roleId, fullName: name, email });
-            if ("error" in res) { toast.error(res.error); return; }
-            const url = `${window.location.origin}/role-readiness/apply/${res.token}`;
-            setLink(url); setName(""); setEmail(""); toast.success("Candidate created - copy the link");
-          })}>
-          <Send className="h-3.5 w-3.5" /> Create invite link
-        </Button>
-      </div>
-      {link && (
-        <div className="mt-3 flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
-          <input readOnly value={link} onFocus={(e) => e.currentTarget.select()} className="flex-1 rounded-md border bg-muted px-2 py-1.5 font-mono text-xs" />
-          <button onClick={() => { navigator.clipboard.writeText(link); toast.success("Copied"); }} className="inline-flex items-center gap-1 rounded border px-2 py-1.5 text-xs hover:bg-muted"><Copy className="h-3 w-3" /> Copy</button>
-        </div>
-      )}
     </div>
   );
 }

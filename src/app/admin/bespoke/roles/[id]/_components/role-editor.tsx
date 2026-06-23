@@ -14,7 +14,7 @@ import type { RoleReadinessConfig } from "@/lib/role-readiness/config";
 import {
   updateRoleAction, setCompetenciesAction, addAreaAction, removeAreaAction,
   addItemAction, removeItemAction, publishRoleAction, unpublishRoleAction, inviteRoleCandidateAction,
-  matchCompetenciesFromJdAction,
+  matchCompetenciesFromJdAction, generateTechnicalItemsAction,
 } from "../../actions";
 
 // VIFM BARS 1-5 target scale - shown on hover next to the competency targets.
@@ -153,17 +153,18 @@ export function RoleEditor({ config, published, clients }: { config: RoleReadine
           </div>
         )}
 
-        <div className="mt-3 max-h-80 space-y-1 overflow-y-auto rounded-lg border p-2">
+        {/* All competencies on one screen: 2-3 compact columns, no scroll. */}
+        <div className="mt-3 grid grid-cols-1 gap-x-4 gap-y-0.5 rounded-lg border p-2 sm:grid-cols-2 xl:grid-cols-3">
           {BEHAVIORAL_COMPETENCIES.map((c) => {
             const on = comps[c.acCompetencyId] != null;
             return (
-              <div key={c.acCompetencyId} className={`flex items-center gap-2 rounded-md px-2 py-1.5 ${on ? "bg-[#5391D5]/5" : ""}`}>
-                <input type="checkbox" checked={on} onChange={() => toggleComp(c.acCompetencyId)} className="h-4 w-4" />
-                <span className="min-w-0 flex-1 truncate text-sm">{c.nameEn} <span className="text-[10px] text-muted-foreground">· {c.clusterNameEn}</span></span>
+              <div key={c.acCompetencyId} className={`flex items-center gap-1.5 rounded px-1.5 py-0.5 text-[11px] ${on ? "bg-[#5391D5]/5" : ""}`}>
+                <input type="checkbox" checked={on} onChange={() => toggleComp(c.acCompetencyId)} className="h-3.5 w-3.5 shrink-0" />
+                <span className="min-w-0 flex-1 truncate" title={`${c.nameEn} · ${c.clusterNameEn}`}>{c.nameEn}</span>
                 {on && (
                   <select value={comps[c.acCompetencyId]} onChange={(e) => setComps((p) => ({ ...p, [c.acCompetencyId]: Number(e.target.value) }))}
                     title={TARGET_HELP}
-                    className="rounded border border-border bg-background px-1.5 py-1 text-xs">
+                    className="shrink-0 rounded border border-border bg-background px-1 py-0.5 text-[10px]">
                     {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>Target {n}</option>)}
                   </select>
                 )}
@@ -185,13 +186,22 @@ export function RoleEditor({ config, published, clients }: { config: RoleReadine
             <div key={area.id} className="rounded-lg border p-3">
               <div className="flex items-center justify-between">
                 <div className="text-sm font-medium">{area.name_en} <span className="text-xs text-muted-foreground">· target {area.target_pct}% · {area.items.length} item(s)</span></div>
-                <button className="text-muted-foreground hover:text-destructive" disabled={pending}
-                  onClick={() => run(() => removeAreaAction({ roleId: config.id, areaId: area.id }), "Area removed")}><Trash2 className="h-4 w-4" /></button>
+                <div className="flex items-center gap-2">
+                  <button
+                    className="inline-flex items-center gap-1 rounded border px-2 py-1 text-[11px] font-medium text-[#5391D5] hover:bg-[#5391D5]/5 disabled:opacity-50"
+                    disabled={pending}
+                    title="AI-draft 4 questions for this area (you can edit/remove them after)"
+                    onClick={() => run(() => generateTechnicalItemsAction({ roleId: config.id, areaId: area.id, roleName: config.name_en, areaName: area.name_en, count: 4 }), "Questions generated")}>
+                    <Sparkles className="h-3 w-3" /> AI generate
+                  </button>
+                  <button className="text-muted-foreground hover:text-destructive" disabled={pending}
+                    onClick={() => run(() => removeAreaAction({ roleId: config.id, areaId: area.id }), "Area removed")}><Trash2 className="h-4 w-4" /></button>
+                </div>
               </div>
               <ul className="mt-2 space-y-1">
                 {area.items.map((it) => (
                   <li key={it.id} className="flex items-start justify-between gap-2 text-xs">
-                    <span className="min-w-0"><span className="text-muted-foreground">Q:</span> {it.stem_en} <span className="text-emerald-600">(ans: {it.options_en[it.correct_index]})</span></span>
+                    <span className="min-w-0"><span className="text-muted-foreground">Q:</span> {it.stem_en} <span className="text-emerald-600" title="Answer key - shown to admins only; the candidate never sees it">(answer: {it.options_en[it.correct_index]})</span></span>
                     <button className="text-muted-foreground hover:text-destructive" disabled={pending}
                       onClick={() => run(() => removeItemAction({ roleId: config.id, itemId: it.id }), "Item removed")}><Trash2 className="h-3.5 w-3.5" /></button>
                   </li>

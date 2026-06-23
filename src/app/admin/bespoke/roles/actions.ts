@@ -9,6 +9,7 @@ import {
   extractCompetenciesFromJdPdf,
   type ExtractedCompetencyRecommendation,
 } from "@/lib/ai/jd-competency-extractor";
+import { generateTechnicalItems } from "@/lib/role-readiness/tech-generator";
 import type { Competency } from "@/types/database";
 
 type Res = { ok: true; id?: string } | { error: string };
@@ -273,4 +274,31 @@ export async function matchCompetenciesFromJdAction(input: {
   }
   if (recs === null) return { error: "AI matching is unavailable right now - select competencies manually." };
   return { ok: true, recommendations: recs };
+}
+
+// AI-generate technical questions for an area and insert them (not flagged sample
+// - they're real authored content the admin can then review/edit/remove).
+export async function generateTechnicalItemsAction(input: {
+  roleId: string;
+  areaId: string;
+  roleName: string;
+  areaName: string;
+  count?: number;
+}): Promise<Res> {
+  if (!(await requireAdmin())) return { error: "Not authorized." };
+  const items = await generateTechnicalItems({ roleName: input.roleName, areaName: input.areaName, count: input.count });
+  if (items === null) return { error: "AI generation is unavailable right now - add questions manually." };
+  if (items.length === 0) return { error: "No questions were generated - try again or add manually." };
+  const sb = createServiceClient();
+  const rows = items.map((it, i) => ({
+    area_id: input.areaId,
+    stem_en: it.stem,
+    options_en: it.options,
+    correct_index: it.correctIndex,
+    sort_order: 100 + i,
+  }));
+  const { error } = await sb.from("rr_technical_items").insert(rows);
+  if (error) return { error: error.message };
+  revalidatePath(`/admin/bespoke/roles/${input.roleId}`);
+  return { ok: true };
 }

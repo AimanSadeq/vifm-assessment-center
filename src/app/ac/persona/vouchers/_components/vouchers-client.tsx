@@ -110,10 +110,6 @@ export function VouchersClient({
       toast.error("Pick a target role profile for a hiring assessment.");
       return;
     }
-    if (selectedCount === 0) {
-      toast.error("Select at least one competency, or choose Full profile.");
-      return;
-    }
     setBusy(true);
     const res = await generatePersonaVouchersAction({
       count,
@@ -125,7 +121,7 @@ export function VouchersClient({
       purpose,
       targetRoleProfileId: purpose === "hiring" ? targetRoleId || null : null,
       // Full selection -> empty (= full bank); a strict subset -> the chosen ids.
-      scopedCompetencyIds: isFull ? [] : [...selectedComps],
+      scopedCompetencyIds: isFull || selectedComps.size === 0 ? [] : [...selectedComps],
       itemFormat,
     });
     setBusy(false);
@@ -176,10 +172,6 @@ export function VouchersClient({
       toast.error("Pick a target role profile for a hiring assessment.");
       return;
     }
-    if (selectedCount === 0) {
-      toast.error("Select at least one competency, or choose Full profile.");
-      return;
-    }
     const parsed = parseDelegates(delegates);
     if (parsed.length === 0) {
       toast.error("Add at least one email (one per line, optionally email,name).");
@@ -196,7 +188,7 @@ export function VouchersClient({
       expiresAt: expiresAt || null,
       purpose,
       targetRoleProfileId: purpose === "hiring" ? targetRoleId || null : null,
-      scopedCompetencyIds: isFull ? [] : [...selectedComps],
+      scopedCompetencyIds: isFull || selectedComps.size === 0 ? [] : [...selectedComps],
       itemFormat,
     });
     setEmailing(false);
@@ -381,8 +373,8 @@ export function VouchersClient({
                 ))}
               </div>
               <p className="mt-1.5 text-xs text-muted-foreground">
-                {isFull
-                  ? `Full profile - all ${total} competencies (~${estItems} statements).`
+                {isFull || selectedCount === 0
+                  ? `Full profile - all ${total} competencies. The candidate answers the whole bank (leave as-is for a general link).`
                   : `${selectedCount} of ${total} competencies (~${estItems} statements). The candidate answers only these.`}
               </p>
             </div>

@@ -356,7 +356,17 @@ const T = {
   },
 } as const;
 
-export function PlatformLanding({ clientMode }: { clientMode?: ClientPortalMode } = {}) {
+// Configured bespoke products (e.g. Role Readiness) persisted in bespoke_services
+// and surfaced as launchable cards inside the Bespoke Services section.
+export type BespokeProduct = { id: string; nameEn: string; nameAr: string | null; roleConfigId: string | null };
+
+export function PlatformLanding({
+  clientMode,
+  bespokeProducts = [],
+}: {
+  clientMode?: ClientPortalMode;
+  bespokeProducts?: BespokeProduct[];
+} = {}) {
   const [lang, setLang] = useState<Lang>("en");
   useEffect(() => {
     try {
@@ -672,6 +682,26 @@ export function PlatformLanding({ clientMode }: { clientMode?: ClientPortalMode 
                 ))}
               </div>
             </Link>
+
+            {/* Configured products (e.g. Role Readiness) - launchable from the section. */}
+            {bespokeProducts.length > 0 && (
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {bespokeProducts.map((p) => (
+                  <Link
+                    key={p.id}
+                    href={p.roleConfigId ? `/admin/bespoke/roles/${p.roleConfigId}` : "/admin/bespoke/roles"}
+                    className="flex items-center justify-between gap-2 rounded-xl border border-[#5391D5]/30 bg-card p-3 transition-colors hover:border-[#5391D5]"
+                  >
+                    <span className="inline-flex items-center gap-2 text-sm font-medium text-[#010131]">
+                      <Boxes className="h-4 w-4 text-[#5391D5]" /> {rtl && p.nameAr ? p.nameAr : p.nameEn}
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#5391D5]">
+                      {lang === "ar" ? "فتح" : "Open"} <Arrow className="h-3 w-3" />
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
           </section>
         )}
       </main>

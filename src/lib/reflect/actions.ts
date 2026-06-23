@@ -861,7 +861,15 @@ export async function sendInvitationsForEngagement(
 
   if (!raters || raters.length === 0) return { count: 0, failed: 0 };
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "";
+  // Absolute base URL for the emailed link. NEXT_PUBLIC_APP_URL can be unset on
+  // some environments, which previously left baseUrl="" and produced a relative,
+  // broken link in the email. Fall back through NEXT_PUBLIC_SITE_URL to the
+  // production domain so the invitation always carries a clickable absolute URL
+  // (the in-app Copy-link already uses window.location.origin and was unaffected).
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
+    "https://caliber.viftraining.com";
   let count = 0;
   let failed = 0;
   const now = new Date().toISOString();

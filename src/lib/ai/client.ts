@@ -8,7 +8,12 @@ export function getAIClient(): Anthropic | null {
     return null;
   }
   if (!client) {
-    client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    // maxRetries=4 (up from the SDK default of 2): the API intermittently
+    // returns HTTP 529 "overloaded_error" (transient capacity throttle, flagged
+    // x-should-retry:true). The SDK retries 408/409/429/500/529 with exponential
+    // backoff; 4 retries rides out longer overload blips before any feature has
+    // to fall back. Benefits every AI path (CBI interview, Fluent, quiz, etc.).
+    client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 4 });
   }
   return client;
 }

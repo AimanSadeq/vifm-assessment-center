@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { DebriefRowActions } from "./_components/debrief-row-actions";
 import { ReflectReassessButton } from "./_components/reassess-button";
 import { LaunchButton } from "./_components/launch-button";
+import { RaterInvitations, type RaterInvite } from "./_components/rater-invitations";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -96,8 +97,12 @@ async function fetchEngagement(id: string) {
       .order("full_name"),
     sb
       .from("reflect_raters")
-      .select("id, rater_role, full_name, email, status, reflect_participants!inner(engagement_id)", { count: "exact" })
-      .eq("reflect_participants.engagement_id", id),
+      .select(
+        "id, rater_role, full_name, email, status, access_token, invited_at, reflect_participants!inner(engagement_id, full_name)",
+        { count: "exact" }
+      )
+      .eq("reflect_participants.engagement_id", id)
+      .order("rater_role"),
   ]);
 
   if (!engRes.data) return null;
@@ -118,6 +123,28 @@ async function fetchEngagement(id: string) {
     }>,
     participantCount: participantsRes.count ?? 0,
     raterCount: ratersRes.count ?? 0,
+    raters: ((ratersRes.data ?? []) as unknown as Array<{
+      id: string;
+      rater_role: string;
+      full_name: string;
+      email: string;
+      status: string;
+      access_token: string;
+      invited_at: string | null;
+      reflect_participants: { full_name: string } | { full_name: string }[] | null;
+    }>).map<RaterInvite>((r) => {
+      const rp = Array.isArray(r.reflect_participants) ? r.reflect_participants[0] : r.reflect_participants;
+      return {
+        id: r.id,
+        full_name: r.full_name,
+        email: r.email,
+        rater_role: r.rater_role,
+        status: r.status,
+        access_token: r.access_token,
+        invited_at: r.invited_at,
+        participant_name: rp?.full_name ?? "",
+      };
+    }),
   };
 }
 
@@ -128,7 +155,7 @@ export default async function ReflectEngagementDetailPage({ params }: Params) {
   if (!data) notFound();
   const t = await getServerT();
 
-  const { engagement, framework, participants, participantCount, raterCount } = data;
+  const { engagement, framework, participants, participantCount, raterCount, raters } = data;
   const status = STATUS_STYLE[engagement.status] ?? STATUS_STYLE.draft;
   const StatusIcon = status.icon;
 
@@ -413,6 +440,9 @@ export default async function ReflectEngagementDetailPage({ params }: Params) {
             </div>
           )}
         </section>
+
+        {/* Rater invitations - per-rater links + resend (email-independent fallback) */}
+        {raterCount > 0 && <RaterInvitations engagementId={engagement.id} raters={raters} />}
       </main>
     </div>
   );

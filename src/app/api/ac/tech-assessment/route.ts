@@ -147,24 +147,32 @@ async function createSession(
   }
 }
 
-async function loadSession(id: string): Promise<StoredTest | null> {
+type LoadedSession = { test: StoredTest; candidateId: string | null; engagementId: string | null };
+
+async function loadSession(id: string): Promise<LoadedSession | null> {
   try {
     const sb = createServiceClient();
+    const nowIso = new Date().toISOString();
+    // ATOMIC single-use claim: flip consumed_at null->now in ONE statement and
+    // only proceed if this call won the row (RETURNING). The previous
+    // SELECT-then-UPDATE let two concurrent /score calls both pass the
+    // unconsumed check, both score, and both issue a CREDENTIAL (replay). The
+    // WHERE also excludes expired sessions so the TTL is enforced in the same
+    // atomic step. No row back => already consumed or expired => reject.
     const { data, error } = await sb
       .from("tech_assessment_sessions")
-      .select("test, expires_at, consumed_at")
+      .update({ consumed_at: nowIso })
       .eq("id", id)
-      .single();
+      .is("consumed_at", null)
+      .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
+      .select("test, candidate_id, engagement_id")
+      .maybeSingle();
     if (error || !data || !data.test) return null;
-    if (data.expires_at && new Date(data.expires_at as string).getTime() < Date.now()) return null;
-    // Single-use: a consumed session can't be re-scored (no credential replay).
-    if (data.consumed_at) return null;
-    try {
-      await sb.from("tech_assessment_sessions").update({ consumed_at: new Date().toISOString() }).eq("id", id);
-    } catch {
-      /* ignore */
-    }
-    return data.test as StoredTest;
+    return {
+      test: data.test as StoredTest,
+      candidateId: (data.candidate_id as string | null) ?? null,
+      engagementId: (data.engagement_id as string | null) ?? null,
+    };
   } catch {
     return null;
   }
@@ -366,9 +374,19 @@ export async function POST(req: Request) {
 
   if (body.action === "score") {
     let test: StoredTest | null = null;
+    // For a SESSION run, the candidate/engagement come from the session (bound at
+    // start), never from the request body - a leaked session id must not let a
+    // caller mint a credential under another identity.
+    let sessionCandidateId: string | null = null;
+    let sessionEngagementId: string | null = null;
+    let fromSession = false;
     if (body.sessionId) {
-      test = await loadSession(body.sessionId);
-      if (!test) return NextResponse.json({ error: "invalid or expired session" }, { status: 400 });
+      const loaded = await loadSession(body.sessionId);
+      if (!loaded) return NextResponse.json({ error: "invalid or expired session" }, { status: 400 });
+      test = loaded.test;
+      sessionCandidateId = loaded.candidateId;
+      sessionEngagementId = loaded.engagementId;
+      fromSession = true;
     } else if (Array.isArray(body.items) && domainKey) {
       const domain = techDomainByKey(domainKey);
       // Items posted from the client are inherently un-trusted → indicative only.
@@ -393,8 +411,10 @@ export async function POST(req: Request) {
 
     const takerName = body.takerName?.trim() || null;
     const takerEmail = body.takerEmail?.trim() || null;
-    const candidateId = body.candidateId?.trim() || null;
-    const engagementId = body.engagementId?.trim() || null;
+    // Session run -> the session's bound identity (credential-integrity); items
+    // run is untrusted + indicative-only, so the body is acceptable there.
+    const candidateId = fromSession ? sessionCandidateId : (body.candidateId?.trim() || null);
+    const engagementId = fromSession ? sessionEngagementId : (body.engagementId?.trim() || null);
 
     // ── Certification gate: only a certified run that clears the cut-score
     //    earns a technical_proficiency credential. ──

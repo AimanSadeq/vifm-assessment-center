@@ -888,7 +888,7 @@ function QuestionInput({
              reversed (ضعيف 5 • ممتاز 1), which respondents misread as
              5=weak / 1=excellent. */}
         <span className="ms-3 text-xs text-muted-foreground" dir={rtl ? "rtl" : "ltr"}>
-          {rtl ? "١ = ضعيف • ٥ = ممتاز" : "1 = Low • 5 = High"}
+          {rtl ? "١ = لا أوافق بشدة • ٥ = أوافق بشدة" : "1 = Strongly disagree • 5 = Strongly agree"}
         </span>
       </div>
     );

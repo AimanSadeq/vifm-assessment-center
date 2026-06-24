@@ -188,6 +188,14 @@ export function buildPersonalAnalysis(args: {
             en: `Self-ratings (${s}) and the objective items (${o}) are well aligned - the self-assessment looks calibrated.`,
             ar: `تتوافق التقييمات الذاتية (${s}) مع البنود الموضوعية (${o}) بشكل جيد - ويبدو التقييم الذاتي معايَراً.`,
           };
+  } else if (args.objectiveCount != null && args.objectiveCount > 0 && args.objectiveCount < 4) {
+    // Too few objective items to calibrate reliably. Surface that the check was
+    // withheld rather than silently omitting it, so the verdict isn't read as if
+    // a self-vs-objective alignment check had passed.
+    calibration = {
+      en: `Calibration check withheld: only ${args.objectiveCount} objective item(s) were answered (4+ needed), so self-vs-objective alignment is not assessed here.`,
+      ar: `تعذّر إجراء فحص المعايرة: لم تُجب سوى عن ${args.objectiveCount} بند موضوعي (المطلوب 4 فأكثر)، لذا لم يُقيَّم التوافق بين التقييم الذاتي والموضوعي.`,
+    };
   }
 
   const basis: AnalysisBlock = {

@@ -7,6 +7,17 @@ import { toast } from "sonner";
 import { Mail, Send, Loader2, Check, AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { setRequisitionClientEmailAction, sendAllReportsToClientAction } from "../../actions";
 
 /**
@@ -18,10 +29,13 @@ export function ClientReportControls({
   requisitionId,
   currentEmail,
   lang,
+  unsentCount,
 }: {
   requisitionId: string;
   currentEmail: string | null;
   lang: "en" | "ar";
+  /** How many scored candidates would actually receive a report (drives the confirm copy). */
+  unsentCount: number;
 }) {
   const router = useRouter();
   const { t } = useTranslation();
@@ -53,7 +67,11 @@ export function ClientReportControls({
       return;
     }
     if (res.data.configured) {
-      toast.success(t("prehire.reportsAllSent", res.data));
+      const msg =
+        (res.data.skipped ?? 0) > 0
+          ? t("prehire.reportsAllSentSkipped", res.data)
+          : t("prehire.reportsAllSent", res.data);
+      toast.success(msg);
     } else {
       toast.warning(t("prehire.reportsNotConfigured"), { duration: 8000 });
     }
@@ -81,10 +99,27 @@ export function ClientReportControls({
           </Button>
         </div>
       </div>
-      <Button onClick={sendAll} disabled={sendingAll || !hasRecipient} className="gap-1.5">
-        {sendingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-        {sendingAll ? t("prehire.sendingAll") : t("prehire.sendAllReports")}
-      </Button>
+      {/* UA-8: confirm before an outward bulk email send; already-sent reports are skipped server-side. */}
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button disabled={sendingAll || !hasRecipient || unsentCount === 0} className="gap-1.5">
+            {sendingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {sendingAll ? t("prehire.sendingAll") : t("prehire.sendAllReports")}
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("prehire.confirmSendAllTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("prehire.confirmSendAllBody", { recipient: currentEmail ?? "" })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("prehire.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={sendAll}>{t("prehire.confirmSendAllCta")}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {!hasRecipient && (
         <p className="basis-full inline-flex items-center gap-1.5 text-xs text-amber-700">
           <AlertCircle className="h-3.5 w-3.5 shrink-0" /> {t("prehire.recipientHint")}

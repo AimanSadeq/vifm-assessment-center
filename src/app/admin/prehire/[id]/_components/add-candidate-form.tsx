@@ -8,6 +8,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { UserPlus, Mail, Loader2 } from "lucide-react";
 import { addCandidateAction, inviteAllPendingAction } from "../../actions";
 import { copyToClipboard } from "@/lib/utils/clipboard";
@@ -92,10 +103,27 @@ export function AddCandidateForm({ requisitionId }: { requisitionId: string }) {
             <UserPlus className="h-4 w-4" />
             {submitting ? t("prehire.adding") : t("prehire.addCandidate")}
           </Button>
-          <Button variant="outline" onClick={handleInviteAll} disabled={invitingAll} className="gap-1.5">
-            {invitingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
-            {invitingAll ? t("prehire.invitingAll") : t("prehire.inviteAll")}
-          </Button>
+          {/* UA-5: confirm before an outward bulk email send. */}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" disabled={invitingAll} className="gap-1.5">
+                {invitingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                {invitingAll ? t("prehire.invitingAll") : t("prehire.inviteAll")}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t("prehire.confirmInviteAllTitle")}</AlertDialogTitle>
+                <AlertDialogDescription>{t("prehire.confirmInviteAllBody")}</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t("prehire.cancel")}</AlertDialogCancel>
+                <AlertDialogAction onClick={handleInviteAll}>
+                  {t("prehire.confirmInviteAllCta")}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </CardContent>
     </Card>

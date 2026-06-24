@@ -5,7 +5,7 @@ import { VifmLogo } from "@/components/shared/vifm-logo";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle2, Download, Loader2 } from "lucide-react";
+import { Check, CheckCircle2, Download, Loader2 } from "lucide-react";
 import type { PrehireCandidateContext } from "@/lib/prehire/candidate-access";
 import type { PrehireStageKind } from "@/types/prehire";
 import { QuizStage } from "./quiz-stage";
@@ -32,6 +32,49 @@ const REC_TONE: Record<string, string> = {
   incomplete: "bg-slate-100 text-slate-700",
 };
 const STAGE_LABEL: Record<string, string> = { quiz: "Competency quiz", fluent: "English placement", cbi: "Behavioural interview" };
+
+// UX-1: a visual progress stepper so the candidate can see how many stages
+// remain and where they are, rather than a bare "Step N of M" line.
+function Stepper({
+  stageKinds,
+  doneSet,
+  current,
+}: {
+  stageKinds: PrehireStageKind[];
+  doneSet: Set<PrehireStageKind>;
+  current: PrehireStageKind | null;
+}) {
+  return (
+    <ol className="flex flex-wrap items-center gap-x-2 gap-y-1" aria-label="Assessment progress">
+      {stageKinds.map((k, i) => {
+        const isDone = doneSet.has(k);
+        const isCurrent = k === current;
+        return (
+          <li key={k} className="flex items-center gap-2">
+            <span
+              aria-current={isCurrent ? "step" : undefined}
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${
+                isDone
+                  ? "bg-emerald-600 text-white"
+                  : isCurrent
+                  ? "bg-[#5391D5] text-white"
+                  : "bg-slate-200 text-slate-500"
+              }`}
+            >
+              {isDone ? <Check className="h-3.5 w-3.5" /> : i + 1}
+            </span>
+            <span className={`text-xs font-medium ${isCurrent ? "text-[#010131]" : "text-slate-500"}`}>
+              {STAGE_LABEL[k] ?? k}
+            </span>
+            {i < stageKinds.length - 1 && (
+              <span className="mx-1 hidden h-px w-6 bg-slate-200 sm:block" aria-hidden="true" />
+            )}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
 
 export function ApplyFlow({ token, ctx, demo = false }: { token: string; ctx: PrehireCandidateContext; demo?: boolean }) {
   // The interactive stages this requisition asks for, in configured order.
@@ -79,13 +122,12 @@ export function ApplyFlow({ token, ctx, demo = false }: { token: string; ctx: Pr
       })
       .finally(() => setLoadingResult(false));
   }, [demo, allDone, demoResult, loadingResult, token]);
-  const stepIndex = current ? stageKinds.indexOf(current) + 1 : stageKinds.length;
   // Voluntary equal-opportunity monitoring runs once, AFTER consent and BEFORE
   // the first assessment (decoupled from scoring). Skip + submit both clear it.
   const demoComplete = !!ctx.candidate.demographics_submitted_at || demoDone;
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA]" dir="ltr">
+    <div className="min-h-screen bg-slate-50" dir="ltr">
       <header className="bg-[#010131] px-6 py-4">
         <div className="mx-auto flex max-w-2xl items-center justify-between">
           <VifmLogo variant="white" size="sm" />
@@ -100,12 +142,20 @@ export function ApplyFlow({ token, ctx, demo = false }: { token: string; ctx: Pr
             {ctx.requisition.clientName ? `${ctx.requisition.clientName} · ` : ""}
             Hi {ctx.candidate.full_name.split(" ")[0]}, welcome.
           </p>
-          {agreed && demoComplete && stageKinds.length > 0 && !allDone && (
-            <p className="mt-2 text-xs font-medium text-[#5391D5]">
-              Step {stepIndex} of {stageKinds.length}
-            </p>
+          {agreed && demoComplete && stageKinds.length > 0 && (
+            <div className="mt-3">
+              <Stepper stageKinds={stageKinds} doneSet={done} current={current} />
+            </div>
           )}
         </div>
+
+        {/* UX-5: a returning candidate (some stages already completed) gets a clear
+            "we saved your progress" cue rather than silently resuming. */}
+        {agreed && demoComplete && completedInit.size > 0 && !allDone && (
+          <div className="rounded-md border border-sky-200 bg-sky-50 p-3 text-xs text-sky-800">
+            Welcome back - we saved your progress. Picking up where you left off.
+          </div>
+        )}
 
         {error && (
           <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
@@ -120,9 +170,30 @@ export function ApplyFlow({ token, ctx, demo = false }: { token: string; ctx: Pr
                 As part of this application you&apos;ll complete a short assessment. Your responses
                 and results are processed by VIFM on behalf of{" "}
                 {ctx.requisition.clientName ?? "the hiring organization"} for the sole purpose of
-                evaluating your application, in line with applicable data-protection law. Results
-                are reviewed by a person - no decision is made automatically.
+                evaluating your application. Results are reviewed by a person - no decision is made
+                automatically.
               </p>
+              {/* UX-4: name the governing data-protection frameworks and the candidate's
+                  rights + retention, rather than a vague "applicable law" line. */}
+              <ul className="list-disc space-y-1 pl-5 text-xs text-muted-foreground">
+                <li>
+                  Processing follows applicable data-protection law - UAE Federal Decree-Law No. 45
+                  of 2021, the Saudi Personal Data Protection Law (PDPL), and the GDPR where it
+                  applies.
+                </li>
+                <li>
+                  Your data is retained for up to 2 years unless a longer period is contractually
+                  agreed, then deleted.
+                </li>
+                <li>
+                  You may request access to or correction of your data, and you may withdraw consent
+                  at any time, by contacting the hiring organization.
+                </li>
+                <li>
+                  Any equal-opportunity information requested on the next screen is voluntary and
+                  never affects your result.
+                </li>
+              </ul>
               <div className="flex items-start gap-3">
                 <Checkbox id="agree" checked={agree} onCheckedChange={(c) => setAgree(c === true)} />
                 <label htmlFor="agree" className="text-sm leading-relaxed">
@@ -157,7 +228,7 @@ export function ApplyFlow({ token, ctx, demo = false }: { token: string; ctx: Pr
         {allDone && demoComplete && !demo && (
           <Card>
             <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-              <CheckCircle2 className="h-10 w-10 text-[#00843D]" />
+              <CheckCircle2 className="h-10 w-10 text-emerald-600" />
               <h2 className="text-lg font-semibold text-[#010131]">Thank you</h2>
               <p className="max-w-sm text-sm text-muted-foreground">
                 Your responses have been submitted. The hiring team will review them and be in
@@ -172,7 +243,7 @@ export function ApplyFlow({ token, ctx, demo = false }: { token: string; ctx: Pr
           <Card>
             <CardContent className="space-y-5 py-8">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-6 w-6 text-[#00843D]" />
+                <CheckCircle2 className="h-6 w-6 text-emerald-600" />
                 <h2 className="text-lg font-semibold text-[#010131]">Screening complete</h2>
               </div>
 

@@ -9,7 +9,7 @@ export default async function PreHireApplyPage({ params }: { params: { token: st
 
   if (!ctx) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F5F7FA] p-6">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
         <div className="max-w-md text-center space-y-3">
           <VifmLogo variant="color" size="md" className="mx-auto" />
           <h1 className="text-xl font-semibold text-[#010131]">This link isn&apos;t valid</h1>

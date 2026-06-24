@@ -8,6 +8,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { certifyPrehireCandidateAction } from "@/app/admin/prehire/actions";
 
 export function CertifyForm({
@@ -70,13 +81,41 @@ export function CertifyForm({
           placeholder="Any context for the client - e.g. confirms the AI read, or a caveat to weigh."
         />
       </div>
-      <Button onClick={submit} disabled={pending || !name.trim()}>
-        {pending ? (
-          <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Working...</>
-        ) : (
-          <><BadgeCheck className="mr-2 h-4 w-4" /> {alreadyCertified ? "Update certification" : "Certify result"}</>
-        )}
-      </Button>
+      {alreadyCertified ? (
+        // UA-7: confirm before overwriting an existing certification.
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button disabled={pending || !name.trim()}>
+              {pending ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Working...</>
+              ) : (
+                <><BadgeCheck className="mr-2 h-4 w-4" /> Update certification</>
+              )}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Overwrite the existing certification?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This candidate is already certified. Continuing replaces the recorded reviewer name,
+                notes, and date with the values above. The previous certification is not kept.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={submit}>Update certification</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      ) : (
+        <Button onClick={submit} disabled={pending || !name.trim()}>
+          {pending ? (
+            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Working...</>
+          ) : (
+            <><BadgeCheck className="mr-2 h-4 w-4" /> Certify result</>
+          )}
+        </Button>
+      )}
     </div>
   );
 }

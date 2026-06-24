@@ -134,6 +134,12 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
   });
   const ranked = rankByComposite(scored);
 
+  // UA-8: how many scored candidates would actually receive a report on a "Send
+  // all" (have a completed stage and have not been sent yet) - drives the confirm.
+  const unsentReportCount = candidates.filter(
+    (c) => (c.prehire_stage_results ?? []).some((s) => s.status === "completed") && !reportSentById.has(c.id)
+  ).length;
+
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-6 py-8">
       <BackLink href="/admin/prehire" label={t("prehire.backToReqs")} />
@@ -147,9 +153,25 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
             <Badge variant="outline">{statusLabel(req.status)}</Badge>
             {req.english_required && <Badge variant="secondary">{t("prehire.englishBadge")}</Badge>}
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            {t("prehire.stagesPrefix")} {plan.map((s) => t(`prehire.stageLabels.${s.kind}`)).join(" · ") || t("prehire.stagesNone")}
-          </p>
+          {/* UA-11: show each stage's weight + cut-score + required flag, not labels alone. */}
+          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+            <span>{t("prehire.stagesPrefix")}</span>
+            {plan.length === 0 ? (
+              <span>{t("prehire.stagesNone")}</span>
+            ) : (
+              plan.map((s) => (
+                <span
+                  key={s.kind}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-input bg-muted/30 px-2 py-0.5"
+                >
+                  <span className="font-medium text-foreground">{t(`prehire.stageLabels.${s.kind}`)}</span>
+                  <span>{Math.round(s.weight * 100)}%</span>
+                  <span>{s.cut_score == null ? t("prehire.stageNoCut") : t("prehire.stageCutShort", { cut: s.cut_score })}</span>
+                  {s.required && <span className="font-medium text-amber-700">{t("prehire.stageRequiredShort")}</span>}
+                </span>
+              ))
+            )}
+          </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <Link
@@ -186,6 +208,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
         requisitionId={req.id as string}
         currentEmail={clientEmail}
         lang={locale === "ar" ? "ar" : "en"}
+        unsentCount={unsentReportCount}
       />
 
       <Card>
@@ -198,6 +221,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
               {t("prehire.noCandidates")}
             </p>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -305,6 +329,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
           <p className="mt-4 text-xs text-muted-foreground">
             {t("prehire.signalNote")}

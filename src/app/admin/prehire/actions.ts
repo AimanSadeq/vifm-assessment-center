@@ -663,9 +663,23 @@ export async function sendAllReportsToClientAction(requisitionId: string, lang?:
     (r.prehire_stage_results ?? []).some((s) => s.status === "completed")
   );
 
+  // UA-8: skip candidates whose report was already delivered, so a repeated
+  // "Send all" click can't spam the client with duplicate emails. Read
+  // report_sent_at separately (tolerant of a pre-00063 DB, like the detail page).
+  const alreadySent = new Set<string>();
+  const { data: sentRows } = await svc
+    .from("prehire_candidates")
+    .select("id, report_sent_at")
+    .eq("requisition_id", requisitionId);
+  for (const r of (sentRows ?? []) as { id: string; report_sent_at: string | null }[]) {
+    if (r.report_sent_at) alreadySent.add(r.id);
+  }
+  const toSend = sendable.filter((r) => !alreadySent.has(r.id));
+  const skipped = sendable.length - toSend.length;
+
   let sent = 0; // counts only real (emailed) sends, not dev mocks
   let lastError: string | null = null;
-  for (const r of sendable) {
+  for (const r of toSend) {
     const res = await deliverReport(r.id, useLang, { uid: caller.uid, isDev: caller.isDev });
     if (res.ok) {
       if (res.emailed) sent += 1;
@@ -675,6 +689,6 @@ export async function sendAllReportsToClientAction(requisitionId: string, lang?:
   }
 
   revalidatePath(`/admin/prehire/${requisitionId}`);
-  if (sent === 0 && lastError) return { error: lastError };
-  return { data: { sent, total: sendable.length, configured: isEmailConfigured() } };
+  if (sent === 0 && skipped === 0 && lastError) return { error: lastError };
+  return { data: { sent, total: toSend.length, skipped, configured: isEmailConfigured() } };
 }

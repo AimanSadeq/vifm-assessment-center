@@ -7,7 +7,10 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Redeem your screening code · VIFM Pre-Hire®" };
 
 type Props = {
-  searchParams?: { code?: string; name?: string; email?: string; company?: string };
+  // Only the voucher CODE is honoured from the URL. name and email are NOT
+  // pre-filled - a crafted link pre-filling someone else's PII is a phishing
+  // vector (same fix applied to the ARC and Persona redeem pages).
+  searchParams?: { code?: string; company?: string };
 };
 
 /**
@@ -45,8 +48,6 @@ export default function PrehireRedeemPage({ searchParams }: Props) {
           <CardContent>
             <RedeemForm
               initialCode={searchParams?.code?.trim() ?? ""}
-              initialName={searchParams?.name?.trim() ?? ""}
-              initialEmail={searchParams?.email?.trim() ?? ""}
               initialCompany={searchParams?.company?.trim() ?? ""}
             />
           </CardContent>

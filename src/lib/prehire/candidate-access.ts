@@ -34,6 +34,8 @@ export type PrehireCandidateContext = {
   requisition: {
     id: string;
     title: string;
+    /** Lifecycle status (open/closed/archived). Stage routes reject closed/archived requisitions. */
+    status: string;
     english_required: boolean;
     stage_config: PrehireStagePlanEntry[];
     /** CAL-PRE-502: explicit quiz competency set (competencies.id[]). null = legacy
@@ -63,7 +65,7 @@ export async function findCandidateByToken(
 
   const { data: req } = await svc
     .from("prehire_requisitions")
-    .select("id, title, english_required, stage_config, role_profile_id, organizations(name)")
+    .select("id, title, status, english_required, stage_config, role_profile_id, organizations(name)")
     .eq("id", cand.requisition_id)
     .maybeSingle();
   if (!req) return null;
@@ -107,6 +109,7 @@ export async function findCandidateByToken(
     requisition: {
       id: req.id as string,
       title: req.title as string,
+      status: (req.status as string) ?? "open",
       english_required: !!req.english_required,
       stage_config: (req.stage_config ?? []) as PrehireStagePlanEntry[],
       competency_ids: competencyIds && competencyIds.length > 0 ? competencyIds : null,
@@ -144,7 +147,7 @@ export async function rescoreCandidate(candidateId: string): Promise<void> {
   const result = computeComposite(plan, results);
 
   const complete = result.recommendation !== "incomplete";
-  await svc
+  const { error: updateError } = await svc
     .from("prehire_candidates")
     .update({
       composite_score: result.composite,
@@ -153,4 +156,5 @@ export async function rescoreCandidate(candidateId: string): Promise<void> {
       completed_at: complete ? new Date().toISOString() : null,
     })
     .eq("id", candidateId);
+  if (updateError) throw new Error(`rescoreCandidate failed: ${updateError.message}`);
 }

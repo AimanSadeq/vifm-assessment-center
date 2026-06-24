@@ -7,6 +7,11 @@ export async function POST(_req: Request, { params }: { params: { token: string 
   const ctx = await findCandidateByToken(params.token);
   if (!ctx) return NextResponse.json({ error: "Invalid link" }, { status: 404 });
 
+  // Idempotency: consent_at is the legal record of when consent was first given.
+  // Re-submission must not overwrite it (would lose the precise first-consent
+  // timestamp required for UAE PDPL / GDPR compliance evidence).
+  if (ctx.candidate.consent_at) return NextResponse.json({ ok: true });
+
   const svc = createServiceClient();
   const { error } = await svc
     .from("prehire_candidates")

@@ -67,6 +67,12 @@ function clientPayload(test: FluentTest, tts: boolean, skills: FluentSkill[]): P
 export async function POST(_req: Request, { params }: { params: { token: string } }) {
   const ctx = await findCandidateByToken(params.token);
   if (!ctx) return NextResponse.json({ error: "Invalid link" }, { status: 404 });
+  if (!ctx.candidate.consent_at) {
+    return NextResponse.json({ error: "Consent is required before starting an assessment." }, { status: 403 });
+  }
+  if (ctx.requisition.status !== "open") {
+    return NextResponse.json({ error: "This screening is no longer accepting submissions." }, { status: 403 });
+  }
   const fluentEntry = ctx.requisition.stage_config.find((s) => s.kind === "fluent");
   if (!fluentEntry) {
     return NextResponse.json({ error: "English test not configured for this role" }, { status: 400 });

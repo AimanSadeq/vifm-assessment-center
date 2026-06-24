@@ -9,6 +9,9 @@ type CbiDetail = { history?: CbiMessage[] } | null;
 export async function POST(_req: Request, { params }: { params: { token: string } }) {
   const ctx = await findCandidateByToken(params.token);
   if (!ctx) return NextResponse.json({ error: "Invalid link" }, { status: 404 });
+  if (!ctx.candidate.consent_at) {
+    return NextResponse.json({ error: "Consent is required before submitting an assessment." }, { status: 403 });
+  }
 
   const svc = createServiceClient();
   const { data: stage } = await svc
@@ -38,8 +41,12 @@ export async function POST(_req: Request, { params }: { params: { token: string 
     language: "en",
   });
 
-  // BARS 1–5 → 0–100 for the composite.
-  const normalized = Math.round(((score.bars_rating - 1) / 4) * 100);
+  // BARS 1–5 → 0–100 for the composite. Clamp defensively before persisting:
+  // scoreCbiInterview is AI-derived and could return an out-of-range value on
+  // a prompt-injection or hallucination; clamping here keeps the stored row
+  // consistent with what computeComposite would produce.
+  const safeBars = Math.max(1, Math.min(5, score.bars_rating));
+  const normalized = Math.round(((safeBars - 1) / 4) * 100);
   const cut = ctx.requisition.stage_config.find((s) => s.kind === "cbi")?.cut_score ?? null;
   const passed = cut == null ? true : normalized >= cut;
 
@@ -47,7 +54,7 @@ export async function POST(_req: Request, { params }: { params: { token: string 
     .from("prehire_stage_results")
     .update({
       status: "completed",
-      raw_score: score.bars_rating,
+      raw_score: safeBars,
       normalized_score: normalized,
       passed,
       detail: { history, score },

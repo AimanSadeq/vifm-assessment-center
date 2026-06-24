@@ -7,7 +7,7 @@ import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { createClientOrganization } from "@/lib/clients/registry";
 import { sendEmail, isEmailConfigured } from "@/lib/integrations/email";
 import { logPrehireEvent } from "@/lib/prehire/audit";
-import { rescoreCandidate } from "@/lib/prehire/candidate-access";
+import { rescoreCandidate, DEMO_REQ_TITLE } from "@/lib/prehire/candidate-access";
 import { buildPrehireCandidatePdf } from "@/lib/reports/prehire-candidate-pdf";
 import { uuidish } from "@/lib/validations/ids";
 import { DEMO_ORG_NAME, DEMO_ORG_NAME_AR } from "@/lib/demo/constants";
@@ -333,7 +333,6 @@ export async function addCandidateAction(input: unknown) {
 // requisition, then mints a fresh anonymous candidate and returns its token so
 // the caller drops straight into the real apply flow. Everything lands under the
 // demo org, so the Demo-data purge removes it.
-const DEMO_REQ_TITLE = "Demo Screening (self-serve)";
 const DEMO_STAGE_PLAN: PrehireStagePlanEntry[] = [
   { kind: "quiz", weight: 0.4, cut_score: 60, required: true },
   { kind: "fluent", weight: 0.3, cut_score: 50, required: true },

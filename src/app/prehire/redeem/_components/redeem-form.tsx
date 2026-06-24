@@ -9,19 +9,17 @@ import { redeemPrehireVoucherAction } from "../actions";
 
 export function RedeemForm({
   initialCode,
-  initialName,
-  initialEmail,
   initialCompany,
 }: {
   initialCode: string;
-  initialName: string;
-  initialEmail: string;
+  // name and email are intentionally NOT pre-filled from the URL - a crafted
+  // link that pre-fills someone else's PII is a phishing vector.
   initialCompany: string;
 }) {
   const router = useRouter();
   const [code, setCode] = useState(initialCode);
-  const [name, setName] = useState(initialName);
-  const [email, setEmail] = useState(initialEmail);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [company, setCompany] = useState(initialCompany);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

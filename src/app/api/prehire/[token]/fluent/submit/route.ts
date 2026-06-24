@@ -48,6 +48,9 @@ type Body = {
 export async function POST(req: Request, { params }: { params: { token: string } }) {
   const ctx = await findCandidateByToken(params.token);
   if (!ctx) return NextResponse.json({ error: "Invalid link" }, { status: 404 });
+  if (!ctx.candidate.consent_at) {
+    return NextResponse.json({ error: "Consent is required before submitting an assessment." }, { status: 403 });
+  }
 
   const body = (await req.json().catch(() => null)) as Body | null;
 

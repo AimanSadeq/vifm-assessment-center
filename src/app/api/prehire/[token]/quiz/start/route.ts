@@ -121,6 +121,13 @@ function allocate(count: number, total: number): number[] {
 export async function POST(_req: Request, { params }: { params: { token: string } }) {
   const ctx = await findCandidateByToken(params.token);
   if (!ctx) return NextResponse.json({ error: "Invalid link" }, { status: 404 });
+  // Consent must be recorded before any stage can start (UAE PDPL / GDPR).
+  if (!ctx.candidate.consent_at) {
+    return NextResponse.json({ error: "Consent is required before starting an assessment." }, { status: 403 });
+  }
+  if (ctx.requisition.status !== "open") {
+    return NextResponse.json({ error: "This screening is no longer accepting submissions." }, { status: 403 });
+  }
   if (!ctx.requisition.stage_config.some((s) => s.kind === "quiz")) {
     return NextResponse.json({ error: "Quiz not configured for this role" }, { status: 400 });
   }

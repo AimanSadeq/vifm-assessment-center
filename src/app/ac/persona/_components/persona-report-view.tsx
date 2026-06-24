@@ -348,7 +348,7 @@ export function PersonaReportView({
                 {c.drivers.length > 0 ? (
                   <div className="mt-1.5 flex flex-wrap gap-1">
                     {c.drivers.map((d, j) => (
-                      <span key={`d-${i}-${j}`} className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] text-blue-900">
+                      <span key={`d-${i}-${j}`} className="inline-flex items-center gap-1 rounded-full border border-[#5391D5]/30 bg-[#5391D5]/5 px-2 py-0.5 text-[10px] text-[#010131]">
                         <span className="font-medium">{d.label}</span>
                         <span className="opacity-70 tabular-nums">{tx("gap", "فجوة")} {d.gap.toFixed(1)} · ×{d.relevance}</span>
                       </span>

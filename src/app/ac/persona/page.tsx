@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Ticket, Users, FileClock, ClipboardList, Layers } from "lucide-react";
+import { Ticket, Users, FileClock, ClipboardList } from "lucide-react";
 import { BackLink } from "@/components/shared/back-link";
 import { AllServicesLink } from "@/components/shared/all-services-link";
 import { DesignTargetRolesLink } from "@/components/shared/design-target-roles-link";
@@ -32,12 +32,6 @@ export default async function PersonaPage({ searchParams }: { searchParams?: { d
     <div className="mx-auto max-w-3xl px-6 py-8">
       <BackLink href="/" label="Back" history />
       <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
-        <Link
-          href="/ac/persona/roles"
-          className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted"
-        >
-          <Layers className="h-3.5 w-3.5" /> Design Target Roles
-        </Link>
         <Link
           href="/ac/persona/results"
           className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted"

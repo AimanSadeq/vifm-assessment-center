@@ -806,8 +806,8 @@ export function PersonaStandaloneClient({
              non-staff taker) - every Persona report is an admin/client
              deliverable. Staff testing the instrument still see the report. */
           <div className="rounded-xl border bg-card p-10 text-center" dir={ar ? "rtl" : "ltr"}>
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-2xl text-emerald-700">
-              ✓
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+              <CheckCircle2 className="h-7 w-7" />
             </div>
             <h2 className="text-lg font-semibold text-[#010131]">
               {tx("Your assessment has been submitted", "تم إرسال تقييمك")}
@@ -1227,7 +1227,7 @@ function AcademyCourses({
                   <span
                     key={`${c.course_id}-d-${i}`}
                     title={d.rationale ?? undefined}
-                    className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] text-blue-900"
+                    className="inline-flex items-center gap-1 rounded-full border border-[#5391D5]/30 bg-[#5391D5]/5 px-2 py-0.5 text-[10px] text-[#010131]"
                   >
                     <span className="font-medium">{ar && d.label_ar ? d.label_ar : d.label}</span>
                     <span className="tabular-nums opacity-70">{tx("gap", "فجوة")} {d.gap.toFixed(1)} · ×{d.relevance}</span>

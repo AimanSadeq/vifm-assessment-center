@@ -5,6 +5,10 @@ import { nextInterviewerTurn, MAX_CANDIDATE_ANSWERS, type CbiMessage } from "@/l
 
 type CbiDetail = { history?: CbiMessage[] } | null;
 
+// I-9: per-answer length clamp - a single candidate turn can't store an
+// unbounded blob (also caps the prompt size sent to the model).
+const MAX_ANSWER_CHARS = 4000;
+
 function competencyFor(title: string) {
   return {
     id: "prehire-cbi",
@@ -29,7 +33,7 @@ export async function POST(req: Request, { params }: { params: { token: string }
   }
 
   const body = (await req.json().catch(() => null)) as { answer?: string } | null;
-  const answer = (body?.answer ?? "").toString().trim();
+  const answer = (body?.answer ?? "").toString().trim().slice(0, MAX_ANSWER_CHARS);
 
   const svc = createServiceClient();
   const { data: stage } = await svc
@@ -54,6 +58,15 @@ export async function POST(req: Request, { params }: { params: { token: string }
       message: last.text,
       shouldConclude: answered >= MAX_CANDIDATE_ANSWERS,
     });
+  }
+
+  // I-9: hard server-side cap on transcript length. Without this a client could
+  // POST unlimited answers, each appending to the stored history and triggering
+  // another model call - unbounded storage + cost. Once MAX_CANDIDATE_ANSWERS is
+  // reached the interview is over; conclude without another turn or DB write.
+  const priorCandidateAnswers = history.filter((m) => m.role === "candidate").length;
+  if (answer && priorCandidateAnswers >= MAX_CANDIDATE_ANSWERS) {
+    return NextResponse.json({ done: true });
   }
 
   if (answer) history.push({ role: "candidate", text: answer });

@@ -36,6 +36,12 @@ export type PrehireCandidateContext = {
     title: string;
     /** Lifecycle status (open/closed/archived). Stage routes reject closed/archived requisitions. */
     status: string;
+    /** I-8: explicit demo flag (migration 00163). Gates the candidate self-view of
+     *  results/report on-screen. Resolved tolerantly - true when the column says so;
+     *  falls back to the legacy title match only when the column is absent
+     *  (pre-migration). A real requisition that merely shares the demo title is NOT
+     *  treated as a demo once 00163 is applied. */
+    is_demo: boolean;
     english_required: boolean;
     stage_config: PrehireStagePlanEntry[];
     /** CAL-PRE-502: explicit quiz competency set (competencies.id[]). null = legacy
@@ -84,6 +90,22 @@ export async function findCandidateByToken(
     competencyIds = Array.isArray(raw) ? (raw as string[]).filter((x) => typeof x === "string") : null;
   }
 
+  // Tolerant: is_demo exists only after migration 00163. Separate query so a
+  // pre-migration DB doesn't error the main select; a missing column falls back
+  // to the legacy title match (I-8). Once the column exists, the explicit flag
+  // wins - a real requisition sharing the demo title is no longer a demo.
+  let isDemo = false;
+  const { data: demoRow } = await svc
+    .from("prehire_requisitions")
+    .select("is_demo")
+    .eq("id", req.id)
+    .maybeSingle();
+  if (demoRow && "is_demo" in demoRow) {
+    isDemo = (demoRow as { is_demo: unknown }).is_demo === true;
+  } else {
+    isDemo = (req.title as string) === DEMO_REQ_TITLE;
+  }
+
   // Tolerant: the demographics column exists only after migration 00051. Query
   // it separately so a pre-migration DB doesn't break the whole apply flow
   // (a missing column would error the main select and make valid links look dead).
@@ -110,6 +132,7 @@ export async function findCandidateByToken(
       id: req.id as string,
       title: req.title as string,
       status: (req.status as string) ?? "open",
+      is_demo: isDemo,
       english_required: !!req.english_required,
       stage_config: (req.stage_config ?? []) as PrehireStagePlanEntry[],
       competency_ids: competencyIds && competencyIds.length > 0 ? competencyIds : null,

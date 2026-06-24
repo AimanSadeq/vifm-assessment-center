@@ -28,7 +28,7 @@ import {
   type WritingScore,
   type SpeakingScore,
 } from "@/lib/ai/fluent-english";
-import type { PronunciationScore } from "@/lib/integrations/speech";
+import { isAzureSpeechConfigured, type PronunciationScore } from "@/lib/integrations/speech";
 import { resolveFluentSkills, FLUENT_SKILLS, type FluentSkill } from "@/types/prehire";
 import { computeIntegritySignal, type IntegrityFlags } from "@/lib/scoring/integrity";
 
@@ -44,6 +44,37 @@ type Body = {
   pronunciation?: PronunciationScore | null;
   integrityFlags?: IntegrityFlags;
 };
+
+const clamp100 = (n: unknown): number => {
+  const x = typeof n === "number" && Number.isFinite(n) ? n : 0;
+  return Math.min(100, Math.max(0, x));
+};
+
+/**
+ * S-6: the pronunciation score arrives in the POST body, so it is candidate-
+ * controlled, and it contributes 0.3 of the speaking CEFR (a posted 100 can
+ * lift speaking ~2 bands). Two guards before it is allowed to move the band:
+ *   1. Only honour it when Azure Speech is configured server-side - otherwise
+ *      there is no trustworthy acoustic source, so a posted value would be pure
+ *      inflation and we discard it (transcript-only scoring, the safe default).
+ *   2. Clamp every sub-score into [0,100] so an out-of-range value can't skew
+ *      the blend.
+ * Residual boundary: even with Azure on, the value is client-reported; the
+ * fully robust design would assess pronunciation server-side from the audio.
+ */
+function sanitizePronunciation(
+  raw: PronunciationScore | null | undefined
+): PronunciationScore | null {
+  if (!raw || typeof raw !== "object") return null;
+  if (!isAzureSpeechConfigured()) return null;
+  return {
+    accuracy: clamp100(raw.accuracy),
+    fluency: clamp100(raw.fluency),
+    completeness: clamp100(raw.completeness),
+    prosody: raw.prosody == null ? null : clamp100(raw.prosody),
+    pron: clamp100(raw.pron),
+  };
+}
 
 export async function POST(req: Request, { params }: { params: { token: string } }) {
   const ctx = await findCandidateByToken(params.token);
@@ -102,8 +133,12 @@ export async function POST(req: Request, { params }: { params: { token: string }
           samples,
         })
       : undefined;
-  // Blend Azure pronunciation (acoustic) into the Claude content score.
-  const speaking = speakingBase ? blendPronunciation(speakingBase, body?.pronunciation ?? null) : undefined;
+  // Blend Azure pronunciation (acoustic) into the Claude content score - but
+  // only after sanitizing the client-supplied value (S-6: gate on Azure being
+  // configured + clamp each sub-score).
+  const speaking = speakingBase
+    ? blendPronunciation(speakingBase, sanitizePronunciation(body?.pronunciation))
+    : undefined;
 
   const result = computeFluentResult({
     // The stored test is already filtered to the selected receptive skills, so

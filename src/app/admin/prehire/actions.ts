@@ -379,6 +379,12 @@ export async function startPrehireDemoAction(): Promise<{ data: { token: string 
       reqId = ins.data.id as string;
     }
 
+    // I-8: mark as a demo requisition so the candidate self-view gate keys on an
+    // explicit flag, not the (brittle) title string. Best-effort - the is_demo
+    // column exists only after migration 00163, so a pre-migration DB no-ops here
+    // (the candidate-access fallback still resolves demo by title until applied).
+    await svc.from("prehire_requisitions").update({ is_demo: true }).eq("id", reqId);
+
     const stamp = Date.now().toString(36);
     const cand = await svc
       .from("prehire_candidates")

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { findCandidateByToken, DEMO_REQ_TITLE } from "@/lib/prehire/candidate-access";
+import { findCandidateByToken } from "@/lib/prehire/candidate-access";
 import { buildPrehireCandidatePdf } from "@/lib/reports/prehire-candidate-pdf";
 
 export const runtime = "nodejs";
@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request, { params }: { params: { token: string } }) {
   const ctx = await findCandidateByToken(params.token);
   if (!ctx) return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
-  if (ctx.requisition.title !== DEMO_REQ_TITLE) {
+  if (!ctx.requisition.is_demo) {
     return NextResponse.json({ ok: false, error: "The report is delivered to the hiring team." }, { status: 403 });
   }
 

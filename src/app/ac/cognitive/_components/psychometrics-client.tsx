@@ -134,6 +134,15 @@ export function PsychometricsClient({
     return () => clearInterval(id);
   }, [phase, deadline]);
 
+  // Guard against losing answers: while the test is open, answers live only in
+  // component state (no autosave), so warn before a refresh / close / navigation.
+  useEffect(() => {
+    if (phase !== "test") return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [phase]);
+
   const total = test ? test.items.length : 0;
   const answered = Object.keys(answers).length;
   const canSubmit = total > 0 && answered === total && !busy;

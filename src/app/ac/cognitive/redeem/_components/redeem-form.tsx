@@ -51,6 +51,7 @@ export function RedeemForm({
           onChange={(e) => setCode(e.target.value)}
           placeholder="VIFM-COG-XXXX-XXXX"
           autoCapitalize="characters"
+          dir="ltr"
           className="font-mono tracking-wide"
         />
       </div>
@@ -61,7 +62,7 @@ export function RedeemForm({
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Input id="email" type="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
       </div>
       <div className="space-y-1.5">

@@ -129,6 +129,14 @@ export async function redeemVoucher(
   const voucher = (Array.isArray(claimed) ? claimed[0] : claimed) as ClaimedVoucher | undefined;
   if (!voucher) return { ok: false, error: "This code is invalid, expired, or fully used." };
 
+  // The seat is now claimed. Any provisioning failure below must hand it back so
+  // a failed redeem doesn't permanently burn a use (tolerant if 00158 isn't
+  // applied yet). Use `fail()` for every post-claim early return.
+  const fail = async (error: string): Promise<{ ok: false; error: string }> => {
+    try { await sb.rpc("ara_voucher_release_seat", { p_code: code }); } catch { /* pre-00158: seat stays claimed */ }
+    return { ok: false, error };
+  };
+
   const tier = voucher.tier === "deep_dive" ? "deep_dive" : "snapshot";
   const region = voucher.region === "saudi" ? "saudi" : "uae";
   const language = voucher.default_language === "ar" ? "ar" : "en";
@@ -163,7 +171,7 @@ export async function redeemVoucher(
         .insert({ name: PRACTICE_ORG_NAME_EN, name_ar: PRACTICE_ORG_NAME_AR, region, sector: "general" })
         .select("id")
         .single<{ id: string }>();
-      if (orgErr || !created) return { ok: false, error: "Could not start your assessment. Please try again." };
+      if (orgErr || !created) return fail("Could not start your assessment. Please try again.");
       orgId = created.id;
     }
   }
@@ -174,7 +182,7 @@ export async function redeemVoucher(
     .select("id")
     .eq("is_active", true)
     .maybeSingle<{ id: string }>();
-  if (!activeBank) return { ok: false, error: "The assessment isn't available right now. Please contact VIFM." };
+  if (!activeBank) return fail("The assessment isn't available right now. Please contact VIFM.");
 
   // 4. Provision the individual run (sandbox/practice).
   const { data: assessment, error: assessErr } = await sb
@@ -197,7 +205,7 @@ export async function redeemVoucher(
     })
     .select("id")
     .single<{ id: string }>();
-  if (assessErr || !assessment) return { ok: false, error: "Could not start your assessment. Please try again." };
+  if (assessErr || !assessment) return fail("Could not start your assessment. Please try again.");
 
   // 5. Respondent (carries the access token).
   const { data: respondent, error: respErr } = await sb
@@ -212,7 +220,7 @@ export async function redeemVoucher(
     .single<{ id: string; access_token: string }>();
   if (respErr || !respondent) {
     await sb.from("ara_assessments").delete().eq("id", assessment.id);
-    return { ok: false, error: "Could not start your assessment. Please try again." };
+    return fail("Could not start your assessment. Please try again.");
   }
 
   // 6. Record the redemption (company_name powers future per-company insights).

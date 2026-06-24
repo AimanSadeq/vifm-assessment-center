@@ -191,6 +191,23 @@ export async function markAraRespondentComplete(token: string): Promise<void> {
   const sb = createServiceClient();
   const respondent = await requireRespondent(token);
 
+  // Idempotent: a re-submit (double-click, retry, auto-submit racing a manual
+  // submit) must not re-stamp, re-score, or re-fire the one-shot background tasks
+  // (credential issue + send-to-client email).
+  if (respondent.completed_at) {
+    revalidatePath(`/ara/respond/${token}`);
+    return;
+  }
+
+  // Completion eligibility (defence-in-depth behind the form's client gate): a
+  // respondent with zero answers cannot be marked complete, so a crafted call
+  // can't inject an empty "completed" respondent and dilute the cohort scores.
+  const { count: answeredCount } = await sb
+    .from("ara_responses")
+    .select("id", { count: "exact", head: true })
+    .eq("respondent_id", respondent.id);
+  if ((answeredCount ?? 0) === 0) return;
+
   // AUTHZ-04 (defense-in-depth): refuse completion on a frozen/archived
   // assessment, matching saveAraAnswer. A consultant freeze locks the run to
   // further answers, so it must also lock the completion stamp. Silent no-op

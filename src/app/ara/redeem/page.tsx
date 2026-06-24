@@ -5,15 +5,14 @@ export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Redeem Voucher · AI Readiness Compass®" };
 
-type Props = { searchParams?: { code?: string; email?: string; name?: string } };
+// Only the voucher CODE is honoured from the URL. Name/email are NOT pre-filled
+// from query params - a crafted link pre-filling someone's PII is a phishing
+// vector; the delegate types their own details. Company is derived server-side
+// from the voucher's tagged client (safe, not attacker-controlled).
+type Props = { searchParams?: { code?: string } };
 
-/** Public voucher redemption - no account required (auth-bypassed in middleware).
- *  A one-click invite link carries ?code= (and ?email=); we prefill those and
- *  the company (from the voucher's tagged client) so the delegate just confirms. */
 export default async function RedeemVoucherPage({ searchParams }: Props) {
   const code = searchParams?.code?.trim() || "";
-  const email = searchParams?.email?.trim() || "";
-  const name = searchParams?.name?.trim() || "";
 
   let company = "";
   if (code) {
@@ -33,7 +32,7 @@ export default async function RedeemVoucherPage({ searchParams }: Props) {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-md px-6 py-16">
-        <RedeemForm initialCode={code} initialEmail={email} initialName={name} initialCompany={company} />
+        <RedeemForm initialCode={code} initialCompany={company} />
       </div>
     </div>
   );

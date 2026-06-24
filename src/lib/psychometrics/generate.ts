@@ -97,8 +97,13 @@ async function aiCognitive(lang: Lang, perSubtest: number, subtests: string[]): 
       if (typeof q.scale !== "string" || !valid.has(q.scale)) return;
       if (typeof q.stem !== "string" || !Array.isArray(q.options) || q.options.length < 2) return;
       if (typeof q.correct !== "number" || q.correct < 0 || q.correct >= q.options.length) return;
+      // A graded MCQ must have DISTINCT options - reject any item where the model
+      // produced a duplicate choice (e.g. the correct answer repeated), which
+      // would make scoring ambiguous. Compare trimmed + case-folded.
+      const opts = (q.options as unknown[]).map((o) => String(o).trim());
+      if (new Set(opts.map((o) => o.toLowerCase())).size !== opts.length) return;
       const difficulty = (["easy", "medium", "hard"] as const).includes(q.difficulty as never) ? (q.difficulty as CognitiveItem["difficulty"]) : "medium";
-      items.push({ id: `cog-${i + 1}`, scale: q.scale, stem: q.stem, options: (q.options as unknown[]).map(String), correct: q.correct, difficulty });
+      items.push({ id: `cog-${i + 1}`, scale: q.scale, stem: q.stem, options: opts, correct: q.correct, difficulty });
     });
     // Require at least one item per requested subtest, and scale the floor to
     // the selection (>= subtests.length * 2) so a 1- or 2-subtest test still

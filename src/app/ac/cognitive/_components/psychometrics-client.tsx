@@ -296,8 +296,10 @@ export function PsychometricsClient({
         </div>
       )}
 
-      {/* XP-13: takers do not see results - a thank-you only. Staff see scores. */}
-      {phase === "result" && result && !canView && (
+      {/* XP-13: takers do not see results - a thank-you only. Staff see scores.
+          The non-staff response carries result=null (no score data over the wire),
+          so this branch must not depend on `result` being present. */}
+      {phase === "result" && !canView && (
         <div className="rounded-xl border bg-white p-8 text-center">
           <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-600" />
           <h2 className="mt-3 text-xl font-bold text-[#010131]">

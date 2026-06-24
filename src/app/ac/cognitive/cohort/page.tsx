@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, Users, Sparkles, FileText, BrainCircuit } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
-import { COGNITIVE_SUBTESTS, BAND_LABEL_EN, type PsyBand } from "@/lib/psychometrics/framework";
+import { COGNITIVE_SUBTESTS, BAND_LABEL_EN, cognitiveBand, type PsyBand } from "@/lib/psychometrics/framework";
 
 export const dynamic = "force-dynamic";
 
@@ -37,13 +37,9 @@ const DIST_ORDER: PsyBand[] = ["high", "above", "average", "below", "low"];
 const subtestName = (key: string): string =>
   COGNITIVE_SUBTESTS.find((s) => s.key === key)?.name_en ?? key;
 
-function bandFromPct(pct: number): PsyBand {
-  if (pct >= 80) return "high";
-  if (pct >= 65) return "above";
-  if (pct >= 45) return "average";
-  if (pct >= 30) return "below";
-  return "low";
-}
+// Banding uses the canonical framework thresholds (cognitiveBand) so the cohort
+// view never diverges from the individual result / report.
+const bandFromPct = cognitiveBand;
 
 type LoadResp = { data: Row[] | null; error: unknown };
 

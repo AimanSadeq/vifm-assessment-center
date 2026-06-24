@@ -62,7 +62,22 @@ export async function POST(req: Request) {
 
     const { data: session } = await svc.from("psy_sessions").select("*").eq("id", sessionId).maybeSingle();
     if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
-    if (session.consumed) return NextResponse.json({ error: "This assessment has already been submitted." }, { status: 409 });
+    // Enforce the ~3h TTL server-side (mirrors the Fluent route) so an expired
+    // session can't be graded long after it was issued.
+    if (session.expires_at && new Date(session.expires_at as string).getTime() < Date.now()) {
+      return NextResponse.json({ error: "This assessment session has expired. Please start again." }, { status: 410 });
+    }
+    // Atomic single-use claim BEFORE scoring: the first caller flips consumed
+    // false->true; a concurrent or double submit gets no row and is rejected, so
+    // a session can never be scored twice (no replay, no duplicate psy_results).
+    const { data: claimed } = await svc
+      .from("psy_sessions")
+      .update({ consumed: true })
+      .eq("id", sessionId)
+      .eq("consumed", false)
+      .select("id")
+      .maybeSingle();
+    if (!claimed) return NextResponse.json({ error: "This assessment has already been submitted." }, { status: 409 });
 
     const test = session.test as PsyTest;
     const answers = (body.answers ?? {}) as Record<string, number>;
@@ -152,12 +167,14 @@ export async function POST(req: Request) {
       }
     }
 
-    await svc.from("psy_sessions").update({ consumed: true }).eq("id", sessionId);
-    // XP-13: staff see results + can download; takers get a thank-you, so only
-    // staff receive result_id (the report-route key).
+    // (the session was already consumed atomically before scoring, above)
+    // XP-13: staff see results + can download; takers get a thank-you. Only staff
+    // receive the result body + result_id - a non-staff taker's network response
+    // must NOT carry the detailed scales/bands/percentiles (UI-hiding alone left
+    // the data inspectable in the JSON).
     const isStaff = await isStaffCaller();
     return NextResponse.json({
-      result: finalResult,
+      result: isStaff ? finalResult : null,
       result_id: isStaff ? resRow?.id ?? null : null,
       isStaff,
     });

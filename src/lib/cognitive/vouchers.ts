@@ -154,7 +154,12 @@ export async function redeemVoucher(
       .select("redemption_token")
       .single<{ redemption_token: string }>());
   }
-  if (redErr || !redemption) return { ok: false, error: "Could not start your test. Please try again." };
+  if (redErr || !redemption) {
+    // The seat was claimed atomically above; hand it back so a failed redemption
+    // doesn't permanently burn a use (tolerant if 00159 isn't applied yet).
+    try { await sb.rpc("cognitive_voucher_release_seat", { p_code: code }); } catch { /* pre-00159 */ }
+    return { ok: false, error: "Could not start your test. Please try again." };
+  }
 
   return { ok: true, redemptionToken: redemption.redemption_token, language };
 }

@@ -53,7 +53,7 @@ export function SqlEngine({ config, locale, initialWork, onChange }: SqlEnginePr
           rows={8}
           dir="ltr"
           placeholder="SELECT ..."
-          className="w-full rounded-md border border-border bg-[#0b1220] p-3 font-mono text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#5391D5]"
+          className="w-full rounded-md border border-border bg-[#0b1220] p-3 font-mono text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-accent"
         />
         <p className="mt-1 text-xs text-muted-foreground">
           Single read-only SELECT/WITH statement. It runs against a throwaway copy of the schema.

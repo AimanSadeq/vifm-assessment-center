@@ -554,17 +554,20 @@ export function scoreTechnicalAssessment(input: {
     }
     bySkill.set(item.skill, entry);
   }
-  const total = test.items.length || 1;
-  const pct = Math.round((100 * correct) / total);
+  // One denominator used everywhere: the reported total, the pct, and the
+  // confidence band must agree. An empty test scores 0% (never divide by zero)
+  // rather than reporting a phantom one-item denominator.
+  const total = test.items.length;
+  const pct = total > 0 ? Math.round((100 * correct) / total) : 0;
   const perSkill = Array.from(bySkill.entries()).map(([skill, v]) => ({ skill, correct: v.correct, total: v.total }));
   return {
     domain_key: test.domain_key,
     domain_name: test.domain_name,
     correct,
-    total: test.items.length,
+    total,
     pct,
     proficiency: proficiencyFromPercent(pct),
-    band: technicalConfidenceBand({ correct, total: test.items.length, perSkill }),
+    band: technicalConfidenceBand({ correct, total, perSkill }),
     perSkill,
     ai_generated: test.ai_generated,
     certified: test.certified ?? false,

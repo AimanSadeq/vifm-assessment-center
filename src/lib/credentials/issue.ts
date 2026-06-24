@@ -64,6 +64,26 @@ export async function issueCredential(
 ): Promise<{ verificationCode: string } | null> {
   try {
     const sb = createServiceClient();
+
+    // Idempotency: a credential is keyed by (source_id, credential_type). If one
+    // already exists for this source, reuse it rather than minting a duplicate -
+    // this makes every retry / re-score / double-submit path safe (a passing
+    // certified sitting can't be replayed for a second credential). Anonymous
+    // results carry a null source_id and are exempt (each is a distinct
+    // issuance). The DB-level partial UNIQUE index (migration 00164) is the
+    // race backstop; this pre-check is the fast, common path.
+    if (args.sourceId) {
+      const { data: existing } = await sb
+        .from("vifm_credentials")
+        .select("verification_code")
+        .eq("source_id", args.sourceId)
+        .eq("credential_type", args.type)
+        .maybeSingle();
+      if (existing?.verification_code) {
+        return { verificationCode: existing.verification_code as string };
+      }
+    }
+
     const { data, error } = await sb
       .from("vifm_credentials")
       .insert({
@@ -83,6 +103,19 @@ export async function issueCredential(
       .select("verification_code")
       .single();
     if (error || !data) {
+      // A concurrent issuance (or the 00164 partial UNIQUE index) may have won
+      // the race - reuse that credential instead of reporting a failure.
+      if (args.sourceId) {
+        const { data: raced } = await sb
+          .from("vifm_credentials")
+          .select("verification_code")
+          .eq("source_id", args.sourceId)
+          .eq("credential_type", args.type)
+          .maybeSingle();
+        if (raced?.verification_code) {
+          return { verificationCode: raced.verification_code as string };
+        }
+      }
       console.error("[credentials] issue failed:", error?.message?.slice(0, 120));
       return null;
     }

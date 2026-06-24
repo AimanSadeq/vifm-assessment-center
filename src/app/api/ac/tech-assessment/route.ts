@@ -112,6 +112,19 @@ const engineNotConfiguredResponse = () =>
     { status: 503 }
   );
 
+// The legacy client-graded fallback (sending the FULL test incl. answer key to
+// the browser when no session row could be created) is a CRITICAL key leak - a
+// taker could read correct_index/correct_indices straight from the start
+// payload and the score path would trust client-posted items. Every migrated
+// environment has tech_assessment_sessions, so a session is always created; if
+// the insert genuinely fails we refuse the run rather than downgrade to the
+// key-leaking path.
+const sessionUnavailableResponse = () =>
+  NextResponse.json(
+    { error: "The assessment store is unavailable right now. Please try again shortly." },
+    { status: 503 }
+  );
+
 async function createSession(
   test: StoredTest,
   meta: { candidateId: string | null; engagementId: string | null; language: "en" | "ar" },
@@ -281,8 +294,8 @@ export async function POST(req: Request) {
         );
         return NextResponse.json({ session_id, test: stripAnswerKey(stored), time_limit_seconds });
       }
-      // Legacy (sessions/00058 not migrated): full test client-side, indicative only.
-      return NextResponse.json({ ...stored });
+      // No session row could be created - refuse rather than leak the answer key.
+      return sessionUnavailableResponse();
     }
 
     // ── Function run: a DEEP, multi-skill blueprinted assessment (the job-level
@@ -334,8 +347,8 @@ export async function POST(req: Request) {
         const time_limit_seconds = await techTimeLimitSeconds([`tech_function:${fn.ref}`], { sum: false });
         return NextResponse.json({ session_id, test: stripAnswerKey(stored), time_limit_seconds });
       }
-      // Legacy (sessions/00058 not migrated): full test client-side, indicative only.
-      return NextResponse.json({ ...stored });
+      // No session row could be created - refuse rather than leak the answer key.
+      return sessionUnavailableResponse();
     }
 
     // ── Domain run (legacy path): 8 generic items, certified when the bank allows. ──
@@ -368,8 +381,8 @@ export async function POST(req: Request) {
       const time_limit_seconds = await techTimeLimitSeconds([`tech_domain:${domainKey}`], { sum: false });
       return NextResponse.json({ session_id, test: stripAnswerKey(stored), time_limit_seconds });
     }
-    // Legacy (sessions table not migrated): full test client-side, indicative only.
-    return NextResponse.json({ ...stored });
+    // No session row could be created - refuse rather than leak the answer key.
+    return sessionUnavailableResponse();
   }
 
   if (body.action === "score") {
@@ -492,10 +505,38 @@ export async function POST(req: Request) {
     if (resultId && (programId || participantId)) {
       try {
         const sb = createServiceClient();
-        await sb
-          .from("tech_assessment_results")
-          .update({ program_id: programId, participant_id: participantId })
-          .eq("id", resultId);
+        // Validate the pairing before attributing the result. A leaked or
+        // guessed program/participant id must not let a caller bind a foreign
+        // score onto another program's roster: require the participant to exist
+        // AND (when a program is also named) to belong to it, resolving the
+        // bound program from the participant's own row. On any mismatch we leave
+        // the result unbound rather than mis-attribute it.
+        let boundProgramId: string | null = null;
+        let boundParticipantId: string | null = null;
+        if (participantId) {
+          const { data: part } = await sb
+            .from("technical_program_participants")
+            .select("id, program_id")
+            .eq("id", participantId)
+            .maybeSingle();
+          if (part && (!programId || programId === part.program_id)) {
+            boundParticipantId = part.id as string;
+            boundProgramId = part.program_id as string;
+          }
+        } else if (programId) {
+          const { data: prog } = await sb
+            .from("technical_programs")
+            .select("id")
+            .eq("id", programId)
+            .maybeSingle();
+          if (prog) boundProgramId = prog.id as string;
+        }
+        if (boundProgramId || boundParticipantId) {
+          await sb
+            .from("tech_assessment_results")
+            .update({ program_id: boundProgramId, participant_id: boundParticipantId })
+            .eq("id", resultId);
+        }
       } catch {
         /* 00057 columns absent - non-fatal */
       }

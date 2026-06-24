@@ -234,6 +234,21 @@ export function Runner({
     return () => clearInterval(t);
   }, [started, submitted, current, captureCurrentWork, save]);
 
+  // Navigate-away guard (audit fix): this is a timed, single-use sitting - the
+  // voucher cannot be redeemed twice. Warn before the taker closes/reloads the
+  // tab mid-assessment so an accidental navigation can't burn their one attempt.
+  useEffect(() => {
+    if (!started || submitted) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      // Modern browsers ignore custom text and show their own prompt; setting
+      // returnValue is what actually triggers the confirmation dialog.
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [started, submitted]);
+
   function goTo(next: number) {
     captureCurrentWork();
     if (current) void save(current.id);
@@ -250,7 +265,7 @@ export function Runner({
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-2xl text-emerald-700">
           ✓
         </div>
-        <h1 className="text-lg font-semibold text-[#010131]">
+        <h1 className="text-lg font-semibold text-primary">
           {ar ? "تم إرسال تقييمك" : "Your assessment has been submitted"}
         </h1>
         <p className="mt-3 text-sm text-muted-foreground">
@@ -279,7 +294,7 @@ export function Runner({
     return (
       <div className="mx-auto max-w-4xl space-y-4 p-4">
         <div className="flex items-center justify-between">
-          <Link href="/" className="text-sm text-[#5391D5] hover:underline">{ar ? "الرئيسية" : "Home"}</Link>
+          <Link href="/" className="text-sm text-accent hover:underline">{ar ? "الرئيسية" : "Home"}</Link>
           <button
             onClick={() => setLocale(ar ? "en" : "ar")}
             className="rounded-md border border-border px-3 py-1 text-sm text-foreground hover:bg-muted"
@@ -316,7 +331,7 @@ export function Runner({
     return (
       <div className="mx-auto max-w-3xl space-y-4 p-4" dir={ar ? "rtl" : "ltr"}>
         <div className="flex items-center justify-between">
-          <Link href="/" className="text-sm text-[#5391D5] hover:underline">{ar ? "الرئيسية" : "Home"}</Link>
+          <Link href="/" className="text-sm text-accent hover:underline">{ar ? "الرئيسية" : "Home"}</Link>
           <div className="flex items-center gap-3">
             <button
               onClick={() => setLocale(ar ? "en" : "ar")}
@@ -373,7 +388,7 @@ export function Runner({
               setIdx(0);
               setPhase("sandbox");
             }}
-            className="rounded-md bg-[#010131] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90"
           >
             {ar ? "المتابعة إلى المهام العملية" : "Continue to hands-on tasks"}
           </button>
@@ -385,7 +400,7 @@ export function Runner({
   return (
     <div className="mx-auto max-w-4xl space-y-4 p-4">
       <div className="flex items-center justify-between">
-        <Link href="/" className="text-sm text-[#5391D5] hover:underline">
+        <Link href="/" className="text-sm text-accent hover:underline">
           {ar ? "الرئيسية" : "Home"}
         </Link>
         <button
@@ -498,7 +513,7 @@ export function Runner({
             {idx < blocks.length - 1 ? (
               <button
                 onClick={() => goTo(idx + 1)}
-                className="rounded-md bg-[#010131] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+                className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90"
               >
                 {ar ? "التالي" : "Next"}
               </button>
@@ -540,12 +555,12 @@ function Results({
   return (
     <div className="mx-auto max-w-3xl space-y-4 p-4" dir={ar ? "rtl" : "ltr"}>
       <div className="flex items-center justify-between">
-        <Link href="/" className="text-sm text-[#5391D5] hover:underline">
+        <Link href="/" className="text-sm text-accent hover:underline">
           {ar ? "الرئيسية" : "Home"}
         </Link>
         <a
           href={`/api/tech-sandbox/${token}/report`}
-          className="rounded-md bg-[#010131] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90"
         >
           {ar ? "تنزيل التقرير PDF" : "Download PDF report"}
         </a>
@@ -619,7 +634,7 @@ function Results({
           </div>
           <a
             href={`/verify/${combined.credentialCode}`}
-            className="mt-1 inline-block text-xs text-[#5391D5] hover:underline"
+            className="mt-1 inline-block text-xs text-accent hover:underline"
           >
             {ar ? "تحقق من الشهادة" : "Verify this credential"}
           </a>
@@ -738,7 +753,7 @@ function McqQuestion({
             <label
               key={i}
               className={`flex cursor-pointer items-start gap-2 rounded-md border px-3 py-2 text-sm ${
-                checked ? "border-[#5391D5] bg-[#5391D5]/10" : "border-border hover:bg-muted"
+                checked ? "border-accent bg-accent/10" : "border-border hover:bg-muted"
               }`}
             >
               <input

@@ -145,12 +145,56 @@ async function saveState(id: string, state: AdaptiveState): Promise<void> {
   }
 }
 
-async function consume(id: string): Promise<void> {
+/** Atomic single-use claim: flip consumed_at null->now in ONE statement and
+ *  report whether THIS call won the row (RETURNING). The run persists its result
+ *  + feeds the bank only on the winning call, so a double-submitted final answer
+ *  can't create a duplicate result row or double-count administration stats. */
+async function consume(id: string): Promise<boolean> {
   try {
     const sb = createServiceClient();
-    await sb.from("tech_assessment_sessions").update({ consumed_at: new Date().toISOString() }).eq("id", id);
+    const { data } = await sb
+      .from("tech_assessment_sessions")
+      .update({ consumed_at: new Date().toISOString() })
+      .eq("id", id)
+      .is("consumed_at", null)
+      .select("id")
+      .maybeSingle();
+    return !!data;
   } catch {
-    /* ignore */
+    return false;
+  }
+}
+
+/** Validate a (program, participant) pairing for result attribution. Returns
+ *  the bound ids, or nulls when the participant doesn't exist / the program
+ *  doesn't match - so a leaked id can't mis-attribute a run to another roster. */
+async function resolveProgramBinding(
+  programId: string | null,
+  participantId: string | null
+): Promise<{ program_id: string | null; participant_id: string | null }> {
+  if (!programId && !participantId) return { program_id: null, participant_id: null };
+  try {
+    const sb = createServiceClient();
+    if (participantId) {
+      const { data: part } = await sb
+        .from("technical_program_participants")
+        .select("id, program_id")
+        .eq("id", participantId)
+        .maybeSingle();
+      if (part && (!programId || programId === part.program_id)) {
+        return { program_id: part.program_id as string, participant_id: part.id as string };
+      }
+      return { program_id: null, participant_id: null };
+    }
+    const { data: prog } = await sb
+      .from("technical_programs")
+      .select("id")
+      .eq("id", programId)
+      .maybeSingle();
+    return { program_id: prog ? (prog.id as string) : null, participant_id: null };
+  } catch {
+    // 00057 tables absent - keep the legacy (unbound) behaviour, don't block.
+    return { program_id: programId, participant_id: participantId };
   }
 }
 
@@ -251,6 +295,17 @@ export async function POST(req: Request) {
     const first = selectNextItem(0, new Set(), calItems(pool));
     if (!first) return NextResponse.json({ error: "empty pool" }, { status: 409 });
 
+    // Validate the program/participant pairing before binding it into the
+    // session - a leaked or guessed id must not let a caller attribute an
+    // indicative run onto another program's roster. Require the participant to
+    // exist AND (when a program is also named) to belong to it; resolve the
+    // bound program from the participant's own row. Invalid pairings drop to
+    // null rather than mis-attribute the result.
+    const { program_id, participant_id } = await resolveProgramBinding(
+      body.programId?.trim() || null,
+      body.participantId?.trim() || null
+    );
+
     const state: AdaptiveState = {
       mode: "adaptive",
       functionKey: fn.ref,
@@ -265,8 +320,8 @@ export async function POST(req: Request) {
       targetSe: TARGET_SE,
       candidate_id: body.candidateId?.trim() || null,
       engagement_id: body.engagementId?.trim() || null,
-      program_id: body.programId?.trim() || null,
-      participant_id: body.participantId?.trim() || null,
+      program_id,
+      participant_id,
       taker_name: body.takerName?.trim() || null,
       taker_email: body.takerEmail?.trim() || null,
     };
@@ -305,15 +360,20 @@ export async function POST(req: Request) {
 
     if (stop) {
       const result = buildResult(state, theta, se);
-      await persistResult(state, result);
-      // Feed administration stats back to the bank for ongoing calibration.
-      const correctById: Record<string, boolean> = {};
-      for (const a of state.administered) correctById[a.id] = a.correct;
-      await recordItemAdministration(
-        state.administered.map((a) => a.id),
-        correctById
-      ).catch(() => {});
-      await consume(body.sessionId);
+      // Atomic single-use: only the call that wins the consume persists the
+      // result + feeds the bank. A double-submitted final answer still gets the
+      // result back (idempotent UX) but cannot double-write.
+      const won = await consume(body.sessionId);
+      if (won) {
+        await persistResult(state, result);
+        // Feed administration stats back to the bank for ongoing calibration.
+        const correctById: Record<string, boolean> = {};
+        for (const a of state.administered) correctById[a.id] = a.correct;
+        await recordItemAdministration(
+          state.administered.map((a) => a.id),
+          correctById
+        ).catch(() => {});
+      }
       return NextResponse.json({
         done: true,
         result,

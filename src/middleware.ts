@@ -87,8 +87,13 @@ const isPublicVerifyRoute = (pathname: string) =>
 // Pre-Hire candidate flow - external job applicants reach their screening via
 // prehire_candidates.access_token (no account). Identity is always derived
 // server-side from the token. Bypass auth in dev and prod, like ARA respondents.
+// I-3: scope the API bypass to a UUID-shaped token segment. Every /api/prehire/*
+// route lives under /api/prehire/[token]/..., so requiring a 36-char access-token
+// segment (the prehire_candidates.access_token shape) means a future route added
+// under /api/prehire/ that is NOT token-gated cannot be silently auth-bypassed.
+const PREHIRE_API_TOKEN = /^\/api\/prehire\/[0-9a-fA-F-]{36}(\/|$)/;
 const isPreHireApplyRoute = (pathname: string) =>
-  pathname.startsWith("/prehire/apply/") || pathname.startsWith("/api/prehire/");
+  pathname.startsWith("/prehire/apply/") || PREHIRE_API_TOKEN.test(pathname);
 
 // Pre-Hire voucher redemption - a no-account applicant redeems a code at
 // /prehire/redeem; the redeem server action provisions a candidate and forwards

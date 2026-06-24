@@ -118,6 +118,18 @@ const stageEntrySchema = z
     { message: "The Fluent stage needs at least one receptive skill (Reading or Listening)." },
   );
 
+// A requisition's stage plan: at least one stage, and no duplicate stage kinds
+// (S-8). computeComposite iterates the plan to weight each stage, and the stage
+// results are keyed by (candidate, kind) - so two entries of the same kind would
+// double-count that stage's weight while collapsing onto a single result row.
+// Reject the duplicate at the edge rather than letting it skew the composite.
+const stagePlanSchema = z
+  .array(stageEntrySchema)
+  .min(1, "Pick at least one screening stage")
+  .refine((stages) => new Set(stages.map((s) => s.kind)).size === stages.length, {
+    message: "Each screening stage can be used only once - remove the duplicate.",
+  });
+
 // NOTE: organization_id / role_profile_id / competency_ids use uuidish (a
 // permissive UUID-shape check), NOT z.string().uuid(). The seed competencies +
 // role profiles carry synthetic UUIDs (version nibble 0) that Zod 4's strict
@@ -129,7 +141,7 @@ const requisitionSchema = z.object({
   role_profile_id: uuidish().nullable().optional(),
   level: z.string().max(60).optional(),
   english_required: z.boolean().optional(),
-  stage_config: z.array(stageEntrySchema).min(1, "Pick at least one screening stage"),
+  stage_config: stagePlanSchema,
   // CAL-PRE-502: explicit competency set for the quiz stage (competencies.id[]).
   // Pre-filled from the role profile but editable. Optional/empty = legacy fallback.
   competency_ids: z.array(uuidish()).optional(),
@@ -203,7 +215,7 @@ export async function createRequisitionAction(input: unknown) {
 // composite, an added stage makes it incomplete until taken.
 const updateStagesSchema = z.object({
   requisition_id: uuidish("Invalid requisition"),
-  stage_config: z.array(stageEntrySchema).min(1, "Pick at least one screening stage"),
+  stage_config: stagePlanSchema,
 });
 
 export async function updateRequisitionStagesAction(input: unknown) {

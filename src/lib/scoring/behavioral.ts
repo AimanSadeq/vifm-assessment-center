@@ -240,10 +240,14 @@ export async function submitAnonymousBehavioral(
 
   const profile = rollupSelfScores((responses ?? []) as ScoreRow[]);
 
-  await sb
-    .from("behavioral_assessment_sessions")
-    .update({ status: "submitted", submitted_at: new Date().toISOString() })
-    .eq("id", sessionId);
+  // Idempotent: scoring is deterministic from the (now-immutable) responses, so a
+  // repeat submit recomputes the same profile - but only stamp submitted_at once.
+  if (session.status !== "submitted") {
+    await sb
+      .from("behavioral_assessment_sessions")
+      .update({ status: "submitted", submitted_at: new Date().toISOString() })
+      .eq("id", sessionId);
+  }
 
   return { ok: true, profile };
 }

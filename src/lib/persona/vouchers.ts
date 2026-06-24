@@ -240,7 +240,16 @@ export async function redeemVoucher(
       .select("redemption_token")
       .single<{ redemption_token: string }>());
   }
-  if (redErr || !redemption) return { ok: false, error: "Could not start your assessment. Please try again." };
+  if (redErr || !redemption) {
+    // The seat was already claimed atomically above; hand it back so a failed
+    // redemption doesn't permanently burn a use (tolerant if 00157 isn't applied).
+    try {
+      await sb.rpc("persona_voucher_release_seat", { p_code: code });
+    } catch {
+      /* release RPC not migrated yet - seat stays claimed (pre-00157 behaviour) */
+    }
+    return { ok: false, error: "Could not start your assessment. Please try again." };
+  }
 
   return { ok: true, redemptionToken: redemption.redemption_token, language };
 }

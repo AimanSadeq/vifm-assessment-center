@@ -13,8 +13,13 @@ export const runtime = "nodejs";
 // Persona self-profile PDF for any behavioral session (anonymous or candidate-bound).
 // EN renders via React-PDF; AR (?lang=ar) renders via Chromium/HTML (React-PDF
 // cannot shape Arabic). Hiring stays admin-gated in BOTH languages.
+const UUID_RE = /^[0-9a-fA-F-]{36}$/;
+
 export async function GET(req: Request, { params }: { params: { sessionId: string } }) {
   try {
+    if (!UUID_RE.test(params.sessionId)) {
+      return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    }
     const lang = new URL(req.url).searchParams.get("lang") === "ar" ? "ar" : "en";
 
     // Auth gate BEFORE the heavy assembly: BOTH the hiring and development

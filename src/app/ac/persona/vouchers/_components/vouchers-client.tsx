@@ -417,8 +417,11 @@ export function VouchersClient({
                 <div key={r.email} className="flex items-center justify-between gap-2">
                   <span className="font-mono text-xs">{r.email}</span>
                   {r.ok ? (
-                    <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-50">
-                      Sent
+                    <Badge
+                      className="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-50"
+                      title="Accepted by the email service - delivery to the inbox is not confirmed. Copy the code/link below to send manually if needed."
+                    >
+                      Queued
                     </Badge>
                   ) : (
                     <Badge variant="outline" className="text-destructive" title={r.error}>

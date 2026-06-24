@@ -60,8 +60,12 @@ export function overallConfidenceBand(result: FluentResult): ConfidenceBand {
   const sd = Math.sqrt(variance);
 
   const receptiveItems = result.reading_total + result.listening_total;
+  // Clamp to [0, 0.4]: a test at or above the target item count adds no inflation
+  // (and must never subtract from the band when it exceeds the target).
   const sampleInflation =
-    receptiveItems > 0 ? Math.min(0.4, 0.4 * (1 - receptiveItems / TARGET_RECEPTIVE_ITEMS)) : 0.4;
+    receptiveItems > 0
+      ? Math.max(0, Math.min(0.4, 0.4 * (1 - receptiveItems / TARGET_RECEPTIVE_ITEMS)))
+      : 0.4;
   // Capped at ±1.5 levels so even an uneven short test stays interpretable
   // (≈3-level span worst case) rather than spanning the whole scale.
   const halfWidth = Math.min(1.5, Math.max(0.5, 0.4 + 0.5 * sd + sampleInflation));

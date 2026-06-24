@@ -27,8 +27,8 @@ export default async function FluentRetentionPage() {
     <div className="max-w-4xl mx-auto px-6 py-8">
       <BackLink href="/ac/fluent" label="Fluent®" />
       <div className="mt-4 mb-2 flex items-center gap-2">
-        <FileClock className="h-5 w-5 text-[#5391D5]" />
-        <h1 className="text-2xl font-semibold text-[#010131]">Fluent® retention</h1>
+        <FileClock className="h-5 w-5 text-accent" />
+        <h1 className="text-2xl font-semibold text-primary">Fluent® retention</h1>
       </div>
       <p className="text-sm text-muted-foreground mb-6">
         Candidate data is retained for a maximum of {RETENTION_MONTHS / 12} years. Purge English-placement
@@ -41,7 +41,7 @@ export default async function FluentRetentionPage() {
             <CardDescription>Total results stored</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-[#010131] tabular-nums">{total}</p>
+            <p className="text-3xl font-bold text-primary tabular-nums">{total}</p>
           </CardContent>
         </Card>
         <Card>

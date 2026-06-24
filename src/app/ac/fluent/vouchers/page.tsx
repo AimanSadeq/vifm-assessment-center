@@ -25,7 +25,7 @@ export default async function FluentVouchersPage() {
     <div className="max-w-6xl mx-auto px-6 py-8">
       <BackLink href="/ac/fluent" label="Fluent®" />
       <div className="mt-4 mb-6">
-        <h1 className="text-2xl font-semibold text-[#010131]">Fluent® vouchers</h1>
+        <h1 className="text-2xl font-semibold text-primary">Fluent® vouchers</h1>
         <p className="text-sm text-muted-foreground">
           Generate redeemable English-placement codes, tag them to a client, and track seats. Copy the
           complete redemption link to send to a client - they forward it to the candidate, who starts

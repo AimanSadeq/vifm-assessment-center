@@ -542,7 +542,7 @@ export function FluentClient({
         <div className="rounded-2xl border bg-card p-6 shadow-[0_16px_48px_-12px_rgba(1,1,49,0.18)] sm:p-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h2 className="text-lg font-semibold text-[#010131]">{t.beginTitle}</h2>
+              <h2 className="text-lg font-semibold text-primary">{t.beginTitle}</h2>
               <p className="mt-1 text-sm text-slate-500">{t.beginSub.replace("{min}", String(limitMinutes))}</p>
             </div>
             <div className="flex items-center gap-2">
@@ -550,7 +550,7 @@ export function FluentClient({
               <div className="inline-flex rounded-lg border border-slate-200 p-0.5">
                 {(["en", "ar"] as const).map((l) => (
                   <button key={l} onClick={() => setLanguage(l)}
-                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${language === l ? "bg-[#5391D5] text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"}`}>
+                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${language === l ? "bg-accent text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"}`}>
                     {l === "en" ? "English" : "العربية"}
                   </button>
                 ))}
@@ -563,13 +563,13 @@ export function FluentClient({
               <span className="text-xs font-medium text-slate-500">{t.nameLabel}</span>
               <input value={takerName} onChange={(e) => setTakerName(e.target.value)} dir="ltr"
                 placeholder={t.namePlaceholder}
-                className="mt-1.5 w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm transition-colors focus:border-[#5391D5] focus:outline-none focus:ring-2 focus:ring-[#5391D5]/20" />
+                className="mt-1.5 w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20" />
             </label>
             <label className="block">
               <span className="text-xs font-medium text-slate-500">{t.emailLabel}</span>
               <input value={takerEmail} onChange={(e) => setTakerEmail(e.target.value)} type="email" dir="ltr"
                 placeholder={t.emailPlaceholder}
-                className="mt-1.5 w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm transition-colors focus:border-[#5391D5] focus:outline-none focus:ring-2 focus:ring-[#5391D5]/20" />
+                className="mt-1.5 w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20" />
             </label>
           </div>
 
@@ -578,7 +578,7 @@ export function FluentClient({
             <ul className="mt-2 space-y-1.5 text-sm text-slate-700">
               {[t.howReading, t.howWriting, t.howSpeaking].map((line, i) => (
                 <li key={i} className="flex gap-2">
-                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#5391D5]" />
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
                   <span>{line}</span>
                 </li>
               ))}
@@ -591,7 +591,7 @@ export function FluentClient({
 
           <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2">
             <button onClick={start} disabled={busy}
-              className="ara-pulse inline-flex items-center gap-2 rounded-lg bg-[#010131] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#121140] disabled:cursor-not-allowed disabled:opacity-60">
+              className="ara-pulse inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#121140] disabled:cursor-not-allowed disabled:opacity-60">
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               {busy ? t.starting : t.start}
             </button>
@@ -630,8 +630,8 @@ export function FluentClient({
           )}
           {/* Reading */}
           <section className="rounded-xl border bg-white p-6 shadow-sm">
-            <h2 className="mb-4 inline-flex items-center gap-2 text-lg font-semibold text-[#010131]">
-              <BookOpen className="h-5 w-5 text-[#5391D5]" /> {t.reading}
+            <h2 className="mb-4 inline-flex items-center gap-2 text-lg font-semibold text-primary">
+              <BookOpen className="h-5 w-5 text-accent" /> {t.reading}
             </h2>
             <div className="space-y-5">
               {test.reading.map((item, i) => {
@@ -643,7 +643,7 @@ export function FluentClient({
                     className={`rounded-lg border p-4 ${unanswered ? "border-rose-400 ring-1 ring-rose-300" : "border-slate-200"}`}
                   >
                     <p dir="ltr" className="text-sm text-[#111232]">{item.passage}</p>
-                    <p dir="ltr" className="mt-2 text-sm font-semibold text-[#010131]">{i + 1}. {item.question}</p>
+                    <p dir="ltr" className="mt-2 text-sm font-semibold text-primary">{i + 1}. {item.question}</p>
                     <Options item={item} answers={answers} setAnswers={setAnswers} />
                     {unanswered && (
                       <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-rose-600">
@@ -658,8 +658,8 @@ export function FluentClient({
 
           {/* Listening */}
           <section className="rounded-xl border bg-white p-6 shadow-sm">
-            <h2 className="mb-1 inline-flex items-center gap-2 text-lg font-semibold text-[#010131]">
-              <Headphones className="h-5 w-5 text-[#5391D5]" /> {t.listening}
+            <h2 className="mb-1 inline-flex items-center gap-2 text-lg font-semibold text-primary">
+              <Headphones className="h-5 w-5 text-accent" /> {t.listening}
             </h2>
             <p className="mb-4 text-xs text-slate-500">{t.listenHint}</p>
             {!ttsAvailable() && (
@@ -689,7 +689,7 @@ export function FluentClient({
                       ) : ttsAvailable() ? (
                         <>
                           <button onClick={() => playClip(item)} disabled={used >= MAX_PLAYS || isPlaying}
-                            className="inline-flex items-center gap-1.5 rounded-md bg-[#5391D5] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#4380c4] disabled:opacity-50">
+                            className="inline-flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-[#4380c4] disabled:opacity-50">
                             {isPlaying ? <Volume2 className="h-3.5 w-3.5 animate-pulse" /> : <Play className="h-3.5 w-3.5" />}
                             {isPlaying ? t.playing : t.play}
                           </button>
@@ -699,7 +699,7 @@ export function FluentClient({
                         <p dir="ltr" className="text-sm italic text-slate-600">“{item.script}”</p>
                       )}
                     </div>
-                    <p dir="ltr" className="mt-3 text-sm font-semibold text-[#010131]">{i + 1}. {item.question}</p>
+                    <p dir="ltr" className="mt-3 text-sm font-semibold text-primary">{i + 1}. {item.question}</p>
                     <Options item={item} answers={answers} setAnswers={setAnswers} />
                     {unanswered && (
                       <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-rose-600">
@@ -717,8 +717,8 @@ export function FluentClient({
             id="fluent-writing"
             className={`rounded-xl border bg-white p-6 shadow-sm ${showGaps && writingShort ? "border-rose-400 ring-1 ring-rose-300" : ""}`}
           >
-            <h2 className="mb-3 inline-flex items-center gap-2 text-lg font-semibold text-[#010131]">
-              <PenLine className="h-5 w-5 text-[#5391D5]" /> {t.writing}
+            <h2 className="mb-3 inline-flex items-center gap-2 text-lg font-semibold text-primary">
+              <PenLine className="h-5 w-5 text-accent" /> {t.writing}
             </h2>
             <p dir="ltr" className="text-sm text-[#111232]">{test.writing.prompt_en}</p>
             {rtl && test.writing.prompt_ar && (
@@ -727,7 +727,7 @@ export function FluentClient({
             <textarea value={writing} onChange={(e) => setWriting(e.target.value)} rows={7}
               onPaste={onPasteCapture}
               placeholder={t.writeHere} dir="ltr"
-              className="mt-3 w-full resize-y rounded-md border border-slate-300 px-3 py-2 text-sm text-[#111232] focus:border-[#5391D5] focus:outline-none" />
+              className="mt-3 w-full resize-y rounded-md border border-slate-300 px-3 py-2 text-sm text-[#111232] focus:border-accent focus:outline-none" />
             <div className={`mt-1 text-[11px] ${wordCount >= test.writing.min_words ? "font-semibold text-emerald-600" : "text-slate-500"}`}>
               {wordCount} {t.words} · {t.min} {test.writing.min_words}
             </div>
@@ -738,8 +738,8 @@ export function FluentClient({
             id="fluent-speaking"
             className={`rounded-xl border bg-white p-6 shadow-sm ${showGaps && speakingShort ? "border-rose-400 ring-1 ring-rose-300" : ""}`}
           >
-            <h2 className="mb-1 inline-flex items-center gap-2 text-lg font-semibold text-[#010131]">
-              <Mic className="h-5 w-5 text-[#5391D5]" /> {t.speaking}
+            <h2 className="mb-1 inline-flex items-center gap-2 text-lg font-semibold text-primary">
+              <Mic className="h-5 w-5 text-accent" /> {t.speaking}
               <span className="ms-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
                 {t.required}
               </span>
@@ -755,7 +755,7 @@ export function FluentClient({
                 <div className="flex flex-wrap items-center gap-3">
                   {!recording ? (
                     <button onClick={startRecording} disabled={transcribing}
-                      className="inline-flex items-center gap-1.5 rounded-md bg-[#010131] px-4 py-2 text-sm font-medium text-white hover:bg-[#121140] disabled:opacity-50">
+                      className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-[#121140] disabled:opacity-50">
                       <Mic className="h-4 w-4" /> {transcript ? t.reRecord : t.record}
                     </button>
                   ) : (
@@ -788,7 +788,7 @@ export function FluentClient({
                 <textarea value={transcript} onChange={(e) => setTranscript(e.target.value)} rows={4}
                   onPaste={onPasteCapture}
                   placeholder={t.speakTypeHere} dir="ltr"
-                  className="w-full resize-y rounded-md border border-slate-300 px-3 py-2 text-sm text-[#111232] focus:border-[#5391D5] focus:outline-none" />
+                  className="w-full resize-y rounded-md border border-slate-300 px-3 py-2 text-sm text-[#111232] focus:border-accent focus:outline-none" />
                 <button onClick={() => { setSpeakMode("record"); setSpeakNote(""); }}
                   className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700">
                   <Mic className="h-3.5 w-3.5" /> {t.recordInstead}
@@ -838,7 +838,7 @@ export function FluentClient({
       {phase === "result" && result && !canView && (
         <div className="rounded-xl border bg-white p-8 text-center shadow-sm">
           <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-600" />
-          <h2 className="mt-3 text-xl font-bold text-[#010131]">
+          <h2 className="mt-3 text-xl font-bold text-primary">
             {rtl ? "تم إرسال تقييمك" : "Your assessment has been submitted"}
           </h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
@@ -856,7 +856,7 @@ export function FluentClient({
       {phase === "result" && result && canView && (
         <div className="rounded-xl border bg-white p-6 shadow-sm space-y-5">
           {takerName.trim() && (
-            <p className="text-sm text-slate-500">{t.resultFor} <span className="font-semibold text-[#010131]">{takerName.trim()}</span></p>
+            <p className="text-sm text-slate-500">{t.resultFor} <span className="font-semibold text-primary">{takerName.trim()}</span></p>
           )}
           <div className="flex flex-wrap items-center gap-4">
             <div>
@@ -891,7 +891,7 @@ export function FluentClient({
 
           {/* Writing criteria + feedback */}
           <div className="rounded-lg border border-slate-200 p-4">
-            <p className="mb-2 inline-flex items-center gap-1.5 text-sm font-semibold text-[#010131]"><PenLine className="h-4 w-4 text-[#5391D5]" /> {t.writing}</p>
+            <p className="mb-2 inline-flex items-center gap-1.5 text-sm font-semibold text-primary"><PenLine className="h-4 w-4 text-accent" /> {t.writing}</p>
             <CriteriaBars values={result.writing} keys={["task_achievement", "coherence", "lexical_range", "grammar", "register", "etiquette", "mechanics"] as const} labels={t.writeCrit} />
             <FeedbackBox text_en={result.writing.feedback_en} text_ar={rtl ? result.writing.feedback_ar : null} ai={result.writing.ai_generated} label={t.feedback} />
           </div>
@@ -899,14 +899,14 @@ export function FluentClient({
           {/* Speaking criteria + transcript + feedback */}
           {result.speaking.attempted && (
             <div className="rounded-lg border border-slate-200 p-4">
-              <p className="mb-2 inline-flex items-center gap-1.5 text-sm font-semibold text-[#010131]"><Mic className="h-4 w-4 text-[#5391D5]" /> {t.speaking}</p>
+              <p className="mb-2 inline-flex items-center gap-1.5 text-sm font-semibold text-primary"><Mic className="h-4 w-4 text-accent" /> {t.speaking}</p>
               <CriteriaBars values={result.speaking} keys={["fluency", "coherence", "lexical_range", "grammar"] as const} labels={t.speakCrit} />
               {typeof result.speaking.pronunciation === "number" && (
                 <div className="mt-2 flex items-center gap-3 text-xs">
                   <span className="w-44 shrink-0">{t.pronunciation}</span>
                   <div className="flex flex-1 gap-1">
                     {[1, 2, 3, 4, 5].map((n) => (
-                      <span key={n} className={`h-2 flex-1 rounded-full ${n <= (result.speaking.pronunciation ?? 0) ? "bg-[#5391D5]" : "bg-slate-200"}`} />
+                      <span key={n} className={`h-2 flex-1 rounded-full ${n <= (result.speaking.pronunciation ?? 0) ? "bg-accent" : "bg-slate-200"}`} />
                     ))}
                   </div>
                   <span className="w-8 shrink-0 text-right tabular-nums text-slate-500">{result.speaking.pronunciation}/5</span>
@@ -969,7 +969,7 @@ export function FluentClient({
                 taker gets only their own certificate here, never the full report. */}
             {result.result_id && (
               <a href={`/api/ac/fluent/${result.result_id}/certificate?format=pdf`} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-md border border-[#5391D5] px-4 py-2 text-sm font-semibold text-[#5391D5] hover:bg-[#5391D5]/10">
+                className="inline-flex items-center gap-2 rounded-md border border-accent px-4 py-2 text-sm font-semibold text-accent hover:bg-accent/10">
                 {rtl ? "الشهادة" : "Certificate"}
               </a>
             )}
@@ -992,11 +992,11 @@ function Options({
     <div className="mt-2 grid gap-2 sm:grid-cols-2" dir="ltr">
       {item.options.map((opt, oi) => (
         <label key={oi} className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm ${
-          answers[item.id] === oi ? "border-[#5391D5] bg-[#5391D5]/5" : "border-slate-200 hover:bg-slate-50"
+          answers[item.id] === oi ? "border-accent bg-accent/5" : "border-slate-200 hover:bg-slate-50"
         }`}>
           <input type="radio" name={item.id} checked={answers[item.id] === oi}
             onChange={() => setAnswers((a) => ({ ...a, [item.id]: oi }))}
-            className="accent-[#5391D5]" />
+            className="accent-accent" />
           <span>{opt}</span>
         </label>
       ))}
@@ -1030,7 +1030,7 @@ function CriteriaBars<K extends string>({
             <span className="w-44 shrink-0">{labels[k]}</span>
             <div className="flex flex-1 gap-1">
               {[1, 2, 3, 4, 5].map((n) => (
-                <span key={n} className={`h-2 flex-1 rounded-full ${n <= v ? "bg-[#5391D5]" : "bg-slate-200"}`} />
+                <span key={n} className={`h-2 flex-1 rounded-full ${n <= v ? "bg-accent" : "bg-slate-200"}`} />
               ))}
             </div>
             <span className="w-8 shrink-0 text-right tabular-nums text-slate-500">{v}/5</span>
@@ -1043,8 +1043,8 @@ function CriteriaBars<K extends string>({
 
 function FeedbackBox({ text_en, text_ar, ai, label }: { text_en: string; text_ar: string | null; ai: boolean; label: string }) {
   return (
-    <div className="mt-3 rounded-md border border-[#5391D5]/30 bg-[#5391D5]/5 p-4">
-      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-[#5391D5]">{label}</p>
+    <div className="mt-3 rounded-md border border-accent/30 bg-accent/5 p-4">
+      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-accent">{label}</p>
       <p dir="ltr" className="text-sm leading-relaxed text-[#111232]">{text_en}</p>
       {text_ar && <p dir="rtl" className="mt-2 text-sm leading-relaxed text-[#111232]">{text_ar}</p>}
       {!ai && <p className="mt-1 text-[10px] text-amber-600">fallback score (no AI key)</p>}

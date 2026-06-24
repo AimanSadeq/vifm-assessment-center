@@ -999,13 +999,27 @@ const pronToNum = (pron: number): number => {
  * score unchanged when no pronunciation assessment is available.
  */
 export function blendPronunciation(score: SpeakingScore, pron: PronunciationScore | null): SpeakingScore {
-  if (!pron || !score.attempted) return score;
-  const blendedNum = cefrToNum(score.cefr) * 0.7 + pronToNum(pron.pron) * 0.3;
+  // Guard: only blend a real, finite acoustic score for an attempted response.
+  // A null/NaN/Infinity pron.pron (forged payload, or a missing Azure result)
+  // leaves the content score untouched rather than producing a NaN band.
+  if (
+    !pron ||
+    !score.attempted ||
+    typeof pron.pron !== "number" ||
+    !Number.isFinite(pron.pron)
+  ) {
+    return score;
+  }
+  // Clamp into the documented 0-100 range so an out-of-range value can't push
+  // the band past the legitimate scale, and drive BOTH the blend and the
+  // displayed 1-5 criterion from the same clamped value (single mapping).
+  const pronPct = Math.min(100, Math.max(0, pron.pron));
+  const blendedNum = cefrToNum(score.cefr) * 0.7 + pronToNum(pronPct) * 0.3;
   return {
     ...score,
     cefr: numToCefr(blendedNum),
-    pronunciation: Math.min(5, Math.max(1, Math.round(pron.pron / 20))),
-    azure: pron,
+    pronunciation: Math.min(5, Math.max(1, pronToNum(pronPct))),
+    azure: { ...pron, pron: pronPct },
   };
 }
 

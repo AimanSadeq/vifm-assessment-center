@@ -122,10 +122,10 @@ export function VouchersClient({ vouchers, clients }: { vouchers: FluentVoucherR
               type="checkbox"
               checked={proctor}
               onChange={(e) => setProctor(e.target.checked)}
-              className="h-4 w-4 rounded border-input accent-[#5391D5]"
+              className="h-4 w-4 rounded border-input accent-accent"
             />
             <span className="inline-flex items-center gap-1 text-xs text-foreground">
-              <Camera className="h-3.5 w-3.5 text-[#5391D5]" /> Require camera proctoring
+              <Camera className="h-3.5 w-3.5 text-accent" /> Require camera proctoring
             </span>
           </label>
           <Button onClick={generate} disabled={busy || count < 1} className="gap-1.5">
@@ -151,7 +151,7 @@ export function VouchersClient({ vouchers, clients }: { vouchers: FluentVoucherR
             <div className="space-y-2">
               {lastCodes.map((c) => (
                 <div key={c} className="flex items-center gap-2 rounded border bg-muted/40 px-2.5 py-1.5">
-                  <code className="shrink-0 font-mono text-xs text-[#010131]">{c}</code>
+                  <code className="shrink-0 font-mono text-xs text-primary">{c}</code>
                   <span className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">{fullLink(c)}</span>
                   <Button variant="ghost" size="sm" className="h-7 shrink-0 gap-1 px-2 text-xs" onClick={() => copy(fullLink(c))}>
                     <Link2 className="h-3 w-3" /> Copy link
@@ -192,7 +192,7 @@ export function VouchersClient({ vouchers, clients }: { vouchers: FluentVoucherR
                       <TableCell className="text-sm">
                         {v.client_name ?? "-"}
                         {v.proctor_enabled && (
-                          <span className="ml-1.5 inline-flex items-center gap-0.5 rounded bg-[#5391D5]/10 px-1.5 py-0.5 text-[10px] font-medium text-[#5391D5]" title="Camera-proctored">
+                          <span className="ml-1.5 inline-flex items-center gap-0.5 rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent" title="Camera-proctored">
                             <Camera className="h-3 w-3" /> Proctored
                           </span>
                         )}

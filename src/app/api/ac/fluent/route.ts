@@ -378,36 +378,67 @@ async function createSession(
   }
 }
 
-type SessionRow = { test: FluentTest; expires_at: string | null; start_ip: string | null };
+type SessionRow = {
+  test: FluentTest;
+  expires_at: string | null;
+  start_ip: string | null;
+  candidate_id: string | null;
+  engagement_id: string | null;
+};
 
-/** Load the full server-stored test (+ start IP) by session id; null if missing/expired. */
-async function loadSession(id: string): Promise<{ test: FluentTest; startIp: string | null } | null> {
+type LoadedSession = {
+  test: FluentTest;
+  startIp: string | null;
+  candidateId: string | null;
+  engagementId: string | null;
+};
+
+/**
+ * Atomically claim + load the server-stored test by session id. Returns null if
+ * the session is missing, expired, or already consumed.
+ *
+ * Security (audit fixes):
+ * - Single-use: the load IS the consume. We flip consumed_at from NULL to now in
+ *   the same statement and only proceed if THIS call won the row. A replay (or a
+ *   double-submit race) sees zero rows and is rejected, so a session can never be
+ *   re-scored into a second result + credential. Mirrors the single-use consume
+ *   hardening applied across the other voucher/session flows.
+ * - candidate_id / engagement_id are read from the SESSION (stamped at start),
+ *   never trusted from the score request body, so a caller cannot bind a result
+ *   or credential to a candidate they don't own.
+ */
+async function loadSession(id: string): Promise<LoadedSession | null> {
   try {
     const sb = createServiceClient();
-    // Try with start_ip (00142); fall back without it on a missing column. Same
-    // row generic on both so the result type stays consistent.
+    const now = new Date().toISOString();
+    // Atomic single-use claim. `.is("consumed_at", null)` makes the update a
+    // no-op for an already-consumed session, so only the first caller gets a row.
+    // Try with start_ip (00142); fall back without it on a missing column.
     let res = await sb
       .from("eng_fluent_sessions")
-      .select("test, expires_at, start_ip")
+      .update({ consumed_at: now })
       .eq("id", id)
+      .is("consumed_at", null)
+      .select("test, expires_at, start_ip, candidate_id, engagement_id")
       .maybeSingle<SessionRow>();
     if (res.error) {
       res = await sb
         .from("eng_fluent_sessions")
-        .select("test, expires_at")
+        .update({ consumed_at: now })
         .eq("id", id)
+        .is("consumed_at", null)
+        .select("test, expires_at, candidate_id, engagement_id")
         .maybeSingle<SessionRow>();
     }
     const row = res.data;
     if (res.error || !row || !row.test) return null;
     if (row.expires_at && new Date(row.expires_at).getTime() < Date.now()) return null;
-    // Record consumption (best-effort; re-scoring is allowed).
-    try {
-      await sb.from("eng_fluent_sessions").update({ consumed_at: new Date().toISOString() }).eq("id", id);
-    } catch {
-      /* ignore */
-    }
-    return { test: row.test, startIp: row.start_ip ?? null };
+    return {
+      test: row.test,
+      startIp: row.start_ip ?? null,
+      candidateId: row.candidate_id ?? null,
+      engagementId: row.engagement_id ?? null,
+    };
   } catch {
     return null;
   }
@@ -444,42 +475,43 @@ export async function POST(req: Request) {
       }
       return NextResponse.json({ session_id, test: publicTest, tts });
     }
-    // Legacy fallback (eng_fluent_sessions not migrated): full test client-side.
-    return NextResponse.json({ ...test, tts });
+    // Fail closed (audit fix): if the server-side session store is unavailable we
+    // must NOT ship the full test - that would leak every correct_index to the
+    // browser. Refuse rather than fall back to an answer-key-bearing payload.
+    return NextResponse.json(
+      { error: "Secure assessment storage is unavailable. Please try again shortly." },
+      { status: 503 },
+    );
   }
 
   if (body.action === "score") {
-    // Resolve the test: secure path loads it server-side by session id (the
-    // answer key never left the server); legacy path uses the posted test.
-    let reading: ReadingItem[] | null = null;
-    let listening: ListeningItem[] = [];
-    let writingTask: WritingTask | null = null;
-    let speakingTask: SpeakingTask | null = null;
-    let aiGenerated = body.aiGenerated === true;
-
-    let startIp: string | null = null;
-    if (body.sessionId) {
-      const loaded = await loadSession(body.sessionId);
-      if (!loaded) {
-        return NextResponse.json({ error: "invalid or expired session" }, { status: 400 });
-      }
-      const test = loaded.test;
-      startIp = loaded.startIp;
-      reading = test.reading;
-      listening = test.listening ?? [];
-      writingTask = test.writing;
-      speakingTask = test.speaking;
-      aiGenerated = test.ai_generated;
-    } else {
-      reading = Array.isArray(body.reading) ? body.reading : null;
-      listening = Array.isArray(body.listening) ? body.listening : [];
-      writingTask = body.writingTask ?? null;
-      speakingTask = body.speakingTask ?? null;
+    // Resolve the test from the server-held session only. We never grade
+    // client-posted items: those would carry a forgeable correct_index, so the
+    // answer-key integrity guarantee depends on the test never leaving the
+    // server. A session id is therefore mandatory.
+    if (!body.sessionId) {
+      return NextResponse.json({ error: "a valid session is required" }, { status: 400 });
     }
+    const loaded = await loadSession(body.sessionId);
+    if (!loaded) {
+      return NextResponse.json({ error: "invalid or expired session" }, { status: 400 });
+    }
+    const test = loaded.test;
+    const startIp: string | null = loaded.startIp;
+    // Bind the result/credential to the candidate stamped on the SESSION at start
+    // time - never to a candidate id supplied in the (untrusted) score body. This
+    // closes the candidate-id spoofing vector.
+    const sessionCandidateId = loaded.candidateId;
+    const sessionEngagementId = loaded.engagementId;
+    const reading: ReadingItem[] | null = test.reading;
+    const listening: ListeningItem[] = test.listening ?? [];
+    const writingTask: WritingTask | null = test.writing;
+    const speakingTask: SpeakingTask | null = test.speaking;
+    const aiGenerated = test.ai_generated;
 
     if (!reading || !writingTask) {
       return NextResponse.json(
-        { error: "a valid session (or reading items + writingTask) is required" },
+        { error: "the session is missing required test content" },
         { status: 400 }
       );
     }
@@ -500,8 +532,14 @@ export async function POST(req: Request) {
         ? await scoreFluentSpeakingEnsemble({ task: speakingTask, transcript: speakingTranscript, language, samples })
         : undefined;
     // Blend Azure pronunciation (acoustic) into the Claude content score.
+    // Security: trust a client-posted acoustic score ONLY when Azure Speech is
+    // actually configured (the score is produced server-side from the audio). On
+    // a deployment without Azure we ignore any posted pronunciation so a forged
+    // value cannot inflate the speaking band. blendPronunciation additionally
+    // validates + clamps the value into its documented 0-100 range.
+    const trustedPronunciation = isAzureSpeechConfigured() ? body.pronunciation ?? null : null;
     const speaking = speakingBase
-      ? blendPronunciation(speakingBase, body.pronunciation ?? null)
+      ? blendPronunciation(speakingBase, trustedPronunciation)
       : undefined;
 
     const result = computeFluentResult({
@@ -531,8 +569,8 @@ export async function POST(req: Request) {
       aiGenerated,
       integrityFlags,
       integrity,
-      candidateId: body.candidateId?.trim() ? body.candidateId.trim() : null,
-      engagementId: body.engagementId?.trim() ? body.engagementId.trim() : null,
+      candidateId: sessionCandidateId,
+      engagementId: sessionEngagementId,
       reliability,
     });
 
@@ -557,7 +595,7 @@ export async function POST(req: Request) {
     // Issue a verifiable CEFR credential (best-effort; VIFM Verify).
     if (result_id) {
       await issueCredential({
-        candidateId: body.candidateId?.trim() ? body.candidateId.trim() : null,
+        candidateId: sessionCandidateId,
         issuedToName: takerName || "Candidate",
         issuedToEmail: takerEmail,
         type: "fluent_cefr",

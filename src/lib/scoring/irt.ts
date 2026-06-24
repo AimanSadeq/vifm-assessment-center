@@ -64,7 +64,14 @@ export function estimateThetaRasch(responses: Array<{ b: number; correct: boolea
   return Math.round(best * 100) / 100;
 }
 
-/** Pick the unadministered calibrated item with maximum information at θ. */
+/**
+ * Pick the unadministered calibrated item with maximum information at θ.
+ *
+ * The caller is responsible for passing a bank of `status='live'` items only;
+ * as a defence-in-depth guard we additionally skip any item whose difficulty is
+ * not a finite number, so an un-calibrated (NULL/NaN irt_b) row that slips into
+ * the bank can never be administered.
+ */
 export function selectNextItem(
   theta: number,
   administeredIds: Set<string>,
@@ -74,6 +81,7 @@ export function selectNextItem(
   let bestInfo = -Infinity;
   for (const it of bank) {
     if (administeredIds.has(it.id)) continue;
+    if (typeof it.irt_b !== "number" || !Number.isFinite(it.irt_b)) continue;
     const info = itemInformation(theta, it.irt_b);
     if (info > bestInfo) {
       bestInfo = info;

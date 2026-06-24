@@ -165,8 +165,8 @@ export default async function FluentPage({ searchParams }: Props) {
       {/* ─── Start / flow (overlaps the hero like the rest of the portal) ─── */}
       <main className="relative z-10 mx-auto -mt-12 max-w-5xl px-6 pb-16">
         {candidateName && (
-          <div className="mb-5 flex items-center gap-2 rounded-xl border border-[#5391D5]/40 bg-[#5391D5]/5 px-4 py-3 text-sm text-[#010131] shadow-sm">
-            <UserCheck className="h-4 w-4 shrink-0 text-[#5391D5]" />
+          <div className="mb-5 flex items-center gap-2 rounded-xl border border-accent/40 bg-accent/5 px-4 py-3 text-sm text-primary shadow-sm">
+            <UserCheck className="h-4 w-4 shrink-0 text-accent" />
             <span>
               {t("acFluent.candidateBindingPrefix")}{" "}
               <strong>{candidateName}</strong>{t("acFluent.candidateBindingSuffix")}

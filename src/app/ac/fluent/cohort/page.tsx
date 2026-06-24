@@ -94,19 +94,19 @@ export default async function FluentCohortPage({ searchParams }: { searchParams?
             <ArrowLeft className="h-3 w-3" /> {t("acFluent.backToFluent")}
           </Link>
           <div className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-[#5391D5]" />
-            <h1 className="text-xl font-semibold text-[#010131]">{t("acFluent.cohortTitle")}</h1>
-            <span className="ml-2 rounded-full bg-[#5391D5]/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[#5391D5]">
+            <Users className="h-5 w-5 text-accent" />
+            <h1 className="text-xl font-semibold text-primary">{t("acFluent.cohortTitle")}</h1>
+            <span className="ml-2 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent">
               {t("acFluent.prototypeBadge")}
             </span>
           </div>
           <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
             {t("acFluent.cohortSubtitle")}
           </p>
-          <Link href="/admin/fluent/partner-courses" className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-[#5391D5] hover:underline">
+          <Link href="/admin/fluent/partner-courses" className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline">
             <BookOpen className="h-3.5 w-3.5" /> Manage partner English courses (report recommendations)
           </Link>
-          <Link href="/admin/proctor" className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-[#5391D5] hover:underline">
+          <Link href="/admin/proctor" className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline">
             <Camera className="h-3.5 w-3.5" /> Proctoring sessions
           </Link>
         </div>
@@ -123,7 +123,7 @@ export default async function FluentCohortPage({ searchParams }: { searchParams?
         {rows !== null && rows.length === 0 && (
           <div className="rounded-lg border bg-white px-4 py-10 text-center text-sm text-muted-foreground shadow-sm">
             {t("acFluent.cohortEmptyPrefix")}{" "}
-            <Link href="/ac/fluent" className="text-[#5391D5] underline">
+            <Link href="/ac/fluent" className="text-accent underline">
               {t("acFluent.cohortEmptyLink")}
             </Link>{" "}
             {t("acFluent.cohortEmptySuffix")}
@@ -138,11 +138,11 @@ export default async function FluentCohortPage({ searchParams }: { searchParams?
           return (
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className="text-slate-500">Client:</span>
-              <Link href="/ac/fluent/cohort" className={`rounded-full border px-2.5 py-0.5 ${!orgFilter ? "border-[#5391D5] bg-[#5391D5]/10 text-[#5391D5] font-medium" : "text-slate-600 hover:bg-slate-100"}`}>
+              <Link href="/ac/fluent/cohort" className={`rounded-full border px-2.5 py-0.5 ${!orgFilter ? "border-accent bg-accent/10 text-accent font-medium" : "text-slate-600 hover:bg-slate-100"}`}>
                 All
               </Link>
               {clientsList.map((c) => (
-                <Link key={c} href={`/ac/fluent/cohort?org=${encodeURIComponent(c)}`} className={`rounded-full border px-2.5 py-0.5 ${orgFilter === c ? "border-[#5391D5] bg-[#5391D5]/10 text-[#5391D5] font-medium" : "text-slate-600 hover:bg-slate-100"}`}>
+                <Link key={c} href={`/ac/fluent/cohort?org=${encodeURIComponent(c)}`} className={`rounded-full border px-2.5 py-0.5 ${orgFilter === c ? "border-accent bg-accent/10 text-accent font-medium" : "text-slate-600 hover:bg-slate-100"}`}>
                   {c}
                 </Link>
               ))}
@@ -184,8 +184,8 @@ function CohortBody({ rows, t }: { rows: Row[]; t: ServerT }) {
 
       {/* CEFR distribution */}
       <section className="rounded-xl border bg-white p-6 shadow-sm">
-        <h2 className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-[#010131]">
-          <Sparkles className="h-4 w-4 text-[#5391D5]" /> {t("acFluent.cohortDistributionTitle")}
+        <h2 className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-primary">
+          <Sparkles className="h-4 w-4 text-accent" /> {t("acFluent.cohortDistributionTitle")}
         </h2>
         <div className="space-y-2">
           {dist.map((d) => (
@@ -195,7 +195,7 @@ function CohortBody({ rows, t }: { rows: Row[]; t: ServerT }) {
               </span>
               <div className="flex-1 rounded-full bg-slate-100">
                 <div
-                  className="h-4 rounded-full bg-[#5391D5]"
+                  className="h-4 rounded-full bg-accent"
                   style={{ width: `${(d.n / maxN) * 100}%`, minWidth: d.n > 0 ? "1.25rem" : "0" }}
                 />
               </div>
@@ -207,11 +207,11 @@ function CohortBody({ rows, t }: { rows: Row[]; t: ServerT }) {
 
       {/* Per-skill averages */}
       <section className="rounded-xl border bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-sm font-semibold text-[#010131]">{t("acFluent.cohortAverageBySkill")}</h2>
+        <h2 className="mb-4 text-sm font-semibold text-primary">{t("acFluent.cohortAverageBySkill")}</h2>
         <div className="grid gap-4 sm:grid-cols-4">
           {skillAverages.map((s) => (
             <div key={s.label} className="rounded-lg border border-slate-200 p-4 text-center">
-              <s.icon className="mx-auto h-4 w-4 text-[#5391D5]" />
+              <s.icon className="mx-auto h-4 w-4 text-accent" />
               <p className="mt-1 text-[11px] uppercase tracking-wider text-slate-500">{s.label}</p>
               <p className={`mt-1 inline-block rounded-md border px-2 text-xl font-bold ${s.band ? CEFR_TONE[s.band.band] : "text-slate-400"}`}>
                 {s.band ? s.band.band : "-"}
@@ -224,7 +224,7 @@ function CohortBody({ rows, t }: { rows: Row[]; t: ServerT }) {
 
       {/* Recent results */}
       <section className="rounded-xl border bg-white shadow-sm">
-        <h2 className="border-b px-6 py-4 text-sm font-semibold text-[#010131]">{t("acFluent.cohortIndividualResults")}</h2>
+        <h2 className="border-b px-6 py-4 text-sm font-semibold text-primary">{t("acFluent.cohortIndividualResults")}</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -294,7 +294,7 @@ function CohortBody({ rows, t }: { rows: Row[]; t: ServerT }) {
                         href={`/api/ac/fluent/${r.id}/report`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-[#010131] hover:underline"
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
                       >
                         <Award className="h-3.5 w-3.5" /> Full report
                       </a>
@@ -302,7 +302,7 @@ function CohortBody({ rows, t }: { rows: Row[]; t: ServerT }) {
                         href={`/api/ac/fluent/${r.id}/certificate`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs font-medium text-[#5391D5] hover:underline"
+                        className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline"
                       >
                         {t("acFluent.openCertificate")}
                       </a>
@@ -322,7 +322,7 @@ function StatCard({ label, value, tone }: { label: string; value: string; tone?:
   return (
     <div className="rounded-xl border bg-white p-4 shadow-sm">
       <p className="text-[11px] uppercase tracking-wider text-slate-500">{label}</p>
-      <p className={`mt-1 text-2xl font-bold ${tone ? `inline-block rounded-md border px-2 ${CEFR_TONE[tone]}` : "text-[#010131]"}`}>
+      <p className={`mt-1 text-2xl font-bold ${tone ? `inline-block rounded-md border px-2 ${CEFR_TONE[tone]}` : "text-primary"}`}>
         {value}
       </p>
     </div>

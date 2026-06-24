@@ -67,8 +67,8 @@ export default async function FluentCalibrationPage() {
             <ArrowLeft className="h-3 w-3" /> {t("acFluent.backToFluent")}
           </Link>
           <div className="flex items-center gap-2">
-            <ClipboardCheck className="h-5 w-5 text-[#5391D5]" />
-            <h1 className="text-xl font-semibold text-[#010131]">{t("acFluent.calibrationTitle")}</h1>
+            <ClipboardCheck className="h-5 w-5 text-accent" />
+            <h1 className="text-xl font-semibold text-primary">{t("acFluent.calibrationTitle")}</h1>
           </div>
           <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
             {t("acFluent.calibrationIntroPrefix")}{" "}
@@ -124,7 +124,7 @@ function CalibrationBody({ results, runs, humans, t }: { results: ResultRow[]; r
       <section className="space-y-4">
         {results.length === 0 && (
           <div className="rounded-xl border bg-white p-6 text-center text-sm text-muted-foreground shadow-sm">
-            {t("acFluent.calibrationNoResultsPrefix")} <Link href="/ac/fluent" className="text-[#5391D5] underline">/ac/fluent</Link>{t("acFluent.calibrationNoResultsSuffix")}
+            {t("acFluent.calibrationNoResultsPrefix")} <Link href="/ac/fluent" className="text-accent underline">/ac/fluent</Link>{t("acFluent.calibrationNoResultsSuffix")}
           </div>
         )}
         {results.map((res) => {
@@ -136,14 +136,14 @@ function CalibrationBody({ results, runs, humans, t }: { results: ResultRow[]; r
           return (
             <div key={res.id} className="rounded-xl border bg-white p-5 shadow-sm">
               <div className="mb-3 flex items-center justify-between gap-2 text-xs text-slate-500">
-                <span className="font-medium text-[#010131]">{res.taker_name || t("acFluent.anonymous")}</span>
+                <span className="font-medium text-primary">{res.taker_name || t("acFluent.anonymous")}</span>
                 <span>{new Date(res.created_at).toLocaleString("en-GB")}</span>
               </div>
 
               <div className="space-y-3">
-                <Block icon={<PenLine className="h-4 w-4 text-[#5391D5]" />} title={t("acFluent.skillWriting")} aiCefr={w?.cefr} text={response} t={t} />
+                <Block icon={<PenLine className="h-4 w-4 text-accent" />} title={t("acFluent.skillWriting")} aiCefr={w?.cefr} text={response} t={t} />
                 {hasSpeaking && (
-                  <Block icon={<Mic className="h-4 w-4 text-[#5391D5]" />} title={t("acFluent.calibrationSpeakingTranscript")} aiCefr={s?.cefr} text={transcript} t={t} />
+                  <Block icon={<Mic className="h-4 w-4 text-accent" />} title={t("acFluent.calibrationSpeakingTranscript")} aiCefr={s?.cefr} text={transcript} t={t} />
                 )}
               </div>
 
@@ -184,7 +184,7 @@ function Block({ icon, title, aiCefr, text, t }: { icon: ReactNode; title: strin
   return (
     <div className="rounded-lg border border-slate-200 p-3">
       <div className="mb-1 flex items-center gap-2">
-        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#010131]">{icon} {title}</span>
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary">{icon} {title}</span>
         {aiCefr && (
           <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${CEFR_TONE[aiCefr] ?? "bg-slate-100 text-slate-700"}`}>
             {t("acFluent.aiPrefix")} {aiCefr}

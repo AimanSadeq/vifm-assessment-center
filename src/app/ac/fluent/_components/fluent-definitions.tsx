@@ -58,7 +58,7 @@ const SPEAKING_CRIT: Def[] = [
 function Group({ heading, items, ar }: { heading: string; items: Def[]; ar: boolean }) {
   return (
     <div>
-      <p className="mt-2 text-xs font-semibold text-[#010131]">{heading}</p>
+      <p className="mt-2 text-xs font-semibold text-primary">{heading}</p>
       <dl className="mt-1 space-y-1">
         {items.map((d) => (
           <div key={d.term.en} className="text-xs leading-relaxed">
@@ -74,7 +74,7 @@ function Group({ heading, items, ar }: { heading: string; items: Def[]; ar: bool
 export function FluentDefinitions({ ar }: { ar: boolean }) {
   return (
     <details className="rounded-xl border bg-white p-5 shadow-sm" dir={ar ? "rtl" : "ltr"}>
-      <summary className="cursor-pointer text-sm font-semibold text-[#010131]">
+      <summary className="cursor-pointer text-sm font-semibold text-primary">
         {ar ? "ما الذي نقيسه (التعريفات)" : "What we measure (definitions)"}
       </summary>
       <div className="mt-3 space-y-3">

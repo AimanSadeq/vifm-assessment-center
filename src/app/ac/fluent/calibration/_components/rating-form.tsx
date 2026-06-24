@@ -15,7 +15,7 @@ function CefrSelect({ value, onChange, label }: { value: string; onChange: (v: s
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-[#5391D5] focus:outline-none"
+        className="rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-accent focus:outline-none"
       >
         <option value="">-</option>
         {CEFR.map((c) => (
@@ -87,7 +87,7 @@ export function RatingForm({
         value={rater}
         onChange={(e) => setRater(e.target.value)}
         placeholder={t("acFluent.ratingRaterPlaceholder")}
-        className="w-40 rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-[#5391D5] focus:outline-none"
+        className="w-40 rounded-md border border-slate-300 px-2 py-1 text-xs focus:border-accent focus:outline-none"
       />
       <span className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{t("acFluent.ratingHumanCefr")}</span>
       <CefrSelect value={w} onChange={setW} label={t("acFluent.skillWriting")} />
@@ -95,7 +95,7 @@ export function RatingForm({
       <button
         onClick={save}
         disabled={busy || !rater.trim() || (!w && !s)}
-        className="inline-flex items-center gap-1.5 rounded-md bg-[#010131] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#121140] disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-[#121140] disabled:opacity-50"
       >
         {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
         {t("acFluent.ratingSaveButton")}

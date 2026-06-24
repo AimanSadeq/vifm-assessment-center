@@ -90,7 +90,7 @@ const G = {
     criticalTitle: "Which competencies matter most for this role?",
     tenureTitle: "How long have you worked with this person?",
     tenureLead: "Optional - adds context to your feedback.",
-    tenure: { less_than_6mo: "< 6 months", six_mo_to_2yr: "6 mo – 2 yr", two_to_5yr: "2 – 5 yr", over_5yr: "5 yr +" },
+    tenure: { less_than_6mo: "< 6 months", six_mo_to_2yr: "6 mo - 2 yr", two_to_5yr: "2 - 5 yr", over_5yr: "5 yr +" },
     submit: "Submit my feedback",
     submitting: "Submitting…",
     needAll: "Rate every card to submit",

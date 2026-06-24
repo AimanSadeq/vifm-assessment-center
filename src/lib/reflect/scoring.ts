@@ -645,13 +645,31 @@ export async function computeParticipantScoring(
   // above-threshold group - the consultant + participant know how many
   // people contributed; trying to randomise speaker order while keeping
   // the count "anonymous enough" creates more risk than value.
-  const groupRaterCount = (role: ReflectRaterRole): number =>
-    (ratersByRole.get(role) ?? []).length;
+  // P3-audit fix (CRITICAL anonymity): the threshold must be measured against
+  // raters who actually CONTRIBUTED a verbatim, not against everyone invited.
+  // Previously this counted all invited raters in the group, so inviting 4
+  // peers and receiving a single verbatim still cleared min_n=3 and surfaced
+  // that lone peer's words verbatim - a direct de-anonymisation. We now count
+  // distinct contributors per group (the tightest correct bound; mirrors the
+  // responded-count pattern used for per-behaviour comments above).
+  const verbatimContributorsByRole = new Map<ReflectRaterRole, number>();
+  for (const r of raters) {
+    const hasVerbatim = !!(
+      r.open_start || r.open_stop || r.open_continue || r.open_strengths ||
+      r.open_development || r.open_example || r.open_advice || r.open_other
+    );
+    if (hasVerbatim) {
+      verbatimContributorsByRole.set(
+        r.rater_role,
+        (verbatimContributorsByRole.get(r.rater_role) ?? 0) + 1
+      );
+    }
+  }
 
   const open_responses: OpenVerbatim[] = [];
   for (const r of raters) {
     const sensitive = r.rater_role !== "self" && r.rater_role !== "manager";
-    if (sensitive && groupRaterCount(r.rater_role) < min_n) continue;
+    if (sensitive && (verbatimContributorsByRole.get(r.rater_role) ?? 0) < min_n) continue;
     if (r.open_start) {
       open_responses.push({ kind: "start", rater_role: r.rater_role, text: r.open_start, tenure: r.tenure });
     }
@@ -840,6 +858,27 @@ export async function computeCohortScoring(
     };
   }
 
+  // P3-audit fix (completion-pct tautology): completion % must be
+  // completed-raters / INVITED-raters per participant. The rollup below used
+  // to divide totalRespondedRaters by itself (always 100%). Pull the real
+  // invited + completed counts per participant once, up front.
+  const raterCounts = new Map<string, { invited: number; completed: number }>();
+  {
+    const { data: raterRows } = await sb
+      .from("reflect_raters")
+      .select("participant_id, status")
+      .in(
+        "participant_id",
+        participants.map((p) => p.id)
+      );
+    for (const r of (raterRows ?? []) as Array<{ participant_id: string; status: string }>) {
+      const e = raterCounts.get(r.participant_id) ?? { invited: 0, completed: 0 };
+      e.invited += 1;
+      if (r.status === "completed") e.completed += 1;
+      raterCounts.set(r.participant_id, e);
+    }
+  }
+
   // Reuse per-participant scoring (computing 117 participants serially
   // is slow; for v1 we accept the latency and revisit with parallelism
   // / materialised views in a later iteration).
@@ -926,14 +965,15 @@ export async function computeCohortScoring(
   const participantsRollup = participants.map((p) => {
     const s = scorings.find((x) => x.participant_id === p.id);
     const overall = s?.overall_others ?? s?.overall_mean ?? null;
-    // Completion %: how many of this participant's raters reached "completed"
-    const groupRaters = s?.by_group ?? [];
-    const totalRaters = groupRaters.reduce((sum, g) => sum + g.rater_count, 0);
+    // Completion %: completed raters over INVITED raters (P3-audit fix - was a
+    // tautology that always reported 100%).
+    const counts = raterCounts.get(p.id) ?? { invited: 0, completed: 0 };
     return {
       participant_id: p.id,
       participant_name: p.full_name,
       overall_mean: overall,
-      completion_pct: totalRaters === 0 ? 0 : Math.round((totalRaters / Math.max(totalRaters, 1)) * 100),
+      completion_pct:
+        counts.invited === 0 ? 0 : Math.round((counts.completed / counts.invited) * 100),
     };
   });
 

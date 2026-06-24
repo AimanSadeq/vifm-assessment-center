@@ -159,6 +159,83 @@ async function requireOwnerForBehavior(behaviorId: string) {
   return requireEngagementOwner(engagementId);
 }
 
+// ──────────────────────────────────────────────────────────────
+// Framework lock (P3-audit: framework-edit/delete-during-live).
+//
+// A 360 framework is the question set. Once an engagement leaves 'draft'
+// (live/closed/archived), raters are answering against a fixed set of
+// behaviour ids; editing the wording or deleting a behaviour mid-flight
+// drifts the stored response semantics from what the rater saw, and a
+// CASCADE delete silently destroys completed raters' responses. We gate
+// every mutating editor path on engagement.status === 'draft'.
+//
+// Template frameworks (engagement_id IS NULL) never reach these helpers -
+// the ownership resolvers throw "not found" first - so a null status here
+// means a transient read miss, not a template, and we do NOT false-block.
+// ──────────────────────────────────────────────────────────────
+
+const FRAMEWORK_LOCKED =
+  "Framework is locked - it cannot be edited once the engagement is live or closed. Reopen a draft to make changes.";
+
+async function engagementStatusByFramework(frameworkId: string): Promise<string | null> {
+  const sb = createServiceClient();
+  const { data } = await sb
+    .from("reflect_frameworks")
+    .select("reflect_engagements!inner(status)")
+    .eq("id", frameworkId)
+    .maybeSingle<{ reflect_engagements: { status: string } }>();
+  return data?.reflect_engagements?.status ?? null;
+}
+
+async function engagementStatusByCompetency(competencyId: string): Promise<string | null> {
+  const sb = createServiceClient();
+  const { data } = await sb
+    .from("reflect_competencies")
+    .select("reflect_frameworks!inner(reflect_engagements!inner(status))")
+    .eq("id", competencyId)
+    .maybeSingle<{ reflect_frameworks: { reflect_engagements: { status: string } } }>();
+  return data?.reflect_frameworks?.reflect_engagements?.status ?? null;
+}
+
+async function engagementStatusByBehavior(behaviorId: string): Promise<string | null> {
+  const sb = createServiceClient();
+  const { data } = await sb
+    .from("reflect_behaviors")
+    .select(
+      "reflect_competencies!inner(reflect_frameworks!inner(reflect_engagements!inner(status)))"
+    )
+    .eq("id", behaviorId)
+    .maybeSingle<{
+      reflect_competencies: { reflect_frameworks: { reflect_engagements: { status: string } } };
+    }>();
+  return (
+    data?.reflect_competencies?.reflect_frameworks?.reflect_engagements?.status ?? null
+  );
+}
+
+/** True when the engagement is in a state that forbids framework edits. */
+function isFrameworkLocked(status: string | null): boolean {
+  return status !== null && status !== "draft";
+}
+
+/**
+ * Does any COMPLETED rater have a recorded response for one of these
+ * behaviours? Completed responses are immutable: deleting their behaviour
+ * (or its parent competency, which CASCADE-deletes behaviours) would erase
+ * a participant's scores. Returns true if the delete must be refused.
+ */
+async function completedResponsesExistForBehaviors(behaviorIds: string[]): Promise<boolean> {
+  if (behaviorIds.length === 0) return false;
+  const sb = createServiceClient();
+  const { data } = await sb
+    .from("reflect_responses")
+    .select("rater_id, reflect_raters!inner(status)")
+    .in("behavior_id", behaviorIds)
+    .eq("reflect_raters.status", "completed")
+    .limit(1);
+  return (data?.length ?? 0) > 0;
+}
+
 
 // ──────────────────────────────────────────────────────────────
 // Create engagement
@@ -447,6 +524,13 @@ export async function upsertReflectCompetency(payload: UpsertCompetencyPayload) 
     else await requireEngagementOwnerByFramework(p.framework_id);
   } catch (e) { return authErr(e); }
 
+  // P3-audit fix: refuse edits once the engagement is live/closed - the
+  // behaviour ids are frozen the moment raters start answering.
+  const status = p.id
+    ? await engagementStatusByCompetency(p.id)
+    : await engagementStatusByFramework(p.framework_id);
+  if (isFrameworkLocked(status)) return { ok: false, error: FRAMEWORK_LOCKED };
+
   const sb = createServiceClient();
   if (p.id) {
     const { error } = await sb
@@ -491,6 +575,12 @@ export async function upsertReflectBehavior(payload: UpsertBehaviorPayload) {
     else await requireOwnerForCompetency(p.competency_id);
   } catch (e) { return authErr(e); }
 
+  // P3-audit fix: refuse edits once the engagement is live/closed.
+  const status = p.id
+    ? await engagementStatusByBehavior(p.id)
+    : await engagementStatusByCompetency(p.competency_id);
+  if (isFrameworkLocked(status)) return { ok: false, error: FRAMEWORK_LOCKED };
+
   const sb = createServiceClient();
   if (p.id) {
     const { error } = await sb
@@ -524,20 +614,76 @@ export async function upsertReflectBehavior(payload: UpsertBehaviorPayload) {
 
 export async function deleteReflectCompetency(competencyId: string) {
   // P3-audit fix: scope delete to the calling consultant's engagements.
-  try { await requireOwnerForCompetency(competencyId); } catch (e) { return authErr(e); }
+  let caller;
+  try { caller = await requireOwnerForCompetency(competencyId); } catch (e) { return authErr(e); }
+
+  // P3-audit fix (CRITICAL cascade-delete): a competency delete CASCADE-deletes
+  // its behaviours and every response under them (00032 FKs). Two guards:
+  // (1) engagement must be draft; (2) no completed rater may have responses for
+  // any behaviour under this competency. Either failing refuses the delete so
+  // a participant's scored history can never silently vanish.
+  const status = await engagementStatusByCompetency(competencyId);
+  if (isFrameworkLocked(status)) return { ok: false, error: FRAMEWORK_LOCKED };
+
   const sb = createServiceClient();
+  const { data: behaviors } = await sb
+    .from("reflect_behaviors")
+    .select("id")
+    .eq("competency_id", competencyId);
+  const behaviorIds = (behaviors ?? []).map((b) => b.id as string);
+  if (await completedResponsesExistForBehaviors(behaviorIds)) {
+    return {
+      ok: false,
+      error:
+        "Cannot delete this competency - completed raters have recorded responses for its behaviours. Their scored history is immutable.",
+    };
+  }
+
   const { error } = await sb.from("reflect_competencies").delete().eq("id", competencyId);
   if (error) return { ok: false, error: error.message };
+
+  // Audit trail (mirrors launchReflectEngagement). Records the cascade so a
+  // later report discrepancy is traceable to a deliberate draft-time edit.
+  await sb.from("reflect_audit_log").insert({
+    action: "competency.deleted",
+    target_table: "reflect_competencies",
+    target_id: competencyId,
+    performed_by: caller?.isDev ? null : caller?.uid ?? null,
+    metadata: { note: "Draft-time delete; cascaded its behaviours.", behaviors: behaviorIds.length },
+  });
   return { ok: true };
 }
 
 
 export async function deleteReflectBehavior(behaviorId: string) {
   // P3-audit fix: scope delete to the calling consultant's engagements.
-  try { await requireOwnerForBehavior(behaviorId); } catch (e) { return authErr(e); }
+  let caller;
+  try { caller = await requireOwnerForBehavior(behaviorId); } catch (e) { return authErr(e); }
+
+  // P3-audit fix (CRITICAL cascade-delete): a behaviour delete CASCADE-deletes
+  // its responses. Same two guards as deleteReflectCompetency.
+  const status = await engagementStatusByBehavior(behaviorId);
+  if (isFrameworkLocked(status)) return { ok: false, error: FRAMEWORK_LOCKED };
+
+  if (await completedResponsesExistForBehaviors([behaviorId])) {
+    return {
+      ok: false,
+      error:
+        "Cannot delete this behaviour - completed raters have recorded responses for it. Their scored history is immutable.",
+    };
+  }
+
   const sb = createServiceClient();
   const { error } = await sb.from("reflect_behaviors").delete().eq("id", behaviorId);
   if (error) return { ok: false, error: error.message };
+
+  await sb.from("reflect_audit_log").insert({
+    action: "behavior.deleted",
+    target_table: "reflect_behaviors",
+    target_id: behaviorId,
+    performed_by: caller?.isDev ? null : caller?.uid ?? null,
+    metadata: { note: "Draft-time delete; cascaded its responses." },
+  });
   return { ok: true };
 }
 

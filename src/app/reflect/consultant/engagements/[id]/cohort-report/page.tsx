@@ -40,6 +40,7 @@ export default async function ReflectCohortReportPage({
       unmappedCompetencies={courses.unmapped}
       lang={lang}
       bare={bare}
+      engagementId={id}
     />
   );
 }
@@ -50,18 +51,28 @@ function CohortReport({
   unmappedCompetencies,
   lang,
   bare,
+  engagementId,
 }: {
   scoring: CohortScoring;
   recommendations: RecommendedCourse[];
   unmappedCompetencies: string[];
   lang: "en" | "ar" | "bilingual";
   bare: boolean;
+  engagementId: string;
 }) {
   const rtl = lang === "ar";
 
   return (
     <div className={`reflect-pdf ${bare ? "bare" : ""}`} dir={rtl ? "rtl" : "ltr"}>
       <style>{COHORT_CSS}</style>
+
+      {/* Back affordance (SOP). Hidden in bare/PDF mode by the
+          `.reflect-pdf.bare nav { display:none }` rule in COHORT_CSS. */}
+      <nav className="screen-back">
+        <a href={`/reflect/consultant/engagements/${engagementId}`}>
+          {rtl ? "→ العودة إلى التكليف" : "← Back to engagement"}
+        </a>
+      </nav>
 
       {/* Cover */}
       <section className="page cover">
@@ -433,6 +444,9 @@ body { margin: 0; }
   line-height: 1.5;
 }
 .reflect-pdf.bare nav, .reflect-pdf.bare aside { display: none !important; }
+.reflect-pdf nav.screen-back { padding: 6mm 4mm 0; }
+.reflect-pdf nav.screen-back a { color: var(--vifm-accent); font-size: 10pt; font-weight: 600; text-decoration: none; }
+.reflect-pdf nav.screen-back a:hover { text-decoration: underline; }
 body > nextjs-portal, [data-nextjs-toast], [data-nextjs-dev-tools-button], #__next-build-watcher { display: none !important; }
 .page { page-break-after: always; break-after: page; padding: 8mm 4mm 0; }
 .page:last-child { page-break-after: auto; break-after: auto; }

@@ -102,8 +102,8 @@ const UI = {
     tenureLead: "Optional. Helps the report show the depth of experience behind each piece of feedback.",
     tenureChoices: {
       less_than_6mo: "Less than 6 months",
-      six_mo_to_2yr: "6 months – 2 years",
-      two_to_5yr: "2 – 5 years",
+      six_mo_to_2yr: "6 months - 2 years",
+      two_to_5yr: "2 - 5 years",
       over_5yr: "More than 5 years",
     },
     criticalHeading: "Which competencies are most critical for this role?",
@@ -635,14 +635,24 @@ export function RaterForm({ ctx }: Props) {
                       {rtl ? b.text_ar ?? b.text_en : b.text_en}
                     </p>
 
-                    {/* Scale buttons */}
-                    <div className="mt-3 flex items-center gap-1.5 flex-wrap">
+                    {/* Scale buttons. A11y: the 1-5 + NA choices form a single
+                        radio group so screen readers announce them as one
+                        control with the BARS descriptor, not five unlabelled
+                        buttons. */}
+                    <div
+                      className="mt-3 flex items-center gap-1.5 flex-wrap"
+                      role="radiogroup"
+                      aria-label={rtl ? b.text_ar ?? b.text_en : b.text_en}
+                    >
                       {[1, 2, 3, 4, 5].map((n) => {
                         const selected = a.score === n;
                         return (
                           <button
                             key={n}
                             type="button"
+                            role="radio"
+                            aria-checked={selected}
+                            aria-label={`${n} - ${scale[n as 1 | 2 | 3 | 4 | 5]}`}
                             onClick={() => setScore(b.id, n)}
                             className={cn(
                               "rounded-md border h-9 min-w-[2.5rem] px-2 text-sm transition-colors",
@@ -658,6 +668,9 @@ export function RaterForm({ ctx }: Props) {
                       })}
                       <button
                         type="button"
+                        role="radio"
+                        aria-checked={a.is_na}
+                        aria-label={scale.na}
                         onClick={() => toggleNA(b.id)}
                         className={cn(
                           "rounded-md border h-9 px-3 text-xs transition-colors",
@@ -671,6 +684,7 @@ export function RaterForm({ ctx }: Props) {
 
                       <button
                         type="button"
+                        aria-expanded={showComment}
                         onClick={() => toggleComment(b.id)}
                         className="text-xs text-muted-foreground hover:text-foreground ms-auto"
                       >
@@ -715,6 +729,7 @@ export function RaterForm({ ctx }: Props) {
                   <li key={c.id}>
                     <button
                       type="button"
+                      aria-pressed={picked}
                       onClick={() => toggleCritical(c.id)}
                       className={cn(
                         "w-full text-start rounded-md border px-3 py-2 text-sm leading-snug transition-colors",

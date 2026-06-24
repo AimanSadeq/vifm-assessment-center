@@ -1,6 +1,13 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import type { ReflectRaterRole } from "./validations";
 
+// P3-audit fix: access tokens are gen_random_uuid()::text (migration 00032).
+// Reject anything that isn't a UUID before it reaches the DB - a malformed
+// token can never match a real row, so we fail fast instead of round-tripping
+// (mirrors the Pre-Hire TOKEN_RE guard). Defense-in-depth alongside the Zod
+// .uuid() checks now on every rater write action.
+const TOKEN_RE = /^[0-9a-fA-F-]{36}$/;
+
 export type RaterRow = {
   id: string;
   participant_id: string;
@@ -132,6 +139,7 @@ export type RaterContext = {
  * The rater never has a Supabase session - token alone establishes identity.
  */
 export async function loadRaterByToken(token: string): Promise<RaterContext | null> {
+  if (!token || !TOKEN_RE.test(token)) return null;
   const sb = createServiceClient();
 
   const { data: rater } = await sb
@@ -246,6 +254,7 @@ export async function loadRaterByToken(token: string): Promise<RaterContext | nu
  * the full form context.
  */
 export async function findRaterByToken(token: string): Promise<RaterRow | null> {
+  if (!token || !TOKEN_RE.test(token)) return null;
   const sb = createServiceClient();
   const { data } = await sb
     .from("reflect_raters")

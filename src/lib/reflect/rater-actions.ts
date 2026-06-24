@@ -71,7 +71,7 @@ export async function touchReflectRater(token: string): Promise<void> {
 // ──────────────────────────────────────────────────────────────
 
 const saveResponseSchema = z.object({
-  token: z.string().min(1),
+  token: z.string().uuid(),
   behavior_id: z.string().uuid(),
   score: z.number().int().min(1).max(5).nullable(),
   is_na: z.boolean(),
@@ -162,7 +162,7 @@ export async function saveReflectResponse(
 // ──────────────────────────────────────────────────────────────
 
 const saveOpenResponseSchema = z.object({
-  token: z.string().min(1),
+  token: z.string().uuid(),
   kind: z.enum([
     "start", "stop", "continue",
     "strengths", "development", "example", "advice", "other",
@@ -223,7 +223,7 @@ export async function saveReflectOpenResponse(
 // ──────────────────────────────────────────────────────────────
 
 const saveTenureSchema = z.object({
-  token: z.string().min(1),
+  token: z.string().uuid(),
   tenure: z
     .enum(["less_than_6mo", "six_mo_to_2yr", "two_to_5yr", "over_5yr"])
     .nullable(),
@@ -268,7 +268,7 @@ export async function saveReflectRaterTenure(
 // ──────────────────────────────────────────────────────────────
 
 const saveCriticalPicksSchema = z.object({
-  token: z.string().min(1),
+  token: z.string().uuid(),
   competency_ids: z.array(z.string().uuid()),
 });
 

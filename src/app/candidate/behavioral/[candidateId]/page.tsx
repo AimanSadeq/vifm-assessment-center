@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getOrCreateBehavioralSession, loadBehavioralResponses } from "@/lib/scoring/behavioral";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
+import { BackLink } from "@/components/shared/back-link";
 import { BehavioralRunner } from "./_components/behavioral-runner";
 
 type Props = { params: { candidateId: string } };
@@ -34,13 +35,18 @@ export default async function BehavioralAssessmentPage({ params }: Props) {
       : BEHAVIORAL_COMPETENCIES;
 
   return (
-    <BehavioralRunner
-      candidateId={cand.id as string}
-      engagementId={cand.engagement_id as string}
-      sessionId={session.id}
-      initialStatus={session.status}
-      competencies={competencies}
-      saved={saved}
-    />
+    <div>
+      <div className="mx-auto max-w-3xl px-6 pt-4">
+        <BackLink href={`/candidate/skills/${cand.id}`} label="Back" history />
+      </div>
+      <BehavioralRunner
+        candidateId={cand.id as string}
+        engagementId={cand.engagement_id as string}
+        sessionId={session.id}
+        initialStatus={session.status}
+        competencies={competencies}
+        saved={saved}
+      />
+    </div>
   );
 }

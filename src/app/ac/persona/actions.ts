@@ -127,8 +127,44 @@ export async function startPersonaAction(
   }
 }
 
-/** Autosave a batch of Likert answers (works on any session id). */
-export async function savePersonaAnswersAction(sessionId: string, answers: BehavioralAnswer[]) {
+/**
+ * Ownership guard for mutating a session. A standalone (admin) run has no voucher
+ * link - the /ac/persona route is staff-authed, so allow it. A voucher/delegate
+ * session (voucher_redemption_id set) requires the matching redemption token, so
+ * a crafted call with someone else's session id cannot inject/finalise answers.
+ */
+async function ownsSession(sessionId: string, redemptionToken?: string | null): Promise<boolean> {
+  try {
+    const sb = createServiceClient();
+    const { data: s } = await sb
+      .from("behavioral_assessment_sessions")
+      .select("voucher_redemption_id")
+      .eq("id", sessionId)
+      .maybeSingle<{ voucher_redemption_id: string | null }>();
+    if (!s) return false;
+    if (!s.voucher_redemption_id) return true; // standalone, staff-authed route
+    if (!redemptionToken) return false;
+    const { data: r } = await sb
+      .from("persona_voucher_redemptions")
+      .select("id")
+      .eq("redemption_token", redemptionToken)
+      .maybeSingle<{ id: string }>();
+    return !!r && r.id === s.voucher_redemption_id;
+  } catch {
+    // Tolerant of voucher tables not migrated: treat as standalone (allow).
+    return true;
+  }
+}
+
+/** Autosave a batch of Likert answers. Voucher sessions require the redemption token. */
+export async function savePersonaAnswersAction(
+  sessionId: string,
+  answers: BehavioralAnswer[],
+  redemptionToken?: string | null,
+) {
+  if (!(await ownsSession(sessionId, redemptionToken))) {
+    return { ok: false as const, error: "Not authorized for this session." };
+  }
   return saveBehavioralAnswers(sessionId, answers);
 }
 
@@ -139,9 +175,17 @@ export async function savePersonaAnswersAction(sessionId: string, answers: Behav
  *  coaching, overused, consistency, percentiles, course plan). The builder
  *  lazily generates + caches the AI artefacts and is fully tolerant; on any
  *  failure the caller still gets the scored profile. `lang` selects EN/AR copy. */
-export async function submitPersonaAction(sessionId: string, lang: "en" | "ar" = "en") {
+export async function submitPersonaAction(
+  sessionId: string,
+  lang: "en" | "ar" = "en",
+  redemptionToken?: string | null,
+) {
   // XP-13: only VIFM staff see the report on-screen; a taker gets a thank-you.
   const isStaff = await isStaffCaller();
+  // A non-staff delegate may only finalise their own voucher session.
+  if (!isStaff && !(await ownsSession(sessionId, redemptionToken))) {
+    return { ok: false as const, error: "Not authorized for this session.", isStaff };
+  }
   const res = await submitAnonymousBehavioral(sessionId);
   if (!res.ok || !res.profile) return { ...res, isStaff };
   // PER-11: building the report runs several AI calls (insights, summary,

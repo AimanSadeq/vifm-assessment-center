@@ -136,12 +136,12 @@ export function PersonaStandaloneClient({
     pendingRef.current.clear();
     setSaving(true);
     const p = (async () => {
-      try { await savePersonaAnswersAction(sessionId, batch); }
+      try { await savePersonaAnswersAction(sessionId, batch, redemptionToken); }
       finally { setSaving(false); }
     })();
     inflightRef.current = p;
     try { await p; } finally { if (inflightRef.current === p) inflightRef.current = null; }
-  }, [sessionId]);
+  }, [sessionId, redemptionToken]);
 
   const queue = useCallback((a: BehavioralAnswer) => {
     pendingRef.current.set(a.itemKey, a);
@@ -320,7 +320,7 @@ export function PersonaStandaloneClient({
     setBusy(true); setError("");
     try {
       await flush(); // persist any buffered answers before scoring
-      const res = await submitPersonaAction(sessionId, lang);
+      const res = await submitPersonaAction(sessionId, lang, redemptionToken);
       if (!res.ok || !res.profile) { setError(res.error || tx("Could not score.", "تعذّر التقييم.")); return; }
       setReport((res as { report?: PersonaPdfData }).report ?? null);
       setCanView((res as { isStaff?: boolean }).isStaff === true);
@@ -521,6 +521,12 @@ export function PersonaStandaloneClient({
                 `الجزء 1: ${totalNormPreview(effectiveCompetencies)} عبارة تُقيَّم من 1 إلى 5 (بترتيب عشوائي). الجزء 2: اختيارات سريعة (الأكثر/الأقل انطباقًا عليّ).`,
               )}
             </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {tx(
+                "About 15-20 minutes. Your answers save automatically, so you can pause and resume. A single format is shorter.",
+                "نحو 15-20 دقيقة. تُحفظ إجاباتك تلقائيًا، فيمكنك الإيقاف والمتابعة لاحقًا. اختيار صيغة واحدة أقصر.",
+              )}
+            </p>
           </div>
 
           <div className="flex flex-wrap items-end gap-4">
@@ -613,6 +619,9 @@ export function PersonaStandaloneClient({
           <p className="text-sm font-semibold text-[#010131]">
             {tx("Rate each statement", "قيّم كل عبارة")} · {tx("Page", "صفحة")} {page + 1}/{normPages.length}
           </p>
+          <p className="text-xs text-muted-foreground">
+            {tx("Scale: 1 = Strongly disagree · 3 = Neither · 5 = Strongly agree", "المقياس: 1 = لا أوافق بشدة · 3 = محايد · 5 = أوافق بشدة")}
+          </p>
 
           <section className="space-y-3 rounded-lg border bg-white p-4">
             {(normPages[page] ?? []).map((it) => (
@@ -632,6 +641,7 @@ export function PersonaStandaloneClient({
                         key={v}
                         type="button"
                         title={likertLabel(v)}
+                        aria-label={`${v} - ${likertLabel(v)}`}
                         onClick={() => answerNorm(it, v)}
                         className={`min-w-[2.25rem] rounded-md border px-2.5 py-1.5 text-sm transition ${
                           selected ? "border-[#5391D5] bg-[#5391D5] text-white" : "border-border hover:bg-muted"

@@ -325,10 +325,11 @@ export async function computeCandidateReadiness(
       const { data: allComps } = await sb.from("competencies").select("id, name");
       acByName = new Map((allComps ?? []).map((c) => [String(c.name).trim().toLowerCase(), c.id as string]));
     }
+    let unmappedReflect = 0;
     for (const cs of scoring.competencies) {
       let acId = acById.get(cs.competency_id) ?? null;
       if (!acId) acId = acByName.get((cs.name_en ?? "").trim().toLowerCase()) ?? null;
-      if (!acId) continue; // unmapped Reflect competency - not part of the role match
+      if (!acId) { unmappedReflect++; continue; } // unmapped - excluded from the role match
       const selfMean =
         assessmentMode === "combined" ? behavioralSelfByAc.get(acId) ?? null : cs.self_mean;
       observed.push({
@@ -338,6 +339,14 @@ export async function computeCandidateReadiness(
         othersCount: othersCountFromGroups(cs.by_group),
         othersSpread: othersSpreadFromGroups(cs.by_group),
       });
+    }
+    // Surface silent data loss: Reflect competencies that couldn't resolve to an
+    // AC competency (no ac_competency_id and no name match) are dropped from the
+    // role match - warn so a framework-naming drift doesn't pass unnoticed.
+    if (unmappedReflect > 0) {
+      console.warn(
+        `[readiness] ${unmappedReflect} Reflect competenc${unmappedReflect === 1 ? "y" : "ies"} could not be mapped to an AC competency; excluded from the readiness match.`,
+      );
     }
   }
 
@@ -358,7 +367,12 @@ export async function computeCandidateReadiness(
         othersSpread: null,
       });
     }
-    if (observed.length > 0) evidenceSource = "persona_self";
+    if (observed.length > 0) {
+      evidenceSource = "persona_self";
+      console.warn(
+        "[readiness] No 360 (Others) evidence; readiness driven by Persona self-ratings only (evidenceSource=persona_self). The report labels this as self-reported.",
+      );
+    }
   }
 
   // 7) Run the engine.

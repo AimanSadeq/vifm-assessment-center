@@ -6,13 +6,13 @@ import { RedeemForm } from "./_components/redeem-form";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Redeem a code · VIFM Persona®" };
 
-type Props = { searchParams?: { code?: string; email?: string; name?: string; company?: string } };
+// Only the voucher CODE is honoured from the URL (voucher links carry it).
+// Name/email/company are NOT pre-filled from query params - pre-filling PII from a
+// crafted link is a phishing vector; the redeemer types their own details.
+type Props = { searchParams?: { code?: string } };
 
 export default function PersonaRedeemPage({ searchParams }: Props) {
   const initialCode = searchParams?.code?.trim() ?? "";
-  const initialEmail = searchParams?.email?.trim() ?? "";
-  const initialName = searchParams?.name?.trim() ?? "";
-  const initialCompany = searchParams?.company?.trim() ?? "";
   return (
     <div className="min-h-screen bg-background">
       <header className="ara-hero relative overflow-hidden">
@@ -39,12 +39,7 @@ export default function PersonaRedeemPage({ searchParams }: Props) {
             <CardTitle className="text-base">Your details</CardTitle>
           </CardHeader>
           <CardContent>
-            <RedeemForm
-              initialCode={initialCode}
-              initialEmail={initialEmail}
-              initialName={initialName}
-              initialCompany={initialCompany}
-            />
+            <RedeemForm initialCode={initialCode} />
           </CardContent>
         </Card>
       </main>

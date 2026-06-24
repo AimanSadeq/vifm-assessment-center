@@ -212,6 +212,22 @@ export function PersonaReportView({
               {data.normProvisional ? tx(` (provisional${data.normN ? `, n=${data.normN}` : ""})`, ` (أوّلية${data.normN ? `، n=${data.normN}` : ""})`) : ""}, {tx("based on self-report.", "بناءً على تقييم ذاتي.")}
             </p>
           ) : null}
+          {/* Small comparison-group caution (norm n below the trust threshold). */}
+          {data.normProvisional && (data.normN ?? 0) < 100 ? (
+            <p className="mt-1 text-[11px] text-amber-700">
+              {tx(
+                "Small comparison group - treat any percentile as indicative only.",
+                "مجموعة مقارنة صغيرة - تعامل مع أي نسبة مئوية كإشارة استرشادية فقط.",
+              )}
+            </p>
+          ) : null}
+          {/* Reading the scores: how a score is derived + the band scale. */}
+          <p className="mt-2 border-t border-slate-100 pt-2 text-[11px] leading-relaxed text-slate-400">
+            {tx(
+              "Reading the scores: each competency is the average of its 1-5 self-ratings. Bands: 1.5 Requires Focus · 2.5 Developing · 3.5 Proficient · 4.5 Exceptional. All figures are self-report.",
+              "قراءة الدرجات: كل جدارة هي متوسط تقييماتك الذاتية من 1 إلى 5. الفئات: 1.5 يحتاج تركيزًا · 2.5 قيد التطوير · 3.5 متمكّن · 4.5 متميّز. جميع الأرقام تقييم ذاتي.",
+            )}
+          </p>
         </div>
       ) : null}
 

@@ -26,10 +26,25 @@ export default async function PersonaTakePage({
   const sb = createServiceClient();
   const { data: redemption } = await sb
     .from("persona_voucher_redemptions")
-    .select("redemption_token, redeemer_name")
+    .select("redemption_token, redeemer_name, voucher_id")
     .eq("redemption_token", params.token)
-    .maybeSingle<{ redemption_token: string; redeemer_name: string }>();
+    .maybeSingle<{ redemption_token: string; redeemer_name: string; voucher_id: string }>();
   if (!redemption) return notFound();
+
+  // The voucher language drives the welcome-header direction (the runner below
+  // carries its own EN/AR toggle); keeps the header from being stuck LTR for an
+  // Arabic delegate. Tolerant: defaults to EN.
+  let headerAr = false;
+  try {
+    const { data: v } = await sb
+      .from("persona_vouchers")
+      .select("default_language")
+      .eq("id", redemption.voucher_id)
+      .maybeSingle<{ default_language: string }>();
+    headerAr = v?.default_language === "ar";
+  } catch {
+    /* default en */
+  }
 
   const [roleProfiles, definitions] = await Promise.all([
     loadPersonaRoleOptions(),
@@ -62,7 +77,7 @@ export default async function PersonaTakePage({
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="ara-hero relative overflow-hidden">
+      <header className="ara-hero relative overflow-hidden" dir={headerAr ? "rtl" : "ltr"}>
         <div className="mx-auto max-w-3xl px-6 pt-7 pb-16">
           <VifmLogo variant="white" size="sm" />
           <div className="mt-8 max-w-2xl">
@@ -70,7 +85,7 @@ export default async function PersonaTakePage({
               <Layers className="h-3 w-3" /> VIFM Persona®
             </span>
             <h1 className="ara-numeral mt-3 text-2xl font-semibold leading-tight text-white sm:text-3xl">
-              Welcome{redemption.redeemer_name ? `, ${redemption.redeemer_name}` : ""}
+              {headerAr ? "مرحبًا" : "Welcome"}{redemption.redeemer_name ? `${headerAr ? "، " : ", "}${redemption.redeemer_name}` : ""}
             </h1>
           </div>
         </div>

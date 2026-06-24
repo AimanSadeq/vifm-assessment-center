@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, Sparkles, Save, Trash2, Target } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { extractRoleFromJdAction, saveTargetRoleAction, type DesignedCompetency } from "../actions";
 
 type Region = "" | "uae" | "saudi" | "gcc" | "global";
@@ -94,11 +96,10 @@ export function RoleDesigner() {
         <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_12rem]">
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-xs text-muted-foreground">Role name</span>
-            <input
+            <Input
               value={roleName}
               onChange={(e) => setRoleName(e.target.value)}
               placeholder="e.g. Head of Data Governance"
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
@@ -114,12 +115,11 @@ export function RoleDesigner() {
         </div>
         <label className="mt-3 flex flex-col gap-1 text-sm">
           <span className="text-xs text-muted-foreground">Job description</span>
-          <textarea
+          <Textarea
             value={jd}
             onChange={(e) => setJd(e.target.value)}
             rows={7}
             placeholder="Paste the job description (English or Arabic). The AI maps it to the VIFM competency framework."
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm"
           />
         </label>
         <button
@@ -193,18 +193,18 @@ export function RoleDesigner() {
                           </label>
                           <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             Weight
-                            <input
+                            <Input
                               type="number" min={0.5} max={10} step={0.5} value={c.weight}
                               onChange={(e) => update(c.competencyId, { weight: Number(e.target.value) })}
-                              className="w-16 rounded border border-slate-300 px-2 py-1 text-xs text-foreground"
+                              className="h-8 w-16 px-2 py-1 text-xs"
                             />
                           </label>
                           <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             Target (1-5)
-                            <input
+                            <Input
                               type="number" min={1} max={5} step={0.5} value={c.target}
                               onChange={(e) => update(c.competencyId, { target: Number(e.target.value) })}
-                              className="w-16 rounded border border-slate-300 px-2 py-1 text-xs text-foreground"
+                              className="h-8 w-16 px-2 py-1 text-xs"
                             />
                           </label>
                         </div>

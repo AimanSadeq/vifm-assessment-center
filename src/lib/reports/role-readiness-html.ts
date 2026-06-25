@@ -59,7 +59,11 @@ export function renderRoleReadinessHtml(data: RrReportData): string {
   return `<!doctype html><html><head><meta charset="utf-8"/>
 <style>
   * { box-sizing: border-box; }
-  body { font-family: "Open Sans", Arial, sans-serif; color: #111232; margin: 0; padding: 32px 36px; font-size: 12px; }
+  /* Explicit white page background: the new headless-Chromium renderer prints a
+     transparent body as BLACK when printBackground:true, so the report opened
+     as an all-black page. Force white on html+body to fix it. */
+  html, body { background: #ffffff; }
+  body { font-family: "Open Sans", Arial, sans-serif; color: #111232; margin: 0; padding: 32px 36px; font-size: 12px; background: #ffffff; }
   h1 { font-size: 20px; margin: 0; color: #010131; }
   .muted { color: #64748b; }
   .hdr { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #010131; padding-bottom:12px; }

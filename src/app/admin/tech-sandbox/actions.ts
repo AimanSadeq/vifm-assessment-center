@@ -6,6 +6,8 @@ import {
   listFunctionDescriptors,
   listFunctions,
   getSessionByToken,
+  getCustomBuilderData,
+  type CustomBuilderData,
 } from "@/lib/technical-sandbox/service";
 import { matchJobDescription } from "@/lib/technical-sandbox/jd-matcher";
 import { pingSandboxDb } from "@/lib/technical-sandbox/sql-runner";
@@ -174,6 +176,21 @@ export async function createCustomSandboxSessionsAction(input: {
     });
   }
   return { ok: true, results };
+}
+
+/**
+ * Load the skills + hands-on tasks for one function so the voucher UI can build a
+ * CUSTOM (pick-and-choose) sitting inline (without leaving for the full builder).
+ * Admin-guarded; returns null when the function can't be loaded.
+ */
+export async function getCustomBuilderDataAction(
+  functionId: string,
+): Promise<Result<{ data: CustomBuilderData | null }>> {
+  const g = await guard();
+  if ("error" in g) return g;
+  if (!functionId) return { error: "Select a function." };
+  const data = await getCustomBuilderData(functionId);
+  return { ok: true, data };
 }
 
 export async function generateVouchersAction(input: {

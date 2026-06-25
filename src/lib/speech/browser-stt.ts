@@ -84,40 +84,39 @@ export function startBrowserStt(handlers: BrowserSttHandlers, lang = "en-US"): B
   recognizer.maxAlternatives = 1;
 
   let finalText = "";
-  // A genuinely fatal problem (mic blocked / no device). We stop and report it.
-  let fatalError: string | null = null;
-  // The last error code seen since the previous restart. "no-speech" is normal
-  // (the speaker hasn't started / paused) and must NOT end the session.
-  let lastErrorCode: string | null = null;
-  // Set true only when the CALLER asks us to stop (the Stop button). Until then
-  // a session that ends on its own is a silence pause, and we restart.
+  // The ONLY thing that truly stops us: the user explicitly denied microphone
+  // permission. Everything else - silence pauses, "no-speech", a transient
+  // "network"/"audio-capture"/"service-not-allowed", or the engine simply
+  // ending a session on its own - is recoverable: we restart and keep listening,
+  // so the speaker is NEVER cut off mid-answer and NEVER forced into typing.
+  let permissionDenied = false;
+  // Set true only when the CALLER asks us to stop (the Stop button).
   let manualStop = false;
-  // Safety ceiling so a persistent failure can't loop forever.
+  // Restart accounting. emptyStreak counts consecutive sessions that captured no
+  // speech at all - that's the only thing that ends listening on its own (a long
+  // pure silence, or a tight error loop when the service is genuinely down).
   let restarts = 0;
-  const MAX_RESTARTS = 80;
-
-  // Codes that mean "keep listening" rather than "give up": the Web Speech API
-  // ends a session after a pause (clean end, no error) or fires "no-speech" when
-  // the speaker hasn't started yet. Both should resume listening.
-  const isRecoverable = (code: string | null) => code === null || code === "no-speech";
+  let emptyStreak = 0;
+  let gotSpeechSinceStart = false;
+  const MAX_RESTARTS = 300; // hard backstop
+  const MAX_EMPTY_STREAK = 12; // ~ sustained silence / dead-service loop before giving up
 
   const finish = () => {
     const text = collapse(finalText);
     if (text) {
-      handlers.onDone(text); // use whatever we captured, even after an error
-    } else if (fatalError) {
-      handlers.onError(fatalError);
-    } else if (lastErrorCode && lastErrorCode !== "no-speech" && lastErrorCode !== "aborted") {
-      // e.g. "network": nothing captured and the service failed - report it so
-      // the caller can offer a retry / type fallback.
-      handlers.onError(lastErrorCode);
+      handlers.onDone(text); // deliver whatever we captured, even after an error
+    } else if (permissionDenied) {
+      handlers.onError("not-allowed"); // the one case the caller may offer typing
     } else {
-      handlers.onDone(""); // ended cleanly with nothing recognised
+      // Nothing captured, but the mic was NOT blocked - the caller keeps the
+      // user in record mode (a gentle "tap Record again" note), never type-mode.
+      handlers.onDone("");
     }
   };
 
   recognizer.onresult = (e) => {
-    lastErrorCode = null; // speech is flowing again
+    gotSpeechSinceStart = true;
+    emptyStreak = 0;
     let interim = "";
     for (let i = e.resultIndex; i < e.results.length; i++) {
       const res = e.results[i];
@@ -130,41 +129,41 @@ export function startBrowserStt(handlers: BrowserSttHandlers, lang = "en-US"): B
 
   recognizer.onerror = (e) => {
     const code = e?.error ?? "unknown";
-    lastErrorCode = code;
-    // Mic blocked / no capture device is genuinely fatal - the user must grant
-    // access or type instead. Everything else (no-speech, aborted, network) is
-    // handled in onend, which decides whether to keep listening.
-    if (code === "not-allowed" || code === "service-not-allowed" || code === "audio-capture") {
-      fatalError = code;
-    }
+    // ONLY an explicit permission denial is fatal. We deliberately do NOT treat
+    // "service-not-allowed" / "audio-capture" / "network" / "no-speech" as fatal
+    // (those can fire transiently - e.g. in the gap while a session restarts);
+    // onend keeps listening through them.
+    if (code === "not-allowed") permissionDenied = true;
   };
 
   recognizer.onend = () => {
-    // The Web Speech API stops a session after a short silence even with
-    // continuous=true. Unless the caller pressed Stop (or the mic is blocked),
-    // resume listening so a thinking pause never cuts the speaker off.
-    const shouldRestart =
-      !manualStop && !fatalError && isRecoverable(lastErrorCode) && restarts < MAX_RESTARTS;
-    if (shouldRestart) {
-      restarts += 1;
-      lastErrorCode = null;
-      try {
-        recognizer.start();
-        return;
-      } catch {
-        // Engine still settling (rare InvalidStateError) - retry once shortly,
-        // then finish gracefully so we never strand the session.
-        setTimeout(() => {
-          try {
-            recognizer.start();
-          } catch {
-            finish();
-          }
-        }, 250);
-        return;
-      }
+    if (manualStop || permissionDenied) {
+      finish();
+      return;
     }
-    finish();
+    if (gotSpeechSinceStart) emptyStreak = 0;
+    else emptyStreak += 1;
+    if (restarts >= MAX_RESTARTS || emptyStreak >= MAX_EMPTY_STREAK) {
+      finish();
+      return;
+    }
+    restarts += 1;
+    gotSpeechSinceStart = false;
+    try {
+      recognizer.start();
+      return;
+    } catch {
+      // Engine still settling (rare InvalidStateError) - retry once shortly,
+      // then finish gracefully so we never strand the session.
+      setTimeout(() => {
+        try {
+          recognizer.start();
+        } catch {
+          finish();
+        }
+      }, 250);
+      return;
+    }
   };
 
   try {

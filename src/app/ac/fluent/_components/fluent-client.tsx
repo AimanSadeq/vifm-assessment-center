@@ -798,6 +798,17 @@ export function FluentClient({
                     <p dir="ltr" className="text-sm text-[#111232]">{transcript}</p>
                   </div>
                 )}
+                {/* Optional manual escape hatch - the candidate can choose to type,
+                    but is NEVER forced here (only a denied mic switches modes). */}
+                {!recording && (
+                  <button
+                    type="button"
+                    onClick={() => { setSpeakMode("type"); setSpeakNote(""); }}
+                    className="text-xs text-slate-500 underline underline-offset-2 hover:text-slate-700"
+                  >
+                    {t.typeInstead}
+                  </button>
+                )}
               </div>
             ) : (
               <div className="mt-3 space-y-2">

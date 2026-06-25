@@ -26,6 +26,22 @@ import {
  * Activation: the launcher pill, or `?demo=<trackId>&step=N` on any owned route.
  * State lives in localStorage so it survives navigation. Non-destructive.
  */
+
+/**
+ * Report routes must never carry the demo UI - the launcher pill would sit on
+ * top of a report on screen AND leak into the printed PDF (the PDF renders the
+ * same route with ?bare=1). Covers `/.../report`, `/.../reports`, hyphenated
+ * report routes like `/.../cohort-report`, and the Reflect framework preview.
+ */
+function isReportRoute(pathname: string | null): boolean {
+  if (!pathname) return false;
+  return (
+    pathname.includes("/report") ||
+    pathname.includes("-report") ||
+    pathname.includes("/framework-preview")
+  );
+}
+
 export function GuidedDemo() {
   const router = useRouter();
   const pathname = usePathname();
@@ -91,6 +107,9 @@ export function GuidedDemo() {
     setActiveId(null);
     router.push(pathname);
   }, [router, pathname]);
+
+  // Never overlay a report (on screen or in its printed PDF).
+  if (isReportRoute(pathname)) return null;
 
   // ── Running demo: the full rail ──
   if (activeTrack) {

@@ -193,6 +193,13 @@ export function GamifiedRaterForm({ ctx, preview = false }: { ctx: RaterContext;
   const saveIdRef = useRef(0);
   const commentTimerRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const openTimerRef = useRef<Map<"start" | "stop" | "continue", ReturnType<typeof setTimeout>>>(new Map());
+  // Mirror of `answers` so handlers can read the latest value WITHOUT putting the
+  // save side-effect inside the setAnswers updater (which delayed the visual
+  // highlight - the selection now paints immediately and the save runs after).
+  const answersRef = useRef(answers);
+  useEffect(() => {
+    answersRef.current = answers;
+  }, [answers]);
 
   useEffect(() => {
     const sync = () => setIsOnline(navigator.onLine);
@@ -263,12 +270,13 @@ export function GamifiedRaterForm({ ctx, preview = false }: { ctx: RaterContext;
   };
 
   const answer = (behaviorId: string, patch: Partial<LocalAnswer>, autoAdvance: boolean) => {
-    setAnswers((prev) => {
-      const cur = prev[behaviorId] ?? { score: null, is_na: false, comment_text: "" };
-      const next = { ...cur, ...patch };
-      persistOne(behaviorId, next);
-      return { ...prev, [behaviorId]: next };
-    });
+    const cur = answersRef.current[behaviorId] ?? { score: null, is_na: false, comment_text: "" };
+    const next = { ...cur, ...patch };
+    // Paint the selection immediately (pure state update), THEN fire the save -
+    // never inside the updater, so the highlight doesn't wait on the server.
+    answersRef.current = { ...answersRef.current, [behaviorId]: next };
+    setAnswers((prev) => ({ ...prev, [behaviorId]: next }));
+    persistOne(behaviorId, next);
     // Auto-advance, but guard against a DOUBLE advance: if the rater also taps
     // "Next" (or rates quickly - this is mobile-first), `index` may already have
     // moved past this card by the time the 220ms timer fires. Advancing again

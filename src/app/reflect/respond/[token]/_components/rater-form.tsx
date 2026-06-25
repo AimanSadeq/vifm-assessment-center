@@ -255,6 +255,14 @@ export function RaterForm({ ctx }: Props) {
   const inflightRef = useRef<Map<number, Promise<void>>>(new Map());
   const saveIdRef = useRef(0);
 
+  // Mirror of `answers` so the score/NA handlers can read the latest value
+  // without putting the save side-effect inside the setAnswers updater (which
+  // delayed the visual selection). The highlight now paints immediately.
+  const answersRef = useRef(answers);
+  useEffect(() => {
+    answersRef.current = answers;
+  }, [answers]);
+
   // Debounced comment saves - comments are typed character by character
   // so we debounce 700ms before firing the network request.
   const commentTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
@@ -402,23 +410,23 @@ export function RaterForm({ ctx }: Props) {
   // since these are discrete clicks)
   // ──────────────────────────────────────────────────────────
   const setScore = (behaviorId: string, score: number) => {
-    setAnswers((prev) => {
-      const cur = prev[behaviorId] ?? { score: null, is_na: false, comment_text: "" };
-      const next: LocalAnswer = { ...cur, score, is_na: false };
-      persistOne(behaviorId, next);
-      return { ...prev, [behaviorId]: next };
-    });
+    const cur = answersRef.current[behaviorId] ?? { score: null, is_na: false, comment_text: "" };
+    const next: LocalAnswer = { ...cur, score, is_na: false };
+    // Paint the selection immediately (pure update), then save - not inside the
+    // updater, so the highlight never waits on the server round-trip.
+    answersRef.current = { ...answersRef.current, [behaviorId]: next };
+    setAnswers((prev) => ({ ...prev, [behaviorId]: next }));
+    persistOne(behaviorId, next);
   };
 
   const toggleNA = (behaviorId: string) => {
-    setAnswers((prev) => {
-      const cur = prev[behaviorId] ?? { score: null, is_na: false, comment_text: "" };
-      const next: LocalAnswer = cur.is_na
-        ? { ...cur, is_na: false }
-        : { ...cur, is_na: true, score: null };
-      persistOne(behaviorId, next);
-      return { ...prev, [behaviorId]: next };
-    });
+    const cur = answersRef.current[behaviorId] ?? { score: null, is_na: false, comment_text: "" };
+    const next: LocalAnswer = cur.is_na
+      ? { ...cur, is_na: false }
+      : { ...cur, is_na: true, score: null };
+    answersRef.current = { ...answersRef.current, [behaviorId]: next };
+    setAnswers((prev) => ({ ...prev, [behaviorId]: next }));
+    persistOne(behaviorId, next);
   };
 
   const setComment = (behaviorId: string, value: string) => {

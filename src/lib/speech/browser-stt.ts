@@ -84,9 +84,40 @@ export function startBrowserStt(handlers: BrowserSttHandlers, lang = "en-US"): B
   recognizer.maxAlternatives = 1;
 
   let finalText = "";
+  // A genuinely fatal problem (mic blocked / no device). We stop and report it.
   let fatalError: string | null = null;
+  // The last error code seen since the previous restart. "no-speech" is normal
+  // (the speaker hasn't started / paused) and must NOT end the session.
+  let lastErrorCode: string | null = null;
+  // Set true only when the CALLER asks us to stop (the Stop button). Until then
+  // a session that ends on its own is a silence pause, and we restart.
+  let manualStop = false;
+  // Safety ceiling so a persistent failure can't loop forever.
+  let restarts = 0;
+  const MAX_RESTARTS = 80;
+
+  // Codes that mean "keep listening" rather than "give up": the Web Speech API
+  // ends a session after a pause (clean end, no error) or fires "no-speech" when
+  // the speaker hasn't started yet. Both should resume listening.
+  const isRecoverable = (code: string | null) => code === null || code === "no-speech";
+
+  const finish = () => {
+    const text = collapse(finalText);
+    if (text) {
+      handlers.onDone(text); // use whatever we captured, even after an error
+    } else if (fatalError) {
+      handlers.onError(fatalError);
+    } else if (lastErrorCode && lastErrorCode !== "no-speech" && lastErrorCode !== "aborted") {
+      // e.g. "network": nothing captured and the service failed - report it so
+      // the caller can offer a retry / type fallback.
+      handlers.onError(lastErrorCode);
+    } else {
+      handlers.onDone(""); // ended cleanly with nothing recognised
+    }
+  };
 
   recognizer.onresult = (e) => {
+    lastErrorCode = null; // speech is flowing again
     let interim = "";
     for (let i = e.resultIndex; i < e.results.length; i++) {
       const res = e.results[i];
@@ -99,16 +130,41 @@ export function startBrowserStt(handlers: BrowserSttHandlers, lang = "en-US"): B
 
   recognizer.onerror = (e) => {
     const code = e?.error ?? "unknown";
-    // "no-speech" / "aborted" are recoverable (we just end with no text);
-    // anything else (not-allowed, audio-capture, network, …) is fatal.
-    if (code !== "no-speech" && code !== "aborted") fatalError = code;
+    lastErrorCode = code;
+    // Mic blocked / no capture device is genuinely fatal - the user must grant
+    // access or type instead. Everything else (no-speech, aborted, network) is
+    // handled in onend, which decides whether to keep listening.
+    if (code === "not-allowed" || code === "service-not-allowed" || code === "audio-capture") {
+      fatalError = code;
+    }
   };
 
   recognizer.onend = () => {
-    const text = collapse(finalText);
-    if (text) handlers.onDone(text); // use whatever we captured, even after an error
-    else if (fatalError) handlers.onError(fatalError);
-    else handlers.onDone(""); // ended cleanly with nothing recognised (silence)
+    // The Web Speech API stops a session after a short silence even with
+    // continuous=true. Unless the caller pressed Stop (or the mic is blocked),
+    // resume listening so a thinking pause never cuts the speaker off.
+    const shouldRestart =
+      !manualStop && !fatalError && isRecoverable(lastErrorCode) && restarts < MAX_RESTARTS;
+    if (shouldRestart) {
+      restarts += 1;
+      lastErrorCode = null;
+      try {
+        recognizer.start();
+        return;
+      } catch {
+        // Engine still settling (rare InvalidStateError) - retry once shortly,
+        // then finish gracefully so we never strand the session.
+        setTimeout(() => {
+          try {
+            recognizer.start();
+          } catch {
+            finish();
+          }
+        }, 250);
+        return;
+      }
+    }
+    finish();
   };
 
   try {
@@ -118,7 +174,7 @@ export function startBrowserStt(handlers: BrowserSttHandlers, lang = "en-US"): B
   }
 
   return {
-    stop: () => { try { recognizer.stop(); } catch { /* already stopped */ } },
-    abort: () => { try { recognizer.abort(); } catch { /* already stopped */ } },
+    stop: () => { manualStop = true; try { recognizer.stop(); } catch { /* already stopped */ } },
+    abort: () => { manualStop = true; try { recognizer.abort(); } catch { /* already stopped */ } },
   };
 }

@@ -146,13 +146,17 @@ function integrityTone(tier: IntegritySignal["tier"]): { borderColor: string; ba
 }
 
 function Criterion({ label, value }: { label: string; value: number }) {
+  // Guard against a null/NaN criterion: an un-scored value would otherwise feed
+  // `NaN%` into the bar width and crash the whole report render (yoga setWidth).
+  const v = Number.isFinite(value) ? Math.max(0, Math.min(5, value)) : 0;
+  const pct = (v / 5) * 100;
   return (
     <View style={s.critRow}>
       <Text style={s.critLabel}>{label}</Text>
       <View style={s.barTrack}>
-        <View style={{ height: 6, borderRadius: 3, width: `${(value / 5) * 100}%`, backgroundColor: barColor(value) }} />
+        <View style={{ height: 6, borderRadius: 3, width: `${pct}%`, backgroundColor: barColor(v) }} />
       </View>
-      <Text style={s.critVal}>{value}/5</Text>
+      <Text style={s.critVal}>{Number.isFinite(value) ? value : "-"}/5</Text>
     </View>
   );
 }
@@ -338,6 +342,17 @@ export function FluentReport({
                   <Text key={i} style={s.defLine}>{"• "}{reason}</Text>
                 ))}
               </View>
+              {/* Interpretation: make clear LOW is good and what the bands mean,
+                  so a number like 28/100 isn't misread as a failing grade. */}
+              <Text style={{ fontSize: 8.5, fontFamily: "Helvetica-Bold", color: C.primary, marginTop: 6 }}>
+                How to read this signal
+              </Text>
+              <Text style={{ fontSize: 8, color: C.text, lineHeight: 1.4, marginTop: 2 }}>
+                Lower is better - this is NOT a grade out of 100. It counts on-screen activity worth a quick human
+                glance (leaving the test, time away from it, pasting). 0 means nothing was flagged; a higher number
+                simply means there is more to review. Bands: Clean 0-14 · Minor 15-44 · Elevated 45-100. This result
+                sits in the {INTEGRITY_TIER_LABEL[data.integrity.tier]} band.
+              </Text>
               <Text style={{ fontSize: 8, color: C.light, lineHeight: 1.4, marginTop: 4, fontStyle: "italic" }}>
                 Advisory only - this is review telemetry from the test administration. It never affects the CEFR level, caps a score, or auto-fails the test.
               </Text>

@@ -73,12 +73,13 @@ const T = {
     namePlaceholder: "e.g. Sara Al Mansoori", emailPlaceholder: "you@example.com",
     listenHint: "Listen, then answer. You can replay each clip up to twice.",
     play: "Play", playing: "Playing…", replaysLeft: "replays left", noTts: "Audio playback isn't available here - the script is shown so you can still answer.",
-    speakHint: "Record about 45 seconds. We transcribe your speech and assess it.",
+    speakHint: "Tap Record and answer in your own words - take your time. The microphone keeps listening through short pauses; tap Stop when you're done.",
     record: "Record", stop: "Stop", recording: "Recording", transcribing: "Transcribing your speech…",
     yourTranscript: "What we heard", reRecord: "Re-record", typeInstead: "Type instead", recordInstead: "Record instead",
     speakTypeHere: "Type roughly what you would say…", micDenied: "Microphone not available. You can type your answer instead.",
     transcribeFailed: "Transcription didn't work. You can type your answer instead.",
-    noSpeech: "We didn't catch any speech. Please record again.",
+    transcribeRetry: "We couldn't hear you that time. Tap Record and speak again - or type your answer.",
+    noSpeech: "We didn't catch any speech. Tap Record and try again.",
     listening_live: "Listening…",
     optional: "optional", required: "required", certificate: "Download report", resultFor: "Result for",
     transcriptHeading: "Your transcript",
@@ -102,6 +103,11 @@ const T = {
     integrityHeading: "Integrity signal",
     integrityNote: "Advisory only - this never affects your level or auto-fails the test.",
     integrityTier: { clean: "Clean", minor: "Minor activity", elevated: "Elevated activity" },
+    integrityScaleTitle: "How to read this signal",
+    integrityScaleHelp: "Lower is better - this is NOT a grade out of 100. It counts on-screen activity worth a quick human glance (leaving the test, time away from it, pasting). 0 means nothing was flagged; a higher number just means there's more to review.",
+    integrityBands: { clean: "Clean · 0-14", minor: "Minor · 15-44", elevated: "Elevated · 45-100" },
+    integrityYoursIn: "Your result sits in the",
+    integrityBandSuffix: "band.",
   },
   ar: {
     start: "ابدأ اختبار تحديد المستوى", starting: "جارٍ إعداد اختبارك…",
@@ -120,12 +126,13 @@ const T = {
     namePlaceholder: "مثال: سارة المنصوري", emailPlaceholder: "you@example.com",
     listenHint: "استمع ثم أجب. يمكنك إعادة تشغيل كل مقطع مرتين كحدٍّ أقصى.",
     play: "تشغيل", playing: "جارٍ التشغيل…", replaysLeft: "إعادة متبقية", noTts: "تشغيل الصوت غير متاح هنا - يظهر النص لتتمكن من الإجابة.",
-    speakHint: "سجّل نحو 45 ثانية. نقوم بتفريغ كلامك وتقييمه.",
+    speakHint: "اضغط «تسجيل» وأجب بكلماتك - خذ وقتك. يستمر الميكروفون في الإنصات أثناء التوقّفات القصيرة؛ اضغط «إيقاف» عند الانتهاء.",
     record: "تسجيل", stop: "إيقاف", recording: "جارٍ التسجيل", transcribing: "جارٍ تفريغ كلامك…",
     yourTranscript: "ما سمعناه", reRecord: "إعادة التسجيل", typeInstead: "اكتب بدلاً من ذلك", recordInstead: "سجّل بدلاً من ذلك",
     speakTypeHere: "اكتب تقريبًا ما كنت ستقوله…", micDenied: "الميكروفون غير متاح. يمكنك كتابة إجابتك بدلاً من ذلك.",
     transcribeFailed: "تعذّر التفريغ. يمكنك كتابة إجابتك بدلاً من ذلك.",
-    noSpeech: "لم نلتقط أي كلام. يُرجى التسجيل مرة أخرى.",
+    transcribeRetry: "لم نتمكّن من سماعك هذه المرة. اضغط «تسجيل» وتحدّث مرة أخرى - أو اكتب إجابتك.",
+    noSpeech: "لم نلتقط أي كلام. اضغط «تسجيل» وحاول مرة أخرى.",
     listening_live: "جارٍ الاستماع…",
     optional: "اختياري", required: "إلزامي", certificate: "تنزيل التقرير", resultFor: "نتيجة",
     transcriptHeading: "نص كلامك",
@@ -149,6 +156,11 @@ const T = {
     integrityHeading: "إشارة النزاهة",
     integrityNote: "استرشادية فقط - لا تؤثّر على مستواك ولا تُرسِب الاختبار تلقائيًا.",
     integrityTier: { clean: "سليم", minor: "نشاط طفيف", elevated: "نشاط مرتفع" },
+    integrityScaleTitle: "كيف تقرأ هذه الإشارة",
+    integrityScaleHelp: "الأقل أفضل - هذه ليست درجة من 100. إنها تحصي النشاط على الشاشة الذي يستحق نظرة سريعة (مغادرة الاختبار، الوقت بعيدًا عنه، اللصق). الصفر يعني عدم رصد أي نشاط؛ والرقم الأعلى يعني فقط وجود المزيد للمراجعة.",
+    integrityBands: { clean: "سليم · 0-14", minor: "طفيف · 15-44", elevated: "مرتفع · 45-100" },
+    integrityYoursIn: "نتيجتك ضمن نطاق",
+    integrityBandSuffix: "",
   },
 } as const;
 
@@ -336,8 +348,12 @@ export function FluentClient({
         setRecording(false);
         usingSttRef.current = false;
         sttRef.current = null;
-        setSpeakMode("type");
-        setSpeakNote(code === "not-allowed" || code === "service-not-allowed" || code === "audio-capture" ? t.micDenied : t.transcribeFailed);
+        // Only drop to typing when the mic is genuinely unavailable. A transient
+        // service hiccup keeps record mode so the candidate can simply tap Record
+        // and try again, rather than being pushed to type their answer.
+        const micBlocked = code === "not-allowed" || code === "service-not-allowed" || code === "audio-capture";
+        if (micBlocked) setSpeakMode("type");
+        setSpeakNote(micBlocked ? t.micDenied : t.transcribeRetry);
       },
     });
     if (stt) {
@@ -953,6 +969,32 @@ export function FluentClient({
                     <li key={i}>{r}</li>
                   ))}
                 </ul>
+                {/* Interpretation: make clear LOW is good and what the bands mean,
+                    so a number like 28/100 isn't misread as a failing grade. */}
+                <div className="mt-2 rounded-md border border-current/15 bg-white/50 p-2.5">
+                  <p className="text-[11px] font-semibold">{t.integrityScaleTitle}</p>
+                  <p className="mt-0.5 text-[11px] opacity-80">{t.integrityScaleHelp}</p>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[10px]">
+                    {(["clean", "minor", "elevated"] as const).map((band) => (
+                      <span
+                        key={band}
+                        className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 ${
+                          integrity.tier === band ? "font-bold ring-1 ring-current" : "opacity-60"
+                        }`}
+                      >
+                        <span
+                          className={`h-2 w-2 rounded-full ${
+                            band === "clean" ? "bg-emerald-500" : band === "minor" ? "bg-amber-500" : "bg-rose-500"
+                          }`}
+                        />
+                        {t.integrityBands[band]}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="mt-1.5 text-[11px]">
+                    {t.integrityYoursIn} <span className="font-semibold">{t.integrityTier[integrity.tier]}</span> {t.integrityBandSuffix}
+                  </p>
+                </div>
                 <p className="mt-1.5 text-[11px] opacity-70">{t.integrityNote}</p>
               </div>
             );

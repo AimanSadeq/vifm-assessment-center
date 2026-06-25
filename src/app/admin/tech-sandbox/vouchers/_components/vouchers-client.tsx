@@ -13,14 +13,18 @@
 //
 // Every generated voucher also surfaces a copyable redeem LINK (code pre-filled)
 // so a delegate clicks through and starts without typing the code.
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CustomBuilderData, FunctionRow } from "@/lib/technical-sandbox/service";
 import type { VoucherRow } from "@/lib/technical-sandbox/vouchers";
+import type { SavedCustomAssessment } from "@/lib/technical-sandbox/custom-assessments";
 import {
   generateVouchersAction,
   setVoucherStatusAction,
   emailVoucherCodesAction,
   getCustomBuilderDataAction,
+  saveCustomAssessmentAction,
+  listCustomAssessmentsAction,
+  deleteCustomAssessmentAction,
 } from "../../actions";
 
 type Mode = "single" | "pool";
@@ -66,11 +70,21 @@ export function VouchersClient({
   const [skills, setSkills] = useState<Set<string>>(new Set());
   const [blockIds, setBlockIds] = useState<Set<string>>(new Set());
 
+  // ── Saved (reusable) custom designs ──
+  const [savedDesigns, setSavedDesigns] = useState<SavedCustomAssessment[]>([]);
+  const [loadedId, setLoadedId] = useState<string | null>(null);
+  const [pickId, setPickId] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  // A saved design queued to apply once the builder data for its function lands.
+  const pendingDesignRef = useRef<SavedCustomAssessment | null>(null);
+
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const redeemUrl = (code: string) => `${origin}/tech-sandbox/redeem?code=${code}`;
 
-  // Lazy-load the function's skills + tasks when Custom scope is active. Default
-  // both selections to "all" each time a fresh function's data lands.
+  // Lazy-load the function's skills + tasks when Custom scope is active. When a
+  // saved design is queued for this function, apply ITS selection; otherwise
+  // default both selections to "all" each time a fresh function's data lands.
   useEffect(() => {
     if (scope !== "custom" || !functionId) return;
     if (builder && builder.functionId === functionId) return;
@@ -83,13 +97,96 @@ export function VouchersClient({
       if ("error" in res) return setBuilderError(res.error);
       if (!res.data) return setBuilderError("Could not load this function's skills and tasks.");
       setBuilder(res.data);
-      setSkills(new Set(res.data.skills));
-      setBlockIds(new Set(res.data.pillars.flatMap((p) => p.blocks.map((b) => b.id))));
+      const pending = pendingDesignRef.current;
+      if (pending && pending.functionId === functionId) {
+        setSkills(new Set(pending.skills));
+        setBlockIds(new Set(pending.blockIds));
+        setMcqPct(pending.mcqPct);
+        setLabel(pending.name);
+        setLoadedId(pending.id);
+        pendingDesignRef.current = null;
+      } else {
+        setSkills(new Set(res.data.skills));
+        setBlockIds(new Set(res.data.pillars.flatMap((p) => p.blocks.map((b) => b.id))));
+        setLoadedId(null); // manual function change drops any loaded design
+      }
     });
     return () => {
       cancelled = true;
     };
   }, [scope, functionId, builder]);
+
+  // Keep the saved-design picker populated for the selected function while in
+  // Custom scope (silently empty when migration 00166 isn't applied).
+  useEffect(() => {
+    if (scope !== "custom" || !functionId) return;
+    let cancelled = false;
+    listCustomAssessmentsAction(functionId).then((res) => {
+      if (cancelled || "error" in res) return;
+      setSavedDesigns(res.designs);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [scope, functionId]);
+
+  async function refreshSaved() {
+    const res = await listCustomAssessmentsAction(functionId);
+    if (!("error" in res)) setSavedDesigns(res.designs);
+  }
+
+  async function saveDesign(asNew: boolean) {
+    setSaving(true);
+    setSaveMsg(null);
+    const res = await saveCustomAssessmentAction({
+      id: asNew ? null : loadedId,
+      name: label.trim(),
+      functionId,
+      skills: [...skills],
+      blockIds: [...blockIds],
+      mcqPct,
+      talentLens,
+    });
+    setSaving(false);
+    if ("error" in res) {
+      setSaveMsg({ ok: false, text: res.error });
+      return;
+    }
+    setLoadedId(res.id);
+    setSaveMsg({ ok: true, text: "Saved - reuse it any time from “Saved assessments”." });
+    await refreshSaved();
+  }
+
+  function loadDesign(id: string) {
+    const d = savedDesigns.find((x) => x.id === id);
+    if (!d) return;
+    setScope("custom");
+    setNewCodes(null);
+    setSaveMsg({ ok: true, text: `Loaded “${d.name}”.` });
+    if (builder && builder.functionId === d.functionId) {
+      // Builder already loaded for this function - apply the selection now.
+      setSkills(new Set(d.skills));
+      setBlockIds(new Set(d.blockIds));
+      setMcqPct(d.mcqPct);
+      setLabel(d.name);
+      setLoadedId(d.id);
+    } else {
+      // Queue it; the builder-load effect applies it once the data lands.
+      pendingDesignRef.current = d;
+      setFunctionId(d.functionId);
+    }
+  }
+
+  async function removeDesign(id: string) {
+    const res = await deleteCustomAssessmentAction({ id });
+    if ("error" in res) {
+      setSaveMsg({ ok: false, text: res.error });
+      return;
+    }
+    if (loadedId === id) setLoadedId(null);
+    setPickId((cur) => (cur === id ? "" : cur));
+    setSavedDesigns((prev) => prev.filter((x) => x.id !== id));
+  }
 
   const allBlockIds = useMemo(
     () => (builder ? builder.pillars.flatMap((p) => p.blocks.map((b) => b.id)) : []),
@@ -242,6 +339,27 @@ export function VouchersClient({
           {/* Custom scope picker - skills + hands-on tasks + knowledge weight. */}
           {scope === "custom" && (
             <div className="sm:col-span-2 space-y-3 rounded-md border border-[#5391D5]/40 bg-[#5391D5]/5 p-3">
+              {/* Reuse a saved design for this function (hidden until one exists
+                  / when migration 00166 isn't applied). */}
+              {savedDesigns.length > 0 && (
+                <div className="rounded-md border border-border bg-card p-2.5">
+                  <span className="text-xs font-medium text-foreground">Saved assessments</span>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                    <select
+                      value={pickId}
+                      onChange={(e) => setPickId(e.target.value)}
+                      className="min-w-[14rem] rounded-md border border-border bg-card px-2.5 py-1.5 text-sm text-foreground"
+                    >
+                      <option value="">Select a saved assessment…</option>
+                      {savedDesigns.map((d) => (
+                        <option key={d.id} value={d.id}>{d.name}</option>
+                      ))}
+                    </select>
+                    <button type="button" disabled={!pickId} onClick={() => loadDesign(pickId)} className="rounded bg-[#010131] px-3 py-1.5 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50">Load</button>
+                    <button type="button" disabled={!pickId} onClick={() => removeDesign(pickId)} className="rounded border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted disabled:opacity-50">Delete</button>
+                  </div>
+                </div>
+              )}
               {builderBusy ? (
                 <p className="text-sm text-muted-foreground">Loading this function&apos;s skills and tasks…</p>
               ) : builderError ? (
@@ -346,6 +464,30 @@ export function VouchersClient({
                   <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800">
                     Indicative result - a custom (pick-and-choose) trial issues no credential. Use the full function assessment for a certified result.
                   </div>
+
+                  {/* Save this design for reuse. Uses the Label field as the name. */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {loadedId ? (
+                      <>
+                        <button type="button" onClick={() => saveDesign(false)} disabled={saving || !customValid || !label.trim()} className="rounded border border-[#5391D5] px-3 py-1.5 text-xs font-medium text-[#5391D5] hover:bg-[#5391D5]/10 disabled:opacity-50">
+                          {saving ? "Saving…" : "Update saved assessment"}
+                        </button>
+                        <button type="button" onClick={() => saveDesign(true)} disabled={saving || !customValid || !label.trim()} className="rounded border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-50">
+                          Save as new
+                        </button>
+                      </>
+                    ) : (
+                      <button type="button" onClick={() => saveDesign(true)} disabled={saving || !customValid || !label.trim()} className="rounded border border-[#5391D5] px-3 py-1.5 text-xs font-medium text-[#5391D5] hover:bg-[#5391D5]/10 disabled:opacity-50">
+                        {saving ? "Saving…" : "Save assessment for reuse"}
+                      </button>
+                    )}
+                    {!label.trim() && (
+                      <span className="text-[11px] text-muted-foreground">Add a Label below to name and save it.</span>
+                    )}
+                  </div>
+                  {saveMsg && (
+                    <p className={`text-[11px] ${saveMsg.ok ? "text-emerald-700" : "text-red-600"}`}>{saveMsg.text}</p>
+                  )}
                 </>
               ) : null}
             </div>
@@ -454,15 +596,12 @@ export function VouchersClient({
                 copyable redeem link so a delegate starts without typing the code. */}
             {newCodes.length === 1 ? (
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-sm font-semibold tracking-wide text-[#010131]">{newCodes[0]}</span>
-                  <button onClick={() => copy(`code-${newCodes[0]}`, newCodes[0])} className="rounded border border-emerald-300 px-2 py-0.5 text-[11px] text-emerald-800">
-                    {copied === `code-${newCodes[0]}` ? "Copied" : "Copy code"}
-                  </button>
-                </div>
+                {/* The shareable redeem LINK is the primary action - a delegate
+                    clicks it and starts without typing the code. The code itself
+                    is shown only as a small reference (no copy-code button). */}
                 <div className="flex items-center gap-2">
                   <input readOnly value={redeemUrl(newCodes[0])} onFocus={(e) => e.currentTarget.select()} className="flex-1 rounded border border-emerald-200 bg-white px-2 py-1 text-xs text-slate-700" />
-                  <button onClick={() => copy(`link-${newCodes[0]}`, redeemUrl(newCodes[0]))} className="shrink-0 rounded bg-emerald-600 px-3 py-1 text-xs text-white">
+                  <button onClick={() => copy(`link-${newCodes[0]}`, redeemUrl(newCodes[0]))} className="shrink-0 rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-white">
                     {copied === `link-${newCodes[0]}` ? "Copied" : "Copy link"}
                   </button>
                 </div>
@@ -470,14 +609,16 @@ export function VouchersClient({
                   Anyone with this link starts the assessment without entering a code.
                   {mode === "pool" ? ` Up to ${count} seat(s).` : ""}
                 </p>
+                <p className="text-[11px] text-slate-500">
+                  Voucher code (for reference): <span className="font-mono text-slate-600">{newCodes[0]}</span>
+                </p>
               </div>
             ) : (
               <>
                 <div className="mb-2 flex flex-wrap gap-2">
-                  <button onClick={() => copy("all-codes", newCodes.join("\n"))} className="rounded bg-emerald-600 px-3 py-1 text-xs text-white">
-                    {copied === "all-codes" ? "Copied" : "Copy codes"}
-                  </button>
-                  <button onClick={() => copy("all-links", newCodes.map(redeemUrl).join("\n"))} className="rounded bg-emerald-600 px-3 py-1 text-xs text-white">
+                  {/* Copy the redeem LINKS (one per line) rather than bare codes,
+                      so each delegate can start without typing a code. */}
+                  <button onClick={() => copy("all-links", newCodes.map(redeemUrl).join("\n"))} className="rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-white">
                     {copied === "all-links" ? "Copied" : "Copy links"}
                   </button>
                   <button

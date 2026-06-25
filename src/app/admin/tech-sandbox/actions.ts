@@ -17,6 +17,12 @@ import {
   getVouchersByCodes,
 } from "@/lib/technical-sandbox/vouchers";
 import { emailAccessLink, appOrigin } from "@/lib/technical-sandbox/email";
+import {
+  saveCustomAssessment,
+  listCustomAssessments,
+  deleteCustomAssessment,
+  type SavedCustomAssessment,
+} from "@/lib/technical-sandbox/custom-assessments";
 import { revalidatePath } from "next/cache";
 
 function functionLabel(fn?: { nodeId: string | null; nameEn: string }): string {
@@ -191,6 +197,58 @@ export async function getCustomBuilderDataAction(
   if (!functionId) return { error: "Select a function." };
   const data = await getCustomBuilderData(functionId);
   return { ok: true, data };
+}
+
+/**
+ * Save a custom (pick-and-choose) assessment design for reuse - insert, or update
+ * when an id is supplied. Admin-guarded; stamps created_by from the caller.
+ */
+export async function saveCustomAssessmentAction(input: {
+  id?: string | null;
+  name: string;
+  functionId: string;
+  skills: string[];
+  blockIds: string[];
+  mcqPct: number;
+  talentLens?: "acquisition" | "development" | null;
+}): Promise<Result<{ id: string }>> {
+  const g = await guard();
+  if ("error" in g) return g;
+  const res = await saveCustomAssessment({
+    id: input.id ?? null,
+    name: input.name,
+    functionId: input.functionId,
+    skills: input.skills ?? [],
+    blockIds: input.blockIds ?? [],
+    mcqPct: input.mcqPct,
+    talentLens: input.talentLens ?? null,
+    createdBy: "userId" in g ? g.userId : undefined,
+  });
+  if (!res.ok) return { error: res.error };
+  revalidatePath("/admin/tech-sandbox/custom");
+  revalidatePath("/admin/tech-sandbox/vouchers");
+  return { ok: true, id: res.id };
+}
+
+/** List saved custom-assessment designs (optionally for one function). */
+export async function listCustomAssessmentsAction(
+  functionId?: string,
+): Promise<Result<{ designs: SavedCustomAssessment[] }>> {
+  const g = await guard();
+  if ("error" in g) return g;
+  const designs = await listCustomAssessments(functionId ?? null);
+  return { ok: true, designs };
+}
+
+/** Delete a saved custom-assessment design. */
+export async function deleteCustomAssessmentAction(input: { id: string }): Promise<Result> {
+  const g = await guard();
+  if ("error" in g) return g;
+  const res = await deleteCustomAssessment(input.id);
+  if (!res.ok) return { error: res.error };
+  revalidatePath("/admin/tech-sandbox/custom");
+  revalidatePath("/admin/tech-sandbox/vouchers");
+  return { ok: true };
 }
 
 export async function generateVouchersAction(input: {

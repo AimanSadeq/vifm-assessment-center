@@ -1,10 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { CustomBuilderData } from "@/lib/technical-sandbox/service";
+import type { SavedCustomAssessment } from "@/lib/technical-sandbox/custom-assessments";
 import {
   generateVouchersAction,
   emailVoucherCodesAction,
+  saveCustomAssessmentAction,
+  listCustomAssessmentsAction,
+  deleteCustomAssessmentAction,
 } from "../../actions";
 
 const ENGINE_LABEL: Record<string, string> = {
@@ -14,6 +18,37 @@ const ENGINE_LABEL: Record<string, string> = {
   sql: "SQL",
   python: "Python",
 };
+
+// Robust clipboard copy: the async Clipboard API only exists in a secure context
+// (HTTPS / localhost). Over plain HTTP / a LAN IP it's undefined, so fall back to
+// a hidden-textarea + execCommand copy that works everywhere.
+async function robustCopy(text: string): Promise<boolean> {
+  try {
+    if (typeof navigator !== "undefined" && navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    /* fall through to the legacy path */
+  }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.top = "0";
+    ta.style.left = "0";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
+}
 
 type TalentLens = "acquisition" | "development" | null;
 type Delegate = { name: string; email: string };
@@ -46,6 +81,77 @@ export function CustomBuilder({
   const [error, setError] = useState<string | null>(null);
   const [issued, setIssued] = useState<IssuedVoucher[] | null>(null);
   const [emailState, setEmailState] = useState<Record<string, { ok: boolean; text: string }>>({});
+
+  // ── Saved (reusable) designs ──
+  const [savedDesigns, setSavedDesigns] = useState<SavedCustomAssessment[]>([]);
+  const [loadedId, setLoadedId] = useState<string | null>(null);
+  const [pickId, setPickId] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  // Load this function's saved designs (silently hidden if 00166 isn't applied).
+  useEffect(() => {
+    let cancelled = false;
+    listCustomAssessmentsAction(data.functionId).then((res) => {
+      if (cancelled || "error" in res) return;
+      setSavedDesigns(res.designs);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [data.functionId]);
+
+  async function refreshSaved() {
+    const res = await listCustomAssessmentsAction(data.functionId);
+    if (!("error" in res)) setSavedDesigns(res.designs);
+  }
+
+  async function saveDesign(asNew: boolean) {
+    setSaving(true);
+    setSaveMsg(null);
+    const res = await saveCustomAssessmentAction({
+      id: asNew ? null : loadedId,
+      name: title.trim(),
+      functionId: data.functionId,
+      skills: [...skills],
+      blockIds: [...blockIds],
+      mcqPct,
+      talentLens,
+    });
+    setSaving(false);
+    if ("error" in res) {
+      setSaveMsg({ ok: false, text: res.error });
+      return;
+    }
+    setLoadedId(res.id);
+    setSaveMsg({ ok: true, text: "Saved - reuse it any time from “Saved assessments”." });
+    await refreshSaved();
+  }
+
+  function loadDesign(id: string) {
+    const d = savedDesigns.find((x) => x.id === id);
+    if (!d) return;
+    setTitle(d.name);
+    setSkills(new Set(d.skills));
+    setBlockIds(new Set(d.blockIds));
+    setMcqPct(d.mcqPct);
+    setLoadedId(d.id);
+    setStep(1);
+    setIssued(null);
+    setError(null);
+    setSaveMsg({ ok: true, text: `Loaded “${d.name}” - tweak it or issue it below.` });
+  }
+
+  async function removeDesign(id: string) {
+    const res = await deleteCustomAssessmentAction({ id });
+    if ("error" in res) {
+      setSaveMsg({ ok: false, text: res.error });
+      return;
+    }
+    if (loadedId === id) setLoadedId(null);
+    setPickId((cur) => (cur === id ? "" : cur));
+    setSavedDesigns((prev) => prev.filter((x) => x.id !== id));
+  }
 
   const toggle = (set: Set<string>, key: string): Set<string> => {
     const next = new Set(set);
@@ -152,6 +258,45 @@ export function CustomBuilder({
           <div className="rounded-md border border-[#5391D5]/30 bg-[#5391D5]/10 px-3 py-2 text-xs font-medium text-[#010131]">
             {lensLabel} - designing the assessment. You will add the client and delegates after you confirm the design.
           </div>
+        )}
+
+        {/* Saved (reusable) designs for this function. Hidden until at least one
+            is saved (also hidden when migration 00166 isn't applied). */}
+        {savedDesigns.length > 0 && (
+          <section className="rounded-lg border border-border bg-card p-4">
+            <h2 className="font-medium text-foreground">Saved assessments</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Reuse a previously saved custom assessment for this function.
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <select
+                value={pickId}
+                onChange={(e) => setPickId(e.target.value)}
+                className="min-w-[16rem] rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+              >
+                <option value="">Select a saved assessment…</option>
+                {savedDesigns.map((d) => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                disabled={!pickId}
+                onClick={() => loadDesign(pickId)}
+                className="rounded-md bg-[#010131] px-3 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+              >
+                Load
+              </button>
+              <button
+                type="button"
+                disabled={!pickId}
+                onClick={() => removeDesign(pickId)}
+                className="rounded-md border border-border px-3 py-2 text-sm text-muted-foreground hover:bg-muted disabled:opacity-50"
+              >
+                Delete
+              </button>
+            </div>
+          </section>
         )}
 
         {/* Assessment name/title */}
@@ -299,17 +444,57 @@ export function CustomBuilder({
             Indicative result - a custom (pick-and-choose) sitting issues no credential. For a
             certified result, issue the full function assessment.
           </div>
-          <button
-            onClick={() => setStep(2)}
-            disabled={!canContinue}
-            className="mt-3 rounded-md bg-[#010131] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
-          >
-            Confirm design and add delegates
-          </button>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setStep(2)}
+              disabled={!canContinue}
+              className="rounded-md bg-[#010131] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+            >
+              Confirm design and add delegates
+            </button>
+            {/* Save the design for reuse. Update the loaded one, or save a copy. */}
+            {loadedId ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => saveDesign(false)}
+                  disabled={saving || !canContinue || !title.trim()}
+                  className="rounded-md border border-[#5391D5] px-4 py-2 text-sm font-medium text-[#5391D5] hover:bg-[#5391D5]/10 disabled:opacity-50"
+                >
+                  {saving ? "Saving…" : "Update saved assessment"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => saveDesign(true)}
+                  disabled={saving || !canContinue || !title.trim()}
+                  className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50"
+                >
+                  Save as new
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => saveDesign(true)}
+                disabled={saving || !canContinue || !title.trim()}
+                className="rounded-md border border-[#5391D5] px-4 py-2 text-sm font-medium text-[#5391D5] hover:bg-[#5391D5]/10 disabled:opacity-50"
+              >
+                {saving ? "Saving…" : "Save assessment for reuse"}
+              </button>
+            )}
+          </div>
           {!canContinue && (
             <p className="mt-2 text-xs text-muted-foreground">
               Pick at least one hands-on task, or select knowledge skills with a knowledge weight above 0.
             </p>
+          )}
+          {canContinue && !title.trim() && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Add an assessment name above to save it for reuse.
+            </p>
+          )}
+          {saveMsg && (
+            <p className={`mt-2 text-xs ${saveMsg.ok ? "text-emerald-700" : "text-red-600"}`}>{saveMsg.text}</p>
           )}
         </section>
       </div>
@@ -428,22 +613,13 @@ export function CustomBuilder({
           <div className="space-y-3">
             {issued.map((r) => (
               <div key={r.code} className="rounded-md border border-emerald-200 bg-white p-3 text-sm">
-                <div className="mb-1 flex items-center gap-2">
-                  <span className="font-mono text-sm font-semibold tracking-wide text-[#010131]">{r.code}</span>
-                  <button
-                    onClick={() => navigator.clipboard?.writeText(r.code)}
-                    className="rounded border border-emerald-300 px-2 py-0.5 text-[11px] text-emerald-800"
-                  >
-                    Copy code
-                  </button>
-                </div>
                 <div className="mb-1.5 text-xs text-slate-600">
                   {r.name ?? "Anonymous code"}
                   {r.email && <span className="ml-2 text-slate-500">{r.email}</span>}
                 </div>
                 <div className="flex items-center gap-2">
-                  <input readOnly value={r.redeemUrl} className="flex-1 rounded border border-emerald-200 bg-white px-2 py-1 text-xs text-slate-700" />
-                  <button onClick={() => navigator.clipboard?.writeText(r.redeemUrl)} className="rounded bg-emerald-600 px-3 py-1 text-xs text-white">
+                  <input readOnly value={r.redeemUrl} onFocus={(e) => e.currentTarget.select()} className="flex-1 rounded border border-emerald-200 bg-white px-2 py-1 text-xs text-slate-700" />
+                  <button onClick={() => robustCopy(r.redeemUrl)} className="rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-white">
                     Copy link
                   </button>
                   {r.email && (

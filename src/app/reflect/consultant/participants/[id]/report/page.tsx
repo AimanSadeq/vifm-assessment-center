@@ -118,6 +118,9 @@ function ReportBody({
         </div>
       </section>
 
+      {/* Contents - "What's in this report" (12 sections, slide parity) */}
+      <ContentsPage rtl={rtl} />
+
       {/* How to read */}
       <section className="page">
         <h2>{rtl ? "كيف تقرأ هذا التقرير" : "How to read this report"}</h2>
@@ -482,6 +485,57 @@ function KpiCard({ label, value, sub }: { label: string; value: string; sub: str
 function KpiInline({ label, value }: { label: string; value: string }) {
   return (
     <span className="kpi-inline"><span className="kpi-inline-label">{label}</span><span className="kpi-inline-value">{value}</span></span>
+  );
+}
+
+
+// ──────────────────────────────────────────────────────────────
+// Contents page (slide parity). Mirrors the "What each leader gets
+// in their PDF - 12 sections" slide: every section named with a
+// one-line description so the reader knows up front exactly what
+// the report delivers. Bilingual, confidential to the leader + coach.
+// ──────────────────────────────────────────────────────────────
+
+function ContentsPage({ rtl }: { rtl: boolean }) {
+  const sections: Array<{ en: string; ar: string; descEn: string; descAr: string }> = [
+    { en: "Cover wheel", ar: "عجلة الغلاف", descEn: "Self vs Others polygons on the competency axes.", descAr: "مضلّعات أنت مقابل الآخرين على محاور الكفايات." },
+    { en: "Summary KPIs", ar: "مؤشرات الملخّص", descEn: "Overall mean, self-view, others' view, gap.", descAr: "المعدّل العام، تقييمك، تقييم الآخرين، الفجوة." },
+    { en: "Critical-competency alignment", ar: "التوافق على الكفايات الحرجة", descEn: "Self + Manager picks - alignment % and breakdown.", descAr: "اختيارات أنت والمدير - نسبة التوافق والتفصيل." },
+    { en: "Strengths & Development", ar: "نقاط القوة والتطوير", descEn: "Top-5 strengths, top-5 development areas, ranked.", descAr: "أعلى 5 نقاط قوة وأقل 5 مجالات تطوير، مرتّبة." },
+    { en: "Blind spots / Hidden strengths", ar: "النقاط العمياء / القوة الخفية", descEn: "Triangulated Self-vs-Others gaps, auto-flagged.", descAr: "فجوات أنت مقابل الآخرين، مُعلّمة تلقائيًا." },
+    { en: "Per-competency detail", ar: "تفاصيل حسب الكفاية", descEn: "Bars per rater group with the Favorable Zone band.", descAr: "أشرطة لكل فئة مقيّمين مع شريط النطاق المرجعي." },
+    { en: "Reference group comparison", ar: "مقارنة فئات المقيّمين", descEn: "Every group, every competency, on one page.", descAr: "كل فئة وكل كفاية في صفحة واحدة." },
+    { en: "Item-level table", ar: "جدول السلوكيات", descEn: "Every behaviour, every group, with consensus flags.", descAr: "كل سلوك وكل فئة مع إشارات التوافق." },
+    { en: "Verbatims", ar: "بكلمات المقيّمين", descEn: "Start / Stop / Continue in raters' own words.", descAr: "ابدأ / توقّف / استمر بكلمات المقيّمين." },
+    { en: "AI coaching tips", ar: "نصائح تطويرية ذكية", descEn: "A 60-90 word actionable tip per development-area behaviour.", descAr: "نصيحة عملية (60-90 كلمة) لكل سلوك تطويري." },
+    { en: "Recommended VIFM programmes", ar: "برامج VIFM الموصى بها", descEn: "Top-5 courses with HIGH FIT badging.", descAr: "أعلى 5 برامج مع وسم «مناسب جدًا»." },
+    { en: "IDP scaffold", ar: "خطة التطوير الفردية", descEn: "Keep / Stop / Start, ready for the debrief.", descAr: "احتفظ / توقّف / ابدأ، جاهزة لجلسة الاستخلاص." },
+  ];
+  return (
+    <section className="page">
+      <h2>{rtl ? "محتويات هذا التقرير" : "What's in this report"}</h2>
+      <p className="lead">
+        {rtl
+          ? "12 قسمًا. ثنائي اللغة. سرّي للقائد ومدرّبه في VIFM."
+          : "12 sections. Bilingual. Confidential to the leader and their VIFM coach."}
+      </p>
+      <ol className="toc-grid">
+        {sections.map((s, i) => (
+          <li key={i} className="toc-item">
+            <span className="toc-num">{i + 1}</span>
+            <div>
+              <div className="toc-title">{rtl ? s.ar : s.en}</div>
+              <div className="toc-desc">{rtl ? s.descAr : s.descEn}</div>
+            </div>
+          </li>
+        ))}
+      </ol>
+      <div className="toc-note">
+        {rtl
+          ? "متاح بالإنجليزية أو العربية أو ثنائي اللغة جنبًا إلى جنب. يُنشأ كملف PDF عند الطلب."
+          : "Available in English, Arabic, or side-by-side bilingual. Generated as PDF on demand."}
+      </div>
+    </section>
   );
 }
 
@@ -1436,6 +1490,15 @@ h4 { color: var(--vifm-primary); font-size: 11pt; font-weight: 700; margin: 3mm 
 .cover-meta dt { color: var(--vifm-muted); font-size: 9pt; text-transform: uppercase; letter-spacing: 0.05em; }
 .cover-meta dd { margin: 0; font-size: 11pt; color: var(--vifm-dark); }
 .confidentiality { background: var(--vifm-soft); border-radius: 3mm; padding: 4mm 5mm; color: var(--vifm-muted); font-size: 9.5pt; border-left: 3pt solid var(--vifm-accent); }
+
+/* Contents page (12-section table of contents - slide parity) */
+.toc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2mm 6mm; list-style: none; padding: 0; margin: 0 0 6mm; }
+.toc-item { display: grid; grid-template-columns: 6mm 1fr; gap: 2.5mm; padding: 2.5mm 0; border-bottom: 0.6pt solid var(--vifm-border); page-break-inside: avoid; }
+.toc-num { display: inline-flex; align-items: center; justify-content: center; width: 6mm; height: 6mm; border-radius: 50%; background: var(--vifm-soft); color: var(--vifm-primary); font-weight: 700; font-size: 9pt; }
+.toc-title { font-weight: 700; color: var(--vifm-primary); font-size: 10.5pt; }
+.toc-desc { color: var(--vifm-muted); font-size: 9pt; margin-top: 0.5mm; }
+.toc-note { background: var(--vifm-soft); border-left: 3pt solid var(--vifm-accent); border-radius: 2mm; padding: 3mm 4mm; color: var(--vifm-muted); font-size: 9.5pt; }
+.reflect-pdf[dir="rtl"] .toc-note { border-left: 0; border-right: 3pt solid var(--vifm-accent); }
 
 /* Scale grid */
 .scale-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm 8mm; margin-bottom: 6mm; }

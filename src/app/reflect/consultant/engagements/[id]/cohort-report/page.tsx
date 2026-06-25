@@ -78,7 +78,7 @@ function CohortReport({
       <section className="page cover">
         <div className="brand-stripe" />
         <div className="cover-inner">
-          <div className="eyebrow">Reflect 360® · Cohort report</div>
+          <div className="eyebrow">Reflect 360® · {rtl ? "إحاطة مدير الموارد البشرية" : "CHRO briefing"}</div>
           <h1>{scoring.engagement_name}</h1>
           <div className="role-title">{scoring.organization_name}</div>
           <dl className="cover-meta">
@@ -98,6 +98,10 @@ function CohortReport({
           </div>
         </div>
       </section>
+
+      {/* Executive summary - mirrors the "Insights / CHRO briefing" slide:
+          left "At a glance", right "How the CHRO uses it". Landscape page. */}
+      <ExecutiveSummaryPage scoring={scoring} recommendations={recommendations} rtl={rtl} />
 
       {/* Summary */}
       <section className="page">
@@ -399,6 +403,184 @@ function CohortPriorRow({
   );
 }
 
+// ──────────────────────────────────────────────────────────────
+// Executive summary page. Mirrors the "Insights / CHRO briefing"
+// slide one-to-one: a left "At a glance" column listing the five
+// building blocks with a live headline value each, and a right
+// dark panel "How the CHRO uses it - Three conversations the cohort
+// report drives". Rendered on the landscape cohort PDF so the two
+// columns sit side by side exactly like the slide.
+// ──────────────────────────────────────────────────────────────
+
+function ExecutiveSummaryPage({
+  scoring,
+  recommendations,
+  rtl,
+}: {
+  scoring: CohortScoring;
+  recommendations: RecommendedCourse[];
+  rtl: boolean;
+}) {
+  const compName = (c: { name_en: string; name_ar: string | null }) =>
+    rtl ? c.name_ar ?? c.name_en : c.name_en;
+
+  const strengthNames = scoring.top_strengths.map(compName);
+  const devNames = scoring.top_development_areas.map(compName);
+
+  // Headline for the distribution block: competency with the largest
+  // below-zone share (the one that most warrants a training programme).
+  let topBelow: { name: string; pct: number } | null = null;
+  for (const c of scoring.competencies) {
+    const d = c.distribution;
+    if (d.counted === 0) continue;
+    const pct = Math.round((d.below / d.counted) * 100);
+    if (pct > 0 && (!topBelow || pct > topBelow.pct)) {
+      topBelow = { name: compName(c), pct };
+    }
+  }
+
+  // Year-on-year headline (only when this is a reassessment).
+  const yoy =
+    scoring.prior_overall_mean !== null && scoring.overall_mean !== null
+      ? scoring.overall_mean - scoring.prior_overall_mean
+      : null;
+  const yoySign = yoy !== null && yoy > 0 ? "+" : "";
+  const yoyArrow = yoy === null ? "" : yoy >= 0.2 ? "↑" : yoy <= -0.2 ? "↓" : "→";
+
+  const topProgramme = recommendations[0] ?? null;
+
+  const items: Array<{ title: string; desc: string; headline: string | null }> = [
+    {
+      title: rtl ? "أبرز نقاط القوة" : "Top strengths",
+      desc: rtl
+        ? "قائمة مرتّبة بأقوى ثلاث كفايات لدى المجموعة."
+        : "Ranked list of the three competencies the cohort is strongest at.",
+      headline: strengthNames.length > 0 ? strengthNames.join(" · ") : null,
+    },
+    {
+      title: rtl ? "أهم مجالات التطوير" : "Top development areas",
+      desc: rtl
+        ? "أين تُستثمر ميزانية التدريب أولًا. بنفس منطق الترتيب."
+        : "Where to invest training budget first. Same ranking logic.",
+      headline: devNames.length > 0 ? devNames.join(" · ") : null,
+    },
+    {
+      title: rtl ? "خريطة الكفايات الحرارية" : "Competency heatmap",
+      desc: rtl
+        ? "كل قائد وكل كفاية، ملوّنة لتبرز الأنماط فورًا."
+        : "Every leader, every competency, colour-coded so patterns jump out.",
+      headline:
+        scoring.participant_count > 0 && scoring.competencies.length > 0
+          ? rtl
+            ? `${scoring.participant_count} قائد × ${scoring.competencies.length} كفايات`
+            : `${scoring.participant_count} leaders × ${scoring.competencies.length} competencies`
+          : null,
+    },
+    {
+      title: rtl ? "النسبة تحت / داخل / فوق النطاق" : "% below / within / above zone",
+      desc: rtl
+        ? "لكل كفاية، نسبة المجموعة في كل نطاق. مخطط الملخّص التنفيذي."
+        : "For each competency, the share of the cohort in each band. The exec-summary chart.",
+      headline: topBelow
+        ? rtl
+          ? `${topBelow.pct}% من القادة تحت النطاق في «${topBelow.name}»`
+          : `${topBelow.pct}% of leaders below zone on ${topBelow.name}`
+        : null,
+    },
+    {
+      title: rtl ? "التغيّر السنوي" : "Year-on-year delta",
+      desc: rtl
+        ? "عند إعادة التقييم، تُظهر الأسهم ↑+0.4 / ↓-0.2 ما الذي تغيّر."
+        : "On a reassessment, ↑+0.4 / ↓-0.2 arrows show what's moved.",
+      headline:
+        yoy !== null
+          ? rtl
+            ? `المعدّل العام ${yoyArrow} ${yoySign}${yoy.toFixed(2)} مقابل السابق`
+            : `Cohort overall ${yoyArrow} ${yoySign}${yoy.toFixed(2)} vs prior`
+          : rtl
+            ? "يظهر عند إعادة التقييم"
+            : "Appears on a reassessment",
+    },
+  ];
+
+  const convos: Array<{ who: string; text: string; data: string | null }> = [
+    {
+      who: rtl ? "مع الرئيس التنفيذي" : "With the CEO",
+      text: rtl
+        ? "أين يقوى صف القيادة، وأين الفجوات، وما الذي نفعله حيال كل منها."
+        : "where the leadership bench is strong, where the gaps are, and what we're doing about each one.",
+      data:
+        strengthNames[0] && devNames[0]
+          ? rtl
+            ? `الأقوى: ${strengthNames[0]} · الأضعف: ${devNames[0]}`
+            : `Strongest: ${strengthNames[0]} · Weakest: ${devNames[0]}`
+          : null,
+    },
+    {
+      who: rtl ? "مع مالك ميزانية التدريب" : "With the L&D budget owner",
+      text: rtl
+        ? "أي برامج VIFM نلتزم بها للربع القادم، مرتّبة حسب إجمالي فجوة المجموعة."
+        : "which VIFM programmes to commit to next quarter, ranked by aggregated cohort gap.",
+      data: topProgramme
+        ? rtl
+          ? `الترشيح الأول: ${topProgramme.title_ar ?? topProgramme.title_en}`
+          : `Top pick: ${topProgramme.title_en}`
+        : null,
+    },
+    {
+      who: rtl ? "مع المدير المباشر لكل قائد" : "With each leader's line manager",
+      text: rtl
+        ? "أولويات العام، مستندة إلى البيانات بدلًا من الآراء."
+        : "priorities for the year, anchored on data instead of opinion.",
+      data: null,
+    },
+  ];
+
+  return (
+    <section className="page exec-page">
+      <h2>{rtl ? "ملخّص تنفيذي" : "Executive summary"}</h2>
+      <div className="exec-grid">
+        {/* Left: At a glance */}
+        <div className="glance">
+          <div className="glance-eyebrow">{rtl ? "نظرة سريعة" : "At a glance"}</div>
+          <ul className="glance-list">
+            {items.map((it, i) => (
+              <li key={i} className="glance-item">
+                <span className="glance-dot" />
+                <div>
+                  <div className="glance-title">{it.title}</div>
+                  <div className="glance-desc">{it.desc}</div>
+                  {it.headline && <div className="glance-headline">{it.headline}</div>}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Right: How the CHRO uses it */}
+        <div className="chro-panel">
+          <div className="chro-eyebrow">{rtl ? "كيف يستخدمه مدير الموارد البشرية" : "How the CHRO uses it"}</div>
+          <h3 className="chro-title">
+            {rtl ? "ثلاث محادثات يقودها تقرير المجموعة" : "Three conversations the cohort report drives"}
+          </h3>
+          {convos.map((c, i) => (
+            <div key={i} className="chro-convo">
+              <div className="chro-convo-who">{c.who}:</div>
+              <div className="chro-convo-text">{c.text}</div>
+              {c.data && <div className="chro-convo-data">{c.data}</div>}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="exec-footer">
+        {rtl
+          ? "ريفلكت 360® · إحاطة مدير الموارد البشرية · © المعهد الأمريكي للتمويل والإدارة"
+          : "VIFM Reflect 360® · CHRO briefing · © Virginia Institute of Finance and Management"}
+      </div>
+    </section>
+  );
+}
+
 function KpiCard({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
     <div className="kpi">
@@ -556,6 +738,27 @@ h3 { color: var(--vifm-primary); font-size: 12pt; font-weight: 700; margin: 4mm 
 .dist-legend { display: flex; flex-wrap: wrap; gap: 5mm; margin-top: 3mm; background: var(--vifm-soft); padding: 3mm 4mm; border-radius: 2mm; font-size: 9pt; color: var(--vifm-muted); }
 .dist-legend-item { display: inline-flex; align-items: center; gap: 1.5mm; }
 .dist-swatch { display: inline-block; width: 4mm; height: 4mm; border-radius: 0.8mm; }
+
+/* Executive summary - "At a glance" + "How the CHRO uses it" (slide parity) */
+.exec-grid { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 8mm; align-items: start; }
+.glance-eyebrow, .chro-eyebrow { color: var(--vifm-accent); font-size: 9pt; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; margin-bottom: 4mm; }
+.glance-list { list-style: none; padding: 0; margin: 0; }
+.glance-item { display: grid; grid-template-columns: 4mm 1fr; gap: 3mm; padding: 3mm 0; border-bottom: 0.6pt solid var(--vifm-border); }
+.glance-item:last-child { border-bottom: 0; }
+.glance-dot { width: 3.2mm; height: 3.2mm; border-radius: 50%; background: var(--vifm-accent); margin-top: 1.2mm; }
+.glance-title { font-weight: 700; color: var(--vifm-primary); font-size: 11.5pt; }
+.glance-desc { color: var(--vifm-muted); font-size: 9.5pt; margin-top: 0.5mm; }
+.glance-headline { color: var(--vifm-dark); font-size: 9.5pt; font-weight: 600; margin-top: 1.2mm; }
+.chro-panel { background: var(--vifm-primary); color: #fff; border-radius: 3mm; padding: 6mm 6.5mm; }
+.chro-eyebrow { color: var(--vifm-accent); }
+.chro-title { color: #fff; font-size: 13pt; font-weight: 700; margin: 0 0 5mm; border: 0; padding: 0; }
+.chro-convo { border-left: 2.5pt solid var(--vifm-accent); padding-left: 4mm; margin-bottom: 5mm; }
+.chro-convo:last-child { margin-bottom: 0; }
+.chro-convo-who { color: #fff; font-weight: 700; font-size: 11pt; }
+.chro-convo-text { color: #D4DEF0; font-size: 9.5pt; margin-top: 1mm; line-height: 1.5; }
+.chro-convo-data { color: #93B2E4; font-size: 9pt; margin-top: 1.5mm; font-style: italic; }
+.exec-footer { margin-top: 7mm; color: var(--vifm-muted); font-size: 8.5pt; border-top: 0.6pt solid var(--vifm-border); padding-top: 2.5mm; }
+.reflect-pdf[dir="rtl"] .chro-convo { border-left: 0; border-right: 2.5pt solid var(--vifm-accent); padding-left: 0; padding-right: 4mm; }
 
 .reflect-pdf[dir="rtl"] .confidentiality { border-left: 0; border-right: 3pt solid var(--vifm-accent); }
 .reflect-pdf[dir="rtl"] .hm-row-head { text-align: right; }

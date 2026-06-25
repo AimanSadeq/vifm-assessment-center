@@ -80,7 +80,11 @@ export async function GET(req: Request, { params }: { params: { resultId: string
   // stored signal; recompute from the raw flags for older rows that predate it;
   // null on a 00042-only DB so the section is simply omitted.
   const integrity: IntegritySignal | null =
-    row.integrity_flags?.signal ?? (row.integrity_flags ? computeIntegritySignal(row.integrity_flags) : null);
+    row.integrity_flags?.signal && Array.isArray(row.integrity_flags.signal.reasons)
+      ? row.integrity_flags.signal
+      : row.integrity_flags
+        ? computeIntegritySignal(row.integrity_flags)
+        : null;
 
   // English-development recommendations (VIFM catalogue + pluggable partner
   // courses). Best-effort: a recommender failure must never block the report.

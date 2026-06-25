@@ -334,7 +334,7 @@ export function FluentReport({
                 {INTEGRITY_TIER_LABEL[data.integrity.tier]} · {data.integrity.score}/100
               </Text>
               <View style={{ marginTop: 3 }}>
-                {data.integrity.reasons.map((reason, i) => (
+                {(data.integrity.reasons ?? []).map((reason, i) => (
                   <Text key={i} style={s.defLine}>{"• "}{reason}</Text>
                 ))}
               </View>

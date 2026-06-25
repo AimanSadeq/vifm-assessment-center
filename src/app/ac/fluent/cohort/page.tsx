@@ -269,7 +269,13 @@ function CohortBody({ rows, t }: { rows: Row[]; t: ServerT }) {
                       // from raw flags for rows written before the signal was stored.
                       const flags = r.integrity_flags;
                       if (!flags) return <span className="text-slate-300">-</span>;
-                      const sig = flags.signal ?? computeIntegritySignal(flags);
+                      // Trust the persisted signal only when it carries a well-formed
+                      // reasons[]; legacy rows stored an older signal shape without it,
+                      // so recompute from raw flags rather than read undefined.reasons.
+                      const sig =
+                        flags.signal && Array.isArray(flags.signal.reasons)
+                          ? flags.signal
+                          : computeIntegritySignal(flags);
                       if (sig.tier === "clean" && sig.score === 0) return <span className="text-slate-300">-</span>;
                       const tone =
                         sig.tier === "elevated"

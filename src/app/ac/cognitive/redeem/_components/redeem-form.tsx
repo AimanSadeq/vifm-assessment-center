@@ -1,78 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Loader2, KeyRound } from "lucide-react";
+import { VoucherRedeemForm } from "@/components/shared/voucher-redeem-form";
 import { redeemCognitiveVoucherAction } from "../actions";
 
-export function RedeemForm({
-  initialCode = "",
-  initialEmail = "",
-  initialName = "",
-  initialCompany = "",
-}: {
-  initialCode?: string;
-  initialEmail?: string;
-  initialName?: string;
-  initialCompany?: string;
-}) {
-  const router = useRouter();
-  const [code, setCode] = useState(initialCode);
-  const [name, setName] = useState(initialName);
-  const [email, setEmail] = useState(initialEmail);
-  const [company, setCompany] = useState(initialCompany);
-  const [busy, setBusy] = useState(false);
-
-  const ready = code.trim() && name.trim() && email.trim() && company.trim();
-
-  const submit = async () => {
-    if (!ready) return;
-    setBusy(true);
-    const res = await redeemCognitiveVoucherAction({ code, name, email, company });
-    if (!res.ok) {
-      setBusy(false);
-      toast.error(res.error);
-      return;
-    }
-    router.push(`/ac/cognitive/take/${res.redemptionToken}`);
-  };
-
+// Thin wrapper over the shared bilingual redeem form (consolidation Phase 2).
+// Logica gains the EN/AR toggle it lacked; the action layer is unchanged.
+export function RedeemForm({ initialCode = "" }: { initialCode?: string }) {
   return (
-    <div className="space-y-4">
-      <div className="space-y-1.5">
-        <Label htmlFor="code">Voucher code</Label>
-        <Input
-          id="code"
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          placeholder="VIFM-COG-XXXX-XXXX"
-          autoCapitalize="characters"
-          dir="ltr"
-          className="font-mono tracking-wide"
-        />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="name">Full name</Label>
-          <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} />
-        </div>
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="company">Company</Label>
-        <Input id="company" value={company} onChange={(e) => setCompany(e.target.value)} />
-      </div>
-      <Button onClick={submit} disabled={busy || !ready} className="w-full gap-2">
-        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
-        Start my cognitive assessment
-      </Button>
-    </div>
+    <VoucherRedeemForm
+      initialCode={initialCode}
+      companyField="required"
+      codePlaceholder="VIFM-COG-XXXX-XXXX"
+      submitLabel={{ en: "Start my cognitive assessment", ar: "ابدأ تقييم القدرات الذهنية" }}
+      onRedeem={async (v) => {
+        const res = await redeemCognitiveVoucherAction({ code: v.code, name: v.name, email: v.email, company: v.company });
+        if (!res.ok) return { ok: false, error: res.error };
+        return { ok: true, redirectTo: `/ac/cognitive/take/${res.redemptionToken}` };
+      }}
+    />
   );
 }

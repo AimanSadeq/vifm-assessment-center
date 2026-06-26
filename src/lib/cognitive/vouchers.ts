@@ -1,29 +1,22 @@
 import { createServiceClient } from "@/lib/supabase/server";
+import { makeVoucherCode } from "@/lib/vouchers/codegen";
+import { redeemViaDescriptor } from "@/lib/vouchers/core";
+import { VOUCHER_DESCRIPTORS } from "@/lib/vouchers/descriptor";
 
 // ─────────────────────────────────────────────────────────────
 // Cognitive Ability voucher service - generate + redeem access codes for the
 // standalone Cognitive runner. Server-only (service-role). Admin generation is
 // gated by the calling action; redemption is public, validated atomically via
-// the cognitive_voucher_claim RPC. Mirrors src/lib/fluent/vouchers.ts.
+// the cognitive_voucher_claim RPC. Redeem now delegates to the SHARED voucher
+// core (src/lib/vouchers/core.ts) - claim + compensate live there once;
+// code-gen + normalize are shared too. (Phase 1 proof of the consolidation.)
 // ─────────────────────────────────────────────────────────────
 
-const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+export { normalizeCode } from "@/lib/vouchers/codegen";
 
-function randomBlock(len: number): string {
-  const bytes = new Uint8Array(len);
-  globalThis.crypto.getRandomValues(bytes);
-  let out = "";
-  for (let i = 0; i < len; i++) out += CODE_ALPHABET[bytes[i] % CODE_ALPHABET.length];
-  return out;
-}
-
-/** e.g. "VIFM-COG-7K3M-9QX2". */
+/** e.g. "VIFM-COG-7K3M-9QX2" (shared codegen). */
 export function generateVoucherCode(): string {
-  return `VIFM-COG-${randomBlock(4)}-${randomBlock(4)}`;
-}
-
-export function normalizeCode(code: string): string {
-  return code.trim().toUpperCase();
+  return makeVoucherCode("COG");
 }
 
 export type CreateBatchInput = {
@@ -103,63 +96,69 @@ type ClaimedVoucher = {
 export async function redeemVoucher(
   input: RedeemInput,
 ): Promise<{ ok: true; redemptionToken: string; language: "en" | "ar" } | { ok: false; error: string }> {
-  const code = normalizeCode(input.code);
-  if (!code) return { ok: false, error: "Enter a voucher code." };
+  // Validate up front so an invalid form never claims (then releases) a seat.
+  if (!input.code.trim()) return { ok: false, error: "Enter a voucher code." };
   if (!input.redeemerName.trim() || !input.redeemerEmail.trim() || !input.companyName.trim()) {
     return { ok: false, error: "Name, email, and company are required." };
   }
 
-  const sb = createServiceClient();
-  const { data: claimed, error: claimErr } = await sb.rpc("cognitive_voucher_claim", { p_code: code });
-  if (claimErr) return { ok: false, error: "Could not redeem this code. Please try again." };
-  const voucher = (Array.isArray(claimed) ? claimed[0] : claimed) as ClaimedVoucher | undefined;
-  if (!voucher) return { ok: false, error: "This code is invalid, expired, or fully used." };
+  // Claim + compensate-on-failure handled by the shared core; the cognitive-
+  // specific work (project-label carry + redemption record) is the provision step.
+  const out = await redeemViaDescriptor<ClaimedVoucher>(
+    VOUCHER_DESCRIPTORS.cognitive,
+    {
+      code: input.code,
+      redeemerName: input.redeemerName,
+      redeemerEmail: input.redeemerEmail,
+      companyName: input.companyName,
+      ip: input.ip,
+      userAgent: input.userAgent,
+    },
+    async ({ sb, voucher, redeemer }) => {
+      const language = voucher.default_language === "ar" ? "ar" : "en";
 
-  const language = voucher.default_language === "ar" ? "ar" : "en";
+      // Project label (00137) rides voucher -> redemption -> result, mirroring
+      // organization_id. The claim RPC doesn't return it, so read it separately
+      // (tolerant of 00137 not applied).
+      let projectLabel: string | null = null;
+      try {
+        const { data: vRow } = await sb
+          .from("cognitive_vouchers")
+          .select("project_label")
+          .eq("id", voucher.id)
+          .maybeSingle<{ project_label: string | null }>();
+        projectLabel = vRow?.project_label ?? null;
+      } catch {
+        projectLabel = null;
+      }
 
-  // Project label (00137) rides voucher -> redemption -> result, mirroring
-  // organization_id. The claim RPC doesn't return it, so read it separately
-  // (tolerant of 00137 not applied).
-  let projectLabel: string | null = null;
-  try {
-    const { data: vRow } = await sb
-      .from("cognitive_vouchers")
-      .select("project_label")
-      .eq("id", voucher.id)
-      .maybeSingle<{ project_label: string | null }>();
-    projectLabel = vRow?.project_label ?? null;
-  } catch {
-    projectLabel = null;
-  }
+      const redemptionBase = {
+        voucher_id: voucher.id,
+        redeemer_name: redeemer.redeemerName.trim(),
+        redeemer_email: redeemer.redeemerEmail.trim(),
+        company_name: (redeemer.companyName ?? "").trim(),
+        organization_id: voucher.organization_id ?? null,
+        ip: redeemer.ip ?? null,
+        user_agent: redeemer.userAgent ?? null,
+      };
+      let { data: redemption, error: redErr } = await sb
+        .from("cognitive_voucher_redemptions")
+        .insert(projectLabel ? { ...redemptionBase, project_label: projectLabel } : redemptionBase)
+        .select("redemption_token")
+        .single<{ redemption_token: string }>();
+      // Tolerant of 00137 not applied on the redemptions table: retry without it.
+      if (redErr && projectLabel && isMissingColumnError(redErr)) {
+        ({ data: redemption, error: redErr } = await sb
+          .from("cognitive_voucher_redemptions")
+          .insert(redemptionBase)
+          .select("redemption_token")
+          .single<{ redemption_token: string }>());
+      }
+      if (redErr || !redemption) return { ok: false, error: "Could not start your test. Please try again." };
+      return { ok: true, token: redemption.redemption_token, language };
+    },
+  );
 
-  const redemptionBase = {
-    voucher_id: voucher.id,
-    redeemer_name: input.redeemerName.trim(),
-    redeemer_email: input.redeemerEmail.trim(),
-    company_name: input.companyName.trim(),
-    organization_id: voucher.organization_id ?? null,
-    ip: input.ip ?? null,
-    user_agent: input.userAgent ?? null,
-  };
-  let { data: redemption, error: redErr } = await sb
-    .from("cognitive_voucher_redemptions")
-    .insert(projectLabel ? { ...redemptionBase, project_label: projectLabel } : redemptionBase)
-    .select("redemption_token")
-    .single<{ redemption_token: string }>();
-  // Tolerant of 00137 not applied on the redemptions table: retry without it.
-  if (redErr && projectLabel && isMissingColumnError(redErr)) {
-    ({ data: redemption, error: redErr } = await sb
-      .from("cognitive_voucher_redemptions")
-      .insert(redemptionBase)
-      .select("redemption_token")
-      .single<{ redemption_token: string }>());
-  }
-  if (redErr || !redemption) {
-    // The seat was claimed atomically above; hand it back so a failed redemption
-    // doesn't permanently burn a use (tolerant if 00159 isn't applied yet).
-    try { await sb.rpc("cognitive_voucher_release_seat", { p_code: code }); } catch { /* pre-00159 */ }
-    return { ok: false, error: "Could not start your test. Please try again." };
-  }
-
-  return { ok: true, redemptionToken: redemption.redemption_token, language };
+  if (!out.ok) return { ok: false, error: out.error };
+  return { ok: true, redemptionToken: out.token as string, language: out.language as "en" | "ar" };
 }

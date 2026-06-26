@@ -1,31 +1,20 @@
 import { createServiceClient } from "@/lib/supabase/server";
+import { makeVoucherCode } from "@/lib/vouchers/codegen";
+import { redeemViaDescriptor } from "@/lib/vouchers/core";
+import { VOUCHER_DESCRIPTORS } from "@/lib/vouchers/descriptor";
 
 // ─────────────────────────────────────────────────────────────
-// Fluent voucher service - generate + redeem English-placement
-// access codes. Server-only (service-role client). Admin generation is
-// gated by the calling server action; redemption is public and validated
-// atomically via the eng_fluent_voucher_claim RPC. Mirrors the ARC voucher
-// service (src/lib/ara/vouchers.ts).
+// Fluent voucher service - generate + redeem English-placement access codes.
+// Server-only (service-role client). Redeem delegates to the SHARED voucher
+// core (src/lib/vouchers/core.ts) - claim + compensate-on-failure live there
+// once; code-gen + normalize are shared too. (Voucher consolidation.)
 // ─────────────────────────────────────────────────────────────
 
-// Unambiguous charset (no 0/O/1/I) for human-typed codes.
-const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+export { normalizeCode } from "@/lib/vouchers/codegen";
 
-function randomBlock(len: number): string {
-  const bytes = new Uint8Array(len);
-  globalThis.crypto.getRandomValues(bytes);
-  let out = "";
-  for (let i = 0; i < len; i++) out += CODE_ALPHABET[bytes[i] % CODE_ALPHABET.length];
-  return out;
-}
-
-/** Human-friendly, unguessable code, e.g. "VIFM-ENG-7K3M-9QX2". */
+/** Human-friendly, unguessable code, e.g. "VIFM-ENG-7K3M-9QX2" (shared codegen). */
 export function generateVoucherCode(): string {
-  return `VIFM-ENG-${randomBlock(4)}-${randomBlock(4)}`;
-}
-
-export function normalizeCode(code: string): string {
-  return code.trim().toUpperCase();
+  return makeVoucherCode("ENG");
 }
 
 export type CreateBatchInput = {
@@ -91,35 +80,44 @@ type ClaimedVoucher = {
 export async function redeemVoucher(
   input: RedeemInput,
 ): Promise<{ ok: true; redemptionToken: string; language: "en" | "ar" } | { ok: false; error: string }> {
-  const code = normalizeCode(input.code);
-  if (!code) return { ok: false, error: "Enter a voucher code." };
+  // Validate up front so an invalid form never claims (then releases) a seat.
+  if (!input.code.trim()) return { ok: false, error: "Enter a voucher code." };
   if (!input.redeemerName.trim() || !input.redeemerEmail.trim() || !input.companyName.trim()) {
     return { ok: false, error: "Name, email, and company are required." };
   }
 
-  const sb = createServiceClient();
+  // Claim + compensate-on-failure handled by the shared core; the Fluent-specific
+  // work (record the redemption) is the provision step.
+  const out = await redeemViaDescriptor<ClaimedVoucher>(
+    VOUCHER_DESCRIPTORS.fluent,
+    {
+      code: input.code,
+      redeemerName: input.redeemerName,
+      redeemerEmail: input.redeemerEmail,
+      companyName: input.companyName,
+      ip: input.ip,
+      userAgent: input.userAgent,
+    },
+    async ({ sb, voucher, redeemer }) => {
+      const language = voucher.default_language === "ar" ? "ar" : "en";
+      const { data: redemption, error: redErr } = await sb
+        .from("eng_fluent_voucher_redemptions")
+        .insert({
+          voucher_id: voucher.id,
+          redeemer_name: redeemer.redeemerName.trim(),
+          redeemer_email: redeemer.redeemerEmail.trim(),
+          company_name: (redeemer.companyName ?? "").trim(),
+          organization_id: voucher.organization_id ?? null,
+          ip: redeemer.ip ?? null,
+          user_agent: redeemer.userAgent ?? null,
+        })
+        .select("redemption_token")
+        .single<{ redemption_token: string }>();
+      if (redErr || !redemption) return { ok: false, error: "Could not start your test. Please try again." };
+      return { ok: true, token: redemption.redemption_token, language };
+    },
+  );
 
-  const { data: claimed, error: claimErr } = await sb.rpc("eng_fluent_voucher_claim", { p_code: code });
-  if (claimErr) return { ok: false, error: "Could not redeem this code. Please try again." };
-  const voucher = (Array.isArray(claimed) ? claimed[0] : claimed) as ClaimedVoucher | undefined;
-  if (!voucher) return { ok: false, error: "This code is invalid, expired, or fully used." };
-
-  const language = voucher.default_language === "ar" ? "ar" : "en";
-
-  const { data: redemption, error: redErr } = await sb
-    .from("eng_fluent_voucher_redemptions")
-    .insert({
-      voucher_id: voucher.id,
-      redeemer_name: input.redeemerName.trim(),
-      redeemer_email: input.redeemerEmail.trim(),
-      company_name: input.companyName.trim(),
-      organization_id: voucher.organization_id ?? null,
-      ip: input.ip ?? null,
-      user_agent: input.userAgent ?? null,
-    })
-    .select("redemption_token")
-    .single<{ redemption_token: string }>();
-  if (redErr || !redemption) return { ok: false, error: "Could not start your test. Please try again." };
-
-  return { ok: true, redemptionToken: redemption.redemption_token, language };
+  if (!out.ok) return { ok: false, error: out.error };
+  return { ok: true, redemptionToken: out.token as string, language: out.language as "en" | "ar" };
 }

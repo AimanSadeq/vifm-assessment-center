@@ -21,11 +21,13 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export type Delegate = { email: string; name?: string | null };
 export type IssuedVoucher = { code: string; email: string | null; name: string | null; maxUses: number; emailed?: boolean };
 
-/** Build the public redeem URL for a voucher (prefills email + name when known). */
-export function redeemUrlFor(origin: string, v: { code: string; email?: string | null; name?: string | null }): string {
+/** Build the public redeem URL for a voucher. Only the CODE travels in the URL;
+ *  the recipient's name/email are resolved server-side from the voucher row at
+ *  redeem time. Keeping PII out of the URL avoids the prefill-trust phishing
+ *  vector (a crafted link can't pre-fill an arbitrary identity) and matches the
+ *  ARC / Fluent / Techno redeem pattern. */
+export function redeemUrlFor(origin: string, v: { code: string }): string {
   const params = new URLSearchParams({ code: v.code });
-  if (v.email) params.set("email", v.email);
-  if (v.name) params.set("name", v.name);
   return `${origin.replace(/\/$/, "")}/role-readiness/redeem?${params.toString()}`;
 }
 

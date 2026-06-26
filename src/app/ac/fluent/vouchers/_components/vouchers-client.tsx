@@ -20,6 +20,7 @@ export function VouchersClient({ vouchers, clients }: { vouchers: FluentVoucherR
       redeemPath="/ac/fluent/redeem"
       clients={clients}
       vouchers={vouchers}
+      optionsLabel="Fluent"
       options={
         <label className="flex cursor-pointer items-center gap-2 self-center pt-4" title="Candidates redeeming these vouchers will be camera-proctored">
           <input

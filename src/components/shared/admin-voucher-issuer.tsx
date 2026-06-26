@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Ticket, Copy, Ban, Link2, Mail, Send } from "lucide-react";
+import { Loader2, Ticket, Copy, Ban, Link2, Mail, Send, SlidersHorizontal } from "lucide-react";
 import { fmtDate } from "@/lib/utils/format-date";
 import { copyToClipboard } from "@/lib/utils/clipboard";
 
@@ -52,6 +52,8 @@ export type AdminVoucherIssuerProps = {
   /** Per-service options rendered as a full-width block below the field row
    *  (for richer panels, e.g. Persona's purpose + scope picker). */
   optionsBlock?: ReactNode;
+  /** Short service name for the options callout header, e.g. "Fluent" -> "Fluent options". */
+  optionsLabel?: string;
   onGenerate: (c: GenerateCommon) => Promise<{ codes: string[] } | { error: string }>;
   onDisable?: (id: string) => Promise<{ ok: true } | { error: string }>;
   /** Optional "email links to delegates" card (parent adds its own options, e.g. language). */
@@ -80,6 +82,7 @@ export function AdminVoucherIssuer({
   onEmailDelegates,
   onEmailRow,
   optionsBlock,
+  optionsLabel,
   rowBadge,
   showClient = true,
   showLabel = true,
@@ -171,6 +174,7 @@ export function AdminVoucherIssuer({
       Generate
     </Button>
   );
+  const hasExtras = !!options || !!optionsBlock;
 
   return (
     <div className="space-y-6">
@@ -211,11 +215,24 @@ export function AdminVoucherIssuer({
               <Input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
             </div>
           )}
-          {options}
-            {!optionsBlock && genButton}
+            {!hasExtras && genButton}
           </div>
+          {options && (
+            <div className="rounded-lg border border-dashed border-[#5391D5]/50 bg-[#5391D5]/5 p-3">
+              <div className="mb-2.5 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 text-sm font-semibold text-[#010131]">
+                  <SlidersHorizontal className="h-4 w-4 text-[#5391D5]" />
+                  {optionsLabel ? `${optionsLabel} options` : "Options"}
+                </div>
+                <span className="rounded-full bg-[#5391D5]/10 px-2 py-0.5 text-[11px] font-medium text-[#5391D5]">
+                  swaps per service
+                </span>
+              </div>
+              <div className="flex flex-wrap items-end gap-3">{options}</div>
+            </div>
+          )}
           {optionsBlock}
-          {optionsBlock && genButton}
+          {hasExtras && genButton}
         </CardContent>
       </Card>
 

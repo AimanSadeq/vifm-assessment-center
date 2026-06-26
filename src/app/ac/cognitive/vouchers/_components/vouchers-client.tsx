@@ -25,6 +25,7 @@ export function VouchersClient({ vouchers, clients }: { vouchers: CognitiveVouch
       redeemPath="/ac/cognitive/redeem"
       clients={clients}
       vouchers={vouchers}
+      optionsLabel="Logica"
       options={
         <>
           <div className="flex-1 min-w-[12rem] space-y-1.5">

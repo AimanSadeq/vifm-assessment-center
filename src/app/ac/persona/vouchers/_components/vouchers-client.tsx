@@ -87,6 +87,7 @@ export function VouchersClient({
       redeemPath="/ac/persona/redeem"
       clients={clients}
       vouchers={vouchers}
+      optionsLabel="Persona"
       options={
         <>
           <div className="flex-1 min-w-[12rem] space-y-1.5">

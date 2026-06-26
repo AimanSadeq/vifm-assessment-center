@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useTransition } from "react";
 import Link from "next/link";
-import { Ticket, Copy, Download, Check, Ban, RotateCcw, Plus, X, Link2, Upload, BarChart3 } from "lucide-react";
+import { Ticket, Copy, Download, Check, Ban, RotateCcw, Plus, X, Link2, Upload, BarChart3, SlidersHorizontal } from "lucide-react";
 import { fmtDate } from "@/lib/utils/format-date";
 import { copyToClipboard } from "@/lib/utils/clipboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -197,136 +197,129 @@ export function VouchersClient({
 
   return (
     <div className="space-y-8">
-      {/* Assessment length - governs BOTH generation forms below (migration 00143). */}
-      <Card>
-        <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold text-[#010131]">Assessment length</p>
-            <p className="text-xs text-muted-foreground">
-              How many questions a redeemed code serves - set it per client need.
-            </p>
-          </div>
-          <select
-            value={itemsPerFactor}
-            onChange={(e) => setItemsPerFactor(e.target.value)}
-            className={`${selectClass} sm:w-72`}
-            aria-label="Assessment length"
-          >
-            <option value="">Full ARC - 60 questions</option>
-            <option value="12">48 questions (12 per factor)</option>
-            <option value="9">36 questions (9 per factor)</option>
-            <option value="6">24 questions (6 per factor)</option>
-          </select>
-        </CardContent>
-      </Card>
-
       {/* Generate */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Generate codes</CardTitle>
-          <CardDescription>Personal ARC · length set above · seat pool via &ldquo;uses per code&rdquo;.</CardDescription>
+          <CardDescription>Personal ARC · set the length, region &amp; language in ARC options · seat pool via &ldquo;uses per code&rdquo;.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={onGenerate} className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="count"># of codes</Label>
-              <Input id="count" name="count" type="number" min={1} max={500} defaultValue={1} required />
+          <form onSubmit={onGenerate} className="space-y-4">
+            {/* Standard identity fields - the same top row on every voucher page */}
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="w-28 space-y-1.5">
+                <Label htmlFor="count" className="text-xs"># of codes</Label>
+                <Input id="count" name="count" type="number" min={1} max={500} defaultValue={1} required />
+              </div>
+              <div className="w-32 space-y-1.5">
+                <Label htmlFor="maxUses" className="text-xs">Uses per code</Label>
+                <Input id="maxUses" name="maxUses" type="number" min={1} defaultValue={1} required />
+              </div>
+              <div className="flex-1 min-w-[12rem] space-y-1.5">
+                <Label htmlFor="organizationId" className="text-xs">Client org (tag for tracking)</Label>
+                <select
+                  id="organizationId"
+                  name="organizationId"
+                  className={selectClass}
+                  value={selectedOrg}
+                  onChange={(e) => {
+                    const id = e.target.value;
+                    setSelectedOrg(id);
+                    const org = orgList.find((o) => o.id === id);
+                    if (org) setBatchRegion(org.region);
+                  }}
+                >
+                  <option value="">- none -</option>
+                  {orgList.map((o) => (
+                    <option key={o.id} value={o.id}>{o.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1 min-w-[10rem] space-y-1.5">
+                <Label htmlFor="label" className="text-xs">Label (optional)</Label>
+                <Input id="label" name="label" placeholder="e.g. ADNOC pilot" />
+              </div>
+              <div className="w-44 space-y-1.5">
+                <Label htmlFor="expiresAt" className="text-xs">Expires (optional)</Label>
+                <Input id="expiresAt" name="expiresAt" type="date" />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="maxUses">Uses per code (seat pool)</Label>
-              <Input id="maxUses" name="maxUses" type="number" min={1} defaultValue={1} required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="label">Label</Label>
-              <Input id="label" name="label" placeholder="e.g. ADNOC pilot" />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="organizationId">Client org (tag for tracking)</Label>
+
+            {/* ARC options - the per-service controls in the same dashed callout every page uses */}
+            <div className="space-y-3 rounded-lg border border-dashed border-[#5391D5]/50 bg-[#5391D5]/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 text-sm font-semibold text-[#010131]">
+                  <SlidersHorizontal className="h-4 w-4 text-[#5391D5]" /> ARC options
+                </div>
+                <span className="rounded-full bg-[#5391D5]/10 px-2 py-0.5 text-[11px] font-medium text-[#5391D5]">swaps per service</span>
+              </div>
+              <div className="flex flex-wrap items-end gap-3">
+                <div className="w-72 space-y-1.5">
+                  <Label className="text-xs">Assessment length</Label>
+                  <select value={itemsPerFactor} onChange={(e) => setItemsPerFactor(e.target.value)} className={selectClass} aria-label="Assessment length">
+                    <option value="">Full ARC - 60 questions</option>
+                    <option value="12">48 questions (12 per factor)</option>
+                    <option value="9">36 questions (9 per factor)</option>
+                    <option value="6">24 questions (6 per factor)</option>
+                  </select>
+                </div>
+                <div className="w-40 space-y-1.5">
+                  <Label htmlFor="region" className="text-xs">Region {selectedOrg && <span className="text-[10px] font-normal text-muted-foreground">(from client)</span>}</Label>
+                  <select id="region" name="region" className={selectClass} value={batchRegion} onChange={(e) => setBatchRegion(e.target.value)} disabled={!!selectedOrg}>
+                    <option value="uae">UAE</option>
+                    <option value="saudi">Saudi</option>
+                  </select>
+                </div>
+                <div className="w-40 space-y-1.5">
+                  <Label htmlFor="language" className="text-xs">Language</Label>
+                  <select id="language" name="language" className={selectClass} defaultValue="en">
+                    <option value="en">English</option>
+                    <option value="ar">Arabic</option>
+                  </select>
+                </div>
+                <div className="flex-1 min-w-[12rem] space-y-1.5">
+                  <Label htmlFor="clientName" className="text-xs">Client name (free text)</Label>
+                  <Input id="clientName" name="clientName" placeholder="If not in the list above" />
+                </div>
+              </div>
+              <div>
                 <button
                   type="button"
                   onClick={() => { setShowAddClient((s) => !s); setClientError(null); }}
                   className="inline-flex items-center gap-1 text-xs font-medium text-[#5391D5] hover:underline"
                 >
-                  {showAddClient ? <><X className="h-3 w-3" /> Cancel</> : <><Plus className="h-3 w-3" /> Add client</>}
+                  {showAddClient ? <><X className="h-3 w-3" /> Cancel</> : <><Plus className="h-3 w-3" /> Add a new client org</>}
                 </button>
-              </div>
-              <select
-                id="organizationId"
-                name="organizationId"
-                className={selectClass}
-                value={selectedOrg}
-                onChange={(e) => {
-                  const id = e.target.value;
-                  setSelectedOrg(id);
-                  const org = orgList.find((o) => o.id === id);
-                  if (org) setBatchRegion(org.region);
-                }}
-              >
-                <option value="">- none -</option>
-                {orgList.map((o) => (
-                  <option key={o.id} value={o.id}>{o.name}</option>
-                ))}
-              </select>
-
-              {showAddClient && (
-                <div className="mt-2 space-y-2 rounded-md border border-border bg-muted/40 p-3">
-                  <Input
-                    placeholder="New client / organisation name"
-                    value={newClientName}
-                    onChange={(e) => setNewClientName(e.target.value)}
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <select className={selectClass} value={newClientRegion} onChange={(e) => setNewClientRegion(e.target.value)}>
-                      <option value="uae">UAE</option>
-                      <option value="saudi">Saudi</option>
-                    </select>
-                    <select className={selectClass} value={newClientSector} onChange={(e) => setNewClientSector(e.target.value)}>
-                      <option value="general">General</option>
-                      <option value="banking">Banking</option>
-                      <option value="government">Government</option>
-                    </select>
+                {showAddClient && (
+                  <div className="mt-2 space-y-2 rounded-md border border-border bg-card p-3">
+                    <Input
+                      placeholder="New client / organisation name"
+                      value={newClientName}
+                      onChange={(e) => setNewClientName(e.target.value)}
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <select className={selectClass} value={newClientRegion} onChange={(e) => setNewClientRegion(e.target.value)}>
+                        <option value="uae">UAE</option>
+                        <option value="saudi">Saudi</option>
+                      </select>
+                      <select className={selectClass} value={newClientSector} onChange={(e) => setNewClientSector(e.target.value)}>
+                        <option value="general">General</option>
+                        <option value="banking">Banking</option>
+                        <option value="government">Government</option>
+                      </select>
+                    </div>
+                    {clientError && <p className="text-xs text-destructive">{clientError}</p>}
+                    <Button type="button" size="sm" onClick={saveClient} disabled={savingClient} className="gap-1">
+                      <Plus className="h-3.5 w-3.5" /> {savingClient ? "Saving…" : "Save client"}
+                    </Button>
                   </div>
-                  {clientError && <p className="text-xs text-destructive">{clientError}</p>}
-                  <Button type="button" size="sm" onClick={saveClient} disabled={savingClient} className="gap-1">
-                    <Plus className="h-3.5 w-3.5" /> {savingClient ? "Saving…" : "Save client"}
-                  </Button>
-                </div>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="clientName">Client name (free text, optional)</Label>
-              <Input id="clientName" name="clientName" placeholder="If not in the list above" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="expiresAt">Expires (optional)</Label>
-              <Input id="expiresAt" name="expiresAt" type="date" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="region">Region {selectedOrg && <span className="text-xs font-normal text-muted-foreground">(from client)</span>}</Label>
-              <select
-                id="region"
-                name="region"
-                className={selectClass}
-                value={batchRegion}
-                onChange={(e) => setBatchRegion(e.target.value)}
-                disabled={!!selectedOrg}
-              >
-                <option value="uae">UAE</option>
-                <option value="saudi">Saudi</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="language">Language</Label>
-              <select id="language" name="language" className={selectClass} defaultValue="en">
-                <option value="en">English</option>
-                <option value="ar">Arabic</option>
-              </select>
+                )}
+              </div>
             </div>
 
-            {error && <div className="sm:col-span-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+            {error && <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
-            <div className="sm:col-span-2">
+            <div>
               <Button type="submit" disabled={pending} className="gap-2">
                 <Ticket className="h-4 w-4" /> {pending ? "Generating…" : "Generate"}
               </Button>

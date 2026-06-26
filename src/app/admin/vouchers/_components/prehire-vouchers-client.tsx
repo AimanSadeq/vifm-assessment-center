@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Copy, Ban, Ticket } from "lucide-react";
+import { Copy, Ban, Ticket, SlidersHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -100,49 +100,61 @@ export function PrehireVouchersClient({
             </CardTitle>
           </CardHeader>
           <CardContent>
-          <form onSubmit={onCreate}>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            <div className="space-y-1 lg:col-span-2">
-              <Label htmlFor="ph-req" className="text-xs">Requisition</Label>
-              <select
-                id="ph-req"
-                value={requisitionId}
-                onChange={(e) => setRequisitionId(e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
-              >
-                {requisitions.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.title}
-                    {r.organization_name ? ` - ${r.organization_name}` : ""}
-                  </option>
-                ))}
-              </select>
+          <form onSubmit={onCreate} className="space-y-4">
+            {/* Standard identity fields - the same top row on every voucher page */}
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="w-28 space-y-1.5">
+                <Label htmlFor="ph-count" className="text-xs">How many codes</Label>
+                <Input id="ph-count" type="number" min={1} max={500} value={count} onChange={(e) => setCount(Number(e.target.value))} />
+              </div>
+              <div className="w-28 space-y-1.5">
+                <Label htmlFor="ph-seats" className="text-xs">Seats / code</Label>
+                <Input id="ph-seats" type="number" min={1} max={1000} value={seats} onChange={(e) => setSeats(Number(e.target.value))} />
+              </div>
+              <div className="flex-1 min-w-[12rem] space-y-1.5">
+                <Label htmlFor="ph-label" className="text-xs">Label (optional)</Label>
+                <Input id="ph-label" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. analyst intake" />
+              </div>
+              <div className="w-44 space-y-1.5">
+                <Label htmlFor="ph-exp" className="text-xs">Expires (optional)</Label>
+                <Input id="ph-exp" type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
+              </div>
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="ph-label" className="text-xs">Label (optional)</Label>
-              <Input id="ph-label" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. analyst intake" />
+
+            {/* Pre-Hire options - the per-service control in the same dashed callout every page uses */}
+            <div className="space-y-3 rounded-lg border border-dashed border-[#5391D5]/50 bg-[#5391D5]/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 text-sm font-semibold text-[#010131]">
+                  <SlidersHorizontal className="h-4 w-4 text-[#5391D5]" /> Pre-Hire options
+                </div>
+                <span className="rounded-full bg-[#5391D5]/10 px-2 py-0.5 text-[11px] font-medium text-[#5391D5]">swaps per service</span>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="ph-req" className="text-xs">Requisition (the role these vouchers screen for)</Label>
+                <select
+                  id="ph-req"
+                  value={requisitionId}
+                  onChange={(e) => setRequisitionId(e.target.value)}
+                  className="flex h-9 w-full max-w-xl rounded-md border border-input bg-background px-3 py-1 text-sm"
+                >
+                  {requisitions.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.title}
+                      {r.organization_name ? ` - ${r.organization_name}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="ph-count" className="text-xs">Codes</Label>
-              <Input id="ph-count" type="number" min={1} max={500} value={count} onChange={(e) => setCount(Number(e.target.value))} />
+
+            <div className="flex flex-wrap items-center gap-3">
+              <Button type="submit" disabled={pending}>
+                {pending ? "Working..." : "Create vouchers"}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                One code with N seats = a single link your client shares with N applicants. N codes x 1 seat = single-use links.
+              </p>
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="ph-seats" className="text-xs">Seats / code</Label>
-              <Input id="ph-seats" type="number" min={1} max={1000} value={seats} onChange={(e) => setSeats(Number(e.target.value))} />
-            </div>
-          </div>
-          <div className="mt-3 flex flex-wrap items-end gap-3">
-            <div className="space-y-1">
-              <Label htmlFor="ph-exp" className="text-xs">Expires (optional)</Label>
-              <Input id="ph-exp" type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} className="w-44" />
-            </div>
-            <Button type="submit" disabled={pending}>
-              {pending ? "Working..." : "Create vouchers"}
-            </Button>
-            <p className="text-xs text-muted-foreground">
-              One code with N seats = a single link your client shares with N applicants. N codes x 1 seat = single-use links.
-            </p>
-          </div>
           </form>
           </CardContent>
         </Card>

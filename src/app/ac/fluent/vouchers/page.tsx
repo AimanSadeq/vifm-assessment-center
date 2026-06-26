@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentCaller } from "@/lib/ara/auth-guards";
 import { loadPlatformClients } from "@/lib/clients/registry";
 import { BackLink } from "@/components/shared/back-link";
+import { VoucherNav } from "@/components/shared/voucher-nav";
 import { VouchersClient, type FluentVoucherRow } from "./_components/vouchers-client";
 
 export const dynamic = "force-dynamic";
@@ -25,12 +26,7 @@ export default async function FluentVouchersPage() {
     <div className="max-w-6xl mx-auto px-6 py-8">
       <BackLink href="/ac/fluent" label="Fluent®" />
       <div className="mt-4 mb-6">
-        <h1 className="text-2xl font-semibold text-primary">Fluent® vouchers</h1>
-        <p className="text-sm text-muted-foreground">
-          Generate redeemable English-placement codes, tag them to a client, and track seats. Copy the
-          complete redemption link to send to a client - they forward it to the candidate, who starts
-          straight away (no account; the result is tagged to the client).
-        </p>
+        <VoucherNav active="fluent" />
       </div>
       <VouchersClient vouchers={vouchers ?? []} clients={clients.map((c) => c.name)} />
     </div>

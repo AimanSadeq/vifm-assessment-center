@@ -1,5 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { BackLink } from "@/components/shared/back-link";
+import { VoucherNav } from "@/components/shared/voucher-nav";
 import { VouchersClient } from "./_components/vouchers-client";
 
 export const dynamic = "force-dynamic";
@@ -71,6 +72,9 @@ export default async function VouchersAdminPage() {
     <div className="mx-auto max-w-5xl px-6 py-8">
       <div className="mb-4">
         <BackLink href="/ara/admin" label="Back" history />
+      </div>
+      <div className="mb-6">
+        <VoucherNav active="arc" />
       </div>
       <VouchersClient
         vouchers={(vouchers ?? []) as VoucherRow[]}

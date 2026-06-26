@@ -12,13 +12,13 @@ export type HubService = { key: ServiceKey; summary: ServiceSummary; slot: React
 // Display metadata lives here (client side) so the server only passes
 // serializable data + the rendered slot - icon components can't cross the
 // server/client boundary as props.
-const SERVICE_META: Record<ServiceKey, { label: string; sub: string; icon: typeof Compass; tone: string }> = {
-  arc:       { label: "AI Readiness Compass®", sub: "VIFM-ARC codes",  icon: Compass,     tone: "text-violet-600" },
-  technical: { label: "Techno®", sub: "VIFM-TECH codes", icon: BadgeCheck,  tone: "text-indigo-600" },
-  fluent:    { label: "Fluent® (English)",     sub: "Fluent® codes",    icon: Languages,   tone: "text-sky-600" },
-  cognitive: { label: "Logica®",               sub: "Logica® codes",    icon: BrainCircuit, tone: "text-emerald-600" },
-  persona:   { label: "Persona®",              sub: "Persona® codes",   icon: Layers,      tone: "text-fuchsia-600" },
-  prehire:   { label: "Pre-Hire®",             sub: "VIFM-HIRE codes", icon: UserSearch,  tone: "text-rose-600" },
+const SERVICE_META: Record<ServiceKey, { label: string; short: string; sub: string; icon: typeof Compass; tone: string }> = {
+  arc:       { label: "AI Readiness Compass®", short: "ARC",      sub: "VIFM-ARC codes",  icon: Compass,     tone: "text-violet-600" },
+  technical: { label: "Techno®",               short: "Techno",   sub: "VIFM-TECH codes", icon: BadgeCheck,  tone: "text-indigo-600" },
+  fluent:    { label: "Fluent® (English)",     short: "Fluent",   sub: "Fluent® codes",    icon: Languages,   tone: "text-sky-600" },
+  cognitive: { label: "Logica®",               short: "Logica",   sub: "Logica® codes",    icon: BrainCircuit, tone: "text-emerald-600" },
+  persona:   { label: "Persona®",              short: "Persona",  sub: "Persona® codes",   icon: Layers,      tone: "text-fuchsia-600" },
+  prehire:   { label: "Pre-Hire®",             short: "Pre-Hire", sub: "VIFM-HIRE codes", icon: UserSearch,  tone: "text-rose-600" },
 };
 
 function SummaryCard({
@@ -79,38 +79,34 @@ export function VoucherHub({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
-          <Ticket className="h-5 w-5 text-accent" />
+      <div className="rounded-xl bg-[#010131] px-5 py-4 text-white">
+        <div className="flex items-center gap-2">
+          <Ticket className="h-4 w-4 text-[#5391D5]" />
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5391D5]">VIFM &middot; Vouchers</p>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold">Vouchers</h1>
-          <p className="mt-1 max-w-2xl text-muted-foreground">
-            One place to generate, distribute and track redeem codes across every service that uses them.
-            Each voucher hands a client a code their delegates redeem to start an assessment - no account needed.
-          </p>
-        </div>
+        <h1 className="mt-1 text-2xl font-bold text-white">Issue vouchers</h1>
+        <nav className="mt-3 flex flex-wrap gap-2" aria-label="Voucher services">
+          {services.map((s) => (
+            <button
+              key={s.key}
+              onClick={() => setTab(s.key)}
+              aria-current={tab === s.key ? "page" : undefined}
+              className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
+                tab === s.key
+                  ? "bg-[#EDF1F5] text-[#010131]"
+                  : "bg-white/10 text-white/85 ring-1 ring-white/20 hover:bg-white/20"
+              }`}
+            >
+              {SERVICE_META[s.key].short}
+            </button>
+          ))}
+        </nav>
       </div>
 
       {/* Per-service summary cards double as the tab selector */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {services.map((s) => (
           <SummaryCard key={s.key} serviceKey={s.key} summary={s.summary} active={tab === s.key} onClick={() => setTab(s.key)} />
-        ))}
-      </div>
-
-      {/* Tab strip (mirrors the cards, for clarity on which is open) */}
-      <div className="flex flex-wrap gap-1 border-b">
-        {services.map((s) => (
-          <button
-            key={s.key}
-            onClick={() => setTab(s.key)}
-            className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
-              tab === s.key ? "border-accent text-[#010131]" : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {SERVICE_META[s.key].label}
-          </button>
         ))}
       </div>
 

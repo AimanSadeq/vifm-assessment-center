@@ -197,16 +197,6 @@ export function VouchersClient({
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold text-[#010131]">
-          <Ticket className="h-6 w-6 text-[#5391D5]" /> AI Readiness Compass® - Vouchers
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Issue access codes for clients - one code per person, or a single seat-pool code the client
-          distributes to many applicants. Every code provisions the full 60-question Personal ARC.
-        </p>
-      </div>
-
       {/* Assessment length - governs BOTH generation forms below (migration 00143). */}
       <Card>
         <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">

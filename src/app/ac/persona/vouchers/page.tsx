@@ -5,6 +5,7 @@ import { loadPlatformClients } from "@/lib/clients/registry";
 import { loadPersonaRoleOptions } from "@/lib/scoring/persona-roles";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
 import { BackLink } from "@/components/shared/back-link";
+import { VoucherNav } from "@/components/shared/voucher-nav";
 import { VouchersClient, type PersonaVoucherRow } from "./_components/vouchers-client";
 
 export const dynamic = "force-dynamic";
@@ -40,11 +41,7 @@ export default async function PersonaVouchersPage() {
     <div className="max-w-6xl mx-auto px-6 py-8">
       <BackLink href="/ac/persona" label="Persona®" />
       <div className="mt-4 mb-6">
-        <h1 className="text-2xl font-semibold text-[#010131]">Persona® vouchers</h1>
-        <p className="text-sm text-muted-foreground">
-          Generate redeemable Persona self-assessment access codes, tag them to a client, and track seats.
-          Delegates redeem at <code className="text-xs">/ac/persona/redeem</code> - no account needed.
-        </p>
+        <VoucherNav active="persona" />
       </div>
       <VouchersClient
         vouchers={vouchers ?? []}

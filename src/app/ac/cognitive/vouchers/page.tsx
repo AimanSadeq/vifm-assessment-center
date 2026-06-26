@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentCaller } from "@/lib/ara/auth-guards";
 import { loadPlatformClients } from "@/lib/clients/registry";
 import { BackLink } from "@/components/shared/back-link";
+import { VoucherNav } from "@/components/shared/voucher-nav";
 import { VouchersClient, type CognitiveVoucherRow } from "./_components/vouchers-client";
 
 export const dynamic = "force-dynamic";
@@ -24,11 +25,7 @@ export default async function CognitiveVouchersPage() {
     <div className="max-w-6xl mx-auto px-6 py-8">
       <BackLink href="/ac/cognitive" label="Logica®" />
       <div className="mt-4 mb-6">
-        <h1 className="text-2xl font-semibold text-[#010131]">Logica® vouchers</h1>
-        <p className="text-sm text-muted-foreground">
-          Generate redeemable Logica assessment access codes, tag them to a client, and track seats.
-          Delegates redeem at <code className="text-xs">/ac/cognitive/redeem</code> - no account needed.
-        </p>
+        <VoucherNav active="logica" />
       </div>
       <VouchersClient vouchers={vouchers ?? []} clients={clients.map((c) => c.name)} />
     </div>

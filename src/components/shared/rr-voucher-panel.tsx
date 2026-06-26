@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Send, Link2, Copy, Loader2, Users, Upload, X, Check, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CollapsibleCard } from "@/components/shared/collapsible-card";
 import type { IssuedVoucher } from "@/lib/role-readiness/vouchers";
 
@@ -189,8 +191,7 @@ export function RrVoucherPanel({ onIssue }: { onIssue: (input: IssueInput) => Pr
           <div className="mt-2 flex flex-wrap items-end gap-3">
             <label className="flex flex-col gap-1 text-xs">
               <span className="text-muted-foreground">Seats</span>
-              <input type="number" min={1} value={seats} onChange={(e) => setSeats(Math.max(1, Number(e.target.value) || 1))}
-                className="w-32 rounded-md border border-border bg-background px-3 py-2 text-foreground focus:border-[#5391D5] focus:outline-none" />
+              <Input type="number" min={1} value={seats} onChange={(e) => setSeats(Math.max(1, Number(e.target.value) || 1))} className="w-32" />
             </label>
             <Button onClick={issue} disabled={pending || seats < 1} className="gap-2">
               {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />} Generate shared link
@@ -200,33 +201,37 @@ export function RrVoucherPanel({ onIssue }: { onIssue: (input: IssueInput) => Pr
       )}
 
       {result && result.mode === "individual" && (
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="border-b text-left uppercase tracking-wide text-muted-foreground">
-                <th className="py-1.5 pr-3">Name</th><th className="py-1.5 pr-3">Recipient</th><th className="py-1.5 pr-3">Code</th><th className="py-1.5 pr-3">Link</th><th className="py-1.5 pr-3">Emailed</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="mt-4">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Recipient</TableHead>
+                <TableHead>Code</TableHead>
+                <TableHead>Link</TableHead>
+                <TableHead>Emailed</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {result.vouchers.map((v) => (
-                <tr key={v.code} className="border-b last:border-0">
-                  <td className="py-1.5 pr-3">{v.name ?? "-"}</td>
-                  <td className="py-1.5 pr-3">{v.email ?? "-"}</td>
-                  <td className="py-1.5 pr-3 font-mono">{v.code}</td>
-                  <td className="py-1.5 pr-3">
+                <TableRow key={v.code}>
+                  <TableCell>{v.name ?? "-"}</TableCell>
+                  <TableCell>{v.email ?? "-"}</TableCell>
+                  <TableCell className="font-mono text-xs">{v.code}</TableCell>
+                  <TableCell>
                     <button type="button" onClick={() => copy(redeemUrl(v))} className="inline-flex items-center gap-1 rounded border px-2 py-0.5 hover:bg-muted">
                       <Copy className="h-3 w-3" /> Copy
                     </button>
-                  </td>
-                  <td className="py-1.5 pr-3">
+                  </TableCell>
+                  <TableCell>
                     {v.emailed === undefined ? <Minus className="h-3.5 w-3.5 text-muted-foreground" />
                       : v.emailed ? <Check className="h-3.5 w-3.5 text-emerald-600" />
                       : <X className="h-3.5 w-3.5 text-rose-500" />}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
           <p className="mt-2 text-[11px] text-muted-foreground">Each link prefills the delegate&apos;s name + email. Copy a link to send manually if needed.</p>
         </div>
       )}

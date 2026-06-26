@@ -7,6 +7,9 @@ import { Copy, Ban, Ticket } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   createPrehireVoucherBatchAction,
   disablePrehireVoucherAction,
@@ -90,11 +93,14 @@ export function PrehireVouchersClient({
           No requisitions yet. Create a Pre-Hire requisition first, then issue vouchers against it.
         </p>
       ) : (
-        <form onSubmit={onCreate} className="rounded-xl border bg-card p-4">
-          <div className="mb-3 flex items-center gap-2">
-            <Ticket className="h-4 w-4 text-accent" />
-            <h3 className="text-sm font-semibold text-[#010131]">Issue Pre-Hire® vouchers</h3>
-          </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Ticket className="h-4 w-4 text-accent" /> Issue Pre-Hire® vouchers
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+          <form onSubmit={onCreate}>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <div className="space-y-1 lg:col-span-2">
               <Label htmlFor="ph-req" className="text-xs">Requisition</Label>
@@ -137,75 +143,78 @@ export function PrehireVouchersClient({
               One code with N seats = a single link your client shares with N applicants. N codes x 1 seat = single-use links.
             </p>
           </div>
-        </form>
+          </form>
+          </CardContent>
+        </Card>
       )}
 
       {/* Existing vouchers */}
-      {vouchers.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No Pre-Hire vouchers issued yet.</p>
-      ) : (
-        <div className="overflow-x-auto rounded-xl border">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
-              <tr>
-                <th className="px-3 py-2 font-medium">Code</th>
-                <th className="px-3 py-2 font-medium">Requisition</th>
-                <th className="px-3 py-2 font-medium">Seats</th>
-                <th className="px-3 py-2 font-medium">Status</th>
-                <th className="px-3 py-2 font-medium">Link</th>
-                <th className="px-3 py-2"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {vouchers.map((v) => (
-                <tr key={v.id} className="border-t">
-                  <td className="px-3 py-2">
-                    <span className="font-mono text-xs">{v.code}</span>
-                    {v.label ? <span className="ms-2 text-xs text-muted-foreground">{v.label}</span> : null}
-                    {v.assigned_email ? (
-                      <span className="ms-2 text-xs text-muted-foreground">{v.assigned_name || v.assigned_email}</span>
-                    ) : null}
-                  </td>
-                  <td className="px-3 py-2">{v.requisition_title ?? "-"}</td>
-                  <td className="px-3 py-2 tabular-nums">
-                    {v.used_count}/{v.max_uses}
-                  </td>
-                  <td className="px-3 py-2">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                        v.status === "active"
-                          ? "bg-emerald-100 text-emerald-800"
-                          : "bg-slate-200 text-slate-700"
-                      }`}
-                    >
-                      {v.status}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2">
-                    <button
-                      onClick={() => copyLink(v.code)}
-                      className="inline-flex items-center gap-1 text-xs text-accent hover:underline"
-                    >
-                      <Copy className="h-3 w-3" /> Copy
-                    </button>
-                  </td>
-                  <td className="px-3 py-2 text-right">
-                    {v.status === "active" && (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Existing vouchers</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {vouchers.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No Pre-Hire vouchers issued yet.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Code</TableHead>
+                  <TableHead>Requisition</TableHead>
+                  <TableHead>Seats</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Link</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {vouchers.map((v) => (
+                  <TableRow key={v.id}>
+                    <TableCell>
+                      <span className="font-mono text-xs">{v.code}</span>
+                      {v.label ? <span className="ms-2 text-xs text-muted-foreground">{v.label}</span> : null}
+                      {v.assigned_email ? (
+                        <span className="ms-2 text-xs text-muted-foreground">{v.assigned_name || v.assigned_email}</span>
+                      ) : null}
+                    </TableCell>
+                    <TableCell>{v.requisition_title ?? "-"}</TableCell>
+                    <TableCell className="tabular-nums">
+                      {v.used_count}/{v.max_uses}
+                    </TableCell>
+                    <TableCell>
+                      {v.status === "active" ? (
+                        <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-50">{v.status}</Badge>
+                      ) : (
+                        <Badge variant="secondary">{v.status}</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
                       <button
-                        onClick={() => onDisable(v.id)}
-                        disabled={pending}
-                        className="inline-flex items-center gap-1 text-xs text-rose-600 hover:underline disabled:opacity-50"
+                        onClick={() => copyLink(v.code)}
+                        className="inline-flex items-center gap-1 text-xs text-accent hover:underline"
                       >
-                        <Ban className="h-3 w-3" /> Disable
+                        <Copy className="h-3 w-3" /> Copy
                       </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {v.status === "active" && (
+                        <button
+                          onClick={() => onDisable(v.id)}
+                          disabled={pending}
+                          className="inline-flex items-center gap-1 text-xs text-rose-600 hover:underline disabled:opacity-50"
+                        >
+                          <Ban className="h-3 w-3" /> Disable
+                        </button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

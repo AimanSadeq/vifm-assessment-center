@@ -14,6 +14,11 @@
 // Every generated voucher also surfaces a copyable redeem LINK (code pre-filled)
 // so a delegate clicks through and starts without typing the code.
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { CustomBuilderData, FunctionRow } from "@/lib/technical-sandbox/service";
 import type { VoucherRow } from "@/lib/technical-sandbox/vouchers";
 import type { SavedCustomAssessment } from "@/lib/technical-sandbox/custom-assessments";
@@ -298,8 +303,11 @@ export function VouchersClient({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-lg border border-border bg-card p-4">
-        <h3 className="mb-3 font-medium text-foreground">Generate voucher codes</h3>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Generate voucher codes</CardTitle>
+        </CardHeader>
+        <CardContent>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="flex flex-col gap-1 text-sm sm:col-span-2">
             <span className="text-muted-foreground">Function</span>
@@ -520,20 +528,20 @@ export function VouchersClient({
 
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-muted-foreground">{mode === "single" ? "How many codes" : "Seats in the shared link"}</span>
-            <input type="number" min={1} max={500} value={count} onChange={(e) => setCount(Number(e.target.value))} className="rounded-md border border-border bg-card px-3 py-2 text-foreground" />
+            <Input type="number" min={1} max={500} value={count} onChange={(e) => setCount(Number(e.target.value))} />
           </label>
 
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-muted-foreground">Client / organization</span>
-            <input value={organizationName} onChange={(e) => setOrganizationName(e.target.value)} className="rounded-md border border-border bg-card px-3 py-2 text-foreground" />
+            <Input value={organizationName} onChange={(e) => setOrganizationName(e.target.value)} />
           </label>
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-muted-foreground">Label (optional)</span>
-            <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. ADNOC FP&A pilot" className="rounded-md border border-border bg-card px-3 py-2 text-foreground" />
+            <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. ADNOC FP&A pilot" />
           </label>
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-muted-foreground">Expires (optional)</span>
-            <input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} className="rounded-md border border-border bg-card px-3 py-2 text-foreground" />
+            <Input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
           </label>
           {/* The full-scope MCQ weight select; custom scope uses its own slider above. */}
           {scope === "full" && (
@@ -560,10 +568,10 @@ export function VouchersClient({
             </label>
           )}
         </div>
-        <button
+        <Button
           onClick={generate}
           disabled={busy || !functionId || (scope === "custom" && (builderBusy || !customValid))}
-          className="mt-3 rounded-md bg-[#010131] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+          className="mt-3"
         >
           {busy
             ? "Generating…"
@@ -574,7 +582,7 @@ export function VouchersClient({
               : mode === "single"
                 ? `Generate ${count} code(s)`
                 : "Generate shared link"}
-        </button>
+        </Button>
         {scope === "custom" && !customValid && !busy && (
           <p className="mt-2 text-xs text-muted-foreground">
             Pick at least one hands-on task, or select knowledge skills with a knowledge weight above 0.
@@ -643,67 +651,76 @@ export function VouchersClient({
             <p className="mt-2 text-xs text-emerald-700">Delegates redeem at <span className="font-mono">{origin}/tech-sandbox/redeem</span></p>
           </div>
         )}
-      </section>
+        </CardContent>
+      </Card>
 
-      <section className="rounded-lg border border-border bg-card p-4">
-        <h3 className="mb-3 font-medium text-foreground">Existing vouchers</h3>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Existing vouchers</CardTitle>
+        </CardHeader>
+        <CardContent>
         {emailMsg && (
           <p className={`mb-3 text-xs ${emailMsg.ok ? "text-emerald-700" : "text-red-600"}`}>{emailMsg.text}</p>
         )}
         {vouchers.length === 0 ? (
           <p className="text-sm text-muted-foreground">No vouchers yet.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="text-xs text-muted-foreground">
-                <tr>
-                  <th className="p-2 text-start">Code</th>
-                  <th className="p-2 text-start">Delegate</th>
-                  <th className="p-2 text-start">Function</th>
-                  <th className="p-2 text-start">Client</th>
-                  <th className="p-2 text-end">Used / Max</th>
-                  <th className="p-2 text-start">Status</th>
-                  <th className="p-2"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {vouchers.map((v) => (
-                  <tr key={v.id} className="border-t border-border">
-                    <td className="p-2 font-mono text-xs">{v.code}</td>
-                    <td className="p-2 text-muted-foreground">{v.assignedName ? `${v.assignedName}` : "-"}{v.assignedEmail ? ` · ${v.assignedEmail}` : ""}</td>
-                    <td className="p-2 text-muted-foreground">{fnName.get(v.functionId) ?? "-"}</td>
-                    <td className="p-2 text-muted-foreground">{v.organizationName ?? "-"}</td>
-                    <td className="p-2 text-end">{v.usedCount} / {v.maxUses}</td>
-                    <td className="p-2"><span className={v.status === "active" ? "text-emerald-700" : "text-muted-foreground"}>{v.status}</span></td>
-                    <td className="p-2 text-end">
-                      <div className="flex items-center justify-end gap-3">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Code</TableHead>
+                <TableHead>Delegate</TableHead>
+                <TableHead>Function</TableHead>
+                <TableHead>Client</TableHead>
+                <TableHead className="text-right">Used / Max</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {vouchers.map((v) => (
+                <TableRow key={v.id}>
+                  <TableCell className="font-mono text-xs">{v.code}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{v.assignedName ? `${v.assignedName}` : "-"}{v.assignedEmail ? ` · ${v.assignedEmail}` : ""}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{fnName.get(v.functionId) ?? "-"}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{v.organizationName ?? "-"}</TableCell>
+                  <TableCell className="text-right tabular-nums">{v.usedCount} / {v.maxUses}</TableCell>
+                  <TableCell>
+                    {v.status === "active" ? (
+                      <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-50">active</Badge>
+                    ) : (
+                      <Badge variant="secondary">{v.status}</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-end gap-3">
+                      <button
+                        onClick={() => copy(`row-${v.id}`, redeemUrl(v.code))}
+                        className="text-xs text-[#5391D5] hover:underline"
+                      >
+                        {copied === `row-${v.id}` ? "Copied" : "Copy link"}
+                      </button>
+                      {v.assignedEmail && (
                         <button
-                          onClick={() => copy(`row-${v.id}`, redeemUrl(v.code))}
-                          className="text-xs text-[#5391D5] hover:underline"
+                          onClick={() => emailRow(v.code)}
+                          disabled={rowEmailing === v.code}
+                          className="text-xs text-emerald-700 hover:underline disabled:opacity-50"
                         >
-                          {copied === `row-${v.id}` ? "Copied" : "Copy link"}
+                          {rowEmailing === v.code ? "Emailing…" : "Email"}
                         </button>
-                        {v.assignedEmail && (
-                          <button
-                            onClick={() => emailRow(v.code)}
-                            disabled={rowEmailing === v.code}
-                            className="text-xs text-emerald-700 hover:underline disabled:opacity-50"
-                          >
-                            {rowEmailing === v.code ? "Emailing…" : "Email"}
-                          </button>
-                        )}
-                        <button onClick={() => toggle(v.id, v.status)} className="text-xs text-[#5391D5] hover:underline">
-                          {v.status === "active" ? "Disable" : "Enable"}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      )}
+                      <button onClick={() => toggle(v.id, v.status)} className="text-xs text-[#5391D5] hover:underline">
+                        {v.status === "active" ? "Disable" : "Enable"}
+                      </button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
-      </section>
+        </CardContent>
+      </Card>
     </div>
   );
 }

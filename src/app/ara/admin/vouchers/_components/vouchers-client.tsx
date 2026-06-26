@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { createVoucherBatchAction, setVoucherStatusAction, createClientOrgAction, emailVouchersToDelegatesAction } from "../actions";
 
 type VoucherRow = {
@@ -439,49 +440,47 @@ export function VouchersClient({
           {vouchers.length === 0 ? (
             <p className="text-sm text-muted-foreground">No vouchers yet.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                    <th className="py-2 pe-3 font-medium">Code</th>
-                    <th className="py-2 pe-3 font-medium">Label / Client</th>
-                    <th className="py-2 pe-3 font-medium">Used</th>
-                    <th className="py-2 pe-3 font-medium">Status</th>
-                    <th className="py-2 pe-3 font-medium">Expires</th>
-                    <th className="py-2 font-medium"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {vouchers.map((v) => (
-                    <tr key={v.id} className="border-b border-border/60">
-                      <td className="py-2 pe-3">
-                        <button className="inline-flex items-center gap-1 font-mono text-xs hover:underline" onClick={() => copy(v.code, v.id)}>
-                          {v.code} {copied === v.id ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3 text-muted-foreground" />}
-                        </button>
-                      </td>
-                      <td className="py-2 pe-3 text-muted-foreground">{v.label ?? v.client_name ?? "-"}</td>
-                      <td className="py-2 pe-3 tabular-nums">{v.used_count}/{v.max_uses}</td>
-                      <td className="py-2 pe-3">
-                        <Badge variant={v.status === "active" ? "secondary" : "outline"}>{v.status}</Badge>
-                      </td>
-                      <td className="py-2 pe-3 text-muted-foreground">
-                        {v.expires_at ? fmtDate(v.expires_at) : "-"}
-                      </td>
-                      <td className="py-2 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button size="sm" variant="ghost" className="gap-1" onClick={() => copy(redeemLink(v.code), `link-${v.id}`)} title={redeemLink(v.code)}>
-                            {copied === `link-${v.id}` ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Link2 className="h-3.5 w-3.5" />} Link
-                          </Button>
-                          <Button size="sm" variant="ghost" className="gap-1" disabled={pending} onClick={() => toggle(v)}>
-                            {v.status === "active" ? <><Ban className="h-3.5 w-3.5" /> Disable</> : <><RotateCcw className="h-3.5 w-3.5" /> Enable</>}
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Code</TableHead>
+                  <TableHead>Label / Client</TableHead>
+                  <TableHead>Used</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Expires</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {vouchers.map((v) => (
+                  <TableRow key={v.id}>
+                    <TableCell>
+                      <button className="inline-flex items-center gap-1 font-mono text-xs hover:underline" onClick={() => copy(v.code, v.id)}>
+                        {v.code} {copied === v.id ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3 text-muted-foreground" />}
+                      </button>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{v.label ?? v.client_name ?? "-"}</TableCell>
+                    <TableCell className="tabular-nums">{v.used_count}/{v.max_uses}</TableCell>
+                    <TableCell>
+                      <Badge variant={v.status === "active" ? "secondary" : "outline"}>{v.status}</Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {v.expires_at ? fmtDate(v.expires_at) : "-"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button size="sm" variant="ghost" className="gap-1" onClick={() => copy(redeemLink(v.code), `link-${v.id}`)} title={redeemLink(v.code)}>
+                          {copied === `link-${v.id}` ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Link2 className="h-3.5 w-3.5" />} Link
+                        </Button>
+                        <Button size="sm" variant="ghost" className="gap-1" disabled={pending} onClick={() => toggle(v)}>
+                          {v.status === "active" ? <><Ban className="h-3.5 w-3.5" /> Disable</> : <><RotateCcw className="h-3.5 w-3.5" /> Enable</>}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
@@ -524,46 +523,44 @@ export function VouchersClient({
           {companies.length === 0 ? (
             <p className="text-sm text-muted-foreground">No redemptions yet.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                    <th className="py-2 pe-3 font-medium">Company</th>
-                    <th className="py-2 pe-3 font-medium">Delegates</th>
-                    <th className="py-2 pe-3 font-medium">Started</th>
-                    <th className="py-2 pe-3 font-medium">Completed</th>
-                    <th className="py-2 pe-3 font-medium">Completion</th>
-                    <th className="py-2 pe-3 font-medium">Last redeemed</th>
-                    <th className="py-2 font-medium text-right">Insights</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {companies.map((c) => {
-                    const pct = c.delegates > 0 ? Math.round((c.completed / c.delegates) * 100) : 0;
-                    return (
-                      <tr key={c.company} className="border-b border-border/60">
-                        <td className="py-2 pe-3 font-medium">{c.company}</td>
-                        <td className="py-2 pe-3 tabular-nums">{c.delegates}</td>
-                        <td className="py-2 pe-3 tabular-nums">{c.started}</td>
-                        <td className="py-2 pe-3 tabular-nums">{c.completed}</td>
-                        <td className="py-2 pe-3 tabular-nums">{pct}%</td>
-                        <td className="py-2 pe-3 text-muted-foreground">
-                          {c.lastRedeemed ? fmtDate(c.lastRedeemed) : "-"}
-                        </td>
-                        <td className="py-2 text-right">
-                          <Link
-                            href={`/ara/admin/vouchers/insights?company=${encodeURIComponent(c.company)}`}
-                            className="inline-flex items-center gap-1 text-accent hover:underline"
-                          >
-                            <BarChart3 className="h-3.5 w-3.5" /> View
-                          </Link>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Company</TableHead>
+                  <TableHead>Delegates</TableHead>
+                  <TableHead>Started</TableHead>
+                  <TableHead>Completed</TableHead>
+                  <TableHead>Completion</TableHead>
+                  <TableHead>Last redeemed</TableHead>
+                  <TableHead className="text-right">Insights</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {companies.map((c) => {
+                  const pct = c.delegates > 0 ? Math.round((c.completed / c.delegates) * 100) : 0;
+                  return (
+                    <TableRow key={c.company}>
+                      <TableCell className="font-medium">{c.company}</TableCell>
+                      <TableCell className="tabular-nums">{c.delegates}</TableCell>
+                      <TableCell className="tabular-nums">{c.started}</TableCell>
+                      <TableCell className="tabular-nums">{c.completed}</TableCell>
+                      <TableCell className="tabular-nums">{pct}%</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {c.lastRedeemed ? fmtDate(c.lastRedeemed) : "-"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Link
+                          href={`/ara/admin/vouchers/insights?company=${encodeURIComponent(c.company)}`}
+                          className="inline-flex items-center gap-1 text-accent hover:underline"
+                        >
+                          <BarChart3 className="h-3.5 w-3.5" /> View
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>

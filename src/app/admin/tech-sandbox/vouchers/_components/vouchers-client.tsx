@@ -17,7 +17,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { SlidersHorizontal } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { CustomBuilderData, FunctionRow } from "@/lib/technical-sandbox/service";
 import type { VoucherRow } from "@/lib/technical-sandbox/vouchers";
@@ -308,7 +310,35 @@ export function VouchersClient({
           <CardTitle className="text-base">Generate voucher codes</CardTitle>
         </CardHeader>
         <CardContent>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-4">
+          {/* Standard identity fields - the same top row on every voucher page */}
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="w-32 space-y-1.5">
+              <Label className="text-xs">{mode === "single" ? "How many codes" : "Seats in link"}</Label>
+              <Input type="number" min={1} max={500} value={count} onChange={(e) => setCount(Number(e.target.value))} />
+            </div>
+            <div className="flex-1 min-w-[12rem] space-y-1.5">
+              <Label className="text-xs">Client / organization</Label>
+              <Input value={organizationName} onChange={(e) => setOrganizationName(e.target.value)} placeholder="Tag to a client org" />
+            </div>
+            <div className="flex-1 min-w-[10rem] space-y-1.5">
+              <Label className="text-xs">Label (optional)</Label>
+              <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. ADNOC FP&A pilot" />
+            </div>
+            <div className="w-44 space-y-1.5">
+              <Label className="text-xs">Expires (optional)</Label>
+              <Input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
+            </div>
+          </div>
+
+          {/* Techno options - the per-service controls, folded into the same dashed callout every page uses */}
+          <div className="space-y-3 rounded-lg border border-dashed border-[#5391D5]/50 bg-[#5391D5]/5 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 text-sm font-semibold text-[#010131]">
+                <SlidersHorizontal className="h-4 w-4 text-[#5391D5]" /> Techno options
+              </div>
+              <span className="rounded-full bg-[#5391D5]/10 px-2 py-0.5 text-[11px] font-medium text-[#5391D5]">swaps per service</span>
+            </div>
           <label className="flex flex-col gap-1 text-sm sm:col-span-2">
             <span className="text-muted-foreground">Function</span>
             <select value={functionId} onChange={(e) => setFunctionId(e.target.value)} className="rounded-md border border-border bg-card px-3 py-2 text-foreground">
@@ -526,26 +556,9 @@ export function VouchersClient({
             </span>
           </div>
 
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="text-muted-foreground">{mode === "single" ? "How many codes" : "Seats in the shared link"}</span>
-            <Input type="number" min={1} max={500} value={count} onChange={(e) => setCount(Number(e.target.value))} />
-          </label>
-
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="text-muted-foreground">Client / organization</span>
-            <Input value={organizationName} onChange={(e) => setOrganizationName(e.target.value)} />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="text-muted-foreground">Label (optional)</span>
-            <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. ADNOC FP&A pilot" />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="text-muted-foreground">Expires (optional)</span>
-            <Input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
-          </label>
           {/* The full-scope MCQ weight select; custom scope uses its own slider above. */}
           {scope === "full" && (
-            <label className="flex flex-col gap-1 text-sm sm:col-span-2">
+            <label className="flex flex-col gap-1 text-sm">
               <span className="text-muted-foreground">Knowledge (MCQ) section weight</span>
               <select
                 value={mcqPct}
@@ -567,6 +580,7 @@ export function VouchersClient({
               </span>
             </label>
           )}
+          </div>
         </div>
         <Button
           onClick={generate}

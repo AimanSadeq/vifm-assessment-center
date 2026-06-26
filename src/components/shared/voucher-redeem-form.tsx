@@ -38,12 +38,16 @@ export type VoucherRedeemConfig = {
   submitLabel?: { en: string; ar: string };
   /** Small print under the button (e.g. a practice-run disclaimer). */
   footerNote?: { en: string; ar: string };
+  /** Set false to force English-only (no EN/AR toggle) - e.g. Fluent, the
+   *  English placement test. Defaults to bilingual. */
+  bilingual?: boolean;
   onRedeem: (values: VoucherRedeemValues) => Promise<VoucherRedeemResult>;
 };
 
 export function VoucherRedeemForm(cfg: VoucherRedeemConfig) {
   const router = useRouter();
-  const [lang, setLang] = useState<"en" | "ar">(cfg.initialLang === "ar" ? "ar" : "en");
+  const allowAr = cfg.bilingual !== false;
+  const [lang, setLang] = useState<"en" | "ar">(allowAr && cfg.initialLang === "ar" ? "ar" : "en");
   const [code, setCode] = useState(cfg.initialCode ?? "");
   const [name, setName] = useState(cfg.initialName ?? "");
   const [email, setEmail] = useState(cfg.initialEmail ?? "");
@@ -81,20 +85,22 @@ export function VoucherRedeemForm(cfg: VoucherRedeemConfig) {
 
   return (
     <div dir={ar ? "rtl" : "ltr"} className="space-y-4">
-      <div className="flex justify-end gap-1">
-        {(["en", "ar"] as const).map((l) => (
-          <button
-            key={l}
-            type="button"
-            onClick={() => setLang(l)}
-            className={`rounded-md px-2 py-1 text-xs font-medium ${
-              lang === l ? "bg-[#010131] text-white" : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            {l === "en" ? "EN" : "ع"}
-          </button>
-        ))}
-      </div>
+      {allowAr && (
+        <div className="flex justify-end gap-1">
+          {(["en", "ar"] as const).map((l) => (
+            <button
+              key={l}
+              type="button"
+              onClick={() => setLang(l)}
+              className={`rounded-md px-2 py-1 text-xs font-medium ${
+                lang === l ? "bg-[#010131] text-white" : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              {l === "en" ? "EN" : "ع"}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="space-y-1.5">
         <Label htmlFor="vr-code">{tx("Voucher code", "رمز القسيمة")}</Label>

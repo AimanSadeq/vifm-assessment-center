@@ -1,25 +1,21 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Boxes, ArrowRight, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Boxes } from "lucide-react";
+import { VoucherRedeemForm } from "@/components/shared/voucher-redeem-form";
 import { redeemVoucherAction } from "./actions";
 
-export function RedeemClient({ code, emailPrefill, namePrefill = "" }: { code: string; emailPrefill: string; namePrefill?: string }) {
-  const [name, setName] = useState(namePrefill);
-  const [email, setEmail] = useState(emailPrefill);
-  const [error, setError] = useState<string | null>(null);
-  const [pending, start] = useTransition();
-
-  const redeem = () =>
-    start(async () => {
-      setError(null);
-      const res = await redeemVoucherAction({ code, fullName: name, email });
-      if ("error" in res) { setError(res.error); return; }
-      window.location.href = `/role-readiness/apply/${res.token}`;
-    });
-
+// Branding wrapper + the shared bilingual redeem form (consolidation Phase 2).
+// Role Readiness gains the EN/AR toggle it lacked; name/email are prefilled from
+// the voucher row server-side (page.tsx), never from URL params.
+export function RedeemClient({
+  code,
+  emailPrefill,
+  namePrefill = "",
+}: {
+  code: string;
+  emailPrefill: string;
+  namePrefill?: string;
+}) {
   return (
     <div className="min-h-screen bg-[#FEFFF9]">
       <header className="border-b bg-[#010131] px-6 py-4 text-white">
@@ -32,25 +28,28 @@ export function RedeemClient({ code, emailPrefill, namePrefill = "" }: { code: s
         {!code ? (
           <div className="rounded-xl border bg-card p-6 text-center">
             <h1 className="text-lg font-semibold text-[#010131]">Missing voucher code</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Open the link your organisation sent you - it includes the code.</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Open the link your organisation sent you - it includes the code.
+            </p>
           </div>
         ) : (
           <div className="rounded-xl border bg-card p-6">
             <h1 className="text-xl font-semibold text-[#010131]">Start your assessment</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Enter your details to begin. Voucher: <span className="font-mono text-foreground">{code}</span></p>
-            {error && <div className="mt-3 rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
-            <div className="mt-4 space-y-3">
-              <div>
-                <label className="text-xs text-muted-foreground">Full name</label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your full name" className="mt-1" />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Email</label>
-                <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@org.com" className="mt-1" />
-              </div>
-              <Button onClick={redeem} disabled={pending || name.trim().length < 2 || !email.trim()} className="gap-2">
-                {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />} Start assessment
-              </Button>
+            <p className="mt-1 text-sm text-muted-foreground">Enter your details to begin.</p>
+            <div className="mt-4">
+              <VoucherRedeemForm
+                initialCode={code}
+                initialName={namePrefill}
+                initialEmail={emailPrefill}
+                companyField="hidden"
+                codePlaceholder="RR-XXXX-XXXX"
+                submitLabel={{ en: "Start assessment", ar: "ابدأ التقييم" }}
+                onRedeem={async (v) => {
+                  const res = await redeemVoucherAction({ code: v.code, fullName: v.name, email: v.email });
+                  if ("error" in res) return { ok: false, error: res.error };
+                  return { ok: true, redirectTo: `/role-readiness/apply/${res.token}` };
+                }}
+              />
             </div>
           </div>
         )}

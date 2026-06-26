@@ -7,6 +7,8 @@
 import { randomBytes } from "node:crypto";
 import { createServiceClient } from "@/lib/supabase/server";
 import { sendEmail, isEmailConfigured } from "@/lib/integrations/email";
+import { redeemViaDescriptor } from "@/lib/vouchers/core";
+import { VOUCHER_DESCRIPTORS } from "@/lib/vouchers/descriptor";
 
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // no ambiguous 0/O/1/I/L
 function genCode(): string {
@@ -146,43 +148,41 @@ export async function redeemRoleReadinessVoucher(input: {
   fullName: string;
   email: string;
 }): Promise<{ ok: true; token: string } | { error: string }> {
-  const code = (input.code || "").trim();
   const name = (input.fullName || "").trim();
   const email = (input.email || "").trim();
-  if (!code) return { error: "Missing voucher code." };
+  if (!input.code.trim()) return { error: "Missing voucher code." };
   if (name.length < 2 || !EMAIL_RE.test(email)) return { error: "Enter your name and a valid email." };
 
-  const sb = createServiceClient();
-  // Atomically claim a seat in the DB (UPDATE ... SET uses = uses + 1 WHERE
-  // uses < max_uses), so concurrent redeems of a shared voucher can never
-  // over-redeem (the increment + bound are evaluated together under the row lock).
-  const { data: claimed, error: claimErr } = await sb.rpc("rr_claim_voucher_seat", { p_code: code });
-  const row = (Array.isArray(claimed) ? claimed[0] : claimed) as
-    | { role_config_id: string; organization_id: string | null }
-    | undefined;
-  if (claimErr || !row) {
-    // Distinguish "no such code" from "fully redeemed" for a clearer message.
-    const { data: exists } = await sb.from("rr_vouchers").select("id").eq("code", code).maybeSingle();
-    return { error: exists ? "This voucher has already been fully redeemed." : "Invalid voucher code." };
-  }
-
-  const { data: cand, error: candErr } = await sb
-    .from("rr_candidates")
-    .insert({
-      role_config_id: row.role_config_id,
-      organization_id: row.organization_id ?? null,
-      full_name: name,
-      email,
-      invited_at: new Date().toISOString(),
-    })
-    .select("access_token")
-    .single();
-  if (candErr || !cand) {
-    // Atomically hand the seat back (SET uses = greatest(uses - 1, 0)).
-    await sb.rpc("rr_release_voucher_seat", { p_code: code });
-    return { error: candErr?.message ?? "Could not start the assessment." };
-  }
-  return { ok: true, token: cand.access_token as string };
+  // Claim + compensate-on-failure handled by the shared core (the seat is claimed
+  // atomically and handed back if provisioning fails). Provision = create the
+  // rr_candidate. onClaimFailed preserves RR's "invalid vs fully-redeemed" message.
+  const out = await redeemViaDescriptor<{ role_config_id: string; organization_id: string | null }>(
+    VOUCHER_DESCRIPTORS.roleReadiness,
+    { code: input.code, redeemerName: name, redeemerEmail: email },
+    async ({ sb, voucher }) => {
+      const { data: cand, error: candErr } = await sb
+        .from("rr_candidates")
+        .insert({
+          role_config_id: voucher.role_config_id,
+          organization_id: voucher.organization_id ?? null,
+          full_name: name,
+          email,
+          invited_at: new Date().toISOString(),
+        })
+        .select("access_token")
+        .single();
+      if (candErr || !cand) return { ok: false, error: candErr?.message ?? "Could not start the assessment." };
+      return { ok: true, token: cand.access_token as string };
+    },
+    {
+      onClaimFailed: async ({ sb, code }) => {
+        const { data: exists } = await sb.from("rr_vouchers").select("id").eq("code", code).maybeSingle();
+        return exists ? "This voucher has already been fully redeemed." : "Invalid voucher code.";
+      },
+    },
+  );
+  if (!out.ok) return { error: out.error };
+  return { ok: true, token: out.token as string };
 }
 
 export async function loadRoleReadinessVouchers(

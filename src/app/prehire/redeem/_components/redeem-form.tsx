@@ -1,86 +1,25 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { VoucherRedeemForm } from "@/components/shared/voucher-redeem-form";
 import { redeemPrehireVoucherAction } from "../actions";
 
-export function RedeemForm({
-  initialCode,
-  initialCompany,
-}: {
-  initialCode: string;
-  // name and email are intentionally NOT pre-filled from the URL - a crafted
-  // link that pre-fills someone else's PII is a phishing vector.
-  initialCompany: string;
-}) {
-  const router = useRouter();
-  const [code, setCode] = useState(initialCode);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [company, setCompany] = useState(initialCompany);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-    try {
-      const res = await redeemPrehireVoucherAction({ code, name, email, company });
-      if (res.ok) {
-        router.push(`/prehire/apply/${res.token}`);
-      } else {
-        setError(res.error);
-        setLoading(false);
-      }
-    } catch {
-      setError("Something went wrong. Please try again.");
-      setLoading(false);
-    }
-  }
-
+// Thin wrapper over the shared bilingual redeem form (consolidation Phase 2).
+// Pre-Hire gains the EN/AR toggle; name/email are never prefilled from the URL
+// (phishing guard) - only code + company come in (server-derived). Action layer
+// (incl. the per-IP rate limit) is unchanged.
+export function RedeemForm({ initialCode, initialCompany }: { initialCode: string; initialCompany: string }) {
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <div className="space-y-1.5">
-        <Label htmlFor="code">Access code</Label>
-        <Input
-          id="code"
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          placeholder="VIFM-HIRE-XXXX-XXXX"
-          autoComplete="off"
-          required
-        />
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="name">Full name</Label>
-        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="company">
-          Company <span className="text-muted-foreground">(optional)</span>
-        </Label>
-        <Input id="company" value={company} onChange={(e) => setCompany(e.target.value)} />
-      </div>
-
-      {error && <p className="text-sm text-destructive">{error}</p>}
-
-      <Button type="submit" disabled={loading} className="w-full">
-        {loading ? "Starting..." : "Begin screening"}
-      </Button>
-    </form>
+    <VoucherRedeemForm
+      initialCode={initialCode}
+      initialCompany={initialCompany}
+      companyField="optional"
+      codePlaceholder="VIFM-HIRE-XXXX-XXXX"
+      submitLabel={{ en: "Begin screening", ar: "ابدأ الفرز" }}
+      onRedeem={async (v) => {
+        const res = await redeemPrehireVoucherAction({ code: v.code, name: v.name, email: v.email, company: v.company });
+        if (!res.ok) return { ok: false, error: res.error };
+        return { ok: true, redirectTo: `/prehire/apply/${res.token}` };
+      }}
+    />
   );
 }

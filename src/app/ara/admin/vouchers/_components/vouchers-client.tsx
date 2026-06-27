@@ -254,7 +254,16 @@ export function VouchersClient({
             <>
               <div className="flex flex-wrap items-end gap-3">
                 <div className="flex-1 min-w-[14rem] space-y-1.5">
-                  <Label className="text-xs">Which client?</Label>
+                  <div className="flex items-center justify-between gap-2">
+                    <Label className="text-xs">Which client?</Label>
+                    <button
+                      type="button"
+                      onClick={() => { setShowAddClient((s) => !s); setClientError(null); }}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-[#5391D5] hover:underline"
+                    >
+                      {showAddClient ? <><X className="h-3 w-3" /> Cancel</> : <><Plus className="h-3 w-3" /> Add a new client</>}
+                    </button>
+                  </div>
                   <select
                     className={selectClass}
                     value={selectedOrg}
@@ -295,13 +304,6 @@ export function VouchersClient({
                 </div>
               </div>
               <div>
-                <button
-                  type="button"
-                  onClick={() => { setShowAddClient((s) => !s); setClientError(null); }}
-                  className="inline-flex items-center gap-1 text-xs font-medium text-[#5391D5] hover:underline"
-                >
-                  {showAddClient ? <><X className="h-3 w-3" /> Cancel</> : <><Plus className="h-3 w-3" /> Add a new client</>}
-                </button>
                 {showAddClient && (
                   <div className="mt-2 space-y-2 rounded-md border border-border bg-card p-3 sm:max-w-md">
                     <Input

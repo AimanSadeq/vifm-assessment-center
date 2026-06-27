@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { VoucherClientEmailCard } from "@/components/shared/voucher-client-email-card";
+import { VoucherDetailsFields, contactDisplayName, EMPTY_VOUCHER_DETAILS, type VoucherDetails } from "@/components/shared/voucher-details-fields";
 import { Loader2, Ticket, Copy, Ban, Link2, Mail, SlidersHorizontal, Upload, ChevronLeft, ChevronRight, Building2, Users } from "lucide-react";
 import { fmtDate } from "@/lib/utils/format-date";
 import { copyToClipboard } from "@/lib/utils/clipboard";
@@ -94,10 +95,8 @@ export function AdminVoucherIssuer({
 
   // Shared fields
   const [count, setCount] = useState(1);
-  const [label, setLabel] = useState("");
-  const [clientName, setClientName] = useState("");
   const [maxUses, setMaxUses] = useState(1);
-  const [expiresAt, setExpiresAt] = useState("");
+  const [details, setDetails] = useState<VoucherDetails>(EMPTY_VOUCHER_DETAILS);
   const [busy, setBusy] = useState(false);
   const [lastCodes, setLastCodes] = useState<string[]>([]);
 
@@ -121,7 +120,7 @@ export function AdminVoucherIssuer({
 
   const generate = async () => {
     setBusy(true);
-    const res = await onGenerate({ count, maxUses, clientName, label, expiresAt: expiresAt || null });
+    const res = await onGenerate({ count, maxUses, clientName: details.clientName, label: details.projectLabel, expiresAt: details.expiresAt || null });
     setBusy(false);
     if ("error" in res) {
       toast.error(res.error);
@@ -182,7 +181,7 @@ export function AdminVoucherIssuer({
     setDelegateBusy(true);
     setDelegateMsg(null);
     // One single-use code per delegate, then email each their own link.
-    const res = await onGenerate({ count: parsed.length, maxUses: 1, clientName, label, expiresAt: expiresAt || null });
+    const res = await onGenerate({ count: parsed.length, maxUses: 1, clientName: details.clientName, label: details.projectLabel, expiresAt: details.expiresAt || null });
     if ("error" in res) {
       setDelegateBusy(false);
       toast.error(res.error);
@@ -234,31 +233,7 @@ export function AdminVoucherIssuer({
           {/* STEP 1 — details + options */}
           {step === 1 && (
             <>
-              <div className="flex flex-wrap items-end gap-3">
-                {showClient && (
-                  <div className="flex-1 min-w-[12rem] space-y-1.5">
-                    <Label className="text-xs">Client (optional)</Label>
-                    <Input value={clientName} onChange={(e) => setClientName(e.target.value)} list="avi-client-list" placeholder={clientPlaceholder} />
-                    <datalist id="avi-client-list">
-                      {clients.map((c) => (
-                        <option key={c} value={c} />
-                      ))}
-                    </datalist>
-                  </div>
-                )}
-                {showLabel && (
-                  <div className="flex-1 min-w-[10rem] space-y-1.5">
-                    <Label className="text-xs">Label (optional)</Label>
-                    <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Q3 intake" />
-                  </div>
-                )}
-                {showExpiry && (
-                  <div className="w-44 space-y-1.5">
-                    <Label className="text-xs">Expires (optional)</Label>
-                    <Input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
-                  </div>
-                )}
-              </div>
+              <VoucherDetailsFields value={details} onChange={setDetails} clients={clients} />
               {options && (
                 <div className="rounded-lg border border-dashed border-[#5391D5]/50 bg-[#5391D5]/5 p-3">
                   <div className="mb-2.5 flex items-center gap-1.5 text-sm font-semibold text-[#010131]">
@@ -334,7 +309,7 @@ export function AdminVoucherIssuer({
                     </div>
                     <p className="text-xs text-muted-foreground">Copy the links and send them to the client yourself, or email the whole batch below.</p>
                   </div>
-                  <VoucherClientEmailCard serviceLabel={serviceLabel} defaultOpen items={lastCodes.map((c) => ({ code: c, link: fullLink(c) }))} />
+                  <VoucherClientEmailCard serviceLabel={serviceLabel} defaultOpen initialName={contactDisplayName(details)} initialEmail={details.contactEmail} items={lastCodes.map((c) => ({ code: c, link: fullLink(c) }))} />
                 </>
               )}
               <div>

@@ -78,6 +78,9 @@ export function VouchersClient({
   const [delegateText, setDelegateText] = useState("");
   const [delegateBusy, setDelegateBusy] = useState(false);
   const [delegateMsg, setDelegateMsg] = useState<string | null>(null);
+  const [contactName, setContactName] = useState("");
+  const [contactTitle, setContactTitle] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
 
   // ── Custom (pick-and-choose) scope state ──
   const [builder, setBuilder] = useState<CustomBuilderData | null>(null);
@@ -382,23 +385,33 @@ export function VouchersClient({
         {step === 1 && (
         <>
         <div className="space-y-4">
-          {/* Standard identity fields - the same top row on every voucher page */}
+          {/* Standard step-1 details - the same fields on every voucher page */}
           <div className="flex flex-wrap items-end gap-3">
-            <div className="w-32 space-y-1.5">
-              <Label className="text-xs">{mode === "single" ? "How many codes" : "Seats in link"}</Label>
-              <Input type="number" min={1} max={500} value={count} onChange={(e) => setCount(Number(e.target.value))} />
-            </div>
             <div className="flex-1 min-w-[12rem] space-y-1.5">
-              <Label className="text-xs">Client / organization</Label>
-              <Input value={organizationName} onChange={(e) => setOrganizationName(e.target.value)} placeholder="Tag to a client org" />
+              <Label className="text-xs">Client name</Label>
+              <Input value={organizationName} onChange={(e) => setOrganizationName(e.target.value)} placeholder="Client / organisation" />
             </div>
             <div className="flex-1 min-w-[10rem] space-y-1.5">
-              <Label className="text-xs">Label (optional)</Label>
+              <Label className="text-xs">Project label</Label>
               <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. ADNOC FP&A pilot" />
             </div>
             <div className="w-44 space-y-1.5">
-              <Label className="text-xs">Expires (optional)</Label>
+              <Label className="text-xs">Expiry date</Label>
               <Input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
+            </div>
+          </div>
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="flex-1 min-w-[12rem] space-y-1.5">
+              <Label className="text-xs">Contact name</Label>
+              <Input value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="e.g. Sara Ahmed" />
+            </div>
+            <div className="flex-1 min-w-[9rem] space-y-1.5">
+              <Label className="text-xs">Title</Label>
+              <Input value={contactTitle} onChange={(e) => setContactTitle(e.target.value)} placeholder="e.g. L&D Director" />
+            </div>
+            <div className="flex-1 min-w-[12rem] space-y-1.5">
+              <Label className="text-xs">Contact email</Label>
+              <Input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="contact@client.com" />
             </div>
           </div>
 
@@ -678,6 +691,10 @@ export function VouchersClient({
 
         {step === 3 && target === "client" && (
         <div className="space-y-4">
+        <div className="w-40 space-y-1.5">
+          <Label className="text-xs">{mode === "single" ? "How many codes" : "Seats in link"}</Label>
+          <Input type="number" min={1} max={500} value={count} onChange={(e) => setCount(Number(e.target.value))} />
+        </div>
         <Button
           onClick={generate}
           disabled={busy || !functionId || (scope === "custom" && (builderBusy || !customValid))}
@@ -763,7 +780,7 @@ export function VouchersClient({
         )}
         {newCodes && newCodes.length > 0 && (
           <div className="mt-4">
-            <VoucherClientEmailCard serviceLabel="Techno®" defaultOpen items={newCodes.map((c) => ({ code: c, link: redeemUrl(c) }))} />
+            <VoucherClientEmailCard serviceLabel="Techno®" defaultOpen initialName={contactTitle ? `${contactName} (${contactTitle})`.trim() : contactName} initialEmail={contactEmail} items={newCodes.map((c) => ({ code: c, link: redeemUrl(c) }))} />
           </div>
         )}
         <div className="mt-4">

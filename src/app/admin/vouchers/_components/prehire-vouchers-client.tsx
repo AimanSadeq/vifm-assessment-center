@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { VoucherClientEmailCard } from "@/components/shared/voucher-client-email-card";
+import { VoucherDetailsFields, contactDisplayName, EMPTY_VOUCHER_DETAILS, type VoucherDetails } from "@/components/shared/voucher-details-fields";
 import { emailVoucherLinksToDelegatesAction } from "@/lib/vouchers/email-actions";
 import {
   createPrehireVoucherBatchAction,
@@ -28,7 +29,7 @@ export function PrehireVouchersClient({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [requisitionId, setRequisitionId] = useState(requisitions[0]?.id ?? "");
-  const [label, setLabel] = useState("");
+  const [details, setDetails] = useState<VoucherDetails>(EMPTY_VOUCHER_DETAILS);
   const [count, setCount] = useState(1);
   const [seats, setSeats] = useState(1);
 
@@ -62,11 +63,11 @@ export function PrehireVouchersClient({
     startTransition(async () => {
       const res = await createPrehireVoucherBatchAction({
         requisitionId,
-        label: label.trim() || undefined,
+        label: details.projectLabel.trim() || undefined,
         count: Math.max(1, count),
         seatsPerCode: Math.max(1, seats),
-        expiresAt: null,
-        organizationName: orgName(),
+        expiresAt: details.expiresAt || null,
+        organizationName: details.clientName.trim() || orgName(),
       });
       if (res.ok) {
         setGenerated(res.codes);
@@ -115,11 +116,11 @@ export function PrehireVouchersClient({
     setDelegateMsg(null);
     const res = await createPrehireVoucherBatchAction({
       requisitionId,
-      label: label.trim() || undefined,
+      label: details.projectLabel.trim() || undefined,
       count: parsed.length,
       seatsPerCode: 1,
-      expiresAt: null,
-      organizationName: orgName(),
+      expiresAt: details.expiresAt || null,
+      organizationName: details.clientName.trim() || orgName(),
     });
     if (!res.ok) {
       setDelegateBusy(false);
@@ -202,10 +203,7 @@ export function PrehireVouchersClient({
             {/* STEP 1 — requisition + label */}
             {step === 1 && (
               <>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Label (optional)</Label>
-                  <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. analyst intake" className="max-w-md" />
-                </div>
+                <VoucherDetailsFields value={details} onChange={setDetails} clientHint="Defaults to the requisition's organisation if left blank." />
                 <div className="space-y-3 rounded-lg border border-dashed border-[#5391D5]/50 bg-[#5391D5]/5 p-3">
                   <div className="flex items-center gap-1.5 text-sm font-semibold text-[#010131]">
                     <SlidersHorizontal className="h-4 w-4 text-[#5391D5]" /> Pre-Hire options
@@ -272,7 +270,7 @@ export function PrehireVouchersClient({
                       </div>
                       <p className="text-xs text-muted-foreground">Copy the links and send them to the client yourself, or email the whole batch below.</p>
                     </div>
-                    <VoucherClientEmailCard serviceLabel="Pre-Hire®" defaultOpen items={generated.map((c) => ({ code: c, link: redeemUrl(c) }))} />
+                    <VoucherClientEmailCard serviceLabel="Pre-Hire®" defaultOpen initialName={contactDisplayName(details)} initialEmail={details.contactEmail} items={generated.map((c) => ({ code: c, link: redeemUrl(c) }))} />
                   </>
                 )}
                 <div>

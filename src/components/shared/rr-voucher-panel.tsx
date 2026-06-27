@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CollapsibleCard } from "@/components/shared/collapsible-card";
+import { VoucherClientEmailCard } from "@/components/shared/voucher-client-email-card";
+import { VoucherDetailsFields, contactDisplayName, EMPTY_VOUCHER_DETAILS, type VoucherDetails } from "@/components/shared/voucher-details-fields";
 import type { IssuedVoucher } from "@/lib/role-readiness/vouchers";
 
 type Mode = "individual" | "pool";
@@ -71,6 +73,7 @@ async function parseDelegateFile(file: File): Promise<{ delegates: Delegate[]; e
 export function RrVoucherPanel({ onIssue }: { onIssue: (input: IssueInput) => Promise<IssueResult> }) {
   const [mode, setMode] = useState<Mode>("individual");
   const [step, setStep] = useState(1);
+  const [details, setDetails] = useState<VoucherDetails>(EMPTY_VOUCHER_DETAILS);
   const [text, setText] = useState("");
   const [seats, setSeats] = useState(10);
   const [origin, setOrigin] = useState("");
@@ -124,35 +127,49 @@ export function RrVoucherPanel({ onIssue }: { onIssue: (input: IssueInput) => Pr
     <CollapsibleCard title="Issue vouchers" icon={Send} defaultOpen={false}
       subtitle="Individual links per delegate (with optional email), or one shared multi-seat link">
       <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-        {["Delivery", "Issue"].map((s, i) => {
+        {["Details", "Delivery", "Issue"].map((s, i) => {
           const n = i + 1;
           return (
             <span key={s} className="flex items-center gap-2">
               <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-semibold ${step === n ? "bg-[#010131] text-white" : step > n ? "bg-[#5391D5] text-white" : "bg-muted text-muted-foreground"}`}>{n}</span>
               <span className={step === n ? "font-medium text-foreground" : "text-muted-foreground"}>{s}</span>
-              {n < 2 && <ChevronRight className="h-3 w-3 text-muted-foreground" />}
+              {n < 3 && <ChevronRight className="h-3 w-3 text-muted-foreground" />}
             </span>
           );
         })}
       </div>
 
       {step === 1 && (
-        <div className="grid gap-3 sm:grid-cols-2">
-          <button type="button" onClick={() => { setMode("individual"); setStep(2); }} className="rounded-lg border border-border p-4 text-left transition hover:border-[#5391D5] hover:bg-[#5391D5]/5">
-            <div className="flex items-center gap-2 text-sm font-semibold text-[#010131]"><Send className="h-4 w-4 text-[#5391D5]" /> Send to delegates</div>
-            <p className="mt-1 text-xs text-muted-foreground">A single-use link per delegate (upload or paste a list), optionally emailed to each.</p>
-          </button>
-          <button type="button" onClick={() => { setMode("pool"); setStep(2); }} className="rounded-lg border border-border p-4 text-left transition hover:border-[#5391D5] hover:bg-[#5391D5]/5">
-            <div className="flex items-center gap-2 text-sm font-semibold text-[#010131]"><Users className="h-4 w-4 text-[#5391D5]" /> One shared link</div>
-            <p className="mt-1 text-xs text-muted-foreground">One link with the seats you choose - share it with the whole group.</p>
-          </button>
+        <div className="space-y-4">
+          <VoucherDetailsFields value={details} onChange={setDetails} />
+          <div className="flex justify-end">
+            <Button onClick={() => setStep(2)} className="gap-1.5">Next <ChevronRight className="h-4 w-4" /></Button>
+          </div>
         </div>
       )}
 
       {step === 2 && (
+        <>
+          <div className="mb-3">
+            <Button variant="outline" size="sm" onClick={() => setStep(1)} className="gap-1.5"><ChevronLeft className="h-3.5 w-3.5" /> Back</Button>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <button type="button" onClick={() => { setMode("individual"); setStep(3); }} className="rounded-lg border border-border p-4 text-left transition hover:border-[#5391D5] hover:bg-[#5391D5]/5">
+              <div className="flex items-center gap-2 text-sm font-semibold text-[#010131]"><Send className="h-4 w-4 text-[#5391D5]" /> Send to delegates</div>
+              <p className="mt-1 text-xs text-muted-foreground">A single-use link per delegate (upload or paste a list), optionally emailed to each.</p>
+            </button>
+            <button type="button" onClick={() => { setMode("pool"); setStep(3); }} className="rounded-lg border border-border p-4 text-left transition hover:border-[#5391D5] hover:bg-[#5391D5]/5">
+              <div className="flex items-center gap-2 text-sm font-semibold text-[#010131]"><Users className="h-4 w-4 text-[#5391D5]" /> One shared link</div>
+              <p className="mt-1 text-xs text-muted-foreground">One link with the seats you choose - share it with the whole group.</p>
+            </button>
+          </div>
+        </>
+      )}
+
+      {step === 3 && (
       <>
       <div className="mb-3">
-        <Button variant="outline" size="sm" onClick={() => setStep(1)} className="gap-1.5"><ChevronLeft className="h-3.5 w-3.5" /> Back</Button>
+        <Button variant="outline" size="sm" onClick={() => setStep(2)} className="gap-1.5"><ChevronLeft className="h-3.5 w-3.5" /> Back</Button>
       </div>
 
       {mode === "individual" ? (
@@ -271,6 +288,9 @@ export function RrVoucherPanel({ onIssue }: { onIssue: (input: IssueInput) => Pr
             </button>
           </div>
           <p className="mt-2 text-[11px] text-muted-foreground">Share this one link with your group. The first {result.vouchers[0].maxUses} people to open it can take the assessment.</p>
+          <div className="mt-3">
+            <VoucherClientEmailCard serviceLabel="Role Readiness" defaultOpen initialName={contactDisplayName(details)} initialEmail={details.contactEmail} items={[{ code: result.vouchers[0].code, link: redeemUrl(result.vouchers[0]) }]} />
+          </div>
         </div>
       )}
       </>

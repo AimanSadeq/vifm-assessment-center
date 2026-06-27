@@ -69,6 +69,7 @@ export function VouchersClient({
   const [contactName, setContactName] = useState("");
   const [contactTitle, setContactTitle] = useState("");
   const [contactEmail, setContactEmail] = useState("");
+  const [expiresAt, setExpiresAt] = useState("");
 
   // Live origin for shareable redeem links (window is client-only).
   const [origin, setOrigin] = useState("");
@@ -196,6 +197,7 @@ export function VouchersClient({
     fd.set("region", batchRegion);
     fd.set("language", language);
     fd.set("itemsPerFactor", itemsPerFactor);
+    if (expiresAt) fd.set("expiresAt", expiresAt);
     startTransition(async () => {
       const res = await createVoucherBatchAction(fd);
       if (!res.ok) {
@@ -263,8 +265,12 @@ export function VouchersClient({
                   </select>
                 </div>
                 <div className="flex-1 min-w-[12rem] space-y-1.5">
-                  <Label htmlFor="engLabel" className="text-xs">Engagement label</Label>
+                  <Label htmlFor="engLabel" className="text-xs">Project label</Label>
                   <Input id="engLabel" value={engagementLabel} onChange={(e) => setEngagementLabel(e.target.value)} placeholder="e.g. ADNOC AI Readiness 2026" />
+                </div>
+                <div className="w-44 space-y-1.5">
+                  <Label className="text-xs">Expiry date</Label>
+                  <Input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
                 </div>
               </div>
               <div className="flex flex-wrap items-end gap-3">

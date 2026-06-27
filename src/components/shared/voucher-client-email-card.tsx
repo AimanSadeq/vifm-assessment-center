@@ -14,9 +14,11 @@ import { emailVoucherBatchToClientAction } from "@/lib/vouchers/email-actions";
 export function VoucherClientEmailCard({
   serviceLabel,
   items,
+  defaultOpen = false,
 }: {
   serviceLabel: string;
   items: { code: string; link: string }[];
+  defaultOpen?: boolean;
 }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -47,7 +49,7 @@ export function VoucherClientEmailCard({
     <CollapsibleCard
       title="Email codes to a client"
       icon={Mail}
-      defaultOpen={false}
+      defaultOpen={defaultOpen}
       subtitle="Send all the codes you just generated to one client, in a single email, for them to distribute."
     >
       {items.length === 0 ? (

@@ -22,9 +22,11 @@ import type { PrehireVoucherListItem, PrehireRequisitionOption } from "@/lib/pre
 export function PrehireVouchersClient({
   requisitions,
   vouchers,
+  clients = [],
 }: {
   requisitions: PrehireRequisitionOption[];
   vouchers: PrehireVoucherListItem[];
+  clients?: string[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -209,7 +211,7 @@ export function PrehireVouchersClient({
             {/* STEP 1 — requisition + label */}
             {step === 1 && (
               <>
-                <VoucherDetailsFields value={details} onChange={setDetails} clientHint="Defaults to the requisition's organisation if left blank." />
+                <VoucherDetailsFields value={details} onChange={setDetails} clients={clients} clientHint="Defaults to the requisition's organisation if left blank." />
                 <div className="space-y-3 rounded-lg border border-dashed border-[#5391D5]/50 bg-[#5391D5]/5 p-3">
                   <div className="flex items-center gap-1.5 text-sm font-semibold text-[#010131]">
                     <SlidersHorizontal className="h-4 w-4 text-[#5391D5]" /> Pre-Hire options

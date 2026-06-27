@@ -83,10 +83,12 @@ async function parseDelegateFile(file: File): Promise<{ delegates: Delegate[]; e
 // Role Readiness voucher issuance - same model as the other portals: individual
 // single-use vouchers (one complete link per recipient, optionally emailed) OR one
 // shared link with N seats. The parent supplies `onIssue`.
-export function RrVoucherPanel({ onIssue }: { onIssue: (input: IssueInput) => Promise<IssueResult> }) {
+export function RrVoucherPanel({ onIssue, clients = [], fixedClientName }: { onIssue: (input: IssueInput) => Promise<IssueResult>; clients?: string[]; fixedClientName?: string }) {
   const [mode, setMode] = useState<Mode>("individual");
   const [step, setStep] = useState(1);
-  const [details, setDetails] = useState<VoucherDetails>(EMPTY_VOUCHER_DETAILS);
+  const [details, setDetails] = useState<VoucherDetails>(
+    fixedClientName ? { ...EMPTY_VOUCHER_DETAILS, clientName: fixedClientName } : EMPTY_VOUCHER_DETAILS,
+  );
   const [text, setText] = useState("");
   const [seats, setSeats] = useState(10);
   const [origin, setOrigin] = useState("");
@@ -162,7 +164,7 @@ export function RrVoucherPanel({ onIssue }: { onIssue: (input: IssueInput) => Pr
 
       {step === 1 && (
         <div className="space-y-4">
-          <VoucherDetailsFields value={details} onChange={setDetails} />
+          <VoucherDetailsFields value={details} onChange={setDetails} clients={clients} clientReadOnly={!!fixedClientName} />
           <div className="flex justify-end">
             <Button onClick={() => setStep(2)} className="gap-1.5">Next <ChevronRight className="h-4 w-4" /></Button>
           </div>

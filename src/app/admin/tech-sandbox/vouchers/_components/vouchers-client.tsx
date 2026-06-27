@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { SlidersHorizontal, ChevronLeft, ChevronRight, Building2, Users, Loader2, Upload } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { VoucherClientEmailCard } from "@/components/shared/voucher-client-email-card";
+import { VoucherDetailsFields, type VoucherDetails } from "@/components/shared/voucher-details-fields";
 import { emailVoucherLinksToDelegatesAction } from "@/lib/vouchers/email-actions";
 import type { CustomBuilderData, FunctionRow } from "@/lib/technical-sandbox/service";
 import type { VoucherRow } from "@/lib/technical-sandbox/vouchers";
@@ -51,10 +52,12 @@ export function VouchersClient({
   functions,
   vouchers,
   talentLens = null,
+  clients = [],
 }: {
   functions: FunctionRow[];
   vouchers: VoucherRow[];
   talentLens?: "acquisition" | "development" | null;
+  clients?: string[];
 }) {
   const fnName = new Map(functions.map((f) => [f.id, `${f.nodeId ?? ""} ${f.nameEn}`.trim()]));
   const [functionId, setFunctionId] = useState(functions[0]?.id ?? "");
@@ -81,6 +84,25 @@ export function VouchersClient({
   const [contactName, setContactName] = useState("");
   const [contactTitle, setContactTitle] = useState("");
   const [contactEmail, setContactEmail] = useState("");
+
+  // Adapter so the shared VoucherDetailsFields drives Techno's existing per-field
+  // state (label doubles as the custom-assessment design name, so it stays a var).
+  const details: VoucherDetails = {
+    clientName: organizationName,
+    projectLabel: label,
+    expiresAt,
+    contactName,
+    contactTitle,
+    contactEmail,
+  };
+  const setDetails = (v: VoucherDetails) => {
+    setOrganizationName(v.clientName);
+    setLabel(v.projectLabel);
+    setExpiresAt(v.expiresAt);
+    setContactName(v.contactName);
+    setContactTitle(v.contactTitle);
+    setContactEmail(v.contactEmail);
+  };
 
   // ── Custom (pick-and-choose) scope state ──
   const [builder, setBuilder] = useState<CustomBuilderData | null>(null);
@@ -389,35 +411,8 @@ export function VouchersClient({
         {step === 1 && (
         <>
         <div className="space-y-4">
-          {/* Standard step-1 details - the same fields on every voucher page */}
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="flex-1 min-w-[12rem] space-y-1.5">
-              <Label className="text-xs">Client name</Label>
-              <Input value={organizationName} onChange={(e) => setOrganizationName(e.target.value)} placeholder="Client / organisation" />
-            </div>
-            <div className="flex-1 min-w-[10rem] space-y-1.5">
-              <Label className="text-xs">Project label</Label>
-              <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. ADNOC FP&A pilot" />
-            </div>
-            <div className="w-44 space-y-1.5">
-              <Label className="text-xs">Expiry date</Label>
-              <Input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
-            </div>
-          </div>
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="flex-1 min-w-[12rem] space-y-1.5">
-              <Label className="text-xs">Contact name</Label>
-              <Input value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="e.g. Sara Ahmed" />
-            </div>
-            <div className="flex-1 min-w-[9rem] space-y-1.5">
-              <Label className="text-xs">Title</Label>
-              <Input value={contactTitle} onChange={(e) => setContactTitle(e.target.value)} placeholder="e.g. L&D Director" />
-            </div>
-            <div className="flex-1 min-w-[12rem] space-y-1.5">
-              <Label className="text-xs">Contact email</Label>
-              <Input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="contact@client.com" />
-            </div>
-          </div>
+          {/* Standard step-1 details - the shared field set used on every voucher page */}
+          <VoucherDetailsFields value={details} onChange={setDetails} clients={clients} />
 
           {/* Techno options - the per-service controls, folded into the same dashed callout every page uses */}
           <div className="space-y-3 rounded-lg border border-dashed border-[#5391D5]/50 bg-[#5391D5]/5 p-3">

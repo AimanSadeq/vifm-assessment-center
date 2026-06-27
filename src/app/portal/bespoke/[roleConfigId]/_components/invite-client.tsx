@@ -5,9 +5,10 @@ import { clientIssueRoleVouchersAction } from "../actions";
 
 // Client-portal voucher issuance for a Role Readiness programme: individual links
 // or one shared multi-seat link. Org is resolved server-side in the action.
-export function InviteClient({ roleConfigId, orgParam }: { roleConfigId: string; orgParam?: string }) {
+export function InviteClient({ roleConfigId, orgParam, orgName }: { roleConfigId: string; orgParam?: string; orgName?: string }) {
   return (
     <RrVoucherPanel
+      fixedClientName={orgName}
       onIssue={(input) =>
         clientIssueRoleVouchersAction({
           roleConfigId,

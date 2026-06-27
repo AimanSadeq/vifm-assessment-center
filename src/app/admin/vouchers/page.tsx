@@ -102,6 +102,8 @@ export default async function VouchersHubPage({
   }
 
   // ── Technical Assessment ──
+  const clientNames = (await loadPlatformClients().catch(() => [])).map((c) => c.name);
+
   let techSlot: React.ReactNode = null;
   let techSummary: ServiceSummary = UNAVAILABLE;
   try {
@@ -113,15 +115,13 @@ export default async function VouchersHubPage({
           No active functions yet. Add functions in the Techno® item bank before issuing vouchers.
         </p>
       ) : (
-        <TechVouchersClient functions={functions} vouchers={vouchers} />
+        <TechVouchersClient functions={functions} vouchers={vouchers} clients={clientNames} />
       );
   } catch {
     techSummary = UNAVAILABLE;
   }
 
   // ── Fluent / Cognitive / Persona (identical voucher shape) ──
-  const clientNames = (await loadPlatformClients().catch(() => [])).map((c) => c.name);
-
   async function loadAcService<T extends { max_uses: number | null; used_count: number | null }>(
     table: string,
     render: (rows: T[]) => React.ReactNode,
@@ -162,7 +162,7 @@ export default async function VouchersHubPage({
       listPrehireRequisitionsForVoucher(),
     ]);
     prehireSummary = summarize(phVouchers.map((v) => ({ max: v.max_uses, used: v.used_count })));
-    prehireSlot = <PrehireVouchersClient requisitions={phReqs} vouchers={phVouchers} />;
+    prehireSlot = <PrehireVouchersClient requisitions={phReqs} vouchers={phVouchers} clients={clientNames} />;
   } catch {
     prehireSummary = UNAVAILABLE;
   }

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { listFunctions } from "@/lib/technical-sandbox/service";
 import { listVouchers } from "@/lib/technical-sandbox/vouchers";
+import { loadPlatformClients } from "@/lib/clients/registry";
 import { VoucherNav } from "@/components/shared/voucher-nav";
 import { VouchersClient } from "./_components/vouchers-client";
 
@@ -16,6 +17,7 @@ export default async function TechVouchersPage() {
     throw e;
   }
   const [functions, vouchers] = await Promise.all([listFunctions(true), listVouchers()]);
+  const clients = (await loadPlatformClients().catch(() => [])).map((c) => c.name);
 
   return (
     <div className="mx-auto max-w-4xl space-y-4 p-6">
@@ -28,7 +30,7 @@ export default async function TechVouchersPage() {
           No active functions yet. Apply migrations 00077 + 00078 to Supabase.
         </p>
       ) : (
-        <VouchersClient functions={functions} vouchers={vouchers} />
+        <VouchersClient functions={functions} vouchers={vouchers} clients={clients} />
       )}
     </div>
   );

@@ -46,6 +46,11 @@ export default async function PortalBespokeProductPage({
     .maybeSingle();
   if (!assigned) notFound();
 
+  // The client's own org name - shown read-only as the voucher client (no registry
+  // dropdown on the client-facing portal, to avoid leaking other clients' names).
+  const { data: orgRow } = await sb.from("ara_organizations").select("name").eq("id", orgId).maybeSingle();
+  const orgName = (orgRow?.name as string | undefined) ?? "";
+
   const { data: rows } = await sb
     .from("rr_candidates")
     .select("id, full_name, email, status, verdict, access_token, completed_at")
@@ -67,7 +72,7 @@ export default async function PortalBespokeProductPage({
         </p>
       </div>
 
-      <InviteClient roleConfigId={params.roleConfigId} orgParam={access.viewingAsAdmin ? orgId : undefined} />
+      <InviteClient roleConfigId={params.roleConfigId} orgParam={access.viewingAsAdmin ? orgId : undefined} orgName={orgName} />
 
       <div className="rounded-xl border bg-card p-5">
         <h2 className="text-sm font-semibold">Candidates</h2>

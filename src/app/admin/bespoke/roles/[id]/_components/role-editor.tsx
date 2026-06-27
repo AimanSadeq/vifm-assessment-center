@@ -229,6 +229,7 @@ export function RoleEditor({ config, published, clients, assignedOrgId }: { conf
 
       {/* Vouchers (individual links or one shared multi-seat link) - collapsible */}
       <RrVoucherPanel
+        clients={clients.map((c) => c.name)}
         onIssue={(input) =>
           issueRoleVouchersAction({
             roleId: config.id,

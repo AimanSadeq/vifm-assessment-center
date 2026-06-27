@@ -10,7 +10,7 @@ export async function createPrehireVoucherBatchAction(input: {
   seatsPerCode: number;
   expiresAt?: string | null;
   organizationName?: string | null;
-}): Promise<{ ok: true; created: number } | { ok: false; error: string }> {
+}): Promise<{ ok: true; created: number; codes: string[] } | { ok: false; error: string }> {
   await requireRole(["admin"]);
   try {
     if (!input.requisitionId) return { ok: false, error: "Pick a requisition first." };
@@ -22,7 +22,7 @@ export async function createPrehireVoucherBatchAction(input: {
       expiresAt: input.expiresAt ?? null,
       organizationName: input.organizationName ?? null,
     });
-    return { ok: true, created: rows.length };
+    return { ok: true, created: rows.length, codes: rows.map((r) => r.code) };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Could not create vouchers." };
   }

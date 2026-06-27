@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Copy, Ban, Ticket, SlidersHorizontal } from "lucide-react";
+import { Copy, Ban, Ticket, SlidersHorizontal, ChevronLeft, ChevronRight, Building2, Users, Loader2, Upload, Link2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { VoucherClientEmailCard } from "@/components/shared/voucher-client-email-card";
+import { emailVoucherLinksToDelegatesAction } from "@/lib/vouchers/email-actions";
 import {
   createPrehireVoucherBatchAction,
   disablePrehireVoucherAction,
@@ -29,49 +31,115 @@ export function PrehireVouchersClient({
   const [label, setLabel] = useState("");
   const [count, setCount] = useState(1);
   const [seats, setSeats] = useState(1);
-  const [expiresAt, setExpiresAt] = useState("");
 
-  function redeemUrl(code: string): string {
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
-    return `${origin}/prehire/redeem?code=${code}`;
-  }
+  // Wizard state
+  const [step, setStep] = useState(1);
+  const [target, setTarget] = useState<"client" | "delegates" | null>(null);
+  const [generated, setGenerated] = useState<string[]>([]);
+  const [delegateText, setDelegateText] = useState("");
+  const [delegateBusy, setDelegateBusy] = useState(false);
+  const [delegateMsg, setDelegateMsg] = useState<string | null>(null);
 
-  async function copyLink(code: string) {
+  const [origin, setOrigin] = useState("");
+  useEffect(() => setOrigin(window.location.origin), []);
+  const redeemUrl = (code: string) => `${origin}/prehire/redeem?code=${code}`;
+  const orgName = () => requisitions.find((r) => r.id === requisitionId)?.organization_name ?? null;
+
+  async function copyText(text: string) {
     try {
-      await navigator.clipboard.writeText(redeemUrl(code));
-      toast.success("Redeem link copied");
+      await navigator.clipboard.writeText(text);
+      toast.success("Copied");
     } catch {
-      toast.error("Could not copy. Link: " + redeemUrl(code));
+      toast.error("Could not copy.");
     }
   }
 
-  function onCreate(e: React.FormEvent) {
-    e.preventDefault();
+  function generate() {
     if (!requisitionId) {
       toast.error("Pick a requisition.");
       return;
     }
-    const org = requisitions.find((r) => r.id === requisitionId)?.organization_name ?? null;
     startTransition(async () => {
       const res = await createPrehireVoucherBatchAction({
         requisitionId,
         label: label.trim() || undefined,
         count: Math.max(1, count),
         seatsPerCode: Math.max(1, seats),
-        expiresAt: expiresAt || null,
-        organizationName: org,
+        expiresAt: null,
+        organizationName: orgName(),
       });
       if (res.ok) {
+        setGenerated(res.codes);
         toast.success(`Created ${res.created} voucher${res.created === 1 ? "" : "s"}`);
-        setLabel("");
-        setCount(1);
-        setSeats(1);
-        setExpiresAt("");
         router.refresh();
       } else {
         toast.error(res.error);
       }
     });
+  }
+
+  function importEmailsFromFile(file: File) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result ?? "");
+      const found = (text.match(/[^\s,;:<>"'()[\]]+@[^\s,;:<>"'()[\]]+\.[^\s,;:<>"'()[\]]+/g) ?? [])
+        .map((e) => e.trim())
+        .filter((e) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e));
+      if (!found.length) {
+        setDelegateMsg("No email addresses found in that file.");
+        return;
+      }
+      const existing = delegateText.split(/\r?\n/).map((l) => l.split(",")[0]?.trim().toLowerCase()).filter(Boolean);
+      const merged = Array.from(new Set([...existing, ...found.map((e) => e.toLowerCase())]));
+      setDelegateText(merged.join("\n"));
+      setDelegateMsg(`Loaded ${found.length} email(s) from ${file.name}.`);
+    };
+    reader.onerror = () => setDelegateMsg("Could not read that file.");
+    reader.readAsText(file);
+  }
+
+  async function sendToDelegates() {
+    const parsed = delegateText
+      .split(/\r?\n/)
+      .map((line) => { const [email, ...rest] = line.split(","); return { email: (email ?? "").trim(), name: rest.join(",").trim() || undefined }; })
+      .filter((d) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email));
+    if (!parsed.length) {
+      setDelegateMsg("Add at least one valid email.");
+      return;
+    }
+    if (!requisitionId) {
+      toast.error("Pick a requisition.");
+      return;
+    }
+    setDelegateBusy(true);
+    setDelegateMsg(null);
+    const res = await createPrehireVoucherBatchAction({
+      requisitionId,
+      label: label.trim() || undefined,
+      count: parsed.length,
+      seatsPerCode: 1,
+      expiresAt: null,
+      organizationName: orgName(),
+    });
+    if (!res.ok) {
+      setDelegateBusy(false);
+      toast.error(res.error);
+      return;
+    }
+    const codes = res.codes;
+    setGenerated(codes);
+    const recipients = parsed
+      .map((d, i) => ({ email: d.email, name: d.name, link: codes[i] ? redeemUrl(codes[i]) : "" }))
+      .filter((r) => r.link.length > 0);
+    const mail = await emailVoucherLinksToDelegatesAction({ serviceLabel: "Pre-Hire®", recipients });
+    setDelegateBusy(false);
+    if ("error" in mail) {
+      toast.error(mail.error);
+      return;
+    }
+    setDelegateMsg(`Created ${codes.length} code(s) and emailed ${mail.sent} of ${mail.total} delegate(s).`);
+    setDelegateText("");
+    router.refresh();
   }
 
   function onDisable(id: string) {
@@ -86,6 +154,21 @@ export function PrehireVouchersClient({
     });
   }
 
+  const reqSelect = (
+    <select
+      value={requisitionId}
+      onChange={(e) => setRequisitionId(e.target.value)}
+      className="flex h-9 w-full max-w-xl rounded-md border border-input bg-background px-3 py-1 text-sm"
+    >
+      {requisitions.map((r) => (
+        <option key={r.id} value={r.id}>
+          {r.title}
+          {r.organization_name ? ` - ${r.organization_name}` : ""}
+        </option>
+      ))}
+    </select>
+  );
+
   return (
     <div className="space-y-6">
       {requisitions.length === 0 ? (
@@ -95,67 +178,147 @@ export function PrehireVouchersClient({
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Ticket className="h-4 w-4 text-accent" /> Issue Pre-Hire® vouchers
-            </CardTitle>
+            <CardTitle className="text-base">Issue Pre-Hire® vouchers</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              {step === 1 && "Step 1 of 3 · Which role + a label"}
+              {step === 2 && "Step 2 of 3 · How should the vouchers reach people?"}
+              {step === 3 && target === "client" && "Step 3 of 3 · Generate and send to the client"}
+              {step === 3 && target === "delegates" && "Step 3 of 3 · Email a link to each applicant"}
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+              {["Role", "Delivery", "Issue"].map((s, i) => {
+                const n = i + 1;
+                return (
+                  <span key={s} className="flex items-center gap-2">
+                    <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-semibold ${step === n ? "bg-[#010131] text-white" : step > n ? "bg-[#5391D5] text-white" : "bg-muted text-muted-foreground"}`}>{n}</span>
+                    <span className={step === n ? "font-medium text-foreground" : "text-muted-foreground"}>{s}</span>
+                    {n < 3 && <ChevronRight className="h-3 w-3 text-muted-foreground" />}
+                  </span>
+                );
+              })}
+            </div>
           </CardHeader>
-          <CardContent>
-          <form onSubmit={onCreate} className="space-y-4">
-            {/* Standard identity fields - the same top row on every voucher page */}
-            <div className="flex flex-wrap items-end gap-3">
-              <div className="w-28 space-y-1.5">
-                <Label htmlFor="ph-count" className="text-xs">How many codes</Label>
-                <Input id="ph-count" type="number" min={1} max={500} value={count} onChange={(e) => setCount(Number(e.target.value))} />
-              </div>
-              <div className="w-28 space-y-1.5">
-                <Label htmlFor="ph-seats" className="text-xs">Seats / code</Label>
-                <Input id="ph-seats" type="number" min={1} max={1000} value={seats} onChange={(e) => setSeats(Number(e.target.value))} />
-              </div>
-              <div className="flex-1 min-w-[12rem] space-y-1.5">
-                <Label htmlFor="ph-label" className="text-xs">Label (optional)</Label>
-                <Input id="ph-label" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. analyst intake" />
-              </div>
-              <div className="w-44 space-y-1.5">
-                <Label htmlFor="ph-exp" className="text-xs">Expires (optional)</Label>
-                <Input id="ph-exp" type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
-              </div>
-            </div>
-
-            {/* Pre-Hire options - the per-service control in the same dashed callout every page uses */}
-            <div className="space-y-3 rounded-lg border border-dashed border-[#5391D5]/50 bg-[#5391D5]/5 p-3">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5 text-sm font-semibold text-[#010131]">
-                  <SlidersHorizontal className="h-4 w-4 text-[#5391D5]" /> Pre-Hire options
+          <CardContent className="space-y-4">
+            {/* STEP 1 — requisition + label */}
+            {step === 1 && (
+              <>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Label (optional)</Label>
+                  <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. analyst intake" className="max-w-md" />
                 </div>
-                <span className="rounded-full bg-[#5391D5]/10 px-2 py-0.5 text-[11px] font-medium text-[#5391D5]">swaps per service</span>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="ph-req" className="text-xs">Requisition (the role these vouchers screen for)</Label>
-                <select
-                  id="ph-req"
-                  value={requisitionId}
-                  onChange={(e) => setRequisitionId(e.target.value)}
-                  className="flex h-9 w-full max-w-xl rounded-md border border-input bg-background px-3 py-1 text-sm"
-                >
-                  {requisitions.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.title}
-                      {r.organization_name ? ` - ${r.organization_name}` : ""}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+                <div className="space-y-3 rounded-lg border border-dashed border-[#5391D5]/50 bg-[#5391D5]/5 p-3">
+                  <div className="flex items-center gap-1.5 text-sm font-semibold text-[#010131]">
+                    <SlidersHorizontal className="h-4 w-4 text-[#5391D5]" /> Pre-Hire options
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Requisition (the role these vouchers screen for)</Label>
+                    {reqSelect}
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <Button onClick={() => setStep(2)} disabled={!requisitionId} className="gap-1.5">
+                    Next <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </>
+            )}
 
-            <div className="flex flex-wrap items-center gap-3">
-              <Button type="submit" disabled={pending}>
-                {pending ? "Working..." : "Create vouchers"}
-              </Button>
-              <p className="text-xs text-muted-foreground">
-                One code with N seats = a single link your client shares with N applicants. N codes x 1 seat = single-use links.
-              </p>
-            </div>
-          </form>
+            {/* STEP 2 — delivery choice */}
+            {step === 2 && (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Do you want the vouchers sent to the client to distribute, or emailed to each applicant directly?
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <button type="button" onClick={() => { setTarget("client"); setGenerated([]); setStep(3); }} className="rounded-lg border border-border p-4 text-left transition hover:border-[#5391D5] hover:bg-[#5391D5]/5">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-[#010131]"><Building2 className="h-4 w-4 text-[#5391D5]" /> Send to the client</div>
+                    <p className="mt-1 text-xs text-muted-foreground">Generate a batch, then email or copy the links to the client - they distribute to applicants.</p>
+                  </button>
+                  <button type="button" onClick={() => { setTarget("delegates"); setStep(3); }} className="rounded-lg border border-border p-4 text-left transition hover:border-[#5391D5] hover:bg-[#5391D5]/5">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-[#010131]"><Users className="h-4 w-4 text-[#5391D5]" /> Send to applicants</div>
+                    <p className="mt-1 text-xs text-muted-foreground">Upload or paste a list of emails; each applicant gets their own link.</p>
+                  </button>
+                </div>
+                <div>
+                  <Button variant="outline" onClick={() => setStep(1)} className="gap-1.5"><ChevronLeft className="h-4 w-4" /> Back</Button>
+                </div>
+              </>
+            )}
+
+            {/* STEP 3a — to client */}
+            {step === 3 && target === "client" && (
+              <>
+                <div className="flex flex-wrap items-end gap-3">
+                  <div className="w-36 space-y-1.5">
+                    <Label className="text-xs">How many vouchers</Label>
+                    <Input type="number" min={1} max={500} value={count} onChange={(e) => setCount(Math.max(1, Number(e.target.value) || 1))} />
+                  </div>
+                  <div className="w-32 space-y-1.5">
+                    <Label className="text-xs">Seats / code</Label>
+                    <Input type="number" min={1} max={1000} value={seats} onChange={(e) => setSeats(Math.max(1, Number(e.target.value) || 1))} />
+                  </div>
+                  <Button onClick={generate} disabled={pending} className="gap-1.5">
+                    {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ticket className="h-4 w-4" />} Generate
+                  </Button>
+                </div>
+                {generated.length > 0 && (
+                  <>
+                    <div className="rounded-lg border border-border bg-muted/40 p-4">
+                      <div className="mb-2 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-sm font-medium">{generated.length} voucher link(s) ready</p>
+                        <Button size="sm" variant="outline" className="gap-1.5" onClick={() => copyText(generated.map(redeemUrl).join("\n"))}>
+                          <Link2 className="h-3.5 w-3.5" /> Copy links
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Copy the links and send them to the client yourself, or email the whole batch below.</p>
+                    </div>
+                    <VoucherClientEmailCard serviceLabel="Pre-Hire®" defaultOpen items={generated.map((c) => ({ code: c, link: redeemUrl(c) }))} />
+                  </>
+                )}
+                <div>
+                  <Button variant="outline" onClick={() => setStep(2)} className="gap-1.5"><ChevronLeft className="h-4 w-4" /> Back</Button>
+                </div>
+              </>
+            )}
+
+            {/* STEP 3b — to applicants */}
+            {step === 3 && target === "delegates" && (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Upload a text/CSV file of applicant emails (or paste them, one per line as <code className="font-mono">email</code> or <code className="font-mono">email,name</code>). Each applicant gets their own single-use link emailed to them.
+                </p>
+                <div className="flex items-center gap-2">
+                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted">
+                    <Upload className="h-3.5 w-3.5" /> Upload list (CSV / TXT)
+                    <input
+                      type="file"
+                      accept=".csv,.txt,.tsv,text/csv,text/plain"
+                      className="hidden"
+                      disabled={delegateBusy}
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) importEmailsFromFile(f); e.currentTarget.value = ""; }}
+                    />
+                  </label>
+                  {delegateText.trim() && (
+                    <button type="button" onClick={() => { setDelegateText(""); setDelegateMsg(null); }} className="text-xs text-muted-foreground hover:text-foreground hover:underline">Clear</button>
+                  )}
+                </div>
+                <textarea
+                  value={delegateText}
+                  onChange={(e) => setDelegateText(e.target.value)}
+                  rows={5}
+                  placeholder={"one email per line\nahmed@client.com\nsara@client.com, Sara Ali"}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-sm"
+                  disabled={delegateBusy}
+                />
+                {delegateMsg && <div className="rounded-md bg-emerald-50 p-2.5 text-sm text-emerald-700">{delegateMsg}</div>}
+                <div className="flex flex-col items-stretch justify-between gap-2 sm:flex-row sm:items-center">
+                  <Button variant="outline" onClick={() => setStep(2)} className="gap-1.5"><ChevronLeft className="h-4 w-4" /> Back</Button>
+                  <Button onClick={sendToDelegates} disabled={delegateBusy || !delegateText.trim()} className="gap-1.5">
+                    {delegateBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ticket className="h-4 w-4" />} Generate &amp; email each applicant
+                  </Button>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       )}
@@ -203,7 +366,7 @@ export function PrehireVouchersClient({
                     </TableCell>
                     <TableCell>
                       <button
-                        onClick={() => copyLink(v.code)}
+                        onClick={() => copyText(redeemUrl(v.code))}
                         className="inline-flex items-center gap-1 text-xs text-accent hover:underline"
                       >
                         <Copy className="h-3 w-3" /> Copy

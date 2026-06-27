@@ -66,6 +66,9 @@ export function VouchersClient({
   const [maxUses, setMaxUses] = useState(1);
   const [engagementLabel, setEngagementLabel] = useState("");
   const [language, setLanguage] = useState("en");
+  const [contactName, setContactName] = useState("");
+  const [contactTitle, setContactTitle] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
 
   // Live origin for shareable redeem links (window is client-only).
   const [origin, setOrigin] = useState("");
@@ -264,6 +267,20 @@ export function VouchersClient({
                   <Input id="engLabel" value={engagementLabel} onChange={(e) => setEngagementLabel(e.target.value)} placeholder="e.g. ADNOC AI Readiness 2026" />
                 </div>
               </div>
+              <div className="flex flex-wrap items-end gap-3">
+                <div className="flex-1 min-w-[12rem] space-y-1.5">
+                  <Label className="text-xs">Client contact name</Label>
+                  <Input value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="e.g. Sara Ahmed" />
+                </div>
+                <div className="flex-1 min-w-[10rem] space-y-1.5">
+                  <Label className="text-xs">Contact title</Label>
+                  <Input value={contactTitle} onChange={(e) => setContactTitle(e.target.value)} placeholder="e.g. L&D Director" />
+                </div>
+                <div className="flex-1 min-w-[12rem] space-y-1.5">
+                  <Label className="text-xs">Contact email (for sending vouchers)</Label>
+                  <Input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="contact@client.com" />
+                </div>
+              </div>
               <div>
                 <button
                   type="button"
@@ -404,6 +421,8 @@ export function VouchersClient({
                   <VoucherClientEmailCard
                     serviceLabel="AI Readiness Compass®"
                     defaultOpen
+                    initialName={contactTitle ? `${contactName} (${contactTitle})`.trim() : contactName}
+                    initialEmail={contactEmail}
                     items={generated.map((c) => ({ code: c, link: redeemLink(c) }))}
                   />
                 </>

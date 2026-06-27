@@ -15,13 +15,17 @@ export function VoucherClientEmailCard({
   serviceLabel,
   items,
   defaultOpen = false,
+  initialName = "",
+  initialEmail = "",
 }: {
   serviceLabel: string;
   items: { code: string; link: string }[];
   defaultOpen?: boolean;
+  initialName?: string;
+  initialEmail?: string;
 }) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [name, setName] = useState(initialName);
+  const [email, setEmail] = useState(initialEmail);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const ready = items.length > 0 && email.trim().length > 3;

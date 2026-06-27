@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Send, Link2, Copy, Loader2, Users, Upload, X, Check, Minus } from "lucide-react";
+import { Send, Link2, Copy, Loader2, Users, Upload, X, Check, Minus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -70,6 +70,7 @@ async function parseDelegateFile(file: File): Promise<{ delegates: Delegate[]; e
 // shared link with N seats. The parent supplies `onIssue`.
 export function RrVoucherPanel({ onIssue }: { onIssue: (input: IssueInput) => Promise<IssueResult> }) {
   const [mode, setMode] = useState<Mode>("individual");
+  const [step, setStep] = useState(1);
   const [text, setText] = useState("");
   const [seats, setSeats] = useState(10);
   const [origin, setOrigin] = useState("");
@@ -122,15 +123,36 @@ export function RrVoucherPanel({ onIssue }: { onIssue: (input: IssueInput) => Pr
   return (
     <CollapsibleCard title="Issue vouchers" icon={Send} defaultOpen={false}
       subtitle="Individual links per delegate (with optional email), or one shared multi-seat link">
-      <div className="inline-flex rounded-md border border-border p-0.5">
-        <button type="button" onClick={() => setMode("individual")}
-          className={`inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium ${mode === "individual" ? "bg-[#010131] text-white" : "text-muted-foreground hover:bg-muted"}`}>
-          <Send className="h-3.5 w-3.5" /> Individual links
-        </button>
-        <button type="button" onClick={() => setMode("pool")}
-          className={`inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium ${mode === "pool" ? "bg-[#010131] text-white" : "text-muted-foreground hover:bg-muted"}`}>
-          <Link2 className="h-3.5 w-3.5" /> One shared link
-        </button>
+      <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+        {["Delivery", "Issue"].map((s, i) => {
+          const n = i + 1;
+          return (
+            <span key={s} className="flex items-center gap-2">
+              <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-semibold ${step === n ? "bg-[#010131] text-white" : step > n ? "bg-[#5391D5] text-white" : "bg-muted text-muted-foreground"}`}>{n}</span>
+              <span className={step === n ? "font-medium text-foreground" : "text-muted-foreground"}>{s}</span>
+              {n < 2 && <ChevronRight className="h-3 w-3 text-muted-foreground" />}
+            </span>
+          );
+        })}
+      </div>
+
+      {step === 1 && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <button type="button" onClick={() => { setMode("individual"); setStep(2); }} className="rounded-lg border border-border p-4 text-left transition hover:border-[#5391D5] hover:bg-[#5391D5]/5">
+            <div className="flex items-center gap-2 text-sm font-semibold text-[#010131]"><Send className="h-4 w-4 text-[#5391D5]" /> Send to delegates</div>
+            <p className="mt-1 text-xs text-muted-foreground">A single-use link per delegate (upload or paste a list), optionally emailed to each.</p>
+          </button>
+          <button type="button" onClick={() => { setMode("pool"); setStep(2); }} className="rounded-lg border border-border p-4 text-left transition hover:border-[#5391D5] hover:bg-[#5391D5]/5">
+            <div className="flex items-center gap-2 text-sm font-semibold text-[#010131]"><Users className="h-4 w-4 text-[#5391D5]" /> One shared link</div>
+            <p className="mt-1 text-xs text-muted-foreground">One link with the seats you choose - share it with the whole group.</p>
+          </button>
+        </div>
+      )}
+
+      {step === 2 && (
+      <>
+      <div className="mb-3">
+        <Button variant="outline" size="sm" onClick={() => setStep(1)} className="gap-1.5"><ChevronLeft className="h-3.5 w-3.5" /> Back</Button>
       </div>
 
       {mode === "individual" ? (
@@ -250,6 +272,8 @@ export function RrVoucherPanel({ onIssue }: { onIssue: (input: IssueInput) => Pr
           </div>
           <p className="mt-2 text-[11px] text-muted-foreground">Share this one link with your group. The first {result.vouchers[0].maxUses} people to open it can take the assessment.</p>
         </div>
+      )}
+      </>
       )}
     </CollapsibleCard>
   );

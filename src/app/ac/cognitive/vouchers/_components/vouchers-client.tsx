@@ -8,7 +8,6 @@ import { AdminVoucherIssuer, type AdminVoucherRow } from "@/components/shared/ad
 import {
   generateCognitiveVouchersAction,
   disableCognitiveVoucherAction,
-  emailVoucherDelegatesAction,
   emailExistingVoucherCodeAction,
 } from "../actions";
 
@@ -59,18 +58,6 @@ export function VouchersClient({ vouchers, clients }: { vouchers: CognitiveVouch
       onDisable={async (id) => {
         const res = await disableCognitiveVoucherAction(id);
         return "error" in res ? { error: res.error } : { ok: true };
-      }}
-      onEmailDelegates={async ({ delegates, common }) => {
-        const res = await emailVoucherDelegatesAction({
-          delegates,
-          label: common.label || undefined,
-          clientName: common.clientName || undefined,
-          projectLabel: projectLabel || undefined,
-          language,
-          expiresAt: common.expiresAt,
-        });
-        if ("error" in res) return { error: res.error };
-        return { results: res.results.map((r) => ({ email: r.email, ok: r.ok, error: r.error })) };
       }}
       onEmailRow={async (code) => {
         const email = window.prompt("Email this code to which address?");

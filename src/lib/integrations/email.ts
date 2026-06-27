@@ -34,7 +34,8 @@ export type EmailTemplate =
   | "prehire_invitation"
   | "prehire_client_report"
   | "role_readiness_invitation"
-  | "voucher_batch_to_client";
+  | "voucher_batch_to_client"
+  | "voucher_to_delegate";
 
 /** Optional file attachment (e.g. a generated PDF report). */
 export type EmailAttachment = {
@@ -230,6 +231,19 @@ VIFM Assessment Center`,
 Here are your {{count}} VIFM {{serviceLabel}} access link(s). Share each link with the person who will take the assessment - they start straight away, no account needed. Each link opens the page with the code already filled in.
 
 {{links}}
+
+Best regards,
+Virginia Institute of Finance and Management`,
+  },
+  voucher_to_delegate: {
+    subject: "Your VIFM {{serviceLabel}} access link",
+    body: `Dear {{name}},
+
+Here is your personal VIFM {{serviceLabel}} access link. Click it to begin - no account needed; the code is already filled in.
+
+{{link}}
+
+If the link doesn't open, copy and paste it into your browser.
 
 Best regards,
 Virginia Institute of Finance and Management`,

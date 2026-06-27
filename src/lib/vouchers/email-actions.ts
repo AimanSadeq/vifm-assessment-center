@@ -33,3 +33,25 @@ export async function emailVoucherBatchToClientAction(input: {
   });
   return ok ? { ok: true } : { error: "The email could not be sent. Copy the links above and send them manually." };
 }
+
+// Email ONE personal link to each delegate (used by the wizard's "to delegates"
+// path on every portal). Service-agnostic: caller pre-builds each delegate's
+// redeem link. Admin-gated; best-effort per recipient.
+export async function emailVoucherLinksToDelegatesAction(input: {
+  serviceLabel: string;
+  recipients: { email: string; name?: string; link: string }[];
+}): Promise<{ ok: true; sent: number; total: number } | { error: string }> {
+  await requireRole(["admin"]);
+  const recips = input.recipients.filter((r) => EMAIL_RE.test((r.email ?? "").trim()));
+  if (!recips.length) return { error: "No valid delegate email addresses." };
+  let sent = 0;
+  for (const r of recips) {
+    const ok = await sendEmail({
+      to: r.email.trim(),
+      template: "voucher_to_delegate",
+      data: { name: (r.name ?? "").trim() || "there", serviceLabel: input.serviceLabel, link: r.link },
+    });
+    if (ok) sent += 1;
+  }
+  return { ok: true, sent, total: recips.length };
+}

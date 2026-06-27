@@ -9,19 +9,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CollapsibleCard } from "@/components/shared/collapsible-card";
 import { VoucherClientEmailCard } from "@/components/shared/voucher-client-email-card";
-import { Loader2, Ticket, Copy, Ban, Link2, Mail, Send, SlidersHorizontal } from "lucide-react";
+import { Loader2, Ticket, Copy, Ban, Link2, Mail, SlidersHorizontal, Upload, ChevronLeft, ChevronRight, Building2, Users } from "lucide-react";
 import { fmtDate } from "@/lib/utils/format-date";
 import { copyToClipboard } from "@/lib/utils/clipboard";
+import { emailVoucherLinksToDelegatesAction } from "@/lib/vouchers/email-actions";
 
 // ─────────────────────────────────────────────────────────────
-// Shared admin voucher-issuer shell. One consistent look + behaviour for every
-// service's admin voucher page: a "Generate codes" card (common fields + an
-// optional per-service `options` slot), a "Just generated" card with copy-link,
-// and an "All vouchers" table with copy-link / copy-code / disable per row.
-// Each service renders this with its own options + generate/disable actions, so
-// the chrome is identical and only the options block differs.
+// Shared admin voucher-issuer shell - a guided 3-step wizard used by every
+// service's admin voucher page: (1) details + per-service options, (2) deliver
+// to the client or to delegates, (3a) generate a batch then copy/email it to the
+// client, or (3b) upload/paste a delegate list and email each one their own
+// link. Each service supplies its own options + generate/disable actions, so the
+// flow is identical and only the options block differs.
 // ─────────────────────────────────────────────────────────────
 
 export type AdminVoucherRow = {
@@ -49,20 +49,15 @@ export type AdminVoucherIssuerProps = {
   redeemPath: string;
   clients: string[];
   vouchers: AdminVoucherRow[];
-  /** Per-service inline options rendered in the generate field row (small fields). */
+  /** Per-service inline options rendered in step 1 (small fields). */
   options?: ReactNode;
-  /** Per-service options rendered as a full-width block below the field row
+  /** Per-service options rendered as a full-width block in step 1
    *  (for richer panels, e.g. Persona's purpose + scope picker). */
   optionsBlock?: ReactNode;
-  /** Short service name for the options callout header, e.g. "Fluent" -> "Fluent options". */
+  /** Short service name for the options callout header + emails, e.g. "Fluent". */
   optionsLabel?: string;
   onGenerate: (c: GenerateCommon) => Promise<{ codes: string[] } | { error: string }>;
   onDisable?: (id: string) => Promise<{ ok: true } | { error: string }>;
-  /** Optional "email links to delegates" card (parent adds its own options, e.g. language). */
-  onEmailDelegates?: (a: {
-    delegates: { email: string; name?: string }[];
-    common: GenerateCommon;
-  }) => Promise<{ results: { email: string; ok: boolean; error?: string }[] } | { error: string }>;
   /** Optional per-row "email this code" action (parent owns the prompt + toasts). */
   onEmailRow?: (code: string) => Promise<void>;
   /** Per-service badge shown next to the client in each table row (e.g. "Proctored"). */
@@ -81,7 +76,6 @@ export function AdminVoucherIssuer({
   options,
   onGenerate,
   onDisable,
-  onEmailDelegates,
   onEmailRow,
   optionsBlock,
   optionsLabel,
@@ -92,6 +86,13 @@ export function AdminVoucherIssuer({
   clientPlaceholder = "Tag to a client org",
 }: AdminVoucherIssuerProps) {
   const router = useRouter();
+  const serviceLabel = optionsLabel ?? "assessment";
+
+  // Wizard state
+  const [step, setStep] = useState(1);
+  const [target, setTarget] = useState<"client" | "delegates" | null>(null);
+
+  // Shared fields
   const [count, setCount] = useState(1);
   const [label, setLabel] = useState("");
   const [clientName, setClientName] = useState("");
@@ -99,9 +100,12 @@ export function AdminVoucherIssuer({
   const [expiresAt, setExpiresAt] = useState("");
   const [busy, setBusy] = useState(false);
   const [lastCodes, setLastCodes] = useState<string[]>([]);
+
+  // Delegate path state
   const [delegates, setDelegates] = useState("");
-  const [emailing, setEmailing] = useState(false);
-  const [emailResults, setEmailResults] = useState<{ email: string; ok: boolean; error?: string }[]>([]);
+  const [delegateBusy, setDelegateBusy] = useState(false);
+  const [delegateMsg, setDelegateMsg] = useState<string | null>(null);
+
   const [origin, setOrigin] = useState("");
   useEffect(() => setOrigin(window.location.origin), []);
   const fullLink = (code: string) => `${origin}${redeemPath}?code=${encodeURIComponent(code)}`;
@@ -146,170 +150,245 @@ export function AdminVoucherIssuer({
         const [email, ...rest] = line.split(",");
         return { email: (email ?? "").trim(), name: rest.join(",").trim() || undefined };
       })
-      .filter((d) => d.email.length > 0);
+      .filter((d) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email));
 
-  const sendDelegates = async () => {
-    if (!onEmailDelegates) return;
+  // Pull emails from an uploaded CSV/TXT regardless of column layout.
+  const importEmailsFromFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result ?? "");
+      const found = (text.match(/[^\s,;:<>"'()[\]]+@[^\s,;:<>"'()[\]]+\.[^\s,;:<>"'()[\]]+/g) ?? [])
+        .map((e) => e.trim())
+        .filter((e) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e));
+      if (!found.length) {
+        toast.error("No email addresses found in that file.");
+        return;
+      }
+      const existing = delegates.split(/\r?\n/).map((l) => l.split(",")[0]?.trim().toLowerCase()).filter(Boolean);
+      const merged = Array.from(new Set([...existing, ...found.map((e) => e.toLowerCase())]));
+      setDelegates(merged.join("\n"));
+      setDelegateMsg(`Loaded ${found.length} email(s) from ${file.name}.`);
+    };
+    reader.onerror = () => toast.error("Could not read that file.");
+    reader.readAsText(file);
+  };
+
+  const sendToDelegates = async () => {
     const parsed = parseDelegates(delegates);
-    if (parsed.length === 0) {
+    if (!parsed.length) {
       toast.error("Add at least one email (one per line, optionally email,name).");
       return;
     }
-    setEmailing(true);
-    setEmailResults([]);
-    const res = await onEmailDelegates({ delegates: parsed, common: { count, maxUses, clientName, label, expiresAt: expiresAt || null } });
-    setEmailing(false);
+    setDelegateBusy(true);
+    setDelegateMsg(null);
+    // One single-use code per delegate, then email each their own link.
+    const res = await onGenerate({ count: parsed.length, maxUses: 1, clientName, label, expiresAt: expiresAt || null });
     if ("error" in res) {
+      setDelegateBusy(false);
       toast.error(res.error);
       return;
     }
-    setEmailResults(res.results);
-    const sent = res.results.filter((r) => r.ok).length;
-    if (sent === res.results.length) toast.success(`Sent ${sent} link${sent === 1 ? "" : "s"}.`);
-    else toast.warning(`Sent ${sent} of ${res.results.length}. See the results below.`);
+    const codes = res.codes;
+    setLastCodes(codes);
+    const recipients = parsed
+      .map((d, i) => ({ email: d.email, name: d.name, link: codes[i] ? fullLink(codes[i]) : "" }))
+      .filter((r) => r.link.length > 0);
+    const mail = await emailVoucherLinksToDelegatesAction({ serviceLabel, recipients });
+    setDelegateBusy(false);
+    if ("error" in mail) {
+      toast.error(mail.error);
+      return;
+    }
+    setDelegateMsg(`Generated ${codes.length} code(s) and emailed ${mail.sent} of ${mail.total} delegate(s).`);
+    toast.success(`Emailed ${mail.sent} of ${mail.total} delegate(s).`);
+    setDelegates("");
     router.refresh();
   };
 
-  const genButton = (
-    <Button onClick={generate} disabled={busy || count < 1} className="gap-1.5">
-      {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ticket className="h-4 w-4" />}
-      Generate
-    </Button>
-  );
-  const hasExtras = !!options || !!optionsBlock;
-
   return (
     <div className="space-y-6">
+      {/* ── Issue wizard ── */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Generate codes</CardTitle>
+          <CardTitle className="text-base">Issue {optionsLabel ? `${optionsLabel} ` : ""}vouchers</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            {step === 1 && "Step 1 of 3 · Who is this for?"}
+            {step === 2 && "Step 2 of 3 · How should the vouchers reach people?"}
+            {step === 3 && target === "client" && "Step 3 of 3 · Send the batch to the client"}
+            {step === 3 && target === "delegates" && "Step 3 of 3 · Email a link to each delegate"}
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+            {["Details", "Delivery", "Issue"].map((s, i) => {
+              const n = i + 1;
+              return (
+                <span key={s} className="flex items-center gap-2">
+                  <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-semibold ${step === n ? "bg-[#010131] text-white" : step > n ? "bg-[#5391D5] text-white" : "bg-muted text-muted-foreground"}`}>{n}</span>
+                  <span className={step === n ? "font-medium text-foreground" : "text-muted-foreground"}>{s}</span>
+                  {n < 3 && <ChevronRight className="h-3 w-3 text-muted-foreground" />}
+                </span>
+              );
+            })}
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-wrap items-end gap-3">
-          <div className="w-24 space-y-1.5">
-            <Label className="text-xs">How many</Label>
-            <Input type="number" min={1} max={500} value={count} onChange={(e) => setCount(Number(e.target.value))} />
-          </div>
-          <div className="w-28 space-y-1.5">
-            <Label className="text-xs">Seats / code</Label>
-            <Input type="number" min={1} value={maxUses} onChange={(e) => setMaxUses(Number(e.target.value))} />
-          </div>
-          {showClient && (
-            <div className="flex-1 min-w-[12rem] space-y-1.5">
-              <Label className="text-xs">Client (optional)</Label>
-              <Input value={clientName} onChange={(e) => setClientName(e.target.value)} list="avi-client-list" placeholder={clientPlaceholder} />
-              <datalist id="avi-client-list">
-                {clients.map((c) => (
-                  <option key={c} value={c} />
-                ))}
-              </datalist>
-            </div>
-          )}
-          {showLabel && (
-            <div className="flex-1 min-w-[10rem] space-y-1.5">
-              <Label className="text-xs">Label (optional)</Label>
-              <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Q3 intake" />
-            </div>
-          )}
-          {showExpiry && (
-            <div className="w-44 space-y-1.5">
-              <Label className="text-xs">Expires (optional)</Label>
-              <Input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
-            </div>
-          )}
-            {!hasExtras && genButton}
-          </div>
-          {options && (
-            <div className="rounded-lg border border-dashed border-[#5391D5]/50 bg-[#5391D5]/5 p-3">
-              <div className="mb-2.5 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5 text-sm font-semibold text-[#010131]">
-                  <SlidersHorizontal className="h-4 w-4 text-[#5391D5]" />
-                  {optionsLabel ? `${optionsLabel} options` : "Options"}
-                </div>
-                <span className="rounded-full bg-[#5391D5]/10 px-2 py-0.5 text-[11px] font-medium text-[#5391D5]">
-                  swaps per service
-                </span>
+          {/* STEP 1 — details + options */}
+          {step === 1 && (
+            <>
+              <div className="flex flex-wrap items-end gap-3">
+                {showClient && (
+                  <div className="flex-1 min-w-[12rem] space-y-1.5">
+                    <Label className="text-xs">Client (optional)</Label>
+                    <Input value={clientName} onChange={(e) => setClientName(e.target.value)} list="avi-client-list" placeholder={clientPlaceholder} />
+                    <datalist id="avi-client-list">
+                      {clients.map((c) => (
+                        <option key={c} value={c} />
+                      ))}
+                    </datalist>
+                  </div>
+                )}
+                {showLabel && (
+                  <div className="flex-1 min-w-[10rem] space-y-1.5">
+                    <Label className="text-xs">Label (optional)</Label>
+                    <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Q3 intake" />
+                  </div>
+                )}
+                {showExpiry && (
+                  <div className="w-44 space-y-1.5">
+                    <Label className="text-xs">Expires (optional)</Label>
+                    <Input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
+                  </div>
+                )}
               </div>
-              <div className="flex flex-wrap items-end gap-3">{options}</div>
-            </div>
+              {options && (
+                <div className="rounded-lg border border-dashed border-[#5391D5]/50 bg-[#5391D5]/5 p-3">
+                  <div className="mb-2.5 flex items-center gap-1.5 text-sm font-semibold text-[#010131]">
+                    <SlidersHorizontal className="h-4 w-4 text-[#5391D5]" />
+                    {optionsLabel ? `${optionsLabel} options` : "Options"}
+                  </div>
+                  <div className="flex flex-wrap items-end gap-3">{options}</div>
+                </div>
+              )}
+              {optionsBlock}
+              <div className="flex justify-end">
+                <Button onClick={() => setStep(2)} className="gap-1.5">
+                  Next <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </>
           )}
-          {optionsBlock}
-          {hasExtras && genButton}
+
+          {/* STEP 2 — delivery choice */}
+          {step === 2 && (
+            <>
+              <p className="text-sm text-muted-foreground">
+                Do you want the vouchers sent to the client to distribute, or emailed to each delegate directly?
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => { setTarget("client"); setLastCodes([]); setStep(3); }}
+                  className="rounded-lg border border-border p-4 text-left transition hover:border-[#5391D5] hover:bg-[#5391D5]/5"
+                >
+                  <div className="flex items-center gap-2 text-sm font-semibold text-[#010131]"><Building2 className="h-4 w-4 text-[#5391D5]" /> Send to the client</div>
+                  <p className="mt-1 text-xs text-muted-foreground">Generate a batch, then email or copy the links to the client - they distribute to their people.</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setTarget("delegates"); setStep(3); }}
+                  className="rounded-lg border border-border p-4 text-left transition hover:border-[#5391D5] hover:bg-[#5391D5]/5"
+                >
+                  <div className="flex items-center gap-2 text-sm font-semibold text-[#010131]"><Users className="h-4 w-4 text-[#5391D5]" /> Send to delegates</div>
+                  <p className="mt-1 text-xs text-muted-foreground">Upload or paste a list of emails; each delegate gets their own link.</p>
+                </button>
+              </div>
+              <div>
+                <Button variant="outline" onClick={() => setStep(1)} className="gap-1.5"><ChevronLeft className="h-4 w-4" /> Back</Button>
+              </div>
+            </>
+          )}
+
+          {/* STEP 3a — to client */}
+          {step === 3 && target === "client" && (
+            <>
+              <div className="flex flex-wrap items-end gap-3">
+                <div className="w-36 space-y-1.5">
+                  <Label className="text-xs">How many vouchers</Label>
+                  <Input type="number" min={1} max={500} value={count} onChange={(e) => setCount(Math.max(1, Number(e.target.value) || 1))} />
+                </div>
+                <div className="w-32 space-y-1.5">
+                  <Label className="text-xs">Seats / code</Label>
+                  <Input type="number" min={1} value={maxUses} onChange={(e) => setMaxUses(Math.max(1, Number(e.target.value) || 1))} />
+                </div>
+                <Button onClick={generate} disabled={busy} className="gap-1.5">
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ticket className="h-4 w-4" />} Generate
+                </Button>
+              </div>
+              {lastCodes.length > 0 && (
+                <>
+                  <div className="rounded-lg border border-border bg-muted/40 p-4">
+                    <div className="mb-2 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-sm font-medium">{lastCodes.length} voucher link(s) ready</p>
+                      <Button size="sm" variant="outline" className="gap-1.5" onClick={() => copy(lastCodes.map(fullLink).join("\n"))}>
+                        <Link2 className="h-3.5 w-3.5" /> Copy links
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Copy the links and send them to the client yourself, or email the whole batch below.</p>
+                  </div>
+                  <VoucherClientEmailCard serviceLabel={serviceLabel} defaultOpen items={lastCodes.map((c) => ({ code: c, link: fullLink(c) }))} />
+                </>
+              )}
+              <div>
+                <Button variant="outline" onClick={() => setStep(2)} className="gap-1.5"><ChevronLeft className="h-4 w-4" /> Back</Button>
+              </div>
+            </>
+          )}
+
+          {/* STEP 3b — to delegates */}
+          {step === 3 && target === "delegates" && (
+            <>
+              <p className="text-sm text-muted-foreground">
+                Upload a text/CSV file of delegate emails (or paste them, one per line as <code className="font-mono">email</code> or <code className="font-mono">email,name</code>). Each delegate gets their own single-use link emailed to them.
+              </p>
+              <div className="flex items-center gap-2">
+                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted">
+                  <Upload className="h-3.5 w-3.5" /> Upload list (CSV / TXT)
+                  <input
+                    type="file"
+                    accept=".csv,.txt,.tsv,text/csv,text/plain"
+                    className="hidden"
+                    disabled={delegateBusy}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) importEmailsFromFile(f);
+                      e.currentTarget.value = "";
+                    }}
+                  />
+                </label>
+                {delegates.trim() && (
+                  <button type="button" onClick={() => { setDelegates(""); setDelegateMsg(null); }} className="text-xs text-muted-foreground hover:text-foreground hover:underline">
+                    Clear
+                  </button>
+                )}
+              </div>
+              <textarea
+                value={delegates}
+                onChange={(e) => setDelegates(e.target.value)}
+                rows={5}
+                placeholder={"one email per line\nahmed@client.com\nsara@client.com, Sara Ali"}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-sm"
+                disabled={delegateBusy}
+              />
+              {delegateMsg && <div className="rounded-md bg-emerald-50 p-2.5 text-sm text-emerald-700">{delegateMsg}</div>}
+              <div className="flex flex-col items-stretch justify-between gap-2 sm:flex-row sm:items-center">
+                <Button variant="outline" onClick={() => setStep(2)} className="gap-1.5"><ChevronLeft className="h-4 w-4" /> Back</Button>
+                <Button onClick={sendToDelegates} disabled={delegateBusy || !delegates.trim()} className="gap-1.5">
+                  {delegateBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ticket className="h-4 w-4" />} Generate &amp; email each delegate
+                </Button>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
-
-      {onEmailDelegates && (
-        <CollapsibleCard
-          title="Email a code to each delegate"
-          icon={Send}
-          defaultOpen={false}
-          subtitle="One delegate per line; each gets their own single-use code as a one-click redeem link."
-        >
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              One delegate per line, as <code className="font-mono">email</code> or <code className="font-mono">email,name</code>.
-              Each gets a fresh single-use code emailed as a one-click redeem link. The fields above apply to this batch.
-            </p>
-            <textarea
-              value={delegates}
-              onChange={(e) => setDelegates(e.target.value)}
-              rows={4}
-              placeholder={"sara@example.com\nahmed@example.com, Ahmed Ali"}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-sm"
-            />
-            <Button onClick={sendDelegates} disabled={emailing || !delegates.trim()} className="gap-1.5">
-              {emailing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              Send links
-            </Button>
-            {emailResults.length > 0 && (
-              <div className="space-y-1 rounded-md border border-slate-200 p-3 text-sm">
-                {emailResults.map((r) => (
-                  <div key={r.email} className="flex items-center justify-between gap-2">
-                    <span className="font-mono text-xs">{r.email}</span>
-                    {r.ok ? (
-                      <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-50">Sent</Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-destructive" title={r.error}>Failed</Badge>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </CollapsibleCard>
-      )}
-
-      {lastCodes.length > 0 && (
-        <Card>
-          <CardHeader className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <CardTitle className="text-base">Just generated ({lastCodes.length})</CardTitle>
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => copy(lastCodes.map(fullLink).join("\n"))}>
-              <Link2 className="h-3.5 w-3.5" /> Copy all links
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <p className="mb-3 text-xs text-muted-foreground">
-              Send the full link to the client - they forward it to the candidate, who starts directly (the code is pre-filled).
-            </p>
-            <div className="space-y-2">
-              {lastCodes.map((c) => (
-                <div key={c} className="flex items-center gap-2 rounded border bg-muted/40 px-2.5 py-1.5">
-                  <code className="shrink-0 font-mono text-xs text-primary">{c}</code>
-                  <span className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">{fullLink(c)}</span>
-                  <Button variant="ghost" size="sm" className="h-7 shrink-0 gap-1 px-2 text-xs" onClick={() => copy(fullLink(c))}>
-                    <Link2 className="h-3 w-3" /> Copy link
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <VoucherClientEmailCard
-        serviceLabel={optionsLabel ?? "assessment"}
-        items={lastCodes.map((c) => ({ code: c, link: fullLink(c) }))}
-      />
 
       <Card>
         <CardHeader>

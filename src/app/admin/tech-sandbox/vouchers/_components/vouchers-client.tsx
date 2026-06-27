@@ -19,9 +19,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal, ChevronLeft, ChevronRight, Building2, Users, Loader2, Upload } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { VoucherClientEmailCard } from "@/components/shared/voucher-client-email-card";
+import { emailVoucherLinksToDelegatesAction } from "@/lib/vouchers/email-actions";
 import type { CustomBuilderData, FunctionRow } from "@/lib/technical-sandbox/service";
 import type { VoucherRow } from "@/lib/technical-sandbox/vouchers";
 import type { SavedCustomAssessment } from "@/lib/technical-sandbox/custom-assessments";
@@ -70,6 +71,13 @@ export function VouchersClient({
   const [emailMsg, setEmailMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [rowEmailing, setRowEmailing] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+
+  // Wizard state
+  const [step, setStep] = useState(1);
+  const [target, setTarget] = useState<"client" | "delegates" | null>(null);
+  const [delegateText, setDelegateText] = useState("");
+  const [delegateBusy, setDelegateBusy] = useState(false);
+  const [delegateMsg, setDelegateMsg] = useState<string | null>(null);
 
   // ── Custom (pick-and-choose) scope state ──
   const [builder, setBuilder] = useState<CustomBuilderData | null>(null);
@@ -304,13 +312,75 @@ export function VouchersClient({
     setEmailMsg({ ok: res.sent > 0, text: res.sent > 0 ? `Emailed ${res.results[0]?.email}.` : (res.results[0]?.error ?? "Send failed.") });
   }
 
+  function importEmailsFromFile(file: File) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result ?? "");
+      const found = (text.match(/[^\s,;:<>"'()[\]]+@[^\s,;:<>"'()[\]]+\.[^\s,;:<>"'()[\]]+/g) ?? [])
+        .map((e) => e.trim())
+        .filter((e) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e));
+      if (!found.length) { setDelegateMsg("No email addresses found in that file."); return; }
+      const existing = delegateText.split(/\r?\n/).map((l) => l.split(",")[0]?.trim().toLowerCase()).filter(Boolean);
+      const merged = Array.from(new Set([...existing, ...found.map((e) => e.toLowerCase())]));
+      setDelegateText(merged.join("\n"));
+      setDelegateMsg(`Loaded ${found.length} email(s) from ${file.name}.`);
+    };
+    reader.onerror = () => setDelegateMsg("Could not read that file.");
+    reader.readAsText(file);
+  }
+
+  async function sendToDelegates() {
+    const parsed = delegateText
+      .split(/\r?\n/)
+      .map((line) => { const [email, ...rest] = line.split(","); return { email: (email ?? "").trim(), name: rest.join(",").trim() || undefined }; })
+      .filter((d) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email));
+    if (!parsed.length) { setDelegateMsg("Add at least one valid email."); return; }
+    setDelegateBusy(true);
+    setDelegateMsg(null);
+    setError(null);
+    const customConfig = scope === "custom" ? { skills: [...skills], blockIds: [...blockIds], title: label || null } : null;
+    const res = await generateVouchersAction({
+      functionId, count: parsed.length, organizationName: organizationName || undefined,
+      label: label || undefined, maxUsesPerCode: 1, expiresAt: expiresAt || undefined, mcqPct, talentLens, customConfig,
+    });
+    if ("error" in res) { setDelegateBusy(false); setError(res.error); return; }
+    const codes = res.codes;
+    setNewCodes(codes);
+    const recipients = parsed.map((d, i) => ({ email: d.email, name: d.name, link: codes[i] ? redeemUrl(codes[i]) : "" })).filter((r) => r.link);
+    const mail = await emailVoucherLinksToDelegatesAction({ serviceLabel: "Techno®", recipients });
+    setDelegateBusy(false);
+    if ("error" in mail) { setError(mail.error); return; }
+    setDelegateMsg(`Generated ${codes.length} and emailed ${mail.sent} of ${mail.total} delegate(s).`);
+    setDelegateText("");
+  }
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Generate voucher codes</CardTitle>
+          <CardTitle className="text-base">Issue Techno® vouchers</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            {step === 1 && "Step 1 of 3 · Function, scope and who it's for"}
+            {step === 2 && "Step 2 of 3 · How should the vouchers reach people?"}
+            {step === 3 && target === "client" && "Step 3 of 3 · Generate and send to the client"}
+            {step === 3 && target === "delegates" && "Step 3 of 3 · Email a link to each delegate"}
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+            {["Setup", "Delivery", "Issue"].map((s, i) => {
+              const n = i + 1;
+              return (
+                <span key={s} className="flex items-center gap-2">
+                  <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-semibold ${step === n ? "bg-[#010131] text-white" : step > n ? "bg-[#5391D5] text-white" : "bg-muted text-muted-foreground"}`}>{n}</span>
+                  <span className={step === n ? "font-medium text-foreground" : "text-muted-foreground"}>{s}</span>
+                  {n < 3 && <ChevronRight className="h-3 w-3 text-muted-foreground" />}
+                </span>
+              );
+            })}
+          </div>
         </CardHeader>
         <CardContent>
+        {step === 1 && (
+        <>
         <div className="space-y-4">
           {/* Standard identity fields - the same top row on every voucher page */}
           <div className="flex flex-wrap items-end gap-3">
@@ -583,6 +653,31 @@ export function VouchersClient({
           )}
           </div>
         </div>
+        <div className="mt-4 flex justify-end">
+          <Button onClick={() => setStep(2)} disabled={!functionId} className="gap-1.5">Next <ChevronRight className="h-4 w-4" /></Button>
+        </div>
+        </>
+        )}
+
+        {step === 2 && (
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">Do you want the vouchers sent to the client to distribute, or emailed to each delegate directly?</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button type="button" onClick={() => { setTarget("client"); setNewCodes(null); setStep(3); }} className="rounded-lg border border-border p-4 text-left transition hover:border-[#5391D5] hover:bg-[#5391D5]/5">
+                <div className="flex items-center gap-2 text-sm font-semibold text-[#010131]"><Building2 className="h-4 w-4 text-[#5391D5]" /> Send to the client</div>
+                <p className="mt-1 text-xs text-muted-foreground">Generate a batch, then email or copy the links to the client.</p>
+              </button>
+              <button type="button" onClick={() => { setTarget("delegates"); setStep(3); }} className="rounded-lg border border-border p-4 text-left transition hover:border-[#5391D5] hover:bg-[#5391D5]/5">
+                <div className="flex items-center gap-2 text-sm font-semibold text-[#010131]"><Users className="h-4 w-4 text-[#5391D5]" /> Send to delegates</div>
+                <p className="mt-1 text-xs text-muted-foreground">Upload or paste emails; each delegate gets their own link.</p>
+              </button>
+            </div>
+            <div><Button variant="outline" onClick={() => setStep(1)} className="gap-1.5"><ChevronLeft className="h-4 w-4" /> Back</Button></div>
+          </div>
+        )}
+
+        {step === 3 && target === "client" && (
+        <div className="space-y-4">
         <Button
           onClick={generate}
           disabled={busy || !functionId || (scope === "custom" && (builderBusy || !customValid))}
@@ -666,13 +761,38 @@ export function VouchersClient({
             <p className="mt-2 text-xs text-emerald-700">Delegates redeem at <span className="font-mono">{origin}/tech-sandbox/redeem</span></p>
           </div>
         )}
+        {newCodes && newCodes.length > 0 && (
+          <div className="mt-4">
+            <VoucherClientEmailCard serviceLabel="Techno®" defaultOpen items={newCodes.map((c) => ({ code: c, link: redeemUrl(c) }))} />
+          </div>
+        )}
+        <div className="mt-4">
+          <Button variant="outline" onClick={() => setStep(2)} className="gap-1.5"><ChevronLeft className="h-4 w-4" /> Back</Button>
+        </div>
+        </div>
+        )}
+
+        {step === 3 && target === "delegates" && (
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">Upload a text/CSV file of delegate emails (or paste them, one per line as <code className="font-mono">email</code> or <code className="font-mono">email,name</code>). Each delegate gets their own single-use link emailed to them.</p>
+            <div className="flex items-center gap-2">
+              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted">
+                <Upload className="h-3.5 w-3.5" /> Upload list (CSV / TXT)
+                <input type="file" accept=".csv,.txt,.tsv,text/csv,text/plain" className="hidden" disabled={delegateBusy} onChange={(e) => { const f = e.target.files?.[0]; if (f) importEmailsFromFile(f); e.currentTarget.value = ""; }} />
+              </label>
+              {delegateText.trim() && <button type="button" onClick={() => { setDelegateText(""); setDelegateMsg(null); }} className="text-xs text-muted-foreground hover:text-foreground hover:underline">Clear</button>}
+            </div>
+            <textarea value={delegateText} onChange={(e) => setDelegateText(e.target.value)} rows={5} placeholder={"one email per line\nahmed@client.com\nsara@client.com, Sara Ali"} className="w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-sm" disabled={delegateBusy} />
+            {delegateMsg && <div className="rounded-md bg-emerald-50 p-2.5 text-sm text-emerald-700">{delegateMsg}</div>}
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            <div className="flex flex-col items-stretch justify-between gap-2 sm:flex-row sm:items-center">
+              <Button variant="outline" onClick={() => setStep(2)} className="gap-1.5"><ChevronLeft className="h-4 w-4" /> Back</Button>
+              <Button onClick={sendToDelegates} disabled={delegateBusy || !delegateText.trim() || !functionId} className="gap-1.5">{delegateBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Generate &amp; email each delegate</Button>
+            </div>
+          </div>
+        )}
         </CardContent>
       </Card>
-
-      <VoucherClientEmailCard
-        serviceLabel="Techno®"
-        items={(newCodes ?? []).map((c) => ({ code: c, link: redeemUrl(c) }))}
-      />
 
       <Card>
         <CardHeader>

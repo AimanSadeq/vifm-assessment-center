@@ -33,7 +33,8 @@ export type EmailTemplate =
   | "fluent_result"
   | "prehire_invitation"
   | "prehire_client_report"
-  | "role_readiness_invitation";
+  | "role_readiness_invitation"
+  | "voucher_batch_to_client";
 
 /** Optional file attachment (e.g. a generated PDF report). */
 export type EmailAttachment = {
@@ -221,6 +222,17 @@ This is an indicative placement for development purposes - not a certified high-
 
 Best regards,
 VIFM Assessment Center`,
+  },
+  voucher_batch_to_client: {
+    subject: "Your VIFM {{serviceLabel}} access links ({{count}})",
+    body: `Dear {{clientName}},
+
+Here are your {{count}} VIFM {{serviceLabel}} access link(s). Share each link with the person who will take the assessment - they start straight away, no account needed. Each link opens the page with the code already filled in.
+
+{{links}}
+
+Best regards,
+Virginia Institute of Finance and Management`,
   },
 };
 

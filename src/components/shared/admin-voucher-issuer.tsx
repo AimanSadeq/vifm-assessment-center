@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { CollapsibleCard } from "@/components/shared/collapsible-card";
+import { VoucherClientEmailCard } from "@/components/shared/voucher-client-email-card";
 import { Loader2, Ticket, Copy, Ban, Link2, Mail, Send, SlidersHorizontal } from "lucide-react";
 import { fmtDate } from "@/lib/utils/format-date";
 import { copyToClipboard } from "@/lib/utils/clipboard";
@@ -237,13 +239,13 @@ export function AdminVoucherIssuer({
       </Card>
 
       {onEmailDelegates && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Mail className="h-4 w-4" /> Email links to delegates
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <CollapsibleCard
+          title="Email a code to each delegate"
+          icon={Send}
+          defaultOpen={false}
+          subtitle="One delegate per line; each gets their own single-use code as a one-click redeem link."
+        >
+          <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
               One delegate per line, as <code className="font-mono">email</code> or <code className="font-mono">email,name</code>.
               Each gets a fresh single-use code emailed as a one-click redeem link. The fields above apply to this batch.
@@ -273,13 +275,13 @@ export function AdminVoucherIssuer({
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </CollapsibleCard>
       )}
 
       {lastCodes.length > 0 && (
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
             <CardTitle className="text-base">Just generated ({lastCodes.length})</CardTitle>
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => copy(lastCodes.map(fullLink).join("\n"))}>
               <Link2 className="h-3.5 w-3.5" /> Copy all links
@@ -303,6 +305,11 @@ export function AdminVoucherIssuer({
           </CardContent>
         </Card>
       )}
+
+      <VoucherClientEmailCard
+        serviceLabel={optionsLabel ?? "assessment"}
+        items={lastCodes.map((c) => ({ code: c, link: fullLink(c) }))}
+      />
 
       <Card>
         <CardHeader>

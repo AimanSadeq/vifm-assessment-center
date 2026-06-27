@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { SlidersHorizontal } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { VoucherClientEmailCard } from "@/components/shared/voucher-client-email-card";
 import type { CustomBuilderData, FunctionRow } from "@/lib/technical-sandbox/service";
 import type { VoucherRow } from "@/lib/technical-sandbox/vouchers";
 import type { SavedCustomAssessment } from "@/lib/technical-sandbox/custom-assessments";
@@ -667,6 +668,11 @@ export function VouchersClient({
         )}
         </CardContent>
       </Card>
+
+      <VoucherClientEmailCard
+        serviceLabel="Techno®"
+        items={(newCodes ?? []).map((c) => ({ code: c, link: redeemUrl(c) }))}
+      />
 
       <Card>
         <CardHeader>

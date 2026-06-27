@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { CollapsibleCard } from "@/components/shared/collapsible-card";
+import { VoucherClientEmailCard } from "@/components/shared/voucher-client-email-card";
 import { createVoucherBatchAction, setVoucherStatusAction, createClientOrgAction, emailVouchersToDelegatesAction } from "../actions";
 
 type VoucherRow = {
@@ -328,9 +330,9 @@ export function VouchersClient({
 
           {generated.length > 0 && (
             <div className="mt-5 rounded-lg border border-border bg-muted/40 p-4">
-              <div className="mb-2 flex items-center justify-between">
+              <div className="mb-2 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm font-medium">{generated.length} code(s) generated</p>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button size="sm" variant="outline" className="gap-1" onClick={() => copy(generated.map(redeemLink).join("\n"), "all-links")}>
                     {copied === "all-links" ? <Check className="h-3.5 w-3.5" /> : <Link2 className="h-3.5 w-3.5" />} Copy links
                   </Button>
@@ -363,17 +365,19 @@ export function VouchersClient({
         </CardContent>
       </Card>
 
+      <VoucherClientEmailCard
+        serviceLabel="AI Readiness Compass®"
+        items={generated.map((c) => ({ code: c, link: redeemLink(c) }))}
+      />
+
       {/* Email codes to delegates */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Email codes to delegates</CardTitle>
-          <CardDescription>
-            One single-use code per email, sent as a one-click link. Uses the client selected above
-            {selectedOrg ? "." : " (none - pick a client above to tag + inherit region)."}{" "}
-            Paste a list, or upload a CSV / TXT of emails from the client.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      <CollapsibleCard
+        title="Email codes to delegates"
+        icon={Ticket}
+        defaultOpen={false}
+        subtitle="One single-use code per email, sent as a one-click link (generates fresh codes). Uses the client selected above."
+      >
+        <div className="space-y-3">
           <div className="flex items-center gap-2">
             <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted">
               <Upload className="h-3.5 w-3.5" /> Upload list (CSV / TXT)
@@ -411,8 +415,8 @@ export function VouchersClient({
           <Button onClick={emailDelegates} disabled={emailingDelegates} className="gap-2">
             <Ticket className="h-4 w-4" /> {emailingDelegates ? "Sending..." : "Generate & email"}
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </CollapsibleCard>
 
       {/* List */}
       <Card>

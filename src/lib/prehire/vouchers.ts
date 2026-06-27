@@ -39,6 +39,9 @@ export interface GeneratePrehireBatchInput {
   createdBy?: string | null;
   /** When provided, generate ONE named single-use code per delegate. */
   delegates?: PrehireDelegate[] | null;
+  contactName?: string | null;
+  contactTitle?: string | null;
+  contactEmail?: string | null;
 }
 
 export interface PrehireVoucherRow {
@@ -82,6 +85,9 @@ export async function generatePrehireVoucherBatch(
         assigned_email: email,
         expires_at: expiresAt,
         created_by: input.createdBy ?? null,
+        contact_name: input.contactName ?? null,
+        contact_title: input.contactTitle ?? null,
+        contact_email: input.contactEmail ?? null,
       });
     }
   } else {
@@ -97,6 +103,9 @@ export async function generatePrehireVoucherBatch(
         max_uses: maxUses,
         expires_at: expiresAt,
         created_by: input.createdBy ?? null,
+        contact_name: input.contactName ?? null,
+        contact_title: input.contactTitle ?? null,
+        contact_email: input.contactEmail ?? null,
       });
     }
   }

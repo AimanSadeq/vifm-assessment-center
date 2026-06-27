@@ -43,6 +43,9 @@ export type GenerateCommon = {
   clientName: string;
   label: string;
   expiresAt: string | null;
+  contactName: string;
+  contactTitle: string;
+  contactEmail: string;
 };
 
 export type AdminVoucherIssuerProps = {
@@ -120,7 +123,7 @@ export function AdminVoucherIssuer({
 
   const generate = async () => {
     setBusy(true);
-    const res = await onGenerate({ count, maxUses, clientName: details.clientName, label: details.projectLabel, expiresAt: details.expiresAt || null });
+    const res = await onGenerate({ count, maxUses, clientName: details.clientName, label: details.projectLabel, expiresAt: details.expiresAt || null, contactName: details.contactName, contactTitle: details.contactTitle, contactEmail: details.contactEmail });
     setBusy(false);
     if ("error" in res) {
       toast.error(res.error);
@@ -181,7 +184,7 @@ export function AdminVoucherIssuer({
     setDelegateBusy(true);
     setDelegateMsg(null);
     // One single-use code per delegate, then email each their own link.
-    const res = await onGenerate({ count: parsed.length, maxUses: 1, clientName: details.clientName, label: details.projectLabel, expiresAt: details.expiresAt || null });
+    const res = await onGenerate({ count: parsed.length, maxUses: 1, clientName: details.clientName, label: details.projectLabel, expiresAt: details.expiresAt || null, contactName: details.contactName, contactTitle: details.contactTitle, contactEmail: details.contactEmail });
     if ("error" in res) {
       setDelegateBusy(false);
       toast.error(res.error);

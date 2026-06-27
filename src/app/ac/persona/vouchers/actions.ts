@@ -32,6 +32,9 @@ export async function generatePersonaVouchersAction(input: {
   projectLabel?: string;
   /** Item format pin (00140, SD-9): 'normative' / 'ipsative' / 'both' (default). */
   itemFormat?: "normative" | "ipsative" | "both";
+  contactName?: string;
+  contactTitle?: string;
+  contactEmail?: string;
 }): Promise<{ ok: true; codes: string[] } | { error: string }> {
   const g = await guard();
   if (!g.ok) return { error: g.error };
@@ -69,6 +72,9 @@ export async function generatePersonaVouchersAction(input: {
     scopedCompetencyIds: (input.scopedCompetencyIds ?? []).filter(Boolean),
     projectLabel: input.projectLabel?.trim() || null,
     itemFormat,
+    contactName: input.contactName?.trim() || null,
+    contactTitle: input.contactTitle?.trim() || null,
+    contactEmail: input.contactEmail?.trim() || null,
   });
   if (!res.ok) return { error: res.error };
   revalidatePath("/ac/persona/vouchers");

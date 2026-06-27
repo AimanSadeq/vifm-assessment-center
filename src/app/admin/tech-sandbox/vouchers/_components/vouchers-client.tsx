@@ -295,6 +295,9 @@ export function VouchersClient({
       mcqPct,
       talentLens,
       customConfig,
+      contactName: contactName || undefined,
+      contactTitle: contactTitle || undefined,
+      contactEmail: contactEmail || undefined,
     });
     setBusy(false);
     if ("error" in res) return setError(res.error);
@@ -345,6 +348,7 @@ export function VouchersClient({
     const res = await generateVouchersAction({
       functionId, count: parsed.length, organizationName: organizationName || undefined,
       label: label || undefined, maxUsesPerCode: 1, expiresAt: expiresAt || undefined, mcqPct, talentLens, customConfig,
+      contactName: contactName || undefined, contactTitle: contactTitle || undefined, contactEmail: contactEmail || undefined,
     });
     if ("error" in res) { setDelegateBusy(false); setError(res.error); return; }
     const codes = res.codes;

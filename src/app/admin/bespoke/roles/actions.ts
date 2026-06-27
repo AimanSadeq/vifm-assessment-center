@@ -262,6 +262,12 @@ export async function issueRoleVouchersAction(input: {
   seats?: number;
   sendEmails?: boolean;
   origin?: string;
+  clientName?: string;
+  projectLabel?: string;
+  expiresAt?: string;
+  contactName?: string;
+  contactTitle?: string;
+  contactEmail?: string;
 }): Promise<{ ok: true; vouchers: IssuedVoucher[] } | { error: string }> {
   if (!(await requireAdmin())) return { error: "Not authorized." };
   return createRoleReadinessVouchers({
@@ -272,6 +278,12 @@ export async function issueRoleVouchersAction(input: {
     delegates: input.delegates,
     seats: input.seats,
     emailOrigin: input.sendEmails && input.origin ? input.origin : null,
+    clientName: input.clientName ?? null,
+    projectLabel: input.projectLabel ?? null,
+    expiresAt: input.expiresAt ?? null,
+    contactName: input.contactName ?? null,
+    contactTitle: input.contactTitle ?? null,
+    contactEmail: input.contactEmail ?? null,
   });
 }
 

@@ -49,6 +49,9 @@ export interface GenerateBatchInput {
    * function default. NULL/empty = ordinary voucher (full function default).
    */
   customConfig?: { skills: string[]; blockIds: string[]; title?: string | null } | null;
+  contactName?: string | null;
+  contactTitle?: string | null;
+  contactEmail?: string | null;
 }
 
 /** Clamp a possibly-undefined MCQ weight into the 0-100 column range. */
@@ -82,6 +85,12 @@ export async function generateVoucherBatch(input: GenerateBatchInput) {
   const customCol: Record<string, unknown> = hasCustom
     ? { custom_config: { skills: cc!.skills ?? [], blockIds: cc!.blockIds ?? [], title: cc!.title ?? null } }
     : {};
+  // 00168 client contact - peeled first below on a schema-cache miss.
+  const contactCol: Record<string, unknown> = {
+    contact_name: input.contactName ?? null,
+    contact_title: input.contactTitle ?? null,
+    contact_email: input.contactEmail ?? null,
+  };
 
   let rows: Record<string, unknown>[];
   if (delegates.length > 0) {
@@ -100,6 +109,7 @@ export async function generateVoucherBatch(input: GenerateBatchInput) {
       mcq_pct: mcqPct,
       ...lensCol,
       ...customCol,
+      ...contactCol,
     }));
   } else {
     const count = Math.max(1, Math.min(500, Math.floor(input.count)));
@@ -116,31 +126,34 @@ export async function generateVoucherBatch(input: GenerateBatchInput) {
       mcq_pct: mcqPct,
       ...lensCol,
       ...customCol,
+      ...contactCol,
     }));
   }
 
   // Newest-first peel: drop custom_config (00141), then talent_lens (00136),
   // then mcq_pct (00085) on a missing-column error so a pending migration
   // degrades gracefully.
+  const stripContact = (r: Record<string, unknown>) => {
+    const { contact_name, contact_title, contact_email, ...rest } = r;
+    void contact_name; void contact_title; void contact_email;
+    return rest;
+  };
   const stripCustom = (r: Record<string, unknown>) => {
-    const { custom_config, ...rest } = r;
-    void custom_config;
+    const { contact_name, contact_title, contact_email, custom_config, ...rest } = r;
+    void contact_name; void contact_title; void contact_email; void custom_config;
     return rest;
   };
   const stripCustomLens = (r: Record<string, unknown>) => {
-    const { custom_config, talent_lens, ...rest } = r;
-    void custom_config;
-    void talent_lens;
+    const { contact_name, contact_title, contact_email, custom_config, talent_lens, ...rest } = r;
+    void contact_name; void contact_title; void contact_email; void custom_config; void talent_lens;
     return rest;
   };
   const stripCustomLensMcq = (r: Record<string, unknown>) => {
-    const { custom_config, talent_lens, mcq_pct, ...rest } = r;
-    void custom_config;
-    void talent_lens;
-    void mcq_pct;
+    const { contact_name, contact_title, contact_email, custom_config, talent_lens, mcq_pct, ...rest } = r;
+    void contact_name; void contact_title; void contact_email; void custom_config; void talent_lens; void mcq_pct;
     return rest;
   };
-  const attempts = [rows, rows.map(stripCustom), rows.map(stripCustomLens), rows.map(stripCustomLensMcq)];
+  const attempts = [rows, rows.map(stripContact), rows.map(stripCustom), rows.map(stripCustomLens), rows.map(stripCustomLensMcq)];
   type VoucherInsertRow = { code: string; assigned_name: string | null; assigned_email: string | null };
   let data: VoucherInsertRow[] | null = null;
   let error: { code?: string } | null = null;

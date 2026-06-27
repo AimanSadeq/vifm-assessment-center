@@ -68,6 +68,9 @@ export function PrehireVouchersClient({
         seatsPerCode: Math.max(1, seats),
         expiresAt: details.expiresAt || null,
         organizationName: details.clientName.trim() || orgName(),
+        contactName: details.contactName.trim() || null,
+        contactTitle: details.contactTitle.trim() || null,
+        contactEmail: details.contactEmail.trim() || null,
       });
       if (res.ok) {
         setGenerated(res.codes);
@@ -121,6 +124,9 @@ export function PrehireVouchersClient({
       seatsPerCode: 1,
       expiresAt: details.expiresAt || null,
       organizationName: details.clientName.trim() || orgName(),
+      contactName: details.contactName.trim() || null,
+      contactTitle: details.contactTitle.trim() || null,
+      contactEmail: details.contactEmail.trim() || null,
     });
     if (!res.ok) {
       setDelegateBusy(false);

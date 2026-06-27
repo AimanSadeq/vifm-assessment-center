@@ -62,6 +62,12 @@ export async function clientIssueRoleVouchersAction(input: {
   sendEmails?: boolean;
   origin?: string;
   orgParam?: string;
+  clientName?: string;
+  projectLabel?: string;
+  expiresAt?: string;
+  contactName?: string;
+  contactTitle?: string;
+  contactEmail?: string;
 }): Promise<{ ok: true; vouchers: IssuedVoucher[] } | { error: string }> {
   const access = await resolvePortalAccess(input.orgParam);
   if (!access.ok || !access.orgId) return { error: "Not authorized." };
@@ -86,5 +92,11 @@ export async function clientIssueRoleVouchersAction(input: {
     delegates: input.delegates,
     seats: input.seats,
     emailOrigin: input.sendEmails && input.origin ? input.origin : null,
+    clientName: input.clientName ?? null,
+    projectLabel: input.projectLabel ?? null,
+    expiresAt: input.expiresAt ?? null,
+    contactName: input.contactName ?? null,
+    contactTitle: input.contactTitle ?? null,
+    contactEmail: input.contactEmail ?? null,
   });
 }

@@ -52,6 +52,9 @@ export function VouchersClient({ vouchers, clients }: { vouchers: CognitiveVouch
           projectLabel: projectLabel || undefined,
           maxUses: c.maxUses,
           expiresAt: c.expiresAt,
+          contactName: c.contactName || undefined,
+          contactTitle: c.contactTitle || undefined,
+          contactEmail: c.contactEmail || undefined,
         });
         return "error" in res ? { error: res.error } : { codes: res.codes };
       }}

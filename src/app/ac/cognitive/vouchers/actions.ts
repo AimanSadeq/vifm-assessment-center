@@ -25,6 +25,9 @@ export async function generateCognitiveVouchersAction(input: {
   expiresAt?: string | null;
   /** Project/cohort label (00137) - groups this batch with Persona for reporting. */
   projectLabel?: string;
+  contactName?: string;
+  contactTitle?: string;
+  contactEmail?: string;
 }): Promise<{ ok: true; codes: string[] } | { error: string }> {
   const g = await guard();
   if (!g.ok) return { error: g.error };
@@ -49,6 +52,9 @@ export async function generateCognitiveVouchersAction(input: {
     expiresAt: input.expiresAt || null,
     createdBy: g.caller.isDev ? null : g.caller.uid,
     projectLabel: input.projectLabel?.trim() || null,
+    contactName: input.contactName?.trim() || null,
+    contactTitle: input.contactTitle?.trim() || null,
+    contactEmail: input.contactEmail?.trim() || null,
   });
   if (!res.ok) return { error: res.error };
   revalidatePath("/ac/cognitive/vouchers");

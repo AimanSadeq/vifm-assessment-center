@@ -42,6 +42,9 @@ export function VouchersClient({ vouchers, clients }: { vouchers: FluentVoucherR
           maxUses: c.maxUses,
           expiresAt: c.expiresAt,
           proctorEnabled: proctor,
+          contactName: c.contactName || undefined,
+          contactTitle: c.contactTitle || undefined,
+          contactEmail: c.contactEmail || undefined,
         });
         return "error" in res ? { error: res.error } : { codes: res.codes };
       }}

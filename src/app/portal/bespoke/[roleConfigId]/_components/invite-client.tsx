@@ -18,6 +18,12 @@ export function InviteClient({ roleConfigId, orgParam }: { roleConfigId: string;
           sendEmails: input.sendEmails,
           origin: input.origin,
           orgParam,
+          clientName: input.clientName,
+          projectLabel: input.projectLabel,
+          expiresAt: input.expiresAt,
+          contactName: input.contactName,
+          contactTitle: input.contactTitle,
+          contactEmail: input.contactEmail,
         })
       }
     />

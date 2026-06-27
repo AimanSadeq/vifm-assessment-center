@@ -66,6 +66,9 @@ const batchSchema = z.object({
   language: z.enum(["en", "ar"]).default("en"),
   itemsPerFactor: itemsPerFactorSchema,
   expiresAt: z.string().optional(),
+  contactName: z.string().max(200).optional(),
+  contactTitle: z.string().max(200).optional(),
+  contactEmail: z.string().max(200).optional(),
 });
 
 export async function createVoucherBatchAction(formData: FormData) {
@@ -82,6 +85,9 @@ export async function createVoucherBatchAction(formData: FormData) {
     language: formData.get("language") || "en",
     itemsPerFactor: formData.get("itemsPerFactor") || undefined,
     expiresAt: formData.get("expiresAt") || undefined,
+    contactName: formData.get("contactName") || undefined,
+    contactTitle: formData.get("contactTitle") || undefined,
+    contactEmail: formData.get("contactEmail") || undefined,
   });
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Invalid input" };
@@ -120,6 +126,9 @@ export async function createVoucherBatchAction(formData: FormData) {
     itemsPerFactor: parsed.data.itemsPerFactor ?? null,
     expiresAt: toEndOfDayIso(parsed.data.expiresAt),
     createdBy: caller?.uid ?? null,
+    contactName: parsed.data.contactName?.trim() || null,
+    contactTitle: parsed.data.contactTitle?.trim() || null,
+    contactEmail: parsed.data.contactEmail?.trim() || null,
   });
   if (!res.ok) return res;
 
@@ -133,6 +142,9 @@ const emailDelegatesSchema = z.object({
   clientName: z.string().max(300).optional(),
   itemsPerFactor: itemsPerFactorSchema,
   expiresAt: z.string().optional(),
+  contactName: z.string().max(200).optional(),
+  contactTitle: z.string().max(200).optional(),
+  contactEmail: z.string().max(200).optional(),
 });
 
 /**
@@ -150,6 +162,9 @@ export async function emailVouchersToDelegatesAction(formData: FormData) {
     clientName: formData.get("clientName") || undefined,
     itemsPerFactor: formData.get("itemsPerFactor") || undefined,
     expiresAt: formData.get("expiresAt") || undefined,
+    contactName: formData.get("contactName") || undefined,
+    contactTitle: formData.get("contactTitle") || undefined,
+    contactEmail: formData.get("contactEmail") || undefined,
   });
   if (!parsed.success) return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Invalid input" };
 
@@ -198,6 +213,9 @@ export async function emailVouchersToDelegatesAction(formData: FormData) {
       itemsPerFactor: parsed.data.itemsPerFactor ?? null,
       expiresAt,
       createdBy: caller?.uid ?? null,
+      contactName: parsed.data.contactName?.trim() || null,
+      contactTitle: parsed.data.contactTitle?.trim() || null,
+      contactEmail: parsed.data.contactEmail?.trim() || null,
     });
     if (!batch.ok) {
       results.push({ email, ok: false, error: batch.error });

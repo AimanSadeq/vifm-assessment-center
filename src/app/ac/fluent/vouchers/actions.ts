@@ -24,6 +24,9 @@ export async function generateFluentVouchersAction(input: {
   maxUses?: number;
   expiresAt?: string | null;
   proctorEnabled?: boolean;
+  contactName?: string;
+  contactTitle?: string;
+  contactEmail?: string;
 }): Promise<{ ok: true; codes: string[] } | { error: string }> {
   const g = await guard();
   if (!g.ok) return { error: g.error };
@@ -51,6 +54,9 @@ export async function generateFluentVouchersAction(input: {
     expiresAt: input.expiresAt || null,
     createdBy: g.caller.isDev ? null : g.caller.uid,
     proctorEnabled: input.proctorEnabled ?? false,
+    contactName: input.contactName?.trim() || null,
+    contactTitle: input.contactTitle?.trim() || null,
+    contactEmail: input.contactEmail?.trim() || null,
   });
   if (!res.ok) return { error: res.error };
   revalidatePath("/ac/fluent/vouchers");

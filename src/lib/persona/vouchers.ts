@@ -43,6 +43,9 @@ export type CreateBatchInput = {
   projectLabel?: string | null;
   /** Item format pin (00140, SD-9): 'normative' / 'ipsative' / 'both' (default). */
   itemFormat?: "normative" | "ipsative" | "both" | null;
+  contactName?: string | null;
+  contactTitle?: string | null;
+  contactEmail?: string | null;
 };
 
 /** Undefined column - migration 00123 not applied yet. Postgres raises 42703
@@ -84,11 +87,15 @@ export async function createVoucherBatch(
       ? { item_format: input.itemFormat }
       : {};
 
-  // Newest-first peel: item_format (00140) -> project_label (00137) -> scope
-  // (00123) -> base. Each attempt builds fresh rows (each generates its own code).
+  // 00168 client contact - peeled first on a schema-cache miss.
+  const contactCols = { contact_name: input.contactName ?? null, contact_title: input.contactTitle ?? null, contact_email: input.contactEmail ?? null };
+
+  // Newest-first peel: contact (00168) -> item_format (00140) -> project_label
+  // (00137) -> scope (00123) -> base. Each attempt builds fresh rows.
   const build = (extra: Record<string, unknown>) =>
     Array.from({ length: count }, () => ({ ...baseRow(), ...extra }));
   const attempts = [
+    () => build({ ...scopeCols, ...projectCol, ...formatCol, ...contactCols }),
     () => build({ ...scopeCols, ...projectCol, ...formatCol }),
     () => build({ ...scopeCols, ...projectCol }),
     () => build(scopeCols),

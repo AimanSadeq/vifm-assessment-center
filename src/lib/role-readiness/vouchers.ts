@@ -55,6 +55,13 @@ export async function createRoleReadinessVouchers(input: {
   createdBy?: string | null;
   /** When set (individual mode), email each delegate their redeem link from this origin. */
   emailOrigin?: string | null;
+  /** Step-1 details persisted on the row (migration 00168). */
+  clientName?: string | null;
+  projectLabel?: string | null;
+  expiresAt?: string | null;
+  contactName?: string | null;
+  contactTitle?: string | null;
+  contactEmail?: string | null;
 }): Promise<{ ok: true; vouchers: IssuedVoucher[] } | { error: string }> {
   const sb = createServiceClient();
   const base = {
@@ -62,6 +69,12 @@ export async function createRoleReadinessVouchers(input: {
     organization_id: input.organizationId ?? null,
     is_sample: input.isSample ?? false,
     created_by: input.createdBy ?? null,
+    client_name: input.clientName ?? null,
+    project_label: input.projectLabel ?? null,
+    expires_at: input.expiresAt ?? null,
+    contact_name: input.contactName ?? null,
+    contact_title: input.contactTitle ?? null,
+    contact_email: input.contactEmail ?? null,
   };
 
   if (input.mode === "individual") {

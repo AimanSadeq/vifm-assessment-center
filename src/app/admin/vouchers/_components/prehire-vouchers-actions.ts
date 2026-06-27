@@ -10,6 +10,9 @@ export async function createPrehireVoucherBatchAction(input: {
   seatsPerCode: number;
   expiresAt?: string | null;
   organizationName?: string | null;
+  contactName?: string | null;
+  contactTitle?: string | null;
+  contactEmail?: string | null;
 }): Promise<{ ok: true; created: number; codes: string[] } | { ok: false; error: string }> {
   await requireRole(["admin"]);
   try {
@@ -21,6 +24,9 @@ export async function createPrehireVoucherBatchAction(input: {
       label: input.label,
       expiresAt: input.expiresAt ?? null,
       organizationName: input.organizationName ?? null,
+      contactName: input.contactName ?? null,
+      contactTitle: input.contactTitle ?? null,
+      contactEmail: input.contactEmail ?? null,
     });
     return { ok: true, created: rows.length, codes: rows.map((r) => r.code) };
   } catch (e) {

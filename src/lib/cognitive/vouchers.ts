@@ -30,6 +30,9 @@ export type CreateBatchInput = {
   createdBy?: string | null;
   /** Project/cohort label (00137); groups this batch with Persona for reporting. */
   projectLabel?: string | null;
+  contactName?: string | null;
+  contactTitle?: string | null;
+  contactEmail?: string | null;
 };
 
 /** Undefined column - migration 00137 (project_label) not applied yet. Postgres
@@ -58,12 +61,13 @@ export async function createVoucherBatch(
   });
   // 00137 (newest) project label - only carried when set, peeled first below.
   const projectCol = input.projectLabel?.trim() ? { project_label: input.projectLabel.trim() } : {};
+  // 00168 client contact - peeled together with project on a schema-cache miss.
+  const contactCols = { contact_name: input.contactName ?? null, contact_title: input.contactTitle ?? null, contact_email: input.contactEmail ?? null };
 
-  // Newest-first peel: project_label (00137) -> base. Each attempt builds fresh
-  // rows (each row generates its own code).
+  // Newest-first peel: contact (00168) + project_label (00137) -> project -> base.
   const build = (extra: Record<string, unknown>) =>
     Array.from({ length: count }, () => ({ ...baseRow(), ...extra }));
-  const attempts = [() => build(projectCol), () => build({})];
+  const attempts = [() => build({ ...projectCol, ...contactCols }), () => build(projectCol), () => build({})];
   let data: { code: string }[] | null = null;
   let error: { code?: string; message?: string } | null = null;
   for (const make of attempts) {

@@ -239,6 +239,12 @@ export function RoleEditor({ config, published, clients, assignedOrgId }: { conf
             seats: input.seats,
             sendEmails: input.sendEmails,
             origin: input.origin,
+            clientName: input.clientName,
+            projectLabel: input.projectLabel,
+            expiresAt: input.expiresAt,
+            contactName: input.contactName,
+            contactTitle: input.contactTitle,
+            contactEmail: input.contactEmail,
           })
         }
       />

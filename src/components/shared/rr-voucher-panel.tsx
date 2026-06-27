@@ -13,7 +13,20 @@ import type { IssuedVoucher } from "@/lib/role-readiness/vouchers";
 
 type Mode = "individual" | "pool";
 type Delegate = { email: string; name: string };
-type IssueInput = { mode: Mode; emails?: string[]; delegates?: Delegate[]; seats?: number; sendEmails?: boolean; origin?: string };
+type IssueInput = {
+  mode: Mode;
+  emails?: string[];
+  delegates?: Delegate[];
+  seats?: number;
+  sendEmails?: boolean;
+  origin?: string;
+  clientName?: string;
+  projectLabel?: string;
+  expiresAt?: string;
+  contactName?: string;
+  contactTitle?: string;
+  contactEmail?: string;
+};
 type IssueResult = { ok: true; vouchers: IssuedVoucher[] } | { error: string };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -106,12 +119,20 @@ export function RrVoucherPanel({ onIssue }: { onIssue: (input: IssueInput) => Pr
 
   const issue = () =>
     start(async () => {
+      const det = {
+        clientName: details.clientName.trim() || undefined,
+        projectLabel: details.projectLabel.trim() || undefined,
+        expiresAt: details.expiresAt || undefined,
+        contactName: details.contactName.trim() || undefined,
+        contactTitle: details.contactTitle.trim() || undefined,
+        contactEmail: details.contactEmail.trim() || undefined,
+      };
       const payload: IssueInput =
         mode === "individual"
           ? delegates.length > 0
-            ? { mode, delegates, sendEmails, origin }
-            : { mode, emails: text.split(/[\n,;]+/).map((s) => s.trim()).filter(Boolean), sendEmails, origin }
-          : { mode, seats };
+            ? { mode, delegates, sendEmails, origin, ...det }
+            : { mode, emails: text.split(/[\n,;]+/).map((s) => s.trim()).filter(Boolean), sendEmails, origin, ...det }
+          : { mode, seats, ...det };
       const res = await onIssue(payload);
       if ("error" in res) { toast.error(res.error); return; }
       setResult({ mode, vouchers: res.vouchers });

@@ -263,6 +263,9 @@ export async function generateVouchersAction(input: {
   talentLens?: "acquisition" | "development" | null;
   /** Custom (pick-and-choose) sitting design carried to the redeemed session (00141). */
   customConfig?: { skills: string[]; blockIds: string[]; title?: string | null } | null;
+  contactName?: string | null;
+  contactTitle?: string | null;
+  contactEmail?: string | null;
 }): Promise<Result<{ codes: string[]; assignments: { name: string; email: string; code: string }[] }>> {
   const g = await guard();
   if ("error" in g) return g;
@@ -285,6 +288,9 @@ export async function generateVouchersAction(input: {
     mcqPct: input.mcqPct ?? 0,
     talentLens: input.talentLens ?? null,
     customConfig: input.customConfig ?? null,
+    contactName: input.contactName?.trim() || null,
+    contactTitle: input.contactTitle?.trim() || null,
+    contactEmail: input.contactEmail?.trim() || null,
   });
   revalidatePath("/admin/tech-sandbox/vouchers");
   revalidatePath("/admin/tech-sandbox");

@@ -28,6 +28,9 @@ export type CreateBatchInput = {
   createdBy?: string | null;
   /** When true, candidates redeeming this voucher are camera-proctored (migration 00149). */
   proctorEnabled?: boolean;
+  contactName?: string | null;
+  contactTitle?: string | null;
+  contactEmail?: string | null;
 };
 
 export async function createVoucherBatch(
@@ -48,6 +51,9 @@ export async function createVoucherBatch(
     expires_at: input.expiresAt ?? null,
     created_by: input.createdBy ?? null,
     proctor_enabled: input.proctorEnabled ?? false,
+    contact_name: input.contactName ?? null,
+    contact_title: input.contactTitle ?? null,
+    contact_email: input.contactEmail ?? null,
   }));
 
   const { data, error } = await sb.from("eng_fluent_vouchers").insert(rows).select("code");

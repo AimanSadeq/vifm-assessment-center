@@ -46,6 +46,9 @@ export type CreateBatchInput = {
   /** Per-client ARC length: max individual-layer questions per factor a redeemed
    *  code serves. NULL/undefined = the full deep-dive (no cap). Migration 00143. */
   itemsPerFactor?: number | null;
+  contactName?: string | null;
+  contactTitle?: string | null;
+  contactEmail?: string | null;
 };
 
 /**
@@ -76,6 +79,9 @@ export async function createVoucherBatch(
     is_practice: input.isPractice ?? true,
     expires_at: input.expiresAt ?? null,
     created_by: input.createdBy ?? null,
+    contact_name: input.contactName ?? null,
+    contact_title: input.contactTitle ?? null,
+    contact_email: input.contactEmail ?? null,
     ...(ipf != null ? { items_per_factor: ipf } : {}),
   }));
 

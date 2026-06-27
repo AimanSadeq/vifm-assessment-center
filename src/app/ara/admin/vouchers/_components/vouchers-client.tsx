@@ -107,6 +107,10 @@ export function VouchersClient({
     fd.set("emails", delegateEmails);
     fd.set("itemsPerFactor", itemsPerFactor);
     if (selectedOrg) fd.set("organizationId", selectedOrg);
+    if (expiresAt) fd.set("expiresAt", expiresAt);
+    fd.set("contactName", contactName);
+    fd.set("contactTitle", contactTitle);
+    fd.set("contactEmail", contactEmail);
     const res = await emailVouchersToDelegatesAction(fd);
     setEmailingDelegates(false);
     if (!res.ok) {
@@ -198,6 +202,9 @@ export function VouchersClient({
     fd.set("language", language);
     fd.set("itemsPerFactor", itemsPerFactor);
     if (expiresAt) fd.set("expiresAt", expiresAt);
+    fd.set("contactName", contactName);
+    fd.set("contactTitle", contactTitle);
+    fd.set("contactEmail", contactEmail);
     startTransition(async () => {
       const res = await createVoucherBatchAction(fd);
       if (!res.ok) {

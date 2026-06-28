@@ -46,6 +46,7 @@ import {
   Table2,
   BookOpen,
   Database,
+  MonitorPlay,
   type LucideIcon,
 } from "lucide-react";
 
@@ -174,6 +175,7 @@ const NAV: NavEntry[] = [
       label: "Platform",
       icon: Layers,
       items: [
+        link("/admin/licensed-preview", "Licensed Preview", MonitorPlay),
         link("/compare", "adminNav.comparePortals", Table2),
         link("/evidence", "adminNav.researchValidity", BookOpen),
         link("/admin/clients", "adminNav.clients", Building2),

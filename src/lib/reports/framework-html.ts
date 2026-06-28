@@ -60,12 +60,12 @@ export function renderFrameworkHtml(domains: DomainNode[], counts: FrameworkCoun
   .brand { color: #5391D5; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
   h1 { font-size: 22px; margin: 4px 0 4px; color: #010131; }
   .counts { color: #555; font-size: 11px; }
-  .domain { margin-bottom: 14px; page-break-inside: avoid; }
-  .domain-head { display: flex; align-items: baseline; justify-content: space-between; color: #fff; border-radius: 7px; padding: 8px 12px; margin-bottom: 8px; }
+  .domain { margin-bottom: 14px; }
+  .domain-head { display: flex; align-items: baseline; justify-content: space-between; color: #fff; border-radius: 7px; padding: 8px 12px; margin-bottom: 8px; break-after: avoid; page-break-after: avoid; }
   .domain-name { font-size: 15px; font-weight: 800; letter-spacing: .01em; }
   .domain-meta { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; opacity: .9; }
   .cluster { margin: 0 0 9px; }
-  .cluster-name { font-size: 12px; font-weight: 800; color: #1E293B; border-left: 3px solid; padding-left: 8px; margin-bottom: 6px; }
+  .cluster-name { font-size: 12px; font-weight: 800; color: #1E293B; border-left: 3px solid; padding-left: 8px; margin-bottom: 6px; break-after: avoid; page-break-after: avoid; }
   .cluster-def { display: block; font-size: 9.5px; font-weight: 600; color: #64748B; margin-top: 1px; }
   .comp { border: 1px solid #E6EBF2; border-radius: 8px; padding: 8px 10px; margin-bottom: 7px; page-break-inside: avoid; }
   .comp-head { display: flex; align-items: center; gap: 8px; }

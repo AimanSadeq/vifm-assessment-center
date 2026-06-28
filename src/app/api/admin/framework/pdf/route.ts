@@ -7,8 +7,8 @@ import { renderFrameworkHtml } from "@/lib/reports/framework-html";
 
 /**
  * GET /api/admin/framework/pdf - the VIFM competency framework as a PDF
- * (domains -> clusters -> competencies + per-competency positive/negative
- * behavioural indicators). Admin-gated; Puppeteer via the shared launcher.
+ * (domains -> clusters -> competencies, with definitions only; behavioural
+ * indicators are intentionally excluded). Admin-gated; Puppeteer via the shared launcher.
  */
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";

@@ -2,11 +2,11 @@ import "server-only";
 import type { DomainNode, FrameworkCounts } from "@/lib/competencies/framework-tree";
 
 /**
- * VIFM Competency Framework -> printable HTML (Puppeteer PDF). Renders the full
- * framework (domains -> clusters -> competencies) AND the level-2 detail: the
- * positive + negative behavioural indicators per competency. English (the
- * catalogue's indicators are EN-only). Fed by loadFrameworkTree() so the PDF and
- * the on-screen /admin/framework reference share one source.
+ * VIFM Competency Framework -> printable HTML (Puppeteer PDF). Renders the
+ * framework structure only: domains -> clusters (with definitions) ->
+ * competencies (with definitions). Behavioural indicators are deliberately NOT
+ * included in this document - it is the clean framework reference (the 41
+ * competencies + their definitions). Fed by loadFrameworkTree(). English.
  */
 
 const esc = (s: string) =>
@@ -21,24 +21,12 @@ export function renderFrameworkHtml(domains: DomainNode[], counts: FrameworkCoun
         .map((c) => {
           const compsHtml = c.comps
             .map((k) => {
-              const pos =
-                k.positives.length > 0
-                  ? `<ul class="ind pos">${k.positives.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>`
-                  : `<div class="ind-empty">-</div>`;
-              const neg =
-                k.negatives.length > 0
-                  ? `<ul class="ind neg">${k.negatives.map((n) => `<li>${esc(n)}</li>`).join("")}</ul>`
-                  : `<div class="ind-empty">-</div>`;
               return `<div class="comp">
                 <div class="comp-head">
                   <span class="seq" style="background:${d.visual.tint};color:${d.visual.color}">${k.seq}</span>
                   <span class="comp-name">${esc(k.nameEn)}</span>
                 </div>
                 ${k.descEn ? `<p class="comp-desc">${esc(k.descEn)}</p>` : ""}
-                <div class="ind-cols">
-                  <div><div class="ind-title pos">Positive indicators</div>${pos}</div>
-                  <div><div class="ind-title neg">Negative indicators</div>${neg}</div>
-                </div>
               </div>`;
             })
             .join("");
@@ -83,16 +71,7 @@ export function renderFrameworkHtml(domains: DomainNode[], counts: FrameworkCoun
   .comp-head { display: flex; align-items: center; gap: 8px; }
   .seq { display: inline-grid; place-items: center; width: 24px; height: 20px; border-radius: 5px; font-size: 10px; font-weight: 800; }
   .comp-name { font-size: 12.5px; font-weight: 700; color: #1E293B; }
-  .comp-desc { margin: 4px 0 6px; font-size: 10px; color: #64748B; }
-  .ind-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .ind-title { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 2px; }
-  .ind-title.pos { color: #047857; }
-  .ind-title.neg { color: #be123c; }
-  .ind { margin: 0; padding: 0; list-style: none; }
-  .ind li { position: relative; padding-left: 13px; font-size: 10px; margin-bottom: 2px; }
-  .ind.pos li::before { content: "\\2713"; position: absolute; left: 0; color: #059669; font-weight: 700; }
-  .ind.neg li::before { content: "\\2715"; position: absolute; left: 0; color: #e11d48; font-weight: 700; }
-  .ind-empty { font-size: 10px; color: #9AA8BC; }
+  .comp-desc { margin: 4px 0 0; font-size: 10px; color: #64748B; }
   .foot { margin-top: 16px; border-top: 1px solid #E6EBF2; padding-top: 8px; color: #888; font-size: 9px; }
 </style>
 </head>
@@ -100,10 +79,10 @@ export function renderFrameworkHtml(domains: DomainNode[], counts: FrameworkCoun
   <div class="head">
     <div class="brand">Virginia Institute of Finance and Management</div>
     <h1>VIFM Competency Framework</h1>
-    <div class="counts">${counts.domains} domains &middot; ${counts.clusters} clusters &middot; ${counts.competencies} competencies &middot; ${counts.indicators} behavioural indicators &middot; ${generated}</div>
+    <div class="counts">${counts.domains} domains &middot; ${counts.clusters} clusters &middot; ${counts.competencies} competencies &middot; ${generated}</div>
   </div>
   ${domainsHtml}
-  <div class="foot">VIFM-authored behavioural framework. Positive indicators show what strong looks like; negative indicators are the warning signs. Behavioural indicators are maintained in English. &copy; VIFM.</div>
+  <div class="foot">VIFM-authored competency framework: ${counts.competencies} competencies across ${counts.domains} domains and ${counts.clusters} clusters, with their definitions. &copy; VIFM.</div>
 </body>
 </html>`;
 }

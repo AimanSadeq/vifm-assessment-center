@@ -2,14 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, Sparkles, ArrowRight } from "lucide-react";
+import { Eye, Sparkles, ArrowRight, Link2 } from "lucide-react";
+import { PREVIEW_MODULES } from "@/lib/licensed-preview/modules";
 import type { Sector, Region } from "@/lib/licensed-preview/sample-data";
 
 const ACCENTS = ["#5391D5", "#010131", "#16a34a", "#7c3aed", "#ca8a04", "#0d9488", "#e11d48"];
+const CAPS = PREVIEW_MODULES.filter((m) => m.id !== "command");
 
 const PRESETS: { org: string; sector: Sector; region: Region; accent: string }[] = [
   { org: "SDAIA", sector: "government", region: "saudi", accent: "#16a34a" },
@@ -26,12 +29,33 @@ export function PreviewLauncher() {
   const [sector, setSector] = useState<Sector>("government");
   const [region, setRegion] = useState<Region>("saudi");
   const [accent, setAccent] = useState(ACCENTS[0]);
+  const [logo, setLogo] = useState("");
+  const [featured, setFeatured] = useState<string[]>([]);
+
+  const toggleFeatured = (id: string) =>
+    setFeatured((f) => (f.includes(id) ? f.filter((x) => x !== id) : [...f, id]));
+
+  const buildQs = (o = org, s = sector, r = region, a = accent) => {
+    const p = new URLSearchParams({ org: o.trim(), sector: s, region: r, accent: a });
+    if (logo.trim()) p.set("logo", logo.trim());
+    if (featured.length) p.set("featured", featured.join(","));
+    return p.toString();
+  };
 
   const launch = (o = org, s = sector, r = region, a = accent) => {
-    const name = o.trim();
-    if (!name) return;
-    const qs = new URLSearchParams({ org: name, sector: s, region: r, accent: a });
-    router.push(`/licensed-preview?${qs.toString()}`);
+    if (!o.trim()) return;
+    router.push(`/licensed-preview?${buildQs(o, s, r, a)}`);
+  };
+
+  const copyShare = async () => {
+    if (!org.trim()) return;
+    const url = `${window.location.origin}/share/preview?${buildQs()}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Shareable link copied - send it to the prospect.");
+    } catch {
+      toast.error("Could not copy the link.");
+    }
   };
 
   return (
@@ -70,6 +94,11 @@ export function PreviewLauncher() {
             </div>
           </div>
           <div className="space-y-1.5">
+            <Label className="text-xs">Logo URL (optional)</Label>
+            <Input value={logo} onChange={(e) => setLogo(e.target.value)} placeholder="https://prospect.com/logo.png" />
+            <p className="text-[11px] text-muted-foreground">Paste a public logo image URL. Falls back to an initials mark.</p>
+          </div>
+          <div className="space-y-1.5">
             <Label className="text-xs">Accent colour</Label>
             <div className="flex flex-wrap items-center gap-2">
               {ACCENTS.map((c) => (
@@ -84,11 +113,37 @@ export function PreviewLauncher() {
               ))}
             </div>
           </div>
-          <div className="pt-1">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Lead modules (optional)</Label>
+            <p className="text-[11px] text-muted-foreground">Spotlight the capabilities this prospect is actually buying - they lead the nav and the dashboard.</p>
+            <div className="flex flex-wrap gap-1.5 pt-0.5">
+              {CAPS.map((m) => {
+                const on = featured.includes(m.id);
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => toggleFeatured(m.id)}
+                    className={`rounded-full border px-2.5 py-1 text-xs font-medium transition ${on ? "text-white" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                    style={on ? { background: m.tone, borderColor: m.tone } : undefined}
+                  >
+                    {m.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 pt-1">
             <Button onClick={() => launch()} disabled={!org.trim()} className="gap-1.5">
               <Eye className="h-4 w-4" /> Launch preview <ArrowRight className="h-4 w-4" />
             </Button>
+            <Button variant="outline" onClick={copyShare} disabled={!org.trim()} className="gap-1.5">
+              <Link2 className="h-4 w-4" /> Copy shareable link
+            </Button>
           </div>
+          <p className="text-[11px] text-muted-foreground">
+            The shareable link opens a public, read-only version (no login) - a leave-behind for the prospect.
+          </p>
         </CardContent>
       </Card>
 

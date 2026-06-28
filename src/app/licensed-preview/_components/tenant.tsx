@@ -6,6 +6,7 @@ import {
   buildSampleTenant,
   SECTOR_LABEL,
   REGION_LABEL,
+  SECTOR_PROFILE,
   type Brand,
   type ModuleStat,
 } from "@/lib/licensed-preview/sample-data";
@@ -99,20 +100,41 @@ const LOOP = [
   { label: "Succeed", caption: "Succession" },
 ];
 
-export function Tenant({ brand }: { brand: Brand }) {
+export function Tenant({ brand, shareMode = false }: { brand: Brand; shareMode?: boolean }) {
   const data = useMemo(() => buildSampleTenant(brand), [brand]);
   const [activeId, setActiveId] = useState("command");
   const accent = brand.accent;
   const active = moduleById(activeId)!;
+
+  // Featured modules lead the nav (a "Spotlight" group) + the capability grid.
+  const featured = (brand.featured ?? [])
+    .map(moduleById)
+    .filter((m): m is PreviewModule => !!m && m.id !== "command");
+  const featuredIds = new Set(featured.map((m) => m.id));
+  const navGroups: { key: string; label: string; caption: string; mods: PreviewModule[] }[] = [
+    { key: "command", label: "Command", caption: "Your HQ", mods: PREVIEW_MODULES.filter((m) => m.group === "command") },
+    ...(featured.length ? [{ key: "spotlight", label: "Spotlight", caption: "Leads this licence", mods: featured }] : []),
+    ...MODULE_GROUPS.filter((g) => g.key !== "command").map((g) => ({
+      key: g.key,
+      label: g.label,
+      caption: g.caption,
+      mods: PREVIEW_MODULES.filter((m) => m.group === g.key && !featuredIds.has(m.id)),
+    })),
+  ].filter((g) => g.mods.length > 0);
 
   return (
     <div className="fixed inset-0 z-[80] flex h-screen flex-col bg-slate-50 text-slate-900">
       {/* ── Brand header ── */}
       <header className="flex items-center justify-between gap-4 bg-[#010131] px-5 py-3 text-white">
         <div className="flex items-center gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg text-sm font-bold" style={{ background: accent }}>
-            {initials(brand.org)}
-          </span>
+          {brand.logo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={brand.logo} alt={brand.org} className="h-9 w-auto max-w-[150px] rounded-md bg-white/95 object-contain p-1" />
+          ) : (
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg text-sm font-bold" style={{ background: accent }}>
+              {initials(brand.org)}
+            </span>
+          )}
           <div className="leading-tight">
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60">Caliber for</span>
@@ -128,23 +150,26 @@ export function Tenant({ brand }: { brand: Brand }) {
           <span className="hidden items-center gap-1.5 rounded-full bg-amber-400/15 px-2.5 py-1 text-[11px] font-semibold text-amber-300 md:inline-flex">
             <ShieldCheck className="h-3.5 w-3.5" /> Licensed preview · sample data
           </span>
-          <Link href="/admin/licensed-preview" className="inline-flex items-center gap-1 rounded-md bg-white/10 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-white/20">
-            <ArrowLeft className="h-3.5 w-3.5" /> Exit preview
-          </Link>
+          {shareMode ? (
+            <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-white/50">Powered by Caliber</span>
+          ) : (
+            <Link href="/admin/licensed-preview" className="inline-flex items-center gap-1 rounded-md bg-white/10 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-white/20">
+              <ArrowLeft className="h-3.5 w-3.5" /> Exit preview
+            </Link>
+          )}
         </div>
       </header>
 
       <div className="flex min-h-0 flex-1">
         {/* ── Module nav ── */}
         <nav className="w-64 shrink-0 overflow-y-auto border-r border-slate-200 bg-white px-3 py-4">
-          {MODULE_GROUPS.map((g) => {
-            const mods = PREVIEW_MODULES.filter((m) => m.group === g.key);
+          {navGroups.map((g) => {
             return (
               <div key={g.key} className="mb-4">
                 <div className="px-2 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                   {g.label} <span className="font-medium text-slate-300">· {g.caption}</span>
                 </div>
-                {mods.map((m) => {
+                {g.mods.map((m) => {
                   const on = m.id === activeId;
                   const Icon = m.icon;
                   return (
@@ -168,7 +193,7 @@ export function Tenant({ brand }: { brand: Brand }) {
         {/* ── Content ── */}
         <main className="min-w-0 flex-1 overflow-y-auto p-6">
           {activeId === "command" ? (
-            <CommandCenter brand={brand} data={data} accent={accent} onOpen={setActiveId} />
+            <CommandCenter brand={brand} data={data} accent={accent} onOpen={setActiveId} featuredIds={featuredIds} />
           ) : (
             <ModuleView module={active} stat={data.modules[active.id]} departments={data.departments} />
           )}
@@ -188,17 +213,24 @@ function CommandCenter({
   data,
   accent,
   onOpen,
+  featuredIds,
 }: {
   brand: Brand;
   data: ReturnType<typeof buildSampleTenant>;
   accent: string;
   onOpen: (id: string) => void;
+  featuredIds: Set<string>;
 }) {
+  const profile = SECTOR_PROFILE[brand.sector];
+  const caps = [...PREVIEW_MODULES.filter((m) => m.id !== "command")].sort(
+    (a, b) => (featuredIds.has(b.id) ? 1 : 0) - (featuredIds.has(a.id) ? 1 : 0),
+  );
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <div>
+        <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: accent }}>{profile.headline}</div>
         <h1 className="text-2xl font-bold text-slate-900">{brand.org} · Talent Intelligence</h1>
-        <p className="mt-1 text-sm text-slate-500">One command center across every capability in your Caliber licence.</p>
+        <p className="mt-1 text-sm text-slate-500">{profile.tagline}</p>
       </div>
 
       {/* Hero */}
@@ -244,20 +276,26 @@ function CommandCenter({
       <div>
         <div className="mb-3 text-sm font-semibold text-slate-900">Your licensed capabilities</div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {PREVIEW_MODULES.filter((m) => m.id !== "command").map((m) => {
+          {caps.map((m) => {
             const s = data.modules[m.id];
             const Icon = m.icon;
+            const isFeatured = featuredIds.has(m.id);
             return (
               <button
                 key={m.id}
                 onClick={() => onOpen(m.id)}
-                className="group rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-slate-300 hover:shadow"
+                className={`group rounded-xl border bg-white p-4 text-left shadow-sm transition hover:shadow ${isFeatured ? "border-2" : "border border-slate-200 hover:border-slate-300"}`}
+                style={isFeatured ? { borderColor: m.tone } : undefined}
               >
                 <div className="flex items-center justify-between">
                   <span className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ background: `${m.tone}15`, color: m.tone }}>
                     <Icon className="h-5 w-5" />
                   </span>
-                  <ChevronRight className="h-4 w-4 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-slate-500" />
+                  {isFeatured ? (
+                    <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white" style={{ background: m.tone }}>Featured</span>
+                  ) : (
+                    <ChevronRight className="h-4 w-4 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-slate-500" />
+                  )}
                 </div>
                 <div className="mt-2.5 text-sm font-semibold text-slate-900">{m.label}</div>
                 <div className="text-xs text-slate-500">{m.tagline}</div>

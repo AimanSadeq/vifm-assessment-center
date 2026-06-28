@@ -12,6 +12,28 @@ export type Brand = {
   sector: Sector;
   region: Region;
   accent: string; // hex, drives the tenant's accent colour
+  logo?: string; // optional logo image URL (falls back to an initials mark)
+  featured?: string[]; // module ids to lead the nav + capability grid
+};
+
+// Per-sector tuning: a headline + tagline for the Command Center hero, and a
+// per-module score bias so a bank's tenant "feels" different from a ministry's.
+export const SECTOR_PROFILE: Record<Sector, { headline: string; tagline: string; bias: Record<string, number> }> = {
+  government: {
+    headline: "National Workforce Capability",
+    tagline: "A future-ready public sector, measured and developed in one place.",
+    bias: { arc: 6, reflect: 4, ac: 3, persona: 2, academy: 3, techno: -3 },
+  },
+  banking: {
+    headline: "Regulated-Workforce Readiness",
+    tagline: "Risk-ready, regulated, and AI-enabled talent - on one command center.",
+    bias: { techno: 7, prehire: 5, arc: 4, psychometrics: 3, ac: 2, fluent: 2 },
+  },
+  general: {
+    headline: "Enterprise Talent Intelligence",
+    tagline: "One view of capability across every function and grade.",
+    bias: { ac: 3, academy: 4, succession: 3, persona: 2 },
+  },
 };
 
 export type Cohort = { name: string; size: number; score: number };
@@ -118,9 +140,10 @@ export function buildSampleTenant(brand: Brand): TenantData {
     };
   }).sort((a, b) => b.readiness - a.readiness);
 
+  const sectorBias = SECTOR_PROFILE[brand.sector].bias;
   const modules: Record<string, ModuleStat> = {};
   for (const [id, p] of Object.entries(MODULE_PROFILES)) {
-    const avgScore = Math.min(94, Math.max(40, p.base + between(-6, 8)));
+    const avgScore = Math.min(94, Math.max(40, p.base + (sectorBias[id] ?? 0) + between(-6, 8)));
     const assessed = between(Math.floor(headcount * 0.25), Math.floor(headcount * 0.85));
     modules[id] = {
       assessed,

@@ -155,6 +155,14 @@ const isRoleReadinessRoute = (pathname: string) =>
   pathname.startsWith("/role-readiness/redeem") ||
   pathname.startsWith("/api/role-readiness/");
 
+// Public, read-only "Licensed Portal Preview" share link - a no-account
+// leave-behind for a prospect. The page renders only representative sample data
+// from the URL params (no DB, no real records), so it is safe to expose without
+// a session. The admin launcher + the admin /licensed-preview tenant stay
+// session-gated; only this /share/preview variant is public.
+const isPublicPreviewRoute = (pathname: string) =>
+  pathname === "/share/preview" || pathname.startsWith("/share/preview/");
+
 export async function middleware(request: NextRequest) {
   if (
     isProctorApiRoute(request.nextUrl.pathname) ||
@@ -172,7 +180,8 @@ export async function middleware(request: NextRequest) {
     isFluentPublicRoute(request.nextUrl.pathname) ||
     isCognitivePublicRoute(request.nextUrl.pathname) ||
     isPersonaPublicRoute(request.nextUrl.pathname) ||
-    isRoleReadinessRoute(request.nextUrl.pathname)
+    isRoleReadinessRoute(request.nextUrl.pathname) ||
+    isPublicPreviewRoute(request.nextUrl.pathname)
   ) {
     return NextResponse.next();
   }

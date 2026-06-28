@@ -106,7 +106,7 @@ export function Tenant({ brand }: { brand: Brand }) {
   const active = moduleById(activeId)!;
 
   return (
-    <div className="flex h-screen flex-col bg-slate-50 text-slate-900">
+    <div className="fixed inset-0 z-[80] flex h-screen flex-col bg-slate-50 text-slate-900">
       {/* ── Brand header ── */}
       <header className="flex items-center justify-between gap-4 bg-[#010131] px-5 py-3 text-white">
         <div className="flex items-center gap-3">

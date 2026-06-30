@@ -11,7 +11,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { AR_FONT_HREF, escapeHtml } from "@/lib/reports/html-to-pdf";
-import { personaBand, gapToneHex } from "@/lib/scoring/persona-bands";
+import { personaBand, gapToneHex, PERSONA_BAND_GUIDE, PERSONA_BAND_HEX } from "@/lib/scoring/persona-bands";
 import type { PersonaPdfData } from "@/lib/reports/persona-profile";
 
 const C = {
@@ -165,6 +165,13 @@ export function renderPersonaProfileHtmlAr(data: PersonaPdfData): string {
     <div class="overall-value" style="color:${bandColor(data.overall)}">${num(data.overall.toFixed(2))} / 5 · ${escapeHtml(personaBand(data.overall).labelAr)}</div>
     ${overallPct}
   </div>`);
+
+  // Persona interpretation bands legend (under the overall self-rating)
+  const arBandRows = PERSONA_BAND_GUIDE.map((b) => {
+    const hex = PERSONA_BAND_HEX[b.key];
+    return `<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:3px"><span style="width:7px;height:7px;border-radius:4px;background:${hex};margin-top:4px;flex:0 0 auto"></span><span style="font-size:9px;line-height:1.6"><b style="color:${hex}">${escapeHtml(b.nameAr)}</b> <span style="color:#6b7280">(${num(b.rangeAr)})</span> - ${escapeHtml(b.definitionAr)}</span></div>`;
+  }).join("");
+  parts.push(`<div style="border:0.5px solid #e5e7eb;border-radius:6px;padding:9px;background:#fafbfc;margin-bottom:14px"><div style="font-size:8px;color:#6b7280;font-weight:bold;margin-bottom:5px">نطاقات تفسير برسونا</div>${arBandRows}</div>`);
 
   // Clusters
   for (const cl of data.clusters) {

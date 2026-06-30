@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ClipboardList, FileText, Target, GraduationCap } from "lucide-react";
+import { ArrowLeft, ClipboardList, FileText, Target, GraduationCap, Compass } from "lucide-react";
 import { getCurrentCaller } from "@/lib/ara/auth-guards";
 import { listPersonaResults } from "@/lib/scoring/persona-results";
 import { fitBand, FIT_BAND_TW } from "@/lib/scoring/persona-fit";
@@ -134,14 +134,24 @@ export default async function PersonaResultsPage({ searchParams }: { searchParam
                       </td>
                       <td className="px-4 py-2.5">
                         {r.itemCount > 0 ? (
-                          <a
-                            href={`/api/ac/persona/${r.id}/report`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs font-medium text-[#5391D5] hover:underline"
-                          >
-                            <FileText className="h-3.5 w-3.5" /> Open report
-                          </a>
+                          <div className="flex flex-col gap-1">
+                            <a
+                              href={`/api/ac/persona/${r.id}/report`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs font-medium text-[#5391D5] hover:underline"
+                            >
+                              <FileText className="h-3.5 w-3.5" /> Open report
+                            </a>
+                            <a
+                              href={`/api/ac/persona/${r.id}/leadership-report`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs font-medium text-[#c026d3] hover:underline"
+                            >
+                              <Compass className="h-3.5 w-3.5" /> Leadership
+                            </a>
+                          </div>
                         ) : (
                           <span className="text-xs text-slate-300">-</span>
                         )}

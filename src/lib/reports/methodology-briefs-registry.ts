@@ -68,6 +68,15 @@ export const METHODOLOGY_BRIEFS: readonly MethodologyBrief[] = [
     pillar: "both",
   },
   {
+    slug: "persona-leadership",
+    service: "Persona Leadership Report",
+    tagline: "Management vs leadership orientation model",
+    eyebrow: "VIFM Persona® Leadership Report",
+    file: "Persona-Leadership-Model.md",
+    filename: "VIFM-Persona-Leadership-Model.pdf",
+    pillar: "manage",
+  },
+  {
     slug: "fluent",
     service: "Fluent",
     tagline: "Indicative CEFR English placement",

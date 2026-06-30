@@ -1,5 +1,5 @@
 import { Document, Page, Text, View, StyleSheet, Svg, Path, Circle, Line, Polygon } from "@react-pdf/renderer";
-import { personaBand, gapToneHex } from "@/lib/scoring/persona-bands";
+import { personaBand, gapToneHex, PERSONA_BAND_GUIDE, PERSONA_BAND_HEX } from "@/lib/scoring/persona-bands";
 
 // Persona - Behavioural Competency Self-Assessment profile PDF (English /
 // React-PDF). Works for any behavioral session (anonymous /ac/persona or
@@ -114,6 +114,14 @@ const s = StyleSheet.create({
   overallLabel: { fontSize: 8, color: C.textLight, textTransform: "uppercase", letterSpacing: 0.6 },
   overallValue: { fontSize: 24, fontFamily: "Helvetica-Bold" },
   overallPct: { fontSize: 9, color: C.textLight, marginTop: 2 },
+
+  bandsBox: { borderWidth: 0.5, borderColor: C.border, borderRadius: 5, padding: 8, backgroundColor: C.bgSoft, marginBottom: 14 },
+  bandsTitle: { fontSize: 8, color: C.textLight, textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 4, fontFamily: "Helvetica-Bold" },
+  bandRow: { flexDirection: "row", alignItems: "flex-start", marginBottom: 2.5 },
+  bandDot: { width: 6, height: 6, borderRadius: 3, marginTop: 2.5, marginRight: 5 },
+  bandName: { fontSize: 8, fontFamily: "Helvetica-Bold" },
+  bandRange: { fontSize: 7.5, color: C.textLight },
+  bandDef: { fontSize: 8, color: C.text, flex: 1 },
 
   clusterTitleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4, marginTop: 10 },
   clusterName: { fontSize: 11, fontFamily: "Helvetica-Bold", color: C.primary },
@@ -448,6 +456,20 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
               <Text style={s.overallPct}>{ordinal(data.overallPercentile)} percentile vs {data.normGroupLabel ?? "the norm group"}</Text>
             ) : null}
           </View>
+        </View>
+
+        <View style={s.bandsBox} wrap={false}>
+          <Text style={s.bandsTitle}>Persona interpretation bands</Text>
+          {PERSONA_BAND_GUIDE.map((b) => (
+            <View key={b.key} style={s.bandRow}>
+              <View style={[s.bandDot, { backgroundColor: PERSONA_BAND_HEX[b.key] }]} />
+              <Text style={s.bandDef}>
+                <Text style={[s.bandName, { color: PERSONA_BAND_HEX[b.key] }]}>{b.name} </Text>
+                <Text style={s.bandRange}>({b.range})  </Text>
+                {b.definition}
+              </Text>
+            </View>
+          ))}
         </View>
 
         {data.clusters.map((cl) => (

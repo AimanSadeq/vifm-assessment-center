@@ -361,7 +361,6 @@ export function CaliberLandingPage() {
             </div>
             <div className="flex gap-6 text-sm text-white/50">
               <a href="/courses" className="hover:text-white/80">Training catalogue</a>
-              <a href="/compare" className="hover:text-white/80">Compare portals</a>
             </div>
           </div>
         </footer>

@@ -2,16 +2,24 @@ import { PlatformLanding } from "./_components/platform-landing";
 import { PortalSidebar } from "@/components/shared/portal-sidebar";
 import { MobileSidebar } from "@/components/shared/mobile-sidebar";
 import { loadBespokeServices } from "@/lib/bespoke/services";
+import { getCurrentCaller } from "@/lib/ara/auth-guards";
+import { CaliberLandingPage } from "@/components/landing/caliber-landing-page";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "VIFM Academy · Learning, assessment & readiness",
+  title: "VIFM Talent Intelligence Platform · Assessment & learning for the GCC",
   description:
-    "The VIFM Academy turns assessment insight into self-paced finance & management programmes for the GCC - with AI knowledge-checks, verifiable credentials, and seven bilingual diagnostic services that personalise each learning path.",
+    "One platform across the full talent lifecycle - bilingual assessments, AI-readiness diagnostics, verifiable credentials, and learning mapped to the gaps your diagnostics reveal. Built for the GCC.",
 };
 
 export default async function Home() {
+  // Public visitors see the marketing landing; signed-in staff get the launcher.
+  const caller = await getCurrentCaller().catch(() => null);
+  if (!caller) {
+    return <CaliberLandingPage />;
+  }
+
   // Academy-led front screen: the left panel for navigation, with the Academy
   // landing as the scrolling content beside it.
   const bespokeProducts = (await loadBespokeServices())

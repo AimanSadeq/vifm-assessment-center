@@ -35,7 +35,8 @@ export type EmailTemplate =
   | "prehire_client_report"
   | "role_readiness_invitation"
   | "voucher_batch_to_client"
-  | "voucher_to_delegate";
+  | "voucher_to_delegate"
+  | "platform_demo_request";
 
 /** Optional file attachment (e.g. a generated PDF report). */
 export type EmailAttachment = {
@@ -68,6 +69,21 @@ function getGraphClient(): Client | null {
 }
 
 const TEMPLATES: Record<EmailTemplate, { subject: string; body: string }> = {
+  platform_demo_request: {
+    subject: "New demo request - {{organisation}}",
+    body: `A demo request was submitted from the Caliber landing page.
+
+Name: {{name}}
+Work email: {{email}}
+Organisation: {{organisation}}
+Role: {{role}}
+Phone: {{phone}}
+
+Message:
+{{message}}
+
+Virginia Institute of Finance and Management`,
+  },
   candidate_invitation: {
     subject: "You have been invited to a VIFM Assessment Center",
     body: `Dear {{candidateName}},

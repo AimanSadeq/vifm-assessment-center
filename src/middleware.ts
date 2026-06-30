@@ -163,6 +163,10 @@ const isRoleReadinessRoute = (pathname: string) =>
 const isPublicPreviewRoute = (pathname: string) =>
   pathname === "/share/preview" || pathname.startsWith("/share/preview/");
 
+// Public "Request a demo" lead-capture from the marketing landing. No account;
+// validated + best-effort emailed server-side. Bypass auth in dev and prod.
+const isDemoRequestRoute = (pathname: string) => pathname === "/api/demo-request";
+
 export async function middleware(request: NextRequest) {
   if (
     isProctorApiRoute(request.nextUrl.pathname) ||
@@ -181,7 +185,8 @@ export async function middleware(request: NextRequest) {
     isCognitivePublicRoute(request.nextUrl.pathname) ||
     isPersonaPublicRoute(request.nextUrl.pathname) ||
     isRoleReadinessRoute(request.nextUrl.pathname) ||
-    isPublicPreviewRoute(request.nextUrl.pathname)
+    isPublicPreviewRoute(request.nextUrl.pathname) ||
+    isDemoRequestRoute(request.nextUrl.pathname)
   ) {
     return NextResponse.next();
   }
@@ -190,6 +195,7 @@ export async function middleware(request: NextRequest) {
   // anonymous prospects and VIFM staff see them unchanged, but a signed-in
   // client_manager is bounced to their own /portal so they stay confined.
   if (
+    request.nextUrl.pathname === "/" ||
     isAraMarketingRoute(request.nextUrl.pathname) ||
     isPublicCoursesRoute(request.nextUrl.pathname) ||
     isPublicEvidenceRoute(request.nextUrl.pathname)

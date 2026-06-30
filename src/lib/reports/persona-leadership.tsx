@@ -46,10 +46,7 @@ const s = StyleSheet.create({
   statValue: { fontSize: 22, fontFamily: "Helvetica-Bold", marginTop: 2 },
   statSub: { fontSize: 8, color: C.textLight, marginTop: 1 },
 
-  matrixWrap: { flexDirection: "row", gap: 16, alignItems: "center", marginBottom: 6 },
-  matrixBox: { position: "relative", width: 220, height: 220 },
-  qLabel: { position: "absolute", fontSize: 7.5, fontFamily: "Helvetica-Bold", color: C.textLight, width: 96 },
-  axisX: { textAlign: "center", fontSize: 8, color: C.mgmt, fontFamily: "Helvetica-Bold", marginTop: 2, width: 220 },
+  matrixWrap: { alignItems: "center", marginBottom: 8 },
 
   row: { marginBottom: 6, paddingBottom: 5, borderBottomWidth: 0.5, borderBottomColor: C.border },
   rowHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
@@ -62,38 +59,83 @@ const s = StyleSheet.create({
   pill: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 0.5, borderColor: C.border, borderRadius: 4, paddingVertical: 4, paddingHorizontal: 7, marginBottom: 4, backgroundColor: "#ffffff" },
   pillName: { fontSize: 9, fontFamily: "Helvetica-Bold", color: C.text },
 
+  devItem: { marginBottom: 8, borderWidth: 0.5, borderColor: C.border, borderRadius: 5, padding: 8, backgroundColor: C.bgSoft },
+  devHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
+  tipRow: { flexDirection: "row", marginBottom: 2.5 },
+  tipBullet: { fontSize: 8.5, color: C.lead, marginRight: 5, fontFamily: "Helvetica-Bold" },
+  tipText: { fontSize: 8.5, color: C.text, flex: 1, lineHeight: 1.4 },
+  tipEmpty: { fontSize: 8.5, color: C.textLight, fontStyle: "italic" },
+
   footer: { position: "absolute", bottom: 24, left: 44, right: 44, fontSize: 7.5, color: C.textLight, textAlign: "center", borderTopWidth: 0.5, borderTopColor: C.border, paddingTop: 6, lineHeight: 1.4 },
 });
 
-/** The 2x2 Leadership/Management matrix. X = management, Y = leadership (1-5). */
+/**
+ * The 2x2 Leadership/Management matrix, drawn entirely in SVG: quadrant tints,
+ * integer gridlines, a bold midpoint cross, tick numbers (1-5) on both axes, and
+ * rotated X (Management) / Y (Leadership) axis labels. X = management,
+ * Y = leadership, each 1-5.
+ */
 function Matrix({ management, leadership }: { management: number; leadership: number }) {
-  const SIZE = 220;
-  const pad = 8;
-  const inner = SIZE - pad * 2;
+  const W = 250;
+  const H = 214;
+  const cl = 28; // chart left (room for Y axis label + ticks)
+  const ct = 10; // chart top
+  const cw = 200; // chart width
+  const ch = 168; // chart height
+  const cr = cl + cw; // chart right
+  const cb = ct + ch; // chart bottom
   const clamp = (v: number) => Math.max(1, Math.min(5, v));
-  const px = pad + ((clamp(management) - 1) / 4) * inner;
-  const py = pad + inner - ((clamp(leadership) - 1) / 4) * inner; // invert Y
-  const midX = pad + ((LEADERSHIP_MIDPOINT - 1) / 4) * inner;
-  const midY = pad + inner - ((LEADERSHIP_MIDPOINT - 1) / 4) * inner;
+  const X = (v: number) => cl + ((v - 1) / 4) * cw;
+  const Y = (v: number) => cb - ((v - 1) / 4) * ch; // invert Y (5 at top)
+  const px = X(clamp(management));
+  const py = Y(clamp(leadership));
+  const midX = X(LEADERSHIP_MIDPOINT);
+  const midY = Y(LEADERSHIP_MIDPOINT);
+  const ticks = [1, 2, 3, 4, 5];
+  const yMid = ct + ch / 2;
 
   return (
-    <View style={s.matrixBox}>
-      <Svg width={SIZE} height={SIZE}>
-        <Rect x={pad} y={pad} width={inner} height={inner} fill="#ffffff" stroke={C.border} strokeWidth={1} />
-        {/* quadrant divider lines at the midpoint */}
-        <Line x1={midX} y1={pad} x2={midX} y2={pad + inner} stroke={C.border} strokeWidth={0.8} strokeDasharray="2 2" />
-        <Line x1={pad} y1={midY} x2={pad + inner} y2={midY} stroke={C.border} strokeWidth={0.8} strokeDasharray="2 2" />
-        {/* the candidate's plotted position */}
-        <Circle cx={px} cy={py} r={6} fill={C.primary} stroke="#ffffff" strokeWidth={1.5} />
-        <Circle cx={px} cy={py} r={11} fill="none" stroke={C.lead} strokeWidth={1} />
-      </Svg>
-      {/* quadrant labels (top-left = high leadership/low mgmt, etc.) */}
-      <Text style={[s.qLabel, { top: 12, left: 12 }]}>Visionary{"\n"}(high leadership)</Text>
-      <Text style={[s.qLabel, { top: 12, right: 12, textAlign: "right" }]}>Integrated{"\n"}(high both)</Text>
-      <Text style={[s.qLabel, { bottom: 26, left: 12 }]}>Emerging{"\n"}(low both)</Text>
-      <Text style={[s.qLabel, { bottom: 26, right: 12, textAlign: "right" }]}>Operational{"\n"}(high management)</Text>
-      <Text style={s.axisX}>Management (transactional) ▶</Text>
-    </View>
+    <Svg width={W} height={H}>
+      {/* quadrant tints */}
+      <Rect x={cl} y={ct} width={midX - cl} height={midY - ct} fill="#fdf4ff" />
+      <Rect x={midX} y={ct} width={cr - midX} height={midY - ct} fill="#ecfdf5" />
+      <Rect x={cl} y={midY} width={midX - cl} height={cb - midY} fill="#f8fafc" />
+      <Rect x={midX} y={midY} width={cr - midX} height={cb - midY} fill="#eff6ff" />
+      {/* integer gridlines */}
+      {[2, 3, 4].map((v) => (
+        <Line key={`gv${v}`} x1={X(v)} y1={ct} x2={X(v)} y2={cb} stroke="#e5e7eb" strokeWidth={0.5} />
+      ))}
+      {[2, 3, 4].map((v) => (
+        <Line key={`gh${v}`} x1={cl} y1={Y(v)} x2={cr} y2={Y(v)} stroke="#e5e7eb" strokeWidth={0.5} />
+      ))}
+      {/* bold midpoint cross (the high/low split) */}
+      <Line x1={midX} y1={ct} x2={midX} y2={cb} stroke="#9ca3af" strokeWidth={1} />
+      <Line x1={cl} y1={midY} x2={cr} y2={midY} stroke="#9ca3af" strokeWidth={1} />
+      {/* frame */}
+      <Rect x={cl} y={ct} width={cw} height={ch} fill="none" stroke="#cbd5e1" strokeWidth={1} />
+      {/* quadrant labels */}
+      <Text x={cl + 5} y={ct + 12} fill={C.lead} textAnchor="start" style={{ fontSize: 7, fontFamily: "Helvetica-Bold" }}>Visionary</Text>
+      <Text x={cr - 5} y={ct + 12} fill={C.emerald} textAnchor="end" style={{ fontSize: 7, fontFamily: "Helvetica-Bold" }}>Integrated</Text>
+      <Text x={cl + 5} y={cb - 6} fill={C.textLight} textAnchor="start" style={{ fontSize: 7, fontFamily: "Helvetica-Bold" }}>Emerging</Text>
+      <Text x={cr - 5} y={cb - 6} fill={C.mgmt} textAnchor="end" style={{ fontSize: 7, fontFamily: "Helvetica-Bold" }}>Operational</Text>
+      {/* tick numbers */}
+      {ticks.map((v) => (
+        <Text key={`xt${v}`} x={X(v)} y={cb + 10} fill={C.textLight} textAnchor="middle" style={{ fontSize: 6.5 }}>{String(v)}</Text>
+      ))}
+      {ticks.map((v) => (
+        <Text key={`yt${v}`} x={cl - 6} y={Y(v) + 2.4} fill={C.textLight} textAnchor="end" style={{ fontSize: 6.5 }}>{String(v)}</Text>
+      ))}
+      {/* axis labels (Y rotated) */}
+      <Text x={cl + cw / 2} y={H - 3} fill={C.mgmt} textAnchor="middle" style={{ fontSize: 8.5, fontFamily: "Helvetica-Bold" }}>
+        Management (transactional)
+      </Text>
+      <Text x={10} y={yMid} fill={C.lead} textAnchor="middle" transform={`rotate(-90, 10, ${yMid})`} style={{ fontSize: 8.5, fontFamily: "Helvetica-Bold" }}>
+        Leadership (transformational)
+      </Text>
+      {/* the candidate's plotted position */}
+      <Circle cx={px} cy={py} r={11} fill="none" stroke={C.lead} strokeWidth={1} />
+      <Circle cx={px} cy={py} r={5.5} fill={C.primary} stroke="#ffffff" strokeWidth={1.5} />
+    </Svg>
   );
 }
 
@@ -162,23 +204,18 @@ export function LeadershipReportPdf({ data }: { data: LeadershipPdfData }) {
           </Text>
         </View>
 
-        {/* 4. Leadership/Management Matrix */}
+        {/* 2. Leadership/Management Matrix */}
         <View style={s.section} wrap={false}>
           <Text style={s.h2}>2 · Leadership / Management Matrix</Text>
           <View style={s.matrixWrap}>
             <Matrix management={p.management} leadership={p.leadership} />
-            <View style={{ flex: 1 }}>
-              <Text style={[s.para, { marginBottom: 6 }]}>
-                The X-axis is management (transactional) orientation; the Y-axis is leadership (transformational) orientation. The marked
-                point is this individual&rsquo;s self-assessed position.
-              </Text>
-              <Text style={[s.para, { fontFamily: "Helvetica-Bold", color: C.primary }]}>Preferred style: {p.styleLabel}</Text>
-              <Text style={[s.statSub, { marginTop: 6 }]}>
-                High/low is split at the {LEADERSHIP_MIDPOINT.toFixed(1)} scale midpoint (moves to the norm median once a Persona norm
-                sample exists).
-              </Text>
-            </View>
           </View>
+          <Text style={s.para}>
+            Each axis is a 1-5 self-rating: the X-axis is management (transactional) orientation, the Y-axis is leadership
+            (transformational) orientation. The plotted point is this individual&rsquo;s self-assessed position; the bold cross is the{" "}
+            {LEADERSHIP_MIDPOINT.toFixed(1)} high/low split (it moves to the norm median once a Persona norm sample exists). Preferred
+            style: <Text style={{ fontFamily: "Helvetica-Bold", color: C.primary }}>{p.styleLabel}</Text>.
+          </Text>
         </View>
 
         {/* 3. Leadership Potential Summary */}
@@ -213,9 +250,43 @@ export function LeadershipReportPdf({ data }: { data: LeadershipPdfData }) {
         </Text>
       </Page>
 
-      {/* ── Page 2: Competency-by-competency details ── */}
+      {/* ── Page 2: Development tips & activities for the development areas ── */}
       <Page size="A4" style={s.page}>
-        <Text style={s.h2}>4 · Leadership Potential Details</Text>
+        <Text style={s.h2}>4 · Development Tips &amp; Activities</Text>
+        <Text style={[s.para, { marginBottom: 10 }]}>
+          Targeted tips and on-the-job activities for the five lowest-rated competencies (the development areas above) - concrete,
+          GCC-contextualised actions to start over a 30/60/90-day cycle, ideally with a manager or coach.
+        </Text>
+        {data.developmentPlan.map((d) => (
+          <View key={d.name} style={s.devItem} wrap={false}>
+            <View style={s.devHead}>
+              <View style={s.rowNameWrap}>
+                <Text style={s.pillName}>{d.name}</Text>
+                <Text style={[s.tag, { backgroundColor: dimHex(d.dimension) }]}>{dimShort(d.dimension)}</Text>
+              </View>
+              <Text style={[s.rowScore, { color: band(d.score) }]}>{d.score.toFixed(2)}</Text>
+            </View>
+            {d.tips.length > 0 ? (
+              d.tips.map((t, i) => (
+                <View key={i} style={s.tipRow}>
+                  <Text style={s.tipBullet}>•</Text>
+                  <Text style={s.tipText}>{t}</Text>
+                </View>
+              ))
+            ) : (
+              <Text style={s.tipEmpty}>No catalogue tips for this competency yet - set a development objective with a coach.</Text>
+            )}
+          </View>
+        ))}
+        <Text style={s.footer} fixed>
+          Self-report orientation lens, mapped to the transactional/transformational (Bass &amp; Avolio) model - not a validated leadership
+          typology or a selection tool. Triangulate with a Reflect 360° before any leadership-readiness conclusion. © VIFM.
+        </Text>
+      </Page>
+
+      {/* ── Page 3: Competency-by-competency details ── */}
+      <Page size="A4" style={s.page}>
+        <Text style={s.h2}>5 · Leadership Potential Details</Text>
         <Text style={[s.para, { marginBottom: 10 }]}>
           Every competency with its self-rating (out of 5), short definition, and dimension tag, grouped by dimension and ordered by
           score.

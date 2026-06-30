@@ -68,9 +68,10 @@ A near-midpoint position on both axes is read as a **Balanced / Versatile** prof
 ## 6. What the report contains
 
 1. **Executive Summary** - the preferred style, the two axis scores, the overall self-rating, and a short synthesis of orientation.
-2. **Leadership / Management Matrix** - the 2x2 plot of the person's self-assessed position (X = management, Y = leadership).
+2. **Leadership / Management Matrix** - the 2x2 plot of the person's self-assessed position (X = management, Y = leadership), with quadrant tints, gridlines, 1-5 tick marks, and both axis labels.
 3. **Leadership Potential Summary** - dominant tendencies (highest self-ratings) and development areas (lowest), each tagged by dimension.
-4. **Leadership Potential Details** - every competency with its self-rating, short definition, and dimension tag, grouped by dimension and ordered by score.
+4. **Development Tips & Activities** - targeted tips and on-the-job activities for the five lowest-rated competencies (the development areas), drawn from the VIFM development-tip catalogue (3 per competency, GCC-contextualised), framed for a 30/60/90-day cycle with a manager or coach.
+5. **Leadership Potential Details** - every competency with its self-rating, short definition, and dimension tag, grouped by dimension and ordered by score.
 
 ---
 

@@ -7,13 +7,25 @@
 
 import { createServiceClient } from "@/lib/supabase/server";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
-import { computeLeadershipProfile, type LeadershipProfile } from "@/lib/reports/persona-leadership-dimensions";
+import {
+  computeLeadershipProfile,
+  type LeadershipProfile,
+  type LeadershipDimension,
+} from "@/lib/reports/persona-leadership-dimensions";
+
+export type DevelopmentPlanItem = {
+  name: string;
+  dimension: LeadershipDimension;
+  score: number;
+  tips: string[];
+};
 
 export type LeadershipPdfData = {
   takerName: string | null;
   generatedAt: string;
   overall: number; // mean across all answered competencies (1-5)
   profile: LeadershipProfile;
+  developmentPlan: DevelopmentPlanItem[]; // tips/activities for the lowest-rated competencies
 };
 
 export type LeadershipBuildResult =
@@ -70,6 +82,34 @@ export async function buildLeadershipPdfData(sessionId: string): Promise<Leaders
   const all = [...scoreById.values()];
   const overall = all.length ? round2(all.reduce((a, b) => a + b, 0) / all.length) : 0;
 
+  // ── Development tips/activities for the lowest-rated competencies ──
+  // Tips are seeded into behavioral_indicators tagged "[DEV TIP] ..." (00004).
+  const devIds = profile.topDevelopment.map((r) => r.id);
+  const tipsById = new Map<string, string[]>();
+  if (devIds.length) {
+    try {
+      const { data: tipRows } = await sb
+        .from("behavioral_indicators")
+        .select("competency_id, description, sort_order")
+        .in("competency_id", devIds)
+        .like("description", "[DEV TIP]%")
+        .order("sort_order");
+      for (const t of tipRows ?? []) {
+        const txt = String(t.description).replace(/^\[DEV TIP\]\s*/, "").trim();
+        if (!txt) continue;
+        const cid = t.competency_id as string;
+        if (!tipsById.has(cid)) tipsById.set(cid, []);
+        tipsById.get(cid)!.push(txt);
+      }
+    } catch { /* tolerant */ }
+  }
+  const developmentPlan: DevelopmentPlanItem[] = profile.topDevelopment.map((r) => ({
+    name: r.name,
+    dimension: r.dimension,
+    score: r.score,
+    tips: tipsById.get(r.id) ?? [],
+  }));
+
   return {
     ok: true,
     data: {
@@ -77,6 +117,7 @@ export async function buildLeadershipPdfData(sessionId: string): Promise<Leaders
       generatedAt: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }),
       overall,
       profile,
+      developmentPlan,
     },
   };
 }

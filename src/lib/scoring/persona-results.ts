@@ -209,14 +209,27 @@ export async function listPersonaResults(limit = 500): Promise<PersonaResultRow[
     if (sessions.length === 0) return [];
 
     const ids = sessions.map((s) => s.id);
-    const { data: responses } = await sb
-      .from("behavioral_assessment_responses")
-      .select("session_id, competency_id, raw_score, is_reverse")
-      .in("session_id", ids);
+    // Page through the responses: the API caps a single select at ~1000 rows, and
+    // a busy bank can have thousands of Persona answers, so an unpaged fetch would
+    // silently drop the responses for most sittings (they'd show "-" with no report
+    // link). Range-paginate until a short page comes back.
+    type RespRow = { session_id: string; competency_id: string; raw_score: number; is_reverse: boolean };
+    const responses: RespRow[] = [];
+    const PAGE = 1000;
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await sb
+        .from("behavioral_assessment_responses")
+        .select("session_id, competency_id, raw_score, is_reverse")
+        .in("session_id", ids)
+        .range(from, from + PAGE - 1);
+      if (error || !data || data.length === 0) break;
+      responses.push(...(data as unknown as RespRow[]));
+      if (data.length < PAGE) break;
+    }
 
     // Per-session: per-competency reverse-mapped values + the flat list (overall).
     const bySession = new Map<string, Map<string, number[]>>();
-    for (const r of responses ?? []) {
+    for (const r of responses) {
       const sid = r.session_id as string;
       if (!bySession.has(sid)) bySession.set(sid, new Map());
       const m = bySession.get(sid)!;

@@ -41,6 +41,150 @@ function orgNameOf(r: SessionRow): string | null {
   return Array.isArray(o) ? o[0]?.name ?? null : o.name ?? null;
 }
 
+export type PersonaClientCount = { client: string; completed: number; inProgress: number };
+
+/**
+ * Completed + in-progress standalone Persona sittings grouped by client org, for
+ * the discoverability panel on the vouchers page (so "I issued vouchers to X"
+ * leads straight to "here are X's results"). Service-role read; tolerant of the
+ * org table / columns being absent (returns []).
+ */
+export async function personaResultCountsByClient(): Promise<PersonaClientCount[]> {
+  try {
+    const sb = createServiceClient();
+    const { data, error } = await sb
+      .from("behavioral_assessment_sessions")
+      .select("status, organization_id")
+      .is("candidate_id", null)
+      .in("status", ["submitted", "in_progress"])
+      .not("organization_id", "is", null)
+      .limit(3000);
+    if (error || !data) return [];
+    const rows = data as { status: string; organization_id: string | null }[];
+    const orgIds = Array.from(new Set(rows.map((r) => r.organization_id).filter((x): x is string => !!x)));
+    if (orgIds.length === 0) return [];
+    const { data: orgs } = await sb.from("organizations").select("id, name").in("id", orgIds);
+    const nameById = new Map((orgs ?? []).map((o: { id: string; name: string }) => [o.id, o.name]));
+    const map = new Map<string, { completed: number; inProgress: number }>();
+    for (const r of rows) {
+      const name = r.organization_id ? nameById.get(r.organization_id) : null;
+      if (!name) continue;
+      if (!map.has(name)) map.set(name, { completed: 0, inProgress: 0 });
+      const e = map.get(name)!;
+      if (r.status === "submitted") e.completed += 1;
+      else e.inProgress += 1;
+    }
+    return Array.from(map.entries())
+      .map(([client, c]) => ({ client, ...c }))
+      .sort((a, b) => b.completed - a.completed || a.client.localeCompare(b.client));
+  } catch {
+    return [];
+  }
+}
+
+export type PersonaRedeemer = {
+  name: string | null;
+  email: string | null;
+  redeemedAt: string;
+  status: "completed" | "in_progress" | "not_started";
+  resultId: string | null;
+};
+export type PersonaVoucherActivity = {
+  code: string;
+  clientName: string | null;
+  contactName: string | null;
+  contactEmail: string | null;
+  createdAt: string;
+  usedCount: number;
+  maxUses: number;
+  redeemers: PersonaRedeemer[];
+};
+
+/**
+ * Per-voucher issuance + redemption activity for the Persona vouchers page: when
+ * each voucher was issued, to which client (+ contact), and the named delegates
+ * who redeemed it with their completion status + result link. Answers "when did
+ * I issue these, to whom, and who actually did it". Tolerant of the contact
+ * columns (migration 00168) being absent.
+ */
+export async function personaVoucherActivity(limit = 100): Promise<PersonaVoucherActivity[]> {
+  try {
+    const sb = createServiceClient();
+    type VRow = {
+      id: string; code: string; client_name: string | null;
+      contact_name?: string | null; contact_email?: string | null;
+      used_count: number | null; max_uses: number | null; created_at: string;
+    };
+    const r1 = await sb
+      .from("persona_vouchers")
+      .select("id, code, client_name, contact_name, contact_email, used_count, max_uses, created_at")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    let rows = r1.data as unknown as VRow[] | null;
+    if (r1.error) {
+      const r2 = await sb
+        .from("persona_vouchers")
+        .select("id, code, client_name, used_count, max_uses, created_at")
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      rows = r2.data as unknown as VRow[] | null;
+    }
+    const vouchers = rows ?? [];
+    if (vouchers.length === 0) return [];
+
+    const vIds = vouchers.map((v) => v.id);
+    const { data: redemptions } = await sb
+      .from("persona_voucher_redemptions")
+      .select("voucher_id, redeemer_name, redeemer_email, redeemed_at, result_id")
+      .in("voucher_id", vIds)
+      .order("redeemed_at", { ascending: true });
+
+    const resultIds = (redemptions ?? [])
+      .map((r) => r.result_id as string | null)
+      .filter((x): x is string => !!x);
+    const statusById = new Map<string, string>();
+    if (resultIds.length) {
+      const { data: sessions } = await sb
+        .from("behavioral_assessment_sessions")
+        .select("id, status")
+        .in("id", resultIds);
+      for (const s of sessions ?? []) statusById.set(s.id as string, s.status as string);
+    }
+
+    const byVoucher = new Map<string, PersonaRedeemer[]>();
+    for (const r of redemptions ?? []) {
+      const vid = r.voucher_id as string;
+      if (!byVoucher.has(vid)) byVoucher.set(vid, []);
+      const rid = (r.result_id as string | null) ?? null;
+      const status: PersonaRedeemer["status"] = !rid
+        ? "not_started"
+        : statusById.get(rid) === "submitted"
+          ? "completed"
+          : "in_progress";
+      byVoucher.get(vid)!.push({
+        name: (r.redeemer_name as string | null) ?? null,
+        email: (r.redeemer_email as string | null) ?? null,
+        redeemedAt: r.redeemed_at as string,
+        status,
+        resultId: rid,
+      });
+    }
+
+    return vouchers.map((v) => ({
+      code: v.code,
+      clientName: v.client_name ?? null,
+      contactName: v.contact_name ?? null,
+      contactEmail: v.contact_email ?? null,
+      createdAt: v.created_at,
+      usedCount: Number(v.used_count) || 0,
+      maxUses: Number(v.max_uses) || 0,
+      redeemers: byVoucher.get(v.id) ?? [],
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export async function listPersonaResults(limit = 500): Promise<PersonaResultRow[] | null> {
   try {
     const sb = createServiceClient();

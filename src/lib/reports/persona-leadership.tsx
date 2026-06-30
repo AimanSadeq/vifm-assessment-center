@@ -1,4 +1,4 @@
-import { Document, Page, Text, View, StyleSheet, Svg, Rect, Line, Circle } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Svg, Rect, Line, Circle, G } from "@react-pdf/renderer";
 import type { LeadershipPdfData } from "@/lib/reports/persona-leadership-data";
 import type { LeadershipRow } from "@/lib/reports/persona-leadership-dimensions";
 import { LEADERSHIP_MIDPOINT } from "@/lib/reports/persona-leadership-dimensions";
@@ -129,9 +129,11 @@ function Matrix({ management, leadership }: { management: number; leadership: nu
       <Text x={cl + cw / 2} y={H - 3} fill={C.mgmt} textAnchor="middle" style={{ fontSize: 8.5, fontFamily: "Helvetica-Bold" }}>
         Management (transactional)
       </Text>
-      <Text x={10} y={yMid} fill={C.lead} textAnchor="middle" transform={`rotate(-90, 10, ${yMid})`} style={{ fontSize: 8.5, fontFamily: "Helvetica-Bold" }}>
-        Leadership (transformational)
-      </Text>
+      <G transform={`translate(11, ${yMid}) rotate(-90)`}>
+        <Text x={0} y={3} fill={C.lead} textAnchor="middle" style={{ fontSize: 8.5, fontFamily: "Helvetica-Bold" }}>
+          Leadership (transformational)
+        </Text>
+      </G>
       {/* the candidate's plotted position */}
       <Circle cx={px} cy={py} r={11} fill="none" stroke={C.lead} strokeWidth={1} />
       <Circle cx={px} cy={py} r={5.5} fill={C.primary} stroke="#ffffff" strokeWidth={1.5} />

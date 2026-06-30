@@ -144,4 +144,22 @@ For methodology questions or research-collaboration enquiries, contact the VIFM 
 
 ---
 
+## Reliability & Validity Evidence
+
+Two kinds of evidence: **(A)** established coefficients for the *methods* combined in the composite, from the published meta-analytic literature; and **(B)** VIFM's own reliability and defensibility procedures with their honest current status.
+
+**A. Established coefficients for the methods (published literature)**
+
+- **Structured / behavioural interview** (the CBI stage): operational validity **ρ ≈ .44** for structured interviews (McDaniel, Whetzel, Schmidt & Maurer, 1994), up to **ρ ≈ .51** in the classic table (Schmidt & Hunter, 1998) - structured formats roughly double the validity of unstructured ones.
+- **Composite validity:** combining a cognitive measure, a structured interview and a work sample yields **incremental validity above any single predictor** (Schmidt & Hunter, 1998).
+- The component instruments (competency quiz, Fluent placement, CBI) each carry the coefficients cited in their own briefs.
+
+**B. VIFM's own reliability & defensibility - method, threshold, and current status**
+
+- **No items of its own:** Pre-Hire is a **weighted composite** with per-stage cut-scores. It produces an advisory band (advance / review / hold) and is **never an auto-reject - a human always decides**.
+- **Adverse-impact monitoring:** the **4/5ths rule** (Uniform Guidelines on Employee Selection Procedures, 1978) is computed live per demographic dimension; an immutable audit trail records every event.
+- **Criterion validity** of the composite is not claimed pending a local predictive study.
+
+---
+
 *VIFM Pre-Hire - Commercial Pre-Employment Screening - Methodology Brief v1.0.*

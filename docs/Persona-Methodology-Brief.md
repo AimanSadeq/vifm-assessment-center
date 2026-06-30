@@ -150,4 +150,22 @@ For methodology questions or research-collaboration enquiries, contact the VIFM 
 
 ---
 
+## Reliability & Validity Evidence
+
+Two kinds of evidence: **(A)** established coefficients for the *method* (multi-item behavioural self-report), from the published literature; and **(B)** VIFM's own reliability procedures and their honest current status. We report (A) as evidence for the method, not as a claim about VIFM's specific item set.
+
+**A. Established coefficients for the method (published literature)**
+
+- **Self-report personality → job performance:** Conscientiousness operational validity **ρ ≈ .22** (Barrick & Mount, 1991); broader Five-Factor operational validities fall in the **.10-.23** range (Barrick, Mount & Judge, 2001). Self-report is predictive but modestly so - which is why Persona is positioned as a screening signal, not a decision.
+- **Internal-consistency convention:** well-constructed multi-item self-report scales typically reach Cronbach's **α ≈ .70-.85**; **α ≥ .70** is the accepted threshold (Nunnally & Bernstein, 1994).
+- **Self-other agreement** (relevant because Persona feeds the self-vs-360 gap): meta-analytic self-other **r ≈ .35** (Harris & Schaubroeck, 1988) - modest by design; the gap is informative, not error.
+
+**B. VIFM's own reliability - method, threshold, and current status**
+
+- **Internal consistency:** Cronbach's **α** per competency cluster, computed from collected Persona responses (the same engine as the Psychometrics bank); target **α ≥ .70**. Status: being established as response volume accrues.
+- **Convergent check:** the self-vs-others gap is computed against Reflect 360 (others) inside Succession Readiness - a built-in triangulation of the self-report.
+- **Content consistency:** Persona uses the *same* 41-competency framework as the Assessment Center and Reflect 360.
+
+---
+
 *VIFM Persona - Behavioural Self-Assessment - Methodology Brief v1.0.*

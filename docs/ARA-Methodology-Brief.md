@@ -183,4 +183,22 @@ For methodology questions or research-collaboration enquiries, contact the VIFM 
 
 ---
 
+## Reliability & Validity Evidence
+
+This consolidates the evidence in two parts: **(A)** established coefficients for the *methods* the Compass is built on, from the published literature; and **(B)** VIFM's own reliability procedures and their honest current status. We report (A) as evidence for the method, not as a claim about VIFM's specific item set.
+
+**A. Established coefficients for the methods (published literature)**
+
+- **Technology-acceptance / readiness constructs** (which the individual factors content-align with) report strong internal consistency in their source scales: UTAUT / UTAUT2 constructs typically show composite reliability **> .80** and average variance extracted **> .50** (Venkatesh et al., 2003, 2012); the Technology Readiness Index reports Cronbach's **α in the .70s-.80s** (Parasuraman & Colby, 2015).
+- **Organisational maturity** is standards-based rather than coefficient-based: NIST AI RMF 1.0 (2023), ISO/IEC 42001:2023 and CMMI provide the rubric anchors, not criterion correlations.
+
+**B. VIFM's own reliability - method, threshold, and current status**
+
+- **Internal consistency:** Cronbach's **α** per factor and per pillar; target **α ≥ .70**. Status: accumulating responses via the free Personal Snapshot; reported once **N ≥ 200** (individual) / **N ≥ 50** (organisational). Not yet met.
+- **Construct validity:** a confirmatory factor analysis of the four-factor individual model is planned at **N ≥ 200**; pre-CFA the structure is a content-validated heuristic (disclosed on every Deep-Dive and Mode C report).
+- **Test-retest:** computed from the annual-reassessment links once repeat data accrues.
+- **Criterion validity:** not claimed - the Compass is diagnostic/developmental, not a selection instrument.
+
+---
+
 *VIFM AI Readiness Compass · Methodology Brief v1.1 · Last updated 2026-04-30.*

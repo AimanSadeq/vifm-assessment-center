@@ -124,4 +124,22 @@ For methodology questions or research-collaboration enquiries, contact the VIFM 
 
 ---
 
+## Reliability & Validity Evidence
+
+Two kinds of evidence: **(A)** established coefficients for the *method* (multi-source / 360-degree feedback), from the published meta-analytic literature; and **(B)** VIFM's own reliability procedures and their honest current status.
+
+**A. Established coefficients for the method (published literature)**
+
+- **Self-other agreement:** meta-analytic self-supervisor / self-peer **r ≈ .35** (Harris & Schaubroeck, 1988). Low-to-moderate agreement is expected and *informative* in 360 feedback - the self-vs-others gap is the signal, not measurement error.
+- **Multi-source design** reduces single-rater bias and idiosyncrasy (Bracken, Timmreck & Church, 2001).
+- **Impact:** 360 feedback produces small but reliable performance improvement, moderated by feedback acceptance and follow-up (Smither, London & Reilly, 2005, meta-analysis).
+
+**B. VIFM's own reliability - method, threshold, and current status**
+
+- **Content validity:** behaviours are decomposed from the *client's own* values / competencies (consultant-reviewed), then rated by Self, Manager, Peer and Direct Report on a 5-point frequency scale.
+- **Anonymity threshold (min-n, default 3):** group means and verbatims are withheld until a rater group reaches the threshold - protecting rater candour and data quality.
+- **Internal consistency** per competency (across its behaviours) is computable as rater volume accrues; target **α ≥ .70**. Self-vs-others gap and year-on-year deltas are computed today.
+
+---
+
 *VIFM Reflect 360 · Methodology Brief v1.0 · Last updated 2026-06-07.*

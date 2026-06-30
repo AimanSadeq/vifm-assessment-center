@@ -184,4 +184,21 @@ For methodology questions or research-collaboration enquiries, contact the VIFM 
 
 ---
 
+## Reliability & Validity Evidence
+
+Two kinds of evidence: **(A)** established standards/coefficients for the *method* (CEFR placement and rater agreement), from the published literature; and **(B)** VIFM's own reliability procedures and their honest current status.
+
+**A. Established coefficients for the method (published literature)**
+
+- **Content / standards validity:** the CEFR provides the can-do descriptor anchors for all four skills (Council of Europe, 2001, 2020) - validity here is content-alignment to the framework, not a criterion correlation.
+- **Rater-agreement bands** (for AI-scored writing & speaking): weighted kappa interprets as **κ .61-.80 = "substantial"**, **.81-1.00 = "almost perfect"** (Landis & Koch, 1977; Cohen's weighted kappa, 1968).
+
+**B. VIFM's own reliability - method, threshold, and current status**
+
+- **AI-vs-human agreement:** **Quadratic Weighted Kappa (QWK)** computed per skill from human re-ratings in the calibration console; target **QWK ≥ .70** (substantial). Status: target set; QWK is reported per skill as human-rating volume accrues.
+- **Receptive skills** (reading, listening) are auto-scored MCQ from a calibrated bank; an **overall confidence band** is reported on every result.
+- **Positioning:** indicative placement (A1-C2), not a certified high-stakes score.
+
+---
+
 *VIFM Fluent (English) · Methodology Brief v1.1 · Last updated 2026-06-21.*

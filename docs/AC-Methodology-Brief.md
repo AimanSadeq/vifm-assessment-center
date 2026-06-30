@@ -141,4 +141,21 @@ For methodology questions or research-collaboration enquiries, contact the VIFM 
 
 ---
 
+## Reliability & Validity Evidence
+
+Two kinds of evidence: **(A)** established coefficients for the *method* (the assessment-centre method and BARS), from the published meta-analytic literature; and **(B)** VIFM's own reliability procedures and their honest current status. We report (A) as evidence for the method, not as a claim about a VIFM-specific coefficient.
+
+**A. Established coefficients for the method (published literature)**
+
+- **Assessment-centre overall criterion validity:** meta-analytic operational validity **ρ ≈ .37** for predicting job performance (Gaugler, Rosenthal, Thornton & Bentson, 1987).
+- **Dimension-level validity:** AC dimensions show meaningful but modest criterion validities (~**.25-.39** for the strongest), with the well-documented exercise-vs-dimension construct-variance caveat (Arthur, Day, McNelly & Edens, 2003).
+- **Rating method:** Behaviourally Anchored Rating Scales reduce halo and leniency relative to graphic scales (Smith & Kendall, 1963).
+
+**B. VIFM's own reliability - method, threshold, and current status**
+
+- **Inter-rater reliability:** Intraclass Correlation (**ICC**; Shrout & Fleiss, 1979) across assessors, integrated to a consensus wash-up; target **ICC ≥ .70** (good agreement). Status: ICC is computed live per engagement wherever **≥ 2** assessors rate the same candidate-exercise; a stable cross-engagement figure will be published once **≥ 30** multi-rater engagements accrue.
+- **Content validity:** each of the 41 competencies is observed in **≥ 2** exercises (the exercise-competency matrix) - the documented coverage design.
+
+---
+
 *VIFM Assessment Center · Methodology Brief v1.0 · Last updated 2026-06-07.*

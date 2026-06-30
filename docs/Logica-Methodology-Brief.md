@@ -154,4 +154,21 @@ For methodology questions or research-collaboration enquiries, contact the VIFM 
 
 ---
 
+## Reliability & Validity Evidence
+
+Two kinds of evidence: **(A)** established coefficients for the *method* (general mental ability testing), from the published meta-analytic literature; and **(B)** VIFM's own reliability procedures and their honest current status.
+
+**A. Established coefficients for the method (published literature)**
+
+- **General mental ability (GMA):** the single most generalisable cognitive predictor of job performance. Operational validity **ρ ≈ .51** in the classic meta-analysis (Schmidt & Hunter, 1998); a 2022 reappraisal correcting for range-restriction artefacts re-estimates corrected GMA validity at **ρ ≈ .31** (Sackett, Zhang, Berry & Lievens, 2022). We cite both - the honest range is roughly **.31-.51**.
+- **Internal consistency:** well-constructed reasoning batteries typically reach Cronbach's **α ≈ .80+**.
+
+**B. VIFM's own reliability - method, threshold, and current status**
+
+- **Tier:** Logica is currently **INDICATIVE** - AI-generated items, no local norms, no IRT calibration yet, and it issues no credential.
+- **Internal consistency:** Cronbach's **α** per subtest, target **α ≥ .70**; **Rasch / IRT difficulty calibration** is the documented Tier-2 path. Status: not yet met.
+- **Norms:** a norm sample (target **n ≥ 200**) converts raw scores to percentiles / stens; until then only indicative bands are shown.
+
+---
+
 *VIFM Logica - Cognitive Reasoning Ability - Methodology Brief v1.0.*

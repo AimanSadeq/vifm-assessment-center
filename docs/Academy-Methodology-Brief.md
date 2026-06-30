@@ -134,4 +134,21 @@ For methodology questions or research-collaboration enquiries, contact the VIFM 
 
 ---
 
+## Reliability & Validity Evidence
+
+Academy is **learning delivery + completion certification**, not a psychometric measure of a latent trait - so "validity" here is assessment-*of-learning* (criterion-referenced mastery), not criterion validity against job performance.
+
+**A. Established standards for the method (published literature)**
+
+- **Criterion-referenced / mastery testing:** a completion claim should rest on demonstrated mastery against a fixed standard, not a norm (the mastery-testing tradition; *Standards for Educational and Psychological Testing*, AERA / APA / NCME, 2014).
+- **Pass-gate convention:** a mastery cut around **70%** is a widely used threshold for knowledge-check competence.
+
+**B. VIFM's own reliability - method, threshold, and current status**
+
+- **Pass-gate:** each lesson carries an AI knowledge-check with a default **passing score of 70%**; a course completes - and certifies - only when **every** lesson is *passed*, not merely attempted.
+- **Item statistics:** per-check question statistics are light (no IRT); checks are grounded in the course's own content.
+- **Credential:** the completion credential is **verifiable** (public verification code) and **renewable** (1-3 year validity by type).
+
+---
+
 *VIFM Academy - Course Delivery and Completion Certification - Methodology Brief v1.0.*

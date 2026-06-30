@@ -123,4 +123,22 @@ For methodology questions or research-collaboration enquiries, contact the VIFM 
 
 ---
 
+## Reliability & Validity Evidence
+
+Two kinds of evidence: **(A)** established coefficients for the *method* (work-sample and job-knowledge testing), from the published meta-analytic literature; and **(B)** VIFM's own reliability procedures and their honest current status.
+
+**A. Established coefficients for the method (published literature)**
+
+- **Work-sample / performance tests:** among the highest-fidelity predictors of job performance. The classic meta-analytic table places work samples at operational validity **ρ ≈ .54** (Schmidt & Hunter, 1998); a more conservative re-estimate reports **ρ ≈ .33** (Roth, Bobko & McFarland, 2005). We cite both honestly - the true value sits in this band.
+- **Job-knowledge tests** (the MCQ layer): operational validity **ρ ≈ .48** (Schmidt & Hunter, 1998).
+- Work samples also tend to show **lower adverse impact** than cognitive-only tests (Roth et al., 2005).
+
+**B. VIFM's own reliability - method, threshold, and current status**
+
+- **Item statistics:** per-item difficulty (**p-values**) and pass/fail counts are tracked, behind an SME approve / reject / retire review workflow. Status: light classical statistics only; **IRT / Rasch calibration is the documented Tier-2 path, not yet run**.
+- **Cut-scores:** documented per domain with method and rationale; the CERTIFIED path assembles only SME-approved items above the cut, otherwise the result is explicitly INDICATIVE.
+- **Delivery integrity:** single-use sessions, server-held answer key, options re-randomised per administration.
+
+---
+
 *VIFM Technical Certification · Methodology Brief v1.0 · Last updated 2026-06-07.*

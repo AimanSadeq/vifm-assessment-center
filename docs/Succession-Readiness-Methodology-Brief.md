@@ -71,3 +71,23 @@ The methodology is built to align with established assessment standards: the *St
 ## 9. Update cadence and contact
 
 Reviewed each assessment cycle and whenever the framework, item bank, or thresholds change. Questions and calibration requests: VIFM Assessment Center.
+
+## 10. Reliability & Validity Evidence
+
+Two kinds of evidence: **(A)** established coefficients for the *methods* combined here, from the published literature; and **(B)** VIFM's own reliability procedures and their honest current status. Succession Readiness has no items of its own - it is a weighted computation over Persona (self) and Reflect 360 (others) against a target role - so it inherits the evidence of those instruments.
+
+**A. Established coefficients for the methods (published literature)**
+
+- **Self-other agreement** (Persona self vs Reflect 360 others): meta-analytic **r ≈ .35** (Harris & Schaubroeck, 1988) - the gap between self and others is the informative signal.
+- **Behavioural self-report → performance:** Five-Factor operational validities **ρ ≈ .10-.23** (Barrick, Mount & Judge, 2001).
+- **Potential identification:** combining performance, behaviour and role-fit follows the applied potential / succession literature (Silzer & Church, 2009).
+
+**B. VIFM's own reliability - method, threshold, and current status**
+
+- **Inherited reliability:** the Cronbach's **α**, QWK and ICC pipelines (targets **≥ .70**) of the underlying Persona and Reflect 360 instruments apply here (see those briefs).
+- **Convergent design:** triangulating a self-view, an others-view and an explicit role target strengthens a single-source inference.
+- **Status:** a development-planning signal, not a selection decision. Predictive validity (does a readiness tier predict a successful transition?) is not claimed pending a local longitudinal study.
+
+---
+
+*VIFM Succession Readiness · Methodology Brief v1.0 · Last updated 2026-06-30.*

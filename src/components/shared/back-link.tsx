@@ -14,13 +14,16 @@ type Props = {
    * `href` when there's no in-app history (page opened directly / in a new tab).
    */
   history?: boolean;
+  /** Colour override for dark surfaces (e.g. "text-white/70 hover:text-white"). */
+  className?: string;
 };
 
-const CLASS =
-  "inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors";
+const BASE = "inline-flex items-center gap-1.5 text-sm transition-colors";
+const TONE = "text-muted-foreground hover:text-foreground";
 
-export function BackLink({ href, label, history }: Props) {
+export function BackLink({ href, label, history, className }: Props) {
   const router = useRouter();
+  const cls = `${BASE} ${className ?? TONE}`;
 
   if (history) {
     return (
@@ -33,7 +36,7 @@ export function BackLink({ href, label, history }: Props) {
             router.push(href);
           }
         }}
-        className={CLASS}
+        className={cls}
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         {label}
@@ -42,7 +45,7 @@ export function BackLink({ href, label, history }: Props) {
   }
 
   return (
-    <Link href={href} className={CLASS}>
+    <Link href={href} className={cls}>
       <ArrowLeft className="h-3.5 w-3.5" />
       {label}
     </Link>

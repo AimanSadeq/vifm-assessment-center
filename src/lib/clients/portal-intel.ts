@@ -9,7 +9,7 @@ import { personaBand } from "@/lib/scoring/persona-bands";
 export type PersonaOrgIntel = {
   completed: number;
   cohortMean: number | null;
-  bandMix: { label: string; count: number }[];
+  bandMix: { key: string; label: string; count: number }[];
 };
 
 export async function personaOrgIntel(orgId: string): Promise<PersonaOrgIntel> {
@@ -54,15 +54,17 @@ export async function personaOrgIntel(orgId: string): Promise<PersonaOrgIntel> {
     if (means.length === 0) return { completed: ids.length, cohortMean: null, bandMix: [] };
 
     const cohortMean = Math.round((means.reduce((a, b) => a + b, 0) / means.length) * 100) / 100;
-    const mix = new Map<string, number>();
+    const mix = new Map<string, { key: string; label: string; count: number }>();
     for (const m of means) {
-      const label = personaBand(m).label;
-      mix.set(label, (mix.get(label) ?? 0) + 1);
+      const band = personaBand(m);
+      const entry = mix.get(band.key) ?? { key: band.key, label: band.label, count: 0 };
+      entry.count += 1;
+      mix.set(band.key, entry);
     }
     return {
       completed: means.length,
       cohortMean,
-      bandMix: [...mix.entries()].map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count),
+      bandMix: [...mix.values()].sort((a, b) => b.count - a.count),
     };
   } catch {
     return empty;

@@ -15,7 +15,7 @@ import {
 import { toast } from "sonner";
 import { PORTAL_SERVICES, type CaliberService } from "@/lib/clients/portal-services";
 import { COGNITIVE_SUBTESTS, COGNITIVE_SUBTEST_KEYS } from "@/lib/psychometrics/framework";
-import { composeBundleAction, archiveBundleAction } from "../actions";
+import { composeBundleAction, archiveBundleAction, inviteBundleCandidateAction } from "../actions";
 
 // Per-service icon (mirrors the landing page's icon choices).
 const SERVICE_ICON: Record<CaliberService, typeof Boxes> = {
@@ -47,6 +47,63 @@ const logicaScopeLabel = (subtests: string[]): string =>
   subtests.length === COGNITIVE_SUBTEST_KEYS.length
     ? "Logica"
     : `Logica · ${subtests.map((k) => COGNITIVE_SUBTESTS.find((s) => s.key === k)?.name_en ?? k).join(" · ")}`;
+
+/** Inline candidate invite for a saved bundle - creates the one-sitting apply
+ *  link (consent -> Persona -> Logica) and surfaces it to copy/share. */
+function InviteCandidate({ bundleId }: { bundleId: string }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [url, setUrl] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const invite = async () => {
+    setBusy(true);
+    try {
+      const res = await inviteBundleCandidateAction({ bundleId, fullName: name, email });
+      if ("error" in res) { toast.error(res.error); return; }
+      const full = `${window.location.origin}${res.url}`;
+      setUrl(full);
+      try { await navigator.clipboard.writeText(full); toast.success("Invite link copied to clipboard"); }
+      catch { toast.success("Invite link created"); }
+      setName(""); setEmail("");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mt-2">
+      {!open ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#5391D5] hover:underline"
+        >
+          <Plus className="h-3 w-3" /> Invite candidate (one-sitting link)
+        </button>
+      ) : (
+        <div className="mt-1 space-y-1.5 rounded-md border bg-muted/30 p-2">
+          <div className="grid gap-1.5 sm:grid-cols-2">
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Candidate name" className="h-8 text-xs" />
+            <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="candidate@email.com" className="h-8 text-xs" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Button size="sm" className="h-7 gap-1 text-[11px]" disabled={busy || !name.trim() || !email.trim()} onClick={invite}>
+              {busy ? "Creating…" : "Create invite link"}
+            </Button>
+            <button type="button" onClick={() => { setOpen(false); setUrl(null); }} className="text-[11px] text-muted-foreground hover:underline">
+              Close
+            </button>
+          </div>
+          {url && (
+            <p className="break-all rounded bg-white px-2 py-1 font-mono text-[10px] text-[#010131]">{url}</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function BespokeBuilder({ clients, initialBundles = [] }: { clients: ClientOpt[]; initialBundles?: Composed[] }) {
   const [nameEn, setNameEn] = useState("");
@@ -362,6 +419,7 @@ export function BespokeBuilder({ clients, initialBundles = [] }: { clients: Clie
                       Issue Logica vouchers for this scope →
                     </a>
                   )}
+                  <InviteCandidate bundleId={b.id} />
                 </li>
               ))}
             </ul>

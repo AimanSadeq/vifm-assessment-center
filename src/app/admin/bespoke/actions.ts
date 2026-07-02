@@ -82,3 +82,49 @@ export async function archiveBundleAction(id: string): Promise<{ ok: true } | { 
   revalidatePath("/");
   return { ok: true };
 }
+
+/**
+ * Invite a candidate to a bundle's one-sitting flow: creates the
+ * bundle_candidates row (org inherited from the bundle) and returns the
+ * token apply link for the admin to share.
+ */
+export async function inviteBundleCandidateAction(input: {
+  bundleId: string;
+  fullName: string;
+  email: string;
+}): Promise<{ ok: true; url: string } | { error: string }> {
+  const g = await guard();
+  if (!g.ok) return { error: g.error };
+
+  const fullName = input.fullName?.trim() ?? "";
+  const email = input.email?.trim().toLowerCase() ?? "";
+  if (fullName.length < 2) return { error: "Enter the candidate's name." };
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { error: "Enter a valid email address." };
+
+  const { createServiceClient } = await import("@/lib/supabase/server");
+  const svc = createServiceClient();
+  const { data: bundle } = await svc
+    .from("bespoke_services")
+    .select("id, kind, status, organization_id")
+    .eq("id", input.bundleId)
+    .maybeSingle<{ id: string; kind: string; status: string; organization_id: string | null }>();
+  if (!bundle || bundle.kind !== "bundle" || bundle.status !== "active") {
+    return { error: "Bundle not found (it may have been archived)." };
+  }
+
+  const { data, error } = await svc
+    .from("bundle_candidates")
+    .insert({
+      bespoke_service_id: bundle.id,
+      organization_id: bundle.organization_id,
+      full_name: fullName,
+      email,
+      created_by: g.caller.isDev ? null : g.caller.uid,
+    })
+    .select("access_token")
+    .single<{ access_token: string }>();
+  if (error || !data) {
+    return { error: error?.message?.includes("bundle_candidates") ? "Apply migration 00172 (bundle_candidates) first." : error?.message ?? "Could not invite." };
+  }
+  return { ok: true, url: `/bundle/apply/${data.access_token}` };
+}

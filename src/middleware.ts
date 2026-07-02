@@ -155,6 +155,12 @@ const isRoleReadinessRoute = (pathname: string) =>
   pathname.startsWith("/role-readiness/redeem") ||
   pathname.startsWith("/api/role-readiness/");
 
+// Bespoke bundle candidate flow - a no-account candidate takes the composed
+// bundle's chained sitting (Persona + Logica) via bundle_candidates.access_token.
+// Identity is derived server-side from the token. Bypass auth like Role Readiness.
+const isBundleApplyRoute = (pathname: string) =>
+  pathname.startsWith("/bundle/apply/") || pathname.startsWith("/api/bundle/");
+
 // Public, read-only "Licensed Portal Preview" share link - a no-account
 // leave-behind for a prospect. The page renders only representative sample data
 // from the URL params (no DB, no real records), so it is safe to expose without
@@ -185,6 +191,7 @@ export async function middleware(request: NextRequest) {
     isCognitivePublicRoute(request.nextUrl.pathname) ||
     isPersonaPublicRoute(request.nextUrl.pathname) ||
     isRoleReadinessRoute(request.nextUrl.pathname) ||
+    isBundleApplyRoute(request.nextUrl.pathname) ||
     isPublicPreviewRoute(request.nextUrl.pathname) ||
     isDemoRequestRoute(request.nextUrl.pathname)
   ) {

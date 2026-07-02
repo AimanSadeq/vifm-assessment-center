@@ -7,7 +7,10 @@ import { loadBespokeServices } from "@/lib/bespoke/services";
 import { getAllocationsForOrg } from "@/lib/clients/allocations";
 import { PORTAL_SERVICES, type CaliberService } from "@/lib/clients/portal-services";
 import { COGNITIVE_SUBTESTS, COGNITIVE_SUBTEST_KEYS } from "@/lib/psychometrics/framework";
+import { RUNNABLE_BUNDLE_STAGES, type BundleStage } from "@/lib/bespoke/candidates";
+import { allocationUsable } from "@/lib/clients/allocations";
 import { BackLink } from "@/components/shared/back-link";
+import { BundleInviteClient } from "./_components/bundle-invite-client";
 
 type BundleCand = { id: string; full_name: string; email: string; status: string; completed_at: string | null };
 
@@ -94,6 +97,28 @@ export default async function PortalBundlePage({
           A tailored VIFM package - {services.length} service{services.length === 1 ? "" : "s"} bundled for your organisation.
         </p>
       </div>
+
+      {/* Client-side candidate invite: one link, whole sitting. Metered - one
+          seat per bundled runnable service per invite. */}
+      {(() => {
+        const metered = bundle.service_keys.filter((k): k is BundleStage =>
+          (RUNNABLE_BUNDLE_STAGES as readonly string[]).includes(k)
+        );
+        if (metered.length === 0) return null;
+        const labels = metered.map((k) => PORTAL_SERVICES.find((s) => s.id === k)?.label ?? k);
+        const canInvite = metered.every((k) => {
+          const a = allocated.get(k as (typeof PORTAL_SERVICES)[number]["id"]);
+          return !!a && allocationUsable(a);
+        });
+        return (
+          <BundleInviteClient
+            bundleId={bundle.id}
+            orgParam={access.viewingAsAdmin ? orgId : undefined}
+            seatNote={`Each invite uses ${labels.map((l) => `1 ${l} seat`).join(" + ")}.`}
+            canInvite={canInvite}
+          />
+        );
+      })()}
 
       <div className="grid gap-3 sm:grid-cols-2">
         {services.map((svc) => {

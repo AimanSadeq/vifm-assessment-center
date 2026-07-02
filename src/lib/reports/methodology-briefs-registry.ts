@@ -77,6 +77,15 @@ export const METHODOLOGY_BRIEFS: readonly MethodologyBrief[] = [
     pillar: "manage",
   },
   {
+    slug: "persona-dare",
+    service: "DARE Decision-Role Profile",
+    tagline: "Decide / Advise / Recommend / Execute decision-rights lens",
+    eyebrow: "VIFM DARE Framework",
+    file: "VIFM-DARE-Framework.md",
+    filename: "VIFM-DARE-Framework.pdf",
+    pillar: "manage",
+  },
+  {
     slug: "fluent",
     service: "Fluent",
     tagline: "Indicative CEFR English placement",

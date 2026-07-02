@@ -62,6 +62,13 @@ export function PsychometricsClient({
     setSelectedSubtests((prev) =>
       prev.includes(key) ? prev.filter((k) => k !== key) : [...COGNITIVE_SUBTEST_KEYS.filter((k) => prev.includes(k) || k === key)]
     );
+  // The instrument description reflects the ACTUAL scope (a locked voucher set
+  // or the taker's live selection) instead of always naming all four subtests.
+  const activeSubtests = selectedSubtests.length > 0 ? selectedSubtests : [...COGNITIVE_SUBTEST_KEYS];
+  const subtestPhrase =
+    activeSubtests.length === COGNITIVE_SUBTEST_KEYS.length
+      ? "Numerical, verbal, inductive and deductive reasoning"
+      : activeSubtests.map(scaleName).join(" · ");
   // Countdown: deadline stamped when the test starts; on expiry, auto-submit.
   const [deadline, setDeadline] = useState<number | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
@@ -164,7 +171,7 @@ export function PsychometricsClient({
           <BrainCircuit className="h-6 w-6 text-[#5391D5]" /> Logica®
         </h1>
         <p className={`mt-1 text-sm ${onDark ? "text-white/80" : "text-muted-foreground"}`}>
-          Numerical, verbal, inductive and deductive reasoning - an <strong>indicative</strong> developmental read,
+          {subtestPhrase} - an <strong>indicative</strong> developmental read,
           not a norm-referenced or high-stakes score.
         </p>
       </div>
@@ -175,7 +182,7 @@ export function PsychometricsClient({
         <div className="space-y-5 rounded-xl border bg-card p-6">
           <div className="rounded-lg border border-[#5391D5] bg-[#5391D5]/5 p-4">
             <p className="font-semibold text-[#010131]">Logica®</p>
-            <p className="mt-1 text-xs text-muted-foreground">Numerical · verbal · inductive · deductive reasoning (timed-style MCQs).</p>
+            <p className="mt-1 text-xs text-muted-foreground">{subtestPhrase} (timed-style MCQs).</p>
           </div>
 
           {/* SD-4: subtest selection. Hidden when an admin has locked the set. */}

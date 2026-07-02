@@ -105,11 +105,12 @@ async function aiCognitive(lang: Lang, perSubtest: number, subtests: string[]): 
       const difficulty = (["easy", "medium", "hard"] as const).includes(q.difficulty as never) ? (q.difficulty as CognitiveItem["difficulty"]) : "medium";
       items.push({ id: `cog-${i + 1}`, scale: q.scale, stem: q.stem, options: opts, correct: q.correct, difficulty });
     });
-    // Require at least one item per requested subtest, and scale the floor to
-    // the selection (>= subtests.length * 2) so a 1- or 2-subtest test still
-    // passes the AI path; else fall back to the static deck.
+    // Require at least one item per requested subtest, and at least half the
+    // requested volume overall (so a 10-item single-subtest request can't come
+    // back as a 2-item test); else fall back to the static deck.
     const haveAll = subtests.every((s) => items.some((it) => it.scale === s));
-    return haveAll && items.length >= subtests.length * 2 ? items : null;
+    const floor = Math.max(subtests.length * 2, Math.ceil((perSubtest * subtests.length) / 2));
+    return haveAll && items.length >= floor ? items : null;
   } catch {
     return null;
   }
@@ -150,7 +151,12 @@ export async function generatePsyTest(
   if (kind === "personality") {
     return { kind: "personality", items: personalityItems(lang) };
   }
-  const ai = await aiCognitive(lang, 4, effectiveCog);
+  // Scale items-per-subtest to the selection so a scoped test is still a real
+  // test: 1 subtest -> 10 items, 2 -> 6 each (12), 3 -> 5 each (15), 4 -> 4 (16).
+  // (A flat 4/subtest made a single-subtest sitting just 4 questions.)
+  const PER_SUBTEST: Record<number, number> = { 1: 10, 2: 6, 3: 5, 4: 4 };
+  const perSubtest = PER_SUBTEST[effectiveCog.length] ?? 4;
+  const ai = await aiCognitive(lang, perSubtest, effectiveCog);
   if (ai) return { kind: "cognitive", items: ai, ai_generated: true };
   return { kind: "cognitive", items: staticCognitive(lang, effectiveCog), ai_generated: false };
 }

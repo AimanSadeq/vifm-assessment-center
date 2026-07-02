@@ -1,11 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { Building2 } from "lucide-react";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { Building2, BarChart3 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { LogoutButton } from "@/components/shared/logout-button";
+
+/** Intelligence nav link - preserves the admin-preview ?org= context.
+ *  useSearchParams needs a Suspense boundary in the app router. */
+function IntelligenceLink() {
+  const params = useSearchParams();
+  const org = params.get("org");
+  return (
+    <Link
+      href={`/portal/insights${org ? `?org=${org}` : ""}`}
+      className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold text-[#010131] hover:bg-muted"
+    >
+      <BarChart3 className="h-3.5 w-3.5 text-[#5391D5]" /> Intelligence
+    </Link>
+  );
+}
 
 /** Top-bar chrome for the client self-service portal (client component; the
  *  server layout does the role gate). */
@@ -19,6 +36,9 @@ export function PortalChrome({ children, adminPreview }: { children: React.React
             <span className="hidden text-xs text-muted-foreground sm:block">Talent Intelligence Portal</span>
           </Link>
           <div className="ms-auto flex items-center gap-2 sm:gap-3">
+            <Suspense fallback={null}>
+              <IntelligenceLink />
+            </Suspense>
             {adminPreview && (
               <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-medium text-amber-800">
                 Admin preview

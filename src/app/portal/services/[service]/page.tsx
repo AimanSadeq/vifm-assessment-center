@@ -4,7 +4,7 @@ import { getAllocationsForOrg } from "@/lib/clients/allocations";
 import { portalService } from "@/lib/clients/portal-services";
 import { isVoucherService } from "@/lib/clients/voucher-issue";
 import { isSeatService, getSeatActivity } from "@/lib/clients/seat-issue";
-import { getServiceActivity } from "@/lib/clients/monitor";
+import { getServiceActivity, getVoucherLedger } from "@/lib/clients/monitor";
 import { getServerLocale } from "@/lib/i18n/server";
 import { BackLink } from "@/components/shared/back-link";
 import { VoucherServiceClient } from "./_components/voucher-service-client";
@@ -56,6 +56,7 @@ export default async function PortalServicePage({
   const voucherSvc = isVoucherService(svc.id);
   const seatSvc = isSeatService(svc.id);
   const activity = voucherSvc ? await getServiceActivity(svc.id, orgId) : null;
+  const ledger = voucherSvc ? await getVoucherLedger(svc.id, orgId) : [];
   const seatActivity = seatSvc && alloc ? await getSeatActivity(svc.id, orgId, alloc.ara_organization_id) : null;
 
   return (
@@ -118,6 +119,68 @@ export default async function PortalServicePage({
               </div>
             ))}
           </div>
+          {/* Voucher ledger: every issued code, who it went to, who redeemed it.
+              Collapsed by default - the funnel above gives the headline. */}
+          {ledger.length > 0 && (
+            <details className="rounded-xl border bg-card">
+              <summary className="cursor-pointer select-none px-5 py-4 text-sm font-semibold text-foreground">
+                Voucher ledger{" "}
+                <span className="font-normal text-muted-foreground">
+                  ({ledger.length} issued · {ledger.filter((v) => v.usedCount > 0).length} redeemed)
+                </span>
+              </summary>
+              <div className="overflow-x-auto px-5 pb-5">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b text-left uppercase tracking-wide text-muted-foreground">
+                      <th className="py-1.5 pr-3">Code</th>
+                      <th className="py-1.5 pr-3">Assigned to</th>
+                      <th className="py-1.5 pr-3">Redeemed by</th>
+                      <th className="py-1.5 pr-3">Uses</th>
+                      <th className="py-1.5 pr-3">Status</th>
+                      <th className="py-1.5 pr-3">Issued</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ledger.map((v) => (
+                      <tr key={v.code} className="border-b align-top last:border-0">
+                        <td className="py-1.5 pr-3 font-mono text-[11px]">{v.code}</td>
+                        <td className="py-1.5 pr-3">{v.assigned ?? <span className="text-slate-300">-</span>}</td>
+                        <td className="py-1.5 pr-3">
+                          {v.redeemers.length === 0 ? (
+                            <span className="text-slate-400">Not redeemed yet</span>
+                          ) : (
+                            v.redeemers.map((r, i) => (
+                              <div key={i}>
+                                {r.name ?? "Anonymous"}
+                                {r.email ? <span className="text-muted-foreground"> · {r.email}</span> : null}
+                                {r.when ? (
+                                  <span className="text-muted-foreground">
+                                    {" "}· {new Date(r.when).toLocaleDateString(locale === "ar" ? "ar" : "en-GB")}
+                                  </span>
+                                ) : null}
+                              </div>
+                            ))
+                          )}
+                        </td>
+                        <td className="py-1.5 pr-3 tabular-nums">{v.usedCount}/{v.maxUses}</td>
+                        <td className="py-1.5 pr-3">
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                            v.status === "active"
+                              ? v.usedCount >= v.maxUses ? "bg-slate-100 text-slate-600" : "bg-emerald-100 text-emerald-700"
+                              : "bg-rose-100 text-rose-700"
+                          }`}>
+                            {v.status === "active" ? (v.usedCount >= v.maxUses ? "Fully used" : "Active") : v.status}
+                          </span>
+                        </td>
+                        <td className="py-1.5 pr-3">{v.issuedAt ? new Date(v.issuedAt).toLocaleDateString(locale === "ar" ? "ar" : "en-GB") : "-"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          )}
           <div className="rounded-xl border bg-card p-5">
             <h2 className="text-sm font-semibold text-foreground">Completed - review &amp; download reports</h2>
             {activity.rows.length === 0 ? (

@@ -167,8 +167,16 @@ export function computeLeadershipProfile(
   const style = leadershipStyle(management, leadership);
 
   const all = [...managementRows, ...leadershipRows];
+  // Disjoint sets: with few answered competencies the top-5 and bottom-5 windows
+  // overlap, which listed the same competency (e.g. a mid-3 score) under BOTH
+  // dominant tendencies and development areas. A competency reads as a strength
+  // first; development areas are drawn from what remains.
   const topStrengths = [...all].sort((a, b) => b.score - a.score).slice(0, 5);
-  const topDevelopment = [...all].sort((a, b) => a.score - b.score).slice(0, 5);
+  const strengthIds = new Set(topStrengths.map((r) => r.id));
+  const topDevelopment = [...all]
+    .sort((a, b) => a.score - b.score)
+    .filter((r) => !strengthIds.has(r.id))
+    .slice(0, 5);
 
   return {
     management,

@@ -246,9 +246,9 @@ export function LeadershipReportPdf({ data }: { data: LeadershipPdfData }) {
         </View>
 
         <Text style={s.footer} fixed>
-          Self-report orientation lens, mapped to the transactional/transformational (Bass &amp; Avolio) model - not a validated leadership
-          typology or a selection tool. Triangulate with a Reflect 360° (others&rsquo; view) before any leadership-readiness conclusion.
-          Indicative until a Persona norm sample exists. © VIFM.
+          A development-focused self-report profile built on the established transactional/transformational leadership model (Bass &amp;
+          Avolio, Full Range Leadership). Use it to guide development conversations; pair with a Reflect 360° (others&rsquo; view) and a
+          structured interview before any leadership-readiness or selection decision. Indicative until a Persona norm sample exists. © VIFM.
         </Text>
       </Page>
 
@@ -281,8 +281,8 @@ export function LeadershipReportPdf({ data }: { data: LeadershipPdfData }) {
           </View>
         ))}
         <Text style={s.footer} fixed>
-          Self-report orientation lens, mapped to the transactional/transformational (Bass &amp; Avolio) model - not a validated leadership
-          typology or a selection tool. Triangulate with a Reflect 360° before any leadership-readiness conclusion. © VIFM.
+          A development-focused self-report profile built on the established transactional/transformational leadership model (Bass &amp;
+          Avolio). Pair with a Reflect 360° (others&rsquo; view) before any leadership-readiness or selection decision. © VIFM.
         </Text>
       </Page>
 
@@ -305,8 +305,8 @@ export function LeadershipReportPdf({ data }: { data: LeadershipPdfData }) {
         ))}
 
         <Text style={s.footer} fixed>
-          Self-report orientation lens, mapped to the transactional/transformational (Bass &amp; Avolio) model - not a validated leadership
-          typology or a selection tool. Triangulate with a Reflect 360° before any leadership-readiness conclusion. © VIFM.
+          A development-focused self-report profile built on the established transactional/transformational leadership model (Bass &amp;
+          Avolio). Pair with a Reflect 360° (others&rsquo; view) before any leadership-readiness or selection decision. © VIFM.
         </Text>
       </Page>
     </Document>

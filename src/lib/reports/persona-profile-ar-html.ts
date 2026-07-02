@@ -100,7 +100,9 @@ export function renderPersonaProfileHtmlAr(data: PersonaPdfData): string {
     if (data.fit.strengths && data.fit.strengths.length > 0) {
       fitBlocks.push(`<div class="fit-gap-title" style="color:${C.emerald}">${dev ? "نقاط القوة للاستثمار (ذاتي / مستهدف)" : "أبرز نقاط القوة (ذاتي / مستهدف)"}</div>`);
       for (const g of data.fit.strengths) {
-        fitBlocks.push(`<div class="gap-row"><span>${escapeHtml(g.name)}</span><span style="color:${C.emerald}">${num(f1(g.self))} / ${num(f1(g.target))} <svg width="7" height="7" viewBox="0 0 10 10" style="vertical-align:middle"><polygon points="5,1 9.5,8 0.5,8" fill="${C.emerald}"/></svg></span></div>`);
+        // Surplus above target after the arrow - mirrors the deficit on gap rows.
+        const surplus = g.self - g.target > 0 ? ` <span style="color:${C.emerald}">+${num(f1(g.self - g.target))}</span>` : "";
+        fitBlocks.push(`<div class="gap-row"><span>${escapeHtml(g.name)}</span><span style="color:${C.emerald}">${num(f1(g.self))} / ${num(f1(g.target))} <svg width="7" height="7" viewBox="0 0 10 10" style="vertical-align:middle"><polygon points="5,1 9.5,8 0.5,8" fill="${C.emerald}"/></svg>${surplus}</span></div>`);
       }
     }
     if (data.fit.gaps.length > 0) {

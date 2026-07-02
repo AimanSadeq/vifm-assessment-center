@@ -333,9 +333,13 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
                     <Text style={s.fitGapName}>{g.name}</Text>
                     <View style={{ flexDirection: "row", alignItems: "center" }}>
                       <Text style={[s.fitGapNum, { color: C.emerald }]}>{g.self.toFixed(1)} / {g.target.toFixed(1)}</Text>
-                      <Svg width={7} height={7} viewBox="0 0 10 10" style={{ marginLeft: 4 }}>
+                      <Svg width={7} height={7} viewBox="0 0 10 10" style={{ marginLeft: 4, marginRight: 2 }}>
                         <Polygon points="5,1 9.5,8 0.5,8" fill={C.emerald} />
                       </Svg>
+                      {/* Surplus above target - mirrors the deficit shown on gap rows. */}
+                      {g.self - g.target > 0 ? (
+                        <Text style={[s.fitGapNum, { color: C.emerald }]}>+{(g.self - g.target).toFixed(1)}</Text>
+                      ) : null}
                     </View>
                   </View>
                 ))}

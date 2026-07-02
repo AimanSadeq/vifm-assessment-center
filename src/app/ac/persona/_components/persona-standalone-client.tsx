@@ -950,7 +950,10 @@ function PersonaResult({
                   .slice(0, 5).map((g) => (
                   <div key={g.competencyId} className="flex items-center justify-between text-sm">
                     <span className="text-[#010131]">{nameById.get(g.competencyId) ?? g.name}</span>
-                    <span className="tabular-nums font-semibold text-emerald-600">{g.self?.toFixed(1)} / {g.target.toFixed(1)}</span>
+                    <span className="tabular-nums font-semibold text-emerald-600">
+                      {g.self?.toFixed(1)} / {g.target.toFixed(1)}
+                      {(g.self as number) - g.target > 0 ? ` ▲ +${((g.self as number) - g.target).toFixed(1)}` : ""}
+                    </span>
                   </div>
                 ))}
                 {fit.gaps.filter((g) => g.self != null && (g.self as number) >= g.target).length === 0 && (
@@ -964,7 +967,9 @@ function PersonaResult({
                 {fit.gaps.filter((g) => g.self != null && g.gap > 0).slice(0, 5).map((g) => (
                   <div key={g.competencyId} className="flex items-center justify-between text-sm">
                     <span className="text-[#010131]">{nameById.get(g.competencyId) ?? g.name}</span>
-                    <span className="tabular-nums font-semibold text-rose-600">{g.self?.toFixed(1)} / {g.target.toFixed(1)}</span>
+                    <span className="tabular-nums font-semibold text-rose-600">
+                      {g.self?.toFixed(1)} / {g.target.toFixed(1)} ▼ {g.gap.toFixed(1)}
+                    </span>
                   </div>
                 ))}
                 {fit.gaps.filter((g) => g.self != null && g.gap > 0).length === 0 && (
@@ -1029,7 +1034,10 @@ function PersonaResult({
                   .slice(0, 5).map((g) => (
                   <div key={g.competencyId} className="flex items-center justify-between text-sm">
                     <span className="text-[#010131]">{nameById.get(g.competencyId) ?? g.name}</span>
-                    <span className="tabular-nums font-semibold text-emerald-600">{g.self?.toFixed(1)} / {g.target.toFixed(1)}</span>
+                    <span className="tabular-nums font-semibold text-emerald-600">
+                      {g.self?.toFixed(1)} / {g.target.toFixed(1)}
+                      {(g.self as number) - g.target > 0 ? ` ▲ +${((g.self as number) - g.target).toFixed(1)}` : ""}
+                    </span>
                   </div>
                 ))}
                 {fit.gaps.filter((g) => g.self != null && (g.self as number) >= g.target).length === 0 && (
@@ -1043,7 +1051,9 @@ function PersonaResult({
                 {fit.gaps.filter((g) => g.self != null && g.gap > 0).slice(0, 5).map((g) => (
                   <div key={g.competencyId} className="flex items-center justify-between text-sm">
                     <span className="text-[#010131]">{nameById.get(g.competencyId) ?? g.name}</span>
-                    <span className="tabular-nums font-semibold text-amber-600">{g.self?.toFixed(1)} / {g.target.toFixed(1)}</span>
+                    <span className="tabular-nums font-semibold text-amber-600">
+                      {g.self?.toFixed(1)} / {g.target.toFixed(1)} ▼ {g.gap.toFixed(1)}
+                    </span>
                   </div>
                 ))}
                 {fit.gaps.filter((g) => g.self != null && g.gap > 0).length === 0 && (

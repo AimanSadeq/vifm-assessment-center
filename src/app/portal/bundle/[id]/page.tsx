@@ -180,6 +180,7 @@ export default async function PortalBundlePage({
                 <th className="py-2 pr-3">Candidate</th>
                 <th className="py-2 pr-3">Status</th>
                 <th className="py-2 pr-3">Completed</th>
+                <th className="py-2 pr-3">Report</th>
               </tr>
             </thead>
             <tbody>
@@ -194,6 +195,20 @@ export default async function PortalBundlePage({
                     {c.completed_at
                       ? new Date(c.completed_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
                       : "-"}
+                  </td>
+                  <td className="py-2 pr-3">
+                    {c.status === "completed" ? (
+                      <a
+                        href={`/api/admin/bundle/${c.id}/report`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-semibold text-[#5391D5] hover:underline"
+                      >
+                        Combined report (PDF)
+                      </a>
+                    ) : (
+                      <span className="text-xs text-slate-300">-</span>
+                    )}
                   </td>
                 </tr>
               ))}

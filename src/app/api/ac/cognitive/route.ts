@@ -33,7 +33,30 @@ export async function POST(req: Request) {
     const kind = "cognitive" as const;
     // SD-4: optional subtest selection (numerical/verbal/inductive/deductive).
     // Sanitized server-side; empty/invalid defaults to all four.
-    const subtests = sanitizeSubtests(body.subtests);
+    let subtests = sanitizeSubtests(body.subtests);
+    // Voucher subtest scope (00170): a delegate session is locked to the set the
+    // voucher was issued for - resolved server-side from the redemption token so
+    // a tampered client can never widen the scope. Tolerant of the migration
+    // not being applied (falls back to the requested set).
+    if (typeof body.redemptionToken === "string" && body.redemptionToken.trim()) {
+      try {
+        const { data: redemption } = await svc
+          .from("cognitive_voucher_redemptions")
+          .select("voucher_id")
+          .eq("redemption_token", body.redemptionToken.trim())
+          .maybeSingle<{ voucher_id: string | null }>();
+        if (redemption?.voucher_id) {
+          const { data: v } = await svc
+            .from("cognitive_vouchers")
+            .select("subtests")
+            .eq("id", redemption.voucher_id)
+            .maybeSingle<{ subtests: string[] | null }>();
+          if (v?.subtests && v.subtests.length > 0) subtests = sanitizeSubtests(v.subtests);
+        }
+      } catch {
+        /* 00170 not applied - keep the requested set */
+      }
+    }
     const test = await generatePsyTest(kind, lang, subtests);
     const { data, error } = await svc
       .from("psy_sessions")

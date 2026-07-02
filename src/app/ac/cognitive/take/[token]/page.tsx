@@ -17,10 +17,26 @@ export default async function CognitiveTakePage({ params }: { params: { token: s
   const sb = createServiceClient();
   const { data: redemption } = await sb
     .from("cognitive_voucher_redemptions")
-    .select("redemption_token, redeemer_name")
+    .select("redemption_token, redeemer_name, voucher_id")
     .eq("redemption_token", params.token)
-    .maybeSingle<{ redemption_token: string; redeemer_name: string }>();
+    .maybeSingle<{ redemption_token: string; redeemer_name: string; voucher_id: string | null }>();
   if (!redemption) return notFound();
+
+  // Voucher subtest scope (00170): lock the delegate to the issued set.
+  // Tolerant of the migration not being applied (null = full battery).
+  let lockedSubtests: string[] | null = null;
+  if (redemption.voucher_id) {
+    try {
+      const { data: v } = await sb
+        .from("cognitive_vouchers")
+        .select("subtests")
+        .eq("id", redemption.voucher_id)
+        .maybeSingle<{ subtests: string[] | null }>();
+      lockedSubtests = v?.subtests && v.subtests.length > 0 ? v.subtests : null;
+    } catch {
+      lockedSubtests = null;
+    }
+  }
 
   const timerMinutes = await getTimerMinutes("cognitive", TIMER_DEFAULTS.cognitive);
 
@@ -47,6 +63,7 @@ export default async function CognitiveTakePage({ params }: { params: { token: s
           redemptionToken={redemption.redemption_token}
           prefillName={redemption.redeemer_name ?? undefined}
           timerMinutes={timerMinutes}
+          lockedSubtests={lockedSubtests}
         />
       </main>
     </div>

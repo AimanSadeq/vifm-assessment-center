@@ -9,9 +9,19 @@ import { VouchersClient, type CognitiveVoucherRow } from "./_components/vouchers
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Logica® vouchers · VIFM" };
 
-export default async function CognitiveVouchersPage() {
+export default async function CognitiveVouchersPage({
+  searchParams,
+}: {
+  searchParams?: { subtests?: string };
+}) {
   const caller = await getCurrentCaller();
   if (!caller || caller.role !== "admin") return notFound();
+
+  // Prefill from the runner's "Issue voucher for this selection" link.
+  const initialSubtests = (searchParams?.subtests ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
 
   const sb = createServiceClient();
   const { data: vouchers } = await sb
@@ -27,7 +37,7 @@ export default async function CognitiveVouchersPage() {
       <div className="mt-4 mb-6">
         <VoucherNav active="logica" />
       </div>
-      <VouchersClient vouchers={vouchers ?? []} clients={clients.map((c) => c.name)} />
+      <VouchersClient vouchers={vouchers ?? []} clients={clients.map((c) => c.name)} initialSubtests={initialSubtests} />
     </div>
   );
 }

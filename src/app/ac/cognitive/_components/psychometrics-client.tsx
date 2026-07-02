@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { BrainCircuit, Sparkles, Loader2, CheckCircle2, RotateCcw, AlertTriangle, Download, Clock } from "lucide-react";
+import { BrainCircuit, Sparkles, Loader2, CheckCircle2, RotateCcw, AlertTriangle, Download, Clock, Ticket } from "lucide-react";
 import type { PsyTestPublic, PsyResult, ScaleScore } from "@/lib/psychometrics/scoring";
 import { COGNITIVE_SUBTESTS, COGNITIVE_SUBTEST_KEYS, cognitiveNarrative } from "@/lib/psychometrics/framework";
 
@@ -84,7 +84,7 @@ export function PsychometricsClient({
       const boundEngagementId = engagementId ?? (cogEng || null);
       const res = await fetch("/api/ac/cognitive", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "start", language: lang, candidateId: boundCandidateId, engagementId: boundEngagementId, takerEmail: null, subtests: selectedSubtests }),
+        body: JSON.stringify({ action: "start", language: lang, candidateId: boundCandidateId, engagementId: boundEngagementId, takerEmail: null, subtests: selectedSubtests, redemptionToken }),
       });
       const d = await res.json();
       if (!res.ok || !d.test) { setError(d.error || "Could not start."); return; }
@@ -203,6 +203,19 @@ export function PsychometricsClient({
                 <p className="mt-2 text-xs text-rose-600">
                   {lang === "ar" ? "اختر اختبارًا فرعيًا واحدًا على الأقل." : "Select at least one subtest."}
                 </p>
+              )}
+              {/* Admin surface only (voucher takers arrive with a token/locked set):
+                  issue a voucher scoped to exactly this selection. */}
+              {!redemptionToken && selectedSubtests.length > 0 && (
+                <a
+                  href={`/ac/cognitive/vouchers?subtests=${selectedSubtests.join(",")}`}
+                  className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#5391D5] hover:underline"
+                >
+                  <Ticket className="h-3.5 w-3.5" />
+                  {lang === "ar"
+                    ? "أصدر قسيمة لهذا الاختيار"
+                    : `Issue a voucher for this selection (${selectedSubtests.length === COGNITIVE_SUBTEST_KEYS.length ? "full battery" : selectedSubtests.map(scaleName).join(" · ")})`}
+                </a>
               )}
             </div>
           )}

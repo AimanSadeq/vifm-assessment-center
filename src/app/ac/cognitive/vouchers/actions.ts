@@ -6,6 +6,16 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { createVoucherBatch } from "@/lib/cognitive/vouchers";
 import { emailVoucherLink, appOrigin } from "@/lib/cognitive/email";
 import { createClientOrganization } from "@/lib/clients/registry";
+import { COGNITIVE_SUBTEST_KEYS } from "@/lib/psychometrics/framework";
+
+/** Normalize a requested voucher subtest scope: known keys only, canonical
+ *  order; null when empty or the full battery (full battery = no scope). */
+function voucherSubtestScope(keys: unknown): string[] | null {
+  if (!Array.isArray(keys)) return null;
+  const picked = COGNITIVE_SUBTEST_KEYS.filter((k) => keys.includes(k));
+  if (picked.length === 0 || picked.length === COGNITIVE_SUBTEST_KEYS.length) return null;
+  return picked;
+}
 
 async function guard() {
   try {
@@ -28,6 +38,8 @@ export async function generateCognitiveVouchersAction(input: {
   contactName?: string;
   contactTitle?: string;
   contactEmail?: string;
+  /** Logica subtest scope (e.g. ["inductive"]); omit for the full battery. */
+  subtests?: string[];
 }): Promise<{ ok: true; codes: string[] } | { error: string }> {
   const g = await guard();
   if (!g.ok) return { error: g.error };
@@ -55,6 +67,7 @@ export async function generateCognitiveVouchersAction(input: {
     contactName: input.contactName?.trim() || null,
     contactTitle: input.contactTitle?.trim() || null,
     contactEmail: input.contactEmail?.trim() || null,
+    subtests: voucherSubtestScope(input.subtests),
   });
   if (!res.ok) return { error: res.error };
   revalidatePath("/ac/cognitive/vouchers");
@@ -98,6 +111,8 @@ export async function emailVoucherDelegatesAction(input: {
   expiresAt?: string | null;
   /** Project/cohort label (00137) - groups this batch with Persona for reporting. */
   projectLabel?: string;
+  /** Logica subtest scope (e.g. ["inductive"]); omit for the full battery. */
+  subtests?: string[];
 }): Promise<{ ok: true; results: DelegateResult[] } | { error: string }> {
   const g = await guard();
   if (!g.ok) return { error: g.error };
@@ -140,6 +155,7 @@ export async function emailVoucherDelegatesAction(input: {
       expiresAt: input.expiresAt || null,
       createdBy: g.caller.isDev ? null : g.caller.uid,
       projectLabel: input.projectLabel?.trim() || null,
+      subtests: voucherSubtestScope(input.subtests),
     });
     if (!batch.ok) {
       results.push({ email: d.email, ok: false, error: batch.error });

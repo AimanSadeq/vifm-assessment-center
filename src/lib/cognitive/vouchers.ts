@@ -33,6 +33,8 @@ export type CreateBatchInput = {
   contactName?: string | null;
   contactTitle?: string | null;
   contactEmail?: string | null;
+  /** Logica subtest scope (00170); null = full battery (all four). */
+  subtests?: string[] | null;
 };
 
 /** Undefined column - migration 00137 (project_label) not applied yet. Postgres
@@ -59,15 +61,22 @@ export async function createVoucherBatch(
     expires_at: input.expiresAt ?? null,
     created_by: input.createdBy ?? null,
   });
-  // 00137 (newest) project label - only carried when set, peeled first below.
+  // 00137 project label - only carried when set, peeled below.
   const projectCol = input.projectLabel?.trim() ? { project_label: input.projectLabel.trim() } : {};
   // 00168 client contact - peeled together with project on a schema-cache miss.
   const contactCols = { contact_name: input.contactName ?? null, contact_title: input.contactTitle ?? null, contact_email: input.contactEmail ?? null };
+  // 00170 (newest) Logica subtest scope - only carried when a real subset was picked.
+  const subtestCols = input.subtests && input.subtests.length > 0 ? { subtests: input.subtests } : {};
 
-  // Newest-first peel: contact (00168) + project_label (00137) -> project -> base.
+  // Newest-first peel: subtests (00170) -> contact (00168) -> project (00137) -> base.
   const build = (extra: Record<string, unknown>) =>
     Array.from({ length: count }, () => ({ ...baseRow(), ...extra }));
-  const attempts = [() => build({ ...projectCol, ...contactCols }), () => build(projectCol), () => build({})];
+  const attempts = [
+    () => build({ ...projectCol, ...contactCols, ...subtestCols }),
+    () => build({ ...projectCol, ...contactCols }),
+    () => build(projectCol),
+    () => build({}),
+  ];
   let data: { code: string }[] | null = null;
   let error: { code?: string; message?: string } | null = null;
   for (const make of attempts) {

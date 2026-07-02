@@ -65,16 +65,24 @@ export default async function PortalHomePage({ searchParams }: { searchParams?: 
     };
   }
 
-  // The org's assigned bespoke programmes (Role Readiness) surface as portal
-  // tiles - org-assigned only (organization_id === this org), not global templates.
+  // The org's assigned bespoke programmes surface as portal tiles - org-assigned
+  // only (organization_id === this org), not global templates. Role Readiness
+  // rows open the programme roster; composed bundles open the bundle page.
   const bespokeProducts = (await loadBespokeServices({ organizationId: orgId }))
-    .filter((s) => s.kind === "role_readiness" && s.organization_id === orgId && s.role_config_id)
+    .filter(
+      (s) =>
+        s.organization_id === orgId &&
+        ((s.kind === "role_readiness" && s.role_config_id) || s.kind === "bundle")
+    )
     .map((s) => ({
       id: s.id,
       nameEn: s.name_en,
       nameAr: s.name_ar,
       roleConfigId: s.role_config_id,
-      href: `/portal/bespoke/${s.role_config_id}${orgSuffix}`,
+      href:
+        s.kind === "role_readiness"
+          ? `/portal/bespoke/${s.role_config_id}${orgSuffix}`
+          : `/portal/bundle/${s.id}${orgSuffix}`,
     }));
 
   return (

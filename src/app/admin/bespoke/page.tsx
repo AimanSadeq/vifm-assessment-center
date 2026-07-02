@@ -3,9 +3,12 @@ import { notFound } from "next/navigation";
 import { Boxes, FileText } from "lucide-react";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { loadPlatformClients } from "@/lib/clients/registry";
+import { loadBespokeServices } from "@/lib/bespoke/services";
+import { COGNITIVE_SUBTEST_KEYS } from "@/lib/psychometrics/framework";
+import type { CaliberService } from "@/lib/clients/portal-services";
 import { BackLink } from "@/components/shared/back-link";
 import { Button } from "@/components/ui/button";
-import { BespokeBuilder } from "./_components/bespoke-builder";
+import { BespokeBuilder, type Composed } from "./_components/bespoke-builder";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +27,26 @@ export default async function BespokeServicesPage() {
     throw e;
   }
 
-  const clients = (await loadPlatformClients()).map((c) => ({ key: c.key, name: c.name }));
+  const platformClients = await loadPlatformClients();
+  const clients = platformClients.map((c) => ({ key: c.key, name: c.name }));
+
+  // Persisted bundles (kind='bundle', active) -> the composer's saved list.
+  const nameByAcId = new Map(platformClients.filter((c) => c.acId).map((c) => [c.acId as string, c.name]));
+  const initialBundles: Composed[] = (await loadBespokeServices())
+    .filter((s) => s.kind === "bundle")
+    .map((s) => {
+      const logica = (s.service_config as { logica?: { subtests?: string[] } }).logica;
+      return {
+        id: s.id,
+        nameEn: s.name_en,
+        nameAr: s.name_ar ?? "",
+        description: s.description ?? "",
+        services: s.service_keys as CaliberService[],
+        clientName: (s.organization_id && nameByAcId.get(s.organization_id)) || "Unassigned",
+        logicaSubtests:
+          logica?.subtests && logica.subtests.length > 0 ? logica.subtests : [...COGNITIVE_SUBTEST_KEYS],
+      };
+    });
 
   return (
     <div className="space-y-6">
@@ -75,7 +97,7 @@ export default async function BespokeServicesPage() {
         </div>
       </div>
 
-      <BespokeBuilder clients={clients} />
+      <BespokeBuilder clients={clients} initialBundles={initialBundles} />
     </div>
   );
 }

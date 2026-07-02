@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 import { PORTAL_SERVICES, type CaliberService } from "@/lib/clients/portal-services";
 import { COGNITIVE_SUBTESTS, COGNITIVE_SUBTEST_KEYS } from "@/lib/psychometrics/framework";
+import { composeBundleAction, archiveBundleAction } from "../actions";
 
 // Per-service icon (mirrors the landing page's icon choices).
 const SERVICE_ICON: Record<CaliberService, typeof Boxes> = {
@@ -29,15 +30,14 @@ const SERVICE_ICON: Record<CaliberService, typeof Boxes> = {
 
 type ClientOpt = { key: string; name: string };
 
-// A composed bespoke service held in front-end state only (this first pass is
-// the composer UI; persistence + client-portal wiring lands in the next step).
-type Composed = {
+// A composed bespoke bundle. Persisted in bespoke_services (kind='bundle');
+// the client's portal surfaces it as a tile under "Your tailored programmes".
+export type Composed = {
   id: string;
   nameEn: string;
   nameAr: string;
   description: string;
   services: CaliberService[];
-  clientKey: string;
   clientName: string;
   /** Logica element scope (subtest keys); full battery when all four. */
   logicaSubtests: string[];
@@ -48,13 +48,14 @@ const logicaScopeLabel = (subtests: string[]): string =>
     ? "Logica"
     : `Logica · ${subtests.map((k) => COGNITIVE_SUBTESTS.find((s) => s.key === k)?.name_en ?? k).join(" · ")}`;
 
-export function BespokeBuilder({ clients }: { clients: ClientOpt[] }) {
+export function BespokeBuilder({ clients, initialBundles = [] }: { clients: ClientOpt[]; initialBundles?: Composed[] }) {
   const [nameEn, setNameEn] = useState("");
   const [nameAr, setNameAr] = useState("");
   const [description, setDescription] = useState("");
   const [selected, setSelected] = useState<CaliberService[]>([]);
   const [clientKey, setClientKey] = useState("");
-  const [composed, setComposed] = useState<Composed[]>([]);
+  const [composed, setComposed] = useState<Composed[]>(initialBundles);
+  const [busy, setBusy] = useState(false);
   // Logica element scope: which subtests the package includes (default: all four).
   const [logicaSubtests, setLogicaSubtests] = useState<string[]>([...COGNITIVE_SUBTEST_KEYS]);
 
@@ -77,23 +78,51 @@ export function BespokeBuilder({ clients }: { clients: ClientOpt[] }) {
     setLogicaSubtests([...COGNITIVE_SUBTEST_KEYS]);
   };
 
-  const add = () => {
-    if (!canSave || !client) return;
-    setComposed((prev) => [
-      {
-        id: String(Date.now()),
+  const add = async () => {
+    if (!canSave || !client || busy) return;
+    setBusy(true);
+    try {
+      const res = await composeBundleAction({
         nameEn: nameEn.trim(),
-        nameAr: nameAr.trim(),
-        description: description.trim(),
+        nameAr: nameAr.trim() || undefined,
+        description: description.trim() || undefined,
         services: [...selected],
-        clientKey,
         clientName: client.name,
-        logicaSubtests: logicaOn ? [...logicaSubtests] : [...COGNITIVE_SUBTEST_KEYS],
-      },
-      ...prev,
-    ]);
-    toast.success(`Bespoke service "${nameEn.trim()}" composed for ${client.name}`);
-    reset();
+        logicaSubtests: logicaOn ? [...logicaSubtests] : undefined,
+      });
+      if ("error" in res) {
+        toast.error(res.error);
+        return;
+      }
+      setComposed((prev) => [
+        {
+          id: res.id,
+          nameEn: nameEn.trim(),
+          nameAr: nameAr.trim(),
+          description: description.trim(),
+          services: [...selected],
+          clientName: client.name,
+          logicaSubtests: logicaOn ? [...logicaSubtests] : [...COGNITIVE_SUBTEST_KEYS],
+        },
+        ...prev,
+      ]);
+      toast.success(`Bespoke service "${nameEn.trim()}" saved - it now shows on ${client.name}'s portal`);
+      reset();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (id: string) => {
+    const prev = composed;
+    setComposed((p) => p.filter((x) => x.id !== id)); // optimistic
+    const res = await archiveBundleAction(id);
+    if ("error" in res) {
+      setComposed(prev);
+      toast.error(res.error);
+    } else {
+      toast.success("Bundle archived - removed from the client's portal.");
+    }
   };
 
   const labelFor = (id: CaliberService) => PORTAL_SERVICES.find((s) => s.id === id)?.label ?? id;
@@ -237,8 +266,8 @@ export function BespokeBuilder({ clients }: { clients: ClientOpt[] }) {
               ? `${selected.length} service${selected.length === 1 ? "" : "s"} selected`
               : "Select at least one service"}
           </p>
-          <Button onClick={add} disabled={!canSave} className="gap-1.5">
-            <Plus className="h-4 w-4" /> Add bespoke service
+          <Button onClick={add} disabled={!canSave || busy} className="gap-1.5">
+            <Plus className="h-4 w-4" /> {busy ? "Saving…" : "Add bespoke service"}
           </Button>
         </div>
       </div>
@@ -307,9 +336,9 @@ export function BespokeBuilder({ clients }: { clients: ClientOpt[] }) {
                     </div>
                     <button
                       type="button"
-                      onClick={() => setComposed((prev) => prev.filter((x) => x.id !== b.id))}
+                      onClick={() => remove(b.id)}
                       className="text-muted-foreground hover:text-destructive"
-                      aria-label="Remove"
+                      aria-label="Archive bundle"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -338,8 +367,8 @@ export function BespokeBuilder({ clients }: { clients: ClientOpt[] }) {
             </ul>
           )}
           <p className="mt-4 border-t pt-3 text-[11px] leading-relaxed text-muted-foreground">
-            Front-end preview. Saving to the database and surfacing the package in the client&apos;s
-            portal is the next step - we&apos;ll wire it when you give the bespoke design to build.
+            Saved bundles appear on the assigned client&apos;s portal under &quot;Your tailored
+            programmes&quot;, alongside Role Readiness. Archiving removes the tile.
           </p>
         </div>
       </div>

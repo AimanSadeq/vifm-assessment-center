@@ -23,8 +23,15 @@ export default async function Home() {
   // Academy-led front screen: the left panel for navigation, with the Academy
   // landing as the scrolling content beside it.
   const bespokeProducts = (await loadBespokeServices())
-    .filter((s) => s.kind === "role_readiness")
-    .map((s) => ({ id: s.id, nameEn: s.name_en, nameAr: s.name_ar, roleConfigId: s.role_config_id }));
+    .filter((s) => s.kind === "role_readiness" || s.kind === "bundle")
+    .map((s) => ({
+      id: s.id,
+      nameEn: s.name_en,
+      nameAr: s.name_ar,
+      roleConfigId: s.role_config_id,
+      // Role Readiness opens its config; a composed bundle opens the composer.
+      ...(s.kind === "bundle" ? { href: "/admin/bespoke" } : {}),
+    }));
   return (
     <div className="flex h-screen overflow-hidden">
       <PortalSidebar />

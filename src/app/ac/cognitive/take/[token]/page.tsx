@@ -43,7 +43,9 @@ export default async function CognitiveTakePage({ params }: { params: { token: s
   return (
     <div className="min-h-screen bg-background">
       <header className="ara-hero relative overflow-hidden">
-        <div className="mx-auto max-w-3xl px-6 pt-7 pb-16">
+        {/* Deep enough that the runner's overlapped header (title + subtitle)
+            sits entirely on the dark band - see onDark on PsychometricsClient. */}
+        <div className="mx-auto max-w-3xl px-6 pt-7 pb-36">
           <VifmLogo variant="white" size="sm" />
           <div className="mt-8 max-w-2xl">
             <span className="ara-eyebrow text-accent">
@@ -56,7 +58,7 @@ export default async function CognitiveTakePage({ params }: { params: { token: s
         </div>
       </header>
 
-      <main className="relative z-10 mx-auto -mt-8 max-w-3xl px-6 pb-16">
+      <main className="relative z-10 mx-auto -mt-32 max-w-3xl px-6 pb-16">
         <PsychometricsClient
           candidateId={null}
           engagementId={null}
@@ -64,6 +66,7 @@ export default async function CognitiveTakePage({ params }: { params: { token: s
           prefillName={redemption.redeemer_name ?? undefined}
           timerMinutes={timerMinutes}
           lockedSubtests={lockedSubtests}
+          onDark
         />
       </main>
     </div>

@@ -29,7 +29,7 @@ const scaleDefinition = (key: string): string =>
   COGNITIVE_SUBTESTS.find((s) => s.key === key)?.definition_en ?? "";
 
 export function PsychometricsClient({
-  candidateId, engagementId, engagements = [], redemptionToken = null, prefillName, timerMinutes, lockedSubtests = null,
+  candidateId, engagementId, engagements = [], redemptionToken = null, prefillName, timerMinutes, lockedSubtests = null, onDark = false,
 }: {
   candidateId: string | null;
   engagementId: string | null;
@@ -42,6 +42,9 @@ export function PsychometricsClient({
   /** When set (e.g. an admin-pinned voucher), the subtest set is fixed and the
    *  picker is hidden. null = taker chooses. */
   lockedSubtests?: string[] | null;
+  /** The take page overlaps the component's header onto its dark hero banner -
+   *  render the title + subtitle light so they stay readable. */
+  onDark?: boolean;
 }) {
   const limitMinutes = timerMinutes && timerMinutes > 0 ? timerMinutes : null;
   const [phase, setPhase] = useState<"intro" | "test" | "result">("intro");
@@ -157,10 +160,10 @@ export function PsychometricsClient({
   return (
     <div dir={lang === "ar" ? "rtl" : "ltr"} className="space-y-5">
       <div>
-        <h1 className="inline-flex items-center gap-2 text-2xl font-bold text-[#010131]">
+        <h1 className={`inline-flex items-center gap-2 text-2xl font-bold ${onDark ? "text-white" : "text-[#010131]"}`}>
           <BrainCircuit className="h-6 w-6 text-[#5391D5]" /> Logica®
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className={`mt-1 text-sm ${onDark ? "text-white/80" : "text-muted-foreground"}`}>
           Numerical, verbal, inductive and deductive reasoning - an <strong>indicative</strong> developmental read,
           not a norm-referenced or high-stakes score.
         </p>

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
+import { uuidish } from "@/lib/validations/ids";
 import type {
   VifmCourseLevel,
   VifmVertical,
@@ -134,7 +135,9 @@ export async function deleteCourseAction(id: string) {
 const setCompetencyTagsSchema = z.object({
   course_id: z.string().uuid(),
   tags: z.array(z.object({
-    competency_id: z.string().uuid(),
+    // uuidish, NOT .uuid(): the seed competencies carry synthetic UUIDs
+    // (version nibble 0) that Zod 4's strict .uuid() rejects.
+    competency_id: uuidish(),
     relevance_weight: z.number().int().min(1).max(3),
     rationale: z.string().nullable().optional(),
     source: z.enum(["manual", "ai_proposed", "ai_accepted"]).default("manual"),

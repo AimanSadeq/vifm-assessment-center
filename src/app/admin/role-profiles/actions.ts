@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { uuidish } from "@/lib/validations/ids";
 
 const roleProfileFormSchema = z.object({
   name_en: z.string().min(2, "Name is required").max(120),
@@ -13,11 +14,14 @@ const roleProfileFormSchema = z.object({
   region: z.enum(["uae", "saudi", "gcc", "global"]).optional(),
   default_target_proficiency: z.coerce.number().min(1).max(5).optional(),
   source_jd: z.string().max(20000).optional(),
-  organization_id: z.string().uuid().optional(),
+  organization_id: uuidish().optional(),
 });
 
 const competencySchema = z.object({
-  competency_id: z.string().uuid(),
+  // uuidish, NOT z.string().uuid(): the 41 seed competencies carry synthetic
+  // UUIDs (version nibble 0) that Zod 4's strict .uuid() rejects, which failed
+  // every create/update with the generic "Invalid competency list".
+  competency_id: uuidish(),
   weight: z.coerce.number().min(0.5).max(10).optional(),
   priority: z.enum(["high", "medium", "low"]).optional(),
   reasoning: z.string().max(500).optional(),

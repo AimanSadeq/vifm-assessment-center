@@ -222,8 +222,9 @@ export function LeadershipReportPdf({ data }: { data: LeadershipPdfData }) {
           </Text>
         </View>
 
-        {/* 3. Leadership Potential Summary */}
-        <View style={s.section}>
+        {/* 3. Leadership Potential Summary - always starts on its own page so
+            the heading never orphans at the bottom of the executive page. */}
+        <View style={s.section} break>
           <Text style={s.h2}>3 · Leadership Potential Summary</Text>
           <Text style={[s.statLabel, { marginBottom: 4 }]}>Dominant tendencies (highest self-ratings)</Text>
           {p.topStrengths.map((r) => (

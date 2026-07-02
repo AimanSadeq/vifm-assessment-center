@@ -103,8 +103,15 @@ export function PsychometricsClient({
         body: JSON.stringify({ action: "score", session_id: sessionId, answers, takerName: takerName.trim() || null, language: lang, redemptionToken }),
       });
       const d = await res.json();
-      if (!res.ok || !d.result) { setError(d.error || "Could not score."); return; }
-      setResult(d.result as PsyResult); setResultId(d.result_id ?? null); setCanView(d.isStaff === true); setPhase("result");
+      // XP-13: a NON-STAFF taker's successful response deliberately carries
+      // result=null (no score data over the wire), so success is res.ok alone -
+      // requiring d.result here mislabelled every voucher taker's successful
+      // submit as "Could not score." (and their retry hit the single-use guard).
+      if (!res.ok) { setError(d.error || "Could not score."); return; }
+      setResult((d.result as PsyResult | null) ?? null);
+      setResultId(d.result_id ?? null);
+      setCanView(d.isStaff === true && !!d.result);
+      setPhase("result");
     } catch { setError("Could not score."); } finally { setBusy(false); }
   };
 

@@ -85,7 +85,8 @@ const INTEGRITY_TIER_LABEL: Record<IntegritySignal["tier"], string> = {
 };
 
 const s = StyleSheet.create({
-  page: { paddingTop: 40, paddingBottom: 48, paddingHorizontal: 40, fontFamily: "Helvetica", fontSize: 9.5, color: C.text },
+  // paddingBottom clears the fixed footer (bottom 22 + up to 2 wrapped lines).
+  page: { paddingTop: 40, paddingBottom: 58, paddingHorizontal: 40, fontFamily: "Helvetica", fontSize: 9.5, color: C.text },
   banner: { backgroundColor: C.primary, borderRadius: 6, paddingVertical: 16, paddingHorizontal: 18, marginBottom: 14 },
   eyebrow: { fontSize: 7.5, color: C.accent, letterSpacing: 2, textTransform: "uppercase", fontFamily: "Helvetica-Bold" },
   title: { fontSize: 19, color: "#fff", fontFamily: "Helvetica-Bold", marginTop: 4 },

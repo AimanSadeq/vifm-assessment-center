@@ -26,7 +26,9 @@ const dimHex = (d: "management" | "leadership") => (d === "management" ? C.mgmt 
 const dimShort = (d: "management" | "leadership") => (d === "management" ? "Management" : "Leadership");
 
 const s = StyleSheet.create({
-  page: { paddingTop: 44, paddingBottom: 48, paddingHorizontal: 44, fontFamily: "Helvetica", fontSize: 10, color: C.text },
+  // paddingBottom must clear the fixed footer's zone (bottom 24 + ~3 wrapped
+  // lines + border ≈ 66pt), or page content renders THROUGH the footer text.
+  page: { paddingTop: 44, paddingBottom: 80, paddingHorizontal: 44, fontFamily: "Helvetica", fontSize: 10, color: C.text },
   banner: { backgroundColor: C.primary, borderRadius: 6, paddingVertical: 18, paddingHorizontal: 20, marginBottom: 16 },
   eyebrow: { fontSize: 8, color: C.lead, letterSpacing: 2, textTransform: "uppercase", fontFamily: "Helvetica-Bold" },
   title: { fontSize: 21, color: "#ffffff", fontFamily: "Helvetica-Bold", marginTop: 4 },

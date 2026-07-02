@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { PORTAL_SERVICES, type CaliberService } from "@/lib/clients/portal-services";
+import { COGNITIVE_SUBTESTS, COGNITIVE_SUBTEST_KEYS } from "@/lib/psychometrics/framework";
 
 // Per-service icon (mirrors the landing page's icon choices).
 const SERVICE_ICON: Record<CaliberService, typeof Boxes> = {
@@ -38,7 +39,14 @@ type Composed = {
   services: CaliberService[];
   clientKey: string;
   clientName: string;
+  /** Logica element scope (subtest keys); full battery when all four. */
+  logicaSubtests: string[];
 };
+
+const logicaScopeLabel = (subtests: string[]): string =>
+  subtests.length === COGNITIVE_SUBTEST_KEYS.length
+    ? "Logica"
+    : `Logica · ${subtests.map((k) => COGNITIVE_SUBTESTS.find((s) => s.key === k)?.name_en ?? k).join(" · ")}`;
 
 export function BespokeBuilder({ clients }: { clients: ClientOpt[] }) {
   const [nameEn, setNameEn] = useState("");
@@ -47,15 +55,26 @@ export function BespokeBuilder({ clients }: { clients: ClientOpt[] }) {
   const [selected, setSelected] = useState<CaliberService[]>([]);
   const [clientKey, setClientKey] = useState("");
   const [composed, setComposed] = useState<Composed[]>([]);
+  // Logica element scope: which subtests the package includes (default: all four).
+  const [logicaSubtests, setLogicaSubtests] = useState<string[]>([...COGNITIVE_SUBTEST_KEYS]);
 
   const toggle = (id: CaliberService) =>
     setSelected((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]));
+  const toggleLogicaSubtest = (key: string) =>
+    setLogicaSubtests((prev) =>
+      prev.includes(key)
+        ? prev.filter((k) => k !== key)
+        : COGNITIVE_SUBTEST_KEYS.filter((k) => prev.includes(k) || k === key)
+    );
 
   const client = clients.find((c) => c.key === clientKey);
-  const canSave = nameEn.trim().length >= 2 && selected.length >= 1 && !!client;
+  const logicaOn = selected.includes("logica");
+  const canSave =
+    nameEn.trim().length >= 2 && selected.length >= 1 && !!client && (!logicaOn || logicaSubtests.length > 0);
 
   const reset = () => {
     setNameEn(""); setNameAr(""); setDescription(""); setSelected([]); setClientKey("");
+    setLogicaSubtests([...COGNITIVE_SUBTEST_KEYS]);
   };
 
   const add = () => {
@@ -69,6 +88,7 @@ export function BespokeBuilder({ clients }: { clients: ClientOpt[] }) {
         services: [...selected],
         clientKey,
         clientName: client.name,
+        logicaSubtests: logicaOn ? [...logicaSubtests] : [...COGNITIVE_SUBTEST_KEYS],
       },
       ...prev,
     ]);
@@ -151,6 +171,39 @@ export function BespokeBuilder({ clients }: { clients: ClientOpt[] }) {
               );
             })}
           </div>
+
+          {/* Logica element scope - pick which reasoning subtests the package includes. */}
+          {logicaOn && (
+            <div className="rounded-lg border p-3" style={{ borderColor: "#c026d366", backgroundColor: "#c026d30a" }}>
+              <p className="inline-flex items-center gap-1.5 text-xs font-semibold" style={{ color: "#c026d3" }}>
+                <BrainCircuit className="h-3.5 w-3.5" /> Logica elements
+              </p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                Scope the package to specific reasoning elements - e.g. Inductive Reasoning only. Default is the full battery.
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {COGNITIVE_SUBTESTS.map((s) => {
+                  const on = logicaSubtests.includes(s.key);
+                  return (
+                    <button
+                      key={s.key}
+                      type="button"
+                      onClick={() => toggleLogicaSubtest(s.key)}
+                      aria-pressed={on}
+                      className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                        on ? "border-[#c026d3] bg-[#c026d3] text-white" : "border-slate-300 text-slate-600 hover:bg-slate-100"
+                      }`}
+                    >
+                      {s.name_en}
+                    </button>
+                  );
+                })}
+              </div>
+              {logicaSubtests.length === 0 && (
+                <p className="mt-2 text-[11px] text-rose-600">Pick at least one Logica element.</p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 3. Assign to client */}
@@ -217,7 +270,7 @@ export function BespokeBuilder({ clients }: { clients: ClientOpt[] }) {
                   className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium"
                   style={{ borderColor: accentFor(id), color: accentFor(id) }}
                 >
-                  {labelFor(id)}
+                  {id === "logica" ? logicaScopeLabel(logicaSubtests) : labelFor(id)}
                 </span>
               ))
             )}
@@ -268,10 +321,18 @@ export function BespokeBuilder({ clients }: { clients: ClientOpt[] }) {
                         className="rounded-full px-2 py-0.5 text-[10px] font-medium text-white"
                         style={{ backgroundColor: accentFor(id) }}
                       >
-                        {labelFor(id)}
+                        {id === "logica" ? logicaScopeLabel(b.logicaSubtests) : labelFor(id)}
                       </span>
                     ))}
                   </div>
+                  {b.services.includes("logica") && (
+                    <a
+                      href={`/ac/cognitive/vouchers?subtests=${b.logicaSubtests.join(",")}`}
+                      className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-[#c026d3] hover:underline"
+                    >
+                      Issue Logica vouchers for this scope →
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>

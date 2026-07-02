@@ -17,6 +17,21 @@ async function guard() {
   }
 }
 
+/**
+ * A hiring voucher's target role must exist NOW, not just when the page loaded.
+ * The role dropdown goes stale if a role profile is deleted (or recreated with a
+ * new id) in another tab; without this pre-check the insert surfaces a raw FK
+ * violation ("persona_vouchers_target_role_profile_id_fkey") to the admin.
+ */
+async function validateTargetRole(id: string | null | undefined): Promise<string | null> {
+  if (!id) return null;
+  const sb = createServiceClient();
+  const { data } = await sb.from("role_profiles").select("id").eq("id", id).maybeSingle();
+  return data
+    ? null
+    : "That target role no longer exists - it may have been deleted or recreated. Refresh the page and pick a current role.";
+}
+
 export async function generatePersonaVouchersAction(input: {
   count: number;
   label?: string;
@@ -46,6 +61,10 @@ export async function generatePersonaVouchersAction(input: {
   // can't issue a hiring batch that produces no fit report.
   if (purpose === "hiring" && !input.targetRoleProfileId) {
     return { error: "Pick a target role profile for a hiring assessment." };
+  }
+  if (purpose === "hiring") {
+    const roleErr = await validateTargetRole(input.targetRoleProfileId);
+    if (roleErr) return { error: roleErr };
   }
 
   let organizationId: string | null = null;
@@ -143,6 +162,10 @@ export async function emailVoucherDelegatesAction(input: {
   const purpose = input.purpose === "hiring" || input.purpose === "development" ? input.purpose : null;
   if (purpose === "hiring" && !input.targetRoleProfileId) {
     return { error: "Pick a target role profile for a hiring assessment." };
+  }
+  if (purpose === "hiring") {
+    const roleErr = await validateTargetRole(input.targetRoleProfileId);
+    if (roleErr) return { error: roleErr };
   }
 
   let organizationId: string | null = null;

@@ -418,6 +418,11 @@ export function FluentStage({ token, onDone }: { token: string; onDone: () => vo
               <PenLine className="h-5 w-5 text-[#5391D5]" /> Writing
             </h2>
             <p className="text-sm text-[#111232]">{test.writing.prompt_en}</p>
+            {/* Explicit, labelled word target so "70-90 words" in the prompt
+                can never be misread as a per-section time limit. */}
+            <p className="mt-2 text-[11px] font-medium text-slate-500">
+              Target length: about 70-90 words. This is a word count, not a time limit.
+            </p>
             <textarea
               value={writing}
               onChange={(e) => setWriting(e.target.value)}

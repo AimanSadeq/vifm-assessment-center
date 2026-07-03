@@ -85,6 +85,8 @@ const T = {
     transcriptHeading: "Your transcript",
     beginTitle: "Begin your placement",
     beginSub: "About {min} minutes · four skills · an indicative CEFR level the moment you finish.",
+    oneTimer: "One countdown covers all four skills - there are no per-section timers.",
+    targetLen: "Target length: about 70-90 words. The countdown covers the whole test, not this task.",
     howToTitle: "How to answer",
     howReading: "Reading & Listening: choose the best answer; listening items have audio you can replay.",
     howWriting: "Writing: type your response; write naturally and stay on the topic.",
@@ -138,6 +140,8 @@ const T = {
     transcriptHeading: "نص كلامك",
     beginTitle: "ابدأ تحديد مستواك",
     beginSub: "نحو {min} دقيقة · أربع مهارات · مستوى CEFR تقريبي فور انتهائك.",
+    oneTimer: "عدّ تنازلي واحد يغطي المهارات الأربع كلها - لا توجد مؤقّتات لكل قسم.",
+    targetLen: "الطول المستهدف: نحو 70-90 كلمة. العدّ التنازلي يغطي الاختبار كاملاً، لا هذه المهمة فقط.",
     howToTitle: "كيفية الإجابة",
     howReading: "القراءة والاستماع: اختر الإجابة الأنسب؛ بنود الاستماع تتضمّن صوتًا يمكنك إعادة تشغيله.",
     howWriting: "الكتابة: اكتب إجابتك بأسلوب طبيعي والتزم بالموضوع.",
@@ -560,6 +564,7 @@ export function FluentClient({
             <div>
               <h2 className="text-lg font-semibold text-primary">{t.beginTitle}</h2>
               <p className="mt-1 text-sm text-slate-500">{t.beginSub.replace("{min}", String(limitMinutes))}</p>
+              {hasTimeLimit && <p className="mt-1 text-xs text-slate-500">{t.oneTimer}</p>}
             </div>
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{t.pickLang}</span>
@@ -740,6 +745,10 @@ export function FluentClient({
             {rtl && test.writing.prompt_ar && (
               <p dir="rtl" className="mt-1 text-sm text-slate-600">{test.writing.prompt_ar}</p>
             )}
+            {/* Explicit, labelled word target - a reviewer read the prompt's
+                "70-90 words" as "70 min", so the target is stated as a length
+                and explicitly decoupled from the global countdown. */}
+            <p className="mt-2 text-[11px] font-medium text-slate-500">{t.targetLen}</p>
             <textarea value={writing} onChange={(e) => setWriting(e.target.value)} rows={7}
               onPaste={onPasteCapture}
               placeholder={t.writeHere} dir="ltr"

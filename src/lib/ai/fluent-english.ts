@@ -9,7 +9,7 @@ import { reorderOptions } from "@/lib/scoring/option-shuffle";
  *   1. generateFluentTest() - authors a placement test in one call:
  *      · 6 reading items   (difficulty ramp A2→C1, auto-scored)
  *      · 4 listening items (script spoken via browser TTS, auto-scored)
- *      · 1 writing task    (Claude-scored, the IELTS/TOEFL differentiator)
+ *      · 1 writing task    (Claude-scored against CEFR-aligned criteria)
  *      · 1 speaking task    (Whisper transcript → Claude-scored)
  *   2. scoreFluentWriting()  - CEFR criteria on a free-text response.
  *   3. scoreFluentSpeaking() - CEFR criteria on a SPOKEN response that has
@@ -806,8 +806,15 @@ export async function scoreFluentWriting(input: {
     `Register (professional, business-like tone appropriate to a workplace email/message); ` +
     `Etiquette (courtesy, politeness, appropriate greetings/closings, cultural sensitivity); ` +
     `Mechanics (spelling and punctuation). ` +
-    `Then assign an overall CEFR level (A1–C2) and give 2–3 sentences of specific, ` +
-    `constructive feedback. Be fair but rigorous; reward communication, not just accuracy. ` +
+    `Then assign an overall CEFR level (A1–C2) and write feedback_en as 3-5 sentences of ` +
+    `coaching feedback addressed directly to the writer as "you", following this contract: ` +
+    `(1) open by naming concretely what the response achieved AND what it missed against this ` +
+    `specific task - reference their actual content, never a generic verdict like "your response ` +
+    `does not address the task"; (2) give 2-3 specific, actionable improvement steps tied to this ` +
+    `task (structure, required content points, length, tone - e.g. "add a greeting and a closing", ` +
+    `"state your recommendation in the first sentence"); (3) close on an encouraging, forward-looking ` +
+    `note. Specific, constructive, actionable, encouraging - never harsh or boilerplate. ` +
+    `Be fair but rigorous in the SCORES; reward communication, not just accuracy. ` +
     `Separately, estimate ai_likelihood (0-100): how strongly the response's STYLE suggests it ` +
     `was produced with a generative-AI tool rather than typed by a test candidate. Markers to weigh: ` +
     `polish/lexis far above the response's own error profile, template-like structure with uniform ` +
@@ -835,7 +842,7 @@ export async function scoreFluentWriting(input: {
     `  "cefr":"B1",`,
     `  "task_achievement":<1-5>, "coherence":<1-5>, "lexical_range":<1-5>, "grammar":<1-5>,`,
     `  "register":<1-5>, "etiquette":<1-5>, "mechanics":<1-5>,`,
-    `  "feedback_en":"<2-3 sentences>",`,
+    `  "feedback_en":"<3-5 sentences per the feedback contract>",`,
     `  "issues":[{"category":"grammar|spelling|punctuation|vocabulary|etiquette|structure","quote":"<short verbatim phrase>","suggestion":"<correction>"}],`,
     `  "ai_likelihood":<0-100>, "ai_markers":["<short stylometric observation>"],`,
     `  "feedback_ar":${wantsAr ? '"<same feedback in Modern Standard Arabic>"' : "null"}`,
@@ -921,8 +928,15 @@ export async function scoreFluentSpeaking(input: {
     `pronunciation or accent from a transcript, so do not. Score four criteria, each ` +
     `1–5: Fluency & Coherence (infer hesitation/repetition/false-starts from the text), ` +
     `Coherence & Cohesion, Lexical Resource, Grammatical Range & Accuracy. Then assign ` +
-    `an overall CEFR level (A1–C2) and give 2–3 sentences of specific, constructive ` +
-    `feedback. Reward communication and content relevance to the task. ` +
+    `an overall CEFR level (A1–C2) and write feedback_en as 3-5 sentences of coaching ` +
+    `feedback addressed directly to the speaker as "you", following this contract: ` +
+    `(1) open by naming concretely what the response achieved AND what it missed against ` +
+    `this specific task - reference their actual content, never a generic verdict; ` +
+    `(2) give 2-3 specific, actionable improvement steps tied to this task (e.g. "give one ` +
+    `example to support your opinion", "link your points with connectors like however/because"); ` +
+    `(3) close on an encouraging, forward-looking note. Specific, constructive, actionable, ` +
+    `encouraging - never harsh or boilerplate. Reward communication and content relevance ` +
+    `to the task in the SCORES. ` +
     CEFR_ANCHORS;
 
   const user = [
@@ -937,7 +951,7 @@ export async function scoreFluentSpeaking(input: {
     `{`,
     `  "cefr":"B1",`,
     `  "fluency":<1-5>, "coherence":<1-5>, "lexical_range":<1-5>, "grammar":<1-5>,`,
-    `  "feedback_en":"<2-3 sentences>",`,
+    `  "feedback_en":"<3-5 sentences per the feedback contract>",`,
     `  "feedback_ar":${wantsAr ? '"<same feedback in Modern Standard Arabic>"' : "null"}`,
     `}`,
   ].join("\n");

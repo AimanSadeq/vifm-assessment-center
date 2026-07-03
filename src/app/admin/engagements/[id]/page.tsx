@@ -13,6 +13,8 @@ import { TechnicalCertPanel } from "./_components/technical-cert-panel";
 import { CandidateFilterBar } from "./_components/candidate-filter-bar";
 import { loadReadinessSetup } from "@/lib/scoring/readiness-setup";
 import { ReadinessSetupPanel } from "./_components/readiness-setup-panel";
+import { computeAcObservedLens } from "@/lib/scoring/ac-observed-lens";
+import { ObservedLensPanel } from "./_components/observed-lens-panel";
 
 type Props = {
   params: { id: string };
@@ -127,6 +129,12 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
     ? candidates.find((c) => c.id === focusedCandidateId)
     : null;
 
+  // B3 - observed-evidence DARE + EQ lens for the focused candidate. Null
+  // (panel hidden) until the candidate has wash-up consensus scores.
+  const observedLens = focusedCandidate
+    ? await computeAcObservedLens(id, focusedCandidate.id as string)
+    : null;
+
   // Technical certification program for this engagement (paid org layer).
   const techProgram = await getEngagementTechProgram(id, await getServerLocale());
 
@@ -176,6 +184,12 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
         courses={recommendedCourses}
         context="ac"
       />
+      {observedLens && focusedCandidate && (
+        <ObservedLensPanel
+          lens={observedLens}
+          candidateName={focusedCandidate.full_name as string}
+        />
+      )}
       <TechnicalCertPanel engagementId={id} program={techProgram} />
     </div>
   );

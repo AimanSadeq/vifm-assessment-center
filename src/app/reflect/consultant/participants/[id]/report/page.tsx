@@ -10,6 +10,8 @@ import {
   generateReflectBehaviorTips,
   type BehaviorTip,
 } from "@/lib/ai/reflect-behavior-tips";
+import { computeReflectLens } from "@/lib/reflect/lens";
+import { GAP_READ_LABEL, type LensGroupRead } from "@/lib/reports/lens-shared";
 
 export const dynamic = "force-dynamic";
 
@@ -328,6 +330,10 @@ function ReportBody({
         })}
       </section>
 
+      {/* B1/B2 VIFM lens - DARE decision roles + Goleman EQ quadrants with
+          self-vs-others gaps (renders only when framework names map). */}
+      <DareEqLensPage scoring={scoring} rtl={rtl} />
+
       {/* P3.2 Reference Group Comparison - single horizontal-dots view */}
       <ReferenceGroupComparisonPage scoring={scoring} rtl={rtl} />
 
@@ -504,6 +510,7 @@ function ContentsPage({ rtl }: { rtl: boolean }) {
     { en: "Strengths & Development", ar: "نقاط القوة والتطوير", descEn: "Top-5 strengths, top-5 development areas, ranked.", descAr: "أعلى 5 نقاط قوة وأقل 5 مجالات تطوير، مرتّبة." },
     { en: "Blind spots / Hidden strengths", ar: "النقاط العمياء / القوة الخفية", descEn: "Triangulated Self-vs-Others gaps, auto-flagged.", descAr: "فجوات أنت مقابل الآخرين، مُعلّمة تلقائيًا." },
     { en: "Per-competency detail", ar: "تفاصيل حسب الكفاية", descEn: "Bars per rater group with the Favorable Zone band.", descAr: "أشرطة لكل فئة مقيّمين مع شريط النطاق المرجعي." },
+    { en: "DARE + EQ lens", ar: "عدسة DARE والذكاء العاطفي", descEn: "Decision-role and Goleman-quadrant re-read with self-vs-others gaps.", descAr: "قراءة عبر أدوار القرار ومربّعات جولمان مع فجوات أنت مقابل الآخرين." },
     { en: "Reference group comparison", ar: "مقارنة فئات المقيّمين", descEn: "Every group, every competency, on one page.", descAr: "كل فئة وكل كفاية في صفحة واحدة." },
     { en: "Item-level table", ar: "جدول السلوكيات", descEn: "Every behaviour, every group, with consensus flags.", descAr: "كل سلوك وكل فئة مع إشارات التوافق." },
     { en: "Verbatims", ar: "بكلمات المقيّمين", descEn: "Start / Stop / Continue in raters' own words.", descAr: "ابدأ / توقّف / استمر بكلمات المقيّمين." },
@@ -516,8 +523,8 @@ function ContentsPage({ rtl }: { rtl: boolean }) {
       <h2>{rtl ? "محتويات هذا التقرير" : "What's in this report"}</h2>
       <p className="lead">
         {rtl
-          ? "12 قسمًا. ثنائي اللغة. سرّي للقائد ومدرّبه في VIFM."
-          : "12 sections. Bilingual. Confidential to the leader and their VIFM coach."}
+          ? `${sections.length} قسمًا. ثنائي اللغة. سرّي للقائد ومدرّبه في VIFM.`
+          : `${sections.length} sections. Bilingual. Confidential to the leader and their VIFM coach.`}
       </p>
       <ol className="toc-grid">
         {sections.map((s, i) => (
@@ -534,6 +541,116 @@ function ContentsPage({ rtl }: { rtl: boolean }) {
         {rtl
           ? "متاح بالإنجليزية أو العربية أو ثنائي اللغة جنبًا إلى جنب. يُنشأ كملف PDF عند الطلب."
           : "Available in English, Arabic, or side-by-side bilingual. Generated as PDF on demand."}
+      </div>
+    </section>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────
+// B1/B2 - VIFM DARE + EQ lens (self vs others, coverage-badged)
+// ──────────────────────────────────────────────────────────────
+
+const LENS_GROUP_AR: Record<string, string> = {
+  decide: "يقرّر",
+  advise: "يستشار",
+  recommend: "يوصي",
+  execute: "ينفّذ",
+  self_awareness: "الوعي الذاتي",
+  self_management: "إدارة الذات",
+  social_awareness: "الوعي الاجتماعي (التعاطف)",
+  relationship_management: "إدارة العلاقات",
+};
+const GAP_READ_AR: Record<string, string> = {
+  blind_spot: "نقطة عمياء محتملة",
+  hidden_strength: "قوة خفية",
+  aligned: "متوافق",
+};
+const GAP_READ_CLASS: Record<string, string> = {
+  blind_spot: "lens-chip-blind",
+  hidden_strength: "lens-chip-hidden",
+  aligned: "lens-chip-aligned",
+};
+
+function LensBarRow({ label, value, hex }: { label: string; value: number | null; hex: string }) {
+  return (
+    <div className="lens-bar-row">
+      <span className="lens-bar-label">{label}</span>
+      <span className="lens-bar-track">
+        {value !== null && (
+          <span className="lens-bar-fill" style={{ width: `${(value / 5) * 100}%`, background: hex }} />
+        )}
+      </span>
+      <span className="lens-bar-value">{value !== null ? value.toFixed(2) : "-"}</span>
+    </div>
+  );
+}
+
+function LensGroupRow({ g, rtl }: { g: LensGroupRead; rtl: boolean }) {
+  return (
+    <div className="lens-row">
+      <div className="lens-row-head">
+        <span className="lens-dot" style={{ background: g.hex }} />
+        <span className="lens-label">{rtl ? LENS_GROUP_AR[g.key] ?? g.label : g.label}</span>
+        <span className="lens-coverage">
+          {rtl
+            ? `${g.inInstrument} من ${g.totalInModel} كفاية`
+            : `${g.inInstrument} of ${g.totalInModel} competencies`}
+        </span>
+        {g.gapRead && (
+          <span className={`lens-chip ${GAP_READ_CLASS[g.gapRead]}`}>
+            {rtl ? GAP_READ_AR[g.gapRead] : GAP_READ_LABEL[g.gapRead]}
+            {g.gap !== null && ` · ${g.gap > 0 ? "+" : ""}${g.gap.toFixed(2)}`}
+          </span>
+        )}
+      </div>
+      <LensBarRow label={rtl ? "أنت" : "Self"} value={g.self} hex="#94A3B8" />
+      <LensBarRow label={rtl ? "الآخرون" : "Others"} value={g.others} hex={g.hex} />
+    </div>
+  );
+}
+
+function DareEqLensPage({ scoring, rtl }: { scoring: ParticipantScoring; rtl: boolean }) {
+  const lens = computeReflectLens(scoring);
+  if (!lens.hasAny) return null;
+  return (
+    <section className="page">
+      <h2>{rtl ? "عدسة VIFM: أدوار القرار (DARE) والذكاء العاطفي (EQ)" : "VIFM lens: DARE decision roles + EQ quadrants"}</h2>
+      <p className="lead">
+        {rtl
+          ? "قراءة ثانية لنتائجك عبر إطارَي VIFM: أدوار القرار (يقرّر · يستشار · يوصي · ينفّذ) ومربّعات جولمان الأربعة للذكاء العاطفي. الفجوة = تقييمك ناقص تقييم الآخرين: فجوة موجبة (≥ +0.5) نقطة عمياء محتملة، وفجوة سالبة (≤ −0.5) قوة خفية."
+          : "A second read of the same 360 data through two VIFM frameworks: the DARE decision roles (Decide · Advise · Recommend · Execute) and the four Goleman EQ quadrants. Gap = Self minus Others: a positive gap (>= +0.5) flags a potential blind spot, a negative gap (<= -0.5) a hidden strength."}
+      </p>
+
+      {lens.dare.length > 0 && (
+        <div className="lens-block">
+          <h3>{rtl ? "أدوار القرار - DARE" : "DARE - decision roles"}</h3>
+          {lens.dare.map((g) => (
+            <LensGroupRow key={g.key} g={g} rtl={rtl} />
+          ))}
+        </div>
+      )}
+
+      {lens.eq.length > 0 && (
+        <div className="lens-block">
+          <h3>{rtl ? "مربّعات الذكاء العاطفي - جولمان" : "EQ - Goleman quadrants"}</h3>
+          {lens.eq.map((g) => (
+            <LensGroupRow key={g.key} g={g} rtl={rtl} />
+          ))}
+        </div>
+      )}
+
+      <div className="callout">
+        {rtl
+          ? `عدسة محتوى، وليست أداة مقنّنة: يُعاد تجميع كفايات إطار هذا البرنامج (${lens.mappedCount} من ${lens.totalCount} طابقت دليل VIFM) في مجموعات النموذج، وتُحسب كل مجموعة من الكفايات المقاسة فعلًا فقط - شارة التغطية «ن من م» هي مقياس الأمانة.`
+          : `A content lens, not a normed instrument: this engagement's framework competencies (${lens.mappedCount} of ${lens.totalCount} matched to the VIFM catalogue) are re-grouped into each model, and every group is scored only from the competencies this 360 actually measured - the "n of N" coverage badge is the honesty rail.`}
+        {lens.unmapped.length > 0 && (
+          <>
+            {" "}
+            {rtl
+              ? `كفايات خارج الدليل (غير مشمولة): ${lens.unmapped.join("، ")}.`
+              : `Outside the catalogue (excluded): ${lens.unmapped.join(", ")}.`}
+          </>
+        )}
       </div>
     </section>
   );
@@ -1560,6 +1677,24 @@ h4 { color: var(--vifm-primary); font-size: 11pt; font-weight: 700; margin: 3mm 
 .reflect-pdf[dir="rtl"] .favorable-zone { left: auto; right: 70%; }
 .group-bar-value { text-align: right; font-variant-numeric: tabular-nums; color: var(--vifm-dark); }
 .group-bar-hidden { color: var(--vifm-muted); font-size: 8pt; padding: 0 2mm; }
+
+/* B1/B2 DARE + EQ lens */
+.lens-block { margin-bottom: 5mm; }
+.lens-row { border: 1px solid var(--vifm-border); border-radius: 2.5mm; padding: 2.5mm 4mm 3mm; margin-bottom: 2mm; page-break-inside: avoid; }
+.lens-row-head { display: flex; align-items: center; gap: 2.5mm; flex-wrap: wrap; margin-bottom: 1mm; }
+.lens-dot { width: 3.2mm; height: 3.2mm; border-radius: 50%; flex-shrink: 0; }
+.lens-label { font-weight: 700; color: var(--vifm-primary); font-size: 10.5pt; }
+.lens-coverage { font-size: 8.5pt; color: var(--vifm-muted); background: var(--vifm-soft); border-radius: 2mm; padding: 0.5mm 2mm; }
+.lens-chip { margin-left: auto; font-size: 8.5pt; font-weight: 700; border-radius: 2mm; padding: 0.5mm 2.5mm; }
+.reflect-pdf[dir="rtl"] .lens-chip { margin-left: 0; margin-right: auto; }
+.lens-chip-blind { background: #FFF1F2; color: var(--tone-blind); }
+.lens-chip-hidden { background: #F5F3FF; color: var(--tone-hidden); }
+.lens-chip-aligned { background: #ECFDF5; color: var(--tone-strength); }
+.lens-bar-row { display: grid; grid-template-columns: 18mm 1fr 12mm; gap: 3mm; align-items: center; font-size: 9pt; margin-top: 1mm; }
+.lens-bar-label { color: var(--vifm-muted); }
+.lens-bar-track { height: 3mm; background: var(--vifm-soft); border-radius: 1.5mm; overflow: hidden; }
+.lens-bar-fill { display: block; height: 100%; border-radius: 1.5mm; }
+.lens-bar-value { text-align: right; font-variant-numeric: tabular-nums; color: var(--vifm-dark); }
 
 /* Recommended programmes */
 .programme-list { padding: 0; margin: 0; list-style: none; }

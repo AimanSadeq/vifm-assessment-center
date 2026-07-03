@@ -11,9 +11,9 @@ import "./globals.css";
 const openSans = Open_Sans({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "VIFM Assessment Center",
+  title: "VIFM Talent Intelligence",
   description:
-    "Assessment Center management platform by Virginia Institute of Finance and Management",
+    "Talent intelligence platform by Virginia Institute of Finance and Management",
 };
 
 export default function RootLayout({

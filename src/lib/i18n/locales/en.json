@@ -858,7 +858,7 @@
     "notSet": "Not set"
   },
   "common": {
-    "appName": "VIFM Assessment Center",
+    "appName": "VIFM Talent Intelligence",
     "vifm": "Virginia Institute of Finance and Management",
     "loading": "Loading...",
     "save": "Save",
@@ -4141,12 +4141,12 @@
   },
   "authPublic": {
     "brand": {
-      "title": "Assessment Center",
-      "tagline": "Virginia Institute of Finance and Management - Professional assessment center platform for leadership evaluation and talent development across the GCC and MENA region."
+      "title": "Talent Intelligence",
+      "tagline": "Virginia Institute of Finance and Management - Professional talent intelligence platform for leadership evaluation and talent development across the GCC and MENA region."
     },
     "login": {
       "title": "Sign In",
-      "description": "Welcome to the VIFM Assessment Center Portal. Enter your credentials to continue.",
+      "description": "Welcome to the VIFM Talent Intelligence Portal. Enter your credentials to continue.",
       "selectRole": "Select role...",
       "roleAdmin": "Admin",
       "roleConsultant": "Consultant",

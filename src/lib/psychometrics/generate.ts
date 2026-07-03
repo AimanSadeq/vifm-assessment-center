@@ -7,6 +7,7 @@
 import { getAIClient, AI_MODEL } from "@/lib/ai/client";
 import { MINI_IPIP, COGNITIVE_SUBTESTS, COGNITIVE_SUBTEST_KEYS, LIKERT_ANCHORS_EN, LIKERT_ANCHORS_AR } from "./framework";
 import { assembleFromBank } from "./bank";
+import { reorderOptions } from "@/lib/scoring/option-shuffle";
 import type { PsyTest, PsyTestPublic, CognitiveItem, PersonalityItem } from "./scoring";
 
 type Lang = "en" | "ar";
@@ -146,7 +147,11 @@ export async function generatePsyTest(
   // populated (item ids are real psy_items uuids → the response log is calibratable).
   // Otherwise fall back to the Tier-1 source (Mini-IPIP / AI / static deck).
   const fromBank = await assembleFromBank(kind, lang, kind === "cognitive" ? effectiveCog : undefined);
-  if (fromBank) return fromBank;
+  if (fromBank) {
+    return fromBank.kind === "cognitive"
+      ? { ...fromBank, items: shuffleCognitiveOptions(fromBank.items) }
+      : fromBank;
+  }
 
   if (kind === "personality") {
     return { kind: "personality", items: personalityItems(lang) };
@@ -157,8 +162,25 @@ export async function generatePsyTest(
   const PER_SUBTEST: Record<number, number> = { 1: 10, 2: 6, 3: 5, 4: 4 };
   const perSubtest = PER_SUBTEST[effectiveCog.length] ?? 4;
   const ai = await aiCognitive(lang, perSubtest, effectiveCog);
-  if (ai) return { kind: "cognitive", items: ai, ai_generated: true };
-  return { kind: "cognitive", items: staticCognitive(lang, effectiveCog), ai_generated: false };
+  if (ai) return { kind: "cognitive", items: shuffleCognitiveOptions(ai), ai_generated: true };
+  return { kind: "cognitive", items: shuffleCognitiveOptions(staticCognitive(lang, effectiveCog)), ai_generated: false };
+}
+
+/**
+ * Per-administration option reorder (integrity pass): numeric option sets are
+ * sorted, judgement scales (True/False/Cannot say + Arabic forms) stay as
+ * authored, everything else Fisher-Yates shuffles - see option-shuffle.ts.
+ * Applied before the keyed test is stored on psy_sessions, so the server copy
+ * and the stripped browser payload always agree. Note for calibration: the
+ * psy_item_responses log keys on correctness (Rasch p-values), which is
+ * computed against this same shuffled session copy, so shuffling does not
+ * disturb the calibration substrate. Never shuffles Likert personality items.
+ */
+function shuffleCognitiveOptions(items: CognitiveItem[]): CognitiveItem[] {
+  return items.map((it) => {
+    const s = reorderOptions(it.options, it.correct);
+    return { ...it, options: s.options, correct: s.correctIndex, orig: s.origIndex };
+  });
 }
 
 /** Remove the answer key before the test reaches the browser. */

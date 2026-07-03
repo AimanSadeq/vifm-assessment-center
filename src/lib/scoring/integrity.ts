@@ -48,6 +48,21 @@ export type IntegrityFlags = {
    * set server-side, never trusted from the client. Advisory only.
    */
   ipChanged?: boolean;
+  /**
+   * Advisory stylometric estimate (0-100) that a free-text writing response was
+   * produced with a generative-AI tool (set server-side from the AI examiner's
+   * scoring pass, never trusted from the client). AI-text detection is
+   * inherently unreliable: this contributes to the advisory composite only
+   * above a conservative floor, is strongest read alongside pasteChars, and
+   * never auto-fails anything.
+   */
+  aiLikelihood?: number;
+  /**
+   * Server-detected: camera proctoring was REQUIRED for this administration
+   * (voucher flag or org policy) but no proctoring session was recorded - the
+   * browser-side consent gate was skipped, blocked, or stripped. Advisory only.
+   */
+  proctorMissing?: boolean;
 };
 
 export type IntegrityTier = "clean" | "minor" | "elevated";
@@ -85,6 +100,17 @@ const PASTE_CHARS_FOR_MAX = 600; // ~a long paragraph pasted in reads as the ful
  *  enough to clear the "minor" bar on its own and to read as elevated alongside
  *  other activity. Advisory only (a legitimate network switch also changes IP). */
 const IP_CHANGE_POINTS = 30;
+
+/** AI-likeness contribution: nothing below the floor (detectors are unreliable
+ *  and competent human writing must not accrue points), then a linear ramp to
+ *  MAX_AI_POINTS at likelihood 100. At the floor+paste combination the composite
+ *  reads elevated - which is exactly the "worth a human glance" case. */
+const AI_LIKELIHOOD_FLOOR = 60;
+const MAX_AI_POINTS = 25;
+
+/** Required proctoring with no recorded session clears the "minor" bar on its
+ *  own - a camera can legitimately fail, so it prompts review, never a fail. */
+const PROCTOR_MISSING_POINTS = 30;
 
 /** Tier cut-offs on the 0-100 composite. */
 const MINOR_AT = 15;
@@ -128,11 +154,31 @@ export function computeIntegritySignal(flags: IntegrityFlags | null | undefined)
         : 0;
 
   const ipPoints = f.ipChanged ? IP_CHANGE_POINTS : 0;
-  const score = Math.min(100, Math.round(blurPoints + awayPoints + pastePoints + ipPoints));
+  const aiLikelihood =
+    typeof f.aiLikelihood === "number" && Number.isFinite(f.aiLikelihood)
+      ? Math.min(100, Math.max(0, Math.round(f.aiLikelihood)))
+      : null;
+  const aiPoints =
+    aiLikelihood !== null && aiLikelihood >= AI_LIKELIHOOD_FLOOR
+      ? ((aiLikelihood - AI_LIKELIHOOD_FLOOR) / (100 - AI_LIKELIHOOD_FLOOR)) * MAX_AI_POINTS
+      : 0;
+  const proctorPoints = f.proctorMissing ? PROCTOR_MISSING_POINTS : 0;
+  const score = Math.min(
+    100,
+    Math.round(blurPoints + awayPoints + pastePoints + ipPoints + aiPoints + proctorPoints)
+  );
 
   const reasons: string[] = [];
+  if (f.proctorMissing) {
+    reasons.push("Camera proctoring was required but no proctoring session was recorded");
+  }
   if (f.ipChanged) {
     reasons.push("IP address changed during the test");
+  }
+  if (aiLikelihood !== null && aiLikelihood >= AI_LIKELIHOOD_FLOOR) {
+    reasons.push(
+      `Writing style reads as possibly AI-assisted (advisory estimate ${aiLikelihood}/100 - stylometric, not proof)`
+    );
   }
   if (blurCount > 0) {
     reasons.push(blurCount === 1 ? "Left the test once" : `Left the test ${blurCount} times`);

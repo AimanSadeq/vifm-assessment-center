@@ -244,10 +244,15 @@ async function persistScoreRuns(
   }
 }
 
-/** Stable content identity for an item, so identical items merge in the bank. */
+/**
+ * Stable content identity for an item, so identical items merge in the bank.
+ * Order-invariant: options are hashed SORTED and the key is the correct option's
+ * TEXT, not its index - per-administration option shuffling (integrity pass)
+ * must not fragment the calibration bank into one row per permutation.
+ */
 function itemHash(skill: string, content: string, question: string, options: string[], correctIndex: number): string {
   return createHash("sha256")
-    .update(JSON.stringify({ skill, content, question, options, correctIndex }))
+    .update(JSON.stringify({ skill, content, question, options: [...options].sort(), correct: options[correctIndex] ?? correctIndex }))
     .digest("hex");
 }
 
@@ -264,16 +269,34 @@ async function logItemResponses(
   sessionId: string | null
 ): Promise<void> {
   try {
+    // Canonical frame (integrity pass): options are shuffled per administration,
+    // so the shared bank row must be permutation-stable. The stored stem uses
+    // SORTED options (the same canonical order the content_hash keys on) with a
+    // remapped correct_index, and chosen_index is remapped into that frame too -
+    // otherwise each sitting would overwrite the row's stem with its own shuffle
+    // and chosen_index would be incoherent across sittings.
+    const toCanonical = <T extends { options: string[]; correct_index: number }>(item: T) => {
+      const sorted = [...item.options].sort();
+      return {
+        stem: { ...item, options: sorted, correct_index: sorted.indexOf(item.options[item.correct_index]) },
+        chosenIn: (chosen: number | undefined) =>
+          typeof chosen === "number" && item.options[chosen] !== undefined
+            ? sorted.indexOf(item.options[chosen])
+            : null,
+      };
+    };
     const all = [
       ...reading.map((r) => ({
         skill: "reading" as const,
         hash: itemHash("reading", r.passage, r.question, r.options, r.correct_index),
         item: r,
+        canon: toCanonical(r),
       })),
       ...listening.map((l) => ({
         skill: "listening" as const,
         hash: itemHash("listening", l.script, l.question, l.options, l.correct_index),
         item: l,
+        canon: toCanonical(l),
       })),
     ];
     if (all.length === 0) return;
@@ -282,7 +305,7 @@ async function logItemResponses(
     const { data: upserted, error } = await sb
       .from("eng_fluent_items")
       .upsert(
-        all.map((a) => ({ content_hash: a.hash, skill: a.skill, stem: a.item, cefr_label: a.item.cefr })),
+        all.map((a) => ({ content_hash: a.hash, skill: a.skill, stem: a.canon.stem, cefr_label: a.item.cefr })),
         { onConflict: "content_hash" }
       )
       .select("id, content_hash");
@@ -299,7 +322,8 @@ async function logItemResponses(
         return {
           item_id: itemId,
           session_id: sessionId,
-          chosen_index: typeof chosen === "number" ? chosen : null,
+          chosen_index: a.canon.chosenIn(chosen),
+          // Correctness is judged in the administration frame the taker saw.
           correct: chosen === a.item.correct_index,
         };
       })
@@ -558,7 +582,58 @@ export async function POST(req: Request) {
     // (PDPL-safe) flags so it rides into the persisted integrity_flags + signal.
     const scoreIp = clientIp(req);
     const ipChanged = !!startIp && !!scoreIp && startIp !== scoreIp;
-    const integrityFlags: IntegrityFlags = { ...(body.integrityFlags ?? {}), ...(ipChanged ? { ipChanged: true } : {}) };
+    // Server-authoritative flags: ipChanged and aiLikelihood are computed here
+    // and OVERWRITE anything the (untrusted) client posted under those keys.
+    // aiLikelihood is the AI examiner's advisory stylometric estimate for the
+    // writing response (integrity pass) - unreliable by nature, so it only
+    // nudges the advisory composite above a conservative floor and never
+    // auto-fails anything.
+    const integrityFlags: IntegrityFlags = {
+      ...(body.integrityFlags ?? {}),
+      ipChanged,
+      aiLikelihood: typeof writing.ai_likelihood === "number" ? writing.ai_likelihood : undefined,
+    };
+    if (!ipChanged) delete integrityFlags.ipChanged;
+    if (integrityFlags.aiLikelihood === undefined) delete integrityFlags.aiLikelihood;
+    // Proctoring breadcrumb (integrity pass): when the voucher or its client
+    // org REQUIRED camera proctoring, verify a proctoring session was actually
+    // recorded for this administration. The consent gate is a browser control -
+    // a determined taker can strip it - so its absence is converted here into a
+    // server-detected advisory flag rather than trusted silence. Best-effort:
+    // tolerant of un-applied migrations.
+    if (body.redemptionToken?.trim()) {
+      try {
+        const sb = createServiceClient();
+        const token = body.redemptionToken.trim();
+        const { data: redemption } = await sb
+          .from("eng_fluent_voucher_redemptions")
+          .select("voucher_id")
+          .eq("redemption_token", token)
+          .maybeSingle<{ voucher_id: string }>();
+        if (redemption) {
+          const { data: voucher } = await sb
+            .from("eng_fluent_vouchers")
+            .select("proctor_enabled, organization_id")
+            .eq("id", redemption.voucher_id)
+            .maybeSingle<{ proctor_enabled: boolean; organization_id: string | null }>();
+          let required = voucher?.proctor_enabled ?? false;
+          if (!required && voucher?.organization_id) {
+            const { getOrgSettings } = await import("@/lib/clients/org-settings");
+            required = (await getOrgSettings(voucher.organization_id)).fluent_proctoring_required === true;
+          }
+          if (required) {
+            const { count } = await sb
+              .from("proctor_sessions")
+              .select("id", { count: "exact", head: true })
+              .eq("context", "fluent")
+              .eq("ref_id", token);
+            if (!count || count === 0) integrityFlags.proctorMissing = true;
+          }
+        }
+      } catch {
+        /* proctor tables / policy not migrated - no breadcrumb */
+      }
+    }
     // CAL-FLU-601 + FLU-1: advisory integrity signal from the flags.
     const integrity = computeIntegritySignal(integrityFlags);
 
@@ -608,13 +683,26 @@ export async function POST(req: Request) {
 
     // Staff (admin/consultant/assessor) see results on-screen; takers get a
     // thank-you. result_id is only returned to staff so a taker can never fetch
-    // the certificate even by guessing the API shape (XP-13).
+    // the certificate even by guessing the API shape (XP-13). The advisory
+    // AI-likeness output (estimate + markers + its reason string) is also
+    // staff-only: returning the detector's own reading to the taker would hand
+    // an unsupervised candidate a live oracle to reword against. The persisted
+    // result keeps the full detail for the admin surfaces.
     const isStaff = await isStaffCaller();
+    const responseResult = isStaff
+      ? result
+      : {
+          ...result,
+          writing: { ...result.writing, ai_likelihood: undefined, ai_markers: undefined },
+        };
+    const responseIntegrity = isStaff
+      ? integrity
+      : { ...integrity, reasons: integrity.reasons.filter((r) => !r.startsWith("Writing style reads")) };
     return NextResponse.json({
-      ...result,
+      ...responseResult,
       reliability,
       result_id: isStaff ? result_id : null,
-      integrity,
+      integrity: responseIntegrity,
       isStaff,
     });
   }

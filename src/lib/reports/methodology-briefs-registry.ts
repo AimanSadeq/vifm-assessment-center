@@ -23,6 +23,15 @@ export type MethodologyBrief = {
 
 export const METHODOLOGY_BRIEFS: readonly MethodologyBrief[] = [
   {
+    slug: "integrity-security",
+    service: "Assessment Integrity & Security",
+    tagline: "The layered model that protects result validity",
+    eyebrow: "VIFM Caliber® Platform",
+    file: "Integrity-Security-Methodology-Brief.md",
+    filename: "VIFM-Caliber-Integrity-Security-Brief.pdf",
+    pillar: "both",
+  },
+  {
     slug: "assessment-center",
     service: "Assessment Center",
     tagline: "Observed behavioural competency assessment",

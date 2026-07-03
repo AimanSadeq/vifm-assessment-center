@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { findCandidateByToken, rescoreCandidate } from "@/lib/prehire/candidate-access";
 import { logPrehireEvent } from "@/lib/prehire/audit";
 import { scoreCbiInterview, type CbiMessage } from "@/lib/ai/cbi-interviewer";
+import { computeIntegritySignal, type IntegrityFlags } from "@/lib/scoring/integrity";
 
 type CbiDetail = { history?: CbiMessage[] } | null;
 
@@ -50,6 +51,13 @@ export async function POST(_req: Request, { params }: { params: { token: string 
   const cut = ctx.requisition.stage_config.find((s) => s.kind === "cbi")?.cut_score ?? null;
   const passed = cut == null ? true : normalized >= cut;
 
+  // Integrity pass: the AI examiner's advisory AI-likeness estimate on the
+  // candidate's typed answers rides into the stage flags (same pattern as the
+  // fluent stage) so the recruiter view can show it. Advisory only - it never
+  // caps or fails the stage.
+  const integrityFlags: IntegrityFlags | null =
+    typeof score.ai_likelihood === "number" ? { aiLikelihood: score.ai_likelihood } : null;
+
   const { error } = await svc
     .from("prehire_stage_results")
     .update({
@@ -58,6 +66,9 @@ export async function POST(_req: Request, { params }: { params: { token: string 
       normalized_score: normalized,
       passed,
       detail: { history, score },
+      ...(integrityFlags
+        ? { flags: { ...integrityFlags, signal: computeIntegritySignal(integrityFlags) } }
+        : {}),
       completed_at: new Date().toISOString(),
     })
     .eq("id", stage.id);

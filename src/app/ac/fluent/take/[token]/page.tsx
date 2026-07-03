@@ -29,20 +29,28 @@ export default async function FluentTakePage({
     .maybeSingle<{ redemption_token: string; redeemer_name: string; redeemer_email: string; voucher_id: string }>();
   if (!redemption) return notFound();
 
-  // Proctoring is enforced per-voucher (migration 00149): if the redeemed
-  // voucher requires it, the camera turns on regardless of any URL flag. The
-  // ?proctor=1 param still works for the admin-run path. Tolerant of an
-  // un-applied 00149 (defaults to off).
+  // Proctoring is enforced server-side, in precedence order (integrity pass):
+  // 1. the client org's policy (organizations.settings.fluent_proctoring_required,
+  //    migration 00173) - a client mandate covers every voucher, old and new;
+  // 2. the per-voucher flag (migration 00149);
+  // 3. the ?proctor=1 URL param (admin-run path only - auxiliary, never the gate).
+  // The taker can strip the URL param but cannot touch 1 or 2 (both fetched
+  // server-side). Tolerant of un-applied migrations (defaults to off).
   let proctorRequired = false;
   try {
     const { data: voucher } = await sb
       .from("eng_fluent_vouchers")
-      .select("proctor_enabled")
+      .select("proctor_enabled, organization_id")
       .eq("id", redemption.voucher_id)
-      .maybeSingle<{ proctor_enabled: boolean }>();
+      .maybeSingle<{ proctor_enabled: boolean; organization_id: string | null }>();
     proctorRequired = voucher?.proctor_enabled ?? false;
+    if (!proctorRequired && voucher?.organization_id) {
+      const { getOrgSettings } = await import("@/lib/clients/org-settings");
+      const settings = await getOrgSettings(voucher.organization_id);
+      proctorRequired = settings.fluent_proctoring_required === true;
+    }
   } catch {
-    /* 00149 not applied yet - proctoring stays off */
+    /* 00149/00173 not applied yet - proctoring stays off */
   }
 
   const fluentMinutes = (await getTimerMinutes("fluent", TIMER_DEFAULTS.fluent)) ?? TIMER_DEFAULTS.fluent;

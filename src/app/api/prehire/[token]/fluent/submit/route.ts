@@ -161,6 +161,17 @@ export async function POST(req: Request, { params }: { params: { token: string }
   // present a full Overall CEFR.
   const partial = skills.length < FLUENT_SKILLS.length;
 
+  // CAL-FLU-601 + integrity pass: persist the widened flags + the advisory
+  // signal for the recruiter/fairness view (never auto-fails the candidate).
+  // aiLikelihood is SERVER-AUTHORITATIVE - the AI examiner's estimate from the
+  // writing score overwrites (or removes) anything the candidate posted under
+  // that key, mirroring the AC fluent route.
+  const integrityFlags: IntegrityFlags = {
+    ...(body?.integrityFlags ?? {}),
+    aiLikelihood: typeof writing?.ai_likelihood === "number" ? writing.ai_likelihood : undefined,
+  };
+  if (integrityFlags.aiLikelihood === undefined) delete integrityFlags.aiLikelihood;
+
   const { error } = await svc
     .from("prehire_stage_results")
     .update({
@@ -169,9 +180,7 @@ export async function POST(req: Request, { params }: { params: { token: string }
       normalized_score: normalized,
       passed,
       detail: { result, answers, skills, partial },
-      // CAL-FLU-601: persist the widened flags + the advisory signal for the
-      // recruiter/fairness view (never auto-fails the candidate).
-      flags: { ...(body?.integrityFlags ?? {}), signal: computeIntegritySignal(body?.integrityFlags ?? null) },
+      flags: { ...integrityFlags, signal: computeIntegritySignal(integrityFlags) },
       completed_at: new Date().toISOString(),
     })
     .eq("id", stage.id);

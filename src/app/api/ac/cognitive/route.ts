@@ -139,15 +139,24 @@ export async function POST(req: Request) {
       .select("id")
       .single();
 
-    // Per-item response log (best-effort).
+    // Per-item response log (best-effort). Shuffled cognitive items carry an
+    // `orig` permutation map; the chosen index is remapped into the AUTHORED
+    // frame so the logged response stays coherent with the bank row's option
+    // order across differently-shuffled sittings (integrity pass).
     if (resRow) {
-      const rows = test.items.map((it) => ({
-        result_id: resRow.id,
-        item_ref: it.id,
-        scale_key: it.scale,
-        response: typeof answers[it.id] === "number" ? answers[it.id] : null,
-        correct: test.kind === "cognitive" ? answers[it.id] === (it as CognitiveItem).correct : null,
-      }));
+      const rows = test.items.map((it) => {
+        const raw = typeof answers[it.id] === "number" ? answers[it.id] : null;
+        const orig = (it as CognitiveItem).orig;
+        const response =
+          raw !== null && Array.isArray(orig) && typeof orig[raw] === "number" ? orig[raw] : raw;
+        return {
+          result_id: resRow.id,
+          item_ref: it.id,
+          scale_key: it.scale,
+          response,
+          correct: test.kind === "cognitive" ? answers[it.id] === (it as CognitiveItem).correct : null,
+        };
+      });
       await svc.from("psy_item_responses").insert(rows);
     }
 

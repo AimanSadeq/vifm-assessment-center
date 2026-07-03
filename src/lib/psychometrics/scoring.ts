@@ -17,6 +17,14 @@ export type CognitiveItem = {
   options: string[];
   correct: number;          // index into options
   difficulty: "easy" | "medium" | "hard";
+  /**
+   * Per-administration option permutation (integrity pass): orig[i] = the
+   * AUTHORED index of the option served at position i. Lets the response log
+   * remap a chosen index back into the authored frame so bank items stay
+   * analysable across shuffled sittings. Absent on unshuffled/legacy items;
+   * never sent to the browser (stripAnswerKey drops it).
+   */
+  orig?: number[];
 };
 export type PersonalityItem = {
   id: string;

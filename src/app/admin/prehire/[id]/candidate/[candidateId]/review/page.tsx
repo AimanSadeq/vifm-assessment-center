@@ -70,6 +70,8 @@ export default async function PrehireReviewPage({
           rationale?: string;
           strengths?: string[];
           development_areas?: string[];
+          ai_likelihood?: number;
+          ai_markers?: string[];
         };
       }
     | null
@@ -158,6 +160,17 @@ export default async function PrehireReviewPage({
               {cbiScore.rationale && (
                 <div className="mt-1">
                   <span className="font-semibold text-accent">Rationale:</span> {cbiScore.rationale}
+                </div>
+              )}
+              {typeof cbiScore.ai_likelihood === "number" && cbiScore.ai_likelihood >= 30 && (
+                <div className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">
+                  <span className="font-semibold">AI-likeness (advisory):</span> the answers&apos;
+                  style reads as possibly AI-assisted, estimate {cbiScore.ai_likelihood}/100.
+                  Stylometric only - not proof; weigh it alongside the transcript, and verify at
+                  the human interview stage.
+                  {(cbiScore.ai_markers?.length ?? 0) > 0 && (
+                    <span> Markers: {cbiScore.ai_markers!.join("; ")}.</span>
+                  )}
                 </div>
               )}
             </div>

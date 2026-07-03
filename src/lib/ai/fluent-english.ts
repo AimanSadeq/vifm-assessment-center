@@ -1,5 +1,6 @@
 import { getAIClient, AI_MODEL } from "./client";
 import type { PronunciationScore } from "@/lib/integrations/speech";
+import { reorderOptions } from "@/lib/scoring/option-shuffle";
 
 /**
  * Fluent - English-language assessment engine (prototype).
@@ -144,6 +145,17 @@ export type WritingScore = {
   feedback_ar: string | null;
   /** Specific grammar / spelling / etiquette issues with corrections (FLU-4). */
   issues?: WritingIssue[];
+  /**
+   * Advisory stylometric estimate (0-100) that the response was produced with a
+   * generative-AI tool rather than written by the candidate. AI-text detection
+   * is inherently UNRELIABLE - this is one advisory signal among several (read
+   * it alongside the paste-length capture), never proof, and it must never
+   * auto-fail a result. Capped low on short responses where stylometry says
+   * almost nothing. Absent on legacy rows / when scoring is unavailable.
+   */
+  ai_likelihood?: number;
+  /** Short stylometric markers behind the estimate (advisory framing). */
+  ai_markers?: string[];
   ai_generated: boolean;
 };
 
@@ -194,6 +206,30 @@ function parseWritingIssues(raw: unknown): WritingIssue[] {
     if (out.length >= 8) break;
   }
   return out;
+}
+
+/**
+ * Validate + clamp the advisory AI-likelihood fields (integrity pass). Server-side
+ * guardrail regardless of what the model returns: responses under 40 words carry
+ * almost no stylometric signal, so the estimate is hard-capped at 20 there -
+ * deliberately BELOW every display threshold (30) and the composite floor (60),
+ * so a thin response can never trigger an AI-likeness banner on its own.
+ */
+function parseAiLikelihood(
+  p: Record<string, unknown>,
+  response: string
+): { ai_likelihood?: number; ai_markers?: string[] } {
+  if (typeof p.ai_likelihood !== "number" || !Number.isFinite(p.ai_likelihood)) return {};
+  const words = response.split(/\s+/).filter(Boolean).length;
+  const cap = words < 40 ? 20 : 100;
+  const ai_likelihood = Math.min(cap, Math.max(0, Math.round(p.ai_likelihood)));
+  const ai_markers = Array.isArray(p.ai_markers)
+    ? (p.ai_markers as unknown[])
+        .filter((m): m is string => typeof m === "string" && m.trim().length > 0)
+        .map((m) => m.trim().slice(0, 160))
+        .slice(0, 4)
+    : [];
+  return { ai_likelihood, ai_markers };
 }
 
 // ── Difficulty-weighted receptive scoring (IRT-lite) ─────────────
@@ -535,11 +571,33 @@ const WRITING_NOT_ASSESSED: WritingScore = {
 };
 
 // ── 1. Generate a placement test ─────────────────────────────────
+/**
+ * Per-administration option reorder (integrity pass): shuffles each receptive
+ * item's options (numeric sets sorted, judgement scales untouched - see
+ * option-shuffle.ts) and remaps correct_index. Applied at generation time so the
+ * server-held session key and the stripped browser payload always agree, and so
+ * every caller (AC runner, Pre-Hire stage, bundles) inherits it. Returns fresh
+ * items - the static FALLBACK_TEST constant is never mutated.
+ */
+function shuffleFluentOptions(test: FluentTest): FluentTest {
+  return {
+    ...test,
+    reading: test.reading.map((r) => {
+      const s = reorderOptions(r.options, r.correct_index);
+      return { ...r, options: s.options, correct_index: s.correctIndex };
+    }),
+    listening: test.listening.map((l) => {
+      const s = reorderOptions(l.options, l.correct_index);
+      return { ...l, options: s.options, correct_index: s.correctIndex };
+    }),
+  };
+}
+
 export async function generateFluentTest(input: {
   language: FluentLanguage;
 }): Promise<FluentTest> {
   const client = getAIClient();
-  if (!client) return FALLBACK_TEST;
+  if (!client) return shuffleFluentOptions(FALLBACK_TEST);
 
   const wantsAr = input.language === "ar";
   const system =
@@ -629,7 +687,7 @@ export async function generateFluentTest(input: {
     // Require a substantial reading set; if the model under-delivers, fall back
     // to the static deck rather than serve a too-short test.
     if (reading.length < 8 || !w || typeof w.prompt_en !== "string") {
-      return FALLBACK_TEST;
+      return shuffleFluentOptions(FALLBACK_TEST);
     }
     const writing: WritingTask = {
       id: w.id || "w1",
@@ -651,16 +709,16 @@ export async function generateFluentTest(input: {
 
     // Listening is best-effort: if the model under-delivered, fall back to the
     // static listening set rather than dropping the skill entirely.
-    return {
+    return shuffleFluentOptions({
       reading,
       listening: listening.length >= 2 ? listening : FALLBACK_TEST.listening,
       writing,
       speaking,
       ai_generated: true,
-    };
+    });
   } catch (err) {
     console.error("[fluent-english] generate failed:", err);
-    return FALLBACK_TEST;
+    return shuffleFluentOptions(FALLBACK_TEST);
   }
 }
 
@@ -750,6 +808,13 @@ export async function scoreFluentWriting(input: {
     `Mechanics (spelling and punctuation). ` +
     `Then assign an overall CEFR level (A1–C2) and give 2–3 sentences of specific, ` +
     `constructive feedback. Be fair but rigorous; reward communication, not just accuracy. ` +
+    `Separately, estimate ai_likelihood (0-100): how strongly the response's STYLE suggests it ` +
+    `was produced with a generative-AI tool rather than typed by a test candidate. Markers to weigh: ` +
+    `polish/lexis far above the response's own error profile, template-like structure with uniform ` +
+    `sentence rhythm, generic content not anchored to the prompt's specifics, hedged assistant-style ` +
+    `phrasing. Be conservative - stylometric detection is unreliable, competent human writing is not ` +
+    `evidence of AI, and a false accusation is worse than a miss: when unsure stay under 30, and for ` +
+    `responses under ~40 words never exceed 30. This is an advisory signal, not a verdict. ` +
     CEFR_ANCHORS;
 
   const user = [
@@ -772,6 +837,7 @@ export async function scoreFluentWriting(input: {
     `  "register":<1-5>, "etiquette":<1-5>, "mechanics":<1-5>,`,
     `  "feedback_en":"<2-3 sentences>",`,
     `  "issues":[{"category":"grammar|spelling|punctuation|vocabulary|etiquette|structure","quote":"<short verbatim phrase>","suggestion":"<correction>"}],`,
+    `  "ai_likelihood":<0-100>, "ai_markers":["<short stylometric observation>"],`,
     `  "feedback_ar":${wantsAr ? '"<same feedback in Modern Standard Arabic>"' : "null"}`,
     `}`,
   ].join("\n");
@@ -800,6 +866,7 @@ export async function scoreFluentWriting(input: {
       feedback_en: typeof p.feedback_en === "string" ? p.feedback_en.trim() : "No feedback produced.",
       feedback_ar: typeof p.feedback_ar === "string" && p.feedback_ar.trim() ? p.feedback_ar.trim() : null,
       issues: parseWritingIssues(p.issues),
+      ...parseAiLikelihood(p, trimmed),
       ai_generated: true,
     };
   } catch (err) {
@@ -947,8 +1014,25 @@ export async function scoreFluentWritingEnsemble(input: {
     feedback_en: pick.feedback_en,
     feedback_ar: pick.feedback_ar,
     issues: pick.issues ?? [],
+    ...aggregateAiLikelihood(runs),
     ai_generated: runs.some((r) => r.ai_generated),
   };
+}
+
+/** Median the advisory AI-likelihood across ensemble runs (absent runs skipped).
+ *  For even counts the LOWER middle is used - an accusatory signal should be
+ *  biased conservative, so with 2 samples one hallucinated high value cannot
+ *  become the stored estimate. */
+function aggregateAiLikelihood(runs: WritingScore[]): { ai_likelihood?: number; ai_markers?: string[] } {
+  const vals = runs
+    .map((r) => r.ai_likelihood)
+    .filter((v): v is number => typeof v === "number")
+    .sort((a, b) => a - b);
+  if (vals.length === 0) return {};
+  const ai_likelihood = vals[Math.floor((vals.length - 1) / 2)];
+  const withMarkers = runs.filter((r) => typeof r.ai_likelihood === "number" && (r.ai_markers?.length ?? 0) > 0);
+  const top = [...withMarkers].sort((a, b) => (b.ai_likelihood ?? 0) - (a.ai_likelihood ?? 0))[0];
+  return { ai_likelihood, ai_markers: top?.ai_markers ?? [] };
 }
 
 export async function scoreFluentSpeakingEnsemble(input: {

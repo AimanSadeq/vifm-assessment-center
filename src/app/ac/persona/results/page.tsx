@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ClipboardList, FileText, Target, GraduationCap, Compass, GitBranch } from "lucide-react";
+import { ArrowLeft, ClipboardList, FileText, Target, GraduationCap, Compass, GitBranch, HeartHandshake } from "lucide-react";
 import { getCurrentCaller } from "@/lib/ara/auth-guards";
 import { listPersonaResults } from "@/lib/scoring/persona-results";
 import { fitBand, FIT_BAND_TW } from "@/lib/scoring/persona-fit";
@@ -158,6 +158,14 @@ export default async function PersonaResultsPage({ searchParams }: { searchParam
                               className="inline-flex items-center gap-1 text-xs font-medium text-[#4f46e5] hover:underline"
                             >
                               <GitBranch className="h-3.5 w-3.5" /> DARE
+                            </a>
+                            <a
+                              href={`/api/ac/persona/${r.id}/eq-report`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs font-medium text-[#d97706] hover:underline"
+                            >
+                              <HeartHandshake className="h-3.5 w-3.5" /> EQ
                             </a>
                           </div>
                         ) : (

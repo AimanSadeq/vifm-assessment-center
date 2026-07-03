@@ -86,6 +86,15 @@ export const METHODOLOGY_BRIEFS: readonly MethodologyBrief[] = [
     pillar: "manage",
   },
   {
+    slug: "persona-eq",
+    service: "Emotional Intelligence Profile",
+    tagline: "Goleman four-quadrant EI lens on the VIFM competencies",
+    eyebrow: "VIFM EQ Framework",
+    file: "VIFM-EQ-Framework.md",
+    filename: "VIFM-EQ-Framework.pdf",
+    pillar: "manage",
+  },
+  {
     slug: "fluent",
     service: "Fluent",
     tagline: "Indicative CEFR English placement",

@@ -15,7 +15,19 @@ import {
 import { toast } from "sonner";
 import { PORTAL_SERVICES, type CaliberService } from "@/lib/clients/portal-services";
 import { COGNITIVE_SUBTESTS, COGNITIVE_SUBTEST_KEYS } from "@/lib/psychometrics/framework";
+import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
 import { composeBundleAction, archiveBundleAction, inviteBundleCandidateAction } from "../actions";
+
+// Competency picker source: the 41, grouped by cluster (stable order).
+const COMPETENCY_CLUSTERS: { cluster: string; items: { id: string; name: string }[] }[] = (() => {
+  const by = new Map<string, { id: string; name: string }[]>();
+  for (const c of BEHAVIORAL_COMPETENCIES) {
+    if (!by.has(c.clusterNameEn)) by.set(c.clusterNameEn, []);
+    by.get(c.clusterNameEn)!.push({ id: c.acCompetencyId, name: c.nameEn });
+  }
+  return [...by.entries()].map(([cluster, items]) => ({ cluster, items }));
+})();
+const ALL_COMPETENCY_IDS = BEHAVIORAL_COMPETENCIES.map((c) => c.acCompetencyId);
 
 // Per-service icon (mirrors the landing page's icon choices).
 const SERVICE_ICON: Record<CaliberService, typeof Boxes> = {
@@ -41,7 +53,12 @@ export type Composed = {
   clientName: string;
   /** Logica element scope (subtest keys); full battery when all four. */
   logicaSubtests: string[];
+  /** Persona competency scope (ids); full instrument when all 41. */
+  personaCompetencyIds: string[];
 };
+
+const personaScopeLabel = (ids: string[]): string =>
+  ids.length === ALL_COMPETENCY_IDS.length ? "Persona" : `Persona · ${ids.length} of ${ALL_COMPETENCY_IDS.length} competencies`;
 
 const logicaScopeLabel = (subtests: string[]): string =>
   subtests.length === COGNITIVE_SUBTEST_KEYS.length
@@ -75,13 +92,9 @@ function InviteCandidate({ bundleId }: { bundleId: string }) {
   return (
     <div className="mt-2">
       {!open ? (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#5391D5] hover:underline"
-        >
-          <Plus className="h-3 w-3" /> Invite candidate (one-sitting link)
-        </button>
+        <Button size="sm" variant="outline" className="h-7 gap-1.5 border-[#5391D5]/50 text-[11px] font-semibold text-[#5391D5] hover:bg-[#5391D5]/5" onClick={() => setOpen(true)}>
+          <Plus className="h-3 w-3" /> Invite candidate - one sitting, all sections
+        </Button>
       ) : (
         <div className="mt-1 space-y-1.5 rounded-md border bg-muted/30 p-2">
           <div className="grid gap-1.5 sm:grid-cols-2">
@@ -115,6 +128,8 @@ export function BespokeBuilder({ clients, initialBundles = [] }: { clients: Clie
   const [busy, setBusy] = useState(false);
   // Logica element scope: which subtests the package includes (default: all four).
   const [logicaSubtests, setLogicaSubtests] = useState<string[]>([...COGNITIVE_SUBTEST_KEYS]);
+  // Persona competency scope: which of the 41 the package serves (default: all).
+  const [personaIds, setPersonaIds] = useState<string[]>([...ALL_COMPETENCY_IDS]);
 
   const toggle = (id: CaliberService) =>
     setSelected((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]));
@@ -124,15 +139,25 @@ export function BespokeBuilder({ clients, initialBundles = [] }: { clients: Clie
         ? prev.filter((k) => k !== key)
         : COGNITIVE_SUBTEST_KEYS.filter((k) => prev.includes(k) || k === key)
     );
+  const togglePersonaId = (id: string) =>
+    setPersonaIds((prev) => (prev.includes(id) ? prev.filter((k) => k !== id) : [...prev, id]));
+  const togglePersonaCluster = (ids: string[], on: boolean) =>
+    setPersonaIds((prev) => (on ? [...new Set([...prev, ...ids])] : prev.filter((k) => !ids.includes(k))));
 
   const client = clients.find((c) => c.key === clientKey);
   const logicaOn = selected.includes("logica");
+  const personaOn = selected.includes("persona");
   const canSave =
-    nameEn.trim().length >= 2 && selected.length >= 1 && !!client && (!logicaOn || logicaSubtests.length > 0);
+    nameEn.trim().length >= 2 &&
+    selected.length >= 1 &&
+    !!client &&
+    (!logicaOn || logicaSubtests.length > 0) &&
+    (!personaOn || personaIds.length > 0);
 
   const reset = () => {
     setNameEn(""); setNameAr(""); setDescription(""); setSelected([]); setClientKey("");
     setLogicaSubtests([...COGNITIVE_SUBTEST_KEYS]);
+    setPersonaIds([...ALL_COMPETENCY_IDS]);
   };
 
   const add = async () => {
@@ -146,6 +171,7 @@ export function BespokeBuilder({ clients, initialBundles = [] }: { clients: Clie
         services: [...selected],
         clientName: client.name,
         logicaSubtests: logicaOn ? [...logicaSubtests] : undefined,
+        personaCompetencyIds: personaOn ? [...personaIds] : undefined,
       });
       if ("error" in res) {
         toast.error(res.error);
@@ -160,6 +186,7 @@ export function BespokeBuilder({ clients, initialBundles = [] }: { clients: Clie
           services: [...selected],
           clientName: client.name,
           logicaSubtests: logicaOn ? [...logicaSubtests] : [...COGNITIVE_SUBTEST_KEYS],
+          personaCompetencyIds: personaOn ? [...personaIds] : [...ALL_COMPETENCY_IDS],
         },
         ...prev,
       ]);
@@ -290,6 +317,70 @@ export function BespokeBuilder({ clients, initialBundles = [] }: { clients: Clie
               )}
             </div>
           )}
+
+          {/* Persona competency scope - pick which of the 41 the package serves. */}
+          {personaOn && (
+            <div className="rounded-lg border p-3" style={{ borderColor: "#0891b266", backgroundColor: "#0891b20a" }}>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="inline-flex items-center gap-1.5 text-xs font-semibold" style={{ color: "#0891b2" }}>
+                  <Layers className="h-3.5 w-3.5" /> Persona competencies
+                  <span className="font-normal text-muted-foreground">
+                    ({personaIds.length}/{ALL_COMPETENCY_IDS.length} selected)
+                  </span>
+                </p>
+                <div className="flex gap-2 text-[11px] font-semibold">
+                  <button type="button" className="text-[#0891b2] hover:underline" onClick={() => setPersonaIds([...ALL_COMPETENCY_IDS])}>
+                    Select all
+                  </button>
+                  <button type="button" className="text-muted-foreground hover:underline" onClick={() => setPersonaIds([])}>
+                    Clear
+                  </button>
+                </div>
+              </div>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                Scope the behavioural self-assessment to the competencies that matter for this package. Default is the full instrument.
+              </p>
+              <div className="mt-2 max-h-64 space-y-2 overflow-y-auto pr-1">
+                {COMPETENCY_CLUSTERS.map((g) => {
+                  const groupIds = g.items.map((i) => i.id);
+                  const onCount = groupIds.filter((i) => personaIds.includes(i)).length;
+                  return (
+                    <div key={g.cluster}>
+                      <button
+                        type="button"
+                        onClick={() => togglePersonaCluster(groupIds, onCount < groupIds.length)}
+                        className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground hover:text-[#0891b2]"
+                        title="Toggle the whole cluster"
+                      >
+                        {g.cluster} · {onCount}/{groupIds.length}
+                      </button>
+                      <div className="mt-1 flex flex-wrap gap-1.5">
+                        {g.items.map((c) => {
+                          const on = personaIds.includes(c.id);
+                          return (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => togglePersonaId(c.id)}
+                              aria-pressed={on}
+                              className={`rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition-colors ${
+                                on ? "border-[#0891b2] bg-[#0891b2] text-white" : "border-slate-300 text-slate-600 hover:bg-slate-100"
+                              }`}
+                            >
+                              {c.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {personaIds.length === 0 && (
+                <p className="mt-2 text-[11px] text-rose-600">Pick at least one competency.</p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 3. Assign to client */}
@@ -356,7 +447,11 @@ export function BespokeBuilder({ clients, initialBundles = [] }: { clients: Clie
                   className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium"
                   style={{ borderColor: accentFor(id), color: accentFor(id) }}
                 >
-                  {id === "logica" ? logicaScopeLabel(logicaSubtests) : labelFor(id)}
+                  {id === "logica"
+                    ? logicaScopeLabel(logicaSubtests)
+                    : id === "persona"
+                      ? personaScopeLabel(personaIds)
+                      : labelFor(id)}
                 </span>
               ))
             )}
@@ -407,18 +502,17 @@ export function BespokeBuilder({ clients, initialBundles = [] }: { clients: Clie
                         className="rounded-full px-2 py-0.5 text-[10px] font-medium text-white"
                         style={{ backgroundColor: accentFor(id) }}
                       >
-                        {id === "logica" ? logicaScopeLabel(b.logicaSubtests) : labelFor(id)}
+                        {id === "logica"
+                          ? logicaScopeLabel(b.logicaSubtests)
+                          : id === "persona"
+                            ? personaScopeLabel(b.personaCompetencyIds)
+                            : labelFor(id)}
                       </span>
                     ))}
                   </div>
-                  {b.services.includes("logica") && (
-                    <a
-                      href={`/ac/cognitive/vouchers?subtests=${b.logicaSubtests.join(",")}`}
-                      className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-[#c026d3] hover:underline"
-                    >
-                      Issue Logica vouchers for this scope →
-                    </a>
-                  )}
+                  {/* NOTE: no per-service voucher shortcut here - a standalone
+                      Logica voucher runs ONLY Logica and confused testing. The
+                      bundle is delivered through the one-sitting invite below. */}
                   <InviteCandidate bundleId={b.id} />
                 </li>
               ))}

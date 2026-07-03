@@ -6,6 +6,7 @@ import { createClientOrganization } from "@/lib/clients/registry";
 import { saveBundleService, archiveBundleService } from "@/lib/bespoke/services";
 import { PORTAL_SERVICE_IDS, type CaliberService } from "@/lib/clients/portal-services";
 import { COGNITIVE_SUBTEST_KEYS } from "@/lib/psychometrics/framework";
+import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
 
 async function guard() {
   try {
@@ -31,6 +32,8 @@ export async function composeBundleAction(input: {
   clientName: string;
   /** Logica element scope; a real subset stores config, full battery stores nothing. */
   logicaSubtests?: string[];
+  /** Persona competency scope; a real subset stores config, all 41 stores nothing. */
+  personaCompetencyIds?: string[];
 }): Promise<{ ok: true; id: string } | { error: string }> {
   const g = await guard();
   if (!g.ok) return { error: g.error };
@@ -43,12 +46,18 @@ export async function composeBundleAction(input: {
   const services = PORTAL_SERVICE_IDS.filter((id) => (input.services ?? []).includes(id)) as CaliberService[];
   if (services.length === 0) return { error: "Pick at least one service." };
 
-  // Per-service options: only a real Logica subset is worth storing.
+  // Per-service options: only a real subset is worth storing.
   const serviceConfig: Record<string, unknown> = {};
   if (services.includes("logica")) {
     const picked = COGNITIVE_SUBTEST_KEYS.filter((k) => (input.logicaSubtests ?? []).includes(k));
     if (picked.length === 0) return { error: "Pick at least one Logica element." };
     if (picked.length < COGNITIVE_SUBTEST_KEYS.length) serviceConfig.logica = { subtests: picked };
+  }
+  if (services.includes("persona")) {
+    const known = BEHAVIORAL_COMPETENCIES.map((c) => c.acCompetencyId);
+    const picked = known.filter((id) => (input.personaCompetencyIds ?? known).includes(id));
+    if (picked.length === 0) return { error: "Pick at least one Persona competency." };
+    if (picked.length < known.length) serviceConfig.persona = { competencyIds: picked };
   }
 
   const reg = await createClientOrganization({ name: clientName, createdBy: g.caller.isDev ? null : g.caller.uid });

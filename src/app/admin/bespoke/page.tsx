@@ -5,6 +5,7 @@ import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { loadPlatformClients } from "@/lib/clients/registry";
 import { loadBespokeServices } from "@/lib/bespoke/services";
 import { COGNITIVE_SUBTEST_KEYS } from "@/lib/psychometrics/framework";
+import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
 import type { CaliberService } from "@/lib/clients/portal-services";
 import { BackLink } from "@/components/shared/back-link";
 import { Button } from "@/components/ui/button";
@@ -32,10 +33,11 @@ export default async function BespokeServicesPage() {
 
   // Persisted bundles (kind='bundle', active) -> the composer's saved list.
   const nameByAcId = new Map(platformClients.filter((c) => c.acId).map((c) => [c.acId as string, c.name]));
+  const allCompetencyIds = BEHAVIORAL_COMPETENCIES.map((c) => c.acCompetencyId);
   const initialBundles: Composed[] = (await loadBespokeServices())
     .filter((s) => s.kind === "bundle")
     .map((s) => {
-      const logica = (s.service_config as { logica?: { subtests?: string[] } }).logica;
+      const cfg = s.service_config as { logica?: { subtests?: string[] }; persona?: { competencyIds?: string[] } };
       return {
         id: s.id,
         nameEn: s.name_en,
@@ -44,7 +46,9 @@ export default async function BespokeServicesPage() {
         services: s.service_keys as CaliberService[],
         clientName: (s.organization_id && nameByAcId.get(s.organization_id)) || "Unassigned",
         logicaSubtests:
-          logica?.subtests && logica.subtests.length > 0 ? logica.subtests : [...COGNITIVE_SUBTEST_KEYS],
+          cfg.logica?.subtests && cfg.logica.subtests.length > 0 ? cfg.logica.subtests : [...COGNITIVE_SUBTEST_KEYS],
+        personaCompetencyIds:
+          cfg.persona?.competencyIds && cfg.persona.competencyIds.length > 0 ? cfg.persona.competencyIds : allCompetencyIds,
       };
     });
 

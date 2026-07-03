@@ -6,6 +6,7 @@
 
 import { createServiceClient } from "@/lib/supabase/server";
 import { COGNITIVE_SUBTEST_KEYS } from "@/lib/psychometrics/framework";
+import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
 import { loadBespokeServices, type BespokeServiceRow } from "./services";
 
 const TOKEN_RE = /^[0-9a-fA-F-]{36}$/;
@@ -35,6 +36,8 @@ export type BundleCandidateContext = {
   stages: BundleStage[];
   /** Logica subtest scope from service_config; null = full battery. */
   logicaSubtests: string[] | null;
+  /** Persona competency scope from service_config; null = full instrument. */
+  personaCompetencyIds: string[] | null;
 };
 
 export async function findBundleCandidateByToken(token: string): Promise<BundleCandidateContext | null> {
@@ -54,11 +57,15 @@ export async function findBundleCandidateByToken(token: string): Promise<BundleC
   const stages = bundle.service_keys.filter((k): k is BundleStage =>
     (RUNNABLE_BUNDLE_STAGES as readonly string[]).includes(k)
   );
-  const cfg = (bundle.service_config as { logica?: { subtests?: string[] } }).logica;
-  const scoped = COGNITIVE_SUBTEST_KEYS.filter((k) => cfg?.subtests?.includes(k));
+  const cfg = bundle.service_config as { logica?: { subtests?: string[] }; persona?: { competencyIds?: string[] } };
+  const scoped = COGNITIVE_SUBTEST_KEYS.filter((k) => cfg.logica?.subtests?.includes(k));
   const logicaSubtests = scoped.length > 0 && scoped.length < COGNITIVE_SUBTEST_KEYS.length ? scoped : null;
 
-  return { candidate: data, bundle, stages, logicaSubtests };
+  const known = BEHAVIORAL_COMPETENCIES.map((c) => c.acCompetencyId);
+  const scopedPersona = known.filter((id) => cfg.persona?.competencyIds?.includes(id));
+  const personaCompetencyIds = scopedPersona.length > 0 && scopedPersona.length < known.length ? scopedPersona : null;
+
+  return { candidate: data, bundle, stages, logicaSubtests, personaCompetencyIds };
 }
 
 /** Stage completion from the native records (survives reloads). */

@@ -26,10 +26,17 @@ import {
 
 export type BundlePersonaItem = { itemKey: string; competencyId: string; textEn: string; textAr: string };
 
-function fullPersonaItems(): { items: BundlePersonaItem[]; meta: Map<string, { competencyId: string; reverse: boolean }> } {
+/** Persona items for this bundle - the full instrument, or the composed
+ *  competency scope when the bundle pins one (service_config.persona). */
+function personaItemsForBundle(ctx: BundleCandidateContext): {
+  items: BundlePersonaItem[];
+  meta: Map<string, { competencyId: string; reverse: boolean }>;
+} {
+  const scope = ctx.personaCompetencyIds ? new Set(ctx.personaCompetencyIds) : null;
   const items: BundlePersonaItem[] = [];
   const meta = new Map<string, { competencyId: string; reverse: boolean }>();
   for (const comp of BEHAVIORAL_COMPETENCIES) {
+    if (scope && !scope.has(comp.acCompetencyId)) continue;
     for (const it of comp.items) {
       items.push({ itemKey: it.itemKey, competencyId: comp.acCompetencyId, textEn: it.textEn, textAr: it.textAr });
       meta.set(it.itemKey, { competencyId: comp.acCompetencyId, reverse: it.reverse });
@@ -39,7 +46,7 @@ function fullPersonaItems(): { items: BundlePersonaItem[]; meta: Map<string, { c
 }
 
 export async function startBundlePersona(ctx: BundleCandidateContext): Promise<{ sessionId: string; items: BundlePersonaItem[] }> {
-  const { items } = fullPersonaItems();
+  const { items } = personaItemsForBundle(ctx);
   if (ctx.candidate.persona_session_id) {
     return { sessionId: ctx.candidate.persona_session_id, items };
   }
@@ -47,6 +54,9 @@ export async function startBundlePersona(ctx: BundleCandidateContext): Promise<{
     takerEmail: ctx.candidate.email,
     organizationId: ctx.candidate.organization_id,
     projectLabel: `Bundle: ${ctx.bundle.name_en}`,
+    // Pin the composed competency scope on the session (00123) so the standard
+    // Persona report renders it as a scoped sitting.
+    scopedCompetencyIds: ctx.personaCompetencyIds,
   });
   await setBundlePersonaSession(ctx.candidate.id, session.id);
   return { sessionId: session.id, items };
@@ -56,7 +66,7 @@ export async function submitBundlePersona(
   ctx: BundleCandidateContext,
   answers: Array<{ itemKey: string; rawScore: number }>,
 ): Promise<{ ok: boolean; error?: string }> {
-  const { items, meta } = fullPersonaItems();
+  const { items, meta } = personaItemsForBundle(ctx);
   const byKey = new Map(answers.map((a) => [a.itemKey, a.rawScore]));
   for (const it of items) {
     const v = byKey.get(it.itemKey);

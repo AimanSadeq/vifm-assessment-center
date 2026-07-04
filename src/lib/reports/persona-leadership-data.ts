@@ -6,6 +6,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { createServiceClient } from "@/lib/supabase/server";
+import { selfScoreByCompetency, type PersonaScoreRow } from "@/lib/scoring/behavioral";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
 import {
   computeLeadershipProfile,
@@ -24,6 +25,7 @@ export type LeadershipPdfData = {
   takerName: string | null;
   generatedAt: string;
   overall: number; // mean across all answered competencies (1-5)
+  overallCount: number; // number of competencies actually measured (may be < 41 when scoped)
   profile: LeadershipProfile;
   developmentPlan: DevelopmentPlanItem[]; // tips/activities for the lowest-rated competencies
 };
@@ -49,26 +51,20 @@ export async function buildLeadershipPdfData(sessionId: string): Promise<Leaders
     takerName = data.taker_name ?? null;
   }
 
-  // ── Responses → per-competency score ──
-  let responses: { competency_id: string; raw_score: number; is_reverse: boolean }[] = [];
+  // ── Responses → per-competency score (ipsative-aware) ──
+  let responses: PersonaScoreRow[] = [];
   {
     const { data } = await sb
       .from("behavioral_assessment_responses")
-      .select("competency_id, raw_score, is_reverse")
+      .select("competency_id, raw_score, is_reverse, item_type, answer_data")
       .eq("session_id", sessionId);
-    responses = (data as typeof responses) ?? [];
+    responses = (data as PersonaScoreRow[]) ?? [];
   }
   if (responses.length === 0) return { ok: false, status: 400, error: "No answers recorded for this session yet" };
 
-  const byComp = new Map<string, number[]>();
-  for (const r of responses) {
-    const raw = Number(r.raw_score);
-    const v = r.is_reverse ? 6 - raw : raw;
-    if (!byComp.has(r.competency_id)) byComp.set(r.competency_id, []);
-    byComp.get(r.competency_id)!.push(v);
-  }
-  const scoreById = new Map<string, number>();
-  for (const [cid, vals] of byComp) scoreById.set(cid, round2(vals.reduce((a, b) => a + b, 0) / vals.length));
+  // Forced-choice rows collapse to one value per competency (3 + #most - #least),
+  // matching the canonical scorer instead of averaging raw 5/1/3 as Likert.
+  const scoreById = selfScoreByCompetency(responses);
 
   // ── Names (from the static catalogue) + definitions (live) ──
   const nameById = new Map(BEHAVIORAL_COMPETENCIES.map((c) => [c.acCompetencyId, c.nameEn]));
@@ -116,6 +112,7 @@ export async function buildLeadershipPdfData(sessionId: string): Promise<Leaders
       takerName,
       generatedAt: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }),
       overall,
+      overallCount: all.length,
       profile,
       developmentPlan,
     },

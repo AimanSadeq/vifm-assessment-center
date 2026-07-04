@@ -9,6 +9,7 @@
 // Tolerant of migrations 00110 / 00106 not being applied.
 // ─────────────────────────────────────────────────────────────
 import { createServiceClient } from "@/lib/supabase/server";
+import { selfScoreByCompetency, overallSelfScore, type PersonaScoreRow } from "./behavioral";
 import { computeFit, type FitBandKey } from "./persona-fit";
 import { loadPersonaRoleOptions } from "./persona-roles";
 
@@ -213,13 +214,13 @@ export async function listPersonaResults(limit = 500): Promise<PersonaResultRow[
     // a busy bank can have thousands of Persona answers, so an unpaged fetch would
     // silently drop the responses for most sittings (they'd show "-" with no report
     // link). Range-paginate until a short page comes back.
-    type RespRow = { session_id: string; competency_id: string; raw_score: number; is_reverse: boolean };
+    type RespRow = PersonaScoreRow & { session_id: string };
     const responses: RespRow[] = [];
     const PAGE = 1000;
     for (let from = 0; ; from += PAGE) {
       const { data, error } = await sb
         .from("behavioral_assessment_responses")
-        .select("session_id, competency_id, raw_score, is_reverse")
+        .select("session_id, competency_id, raw_score, is_reverse, item_type, answer_data")
         .in("session_id", ids)
         .range(from, from + PAGE - 1);
       if (error || !data || data.length === 0) break;
@@ -227,32 +228,22 @@ export async function listPersonaResults(limit = 500): Promise<PersonaResultRow[
       if (data.length < PAGE) break;
     }
 
-    // Per-session: per-competency reverse-mapped values + the flat list (overall).
-    const bySession = new Map<string, Map<string, number[]>>();
+    // Group raw rows per session; the ipsative-aware helpers collapse forced-choice
+    // rows correctly (instead of averaging raw 5/1/3 as Likert).
+    const bySession = new Map<string, PersonaScoreRow[]>();
     for (const r of responses) {
-      const sid = r.session_id as string;
-      if (!bySession.has(sid)) bySession.set(sid, new Map());
-      const m = bySession.get(sid)!;
-      const cid = r.competency_id as string;
-      const v = r.is_reverse ? 6 - Number(r.raw_score) : Number(r.raw_score);
-      if (!m.has(cid)) m.set(cid, []);
-      m.get(cid)!.push(v);
+      const sid = r.session_id;
+      if (!bySession.has(sid)) bySession.set(sid, []);
+      bySession.get(sid)!.push(r);
     }
 
     const roles = await loadPersonaRoleOptions();
     const roleById = new Map(roles.map((r) => [r.id, r]));
 
     return sessions.map((s): PersonaResultRow => {
-      const m = bySession.get(s.id) ?? new Map<string, number[]>();
-      const scoreById = new Map<string, number>();
-      const allVals: number[] = [];
-      for (const [cid, vals] of m) {
-        scoreById.set(cid, Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 100) / 100);
-        allVals.push(...vals);
-      }
-      const overall = allVals.length
-        ? Math.round((allVals.reduce((a, b) => a + b, 0) / allVals.length) * 100) / 100
-        : null;
+      const rows = bySession.get(s.id) ?? [];
+      const scoreById = selfScoreByCompetency(rows);
+      const overall = overallSelfScore(rows);
 
       const purpose: "development" | "hiring" = s.purpose === "hiring" ? "hiring" : "development";
       // A role can be bound for BOTH purposes now (hiring fit + development plan);
@@ -283,7 +274,7 @@ export async function listPersonaResults(limit = 500): Promise<PersonaResultRow[
         fitPct,
         fitBand,
         overall,
-        itemCount: allVals.length,
+        itemCount: rows.length,
         submittedAt: s.submitted_at ?? s.created_at,
       };
     });

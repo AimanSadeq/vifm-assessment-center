@@ -4,6 +4,7 @@
 // Tolerant throughout - missing tables/columns yield empty intel, never errors.
 
 import { createServiceClient } from "@/lib/supabase/server";
+import { overallSelfScore, type PersonaScoreRow } from "@/lib/scoring/behavioral";
 import { personaBand } from "@/lib/scoring/persona-bands";
 
 export type PersonaOrgIntel = {
@@ -27,13 +28,13 @@ export async function personaOrgIntel(orgId: string): Promise<PersonaOrgIntel> {
     if (ids.length === 0) return empty;
 
     // Range-paginate: the responses set can exceed PostgREST's 1000-row cap.
-    type Resp = { session_id: string; raw_score: number; is_reverse: boolean };
+    type Resp = PersonaScoreRow & { session_id: string };
     const responses: Resp[] = [];
     const PAGE = 1000;
     for (let from = 0; ; from += PAGE) {
       const { data, error } = await sb
         .from("behavioral_assessment_responses")
-        .select("session_id, raw_score, is_reverse")
+        .select("session_id, competency_id, raw_score, is_reverse, item_type, answer_data")
         .in("session_id", ids)
         .range(from, from + PAGE - 1);
       if (error || !data || data.length === 0) break;
@@ -41,15 +42,17 @@ export async function personaOrgIntel(orgId: string): Promise<PersonaOrgIntel> {
       if (data.length < PAGE) break;
     }
 
-    const bySession = new Map<string, number[]>();
+    // Ipsative-aware per-session mean (forced-choice rows collapsed, not averaged
+    // as Likert), driving the cohort mean + band mix.
+    const bySession = new Map<string, PersonaScoreRow[]>();
     for (const r of responses) {
-      const v = r.is_reverse ? 6 - Number(r.raw_score) : Number(r.raw_score);
       if (!bySession.has(r.session_id)) bySession.set(r.session_id, []);
-      bySession.get(r.session_id)!.push(v);
+      bySession.get(r.session_id)!.push(r);
     }
     const means: number[] = [];
-    for (const vals of bySession.values()) {
-      if (vals.length > 0) means.push(vals.reduce((a, b) => a + b, 0) / vals.length);
+    for (const rows of bySession.values()) {
+      const m = overallSelfScore(rows);
+      if (m !== null) means.push(m);
     }
     if (means.length === 0) return { completed: ids.length, cohortMean: null, bandMix: [] };
 

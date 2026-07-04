@@ -153,15 +153,22 @@ export function computeDareProfile(
     counts[role] = rowsByRole[role].length;
   }
 
-  const ranked = [...DARE_ROLES].sort((a, b) => scores[b] - scores[a]);
+  // Rank + classify only among MEASURED roles (count > 0). On a scoped sitting a
+  // role with no in-scope competencies has score 0, which must not be read as a
+  // real low rating or become "weakest" - so it is excluded from the verdict.
+  const measured = [...DARE_ROLES].filter((r) => counts[r] > 0);
+  const ranked = (measured.length ? measured : [...DARE_ROLES]).sort((a, b) => scores[b] - scores[a]);
   const primary = ranked[0];
-  const secondary = ranked[1];
-  const spread = scores[ranked[0]] - scores[ranked[3]];
+  const secondary = ranked[1] ?? ranked[0];
+  const spread = scores[ranked[0]] - scores[ranked[ranked.length - 1]];
   const topGap = scores[primary] - scores[secondary];
 
   let profileLabel: string;
   let profileBlurb: string;
-  if (spread <= VERSATILE_SPREAD) {
+  if (ranked.length === 1) {
+    profileLabel = DARE_META[primary].noun;
+    profileBlurb = DARE_META[primary].blurb;
+  } else if (spread <= VERSATILE_SPREAD) {
     profileLabel = "Versatile";
     profileBlurb =
       "Self-ratings sit close together across all four decision roles - a flexible profile that can take whichever seat the decision needs. Valuable in small teams; in larger organisations, pick the seat deliberately per decision.";

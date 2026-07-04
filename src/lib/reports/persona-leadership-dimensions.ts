@@ -111,6 +111,33 @@ export function leadershipStyle(management: number, leadership: number): {
   };
 }
 
+/** Honest verdict when a scoped sitting measured only one of the two axes. */
+function partialLeadershipStyle(hasManagement: boolean, hasLeadership: boolean): {
+  quadrant: LeadershipQuadrant;
+  label: string;
+  blurb: string;
+} {
+  if (hasManagement && !hasLeadership)
+    return {
+      quadrant: "operational",
+      label: "Management axis only (partial coverage)",
+      blurb:
+        "This sitting assessed only the transactional (management) competencies; the transformational (leadership) axis was not in scope, so a full leadership-style placement is not possible. The verdict below reflects the management axis alone - widen the scope to place both orientations.",
+    };
+  if (hasLeadership && !hasManagement)
+    return {
+      quadrant: "visionary",
+      label: "Leadership axis only (partial coverage)",
+      blurb:
+        "This sitting assessed only the transformational (leadership) competencies; the transactional (management) axis was not in scope, so a full leadership-style placement is not possible. The verdict below reflects the leadership axis alone - widen the scope to place both orientations.",
+    };
+  return {
+    quadrant: "emerging",
+    label: "Insufficient coverage",
+    blurb: "Neither leadership axis had enough answered competencies to place a style.",
+  };
+}
+
 export type LeadershipRow = { id: string; name: string; definition?: string; score: number; dimension: LeadershipDimension };
 
 export type LeadershipProfile = {
@@ -120,6 +147,8 @@ export type LeadershipProfile = {
   average: number; // (management + leadership) / 2
   managementCount: number;
   leadershipCount: number;
+  /** True when a scoped sitting left an entire axis unanswered (verdict is partial). */
+  partialCoverage: boolean;
   quadrant: LeadershipQuadrant;
   styleLabel: string;
   styleBlurb: string;
@@ -164,7 +193,14 @@ export function computeLeadershipProfile(
 
   const management = mean(managementRows.map((r) => r.score));
   const leadership = mean(leadershipRows.map((r) => r.score));
-  const style = leadershipStyle(management, leadership);
+  // A scoped sitting can leave an entire axis unanswered. mean([]) = 0 would then
+  // read as a genuine low rating and force a wrong quadrant (e.g. "Emerging" or
+  // "Operational"), so when either axis has no answers we produce an honest
+  // partial-coverage verdict instead of classifying against the 3.0 midpoint.
+  const partialCoverage = managementRows.length === 0 || leadershipRows.length === 0;
+  const style = partialCoverage
+    ? partialLeadershipStyle(managementRows.length > 0, leadershipRows.length > 0)
+    : leadershipStyle(management, leadership);
 
   const all = [...managementRows, ...leadershipRows];
   // Disjoint sets: with few answered competencies the top-5 and bottom-5 windows
@@ -185,6 +221,7 @@ export function computeLeadershipProfile(
     average: round2((management + leadership) / 2),
     managementCount: managementRows.length,
     leadershipCount: leadershipRows.length,
+    partialCoverage,
     quadrant: style.quadrant,
     styleLabel: style.label,
     styleBlurb: style.blurb,

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Users, Layers, BrainCircuit, FileText } from "lucide-react";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { createServiceClient } from "@/lib/supabase/server";
+import { overallSelfScore, type PersonaScoreRow } from "@/lib/scoring/behavioral";
 import { BackLink } from "@/components/shared/back-link";
 import { personaBand, personaBandLabel, PERSONA_BAND_TW } from "@/lib/scoring/persona-bands";
 
@@ -65,23 +66,31 @@ async function loadPersona(project: string): Promise<PersonaRow[]> {
   const sessions = res.data as { id: string; taker_name: string | null; taker_email: string | null }[];
   if (sessions.length === 0) return [];
   const ids = sessions.map((s) => s.id);
-  const { data: responses } = await sb
-    .from("behavioral_assessment_responses")
-    .select("session_id, raw_score, is_reverse")
-    .in("session_id", ids);
-  const bySession = new Map<string, number[]>();
-  for (const r of responses ?? []) {
-    const raw = Number(r.raw_score);
-    const v = r.is_reverse ? 6 - raw : raw;
-    const sid = r.session_id as string;
-    if (!bySession.has(sid)) bySession.set(sid, []);
-    bySession.get(sid)!.push(v);
+  // Range-paginate (API ~1000-row cap) + ipsative-aware overall.
+  type RespRow = PersonaScoreRow & { session_id: string };
+  const responses: RespRow[] = [];
+  const PAGE = 1000;
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await sb
+      .from("behavioral_assessment_responses")
+      .select("session_id, competency_id, raw_score, is_reverse, item_type, answer_data")
+      .in("session_id", ids)
+      .range(from, from + PAGE - 1);
+    if (error || !data || data.length === 0) break;
+    responses.push(...(data as unknown as RespRow[]));
+    if (data.length < PAGE) break;
   }
-  return sessions.map((s) => {
-    const vals = bySession.get(s.id) ?? [];
-    const overall = vals.length ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 100) / 100 : null;
-    return { name: s.taker_name, email: s.taker_email, overall, sessionId: s.id };
-  });
+  const bySession = new Map<string, PersonaScoreRow[]>();
+  for (const r of responses) {
+    if (!bySession.has(r.session_id)) bySession.set(r.session_id, []);
+    bySession.get(r.session_id)!.push(r);
+  }
+  return sessions.map((s) => ({
+    name: s.taker_name,
+    email: s.taker_email,
+    overall: overallSelfScore(bySession.get(s.id) ?? []),
+    sessionId: s.id,
+  }));
 }
 
 async function loadCognitive(project: string): Promise<CognitiveRow[]> {

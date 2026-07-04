@@ -172,8 +172,12 @@ export function DareReportPdf({ data }: { data: DarePdfData }) {
                 <Text style={[s.statLabel, { color: DARE_META[role].hex }]}>
                   {DARE_META[role].letter} · {DARE_META[role].label}
                 </Text>
-                <Text style={s.statValue}>{(p.scores[role] ?? 0).toFixed(2)}</Text>
-                <Text style={s.statSub}>mean of {p.counts[role]} · out of 5{role === p.primary ? " · primary" : ""}</Text>
+                <Text style={s.statValue}>{p.counts[role] > 0 ? (p.scores[role] ?? 0).toFixed(2) : "n/a"}</Text>
+                <Text style={s.statSub}>
+                  {p.counts[role] > 0
+                    ? `mean of ${p.counts[role]} · out of 5${role === p.primary ? " · primary" : ""}`
+                    : "not assessed in this scope"}
+                </Text>
               </View>
             ))}
           </View>
@@ -210,8 +214,11 @@ export function DareReportPdf({ data }: { data: DarePdfData }) {
             <View style={s.roleHead} wrap={false}>
               <Text style={[s.roleLetter, { backgroundColor: DARE_META[role].hex }]}>{DARE_META[role].letter}</Text>
               <Text style={s.roleTitle}>{DARE_META[role].label}</Text>
-              <Text style={[s.roleScore, { color: DARE_META[role].hex }]}>{(p.scores[role] ?? 0).toFixed(2)}</Text>
+              <Text style={[s.roleScore, { color: DARE_META[role].hex }]}>{p.counts[role] > 0 ? (p.scores[role] ?? 0).toFixed(2) : "n/a"}</Text>
             </View>
+            {p.counts[role] === 0 ? (
+              <Text style={[s.statSub, { marginBottom: 4 }]}>Not assessed in this scope.</Text>
+            ) : null}
             {p.rowsByRole[role].map((r: DareRow) => (
               <View key={r.id} style={s.pill} wrap={false}>
                 <Text style={s.pillName}>{r.name}</Text>

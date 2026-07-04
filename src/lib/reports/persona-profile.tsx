@@ -60,6 +60,11 @@ export type PersonaPdfFit = {
    *  additive to the fit %, labelled indicative (self-report). */
   verdictLabel?: string | null;
   verdictHex?: string | null;
+  /** Role competencies actually measured / total in the target role. When
+   *  measured < total the fit % is computed on a subset (scoped sitting) and the
+   *  report discloses it rather than silently implying full coverage. */
+  coverageMeasured?: number;
+  coverageTotal?: number;
   gaps: { name: string; self: number; target: number; gap: number }[];
   strengths?: { name: string; self: number; target: number }[];
 };
@@ -323,6 +328,14 @@ export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
                 ) : null}
               </View>
             )}
+            {typeof data.fit.coverageMeasured === "number" &&
+            typeof data.fit.coverageTotal === "number" &&
+            data.fit.coverageMeasured < data.fit.coverageTotal ? (
+              <Text style={{ fontSize: 7.5, color: C.textLight, marginTop: 3, textAlign: "center" }}>
+                Fit measured on {data.fit.coverageMeasured} of {data.fit.coverageTotal} role competencies (scoped
+                assessment) - read as a partial signal.
+              </Text>
+            ) : null}
             {data.fit.strengths && data.fit.strengths.length > 0 ? (
               <>
                 <Text style={[s.fitGapTitle, { color: C.emerald }]}>

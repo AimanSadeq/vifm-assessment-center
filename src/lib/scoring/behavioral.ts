@@ -155,13 +155,15 @@ export type BehavioralProfileRow = {
   itemCount: number;
 };
 
-type ScoreRow = {
+export type ScoreRow = {
   competency_id: string;
   raw_score: number | string;
   is_reverse: boolean;
   item_type?: string | null;
   answer_data?: { choice?: string } | null;
 };
+/** Public alias for the shape report/list scorers should select + pass. */
+export type PersonaScoreRow = ScoreRow;
 
 /**
  * Per-competency self-score rollup shared by the anonymous + candidate paths.
@@ -214,6 +216,31 @@ export function rollupSelfScores(responses: ScoreRow[]): BehavioralProfileRow[] 
     });
   }
   return profile;
+}
+
+/**
+ * Ipsative-aware per-competency self-score map for ONE session's response rows.
+ * Wraps rollupSelfScores so every report/list surface collapses forced-choice
+ * rows the same way the taker's on-screen result did, instead of averaging the
+ * raw 5/1/3 ipsative rows as if they were Likert. Callers MUST select
+ * `item_type` and `answer_data` alongside competency_id/raw_score/is_reverse.
+ */
+export function selfScoreByCompetency(rows: ScoreRow[]): Map<string, number> {
+  return new Map(rollupSelfScores(rows).map((r) => [r.competencyId, r.selfScore]));
+}
+
+/**
+ * Ipsative-aware overall self-rating (1-5) for ONE session = the mean of its
+ * per-competency self-scores (each competency collapsed correctly first), NOT a
+ * flat mean of every raw response row. Returns null when the session has no
+ * scorable rows. For multi-session surfaces, group rows by session_id and call
+ * this per session.
+ */
+export function overallSelfScore(rows: ScoreRow[]): number | null {
+  const profile = rollupSelfScores(rows);
+  if (profile.length === 0) return null;
+  const mean = profile.reduce((a, r) => a + r.selfScore, 0) / profile.length;
+  return Math.round(mean * 100) / 100;
 }
 
 /**

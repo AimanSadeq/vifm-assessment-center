@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Users, Sparkles, FileText, Layers } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentCaller } from "@/lib/ara/auth-guards";
+import { overallSelfScore, type PersonaScoreRow } from "@/lib/scoring/behavioral";
 import { personaBand, personaBandLabel, PERSONA_BAND_TW, type PersonaBandKey } from "@/lib/scoring/persona-bands";
 
 export const dynamic = "force-dynamic";
@@ -57,24 +58,32 @@ async function loadRows(): Promise<Row[] | null> {
     const sessions = res.data ?? [];
     if (sessions.length === 0) return [];
 
-    // Overall self-rating per session: mean of all responses (reverse mapped).
+    // Overall self-rating per session, ipsative-aware. Range-paginate the response
+    // fetch: the API caps a single select at ~1000 rows, so an unpaged fetch would
+    // silently drop the answers for most sittings beyond ~4 (the D360 incident).
     const ids = sessions.map((s) => s.id);
-    const { data: responses } = await sb
-      .from("behavioral_assessment_responses")
-      .select("session_id, raw_score, is_reverse")
-      .in("session_id", ids);
-    const bySession = new Map<string, number[]>();
-    for (const r of responses ?? []) {
-      const raw = Number(r.raw_score);
-      const v = r.is_reverse ? 6 - raw : raw;
-      const sid = r.session_id as string;
+    type RespRow = PersonaScoreRow & { session_id: string };
+    const responses: RespRow[] = [];
+    const PAGE = 1000;
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await sb
+        .from("behavioral_assessment_responses")
+        .select("session_id, competency_id, raw_score, is_reverse, item_type, answer_data")
+        .in("session_id", ids)
+        .range(from, from + PAGE - 1);
+      if (error || !data || data.length === 0) break;
+      responses.push(...(data as unknown as RespRow[]));
+      if (data.length < PAGE) break;
+    }
+    const bySession = new Map<string, PersonaScoreRow[]>();
+    for (const r of responses) {
+      const sid = r.session_id;
       if (!bySession.has(sid)) bySession.set(sid, []);
-      bySession.get(sid)!.push(v);
+      bySession.get(sid)!.push(r);
     }
     return sessions.map((s) => {
-      const vals = bySession.get(s.id) ?? [];
-      const overall = vals.length ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 100) / 100 : null;
-      return { ...s, overall, itemCount: vals.length };
+      const rows = bySession.get(s.id) ?? [];
+      return { ...s, overall: overallSelfScore(rows), itemCount: rows.length };
     });
   } catch {
     return null;

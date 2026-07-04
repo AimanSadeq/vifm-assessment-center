@@ -7,6 +7,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { createServiceClient } from "@/lib/supabase/server";
+import { selfScoreByCompetency } from "@/lib/scoring/behavioral";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
 import { loadPersonaRoleById, type PersonaRoleOption } from "@/lib/scoring/persona-roles";
 import { computeFit, competencyNarrative, developmentNarrative, FIT_BAND_HEX, readinessVerdict, READINESS_VERDICT_HEX } from "@/lib/scoring/persona-fit";
@@ -140,18 +141,10 @@ export async function buildPersonaPdfData(sessionId: string, lang: PersonaLang =
   }
   if (responses.length === 0) return { ok: false, status: 400, error: "No answers recorded for this session yet" };
 
-  // Per-competency self score (reverse mapped 6 - raw).
-  const byComp = new Map<string, number[]>();
-  for (const r of responses) {
-    const raw = Number(r.raw_score);
-    const v = r.is_reverse ? 6 - raw : raw;
-    if (!byComp.has(r.competency_id)) byComp.set(r.competency_id, []);
-    byComp.get(r.competency_id)!.push(v);
-  }
-  const scoreById = new Map<string, number>();
-  for (const [cid, vals] of byComp) {
-    scoreById.set(cid, Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 100) / 100);
-  }
+  // Per-competency self score, ipsative-aware (forced-choice rows collapse to
+  // 3 + #most - #least, exactly as the taker's on-screen result did) rather than
+  // averaging raw 5/1/3 ipsative rows as if they were Likert.
+  const scoreById = selfScoreByCompetency(responses);
 
   // ── Definitions + dev tips ──
   const definitionById = new Map<string, string>();
@@ -308,6 +301,10 @@ export async function buildPersonaPdfData(sessionId: string, lang: PersonaLang =
         bandHex: FIT_BAND_HEX[f.band],
         verdictLabel: verdict ? (ar ? verdict.labelAr : verdict.label) : null,
         verdictHex: verdict ? READINESS_VERDICT_HEX[verdict.key] : null,
+        // Coverage disclosure: fit % is computed on the role competencies actually
+        // served (a scoped sitting measures a subset), not silently on "all".
+        coverageMeasured: measuredComps.length,
+        coverageTotal: role.comps.length,
         // CAL-PER-407: display the top 5 priorities/strengths so the fit panel
         // matches the 5-row action plan (internal gapsTop stays 6 for course
         // recs / drivers / watch areas).

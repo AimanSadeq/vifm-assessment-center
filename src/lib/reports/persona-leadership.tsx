@@ -186,20 +186,34 @@ export function LeadershipReportPdf({ data }: { data: LeadershipPdfData }) {
           <View style={s.statsRow}>
             <View style={s.stat}>
               <Text style={[s.statLabel, { color: C.lead }]}>Leadership (transformational)</Text>
-              <Text style={[s.statValue, { color: band(p.leadership) }]}>{p.leadership.toFixed(2)}</Text>
-              <Text style={s.statSub}>mean of {p.leadershipCount} competencies · out of 5</Text>
+              <Text style={[s.statValue, { color: p.leadershipCount > 0 ? band(p.leadership) : C.textLight }]}>
+                {p.leadershipCount > 0 ? p.leadership.toFixed(2) : "n/a"}
+              </Text>
+              <Text style={s.statSub}>
+                {p.leadershipCount > 0 ? `mean of ${p.leadershipCount} competencies · out of 5` : "not assessed in this scope"}
+              </Text>
             </View>
             <View style={s.stat}>
               <Text style={[s.statLabel, { color: C.mgmt }]}>Management (transactional)</Text>
-              <Text style={[s.statValue, { color: band(p.management) }]}>{p.management.toFixed(2)}</Text>
-              <Text style={s.statSub}>mean of {p.managementCount} competencies · out of 5</Text>
+              <Text style={[s.statValue, { color: p.managementCount > 0 ? band(p.management) : C.textLight }]}>
+                {p.managementCount > 0 ? p.management.toFixed(2) : "n/a"}
+              </Text>
+              <Text style={s.statSub}>
+                {p.managementCount > 0 ? `mean of ${p.managementCount} competencies · out of 5` : "not assessed in this scope"}
+              </Text>
             </View>
             <View style={s.stat}>
               <Text style={s.statLabel}>Overall</Text>
               <Text style={[s.statValue, { color: band(data.overall) }]}>{data.overall.toFixed(2)}</Text>
-              <Text style={s.statSub}>all 41 · out of 5</Text>
+              <Text style={s.statSub}>{data.overallCount} competenc{data.overallCount === 1 ? "y" : "ies"} · out of 5</Text>
             </View>
           </View>
+          {p.partialCoverage ? (
+            <Text style={[s.statSub, { marginTop: 4 }]}>
+              Partial coverage: this scoped sitting measured only one leadership axis, so the style placement below reflects
+              that axis alone. Widen the competency scope to place both orientations.
+            </Text>
+          ) : null}
           <Text style={s.para}>
             {(data.takerName || "This individual")}&rsquo;s self-assessment {orientationWord}: a leadership score of{" "}
             {p.leadership.toFixed(2)} against a management score of {p.management.toFixed(2)} (out of 5). The dominant orientation is{" "}

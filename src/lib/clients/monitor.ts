@@ -180,18 +180,24 @@ export async function getServiceActivity(service: CaliberService, orgId: string)
     }
 
     if (service === "persona") {
-      const [issued, redeemed] = await Promise.all([
+      const [issued, redeemed, completedRes, listRes] = await Promise.all([
         countOrg("persona_vouchers", orgId),
         countOrg("persona_voucher_redemptions", orgId),
+        // True completed count (head query) - independent of the 100-row display cap.
+        sb
+          .from("behavioral_assessment_sessions")
+          .select("id", { count: "exact", head: true })
+          .eq("organization_id", orgId)
+          .eq("status", "submitted"),
+        sb
+          .from("behavioral_assessment_sessions")
+          .select("id, created_at, submitted_at, taker_name, status")
+          .eq("organization_id", orgId)
+          .eq("status", "submitted")
+          .order("created_at", { ascending: false })
+          .limit(100),
       ]);
-      const { data } = await sb
-        .from("behavioral_assessment_sessions")
-        .select("id, created_at, submitted_at, taker_name, status")
-        .eq("organization_id", orgId)
-        .eq("status", "submitted")
-        .order("created_at", { ascending: false })
-        .limit(100);
-      const list = (data ?? []) as { id: string; created_at: string; submitted_at: string | null; taker_name: string | null }[];
+      const list = (listRes.data ?? []) as { id: string; created_at: string; submitted_at: string | null; taker_name: string | null }[];
       const rows = list.map((r) => ({
         id: r.id,
         name: r.taker_name?.trim() || "Candidate",
@@ -199,7 +205,7 @@ export async function getServiceActivity(service: CaliberService, orgId: string)
         summary: "Completed",
         reportPath: `/api/ac/persona/${r.id}/report`,
       }));
-      return { issued, redeemed, completed: rows.length, rows };
+      return { issued, redeemed, completed: completedRes.count ?? rows.length, rows };
     }
 
     if (service === "techno") {

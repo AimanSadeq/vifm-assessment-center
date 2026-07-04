@@ -119,8 +119,11 @@ export type ReadinessVerdict = {
 };
 
 export function readinessVerdict(fitPct: number): ReadinessVerdict {
+  // Breakpoints deliberately match fitBand (>=80 strong, >=60 moderate) so the
+  // verdict badge and the fit-band label can never contradict - a 57% no longer
+  // reads "Limited fit" (rose) next to "Ready with Development" (amber).
   if (fitPct >= 80) return { key: "ready", label: "Ready", labelAr: "جاهز" };
-  if (fitPct >= 55)
+  if (fitPct >= 60)
     return { key: "ready_with_development", label: "Ready with Development", labelAr: "جاهز مع التطوير" };
   return { key: "not_ready", label: "Not Ready", labelAr: "غير جاهز" };
 }

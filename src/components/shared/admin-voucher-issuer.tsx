@@ -391,6 +391,7 @@ export function AdminVoucherIssuer({
               <TableBody>
                 {vouchers.map((v) => {
                   const exhausted = v.used_count >= v.max_uses;
+                  const expired = !!v.expires_at && new Date(v.expires_at).getTime() < Date.now();
                   return (
                     <TableRow key={v.id}>
                       <TableCell className="font-mono text-xs">{v.code}</TableCell>
@@ -407,6 +408,8 @@ export function AdminVoucherIssuer({
                       <TableCell>
                         {v.status === "disabled" ? (
                           <Badge variant="secondary">Disabled</Badge>
+                        ) : expired ? (
+                          <Badge className="border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-50">Expired</Badge>
                         ) : exhausted ? (
                           <Badge variant="outline">Fully used</Badge>
                         ) : (

@@ -36,6 +36,7 @@ export async function personaOrgIntel(orgId: string): Promise<PersonaOrgIntel> {
         .from("behavioral_assessment_responses")
         .select("session_id, competency_id, raw_score, is_reverse, item_type, answer_data")
         .in("session_id", ids)
+        .order("id", { ascending: true })
         .range(from, from + PAGE - 1);
       if (error || !data || data.length === 0) break;
       responses.push(...(data as unknown as Resp[]));

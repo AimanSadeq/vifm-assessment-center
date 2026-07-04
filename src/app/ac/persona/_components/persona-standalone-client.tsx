@@ -354,10 +354,18 @@ export function PersonaStandaloneClient({
     try {
       await flush(); // persist any buffered answers before scoring
       const res = await submitPersonaAction(sessionId, lang, redemptionToken);
-      if (!res.ok || !res.profile) { setError(res.error || tx("Could not score.", "تعذّر التقييم.")); return; }
+      if (!res.ok) { setError(res.error || tx("Could not score.", "تعذّر التقييم.")); return; }
+      const isStaff = (res as { isStaff?: boolean }).isStaff === true;
+      // Non-staff takers get a thank-you (XP-13); their response carries no
+      // profile/report by design, so don't treat its absence as an error.
+      if (isStaff && !("profile" in res && res.profile)) {
+        setError(tx("Could not score.", "تعذّر التقييم."));
+        return;
+      }
       setReport((res as { report?: PersonaPdfData }).report ?? null);
-      setCanView((res as { isStaff?: boolean }).isStaff === true);
-      setProfile(res.profile); setPhase("result");
+      setCanView(isStaff);
+      setProfile((res as { profile?: BehavioralProfileRow[] }).profile ?? null);
+      setPhase("result");
     } catch { setError(tx("Could not score.", "تعذّر التقييم.")); } finally { setBusy(false); }
   };
 
@@ -679,14 +687,20 @@ export function PersonaStandaloneClient({
                   flashKey === it.itemKey ? "-mx-2 rounded-md bg-amber-50 px-2 ring-2 ring-amber-300 transition" : ""
                 }`}
               >
-                <p className="text-sm">{ar ? it.textAr : it.textEn}</p>
-                <div className="flex flex-wrap gap-1.5">
+                <p className="text-sm" id={`norm-stmt-${it.itemKey}`}>{ar ? it.textAr : it.textEn}</p>
+                <div
+                  className="flex flex-wrap gap-1.5"
+                  role="radiogroup"
+                  aria-labelledby={`norm-stmt-${it.itemKey}`}
+                >
                   {LIKERT.map((v) => {
                     const selected = answers[it.itemKey] === v;
                     return (
                       <button
                         key={v}
                         type="button"
+                        role="radio"
+                        aria-checked={selected}
                         title={likertLabel(v)}
                         aria-label={`${v} - ${likertLabel(v)}`}
                         onClick={() => answerNorm(it, v)}

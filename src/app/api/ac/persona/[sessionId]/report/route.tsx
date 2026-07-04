@@ -22,11 +22,12 @@ export async function GET(req: Request, { params }: { params: { sessionId: strin
     }
     const lang = new URL(req.url).searchParams.get("lang") === "ar" ? "ar" : "en";
 
-    // Auth gate BEFORE the heavy assembly: BOTH the hiring and development
+    // Auth gate BEFORE anything session-specific: BOTH the hiring and development
     // reports are admin/client deliverables, so a candidate (voucher delegate,
     // no account) cannot pull their own report PDF even with the session id.
-    const purpose = await peekPersonaPurpose(params.sessionId);
-    if (purpose === "missing") return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    // Authenticate FIRST so an unauthenticated caller always gets 403 regardless
+    // of whether the session exists - no 404-vs-403 existence oracle, matching
+    // the leadership/dare/eq report routes.
     {
       const caller = await getCurrentCaller();
       if (!caller) {
@@ -49,6 +50,8 @@ export async function GET(req: Request, { params }: { params: { sessionId: strin
         }
       }
     }
+    const purpose = await peekPersonaPurpose(params.sessionId);
+    if (purpose === "missing") return NextResponse.json({ error: "Session not found" }, { status: 404 });
 
     const built = await buildPersonaPdfData(params.sessionId, lang);
     if (!built.ok) return NextResponse.json({ error: built.error }, { status: built.status });

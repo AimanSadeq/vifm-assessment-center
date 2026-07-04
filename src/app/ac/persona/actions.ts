@@ -223,19 +223,23 @@ export async function submitPersonaAction(
     return { ok: false as const, error: "Not authorized for this session.", isStaff };
   }
   const res = await submitAnonymousBehavioral(sessionId);
-  if (!res.ok || !res.profile) return { ...res, isStaff };
+  if (!res.ok) return { ...res, isStaff };
+  // XP-13: the per-competency score profile is a staff-only deliverable. Strip
+  // it from a non-staff (delegate) response so the numeric self-scores the UI
+  // withholds can't be read straight out of the network payload. The taker's
+  // client only needs ok/isStaff to show its thank-you.
+  if (!isStaff) return { ok: res.ok, isStaff };
+  if (!res.profile) return { ...res, isStaff };
   // PER-11: building the report runs several AI calls (insights, summary,
   // courses, interview probes) - the cause of "scoring takes a long time". Only
   // staff see the report on submit, so skip that build for takers (their submit
   // is then near-instant). An admin builds it on demand from the report route /
   // cohort view (insights are cached on the session for reuse).
-  if (isStaff) {
-    try {
-      const built = await buildPersonaPdfData(sessionId, lang);
-      if (built.ok) return { ...res, report: built.data, isStaff };
-    } catch {
-      /* fall back to the plain scored profile */
-    }
+  try {
+    const built = await buildPersonaPdfData(sessionId, lang);
+    if (built.ok) return { ...res, report: built.data, isStaff };
+  } catch {
+    /* fall back to the plain scored profile */
   }
   return { ...res, isStaff };
 }

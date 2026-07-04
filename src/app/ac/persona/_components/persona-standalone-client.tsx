@@ -675,7 +675,7 @@ export function PersonaStandaloneClient({
             {tx("Rate each statement", "قيّم كل عبارة")} · {tx("Page", "صفحة")} {page + 1}/{normPages.length}
           </p>
           <p className="text-xs text-muted-foreground">
-            {tx("Scale: 1 = Strongly disagree · 3 = Neither · 5 = Strongly agree", "المقياس: 1 = لا أوافق بشدة · 3 = محايد · 5 = أوافق بشدة")}
+            {tx("Scale: 1 = Strongly disagree · 2 = Disagree · 3 = Neither · 4 = Agree · 5 = Strongly agree", "المقياس: 1 = لا أوافق بشدة · 2 = لا أوافق · 3 = محايد · 4 = أوافق · 5 = أوافق بشدة")}
           </p>
 
           <section className="space-y-3 rounded-lg border bg-white p-4">

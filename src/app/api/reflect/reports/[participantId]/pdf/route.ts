@@ -35,15 +35,24 @@ export async function GET(
     langRaw === "ar" ? "ar" : langRaw === "bilingual" ? "bilingual" : "en";
   const reportUrl = `${selfOrigin(req.url)}/reflect/consultant/participants/${participantId}/report?bare=1&lang=${language}`;
 
-  // Compute scoring first so we can persist the snapshot alongside the file.
+  // Authorise BEFORE any scoring work: resolve the participant's engagement
+  // cheaply and gate on it, so a non-owner can't use the 404-vs-403 ordering (or
+  // the scoring compute) as an existence oracle. A missing participant and an
+  // unauthorised one both resolve to the guard's uniform 403.
+  const sbGuard = createServiceClient();
+  const { data: part } = await sbGuard
+    .from("reflect_participants")
+    .select("engagement_id")
+    .eq("id", participantId)
+    .maybeSingle<{ engagement_id: string | null }>();
+  const denied = await guardReflectEngagementAccess(part?.engagement_id ?? "");
+  if (denied) return denied;
+
+  // Owner-authorised past this point; now compute + persist the snapshot.
   const scoring = await computeParticipantScoring(participantId);
   if (!scoring) {
     return NextResponse.json({ ok: false, error: "Participant not found" }, { status: 404 });
   }
-
-  // Gate before the expensive Puppeteer launch: admin or owning consultant only.
-  const denied = await guardReflectEngagementAccess(scoring.engagement_id);
-  if (denied) return denied;
 
   let browser: Browser | null = null;
   try {

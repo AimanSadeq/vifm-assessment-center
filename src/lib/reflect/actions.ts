@@ -118,6 +118,41 @@ async function requireEngagementOwner(engagementId: string) {
   return caller;
 }
 
+/**
+ * REFLECT-LC-01: transition a finished engagement to 'archived' (stamping
+ * archived_at) so the retention purge - which only matches archived rows past the
+ * cutoff - becomes reachable. Without any archive path the purge was a permanent
+ * no-op and rater PII was retained forever. Owner/admin only; only from a
+ * released ('complete') or in-field ('live') engagement.
+ */
+export async function archiveReflectEngagement(
+  engagementId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    await requireEngagementOwner(engagementId);
+  } catch (e) {
+    return { ok: false, error: isAuthorizationError(e) ? e.message : "Not authorised" };
+  }
+  const sb = createServiceClient();
+  const { data: eng } = await sb
+    .from("reflect_engagements")
+    .select("status")
+    .eq("id", engagementId)
+    .maybeSingle<{ status: string }>();
+  if (!eng) return { ok: false, error: "Engagement not found" };
+  if (eng.status === "archived") return { ok: true };
+  if (!["complete", "live"].includes(eng.status)) {
+    return { ok: false, error: `A ${eng.status} engagement can't be archived.` };
+  }
+  const { error } = await sb
+    .from("reflect_engagements")
+    .update({ status: "archived", archived_at: new Date().toISOString() })
+    .eq("id", engagementId);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/reflect/consultant/engagements/${engagementId}`);
+  return { ok: true };
+}
+
 /** Resolve a framework to its engagement_id and check ownership. */
 async function requireEngagementOwnerByFramework(frameworkId: string) {
   const sb = createServiceClient();
@@ -1112,6 +1147,14 @@ export type ReflectFrameworkBundle = {
 export async function loadReflectFrameworkForEngagement(
   engagementId: string
 ): Promise<ReflectFrameworkBundle | null> {
+  // "use server" action = independently POST-invokable, so it must self-gate
+  // like every sibling. Without this, consultant A could pull consultant B's
+  // full framework (names, EN/AR behaviours, rationale) by id.
+  try {
+    await requireEngagementOwner(engagementId);
+  } catch {
+    return null;
+  }
   const sb = createServiceClient();
 
   const { data: framework } = await sb
@@ -1220,7 +1263,9 @@ export async function createReflectReassessmentFromPrior(input: {
     .eq("id", input.priorEngagementId)
     .maybeSingle();
   if (!prior) return { ok: false, error: "Prior engagement not found" };
-  if (!["completed", "live", "archived"].includes(prior.status)) {
+  // The released state is 'complete' (not 'completed' - that value is not in the
+  // enum), so the primary year-on-year reassessment case was always rejected.
+  if (!["complete", "live", "archived"].includes(prior.status)) {
     return {
       ok: false,
       error: `Engagement status "${prior.status}" can't be reassessed yet - wait until it's at least live.`,

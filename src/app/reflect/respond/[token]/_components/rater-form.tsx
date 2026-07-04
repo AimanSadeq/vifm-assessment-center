@@ -255,6 +255,17 @@ export function RaterForm({ ctx }: Props) {
   const inflightRef = useRef<Map<number, Promise<void>>>(new Map());
   const saveIdRef = useRef(0);
 
+  // Register an external in-flight save (the open-questions block) so the submit
+  // flush awaits it before markComplete - closes a race where the block's
+  // blur-save could still be posting when the page refreshed into "completed".
+  const trackInflight = (p: Promise<unknown>) => {
+    const myId = ++saveIdRef.current;
+    const wrapped = Promise.resolve(p).then(() => {}, () => {}).finally(() => {
+      inflightRef.current.delete(myId);
+    });
+    inflightRef.current.set(myId, wrapped);
+  };
+
   // Mirror of `answers` so the score/NA handlers can read the latest value
   // without putting the save side-effect inside the setAnswers updater (which
   // delayed the visual selection). The highlight now paints immediately.
@@ -574,6 +585,13 @@ export function RaterForm({ ctx }: Props) {
           <p className="text-sm text-muted-foreground leading-relaxed">
             {framing.lead}
           </p>
+          {ctx.rater.rater_role !== "self" && (
+            <p className="mt-3 rounded-lg bg-[#5391D5]/5 px-3 py-2 text-xs text-[#010131]/80">
+              {rtl
+                ? "تُدمج تقييماتك الفردية مع تقييمات المُقيّمين الآخرين وتُعرض كمتوسط للمجموعة فقط - لا يطّلع أحد على درجاتك الفردية."
+                : "Your individual ratings are combined with those of other raters and shown only as a group average - no one sees your individual scores."}
+            </p>
+          )}
           <ScaleLegend scale={scale} rtl={rtl} />
         </section>
 
@@ -804,6 +822,7 @@ export function RaterForm({ ctx }: Props) {
             isSelf={ctx.rater.rater_role === "self"}
             ar={rtl}
             initial={ctx.openQuestions}
+            registerInflight={trackInflight}
           />
         </section>
 

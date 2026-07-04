@@ -483,6 +483,13 @@ export function GamifiedRaterForm({ ctx, preview = false }: { ctx: RaterContext;
             </div>
             <h1 className="text-2xl font-semibold text-primary">{framing.title}</h1>
             <p className="mt-2 text-sm text-muted-foreground">{framing.lead}</p>
+            {!isSelf && (
+              <p className="mx-auto mt-3 max-w-md rounded-lg bg-primary/5 px-3 py-2 text-xs text-primary/80">
+                {rtl
+                  ? "تُدمج تقييماتك الفردية مع تقييمات المُقيّمين الآخرين وتُعرض كمتوسط للمجموعة فقط - لا يطّلع أحد على درجاتك الفردية."
+                  : "Your individual ratings are combined with those of other raters and shown only as a group average - no one sees your individual scores."}
+              </p>
+            )}
             <p className="mt-3 text-xs font-medium text-primary/80">{t.estimate(total)}</p>
 
             {showTenure && (
@@ -525,10 +532,13 @@ export function GamifiedRaterForm({ ctx, preview = false }: { ctx: RaterContext;
               <div className="mt-3 rounded-2xl border bg-card p-5 shadow-sm">
                 <p className="text-lg leading-relaxed font-medium">{behText(it.behavior)}</p>
 
-                <div className="mt-5 grid gap-2">
+                <div className="mt-5 grid gap-2" role="radiogroup" aria-label={behText(it.behavior)}>
                   {[5, 4, 3, 2, 1].map((n) => (
                     <button
                       key={n}
+                      role="radio"
+                      aria-checked={a.score === n}
+                      aria-label={scale[n as 1 | 2 | 3 | 4 | 5]}
                       onClick={() => answer(it.behavior.id, { score: n, is_na: false }, true)}
                       className={cn(
                         "flex items-center justify-between rounded-xl border px-4 py-3 text-sm transition-all",
@@ -540,6 +550,9 @@ export function GamifiedRaterForm({ ctx, preview = false }: { ctx: RaterContext;
                     </button>
                   ))}
                   <button
+                    role="radio"
+                    aria-checked={a.is_na}
+                    aria-label={t.na}
                     onClick={() => answer(it.behavior.id, { is_na: true, score: null }, true)}
                     className={cn(
                       "rounded-xl border px-4 py-2.5 text-sm transition-colors",
@@ -683,6 +696,7 @@ export function GamifiedRaterForm({ ctx, preview = false }: { ctx: RaterContext;
                 isSelf={isSelf}
                 ar={rtl}
                 initial={ctx.openQuestions}
+                registerInflight={(p) => track(Promise.resolve(p).then(() => {}, () => {}))}
               />
             </div>
 

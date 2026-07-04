@@ -419,6 +419,31 @@ export async function computeParticipantScoring(
 
   const min_n = engagement.anonymity_min_n;
 
+  // ── Anonymity floor for POOLED aggregates ──
+  // The SENSITIVE groups (peer/direct_report/skip_level/other) must never be
+  // de-anonymised. Self + manager are exempt (their identity is known by design).
+  // A pooled mean / comment / ranking is WITHHELD whenever it is carried by
+  // 1..min_n-1 distinct SENSITIVE contributors - mirroring the per-group + verbatim
+  // rules so the report can never publish a number that reduces to a single
+  // anonymous voice (the per-group table already hides it; the pool must too).
+  const SENSITIVE = new Set<ReflectRaterRole>(["peer", "direct_report", "skip_level", "other"]);
+  const sensitiveCount = (ids: string[]): number =>
+    ids.filter((id) => { const m = raterById.get(id); return !!m && SENSITIVE.has(m.role); }).length;
+  const belowFloor = (n: number): boolean => n >= 1 && n < min_n;
+
+  // Distinct COMMENTERS per role (raters who left any comment), so a behaviour's
+  // comments are gated on who actually COMMENTED, not who merely scored - a rater
+  // can score without commenting, so the scorer count over-counts the denominator.
+  const commentersByRole = new Map<ReflectRaterRole, Set<string>>();
+  for (const arr of Array.from(commentsByBehavior.values())) {
+    for (const c of arr) {
+      const m = raterById.get(c.raterId);
+      if (!m) continue;
+      if (!commentersByRole.has(m.role)) commentersByRole.set(m.role, new Set());
+      commentersByRole.get(m.role)!.add(c.raterId);
+    }
+  }
+
   // ── Per-rater-group rollup at the overall level ──
   const allRoles: ReflectRaterRole[] = [
     "self",
@@ -462,7 +487,8 @@ export async function computeParticipantScoring(
     const map = responsesByRater.get(id)!;
     for (const v of Array.from(map.values())) overallOthersScores.push(v);
   }
-  const overallOthers = mean(overallOthersScores);
+  const overallOthersHidden = belowFloor(sensitiveCount(othersResponded));
+  const overallOthers = overallOthersHidden ? null : mean(overallOthersScores);
 
   // ── Self view ──
   const selfRaterIds = ratersByRole.get("self") ?? [];
@@ -474,10 +500,12 @@ export async function computeParticipantScoring(
   }
   const overallSelf = mean(overallSelfScores);
 
-  // Combined overall = average of self + others if both present, else
-  // whichever is available.
+  // Combined overall = average of self + others if both present, else whichever
+  // is available. When the pooled Others is withheld for anonymity, the combined
+  // is withheld too: otherwise a reader could recover the hidden others mean from
+  // combined + self + the published rater counts (self is separately shown).
   const overallAll: number[] = [...overallSelfScores, ...overallOthersScores];
-  const overallMean = mean(overallAll);
+  const overallMean = overallOthersHidden ? null : mean(overallAll);
 
   // ── Per-competency ──
   const behaviorsByComp = new Map<string, Array<{ id: string; text_en: string; text_ar: string | null }>>();
@@ -505,7 +533,13 @@ export async function computeParticipantScoring(
       }
     }
     const sMean = mean(selfScores);
-    const oMean = mean(othersScores);
+    // Withhold the pooled Others mean for this competency when it is carried by
+    // fewer than min_n distinct SENSITIVE contributors (mirrors the overall floor).
+    const compOthersContribs = othersResponded.filter((id) => {
+      const map = responsesByRater.get(id);
+      return !!map && Array.from(map.keys()).some((bid) => compBehIds.has(bid));
+    });
+    const oMean = belowFloor(sensitiveCount(compOthersContribs)) ? null : mean(othersScores);
 
     const compByGroup: RaterGroupScore[] = allRoles.map((role) => {
       const ids = ratersByRole.get(role) ?? [];
@@ -553,12 +587,19 @@ export async function computeParticipantScoring(
         break;
       }
     }
+    const behOthersContribs: string[] = [];
     const othersScores: number[] = [];
     for (const id of othersResponded) {
       const map = responsesByRater.get(id)!;
-      if (map.has(b.id)) othersScores.push(map.get(b.id)!);
+      if (map.has(b.id)) {
+        othersScores.push(map.get(b.id)!);
+        behOthersContribs.push(id);
+      }
     }
-    const oMean = mean(othersScores);
+    // Withhold this behaviour's pooled Others mean below the sensitive floor - this
+    // also removes it from the strength/dev/blind/hidden rankings (they require a
+    // non-null others_mean) so a sub-threshold behaviour can never be printed.
+    const oMean = belowFloor(sensitiveCount(behOthersContribs)) ? null : mean(othersScores);
 
     // Per-rater-group means for THIS behaviour. Anonymity threshold
     // mirrors the competency-level policy: hide peer/direct_report/
@@ -594,9 +635,11 @@ export async function computeParticipantScoring(
       const meta = raterById.get(c.raterId);
       if (!meta) continue;
       const sensitive = meta.role !== "self" && meta.role !== "manager";
-      const respondedCount = (ratersByRole.get(meta.role) ?? [])
-        .filter((id) => responsesByRater.has(id)).length;
-      if (sensitive && respondedCount < min_n) continue;
+      // Gate on the number of distinct raters in this role who actually COMMENTED
+      // (not merely scored): a single peer comment among 3 scoring peers is still
+      // fully attributable, so the scorer count was the wrong denominator.
+      const commenterCount = commentersByRole.get(meta.role)?.size ?? 0;
+      if (sensitive && commenterCount < min_n) continue;
       visibleComments.push({ rater_role: meta.role, text: c.text });
     }
 
@@ -614,9 +657,10 @@ export async function computeParticipantScoring(
     };
   });
 
-  // Rankings - only behaviors that have a meaningful Others view (>=2 responses)
-  // qualify for strength / development / blind-spot / hidden-strength lists.
-  const ranked = behaviors.filter((b) => b.others_mean !== null && b.others_count >= 2);
+  // Rankings - only behaviours with a non-withheld Others view AND at least min_n
+  // responses qualify for strength / development / blind-spot / hidden-strength
+  // lists (the others_mean is already null-gated below the sensitive floor).
+  const ranked = behaviors.filter((b) => b.others_mean !== null && b.others_count >= min_n);
 
   const strengths = [...ranked]
     .sort((a, b) => (b.others_mean! - a.others_mean!))

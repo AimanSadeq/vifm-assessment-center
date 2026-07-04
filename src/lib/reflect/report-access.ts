@@ -31,7 +31,9 @@ export async function guardReflectEngagementAccess(
     .select("consultant_id, organization_id")
     .eq("id", engagementId)
     .maybeSingle<{ consultant_id: string | null; organization_id: string | null }>();
-  if (!eng) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  // A non-admin caller gets an identical 403 for a missing OR unauthorised
+  // engagement, so a 404-vs-403 difference can't be used as an existence oracle.
+  if (!eng) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   // Additive: a client_manager may access an engagement owned by their org.
   if (caller.role === "client_manager") {

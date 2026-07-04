@@ -28,12 +28,18 @@ async function requireRater(token: string) {
 
   const { data: engagement } = await sb
     .from("reflect_engagements")
-    .select("id, status")
+    .select("id, status, field_window_end")
     .eq("id", participant.engagement_id)
-    .maybeSingle<{ id: string; status: string }>();
+    .maybeSingle<{ id: string; status: string; field_window_end: string | null }>();
   if (!engagement) throw new Error("Engagement missing");
   if (!["draft", "live"].includes(engagement.status)) {
     throw new Error(`Engagement is ${engagement.status} - cannot accept new responses`);
+  }
+  // Enforce the field window: even while still 'live', reject writes once the
+  // configured close date has passed, so a rater cannot re-open a stale link
+  // months later and overwrite aggregates the consultant already reported on.
+  if (engagement.field_window_end && new Date(engagement.field_window_end).getTime() < Date.now()) {
+    throw new Error("The feedback window for this engagement has closed");
   }
 
   return { rater, participantId: participant.id, engagementId: engagement.id };

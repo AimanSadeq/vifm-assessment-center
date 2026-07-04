@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { saveReflectOpenResponse } from "@/lib/reflect/rater-actions";
 
 type Kind = "strengths" | "development" | "example" | "advice" | "other";
@@ -55,26 +55,38 @@ export function OpenQuestionsBlock({
   isSelf,
   ar,
   initial,
+  registerInflight,
 }: {
   token: string;
   isSelf: boolean;
   ar: boolean;
   initial: OpenQuestionValues;
+  /** Register a save promise with the parent's submit flush so completion never
+   *  fires while a blur-save is still in flight (else the answer is lost). */
+  registerInflight?: (p: Promise<unknown>) => void;
 }) {
   const [savingKind, setSavingKind] = useState<Kind | null>(null);
   const [savedKind, setSavedKind] = useState<Kind | null>(null);
+  const [failedKind, setFailedKind] = useState<Kind | null>(null);
+  const lastText = useRef<Record<string, string>>({});
   const tx = (en: string, arabic: string) => (ar ? arabic : en);
 
   const save = async (kind: Kind, text: string) => {
+    lastText.current[kind] = text;
     setSavingKind(kind);
     setSavedKind(null);
+    setFailedKind((f) => (f === kind ? null : f));
+    const p = saveReflectOpenResponse({ token, kind, text: text.trim() });
+    registerInflight?.(p);
     try {
-      await saveReflectOpenResponse({ token, kind, text: text.trim() });
+      await p;
       setSavedKind(kind);
     } catch {
-      /* best-effort; the consultant can chase a missing verbatim */
+      // Surface the failure (previously swallowed silently) so the rater knows
+      // their answer did not save and can retry.
+      setFailedKind(kind);
     } finally {
-      setSavingKind(null);
+      setSavingKind((k) => (k === kind ? null : k));
     }
   };
 
@@ -102,8 +114,20 @@ export function OpenQuestionsBlock({
               placeholder={tx("Optional - write as much or as little as you like.", "اختياري - اكتب بقدر ما تشاء.")}
               className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-[#5391D5] focus:outline-none"
             />
-            <span className="text-[11px] text-muted-foreground">
-              {savingKind === q.kind ? tx("Saving…", "جارٍ الحفظ…") : savedKind === q.kind ? tx("Saved", "تم الحفظ") : ""}
+            <span className="text-[11px]">
+              {savingKind === q.kind ? (
+                <span className="text-muted-foreground">{tx("Saving…", "جارٍ الحفظ…")}</span>
+              ) : failedKind === q.kind ? (
+                <button
+                  type="button"
+                  onClick={() => save(q.kind, lastText.current[q.kind] ?? "")}
+                  className="text-rose-600 underline"
+                >
+                  {tx("Not saved - retry", "لم يُحفظ - أعد المحاولة")}
+                </button>
+              ) : savedKind === q.kind ? (
+                <span className="text-emerald-600">{tx("Saved", "تم الحفظ")}</span>
+              ) : null}
             </span>
           </label>
         );

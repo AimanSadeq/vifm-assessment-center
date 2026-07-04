@@ -11,12 +11,16 @@ function cutoffIso(): string {
   return d.toISOString();
 }
 
-async function countOlder(table: string, cutoff: string): Promise<{ total: number; expired: number }> {
+async function countOlder(
+  table: string,
+  cutoff: string,
+  tsCol = "created_at",
+): Promise<{ total: number; expired: number }> {
   const sb = createServiceClient();
   try {
     const totalRes = await sb.from(table).select("id", { count: "exact", head: true });
     if (totalRes.error) return { total: 0, expired: 0 };
-    const expiredRes = await sb.from(table).select("id", { count: "exact", head: true }).lt("created_at", cutoff);
+    const expiredRes = await sb.from(table).select("id", { count: "exact", head: true }).lt(tsCol, cutoff);
     return { total: totalRes.count ?? 0, expired: expiredRes.count ?? 0 };
   } catch {
     return { total: 0, expired: 0 };
@@ -34,6 +38,10 @@ export async function countExpiredTechnical(): Promise<{ total: number; expired:
     countOlder("tech_assessment_results", cutoff),
     countOlder("tech_assessment_sessions", cutoff),
     countOlder("technical_sandbox_sessions", cutoff),
+    // Voucher redemptions hold redeemer PII (name/email/company/ip/user_agent);
+    // keyed on redeemed_at, not created_at. Its session_id FK is ON DELETE SET
+    // NULL, so purging the session leaves this PII row intact - purge it directly.
+    countOlder("technical_sandbox_voucher_redemptions", cutoff, "redeemed_at"),
   ]);
   return parts.reduce(
     (acc, p) => ({ total: acc.total + p.total, expired: acc.expired + p.expired }),
@@ -41,10 +49,10 @@ export async function countExpiredTechnical(): Promise<{ total: number; expired:
   );
 }
 
-async function purgeTable(table: string, cutoff: string): Promise<number> {
+async function purgeTable(table: string, cutoff: string, tsCol = "created_at"): Promise<number> {
   const sb = createServiceClient();
   try {
-    const { data, error } = await sb.from(table).select("id").lt("created_at", cutoff);
+    const { data, error } = await sb.from(table).select("id").lt(tsCol, cutoff);
     if (error) return 0;
     const ids = (data ?? []).map((r) => r.id as string);
     if (ids.length === 0) return 0;
@@ -80,7 +88,9 @@ export async function purgeTechnical(
   const purged =
     (await purgeTable("tech_assessment_results", cutoff)) +
     (await purgeTable("tech_assessment_sessions", cutoff)) +
-    (await purgeTable("technical_sandbox_sessions", cutoff));
+    (await purgeTable("technical_sandbox_sessions", cutoff)) +
+    // Redeemer PII (name/email/company/ip/user_agent); keyed on redeemed_at.
+    (await purgeTable("technical_sandbox_voucher_redemptions", cutoff, "redeemed_at"));
 
   revalidatePath("/admin/tech-assessment/retention");
   return { ok: true, purged };

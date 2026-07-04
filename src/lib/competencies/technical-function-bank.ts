@@ -20,7 +20,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { getAIClient, AI_MODEL } from "@/lib/ai/client";
 import {
-  CERTIFIED_TEST_SIZE,
   ASSEMBLY_COLS,
   ASSEMBLY_COLS_LEGACY,
   bankRowUsable,
@@ -40,6 +39,12 @@ import type { TechItem, TechTest } from "@/lib/ai/technical-assessment";
 const DEFAULT_PASS_PCT = 70;
 const DEFAULT_MIN_PER_SKILL = 2;
 const DEFAULT_DRAW_PER_SKILL = 4;
+/** Overall test-length floor for a CERTIFIED function/mix sitting. The per-skill
+ *  floor (2) alone lets a single-skill ad-hoc selection certify from as few as 2
+ *  items and mint a public credential. A defensible credential needs enough total
+ *  items regardless of how few skills were picked - mirror the domain path's
+ *  min_items gate (default 8). Below this, assembly returns null → indicative. */
+const MIN_CERTIFIED_TOTAL_ITEMS = 8;
 /** Min calibrated approved items before an adaptive (CAT) sitting is worthwhile. */
 export const ADAPTIVE_MIN_POOL = 10;
 
@@ -410,8 +415,11 @@ export async function buildCertifiedFunctionTest(input: {
   for (const s of skillsEn) {
     picked.push(...shuffle(bySkill.get(s) ?? []).slice(0, drawPerSkill));
   }
-  if (picked.length < CERTIFIED_TEST_SIZE && picked.length < skillsEn.length * cut.minItemsPerSkill) {
-    return null; // shouldn't happen given the floor check, but stay safe
+  // Overall length floor: a single-skill (ad-hoc mix) selection that clears only
+  // the per-skill floor of 2 would otherwise certify from 2 items. Require a
+  // defensible total before certifying; below it, drop to indicative.
+  if (picked.length < MIN_CERTIFIED_TOTAL_ITEMS) {
+    return null;
   }
 
   const itemIds: string[] = [];

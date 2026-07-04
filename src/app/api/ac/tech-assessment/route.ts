@@ -72,6 +72,9 @@ type StoredTest = TechTest & {
   item_ids?: string[];
   function_key?: string | null;
   function_id?: string | null;
+  /** Server-side deadline (stamped at session creation) for the time-limit
+   *  backstop. Held server-side in the session; never trusted from the client. */
+  deadline_at?: string | null;
 };
 
 type Body = {
@@ -95,6 +98,34 @@ type Body = {
 };
 
 const SESSION_TTL_MS = 1000 * 60 * 60 * 3;
+
+// Backstop grace for the server-side time-limit check. The client countdown
+// auto-submits at the deadline; this server check only rejects grossly late
+// submissions from a manipulated client. The deadline is stamped at session
+// creation (just before the brief instructions screen), so a generous grace
+// absorbs instructions-reading + network latency + clock skew and never rejects
+// a legitimate on-time taker - it only stops gross abuse (submitting long after).
+const TIMER_GRACE_MS = 1000 * 60 * 5;
+
+/** Has this program participant already completed a sitting for the given scope?
+ *  Enforces one certified sitting per program seat (no retake-farming / duplicate
+ *  credentials off one token). Tolerant: false if the columns are absent. */
+async function participantHasResultForScope(
+  participantId: string,
+  scope: { functionKey?: string | null; domainKey?: string | null }
+): Promise<boolean> {
+  try {
+    const sb = createServiceClient();
+    let q = sb.from("tech_assessment_results").select("id").eq("participant_id", participantId).limit(1);
+    if (scope.functionKey) q = q.eq("function_key", scope.functionKey);
+    else if (scope.domainKey) q = q.eq("domain_key", scope.domainKey);
+    const { data, error } = await q;
+    if (error) return false;
+    return !!(data && data.length > 0);
+  } catch {
+    return false;
+  }
+}
 
 // The self-answering placeholder deck exists so the dev flow renders without an
 // API key - it must never be administered in production.
@@ -282,16 +313,19 @@ export async function POST(req: Request) {
       if (process.env.NODE_ENV === "production" && isPlaceholderTest(stored)) {
         return engineNotConfiguredResponse();
       }
+      const time_limit_seconds = await techTimeLimitSeconds(
+        (contributing.length > 0 ? contributing : fns).map((f) => `tech_function:${f.ref}`),
+        { sum: true }
+      );
+      if (time_limit_seconds && time_limit_seconds > 0) {
+        stored.deadline_at = new Date(Date.now() + time_limit_seconds * 1000 + TIMER_GRACE_MS).toISOString();
+      }
       const session_id = await createSession(
         stored,
         { candidateId, engagementId, language },
         { key: compositeKey, id: null }
       );
       if (session_id) {
-        const time_limit_seconds = await techTimeLimitSeconds(
-          (contributing.length > 0 ? contributing : fns).map((f) => `tech_function:${f.ref}`),
-          { sum: true }
-        );
         return NextResponse.json({ session_id, test: stripAnswerKey(stored), time_limit_seconds });
       }
       // No session row could be created - refuse rather than leak the answer key.
@@ -303,6 +337,14 @@ export async function POST(req: Request) {
     if (functionRef) {
       const fn = await getTechnicalFunctionByRef(functionRef, language);
       if (!fn) return NextResponse.json({ error: "valid functionKey required" }, { status: 400 });
+      // One certified sitting per program seat: if this participant already has a
+      // result on this function, refuse a retake - stops attempt-farming and
+      // duplicate credentials off one token. The score path re-validates the
+      // participant->program binding before attributing/issuing.
+      const partId = body.participantId?.trim() || null;
+      if (partId && (await participantHasResultForScope(partId, { functionKey: fn.ref }))) {
+        return NextResponse.json({ error: "already_completed" }, { status: 409 });
+      }
       // Prefer the certified path (SME-approved per-skill bank). Fall back to the
       // indicative AI assembly when any skill is below its coverage floor.
       const certified = await buildCertifiedFunctionTest({
@@ -338,13 +380,16 @@ export async function POST(req: Request) {
       if (process.env.NODE_ENV === "production" && isPlaceholderTest(stored)) {
         return engineNotConfiguredResponse();
       }
+      const time_limit_seconds = await techTimeLimitSeconds([`tech_function:${fn.ref}`], { sum: false });
+      if (time_limit_seconds && time_limit_seconds > 0) {
+        stored.deadline_at = new Date(Date.now() + time_limit_seconds * 1000 + TIMER_GRACE_MS).toISOString();
+      }
       const session_id = await createSession(
         stored,
         { candidateId, engagementId, language },
         { key: fn.ref, id: fn.id }
       );
       if (session_id) {
-        const time_limit_seconds = await techTimeLimitSeconds([`tech_function:${fn.ref}`], { sum: false });
         return NextResponse.json({ session_id, test: stripAnswerKey(stored), time_limit_seconds });
       }
       // No session row could be created - refuse rather than leak the answer key.
@@ -354,6 +399,11 @@ export async function POST(req: Request) {
     // ── Domain run (legacy path): 8 generic items, certified when the bank allows. ──
     if (!domainKey || !techDomainByKey(domainKey)) {
       return NextResponse.json({ error: "valid domainKey or functionKey required" }, { status: 400 });
+    }
+    // One sitting per program seat (see the function branch).
+    const partIdDomain = body.participantId?.trim() || null;
+    if (partIdDomain && (await participantHasResultForScope(partIdDomain, { domainKey }))) {
+      return NextResponse.json({ error: "already_completed" }, { status: 409 });
     }
 
     // Prefer the certified path (SME-approved bank). Fall back to indicative AI.
@@ -376,9 +426,12 @@ export async function POST(req: Request) {
       return engineNotConfiguredResponse();
     }
 
+    const time_limit_seconds = await techTimeLimitSeconds([`tech_domain:${domainKey}`], { sum: false });
+    if (time_limit_seconds && time_limit_seconds > 0) {
+      stored.deadline_at = new Date(Date.now() + time_limit_seconds * 1000 + TIMER_GRACE_MS).toISOString();
+    }
     const session_id = await createSession(stored, { candidateId, engagementId, language });
     if (session_id) {
-      const time_limit_seconds = await techTimeLimitSeconds([`tech_domain:${domainKey}`], { sum: false });
       return NextResponse.json({ session_id, test: stripAnswerKey(stored), time_limit_seconds });
     }
     // No session row could be created - refuse rather than leak the answer key.
@@ -400,6 +453,13 @@ export async function POST(req: Request) {
       sessionCandidateId = loaded.candidateId;
       sessionEngagementId = loaded.engagementId;
       fromSession = true;
+      // Time-limit backstop: reject a grossly late submission from a manipulated
+      // client. The client countdown auto-submits on time; the grace baked into
+      // deadline_at absorbs reading + latency, so an on-time taker never trips
+      // this. The session is already consumed (single-use) by loadSession.
+      if (test.deadline_at && Date.now() > Date.parse(test.deadline_at)) {
+        return NextResponse.json({ error: "time limit exceeded" }, { status: 400 });
+      }
     } else if (Array.isArray(body.items) && domainKey) {
       const domain = techDomainByKey(domainKey);
       // Items posted from the client are inherently un-trusted → indicative only.
@@ -502,6 +562,9 @@ export async function POST(req: Request) {
     // Decoupled from the insert above so it's tolerant of those columns being absent.
     const programId = body.programId?.trim() || null;
     const participantId = body.participantId?.trim() || null;
+    // Hoisted so the credential path can dedupe per participant+scope.
+    let boundProgramId: string | null = null;
+    let boundParticipantId: string | null = null;
     if (resultId && (programId || participantId)) {
       try {
         const sb = createServiceClient();
@@ -511,8 +574,6 @@ export async function POST(req: Request) {
         // AND (when a program is also named) to belong to it, resolving the
         // bound program from the participant's own row. On any mismatch we leave
         // the result unbound rather than mis-attribute it.
-        let boundProgramId: string | null = null;
-        let boundParticipantId: string | null = null;
         if (participantId) {
           const { data: part } = await sb
             .from("technical_program_participants")
@@ -544,6 +605,36 @@ export async function POST(req: Request) {
 
     // Issue the credential when the certified run passed the cut-score.
     if (result.certified && passedCut) {
+      // Credential dedupe: a program participant must not farm multiple verifiable
+      // credentials by retaking. If this participant already holds a passing
+      // certified result WITH a credential for the same scope from an EARLIER run,
+      // surface that credential instead of minting a second one. (The start path
+      // already refuses a retake; this is the defence-in-depth at issuance.)
+      if (boundParticipantId && resultId) {
+        try {
+          const sb = createServiceClient();
+          const scopeCol = isFunctionRun ? "function_key" : "domain_key";
+          const scopeVal = isFunctionRun ? (test.function_key ?? null) : result.domain_key;
+          let pq = sb
+            .from("tech_assessment_results")
+            .select("credential_code")
+            .eq("participant_id", boundParticipantId)
+            .eq("certified", true)
+            .eq("passed_cut", true)
+            .neq("id", resultId)
+            .not("credential_code", "is", null)
+            .limit(1);
+          if (scopeVal) pq = pq.eq(scopeCol, scopeVal);
+          const { data: prior } = await pq;
+          if (prior && prior.length > 0) {
+            credentialCode = (prior[0].credential_code as string | null) ?? null;
+          }
+        } catch {
+          /* certified/passed_cut columns absent (pre-00053) - fall through to issue */
+        }
+      }
+    }
+    if (result.certified && passedCut && !credentialCode) {
       let issuedToName = takerName;
       if (!issuedToName && candidateId) {
         try {

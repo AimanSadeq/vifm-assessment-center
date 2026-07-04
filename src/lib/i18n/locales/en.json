@@ -540,6 +540,8 @@
     "take": {
       "errBuild": "Couldn't build the assessment. Please try again.",
       "errScore": "Scoring failed. Please try again.",
+      "errAlreadyDone": "You have already completed this assessment. This program seat allows one sitting.",
+      "errTimeUp": "The time limit for this assessment has passed, so it can no longer be submitted.",
       "chooseTitle": "Choose a technical domain",
       "chooseIntro": "A short, indicative assessment of your technical proficiency in one domain. About 8 questions.",
       "chooseFunctionTitle": "Select a domain",
@@ -584,6 +586,7 @@
         "g1": "Answer every question; you can change your answers until you submit.",
         "g2": "Read each question carefully - some options are deliberately close.",
         "adaptive": "The test adapts to your answers and ends once your level is clear.",
+        "timeLimit": "You have {{minutes}} minutes. The assessment submits automatically when time runs out.",
         "certified": "This is a certified assessment. It is single-use: once you submit, the sitting is complete and a passing score can earn a verifiable credential.",
         "indicative": "This is an indicative assessment - it gives a guidance-level result, not a formal certificate.",
         "start": "Start assessment"
@@ -594,7 +597,7 @@
       "certifiedProf": "Certified proficiency",
       "indicativeProf": "Indicative proficiency",
       "score": "Score",
-      "bandRange": "Indicative range: {{low}}–{{high}}",
+      "bandRange": "Indicative range: {{low}} - {{high}}",
       "bandShort": "short test - read the band, not the point",
       "adaptiveBadge": "Adaptive",
       "adaptiveTitle": "Adaptive assessment",

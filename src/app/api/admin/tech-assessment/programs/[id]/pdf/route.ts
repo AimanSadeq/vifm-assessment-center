@@ -63,6 +63,13 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     browser = await launchBrowser();
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0", timeout: 60_000 });
+    // networkidle0 settles the stylesheet request but does NOT guarantee the
+    // Arabic font FILES are downloaded + shaped; wait for fonts.ready so the
+    // webfont is applied before capture (else ar glyphs fall back to tofu).
+    await page.evaluate(async () => {
+      const f = (document as unknown as { fonts?: { ready?: Promise<unknown> } }).fonts;
+      if (f && typeof f.ready?.then === "function") await f.ready;
+    });
     const pdf = await page.pdf({ format: "A4", printBackground: true, preferCSSPageSize: true });
     const filename = `technical-program-${params.id.slice(0, 8)}-${lang}.pdf`;
     return new NextResponse(pdf as unknown as BodyInit, {

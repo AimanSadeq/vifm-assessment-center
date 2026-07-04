@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Loader2, CheckCircle2, RotateCcw, GraduationCap, AlertCircle, ShieldCheck, ExternalLink, Layers3, ChevronDown, ChevronRight, ChevronLeft, Gauge, Blend, Plus, Check, X } from "lucide-react";
+import { Loader2, CheckCircle2, RotateCcw, GraduationCap, AlertCircle, ShieldCheck, ExternalLink, Layers3, ChevronDown, ChevronRight, ChevronLeft, Gauge, Blend, Plus, Check, X, Clock } from "lucide-react";
 import type { LocalizedTechDomain } from "@/lib/competencies/technical-taxonomy";
 import type { LocalizedTechFunction } from "@/lib/competencies/technical-function";
 import { categoryRank, aggregateByCompetency } from "@/lib/competencies/technical-categories";
@@ -187,12 +187,18 @@ export function TechAssessmentClient({
         session_id?: string;
         test?: PublicTechTest;
         time_limit_seconds?: number | null;
+        error?: string;
       };
+      if (!res.ok) {
+        // A program seat allows one sitting; a completed participant is refused.
+        setError(raw.error === "already_completed" ? t("tech.take.errAlreadyDone") : t("tech.take.errBuild"));
+        return;
+      }
       // The session path nests the test under `test`; the legacy (un-migrated)
       // path returns the test fields flat. Normalize, and refuse to enter the
       // test phase with a malformed or empty deck.
       const built = raw.test ?? raw;
-      if (!res.ok || !built || !Array.isArray(built.items) || built.items.length === 0) {
+      if (!built || !Array.isArray(built.items) || built.items.length === 0) {
         setError(t("tech.take.errBuild"));
         return;
       }
@@ -232,6 +238,11 @@ export function TechAssessmentClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        setError(err.error === "time limit exceeded" ? t("tech.take.errTimeUp") : t("tech.take.errScore"));
+        return;
+      }
       const data = (await res.json()) as ScoredResult;
       setResult(data);
       setPhase("result");
@@ -605,6 +616,13 @@ export function TechAssessmentClient({
               )}
             </ul>
 
+            {startTarget === "test" && timeLimitSeconds != null && timeLimitSeconds > 0 && (
+              <div className="flex items-start gap-2 rounded-md border border-slate-200 bg-slate-50 p-3 text-[12px] text-slate-700">
+                <Clock className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
+                <span>{t("tech.take.instr.timeLimit", { minutes: Math.ceil(timeLimitSeconds / 60) })}</span>
+              </div>
+            )}
+
             {!isAdaptive &&
               (certified ? (
                 <div className="flex items-start gap-2 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-[12px] text-emerald-800">
@@ -775,7 +793,7 @@ export function TechAssessmentClient({
           <div className="flex flex-wrap items-center gap-4">
             <div>
               <p className="text-[11px] uppercase tracking-wider text-slate-500">
-                {result.certified ? t("tech.take.certifiedProf") : t("tech.take.indicativeProf")} · {displayName(result.domain_key, result.domain_name)}
+                {result.certified && result.passedCut ? t("tech.take.certifiedProf") : t("tech.take.indicativeProf")} · {displayName(result.domain_key, result.domain_name)}
               </p>
               <div className={`mt-1 inline-flex items-center justify-center rounded-xl border-2 px-5 py-3 text-2xl font-bold ${LEVEL_TONE[result.proficiency.level]}`}>
                 {result.proficiency.level}/5 · {t(`tech.take.levels.${result.proficiency.label}`)}
@@ -874,12 +892,16 @@ export function TechAssessmentClient({
             </div>
           </div>
 
-          {result.certified ? (
+          {/* Certified track that PASSED the cut-score → green certified disclaimer.
+              Indicative track → amber disclaimer. A certified track that did NOT
+              pass earns no credential and is not "Certified"; the rose below-cut
+              panel above already explains it, so show no green/certified footer. */}
+          {result.certified && result.passedCut ? (
             <div className="flex items-start gap-2 rounded-md border border-slate-200 bg-slate-50 p-3 text-[11px] text-slate-600">
               <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
               <span>{t("tech.take.discCertified", { levels: t("tech.take.levelsLine") })}</span>
             </div>
-          ) : (
+          ) : !result.certified ? (
             <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-[11px] text-amber-800">
               <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span>
@@ -889,7 +911,7 @@ export function TechAssessmentClient({
                 })}
               </span>
             </div>
-          )}
+          ) : null}
 
           {!locked && (
             <button

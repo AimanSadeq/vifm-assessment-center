@@ -294,7 +294,10 @@ export async function getTechnicalProgram(
         .from("tech_assessment_results")
         .select("participant_id, function_key, level, level_label, score_pct, result, created_at")
         .eq("program_id", programId)
-        .not("function_key", "is", null)
+        // Only results on THIS program's own function count - a mix run
+        // ("mix:...") or a different function's run bound to the same program
+        // must not surface as this function's cohort score/level.
+        .eq("function_key", functionRef)
         .order("created_at", { ascending: false });
       for (const r of (resData ?? []) as FnResultRow[]) {
         if (!r.participant_id) continue;
@@ -344,6 +347,7 @@ const TOKEN_RE = /^[0-9a-fA-F-]{36}$/;
 
 type ProgramJoin = {
   name: string;
+  status?: string | null;
   function_id?: string | null;
   technical_functions?: { key: string | null } | { key: string | null }[] | null;
 };
@@ -364,13 +368,13 @@ export async function findParticipantByToken(token: string): Promise<ProgramPart
     let row: PartRow | null = null;
     const withFn = await sb
       .from("technical_program_participants")
-      .select("id, full_name, email, program_id, technical_programs(name, function_id, technical_functions(key))")
+      .select("id, full_name, email, program_id, technical_programs(name, status, function_id, technical_functions(key))")
       .eq("access_token", token)
       .maybeSingle();
     if (withFn.error) {
       const legacy = await sb
         .from("technical_program_participants")
-        .select("id, full_name, email, program_id, technical_programs(name)")
+        .select("id, full_name, email, program_id, technical_programs(name, status)")
         .eq("access_token", token)
         .maybeSingle();
       if (legacy.error || !legacy.data) return null;
@@ -383,6 +387,10 @@ export async function findParticipantByToken(token: string): Promise<ProgramPart
     const prog = Array.isArray(row.technical_programs)
       ? row.technical_programs[0] ?? null
       : row.technical_programs ?? null;
+    // A completed/archived program's participant links are dead - a leaked or
+    // forwarded token must not remain a live entry point into the certified
+    // assessment engine after the program has closed.
+    if (prog && (prog.status === "completed" || prog.status === "archived")) return null;
     const fn = prog
       ? Array.isArray(prog.technical_functions)
         ? prog.technical_functions[0] ?? null

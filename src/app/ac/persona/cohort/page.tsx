@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowLeft, Users, Sparkles, FileText, Layers } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getCurrentCaller } from "@/lib/ara/auth-guards";
 import { personaBand, personaBandLabel, PERSONA_BAND_TW, type PersonaBandKey } from "@/lib/scoring/persona-bands";
 
 export const dynamic = "force-dynamic";
@@ -80,6 +82,14 @@ async function loadRows(): Promise<Row[] | null> {
 }
 
 export default async function PersonaCohortPage({ searchParams }: { searchParams?: { org?: string } }) {
+  // Admin-only: this surfaces taker names, client-org names and self-ratings
+  // across every organisation (service-role read, RLS bypassed). Middleware only
+  // enforces authentication, so without this gate any authenticated non-admin
+  // could read cross-tenant PII. Mirrors the sibling results/vouchers/retention
+  // pages exactly.
+  const caller = await getCurrentCaller();
+  if (!caller || caller.role !== "admin") return notFound();
+
   const allRows = await loadRows();
   const orgFilter = searchParams?.org?.trim() || null;
   const rows = allRows && orgFilter ? allRows.filter((r) => orgName(r) === orgFilter) : allRows;

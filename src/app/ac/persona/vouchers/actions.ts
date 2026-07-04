@@ -36,6 +36,8 @@ export async function generatePersonaVouchersAction(input: {
   count: number;
   label?: string;
   clientName?: string;
+  /** Delegate UI language pinned on the voucher (drives default_language). */
+  language?: "en" | "ar";
   maxUses?: number;
   expiresAt?: string | null;
   /** Admin-pinned scope (SD-1). purpose omitted = legacy/unpinned (candidate picks). */
@@ -83,6 +85,7 @@ export async function generatePersonaVouchersAction(input: {
     label: input.label?.trim() || null,
     organizationId,
     clientName,
+    language: input.language === "ar" ? "ar" : "en",
     maxUses: Math.max(1, input.maxUses ?? 1),
     expiresAt: input.expiresAt || null,
     createdBy: g.caller.isDev ? null : g.caller.uid,

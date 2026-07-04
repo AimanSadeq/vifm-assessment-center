@@ -65,6 +65,42 @@ export async function startPersonaAction(
         if (r) {
           organizationId = r.organization_id;
           redemptionId = r.id;
+          // One voucher seat = one sitting. If a session already exists for this
+          // redemption, do NOT silently create a new one (which would overwrite
+          // the recruiter-visible result_id and let a delegate retake forever):
+          //  - submitted  -> refuse; the completed result stands.
+          //  - in progress -> resume it, returning the saved answers so a reload
+          //                    doesn't discard progress on a 164-item test.
+          const { data: existing } = await sb
+            .from("behavioral_assessment_sessions")
+            .select("id, status, seed, item_format")
+            .eq("voucher_redemption_id", r.id)
+            .order("created_at", { ascending: false })
+            .maybeSingle<{ id: string; status: string; seed: number | null; item_format: string | null }>();
+          if (existing?.status === "submitted") {
+            return { ok: false as const, completed: true as const, error: "This assessment has already been completed." };
+          }
+          if (existing && existing.status !== "submitted") {
+            // Restore only the NORMATIVE (Likert) answers - ipsative choices live
+            // in separate client state and are quick to redo. Keyed by item_key.
+            const { data: prior } = await sb
+              .from("behavioral_assessment_responses")
+              .select("item_key, raw_score, item_type")
+              .eq("session_id", existing.id);
+            const answers: Record<string, number> = {};
+            for (const row of prior ?? []) {
+              if (row.item_type === "ipsative") continue;
+              answers[row.item_key as string] = Number(row.raw_score);
+            }
+            return {
+              ok: true as const,
+              sessionId: existing.id,
+              resumed: true as const,
+              answers,
+              seed: existing.seed ?? null,
+              itemFormat: (existing.item_format as "normative" | "ipsative" | "both" | null) ?? null,
+            };
+          }
           // Project label (00137) read separately so a pending migration can't
           // drop the org/redemption linkage above.
           try {

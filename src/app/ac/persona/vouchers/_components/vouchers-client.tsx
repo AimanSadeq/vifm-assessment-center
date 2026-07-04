@@ -222,6 +222,7 @@ export function VouchersClient({
           label: c.label || undefined,
           clientName: c.clientName || undefined,
           projectLabel: projectLabel || undefined,
+          language,
           maxUses: c.maxUses,
           expiresAt: c.expiresAt,
           contactName: c.contactName || undefined,

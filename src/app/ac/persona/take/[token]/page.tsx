@@ -18,32 +18,57 @@ export const metadata = { title: "Persona® assessment · VIFM" };
  */
 export default async function PersonaTakePage({
   params,
-  searchParams,
 }: {
   params: { token: string };
-  searchParams?: { demo?: string };
 }) {
   const sb = createServiceClient();
   const { data: redemption } = await sb
     .from("persona_voucher_redemptions")
-    .select("redemption_token, redeemer_name, voucher_id")
+    .select("id, redemption_token, redeemer_name, voucher_id")
     .eq("redemption_token", params.token)
-    .maybeSingle<{ redemption_token: string; redeemer_name: string; voucher_id: string }>();
+    .maybeSingle<{ id: string; redemption_token: string; redeemer_name: string; voucher_id: string }>();
   if (!redemption) return notFound();
 
-  // The voucher language drives the welcome-header direction (the runner below
-  // carries its own EN/AR toggle); keeps the header from being stuck LTR for an
-  // Arabic delegate. Tolerant: defaults to EN.
+  // Re-check the voucher at take time (not just at redeem): a code disabled or
+  // expired AFTER redemption must not keep serving the assessment. Also drives
+  // the welcome-header direction from the voucher language. Tolerant: on a read
+  // error or pending migration, default to active + EN rather than lock people out.
   let headerAr = false;
+  let voucherDead = false;
   try {
     const { data: v } = await sb
       .from("persona_vouchers")
-      .select("default_language")
+      .select("default_language, status, expires_at")
       .eq("id", redemption.voucher_id)
-      .maybeSingle<{ default_language: string }>();
+      .maybeSingle<{ default_language: string; status: string | null; expires_at: string | null }>();
     headerAr = v?.default_language === "ar";
+    const expired = !!v?.expires_at && new Date(v.expires_at).getTime() < Date.now();
+    voucherDead = v?.status === "disabled" || expired;
   } catch {
-    /* default en */
+    /* default en + active */
+  }
+
+  // Block a dead voucher unless the delegate already completed their sitting
+  // (then the report stands and the message would be confusing).
+  if (voucherDead) {
+    const { data: prior } = await sb
+      .from("behavioral_assessment_sessions")
+      .select("id")
+      .eq("voucher_redemption_id", redemption.id)
+      .eq("status", "submitted")
+      .maybeSingle<{ id: string }>();
+    if (!prior) {
+      return (
+        <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center px-6 text-center">
+          <VifmLogo variant="color" size="md" />
+          <h1 className="mt-6 text-xl font-semibold text-[#010131]">This assessment link is no longer active</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            The voucher for this Persona® assessment has expired or been withdrawn. Please contact the organisation
+            that invited you for a new link.
+          </p>
+        </div>
+      );
+    }
   }
 
   const [roleProfiles, definitions] = await Promise.all([
@@ -99,7 +124,10 @@ export default async function PersonaTakePage({
           roleProfiles={roleProfiles}
           pinned={pinned}
           definitions={definitions}
-          demo={searchParams?.demo === "1" || process.env.NODE_ENV !== "production"}
+          // The "fill random answers" demo shortcut must never be reachable by a
+          // real delegate on the public token route - gate it to non-production
+          // only, ignoring any ?demo=1 query a candidate could append.
+          demo={process.env.NODE_ENV !== "production"}
         />
       </main>
     </div>

@@ -99,6 +99,7 @@ export function PersonaStandaloneClient({
   const [flashKey, setFlashKey] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
   const [error, setError] = useState("");
 
   const ar = lang === "ar";
@@ -136,8 +137,20 @@ export function PersonaStandaloneClient({
     pendingRef.current.clear();
     setSaving(true);
     const p = (async () => {
-      try { await savePersonaAnswersAction(sessionId, batch, redemptionToken); }
-      finally { setSaving(false); }
+      try {
+        const res = await savePersonaAnswersAction(sessionId, batch, redemptionToken);
+        if (res && res.ok === false) throw new Error(res.error || "save failed");
+        setSaveError(false);
+      } catch {
+        // Re-queue the failed answers (unless a newer answer for the same item
+        // has since arrived) so they retry on the next flush instead of being
+        // silently dropped and scored as missing. Surface a visible banner.
+        for (const a of batch) if (!pendingRef.current.has(a.itemKey)) pendingRef.current.set(a.itemKey, a);
+        setSaveError(true);
+        if (!flushTimer.current) flushTimer.current = setTimeout(() => { void flush(); }, 4000);
+      } finally {
+        setSaving(false);
+      }
     })();
     inflightRef.current = p;
     try { await p; } finally { if (inflightRef.current === p) inflightRef.current = null; }
@@ -228,7 +241,27 @@ export function PersonaStandaloneClient({
         seed: s,
         itemFormat,
       });
-      if (!res.ok) { setError(res.error); return; }
+      if (!res.ok) {
+        setError(
+          "completed" in res && res.completed
+            ? tx(
+                "You have already completed this assessment. Your results have been shared with the organisation that invited you.",
+                "لقد أكملت هذا التقييم بالفعل. تمت مشاركة نتائجك مع الجهة التي دعتك.",
+              )
+            : res.error,
+        );
+        return;
+      }
+      // Resume (voucher path): restore the saved seed + normative answers so a
+      // reload/return doesn't discard progress on a 164-item test.
+      if ("resumed" in res && res.resumed) {
+        setSeed(res.seed ?? s);
+        setSessionId(res.sessionId);
+        setAnswers(res.answers ?? {});
+        setPhase(itemFormat === "ipsative" ? "ipsative" : "normative");
+        setPage(0);
+        return;
+      }
       // SD-9: open on the first format actually being served (skip the section
       // the chosen format omits). A voucher pin already set itemFormat.
       setSeed(s); setSessionId(res.sessionId);
@@ -517,15 +550,29 @@ export function PersonaStandaloneClient({
             <p className="font-semibold text-[#010131]">{tx("How it works", "كيف يعمل")}</p>
             <p className="mt-1 text-xs text-muted-foreground">
               {tx(
-                `Part 1: ${totalNormPreview(effectiveCompetencies)} statements rated 1-5 (in random order). Part 2: a few quick "most / least like me" choices.`,
-                `الجزء 1: ${totalNormPreview(effectiveCompetencies)} عبارة تُقيَّم من 1 إلى 5 (بترتيب عشوائي). الجزء 2: اختيارات سريعة (الأكثر/الأقل انطباقًا عليّ).`,
+                // Describe only the section(s) the chosen/pinned format serves.
+                itemFormat === "ipsative"
+                  ? `A few quick "most / least like me" choices.`
+                  : itemFormat === "normative"
+                    ? `${totalNormPreview(effectiveCompetencies)} statements rated 1-5 (in random order).`
+                    : `Part 1: ${totalNormPreview(effectiveCompetencies)} statements rated 1-5 (in random order). Part 2: a few quick "most / least like me" choices.`,
+                itemFormat === "ipsative"
+                  ? `اختيارات سريعة (الأكثر/الأقل انطباقًا عليّ).`
+                  : itemFormat === "normative"
+                    ? `${totalNormPreview(effectiveCompetencies)} عبارة تُقيَّم من 1 إلى 5 (بترتيب عشوائي).`
+                    : `الجزء 1: ${totalNormPreview(effectiveCompetencies)} عبارة تُقيَّم من 1 إلى 5 (بترتيب عشوائي). الجزء 2: اختيارات سريعة (الأكثر/الأقل انطباقًا عليّ).`,
               )}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {tx(
-                "About 15-20 minutes. Your answers save automatically, so you can pause and resume. A single format is shorter.",
-                "نحو 15-20 دقيقة. تُحفظ إجاباتك تلقائيًا، فيمكنك الإيقاف والمتابعة لاحقًا. اختيار صيغة واحدة أقصر.",
-              )}
+              {redemptionToken
+                ? tx(
+                    "About 15-20 minutes. Your answers save automatically, so you can pause and resume from this link. A single format is shorter.",
+                    "نحو 15-20 دقيقة. تُحفظ إجاباتك تلقائيًا، فيمكنك الإيقاف والمتابعة لاحقًا من هذا الرابط. اختيار صيغة واحدة أقصر.",
+                  )
+                : tx(
+                    "About 15-20 minutes. Your answers save automatically as you go - complete it in one sitting. A single format is shorter.",
+                    "نحو 15-20 دقيقة. تُحفظ إجاباتك تلقائيًا أثناء التقدّم - أكمِله في جلسة واحدة. اختيار صيغة واحدة أقصر.",
+                  )}
             </p>
           </div>
 
@@ -664,8 +711,12 @@ export function PersonaStandaloneClient({
             >
               <ChevronLeft className="h-4 w-4" /> {tx("Previous", "السابق")}
             </button>
-            <span className="text-[11px] text-muted-foreground">
-              {saving ? tx("Saving…", "جارٍ الحفظ…") : tx("Answers save automatically", "تُحفظ الإجابات تلقائيًا")}
+            <span className={`text-[11px] ${saveError ? "font-medium text-rose-600" : "text-muted-foreground"}`}>
+              {saveError
+                ? tx("Couldn't save - retrying. Keep this tab open.", "تعذّر الحفظ - جارٍ إعادة المحاولة. أبقِ هذه الصفحة مفتوحة.")
+                : saving
+                  ? tx("Saving…", "جارٍ الحفظ…")
+                  : tx("Answers save automatically", "تُحفظ الإجابات تلقائيًا")}
             </span>
             {page < normPages.length - 1 ? (
               <button
@@ -776,8 +827,12 @@ export function PersonaStandaloneClient({
                 <ChevronLeft className="h-4 w-4" /> {tx("Back", "رجوع")}
               </button>
             )}
-            <span className="text-[11px] text-muted-foreground">
-              {saving ? tx("Saving…", "جارٍ الحفظ…") : tx("Answers save automatically", "تُحفظ الإجابات تلقائيًا")}
+            <span className={`text-[11px] ${saveError ? "font-medium text-rose-600" : "text-muted-foreground"}`}>
+              {saveError
+                ? tx("Couldn't save - retrying. Keep this tab open.", "تعذّر الحفظ - جارٍ إعادة المحاولة. أبقِ هذه الصفحة مفتوحة.")
+                : saving
+                  ? tx("Saving…", "جارٍ الحفظ…")
+                  : tx("Answers save automatically", "تُحفظ الإجابات تلقائيًا")}
             </span>
             <button
               onClick={submit}

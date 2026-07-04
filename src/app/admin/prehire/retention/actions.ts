@@ -34,7 +34,7 @@ export async function countExpiredPrehireCandidates(): Promise<{ total: number; 
  */
 export async function purgePrehireCandidates(
   formData: FormData,
-): Promise<{ ok: true; purged: number } | { error: string }> {
+): Promise<{ ok: true; purged: number; redemptionsPurged: number } | { error: string }> {
   try {
     await requireRole(["admin"]);
   } catch (e) {
@@ -53,11 +53,24 @@ export async function purgePrehireCandidates(
     .lt("created_at", cutoffIso());
   if (error) return { error: error.message };
   const ids = (rows ?? []).map((r) => r.id as string);
-  if (ids.length === 0) return { ok: true, purged: 0 };
+  if (ids.length === 0) return { ok: true, purged: 0, redemptionsPurged: 0 };
+
+  // Delete voucher-redemption PII first. The redemption FK is ON DELETE SET NULL,
+  // so deleting the candidate would orphan the redemption row (redeemer name /
+  // email / IP) with its candidate link nulled - leaving PII past the window.
+  // Remove them while the candidate_id still matches. Best-effort (un-migrated
+  // table just no-ops).
+  let redemptionsPurged = 0;
+  try {
+    const rdel = await sb.from("prehire_voucher_redemptions").delete().in("candidate_id", ids).select("id");
+    redemptionsPurged = rdel.data?.length ?? 0;
+  } catch {
+    /* redemptions table absent */
+  }
 
   const del = await sb.from("prehire_candidates").delete().in("id", ids).select("id");
   if (del.error) return { error: del.error.message };
 
   revalidatePath("/admin/prehire/retention");
-  return { ok: true, purged: del.data?.length ?? ids.length };
+  return { ok: true, purged: del.data?.length ?? ids.length, redemptionsPurged };
 }

@@ -82,13 +82,21 @@ export function computeComposite(
     .filter((s) => s.required && s.passed === false)
     .map((s) => s.kind);
 
-  // Composite is only meaningful once every weighted stage has a score.
+  // A REQUIRED stage that has not been scored blocks completion regardless of its
+  // weight. A required weight-0 hurdle (e.g. a pass/fail CBI that shouldn't move
+  // the number) must still be sat - without this, a candidate could complete only
+  // the weighted stages, skip the required one, and still read "advance".
+  const requiredUnscored = perStage.some((s) => s.required && s.normalized == null);
+
+  // Composite is only meaningful once every weighted stage AND every required
+  // stage has a score.
   const allWeightedScored = perStage
     .filter((s) => weighted.some((w) => w.kind === s.kind))
     .every((s) => s.normalized != null);
+  const complete = allWeightedScored && !requiredUnscored;
 
   let composite: number | null = null;
-  if (allWeightedScored && weighted.length > 0) {
+  if (complete && weighted.length > 0) {
     composite = clamp01to100(
       perStage
         .filter((s) => weighted.some((w) => w.kind === s.kind))
@@ -100,7 +108,7 @@ export function computeComposite(
   const recommendation = recommendationFor(
     composite,
     requiredFailures.length > 0,
-    allWeightedScored,
+    complete,
     thresholds
   );
 

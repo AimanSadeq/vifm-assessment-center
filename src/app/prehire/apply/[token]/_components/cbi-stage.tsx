@@ -11,7 +11,9 @@ type Msg = { role: "interviewer" | "candidate"; text: string };
  * transcript + when to conclude; this component just renders the chat and
  * calls onDone() after the candidate submits (cbi/submit scores it).
  */
-export function CbiStage({ token, onDone }: { token: string; onDone: () => void }) {
+export function CbiStage({ token, onDone, lang = "en" }: { token: string; onDone: () => void; lang?: "en" | "ar" }) {
+  const ar = lang === "ar";
+  const tr = (en: string, arText: string) => (ar ? arText : en);
   const [phase, setPhase] = useState<"intro" | "chat">("intro");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +32,7 @@ export function CbiStage({ token, onDone }: { token: string; onDone: () => void 
     const d = await r.json().catch(() => ({}));
     setBusy(false);
     if (d.done) return onDone();
-    if (!r.ok || !d.message) return setError(d.error || "Couldn't start the interview.");
+    if (!r.ok || !d.message) return setError(d.error || tr("Couldn't start the interview.", "تعذّر بدء المقابلة."));
     setMessages([{ role: "interviewer", text: d.message }]);
     setConcluded(!!d.shouldConclude);
     setPhase("chat");
@@ -62,13 +64,13 @@ export function CbiStage({ token, onDone }: { token: string; onDone: () => void 
     setBusy(false);
     if (!r.ok) {
       const d = await r.json().catch(() => ({}));
-      return setError(d.error || "Couldn't submit the interview.");
+      return setError(d.error || tr("Couldn't submit the interview.", "تعذّر إرسال المقابلة."));
     }
     onDone();
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" dir={ar ? "rtl" : "ltr"}>
       {error && (
         <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
       )}
@@ -76,14 +78,15 @@ export function CbiStage({ token, onDone }: { token: string; onDone: () => void 
       {phase === "intro" && (
         <Card>
           <CardContent className="space-y-4 pt-6">
-            <h2 className="font-semibold text-[#010131]">Behavioural interview</h2>
+            <h2 className="font-semibold text-[#010131]">{tr("Behavioural interview", "مقابلة سلوكية")}</h2>
             <p className="text-sm text-muted-foreground">
-              A short conversational interview. You&apos;ll be asked about real situations
-              you&apos;ve handled - describe what happened, what you personally did, and the
-              outcome. Answer in your own words; take your time.
+              {tr(
+                "A short conversational interview. You'll be asked about real situations you've handled - describe what happened, what you personally did, and the outcome. Answer in your own words; take your time.",
+                "مقابلة حوارية قصيرة. ستُسأل عن مواقف حقيقية تعاملت معها - صِف ما حدث، وما فعلته أنت شخصيًا، والنتيجة. أجب بأسلوبك الخاص، وخذ وقتك."
+              )}
             </p>
             <Button onClick={start} disabled={busy} className="w-full">
-              {busy ? "Starting…" : "Start interview"}
+              {busy ? tr("Starting…", "جارٍ البدء…") : tr("Start interview", "ابدأ المقابلة")}
             </Button>
           </CardContent>
         </Card>
@@ -114,10 +117,10 @@ export function CbiStage({ token, onDone }: { token: string; onDone: () => void 
             <Card>
               <CardContent className="space-y-3 pt-6 text-center">
                 <p className="text-sm text-muted-foreground">
-                  That&apos;s the end of the interview. Submit to finish this step.
+                  {tr("That's the end of the interview. Submit to finish this step.", "انتهت المقابلة. أرسِل لإنهاء هذه الخطوة.")}
                 </p>
                 <Button onClick={finish} disabled={busy} className="w-full" size="lg">
-                  {busy ? "Submitting…" : "Finish & submit"}
+                  {busy ? tr("Submitting…", "جارٍ الإرسال…") : tr("Finish & submit", "إنهاء وإرسال")}
                 </Button>
               </CardContent>
             </Card>
@@ -127,12 +130,12 @@ export function CbiStage({ token, onDone }: { token: string; onDone: () => void 
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 rows={4}
-                placeholder="Type your answer…"
+                placeholder={tr("Type your answer…", "اكتب إجابتك…")}
                 disabled={busy}
                 className="w-full rounded-md border border-input bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5391D5]"
               />
               <Button onClick={send} disabled={!draft.trim() || busy} className="w-full">
-                {busy ? "Sending…" : "Send"}
+                {busy ? tr("Sending…", "جارٍ الإرسال…") : tr("Send", "إرسال")}
               </Button>
             </div>
           )}

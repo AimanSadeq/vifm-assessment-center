@@ -80,7 +80,8 @@ export function DemographicsCard({ token, onDone }: { token: string; onDone: () 
           <p className="mt-1 text-sm text-muted-foreground">
             This is completely voluntary and is <strong>never</strong> used in your assessment or
             seen by the people reviewing it. VIFM uses it only in aggregate to check the screening
-            is fair to everyone. You can skip it.
+            is fair to everyone. We ask it now, before you begin, purely for administrative reasons -
+            it <strong>cannot</strong> influence your result. You can skip it.
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-3">

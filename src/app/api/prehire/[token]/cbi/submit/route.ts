@@ -10,6 +10,11 @@ type CbiDetail = { history?: CbiMessage[] } | null;
 export async function POST(_req: Request, { params }: { params: { token: string } }) {
   const ctx = await findCandidateByToken(params.token);
   if (!ctx) return NextResponse.json({ error: "Invalid link" }, { status: 404 });
+  // Parity with the start route: a closed/archived requisition must not score a
+  // stage either, or a sitting begun while open could still be recorded after close.
+  if (ctx.requisition.status !== "open") {
+    return NextResponse.json({ error: "This screening is no longer accepting submissions." }, { status: 403 });
+  }
   if (!ctx.candidate.consent_at) {
     return NextResponse.json({ error: "Consent is required before submitting an assessment." }, { status: 403 });
   }

@@ -94,6 +94,11 @@ export function ApplyFlow({ token, ctx, demo = false }: { token: string; ctx: Pr
   const [demoDone, setDemoDone] = useState(false);
   const [demoResult, setDemoResult] = useState<DemoResult | null>(null);
   const [loadingResult, setLoadingResult] = useState(false);
+  // PREHIRE-UX-001: the candidate can take the screening in Arabic (RTL). The
+  // quiz + Fluent stages already receive bilingual content from the backend.
+  const [lang, setLang] = useState<"en" | "ar">("en");
+  const ar = lang === "ar";
+  const T = (en: string, arText: string) => (ar ? arText : en);
 
   const consent = async () => {
     setBusy(true);
@@ -127,11 +132,25 @@ export function ApplyFlow({ token, ctx, demo = false }: { token: string; ctx: Pr
   const demoComplete = !!ctx.candidate.demographics_submitted_at || demoDone;
 
   return (
-    <div className="min-h-screen bg-slate-50" dir="ltr">
+    <div className="min-h-screen bg-slate-50" dir={ar ? "rtl" : "ltr"}>
       <header className="bg-[#010131] px-6 py-4">
         <div className="mx-auto flex max-w-2xl items-center justify-between">
           <VifmLogo variant="white" size="sm" />
-          <span className="text-xs text-white/60">Pre-employment screening</span>
+          <div className="flex items-center gap-3">
+            <div className="inline-flex overflow-hidden rounded-md border border-white/20 text-[11px]">
+              {(["en", "ar"] as const).map((l) => (
+                <button
+                  key={l}
+                  type="button"
+                  onClick={() => setLang(l)}
+                  className={`px-2.5 py-1 font-medium ${lang === l ? "bg-white/20 text-white" : "text-white/60 hover:text-white"}`}
+                >
+                  {l === "en" ? "EN" : "العربية"}
+                </button>
+              ))}
+            </div>
+            <span className="text-xs text-white/60">{T("Pre-employment screening", "فحص ما قبل التوظيف")}</span>
+          </div>
         </div>
       </header>
 
@@ -140,7 +159,7 @@ export function ApplyFlow({ token, ctx, demo = false }: { token: string; ctx: Pr
           <h1 className="text-2xl font-bold text-[#010131]">{ctx.requisition.title}</h1>
           <p className="text-sm text-muted-foreground">
             {ctx.requisition.clientName ? `${ctx.requisition.clientName} · ` : ""}
-            Hi {ctx.candidate.full_name.split(" ")[0]}, welcome.
+            {T(`Hi ${ctx.candidate.full_name.split(" ")[0]}, welcome.`, `مرحبًا ${ctx.candidate.full_name.split(" ")[0]}.`)}
           </p>
           {agreed && demoComplete && stageKinds.length > 0 && (
             <div className="mt-3">
@@ -153,7 +172,10 @@ export function ApplyFlow({ token, ctx, demo = false }: { token: string; ctx: Pr
             "we saved your progress" cue rather than silently resuming. */}
         {agreed && demoComplete && completedInit.size > 0 && !allDone && (
           <div className="rounded-md border border-sky-200 bg-sky-50 p-3 text-xs text-sky-800">
-            Welcome back - we saved your progress. Picking up where you left off.
+            {T(
+              "Welcome back - we saved your progress. Picking up where you left off.",
+              "مرحبًا بعودتك - حفظنا تقدّمك. سنكمل من حيث توقفت."
+            )}
           </div>
         )}
 
@@ -165,43 +187,52 @@ export function ApplyFlow({ token, ctx, demo = false }: { token: string; ctx: Pr
         {!agreed && (
           <Card>
             <CardContent className="space-y-4 pt-6">
-              <h2 className="font-semibold text-[#010131]">Consent &amp; data processing</h2>
+              <h2 className="font-semibold text-[#010131]">{T("Consent & data processing", "الموافقة ومعالجة البيانات")}</h2>
               <p className="text-sm text-muted-foreground">
-                As part of this application you&apos;ll complete a short assessment. Your responses
-                and results are processed by VIFM on behalf of{" "}
-                {ctx.requisition.clientName ?? "the hiring organization"} for the sole purpose of
-                evaluating your application. Results are reviewed by a person - no decision is made
-                automatically.
+                {T(
+                  `As part of this application you'll complete a short assessment. Your responses and results are processed by VIFM on behalf of ${ctx.requisition.clientName ?? "the hiring organization"} for the sole purpose of evaluating your application. Results are reviewed by a person - no decision is made automatically.`,
+                  `كجزء من هذا الطلب ستُكمل تقييمًا قصيرًا. تُعالَج إجاباتك ونتائجك من قِبل VIFM نيابةً عن ${ctx.requisition.clientName ?? "الجهة الموظِّفة"} لغرض تقييم طلبك فقط. تُراجَع النتائج من قِبل شخص - ولا يُتَّخذ أي قرار تلقائيًا.`
+                )}
               </p>
               {/* UX-4: name the governing data-protection frameworks and the candidate's
                   rights + retention, rather than a vague "applicable law" line. */}
-              <ul className="list-disc space-y-1 pl-5 text-xs text-muted-foreground">
+              <ul className="list-disc space-y-1 ps-5 text-xs text-muted-foreground">
                 <li>
-                  Processing follows applicable data-protection law - UAE Federal Decree-Law No. 45
-                  of 2021, the Saudi Personal Data Protection Law (PDPL), and the GDPR where it
-                  applies.
+                  {T(
+                    "Processing follows applicable data-protection law - UAE Federal Decree-Law No. 45 of 2021, the Saudi Personal Data Protection Law (PDPL), and the GDPR where it applies.",
+                    "تتم المعالجة وفقًا لقوانين حماية البيانات المعمول بها - المرسوم بقانون اتحادي إماراتي رقم 45 لسنة 2021، ونظام حماية البيانات الشخصية السعودي (PDPL)، واللائحة الأوروبية (GDPR) حيثما تنطبق."
+                  )}
                 </li>
                 <li>
-                  Your data is retained for up to 2 years unless a longer period is contractually
-                  agreed, then deleted.
+                  {T(
+                    "Your data is retained for up to 2 years unless a longer period is contractually agreed, then deleted.",
+                    "يُحتفظ ببياناتك لمدة تصل إلى سنتين ما لم يُتفق تعاقديًا على مدة أطول، ثم تُحذف."
+                  )}
                 </li>
                 <li>
-                  You may request access to or correction of your data, and you may withdraw consent
-                  at any time, by contacting the hiring organization.
+                  {T(
+                    "You may request access to or correction of your data, and you may withdraw consent at any time, by contacting the hiring organization.",
+                    "يمكنك طلب الاطلاع على بياناتك أو تصحيحها، ويمكنك سحب موافقتك في أي وقت، بالتواصل مع الجهة الموظِّفة."
+                  )}
                 </li>
                 <li>
-                  Any equal-opportunity information requested on the next screen is voluntary and
-                  never affects your result.
+                  {T(
+                    "Any equal-opportunity information requested on the next screen is voluntary and never affects your result.",
+                    "أي معلومات تكافؤ الفرص المطلوبة في الشاشة التالية اختيارية تمامًا ولا تؤثر إطلاقًا على نتيجتك."
+                  )}
                 </li>
               </ul>
               <div className="flex items-start gap-3">
                 <Checkbox id="agree" checked={agree} onCheckedChange={(c) => setAgree(c === true)} />
                 <label htmlFor="agree" className="text-sm leading-relaxed">
-                  I consent to VIFM processing my assessment data for this application.
+                  {T(
+                    "I consent to VIFM processing my assessment data for this application.",
+                    "أوافق على معالجة VIFM لبيانات تقييمي لأغراض هذا الطلب."
+                  )}
                 </label>
               </div>
               <Button onClick={consent} disabled={!agree || busy} className="w-full">
-                {busy ? "…" : "Agree & continue"}
+                {busy ? "…" : T("Agree & continue", "أوافق ومتابعة")}
               </Button>
             </CardContent>
           </Card>
@@ -214,13 +245,13 @@ export function ApplyFlow({ token, ctx, demo = false }: { token: string; ctx: Pr
 
         {/* Active interactive stage (after consent + the demographics step) */}
         {agreed && demoComplete && current === "quiz" && (
-          <QuizStage key="quiz" token={token} onDone={() => markDone("quiz")} />
+          <QuizStage key="quiz" token={token} onDone={() => markDone("quiz")} lang={lang} />
         )}
         {agreed && demoComplete && current === "cbi" && (
-          <CbiStage key="cbi" token={token} onDone={() => markDone("cbi")} />
+          <CbiStage key="cbi" token={token} onDone={() => markDone("cbi")} lang={lang} />
         )}
         {agreed && demoComplete && current === "fluent" && (
-          <FluentStage key="fluent" token={token} onDone={() => markDone("fluent")} />
+          <FluentStage key="fluent" token={token} onDone={() => markDone("fluent")} lang={lang} />
         )}
 
         {/* All stages complete - real screening: a thank-you only (the candidate
@@ -229,10 +260,12 @@ export function ApplyFlow({ token, ctx, demo = false }: { token: string; ctx: Pr
           <Card>
             <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
               <CheckCircle2 className="h-10 w-10 text-emerald-600" />
-              <h2 className="text-lg font-semibold text-[#010131]">Thank you</h2>
+              <h2 className="text-lg font-semibold text-[#010131]">{T("Thank you", "شكرًا لك")}</h2>
               <p className="max-w-sm text-sm text-muted-foreground">
-                Your responses have been submitted. The hiring team will review them and be in
-                touch.
+                {T(
+                  "Your responses have been submitted. The hiring team will review them and be in touch.",
+                  "تم إرسال إجاباتك. سيراجعها فريق التوظيف ويتواصل معك."
+                )}
               </p>
             </CardContent>
           </Card>

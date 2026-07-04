@@ -44,7 +44,10 @@ const ttsAvailable = () =>
 
 const wordCount = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0);
 
-export function FluentStage({ token, onDone }: { token: string; onDone: () => void }) {
+export function FluentStage({ token, onDone, lang = "en" }: { token: string; onDone: () => void; lang?: "en" | "ar" }) {
+  // The test CONTENT is always English; only the RTL layout + the writing /
+  // speaking task INSTRUCTIONS (prompt_ar, already shipped) localise.
+  const ar = lang === "ar";
   const [phase, setPhase] = useState<"intro" | "test">("intro");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -315,7 +318,7 @@ export function FluentStage({ token, onDone }: { token: string; onDone: () => vo
     !recording;
 
   return (
-    <div className="space-y-4" dir="ltr">
+    <div className="space-y-4" dir={ar ? "rtl" : "ltr"}>
       {error && (
         <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
       )}
@@ -417,7 +420,7 @@ export function FluentStage({ token, onDone }: { token: string; onDone: () => vo
             <h2 className="mb-3 inline-flex items-center gap-2 text-lg font-semibold text-[#010131]">
               <PenLine className="h-5 w-5 text-[#5391D5]" /> Writing
             </h2>
-            <p className="text-sm text-[#111232]">{test.writing.prompt_en}</p>
+            <p className="text-sm text-[#111232]">{ar && test.writing.prompt_ar ? test.writing.prompt_ar : test.writing.prompt_en}</p>
             {/* Explicit, labelled word target so "70-90 words" in the prompt
                 can never be misread as a per-section time limit. */}
             <p className="mt-2 text-[11px] font-medium text-slate-500">
@@ -446,7 +449,7 @@ export function FluentStage({ token, onDone }: { token: string; onDone: () => vo
             <p className="mb-3 text-xs text-slate-500">
               Record about {test.speaking.min_seconds} seconds. We transcribe your speech and assess it.
             </p>
-            <p className="text-sm text-[#111232]">{test.speaking.prompt_en}</p>
+            <p className="text-sm text-[#111232]">{ar && test.speaking.prompt_ar ? test.speaking.prompt_ar : test.speaking.prompt_en}</p>
 
             {speakMode === "record" ? (
               <div className="mt-3 space-y-3">

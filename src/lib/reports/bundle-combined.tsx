@@ -14,7 +14,7 @@ import { buildPersonaPdfData } from "@/lib/reports/persona-report-data";
 import { PersonaProfilePdf } from "@/lib/reports/persona-profile";
 import { buildLeadershipPdfData } from "@/lib/reports/persona-leadership-data";
 import { LeadershipReportPdf } from "@/lib/reports/persona-leadership";
-import { buildPsyReportData } from "@/lib/reports/psy-report-data";
+import { buildPsyReportData, latinSafeName } from "@/lib/reports/psy-report-data";
 import { PsychometricReport } from "@/lib/reports/psychometric-report";
 import { personaBand } from "@/lib/scoring/persona-bands";
 import { COGNITIVE_SUBTESTS, COGNITIVE_SUBTEST_KEYS } from "@/lib/psychometrics/framework";
@@ -225,7 +225,8 @@ export async function buildBundleCombinedReport(candidateId: string): Promise<Co
       <CombinedCover
         d={{
           bundleName,
-          candidateName: cand.full_name,
+          // Helvetica cover cannot shape Arabic; fall back so the name is readable.
+          candidateName: latinSafeName(cand.full_name, cand.email),
           candidateEmail: cand.email,
           orgName,
           completedAt: cand.completed_at

@@ -67,8 +67,12 @@ export function PsychometricsClient({
   const activeSubtests = selectedSubtests.length > 0 ? selectedSubtests : [...COGNITIVE_SUBTEST_KEYS];
   const subtestPhrase =
     activeSubtests.length === COGNITIVE_SUBTEST_KEYS.length
-      ? "Numerical, verbal, inductive and deductive reasoning"
-      : activeSubtests.map(scaleName).join(" · ");
+      ? lang === "ar"
+        ? "الاستدلال العددي واللفظي والاستقرائي والاستنتاجي"
+        : "Numerical, verbal, inductive and deductive reasoning"
+      : activeSubtests
+          .map((k) => (lang === "ar" ? COGNITIVE_SUBTESTS.find((x) => x.key === k)?.name_ar ?? k : scaleName(k)))
+          .join(" · ");
   // Countdown: deadline stamped when the test starts; on expiry, auto-submit.
   const [deadline, setDeadline] = useState<number | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
@@ -171,8 +175,11 @@ export function PsychometricsClient({
           <BrainCircuit className="h-6 w-6 text-[#5391D5]" /> Logica®
         </h1>
         <p className={`mt-1 text-sm ${onDark ? "text-white/80" : "text-muted-foreground"}`}>
-          {subtestPhrase} - an <strong>indicative</strong> developmental read,
-          not a norm-referenced or high-stakes score.
+          {lang === "ar" ? (
+            <>{subtestPhrase} - قراءة تطويرية <strong>استرشادية</strong>، وليست درجة معيارية أو عالية المخاطر.</>
+          ) : (
+            <>{subtestPhrase} - an <strong>indicative</strong> developmental read, not a norm-referenced or high-stakes score.</>
+          )}
         </p>
       </div>
 
@@ -182,7 +189,38 @@ export function PsychometricsClient({
         <div className="space-y-5 rounded-xl border bg-card p-6">
           <div className="rounded-lg border border-[#5391D5] bg-[#5391D5]/5 p-4">
             <p className="font-semibold text-[#010131]">Logica®</p>
-            <p className="mt-1 text-xs text-muted-foreground">{subtestPhrase} (timed-style MCQs).</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {subtestPhrase} {lang === "ar" ? "(أسئلة اختيار من متعدد ضمن وقت محدد)." : "(timed-style MCQs)."}
+            </p>
+          </div>
+
+          {/* Pre-test notice: the material terms, before the taker commits. */}
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900">
+            <p className="text-sm font-semibold">{lang === "ar" ? "قبل أن تبدأ" : "Before you begin"}</p>
+            <ul className="mt-1.5 space-y-1 text-xs">
+              <li>
+                {lang === "ar"
+                  ? `أسئلة اختيار من متعدد عبر ${activeSubtests.length} ${activeSubtests.length === 1 ? "اختبار فرعي" : "اختبارات فرعية"}.`
+                  : `Multiple-choice questions across ${activeSubtests.length} subtest${activeSubtests.length === 1 ? "" : "s"}.`}
+              </li>
+              {limitMinutes && (
+                <li>
+                  {lang === "ar"
+                    ? `الوقت المحدد ${limitMinutes} دقيقة، ويُرسَل الاختبار تلقائيًا عند انتهاء الوقت.`
+                    : `You have ${limitMinutes} minutes; it submits automatically when time runs out.`}
+                </li>
+              )}
+              <li>
+                {lang === "ar"
+                  ? "يمكن أداؤه مرة واحدة فقط، والإجابات نهائية بعد الإرسال."
+                  : "It can be taken once, and your answers are final after you submit."}
+              </li>
+              <li>
+                {lang === "ar"
+                  ? "تحديث الصفحة أو إغلاقها أثناء الاختبار يفقد إجاباتك."
+                  : "Refreshing or closing the page mid-test loses your answers."}
+              </li>
+            </ul>
           </div>
 
           {/* SD-4: subtest selection. Hidden when an admin has locked the set. */}
@@ -292,7 +330,9 @@ export function PsychometricsClient({
           <button onClick={start} disabled={busy || selectedSubtests.length === 0}
             className="inline-flex items-center gap-2 rounded-lg bg-[#010131] px-6 py-3 text-sm font-semibold text-white hover:bg-[#121140] disabled:opacity-60">
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            {busy ? "Preparing…" : "Begin cognitive assessment"}
+            {busy
+              ? lang === "ar" ? "جارٍ التحضير…" : "Preparing…"
+              : lang === "ar" ? "ابدأ اختبار القدرات" : "Begin cognitive assessment"}
           </button>
         </div>
       )}
@@ -318,7 +358,7 @@ export function PsychometricsClient({
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="text-xs text-muted-foreground">{answered}/{total} answered</span>
+              <span className="text-xs text-muted-foreground">{answered}/{total} {lang === "ar" ? "تمت الإجابة" : "answered"}</span>
               {remaining != null && (
                 <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium tabular-nums ${remaining <= 60 ? "bg-rose-100 text-rose-700" : "bg-slate-100 text-slate-600"}`}>
                   <Clock className="h-3 w-3" />
@@ -329,7 +369,7 @@ export function PsychometricsClient({
             <button onClick={submit} disabled={!canSubmit}
               className="inline-flex items-center gap-2 rounded-md bg-[#047857] px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50">
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-              {busy ? "Scoring…" : "Submit"}
+              {busy ? (lang === "ar" ? "جارٍ التقييم…" : "Scoring…") : (lang === "ar" ? "إرسال" : "Submit")}
             </button>
           </div>
         </div>

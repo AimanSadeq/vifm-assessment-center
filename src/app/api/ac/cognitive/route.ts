@@ -5,9 +5,16 @@ import { computePsyResult, type PsyTest, type CognitiveItem } from "@/lib/psycho
 import { applyNorms, type ScaleNorm } from "@/lib/psychometrics/calibration";
 import { COGNITIVE_INSTRUMENT, sanitizeSubtests } from "@/lib/psychometrics/framework";
 import { isStaffCaller } from "@/lib/ara/auth-guards";
+import { getTimerMinutes, TIMER_DEFAULTS } from "@/lib/assessment-timers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+// Backstop grace for the server-side time-limit check. The client countdown
+// auto-submits at the deadline; this only rejects a grossly-late submission from
+// a manipulated client. Absorbs latency + clock skew, so an on-time taker is
+// never rejected.
+const TIMER_GRACE_MS = 1000 * 60 * 2;
 
 /**
  * Psychometrics runner API (Tier 1 indicative). Mirrors the Fluent/Technical
@@ -58,11 +65,19 @@ export async function POST(req: Request) {
       }
     }
     const test = await generatePsyTest(kind, lang, subtests);
+    // Server-side time-limit backstop: resolve the cognitive limit ourselves
+    // (never trust the client) and stamp a deadline into the session, so a
+    // grossly-late score can be rejected even if the client timer is bypassed.
+    const limitMinutes = await getTimerMinutes("cognitive", TIMER_DEFAULTS.cognitive);
+    const storedTest =
+      limitMinutes && limitMinutes > 0
+        ? { ...test, deadline_at: new Date(Date.now() + limitMinutes * 60_000 + TIMER_GRACE_MS).toISOString() }
+        : test;
     const { data, error } = await svc
       .from("psy_sessions")
       .insert({
         kind,
-        test,
+        test: storedTest,
         candidate_id: (body.candidateId as string) ?? null,
         engagement_id: (body.engagementId as string) ?? null,
         taker_email: (body.takerEmail as string) ?? null,
@@ -89,6 +104,18 @@ export async function POST(req: Request) {
     // session can't be graded long after it was issued.
     if (session.expires_at && new Date(session.expires_at as string).getTime() < Date.now()) {
       return NextResponse.json({ error: "This assessment session has expired. Please start again." }, { status: 410 });
+    }
+    // Time-limit backstop: reject a grossly-late submission (the client
+    // auto-submits at the limit; the grace baked into deadline_at absorbs
+    // latency, so an on-time taker never trips this). Only when a limit was set.
+    {
+      const t = session.test as { deadline_at?: string };
+      if (t.deadline_at && Date.now() > Date.parse(t.deadline_at)) {
+        return NextResponse.json(
+          { error: "The time limit for this assessment has passed, so it can no longer be submitted." },
+          { status: 410 }
+        );
+      }
     }
     // Atomic single-use claim BEFORE scoring: the first caller flips consumed
     // false->true; a concurrent or double submit gets no row and is rejected, so

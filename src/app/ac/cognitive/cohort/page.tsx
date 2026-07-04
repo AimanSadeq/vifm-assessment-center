@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowLeft, Users, Sparkles, FileText, BrainCircuit } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { requireRole, isAuthorizationError, getCurrentCaller } from "@/lib/ara/auth-guards";
+import { getClientOrgId } from "@/lib/auth/get-org-id";
 import { COGNITIVE_SUBTESTS, BAND_LABEL_EN, cognitiveBand, type PsyBand } from "@/lib/psychometrics/framework";
 
 export const dynamic = "force-dynamic";
@@ -43,17 +46,21 @@ const bandFromPct = cognitiveBand;
 
 type LoadResp = { data: Row[] | null; error: unknown };
 
-async function loadRows(): Promise<Row[] | null> {
+async function loadRows(orgId: string | null): Promise<Row[] | null> {
   try {
     const sb = createServiceClient();
     const base = "id, created_at, taker_name, taker_email, scales, overall";
-    const query = (cols: string) =>
-      sb
+    const query = (cols: string) => {
+      let q = sb
         .from("psy_results")
         .select(cols)
         .eq("kind", "cognitive")
         .order("created_at", { ascending: false })
         .limit(500);
+      // A client_manager only ever sees their own organisation's results.
+      if (orgId) q = q.eq("organization_id", orgId);
+      return q;
+    };
     // Graceful degradation: try with the client-org join (00105), then the base.
     let res = (await query(base + ", organization:organizations(name)")) as unknown as LoadResp;
     if (res.error) res = (await query(base)) as unknown as LoadResp;
@@ -65,7 +72,26 @@ async function loadRows(): Promise<Row[] | null> {
 }
 
 export default async function CognitiveCohortPage({ searchParams }: { searchParams?: { org?: string } }) {
-  const allRows = await loadRows();
+  // This page uses the service-role client (bypassing psy_results' admin-only
+  // RLS), so it MUST self-gate. Staff see all results; a client_manager is
+  // scoped to their own organisation (mirrors the report route); anyone else is
+  // refused. Under AUTH_ENABLED=false requireRole returns a synthetic admin, so
+  // dev still shows everything.
+  let clientMgrOrgId: string | null = null;
+  try {
+    await requireRole(["admin", "consultant", "lead_assessor", "associate_assessor"]);
+  } catch (e) {
+    if (!isAuthorizationError(e)) throw e;
+    const caller = await getCurrentCaller();
+    if (caller?.role === "client_manager") {
+      clientMgrOrgId = await getClientOrgId();
+      if (!clientMgrOrgId) notFound();
+    } else {
+      notFound();
+    }
+  }
+
+  const allRows = await loadRows(clientMgrOrgId);
   const orgFilter = searchParams?.org?.trim() || null;
   const rows = allRows && orgFilter ? allRows.filter((r) => orgName(r) === orgFilter) : allRows;
 

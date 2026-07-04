@@ -28,12 +28,15 @@ export async function countExpiredCognitiveResults(): Promise<{ total: number; e
 
 /**
  * Purge cognitive results older than the retention window. Destructive: requires
- * a typed confirmation. Per-item response rows cascade (ON DELETE CASCADE);
- * voucher redemptions keep their row (result_id is ON DELETE SET NULL).
+ * a typed confirmation. Per-item response rows cascade (ON DELETE CASCADE).
+ * Voucher-redemption ROWS are kept for seat/commercial accounting, but their PII
+ * (redeemer name / email / company / IP / user-agent) is ANONYMISED past the same
+ * window, and expired psy_sessions (keyed test + taker email) are swept, so no
+ * personal data outlives the 2-year retention rule (mirrors the Persona purge).
  */
 export async function purgeCognitiveResults(
   formData: FormData,
-): Promise<{ ok: true; purged: number } | { error: string }> {
+): Promise<{ ok: true; purged: number; anonymised: number; sessionsSwept: number } | { error: string }> {
   try {
     await requireRole(["admin"]);
   } catch (e) {
@@ -46,18 +49,54 @@ export async function purgeCognitiveResults(
   }
 
   const sb = createServiceClient();
+  const cutoff = cutoffIso();
+
+  // 1. Delete expired results (per-item responses cascade).
   const { data: rows, error } = await sb
     .from("psy_results")
     .select("id")
     .eq("kind", "cognitive")
-    .lt("created_at", cutoffIso());
+    .lt("created_at", cutoff);
   if (error) return { error: error.message };
   const ids = (rows ?? []).map((r) => r.id as string);
-  if (ids.length === 0) return { ok: true, purged: 0 };
+  let purged = 0;
+  if (ids.length > 0) {
+    const del = await sb.from("psy_results").delete().in("id", ids).select("id");
+    if (del.error) return { error: del.error.message };
+    purged = del.data?.length ?? ids.length;
+  }
 
-  const del = await sb.from("psy_results").delete().in("id", ids).select("id");
-  if (del.error) return { error: del.error.message };
+  // 2. Anonymise voucher-redemption PII past the window (NOT NULL columns get a
+  //    redaction sentinel; nullable forensic columns cleared). Best-effort.
+  let anonymised = 0;
+  try {
+    const anon = await sb
+      .from("cognitive_voucher_redemptions")
+      .update({ redeemer_name: "[purged]", redeemer_email: "[purged]", company_name: "[purged]", ip: null, user_agent: null })
+      .lt("redeemed_at", cutoff)
+      .neq("redeemer_email", "[purged]")
+      .select("id");
+    anonymised = anon.data?.length ?? 0;
+  } catch {
+    /* redemptions table not migrated - nothing to anonymise */
+  }
+
+  // 3. Sweep expired cognitive sessions - each carries the full keyed test +
+  //    taker email and is unusable past its ~3h TTL, but nothing else deletes
+  //    them, so they would otherwise retain PII indefinitely. Best-effort.
+  let sessionsSwept = 0;
+  try {
+    const sw = await sb
+      .from("psy_sessions")
+      .delete()
+      .eq("kind", "cognitive")
+      .lt("expires_at", new Date().toISOString())
+      .select("id");
+    sessionsSwept = sw.data?.length ?? 0;
+  } catch {
+    /* psy_sessions not migrated */
+  }
 
   revalidatePath("/ac/cognitive/retention");
-  return { ok: true, purged: del.data?.length ?? ids.length };
+  return { ok: true, purged, anonymised, sessionsSwept };
 }

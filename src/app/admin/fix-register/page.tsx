@@ -39,9 +39,9 @@ export default function FixRegisterPage() {
         <div>
           <h1 className="text-2xl font-semibold text-[#010131]">Fix Register</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            A live, per-service record of every change shipped to Caliber, generated from the deployment
-            history. Each entry carries its fix date, the engineer who made it, an optional requester, and
-            the full explanation. Expand any row to read the detail.
+            A live, per-service record of every change shipped to Caliber. Each entry is written in plain
+            English - what changed and why it matters - alongside its date, the engineer who made it, and an
+            optional requester. Expand any row for the technical detail.
           </p>
         </div>
       </div>
@@ -63,10 +63,32 @@ export default function FixRegisterPage() {
         </span>
       </div>
 
+      {/* Plain-language legend for the type labels. */}
+      <div className="mb-5 rounded-xl border bg-card p-4">
+        <p className="mb-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">What the labels mean</p>
+        <div className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
+          {LEGEND.map((l) => (
+            <div key={l.label} className="flex items-start gap-2.5 text-sm">
+              <span className={`mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${l.cls}`}>{l.label}</span>
+              <span className="text-muted-foreground">{l.desc}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <FixRegisterClient services={data.services} />
     </div>
   );
 }
+
+const LEGEND = [
+  { label: "Critical", cls: "bg-rose-600 text-white", desc: "An urgent security or data problem, fixed as a priority." },
+  { label: "Security", cls: "bg-amber-100 text-amber-800 border border-amber-200", desc: "A change that makes the platform safer or closes a loophole." },
+  { label: "Audit", cls: "bg-sky-100 text-sky-800 border border-sky-200", desc: "Found during a deep, deliberate review of a module." },
+  { label: "Fix", cls: "bg-slate-100 text-slate-700 border border-slate-200", desc: "Something was not working correctly and has been put right." },
+  { label: "Feature", cls: "bg-emerald-100 text-emerald-800 border border-emerald-200", desc: "Something new you can now do." },
+  { label: "Change", cls: "bg-slate-100 text-slate-600 border border-slate-200", desc: "An improvement or adjustment to how something works." },
+] as const;
 
 function Stat({ value, label, small }: { value: string; label: string; small?: boolean }) {
   return (

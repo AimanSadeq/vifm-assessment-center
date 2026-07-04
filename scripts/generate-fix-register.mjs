@@ -22,10 +22,25 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { readFileSync, existsSync } from "node:fs";
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
 const OUT = join(ROOT, "src", "data", "fix-register.generated.json");
+const CACHE = join(ROOT, "src", "data", "fix-register-explanations.json");
 const MAX_COMMITS = 600;
+
+// Plain-language explanations, keyed by commit hash, produced by
+// scripts/explain-fix-register.mjs. Merged in as `plain` on each entry so the
+// page can show a jargon-free line for every change. Absent → null (the page
+// falls back to the raw commit message).
+const explanations = (() => {
+  try {
+    return existsSync(CACHE) ? JSON.parse(readFileSync(CACHE, "utf8")) : {};
+  } catch {
+    return {};
+  }
+})();
 
 const US = "\x1f"; // unit separator (between fields)
 const RS = "\x1e"; // record separator (between commits)
@@ -139,6 +154,7 @@ function readCommits() {
       requester,
       type: classifyType(subject ?? "", body ?? ""),
       title: (subject ?? "").trim(),
+      plain: explanations[hash.trim()] ?? null,
       explanation,
       service: svc.key,
     });

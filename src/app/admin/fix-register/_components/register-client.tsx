@@ -13,6 +13,7 @@ export type FixEntry = {
   requester: string | null;
   type: string;
   title: string;
+  plain: string | null;
   explanation: string;
   service: string;
 };
@@ -53,6 +54,7 @@ export function FixRegisterClient({ services }: { services: FixService[] }) {
           if (!q) return true;
           return (
             e.title.toLowerCase().includes(q) ||
+            (e.plain ?? "").toLowerCase().includes(q) ||
             e.explanation.toLowerCase().includes(q) ||
             (e.requester ?? "").toLowerCase().includes(q) ||
             e.author.toLowerCase().includes(q)
@@ -123,27 +125,47 @@ export function FixRegisterClient({ services }: { services: FixService[] }) {
       {/* Per-service sections */}
       <div className="space-y-6">
         {filtered.map((s) => (
-          <section key={s.key} className="rounded-xl border bg-card">
-            <header className="flex flex-wrap items-baseline justify-between gap-2 border-b px-4 py-3">
-              <div>
-                <h2 className="text-base font-semibold text-[#010131]">{s.label}</h2>
-                <p className="text-xs text-muted-foreground">{s.blurb}</p>
-              </div>
-              <span className="rounded-full bg-[#5391D5]/10 px-2.5 py-0.5 text-xs font-semibold text-[#2b6cb0]">
-                {s.entries.length}{s.entries.length !== s.count ? ` / ${s.count}` : ""} entries
-              </span>
-            </header>
-            <ul className="divide-y">
-              {s.entries.map((e) => (
-                <li key={e.hash}>
-                  <EntryRow entry={e} />
-                </li>
-              ))}
-            </ul>
-          </section>
+          <ServiceSection key={s.key} service={s} />
         ))}
       </div>
     </div>
+  );
+}
+
+const SERVICE_CAP = 20;
+
+function ServiceSection({ service }: { service: FixService }) {
+  const [showAll, setShowAll] = useState(false);
+  const entries = showAll ? service.entries : service.entries.slice(0, SERVICE_CAP);
+  const hidden = service.entries.length - entries.length;
+
+  return (
+    <section className="rounded-xl border bg-card">
+      <header className="flex flex-wrap items-baseline justify-between gap-2 border-b px-4 py-3">
+        <div>
+          <h2 className="text-base font-semibold text-[#010131]">{service.label}</h2>
+          <p className="text-xs text-muted-foreground">{service.blurb}</p>
+        </div>
+        <span className="rounded-full bg-[#5391D5]/10 px-2.5 py-0.5 text-xs font-semibold text-[#2b6cb0]">
+          {service.entries.length}{service.entries.length !== service.count ? ` / ${service.count}` : ""} entries
+        </span>
+      </header>
+      <ul className="divide-y">
+        {entries.map((e) => (
+          <li key={e.hash}>
+            <EntryRow entry={e} />
+          </li>
+        ))}
+      </ul>
+      {(hidden > 0 || showAll) && service.entries.length > SERVICE_CAP && (
+        <button
+          onClick={() => setShowAll((v) => !v)}
+          className="w-full border-t px-4 py-2.5 text-xs font-medium text-[#2b6cb0] hover:bg-muted/40"
+        >
+          {hidden > 0 ? `Show ${hidden} more` : "Show fewer"}
+        </button>
+      )}
+    </section>
   );
 }
 
@@ -151,6 +173,9 @@ function EntryRow({ entry }: { entry: FixEntry }) {
   const [open, setOpen] = useState(false);
   const meta = typeMeta(entry.type);
   const hasBody = entry.explanation.length > 0;
+  // Always show a human line. Prefer the AI-written plain-English summary; fall
+  // back to the raw commit message when a brand-new change is not yet explained.
+  const plain = entry.plain?.trim() || (hasBody ? entry.explanation.split("\n").find((l) => l.trim())?.trim() ?? "" : "");
 
   return (
     <div className="px-4 py-3">
@@ -158,18 +183,13 @@ function EntryRow({ entry }: { entry: FixEntry }) {
         <time className="mt-0.5 w-[86px] shrink-0 font-mono text-xs tabular-nums text-muted-foreground">{entry.date}</time>
         <span className={cn("mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold", meta.cls)}>{meta.label}</span>
         <div className="min-w-0 flex-1">
-          <button
-            onClick={() => hasBody && setOpen((o) => !o)}
-            className={cn("group flex w-full items-start gap-1.5 text-left", hasBody ? "cursor-pointer" : "cursor-default")}
-            aria-expanded={hasBody ? open : undefined}
-          >
-            {hasBody && (
-              <ChevronRight className={cn("mt-1 h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform", open && "rotate-90")} />
-            )}
-            <span className={cn("text-sm font-medium text-[#111232]", !hasBody && "ms-5")}>{entry.title}</span>
-          </button>
+          {/* Plain-English explanation - the headline any reader can understand. */}
+          {plain && <p className="text-sm leading-relaxed text-[#111232]">{plain}</p>}
 
-          <div className="ms-5 mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+          {/* The original change title, secondary. */}
+          <p className={cn("text-xs text-muted-foreground", plain && "mt-0.5")}>{entry.title}</p>
+
+          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1"><User className="h-3 w-3" /> {entry.author}</span>
             {entry.requester && (
               <span className="inline-flex items-center gap-1 text-[#2b6cb0]">
@@ -177,10 +197,20 @@ function EntryRow({ entry }: { entry: FixEntry }) {
               </span>
             )}
             <span className="inline-flex items-center gap-1 font-mono"><GitCommit className="h-3 w-3" /> {entry.short}</span>
+            {hasBody && (
+              <button
+                onClick={() => setOpen((o) => !o)}
+                className="inline-flex items-center gap-0.5 text-muted-foreground hover:text-foreground"
+                aria-expanded={open}
+              >
+                <ChevronRight className={cn("h-3 w-3 transition-transform", open && "rotate-90")} />
+                Technical detail
+              </button>
+            )}
           </div>
 
           {hasBody && open && (
-            <pre className="ms-5 mt-2 whitespace-pre-wrap rounded-md bg-muted/40 p-3 text-xs leading-relaxed text-[#26324a]">{entry.explanation}</pre>
+            <pre className="mt-2 whitespace-pre-wrap rounded-md bg-muted/40 p-3 text-xs leading-relaxed text-[#26324a]">{entry.explanation}</pre>
           )}
         </div>
       </div>

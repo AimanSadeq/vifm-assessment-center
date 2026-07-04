@@ -90,8 +90,12 @@ export function VouchersClient({
       options={
         <>
           <div className="flex-1 min-w-[12rem] space-y-1.5">
-            <Label className="text-xs">Project / cohort (optional)</Label>
-            <Input value={projectLabel} onChange={(e) => setProjectLabel(e.target.value)} placeholder="Groups with Logica for reporting" />
+            <Label className="text-xs">Cohort key (cross-service reporting)</Label>
+            <Input value={projectLabel} onChange={(e) => setProjectLabel(e.target.value)} placeholder="e.g. Q3-Leaders - matches Logica for the combined cohort" />
+            <p className="text-[10px] text-muted-foreground">
+              Groups this batch with Logica on the combined cohort report. Distinct from the free-text
+              &ldquo;Project label&rdquo; above, which is an internal note only.
+            </p>
           </div>
           <div className="w-32 space-y-1.5">
             <Label className="text-xs">Language</Label>

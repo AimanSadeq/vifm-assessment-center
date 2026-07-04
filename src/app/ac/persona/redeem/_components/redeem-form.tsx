@@ -34,13 +34,23 @@ export function RedeemForm({
 
   const ready = code.trim() && name.trim() && email.trim() && company.trim();
 
+  // The redeem server action returns English error strings; localise the known
+  // ones for an Arabic delegate (fall back to the raw message for anything new).
+  const AR_ERRORS: Record<string, string> = {
+    "Enter a voucher code.": "أدخل رمز القسيمة.",
+    "This code is invalid, expired, or fully used.": "هذا الرمز غير صالح أو منتهي الصلاحية أو استُخدم بالكامل.",
+    "Could not redeem this code. Please check it and try again.": "تعذّر استخدام هذا الرمز. يرجى التحقق منه والمحاولة مرة أخرى.",
+    "Could not start your assessment. Please try again.": "تعذّر بدء تقييمك. يرجى المحاولة مرة أخرى.",
+  };
+  const localizeError = (msg: string) => (ar ? AR_ERRORS[msg] ?? msg : msg);
+
   const submit = async () => {
     if (!ready) return;
     setBusy(true);
     const res = await redeemPersonaVoucherAction({ code, name, email, company });
     if (!res.ok) {
       setBusy(false);
-      toast.error(res.error);
+      toast.error(localizeError(res.error));
       return;
     }
     router.push(`/ac/persona/take/${res.redemptionToken}`);

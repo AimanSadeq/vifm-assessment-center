@@ -24,17 +24,36 @@ export function DeleteRoleProfileButton({ id, name }: { id: string; name: string
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
 
+  const finishDelete = () => {
+    toast.success(t("adminRoleProfiles.delete.toastDeleted"));
+    router.push("/admin/role-profiles");
+    router.refresh();
+  };
+
   const onDelete = async () => {
     setBusy(true);
     const result = await deleteRoleProfileAction(id);
+    // Referenced by issued vouchers / completed sittings: deleting will strip
+    // the fit section from their reports (FK is SET NULL). Confirm explicitly.
+    if ("referenced" in result && result.referenced) {
+      setBusy(false);
+      const ok = window.confirm(
+        `This role is used by ${result.referenced} voucher(s) / sitting(s). Deleting it will remove the role-fit section from their Persona reports. Delete anyway?`,
+      );
+      if (!ok) return;
+      setBusy(true);
+      const forced = await deleteRoleProfileAction(id, true);
+      setBusy(false);
+      if ("error" in forced) { toast.error(forced.error); return; }
+      finishDelete();
+      return;
+    }
     setBusy(false);
     if ("error" in result) {
       toast.error(result.error);
       return;
     }
-    toast.success(t("adminRoleProfiles.delete.toastDeleted"));
-    router.push("/admin/role-profiles");
-    router.refresh();
+    finishDelete();
   };
 
   return (

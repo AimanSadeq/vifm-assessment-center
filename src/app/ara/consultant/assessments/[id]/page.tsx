@@ -24,7 +24,7 @@ import { StartReassessmentButton } from "./_components/start-reassessment-button
 import { AraPathwayCard } from "./_components/ara-pathway-card";
 import {
   createConsultantNote, deleteConsultantNote, toggleNoteIncludeInReport,
-  freezeAssessmentScores, unfreezeAssessmentScores,
+  freezeAssessmentScores, unfreezeAssessmentScores, activateAssessment, completeAssessment,
   recalculateCompliance, overrideComplianceStatus,
   updatePillarWeights,
   archiveAssessment, reopenAssessment,
@@ -271,6 +271,8 @@ export default async function AraAssessmentDetailPage({
 
   const isFrozen = assessment.status === "frozen";
   const isArchived = assessment.status === "archived";
+  const isDraft = assessment.status === "draft";
+  const isCompleted = assessment.status === "completed";
   const overall = overallScore?.overall_score;
 
   // Bound inline server actions
@@ -281,6 +283,14 @@ export default async function AraAssessmentDetailPage({
   const unfreezeAction = async () => {
     "use server";
     await unfreezeAssessmentScores(assessment.id);
+  };
+  const activateAction = async () => {
+    "use server";
+    await activateAssessment(assessment.id);
+  };
+  const completeAction = async () => {
+    "use server";
+    await completeAssessment(assessment.id);
   };
   const recalcAction = async () => {
     "use server";
@@ -418,7 +428,33 @@ export default async function AraAssessmentDetailPage({
             <Badge variant="secondary" className="capitalize">
               {t("araAssessmentDetail.phase_n", { n: assessment.phase.replace("phase", "") })}
             </Badge>
-            {!isArchived && (isFrozen ? (
+            {isDraft && (
+              <ConfirmAction
+                action={activateAction}
+                variant="default"
+                destructive={false}
+                title="Launch assessment"
+                description="Move this assessment from draft to active so respondents can start answering."
+                confirmLabel="Launch"
+                successMessage="Assessment launched."
+              >
+                <Unlock className="h-3 w-3" /> Launch
+              </ConfirmAction>
+            )}
+            {(assessment.status === "active" || isFrozen) && !isCompleted && (
+              <ConfirmAction
+                action={completeAction}
+                variant="outline"
+                destructive={false}
+                title="Mark complete"
+                description="Finalise this assessment. Scores are recalculated and locked as the baseline for next year's comparison. You can still generate reports."
+                confirmLabel="Mark complete"
+                successMessage="Assessment marked complete."
+              >
+                <Lock className="h-3 w-3" /> Mark complete
+              </ConfirmAction>
+            )}
+            {!isArchived && !isDraft && !isCompleted && (isFrozen ? (
               <ConfirmAction
                 action={unfreezeAction}
                 variant="outline"
@@ -758,7 +794,7 @@ export default async function AraAssessmentDetailPage({
                           min="0"
                           max="100"
                           step="0.5"
-                          defaultValue={weights?.[p.id] ?? 12.5}
+                          defaultValue={weights?.[p.id] ?? Math.round((100 / inScopePillars.length) * 10) / 10}
                           className="h-8 text-xs"
                         />
                       </div>

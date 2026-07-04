@@ -102,15 +102,30 @@ export async function saveAraAnswer(input: z.infer<typeof saveAnswerSchema>): Pr
   // silently reject every Personal Snapshot answer.
   const { data: assessment } = await sb
     .from("ara_assessments")
-    .select("question_bank_version_id, status")
+    .select("question_bank_version_id, status, time_limit_minutes")
     .eq("id", respondent.assessment_id)
-    .maybeSingle<{ question_bank_version_id: string | null; status: string }>();
+    .maybeSingle<{ question_bank_version_id: string | null; status: string; time_limit_minutes: number | null }>();
 
   if (!assessment || assessment.question_bank_version_id !== question.version_id) {
     return { ok: false, error: "Question is not part of this assessment" };
   }
   if (assessment.status === "frozen" || assessment.status === "archived") {
     return { ok: false, error: "This assessment is closed to further answers" };
+  }
+
+  // Server-side time-limit enforcement (TIMER-05): the countdown + auto-submit
+  // are client-only, so a manipulated client could keep saving after the
+  // deadline. When a per-instance limit is set and the respondent has started,
+  // reject saves past the deadline. A grace buffer absorbs clock drift + the
+  // in-flight autosave that fires as the timer hits zero, so a legitimate
+  // last-second answer isn't lost.
+  const GRACE_MS = 60_000;
+  const startedAt = (respondent as { started_at?: string | null }).started_at ?? null;
+  if (assessment.time_limit_minutes && assessment.time_limit_minutes > 0 && startedAt) {
+    const deadline = new Date(startedAt).getTime() + assessment.time_limit_minutes * 60_000 + GRACE_MS;
+    if (Date.now() > deadline) {
+      return { ok: false, error: "The time limit for this assessment has passed." };
+    }
   }
 
   // Pillar-assignment is enforced only for org-pillar questions. Individual-

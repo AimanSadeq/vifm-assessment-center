@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, FileText, Upload, Trash2, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, FileText, Upload, Trash2, CheckCircle2, XCircle, AlertCircle, Loader2 } from "lucide-react";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { createServiceClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ConfirmAction } from "@/components/shared/confirm-action";
 import { isAIConfigured } from "@/lib/ai/client";
 import {
-  uploadAraRegulatoryDocument, deleteAraRegulatoryDocument,
+  uploadAraRegulatoryDocument, deleteAraRegulatoryDocument, setAraRegulatoryDocumentStatus,
 } from "@/lib/ara/admin-actions";
 import { getServerT } from "@/lib/i18n/server";
 
@@ -216,6 +216,14 @@ export default async function AraRegulatoryAdminPage() {
                     "use server";
                     await deleteAraRegulatoryDocument(d.id);
                   };
+                  const approveAction = async () => {
+                    "use server";
+                    await setAraRegulatoryDocumentStatus(d.id, "approved");
+                  };
+                  const rejectAction = async () => {
+                    "use server";
+                    await setAraRegulatoryDocumentStatus(d.id, "rejected");
+                  };
                   return (
                     <div key={d.id} className="rounded-md border bg-card p-3 text-sm">
                       <div className="flex items-start justify-between gap-3">
@@ -238,6 +246,20 @@ export default async function AraRegulatoryAdminPage() {
                             {t("araAdminData.reg_uploaded_at", { when: new Date(d.uploaded_at).toLocaleString() })}
                           </p>
                         </div>
+                        {d.processing_status === "review" && (
+                          <div className="flex items-center gap-1 shrink-0">
+                            <form action={approveAction}>
+                              <Button type="submit" size="sm" variant="outline" className="h-7 gap-1 text-xs text-emerald-700 hover:text-emerald-800">
+                                <CheckCircle2 className="h-3.5 w-3.5" /> Approve
+                              </Button>
+                            </form>
+                            <form action={rejectAction}>
+                              <Button type="submit" size="sm" variant="outline" className="h-7 gap-1 text-xs text-rose-700 hover:text-rose-800">
+                                <XCircle className="h-3.5 w-3.5" /> Reject
+                              </Button>
+                            </form>
+                          </div>
+                        )}
                         <ConfirmAction
                           action={deleteAction}
                           variant="ghost"

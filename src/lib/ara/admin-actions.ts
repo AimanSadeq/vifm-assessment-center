@@ -142,6 +142,26 @@ export async function deleteAraRegulatoryDocument(documentId: string) {
   return { ok: true };
 }
 
+/**
+ * Approve / reject a regulatory document after human review (DEFER-01). The admin
+ * page rendered an approved/rejected lifecycle but had no control to advance a
+ * document out of "review", so every upload was stuck there forever. Admin only.
+ */
+export async function setAraRegulatoryDocumentStatus(
+  documentId: string,
+  status: "approved" | "rejected",
+) {
+  try { await requireRole("admin"); } catch (e) { return authErr(e); }
+  const sb = createServiceClient();
+  const { error } = await sb
+    .from("ara_regulatory_documents")
+    .update({ processing_status: status })
+    .eq("id", documentId);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/ara/admin/regulatory");
+  return { ok: true };
+}
+
 // ─────────────────────────────────────────────────────────────
 // Sandbox cleanup (handover §17.4)
 // Admin must type "DELETE SANDBOX DATA" to confirm. Hard-deletes every
@@ -171,6 +191,18 @@ export async function clearAraSandboxData(formData: FormData) {
     .delete()
     .eq("is_sandbox", true);
   if (delErr) return { ok: false, error: delErr.message };
+
+  // Audit the destructive purge (ORG-DELETE-02 sibling) - best-effort.
+  try {
+    await sb.from("ara_data_management_log").insert({
+      action: "sandbox_purge",
+      target_table: "ara_assessments",
+      target_id: null,
+      reason: `Hard-deleted ${count} sandbox assessment(s) and cascaded children.`,
+      client_request: false,
+      performed_at: new Date().toISOString(),
+    });
+  } catch { /* audit is best-effort; never block the purge */ }
 
   revalidatePath("/ara/admin");
   revalidatePath("/ara/admin/sandbox");

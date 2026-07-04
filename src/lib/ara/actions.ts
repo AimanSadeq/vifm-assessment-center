@@ -211,6 +211,28 @@ export async function deleteAraOrganization(orgId: string) {
   // Delete is strictly admin - cascades to all consultants' assessments.
   try { await requireRole("admin"); } catch (e) { return authErr(e); }
   const sb = createServiceClient();
+
+  // Audit BEFORE the cascade delete (the row is gone afterwards). The
+  // "immutable log" compliance requirement covers destructive ops, and this
+  // hard-delete previously wrote nothing (ORG-DELETE-02). Capture what existed
+  // so the trail records what was removed. Best-effort - never blocks the op.
+  try {
+    const { data: org } = await sb
+      .from("ara_organizations").select("name").eq("id", orgId)
+      .maybeSingle<{ name: string | null }>();
+    const { count } = await sb
+      .from("ara_assessments").select("id", { count: "exact", head: true })
+      .eq("organization_id", orgId);
+    await sb.from("ara_data_management_log").insert({
+      action: "delete_organization",
+      target_table: "ara_organizations",
+      target_id: orgId,
+      reason: `Hard-deleted "${org?.name ?? "unknown"}" and cascaded ${count ?? 0} assessment(s).`,
+      client_request: false,
+      performed_at: new Date().toISOString(),
+    });
+  } catch { /* audit is best-effort; never block the delete */ }
+
   const { error } = await sb.from("ara_organizations").delete().eq("id", orgId);
   if (error) return { ok: false, error: error.message };
   revalidatePath("/ara/admin/organizations");

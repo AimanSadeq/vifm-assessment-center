@@ -6,7 +6,8 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { recalculateAssessmentCompliance, complianceStatusLabel } from "@/lib/ara/compliance";
 import { recalculateAssessmentScores } from "@/lib/ara/scoring";
 import { requireAssessmentOwner, isAuthorizationError } from "@/lib/ara/auth-guards";
-import type { AraComplianceStatus } from "@/types/ara";
+import { getPillarsForAssessment } from "@/lib/constants/ara-stages";
+import type { AraComplianceStatus, AraPillarId, AraEngagementStage } from "@/types/ara";
 
 function authErr(e: unknown) {
   if (isAuthorizationError(e)) return { ok: false as const, error: e.message };
@@ -155,6 +156,51 @@ export async function unfreezeAssessmentScores(assessmentId: string) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Status lifecycle: activate (draft -> active) + complete (-> completed).
+// Previously org assessments only had freeze/unfreeze, so they could never
+// leave draft or reach an end state (STATUS-08/09) - which also meant the
+// year-on-year prior scan (status in completed/frozen/archived) never saw them.
+// ─────────────────────────────────────────────────────────────
+export async function activateAssessment(assessmentId: string) {
+  try { await requireAssessmentOwner(assessmentId); } catch (e) { return authErr(e); }
+  const sb = createServiceClient();
+  const { data: a } = await sb
+    .from("ara_assessments").select("status").eq("id", assessmentId)
+    .maybeSingle<{ status: string }>();
+  if (!a) return { ok: false, error: "Assessment not found" };
+  if (a.status !== "draft") return { ok: false, error: "Only a draft assessment can be launched." };
+  const { error } = await sb
+    .from("ara_assessments")
+    .update({ status: "active", phase: "phase1" })
+    .eq("id", assessmentId);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/ara/consultant/assessments/${assessmentId}`);
+  return { ok: true };
+}
+
+export async function completeAssessment(assessmentId: string) {
+  try { await requireAssessmentOwner(assessmentId); } catch (e) { return authErr(e); }
+  const sb = createServiceClient();
+  const { data: a } = await sb
+    .from("ara_assessments").select("status").eq("id", assessmentId)
+    .maybeSingle<{ status: string }>();
+  if (!a) return { ok: false, error: "Assessment not found" };
+  if (!["active", "frozen"].includes(a.status)) {
+    return { ok: false, error: "Only an active or frozen assessment can be marked complete." };
+  }
+  // Freeze the numbers on completion so a completed year-1 baseline is stable
+  // for the year-on-year comparison.
+  await recalculateAssessmentScores(assessmentId);
+  const { error } = await sb
+    .from("ara_assessments")
+    .update({ status: "completed", completed_at: new Date().toISOString(), phase: "report" })
+    .eq("id", assessmentId);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/ara/consultant/assessments/${assessmentId}`);
+  return { ok: true };
+}
+
+// ─────────────────────────────────────────────────────────────
 // Full recalc - scores + compliance (explicit button)
 // ─────────────────────────────────────────────────────────────
 export async function recalculateCompliance(assessmentId: string) {
@@ -175,35 +221,43 @@ const PILLAR_IDS = [
   "governance", "operations", "model_management",
 ] as const;
 
-const pillarWeightsSchema = z
-  .object(
-    Object.fromEntries(
-      PILLAR_IDS.map((p) => [p, z.coerce.number().min(0).max(100)])
-    ) as Record<(typeof PILLAR_IDS)[number], z.ZodNumber>
-  )
-  .refine(
-    (obj) => {
-      const total = PILLAR_IDS.reduce((sum, p) => sum + (obj[p] ?? 0), 0);
-      return Math.abs(total - 100) < 0.01;
-    },
-    { message: "Pillar weights must sum to 100" }
-  );
-
 export async function updatePillarWeights(formData: FormData) {
   const assessmentId = String(formData.get("assessment_id") ?? "");
   if (!assessmentId) return { ok: false, error: "Missing assessment id" };
   try { await requireAssessmentOwner(assessmentId); } catch (e) { return authErr(e); }
 
-  const raw: Record<string, number> = {};
-  for (const p of PILLAR_IDS) raw[p] = Number(formData.get(`weight_${p}`) ?? 0);
-
-  const parsed = pillarWeightsSchema.safeParse(raw);
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid weights" };
-
   const sb = createServiceClient();
+  // Only the IN-SCOPE pillars have form fields (4 for Department, 6 for Division,
+  // 8 for Enterprise), so read + validate + write over exactly those - not all 8.
+  // Reading all 8 wrote 0 for every out-of-scope pillar and made the sum-to-100
+  // rule unsatisfiable from the 4/6 visible fields (WEIGHT-04).
+  const { data: assess } = await sb
+    .from("ara_assessments")
+    .select("engagement_stage, pillars_in_scope")
+    .eq("id", assessmentId)
+    .maybeSingle<{ engagement_stage: AraEngagementStage; pillars_in_scope: AraPillarId[] | null }>();
+  if (!assess) return { ok: false, error: "Assessment not found" };
+  const inScope = getPillarsForAssessment({
+    engagement_stage: assess.engagement_stage,
+    pillars_in_scope: assess.pillars_in_scope ?? null,
+  }) as AraPillarId[];
+
+  const weights: Record<string, number> = {};
+  for (const p of inScope) weights[p] = Number(formData.get(`weight_${p}`) ?? 0);
+  // Out-of-scope pillars carry weight 0 (they don't contribute to the overall).
+  for (const p of PILLAR_IDS) if (!(p in weights)) weights[p] = 0;
+
+  const total = inScope.reduce((sum, p) => sum + (weights[p] ?? 0), 0);
+  if (Math.abs(total - 100) > 0.01) {
+    return { ok: false, error: `In-scope pillar weights must sum to 100 (currently ${total.toFixed(1)}).` };
+  }
+  if (inScope.some((p) => weights[p] < 0 || weights[p] > 100)) {
+    return { ok: false, error: "Each weight must be between 0 and 100." };
+  }
+
   const { error } = await sb
     .from("ara_assessments")
-    .update({ pillar_weights: parsed.data })
+    .update({ pillar_weights: weights })
     .eq("id", assessmentId);
   if (error) return { ok: false, error: error.message };
 

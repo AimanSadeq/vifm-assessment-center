@@ -315,11 +315,21 @@ export async function sendAraEmail(
     console.log(`[ara-email MOCK] subject=${rendered.subject}`);
   } else {
     try {
+      // Map attachments (e.g. the results PDF) to Graph fileAttachment blocks -
+      // the Graph path previously omitted them, so the emailed PDF silently
+      // never attached (EMAIL-17). ARA only ever attaches the results PDF.
+      const graphAttachments = (input.attachments ?? []).map((a) => ({
+        "@odata.type": "#microsoft.graph.fileAttachment",
+        name: a.filename,
+        contentType: "application/pdf",
+        contentBytes: a.content,
+      }));
       await graphClient.api(`/users/${fromAddress}/sendMail`).post({
         message: {
           subject: rendered.subject,
           body: { contentType: rendered.contentType, content: rendered.body },
           toRecipients: [{ emailAddress: { address: recipient } }],
+          ...(graphAttachments.length > 0 ? { attachments: graphAttachments } : {}),
         },
         saveToSentItems: true,
       });

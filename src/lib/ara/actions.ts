@@ -913,6 +913,22 @@ export async function deleteAraQuestion(questionId: string, versionId: string) {
 }
 
 /**
+ * Activate / deactivate a question. AI-authored questions are inserted
+ * is_active=false (drafts pending review); this is the control that makes them
+ * live (QCRUD-08 - previously the help text promised activation "via the edit
+ * page" but no control existed, so AI drafts were permanently unusable). Admin
+ * only. An inactive question is excluded from the respondent flow + scoring.
+ */
+export async function setAraQuestionActive(questionId: string, active: boolean, versionId: string) {
+  try { await requireRole("admin"); } catch (e) { return authErr(e); }
+  const sb = createServiceClient();
+  const { error } = await sb.from("ara_questions").update({ is_active: active }).eq("id", questionId);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/ara/admin/questions/${versionId}`);
+  return { ok: true };
+}
+
+/**
  * Bulk reorder questions inside a pillar. Accepts an array of question
  * IDs in the desired order; rewrites display_order to match the array
  * index. Used by the drag-and-drop UX on the question list page.

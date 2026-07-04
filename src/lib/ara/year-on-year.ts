@@ -51,35 +51,43 @@ export async function computeYoYComparison(
   if (!currentVersion) return null;
   const currentMajor = currentVersion.version_number.split(".")[0];
 
-  // Find other assessments for this org with a scored overall.
-  const { data: candidates } = await sb
+  // Resolve which bank versions share the current MAJOR version first, then scope
+  // the candidate query to them. (Previously the candidate scan truncated to the
+  // 10 most-recent priors BEFORE the version filter, so a compatible same-major
+  // baseline sitting outside the 10 newest rows was lost and the consultant was
+  // wrongly told "a new baseline has been established" - YOY-07.)
+  const { data: allVersions } = await sb
+    .from("ara_question_bank_versions")
+    .select("id, version_number");
+  const sameMajorVersionIds = (allVersions ?? [])
+    .filter((v) => v.version_number.split(".")[0] === currentMajor)
+    .map((v) => v.id);
+
+  // Any prior for this org at all (to distinguish "no prior" from "incompatible prior").
+  const { data: anyPrior } = await sb
     .from("ara_assessments")
-    .select(
-      "id, question_bank_version_id, assessment_year, completed_at, frozen_at, archived_at"
-    )
+    .select("id")
     .eq("organization_id", current.organization_id)
     .neq("id", current.id)
     .in("status", ["completed", "frozen", "archived"])
-    .order("assessment_year", { ascending: false })
-    .limit(10);
+    .limit(1);
+  if (!anyPrior || anyPrior.length === 0) return null;
 
-  if (!candidates || candidates.length === 0) return null;
+  // The most-recent SAME-MAJOR prior, filtered at the query layer (no truncation
+  // before the version filter).
+  const { data: compatibleCandidates } = sameMajorVersionIds.length
+    ? await sb
+        .from("ara_assessments")
+        .select("id, question_bank_version_id, assessment_year, completed_at, frozen_at, archived_at")
+        .eq("organization_id", current.organization_id)
+        .neq("id", current.id)
+        .in("status", ["completed", "frozen", "archived"])
+        .in("question_bank_version_id", sameMajorVersionIds)
+        .order("assessment_year", { ascending: false })
+        .limit(1)
+    : { data: [] as Array<{ id: string; question_bank_version_id: string | null; assessment_year: number; completed_at: string | null; frozen_at: string | null; archived_at: string | null }> };
 
-  // Filter to same major version
-  const versionIds = Array.from(
-    new Set(candidates.map((c) => c.question_bank_version_id).filter(Boolean) as string[])
-  );
-  const { data: versions } = await sb
-    .from("ara_question_bank_versions")
-    .select("id, version_number")
-    .in("id", versionIds);
-  const majorByVersion = new Map<string, string>();
-  (versions ?? []).forEach((v) => majorByVersion.set(v.id, v.version_number.split(".")[0]));
-
-  const compatibleCandidates = candidates.filter(
-    (c) => c.question_bank_version_id && majorByVersion.get(c.question_bank_version_id) === currentMajor
-  );
-  if (compatibleCandidates.length === 0) {
+  if (!compatibleCandidates || compatibleCandidates.length === 0) {
     return {
       compatible: false,
       incompatibleReason:

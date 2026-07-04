@@ -114,6 +114,12 @@ export function BilingualReport(p: BilingualReportProps) {
   const sectorCap = p.sector.charAt(0).toUpperCase() + p.sector.slice(1);
   // Stage drives pillar filtering + which strategic-output sections render.
   const stageDef = ARA_STAGE_MAP[p.engagementStage ?? "enterprise"] ?? ARA_STAGE_MAP.enterprise;
+  // Pillars in scope for THIS assessment (override or stage default). Every
+  // pillar-driven section uses this so a subset-stage run isn't zero-filled to
+  // 8 pillars in the client PDF (mirrors the deep-dive filter at ~line 501).
+  const scopedPillars = ARA_PILLARS.filter((pl) =>
+    (p.pillarsInScope ?? stageDef.applicable_pillars).includes(pl.id),
+  );
   const stageBadgeBg =
     stageDef.tone === "teal" ? "rgba(45, 212, 191, 0.15)" :
     stageDef.tone === "violet" ? "rgba(167, 139, 250, 0.18)" :
@@ -480,7 +486,7 @@ export function BilingualReport(p: BilingualReportProps) {
           </h2>
         </div>
         <div style={{ display: "flex", justifyContent: "center" }}>
-          <RadarChart pillarScores={p.scoreMap} size={400} />
+          <RadarChart pillarScores={p.scoreMap} size={400} pillars={scopedPillars} />
         </div>
         <div className="bilingual-text">
           <div className="col-en">
@@ -998,7 +1004,7 @@ export function BilingualReport(p: BilingualReportProps) {
                 </tr>
               </thead>
               <tbody>
-                {ARA_PILLARS.map((pp) => {
+                {scopedPillars.map((pp) => {
                   const row = p.pillarMap.get(pp.id);
                   const s = row?.raw_score != null ? Number(row.raw_score) : null;
                   const peer = p.peerBenchmarks.pillars.find((x) => x.pillar_id === pp.id)?.median;
@@ -1035,7 +1041,7 @@ export function BilingualReport(p: BilingualReportProps) {
                 </tr>
               </thead>
               <tbody>
-                {ARA_PILLARS.map((pp) => {
+                {scopedPillars.map((pp) => {
                   const row = p.pillarMap.get(pp.id);
                   const s = row?.raw_score != null ? Number(row.raw_score) : null;
                   const peer = p.peerBenchmarks.pillars.find((x) => x.pillar_id === pp.id)?.median;
@@ -1309,7 +1315,7 @@ export function BilingualReport(p: BilingualReportProps) {
           <p className="report-body">{tr("en", "appendix_scoring")}</p>
           <h3 className="report-h3">{tr("en", "weights_used")}</h3>
           <ul className="report-body">
-            {ARA_PILLARS.map((pp) => (
+            {scopedPillars.map((pp) => (
               <li key={pp.id}>
                 {pp.name_en} - {(p.pillarWeights?.[pp.id] ?? 12.5).toFixed(1)}%
               </li>
@@ -1326,7 +1332,7 @@ export function BilingualReport(p: BilingualReportProps) {
           <p className="report-body">{tr("ar", "appendix_scoring")}</p>
           <h3 className="report-h3">{tr("ar", "weights_used")}</h3>
           <ul className="report-body">
-            {ARA_PILLARS.map((pp) => (
+            {scopedPillars.map((pp) => (
               <li key={pp.id}>
                 {pp.name_ar} - {(p.pillarWeights?.[pp.id] ?? 12.5).toFixed(1)}%
               </li>

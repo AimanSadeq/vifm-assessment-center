@@ -335,7 +335,8 @@ export async function createReassessmentFromPrior(
     .from("ara_assessments")
     .select(
       "id, organization_id, consultant_id, region, sector, default_language, is_sandbox, " +
-      "engagement_stage, scope_label, scope_label_ar, status, pillar_weights, assessment_year"
+      "engagement_stage, scope_label, scope_label_ar, status, pillar_weights, assessment_year, " +
+      "pillars_in_scope, include_agentic_layer, include_individual_layer, assessment_tier"
     )
     .eq("id", priorAssessmentId)
     .maybeSingle<{
@@ -352,6 +353,10 @@ export async function createReassessmentFromPrior(
       status: string;
       pillar_weights: Record<string, number> | null;
       assessment_year: number;
+      pillars_in_scope: string[] | null;
+      include_agentic_layer: boolean | null;
+      include_individual_layer: boolean | null;
+      assessment_tier: string | null;
     }>();
   if (priorErr || !prior) return { ok: false, error: priorErr?.message ?? "Prior assessment not found" };
 
@@ -410,6 +415,13 @@ export async function createReassessmentFromPrior(
       status: "draft",
       phase: "phase1",
       prior_assessment_id: prior.id,
+      // Carry the year-1 SCOPE so the year-2 run measures the same thing (a
+      // dropped pillars_in_scope / agentic / individual / tier silently
+      // re-scoped the reassessment, breaking the year-on-year comparison).
+      pillars_in_scope: prior.pillars_in_scope ?? null,
+      include_agentic_layer: prior.include_agentic_layer ?? false,
+      include_individual_layer: prior.include_individual_layer ?? false,
+      assessment_tier: prior.assessment_tier ?? null,
     })
     .select("id")
     .single<{ id: string }>();

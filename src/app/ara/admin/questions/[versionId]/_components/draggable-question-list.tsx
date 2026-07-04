@@ -4,11 +4,11 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ChevronUp, ChevronDown, GripVertical, Pencil, Trash2, Loader2,
+  ChevronUp, ChevronDown, GripVertical, Pencil, Trash2, Loader2, Power,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
-  reorderAraQuestions, moveAraQuestion, deleteAraQuestion,
+  reorderAraQuestions, moveAraQuestion, deleteAraQuestion, setAraQuestionActive,
 } from "@/lib/ara/actions";
 import type { AraQuestion } from "@/types/ara";
 
@@ -16,6 +16,9 @@ type Item = Pick<
   AraQuestion,
   "id" | "question_number" | "question_text_en" | "layer"
 > & {
+  /** Whether the question is live. AI-authored drafts arrive inactive and are
+   *  excluded from the respondent flow + scoring until an admin activates them. */
+  is_active?: boolean;
   /** Validation-evidence review status, surfaced as a per-row chip
    *  so admins can see at a glance which questions still need an
    *  anchor citation reviewed. Null = no evidence captured yet. */
@@ -142,6 +145,18 @@ export function DraggableQuestionList({
     });
   };
 
+  const handleToggleActive = (id: string, next: boolean) => {
+    const prev = questions;
+    setQuestions(questions.map((q) => (q.id === id ? { ...q, is_active: next } : q)));
+    start(async () => {
+      const result = await setAraQuestionActive(id, next, versionId);
+      if (!result?.ok) {
+        setError(result?.error ?? "Could not update the question.");
+        setQuestions(prev);
+      }
+    });
+  };
+
   if (questions.length === 0) {
     return <p className="text-xs text-muted-foreground">{t("araAdminData.dql_no_questions")}</p>;
   }
@@ -201,9 +216,24 @@ export function DraggableQuestionList({
               >
                 <span className="font-medium">Q{q.question_number}</span>{" "}
                 <Badge variant="outline" className="text-[10px] mx-1">L{q.layer}</Badge>
-                <span className="text-muted-foreground group-hover:text-accent">{q.question_text_en}</span>
+                {q.is_active === false && (
+                  <Badge className="mx-1 border-amber-200 bg-amber-100 text-[10px] text-amber-900">Inactive draft</Badge>
+                )}
+                <span className={`group-hover:text-accent ${q.is_active === false ? "text-muted-foreground/60 italic" : "text-muted-foreground"}`}>{q.question_text_en}</span>
               </Link>
               <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleToggleActive(q.id, q.is_active === false)}
+                  disabled={pending}
+                  className={`h-6 w-6 inline-flex items-center justify-center rounded-md hover:bg-muted disabled:opacity-40 ${
+                    q.is_active === false ? "text-amber-600 hover:text-emerald-600" : "text-emerald-600 hover:text-muted-foreground"
+                  }`}
+                  title={q.is_active === false ? "Activate (make this question live)" : "Deactivate (hide from the assessment)"}
+                  aria-label={q.is_active === false ? "Activate question" : "Deactivate question"}
+                >
+                  <Power className="h-3.5 w-3.5" />
+                </button>
                 {q.evidence_status && EVIDENCE_TONE[q.evidence_status] && (
                   <span
                     className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full border ${EVIDENCE_TONE[q.evidence_status]}`}

@@ -192,6 +192,7 @@ export default async function AraVersionDetailPage({
                               question_number: q.question_number,
                               question_text_en: q.question_text_en,
                               layer: q.layer,
+                              is_active: q.is_active,
                               evidence_status: status ?? null,
                             };
                           })}

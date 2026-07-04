@@ -6,14 +6,17 @@ import type { AraLanguage } from "@/types/ara";
 
 type Mode = "online" | "offline" | "reconnected";
 
+// Answers autosave to the server, which needs a connection - there is no local
+// (localStorage) mirror. Be honest: while offline, ask the respondent to pause
+// so answers entered offline aren't lost, rather than falsely promising a sync.
 const COPY: Record<AraLanguage, { offline: string; reconnected: string }> = {
   en: {
-    offline: "You are offline. Your answers are saved locally and will sync when you reconnect.",
-    reconnected: "You are back online. Your answers have been synced.",
+    offline: "You are offline. Answers can only be saved while connected - please pause and continue once you reconnect.",
+    reconnected: "You are back online - your answers are saving again. You can continue.",
   },
   ar: {
-    offline: "أنت غير متصل. إجاباتك محفوظة محلياً وستتم المزامنة عند عودة الاتصال.",
-    reconnected: "عدت متصلاً. تمت مزامنة إجاباتك.",
+    offline: "أنت غير متصل. لا يمكن حفظ الإجابات إلا أثناء الاتصال - يرجى التوقّف ومتابعة التقييم عند عودة الاتصال.",
+    reconnected: "عدت متصلاً - تُحفظ إجاباتك الآن. يمكنك المتابعة.",
   },
 };
 

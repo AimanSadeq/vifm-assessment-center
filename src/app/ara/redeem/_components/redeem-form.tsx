@@ -13,9 +13,11 @@ type Props = {
   initialCode?: string;
   initialCompany?: string;
   initialLang?: "en" | "ar";
+  /** True only for a genuine practice/sandbox voucher; false = a real run. */
+  isPractice?: boolean;
 };
 
-export function RedeemForm({ initialCode = "", initialCompany = "", initialLang = "en" }: Props) {
+export function RedeemForm({ initialCode = "", initialCompany = "", initialLang = "en", isPractice = false }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,10 +95,15 @@ export function RedeemForm({ initialCode = "", initialCompany = "", initialLang 
             {loading ? tx("Starting...", "جارٍ البدء...") : tx("Start assessment", "ابدأ التقييم")}
           </Button>
           <p className="text-center text-[11px] text-muted-foreground">
-            {tx(
-              "This is a practice run for development purposes - not an official certified assessment.",
-              "هذه نسخة تدريبية لأغراض التطوير - وليست تقييماً رسمياً معتمداً.",
-            )}
+            {isPractice
+              ? tx(
+                  "This is a practice run for development purposes - not an official certified assessment.",
+                  "هذه نسخة تدريبية لأغراض التطوير - وليست تقييماً رسمياً معتمداً.",
+                )
+              : tx(
+                  "Your responses are shared with the organisation that invited you, who will follow up on next steps.",
+                  "تُشارَك إجاباتك مع الجهة التي دعتك، وستتابع معك الخطوات التالية.",
+                )}
           </p>
         </form>
       </CardContent>

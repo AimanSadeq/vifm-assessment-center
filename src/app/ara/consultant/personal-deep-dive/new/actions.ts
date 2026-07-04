@@ -3,14 +3,14 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
-import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
+import { requireRole, isAuthorizationError, type AraCaller } from "@/lib/ara/auth-guards";
 import { sendAraRespondentInvitation } from "@/lib/ara/actions";
 import { validateTalentLens } from "@/lib/constants/ara-individual-factors";
 
-async function requireConsultant() {
+async function requireConsultant(): Promise<{ ok: false; error: string } | { ok: true; caller: AraCaller }> {
   try {
-    await requireRole(["admin", "consultant"]);
-    return null;
+    const caller = await requireRole(["admin", "consultant"]);
+    return { ok: true, caller };
   } catch (e) {
     if (isAuthorizationError(e)) return { ok: false as const, error: e.message };
     throw e;
@@ -65,8 +65,9 @@ export async function createDeepDivePersonalAssessment(
   | { ok: false; error: string }
   | { ok: true; respondentUrl: string; assessmentId: string; respondentId: string; emailed: boolean }
 > {
-  const denied = await requireConsultant();
-  if (denied) return denied;
+  const auth = await requireConsultant();
+  if (!auth.ok) return auth;
+  const caller = auth.caller;
 
   const parsed = inputSchema.safeParse({
     full_name: formData.get("full_name"),
@@ -130,7 +131,10 @@ export async function createDeepDivePersonalAssessment(
 
   const assessmentPayload: Record<string, unknown> = {
     organization_id: orgId,
-    consultant_id: null, // Set explicitly to caller in a future hardening pass.
+    // Bind to the issuing consultant so they can open their own assessment under
+    // requireAssessmentOwner (admins bypass ownership regardless). Was null,
+    // which locked a consultant issuer out of their own Mode B deep-dive.
+    consultant_id: caller.uid,
     region: parsed.data.region,
     sector: "general",
     default_language: parsed.data.language,

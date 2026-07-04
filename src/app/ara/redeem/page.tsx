@@ -15,24 +15,29 @@ export default async function RedeemVoucherPage({ searchParams }: Props) {
   const code = searchParams?.code?.trim() || "";
 
   let company = "";
+  // Default to a REAL run: every admin-issued voucher is is_practice=false, so a
+  // manual-entry redeem (no prefilled code, status unknown) must not show the
+  // "practice run" disclaimer. Only a genuinely practice voucher flips this true.
+  let isPractice = false;
   if (code) {
     try {
       const sb = createServiceClient();
       const { data } = await sb
         .from("ara_vouchers")
-        .select("client_name")
+        .select("client_name, is_practice")
         .eq("code", code.toUpperCase())
-        .maybeSingle<{ client_name: string | null }>();
+        .maybeSingle<{ client_name: string | null; is_practice: boolean | null }>();
       company = data?.client_name || "";
+      isPractice = data?.is_practice === true;
     } catch {
-      /* tolerant - leave company blank */
+      /* tolerant - leave company blank + treat as a real run */
     }
   }
 
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-md px-6 py-16">
-        <RedeemForm initialCode={code} initialCompany={company} />
+        <RedeemForm initialCode={code} initialCompany={company} isPractice={isPractice} />
       </div>
     </div>
   );

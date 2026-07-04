@@ -233,8 +233,20 @@ export default async function AraReportPage({
   const pillarMap = new Map<AraPillarId, PillarScoreRow>();
   (pillarScores ?? []).forEach((p) => pillarMap.set(p.pillar_id as AraPillarId, p));
 
+  // Which pillars are in scope for THIS assessment (stage default OR the
+  // pillars_in_scope override). The report must show only these - iterating the
+  // full 8-pillar catalogue anywhere pillar-driven makes a Department (4) or
+  // Division (6) engagement read as a half-assessed enterprise, zero-filling the
+  // out-of-scope pillars in the client-facing PDF. `scopedPillars` is the single
+  // in-scope list every section below uses instead of ARA_PILLARS.
+  const inScopePillarIds = getPillarsForAssessment({
+    engagement_stage: assessment.engagement_stage,
+    pillars_in_scope: assessment.pillars_in_scope ?? null,
+  });
+  const scopedPillars = ARA_PILLARS.filter((p) => inScopePillarIds.includes(p.id));
+
   const scoreMap = new Map<AraPillarId, number | null>();
-  ARA_PILLARS.forEach((p) => {
+  scopedPillars.forEach((p) => {
     const row = pillarMap.get(p.id);
     scoreMap.set(p.id, row?.raw_score != null ? Number(row.raw_score) : null);
   });
@@ -252,7 +264,7 @@ export default async function AraReportPage({
 
   const strengths: Array<{ pillar: string; score: number }> = [];
   const gaps: Array<{ pillar: string; score: number; gap: number }> = [];
-  ARA_PILLARS.forEach((p) => {
+  scopedPillars.forEach((p) => {
     const row = pillarMap.get(p.id);
     if (row?.raw_score == null) return;
     const s = Number(row.raw_score);
@@ -277,7 +289,7 @@ export default async function AraReportPage({
 
   // Pillar data for the investment priority matrix - uses pillar weights
   // as the value proxy and benchmark gap as the effort proxy.
-  const investmentData = ARA_PILLARS.map((p) => ({
+  const investmentData = scopedPillars.map((p) => ({
     pillar_id: p.id,
     raw_score: pillarMap.get(p.id)?.raw_score != null ? Number(pillarMap.get(p.id)!.raw_score) : null,
     pillar_weight: ((assessment.pillar_weights as Record<string, number>)?.[p.id] ?? 12.5),
@@ -664,7 +676,7 @@ export default async function AraReportPage({
             benchmark of 4.0 (dashed line). Pillars inside the dashed ring are below the
             benchmark and warrant focus.
           </p>
-          <RadarChart pillarScores={scoreMap} size={440} />
+          <RadarChart pillarScores={scoreMap} size={440} pillars={scopedPillars} language={rtl ? "ar" : "en"} />
         </section>
 
         {/* ─── PAGES 6–21 - Pillar Deep Dives (2 pages each) ─── *
@@ -704,7 +716,7 @@ export default async function AraReportPage({
           <h2 className="report-h2">{t("strengths_gaps")}</h2>
           <h3 className="report-h3">Traffic-light grid</h3>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8pt" }}>
-            {ARA_PILLARS.map((p) => {
+            {scopedPillars.map((p) => {
               const row = pillarMap.get(p.id);
               const s = row?.raw_score != null ? Number(row.raw_score) : null;
               const bg =
@@ -749,7 +761,7 @@ export default async function AraReportPage({
               </tr>
             </thead>
             <tbody>
-              {ARA_PILLARS.map((p) => {
+              {scopedPillars.map((p) => {
                 const row = pillarMap.get(p.id);
                 const s = row?.raw_score != null ? Number(row.raw_score) : null;
                 const gap = s != null ? Number((4.0 - s).toFixed(2)) : null;
@@ -1305,7 +1317,7 @@ export default async function AraReportPage({
           <h3 className="report-h3">Pillar weights used</h3>
           <table className="report-body" style={{ width: "60%", borderCollapse: "collapse" }}>
             <tbody>
-              {ARA_PILLARS.map((p) => {
+              {scopedPillars.map((p) => {
                 const weights = assessment.pillar_weights as Record<string, number>;
                 return (
                   <tr key={p.id} style={{ borderTop: "1px solid #e5e7eb" }}>

@@ -152,9 +152,16 @@ export async function computeAraDistortion(assessmentId: string): Promise<Distor
     }
     for (const [pid, mine] of Array.from(myPillarSums.entries())) {
       const pop = pillarSums.get(pid);
-      if (!pop || pop.n === 0) continue;
+      if (!pop) continue;
+      // Leave-one-out: remove THIS respondent's own answers from the population
+      // anchor before comparing, so a faker's own extremes can't pull the anchor
+      // toward themselves and dilute the very deviation this signal measures
+      // (critical on the small cohorts ARC runs - Department 1-2, Division 4-8).
+      const otherSum = pop.sum - mine.sum;
+      const otherN = pop.n - mine.n;
+      if (otherN <= 0) continue; // no other respondents answered this pillar
       const myMean = mine.sum / mine.n;
-      const popMean = pop.sum / pop.n;
+      const popMean = otherSum / otherN;
       totalDelta += Math.abs(myMean - popMean);
       pillarsCounted += 1;
     }

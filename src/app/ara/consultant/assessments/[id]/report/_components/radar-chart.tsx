@@ -1,24 +1,30 @@
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
 import type { AraPillarId } from "@/types/ara";
 
+type RadarPillar = { id: AraPillarId; name_en: string; name_ar: string };
+
 /**
- * 8-axis radar chart.
- * Client scores are drawn as a filled polygon; the 4.0 "AI Ready"
- * benchmark ring is a dashed overlay.
+ * Radar chart over the pillars IN SCOPE for the assessment (4 / 6 / 8 axes).
+ * Client scores are drawn as a filled polygon; the 4.0 "AI Ready" benchmark
+ * ring is a dashed overlay. Axis labels localise to the report language.
  * Pure SVG - prints cleanly.
  */
 export function RadarChart({
   pillarScores,
   size = 360,
+  pillars = ARA_PILLARS as unknown as RadarPillar[],
+  language = "en",
 }: {
   pillarScores: Map<AraPillarId, number | null>;
   size?: number;
+  /** In-scope pillars to plot (defaults to all 8). */
+  pillars?: RadarPillar[];
+  language?: "en" | "ar";
 }) {
   const CENTER = size / 2;
   const MAX_RADIUS = size / 2 - 50;
   const MAX_SCORE = 5;
 
-  const pillars = ARA_PILLARS;
   const count = pillars.length;
 
   const polar = (index: number, score: number) => {
@@ -104,13 +110,14 @@ export function RadarChart({
         ) : null;
       })}
 
-      {/* Pillar labels */}
+      {/* Pillar labels - localised to the report language (PDF-17). */}
       {pillars.map((p, i) => {
         const pt = polarLabel(i);
         const isRight = pt.x > CENTER + 5;
         const isLeft = pt.x < CENTER - 5;
         const anchor = isLeft ? "end" : isRight ? "start" : "middle";
-        const words = p.name_en.split(" & ");
+        const label = language === "ar" ? p.name_ar : p.name_en;
+        const words = language === "ar" ? [label] : label.split(" & ");
         return (
           <text key={p.id} x={pt.x} y={pt.y} textAnchor={anchor} fontSize="10" fill="#374151">
             {words.map((w, wi) => (

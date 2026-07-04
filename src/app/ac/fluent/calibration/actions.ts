@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { createServiceClient } from "@/lib/supabase/server";
 
 const CEFR = new Set(["A1", "A2", "B1", "B2", "C1", "C2"]);
@@ -14,6 +15,15 @@ const CEFR = new Set(["A1", "A2", "B1", "B2", "C1", "C2"]);
 export async function submitHumanRating(
   formData: FormData
 ): Promise<{ ok: boolean; error?: string }> {
+  // Server action = independently invocable POST; gate it the same way the page
+  // is (staff only) so a non-staff caller can't corrupt the calibration data.
+  try {
+    await requireRole(["admin", "consultant", "lead_assessor", "associate_assessor"]);
+  } catch (e) {
+    if (isAuthorizationError(e)) return { ok: false, error: "Not authorised." };
+    throw e;
+  }
+
   const resultId = String(formData.get("resultId") || "").trim();
   const raterId = String(formData.get("raterId") || "").trim() || "rater";
   if (!resultId) return { ok: false, error: "missing result" };

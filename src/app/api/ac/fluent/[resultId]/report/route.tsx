@@ -21,10 +21,20 @@ import { recommendEnglishDevelopment, type EnglishRecommendations } from "@/lib/
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+// The report is EN-only React-PDF (Helvetica cannot shape Arabic), so an Arabic
+// name would print as tofu. Fall back to the (Latin) email, then a generic label,
+// so the identity line is always readable.
+const hasArabic = (s: string) => /[؀-ۿݐ-ݿ]/.test(s);
+const latinSafeName = (name: string | null, email: string | null): string => {
+  const n = name?.trim();
+  return n && !hasArabic(n) ? n : email?.trim() || "Candidate";
+};
+
 type Row = {
   id: string;
   created_at: string;
   taker_name: string | null;
+  taker_email: string | null;
   result: (FluentResult & { reliability?: { low?: string; high?: string } }) | null;
   // Voucher redemption this result is stamped with (00044) - the link to a
   // camera-proctoring session (proctor_sessions.ref_id = the redemption token).
@@ -57,7 +67,7 @@ export async function GET(req: Request, { params }: { params: { resultId: string
     const sb = createServiceClient();
     const { data } = await sb
       .from("eng_fluent_results")
-      .select("id, created_at, taker_name, result, integrity_flags, voucher_redemption_id, organization_id")
+      .select("id, created_at, taker_name, taker_email, result, integrity_flags, voucher_redemption_id, organization_id")
       .eq("id", params.resultId)
       .single();
     row = (data as Row) ?? null;
@@ -71,7 +81,7 @@ export async function GET(req: Request, { params }: { params: { resultId: string
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const name = row.taker_name?.trim() || "Candidate";
+  const name = latinSafeName(row.taker_name, row.taker_email);
   const date = new Date(row.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
   const band = row.result.reliability;
   const rangeText = band?.low && band?.high ? (band.low === band.high ? band.low : `${band.low}-${band.high}`) : null;

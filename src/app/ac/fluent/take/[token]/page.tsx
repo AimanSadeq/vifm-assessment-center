@@ -24,10 +24,28 @@ export default async function FluentTakePage({
   const sb = createServiceClient();
   const { data: redemption } = await sb
     .from("eng_fluent_voucher_redemptions")
-    .select("redemption_token, redeemer_name, redeemer_email, voucher_id")
+    .select("redemption_token, redeemer_name, redeemer_email, voucher_id, result_id")
     .eq("redemption_token", params.token)
-    .maybeSingle<{ redemption_token: string; redeemer_name: string; redeemer_email: string; voucher_id: string }>();
+    .maybeSingle<{ redemption_token: string; redeemer_name: string; redeemer_email: string; voucher_id: string; result_id: string | null }>();
   if (!redemption) return notFound();
+
+  // One seat = one placement. Once this token has a completed sitting, refuse a
+  // retake (the score route enforces the same on its side) so a delegate cannot
+  // re-sit and self-select their best CEFR from a single voucher.
+  if (redemption.result_id) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-6">
+        <div className="max-w-md rounded-2xl border bg-card p-8 text-center shadow-sm">
+          <VifmLogo variant="dark" size="sm" className="mx-auto" />
+          <h1 className="mt-6 text-xl font-semibold text-primary">Assessment already completed</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            This placement has already been submitted{redemption.redeemer_name ? `, ${redemption.redeemer_name}` : ""}.
+            Your result has been recorded and sent to the organisation that invited you. This link can be used once.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Proctoring is enforced server-side, in precedence order (integrity pass):
   // 1. the client org's policy (organizations.settings.fluent_proctoring_required,
@@ -70,6 +88,10 @@ export default async function FluentTakePage({
             <p className="mt-3 text-base leading-relaxed text-white/75">
               A four-skill, CEFR-aligned English placement. Reading and listening are
               auto-scored; writing and speaking are scored against the CEFR rubric.
+            </p>
+            <p dir="rtl" className="mt-2 text-base leading-relaxed text-white/60">
+              تقييم إنجليزي رباعي المهارات ومتوافق مع الإطار الأوروبي المرجعي (CEFR). تُقيَّم القراءة
+              والاستماع تلقائيًا، وتُقيَّم الكتابة والتحدّث وفق معيار CEFR.
             </p>
           </div>
         </div>

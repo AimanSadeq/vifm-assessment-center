@@ -540,6 +540,29 @@ export async function POST(req: Request) {
       );
     }
 
+    // FLU-LC-01: one seat = one placement. If this voucher redemption already has
+    // a completed result, refuse a retake (the take page enforces the same on its
+    // side) so a delegate cannot re-sit and self-select their best CEFR, and no
+    // second credential is minted. A leaked/re-opened token can't bypass this.
+    if (body.redemptionToken?.trim()) {
+      try {
+        const sbGuard = createServiceClient();
+        const { data: red } = await sbGuard
+          .from("eng_fluent_voucher_redemptions")
+          .select("result_id")
+          .eq("redemption_token", body.redemptionToken.trim())
+          .maybeSingle<{ result_id: string | null }>();
+        if (red?.result_id) {
+          return NextResponse.json(
+            { error: "This assessment has already been completed for this link." },
+            { status: 409 }
+          );
+        }
+      } catch {
+        /* redemptions table not migrated - fall through */
+      }
+    }
+
     // Self-consistency: average over FLUENT_SCORE_SAMPLES model calls (default 1).
     const samples = Math.max(1, Math.min(5, Number(process.env.FLUENT_SCORE_SAMPLES) || 1));
     const writingResponse = String(body.writingResponse ?? "");

@@ -3,7 +3,9 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ArrowLeft, ClipboardCheck, PenLine, Mic } from "lucide-react";
+import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
+import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { getServerT, type ServerT } from "@/lib/i18n/server";
 import { CEFR_ORDER, type CefrLevel } from "@/lib/ai/fluent-english";
 import { quadraticWeightedKappa, QWK_ACCEPTABLE } from "@/lib/scoring/qwk";
@@ -56,6 +58,14 @@ async function load() {
 }
 
 export default async function FluentCalibrationPage() {
+  // Internal QA console: it exposes cross-org taker names + verbatim writing /
+  // speaking responses via the service-role client, so it must be staff-only.
+  try {
+    await requireRole(["admin", "consultant", "lead_assessor", "associate_assessor"]);
+  } catch (e) {
+    if (!isAuthorizationError(e)) throw e;
+    notFound();
+  }
   const t = await getServerT("en"); // Fluent stays English regardless of locale cookie
   const data = await load();
 

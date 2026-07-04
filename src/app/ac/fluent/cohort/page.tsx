@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowLeft, Users, BookOpen, Headphones, PenLine, Mic, Award, Sparkles, Flag, MailCheck, Camera } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { requireRole, isAuthorizationError, getCurrentCaller } from "@/lib/ara/auth-guards";
+import { getClientOrgId } from "@/lib/auth/get-org-id";
 import { getServerT, type ServerT } from "@/lib/i18n/server";
 import { CEFR_ORDER, type CefrLevel } from "@/lib/ai/fluent-english";
 import { computeIntegritySignal, type IntegrityFlags, type IntegritySignal } from "@/lib/scoring/integrity";
@@ -57,13 +60,17 @@ function avgBand(values: Array<string | null | undefined>): { band: CefrLevel; n
 
 type LoadResp = { data: Row[] | null; error: unknown };
 
-async function loadRows(): Promise<Row[] | null> {
+async function loadRows(orgId: string | null): Promise<Row[] | null> {
   try {
     const sb = createServiceClient();
     const base =
       "id, created_at, taker_name, taker_email, overall_cefr, reading_cefr, listening_cefr, listening_total, writing_cefr, speaking_attempted, speaking_cefr, ai_scored";
-    const query = (cols: string) =>
-      sb.from("eng_fluent_results").select(cols).order("created_at", { ascending: false }).limit(500);
+    const query = (cols: string) => {
+      let q = sb.from("eng_fluent_results").select(cols).order("created_at", { ascending: false }).limit(500);
+      // A client_manager only ever sees their own organisation's results.
+      if (orgId) q = q.eq("organization_id", orgId);
+      return q;
+    };
 
     // Graceful degradation across migrations: try with the client-org join
     // (00104), then the depth columns (00043), then the base (00042-only).
@@ -79,7 +86,24 @@ async function loadRows(): Promise<Row[] | null> {
 
 export default async function FluentCohortPage({ searchParams }: { searchParams?: { org?: string } }) {
   const t = await getServerT("en"); // Fluent stays English regardless of locale cookie
-  const allRows = await loadRows();
+  // Service-role read (bypasses eng_fluent_results' admin-only RLS), so self-gate:
+  // staff see all; a client_manager is scoped to their own org (mirrors the report
+  // route); anyone else is refused. Dev synthetic-admin still shows everything.
+  let clientMgrOrgId: string | null = null;
+  try {
+    await requireRole(["admin", "consultant", "lead_assessor", "associate_assessor"]);
+  } catch (e) {
+    if (!isAuthorizationError(e)) throw e;
+    const caller = await getCurrentCaller();
+    if (caller?.role === "client_manager") {
+      clientMgrOrgId = await getClientOrgId();
+      if (!clientMgrOrgId) notFound();
+    } else {
+      notFound();
+    }
+  }
+
+  const allRows = await loadRows(clientMgrOrgId);
   const orgFilter = searchParams?.org?.trim() || null;
   const rows = allRows && orgFilter ? allRows.filter((r) => orgName(r) === orgFilter) : allRows;
 

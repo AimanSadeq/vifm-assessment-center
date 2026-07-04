@@ -139,7 +139,7 @@ export function FluentCertificate({ data }: { data: FluentCertificateData }) {
             Fluent. It is intended for placement and development purposes and is not a certified
             high-stakes language qualification.
           </Text>
-          <Text style={s.verify}>Verification ID: {data.id}</Text>
+          <Text style={s.verify}>Result reference: {data.id}</Text>
         </View>
       </Page>
     </Document>

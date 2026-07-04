@@ -50,7 +50,15 @@ export function overallConfidenceBand(result: FluentResult): ConfidenceBand {
   const parts: Array<{ num: number; weight: number }> = [];
   if (result.reading_total > 0) parts.push({ num: toNum(result.reading_cefr), weight: 1 });
   if (result.listening_total > 0) parts.push({ num: toNum(result.listening_cefr), weight: 1 });
-  parts.push({ num: toNum(result.writing.cefr), weight: 1.2 });
+  // Only count writing when it was actually administered. A partial placement
+  // leaves the WRITING_NOT_ASSESSED placeholder (all-zero, "not administered"),
+  // which would otherwise drag the band toward A1 and inflate the half-width -
+  // mirror the guard computeFluentResult uses for the overall blend.
+  const writingAssessed = !(
+    result.writing.task_achievement === 0 &&
+    result.writing.feedback_en === "Writing task was not administered."
+  );
+  if (writingAssessed) parts.push({ num: toNum(result.writing.cefr), weight: 1.2 });
   if (result.speaking.attempted) parts.push({ num: toNum(result.speaking.cefr), weight: 1.2 });
 
   const wSum = parts.reduce((a, p) => a + p.weight, 0);

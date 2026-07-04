@@ -60,6 +60,11 @@ const esc = (s: unknown): string =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 
+// React-PDF (Helvetica) cannot shape Arabic; an Arabic name would print as tofu.
+// Detect it so the PDF certificate routes to the Arabic (Puppeteer) renderer,
+// which shapes the name correctly - even when the UI locale is English.
+const hasArabic = (s: string): boolean => /[؀-ۿݐ-ݿ]/.test(s);
+
 function notFound(): Response {
   return new Response(
     `<!doctype html><meta charset="utf-8"><title>Certificate not found</title>` +
@@ -142,8 +147,9 @@ export async function GET(req: Request, { params }: { params: { resultId: string
 
     // ── Arabic path: Puppeteer renders RTL HTML so Chromium can shape
     //    the Arabic glyphs React-PDF cannot. Same data shape; layout
-    //    mirrors the EN landscape certificate. ──
-    if (lang === "ar") {
+    //    mirrors the EN landscape certificate. Also used when the taker's
+    //    NAME is Arabic (even on an EN request) so it never prints as tofu. ──
+    if (lang === "ar" || hasArabic(name)) {
       const arDate = new Date(row.created_at).toLocaleDateString("ar-AE", {
         day: "numeric",
         month: "long",
@@ -274,7 +280,7 @@ export async function GET(req: Request, { params }: { params: { resultId: string
         This certificate reflects an AI-assisted, CEFR-aligned <strong>indicative</strong> placement produced by Fluent.
         It is intended for placement and development purposes and is <strong>not</strong> a certified high-stakes language qualification.${rangeText ? ` Indicative CEFR range: ${esc(rangeText)}.` : ""}
       </p>
-      <p class="verify">Verification ID: ${esc(row.id)}</p>
+      <p class="verify">Result reference: ${esc(row.id)}</p>
     </div>
   </div>
 </body>

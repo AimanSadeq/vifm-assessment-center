@@ -116,6 +116,19 @@ function parseBody(body) {
 }
 
 function readCommits() {
+  // Render (and most CI) shallow-clone at depth 1, so `git log` would otherwise
+  // see only the HEAD commit and the register would collapse to a single entry.
+  // Best-effort deepen to full history; harmless and fast on an already-complete
+  // repo (git prints "fatal: --unshallow on a complete repository" and exits, we
+  // swallow it). If there is no network this quietly falls through to whatever
+  // history is present, and the entry-count guard below keeps the committed
+  // snapshot rather than regressing.
+  try {
+    execFileSync("git", ["fetch", "--unshallow", "--quiet"], { cwd: ROOT, stdio: "ignore" });
+  } catch {
+    /* not shallow, or offline - fall through */
+  }
+
   const fmt = ["%H", "%h", "%an", "%ad", "%s", "%b"].join(US) + RS;
   const meta = execFileSync(
     "git",
@@ -186,6 +199,24 @@ function build(commits) {
 try {
   const commits = readCommits();
   const data = build(commits);
+
+  // Guard against a shallow clone (where --unshallow failed and `git log` sees
+  // ~1 commit) clobbering the richer committed register. Only overwrite when we
+  // parsed at least as many entries as the file already holds, so a degraded
+  // git environment keeps the good committed snapshot instead of regressing it.
+  let existingTotal = 0;
+  try {
+    if (existsSync(OUT)) existingTotal = JSON.parse(readFileSync(OUT, "utf8")).totalEntries ?? 0;
+  } catch {
+    /* unreadable/absent committed file - treat as empty */
+  }
+  if (data.totalEntries < existingTotal) {
+    console.warn(
+      `[fix-register] parsed ${data.totalEntries} entries (< committed ${existingTotal}); likely a shallow clone - keeping the committed register.`,
+    );
+    process.exit(0);
+  }
+
   mkdirSync(dirname(OUT), { recursive: true });
   writeFileSync(OUT, JSON.stringify(data, null, 2) + "\n", "utf8");
   console.log(`[fix-register] wrote ${data.totalEntries} entries across ${data.serviceCount} services -> ${OUT}`);

@@ -596,5 +596,12 @@
   "adbae3db28c2f2326c65f459a93758be913f0b94": "System maintenance record for data update is now documented for future reference.",
   "c4cc4ceb042a1a9c8532b602d9cfa594422aebac": "Hovering over assessment tiles on the home page now shows helpful hints about what each assessment does.",
   "31468f9dc82331dd8238838dd5def2cbb91c1696": "Platform landing page now fits on a single screen without scrolling on most device sizes.",
-  "ee6daaa3f7131baa94b1816b928125325b64a3b8": "Language choice now stays consistent when users switch between the home page and assessment portals."
+  "ee6daaa3f7131baa94b1816b928125325b64a3b8": "Language choice now stays consistent when users switch between the home page and assessment portals.",
+  "04a3340be8399db9820b72f88aa00b6b9c6ab982": "English placement now prevents unauthorized access to test-taker names, emails, and scores - staff can only see their own organization's data.",
+  "959e01ffc1d132c7ca8cb6efb8f8c19544bc54a9": "Cognitive tests now prevent unauthorized access to test-taker names, emails, and scores - staff can only see their own organization's data.",
+  "c6cdc57f0f7e5799dae537b6f25503eefad20d71": "360 feedback reports now hide feedback summaries when too few people respond, protecting respondent anonymity.",
+  "a1883f96a7e6dc53fcbf9b3a5b735091361d2eb4": "Pre-hire screening now correctly requires all mandatory stages to be completed before candidates can advance, even if those stages have no point value.",
+  "fd61380593bb54668b253a276e0ee56d9b393e0d": "All platform changes now display in plain language first, with technical details available for those who need them.",
+  "bd7c6a7b0bcf0d101ca9d3a00e6e82c36fb4d947": "Administrators can now view a live changelog showing every update to Caliber, organized by feature, with dates and authors.",
+  "e8322975a0dbff7205f92e2823d9d2267d4fb0c5": "The changelog now loads completely and accurately on all deployment platforms, including those that use shallow repository copies."
 }

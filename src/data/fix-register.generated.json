@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T17:04:32.709Z",
+  "generatedAt": "2026-07-05T00:39:05.280Z",
   "latestFixDate": "2026-07-04",
   "totalEntries": 600,
   "serviceCount": 12,
@@ -952,7 +952,7 @@
       "key": "arc",
       "label": "AR Compass (ARC)",
       "blurb": "AI Readiness Compass - organisation + individual readiness.",
-      "count": 92,
+      "count": 91,
       "entries": [
         {
           "hash": "abba0b9295c7c81c94ccb9139486b7ac09ec92b3",
@@ -2044,18 +2044,6 @@
           "title": "Translate the AI Readiness console to Arabic (RTL)",
           "plain": "AI Readiness assessment dashboards and reports now fully support Arabic language with right-to-left display.",
           "explanation": "Wires the ARA consultant + admin consoles into the i18n system with\nArabic copy: the consultant dashboard, assessment creation, the\nassessment-detail view (all tabs), personal deep-dive, the admin console\n(organizations, question bank + authoring, regulatory, retention,\nsandbox), the cohort view, and the report charts (gantt, investment\nmatrix, compliance). Report components that were already bilingual were\nleft untouched. ~760 new EN/AR keys (2019 total at parity); tsc clean.",
-          "service": "arc"
-        },
-        {
-          "hash": "c19461e8c394d56f0aef5464dd32c5d8c1a32f1d",
-          "short": "c19461e",
-          "date": "2026-05-27",
-          "author": "AimanSadeq",
-          "requester": null,
-          "type": "feature",
-          "title": "Add percentile ranking to Personal AI Readiness Snapshot",
-          "plain": "Personal AI Readiness reports now show how candidates rank compared to others who took the same assessment.",
-          "explanation": "Ranks a respondent's overall and per-factor scores against the\ndistribution of all completed personal snapshots (norm group). Gated at\nMIN_NORM_SAMPLE=50 - below that the results page shows an honest\n\"accruing\" note instead of an unstable rank; above it, overall + per-\nfactor percentiles render (bilingual). Norms recompute from raw\nresponses across question-bank versions, so live percentiles appear\nautomatically as volume accrues.",
           "service": "arc"
         }
       ]
@@ -3152,8 +3140,20 @@
       "key": "fluent",
       "label": "Fluent",
       "blurb": "English placement (CEFR).",
-      "count": 44,
+      "count": 45,
       "entries": [
+        {
+          "hash": "04a3340be8399db9820b72f88aa00b6b9c6ab982",
+          "short": "04a3340",
+          "date": "2026-07-04",
+          "author": "AimanSadeq",
+          "requester": null,
+          "type": "critical",
+          "title": "Fluent audit fixes: cohort + calibration IDOR (critical) + retake, retention, reports",
+          "plain": "English placement now prevents unauthorized access to test-taker names, emails, and scores - staff can only see their own organization's data.",
+          "explanation": "Adversarial audit of the English-placement module (11 findings). All app-layer,\nno migration.\n\nCritical / security\n- Cohort page had no staff gate and no org scoping - a service-role query\n  returned every org's taker names, emails, and CEFR scores to any signed-in\n  user. Now gated to staff; a client_manager is scoped to their own org\n  (mirrors the report/certificate routes).\n- Calibration page (QA console) likewise exposed cross-org names + verbatim\n  writing responses + speaking transcripts - now staff-gated.\n- submitHumanRating server action had no role check - now requireRole(staff),\n  so a non-staff caller can't corrupt the calibration data.\n\nMajor\n- Voucher link allowed unlimited retakes (a new result + CEFR credential each\n  time). The take page and the score route now refuse once the redemption has\n  a result - one seat, one placement.\n- Retention purge now anonymises voucher-redeemer PII and sweeps expired\n  sessions (keyed test + start IP), so no PII outlives the 2-year rule.\n- Arabic taker name no longer prints as tofu: the report falls back to the\n  email; the certificate routes to the Arabic (Puppeteer) renderer when the\n  name is Arabic even on an EN request.\n\nMinor\n- Reliability band no longer counts writing when it wasn't administered\n  (partial/Pre-Hire runs).\n- Certificate relabels \"Verification ID\" -> \"Result reference\" (the printed id\n  is the result row, not the publicly-verifiable credential code).\n- Drop the IELTS/TOEFL equivalence claim from the hero (EN + AR).\n- Bilingual framing on the token-delegate landing hero.",
+          "service": "fluent"
+        },
         {
           "hash": "6914c26ab4361db9ff87e2c0a0c03f4c6bfe1a52",
           "short": "6914c26",
@@ -3688,8 +3688,20 @@
       "key": "logica",
       "label": "Logica (Cognitive)",
       "blurb": "Cognitive ability + psychometrics.",
-      "count": 35,
+      "count": 36,
       "entries": [
+        {
+          "hash": "959e01ffc1d132c7ca8cb6efb8f8c19544bc54a9",
+          "short": "959e01f",
+          "date": "2026-07-04",
+          "author": "AimanSadeq",
+          "requester": null,
+          "type": "critical",
+          "title": "Logica audit fixes: cohort IDOR (critical) + reports, timer, retention, i18n",
+          "plain": "Cognitive tests now prevent unauthorized access to test-taker names, emails, and scores - staff can only see their own organization's data.",
+          "explanation": "Adversarial audit of the Cognitive/Psychometrics module (8 findings). All\napp-layer, no migration.\n\nCritical\n- Cognitive cohort page had no staff gate and no org scoping - a service-role\n  query returned every org's taker names, emails, and scores to any signed-in\n  user. Now gated to staff; a client_manager is scoped to their own org\n  (mirrors the report route + the Persona cohort fix).\n\nMinor\n- Retention purge now anonymises voucher-redemption PII and sweeps expired\n  psy_sessions (keyed test + taker email), so no PII outlives the 2-year rule.\n- Report no longer prints a \"General mental ability (g)\" composite for a scoped\n  sitting: single-subtest suppresses it, a partial battery is relabelled\n  \"Reasoning average (partial battery)\".\n- Arabic taker names no longer render as tofu on the (Helvetica) report and\n  bundle cover - they fall back to the email, then a generic label.\n- Server-side time-limit backstop: the cognitive route stamps a deadline at\n  start and rejects a grossly-late score (client auto-submit unchanged).\n- Bilingual pre-test notice (item count, time limit, single-use, answers final,\n  refresh loses progress) before the taker commits.\n- Remaining English-only runner controls (subtitle, Begin, answered-count,\n  Submit) now localise in Arabic mode.",
+          "service": "logica"
+        },
         {
           "hash": "bf96b7d3c0cb71ebbe30059cf8afc58434cd70f5",
           "short": "bf96b7d",
@@ -4116,8 +4128,20 @@
       "key": "reflect",
       "label": "Reflect 360",
       "blurb": "360-degree leadership feedback.",
-      "count": 33,
+      "count": 32,
       "entries": [
+        {
+          "hash": "c6cdc57f0f7e5799dae537b6f25503eefad20d71",
+          "short": "c6cdc57",
+          "date": "2026-07-04",
+          "author": "AimanSadeq",
+          "requester": null,
+          "type": "critical",
+          "title": "Reflect 360 audit fixes: anonymity floor (2 critical) + IDOR, lifecycle, a11y",
+          "plain": "360 feedback reports now hide feedback summaries when too few people respond, protecting respondent anonymity.",
+          "explanation": "Adversarial audit of the 360 feedback module (12 findings). All app-layer, no\nmigration (the archived enum + archived_at column already exist).\n\nCritical - anonymity de-anonymisation in the deliverable\n- The pooled \"Others\" mean (overall + per-competency + per-behaviour) had no\n  distinct-contributor floor, so a lone peer's exact average was published as\n  \"Others' view\" while the per-group table dutifully hid it. Now withheld (and\n  the combined overall too, to block inversion from self + counts) whenever it\n  is carried by 1..min_n-1 distinct SENSITIVE (non-self, non-manager) raters.\n- Per-behaviour verbatim comments were gated on the SCORER count, not the\n  COMMENTER count, so a single peer comment among 3 scoring peers leaked. Now\n  gated on distinct commenters per role.\n\nMajor\n- loadReflectFrameworkForEngagement server action had no owner gate - a\n  consultant could pull another's full framework by id. Now requireEngagementOwner.\n- Strength/blind-spot rankings gated on a hardcoded >= 2 raters; now >= min_n.\n- Rater field window never closed: requireRater now rejects writes past\n  field_window_end, so a stale link can't overwrite reported aggregates.\n- Reassessment guard checked \"completed\" but the enum value is \"complete\", so\n  the primary year-on-year case was always blocked. Fixed the string.\n\nMinor\n- Participant PDF route now authorises before computing scoring, and the guard\n  returns a uniform 403 for missing-vs-unauthorised (no existence oracle).\n- Added an Archive action + button so the retention purge (which only matches\n  archived rows) is reachable - it was a permanent no-op.\n- Rater form now states the anonymity/aggregation promise before rating.\n- Open-question saves register with the submit flush (no lost answers) and\n  surface a retry on failure instead of failing silently.\n- Gamified rating buttons are now a real radiogroup (role/aria-checked).",
+          "service": "reflect"
+        },
         {
           "hash": "632fc3e0ad17123236a5bddf84b9de2ce330080e",
           "short": "632fc3e",
@@ -4489,30 +4513,6 @@
           "plain": "The Reflect 360 platform and Assessment Center rater tools now support full Arabic translation and right-to-left display.",
           "explanation": "Assessor portal: shell/nav, dashboard, assignments, observation form,\nintegration worksheet, and the wash-up engine. Reflect 360 console:\nconsultant dashboard + engagement detail, the 5-step engagement wizard,\nadmin/templates, and the IDP editor. Report pages that were already\nbilingual (participant report, cohort report, framework preview) were\nleft untouched. Gate enabled for /assessor, /client, and the Reflect\nconsole routes. ~470 new EN/AR keys (2522 total at parity); tsc clean.",
           "service": "reflect"
-        },
-        {
-          "hash": "c451a0a37ccda03fe65b4f76ae26325af0699a52",
-          "short": "c451a0a",
-          "date": "2026-05-27",
-          "author": "AimanSadeq",
-          "requester": null,
-          "type": "change",
-          "title": "Rename product \"VIFM Reflect 360\" to \"Reflect 360\"",
-          "plain": "The product name has been simplified from 'VIFM Reflect 360' to 'Reflect 360' for clearer branding across the platform.",
-          "explanation": "Display-name only, across titles, eyebrows, the admin nav label, email\nsignatures, and the behaviour-extractor prompt. Routes stay /reflect and\ntables stay reflect_*. Mirrors the earlier \"VIFM Fluent\" -> \"Fluent\"\nrename. The MIAHONA CHRO deck script and applied migration comments are\nleft untouched.",
-          "service": "reflect"
-        },
-        {
-          "hash": "106e3e3842e14e02ef7da6f9350ca8d456b28117",
-          "short": "106e3e3",
-          "date": "2026-05-26",
-          "author": "AimanSadeq",
-          "requester": null,
-          "type": "change",
-          "title": "Enlarge service-card titles on the platform launcher",
-          "plain": "Service names on the home page are now displayed in larger text for easier scanning and better visual hierarchy.",
-          "explanation": "Bump the four service names (Assessment Center, AI Readiness, Reflect 360,\nFluent) from text-xl to text-2xl for more prominence. Cards otherwise\nunchanged from the light style.",
-          "service": "reflect"
         }
       ]
     },
@@ -4520,8 +4520,20 @@
       "key": "prehire",
       "label": "Pre-Hire",
       "blurb": "Commercial pre-employment screening.",
-      "count": 35,
+      "count": 36,
       "entries": [
+        {
+          "hash": "a1883f96a7e6dc53fcbf9b3a5b735091361d2eb4",
+          "short": "a1883f9",
+          "date": "2026-07-04",
+          "author": "AimanSadeq",
+          "requester": null,
+          "type": "critical",
+          "title": "Pre-Hire audit fixes: required-stage completeness gate + retention, close guard, i18n/a11y",
+          "plain": "Pre-hire screening now correctly requires all mandatory stages to be completed before candidates can advance, even if those stages have no point value.",
+          "explanation": "Adversarial audit of the pre-employment screening module (6 findings, 0\ncritical - the guardrails and token boundary held). All app-layer, no migration.\n\nMajor\n- A required stage with weight 0 could be skipped entirely yet the candidate\n  still scored \"advance\": the completeness gate only inspected weighted stages,\n  and a not-taken stage read as passed=null (not a failure). Now any required\n  stage that is unscored forces \"incomplete\" and nulls the composite - a\n  required hurdle can no longer be silently skipped.\n\nMinor\n- Retention purge now deletes voucher-redemption PII (name/email/IP) for purged\n  candidates - the FK is ON DELETE SET NULL, so it survived the candidate delete.\n- quiz/fluent/cbi submit routes now reject a closed/archived requisition, for\n  parity with the start routes (a stage begun while open could still be scored\n  after close).\n- Candidate apply flow is now bilingual EN/AR with a language toggle + RTL: the\n  quiz (fully) and Fluent task instructions render the Arabic the backend\n  already ships; consent/CBI chrome localised.\n- Quiz answer options are now a real radiogroup (role=radio + aria-checked +\n  aria-labelledby) so screen-reader users can perceive selection and grouping.\n- Voluntary demographics card states explicitly it cannot influence the result\n  (it is shown before the assessment for administrative reasons).",
+          "service": "prehire"
+        },
         {
           "hash": "468811b624b63f1039315b64334ddaebfd6df92a",
           "short": "468811b",
@@ -4948,7 +4960,7 @@
       "key": "academy",
       "label": "Academy & Credentials",
       "blurb": "Course delivery + verifiable credentials.",
-      "count": 11,
+      "count": 9,
       "entries": [
         {
           "hash": "de21b995f2a6092e599bdd92364acd5651ef592e",
@@ -5056,30 +5068,6 @@
           "title": "Translate the full candidate Assessment Center to Arabic",
           "plain": "All candidate-facing pages in the Assessment Center - from welcome through reports to credentials - are now fully translated and displayed in Arabic when selected.",
           "explanation": "Wires every candidate-facing page to the i18n helpers (getServerT for\nserver pages, useTranslation for client components) and adds Arabic copy:\nwelcome + profile form, consent (incl. the UAE/Saudi PDPL + GDPR notice),\nassessments, report, pathway, academy hub/course/lesson + components, and\nthe credentials wallet. Previously only 6 candidate files were wired, so\nswitching to Arabic flipped the layout RTL but left page text English.\n\nLocale files reach full EN/AR parity (403 keys each, no orphans). DB\nvalues (names, course/org titles, scores, enums) stay as data. Arabic is\nMSA and should get a native-speaker review before go-live.",
-          "service": "academy"
-        },
-        {
-          "hash": "6fa85551557839765317d55b7c5c66e9d71b9d7a",
-          "short": "6fa8555",
-          "date": "2026-05-27",
-          "author": "AimanSadeq",
-          "requester": null,
-          "type": "change",
-          "title": "Issue AC \"Ready Now\" credential on engagement completion",
-          "plain": "Candidates whose assessment shows they are 'Ready Now' automatically receive a credential upon engagement completion, visible in their credentials wallet.",
-          "explanation": "When an engagement is marked completed, every candidate whose finalised\nOAR recommendation is ready_now is issued an ac_ready_now credential\n(idempotent on the OAR uuid, best-effort so it never blocks the status\nchange). Engagement-completion is the deliberate \"assessment is final\"\ngate; there is no separate report-release write, and per-OAR-save would\nbe premature. Surfaces in the existing wallet / verify page / certificate.",
-          "service": "academy"
-        },
-        {
-          "hash": "70afe45a63e283bca871dc1ca1c839fe8fca9bdf",
-          "short": "70afe45",
-          "date": "2026-05-27",
-          "author": "AimanSadeq",
-          "requester": null,
-          "type": "feature",
-          "title": "Add VIFM Academy learner flow and verifiable credentials",
-          "plain": "Academy now lets candidates enroll in courses, complete lessons with AI-powered knowledge checks, track progress, view personalized recommendations, earn credentials upon completion, and display certificates on a public verification page.",
-          "explanation": "Academy: self-enroll, course consumption, per-lesson AI knowledge\nchecks (bilingual, deterministic fallback when AI is absent), progress\ntracking, and a My Learning hub with gap-driven recommendations.\n\nCredentials: issue on course completion and on Fluent placement, a\npublic /verify/[code] page (service-client, no auth), a candidate\nwallet, and a React-PDF certificate. Migration 00049 adds enrollments,\nlesson attempts, and credentials tables with admin/own/client RLS.\n\nWire entry points on the candidate welcome + skills surfaces, and\nbypass auth for the public verify routes in middleware.\n\nmarkEnrollmentComplete lives in lib (App Router route files may not\nexport helpers - it would break the production build). Also fixes a\nlesson-result hydration error (Badge inside <p>) and the My Learning\nenrolled_at column.",
           "service": "academy"
         }
       ]
@@ -5599,6 +5587,18 @@
       "count": 70,
       "entries": [
         {
+          "hash": "fd61380593bb54668b253a276e0ee56d9b393e0d",
+          "short": "fd61380",
+          "date": "2026-07-04",
+          "author": "AimanSadeq",
+          "requester": null,
+          "type": "critical",
+          "title": "Fix Register: plain-English explanation for every change",
+          "plain": "All platform changes now display in plain language first, with technical details available for those who need them.",
+          "explanation": "Every entry now leads with a jargon-free sentence a non-technical reader can\nunderstand (what changed and why it matters), with the raw commit message\ntucked behind a \"Technical detail\" expander.\n\n- scripts/explain-fix-register.mjs: AI-writes one plain sentence per commit\n  (Haiku, batched), cached by hash in src/data/fix-register-explanations.json.\n  Incremental (only uncached commits) + crash-safe + tolerant (no key / model\n  error just leaves the raw message as fallback). 597/600 seeded.\n- Generator merges the cache as `plain` on each entry.\n- prebuild runs generate -> explain -> generate so new commits are explained\n  on each deploy.\n- Page: plain line is the headline; a \"What the labels mean\" legend explains\n  Critical / Security / Audit / Fix / Feature / Change in plain terms.\n- Per-service list capped at 20 with a \"Show more\" expander (lighter render).",
+          "service": "platform"
+        },
+        {
           "hash": "bd7c6a7b0bcf0d101ca9d3a00e6e82c36fb4d947",
           "short": "bd7c6a7",
           "date": "2026-07-04",
@@ -5606,7 +5606,7 @@
           "requester": null,
           "type": "fix",
           "title": "Add live Fix Register admin page (per-service, git-derived)",
-          "plain": null,
+          "plain": "Administrators can now view a live changelog showing every update to Caliber, organized by feature, with dates and authors.",
           "explanation": "A live, admin-only changelog at /admin/fix-register showing, per service,\nevery change shipped to Caliber with its fix date, author, optional\nrequester, and full explanation.\n\n- scripts/generate-fix-register.mjs parses the commit history, classifies\n  each commit to a service by touched files + message, infers a change\n  type, and extracts an optional \"Requested-by:\" trailer. Writes\n  src/data/fix-register.generated.json. Tolerant of no .git at build.\n- Wired into \"prebuild\" so the register refreshes on every deploy; also\n  runnable via \"npm run gen:fix-register\".\n- Page is a server component + client filter (search, service, type).\n  Admin-only for free under the /admin layout role gate.\n- Sidebar link under Platform.",
           "service": "platform"
         },
@@ -6425,18 +6425,6 @@
           "plain": "The admin portal now works fully in Arabic with right-to-left layout.",
           "explanation": "Wires the full /admin portal into the i18n system with Arabic copy:\nthe sidebar shell + dashboard, clients, assessors, settings, analytics,\nengagements (list/detail/Talent Map), the 5-step engagement wizard,\nrole profiles, and the training-courses catalogue. Adds /admin (and the\nARA console routes) to the locale gate so the in-portal language switcher\nflips the whole portal to Arabic/RTL; translates the shared ProcessMap\nand AraTopBar shells. ~800 new EN/AR keys at parity; tsc clean.\n\nThe ARA and Reflect consoles are still in progress and not in this commit.",
           "service": "platform"
-        },
-        {
-          "hash": "3179d16449f335e11414648f4a2b3d82ae3ab69c",
-          "short": "3179d16",
-          "date": "2026-05-27",
-          "author": "AimanSadeq",
-          "requester": null,
-          "type": "feature",
-          "title": "Add engagement Talent Map (9-box, succession, skills heatmap)",
-          "plain": "Admins can now see team talent on interactive charts - a nine-box performance plot, succession pipeline, and skills breakdown.",
-          "explanation": "New admin page at /admin/engagements/[id]/talent-map plots the cohort\non a nine-box (performance = RESULTS+PEOPLE, potential = THINKING+SELF,\n1-5 consensus scale), a succession-readiness pipeline grouped by OAR\nrecommendation, and a domain-grouped cohort skills heatmap with a\ncohort-average row. Summary cards surface ready-now and star counts.\n\nReusable bands / 9-box label matrix / tones live in\nsrc/lib/scoring/talent-map.ts. heatmapTone returns inline hex (not\nTailwind classes) because src/lib is outside the content globs and\nclass strings there get purged. Adds a Talent Map button to the\nengagement detail header.",
-          "service": "platform"
         }
       ]
     },
@@ -6444,8 +6432,20 @@
       "key": "other",
       "label": "Other",
       "blurb": "Uncategorised changes.",
-      "count": 71,
+      "count": 72,
       "entries": [
+        {
+          "hash": "e8322975a0dbff7205f92e2823d9d2267d4fb0c5",
+          "short": "e832297",
+          "date": "2026-07-04",
+          "author": "AimanSadeq",
+          "requester": null,
+          "type": "fix",
+          "title": "Fix Register: survive Render shallow clone (deepen + entry guard)",
+          "plain": "The changelog now loads completely and accurately on all deployment platforms, including those that use shallow repository copies.",
+          "explanation": "Render deploys shallow-clone at depth 1, so the prebuild git-log saw only\nthe HEAD commit and regenerated the register down to a single entry,\nclobbering the committed 600-entry snapshot on the live site.\n\n- readCommits() best-effort `git fetch --unshallow` to restore full history\n  in CI (harmless/fast on an already-complete local clone).\n- write step keeps the committed register when a parse yields fewer entries\n  than the file already holds (belt-and-suspenders if unshallow is offline).",
+          "service": "other"
+        },
         {
           "hash": "11a89f15c16b329270e692d65317ad6a2c7d89a1",
           "short": "11a89f1",

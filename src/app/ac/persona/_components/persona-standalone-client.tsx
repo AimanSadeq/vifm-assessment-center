@@ -869,26 +869,31 @@ export function PersonaStandaloneClient({
         </div>
       )}
 
-      {phase === "result" && profile && (
-        (pinned || !canView) ? (
-          /* XP-13: results are NOT shown to the taker (voucher delegate OR any
-             non-staff taker) - every Persona report is an admin/client
-             deliverable. Staff testing the instrument still see the report. */
-          <div className="rounded-xl border bg-card p-10 text-center" dir={ar ? "rtl" : "ltr"}>
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-              <CheckCircle2 className="h-7 w-7" />
-            </div>
-            <h2 className="text-lg font-semibold text-[#010131]">
-              {tx("Your assessment has been submitted", "تم إرسال تقييمك")}
-            </h2>
-            <p className="mt-3 text-sm text-muted-foreground">
-              {tx(
-                "Thank you. Your responses have been recorded and will be shared with the requesting organization. Results are not shown here.",
-                "شكراً لك. تم تسجيل إجاباتك وستتم مشاركتها مع المؤسسة الطالبة للتقييم، ولا تُعرض النتائج هنا.",
-              )}
-            </p>
+      {/* XP-13: results are NOT shown to the taker (voucher delegate OR any
+          non-staff taker) - every Persona report is an admin/client deliverable,
+          so the taker gets a thank-you. This must NOT depend on `profile`: a
+          non-staff submit deliberately returns no profile/report, so gating the
+          whole block on `profile` used to leave the taker on a blank screen with
+          no confirmation. Staff testing the instrument still see the report. */}
+      {phase === "result" && (pinned || !canView) && (
+        <div className="rounded-xl border bg-card p-10 text-center" dir={ar ? "rtl" : "ltr"}>
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+            <CheckCircle2 className="h-7 w-7" />
           </div>
-        ) : report ? (
+          <h2 className="text-lg font-semibold text-[#010131]">
+            {tx("Your assessment has been submitted", "تم إرسال تقييمك")}
+          </h2>
+          <p className="mt-3 text-sm text-muted-foreground">
+            {tx(
+              "Thank you. Your responses have been recorded and will be shared with the requesting organization. Results are not shown here.",
+              "شكراً لك. تم تسجيل إجاباتك وستتم مشاركتها مع المؤسسة الطالبة للتقييم، ولا تُعرض النتائج هنا.",
+            )}
+          </p>
+        </div>
+      )}
+
+      {phase === "result" && !(pinned || !canView) && profile && (
+        report ? (
           <PersonaReportView data={report} ar={ar} sessionId={sessionId} onReset={reset} />
         ) : (
           <PersonaResult

@@ -426,7 +426,7 @@ export function VouchersClient({
             <span className="text-muted-foreground">Function</span>
             <select value={functionId} onChange={(e) => setFunctionId(e.target.value)} className="rounded-md border border-border bg-card px-3 py-2 text-foreground">
               {functions.map((f) => (
-                <option key={f.id} value={f.id}>{f.nodeId} · {f.nameEn}</option>
+                <option key={f.id} value={f.id}>{f.nodeId ? `${f.nodeId} · ` : ""}{f.nameEn}</option>
               ))}
             </select>
           </label>

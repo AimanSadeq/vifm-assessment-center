@@ -397,10 +397,24 @@ export interface CreateSessionInput {
 }
 export async function createSession(input: CreateSessionInput) {
   const sb = createServiceClient();
-  const mcqPct = Math.max(0, Math.min(100, Math.round(input.mcqPct ?? 0)));
+  let mcqPct = Math.max(0, Math.min(100, Math.round(input.mcqPct ?? 0)));
   const isCustom = input.isCustom === true;
   const selectedSkills = (input.selectedSkills ?? []).filter(Boolean);
   const selectedBlockIds = (input.selectedBlockIds ?? []).filter(Boolean);
+
+  // A FULL sitting on a function with NO hands-on tasks (e.g. a knowledge-only
+  // HR function like Talent Acquisition, which has skills but no sandbox blocks)
+  // would be an EMPTY test when the knowledge weight is left at 0. Force the
+  // knowledge section on so the delegate always gets a real (indicative) MCQ
+  // sitting. Custom sittings already validate that they assess something.
+  if (!isCustom && mcqPct <= 0) {
+    try {
+      const { blocks } = await loadBlocks(input.functionId);
+      if (blocks.length === 0) mcqPct = 100;
+    } catch {
+      /* can't tell - leave the weight as-is */
+    }
+  }
 
   // Provision the keyed MCQ test up front (held server-side; stripped before it
   // reaches the browser). Built in English for v1 - the sandbox blocks keep

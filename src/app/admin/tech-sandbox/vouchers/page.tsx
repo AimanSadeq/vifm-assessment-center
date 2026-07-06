@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
-import { listFunctions } from "@/lib/technical-sandbox/service";
+import { listAssessableFunctions } from "@/lib/technical-sandbox/service";
 import { listVouchers } from "@/lib/technical-sandbox/vouchers";
 import { loadPlatformClients } from "@/lib/clients/registry";
 import { VoucherNav } from "@/components/shared/voucher-nav";
@@ -16,7 +16,7 @@ export default async function TechVouchersPage() {
     if (isAuthorizationError(e)) redirect("/login");
     throw e;
   }
-  const [functions, vouchers] = await Promise.all([listFunctions(true), listVouchers()]);
+  const [functions, vouchers] = await Promise.all([listAssessableFunctions(), listVouchers()]);
   const clients = (await loadPlatformClients().catch(() => [])).map((c) => c.name);
 
   return (

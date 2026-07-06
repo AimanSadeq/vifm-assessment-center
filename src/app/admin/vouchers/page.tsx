@@ -3,7 +3,7 @@ import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { createServiceClient } from "@/lib/supabase/server";
 import { BackLink } from "@/components/shared/back-link";
 import { loadPlatformClients } from "@/lib/clients/registry";
-import { listFunctions } from "@/lib/technical-sandbox/service";
+import { listAssessableFunctions } from "@/lib/technical-sandbox/service";
 import { listVouchers } from "@/lib/technical-sandbox/vouchers";
 import { VouchersClient as AraVouchersClient } from "@/app/ara/admin/vouchers/_components/vouchers-client";
 import { VouchersClient as TechVouchersClient } from "@/app/admin/tech-sandbox/vouchers/_components/vouchers-client";
@@ -107,7 +107,7 @@ export default async function VouchersHubPage({
   let techSlot: React.ReactNode = null;
   let techSummary: ServiceSummary = UNAVAILABLE;
   try {
-    const [functions, vouchers] = await Promise.all([listFunctions(true), listVouchers()]);
+    const [functions, vouchers] = await Promise.all([listAssessableFunctions(), listVouchers()]);
     techSummary = summarize(vouchers.map((v) => ({ max: v.maxUses, used: v.usedCount })));
     techSlot =
       functions.length === 0 ? (

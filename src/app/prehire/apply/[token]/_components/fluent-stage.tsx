@@ -81,9 +81,17 @@ export function FluentStage({ token, onDone, lang = "en" }: { token: string; onD
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  // Browser-native speech-to-text (primary path - free, no server, works on Render).
+  // Browser-native speech-to-text: a live-preview "fast path" that runs IN
+  // PARALLEL with an always-on audio recording. Web Speech is unreliable (a
+  // network hiccup to the browser's recogniser returns nothing), so the recorded
+  // audio is the real source of truth - if Web Speech comes back empty we
+  // transcribe the recording on the server instead of dead-ending the candidate.
   const sttRef = useRef<BrowserSttSession | null>(null);
-  const usingSttRef = useRef(false);
+  const sttFinalRef = useRef<string | null>(null);
+  const audioBlobRef = useRef<Blob | null>(null);
+  const sttSettledRef = useRef(false);
+  const recorderSettledRef = useRef(false);
+  const finalizedRef = useRef(false);
 
   // Stop TTS + recording if we unmount mid-flow.
   useEffect(() => {
@@ -152,28 +160,24 @@ export function FluentStage({ token, onDone, lang = "en" }: { token: string; onD
     synth.speak(u);
   }, [plays]);
 
-  async function transcribeBlob(blob: Blob) {
-    setTranscribing(true);
-    setSpeakNote("");
+  // A blob smaller than this almost certainly captured no real audio.
+  const MIN_AUDIO_BYTES = 1500;
+
+  /** Server transcription of the recorded audio (OpenAI Whisper on Render).
+   *  Returns the transcript on success, or null on any failure. */
+  async function transcribeBlob(blob: Blob): Promise<string | null> {
     try {
       const fd = new FormData();
       fd.append("audio", blob, "speaking.webm");
       const res = await fetch(`/api/prehire/${token}/fluent/transcribe`, { method: "POST", body: fd });
       const data = (await res.json().catch(() => ({}))) as {
-        transcript?: string; error?: string; pronunciation?: PronunciationLike | null;
+        transcript?: string; pronunciation?: PronunciationLike | null;
       };
-      if (!res.ok || typeof data.transcript !== "string") {
-        setSpeakMode("type");
-        setSpeakNote("Transcription didn't work. You can type your answer instead.");
-      } else {
-        setTranscript(data.transcript);
-        setPronunciation(data.pronunciation ?? null);
-      }
+      if (!res.ok || typeof data.transcript !== "string") return null;
+      setPronunciation(data.pronunciation ?? null);
+      return data.transcript.trim();
     } catch {
-      setSpeakMode("type");
-      setSpeakNote("Transcription didn't work. You can type your answer instead.");
-    } finally {
-      setTranscribing(false);
+      return null;
     }
   }
 
@@ -181,48 +185,72 @@ export function FluentStage({ token, onDone, lang = "en" }: { token: string; onD
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
   }
 
-  async function startRecording() {
-    setSpeakNote("");
-    // Primary: free, in-browser transcription (no server round-trip, works on
-    // Render). The transcript streams in live and flows straight into scoring.
-    // Only browsers without the Web Speech API (e.g. Firefox) fall through.
-    const stt = startBrowserStt({
-      onPartial: (text) => setTranscript(text),
-      onDone: (finalText) => {
-        endTimer();
-        setRecording(false);
-        usingSttRef.current = false;
-        sttRef.current = null;
-        setTranscript(finalText);
-        if (!finalText) setSpeakNote("We didn't catch any speech. Please record again.");
-      },
-      onError: (code) => {
-        endTimer();
-        setRecording(false);
-        usingSttRef.current = false;
-        sttRef.current = null;
-        setSpeakMode("type");
-        setSpeakNote(
-          code === "not-allowed" || code === "service-not-allowed" || code === "audio-capture"
-            ? "Microphone not available. You can type your answer instead."
-            : "Transcription didn't work. You can type your answer instead."
-        );
-      },
-    });
-    if (stt) {
-      sttRef.current = stt;
-      usingSttRef.current = true;
-      setTranscript("");
-      setPronunciation(null);
-      setRecording(true);
-      setRecSeconds(0);
-      timerRef.current = setInterval(() => setRecSeconds((s) => s + 1), 1000);
+  /** Runs once BOTH the live Web-Speech result and the audio recording have
+   *  settled. Prefers a solid live transcript; otherwise falls back to
+   *  server transcription of the actual recording so a Web-Speech miss never
+   *  strands the candidate. Only if BOTH fail do we offer typing. */
+  const finalizeSpeaking = useCallback(async () => {
+    if (finalizedRef.current) return;
+    if (!sttSettledRef.current || !recorderSettledRef.current) return; // wait for both
+    finalizedRef.current = true;
+    endTimer();
+    setRecording(false);
+
+    const sttText = (sttFinalRef.current ?? "").trim();
+    const blob = audioBlobRef.current;
+
+    // Fast path: the live browser transcript already has enough - use it, no
+    // server round-trip.
+    if (wordCount(sttText) >= MIN_WORDS) {
+      setTranscript(sttText);
       return;
     }
-    // Fallback: MediaRecorder → server transcription (e.g. Firefox).
+    // Reliable fallback: transcribe the recording we captured. This rescues the
+    // common "Web Speech returned nothing" case that used to dead-end here.
+    if (blob && blob.size >= MIN_AUDIO_BYTES) {
+      setTranscribing(true);
+      const serverText = await transcribeBlob(blob);
+      setTranscribing(false);
+      if (serverText && wordCount(serverText) >= 1) {
+        setTranscript(serverText);
+        setSpeakNote("");
+        return;
+      }
+    }
+    // Both paths failed. Keep any partial words and guide clearly; the "type
+    // instead" affordance stays available so the candidate is never stuck.
+    if (sttText) {
+      setTranscript(sttText);
+      setSpeakNote("We only caught part of your answer. Please record again, or type your answer.");
+    } else {
+      setSpeakNote("We couldn't hear you. Check your microphone and record again, or type your answer instead.");
+    }
+    // transcribeBlob only closes over token + stable setters - safe to omit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
+  async function startRecording() {
+    setSpeakNote("");
+    setTranscript("");
+    setPronunciation(null);
+    finalizedRef.current = false;
+    sttFinalRef.current = null;
+    audioBlobRef.current = null;
+
+    // 1) ALWAYS capture raw audio first - it is the reliable source of truth.
+    //    Without a working mic there's nothing to fall back on, so offer typing.
+    let stream: MediaStream;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      setSpeakMode("type");
+      setSpeakNote("Microphone not available. You can type your answer instead.");
+      return;
+    }
+    streamRef.current = stream;
+
+    let hasRecorder = false;
+    try {
       const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
         ? "audio/webm;codecs=opus"
         : MediaRecorder.isTypeSupported("audio/webm")
@@ -233,29 +261,67 @@ export function FluentStage({ token, onDone, lang = "en" }: { token: string; onD
       mr.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
       mr.onstop = () => {
         streamRef.current?.getTracks().forEach((tr) => tr.stop());
-        const blob = new Blob(chunksRef.current, { type: mr.mimeType || "audio/webm" });
-        void transcribeBlob(blob);
+        streamRef.current = null;
+        audioBlobRef.current = chunksRef.current.length
+          ? new Blob(chunksRef.current, { type: mr.mimeType || "audio/webm" })
+          : null;
+        recorderSettledRef.current = true;
+        void finalizeSpeaking();
       };
       mediaRef.current = mr;
       mr.start();
-      setRecording(true);
-      setRecSeconds(0);
-      timerRef.current = setInterval(() => setRecSeconds((s) => s + 1), 1000);
+      hasRecorder = true;
     } catch {
-      setSpeakMode("type");
-      setSpeakNote("Microphone not available. You can type your answer instead.");
+      mediaRef.current = null;
     }
+    recorderSettledRef.current = !hasRecorder; // nothing to wait for if no recorder
+
+    // 2) Live browser transcription (preview + fast path), running alongside the
+    //    recording. May be unavailable (Firefox) or fail - the recording covers it.
+    const stt = startBrowserStt({
+      onPartial: (text) => setTranscript(text),
+      onDone: (finalText) => {
+        sttFinalRef.current = finalText;
+        sttRef.current = null;
+        sttSettledRef.current = true;
+        void finalizeSpeaking();
+      },
+      onError: () => {
+        sttFinalRef.current = sttFinalRef.current ?? "";
+        sttRef.current = null;
+        sttSettledRef.current = true;
+        void finalizeSpeaking();
+      },
+    });
+    if (stt) {
+      sttRef.current = stt;
+      sttSettledRef.current = false;
+    } else {
+      sttFinalRef.current = "";
+      sttSettledRef.current = true; // no live engine; rely on the recording
+    }
+
+    setRecording(true);
+    setRecSeconds(0);
+    timerRef.current = setInterval(() => setRecSeconds((s) => s + 1), 1000);
   }
 
   function stopRecording() {
-    // Web Speech path: stop() triggers onDone, which clears the timer + state.
-    if (usingSttRef.current && sttRef.current) {
-      sttRef.current.stop();
-      return;
+    // Stop the live transcriber (fires onDone → settles the STT side) and the
+    // recorder (fires onstop → settles the recorder side + builds the blob).
+    // finalizeSpeaking runs once both have settled.
+    if (sttRef.current) {
+      try { sttRef.current.stop(); } catch { sttSettledRef.current = true; }
+    } else {
+      sttSettledRef.current = true;
     }
-    endTimer();
-    setRecording(false);
-    mediaRef.current?.stop();
+    const mr = mediaRef.current;
+    if (mr && mr.state !== "inactive") {
+      try { mr.stop(); } catch { recorderSettledRef.current = true; }
+    } else {
+      recorderSettledRef.current = true;
+    }
+    void finalizeSpeaking();
   }
 
   const start = async () => {
@@ -487,6 +553,14 @@ export function FluentStage({ token, onDone, lang = "en" }: { token: string; onD
                     <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{recording ? "Listening…" : "What we heard"}</p>
                     <p className="text-sm text-[#111232]">{transcript}</p>
                   </div>
+                )}
+                {!recording && !transcribing && (
+                  <button
+                    onClick={() => { setSpeakMode("type"); setSpeakNote(""); }}
+                    className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700"
+                  >
+                    <PenLine className="h-3.5 w-3.5" /> Prefer to type? Type your answer instead
+                  </button>
                 )}
               </div>
             ) : (

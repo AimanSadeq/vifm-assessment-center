@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
-import { listFunctions, getCustomBuilderData } from "@/lib/technical-sandbox/service";
+import { listAssessableFunctions, getCustomBuilderData } from "@/lib/technical-sandbox/service";
 import { validateTalentLens } from "@/lib/constants/ara-individual-factors";
 import { BackLink } from "@/components/shared/back-link";
 import { CustomBuilder } from "./_components/custom-builder";
@@ -23,7 +23,7 @@ export default async function CustomBuilderPage({
   // Talent lens captured from the launching pillar (00135): drives whether the
   // report carries the VIFM Academy course block. NULL = development framing.
   const talentLens = validateTalentLens(searchParams.lens);
-  const functions = await listFunctions(true);
+  const functions = await listAssessableFunctions();
   const selectedKey = searchParams.function ?? functions[0]?.key ?? null;
   const selected = functions.find((f) => f.key === selectedKey) ?? null;
   const builder = selected ? await getCustomBuilderData(selected.id) : null;

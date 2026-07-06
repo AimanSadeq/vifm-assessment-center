@@ -173,6 +173,14 @@ const isPublicPreviewRoute = (pathname: string) =>
 // validated + best-effort emailed server-side. Bypass auth in dev and prod.
 const isDemoRequestRoute = (pathname: string) => pathname === "/api/demo-request";
 
+// Client proposal view - a no-account client opens an ISSUED proposal (and its
+// PDF) via an unguessable proposals.access_token. Identity/eligibility is gated
+// server-side (token match + issued status). NOTE: the admin surfaces live under
+// /admin/proposals + /api/admin/proposals and are NOT matched here, so they stay
+// session-gated.
+const isProposalClientRoute = (pathname: string) =>
+  pathname.startsWith("/proposals/") || pathname.startsWith("/api/proposals/");
+
 export async function middleware(request: NextRequest) {
   if (
     isProctorApiRoute(request.nextUrl.pathname) ||
@@ -193,7 +201,8 @@ export async function middleware(request: NextRequest) {
     isRoleReadinessRoute(request.nextUrl.pathname) ||
     isBundleApplyRoute(request.nextUrl.pathname) ||
     isPublicPreviewRoute(request.nextUrl.pathname) ||
-    isDemoRequestRoute(request.nextUrl.pathname)
+    isDemoRequestRoute(request.nextUrl.pathname) ||
+    isProposalClientRoute(request.nextUrl.pathname)
   ) {
     return NextResponse.next();
   }

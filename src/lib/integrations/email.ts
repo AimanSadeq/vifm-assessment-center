@@ -36,6 +36,7 @@ export type EmailTemplate =
   | "role_readiness_invitation"
   | "voucher_batch_to_client"
   | "voucher_to_delegate"
+  | "proposal_delivery"
   | "platform_demo_request";
 
 /** Optional file attachment (e.g. a generated PDF report). */
@@ -247,6 +248,20 @@ VIFM Assessment Center`,
 Here are your {{count}} VIFM {{serviceLabel}} access link(s). Share each link with the person who will take the assessment - they start straight away, no account needed. Each link opens the page with the code already filled in.
 
 {{links}}
+
+Best regards,
+Virginia Institute of Finance and Management`,
+  },
+  proposal_delivery: {
+    subject: "Your VIFM proposal - {{proposalTitle}}",
+    body: `Dear {{clientName}},
+
+Please find attached your talent-intelligence proposal from the Virginia Institute of Finance and Management: {{proposalTitle}}.
+
+You can also view it online here:
+{{viewUrl}}
+
+This proposal is valid until {{validUntil}}. We would be glad to walk you through the technical approach and commercials at your convenience.
 
 Best regards,
 Virginia Institute of Finance and Management`,

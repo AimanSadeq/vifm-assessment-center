@@ -23,6 +23,7 @@ function fmtDate(iso: string | null): string {
 export function buildProposalHtml(p: Proposal): string {
   const cur = p.currency || "USD";
   const money = (n: number) => formatMoney(n, cur);
+  const num = (n: number) => (n || 0).toLocaleString("en-US");
   const discount = Math.round((p.subtotal - p.total) * 100) / 100;
 
   const scopeWithSeats = p.scope.filter((s) => (s.seats ?? 0) > 0);
@@ -34,7 +35,7 @@ export function buildProposalHtml(p: Proposal): string {
       const blurb = meta?.blurb ?? "";
       const note = s.scopeNote ? `<p class="scope-note"><strong>Scope:</strong> ${esc(s.scopeNote)}</p>` : "";
       return `<div class="svc">
-        <h3>${esc(s.label)} <span class="seats">${s.seats} participant${s.seats === 1 ? "" : "s"}</span></h3>
+        <h3>${esc(s.label)} <span class="seats">${num(s.seats)} participant${s.seats === 1 ? "" : "s"}</span></h3>
         <p>${esc(blurb)}</p>
         ${note}
       </div>`;
@@ -45,7 +46,7 @@ export function buildProposalHtml(p: Proposal): string {
   const scopeRows = scopeWithSeats
     .map(
       (s) =>
-        `<tr><td>${esc(s.label)}</td><td class="num">${s.seats}</td><td>${esc(
+        `<tr><td>${esc(s.label)}</td><td class="num">${num(s.seats)}</td><td>${esc(
           s.scopeNote ?? "Full instrument",
         )}</td></tr>`,
     )
@@ -55,7 +56,7 @@ export function buildProposalHtml(p: Proposal): string {
   const lineRows = p.lineItems
     .map(
       (l) =>
-        `<tr><td>${esc(l.label)}</td><td class="num">${l.seats}</td><td class="num">${money(
+        `<tr><td>${esc(l.label)}</td><td class="num">${num(l.seats)}</td><td class="num">${money(
           l.unitRate,
         )}</td><td class="num">${money(l.subtotal)}</td></tr>`,
     )

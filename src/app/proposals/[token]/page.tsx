@@ -48,7 +48,7 @@ export default async function ClientProposalPage({ params }: { params: { token: 
                         {s.label}
                         {s.scopeNote ? <span className="text-slate-500"> &middot; {s.scopeNote}</span> : null}
                       </span>
-                      <span className="shrink-0 tabular-nums text-slate-500">{s.seats} participant{s.seats === 1 ? "" : "s"}</span>
+                      <span className="shrink-0 tabular-nums text-slate-500">{(s.seats || 0).toLocaleString("en-US")} participant{s.seats === 1 ? "" : "s"}</span>
                     </li>
                   ))}
               </ul>

@@ -41,7 +41,17 @@ export function proposalRef(p: Proposal): string {
   return `VIFM-P-${year}-${p.id.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
 }
 
-export function buildProposalHtml(p: Proposal): string {
+export function buildProposalHtml(
+  p: Proposal,
+  opts?: {
+    /** Monochrome white VIFM logo (data URI) - dark cover, per the Brand Kit. */
+    logoWhite?: string | null;
+    /** Primary color VIFM logo (data URI) - light pages, per the Brand Kit. */
+    logoColor?: string | null;
+  },
+): string {
+  const logoWhite = opts?.logoWhite ?? null;
+  const logoColor = opts?.logoColor ?? null;
   const cur = p.currency || "USD";
   const money = (n: number) => formatMoney(n, cur);
   const num = (n: number) => (n || 0).toLocaleString("en-US");
@@ -111,6 +121,8 @@ export function buildProposalHtml(p: Proposal): string {
 <html lang="en">
 <head>
 <meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" />
 <style>
   @page { size: A4; margin: 16mm 15mm 20mm; }
   * { box-sizing: border-box; }
@@ -118,6 +130,7 @@ export function buildProposalHtml(p: Proposal): string {
 
   /* Cover */
   .cover { background: #010131; color: #fff; border-radius: 10px; padding: 26mm 20mm; height: 250mm; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always; }
+  .cover .logo { height: 16mm; width: auto; display: block; margin-bottom: 16mm; }
   .cover .eyebrow { color: #93b8e6; font-size: 9pt; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
   .cover h1 { color: #fff; font-size: 26pt; line-height: 1.15; margin: 10px 0 0; border: 0; padding: 0; }
   .cover .accent { width: 64px; height: 4px; background: #5391D5; margin-top: 16px; }
@@ -127,6 +140,8 @@ export function buildProposalHtml(p: Proposal): string {
 
   /* Contents */
   .toc { page-break-after: always; }
+  .toc-head { display: flex; align-items: center; justify-content: space-between; gap: 10mm; }
+  .toc-head img { height: 10mm; width: auto; }
   .toc ol { margin: 10px 0 0; padding-left: 0; list-style: none; counter-reset: toc; column-count: 1; }
   .toc li { counter-increment: toc; padding: 6px 2px; border-bottom: 1px solid #eef2f7; font-size: 10.5pt; }
   .toc li::before { content: counter(toc) ".  "; color: #5391D5; font-weight: 700; }
@@ -183,6 +198,7 @@ export function buildProposalHtml(p: Proposal): string {
   <!-- Cover -->
   <div class="cover">
     <div>
+      ${logoWhite ? `<img class="logo" src="${logoWhite}" alt="VIFM" />` : ""}
       <div class="eyebrow">VIFM Caliber&reg; &middot; Talent Intelligence Proposal</div>
       <h1>${esc(p.title)}</h1>
       <div class="accent"></div>
@@ -205,7 +221,10 @@ export function buildProposalHtml(p: Proposal): string {
 
   <!-- Contents -->
   <div class="toc">
-    <div class="eyebrow">${ref}</div>
+    <div class="toc-head">
+      <div class="eyebrow">${ref}</div>
+      ${logoColor ? `<img src="${logoColor}" alt="VIFM" />` : ""}
+    </div>
     <h2 style="border-top:0;padding-top:0;">Contents</h2>
     <ol>
       <li>Executive summary</li>

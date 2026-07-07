@@ -38,7 +38,12 @@ export function escapeHtml(s: unknown): string {
  */
 export async function renderHtmlToPdfBuffer(
   html: string,
-  opts?: { landscape?: boolean }
+  opts?: {
+    landscape?: boolean;
+    /** Print a running footer: `left` text + "Page N of M" on every page.
+     *  Caller-supplied constant text, escaped defensively anyway. */
+    pageFooter?: { left?: string };
+  }
 ): Promise<Buffer> {
   const browser: Browser = await launchPdfBrowser({
     defaultViewport: { width: 1200, height: 900, deviceScaleFactor: 1 },
@@ -50,11 +55,22 @@ export async function renderHtmlToPdfBuffer(
       const f = (document as unknown as { fonts?: { ready?: Promise<unknown> } }).fonts;
       if (f && typeof f.ready?.then === "function") await f.ready;
     });
+    const footer = opts?.pageFooter;
     const pdf = await page.pdf({
       format: "A4",
       landscape: opts?.landscape ?? false,
       printBackground: true,
       preferCSSPageSize: true,
+      ...(footer
+        ? {
+            displayHeaderFooter: true,
+            headerTemplate: "<span></span>",
+            footerTemplate:
+              `<div style="width:100%;font-size:7pt;color:#94a3b8;padding:0 15mm;display:flex;justify-content:space-between;align-items:baseline;font-family:Arial,Helvetica,sans-serif;">` +
+              `<span>${escapeHtml(footer.left ?? "")}</span>` +
+              `<span>Page <span class="pageNumber"></span> of <span class="totalPages"></span></span></div>`,
+          }
+        : {}),
     });
     return Buffer.from(pdf);
   } finally {

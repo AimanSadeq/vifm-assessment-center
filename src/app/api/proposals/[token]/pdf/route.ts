@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { findProposalByToken } from "@/lib/proposals/service";
-import { buildProposalHtml } from "@/lib/proposals/proposal-html";
+import { buildProposalHtml, proposalRef } from "@/lib/proposals/proposal-html";
 import { renderHtmlToPdfBuffer } from "@/lib/reports/html-to-pdf";
 
 export const runtime = "nodejs";
@@ -18,7 +18,9 @@ export async function GET(_req: Request, { params }: { params: { token: string }
     return NextResponse.json({ error: "Proposal not found" }, { status: 404 });
   }
   try {
-    const pdf = await renderHtmlToPdfBuffer(buildProposalHtml(proposal));
+    const pdf = await renderHtmlToPdfBuffer(buildProposalHtml(proposal), {
+      pageFooter: { left: `VIFM Caliber® · ${proposalRef(proposal)} · Confidential` },
+    });
     const name = proposal.clientName.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "Client";
     return new NextResponse(new Uint8Array(pdf), {
       headers: {

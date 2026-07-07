@@ -35,6 +35,48 @@ export const PROPOSAL_BLURB: Record<CaliberService, string> = {
     "Multi-rater 360 leadership feedback against the client's own competency framework. Self, manager, peer and direct-report ratings roll up into anonymity-protected participant and cohort reports with an individual development plan.",
 };
 
+/** Concrete deliverables per service, listed under each technical-approach block. */
+export const PROPOSAL_DELIVERABLES: Record<CaliberService, string[]> = {
+  fluent: [
+    "Individual CEFR placement report with per-skill breakdown (reading, listening, writing, speaking)",
+    "Downloadable placement certificate per participant",
+    "Cohort placement matrix for programme planning",
+  ],
+  logica: [
+    "Individual reasoning profile with per-subtest bands (numerical, verbal, inductive, deductive)",
+    "Cohort analytics with band distributions",
+    "Administration integrity signals surfaced to the programme owner",
+  ],
+  persona: [
+    "Individual behavioural profile across the VIFM 41-competency framework",
+    "Optional decision-rights (DARE) and emotional-intelligence report lenses",
+    "Role-fit view where a target role profile is set",
+    "Cohort intelligence sheet for the sponsoring organization",
+  ],
+  techno: [
+    "Per-domain technical proficiency bands with skill-level detail",
+    "Publicly verifiable Technical Proficiency credential where the documented cut-score is met",
+    "Cohort readiness view across the assessed functions",
+  ],
+  prehire: [
+    "Per-candidate screening report with advisory composite (never an auto-reject)",
+    "Ranked shortlist across the full requisition",
+    "Adverse-impact (4/5ths) monitoring view and immutable audit trail",
+    "ATS-ready JSON/CSV export",
+  ],
+  arc: [
+    "Bilingual (EN/AR) organizational AI-readiness report across the assessed pillars",
+    "Pillar heatmap, investment matrix and phased capability-building roadmap",
+    "Regulatory-alignment view for the applicable UAE / Saudi frameworks",
+    "Year-on-year comparison on reassessment",
+  ],
+  reflect: [
+    "Anonymity-protected participant 360 report per leader",
+    "Individual development plan (IDP) per participant",
+    "Organization-wide cohort report with strengths and blind-spots",
+  ],
+};
+
 export type ProposalServiceMeta = {
   key: CaliberService;
   label: string;

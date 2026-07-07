@@ -17,7 +17,16 @@ export default async function ClientProposalPage({ params }: { params: { token: 
   if (!p || p.status === "draft") notFound();
   const money = (n: number) => formatMoney(n, p.currency);
   const discount = Math.round((p.subtotal - p.total) * 100) / 100;
-  const validUntil = p.validUntil ? new Date(p.validUntil).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : null;
+  // Pin date-only values to noon UTC so the validity date never drifts a day
+  // with the server's timezone (same rule as the PDF builder).
+  const validUntil = p.validUntil
+    ? new Date(`${p.validUntil.slice(0, 10)}T12:00:00Z`).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone: "UTC",
+      })
+    : null;
 
   return (
     <div className="min-h-screen bg-[#f5f7fa] py-10 px-4">

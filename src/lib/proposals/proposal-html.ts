@@ -1,10 +1,14 @@
 // Builds the full, self-contained HTML for a proposal PDF (rendered via
 // renderHtmlToPdfBuffer). Caliber brand, A4 print CSS, EN. A complete business
-// proposal: cover -> contents -> executive summary -> about VIFM ->
-// understanding of requirements -> proposed solution (per service, with
-// deliverables) -> methodology & standards -> implementation plan ->
-// governance -> data protection -> commercials -> assumptions & exclusions ->
-// terms & conditions -> acceptance page. Pure string builder, no I/O.
+// proposal whose section architecture mirrors the VIFM Proposals Portal's
+// Talent Intelligence template (proposals.viftraining.com): cover -> contents
+// -> executive summary (names the offered services) -> about VIFM ->
+// understanding of requirements -> proposed solution -> psychometric
+// foundations -> methodology & standards -> platform, integration & security ->
+// implementation plan -> governance -> data protection -> AI governance ->
+// service level & support -> relevant experience -> commercials -> assumptions
+// -> terms & conditions -> definitions -> acceptance & next steps.
+// Pure string builder, no I/O.
 
 import { formatMoney } from "./pricing";
 import { proposalService, PROPOSAL_DELIVERABLES } from "./constants";
@@ -41,6 +45,29 @@ export function proposalRef(p: Proposal): string {
   return `VIFM-P-${year}-${p.id.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
 }
 
+/** Document outline - single source for the contents page and numbering. */
+const SECTIONS = [
+  "Executive summary",
+  "About VIFM",
+  "Understanding of your requirements",
+  "Proposed solution & technical approach",
+  "Psychometric foundations",
+  "Methodology & quality standards",
+  "Platform, integration & security",
+  "Implementation plan",
+  "Project governance & team",
+  "Data protection & privacy",
+  "AI governance & standards",
+  "Service level & support",
+  "Relevant experience",
+  "Commercial proposal",
+  "Assumptions & exclusions",
+  "Terms & conditions",
+  "Definitions",
+  "Acceptance & next steps",
+] as const;
+const NO = (title: (typeof SECTIONS)[number]) => SECTIONS.indexOf(title) + 1;
+
 export function buildProposalHtml(
   p: Proposal,
   opts?: {
@@ -57,6 +84,7 @@ export function buildProposalHtml(
   const num = (n: number) => (n || 0).toLocaleString("en-US");
   const discount = Math.round((p.subtotal - p.total) * 100) / 100;
   const ref = proposalRef(p);
+  const tcNo = NO("Terms & conditions");
 
   const scopeWithSeats = p.scope.filter((s) => (s.seats ?? 0) > 0);
   const totalParticipants = scopeWithSeats.reduce((n, s) => n + (s.seats ?? 0), 0);
@@ -65,6 +93,7 @@ export function buildProposalHtml(
     serviceLabels.length <= 1
       ? serviceLabels.join("")
       : `${serviceLabels.slice(0, -1).join(", ")} and ${serviceLabels[serviceLabels.length - 1]}`;
+  const singleService = scopeWithSeats.length === 1 ? scopeWithSeats[0].label : null;
 
   const jurisdiction =
     p.clientRegion === "saudi" ? "the Kingdom of Saudi Arabia" : "the United Arab Emirates";
@@ -75,7 +104,7 @@ export function buildProposalHtml(
         ? "a banking and financial-services organization"
         : "an organization";
 
-  // ── 4. Proposed solution - one block per selected service, with deliverables. ──
+  // ── Proposed solution - one block per selected service, with deliverables. ──
   const technical = scopeWithSeats
     .map((s) => {
       const meta = proposalService(s.service);
@@ -95,7 +124,7 @@ export function buildProposalHtml(
     })
     .join("\n");
 
-  // ── 9. Commercials table. ──
+  // ── Commercials table. ──
   const lineRows = p.lineItems
     .map(
       (l) =>
@@ -111,9 +140,11 @@ export function buildProposalHtml(
         )}</td></tr>`
       : "";
 
+  // The executive summary NAMES the offered service(s) - a proposal must say
+  // what is being sold in its first breath, not just "assessment instruments".
   const intro =
     p.introNote?.trim() ||
-    `We are pleased to present this talent-intelligence proposal for ${p.clientName}. It combines VIFM's assessment instruments into a single, defensible programme, with the technical approach, delivery plan and commercial detail set out in the sections that follow.`;
+    `We are pleased to present this proposal for the deployment of ${serviceList || "VIFM's talent-intelligence services"} for ${p.clientName}, covering ${num(totalParticipants)} participant${totalParticipants === 1 ? "" : "s"}. Delivered on the VIFM Caliber® Talent Intelligence Platform, the programme is set out below with its technical approach, delivery plan and commercial detail.`;
 
   const validUntil = p.validUntil ? fmtDate(p.validUntil) : null;
 
@@ -132,6 +163,7 @@ export function buildProposalHtml(
   .cover { background: #010131; color: #fff; border-radius: 10px; padding: 26mm 20mm; height: 250mm; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always; }
   .cover .logo { height: 16mm; width: auto; display: block; margin-bottom: 16mm; }
   .cover .eyebrow { color: #93b8e6; font-size: 9pt; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+  h1 { color: #010131; font-size: 22pt; margin: 8px 0 6px; line-height: 1.1; }
   .cover h1 { color: #fff; font-size: 26pt; line-height: 1.15; margin: 10px 0 0; border: 0; padding: 0; }
   .cover .accent { width: 64px; height: 4px; background: #5391D5; margin-top: 16px; }
   .cover .grid { display: flex; flex-wrap: wrap; gap: 10px 40px; margin-top: 26px; font-size: 10pt; }
@@ -143,11 +175,10 @@ export function buildProposalHtml(
   .toc-head { display: flex; align-items: center; justify-content: space-between; gap: 10mm; }
   .toc-head img { height: 10mm; width: auto; }
   .toc ol { margin: 10px 0 0; padding-left: 0; list-style: none; counter-reset: toc; column-count: 1; }
-  .toc li { counter-increment: toc; padding: 6px 2px; border-bottom: 1px solid #eef2f7; font-size: 10.5pt; }
+  .toc li { counter-increment: toc; padding: 5px 2px; border-bottom: 1px solid #eef2f7; font-size: 10.5pt; }
   .toc li::before { content: counter(toc) ".  "; color: #5391D5; font-weight: 700; }
 
   .eyebrow { color: #5391D5; font-size: 8.5pt; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
-  h1 { color: #010131; font-size: 22pt; margin: 8px 0 6px; line-height: 1.1; }
   h2 { color: #010131; font-size: 13.5pt; margin: 22px 0 8px; padding-top: 8px; border-top: 1px solid #e5e7eb; }
   h2 .no { color: #5391D5; margin-right: 6px; }
   h3 { color: #121140; font-size: 11.5pt; margin: 14px 0 3px; }
@@ -175,10 +206,10 @@ export function buildProposalHtml(
   .total-row td { border-top: 2px solid #010131; font-weight: 800; color: #010131; font-size: 11pt; }
   .terms-box { background: #f8fafc; border-left: 3px solid #5391D5; border-radius: 0 6px 6px 0; padding: 10px 14px; margin-top: 8px; font-size: 9.5pt; color: #334155; }
 
-  /* Numbered legal clauses */
+  /* Numbered legal clauses (prefix follows the T&C section number) */
   ol.clauses { margin: 8px 0 0; padding-left: 0; list-style: none; counter-reset: cl; }
-  ol.clauses > li { counter-increment: cl; margin: 0 0 8px; padding-left: 34px; position: relative; font-size: 9.5pt; color: #334155; page-break-inside: avoid; }
-  ol.clauses > li::before { content: "11." counter(cl); position: absolute; left: 0; top: 0; color: #010131; font-weight: 700; }
+  ol.clauses > li { counter-increment: cl; margin: 0 0 8px; padding-left: 38px; position: relative; font-size: 9.5pt; color: #334155; page-break-inside: avoid; }
+  ol.clauses > li::before { content: "${tcNo}." counter(cl); position: absolute; left: 0; top: 0; color: #010131; font-weight: 700; }
   ol.clauses b { color: #010131; }
 
   /* Acceptance page */
@@ -227,36 +258,24 @@ export function buildProposalHtml(
     </div>
     <h2 style="border-top:0;padding-top:0;">Contents</h2>
     <ol>
-      <li>Executive summary</li>
-      <li>About VIFM</li>
-      <li>Understanding of your requirements</li>
-      <li>Proposed solution &amp; technical approach</li>
-      <li>Methodology &amp; quality standards</li>
-      <li>Implementation plan</li>
-      <li>Project governance &amp; team</li>
-      <li>Data protection &amp; security</li>
-      <li>Commercial proposal</li>
-      <li>Assumptions &amp; exclusions</li>
-      <li>Terms &amp; conditions</li>
-      <li>Acceptance &amp; authorization</li>
+      ${SECTIONS.map((s) => `<li>${esc(s)}</li>`).join("\n      ")}
     </ol>
   </div>
 
-  <h2 style="border-top:0;padding-top:0;"><span class="no">1.</span>Executive summary</h2>
+  <h2 style="border-top:0;padding-top:0;"><span class="no">${NO("Executive summary")}.</span>Executive summary</h2>
   <p>${esc(intro)}</p>
   <div class="facts">
-    <div class="fact"><b>${scopeWithSeats.length}</b><span>Service${scopeWithSeats.length === 1 ? "" : "s"}</span></div>
-    <div class="fact"><b>${num(totalParticipants)}</b><span>Participants</span></div>
     ${
-      "" /* Currency already renders in the value (formatMoney) and in Section 9's
-            "Total (USD)" row - repeating it here wrapped the label to two lines
-            and broke the strip's alignment. */
+      singleService
+        ? `<div class="fact"><b>${esc(singleService)}</b><span>Service</span></div>`
+        : `<div class="fact"><b>${scopeWithSeats.length}</b><span>Services</span></div>`
     }
+    <div class="fact"><b>${num(totalParticipants)}</b><span>Participants</span></div>
     <div class="fact"><b>${money(p.total)}</b><span>Total investment</span></div>
     ${validUntil ? `<div class="fact"><b>${validUntil}</b><span>Offer validity</span></div>` : ""}
   </div>
 
-  <h2><span class="no">2.</span>About VIFM</h2>
+  <h2><span class="no">${NO("About VIFM")}.</span>About VIFM</h2>
   <p>The Virginia Institute of Finance and Management (VIFM) is a finance and management institute serving the
   GCC, combining professional training with a purpose-built talent-intelligence platform, VIFM Caliber&reg;.
   Caliber delivers structured, bilingual (English/Arabic) assessment across the full talent lifecycle - from
@@ -268,7 +287,7 @@ export function buildProposalHtml(
   verifiable. Published methodology briefs for each instrument are available on request and form part of this
   proposal by reference.</p>
 
-  <h2><span class="no">3.</span>Understanding of your requirements</h2>
+  <h2><span class="no">${NO("Understanding of your requirements")}.</span>Understanding of your requirements</h2>
   <p>${esc(p.clientName)} is ${sectorPhrase}${
     p.clientRegion ? ` operating in ${jurisdiction}` : ""
   } seeking a structured, defensible view of the capability of ${num(totalParticipants)} participant${
@@ -279,20 +298,41 @@ export function buildProposalHtml(
   audience requires it, auditable end to end, and aligned with the data-protection expectations that apply in
   ${jurisdiction}. Any refinement of scope agreed during kickoff will be captured in the statement of work.</p>
 
-  <h2><span class="no">4.</span>Proposed solution &amp; technical approach</h2>
+  <h2><span class="no">${NO("Proposed solution & technical approach")}.</span>Proposed solution &amp; technical approach</h2>
   ${technical || "<p>No services selected.</p>"}
 
-  <h2><span class="no">5.</span>Methodology &amp; quality standards</h2>
+  <h2><span class="no">${NO("Psychometric foundations")}.</span>Psychometric foundations</h2>
+  <p>The proposed instrument${scopeWithSeats.length === 1 ? " is" : "s are"} built on documented measurement
+  foundations rather than ad-hoc question sets:</p>
+  <ul>
+    <li><b>A common competency spine</b> - behavioural measurement maps to the VIFM 41-competency framework (4 domains, 9 clusters), so results from different instruments describe people in one shared language.</li>
+    <li><b>Recognised scales</b> - behavioural ratings use defined anchor scales; English placement is aligned to the CEFR (A1-C2); cognitive and technical results are reported as banded levels with their basis stated.</li>
+    <li><b>Curated item banks</b> - items are drafted, SME-reviewed and versioned; option order is re-randomised per administration to protect item integrity.</li>
+    <li><b>Response-quality safeguards</b> - where the construct warrants it, instruments carry distortion and consistency checks (e.g. social-desirability signals on self-report measures) that are surfaced to the reviewing consultant rather than silently auto-scored.</li>
+    <li><b>Reliability monitoring</b> - internal-consistency statistics are tracked as response volumes grow, and norm-referenced reporting is enabled only when the underlying sample is adequate.</li>
+    <li><b>Honest reporting tiers</b> - each result is explicitly labelled indicative or certified; certified outcomes exist only where a documented cut-score and review process stand behind them.</li>
+  </ul>
+
+  <h2><span class="no">${NO("Methodology & quality standards")}.</span>Methodology &amp; quality standards</h2>
   <ul>
     <li><b>Documented methodology per instrument</b> - each assessment ships with a published methodology brief covering construct, scoring model and honest limits; these briefs accompany this proposal on request.</li>
     <li><b>Alignment with recognised guidance</b> - programme design is aligned with ISO 10667 (assessment service delivery) and, for assessment-centre work, the International Taskforce Guidelines (6th edition).</li>
-    <li><b>Secure administration</b> - answer keys are held server-side and never reach the participant's browser; grading is server-side; option order is re-randomised per administration; sessions are single-use.</li>
+    <li><b>Secure administration</b> - answer keys are held server-side and never reach the participant's browser; grading is server-side; sessions are single-use.</li>
     <li><b>Human oversight of AI scoring</b> - where AI contributes to scoring or content generation, outputs are calibrated and a person retains review authority; no automated decision is final.</li>
     <li><b>Bilingual delivery</b> - participant-facing experiences are available in English and Arabic (full RTL) where scoped.</li>
-    <li><b>Honest positioning</b> - indicative instruments are labelled indicative; certified outcomes are issued only where documented cut-scores are met, as publicly verifiable credentials.</li>
   </ul>
 
-  <h2><span class="no">6.</span>Implementation plan</h2>
+  <h2><span class="no">${NO("Platform, integration & security")}.</span>Platform, integration &amp; security</h2>
+  <ul>
+    <li><b>Delivery platform</b> - the programme runs on VIFM Caliber&reg;, a cloud platform requiring no client-side installation; participants join through personal invitation links on any modern browser.</li>
+    <li><b>Programme visibility</b> - the sponsoring team receives live completion monitoring during the assessment window, with reminders managed by VIFM.</li>
+    <li><b>Verifiable outcomes</b> - certified credentials carry a public verification link, so any third party can confirm authenticity without contacting VIFM.</li>
+    <li><b>Data portability</b> - results export in standard formats (CSV / JSON) for the client's HRIS or ATS; individual reports are delivered as PDF.</li>
+    <li><b>Integration</b> - single sign-on or deeper system integration can be scoped in the statement of work where required.</li>
+    <li><b>Security posture</b> - encryption in transit and at rest, role-based access with row-level controls, and scoring logic that never reaches the participant's device (see Section ${NO("Data protection & privacy")}).</li>
+  </ul>
+
+  <h2><span class="no">${NO("Implementation plan")}.</span>Implementation plan</h2>
   <p class="scope-note">Indicative plan for a cohort of this size; the definitive schedule is agreed at kickoff and confirmed in the statement of work.</p>
   <table>
     <thead><tr><th>Phase</th><th>Indicative timing</th><th>Key activities</th><th>Outputs</th></tr></thead>
@@ -304,7 +344,7 @@ export function buildProposalHtml(
     </tbody>
   </table>
 
-  <h2><span class="no">7.</span>Project governance &amp; team</h2>
+  <h2><span class="no">${NO("Project governance & team")}.</span>Project governance &amp; team</h2>
   <ul>
     <li><b>Engagement lead (VIFM)</b> - single accountable owner for delivery, commercials and escalation.</li>
     <li><b>Delivery coordinator (VIFM)</b> - manages invitations, completion monitoring and participant support throughout the assessment window.</li>
@@ -313,7 +353,7 @@ export function buildProposalHtml(
     <li><b>Cadence</b> - weekly written status during the assessment window, with a standing escalation path to the engagement lead and a closing debrief at handover.</li>
   </ul>
 
-  <h2><span class="no">8.</span>Data protection &amp; security</h2>
+  <h2><span class="no">${NO("Data protection & privacy")}.</span>Data protection &amp; privacy</h2>
   <ul>
     <li>Assessment data is processed in line with applicable data-protection law: UAE Federal Decree-Law No. 45 of 2021, the Saudi Personal Data Protection Law, and the GDPR where relevant.</li>
     <li>Participant consent is captured before any assessment data is collected; participation records carry an audit trail.</li>
@@ -322,7 +362,35 @@ export function buildProposalHtml(
     <li>Individual results are released only to the sponsoring organization's authorised recipients; anonymity thresholds protect multi-rater feedback contributors.</li>
   </ul>
 
-  <h2><span class="no">9.</span>Commercial proposal</h2>
+  <h2><span class="no">${NO("AI governance & standards")}.</span>AI governance &amp; standards</h2>
+  <ul>
+    <li><b>Human-in-the-loop by design</b> - AI assists with item drafting, transcription and first-pass scoring; a qualified person retains review authority over any output that affects a participant, and no hiring or promotion decision is automated.</li>
+    <li><b>Transparency</b> - each instrument's methodology brief states where AI contributes and where it does not, so the client can evidence its own governance obligations.</li>
+    <li><b>Calibration</b> - AI-scored productive tasks (e.g. writing and speaking) are calibrated against human ratings, with agreement monitored over time.</li>
+    <li><b>Never an auto-reject</b> - screening composites are advisory signals; the decision remains with the client's own reviewers, and the reports say so explicitly.</li>
+    <li><b>Regional alignment</b> - the approach is designed to be defensible under emerging GCC AI-governance expectations${p.clientRegion === "saudi" ? ", including guidance applicable in the Kingdom of Saudi Arabia" : ""}.</li>
+  </ul>
+
+  <h2><span class="no">${NO("Service level & support")}.</span>Service level &amp; support</h2>
+  <ul>
+    <li><b>Named team</b> - an engagement lead and a delivery coordinator are assigned for the duration of the programme (see Section ${NO("Project governance & team")}).</li>
+    <li><b>Support window</b> - programme and participant support during GCC business hours (Sunday-Thursday), with initial response within one business day.</li>
+    <li><b>Participant support</b> - access issues, invitation resends and completion queries are handled by VIFM directly, keeping the client's coordinator out of day-to-day traffic.</li>
+    <li><b>Continuity</b> - the platform is operated to avoid participant-visible interruptions during the agreed assessment window; planned maintenance is scheduled around it.</li>
+    <li><b>Formal SLA</b> - where the client requires committed availability and response metrics, they are documented in the statement of work.</li>
+  </ul>
+
+  <h2><span class="no">${NO("Relevant experience")}.</span>Relevant experience</h2>
+  <p>VIFM delivers assessment and development programmes for banking, government and corporate organizations
+  across the GCC. The Caliber platform carries seven instrument families spanning talent acquisition and
+  talent development - behavioural profiling, cognitive aptitude, technical certification, English placement,
+  pre-hire screening, 360&deg; leadership feedback and organizational AI-readiness - delivered bilingually as
+  standard.</p>
+  <p>Client references and anonymised case summaries relevant to this engagement are available on request,
+  subject to the confidentiality commitments we make to every client - the same commitments this proposal
+  makes to ${esc(p.clientName)}.</p>
+
+  <h2><span class="no">${NO("Commercial proposal")}.</span>Commercial proposal</h2>
   <table>
     <thead><tr><th>Service</th><th class="num">Participants</th><th class="num">Rate / participant</th><th class="num">Subtotal</th></tr></thead>
     <tbody>
@@ -343,7 +411,7 @@ export function buildProposalHtml(
     <li>On-site delivery, travel and accommodation; instrument customisation beyond the stated scope; additional participants beyond the quoted volumes (chargeable at the quoted per-participant rate); and any third-party costs - each quotable separately on request.</li>
   </ul>
 
-  <h2><span class="no">10.</span>Assumptions &amp; exclusions</h2>
+  <h2><span class="no">${NO("Assumptions & exclusions")}.</span>Assumptions &amp; exclusions</h2>
   <ul>
     <li>${esc(p.clientName)} provides a complete, accurate participant list (names and email addresses) before the assessment window opens, and nominates a single point of contact empowered to make scheduling decisions.</li>
     <li>Participants have access to a suitable device and internet connection; assessments are completed remotely unless otherwise agreed in writing.</li>
@@ -352,13 +420,13 @@ export function buildProposalHtml(
     <li>This proposal does not constitute a contract; the engagement commences on signature of a statement of work referencing this proposal.</li>
   </ul>
 
-  <h2><span class="no">11.</span>Terms &amp; conditions</h2>
+  <h2><span class="no">${tcNo}.</span>Terms &amp; conditions</h2>
   ${p.terms ? `<div class="terms-box">${esc(p.terms)}</div>` : ""}
   <ol class="clauses">
     <li><b>Confidentiality.</b> Each party will keep the other's confidential information confidential, use it only for this engagement, and disclose it only to personnel who need it and are bound by equivalent obligations. This clause survives the engagement.</li>
     <li><b>Intellectual property.</b> VIFM retains all rights in its instruments, item banks, frameworks, methodologies, software and report formats. ${esc(p.clientName)} receives a non-exclusive, non-transferable right to use the deliverables internally for the purposes of this engagement. Participant-level data remains subject to the data-protection terms herein.</li>
-    <li><b>Data protection.</b> The parties will comply with applicable data-protection law as described in Section 8. VIFM acts as a processor of participant personal data on the client's documented instructions, save where law provides otherwise.</li>
-    <li><b>Fees and payment.</b> Fees are as set out in Section 9 and are payable per the stated payment terms. Invoices are due within 30 days of issue unless otherwise agreed in the statement of work. Late amounts may bear a reasonable financing charge where permitted by law.</li>
+    <li><b>Data protection.</b> The parties will comply with applicable data-protection law as described in Section ${NO("Data protection & privacy")}. VIFM acts as a processor of participant personal data on the client's documented instructions, save where law provides otherwise.</li>
+    <li><b>Fees and payment.</b> Fees are as set out in Section ${NO("Commercial proposal")} and are payable per the stated payment terms. Invoices are due within 30 days of issue unless otherwise agreed in the statement of work. Late amounts may bear a reasonable financing charge where permitted by law.</li>
     <li><b>Limitation of liability.</b> Neither party is liable for indirect or consequential loss. Each party's aggregate liability under this engagement is capped at the total fees paid or payable under it, save for liability that cannot be limited by law. Assessment outputs inform - and do not replace - the client's own decisions; VIFM is not liable for employment decisions made by the client.</li>
     <li><b>Term and termination.</b> Either party may terminate for convenience on 30 days' written notice, or immediately on the other's material, uncured breach. On termination, the client pays for work performed and deliverables completed to the termination date.</li>
     <li><b>Force majeure.</b> Neither party is liable for delay or failure caused by events beyond its reasonable control, provided it notifies the other promptly and mitigates the impact.</li>
@@ -367,8 +435,28 @@ export function buildProposalHtml(
     <li><b>Entire agreement and precedence.</b> The signed statement of work, together with this proposal, constitutes the entire agreement for the engagement. In case of conflict, the signed statement of work prevails over this proposal.</li>
   </ol>
 
+  <h2><span class="no">${NO("Definitions")}.</span>Definitions</h2>
+  <table>
+    <thead><tr><th style="width:34%">Term</th><th>Meaning in this proposal</th></tr></thead>
+    <tbody>
+      <tr><td><b>Participant</b></td><td>An individual invited by ${esc(p.clientName)} to complete one or more of the scoped assessments.</td></tr>
+      <tr><td><b>Sitting</b></td><td>One completed administration of an instrument by one participant.</td></tr>
+      <tr><td><b>Instrument</b></td><td>A named VIFM assessment service (e.g. ${esc(serviceLabels[0] ?? "Persona")}) with its own documented methodology.</td></tr>
+      <tr><td><b>Indicative result</b></td><td>A development-grade output without a formal cut-score; labelled as such and not a credential.</td></tr>
+      <tr><td><b>Certified credential</b></td><td>An outcome issued only where a documented cut-score is met; publicly verifiable by its verification link.</td></tr>
+      <tr><td><b>Assessment window</b></td><td>The agreed period during which participants complete their sittings.</td></tr>
+      <tr><td><b>Statement of work (SOW)</b></td><td>The signed document that puts this proposal into effect and governs the engagement.</td></tr>
+    </tbody>
+  </table>
+
   <div class="accept">
-    <h2 style="border-top:0;padding-top:0;"><span class="no">12.</span>Acceptance &amp; authorization</h2>
+    <h2 style="border-top:0;padding-top:0;"><span class="no">${NO("Acceptance & next steps")}.</span>Acceptance &amp; next steps</h2>
+    <ul>
+      <li><b>1.</b> Confirm the scope and participant volumes in Section ${NO("Commercial proposal")} (or request adjustments - a revised proposal is issued the same way).</li>
+      <li><b>2.</b> Sign the acceptance below${validUntil ? ` before the validity date (${validUntil})` : ""}.</li>
+      <li><b>3.</b> VIFM issues the statement of work referencing <b>${ref}</b> for signature.</li>
+      <li><b>4.</b> Kickoff is scheduled within five business days of the signed statement of work.</li>
+    </ul>
     <p>Signature below confirms acceptance of this proposal (reference <b>${ref}</b>) and authorises VIFM to
     prepare the statement of work. The engagement commences on signature of the statement of work.</p>
     <div class="sig-grid">

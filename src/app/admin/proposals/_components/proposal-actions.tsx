@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Download, Send, CheckCircle2, Copy } from "lucide-react";
+import { Send, CheckCircle2, Copy } from "lucide-react";
+import { PdfDownloadButton } from "@/components/shared/pdf-download-button";
 import { sendProposalToClientAction, setStatusAction } from "../actions";
 import type { Proposal, ProposalStatus } from "@/lib/proposals/service";
 
@@ -43,10 +44,12 @@ export function ProposalActions({ proposal, clientUrl }: { proposal: Proposal; c
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <a href={`/api/admin/proposals/${proposal.id}/pdf`} target="_blank" rel="noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-md bg-[#010131] px-3.5 py-2 text-sm font-medium text-white hover:bg-[#121140]">
-          <Download className="h-4 w-4" /> Download PDF
-        </a>
+        <PdfDownloadButton
+          url={`/api/admin/proposals/${proposal.id}/pdf`}
+          filename={`VIFM-Proposal-${proposal.clientName.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "Client"}.pdf`}
+          label="Download PDF"
+          className="inline-flex items-center gap-1.5 rounded-md bg-[#010131] px-3.5 py-2 text-sm font-medium text-white hover:bg-[#121140] disabled:opacity-60"
+        />
         {proposal.status !== "draft" && (
           <>
             <a href={clientUrl} target="_blank" rel="noreferrer"

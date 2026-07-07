@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
-import { Download } from "lucide-react";
 import { findProposalByToken } from "@/lib/proposals/service";
 import { formatMoney } from "@/lib/proposals/pricing";
+import { PdfDownloadButton } from "@/components/shared/pdf-download-button";
 
 export const dynamic = "force-dynamic";
 
@@ -71,12 +71,12 @@ export default async function ClientProposalPage({ params }: { params: { token: 
               </div>
             </div>
 
-            <a
-              href={`/api/proposals/${p.accessToken}/pdf`}
-              className="inline-flex items-center gap-2 rounded-md bg-[#010131] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#121140]"
-            >
-              <Download className="h-4 w-4" /> Download the full proposal (PDF)
-            </a>
+            <PdfDownloadButton
+              url={`/api/proposals/${p.accessToken}/pdf`}
+              filename={`VIFM-Proposal-${p.clientName.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "Client"}.pdf`}
+              label="Download the full proposal (PDF)"
+              className="inline-flex items-center gap-2 rounded-md bg-[#010131] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#121140] disabled:opacity-60"
+            />
 
             {p.paymentTerms && <p className="text-xs leading-relaxed text-slate-500">{p.paymentTerms}</p>}
           </div>

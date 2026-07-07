@@ -169,8 +169,11 @@ export function CaliberLandingPage() {
               <a href="#academy" className="hover:text-white">Academy</a>
             </nav>
             <div className="flex items-center gap-2 sm:gap-3">
-              <a href="/login" className="hidden items-center gap-1.5 rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-white/80 hover:bg-white/10 sm:flex">
-                <ShieldCheck className="h-3.5 w-3.5" /> Admin
+              {/* Sign-in must be reachable by CLIENTS too (client_manager -> /portal),
+                  on every viewport - it was mobile-hidden and labelled "Admin",
+                  which left clients on a phone with no path to their portal. */}
+              <a href="/login" className="flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-white/80 hover:bg-white/10">
+                <ShieldCheck className="h-3.5 w-3.5" /> Sign in
               </a>
               <button onClick={() => setDemoOpen(true)} className="rounded-lg bg-[#8b7bf0] px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-[#7c6ae8]">
                 Request a demo

@@ -247,7 +247,12 @@ export function buildProposalHtml(
   <div class="facts">
     <div class="fact"><b>${scopeWithSeats.length}</b><span>Service${scopeWithSeats.length === 1 ? "" : "s"}</span></div>
     <div class="fact"><b>${num(totalParticipants)}</b><span>Participants</span></div>
-    <div class="fact"><b>${money(p.total)}</b><span>Total investment (${esc(cur)})</span></div>
+    ${
+      "" /* Currency already renders in the value (formatMoney) and in Section 9's
+            "Total (USD)" row - repeating it here wrapped the label to two lines
+            and broke the strip's alignment. */
+    }
+    <div class="fact"><b>${money(p.total)}</b><span>Total investment</span></div>
     ${validUntil ? `<div class="fact"><b>${validUntil}</b><span>Offer validity</span></div>` : ""}
   </div>
 

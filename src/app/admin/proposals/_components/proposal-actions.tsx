@@ -50,6 +50,12 @@ export function ProposalActions({ proposal, clientUrl }: { proposal: Proposal; c
           label="Download PDF"
           className="inline-flex items-center gap-1.5 rounded-md bg-[#010131] px-3.5 py-2 text-sm font-medium text-white hover:bg-[#121140] disabled:opacity-60"
         />
+        <PdfDownloadButton
+          url={`/api/admin/proposals/${proposal.id}/pdf?language=ar`}
+          filename={`VIFM-Proposal-${proposal.clientName.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "Client"}-AR.pdf`}
+          label="تحميل PDF (عربي)"
+          className="inline-flex items-center gap-1.5 rounded-md border border-[#010131] px-3.5 py-2 text-sm font-medium text-[#010131] hover:bg-muted disabled:opacity-60"
+        />
         {proposal.status !== "draft" && (
           <>
             <a href={clientUrl} target="_blank" rel="noreferrer"

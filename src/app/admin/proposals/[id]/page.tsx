@@ -4,8 +4,10 @@ import { BackLink } from "@/components/shared/back-link";
 import { loadProposal } from "@/lib/proposals/service";
 import { formatMoney } from "@/lib/proposals/pricing";
 import { loadClientOptions, loadBundleOptions, loadRateMap } from "@/lib/proposals/options";
+import { buildSectionEditorData } from "@/lib/proposals/section-editor";
 import { ProposalBuilder } from "../_components/proposal-builder";
 import { ProposalActions } from "../_components/proposal-actions";
+import { ProposalSectionEditor } from "../_components/proposal-section-editor";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +21,7 @@ export default async function ProposalDetailPage({ params }: { params: { id: str
   const proposal = await loadProposal(params.id);
   if (!proposal) notFound();
   const [clients, bundles, rates] = await Promise.all([loadClientOptions(), loadBundleOptions(), loadRateMap()]);
+  const sectionData = buildSectionEditorData(proposal);
 
   const base = (process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://caliber.viftraining.com").replace(/\/$/, "");
   const clientUrl = `${base}/proposals/${proposal.accessToken}`;
@@ -38,8 +41,10 @@ export default async function ProposalDetailPage({ params }: { params: { id: str
 
       <ProposalActions proposal={proposal} clientUrl={clientUrl} />
 
+      <ProposalSectionEditor proposalId={proposal.id} sections={sectionData} />
+
       <details className="rounded-lg border border-border bg-card">
-        <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-foreground">Edit proposal</summary>
+        <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-foreground">Edit pricing &amp; structure</summary>
         <div className="border-t border-border p-4">
           <ProposalBuilder existing={proposal} clients={clients} bundles={bundles} rates={rates} />
         </div>

@@ -138,21 +138,9 @@ export function ProposalBuilder({
     });
   }
 
-  // Per-section text overrides (Feature 1). Blank = keep the standard wording.
-  // Stored in licence_data.sectionOverrides as { "<title>": { en, ar } }.
-  const [sectionOverrides, setSectionOverrides] = useState<Record<string, { en: string; ar: string }>>(() => {
-    const src = (existing?.licenceData as Record<string, unknown> | undefined)?.sectionOverrides as
-      | Record<string, { en?: string; ar?: string }>
-      | undefined;
-    const out: Record<string, { en: string; ar: string }> = {};
-    if (src) for (const [k, v] of Object.entries(src)) out[k] = { en: v?.en ?? "", ar: v?.ar ?? "" };
-    return out;
-  });
-  const setOverride = (title: string, lang: "en" | "ar", val: string) =>
-    setSectionOverrides((prev) => ({
-      ...prev,
-      [title]: { en: prev[title]?.en ?? "", ar: prev[title]?.ar ?? "", [lang]: val },
-    }));
+  // Per-section text is edited on the proposal page after Create (ProposalSectionEditor),
+  // not here - the builder owns pricing + structure. Existing sectionOverrides in
+  // licence_data are preserved on save via the `...existing.licenceData` spread below.
 
   // ROI / business-case inputs (Phase 2), persisted in licence_data.roi.
   const roi0 = (existing?.licenceData as Record<string, unknown> | undefined)?.roi as
@@ -328,17 +316,12 @@ export function ProposalBuilder({
       engagementModel: pricingMode === "engagement" || pricingMode === "combined" ? assembleEngagementModel() : null,
       sectionSelection: Array.from(selectedSections),
       licenceData: {
+        // Spread preserves sectionOverrides (edited on the proposal page) + any other keys.
         ...(existing?.licenceData ?? {}),
         roi: roiSalary > 0 && roiHires > 0 ? { avgSalary: roiSalary, hiresPerYear: roiHires, accuracyGainPct: roiGainPct } : null,
         dataResidency,
         dataResidencyFee,
         combinedServicesMode: pricingMode === "combined" ? combinedServicesMode : undefined,
-        // Only keep sections that actually have an override, so the bag stays lean.
-        sectionOverrides: Object.fromEntries(
-          Object.entries(sectionOverrides)
-            .map(([k, v]) => [k, { en: v.en.trim(), ar: v.ar.trim() }] as const)
-            .filter(([, v]) => v.en || v.ar),
-        ),
       },
       bundleId: bundleId || null,
       scope,
@@ -877,44 +860,11 @@ export function ProposalBuilder({
         </div>
       </section>
 
-      {/* Proposal text overrides (Feature 1) */}
-      <section className="rounded-lg border border-border bg-card p-4 space-y-3">
-        <div>
-          <h2 className="font-medium text-foreground">Proposal text (optional overrides)</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Rewrite any section&apos;s wording before you export. Leave a box blank to keep the standard text. English shows in the
-            English PDF/Word, Arabic in the Arabic version. Blank line = new paragraph; start a line with &quot;- &quot; for a bullet.
-          </p>
-        </div>
-        <div className="space-y-2">
-          {PROPOSAL_SECTION_DEFS.map((s) => {
-            const ov = sectionOverrides[s.title] ?? { en: "", ar: "" };
-            const edited = !!(ov.en.trim() || ov.ar.trim());
-            return (
-              <details key={s.title} className="rounded-md border border-border">
-                <summary className="cursor-pointer select-none px-3 py-2 text-sm text-foreground">
-                  {s.title}
-                  {edited && <span className="ml-2 text-[10px] uppercase tracking-wide text-[#5391D5]">edited</span>}
-                </summary>
-                <div className="grid gap-2 border-t border-border p-3 sm:grid-cols-2">
-                  <label className="block text-xs">
-                    <span className="text-muted-foreground">English</span>
-                    <textarea value={ov.en} onChange={(e) => setOverride(s.title, "en", e.target.value)} rows={4}
-                      placeholder="Leave blank for the standard wording"
-                      className="mt-1 w-full rounded border border-border bg-card px-2.5 py-1.5 text-sm" />
-                  </label>
-                  <label className="block text-xs">
-                    <span className="text-muted-foreground">العربية</span>
-                    <textarea dir="rtl" value={ov.ar} onChange={(e) => setOverride(s.title, "ar", e.target.value)} rows={4}
-                      placeholder="اتركه فارغاً للنص القياسي"
-                      className="mt-1 w-full rounded border border-border bg-card px-2.5 py-1.5 text-sm" />
-                  </label>
-                </div>
-              </details>
-            );
-          })}
-        </div>
-      </section>
+      {!existing && (
+        <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+          Tip: create the proposal first, then edit any section&apos;s wording inline on the proposal page before you export.
+        </p>
+      )}
 
       {error && <p className="text-sm text-red-600">{error}</p>}
       <div className="flex items-center gap-3">

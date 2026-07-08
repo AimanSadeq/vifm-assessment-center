@@ -8,6 +8,7 @@ import { loadProposalEvidence } from "@/lib/proposals/evidence-summary";
 import {
   createProposal,
   updateProposal,
+  updateProposalSectionOverrides,
   duplicateAsRevision,
   setProposalStatus,
   markProposalSent,
@@ -16,6 +17,7 @@ import {
   type ProposalInput,
   type ProposalStatus,
 } from "@/lib/proposals/service";
+import { revalidatePath } from "next/cache";
 
 type Result<T> = ({ ok: true } & T) | { error: string };
 
@@ -57,6 +59,21 @@ export async function updateProposalAction(
   const denied = await gate();
   if (denied) return denied;
   return updateProposal(id, input);
+}
+
+/** Save the on-page section-text editor: per-section EN/AR overrides only (no re-pricing).
+ *  `managedTitles` = the sections the editor currently shows, so overrides for sections it
+ *  did not manage (e.g. excluded ones) are preserved rather than wiped. */
+export async function saveProposalSectionsAction(
+  id: string,
+  overrides: Record<string, { en?: string; ar?: string }>,
+  managedTitles?: string[],
+): Promise<{ ok: true } | { error: string }> {
+  const denied = await gate();
+  if (denied) return denied;
+  const res = await updateProposalSectionOverrides(id, overrides, managedTitles);
+  if ("ok" in res) revalidatePath(`/admin/proposals/${id}`);
+  return res;
 }
 
 export async function duplicateAsRevisionAction(id: string): Promise<Result<{ id: string }>> {

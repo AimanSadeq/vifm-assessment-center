@@ -48,17 +48,30 @@ export function proposalRef(p: Proposal): string {
   return `VIFM-P-${year}-${p.id.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
 }
 
-export function buildProposalHtml(
+type ProposalRenderOpts = {
+  /** Monochrome white VIFM logo (data URI) - dark cover, per the Brand Kit. */
+  logoWhite?: string | null;
+  /** Primary color VIFM logo (data URI) - light pages, per the Brand Kit. */
+  logoColor?: string | null;
+  /** Live reliability data for the Psychometric foundations + Evidence sections. */
+  evidence?: ProposalEvidence | null;
+};
+
+/** Full HTML string for the proposal PDF/Word. */
+export function buildProposalHtml(p: Proposal, opts?: ProposalRenderOpts): string {
+  return renderProposalDoc(p, opts).html;
+}
+
+/** Each section's DEFAULT (boilerplate) body HTML, keyed by section title. Powers the
+ *  on-page section editor's pre-fill; ignores logos/evidence (not needed for text). */
+export function proposalSectionDefaults(p: Proposal): Record<string, string> {
+  return renderProposalDoc(p).sectionDefaults;
+}
+
+function renderProposalDoc(
   p: Proposal,
-  opts?: {
-    /** Monochrome white VIFM logo (data URI) - dark cover, per the Brand Kit. */
-    logoWhite?: string | null;
-    /** Primary color VIFM logo (data URI) - light pages, per the Brand Kit. */
-    logoColor?: string | null;
-    /** Live reliability data for the Psychometric foundations + Evidence sections. */
-    evidence?: ProposalEvidence | null;
-  },
-): string {
+  opts?: ProposalRenderOpts,
+): { html: string; sectionDefaults: Record<string, string> } {
   const logoWhite = opts?.logoWhite ?? null;
   const logoColor = opts?.logoColor ?? null;
   const evidence = opts?.evidence ?? null;
@@ -104,12 +117,22 @@ export function buildProposalHtml(
           : `<p>${esc(b).replace(/\n/g, "<br/>")}</p>`;
       })
       .join("");
+  // Boilerplate default body per section, captured as a side-effect of rendering so
+  // the on-page section editor can pre-fill an "edit this section" box with the exact
+  // current wording (see proposalSectionDefaults()).
+  const sectionDefaults: Record<string, string> = {};
   /** Body for a section: the override (replace, or prepend for table sections) or the default. */
   const secBody = (title: string, defaultHtml: string): string => {
+    sectionDefaults[title] = defaultHtml;
     const o = ovText(title);
     if (!o) return defaultHtml;
     const rendered = renderOverride(o);
-    return OVERRIDE_PREPEND.has(title) ? rendered + defaultHtml : rendered;
+    // Prepend (keep the default body below the override) for the OVERRIDE_PREPEND set AND
+    // any section whose default carries a generated table (e.g. Implementation plan, the
+    // licence-mode Proposed solution) - renderOverride only emits paragraphs/lists, so a
+    // replace there would silently destroy the table. The editor mirrors this test.
+    const prepend = OVERRIDE_PREPEND.has(title) || /<table/i.test(defaultHtml);
+    return prepend ? rendered + defaultHtml : rendered;
   };
   /** Override rendered as an intro block above generated content (for big table sections). */
   const secIntro = (title: string): string => {
@@ -491,7 +514,7 @@ export function buildProposalHtml(
   </ul>`
     : "";
 
-  return `<!DOCTYPE html>
+  const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -949,4 +972,5 @@ export function buildProposalHtml(
 
 </body>
 </html>`;
+  return { html, sectionDefaults };
 }

@@ -68,10 +68,23 @@ function serviceLabelAr(key: string, fallback: string): string {
   return PORTAL_SERVICES.find((s) => s.id === (key as CaliberService))?.labelAr ?? fallback;
 }
 
-export function buildProposalHtmlAr(
+type ProposalRenderOptsAr = { logoWhite?: string | null; logoColor?: string | null; evidence?: ProposalEvidence | null };
+
+/** Full Arabic (RTL) HTML string for the proposal PDF/Word. */
+export function buildProposalHtmlAr(p: Proposal, opts?: ProposalRenderOptsAr): string {
+  return renderProposalDocAr(p, opts).html;
+}
+
+/** Each section's DEFAULT (boilerplate) Arabic body HTML, keyed by ENGLISH section title
+ *  (the same key the editor + overrides use). Powers the on-page editor's AR pre-fill. */
+export function proposalSectionDefaultsAr(p: Proposal): Record<string, string> {
+  return renderProposalDocAr(p).sectionDefaults;
+}
+
+function renderProposalDocAr(
   p: Proposal,
-  opts?: { logoWhite?: string | null; logoColor?: string | null; evidence?: ProposalEvidence | null },
-): string {
+  opts?: ProposalRenderOptsAr,
+): { html: string; sectionDefaults: Record<string, string> } {
   const logoWhite = opts?.logoWhite ?? null;
   const logoColor = opts?.logoColor ?? null;
   const evidence = opts?.evidence ?? null;
@@ -267,11 +280,16 @@ export function buildProposalHtmlAr(
           : `<p>${esc(b).replace(/\n/g, "<br/>")}</p>`;
       })
       .join("");
+  const sectionDefaults: Record<string, string> = {};
   const secBody = (title: string, defaultHtml: string): string => {
+    sectionDefaults[title] = defaultHtml;
     const o = ovText(title);
     if (!o) return defaultHtml;
     const rendered = renderOverride(o);
-    return OVERRIDE_PREPEND.has(title) ? rendered + defaultHtml : rendered;
+    // Prepend for the OVERRIDE_PREPEND set AND any table-bearing default (mirrors EN;
+    // renderOverride has no table support, so a replace would destroy the table).
+    const prepend = OVERRIDE_PREPEND.has(title) || /<table/i.test(defaultHtml);
+    return prepend ? rendered + defaultHtml : rendered;
   };
   const secIntro = (title: string): string => {
     const o = ovText(title);
@@ -446,7 +464,7 @@ export function buildProposalHtmlAr(
   </ul>`
     : "";
 
-  return `<!DOCTYPE html>
+  const html = `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8" />
@@ -843,4 +861,5 @@ export function buildProposalHtmlAr(
 
 </body>
 </html>`;
+  return { html, sectionDefaults };
 }

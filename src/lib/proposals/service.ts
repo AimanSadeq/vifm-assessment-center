@@ -26,7 +26,7 @@ import {
   type EngagementModelInput,
   type NormalizedEngagementModel,
 } from "./engagement";
-import { proposalService } from "./constants";
+import { proposalService, PROPOSAL_SECTION_TITLES } from "./constants";
 
 export type ProposalStatus = "draft" | "issued" | "won" | "lost";
 
@@ -467,6 +467,19 @@ export async function updateProposal(
   const priced = await buildPricedSnapshot(input);
   if ("error" in priced) return priced;
 
+  // Per-section text (licence_data.sectionOverrides) is owned by the on-page section
+  // editor. A pricing/structure save carries a page-load snapshot of licence_data, so
+  // read-merge the DB's CURRENT sectionOverrides to avoid reverting a just-saved edit.
+  const licenceData: Record<string, unknown> = { ...(input.licenceData ?? {}) };
+  try {
+    const { data: cur } = await svc.from("proposals").select("licence_data").eq("id", id).single();
+    const dbLd = (cur?.licence_data as Record<string, unknown> | null) ?? {};
+    if (dbLd.sectionOverrides !== undefined) licenceData.sectionOverrides = dbLd.sectionOverrides;
+    else delete licenceData.sectionOverrides;
+  } catch {
+    /* tolerate a read failure - fall back to the submitted licence_data */
+  }
+
   const baseRow = { ...proposalFields(input, priced), updated_at: new Date().toISOString() };
   const locRow = { client_city: input.clientCity ?? null, client_country: input.clientCountry ?? null };
   // 00175 columns only. engagement_model (00176) is attached ONLY for engagement
@@ -475,7 +488,7 @@ export async function updateProposal(
     pricing_mode: priced.pricingMode,
     licensing_model: priced.licence,
     section_selection: input.sectionSelection ?? null,
-    licence_data: input.licenceData ?? {},
+    licence_data: licenceData,
     revision_of_id: input.revisionOfId ?? null,
   };
   const licFull =
@@ -511,6 +524,49 @@ export async function updateProposal(
     return { error: `${label}-mode pricing needs migration ${mig}. Apply it before saving in ${priced.pricingMode} mode.` };
   }
   if (error) return { error: error.message ?? "Could not save the proposal." };
+  return { ok: true };
+}
+
+/** Patch ONLY the per-section text overrides (the on-page section editor), merging into
+ *  the licence_data bag so roi / dataResidency / combinedServicesMode survive. Titles are
+ *  validated against the known section set; empty {en,ar} entries are dropped so the bag
+ *  stays lean and an unedited section stays dynamic. Does not re-price. */
+export async function updateProposalSectionOverrides(
+  id: string,
+  overrides: Record<string, { en?: string; ar?: string }>,
+  managedTitles?: string[],
+): Promise<{ ok: true } | { error: string }> {
+  const svc = createServiceClient();
+  const known = new Set(PROPOSAL_SECTION_TITLES);
+  const cleaned: Record<string, { en?: string; ar?: string }> = {};
+  for (const [title, v] of Object.entries(overrides || {})) {
+    if (!known.has(title) || !v || typeof v !== "object") continue;
+    const en = typeof v.en === "string" ? v.en.trim().slice(0, 20000) : "";
+    const ar = typeof v.ar === "string" ? v.ar.trim().slice(0, 20000) : "";
+    if (en || ar) cleaned[title] = { ...(en ? { en } : {}), ...(ar ? { ar } : {}) };
+  }
+
+  const { data, error: readErr } = await svc.from("proposals").select("licence_data").eq("id", id).single();
+  if (readErr) return { error: readErr.message ?? "Proposal not found." };
+  const existing = ((data?.licence_data as Record<string, unknown> | null) ?? {}) as Record<string, unknown>;
+  // Preserve overrides the editor did NOT manage (e.g. a section currently excluded from
+  // the document), so toggling a section off then saving does not wipe its custom text.
+  const managed = new Set((managedTitles ?? []).filter((t) => known.has(t)));
+  const prior = (existing.sectionOverrides as Record<string, { en?: string; ar?: string }> | undefined) ?? {};
+  const preserved: Record<string, { en?: string; ar?: string }> = {};
+  if (managed.size) {
+    for (const [t, v] of Object.entries(prior)) if (known.has(t) && !managed.has(t)) preserved[t] = v;
+  }
+  const merged = { ...existing, sectionOverrides: { ...preserved, ...cleaned } };
+
+  const { error } = await svc
+    .from("proposals")
+    .update({ licence_data: merged, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) {
+    if (isMissingColumn(error) || missing(error)) return { error: "Proposals need migration 00174 (licence_data) applied." };
+    return { error: error.message ?? "Could not save the section text." };
+  }
   return { ok: true };
 }
 

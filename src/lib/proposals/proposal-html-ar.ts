@@ -212,6 +212,44 @@ export function buildProposalHtmlAr(
   const discount = Math.round((p.subtotal - p.total) * 100) / 100;
   const discountRow = discount > 0 ? `<tr><td colspan="3" class="tot-label">خصم (${pc(p.discountPct)})</td><td class="num">- ${m(discount)}</td></tr>` : "";
 
+  // ── Per-section text overrides (Feature 1). This renderer reads the AR text from
+  // licence_data.sectionOverrides["<title>"].ar. Keyed by the ENGLISH section title
+  // (the same key the builder + EN renderer use). Blank = keep the standard wording. ──
+  const overrides =
+    (p.licenceData && typeof p.licenceData === "object"
+      ? ((p.licenceData as Record<string, unknown>).sectionOverrides as Record<string, { en?: string; ar?: string }> | undefined)
+      : undefined) ?? {};
+  const OVERRIDE_PREPEND = new Set([
+    "Commercial proposal",
+    "Definitions",
+    "Acceptance & next steps",
+    "Psychometric foundations",
+    "Evidence & sample reports",
+  ]);
+  const ovText = (title: string): string => (overrides[title]?.ar ?? "").trim();
+  const renderOverride = (text: string): string =>
+    text
+      .split(/\n\s*\n/)
+      .map((b) => b.trim())
+      .filter(Boolean)
+      .map((b) => {
+        const lines = b.split(/\n/).map((l) => l.trim());
+        return lines.every((l) => l.startsWith("- "))
+          ? `<ul>${lines.map((l) => `<li>${esc(l.slice(2))}</li>`).join("")}</ul>`
+          : `<p>${esc(b).replace(/\n/g, "<br/>")}</p>`;
+      })
+      .join("");
+  const secBody = (title: string, defaultHtml: string): string => {
+    const o = ovText(title);
+    if (!o) return defaultHtml;
+    const rendered = renderOverride(o);
+    return OVERRIDE_PREPEND.has(title) ? rendered + defaultHtml : rendered;
+  };
+  const secIntro = (title: string): string => {
+    const o = ovText(title);
+    return o ? renderOverride(o) : "";
+  };
+
   // ── Engagement (professional-services) commercial + solution, Arabic. ──
   const engLineRowAr = (l: { label: string; basis: EngagementBasis; quantity: number; unitRate: number; lineTotal: number }) =>
     `<tr><td>${esc(l.label)}</td><td>${esc(BASIS_LABEL_AR[l.basis])}</td><td class="num">${l.basis === "fixed" ? "&mdash;" : nu(l.quantity)}</td><td class="num">${m(l.unitRate)}</td><td class="num">${m(l.lineTotal)}</td></tr>`;
@@ -469,7 +507,7 @@ export function buildProposalHtmlAr(
   </div>
 
   <h2 style="border-top:0;padding-top:0;">${at("Executive summary")}</h2>
-  <p>${intro}</p>
+  ${secBody("Executive summary", `<p>${intro}</p>`)}
   <div style="display:flex;gap:10px;margin:12px 0 4px;">
     <div style="flex:1;border:1px solid #e2e8f0;border-top:3px solid #5391D5;border-radius:6px;padding:8px 10px;"><b style="display:block;color:#010131;font-size:13pt;">${isLicence && lic ? m(lic.annualRecurring) : nu(totalParticipants)}</b><span style="color:#64748b;font-size:8.5pt;">${isLicence && lic ? "التكلفة المتكررة السنوية" : "المشاركون"}</span></div>
     <div style="flex:1;border:1px solid #e2e8f0;border-top:3px solid #5391D5;border-radius:6px;padding:8px 10px;"><b style="display:block;color:#010131;font-size:13pt;">${isLicence && lic ? m(lic.year1Subtotal + drFee) : m(p.total)}</b><span style="color:#64748b;font-size:8.5pt;">${isLicence && lic ? "استثمار السنة الأولى" : "إجمالي الاستثمار"}</span></div>
@@ -478,19 +516,19 @@ export function buildProposalHtmlAr(
   ${roiHtml}
 
   <h2>${at("About VIFM")}</h2>
-  <p>معهد فرجينيا للتمويل والإدارة (VIFM) معهد للتمويل والإدارة يخدم منطقة الخليج، ويجمع بين التدريب المهني ومنصة ذكاء مواهب مبنية لهذا الغرض هي VIFM Caliber&reg;. توفر المنصة تقييماً منظماً ثنائي اللغة (عربي/إنجليزي) عبر دورة حياة المواهب كاملة - من الفرز قبل التوظيف والشهادات الفنية إلى تحليل السلوك والقدرات المعرفية وتحديد مستوى الإنجليزية والتقييم القيادي 360 والجاهزية المؤسسية للذكاء الاصطناعي.</p>
-  <p>كل أداة مبنية على منهجية موثقة، وتُدار بشكل آمن (مفاتيح إجابات محفوظة على الخادم وعشوائية لكل إدارة)، وتنتج مخرجات قابلة للمراجعة والدفاع عنها. وحيثما يسهم الذكاء الاصطناعي في التقييم فإنه يعمل تحت إشراف بشري موثق؛ وحيثما تُصدر شهادات فإنها قابلة للتحقق العلني.</p>
+  ${secBody("About VIFM", `<p>معهد فرجينيا للتمويل والإدارة (VIFM) معهد للتمويل والإدارة يخدم منطقة الخليج، ويجمع بين التدريب المهني ومنصة ذكاء مواهب مبنية لهذا الغرض هي VIFM Caliber&reg;. توفر المنصة تقييماً منظماً ثنائي اللغة (عربي/إنجليزي) عبر دورة حياة المواهب كاملة - من الفرز قبل التوظيف والشهادات الفنية إلى تحليل السلوك والقدرات المعرفية وتحديد مستوى الإنجليزية والتقييم القيادي 360 والجاهزية المؤسسية للذكاء الاصطناعي.</p>
+  <p>كل أداة مبنية على منهجية موثقة، وتُدار بشكل آمن (مفاتيح إجابات محفوظة على الخادم وعشوائية لكل إدارة)، وتنتج مخرجات قابلة للمراجعة والدفاع عنها. وحيثما يسهم الذكاء الاصطناعي في التقييم فإنه يعمل تحت إشراف بشري موثق؛ وحيثما تُصدر شهادات فإنها قابلة للتحقق العلني.</p>`)}
 
   <h2>${at("Understanding of your requirements")}</h2>
-  <p>${esc(p.clientName)} ${sectorPhrase}${p.clientRegion ? ` تعمل في ${jurisdiction}` : ""} وتسعى إلى رؤية منظمة وقابلة للدفاع عنها لقدرات ${nu(totalParticipants)} مشاركاً من خلال ${serviceListAr}. ويُتوقع أن ينتج البرنامج تقارير فردية لأغراض التطوير ودعم القرار، إلى جانب تحليلات على مستوى المجموعة للفريق الراعي.</p>
-  <p>يعالج الحل المبيّن أدناه هذه المتطلبات بأدوات ثنائية اللغة حيثما يتطلب الجمهور ذلك، وقابلة للتدقيق من طرف إلى طرف، ومتوائمة مع متطلبات حماية البيانات السارية في ${jurisdiction}. وأي تعديل للنطاق يُتفق عليه عند الانطلاق يُوثَّق في بيان العمل.</p>
+  ${secBody("Understanding of your requirements", `<p>${esc(p.clientName)} ${sectorPhrase}${p.clientRegion ? ` تعمل في ${jurisdiction}` : ""} وتسعى إلى رؤية منظمة وقابلة للدفاع عنها لقدرات ${nu(totalParticipants)} مشاركاً من خلال ${serviceListAr}. ويُتوقع أن ينتج البرنامج تقارير فردية لأغراض التطوير ودعم القرار، إلى جانب تحليلات على مستوى المجموعة للفريق الراعي.</p>
+  <p>يعالج الحل المبيّن أدناه هذه المتطلبات بأدوات ثنائية اللغة حيثما يتطلب الجمهور ذلك، وقابلة للتدقيق من طرف إلى طرف، ومتوائمة مع متطلبات حماية البيانات السارية في ${jurisdiction}. وأي تعديل للنطاق يُتفق عليه عند الانطلاق يُوثَّق في بيان العمل.</p>`)}
 
   <h2>${at("Proposed solution & technical approach")}</h2>
-  ${isEngagement ? engagementSolutionAr : `${committedScope}${technical || "<p>لم يتم اختيار خدمات.</p>"}`}
+  ${secBody("Proposed solution & technical approach", `${isEngagement ? engagementSolutionAr : `${committedScope}${technical || "<p>لم يتم اختيار خدمات.</p>"}`}`)}
   <div class="svc"><h3>سيادة البيانات</h3><p>${dataResidencyStatementAr(residency)}</p></div>
 
   ${inc("Psychometric foundations") ? `<h2>${at("Psychometric foundations")}</h2>
-  <p>تقوم الأدوات المقترحة على أسس قياس موثقة لا على مجموعات أسئلة عشوائية:</p>
+  ${secBody("Psychometric foundations", `<p>تقوم الأدوات المقترحة على أسس قياس موثقة لا على مجموعات أسئلة عشوائية:</p>
   <ul>
     <li><b>عمود فقري موحد للكفاءات</b> - يرتبط القياس السلوكي بإطار VIFM المكوّن من 41 كفاءة، فتصف نتائج الأدوات المختلفة الأشخاص بلغة واحدة مشتركة.</li>
     <li><b>مقاييس معتمدة</b> - تستخدم التقييمات السلوكية مقاييس مرجعية محددة؛ ويرتبط تحديد مستوى الإنجليزية بالإطار الأوروبي المرجعي CEFR (من A1 إلى C2).</li>
@@ -499,29 +537,29 @@ export function buildProposalHtmlAr(
     <li><b>مراقبة الثبات</b> - تُتابع إحصاءات الاتساق الداخلي مع نمو أحجام الاستجابة، ولا يُفعّل التقرير المرجعي المعياري إلا عندما تكون العينة كافية.</li>
     <li><b>طبقات إبلاغ صادقة</b> - تُوسم كل نتيجة صراحةً بأنها استرشادية أو معتمدة؛ ولا توجد النتائج المعتمدة إلا حيث تقف خلفها درجة قطع موثقة وعملية مراجعة.</li>
   </ul>
-  ${psyLive}` : ""}
+  ${psyLive}`)}` : ""}
 
   ${inc("Methodology & quality standards") ? `<h2>${at("Methodology & quality standards")}</h2>
-  <ul>
+  ${secBody("Methodology & quality standards", `<ul>
     <li><b>منهجية موثقة لكل أداة</b> - تُرفق كل أداة بموجز منهجية منشور يغطي المفهوم ونموذج التقييم والحدود الصادقة، ويرافق هذا العرض عند الطلب.</li>
     <li><b>توافق مع الإرشادات المعتمدة</b> - يتوائم تصميم البرنامج مع معيار ISO 10667، ومع الإرشادات الدولية لعمليات مراكز التقييم في أعمال مراكز التقييم.</li>
     <li><b>إدارة آمنة</b> - تُحفظ مفاتيح الإجابات على الخادم ولا تصل إلى متصفح المشارك؛ والتصحيح يتم على الخادم؛ والجلسات تُستخدم مرة واحدة.</li>
     <li><b>إشراف بشري على تقييم الذكاء الاصطناعي</b> - حيثما يسهم الذكاء الاصطناعي، تُعاير المخرجات ويحتفظ شخص مؤهل بصلاحية المراجعة؛ ولا يكون أي قرار آلي نهائياً.</li>
     <li><b>تقديم ثنائي اللغة</b> - تتوفر تجارب المشاركين بالإنجليزية والعربية (مع الاتجاه من اليمين إلى اليسار) حيثما شُمل ذلك في النطاق.</li>
-  </ul>` : ""}
+  </ul>`)}` : ""}
 
   ${inc("Platform, integration & security") ? `<h2>${at("Platform, integration & security")}</h2>
-  <ul>
+  ${secBody("Platform, integration & security", `<ul>
     <li><b>منصة التقديم</b> - يعمل البرنامج على VIFM Caliber&reg;، وهي منصة سحابية لا تتطلب أي تثبيت لدى العميل؛ وينضم المشاركون عبر روابط دعوة شخصية على أي متصفح حديث.</li>
     <li><b>وضوح البرنامج</b> - يتلقى الفريق الراعي متابعة إنجاز مباشرة خلال نافذة التقييم، مع إدارة التذكيرات من قِبل VIFM.</li>
     <li><b>مخرجات قابلة للتحقق</b> - تحمل الشهادات المعتمدة رابط تحقق علنياً، فيمكن لأي طرف ثالث تأكيد صحتها دون التواصل مع VIFM.</li>
     <li><b>قابلية نقل البيانات</b> - تُصدَّر النتائج بصيغ قياسية (CSV / JSON) لأنظمة الموارد البشرية أو التتبع لدى العميل؛ وتُسلَّم التقارير الفردية بصيغة PDF.</li>
     <li><b>التكامل</b> - يمكن تحديد نطاق الدخول الموحد أو التكامل الأعمق مع الأنظمة في بيان العمل عند الحاجة.</li>
     <li><b>الوضع الأمني</b> - تشفير أثناء النقل والتخزين، ووصول قائم على الأدوار بضوابط على مستوى الصف، ومنطق تصحيح لا يصل إلى جهاز المشارك (انظر القسم ${NO("Data protection & privacy")}).</li>
-  </ul>` : ""}
+  </ul>`)}` : ""}
 
   ${inc("Implementation plan") ? `<h2>${at("Implementation plan")}</h2>
-  <p class="scope-note">خطة استرشادية لمجموعة بهذا الحجم؛ ويُتفق على الجدول النهائي عند الانطلاق ويُوثَّق في بيان العمل.</p>
+  ${secBody("Implementation plan", `<p class="scope-note">خطة استرشادية لمجموعة بهذا الحجم؛ ويُتفق على الجدول النهائي عند الانطلاق ويُوثَّق في بيان العمل.</p>
   <table>
     <thead><tr><th>المرحلة</th><th>التوقيت الاسترشادي</th><th>الأنشطة الرئيسية</th><th>المخرجات</th></tr></thead>
     <tbody>
@@ -530,37 +568,37 @@ export function buildProposalHtmlAr(
       <tr><td><b>3 &middot; نافذة التقييم</b></td><td>الأسابيع 3-5</td><td>إرسال الدعوات على دفعات، متابعة الإنجاز، إدارة التذكيرات، دعم المشاركين</td><td>لوحة إنجاز؛ تقارير حالة دورية</td></tr>
       <tr><td><b>4 &middot; الإبلاغ والإحاطة</b></td><td>الأسبوع 6</td><td>إصدار التقارير الفردية، تجميع تحليلات المجموعة، جلسة إحاطة للراعي</td><td>حزمة المخرجات الكاملة؛ الإحاطة والتوصيات</td></tr>
     </tbody>
-  </table>` : ""}
+  </table>`)}` : ""}
 
   <h2>${at("Project governance & team")}</h2>
-  <ul>
+  ${secBody("Project governance & team", `<ul>
     <li><b>قائد الارتباط (VIFM)</b> - مالك واحد مسؤول عن التنفيذ والجوانب التجارية والتصعيد.</li>
     <li><b>منسق التقديم (VIFM)</b> - يدير الدعوات ومتابعة الإنجاز ودعم المشاركين طوال نافذة التقييم.</li>
     <li><b>الإشراف على التقييم والقياس النفسي (VIFM)</b> - يملك سلامة الأدوات وجودة التقييم ومراجعة أي إدارة مُعلَّمة.</li>
     <li><b>نقطة الاتصال الواحدة لدى العميل</b> - تسمّي ${esc(p.clientName)} منسقاً واحداً يملك قائمة المشاركين والتواصل الداخلي وقرارات الجدولة.</li>
     <li><b>الإيقاع</b> - حالة مكتوبة أسبوعياً خلال نافذة التقييم، مع مسار تصعيد ثابت إلى قائد الارتباط وإحاطة ختامية عند التسليم.</li>
-  </ul>
+  </ul>`)}
 
   <h2>${at("Data protection & privacy")}</h2>
-  <ul>
+  ${secBody("Data protection & privacy", `<ul>
     <li>تُعالَج بيانات التقييم وفقاً لقوانين حماية البيانات السارية: المرسوم بقانون اتحادي إماراتي رقم 45 لسنة 2021، ونظام حماية البيانات الشخصية السعودي، واللائحة الأوروبية العامة لحماية البيانات حيثما انطبق.</li>
     <li>تُؤخذ موافقة المشارك قبل جمع أي بيانات تقييم؛ وتحمل سجلات المشاركة أثراً تدقيقياً.</li>
     <li>تُشفَّر البيانات أثناء النقل والتخزين؛ والوصول قائم على الأدوار ومحصور بما يتطلبه كل دور؛ ولا تصل مفاتيح الإجابات ومنطق التصحيح إلى جهاز المشارك.</li>
     <li>تُحتفظ البيانات الشخصية لمدة أقصاها 24 شهراً ما لم يُمدَّد ذلك تعاقدياً، ثم تُمحى وفق إجراءات الاحتفاظ لدى VIFM.</li>
     <li>تُتاح النتائج الفردية فقط للمستلمين المخوّلين لدى المؤسسة الراعية؛ وتحمي حدود إخفاء الهوية المساهمين في التقييم متعدد المصادر.</li>
-  </ul>
+  </ul>`)}
 
   ${inc("AI governance & standards") ? `<h2>${at("AI governance & standards")}</h2>
-  <ul>
+  ${secBody("AI governance & standards", `<ul>
     <li><b>الإنسان في الحلقة بالتصميم</b> - يساعد الذكاء الاصطناعي في صياغة البنود والنسخ والتقييم المبدئي؛ ويحتفظ شخص مؤهل بصلاحية المراجعة على أي مخرج يؤثر في مشارك، ولا يُؤتمت أي قرار توظيف أو ترقية.</li>
     <li><b>الشفافية</b> - يوضّح موجز منهجية كل أداة أين يسهم الذكاء الاصطناعي وأين لا يسهم، بما يمكّن العميل من إثبات التزاماته الحوكمية.</li>
     <li><b>المعايرة</b> - تُعاير المهام الإنتاجية المُقيَّمة بالذكاء الاصطناعي (كالكتابة والتحدث) مقابل تقييمات بشرية، مع مراقبة التوافق عبر الزمن.</li>
     <li><b>لا رفض تلقائي</b> - المركّبات الفرزية إشارات استرشادية؛ ويبقى القرار لدى مراجعي العميل، وتقول التقارير ذلك صراحةً.</li>
     <li><b>التوافق الإقليمي</b> - صُمم النهج ليكون قابلاً للدفاع عنه في ظل التوقعات الناشئة لحوكمة الذكاء الاصطناعي في الخليج${p.clientRegion === "saudi" ? "، بما في ذلك الإرشادات السارية في المملكة العربية السعودية" : ""}.</li>
-  </ul>` : ""}
+  </ul>`)}` : ""}
 
   <h2>${at("Service level & support")}</h2>
-  <ul>
+  ${secBody("Service level & support", `<ul>
     <li><b>فريق مُسمّى</b> - يُخصَّص قائد ارتباط ومنسق تقديم طوال مدة البرنامج (انظر القسم ${NO("Project governance & team")}).</li>
     <li><b>نافذة الدعم</b> - دعم للبرنامج وللمشاركين خلال ساعات العمل في الخليج (الأحد-الخميس)، مع استجابة أولية خلال يوم عمل واحد.</li>
     <li><b>دعم المشاركين</b> - تتولى VIFM مباشرةً مشكلات الدخول وإعادة إرسال الدعوات واستفسارات الإنجاز، بما يبعد منسق العميل عن الأعمال اليومية.</li>
@@ -577,13 +615,14 @@ export function buildProposalHtmlAr(
     <li><b>أرصدة الخدمة</b> - يُطبَّق رصيد خدمة تناسبي عن أي شهر يقل عن ضمان التوافر، بوصفه التعويض الحصري عن التوافر.</li>
   </ul>`
       : ""
-  }
+  }`)}
 
   ${inc("Relevant experience") ? `<h2>${at("Relevant experience")}</h2>
-  <p>تقدّم VIFM برامج تقييم وتطوير لمؤسسات مصرفية وحكومية وشركات عبر منطقة الخليج. وتحمل منصة Caliber سبع عائلات من الأدوات تمتد من استقطاب المواهب إلى تطويرها - تحليل السلوك، والقدرات المعرفية، والشهادات الفنية، وتحديد مستوى الإنجليزية، والفرز قبل التوظيف، والتقييم القيادي 360، والجاهزية المؤسسية للذكاء الاصطناعي - تُقدَّم ثنائية اللغة كمعيار.</p>
-  <p>تتوفر مراجع العملاء وملخصات حالات مجهّلة ذات صلة بهذا الارتباط عند الطلب، بما يخضع لالتزامات السرية التي نقدمها لكل عميل - وهي ذات الالتزامات التي يقدمها هذا العرض لـ ${esc(p.clientName)}.</p>` : ""}
+  ${secBody("Relevant experience", `<p>تقدّم VIFM برامج تقييم وتطوير لمؤسسات مصرفية وحكومية وشركات عبر منطقة الخليج. وتحمل منصة Caliber سبع عائلات من الأدوات تمتد من استقطاب المواهب إلى تطويرها - تحليل السلوك، والقدرات المعرفية، والشهادات الفنية، وتحديد مستوى الإنجليزية، والفرز قبل التوظيف، والتقييم القيادي 360، والجاهزية المؤسسية للذكاء الاصطناعي - تُقدَّم ثنائية اللغة كمعيار.</p>
+  <p>تتوفر مراجع العملاء وملخصات حالات مجهّلة ذات صلة بهذا الارتباط عند الطلب، بما يخضع لالتزامات السرية التي نقدمها لكل عميل - وهي ذات الالتزامات التي يقدمها هذا العرض لـ ${esc(p.clientName)}.</p>`)}` : ""}
 
   <h2>${at("Commercial proposal")}</h2>
+  ${secIntro("Commercial proposal")}
   ${
     isEngagement && eng
       ? `<p>النموذج التجاري هو <strong>ارتباط خدمات مهنية مخصص</strong>، مُسعَّر بالبنود أدناه - رسوم تصميم وإبلاغ ثابتة، وتقييم لكل مشارك، ووقت مقيّمين بالأيام الاستشارية، وتغذية راجعة تطويرية لكل متدرب.</p>
@@ -605,15 +644,16 @@ export function buildProposalHtmlAr(
   ${p.paymentTerms ? `<h3>شروط الدفع</h3><p>${esc(p.paymentTerms)}</p>` : ""}
 
   ${inc("Assumptions & exclusions") ? `<h2>${at("Assumptions & exclusions")}</h2>
-  <ul>
+  ${secBody("Assumptions & exclusions", `<ul>
     <li>تقدّم ${esc(p.clientName)} قائمة مشاركين كاملة ودقيقة (الأسماء والبريد الإلكتروني) قبل فتح نافذة التقييم، وتسمّي نقطة اتصال واحدة مخوّلة باتخاذ قرارات الجدولة.</li>
     <li>يتوفر للمشاركين جهاز مناسب واتصال بالإنترنت؛ وتُكمَل التقييمات عن بُعد ما لم يُتفق على خلاف ذلك كتابةً.</li>
     <li>الأحجام كما ذُكرت؛ وتُعالَج أي تغييرات جوهرية في الأحجام أو النطاق أو اللغات بطلب تغيير كتابي وقد تعدّل الرسوم والجدول.</li>
     <li>يفترض الجدول الاسترشادي إصدار مراسلات العميل ضمن النوافذ المتفق عليها؛ وأي تأخر في تعبئة المشاركين يمدّد الجدول لا السعر.</li>
     <li>لا يشكّل هذا العرض عقداً؛ ويبدأ الارتباط عند توقيع بيان عمل يشير إلى هذا العرض.</li>
-  </ul>` : ""}
+  </ul>`)}` : ""}
 
   <h2>${at("Terms & conditions")}</h2>
+  ${secIntro("Terms & conditions")}
   ${p.terms ? `<div class="terms-box">${esc(p.terms)}</div>` : ""}
   <ol class="clauses">
     <li><b>السرية.</b> يحافظ كل طرف على سرية معلومات الطرف الآخر، ويستخدمها فقط لهذا الارتباط، ويفصح عنها فقط لمن يحتاجها من الأفراد الملتزمين بتعهدات مماثلة. ويبقى هذا البند سارياً بعد انتهاء الارتباط.</li>
@@ -638,6 +678,7 @@ export function buildProposalHtmlAr(
   </ol>
 
   ${inc("Definitions") ? `<h2>${at("Definitions")}</h2>
+  ${secIntro("Definitions")}
   <table>
     <thead><tr><th style="width:34%">المصطلح</th><th>المعنى في هذا العرض</th></tr></thead>
     <tbody>
@@ -662,6 +703,7 @@ export function buildProposalHtmlAr(
 
   <div class="accept">
     <h2 style="border-top:0;padding-top:0;">${at("Acceptance & next steps")}</h2>
+    ${secIntro("Acceptance & next steps")}
     <ul>
       <li><b><span dir="ltr">1.</span></b> تأكيد النطاق وأحجام المشاركين في القسم ${NO("Commercial proposal")} (أو طلب تعديلات - يُصدَر عرض مُنقَّح بالطريقة نفسها).</li>
       <li><b><span dir="ltr">2.</span></b> توقيع القبول أدناه${validUntil ? ` قبل تاريخ الصلاحية (${validUntil})` : ""}.</li>
@@ -692,6 +734,7 @@ export function buildProposalHtmlAr(
     inc("Evidence & sample reports")
       ? `<div class="accept">
     <h2 style="border-top:0;padding-top:0;">${at("Evidence & sample reports")}</h2>
+    ${secIntro("Evidence & sample reports")}
     <p>كل أداة في هذا العرض مدعومة بموجز منهجية موثق وأثر أدلة قابل للتدقيق. والأرقام أدناه لقطة حية للأدلة القياسية الحالية للمنصة، أُدرجت لتمكين ${esc(p.clientName)} من إثبات التزاماتها في الضمان والحوكمة. وتتوفر نماذج تقارير مجهّلة لكل خدمة عند الطلب.</p>
     ${
       evRows.length

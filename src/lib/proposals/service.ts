@@ -17,6 +17,12 @@ import {
   type NormalizedLicenceModel,
   type PricingMode,
 } from "./licensing";
+import {
+  computeEngagement,
+  normalizeEngagementModel,
+  type EngagementModelInput,
+  type NormalizedEngagementModel,
+} from "./engagement";
 import { proposalService } from "./constants";
 
 export type ProposalStatus = "draft" | "issued" | "won" | "lost";
@@ -36,6 +42,7 @@ export type Proposal = {
   status: ProposalStatus;
   pricingMode: PricingMode;
   licensingModel: LicenceModelInput | null;
+  engagementModel: EngagementModelInput | null;
   scope: ScopeItem[];
   lineItems: LineItem[];
   subtotal: number;
@@ -122,6 +129,7 @@ function rowToProposal(r: Record<string, unknown>): Proposal {
     status: (r.status as ProposalStatus) ?? "draft",
     pricingMode: (r.pricing_mode as PricingMode) ?? "per_project",
     licensingModel: (r.licensing_model as LicenceModelInput | null) ?? null,
+    engagementModel: (r.engagement_model as EngagementModelInput | null) ?? null,
     scope: Array.isArray(r.scope) ? (r.scope as ScopeItem[]) : [],
     lineItems: Array.isArray(r.line_items) ? (r.line_items as LineItem[]) : [],
     subtotal: Number(r.subtotal ?? 0),
@@ -155,6 +163,7 @@ export type ProposalInput = {
   currency: string;
   pricingMode?: PricingMode;
   licensingModel?: LicenceModelInput | null;
+  engagementModel?: EngagementModelInput | null;
   sectionSelection?: string[] | null;
   licenceData?: Record<string, unknown> | null;
   revisionOfId?: string | null;
@@ -177,6 +186,7 @@ async function price(scope: ScopeItem[], discountPct: number) {
 type PricedSnapshot = {
   pricingMode: PricingMode;
   licence: NormalizedLicenceModel | null;
+  engagement: NormalizedEngagementModel | null;
   scope: ScopeItem[];
   lineItems: LineItem[];
   subtotal: number;
@@ -189,7 +199,38 @@ type PricedSnapshot = {
  *  keeps working); per-project keeps seats x rate-card. Returns an error string
  *  when a licence proposal has nothing priced. */
 async function buildPricedSnapshot(input: ProposalInput): Promise<PricedSnapshot | { error: string }> {
-  const mode: PricingMode = input.pricingMode === "licence" ? "licence" : "per_project";
+  const mode: PricingMode =
+    input.pricingMode === "licence" ? "licence" : input.pricingMode === "engagement" ? "engagement" : "per_project";
+
+  if (mode === "engagement") {
+    const engagement = normalizeEngagementModel(input.engagementModel);
+    if (!engagement) return { error: "Add at least one priced line (amount above 0) before saving an engagement proposal." };
+    const computed = computeEngagement(engagement);
+    if (!computed) return { error: "Nothing is priced on this engagement yet." };
+    // A single synthetic scope row so the participant-driven PDF sections work;
+    // engagement rendering (solution + commercial) is handled explicitly in the builder.
+    const scope: ScopeItem[] = [
+      { service: "engagement", label: engagement.name, seats: computed.participants, scopeNote: null, methodologySlug: null },
+    ];
+    const lineItems: LineItem[] = computed.lines.map((l) => ({
+      service: "engagement",
+      label: l.label,
+      seats: l.quantity,
+      unitRate: l.unitRate,
+      subtotal: l.lineTotal,
+    }));
+    return {
+      pricingMode: mode,
+      licence: null,
+      engagement,
+      scope,
+      lineItems,
+      subtotal: computed.subtotal,
+      discountPct: computed.discountPct,
+      total: computed.total,
+    };
+  }
+
   if (mode === "licence") {
     const licence = normalizeLicensingModel(input.licensingModel);
     if (!licence) {
@@ -214,6 +255,7 @@ async function buildPricedSnapshot(input: ProposalInput): Promise<PricedSnapshot
     return {
       pricingMode: mode,
       licence,
+      engagement: null,
       scope,
       lineItems,
       subtotal: computed.alaCarteTotal,
@@ -225,6 +267,7 @@ async function buildPricedSnapshot(input: ProposalInput): Promise<PricedSnapshot
   return {
     pricingMode: mode,
     licence: null,
+    engagement: null,
     scope: input.scope,
     lineItems: items,
     subtotal,
@@ -272,14 +315,17 @@ export async function createProposal(input: ProposalInput): Promise<{ ok: true; 
   const licRow = {
     pricing_mode: priced.pricingMode,
     licensing_model: priced.licence,
+    engagement_model: priced.engagement,
     section_selection: input.sectionSelection ?? null,
     licence_data: input.licenceData ?? {},
     revision_of_id: input.revisionOfId ?? null,
   };
   // Licence rows NEVER peel the licence columns away (that would silently save a
   // per-project row); per-project rows peel them on an un-applied 00175.
+  // Licence + engagement rows NEVER peel the new columns away (that would silently
+  // save a per-project row); per-project rows peel them on an un-applied migration.
   const candidates =
-    priced.pricingMode === "licence" ? [{ ...baseRow, ...licRow }] : [{ ...baseRow, ...licRow }, { ...baseRow }];
+    priced.pricingMode !== "per_project" ? [{ ...baseRow, ...licRow }] : [{ ...baseRow, ...licRow }, { ...baseRow }];
 
   let data: { id: string } | null = null;
   let error: { code?: string; message?: string } | null = null;
@@ -291,8 +337,10 @@ export async function createProposal(input: ProposalInput): Promise<{ ok: true; 
     if (!isMissingColumn(error)) break;
   }
 
-  if (error && isMissingColumn(error) && priced.pricingMode === "licence") {
-    return { error: "Licence-mode pricing needs migration 00175. Apply it before saving in licence mode." };
+  if (error && isMissingColumn(error) && priced.pricingMode !== "per_project") {
+    const mig = priced.pricingMode === "engagement" ? "00176" : "00175";
+    const label = priced.pricingMode === "engagement" ? "Engagement" : "Licence";
+    return { error: `${label}-mode pricing needs migration ${mig}. Apply it before saving in ${priced.pricingMode} mode.` };
   }
   if (error || !data) {
     return { error: missing(error) ? "Proposals need migration 00174 applied." : error?.message ?? "Could not save the proposal." };
@@ -309,6 +357,8 @@ export async function updateProposal(
   if ("error" in priced) return priced;
 
   const baseRow = { ...proposalFields(input, priced), updated_at: new Date().toISOString() };
+  // 00175 columns only. engagement_model (00176) is attached ONLY for engagement
+  // mode, so a licence / per-project save never gains a dependency on 00176.
   const licRow = {
     pricing_mode: priced.pricingMode,
     licensing_model: priced.licence,
@@ -316,8 +366,13 @@ export async function updateProposal(
     licence_data: input.licenceData ?? {},
     revision_of_id: input.revisionOfId ?? null,
   };
-  const candidates =
-    priced.pricingMode === "licence" ? [{ ...baseRow, ...licRow }] : [{ ...baseRow, ...licRow }, { ...baseRow }];
+  const fullRow =
+    priced.pricingMode === "engagement"
+      ? { ...baseRow, ...licRow, engagement_model: priced.engagement }
+      : { ...baseRow, ...licRow };
+  // Licence + engagement rows NEVER peel the new columns away (that would silently
+  // save a per-project row); per-project rows peel them on an un-applied migration.
+  const candidates = priced.pricingMode !== "per_project" ? [fullRow] : [fullRow, { ...baseRow }];
 
   let error: { code?: string; message?: string } | null = null;
   for (const row of candidates) {
@@ -327,8 +382,10 @@ export async function updateProposal(
     if (!isMissingColumn(error)) break;
   }
 
-  if (error && isMissingColumn(error) && priced.pricingMode === "licence") {
-    return { error: "Licence-mode pricing needs migration 00175. Apply it before saving in licence mode." };
+  if (error && isMissingColumn(error) && priced.pricingMode !== "per_project") {
+    const mig = priced.pricingMode === "engagement" ? "00176" : "00175";
+    const label = priced.pricingMode === "engagement" ? "Engagement" : "Licence";
+    return { error: `${label}-mode pricing needs migration ${mig}. Apply it before saving in ${priced.pricingMode} mode.` };
   }
   if (error) return { error: error.message ?? "Could not save the proposal." };
   return { ok: true };
@@ -364,6 +421,7 @@ export async function duplicateAsRevision(id: string): Promise<{ ok: true; id: s
     currency: src.currency,
     pricingMode: src.pricingMode,
     licensingModel: src.licensingModel,
+    engagementModel: src.engagementModel,
     sectionSelection: src.sectionSelection,
     licenceData: src.licenceData,
     revisionOfId: rootId,

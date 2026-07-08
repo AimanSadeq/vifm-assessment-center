@@ -7,6 +7,7 @@
 
 import { formatMoney } from "./pricing";
 import { computeLicensing, normalizeLicensingModel } from "./licensing";
+import { computeEngagement, normalizeEngagementModel, type EngagementBasis } from "./engagement";
 import { resolveIncludedSections } from "./constants";
 import { PORTAL_SERVICES, type CaliberService } from "@/lib/clients/portal-services";
 import type { ProposalEvidence } from "./evidence-summary";
@@ -93,6 +94,14 @@ export function buildProposalHtmlAr(
 
   const isLicence = p.pricingMode === "licence";
   const lic = isLicence ? computeLicensing(normalizeLicensingModel(p.licensingModel)) : null;
+  const isEngagement = p.pricingMode === "engagement";
+  const eng = isEngagement ? computeEngagement(normalizeEngagementModel(p.engagementModel)) : null;
+  const BASIS_LABEL_AR: Record<EngagementBasis, string> = {
+    fixed: "ثابت",
+    per_participant: "لكل مشارك",
+    per_day: "لكل يوم استشاري",
+    per_session: "لكل جلسة تغذية راجعة",
+  };
 
   const scopeWithSeats = p.scope.filter((s) => (s.seats ?? 0) > 0);
   const totalParticipants = scopeWithSeats.reduce((n, s) => n + (s.seats ?? 0), 0);
@@ -185,11 +194,47 @@ export function buildProposalHtmlAr(
   const discount = Math.round((p.subtotal - p.total) * 100) / 100;
   const discountRow = discount > 0 ? `<tr><td colspan="3" class="tot-label">خصم (${pc(p.discountPct)})</td><td class="num">- ${m(discount)}</td></tr>` : "";
 
+  // ── Engagement (professional-services) commercial + solution, Arabic. ──
+  const engagementCommercialAr = eng
+    ? `<table>
+    <thead><tr><th>البند</th><th>الأساس</th><th class="num">الكمية</th><th class="num">سعر الوحدة</th><th class="num">المبلغ</th></tr></thead>
+    <tbody>
+      ${eng.lines
+        .map(
+          (l) =>
+            `<tr><td>${esc(l.label)}</td><td>${esc(BASIS_LABEL_AR[l.basis])}</td><td class="num">${l.basis === "fixed" ? "&mdash;" : nu(l.quantity)}</td><td class="num">${m(l.unitRate)}</td><td class="num">${m(l.lineTotal)}</td></tr>`,
+        )
+        .join("\n      ")}
+      <tr><td colspan="4" class="tot-label">الإجمالي الفرعي</td><td class="num">${m(eng.subtotal)}</td></tr>
+      ${eng.hasDiscount ? `<tr><td colspan="4" class="tot-label">خصم (${pc(eng.discountPct)})</td><td class="num">- ${m(eng.discountAmount)}</td></tr>` : ""}
+      <tr class="total-row"><td colspan="4" class="tot-label">الإجمالي (${esc(cur)})</td><td class="num">${m(eng.total)}</td></tr>
+    </tbody>
+  </table>
+  <p class="scope-note">هذا ارتباط خدمات مهنية مخصص مُسعَّر وفق النطاق أعلاه: رسوم تصميم وإبلاغ ثابتة، وتقييم لكل مشارك، ووقت مقيّمين بالأيام الاستشارية، وتغذية راجعة تطويرية لكل متدرب. وتُعالَج أي تغييرات في حجم المجموعة أو تصميم التمارين بطلب تغيير كتابي.</p>`
+    : "";
+
+  const engagementSolutionAr = eng
+    ? `<div class="svc">
+    <h3>${esc(eng.name)} <span class="seats">${nu(eng.participants)} مشارك</span></h3>
+    <p>ارتباط مركز تقييم متكامل يُدار ويُيسَّر بواسطة استشاريي VIFM. يراقب مقيّمون مدربون كل متدرب عبر مجموعة من التمارين المرتبطة بالدور (مثل الحقيبة الواردة، ولعب الأدوار، وتمرين المجموعة، ودراسة الحالة، والعرض الشفهي)، ويصنّفون السلوك وفق إطار كفاءات VIFM على مقياس سلوكي محدد.</p>
+    <p class="deliv-head">آلية التنفيذ</p>
+    <ul class="deliv">
+      <li><b>التصميم والإعداد</b> - تُهيَّأ التمارين ومصفوفة التمارين-الكفاءات وموجزات لاعبي الأدوار ومعايرة المقيّمين على الدور المستهدف لدى ${esc(p.clientName)}.</li>
+      <li><b>أيام التقييم</b> - يكمل المتدربون التمارين تحت ملاحظة مقيّمين مدربين، مع تغطية كل كفاءة عبر تمرينين على الأقل.</li>
+      <li><b>الدمج والمواءمة</b> - يوحّد المقيّمون الأدلة في جلسة دمج منظمة للوصول إلى تقييم عام (OAR) قابل للدفاع عنه مع توصية "جاهز الآن / جاهز مع التطوير / غير جاهز" لكل متدرب.</li>
+      <li><b>التغذية الراجعة التطويرية الفردية</b> - يتلقى كل متدرب جلسة تغذية راجعة مخصصة مع استشاري، تترجم الأدلة إلى محور تطوير شخصي.</li>
+      <li><b>الإبلاغ</b> - تقرير فردي لكل متدرب إضافة إلى تقرير دمج وقراءة للمجموعة للفريق الراعي.</li>
+    </ul>
+  </div>`
+    : "";
+
   const intro =
     p.introNote?.trim() ||
-    (isLicence
-      ? `يسعدنا أن نقدم هذا العرض للحصول على ترخيص سنوي شامل لمنصة VIFM Caliber&reg; للذكاء في المواهب لصالح ${esc(p.clientName)}، بما يجمع ${serviceListAr || "خدمات الذكاء في المواهب من VIFM"} ضمن رحلة مرشح واحدة، ووحدة تحكم إدارية واحدة، وتقارير موحدة ثنائية اللغة. والنموذج التجاري هو ترخيص سنوي ملتزم؛ ويرد أدناه المنهج الفني وخطة التنفيذ والتفصيل الكامل لبناء الترخيص.`
-      : `يسعدنا أن نقدم هذا العرض لتفعيل ${serviceListAr || "خدمات الذكاء في المواهب من VIFM"} لصالح ${esc(p.clientName)}، بما يغطي ${nu(totalParticipants)} مشاركاً. ويُقدَّم البرنامج عبر منصة VIFM Caliber&reg; للذكاء في المواهب، ويرد أدناه المنهج الفني وخطة التنفيذ والتفصيل التجاري.`);
+    (isEngagement && eng
+      ? `يسعدنا أن نقدم هذا العرض لارتباط ${esc(eng.name)} لصالح ${esc(p.clientName)}، لتقييم ${nu(eng.participants)} مشاركاً. وهو برنامج بقيادة الاستشاريين - مقيّمون مدربون، وتمارين منظمة مرتبطة بالدور، وتقييم عام قابل للدفاع عنه، وتغذية راجعة تطويرية فردية - مدعوم بمنصة VIFM Caliber&reg;. ويرد أدناه المنهج وخطة التنفيذ والتفصيل التجاري.`
+      : isLicence
+        ? `يسعدنا أن نقدم هذا العرض للحصول على ترخيص سنوي شامل لمنصة VIFM Caliber&reg; للذكاء في المواهب لصالح ${esc(p.clientName)}، بما يجمع ${serviceListAr || "خدمات الذكاء في المواهب من VIFM"} ضمن رحلة مرشح واحدة، ووحدة تحكم إدارية واحدة، وتقارير موحدة ثنائية اللغة. والنموذج التجاري هو ترخيص سنوي ملتزم؛ ويرد أدناه المنهج الفني وخطة التنفيذ والتفصيل الكامل لبناء الترخيص.`
+        : `يسعدنا أن نقدم هذا العرض لتفعيل ${serviceListAr || "خدمات الذكاء في المواهب من VIFM"} لصالح ${esc(p.clientName)}، بما يغطي ${nu(totalParticipants)} مشاركاً. ويُقدَّم البرنامج عبر منصة VIFM Caliber&reg; للذكاء في المواهب، ويرد أدناه المنهج الفني وخطة التنفيذ والتفصيل التجاري.`);
 
   const validUntil = p.validUntil ? fmtDateAr(p.validUntil) : null;
 
@@ -361,7 +406,7 @@ export function buildProposalHtmlAr(
   <p>يعالج الحل المبيّن أدناه هذه المتطلبات بأدوات ثنائية اللغة حيثما يتطلب الجمهور ذلك، وقابلة للتدقيق من طرف إلى طرف، ومتوائمة مع متطلبات حماية البيانات السارية في ${jurisdiction}. وأي تعديل للنطاق يُتفق عليه عند الانطلاق يُوثَّق في بيان العمل.</p>
 
   <h2>${at("Proposed solution & technical approach")}</h2>
-  ${committedScope}${technical || "<p>لم يتم اختيار خدمات.</p>"}
+  ${isEngagement ? engagementSolutionAr : `${committedScope}${technical || "<p>لم يتم اختيار خدمات.</p>"}`}
 
   ${inc("Psychometric foundations") ? `<h2>${at("Psychometric foundations")}</h2>
   <p>تقوم الأدوات المقترحة على أسس قياس موثقة لا على مجموعات أسئلة عشوائية:</p>
@@ -459,10 +504,13 @@ export function buildProposalHtmlAr(
 
   <h2>${at("Commercial proposal")}</h2>
   ${
-    isLicence && lic
-      ? `<p>النموذج التجاري هو <strong>ترخيص سنوي شامل ملتزم</strong> لمنصة Caliber: تُسعَّر الخدمات المختارة إفرادياً حسب الحجم، ثم تُجمَّع بخصم الترخيص الملتزم. ويُدرج الدعم واتفاقية مستوى الخدمة كنسبة من الترخيص، ويغطي التنفيذ لمرة واحدة الإعداد والتهيئة والتكامل والتدريب.</p>
+    isEngagement && eng
+      ? `<p>النموذج التجاري هو <strong>ارتباط خدمات مهنية مخصص</strong>، مُسعَّر بالبنود أدناه - رسوم تصميم وإبلاغ ثابتة، وتقييم لكل مشارك، ووقت مقيّمين بالأيام الاستشارية، وتغذية راجعة تطويرية لكل متدرب.</p>
+  ${engagementCommercialAr}`
+      : isLicence && lic
+        ? `<p>النموذج التجاري هو <strong>ترخيص سنوي شامل ملتزم</strong> لمنصة Caliber: تُسعَّر الخدمات المختارة إفرادياً حسب الحجم، ثم تُجمَّع بخصم الترخيص الملتزم. ويُدرج الدعم واتفاقية مستوى الخدمة كنسبة من الترخيص، ويغطي التنفيذ لمرة واحدة الإعداد والتهيئة والتكامل والتدريب.</p>
   ${licenceCommercial}`
-      : `<table>
+        : `<table>
     <thead><tr><th>الخدمة</th><th class="num">المشاركون</th><th class="num">السعر / مشارك</th><th class="num">الإجمالي الفرعي</th></tr></thead>
     <tbody>
       ${lineRows}

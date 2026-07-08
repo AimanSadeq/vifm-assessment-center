@@ -100,7 +100,7 @@ export default async function ProposalsPage() {
                   <td className="px-4 py-2.5">
                     <span className={`rounded-full px-2 py-0.5 text-xs capitalize ${STATUS_TONE[p.status] ?? ""}`}>{p.status}</span>
                     <span className="ml-1.5 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">
-                      {p.pricingMode === "licence" ? "Licence" : "Project"}
+                      {p.pricingMode === "licence" ? "Licence" : p.pricingMode === "engagement" ? "Engagement" : "Project"}
                     </span>
                   </td>
                   <td className="px-4 py-2.5 text-muted-foreground">{new Date(p.createdAt).toLocaleDateString("en-GB")}</td>

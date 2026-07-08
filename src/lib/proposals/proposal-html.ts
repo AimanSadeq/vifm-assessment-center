@@ -13,6 +13,7 @@
 import { formatMoney } from "./pricing";
 import { proposalService, PROPOSAL_DELIVERABLES, resolveIncludedSections } from "./constants";
 import { computeLicensing, normalizeLicensingModel } from "./licensing";
+import { computeEngagement, normalizeEngagementModel, ENGAGEMENT_BASIS_LABEL } from "./engagement";
 import type { ProposalEvidence } from "./evidence-summary";
 import type { CaliberService } from "@/lib/clients/portal-services";
 import type { Proposal } from "./service";
@@ -83,6 +84,10 @@ export function buildProposalHtml(
   // licence model is empty, so every licence block gates on `isLicence && lic`. ──
   const isLicence = p.pricingMode === "licence";
   const lic = isLicence ? computeLicensing(normalizeLicensingModel(p.licensingModel)) : null;
+
+  // ── Engagement (professional-services) pricing mode, e.g. Assessment Center. ──
+  const isEngagement = p.pricingMode === "engagement";
+  const eng = isEngagement ? computeEngagement(normalizeEngagementModel(p.engagementModel)) : null;
 
   const scopeWithSeats = p.scope.filter((s) => (s.seats ?? 0) > 0);
   const totalParticipants = scopeWithSeats.reduce((n, s) => n + (s.seats ?? 0), 0);
@@ -216,13 +221,49 @@ export function buildProposalHtml(
   ${lic.hasBuffer ? `<p class="scope-note">Committed volumes include a ${num(lic.bufferPct)}% usage buffer at no additional charge; excess usage is invoiced quarterly in arrears at the quoted unit prices.</p>` : ""}`
     : "";
 
+  // ── Engagement commercial (line-item quote) + solution description. ──
+  const engagementCommercial = eng
+    ? `<table>
+    <thead><tr><th>Item</th><th>Basis</th><th class="num">Qty</th><th class="num">Unit rate</th><th class="num">Amount</th></tr></thead>
+    <tbody>
+      ${eng.lines
+        .map(
+          (l) =>
+            `<tr><td>${esc(l.label)}</td><td>${esc(ENGAGEMENT_BASIS_LABEL[l.basis])}</td><td class="num">${l.basis === "fixed" ? "&mdash;" : num(l.quantity)}</td><td class="num">${money(l.unitRate)}</td><td class="num">${money(l.lineTotal)}</td></tr>`,
+        )
+        .join("\n      ")}
+      <tr><td colspan="4" class="tot-label">Subtotal</td><td class="num">${money(eng.subtotal)}</td></tr>
+      ${eng.hasDiscount ? `<tr><td colspan="4" class="tot-label">Discount (${num(eng.discountPct)}%)</td><td class="num">- ${money(eng.discountAmount)}</td></tr>` : ""}
+      <tr class="total-row"><td colspan="4" class="tot-label">Total (${esc(cur)})</td><td class="num">${money(eng.total)}</td></tr>
+    </tbody>
+  </table>
+  <p class="scope-note">This is a bespoke professional-services engagement priced on the scope above: fixed design and reporting fees, per-participant assessment, consultant-day assessor time, and per-delegate developmental feedback. Consultant days assume an assessor-to-delegate ratio appropriate to the exercise set; a change in cohort size or exercise design is handled by written change request.</p>`
+    : "";
+
+  const engagementSolution = eng
+    ? `<div class="svc">
+    <h3>${esc(eng.name)} <span class="seats">${num(eng.participants)} participant${eng.participants === 1 ? "" : "s"}</span></h3>
+    <p>A full assessment-center engagement delivered and facilitated by VIFM consultants. Trained assessors observe each delegate across a set of role-relevant exercises (e.g. in-basket, role-play, group exercise, case study, oral presentation), classifying behaviour against the VIFM competency framework on a defined BARS scale.</p>
+    <p class="deliv-head">How it runs</p>
+    <ul class="deliv">
+      <li><b>Design &amp; setup</b> - exercises, the exercise-to-competency matrix, role-player briefs and assessor calibration are configured to ${esc(p.clientName)}'s target role(s).</li>
+      <li><b>Assessment days</b> - delegates complete the exercises under trained assessor observation; every competency is evidenced across at least two exercises.</li>
+      <li><b>Wash-up &amp; integration</b> - assessors consolidate evidence in a structured wash-up to reach a defensible Overall Assessment Rating (OAR) with a Ready Now / Ready with Development / Not Ready recommendation per delegate.</li>
+      <li><b>1:1 developmental feedback</b> - each delegate receives a dedicated feedback session with a consultant, translating the evidence into a personal development focus.</li>
+      <li><b>Reporting</b> - an individual report per delegate plus a cohort integration and read-out for the sponsoring team.</li>
+    </ul>
+  </div>`
+    : "";
+
   // The executive summary NAMES the offered service(s) - a proposal must say
   // what is being sold in its first breath, not just "assessment instruments".
   const intro =
     p.introNote?.trim() ||
-    (isLicence
-      ? `We are pleased to present this proposal for an annual, all-access licence to the VIFM Caliber® Talent Intelligence Platform for ${p.clientName}, combining ${serviceList || "VIFM's talent-intelligence services"} into one candidate journey, one admin console and combined bilingual reporting. The commercial model is a committed annual licence; the technical approach, delivery plan and full licence build-up are set out below.`
-      : `We are pleased to present this proposal for the deployment of ${serviceList || "VIFM's talent-intelligence services"} for ${p.clientName}, covering ${num(totalParticipants)} participant${totalParticipants === 1 ? "" : "s"}. Delivered on the VIFM Caliber® Talent Intelligence Platform, the programme is set out below with its technical approach, delivery plan and commercial detail.`);
+    (isEngagement && eng
+      ? `We are pleased to present this proposal for a ${esc(eng.name)} engagement for ${p.clientName}, assessing ${num(eng.participants)} participant${eng.participants === 1 ? "" : "s"}. This is a consultant-led programme - trained assessors, structured role-relevant exercises, a defensible overall assessment rating and 1:1 developmental feedback - supported by the VIFM Caliber® platform. The approach, delivery plan and commercial detail are set out below.`
+      : isLicence
+        ? `We are pleased to present this proposal for an annual, all-access licence to the VIFM Caliber® Talent Intelligence Platform for ${p.clientName}, combining ${serviceList || "VIFM's talent-intelligence services"} into one candidate journey, one admin console and combined bilingual reporting. The commercial model is a committed annual licence; the technical approach, delivery plan and full licence build-up are set out below.`
+        : `We are pleased to present this proposal for the deployment of ${serviceList || "VIFM's talent-intelligence services"} for ${p.clientName}, covering ${num(totalParticipants)} participant${totalParticipants === 1 ? "" : "s"}. Delivered on the VIFM Caliber® Talent Intelligence Platform, the programme is set out below with its technical approach, delivery plan and commercial detail.`);
 
   const validUntil = p.validUntil ? fmtDate(p.validUntil) : null;
 
@@ -434,7 +475,7 @@ export function buildProposalHtml(
   ${jurisdiction}. Any refinement of scope agreed during kickoff will be captured in the statement of work.</p>
 
   <h2><span class="no">${NO("Proposed solution & technical approach")}.</span>Proposed solution &amp; technical approach</h2>
-  ${committedScope}${technical || "<p>No services selected.</p>"}
+  ${isEngagement ? engagementSolution : `${committedScope}${technical || "<p>No services selected.</p>"}`}
 
   ${inc("Psychometric foundations") ? `<h2><span class="no">${NO("Psychometric foundations")}.</span>Psychometric foundations</h2>
   <p>The proposed instrument${scopeWithSeats.length === 1 ? " is" : "s are"} built on documented measurement
@@ -539,10 +580,13 @@ export function buildProposalHtml(
 
   <h2><span class="no">${NO("Commercial proposal")}.</span>Commercial proposal</h2>
   ${
-    isLicence && lic
-      ? `<p>The commercial model is a committed <strong>annual all-access licence</strong> to the Caliber platform: the selected services are volume-priced a la carte, then bundled at a committed-licence discount. Support &amp; SLA is included as a percentage of the licence, and one-time implementation covers onboarding, configuration, integration and training.</p>
+    isEngagement && eng
+      ? `<p>The commercial model is a bespoke <strong>professional-services engagement</strong>, priced by line item below - fixed design and reporting fees, per-participant assessment, consultant-day assessor time, and per-delegate developmental feedback.</p>
+  ${engagementCommercial}`
+      : isLicence && lic
+        ? `<p>The commercial model is a committed <strong>annual all-access licence</strong> to the Caliber platform: the selected services are volume-priced a la carte, then bundled at a committed-licence discount. Support &amp; SLA is included as a percentage of the licence, and one-time implementation covers onboarding, configuration, integration and training.</p>
   ${licenceCommercial}`
-      : `<table>
+        : `<table>
     <thead><tr><th>Service</th><th class="num">Participants</th><th class="num">Rate / participant</th><th class="num">Subtotal</th></tr></thead>
     <tbody>
       ${lineRows}

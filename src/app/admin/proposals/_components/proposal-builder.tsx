@@ -22,6 +22,14 @@ import {
   type LicenceTier,
   type PricingMode,
 } from "@/lib/proposals/licensing";
+import {
+  computeEngagement,
+  normalizeEngagementModel,
+  acEngagementTemplate,
+  ENGAGEMENT_BASIS_LABEL,
+  type EngagementBasis,
+  type EngagementModelInput,
+} from "@/lib/proposals/engagement";
 import { createProposalAction, updateProposalAction } from "../actions";
 import type { Proposal } from "@/lib/proposals/service";
 
@@ -125,6 +133,26 @@ export function ProposalBuilder({
   const [roiHires, setRoiHires] = useState<number>(Number(roi0?.hiresPerYear) || 0);
   const [roiGainPct, setRoiGainPct] = useState<number>(Number(roi0?.accuracyGainPct) || 12);
 
+  // Engagement (professional-services) mode: name + participants + free line items.
+  type EngLine = { label: string; basis: EngagementBasis; quantity: number; unitRate: number };
+  const em = existing?.engagementModel;
+  const seedLines: EngLine[] =
+    em?.lines && em.lines.length
+      ? em.lines.map((l) => ({ label: l.label ?? "", basis: (l.basis as EngagementBasis) ?? "fixed", quantity: Number(l.quantity) || 0, unitRate: Number(l.unitRate) || 0 }))
+      : (acEngagementTemplate(8).lines ?? []).map((l) => ({ label: l.label ?? "", basis: (l.basis as EngagementBasis) ?? "fixed", quantity: Number(l.quantity) || 0, unitRate: Number(l.unitRate) || 0 }));
+  const [engName, setEngName] = useState<string>(em?.name ?? "Assessment Center");
+  const [engParticipants, setEngParticipants] = useState<number>(Number(em?.participants) || 8);
+  const [engLines, setEngLines] = useState<EngLine[]>(seedLines);
+  const updateLine = (i: number, patch: Partial<EngLine>) => setEngLines((prev) => prev.map((l, j) => (j === i ? { ...l, ...patch } : l)));
+  const addLine = () => setEngLines((prev) => [...prev, { label: "", basis: "fixed", quantity: 1, unitRate: 0 }]);
+  const removeLine = (i: number) => setEngLines((prev) => prev.filter((_, j) => j !== i));
+  function loadAcTemplate() {
+    const t = acEngagementTemplate(engParticipants || 8);
+    setEngName(t.name ?? "Assessment Center");
+    setEngParticipants(Number(t.participants) || 8);
+    setEngLines((t.lines ?? []).map((l) => ({ label: l.label ?? "", basis: (l.basis as EngagementBasis) ?? "fixed", quantity: Number(l.quantity) || 0, unitRate: Number(l.unitRate) || 0 })));
+  }
+
   const selectedClient = clients.find((c) => c.name === clientName) ?? null;
 
   // Switch mode; swap the payment-terms default only if it is still a known default.
@@ -200,6 +228,17 @@ export function ProposalBuilder({
 
   const licensing = useMemo(() => computeLicensing(normalizeLicensingModel(assembleLicensingModel())), [assembleLicensingModel]);
 
+  const assembleEngagementModel = useCallback(
+    (): EngagementModelInput => ({
+      name: engName.trim() || "Assessment Center",
+      participants: engParticipants,
+      discountPct,
+      lines: engLines.map((l) => ({ label: l.label.trim(), basis: l.basis, quantity: l.quantity, unitRate: l.unitRate })),
+    }),
+    [engName, engParticipants, discountPct, engLines],
+  );
+  const engagement = useMemo(() => computeEngagement(normalizeEngagementModel(assembleEngagementModel())), [assembleEngagementModel]);
+
   async function save() {
     setBusy(true);
     setError(null);
@@ -215,6 +254,7 @@ export function ProposalBuilder({
       currency,
       pricingMode,
       licensingModel: pricingMode === "licence" ? assembleLicensingModel() : null,
+      engagementModel: pricingMode === "engagement" ? assembleEngagementModel() : null,
       sectionSelection: Array.from(selectedSections),
       licenceData: {
         ...(existing?.licenceData ?? {}),
@@ -245,7 +285,8 @@ export function ProposalBuilder({
   }
 
   const isLicence = pricingMode === "licence";
-  const priced = isLicence ? !!licensing : scope.length > 0;
+  const isEngagement = pricingMode === "engagement";
+  const priced = isLicence ? !!licensing : isEngagement ? !!engagement : scope.length > 0;
   const canSave = title.trim() && clientName.trim() && priced && !busy;
 
   const numInput = "mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm";
@@ -298,17 +339,22 @@ export function ProposalBuilder({
             <p className="mt-0.5 text-xs text-muted-foreground">
               {isLicence
                 ? "Annual all-access licence to the Caliber platform (SaaS build-up)."
-                : "One-off project fee: participants x the per-service rate."}
+                : isEngagement
+                  ? "Bespoke professional-services engagement (e.g. Assessment Center): fixed fees + per-participant + consultant-days + feedback."
+                  : "One-off project fee: participants x the per-service rate."}
             </p>
           </div>
           <div className="inline-flex rounded-md border border-border p-0.5">
             <button type="button" onClick={() => switchMode("licence")}
-              className={`flex-1 rounded px-3 py-1.5 text-sm font-medium ${isLicence ? "bg-[#010131] text-white" : "text-muted-foreground hover:bg-muted"}`}>Annual licence</button>
+              className={`rounded px-3 py-1.5 text-sm font-medium ${isLicence ? "bg-[#010131] text-white" : "text-muted-foreground hover:bg-muted"}`}>Annual licence</button>
             <button type="button" onClick={() => switchMode("per_project")}
-              className={`flex-1 rounded px-3 py-1.5 text-sm font-medium ${!isLicence ? "bg-[#010131] text-white" : "text-muted-foreground hover:bg-muted"}`}>Per project</button>
+              className={`rounded px-3 py-1.5 text-sm font-medium ${pricingMode === "per_project" ? "bg-[#010131] text-white" : "text-muted-foreground hover:bg-muted"}`}>Per project</button>
+            <button type="button" onClick={() => switchMode("engagement")}
+              className={`rounded px-3 py-1.5 text-sm font-medium ${isEngagement ? "bg-[#010131] text-white" : "text-muted-foreground hover:bg-muted"}`}>Engagement</button>
           </div>
         </div>
 
+        {!isEngagement && (<>
         <div className="flex items-center justify-between gap-2 border-t border-border pt-3">
           <h3 className="text-sm font-medium text-foreground">Services &amp; {isLicence ? "annual volumes" : "participants"}</h3>
           <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -371,6 +417,71 @@ export function ProposalBuilder({
         )}
         {isLicence && !licensing && (
           <p className="text-xs text-amber-700">Add at least one service with an annual volume and a unit price above 0 to price the licence.</p>
+        )}
+        </>)}
+
+        {isEngagement && (
+          <div className="border-t border-border pt-3 space-y-3">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <label className="block text-sm">
+                <span className="text-muted-foreground">Engagement name</span>
+                <input value={engName} onChange={(e) => setEngName(e.target.value)} className="mt-1 w-64 rounded-md border border-border bg-card px-3 py-2 text-sm" />
+              </label>
+              <label className="block text-sm">
+                <span className="text-muted-foreground">Participants (delegates)</span>
+                <input type="number" min={0} value={engParticipants} onChange={(e) => setEngParticipants(Math.max(0, Number(e.target.value) || 0))} className="mt-1 w-32 rounded-md border border-border bg-card px-3 py-2 text-sm" />
+              </label>
+              <button type="button" onClick={loadAcTemplate}
+                className="rounded-md border border-[#5391D5] px-3 py-2 text-sm font-medium text-[#5391D5] hover:bg-[#5391D5]/5">
+                Load Assessment Center template
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <div className="hidden gap-2 px-1 text-[11px] uppercase tracking-wide text-muted-foreground sm:flex">
+                <span className="flex-1">Line item</span>
+                <span className="w-40">Basis</span>
+                <span className="w-20 text-right">Qty</span>
+                <span className="w-24 text-right">Unit rate</span>
+                <span className="w-24 text-right">Amount</span>
+                <span className="w-6" />
+              </div>
+              {engLines.map((l, i) => {
+                const amount = l.basis === "fixed" ? l.unitRate : l.quantity * l.unitRate;
+                return (
+                  <div key={i} className="flex flex-wrap items-center gap-2 rounded-md border border-border p-2">
+                    <input value={l.label} onChange={(e) => updateLine(i, { label: e.target.value })} placeholder="e.g. Assessor days"
+                      className="min-w-[10rem] flex-1 rounded border border-border bg-card px-2.5 py-1.5 text-sm" />
+                    <select value={l.basis} onChange={(e) => updateLine(i, { basis: e.target.value as EngagementBasis })}
+                      className="w-40 rounded border border-border bg-card px-2 py-1.5 text-sm">
+                      {(Object.keys(ENGAGEMENT_BASIS_LABEL) as EngagementBasis[]).map((b) => (
+                        <option key={b} value={b}>{ENGAGEMENT_BASIS_LABEL[b]}</option>
+                      ))}
+                    </select>
+                    <input type="number" min={0} value={l.basis === "fixed" ? 1 : l.quantity} disabled={l.basis === "fixed"}
+                      onChange={(e) => updateLine(i, { quantity: Math.max(0, Number(e.target.value) || 0) })}
+                      className="w-20 rounded border border-border bg-card px-2 py-1.5 text-right text-sm disabled:opacity-50" />
+                    <input type="number" min={0} value={l.unitRate}
+                      onChange={(e) => updateLine(i, { unitRate: Math.max(0, Number(e.target.value) || 0) })}
+                      className="w-24 rounded border border-border bg-card px-2 py-1.5 text-right text-sm" />
+                    <span className="w-24 text-right text-sm font-semibold tabular-nums text-[#010131]">{money(amount)}</span>
+                    <button type="button" onClick={() => removeLine(i)} className="w-6 text-muted-foreground hover:text-red-600" aria-label="Remove line">×</button>
+                  </div>
+                );
+              })}
+              <button type="button" onClick={addLine} className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground hover:bg-muted">+ Add line</button>
+            </div>
+
+            {engagement ? (
+              <div className="rounded-md border border-border bg-muted/40 p-3 text-sm">
+                <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span className="tabular-nums">{money(engagement.subtotal)}</span></div>
+                {engagement.hasDiscount && <div className="flex justify-between text-muted-foreground"><span>Discount ({discountPct}%)</span><span className="tabular-nums">- {money(engagement.discountAmount)}</span></div>}
+                <div className="mt-1 flex justify-between border-t border-border pt-1 text-base font-semibold text-[#010131]"><span>Total ({engParticipants} delegates)</span><span className="tabular-nums">{money(engagement.total)}</span></div>
+              </div>
+            ) : (
+              <p className="text-xs text-amber-700">Add at least one line with an amount above 0 to price the engagement.</p>
+            )}
+          </div>
         )}
       </section>
 
@@ -505,6 +616,18 @@ export function ProposalBuilder({
                 <p className="text-muted-foreground">Price at least one service above to see the licence build-up.</p>
               )}
             </div>
+          ) : isEngagement ? (
+            <div className="rounded-md border border-border bg-muted/40 p-2 text-sm">
+              {engagement ? (
+                <>
+                  <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span className="tabular-nums">{money(engagement.subtotal)}</span></div>
+                  {engagement.hasDiscount && <div className="flex justify-between text-muted-foreground"><span>Discount ({discountPct}%)</span><span className="tabular-nums">- {money(engagement.discountAmount)}</span></div>}
+                  <div className="mt-1 flex justify-between border-t border-border pt-1 font-semibold text-[#010131]"><span>Engagement total</span><span className="tabular-nums">{money(engagement.total)}</span></div>
+                </>
+              ) : (
+                <p className="text-muted-foreground">Add priced lines above to see the engagement total.</p>
+              )}
+            </div>
           ) : (
             <div className="rounded-md border border-border bg-muted/40 p-2 text-sm">
               <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span className="tabular-nums">{money(totals.subtotal)}</span></div>
@@ -587,7 +710,7 @@ export function ProposalBuilder({
           className="rounded-md bg-[#010131] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#121140] disabled:opacity-50">
           {busy ? "Saving…" : existing ? "Save changes" : "Create proposal"}
         </button>
-        {!priced && <span className="text-xs text-muted-foreground">Add at least one service with {isLicence ? "a volume and unit price" : "participants"}.</span>}
+        {!priced && <span className="text-xs text-muted-foreground">Add at least one {isLicence ? "service with a volume and unit price" : isEngagement ? "priced engagement line" : "service with participants"}.</span>}
       </div>
     </div>
   );

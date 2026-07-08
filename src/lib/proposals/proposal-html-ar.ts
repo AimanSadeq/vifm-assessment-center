@@ -213,16 +213,24 @@ export function buildProposalHtmlAr(
   const discountRow = discount > 0 ? `<tr><td colspan="3" class="tot-label">خصم (${pc(p.discountPct)})</td><td class="num">- ${m(discount)}</td></tr>` : "";
 
   // ── Engagement (professional-services) commercial + solution, Arabic. ──
+  const engLineRowAr = (l: { label: string; basis: EngagementBasis; quantity: number; unitRate: number; lineTotal: number }) =>
+    `<tr><td>${esc(l.label)}</td><td>${esc(BASIS_LABEL_AR[l.basis])}</td><td class="num">${l.basis === "fixed" ? "&mdash;" : nu(l.quantity)}</td><td class="num">${m(l.unitRate)}</td><td class="num">${m(l.lineTotal)}</td></tr>`;
+  const engBodyAr = eng
+    ? eng.titledCount >= 2
+      ? eng.groups
+          .map((g) =>
+            g.name.trim()
+              ? `<tr class="grp-row"><td colspan="5">${esc(g.name)}${g.participants ? ` &middot; ${nu(g.participants)} مشارك` : ""}</td></tr>${g.lines.map(engLineRowAr).join("")}<tr><td colspan="4" class="tot-label">الإجمالي الفرعي لـ${esc(g.name)}</td><td class="num">${m(g.subtotal)}</td></tr>`
+              : g.lines.map(engLineRowAr).join(""),
+          )
+          .join("")
+      : eng.lines.map(engLineRowAr).join("")
+    : "";
   const engagementCommercialAr = eng
     ? `<table>
     <thead><tr><th>البند</th><th>الأساس</th><th class="num">الكمية</th><th class="num">سعر الوحدة</th><th class="num">المبلغ</th></tr></thead>
     <tbody>
-      ${eng.lines
-        .map(
-          (l) =>
-            `<tr><td>${esc(l.label)}</td><td>${esc(BASIS_LABEL_AR[l.basis])}</td><td class="num">${l.basis === "fixed" ? "&mdash;" : nu(l.quantity)}</td><td class="num">${m(l.unitRate)}</td><td class="num">${m(l.lineTotal)}</td></tr>`,
-        )
-        .join("\n      ")}
+      ${engBodyAr}
       <tr><td colspan="4" class="tot-label">الإجمالي الفرعي</td><td class="num">${m(eng.subtotal)}</td></tr>
       ${eng.hasDiscount ? `<tr><td colspan="4" class="tot-label">خصم (${pc(eng.discountPct)})</td><td class="num">- ${m(eng.discountAmount)}</td></tr>` : ""}
       <tr class="total-row"><td colspan="4" class="tot-label">الإجمالي (${esc(cur)})</td><td class="num">${m(eng.total)}</td></tr>
@@ -233,7 +241,7 @@ export function buildProposalHtmlAr(
 
   const engagementSolutionAr = eng
     ? `<div class="svc">
-    <h3>${esc(eng.name)} <span class="seats">${nu(eng.participants)} مشارك</span></h3>
+    <h3>${eng.titledCount >= 2 ? esc(eng.groups.filter((g) => g.name.trim()).map((g) => g.name).join("  ·  ")) : `${esc(eng.name)} <span class="seats">${nu(eng.participants)} مشارك</span>`}</h3>
     <p>ارتباط مركز تقييم متكامل يُدار ويُيسَّر بواسطة استشاريي VIFM. يراقب مقيّمون مدربون كل متدرب عبر مجموعة من التمارين المرتبطة بالدور (مثل الحقيبة الواردة، ولعب الأدوار، وتمرين المجموعة، ودراسة الحالة، والعرض الشفهي)، ويصنّفون السلوك وفق إطار كفاءات VIFM على مقياس سلوكي محدد.</p>
     <p class="deliv-head">آلية التنفيذ</p>
     <ul class="deliv">
@@ -389,6 +397,7 @@ export function buildProposalHtmlAr(
   td.num, th.num { text-align: end; white-space: nowrap; }
   .tot-label { text-align: end; color: #475569; }
   .total-row td { border-top: 2px solid #010131; font-weight: 800; color: #010131; font-size: 11pt; }
+  .grp-row td { background: #eef4fb; color: #010131; font-weight: 700; font-size: 10pt; border-top: 1px solid #cbd5e1; }
   .terms-box { background: #f8fafc; border-right: 3px solid #5391D5; border-radius: 6px 0 0 6px; padding: 10px 14px; margin-top: 8px; font-size: 9.5pt; color: #334155; }
 
   ol.clauses { margin: 8px 0 0; padding-right: 0; list-style: none; counter-reset: cl; }
@@ -426,9 +435,7 @@ export function buildProposalHtmlAr(
         <h1>${esc(p.title)}</h1>
         <div class="subtitle">${coverSubtitleAr}</div>
         <div class="accent"></div>
-        <div class="prepared"><b>مُعدّ لصالح</b><span>${esc(p.clientName)}${
-          p.contactName ? ` <em>&middot; ${esc(p.contactName)}</em>` : ""
-        }</span>${clientLocationAr ? `<i>${esc(clientLocationAr)}</i>` : ""}</div>
+        <div class="prepared"><b>مُعدّ لصالح</b><span>${esc(p.clientName)}</span>${clientLocationAr ? `<i>${esc(clientLocationAr)}</i>` : ""}</div>
       </div>
       <div class="creds">
         <span>ثنائي اللغة عربي / إنجليزي</span><span>شهادات قابلة للتحقق</span><span>متوافق مع ISO 10667</span><span>سيادة بيانات خليجية</span>
@@ -437,7 +444,7 @@ export function buildProposalHtmlAr(
     <div class="layer">
       <div class="panel">
         <div class="grid">
-          <div><b>مُعدّ لصالح</b>${esc(p.clientName)}${p.contactName ? `<br/>${esc(p.contactName)}` : ""}${p.contactEmail ? `<br/><span dir="ltr">${esc(p.contactEmail)}</span>` : ""}</div>
+          <div><b>مُعدّ لصالح</b>${esc(p.clientName)}${p.contactEmail ? `<br/><span dir="ltr">${esc(p.contactEmail)}</span>` : ""}</div>
           <div><b>مُعدّ بواسطة</b>معهد فرجينيا للتمويل والإدارة</div>
           <div><b>المرجع</b><span dir="ltr">${ref}</span></div>
           <div><b>التاريخ</b>${fmtDateAr(p.createdAt)}</div>

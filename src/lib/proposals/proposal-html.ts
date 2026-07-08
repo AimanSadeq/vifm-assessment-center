@@ -13,7 +13,7 @@
 import { formatMoney } from "./pricing";
 import { proposalService, PROPOSAL_DELIVERABLES, resolveIncludedSections } from "./constants";
 import { computeLicensing, normalizeLicensingModel } from "./licensing";
-import { computeEngagement, normalizeEngagementModel, ENGAGEMENT_BASIS_LABEL, DATA_RESIDENCY_LABEL, dataResidencyStatement, resolveDataResidency, withEngagementResidency } from "./engagement";
+import { computeEngagement, normalizeEngagementModel, ENGAGEMENT_BASIS_LABEL, DATA_RESIDENCY_LABEL, dataResidencyStatement, resolveDataResidency, withEngagementResidency, type EngagementBasis } from "./engagement";
 import type { ProposalEvidence } from "./evidence-summary";
 import type { CaliberService } from "@/lib/clients/portal-services";
 import type { Proposal } from "./service";
@@ -231,28 +231,42 @@ export function buildProposalHtml(
   ${lic.hasBuffer ? `<p class="scope-note">Committed volumes include a ${num(lic.bufferPct)}% usage buffer at no additional charge; excess usage is invoiced quarterly in arrears at the quoted unit prices.</p>` : ""}`
     : "";
 
-  // ── Engagement commercial (line-item quote) + solution description. ──
+  // ── Engagement commercial (line-item quote) + solution description. When more
+  // than one engagement is priced, each is itemised as its own group with its own
+  // subtotal, then a combined grand total. ──
+  const engLineRow = (l: { label: string; basis: EngagementBasis; quantity: number; unitRate: number; lineTotal: number }) =>
+    `<tr><td>${esc(l.label)}</td><td>${esc(ENGAGEMENT_BASIS_LABEL[l.basis])}</td><td class="num">${l.basis === "fixed" ? "&mdash;" : num(l.quantity)}</td><td class="num">${money(l.unitRate)}</td><td class="num">${money(l.lineTotal)}</td></tr>`;
+  const engBody = eng
+    ? eng.titledCount >= 2
+      ? eng.groups
+          .map((g) =>
+            g.name.trim()
+              ? `<tr class="grp-row"><td colspan="5">${esc(g.name)}${g.participants ? ` &middot; ${num(g.participants)} participant${g.participants === 1 ? "" : "s"}` : ""}</td></tr>${g.lines.map(engLineRow).join("")}<tr><td colspan="4" class="tot-label">${esc(g.name)} subtotal</td><td class="num">${money(g.subtotal)}</td></tr>`
+              : g.lines.map(engLineRow).join(""),
+          )
+          .join("")
+      : eng.lines.map(engLineRow).join("")
+    : "";
   const engagementCommercial = eng
     ? `<table>
     <thead><tr><th>Item</th><th>Basis</th><th class="num">Qty</th><th class="num">Unit rate</th><th class="num">Amount</th></tr></thead>
     <tbody>
-      ${eng.lines
-        .map(
-          (l) =>
-            `<tr><td>${esc(l.label)}</td><td>${esc(ENGAGEMENT_BASIS_LABEL[l.basis])}</td><td class="num">${l.basis === "fixed" ? "&mdash;" : num(l.quantity)}</td><td class="num">${money(l.unitRate)}</td><td class="num">${money(l.lineTotal)}</td></tr>`,
-        )
-        .join("\n      ")}
+      ${engBody}
       <tr><td colspan="4" class="tot-label">Subtotal</td><td class="num">${money(eng.subtotal)}</td></tr>
       ${eng.hasDiscount ? `<tr><td colspan="4" class="tot-label">Discount (${num(eng.discountPct)}%)</td><td class="num">- ${money(eng.discountAmount)}</td></tr>` : ""}
       <tr class="total-row"><td colspan="4" class="tot-label">Total (${esc(cur)})</td><td class="num">${money(eng.total)}</td></tr>
     </tbody>
   </table>
-  <p class="scope-note">This is a bespoke professional-services engagement priced on the scope above: fixed design and reporting fees, per-participant assessment, consultant-day assessor time, and per-delegate developmental feedback. Consultant days assume an assessor-to-delegate ratio appropriate to the exercise set; a change in cohort size or exercise design is handled by written change request.</p>`
+  <p class="scope-note">This is a bespoke professional-services ${eng.titledCount >= 2 ? "engagement set priced by engagement above" : "engagement priced on the scope above"}: fixed design and reporting fees, per-participant assessment, consultant-day assessor time, and per-delegate developmental feedback. Consultant days assume an assessor-to-delegate ratio appropriate to the exercise set; a change in cohort size or exercise design is handled by written change request.</p>`
     : "";
 
   const engagementSolution = eng
     ? `<div class="svc">
-    <h3>${esc(eng.name)} <span class="seats">${num(eng.participants)} participant${eng.participants === 1 ? "" : "s"}</span></h3>
+    <h3>${
+      eng.titledCount >= 2
+        ? esc(eng.groups.filter((g) => g.name.trim()).map((g) => g.name).join("  ·  "))
+        : `${esc(eng.name)} <span class="seats">${num(eng.participants)} participant${eng.participants === 1 ? "" : "s"}</span>`
+    }</h3>
     <p>A full assessment-center engagement delivered and facilitated by VIFM consultants. Trained assessors observe each delegate across a set of role-relevant exercises (e.g. in-basket, role-play, group exercise, case study, oral presentation), classifying behaviour against the VIFM competency framework on a defined BARS scale.</p>
     <p class="deliv-head">How it runs</p>
     <ul class="deliv">
@@ -423,6 +437,7 @@ export function buildProposalHtml(
   td.num, th.num { text-align: right; white-space: nowrap; }
   .tot-label { text-align: right; color: #475569; }
   .total-row td { border-top: 2px solid #010131; font-weight: 800; color: #010131; font-size: 11pt; }
+  .grp-row td { background: #eef4fb; color: #010131; font-weight: 700; font-size: 10pt; border-top: 1px solid #cbd5e1; }
   .terms-box { background: #f8fafc; border-left: 3px solid #5391D5; border-radius: 0 6px 6px 0; padding: 10px 14px; margin-top: 8px; font-size: 9.5pt; color: #334155; }
 
   /* Numbered legal clauses (prefix follows the T&C section number) */
@@ -462,9 +477,7 @@ export function buildProposalHtml(
         <h1>${esc(p.title)}</h1>
         <div class="subtitle">${coverSubtitle}</div>
         <div class="accent"></div>
-        <div class="prepared"><b>Prepared for</b><span>${esc(p.clientName)}${
-          p.contactName ? ` <em>&middot; ${esc(p.contactName)}</em>` : ""
-        }</span>${clientLocation ? `<i>${esc(clientLocation)}</i>` : ""}</div>
+        <div class="prepared"><b>Prepared for</b><span>${esc(p.clientName)}</span>${clientLocation ? `<i>${esc(clientLocation)}</i>` : ""}</div>
       </div>
       <div class="creds">
         <span>Bilingual EN / AR</span><span>Verifiable credentials</span><span>ISO 10667 aligned</span><span>GCC data residency</span>
@@ -473,9 +486,7 @@ export function buildProposalHtml(
     <div class="layer">
       <div class="panel">
         <div class="grid">
-          <div><b>Prepared for</b>${esc(p.clientName)}${p.contactName ? `<br/>${esc(p.contactName)}` : ""}${
-            p.contactEmail ? `<br/>${esc(p.contactEmail)}` : ""
-          }</div>
+          <div><b>Prepared for</b>${esc(p.clientName)}${p.contactEmail ? `<br/>${esc(p.contactEmail)}` : ""}</div>
           <div><b>Prepared by</b>Virginia Institute of Finance<br/>and Management</div>
           <div><b>Reference</b>${ref}</div>
           <div><b>Date</b>${fmtDate(p.createdAt)}</div>

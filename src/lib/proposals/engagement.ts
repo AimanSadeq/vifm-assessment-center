@@ -17,11 +17,21 @@ export interface EngagementLineInput {
   quantity?: number;
   unitRate?: number;
 }
-export interface EngagementModelInput {
+/** One engagement (a named block of line items, e.g. "Assessment Center"). */
+export interface EngagementGroupInput {
   name?: string;
   lines?: EngagementLineInput[];
   participants?: number;
+}
+export interface EngagementModelInput {
+  // New: one or more engagements, each itemised in the financial proposal.
+  engagements?: EngagementGroupInput[];
   discountPct?: number;
+  // Legacy single-engagement fields (still read for proposals saved before the
+  // multi-engagement change; treated as one engagement when `engagements` is absent).
+  name?: string;
+  lines?: EngagementLineInput[];
+  participants?: number;
 }
 
 export interface NormalizedEngagementLine {
@@ -30,10 +40,13 @@ export interface NormalizedEngagementLine {
   quantity: number;
   unitRate: number;
 }
-export interface NormalizedEngagementModel {
+export interface NormalizedEngagementGroup {
   name: string;
   lines: NormalizedEngagementLine[];
   participants: number;
+}
+export interface NormalizedEngagementModel {
+  groups: NormalizedEngagementGroup[];
   discountPct: number;
 }
 
@@ -67,8 +80,14 @@ export function withEngagementResidency(
 ): EngagementModelInput | null {
   if (!(cost > 0)) return model ?? null;
   const base = (model ?? {}) as EngagementModelInput;
-  const line: EngagementLineInput = { label, basis: "fixed", quantity: 1, unitRate: cost };
-  return { ...base, lines: [...(base.lines ?? []), line] };
+  // An untitled group renders as a plain line (no engagement header), sitting in the
+  // subtotal alongside the engagements.
+  const residencyGroup: EngagementGroupInput = { name: "", participants: 0, lines: [{ label, basis: "fixed", quantity: 1, unitRate: cost }] };
+  const groups =
+    Array.isArray(base.engagements) && base.engagements.length > 0
+      ? base.engagements
+      : [{ name: base.name, participants: base.participants, lines: base.lines }];
+  return { discountPct: base.discountPct, engagements: [...groups, residencyGroup] };
 }
 
 /** Full data-residency commitment sentence for the proposal body (EN). */
@@ -97,11 +116,10 @@ export const ENGAGEMENT_BASIS_LABEL: Record<EngagementBasis, string> = {
 /** Round to 2dp to avoid float noise in stored line totals. */
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
-/** Normalise submitted input -> clean model, or null when nothing is priced. Never throws. */
-export function normalizeEngagementModel(value: unknown): NormalizedEngagementModel | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  const v = value as EngagementModelInput;
-  const lines = (Array.isArray(v.lines) ? v.lines : [])
+/** Normalise one engagement group -> clean group, or null when it has no priced line. */
+function normalizeGroup(g: EngagementGroupInput | undefined): NormalizedEngagementGroup | null {
+  const gg = (g ?? {}) as EngagementGroupInput;
+  const lines = (Array.isArray(gg.lines) ? gg.lines : [])
     .map((l) => {
       const basis: EngagementBasis = BASES.includes(l?.basis as EngagementBasis) ? (l!.basis as EngagementBasis) : "fixed";
       return {
@@ -111,32 +129,47 @@ export function normalizeEngagementModel(value: unknown): NormalizedEngagementMo
         unitRate: Math.max(0, num(l?.unitRate)),
       };
     })
-    // Keep a line only if it has a label and a positive amount.
     .filter((l) => l.label && l.unitRate > 0 && (l.basis === "fixed" || l.quantity > 0));
   if (lines.length === 0) return null;
-  return {
-    name: str(v.name, 120) || "Assessment Center engagement",
-    lines,
-    participants: Math.max(0, Math.round(num(v.participants))),
-    discountPct: clampPct(v.discountPct),
-  };
+  return { name: str(gg.name, 120), lines, participants: Math.max(0, Math.round(num(gg.participants))) };
 }
 
-/** Compute the line totals + subtotal / discount / total. Returns null for an empty model. */
+/** Normalise submitted input -> clean model, or null when nothing is priced. Never throws.
+ *  Accepts the new multi-engagement shape (`engagements[]`) or the legacy single shape. */
+export function normalizeEngagementModel(value: unknown): NormalizedEngagementModel | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const v = value as EngagementModelInput;
+  const rawGroups: EngagementGroupInput[] =
+    Array.isArray(v.engagements) && v.engagements.length > 0
+      ? v.engagements
+      : [{ name: v.name, lines: v.lines, participants: v.participants }];
+  const groups = rawGroups.map(normalizeGroup).filter((g): g is NormalizedEngagementGroup => g !== null);
+  if (groups.length === 0) return null;
+  return { groups, discountPct: clampPct(v.discountPct) };
+}
+
+/** Compute per-engagement + overall totals. Returns null for an empty model. `groups`
+ *  drives the itemised financial proposal; `lines` is the flat union (compat). */
 export function computeEngagement(model: NormalizedEngagementModel | null) {
-  if (!model || model.lines.length === 0) return null;
-  const lines = model.lines.map((l) => ({
-    ...l,
-    lineTotal: round2(l.basis === "fixed" ? l.unitRate : l.quantity * l.unitRate),
-  }));
-  const subtotal = round2(lines.reduce((s, l) => s + l.lineTotal, 0));
+  if (!model || model.groups.length === 0) return null;
+  const groups = model.groups.map((g) => {
+    const lines = g.lines.map((l) => ({
+      ...l,
+      lineTotal: round2(l.basis === "fixed" ? l.unitRate : l.quantity * l.unitRate),
+    }));
+    return { name: g.name, participants: g.participants, lines, subtotal: round2(lines.reduce((s, l) => s + l.lineTotal, 0)) };
+  });
+  const subtotal = round2(groups.reduce((s, g) => s + g.subtotal, 0));
   const discountPct = clampPct(model.discountPct);
   const discountAmount = round2(subtotal * (discountPct / 100));
   const total = round2(subtotal - discountAmount);
+  const titled = groups.filter((g) => g.name.trim().length > 0);
   return {
-    name: model.name,
-    lines,
-    participants: model.participants,
+    name: titled[0]?.name || "Assessment Center engagement",
+    groups,
+    titledCount: titled.length,
+    lines: groups.flatMap((g) => g.lines),
+    participants: groups.reduce((s, g) => s + g.participants, 0),
     subtotal,
     discountPct,
     hasDiscount: discountAmount > 0,

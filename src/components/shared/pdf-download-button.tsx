@@ -14,11 +14,13 @@ export function PdfDownloadButton({
   filename,
   label,
   className,
+  busyLabel = "Preparing PDF…",
 }: {
   url: string;
   filename: string;
   label: string;
   className: string;
+  busyLabel?: string;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +62,7 @@ export function PdfDownloadButton({
     <span className="inline-flex flex-col gap-1">
       <button type="button" onClick={run} disabled={busy} className={className} aria-busy={busy}>
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-        {busy ? "Preparing PDF…" : label}
+        {busy ? busyLabel : label}
       </button>
       {error && <span className="text-xs text-red-600">{error}</span>}
     </span>

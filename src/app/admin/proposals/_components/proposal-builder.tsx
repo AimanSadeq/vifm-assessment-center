@@ -140,16 +140,20 @@ export function ProposalBuilder({
   const [roiHires, setRoiHires] = useState<number>(Number(roi0?.hiresPerYear) || 0);
   const [roiGainPct, setRoiGainPct] = useState<number>(Number(roi0?.accuracyGainPct) || 12);
 
-  // Engagement (professional-services) mode: name + participants + free line items.
+  // Engagement (professional-services) mode: one or more named engagements, each a
+  // block of line items - all itemised in the financial proposal.
   type EngLine = { label: string; basis: EngagementBasis; quantity: number; unitRate: number };
+  type EngGroup = { name: string; participants: number; lines: EngLine[] };
   const em = existing?.engagementModel;
-  const seedLines: EngLine[] =
-    em?.lines && em.lines.length
-      ? em.lines.map((l) => ({ label: l.label ?? "", basis: (l.basis as EngagementBasis) ?? "fixed", quantity: Number(l.quantity) || 0, unitRate: Number(l.unitRate) || 0 }))
-      : (acEngagementTemplate(8).lines ?? []).map((l) => ({ label: l.label ?? "", basis: (l.basis as EngagementBasis) ?? "fixed", quantity: Number(l.quantity) || 0, unitRate: Number(l.unitRate) || 0 }));
-  const [engName, setEngName] = useState<string>(em?.name ?? "Assessment Center");
-  const [engParticipants, setEngParticipants] = useState<number>(Number(em?.participants) || 8);
-  const [engLines, setEngLines] = useState<EngLine[]>(seedLines);
+  const toEngLine = (l: { label?: string; basis?: string; quantity?: number; unitRate?: number }): EngLine => ({
+    label: l.label ?? "", basis: (l.basis as EngagementBasis) ?? "fixed", quantity: Number(l.quantity) || 0, unitRate: Number(l.unitRate) || 0,
+  });
+  const seedGroups: EngGroup[] = em?.engagements && em.engagements.length
+    ? em.engagements.map((g) => ({ name: g.name ?? "", participants: Number(g.participants) || 0, lines: (g.lines ?? []).map(toEngLine) }))
+    : em?.lines && em.lines.length
+      ? [{ name: em.name ?? "Assessment Center", participants: Number(em.participants) || 8, lines: em.lines.map(toEngLine) }]
+      : [{ name: "Assessment Center", participants: 8, lines: (acEngagementTemplate(8).lines ?? []).map(toEngLine) }];
+  const [engGroups, setEngGroups] = useState<EngGroup[]>(seedGroups);
   // Data residency is proposal-level (all pricing modes), stored in licenceData.
   const [dataResidency, setDataResidency] = useState<DataResidency>(
     resolveDataResidency((existing?.licenceData as Record<string, unknown> | undefined)?.dataResidency),
@@ -157,14 +161,22 @@ export function ProposalBuilder({
   const [dataResidencyFee, setDataResidencyFee] = useState<number>(
     Math.max(0, Number((existing?.licenceData as Record<string, unknown> | undefined)?.dataResidencyFee) || 0),
   );
-  const updateLine = (i: number, patch: Partial<EngLine>) => setEngLines((prev) => prev.map((l, j) => (j === i ? { ...l, ...patch } : l)));
-  const addLine = () => setEngLines((prev) => [...prev, { label: "", basis: "fixed", quantity: 1, unitRate: 0 }]);
-  const removeLine = (i: number) => setEngLines((prev) => prev.filter((_, j) => j !== i));
-  function loadAcTemplate() {
-    const t = acEngagementTemplate(engParticipants || 8);
-    setEngName(t.name ?? "Assessment Center");
-    setEngParticipants(Number(t.participants) || 8);
-    setEngLines((t.lines ?? []).map((l) => ({ label: l.label ?? "", basis: (l.basis as EngagementBasis) ?? "fixed", quantity: Number(l.quantity) || 0, unitRate: Number(l.unitRate) || 0 })));
+  const updateGroup = (gi: number, patch: Partial<EngGroup>) => setEngGroups((prev) => prev.map((g, j) => (j === gi ? { ...g, ...patch } : g)));
+  const updateLine = (gi: number, li: number, patch: Partial<EngLine>) =>
+    setEngGroups((prev) => prev.map((g, j) => (j === gi ? { ...g, lines: g.lines.map((l, k) => (k === li ? { ...l, ...patch } : l)) } : g)));
+  const addLine = (gi: number) =>
+    setEngGroups((prev) => prev.map((g, j) => (j === gi ? { ...g, lines: [...g.lines, { label: "", basis: "fixed" as EngagementBasis, quantity: 1, unitRate: 0 }] } : g)));
+  const removeLine = (gi: number, li: number) =>
+    setEngGroups((prev) => prev.map((g, j) => (j === gi ? { ...g, lines: g.lines.filter((_, k) => k !== li) } : g)));
+  const addEngagement = () => setEngGroups((prev) => [...prev, { name: "", participants: 8, lines: [{ label: "", basis: "fixed" as EngagementBasis, quantity: 1, unitRate: 0 }] }]);
+  const removeEngagement = (gi: number) => setEngGroups((prev) => (prev.length > 1 ? prev.filter((_, j) => j !== gi) : prev));
+  function loadAcTemplateInto(gi: number) {
+    const g = engGroups[gi];
+    const t = acEngagementTemplate(g?.participants || 8);
+    updateGroup(gi, {
+      name: g?.name?.trim() ? g.name : (t.name ?? "Assessment Center"),
+      lines: (t.lines ?? []).map(toEngLine),
+    });
   }
 
   const selectedClient = clients.find((c) => c.name === clientName) ?? null;
@@ -251,12 +263,14 @@ export function ProposalBuilder({
 
   const assembleEngagementModel = useCallback(
     (): EngagementModelInput => ({
-      name: engName.trim() || "Assessment Center",
-      participants: engParticipants,
+      engagements: engGroups.map((g) => ({
+        name: g.name.trim(),
+        participants: g.participants,
+        lines: g.lines.map((l) => ({ label: l.label.trim(), basis: l.basis, quantity: l.quantity, unitRate: l.unitRate })),
+      })),
       discountPct,
-      lines: engLines.map((l) => ({ label: l.label.trim(), basis: l.basis, quantity: l.quantity, unitRate: l.unitRate })),
     }),
-    [engName, engParticipants, discountPct, engLines],
+    [engGroups, discountPct],
   );
   const engagement = useMemo(
     () => computeEngagement(normalizeEngagementModel(withEngagementResidency(assembleEngagementModel(), drLineLabel, feeNum))),
@@ -474,62 +488,71 @@ export function ProposalBuilder({
         </>)}
 
         {isEngagement && (
-          <div className="border-t border-border pt-3 space-y-3">
-            <div className="flex flex-wrap items-end justify-between gap-3">
-              <label className="block text-sm">
-                <span className="text-muted-foreground">Engagement name</span>
-                <input value={engName} onChange={(e) => setEngName(e.target.value)} className="mt-1 w-64 rounded-md border border-border bg-card px-3 py-2 text-sm" />
-              </label>
-              <label className="block text-sm">
-                <span className="text-muted-foreground">Participants (delegates)</span>
-                <input type="number" min={0} value={engParticipants} onChange={(e) => setEngParticipants(Math.max(0, Number(e.target.value) || 0))} className="mt-1 w-32 rounded-md border border-border bg-card px-3 py-2 text-sm" />
-              </label>
-              <button type="button" onClick={loadAcTemplate}
-                className="rounded-md border border-[#5391D5] px-3 py-2 text-sm font-medium text-[#5391D5] hover:bg-[#5391D5]/5">
-                Load Assessment Center template
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              <div className="hidden gap-2 px-1 text-[11px] uppercase tracking-wide text-muted-foreground sm:flex">
-                <span className="flex-1">Line item</span>
-                <span className="w-40">Basis</span>
-                <span className="w-20 text-right">Qty</span>
-                <span className="w-24 text-right">Unit rate</span>
-                <span className="w-24 text-right">Amount</span>
-                <span className="w-6" />
-              </div>
-              {engLines.map((l, i) => {
-                const amount = l.basis === "fixed" ? l.unitRate : l.quantity * l.unitRate;
-                return (
-                  <div key={i} className="flex flex-wrap items-center gap-2 rounded-md border border-border p-2">
-                    <input value={l.label} onChange={(e) => updateLine(i, { label: e.target.value })} placeholder="e.g. Assessor days"
-                      className="min-w-[10rem] flex-1 rounded border border-border bg-card px-2.5 py-1.5 text-sm" />
-                    <select value={l.basis} onChange={(e) => updateLine(i, { basis: e.target.value as EngagementBasis })}
-                      className="w-40 rounded border border-border bg-card px-2 py-1.5 text-sm">
-                      {(Object.keys(ENGAGEMENT_BASIS_LABEL) as EngagementBasis[]).map((b) => (
-                        <option key={b} value={b}>{ENGAGEMENT_BASIS_LABEL[b]}</option>
-                      ))}
-                    </select>
-                    <input type="number" min={0} value={l.basis === "fixed" ? 1 : l.quantity} disabled={l.basis === "fixed"}
-                      onChange={(e) => updateLine(i, { quantity: Math.max(0, Number(e.target.value) || 0) })}
-                      className="w-20 rounded border border-border bg-card px-2 py-1.5 text-right text-sm disabled:opacity-50" />
-                    <input type="number" min={0} value={l.unitRate}
-                      onChange={(e) => updateLine(i, { unitRate: Math.max(0, Number(e.target.value) || 0) })}
-                      className="w-24 rounded border border-border bg-card px-2 py-1.5 text-right text-sm" />
-                    <span className="w-24 text-right text-sm font-semibold tabular-nums text-[#010131]">{money(amount)}</span>
-                    <button type="button" onClick={() => removeLine(i)} className="w-6 text-muted-foreground hover:text-red-600" aria-label="Remove line">×</button>
+          <div className="border-t border-border pt-3 space-y-4">
+            {engGroups.map((g, gi) => (
+              <div key={gi} className="rounded-md border border-border p-3 space-y-3">
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                  <label className="block text-sm">
+                    <span className="text-muted-foreground">Engagement {engGroups.length > 1 ? `#${gi + 1} ` : ""}name</span>
+                    <input value={g.name} onChange={(e) => updateGroup(gi, { name: e.target.value })} placeholder="e.g. Assessment Center"
+                      className="mt-1 w-64 rounded-md border border-border bg-card px-3 py-2 text-sm" />
+                  </label>
+                  <label className="block text-sm">
+                    <span className="text-muted-foreground">Participants (delegates)</span>
+                    <input type="number" min={0} value={g.participants} onChange={(e) => updateGroup(gi, { participants: Math.max(0, Number(e.target.value) || 0) })}
+                      className="mt-1 w-32 rounded-md border border-border bg-card px-3 py-2 text-sm" />
+                  </label>
+                  <button type="button" onClick={() => loadAcTemplateInto(gi)}
+                    className="rounded-md border border-[#5391D5] px-3 py-2 text-sm font-medium text-[#5391D5] hover:bg-[#5391D5]/5">Load AC template</button>
+                  {engGroups.length > 1 && (
+                    <button type="button" onClick={() => removeEngagement(gi)}
+                      className="rounded-md border border-border px-3 py-2 text-sm text-muted-foreground hover:text-red-600">Remove engagement</button>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div className="hidden gap-2 px-1 text-[11px] uppercase tracking-wide text-muted-foreground sm:flex">
+                    <span className="flex-1">Line item</span>
+                    <span className="w-40">Basis</span>
+                    <span className="w-20 text-right">Qty</span>
+                    <span className="w-24 text-right">Unit rate</span>
+                    <span className="w-24 text-right">Amount</span>
+                    <span className="w-6" />
                   </div>
-                );
-              })}
-              <button type="button" onClick={addLine} className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground hover:bg-muted">+ Add line</button>
-            </div>
+                  {g.lines.map((l, li) => {
+                    const amount = l.basis === "fixed" ? l.unitRate : l.quantity * l.unitRate;
+                    return (
+                      <div key={li} className="flex flex-wrap items-center gap-2 rounded-md border border-border p-2">
+                        <input value={l.label} onChange={(e) => updateLine(gi, li, { label: e.target.value })} placeholder="e.g. Assessor days"
+                          className="min-w-[10rem] flex-1 rounded border border-border bg-card px-2.5 py-1.5 text-sm" />
+                        <select value={l.basis} onChange={(e) => updateLine(gi, li, { basis: e.target.value as EngagementBasis })}
+                          className="w-40 rounded border border-border bg-card px-2 py-1.5 text-sm">
+                          {(Object.keys(ENGAGEMENT_BASIS_LABEL) as EngagementBasis[]).map((b) => (
+                            <option key={b} value={b}>{ENGAGEMENT_BASIS_LABEL[b]}</option>
+                          ))}
+                        </select>
+                        <input type="number" min={0} value={l.basis === "fixed" ? 1 : l.quantity} disabled={l.basis === "fixed"}
+                          onChange={(e) => updateLine(gi, li, { quantity: Math.max(0, Number(e.target.value) || 0) })}
+                          className="w-20 rounded border border-border bg-card px-2 py-1.5 text-right text-sm disabled:opacity-50" />
+                        <input type="number" min={0} value={l.unitRate}
+                          onChange={(e) => updateLine(gi, li, { unitRate: Math.max(0, Number(e.target.value) || 0) })}
+                          className="w-24 rounded border border-border bg-card px-2 py-1.5 text-right text-sm" />
+                        <span className="w-24 text-right text-sm font-semibold tabular-nums text-[#010131]">{money(amount)}</span>
+                        <button type="button" onClick={() => removeLine(gi, li)} className="w-6 text-muted-foreground hover:text-red-600" aria-label="Remove line">×</button>
+                      </div>
+                    );
+                  })}
+                  <button type="button" onClick={() => addLine(gi)} className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground hover:bg-muted">+ Add line</button>
+                </div>
+              </div>
+            ))}
+            <button type="button" onClick={addEngagement}
+              className="rounded-md border border-[#010131] bg-[#010131] px-3 py-2 text-sm font-medium text-white hover:bg-[#010131]/90">+ Add engagement</button>
 
             {engagement ? (
               <div className="rounded-md border border-border bg-muted/40 p-3 text-sm">
-                <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span className="tabular-nums">{money(engagement.subtotal)}</span></div>
+                <div className="flex justify-between text-muted-foreground"><span>Subtotal (all engagements)</span><span className="tabular-nums">{money(engagement.subtotal)}</span></div>
                 {engagement.hasDiscount && <div className="flex justify-between text-muted-foreground"><span>Discount ({discountPct}%)</span><span className="tabular-nums">- {money(engagement.discountAmount)}</span></div>}
-                <div className="mt-1 flex justify-between border-t border-border pt-1 text-base font-semibold text-[#010131]"><span>Total ({engParticipants} delegates)</span><span className="tabular-nums">{money(engagement.total)}</span></div>
+                <div className="mt-1 flex justify-between border-t border-border pt-1 text-base font-semibold text-[#010131]"><span>Total{engagement.participants ? ` (${engagement.participants} delegates)` : ""}</span><span className="tabular-nums">{money(engagement.total)}</span></div>
               </div>
             ) : (
               <p className="text-xs text-amber-700">Add at least one line with an amount above 0 to price the engagement.</p>

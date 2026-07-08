@@ -67,6 +67,8 @@ export function ProposalBuilder({
   const [clientName, setClientName] = useState(existing?.clientName ?? "");
   const [contactName, setContactName] = useState(existing?.contactName ?? "");
   const [contactEmail, setContactEmail] = useState(existing?.contactEmail ?? "");
+  const [clientCity, setClientCity] = useState(existing?.clientCity ?? "");
+  const [clientCountry, setClientCountry] = useState(existing?.clientCountry ?? "");
   const [currency] = useState(existing?.currency ?? "USD");
 
   // Default NEW proposals to licence mode (per handover); keep the editing proposal's mode.
@@ -249,6 +251,8 @@ export function ProposalBuilder({
       araOrganizationId: selectedClient?.araId ?? null,
       clientRegion: selectedClient?.region ?? null,
       clientSector: selectedClient?.sector ?? null,
+      clientCity: clientCity.trim() || null,
+      clientCountry: clientCountry.trim() || null,
       contactName: contactName.trim() || null,
       contactEmail: contactEmail.trim() || null,
       currency,
@@ -326,6 +330,16 @@ export function ProposalBuilder({
           <label className="block text-sm">
             <span className="text-muted-foreground">Contact email</span>
             <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)}
+              className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm" />
+          </label>
+          <label className="block text-sm">
+            <span className="text-muted-foreground">Client city (optional)</span>
+            <input value={clientCity} onChange={(e) => setClientCity(e.target.value)} placeholder="e.g. Riyadh"
+              className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm" />
+          </label>
+          <label className="block text-sm">
+            <span className="text-muted-foreground">Client country (optional)</span>
+            <input value={clientCountry} onChange={(e) => setClientCountry(e.target.value)} placeholder="e.g. Saudi Arabia"
               className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm" />
           </label>
         </div>

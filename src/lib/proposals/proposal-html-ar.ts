@@ -238,6 +238,15 @@ export function buildProposalHtmlAr(
 
   const validUntil = p.validUntil ? fmtDateAr(p.validUntil) : null;
 
+  // Cover subtitle (names the commercial shape of the offer) + client location.
+  const coverSubtitleAr =
+    isEngagement && eng
+      ? `${esc(eng.name)} &middot; ارتباط خدمات مهنية بقيادة استشاري`
+      : isLicence
+        ? "رخصة سنوية شاملة &middot; منصة VIFM Caliber&reg; للذكاء في المواهب"
+        : "برنامج الذكاء في المواهب &middot; منصة VIFM Caliber&reg;";
+  const clientLocationAr = [p.clientCity, p.clientCountry].filter((s) => s && s.trim()).join("، ");
+
   // ── ROI paragraph (Arabic). ──
   const roiRaw = (p.licenceData && typeof p.licenceData === "object" ? (p.licenceData as Record<string, unknown>).roi : null) as
     | { avgSalary?: number; hiresPerYear?: number; accuracyGainPct?: number }
@@ -304,15 +313,39 @@ export function buildProposalHtmlAr(
   * { box-sizing: border-box; }
   body { font-family: "Noto Naskh Arabic", "Segoe UI", Tahoma, serif; direction: rtl; color: #111232; font-size: 11pt; line-height: 1.7; margin: 0; }
 
-  .cover { background: #010131; color: #fff; border-radius: 10px; padding: 26mm 20mm; height: 250mm; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always; }
-  .cover .logo { height: 16mm; width: auto; display: block; margin-bottom: 16mm; }
-  .cover .eyebrow { color: #93b8e6; font-size: 9pt; font-weight: 700; letter-spacing: .04em; }
+  /* Cover - premium: layered navy gradient + accent glow + faint V motif (RTL) */
+  .cover { position: relative; overflow: hidden; color: #fff; border-radius: 12px; padding: 24mm 22mm; height: 250mm;
+    background:
+      radial-gradient(115% 75% at 16% 6%, rgba(83,145,213,.30) 0%, rgba(83,145,213,0) 44%),
+      linear-gradient(202deg, #0b0b30 0%, #010131 48%, #04051c 100%);
+    display: flex; flex-direction: column; justify-content: space-between; page-break-after: always; }
+  .cover .motif { position: absolute; left: -26mm; bottom: -30mm; width: 152mm; height: 152mm; opacity: .13; z-index: 0; }
+  .cover .texture { position: absolute; inset: 0; z-index: 0; opacity: .55;
+    background-image: radial-gradient(rgba(147,184,230,.11) 1px, transparent 1.2px);
+    background-size: 22px 22px; -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.35) 60%, transparent 100%); }
+  .cover .layer { position: relative; z-index: 1; }
+  .cover .topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 10mm; }
+  .cover .logo { height: 15mm; width: auto; display: block; }
+  .cover .meta-top { text-align: left; color: #93b8e6; font-size: 8pt; line-height: 2; white-space: nowrap; }
+  .cover .eyebrow { color: #9ec2ec; font-size: 10pt; font-weight: 700; }
+  .cover .title-wrap { position: relative; padding-right: 16px; margin-top: 30mm; }
+  .cover .title-wrap::before { content: ""; position: absolute; right: 0; top: 4px; bottom: 10px; width: 3px; border-radius: 2px; background: linear-gradient(#5391D5, rgba(83,145,213,.15)); }
   h1 { color: #010131; font-size: 22pt; margin: 8px 0 6px; line-height: 1.3; }
-  .cover h1 { color: #fff; font-size: 26pt; line-height: 1.35; margin: 10px 0 0; border: 0; padding: 0; }
-  .cover .accent { width: 64px; height: 4px; background: #5391D5; margin-top: 16px; }
-  .cover .grid { display: flex; flex-wrap: wrap; gap: 10px 40px; margin-top: 26px; font-size: 10pt; }
-  .cover .grid b { display: block; color: #93b8e6; font-size: 8pt; font-weight: 700; margin-bottom: 2px; }
-  .cover .conf { color: rgba(255,255,255,.65); font-size: 8.5pt; line-height: 1.75; border-top: 1px solid rgba(255,255,255,.18); padding-top: 12px; }
+  .cover h1 { color: #fff; font-size: 25pt; line-height: 1.3; margin: 10px 0 0; border: 0; padding: 0; font-weight: 800; }
+  .cover .subtitle { color: #bcd3ef; font-size: 12pt; font-weight: 600; margin-top: 10px; line-height: 1.6; }
+  .cover .accent { width: 72px; height: 4px; background: #5391D5; border-radius: 2px; margin-top: 18px; }
+  .cover .prepared { margin-top: 20px; }
+  .cover .prepared b { display: block; color: #9ec2ec; font-size: 9pt; font-weight: 700; margin-bottom: 4px; }
+  .cover .prepared span { display: block; color: #fff; font-size: 16pt; font-weight: 800; line-height: 1.3; }
+  .cover .prepared em { color: #bcd3ef; font-size: 11pt; font-weight: 600; font-style: normal; }
+  .cover .prepared i { display: block; color: #9ec2ec; font-size: 10.5pt; font-weight: 600; font-style: normal; margin-top: 5px; }
+  .cover .creds { display: flex; flex-wrap: wrap; gap: 7px 16px; margin-top: 22px; color: #9ec2ec; font-size: 9pt; font-weight: 600; }
+  .cover .creds span { position: relative; padding-right: 13px; }
+  .cover .creds span::before { content: ""; position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 5px; height: 5px; border-radius: 50%; background: #5391D5; }
+  .cover .panel { background: rgba(255,255,255,.05); border: 1px solid rgba(147,184,230,.22); border-top: 2px solid #5391D5; border-radius: 8px; padding: 15px 20px; }
+  .cover .grid { display: flex; flex-wrap: wrap; gap: 12px 44px; font-size: 10.5pt; }
+  .cover .grid b { display: block; color: #93b8e6; font-size: 8pt; font-weight: 700; margin-bottom: 3px; }
+  .cover .conf { color: rgba(255,255,255,.6); font-size: 8.5pt; line-height: 1.7; margin-top: 14px; }
 
   .toc { page-break-after: always; }
   .toc-head { display: flex; align-items: center; justify-content: space-between; gap: 10mm; }
@@ -358,22 +391,44 @@ export function buildProposalHtmlAr(
 </head>
 <body>
 
+  <!-- Cover -->
   <div class="cover">
-    <div>
-      ${logoWhite ? `<img class="logo" src="${logoWhite}" alt="VIFM" />` : ""}
-      <div class="eyebrow">VIFM Caliber&reg; &middot; عرض الذكاء في المواهب</div>
-      <h1>${esc(p.title)}</h1>
-      <div class="accent"></div>
-      <div class="grid">
-        <div><b>مُعدّ لصالح</b>${esc(p.clientName)}${p.contactName ? `<br/>${esc(p.contactName)}` : ""}${p.contactEmail ? `<br/><span dir="ltr">${esc(p.contactEmail)}</span>` : ""}</div>
-        <div><b>مُعدّ بواسطة</b>معهد فرجينيا للتمويل والإدارة</div>
-        <div><b>المرجع</b><span dir="ltr">${ref}</span></div>
-        <div><b>التاريخ</b>${fmtDateAr(p.createdAt)}</div>
-        ${validUntil ? `<div><b>صالح حتى</b>${validUntil}</div>` : ""}
+    <div class="texture"></div>
+    <svg class="motif" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M18 26 L100 178 L182 26" stroke="#5391D5" stroke-width="11" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M62 26 L100 96 L138 26" stroke="#9ec2ec" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>
+    </svg>
+    <div class="layer">
+      <div class="topbar">
+        ${logoWhite ? `<img class="logo" src="${logoWhite}" alt="VIFM" />` : `<div class="eyebrow">VIFM Caliber&reg;</div>`}
+        <div class="meta-top"><span dir="ltr">${ref}</span><br/>${fmtDateAr(p.createdAt)}</div>
+      </div>
+      <div class="title-wrap">
+        <div class="eyebrow">VIFM Caliber&reg; &middot; عرض الذكاء في المواهب</div>
+        <h1>${esc(p.title)}</h1>
+        <div class="subtitle">${coverSubtitleAr}</div>
+        <div class="accent"></div>
+        <div class="prepared"><b>مُعدّ لصالح</b><span>${esc(p.clientName)}${
+          p.contactName ? ` <em>&middot; ${esc(p.contactName)}</em>` : ""
+        }</span>${clientLocationAr ? `<i>${esc(clientLocationAr)}</i>` : ""}</div>
+      </div>
+      <div class="creds">
+        <span>ثنائي اللغة عربي / إنجليزي</span><span>شهادات قابلة للتحقق</span><span>متوافق مع ISO 10667</span><span>سيادة بيانات خليجية</span>
       </div>
     </div>
-    <div class="conf">
-      يحتوي هذا المستند على معلومات سرية ومملوكة لمعهد فرجينيا للتمويل والإدارة (VIFM)، وهو مُعدّ حصرياً لصالح ${esc(p.clientName)}. ولا يجوز نسخه أو الإفصاح عنه لأي طرف ثالث، كلياً أو جزئياً، دون موافقة خطية مسبقة من VIFM.
+    <div class="layer">
+      <div class="panel">
+        <div class="grid">
+          <div><b>مُعدّ لصالح</b>${esc(p.clientName)}${p.contactName ? `<br/>${esc(p.contactName)}` : ""}${p.contactEmail ? `<br/><span dir="ltr">${esc(p.contactEmail)}</span>` : ""}</div>
+          <div><b>مُعدّ بواسطة</b>معهد فرجينيا للتمويل والإدارة</div>
+          <div><b>المرجع</b><span dir="ltr">${ref}</span></div>
+          <div><b>التاريخ</b>${fmtDateAr(p.createdAt)}</div>
+          ${validUntil ? `<div><b>صالح حتى</b>${validUntil}</div>` : ""}
+        </div>
+      </div>
+      <div class="conf">
+        يحتوي هذا المستند على معلومات سرية ومملوكة لمعهد فرجينيا للتمويل والإدارة (VIFM)، وهو مُعدّ حصرياً لصالح ${esc(p.clientName)}. ولا يجوز نسخه أو الإفصاح عنه لأي طرف ثالث، كلياً أو جزئياً، دون موافقة خطية مسبقة من VIFM.
+      </div>
     </div>
   </div>
 

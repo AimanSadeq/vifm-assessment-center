@@ -267,6 +267,17 @@ export function buildProposalHtml(
 
   const validUntil = p.validUntil ? fmtDate(p.validUntil) : null;
 
+  // Cover subtitle names the commercial shape of the offer, per pricing mode.
+  const coverSubtitle =
+    isEngagement && eng
+      ? `${esc(eng.name)} &middot; Consultant-led professional-services engagement`
+      : isLicence
+        ? "Annual all-access licence &middot; VIFM Caliber&reg; Talent Intelligence Platform"
+        : "Talent-intelligence programme &middot; VIFM Caliber&reg;";
+
+  // City, Country under the client name on the cover (either part optional).
+  const clientLocation = [p.clientCity, p.clientCountry].filter((s) => s && s.trim()).join(", ");
+
   // ── Indicative-return (ROI) paragraph (Phase 2). Renders only when the
   // preparer supplied an average salary + hires/year (stored in licence_data.roi). ──
   const roiRaw = (p.licenceData && typeof p.licenceData === "object"
@@ -334,16 +345,39 @@ export function buildProposalHtml(
   * { box-sizing: border-box; }
   body { font-family: "Open Sans", Arial, Helvetica, sans-serif; color: #111232; font-size: 10.5pt; line-height: 1.5; margin: 0; }
 
-  /* Cover */
-  .cover { background: #010131; color: #fff; border-radius: 10px; padding: 26mm 20mm; height: 250mm; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always; }
-  .cover .logo { height: 16mm; width: auto; display: block; margin-bottom: 16mm; }
-  .cover .eyebrow { color: #93b8e6; font-size: 9pt; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+  /* Cover - premium: layered navy gradient + accent glow + faint V motif */
+  .cover { position: relative; overflow: hidden; color: #fff; border-radius: 12px; padding: 24mm 22mm; height: 250mm;
+    background:
+      radial-gradient(115% 75% at 84% 6%, rgba(83,145,213,.30) 0%, rgba(83,145,213,0) 44%),
+      linear-gradient(158deg, #0b0b30 0%, #010131 48%, #04051c 100%);
+    display: flex; flex-direction: column; justify-content: space-between; page-break-after: always; }
+  .cover .motif { position: absolute; right: -26mm; bottom: -30mm; width: 152mm; height: 152mm; opacity: .13; z-index: 0; }
+  .cover .texture { position: absolute; inset: 0; z-index: 0; opacity: .55;
+    background-image: radial-gradient(rgba(147,184,230,.11) 1px, transparent 1.2px);
+    background-size: 22px 22px; -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.35) 60%, transparent 100%); }
+  .cover .layer { position: relative; z-index: 1; }
+  .cover .topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 10mm; }
+  .cover .logo { height: 15mm; width: auto; display: block; }
+  .cover .meta-top { text-align: right; color: #93b8e6; font-size: 8pt; letter-spacing: .12em; text-transform: uppercase; line-height: 2; white-space: nowrap; }
+  .cover .eyebrow { color: #9ec2ec; font-size: 9pt; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; }
+  .cover .title-wrap { position: relative; padding-left: 16px; margin-top: 30mm; }
+  .cover .title-wrap::before { content: ""; position: absolute; left: 0; top: 4px; bottom: 10px; width: 3px; border-radius: 2px; background: linear-gradient(#5391D5, rgba(83,145,213,.15)); }
   h1 { color: #010131; font-size: 22pt; margin: 8px 0 6px; line-height: 1.1; }
-  .cover h1 { color: #fff; font-size: 26pt; line-height: 1.15; margin: 10px 0 0; border: 0; padding: 0; }
-  .cover .accent { width: 64px; height: 4px; background: #5391D5; margin-top: 16px; }
-  .cover .grid { display: flex; flex-wrap: wrap; gap: 10px 40px; margin-top: 26px; font-size: 10pt; }
-  .cover .grid b { display: block; color: #93b8e6; font-size: 8pt; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 2px; }
-  .cover .conf { color: rgba(255,255,255,.65); font-size: 8.5pt; line-height: 1.55; border-top: 1px solid rgba(255,255,255,.18); padding-top: 12px; }
+  .cover h1 { color: #fff; font-size: 30pt; line-height: 1.12; margin: 8px 0 0; border: 0; padding: 0; font-weight: 800; letter-spacing: -.01em; }
+  .cover .subtitle { color: #bcd3ef; font-size: 11.5pt; font-weight: 600; margin-top: 10px; }
+  .cover .accent { width: 72px; height: 4px; background: #5391D5; border-radius: 2px; margin-top: 18px; }
+  .cover .prepared { margin-top: 20px; }
+  .cover .prepared b { display: block; color: #9ec2ec; font-size: 8pt; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; margin-bottom: 4px; }
+  .cover .prepared span { display: block; color: #fff; font-size: 16pt; font-weight: 800; letter-spacing: -.01em; line-height: 1.15; }
+  .cover .prepared em { color: #bcd3ef; font-size: 10.5pt; font-weight: 600; font-style: normal; }
+  .cover .prepared i { display: block; color: #9ec2ec; font-size: 9.5pt; font-weight: 600; font-style: normal; margin-top: 5px; letter-spacing: .01em; }
+  .cover .creds { display: flex; flex-wrap: wrap; gap: 7px 16px; margin-top: 22px; color: #9ec2ec; font-size: 8pt; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+  .cover .creds span { position: relative; padding-left: 13px; }
+  .cover .creds span::before { content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 5px; height: 5px; border-radius: 50%; background: #5391D5; }
+  .cover .panel { background: rgba(255,255,255,.05); border: 1px solid rgba(147,184,230,.22); border-top: 2px solid #5391D5; border-radius: 8px; padding: 15px 20px; }
+  .cover .grid { display: flex; flex-wrap: wrap; gap: 12px 44px; font-size: 10pt; }
+  .cover .grid b { display: block; color: #93b8e6; font-size: 7.5pt; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 3px; }
+  .cover .conf { color: rgba(255,255,255,.6); font-size: 8pt; line-height: 1.6; margin-top: 14px; }
 
   /* Contents */
   .toc { page-break-after: always; }
@@ -403,25 +437,46 @@ export function buildProposalHtml(
 
   <!-- Cover -->
   <div class="cover">
-    <div>
-      ${logoWhite ? `<img class="logo" src="${logoWhite}" alt="VIFM" />` : ""}
-      <div class="eyebrow">VIFM Caliber&reg; &middot; Talent Intelligence Proposal</div>
-      <h1>${esc(p.title)}</h1>
-      <div class="accent"></div>
-      <div class="grid">
-        <div><b>Prepared for</b>${esc(p.clientName)}${p.contactName ? `<br/>${esc(p.contactName)}` : ""}${
-          p.contactEmail ? `<br/>${esc(p.contactEmail)}` : ""
-        }</div>
-        <div><b>Prepared by</b>Virginia Institute of Finance<br/>and Management</div>
-        <div><b>Reference</b>${ref}</div>
-        <div><b>Date</b>${fmtDate(p.createdAt)}</div>
-        ${validUntil ? `<div><b>Valid until</b>${validUntil}</div>` : ""}
+    <div class="texture"></div>
+    <svg class="motif" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M18 26 L100 178 L182 26" stroke="#5391D5" stroke-width="11" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M62 26 L100 96 L138 26" stroke="#9ec2ec" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>
+    </svg>
+    <div class="layer">
+      <div class="topbar">
+        ${logoWhite ? `<img class="logo" src="${logoWhite}" alt="VIFM" />` : `<div class="eyebrow">VIFM Caliber&reg;</div>`}
+        <div class="meta-top">${ref}<br/>${fmtDate(p.createdAt)}</div>
+      </div>
+      <div class="title-wrap">
+        <div class="eyebrow">VIFM Caliber&reg; &middot; Talent Intelligence Proposal</div>
+        <h1>${esc(p.title)}</h1>
+        <div class="subtitle">${coverSubtitle}</div>
+        <div class="accent"></div>
+        <div class="prepared"><b>Prepared for</b><span>${esc(p.clientName)}${
+          p.contactName ? ` <em>&middot; ${esc(p.contactName)}</em>` : ""
+        }</span>${clientLocation ? `<i>${esc(clientLocation)}</i>` : ""}</div>
+      </div>
+      <div class="creds">
+        <span>Bilingual EN / AR</span><span>Verifiable credentials</span><span>ISO 10667 aligned</span><span>GCC data residency</span>
       </div>
     </div>
-    <div class="conf">
-      This document contains confidential and proprietary information of the Virginia Institute of Finance and
-      Management (VIFM) and is prepared exclusively for ${esc(p.clientName)}. It may not be reproduced or
-      disclosed to any third party, in whole or in part, without VIFM's prior written consent.
+    <div class="layer">
+      <div class="panel">
+        <div class="grid">
+          <div><b>Prepared for</b>${esc(p.clientName)}${p.contactName ? `<br/>${esc(p.contactName)}` : ""}${
+            p.contactEmail ? `<br/>${esc(p.contactEmail)}` : ""
+          }</div>
+          <div><b>Prepared by</b>Virginia Institute of Finance<br/>and Management</div>
+          <div><b>Reference</b>${ref}</div>
+          <div><b>Date</b>${fmtDate(p.createdAt)}</div>
+          ${validUntil ? `<div><b>Valid until</b>${validUntil}</div>` : ""}
+        </div>
+      </div>
+      <div class="conf">
+        This document contains confidential and proprietary information of the Virginia Institute of Finance and
+        Management (VIFM) and is prepared exclusively for ${esc(p.clientName)}. It may not be reproduced or
+        disclosed to any third party, in whole or in part, without VIFM's prior written consent.
+      </div>
     </div>
   </div>
 

@@ -36,6 +36,8 @@ export type Proposal = {
   clientName: string;
   clientRegion: string | null;
   clientSector: string | null;
+  clientCity: string | null;
+  clientCountry: string | null;
   contactName: string | null;
   contactEmail: string | null;
   currency: string;
@@ -123,6 +125,8 @@ function rowToProposal(r: Record<string, unknown>): Proposal {
     clientName: r.client_name as string,
     clientRegion: (r.client_region as string | null) ?? null,
     clientSector: (r.client_sector as string | null) ?? null,
+    clientCity: (r.client_city as string | null) ?? null,
+    clientCountry: (r.client_country as string | null) ?? null,
     contactName: (r.contact_name as string | null) ?? null,
     contactEmail: (r.contact_email as string | null) ?? null,
     currency: (r.currency as string) ?? "USD",
@@ -158,6 +162,8 @@ export type ProposalInput = {
   clientName: string;
   clientRegion?: string | null;
   clientSector?: string | null;
+  clientCity?: string | null;
+  clientCountry?: string | null;
   contactName?: string | null;
   contactEmail?: string | null;
   currency: string;
@@ -312,6 +318,7 @@ export async function createProposal(input: ProposalInput): Promise<{ ok: true; 
     status: "draft",
     created_by: input.createdBy ?? null,
   };
+  const locRow = { client_city: input.clientCity ?? null, client_country: input.clientCountry ?? null };
   const licRow = {
     pricing_mode: priced.pricingMode,
     licensing_model: priced.licence,
@@ -320,12 +327,21 @@ export async function createProposal(input: ProposalInput): Promise<{ ok: true; 
     licence_data: input.licenceData ?? {},
     revision_of_id: input.revisionOfId ?? null,
   };
-  // Licence rows NEVER peel the licence columns away (that would silently save a
-  // per-project row); per-project rows peel them on an un-applied 00175.
-  // Licence + engagement rows NEVER peel the new columns away (that would silently
-  // save a per-project row); per-project rows peel them on an un-applied migration.
+  // Two independent optional column groups peel on an un-applied migration:
+  //   locRow  = client_city/client_country (00177)
+  //   licRow  = pricing_mode + licence/engagement snapshot (00175/00176)
+  // Licence + engagement rows NEVER peel licRow (that would silently downgrade to a
+  // per-project row) - they only peel locRow. Per-project rows peel both, keeping as
+  // many columns as each environment supports.
   const candidates =
-    priced.pricingMode !== "per_project" ? [{ ...baseRow, ...licRow }] : [{ ...baseRow, ...licRow }, { ...baseRow }];
+    priced.pricingMode !== "per_project"
+      ? [{ ...baseRow, ...locRow, ...licRow }, { ...baseRow, ...licRow }]
+      : [
+          { ...baseRow, ...locRow, ...licRow },
+          { ...baseRow, ...licRow },
+          { ...baseRow, ...locRow },
+          { ...baseRow },
+        ];
 
   let data: { id: string } | null = null;
   let error: { code?: string; message?: string } | null = null;
@@ -357,6 +373,7 @@ export async function updateProposal(
   if ("error" in priced) return priced;
 
   const baseRow = { ...proposalFields(input, priced), updated_at: new Date().toISOString() };
+  const locRow = { client_city: input.clientCity ?? null, client_country: input.clientCountry ?? null };
   // 00175 columns only. engagement_model (00176) is attached ONLY for engagement
   // mode, so a licence / per-project save never gains a dependency on 00176.
   const licRow = {
@@ -366,13 +383,19 @@ export async function updateProposal(
     licence_data: input.licenceData ?? {},
     revision_of_id: input.revisionOfId ?? null,
   };
-  const fullRow =
-    priced.pricingMode === "engagement"
-      ? { ...baseRow, ...licRow, engagement_model: priced.engagement }
-      : { ...baseRow, ...licRow };
-  // Licence + engagement rows NEVER peel the new columns away (that would silently
-  // save a per-project row); per-project rows peel them on an un-applied migration.
-  const candidates = priced.pricingMode !== "per_project" ? [fullRow] : [fullRow, { ...baseRow }];
+  const licFull =
+    priced.pricingMode === "engagement" ? { ...licRow, engagement_model: priced.engagement } : { ...licRow };
+  // locRow (00177) and licFull (00175/00176) peel independently; licence + engagement
+  // rows never peel licFull (no silent downgrade), only locRow. See createProposal.
+  const candidates =
+    priced.pricingMode !== "per_project"
+      ? [{ ...baseRow, ...locRow, ...licFull }, { ...baseRow, ...licFull }]
+      : [
+          { ...baseRow, ...locRow, ...licFull },
+          { ...baseRow, ...licFull },
+          { ...baseRow, ...locRow },
+          { ...baseRow },
+        ];
 
   let error: { code?: string; message?: string } | null = null;
   for (const row of candidates) {
@@ -416,6 +439,8 @@ export async function duplicateAsRevision(id: string): Promise<{ ok: true; id: s
     clientName: src.clientName,
     clientRegion: src.clientRegion,
     clientSector: src.clientSector,
+    clientCity: src.clientCity,
+    clientCountry: src.clientCountry,
     contactName: src.contactName,
     contactEmail: src.contactEmail,
     currency: src.currency,

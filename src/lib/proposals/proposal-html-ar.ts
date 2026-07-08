@@ -7,7 +7,7 @@
 
 import { formatMoney } from "./pricing";
 import { computeLicensing, normalizeLicensingModel } from "./licensing";
-import { computeEngagement, normalizeEngagementModel, resolveDataResidency, type EngagementBasis, type DataResidency } from "./engagement";
+import { computeEngagement, normalizeEngagementModel, resolveDataResidency, withEngagementResidency, type EngagementBasis, type DataResidency } from "./engagement";
 import { resolveIncludedSections } from "./constants";
 import { PORTAL_SERVICES, type CaliberService } from "@/lib/clients/portal-services";
 import type { ProposalEvidence } from "./evidence-summary";
@@ -95,8 +95,14 @@ export function buildProposalHtmlAr(
   const isLicence = p.pricingMode === "licence";
   const lic = isLicence ? computeLicensing(normalizeLicensingModel(p.licensingModel)) : null;
   const isEngagement = p.pricingMode === "engagement";
-  const eng = isEngagement ? computeEngagement(normalizeEngagementModel(p.engagementModel)) : null;
   const residency = resolveDataResidency((p.licenceData as Record<string, unknown> | null)?.dataResidency);
+  const drFee = Math.max(0, Number((p.licenceData as Record<string, unknown> | null)?.dataResidencyFee) || 0);
+  const hasDrFee = drFee > 0;
+  const DR_LABEL_AR: Record<DataResidency, string> = { ksa: "السعودية", uae: "الإمارات", vifm: "سحابة VIFM" };
+  const drRowLabelAr = `سيادة البيانات - ${DR_LABEL_AR[residency]}`;
+  const eng = isEngagement
+    ? computeEngagement(normalizeEngagementModel(withEngagementResidency(p.engagementModel, drRowLabelAr, drFee)))
+    : null;
   const BASIS_LABEL_AR: Record<EngagementBasis, string> = {
     fixed: "ثابت",
     per_participant: "لكل مشارك",
@@ -160,7 +166,8 @@ export function buildProposalHtmlAr(
       <tr><td class="tot-label">التكلفة المتكررة السنوية</td><td class="num">${m(lic.annualRecurring)}</td></tr>
       ${lic.hasImplementationFee ? `<tr><td class="tot-label">التنفيذ والإعداد (لمرة واحدة)</td><td class="num">${m(lic.implementationFee)}</td></tr>` : ""}
       ${lic.isSovereign && lic.sovereignSetup > 0 ? `<tr><td class="tot-label">إعداد الاستضافة السيادية (لمرة واحدة)</td><td class="num">${m(lic.sovereignSetup)}</td></tr>` : ""}
-      <tr class="total-row"><td class="tot-label">استثمار السنة الأولى (${esc(cur)})</td><td class="num">${m(lic.year1Subtotal)}</td></tr>
+      ${hasDrFee ? `<tr><td class="tot-label">${drRowLabelAr} (لمرة واحدة)</td><td class="num">${m(drFee)}</td></tr>` : ""}
+      <tr class="total-row"><td class="tot-label">استثمار السنة الأولى (${esc(cur)})</td><td class="num">${m(lic.year1Subtotal + drFee)}</td></tr>
     </tbody>
   </table>
   <p class="scope-note"><strong>نمط النشر:</strong> ${lic.isSovereign ? "سيادي &ndash; نسخة مخصصة داخل الدولة لضمان مقر البيانات" : "سحابة مشتركة"}.</p>
@@ -169,10 +176,10 @@ export function buildProposalHtmlAr(
   <table>
     <thead><tr><th>الفترة</th><th class="num">القيمة</th></tr></thead>
     <tbody>
-      <tr><td>السنة الأولى (استثمار)</td><td class="num">${m(lic.year1Subtotal)}</td></tr>
+      <tr><td>السنة الأولى (استثمار)</td><td class="num">${m(lic.year1Subtotal + drFee)}</td></tr>
       <tr><td>السنة الثانية${lic.upliftPct ? ` (متكرر +${pc(lic.upliftPct)})` : " (متكرر)"}</td><td class="num">${m(lic.year2Recurring)}</td></tr>
       <tr><td>السنة الثالثة (متكرر)</td><td class="num">${m(lic.year3Recurring)}</td></tr>
-      <tr class="total-row"><td>إجمالي كلفة التملك لثلاث سنوات</td><td class="num">${m(lic.tco3)}</td></tr>
+      <tr class="total-row"><td>إجمالي كلفة التملك لثلاث سنوات</td><td class="num">${m(lic.tco3 + drFee)}</td></tr>
     </tbody>
   </table>
   ${
@@ -200,7 +207,7 @@ export function buildProposalHtmlAr(
 
   // ── Per-project commercial table (Arabic). ──
   const lineRows = p.lineItems
-    .map((l) => `<tr><td>${esc(serviceLabelAr(l.service, l.label))}</td><td class="num">${nu(l.seats)}</td><td class="num">${m(l.unitRate)}</td><td class="num">${m(l.subtotal)}</td></tr>`)
+    .map((l) => `<tr><td>${esc(serviceLabelAr(l.service, l.label))}</td><td class="num">${l.service === "data_residency" ? "&mdash;" : nu(l.seats)}</td><td class="num">${l.service === "data_residency" ? "&mdash;" : m(l.unitRate)}</td><td class="num">${m(l.subtotal)}</td></tr>`)
     .join("");
   const discount = Math.round((p.subtotal - p.total) * 100) / 100;
   const discountRow = discount > 0 ? `<tr><td colspan="3" class="tot-label">خصم (${pc(p.discountPct)})</td><td class="num">- ${m(discount)}</td></tr>` : "";
@@ -458,7 +465,7 @@ export function buildProposalHtmlAr(
   <p>${intro}</p>
   <div style="display:flex;gap:10px;margin:12px 0 4px;">
     <div style="flex:1;border:1px solid #e2e8f0;border-top:3px solid #5391D5;border-radius:6px;padding:8px 10px;"><b style="display:block;color:#010131;font-size:13pt;">${isLicence && lic ? m(lic.annualRecurring) : nu(totalParticipants)}</b><span style="color:#64748b;font-size:8.5pt;">${isLicence && lic ? "التكلفة المتكررة السنوية" : "المشاركون"}</span></div>
-    <div style="flex:1;border:1px solid #e2e8f0;border-top:3px solid #5391D5;border-radius:6px;padding:8px 10px;"><b style="display:block;color:#010131;font-size:13pt;">${isLicence && lic ? m(lic.year1Subtotal) : m(p.total)}</b><span style="color:#64748b;font-size:8.5pt;">${isLicence && lic ? "استثمار السنة الأولى" : "إجمالي الاستثمار"}</span></div>
+    <div style="flex:1;border:1px solid #e2e8f0;border-top:3px solid #5391D5;border-radius:6px;padding:8px 10px;"><b style="display:block;color:#010131;font-size:13pt;">${isLicence && lic ? m(lic.year1Subtotal + drFee) : m(p.total)}</b><span style="color:#64748b;font-size:8.5pt;">${isLicence && lic ? "استثمار السنة الأولى" : "إجمالي الاستثمار"}</span></div>
     ${validUntil ? `<div style="flex:1;border:1px solid #e2e8f0;border-top:3px solid #5391D5;border-radius:6px;padding:8px 10px;"><b style="display:block;color:#010131;font-size:12pt;">${validUntil}</b><span style="color:#64748b;font-size:8.5pt;">صلاحية العرض</span></div>` : ""}
   </div>
   ${roiHtml}

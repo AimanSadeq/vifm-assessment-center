@@ -13,7 +13,7 @@
 import { formatMoney } from "./pricing";
 import { proposalService, PROPOSAL_DELIVERABLES, resolveIncludedSections } from "./constants";
 import { computeLicensing, normalizeLicensingModel } from "./licensing";
-import { computeEngagement, normalizeEngagementModel, ENGAGEMENT_BASIS_LABEL, dataResidencyStatement, resolveDataResidency } from "./engagement";
+import { computeEngagement, normalizeEngagementModel, ENGAGEMENT_BASIS_LABEL, DATA_RESIDENCY_LABEL, dataResidencyStatement, resolveDataResidency, withEngagementResidency } from "./engagement";
 import type { ProposalEvidence } from "./evidence-summary";
 import type { CaliberService } from "@/lib/clients/portal-services";
 import type { Proposal } from "./service";
@@ -65,6 +65,12 @@ export function buildProposalHtml(
   const cur = p.currency || "USD";
   const money = (n: number) => formatMoney(n, cur);
   const num = (n: number) => (n || 0).toLocaleString("en-US");
+  // Data residency applies to every pricing mode (stored proposal-level in licenceData).
+  const residency = resolveDataResidency((p.licenceData as Record<string, unknown> | null)?.dataResidency);
+  // Optional manually-priced data-residency fee, shown as a commercial line item + added to the total.
+  const drFee = Math.max(0, Number((p.licenceData as Record<string, unknown> | null)?.dataResidencyFee) || 0);
+  const hasDrFee = drFee > 0;
+  const drRowLabel = `Data residency - ${DATA_RESIDENCY_LABEL[residency]}`;
   const discount = Math.round((p.subtotal - p.total) * 100) / 100;
   const ref = proposalRef(p);
 
@@ -87,10 +93,9 @@ export function buildProposalHtml(
 
   // ── Engagement (professional-services) pricing mode, e.g. Assessment Center. ──
   const isEngagement = p.pricingMode === "engagement";
-  const eng = isEngagement ? computeEngagement(normalizeEngagementModel(p.engagementModel)) : null;
-
-  // Data residency applies to every pricing mode (stored proposal-level in licenceData).
-  const residency = resolveDataResidency((p.licenceData as Record<string, unknown> | null)?.dataResidency);
+  const eng = isEngagement
+    ? computeEngagement(normalizeEngagementModel(withEngagementResidency(p.engagementModel, drRowLabel, drFee)))
+    : null;
 
   const scopeWithSeats = p.scope.filter((s) => (s.seats ?? 0) > 0);
   const totalParticipants = scopeWithSeats.reduce((n, s) => n + (s.seats ?? 0), 0);
@@ -130,13 +135,14 @@ export function buildProposalHtml(
     })
     .join("\n");
 
-  // ── Commercials table. ──
+  // ── Commercials table. Flat lines (e.g. data residency) show a dash for the
+  // per-participant columns, since they are not seat-priced. ──
   const lineRows = p.lineItems
     .map(
       (l) =>
-        `<tr><td>${esc(l.label)}</td><td class="num">${num(l.seats)}</td><td class="num">${money(
-          l.unitRate,
-        )}</td><td class="num">${money(l.subtotal)}</td></tr>`,
+        `<tr><td>${esc(l.label)}</td><td class="num">${l.service === "data_residency" ? "&mdash;" : num(l.seats)}</td><td class="num">${
+          l.service === "data_residency" ? "&mdash;" : money(l.unitRate)
+        }</td><td class="num">${money(l.subtotal)}</td></tr>`,
     )
     .join("");
   const discountRow =
@@ -181,7 +187,8 @@ export function buildProposalHtml(
       <tr><td class="tot-label">Annual recurring</td><td class="num">${money(lic.annualRecurring)}</td></tr>
       ${lic.hasImplementationFee ? `<tr><td class="tot-label">Implementation &amp; onboarding (one-time)</td><td class="num">${money(lic.implementationFee)}</td></tr>` : ""}
       ${lic.isSovereign && lic.sovereignSetup > 0 ? `<tr><td class="tot-label">Sovereign setup (one-time)</td><td class="num">${money(lic.sovereignSetup)}</td></tr>` : ""}
-      <tr class="total-row"><td class="tot-label">Year-1 investment (${esc(cur)})</td><td class="num">${money(lic.year1Subtotal)}</td></tr>
+      ${hasDrFee ? `<tr><td class="tot-label">${drRowLabel} (one-time)</td><td class="num">${money(drFee)}</td></tr>` : ""}
+      <tr class="total-row"><td class="tot-label">Year-1 investment (${esc(cur)})</td><td class="num">${money(lic.year1Subtotal + drFee)}</td></tr>
     </tbody>
   </table>
   <p class="scope-note"><strong>Deployment tier:</strong> ${lic.isSovereign ? "Sovereign &ndash; a dedicated in-country instance for data residency" : "Shared cloud"}.</p>
@@ -190,10 +197,10 @@ export function buildProposalHtml(
   <table>
     <thead><tr><th>Period</th><th class="num">Amount</th></tr></thead>
     <tbody>
-      <tr><td>Year 1 (investment)</td><td class="num">${money(lic.year1Subtotal)}</td></tr>
+      <tr><td>Year 1 (investment)</td><td class="num">${money(lic.year1Subtotal + drFee)}</td></tr>
       <tr><td>Year 2${lic.upliftPct ? ` (recurring +${num(lic.upliftPct)}%)` : " (recurring)"}</td><td class="num">${money(lic.year2Recurring)}</td></tr>
       <tr><td>Year 3 (recurring)</td><td class="num">${money(lic.year3Recurring)}</td></tr>
-      <tr class="total-row"><td>3-year total cost of ownership</td><td class="num">${money(lic.tco3)}</td></tr>
+      <tr class="total-row"><td>3-year total cost of ownership</td><td class="num">${money(lic.tco3 + drFee)}</td></tr>
     </tbody>
   </table>
   ${
@@ -504,7 +511,7 @@ export function buildProposalHtml(
         : `<div class="fact"><b>${scopeWithSeats.length}</b><span>Services</span></div>`
     }
     <div class="fact"><b>${isLicence && lic ? money(lic.annualRecurring) : num(totalParticipants)}</b><span>${isLicence && lic ? "Annual recurring" : "Participants"}</span></div>
-    <div class="fact"><b>${isLicence && lic ? money(lic.year1Subtotal) : money(p.total)}</b><span>${isLicence && lic ? "Year-1 investment" : "Total investment"}</span></div>
+    <div class="fact"><b>${isLicence && lic ? money(lic.year1Subtotal + drFee) : money(p.total)}</b><span>${isLicence && lic ? "Year-1 investment" : "Total investment"}</span></div>
     ${validUntil ? `<div class="fact"><b>${validUntil}</b><span>Offer validity</span></div>` : ""}
   </div>
   ${roiHtml}

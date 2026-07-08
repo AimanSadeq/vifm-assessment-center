@@ -52,6 +52,25 @@ export function resolveDataResidency(v: unknown): DataResidency {
   return RESIDENCIES.includes(v as DataResidency) ? (v as DataResidency) : "vifm";
 }
 
+/** Standard label for the data-residency line item, e.g. "Data residency - Saudi Arabia (KSA)". */
+export function dataResidencyLineLabel(r: DataResidency): string {
+  return `Data residency - ${DATA_RESIDENCY_LABEL[r]}`;
+}
+
+/** Append the data-residency cost as a real engagement line (basis fixed) at compute
+ *  time, so it flows through the model's subtotal / discount / total like any other
+ *  line. Never mutates or persists - returns a new model. Cost <= 0 is a no-op. */
+export function withEngagementResidency(
+  model: EngagementModelInput | null | undefined,
+  label: string,
+  cost: number,
+): EngagementModelInput | null {
+  if (!(cost > 0)) return model ?? null;
+  const base = (model ?? {}) as EngagementModelInput;
+  const line: EngagementLineInput = { label, basis: "fixed", quantity: 1, unitRate: cost };
+  return { ...base, lines: [...(base.lines ?? []), line] };
+}
+
 /** Full data-residency commitment sentence for the proposal body (EN). */
 export function dataResidencyStatement(r: DataResidency): string {
   switch (r) {

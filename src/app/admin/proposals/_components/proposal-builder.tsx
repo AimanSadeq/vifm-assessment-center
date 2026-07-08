@@ -29,6 +29,8 @@ import {
   ENGAGEMENT_BASIS_LABEL,
   DATA_RESIDENCY_LABEL,
   resolveDataResidency,
+  dataResidencyLineLabel,
+  withEngagementResidency,
   type EngagementBasis,
   type EngagementModelInput,
   type DataResidency,
@@ -152,6 +154,9 @@ export function ProposalBuilder({
   const [dataResidency, setDataResidency] = useState<DataResidency>(
     resolveDataResidency((existing?.licenceData as Record<string, unknown> | undefined)?.dataResidency),
   );
+  const [dataResidencyFee, setDataResidencyFee] = useState<number>(
+    Math.max(0, Number((existing?.licenceData as Record<string, unknown> | undefined)?.dataResidencyFee) || 0),
+  );
   const updateLine = (i: number, patch: Partial<EngLine>) => setEngLines((prev) => prev.map((l, j) => (j === i ? { ...l, ...patch } : l)));
   const addLine = () => setEngLines((prev) => [...prev, { label: "", basis: "fixed", quantity: 1, unitRate: 0 }]);
   const removeLine = (i: number) => setEngLines((prev) => prev.filter((_, j) => j !== i));
@@ -206,8 +211,15 @@ export function ProposalBuilder({
     [seats, notes],
   );
 
+  const feeNum = Math.max(0, Number(dataResidencyFee) || 0); // data-residency cost, a real line item
+  const drLineLabel = dataResidencyLineLabel(dataResidency);
   const lineItems = useMemo(() => computeLineItems(scope, rates), [scope, rates]);
-  const totals = useMemo(() => computeTotals(lineItems, discountPct), [lineItems, discountPct]);
+  // Per-project: data residency is a real line item -> part of the discountable subtotal.
+  const lineItemsPriced = useMemo(
+    () => (feeNum > 0 ? [...lineItems, { service: "data_residency", label: drLineLabel, seats: 1, unitRate: feeNum, subtotal: feeNum }] : lineItems),
+    [lineItems, feeNum, drLineLabel],
+  );
+  const totals = useMemo(() => computeTotals(lineItemsPriced, discountPct), [lineItemsPriced, discountPct]);
   const money = (n: number) => formatMoney(n, currency);
   const missingRates = scope.filter((s) => !rates[s.service]).map((s) => s.label);
 
@@ -246,7 +258,10 @@ export function ProposalBuilder({
     }),
     [engName, engParticipants, discountPct, engLines],
   );
-  const engagement = useMemo(() => computeEngagement(normalizeEngagementModel(assembleEngagementModel())), [assembleEngagementModel]);
+  const engagement = useMemo(
+    () => computeEngagement(normalizeEngagementModel(withEngagementResidency(assembleEngagementModel(), drLineLabel, feeNum))),
+    [assembleEngagementModel, drLineLabel, feeNum],
+  );
 
   async function save() {
     setBusy(true);
@@ -271,6 +286,7 @@ export function ProposalBuilder({
         ...(existing?.licenceData ?? {}),
         roi: roiSalary > 0 && roiHires > 0 ? { avgSalary: roiSalary, hiresPerYear: roiHires, accuracyGainPct: roiGainPct } : null,
         dataResidency,
+        dataResidencyFee,
       },
       bundleId: bundleId || null,
       scope,
@@ -358,6 +374,12 @@ export function ProposalBuilder({
                 <option key={r} value={r}>{DATA_RESIDENCY_LABEL[r]}</option>
               ))}
             </select>
+          </label>
+          <label className="block text-sm">
+            <span className="text-muted-foreground">Data residency fee ({currency}, optional)</span>
+            <input type="number" min={0} value={dataResidencyFee}
+              onChange={(e) => setDataResidencyFee(Math.max(0, Number(e.target.value) || 0))} placeholder="0"
+              className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm" />
           </label>
         </div>
       </section>
@@ -630,11 +652,14 @@ export function ProposalBuilder({
                   {licensing.hasOneTime && (
                     <div className="flex justify-between text-muted-foreground"><span>One-time (implementation{licensing.isSovereign && licensing.sovereignSetup > 0 ? " + sovereign setup" : ""})</span><span className="tabular-nums">{money(licensing.oneTimeTotal)}</span></div>
                   )}
-                  <div className="flex justify-between border-t border-border pt-1 text-base font-semibold text-[#010131]"><span>Year-1 investment</span><span className="tabular-nums">{money(licensing.year1Subtotal)}</span></div>
+                  {feeNum > 0 && (
+                    <div className="flex justify-between text-muted-foreground"><span>Data residency (one-time)</span><span className="tabular-nums">{money(feeNum)}</span></div>
+                  )}
+                  <div className="flex justify-between border-t border-border pt-1 text-base font-semibold text-[#010131]"><span>Year-1 investment</span><span className="tabular-nums">{money(licensing.year1Subtotal + feeNum)}</span></div>
                   <div className="mt-2 border-t border-border pt-2 text-xs text-muted-foreground">
                     <div className="flex justify-between"><span>Year 2 (recurring)</span><span className="tabular-nums">{money(licensing.year2Recurring)}</span></div>
                     <div className="flex justify-between"><span>Year 3 (recurring)</span><span className="tabular-nums">{money(licensing.year3Recurring)}</span></div>
-                    <div className="flex justify-between font-medium text-foreground"><span>3-year TCO</span><span className="tabular-nums">{money(licensing.tco3)}</span></div>
+                    <div className="flex justify-between font-medium text-foreground"><span>3-year TCO</span><span className="tabular-nums">{money(licensing.tco3 + feeNum)}</span></div>
                   </div>
                   {licensing.hasBuffer && (
                     <p className="pt-1 text-[11px] text-muted-foreground">Includes a {bufferPct}% usage buffer; excess billed quarterly in arrears at unit prices.</p>

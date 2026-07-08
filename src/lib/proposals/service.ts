@@ -20,6 +20,9 @@ import {
 import {
   computeEngagement,
   normalizeEngagementModel,
+  resolveDataResidency,
+  dataResidencyLineLabel,
+  withEngagementResidency,
   type EngagementModelInput,
   type NormalizedEngagementModel,
 } from "./engagement";
@@ -208,15 +211,27 @@ async function buildPricedSnapshot(input: ProposalInput): Promise<PricedSnapshot
   const mode: PricingMode =
     input.pricingMode === "licence" ? "licence" : input.pricingMode === "engagement" ? "engagement" : "per_project";
 
+  // Optional data-residency cost (proposal-level, stored in licenceData). It is a
+  // real line item in the pricing model: a pre-subtotal line for per-project +
+  // engagement (discountable like any line), and a one-time build-up line for
+  // licence (a bundle discount on infrastructure would be wrong).
+  const dataResidencyFee = Math.max(0, Number((input.licenceData as Record<string, unknown> | null | undefined)?.dataResidencyFee) || 0);
+  const drResidency = resolveDataResidency((input.licenceData as Record<string, unknown> | null | undefined)?.dataResidency);
+  const drLineLabel = dataResidencyLineLabel(drResidency);
+
   if (mode === "engagement") {
-    const engagement = normalizeEngagementModel(input.engagementModel);
-    if (!engagement) return { error: "Add at least one priced line (amount above 0) before saving an engagement proposal." };
-    const computed = computeEngagement(engagement);
-    if (!computed) return { error: "Nothing is priced on this engagement yet." };
+    // Compute from the residency-injected model so the data-residency line flows
+    // through subtotal / discount / total; store the ORIGINAL model (without the
+    // residency line) so a builder edit does not duplicate it (it re-injects fresh).
+    const computed = computeEngagement(
+      normalizeEngagementModel(withEngagementResidency(input.engagementModel, drLineLabel, dataResidencyFee)),
+    );
+    if (!computed) return { error: "Add at least one priced line (amount above 0) before saving an engagement proposal." };
+    const engagement = normalizeEngagementModel(input.engagementModel) ?? normalizeEngagementModel(withEngagementResidency(input.engagementModel, drLineLabel, dataResidencyFee));
     // A single synthetic scope row so the participant-driven PDF sections work;
     // engagement rendering (solution + commercial) is handled explicitly in the builder.
     const scope: ScopeItem[] = [
-      { service: "engagement", label: engagement.name, seats: computed.participants, scopeNote: null, methodologySlug: null },
+      { service: "engagement", label: computed.name, seats: computed.participants, scopeNote: null, methodologySlug: null },
     ];
     const lineItems: LineItem[] = computed.lines.map((l) => ({
       service: "engagement",
@@ -266,10 +281,17 @@ async function buildPricedSnapshot(input: ProposalInput): Promise<PricedSnapshot
       lineItems,
       subtotal: computed.alaCarteTotal,
       discountPct: computed.bundleDiscountPct,
-      total: computed.year1Subtotal,
+      total: computed.year1Subtotal + dataResidencyFee,
     };
   }
-  const { items, subtotal, total } = await price(input.scope, input.discountPct);
+  const base = await price(input.scope, input.discountPct);
+  // Data residency is a real line item in the itemized list -> part of the subtotal
+  // the discount applies to (a pre-fee bolt-on would sit outside the model).
+  const items: LineItem[] =
+    dataResidencyFee > 0
+      ? [...base.items, { service: "data_residency", label: drLineLabel, seats: 1, unitRate: dataResidencyFee, subtotal: dataResidencyFee }]
+      : base.items;
+  const { subtotal, total } = computeTotals(items, input.discountPct || 0);
   return {
     pricingMode: mode,
     licence: null,

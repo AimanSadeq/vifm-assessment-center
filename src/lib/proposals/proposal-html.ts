@@ -12,6 +12,7 @@
 
 import { formatMoney } from "./pricing";
 import { proposalService, PROPOSAL_DELIVERABLES } from "./constants";
+import { computeLicensing, normalizeLicensingModel } from "./licensing";
 import type { CaliberService } from "@/lib/clients/portal-services";
 import type { Proposal } from "./service";
 
@@ -86,6 +87,11 @@ export function buildProposalHtml(
   const ref = proposalRef(p);
   const tcNo = NO("Terms & conditions");
 
+  // ── Licence (SaaS) pricing mode. `lic` is null in per-project mode OR when the
+  // licence model is empty, so every licence block gates on `isLicence && lic`. ──
+  const isLicence = p.pricingMode === "licence";
+  const lic = isLicence ? computeLicensing(normalizeLicensingModel(p.licensingModel)) : null;
+
   const scopeWithSeats = p.scope.filter((s) => (s.seats ?? 0) > 0);
   const totalParticipants = scopeWithSeats.reduce((n, s) => n + (s.seats ?? 0), 0);
   const serviceLabels = scopeWithSeats.map((s) => s.label);
@@ -140,11 +146,91 @@ export function buildProposalHtml(
         )}</td></tr>`
       : "";
 
+  // ── Licence commercial build-up (licence mode only). ──
+  const licenceCommercial = lic
+    ? `<table>
+    <thead><tr><th>Service</th><th>Basis</th><th class="num">Annual volume</th><th class="num">Unit price</th><th class="num">Annual value</th></tr></thead>
+    <tbody>
+      ${lic.products
+        .map(
+          (pr) =>
+            `<tr><td>${esc(pr.name)}</td><td>${esc(pr.basis)}</td><td class="num">${
+              pr.isFixed ? "&mdash;" : num(pr.volume)
+            }</td><td class="num">${pr.isFixed ? "&mdash;" : money(pr.unitPrice)}</td><td class="num">${money(
+              pr.lineTotal,
+            )}</td></tr>`,
+        )
+        .join("\n      ")}
+      ${lic.bundles
+        .map(
+          (b) =>
+            `<tr><td>${esc(b.name)}</td><td colspan="3">${esc(b.services)}</td><td class="num">${money(
+              b.price,
+            )}</td></tr>`,
+        )
+        .join("\n      ")}
+      <tr><td colspan="4" class="tot-label">A-la-carte subtotal</td><td class="num">${money(lic.alaCarteTotal)}</td></tr>
+    </tbody>
+  </table>
+  <table>
+    <tbody>
+      ${lic.hasBundleDiscount ? `<tr><td class="tot-label">Committed-licence discount (${num(lic.bundleDiscountPct)}%)</td><td class="num">- ${money(lic.discountAmount)}</td></tr>` : ""}
+      <tr><td class="tot-label">Committed annual all-access licence</td><td class="num">${money(lic.annualLicence)}</td></tr>
+      ${lic.hasSupport ? `<tr><td class="tot-label">Support &amp; SLA (${num(lic.supportPct)}%)</td><td class="num">${money(lic.supportAmount)}</td></tr>` : ""}
+      ${lic.isSovereign && lic.sovereignAnnual > 0 ? `<tr><td class="tot-label">Sovereign annual (dedicated in-country)</td><td class="num">${money(lic.sovereignAnnual)}</td></tr>` : ""}
+      <tr><td class="tot-label">Annual recurring</td><td class="num">${money(lic.annualRecurring)}</td></tr>
+      ${lic.hasImplementationFee ? `<tr><td class="tot-label">Implementation &amp; onboarding (one-time)</td><td class="num">${money(lic.implementationFee)}</td></tr>` : ""}
+      ${lic.isSovereign && lic.sovereignSetup > 0 ? `<tr><td class="tot-label">Sovereign setup (one-time)</td><td class="num">${money(lic.sovereignSetup)}</td></tr>` : ""}
+      <tr class="total-row"><td class="tot-label">Year-1 investment (${esc(cur)})</td><td class="num">${money(lic.year1Subtotal)}</td></tr>
+    </tbody>
+  </table>
+  <p class="scope-note"><strong>Deployment tier:</strong> ${lic.isSovereign ? "Sovereign &ndash; a dedicated in-country instance for data residency" : "Shared cloud"}.</p>
+  ${lic.hasBuffer ? `<p class="scope-note">Committed annual volumes include a ${num(lic.bufferPct)}% usage buffer at no additional charge. Usage beyond the committed volume plus buffer is invoiced quarterly in arrears at the quoted unit prices.</p>` : ""}
+  <h3>Multi-year view</h3>
+  <table>
+    <thead><tr><th>Period</th><th class="num">Amount</th></tr></thead>
+    <tbody>
+      <tr><td>Year 1 (investment)</td><td class="num">${money(lic.year1Subtotal)}</td></tr>
+      <tr><td>Year 2${lic.upliftPct ? ` (recurring +${num(lic.upliftPct)}%)` : " (recurring)"}</td><td class="num">${money(lic.year2Recurring)}</td></tr>
+      <tr><td>Year 3 (recurring)</td><td class="num">${money(lic.year3Recurring)}</td></tr>
+      <tr class="total-row"><td>3-year total cost of ownership</td><td class="num">${money(lic.tco3)}</td></tr>
+    </tbody>
+  </table>
+  ${
+    lic.hasPilot && lic.pilot
+      ? `<h3>Pilot option</h3>
+  <div class="terms-box">A fixed-price pilot of ${num(lic.pilot.cohort)} participant${lic.pilot.cohort === 1 ? "" : "s"} over ${num(lic.pilot.durationWeeks)} week${lic.pilot.durationWeeks === 1 ? "" : "s"} at ${money(lic.pilot.price)}. On conversion to the annual licence within 90 days, ${num(lic.pilot.creditPct)}% of the pilot fee (${money(lic.pilot.creditAmount)}) is credited against Year 1. The pilot is an alternative entry path and is not included in the Year-1 total above.</div>`
+      : ""
+  }`
+    : "";
+
+  // ── Committed annual scope table (licence mode only), for Proposed solution. ──
+  const committedScope = lic
+    ? `<h3>Committed annual scope</h3>
+  <table>
+    <thead><tr><th>Service</th><th>Committed annual scope</th></tr></thead>
+    <tbody>
+      ${lic.products
+        .map(
+          (pr) =>
+            `<tr><td>${esc(pr.name)}</td><td>${
+              pr.isFixed ? "Included in the licence" : `Up to ${num(pr.volume)} ${esc(pr.basis)} per year`
+            }</td></tr>`,
+        )
+        .join("\n      ")}
+      ${lic.bundles.map((b) => `<tr><td>${esc(b.name)}</td><td>Included in the licence</td></tr>`).join("\n      ")}
+    </tbody>
+  </table>
+  ${lic.hasBuffer ? `<p class="scope-note">Committed volumes include a ${num(lic.bufferPct)}% usage buffer at no additional charge; excess usage is invoiced quarterly in arrears at the quoted unit prices.</p>` : ""}`
+    : "";
+
   // The executive summary NAMES the offered service(s) - a proposal must say
   // what is being sold in its first breath, not just "assessment instruments".
   const intro =
     p.introNote?.trim() ||
-    `We are pleased to present this proposal for the deployment of ${serviceList || "VIFM's talent-intelligence services"} for ${p.clientName}, covering ${num(totalParticipants)} participant${totalParticipants === 1 ? "" : "s"}. Delivered on the VIFM Caliber® Talent Intelligence Platform, the programme is set out below with its technical approach, delivery plan and commercial detail.`;
+    (isLicence
+      ? `We are pleased to present this proposal for an annual, all-access licence to the VIFM Caliber® Talent Intelligence Platform for ${p.clientName}, combining ${serviceList || "VIFM's talent-intelligence services"} into one candidate journey, one admin console and combined bilingual reporting. The commercial model is a committed annual licence; the technical approach, delivery plan and full licence build-up are set out below.`
+      : `We are pleased to present this proposal for the deployment of ${serviceList || "VIFM's talent-intelligence services"} for ${p.clientName}, covering ${num(totalParticipants)} participant${totalParticipants === 1 ? "" : "s"}. Delivered on the VIFM Caliber® Talent Intelligence Platform, the programme is set out below with its technical approach, delivery plan and commercial detail.`);
 
   const validUntil = p.validUntil ? fmtDate(p.validUntil) : null;
 
@@ -270,8 +356,8 @@ export function buildProposalHtml(
         ? `<div class="fact"><b>${esc(singleService)}</b><span>Service</span></div>`
         : `<div class="fact"><b>${scopeWithSeats.length}</b><span>Services</span></div>`
     }
-    <div class="fact"><b>${num(totalParticipants)}</b><span>Participants</span></div>
-    <div class="fact"><b>${money(p.total)}</b><span>Total investment</span></div>
+    <div class="fact"><b>${isLicence && lic ? money(lic.annualRecurring) : num(totalParticipants)}</b><span>${isLicence && lic ? "Annual recurring" : "Participants"}</span></div>
+    <div class="fact"><b>${isLicence && lic ? money(lic.year1Subtotal) : money(p.total)}</b><span>${isLicence && lic ? "Year-1 investment" : "Total investment"}</span></div>
     ${validUntil ? `<div class="fact"><b>${validUntil}</b><span>Offer validity</span></div>` : ""}
   </div>
 
@@ -299,7 +385,7 @@ export function buildProposalHtml(
   ${jurisdiction}. Any refinement of scope agreed during kickoff will be captured in the statement of work.</p>
 
   <h2><span class="no">${NO("Proposed solution & technical approach")}.</span>Proposed solution &amp; technical approach</h2>
-  ${technical || "<p>No services selected.</p>"}
+  ${committedScope}${technical || "<p>No services selected.</p>"}
 
   <h2><span class="no">${NO("Psychometric foundations")}.</span>Psychometric foundations</h2>
   <p>The proposed instrument${scopeWithSeats.length === 1 ? " is" : "s are"} built on documented measurement
@@ -377,8 +463,19 @@ export function buildProposalHtml(
     <li><b>Support window</b> - programme and participant support during GCC business hours (Sunday-Thursday), with initial response within one business day.</li>
     <li><b>Participant support</b> - access issues, invitation resends and completion queries are handled by VIFM directly, keeping the client's coordinator out of day-to-day traffic.</li>
     <li><b>Continuity</b> - the platform is operated to avoid participant-visible interruptions during the agreed assessment window; planned maintenance is scheduled around it.</li>
-    <li><b>Formal SLA</b> - where the client requires committed availability and response metrics, they are documented in the statement of work.</li>
+    ${isLicence ? "" : `<li><b>Formal SLA</b> - where the client requires committed availability and response metrics, they are documented in the statement of work.</li>`}
   </ul>
+  ${
+    isLicence
+      ? `<p class="scope-note">The following service levels apply under the annual licence:</p>
+  <ul>
+    <li><b>Platform uptime</b> - 99.5% monthly uptime guarantee, excluding scheduled maintenance.</li>
+    <li><b>Response times</b> - critical issues within 4 business hours; standard requests within 1 business day.</li>
+    <li><b>Support hours</b> - 09:00-18:00 AST, Sunday-Thursday (full GCC coverage).</li>
+    <li><b>Service credits</b> - a pro-rated service credit applies for any month below the uptime guarantee, as the exclusive remedy for availability.</li>
+  </ul>`
+      : ""
+  }
 
   <h2><span class="no">${NO("Relevant experience")}.</span>Relevant experience</h2>
   <p>VIFM delivers assessment and development programmes for banking, government and corporate organizations
@@ -391,7 +488,11 @@ export function buildProposalHtml(
   makes to ${esc(p.clientName)}.</p>
 
   <h2><span class="no">${NO("Commercial proposal")}.</span>Commercial proposal</h2>
-  <table>
+  ${
+    isLicence && lic
+      ? `<p>The commercial model is a committed <strong>annual all-access licence</strong> to the Caliber platform: the selected services are volume-priced a la carte, then bundled at a committed-licence discount. Support &amp; SLA is included as a percentage of the licence, and one-time implementation covers onboarding, configuration, integration and training.</p>
+  ${licenceCommercial}`
+      : `<table>
     <thead><tr><th>Service</th><th class="num">Participants</th><th class="num">Rate / participant</th><th class="num">Subtotal</th></tr></thead>
     <tbody>
       ${lineRows}
@@ -399,7 +500,8 @@ export function buildProposalHtml(
       ${discountRow}
       <tr class="total-row"><td colspan="3" class="tot-label">Total (${esc(cur)})</td><td class="num">${money(p.total)}</td></tr>
     </tbody>
-  </table>
+  </table>`
+  }
   ${validUntil ? `<p class="scope-note">This proposal is valid until <strong>${validUntil}</strong>. Fees are quoted in ${esc(cur)} and are exclusive of any applicable taxes, which will be added at the prevailing rate where required.</p>` : `<p class="scope-note">Fees are quoted in ${esc(cur)} and are exclusive of any applicable taxes, which will be added at the prevailing rate where required.</p>`}
   ${p.paymentTerms ? `<h3>Payment terms</h3><p>${esc(p.paymentTerms)}</p>` : ""}
   <h3>Included in the fees</h3>
@@ -433,6 +535,15 @@ export function buildProposalHtml(
     <li><b>Non-solicitation.</b> During the engagement and for six months after, neither party will actively solicit for employment the other's personnel directly engaged in the delivery of this programme.</li>
     <li><b>Governing law.</b> This proposal and any resulting engagement are governed by the laws of ${jurisdiction}, and the parties submit to the exclusive jurisdiction of its courts, unless the signed statement of work provides otherwise.</li>
     <li><b>Entire agreement and precedence.</b> The signed statement of work, together with this proposal, constitutes the entire agreement for the engagement. In case of conflict, the signed statement of work prevails over this proposal.</li>
+    ${
+      isLicence && lic
+        ? `<li><b>Committed volumes and usage buffer.</b> The licence includes the committed annual volumes set out in Section ${NO("Commercial proposal")}, with a ${num(lic.bufferPct)}% usage buffer at no additional charge. Usage beyond the committed volume plus buffer is invoiced quarterly in arrears at the quoted unit prices; unused volume does not roll over unless agreed in writing.</li>
+    <li><b>Renewal.</b> The licence term is 12 months, renewable, with 60 days' notice of non-renewal.${lic.upliftPct ? ` Where a multi-year term is agreed, the annual recurring charge is capped at a ${num(lic.upliftPct)}% uplift per year.` : ""}</li>
+    <li><b>Exit and data export.</b> On termination or expiry, ${esc(p.clientName)} receives a full export of its data in standard formats within 15 business days, followed by certified deletion under VIFM's retention procedures.</li>
+    <li><b>Service credits.</b> The service credits set out in Section ${NO("Service level & support")} are the client's exclusive remedy for any failure to meet the availability guarantee.</li>
+    <li><b>Suspension.</b> VIFM may suspend access for undisputed amounts overdue by more than 30 days, on 10 business days' prior written notice.</li>`
+        : ""
+    }
   </ol>
 
   <h2><span class="no">${NO("Definitions")}.</span>Definitions</h2>
@@ -446,6 +557,15 @@ export function buildProposalHtml(
       <tr><td><b>Certified credential</b></td><td>An outcome issued only where a documented cut-score is met; publicly verifiable by its verification link.</td></tr>
       <tr><td><b>Assessment window</b></td><td>The agreed period during which participants complete their sittings.</td></tr>
       <tr><td><b>Statement of work (SOW)</b></td><td>The signed document that puts this proposal into effect and governs the engagement.</td></tr>
+      ${
+        isLicence && lic
+          ? `<tr><td><b>Committed Volume</b></td><td>The maximum annual usage of a service included in the licence, shown as "Up to N per year" in the scope and commercial tables.</td></tr>
+      <tr><td><b>Usage Buffer</b></td><td>A further ${num(lic.bufferPct)}% of each committed volume, provided at no charge before excess usage applies.</td></tr>
+      <tr><td><b>Excess Usage</b></td><td>Usage beyond the committed volume plus buffer, invoiced quarterly in arrears at the quoted unit prices.</td></tr>
+      <tr><td><b>Annual Recurring</b></td><td>The committed annual licence plus support &amp; SLA (and any sovereign annual charge) - the recurring yearly fee, exclusive of one-time implementation.</td></tr>
+      <tr><td><b>Sovereign Deployment</b></td><td>An optional dedicated in-country platform instance for data residency, adding a one-time setup fee and an annual charge.</td></tr>`
+          : ""
+      }
     </tbody>
   </table>
 

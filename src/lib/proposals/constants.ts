@@ -97,9 +97,36 @@ export function proposalService(key: string): ProposalServiceMeta | undefined {
   return PROPOSAL_SERVICES.find((s) => s.key === key);
 }
 
+/** Per-service pricing basis, shown on licence rows and denormalised onto the
+ *  licence model (e.g. "Persona - per employee"). */
+export const PROPOSAL_SERVICE_BASIS: Record<CaliberService, string> = {
+  prehire: "per candidate",
+  logica: "per individual",
+  persona: "per employee",
+  techno: "per individual",
+  fluent: "per individual",
+  arc: "per business unit",
+  reflect: "per leader",
+};
+
+/** Short category label carried onto the licence model (denormalised snapshot). */
+export const PROPOSAL_SERVICE_CATEGORY: Record<CaliberService, string> = {
+  prehire: "Pre-employment screening",
+  logica: "Reasoning aptitude",
+  persona: "Behavioural self-assessment",
+  techno: "Technical proficiency",
+  fluent: "English placement",
+  arc: "AI readiness diagnostic",
+  reflect: "Leadership 360 feedback",
+};
+
 /** Default, editable boilerplate seeded into a new proposal. */
 export const DEFAULT_PAYMENT_TERMS =
   "50% on signature of the statement of work, 50% on delivery. Fees are exclusive of any applicable taxes and are valid until the date shown above.";
+
+/** SaaS payment schedule seeded when a new proposal opens in licence mode. */
+export const DEFAULT_LICENCE_PAYMENT_TERMS =
+  "50% upon signing; 50% upon go-live; annually in advance thereafter. The licence is annual and renewable; renewal for Year 2 is capped at no more than a 5% uplift. Fees are exclusive of any applicable taxes.";
 
 export function defaultTerms(clientName: string, currency: string): string {
   return (

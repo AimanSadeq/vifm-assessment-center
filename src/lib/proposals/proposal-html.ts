@@ -13,7 +13,7 @@
 import { formatMoney } from "./pricing";
 import { proposalService, PROPOSAL_DELIVERABLES, resolveIncludedSections } from "./constants";
 import { computeLicensing, normalizeLicensingModel } from "./licensing";
-import { computeEngagement, normalizeEngagementModel, ENGAGEMENT_BASIS_LABEL } from "./engagement";
+import { computeEngagement, normalizeEngagementModel, ENGAGEMENT_BASIS_LABEL, dataResidencyStatement, resolveDataResidency } from "./engagement";
 import type { ProposalEvidence } from "./evidence-summary";
 import type { CaliberService } from "@/lib/clients/portal-services";
 import type { Proposal } from "./service";
@@ -88,6 +88,9 @@ export function buildProposalHtml(
   // ── Engagement (professional-services) pricing mode, e.g. Assessment Center. ──
   const isEngagement = p.pricingMode === "engagement";
   const eng = isEngagement ? computeEngagement(normalizeEngagementModel(p.engagementModel)) : null;
+
+  // Data residency applies to every pricing mode (stored proposal-level in licenceData).
+  const residency = resolveDataResidency((p.licenceData as Record<string, unknown> | null)?.dataResidency);
 
   const scopeWithSeats = p.scope.filter((s) => (s.seats ?? 0) > 0);
   const totalParticipants = scopeWithSeats.reduce((n, s) => n + (s.seats ?? 0), 0);
@@ -531,6 +534,7 @@ export function buildProposalHtml(
 
   <h2><span class="no">${NO("Proposed solution & technical approach")}.</span>Proposed solution &amp; technical approach</h2>
   ${isEngagement ? engagementSolution : `${committedScope}${technical || "<p>No services selected.</p>"}`}
+  <div class="svc"><h3>Data residency</h3><p>${dataResidencyStatement(residency)}</p></div>
 
   ${inc("Psychometric foundations") ? `<h2><span class="no">${NO("Psychometric foundations")}.</span>Psychometric foundations</h2>
   <p>The proposed instrument${scopeWithSeats.length === 1 ? " is" : "s are"} built on documented measurement

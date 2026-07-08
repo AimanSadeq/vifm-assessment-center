@@ -7,7 +7,7 @@
 
 import { formatMoney } from "./pricing";
 import { computeLicensing, normalizeLicensingModel } from "./licensing";
-import { computeEngagement, normalizeEngagementModel, type EngagementBasis } from "./engagement";
+import { computeEngagement, normalizeEngagementModel, resolveDataResidency, type EngagementBasis, type DataResidency } from "./engagement";
 import { resolveIncludedSections } from "./constants";
 import { PORTAL_SERVICES, type CaliberService } from "@/lib/clients/portal-services";
 import type { ProposalEvidence } from "./evidence-summary";
@@ -96,11 +96,22 @@ export function buildProposalHtmlAr(
   const lic = isLicence ? computeLicensing(normalizeLicensingModel(p.licensingModel)) : null;
   const isEngagement = p.pricingMode === "engagement";
   const eng = isEngagement ? computeEngagement(normalizeEngagementModel(p.engagementModel)) : null;
+  const residency = resolveDataResidency((p.licenceData as Record<string, unknown> | null)?.dataResidency);
   const BASIS_LABEL_AR: Record<EngagementBasis, string> = {
     fixed: "ثابت",
     per_participant: "لكل مشارك",
     per_day: "لكل يوم استشاري",
     per_session: "لكل جلسة تغذية راجعة",
+  };
+  const dataResidencyStatementAr = (r: DataResidency): string => {
+    switch (r) {
+      case "ksa":
+        return "تُخزَّن جميع بيانات المرشحين والتقييم وتُعالَج داخل المملكة العربية السعودية، بما يلبي متطلبات سيادة البيانات داخل المملكة.";
+      case "uae":
+        return "تُخزَّن جميع بيانات المرشحين والتقييم وتُعالَج داخل دولة الإمارات العربية المتحدة، بما يلبي متطلبات سيادة البيانات داخل الدولة.";
+      default:
+        return "تُستضاف جميع بيانات المرشحين والتقييم على سحابة VIFM المُدارة، مع إتاحة سيادة البيانات داخل الدولة (السعودية أو الإمارات) عند الطلب.";
+    }
   };
 
   const scopeWithSeats = p.scope.filter((s) => (s.seats ?? 0) > 0);
@@ -462,6 +473,7 @@ export function buildProposalHtmlAr(
 
   <h2>${at("Proposed solution & technical approach")}</h2>
   ${isEngagement ? engagementSolutionAr : `${committedScope}${technical || "<p>لم يتم اختيار خدمات.</p>"}`}
+  <div class="svc"><h3>سيادة البيانات</h3><p>${dataResidencyStatementAr(residency)}</p></div>
 
   ${inc("Psychometric foundations") ? `<h2>${at("Psychometric foundations")}</h2>
   <p>تقوم الأدوات المقترحة على أسس قياس موثقة لا على مجموعات أسئلة عشوائية:</p>

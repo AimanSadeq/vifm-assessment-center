@@ -27,8 +27,11 @@ import {
   normalizeEngagementModel,
   acEngagementTemplate,
   ENGAGEMENT_BASIS_LABEL,
+  DATA_RESIDENCY_LABEL,
+  resolveDataResidency,
   type EngagementBasis,
   type EngagementModelInput,
+  type DataResidency,
 } from "@/lib/proposals/engagement";
 import { createProposalAction, updateProposalAction } from "../actions";
 import type { Proposal } from "@/lib/proposals/service";
@@ -145,6 +148,10 @@ export function ProposalBuilder({
   const [engName, setEngName] = useState<string>(em?.name ?? "Assessment Center");
   const [engParticipants, setEngParticipants] = useState<number>(Number(em?.participants) || 8);
   const [engLines, setEngLines] = useState<EngLine[]>(seedLines);
+  // Data residency is proposal-level (all pricing modes), stored in licenceData.
+  const [dataResidency, setDataResidency] = useState<DataResidency>(
+    resolveDataResidency((existing?.licenceData as Record<string, unknown> | undefined)?.dataResidency),
+  );
   const updateLine = (i: number, patch: Partial<EngLine>) => setEngLines((prev) => prev.map((l, j) => (j === i ? { ...l, ...patch } : l)));
   const addLine = () => setEngLines((prev) => [...prev, { label: "", basis: "fixed", quantity: 1, unitRate: 0 }]);
   const removeLine = (i: number) => setEngLines((prev) => prev.filter((_, j) => j !== i));
@@ -263,6 +270,7 @@ export function ProposalBuilder({
       licenceData: {
         ...(existing?.licenceData ?? {}),
         roi: roiSalary > 0 && roiHires > 0 ? { avgSalary: roiSalary, hiresPerYear: roiHires, accuracyGainPct: roiGainPct } : null,
+        dataResidency,
       },
       bundleId: bundleId || null,
       scope,
@@ -341,6 +349,15 @@ export function ProposalBuilder({
             <span className="text-muted-foreground">Client country (optional)</span>
             <input value={clientCountry} onChange={(e) => setClientCountry(e.target.value)} placeholder="e.g. Saudi Arabia"
               className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm" />
+          </label>
+          <label className="block text-sm">
+            <span className="text-muted-foreground">Data residency</span>
+            <select value={dataResidency} onChange={(e) => setDataResidency(e.target.value as DataResidency)}
+              className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm">
+              {(Object.keys(DATA_RESIDENCY_LABEL) as DataResidency[]).map((r) => (
+                <option key={r} value={r}>{DATA_RESIDENCY_LABEL[r]}</option>
+              ))}
+            </select>
           </label>
         </div>
       </section>

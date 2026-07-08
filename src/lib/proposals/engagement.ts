@@ -7,6 +7,10 @@
 
 export type EngagementBasis = "fixed" | "per_participant" | "per_day" | "per_session";
 
+// Where candidate + assessment data is stored/processed for this engagement.
+// KSA / UAE = in-country (sovereign) data residency; VIFM = VIFM-managed cloud.
+export type DataResidency = "ksa" | "uae" | "vifm";
+
 export interface EngagementLineInput {
   label?: string;
   basis?: EngagementBasis;
@@ -34,6 +38,31 @@ export interface NormalizedEngagementModel {
 }
 
 const BASES: EngagementBasis[] = ["fixed", "per_participant", "per_day", "per_session"];
+const RESIDENCIES: DataResidency[] = ["ksa", "uae", "vifm"];
+
+/** Short display label for the data-residency choice (EN). */
+export const DATA_RESIDENCY_LABEL: Record<DataResidency, string> = {
+  ksa: "Saudi Arabia (KSA)",
+  uae: "United Arab Emirates (UAE)",
+  vifm: "VIFM-managed cloud",
+};
+
+/** Validate an arbitrary value into a DataResidency, defaulting to VIFM-managed. */
+export function resolveDataResidency(v: unknown): DataResidency {
+  return RESIDENCIES.includes(v as DataResidency) ? (v as DataResidency) : "vifm";
+}
+
+/** Full data-residency commitment sentence for the proposal body (EN). */
+export function dataResidencyStatement(r: DataResidency): string {
+  switch (r) {
+    case "ksa":
+      return "All candidate and assessment data is stored and processed within the Kingdom of Saudi Arabia, meeting in-country (sovereign) data-residency requirements.";
+    case "uae":
+      return "All candidate and assessment data is stored and processed within the United Arab Emirates, meeting in-country (sovereign) data-residency requirements.";
+    default:
+      return "All candidate and assessment data is hosted on VIFM's managed cloud platform, with in-country (KSA or UAE) data residency available on request.";
+  }
+}
 const num = (v: unknown, f = 0) => { const n = Number(v); return Number.isFinite(n) ? n : f; };
 const clampPct = (v: unknown) => Math.min(100, Math.max(0, num(v)));
 const str = (v: unknown, max = 160) => (typeof v === "string" ? v.trim().slice(0, max) : "");

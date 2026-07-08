@@ -1,9 +1,25 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PROPOSAL_SERVICES, DEFAULT_PAYMENT_TERMS, defaultTerms } from "@/lib/proposals/constants";
+import {
+  PROPOSAL_SERVICES,
+  PROPOSAL_SERVICE_BASIS,
+  PROPOSAL_SERVICE_CATEGORY,
+  DEFAULT_PAYMENT_TERMS,
+  DEFAULT_LICENCE_PAYMENT_TERMS,
+  defaultTerms,
+} from "@/lib/proposals/constants";
 import { computeLineItems, computeTotals, formatMoney, type ScopeItem } from "@/lib/proposals/pricing";
+import {
+  computeLicensing,
+  normalizeLicensingModel,
+  LICENSING_DEFAULTS,
+  LICENCE_BENCHMARKS,
+  type LicenceModelInput,
+  type LicenceTier,
+  type PricingMode,
+} from "@/lib/proposals/licensing";
 import { createProposalAction, updateProposalAction } from "../actions";
 import type { Proposal } from "@/lib/proposals/service";
 
@@ -34,30 +50,70 @@ export function ProposalBuilder({
 }) {
   const router = useRouter();
 
-  const seed = (svc: string) =>
-    existing?.scope.find((s) => s.service === svc);
+  const seed = (svc: string) => existing?.scope.find((s) => s.service === svc);
+  const seedProduct = (svc: string) => existing?.licensingModel?.products?.find((p) => p.key === svc);
 
   const [title, setTitle] = useState(existing?.title ?? "");
   const [clientName, setClientName] = useState(existing?.clientName ?? "");
   const [contactName, setContactName] = useState(existing?.contactName ?? "");
   const [contactEmail, setContactEmail] = useState(existing?.contactEmail ?? "");
   const [currency] = useState(existing?.currency ?? "USD");
+
+  // Default NEW proposals to licence mode (per handover); keep the editing proposal's mode.
+  const [pricingMode, setPricingMode] = useState<PricingMode>(existing?.pricingMode ?? "licence");
+
   const [seats, setSeats] = useState<Record<string, number>>(
     Object.fromEntries(PROPOSAL_SERVICES.map((s) => [s.key, seed(s.key)?.seats ?? 0])),
+  );
+  const [unitPrices, setUnitPrices] = useState<Record<string, number>>(
+    Object.fromEntries(
+      PROPOSAL_SERVICES.map((s) => [s.key, seedProduct(s.key)?.unitPrice ?? rates[s.key] ?? LICENCE_BENCHMARKS[s.key] ?? 0]),
+    ),
   );
   const [notes, setNotes] = useState<Record<string, string>>(
     Object.fromEntries(PROPOSAL_SERVICES.map((s) => [s.key, seed(s.key)?.scopeNote ?? ""])),
   );
+
+  // Licence parameters (seeded from the editing proposal's model, else defaults).
+  const lm = existing?.licensingModel;
+  const [bundleDiscountPct, setBundleDiscountPct] = useState(lm?.bundleDiscountPct ?? LICENSING_DEFAULTS.bundleDiscountPct);
+  const [supportPct, setSupportPct] = useState(lm?.supportPct ?? LICENSING_DEFAULTS.supportPct);
+  const [implementationFee, setImplementationFee] = useState(lm?.implementationFee ?? LICENSING_DEFAULTS.implementationFee);
+  const [tier, setTier] = useState<LicenceTier>(lm?.tier === "SOVEREIGN" ? "SOVEREIGN" : "SHARED");
+  const [sovereignSetup, setSovereignSetup] = useState(lm?.sovereignSetup ?? LICENSING_DEFAULTS.sovereignSetup);
+  const [sovereignAnnual, setSovereignAnnual] = useState(lm?.sovereignAnnual ?? LICENSING_DEFAULTS.sovereignAnnual);
+  const [bufferPct, setBufferPct] = useState(lm?.bufferPct ?? LICENSING_DEFAULTS.bufferPct);
+  const [upliftPct, setUpliftPct] = useState(lm?.upliftPct ?? LICENSING_DEFAULTS.upliftPct);
+  const [pilotOn, setPilotOn] = useState(!!lm?.pilot);
+  const [pilotCohort, setPilotCohort] = useState(lm?.pilot?.cohort ?? 0);
+  const [pilotWeeks, setPilotWeeks] = useState(lm?.pilot?.durationWeeks ?? 0);
+  const [pilotPrice, setPilotPrice] = useState(lm?.pilot?.price ?? 0);
+  const [pilotCreditPct, setPilotCreditPct] = useState(lm?.pilot?.creditPct ?? 100);
+
   const [discountPct, setDiscountPct] = useState(existing?.discountPct ?? 0);
   const [validUntil, setValidUntil] = useState(existing?.validUntil ?? "");
   const [introNote, setIntroNote] = useState(existing?.introNote ?? "");
-  const [paymentTerms, setPaymentTerms] = useState(existing?.paymentTerms ?? DEFAULT_PAYMENT_TERMS);
+  const [paymentTerms, setPaymentTerms] = useState(
+    existing?.paymentTerms ?? ((existing?.pricingMode ?? "licence") === "licence" ? DEFAULT_LICENCE_PAYMENT_TERMS : DEFAULT_PAYMENT_TERMS),
+  );
   const [terms, setTerms] = useState(existing?.terms ?? "");
   const [bundleId, setBundleId] = useState<string>(existing?.bundleId ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const selectedClient = clients.find((c) => c.name === clientName) ?? null;
+
+  // Switch mode; swap the payment-terms default only if it is still a known default.
+  function switchMode(m: PricingMode) {
+    setPricingMode(m);
+    setPaymentTerms((prev) =>
+      prev.trim() === "" || prev === DEFAULT_PAYMENT_TERMS || prev === DEFAULT_LICENCE_PAYMENT_TERMS
+        ? m === "licence"
+          ? DEFAULT_LICENCE_PAYMENT_TERMS
+          : DEFAULT_PAYMENT_TERMS
+        : prev,
+    );
+  }
 
   function applyBundle(id: string) {
     setBundleId(id);
@@ -72,7 +128,7 @@ export function ProposalBuilder({
     if (!title.trim()) setTitle(`${b.name} - Talent Intelligence Proposal`);
   }
 
-  // Apply one cohort size across all currently-selected services.
+  // Apply one cohort size (annual volume in licence mode) across all selected services.
   function applyCohort(n: number) {
     setSeats((prev) => Object.fromEntries(Object.entries(prev).map(([k, v]) => [k, (v || 0) > 0 || n > 0 ? n : v])));
   }
@@ -94,6 +150,32 @@ export function ProposalBuilder({
   const money = (n: number) => formatMoney(n, currency);
   const missingRates = scope.filter((s) => !rates[s.service]).map((s) => s.label);
 
+  const assembleLicensingModel = useCallback(
+    (): LicenceModelInput => ({
+      products: PROPOSAL_SERVICES.filter((s) => (seats[s.key] || 0) > 0).map((s) => ({
+        key: s.key,
+        name: s.label,
+        category: PROPOSAL_SERVICE_CATEGORY[s.key] ?? "",
+        basis: PROPOSAL_SERVICE_BASIS[s.key] ?? "",
+        mode: "PER_UNIT" as const,
+        volume: seats[s.key],
+        unitPrice: unitPrices[s.key] ?? 0,
+      })),
+      bundleDiscountPct,
+      supportPct,
+      implementationFee,
+      tier,
+      sovereignSetup,
+      sovereignAnnual,
+      bufferPct,
+      upliftPct,
+      pilot: pilotOn ? { cohort: pilotCohort, durationWeeks: pilotWeeks, price: pilotPrice, creditPct: pilotCreditPct } : null,
+    }),
+    [seats, unitPrices, bundleDiscountPct, supportPct, implementationFee, tier, sovereignSetup, sovereignAnnual, bufferPct, upliftPct, pilotOn, pilotCohort, pilotWeeks, pilotPrice, pilotCreditPct],
+  );
+
+  const licensing = useMemo(() => computeLicensing(normalizeLicensingModel(assembleLicensingModel())), [assembleLicensingModel]);
+
   async function save() {
     setBusy(true);
     setError(null);
@@ -107,13 +189,15 @@ export function ProposalBuilder({
       contactName: contactName.trim() || null,
       contactEmail: contactEmail.trim() || null,
       currency,
+      pricingMode,
+      licensingModel: pricingMode === "licence" ? assembleLicensingModel() : null,
       bundleId: bundleId || null,
       scope,
       discountPct,
       validUntil: validUntil || null,
       introNote: introNote.trim() || null,
       paymentTerms: paymentTerms.trim() || null,
-      terms: (terms.trim() || defaultTerms(clientName.trim() || "the client", currency)),
+      terms: terms.trim() || defaultTerms(clientName.trim() || "the client", currency),
     };
     let id: string;
     if (existing) {
@@ -131,7 +215,11 @@ export function ProposalBuilder({
     router.refresh();
   }
 
-  const canSave = title.trim() && clientName.trim() && scope.length > 0 && !busy;
+  const isLicence = pricingMode === "licence";
+  const priced = isLicence ? !!licensing : scope.length > 0;
+  const canSave = title.trim() && clientName.trim() && priced && !busy;
+
+  const numInput = "mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm";
 
   return (
     <div className="space-y-6">
@@ -173,33 +261,70 @@ export function ProposalBuilder({
         </div>
       </section>
 
-      {/* Services + seats */}
+      {/* Pricing mode + services */}
       <section className="rounded-lg border border-border bg-card p-4 space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="font-medium text-foreground">Services &amp; participants</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-medium text-foreground">Pricing model</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {isLicence
+                ? "Annual all-access licence to the Caliber platform (SaaS build-up)."
+                : "One-off project fee: participants x the per-service rate."}
+            </p>
+          </div>
+          <div className="inline-flex rounded-md border border-border p-0.5">
+            <button type="button" onClick={() => switchMode("licence")}
+              className={`flex-1 rounded px-3 py-1.5 text-sm font-medium ${isLicence ? "bg-[#010131] text-white" : "text-muted-foreground hover:bg-muted"}`}>Annual licence</button>
+            <button type="button" onClick={() => switchMode("per_project")}
+              className={`flex-1 rounded px-3 py-1.5 text-sm font-medium ${!isLicence ? "bg-[#010131] text-white" : "text-muted-foreground hover:bg-muted"}`}>Per project</button>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-2 border-t border-border pt-3">
+          <h3 className="text-sm font-medium text-foreground">Services &amp; {isLicence ? "annual volumes" : "participants"}</h3>
           <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            Apply cohort size
+            Apply {isLicence ? "volume" : "cohort size"}
             <input type="number" min={0} className="w-20 rounded border border-border px-2 py-1 text-sm"
               onChange={(e) => applyCohort(Number(e.target.value) || 0)} />
           </label>
         </div>
-        <p className="text-xs text-muted-foreground">Set participants per service (0 excludes it). Pricing = participants × the per-service rate.</p>
+        <p className="text-xs text-muted-foreground">
+          {isLicence
+            ? "Set the committed annual volume per service (0 excludes it) and its unit price. The a-la-carte total feeds the licence build-up below."
+            : "Set participants per service (0 excludes it). Pricing = participants x the per-service rate."}
+        </p>
+
         <div className="space-y-2">
           {PROPOSAL_SERVICES.map((s) => {
             const on = (seats[s.key] || 0) > 0;
             const rate = rates[s.key] ?? 0;
+            const unit = unitPrices[s.key] ?? 0;
             return (
               <div key={s.key} className={`rounded-md border p-3 ${on ? "border-[#5391D5]/40 bg-[#5391D5]/5" : "border-border"}`}>
                 <div className="flex flex-wrap items-center gap-3">
                   <span className="min-w-[7rem] text-sm font-medium text-foreground">{s.label}</span>
                   <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    Participants
+                    {isLicence ? "Annual volume" : "Participants"}
                     <input type="number" min={0} value={seats[s.key] || 0}
                       onChange={(e) => setSeats((p) => ({ ...p, [s.key]: Math.max(0, Number(e.target.value) || 0) }))}
-                      className="w-20 rounded border border-border px-2 py-1 text-sm" />
+                      className="w-24 rounded border border-border px-2 py-1 text-sm" />
                   </label>
-                  <span className="text-xs text-muted-foreground">Rate: {rate > 0 ? money(rate) : <span className="text-amber-600">not set</span>}</span>
-                  {on && <span className="ml-auto text-sm font-semibold tabular-nums text-[#010131]">{money(rate * (seats[s.key] || 0))}</span>}
+                  {isLicence ? (
+                    <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      Unit price
+                      <input type="number" min={0} value={unit}
+                        onChange={(e) => setUnitPrices((p) => ({ ...p, [s.key]: Math.max(0, Number(e.target.value) || 0) }))}
+                        className="w-24 rounded border border-border px-2 py-1 text-sm" />
+                      <span className="text-[11px] text-muted-foreground">{PROPOSAL_SERVICE_BASIS[s.key]}</span>
+                    </label>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Rate: {rate > 0 ? money(rate) : <span className="text-amber-600">not set</span>}</span>
+                  )}
+                  {on && (
+                    <span className="ml-auto text-sm font-semibold tabular-nums text-[#010131]">
+                      {money((isLicence ? unit : rate) * (seats[s.key] || 0))}
+                    </span>
+                  )}
                 </div>
                 {on && (
                   <input value={notes[s.key] ?? ""} onChange={(e) => setNotes((p) => ({ ...p, [s.key]: e.target.value }))}
@@ -210,32 +335,154 @@ export function ProposalBuilder({
             );
           })}
         </div>
-        {missingRates.length > 0 && (
+        {!isLicence && missingRates.length > 0 && (
           <p className="text-xs text-amber-700">
             No rate set for {missingRates.join(", ")} - they price at 0. <a href="/admin/proposals/rates" className="underline">Set rates</a>.
           </p>
         )}
+        {isLicence && !licensing && (
+          <p className="text-xs text-amber-700">Add at least one service with an annual volume and a unit price above 0 to price the licence.</p>
+        )}
       </section>
+
+      {/* Licence parameters */}
+      {isLicence && (
+        <section className="rounded-lg border border-border bg-card p-4 space-y-3">
+          <h2 className="font-medium text-foreground">Licence parameters</h2>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <label className="block text-sm">
+              <span className="text-muted-foreground">Committed-licence discount %</span>
+              <input type="number" min={0} max={100} value={bundleDiscountPct}
+                onChange={(e) => setBundleDiscountPct(Math.max(0, Math.min(100, Number(e.target.value) || 0)))} className={numInput} />
+            </label>
+            <label className="block text-sm">
+              <span className="text-muted-foreground">Support &amp; SLA %</span>
+              <input type="number" min={0} max={100} value={supportPct}
+                onChange={(e) => setSupportPct(Math.max(0, Math.min(100, Number(e.target.value) || 0)))} className={numInput} />
+            </label>
+            <label className="block text-sm">
+              <span className="text-muted-foreground">Implementation (one-time)</span>
+              <input type="number" min={0} value={implementationFee}
+                onChange={(e) => setImplementationFee(Math.max(0, Number(e.target.value) || 0))} className={numInput} />
+            </label>
+            <label className="block text-sm">
+              <span className="text-muted-foreground">Usage buffer %</span>
+              <input type="number" min={0} max={100} value={bufferPct}
+                onChange={(e) => setBufferPct(Math.max(0, Math.min(100, Number(e.target.value) || 0)))} className={numInput} />
+            </label>
+            <label className="block text-sm">
+              <span className="text-muted-foreground">Renewal uplift % / year</span>
+              <input type="number" min={0} max={100} value={upliftPct}
+                onChange={(e) => setUpliftPct(Math.max(0, Math.min(100, Number(e.target.value) || 0)))} className={numInput} />
+            </label>
+            <label className="block text-sm">
+              <span className="text-muted-foreground">Deployment tier</span>
+              <select value={tier} onChange={(e) => setTier(e.target.value === "SOVEREIGN" ? "SOVEREIGN" : "SHARED")} className={numInput}>
+                <option value="SHARED">Shared cloud</option>
+                <option value="SOVEREIGN">Sovereign (dedicated in-country)</option>
+              </select>
+            </label>
+            {tier === "SOVEREIGN" && (
+              <>
+                <label className="block text-sm">
+                  <span className="text-muted-foreground">Sovereign setup (one-time)</span>
+                  <input type="number" min={0} value={sovereignSetup}
+                    onChange={(e) => setSovereignSetup(Math.max(0, Number(e.target.value) || 0))} className={numInput} />
+                </label>
+                <label className="block text-sm">
+                  <span className="text-muted-foreground">Sovereign annual</span>
+                  <input type="number" min={0} value={sovereignAnnual}
+                    onChange={(e) => setSovereignAnnual(Math.max(0, Number(e.target.value) || 0))} className={numInput} />
+                </label>
+              </>
+            )}
+          </div>
+
+          <label className="flex items-center gap-2 border-t border-border pt-3 text-sm text-foreground">
+            <input type="checkbox" checked={pilotOn} onChange={(e) => setPilotOn(e.target.checked)} />
+            Offer a fixed-price pilot (alternative entry path)
+          </label>
+          {pilotOn && (
+            <div className="grid gap-3 sm:grid-cols-4">
+              <label className="block text-sm">
+                <span className="text-muted-foreground">Pilot cohort</span>
+                <input type="number" min={0} value={pilotCohort} onChange={(e) => setPilotCohort(Math.max(0, Number(e.target.value) || 0))} className={numInput} />
+              </label>
+              <label className="block text-sm">
+                <span className="text-muted-foreground">Duration (weeks)</span>
+                <input type="number" min={0} value={pilotWeeks} onChange={(e) => setPilotWeeks(Math.max(0, Number(e.target.value) || 0))} className={numInput} />
+              </label>
+              <label className="block text-sm">
+                <span className="text-muted-foreground">Pilot fee</span>
+                <input type="number" min={0} value={pilotPrice} onChange={(e) => setPilotPrice(Math.max(0, Number(e.target.value) || 0))} className={numInput} />
+              </label>
+              <label className="block text-sm">
+                <span className="text-muted-foreground">Conversion credit %</span>
+                <input type="number" min={0} max={100} value={pilotCreditPct} onChange={(e) => setPilotCreditPct(Math.max(0, Math.min(100, Number(e.target.value) || 0)))} className={numInput} />
+              </label>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Commercials */}
       <section className="rounded-lg border border-border bg-card p-4 space-y-3">
         <h2 className="font-medium text-foreground">Commercials</h2>
         <div className="grid gap-3 sm:grid-cols-3">
-          <label className="block text-sm">
-            <span className="text-muted-foreground">Discount %</span>
-            <input type="number" min={0} max={100} value={discountPct} onChange={(e) => setDiscountPct(Math.max(0, Math.min(100, Number(e.target.value) || 0)))}
-              className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm" />
-          </label>
+          {!isLicence && (
+            <label className="block text-sm">
+              <span className="text-muted-foreground">Discount %</span>
+              <input type="number" min={0} max={100} value={discountPct} onChange={(e) => setDiscountPct(Math.max(0, Math.min(100, Number(e.target.value) || 0)))}
+                className={numInput} />
+            </label>
+          )}
           <label className="block text-sm">
             <span className="text-muted-foreground">Valid until</span>
-            <input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)}
-              className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm" />
+            <input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} className={numInput} />
           </label>
-          <div className="rounded-md border border-border bg-muted/40 p-2 text-sm">
-            <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span className="tabular-nums">{money(totals.subtotal)}</span></div>
-            {totals.discount > 0 && <div className="flex justify-between text-muted-foreground"><span>Discount</span><span className="tabular-nums">- {money(totals.discount)}</span></div>}
-            <div className="mt-1 flex justify-between border-t border-border pt-1 font-semibold text-[#010131]"><span>Total</span><span className="tabular-nums">{money(totals.total)}</span></div>
-          </div>
+          {isLicence ? (
+            <div className="sm:col-span-3 rounded-md border border-border bg-muted/40 p-3 text-sm">
+              {licensing ? (
+                <div className="space-y-1">
+                  <div className="flex justify-between text-muted-foreground"><span>A-la-carte retail</span><span className="tabular-nums">{money(licensing.alaCarteTotal)}</span></div>
+                  {licensing.hasBundleDiscount && (
+                    <div className="flex justify-between text-muted-foreground"><span>Committed-licence discount ({bundleDiscountPct}%)</span><span className="tabular-nums">- {money(licensing.discountAmount)}</span></div>
+                  )}
+                  <div className="flex justify-between text-foreground"><span>Committed annual licence</span><span className="tabular-nums">{money(licensing.annualLicence)}</span></div>
+                  {licensing.hasSupport && (
+                    <div className="flex justify-between text-muted-foreground"><span>Support &amp; SLA ({supportPct}%)</span><span className="tabular-nums">{money(licensing.supportAmount)}</span></div>
+                  )}
+                  {licensing.isSovereign && licensing.sovereignAnnual > 0 && (
+                    <div className="flex justify-between text-muted-foreground"><span>Sovereign annual</span><span className="tabular-nums">{money(licensing.sovereignAnnual)}</span></div>
+                  )}
+                  <div className="flex justify-between border-t border-border pt-1 font-medium text-[#010131]"><span>Annual recurring</span><span className="tabular-nums">{money(licensing.annualRecurring)}</span></div>
+                  {licensing.hasOneTime && (
+                    <div className="flex justify-between text-muted-foreground"><span>One-time (implementation{licensing.isSovereign && licensing.sovereignSetup > 0 ? " + sovereign setup" : ""})</span><span className="tabular-nums">{money(licensing.oneTimeTotal)}</span></div>
+                  )}
+                  <div className="flex justify-between border-t border-border pt-1 text-base font-semibold text-[#010131]"><span>Year-1 investment</span><span className="tabular-nums">{money(licensing.year1Subtotal)}</span></div>
+                  <div className="mt-2 border-t border-border pt-2 text-xs text-muted-foreground">
+                    <div className="flex justify-between"><span>Year 2 (recurring)</span><span className="tabular-nums">{money(licensing.year2Recurring)}</span></div>
+                    <div className="flex justify-between"><span>Year 3 (recurring)</span><span className="tabular-nums">{money(licensing.year3Recurring)}</span></div>
+                    <div className="flex justify-between font-medium text-foreground"><span>3-year TCO</span><span className="tabular-nums">{money(licensing.tco3)}</span></div>
+                  </div>
+                  {licensing.hasBuffer && (
+                    <p className="pt-1 text-[11px] text-muted-foreground">Includes a {bufferPct}% usage buffer; excess billed quarterly in arrears at unit prices.</p>
+                  )}
+                  {licensing.pilot && (
+                    <p className="text-[11px] text-muted-foreground">Pilot: {money(licensing.pilot.price)} - {pilotCreditPct}% ({money(licensing.pilot.creditAmount)}) credited on conversion within 90 days.</p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-muted-foreground">Price at least one service above to see the licence build-up.</p>
+              )}
+            </div>
+          ) : (
+            <div className="rounded-md border border-border bg-muted/40 p-2 text-sm">
+              <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span className="tabular-nums">{money(totals.subtotal)}</span></div>
+              {totals.discount > 0 && <div className="flex justify-between text-muted-foreground"><span>Discount</span><span className="tabular-nums">- {money(totals.discount)}</span></div>}
+              <div className="mt-1 flex justify-between border-t border-border pt-1 font-semibold text-[#010131]"><span>Total</span><span className="tabular-nums">{money(totals.total)}</span></div>
+            </div>
+          )}
         </div>
       </section>
 
@@ -266,7 +513,7 @@ export function ProposalBuilder({
           className="rounded-md bg-[#010131] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#121140] disabled:opacity-50">
           {busy ? "Saving…" : existing ? "Save changes" : "Create proposal"}
         </button>
-        {scope.length === 0 && <span className="text-xs text-muted-foreground">Add at least one service with participants.</span>}
+        {!priced && <span className="text-xs text-muted-foreground">Add at least one service with {isLicence ? "a volume and unit price" : "participants"}.</span>}
       </div>
     </div>
   );

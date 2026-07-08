@@ -10,6 +10,14 @@ import {
   type LineItem,
   type ScopeItem,
 } from "./pricing";
+import {
+  computeLicensing,
+  normalizeLicensingModel,
+  type LicenceModelInput,
+  type NormalizedLicenceModel,
+  type PricingMode,
+} from "./licensing";
+import { proposalService } from "./constants";
 
 export type ProposalStatus = "draft" | "issued" | "won" | "lost";
 
@@ -26,6 +34,8 @@ export type Proposal = {
   contactEmail: string | null;
   currency: string;
   status: ProposalStatus;
+  pricingMode: PricingMode;
+  licensingModel: LicenceModelInput | null;
   scope: ScopeItem[];
   lineItems: LineItem[];
   subtotal: number;
@@ -35,6 +45,9 @@ export type Proposal = {
   introNote: string | null;
   terms: string | null;
   paymentTerms: string | null;
+  sectionSelection: string[] | null;
+  revisionOfId: string | null;
+  licenceData: Record<string, unknown>;
   accessToken: string;
   createdAt: string;
   issuedAt: string | null;
@@ -46,6 +59,12 @@ export type ProposalRate = { serviceKey: string; unitRate: number; currency: str
 
 function missing(err: { code?: string } | null): boolean {
   return err?.code === "42P01" || err?.code === "PGRST205" || err?.code === "PGRST204";
+}
+
+/** A missing COLUMN (not a missing table) - lets a write peel newer columns and
+ *  retry. Distinct from missing() so a genuinely absent table still fails loud. */
+function isMissingColumn(err: { code?: string } | null): boolean {
+  return err?.code === "PGRST204" || err?.code === "42703";
 }
 
 // ── Rate card ──
@@ -101,6 +120,8 @@ function rowToProposal(r: Record<string, unknown>): Proposal {
     contactEmail: (r.contact_email as string | null) ?? null,
     currency: (r.currency as string) ?? "USD",
     status: (r.status as ProposalStatus) ?? "draft",
+    pricingMode: (r.pricing_mode as PricingMode) ?? "per_project",
+    licensingModel: (r.licensing_model as LicenceModelInput | null) ?? null,
     scope: Array.isArray(r.scope) ? (r.scope as ScopeItem[]) : [],
     lineItems: Array.isArray(r.line_items) ? (r.line_items as LineItem[]) : [],
     subtotal: Number(r.subtotal ?? 0),
@@ -110,6 +131,9 @@ function rowToProposal(r: Record<string, unknown>): Proposal {
     introNote: (r.intro_note as string | null) ?? null,
     terms: (r.terms as string | null) ?? null,
     paymentTerms: (r.payment_terms as string | null) ?? null,
+    sectionSelection: Array.isArray(r.section_selection) ? (r.section_selection as string[]) : null,
+    revisionOfId: (r.revision_of_id as string | null) ?? null,
+    licenceData: (r.licence_data as Record<string, unknown> | null) ?? {},
     accessToken: r.access_token as string,
     createdAt: r.created_at as string,
     issuedAt: (r.issued_at as string | null) ?? null,
@@ -129,6 +153,8 @@ export type ProposalInput = {
   contactName?: string | null;
   contactEmail?: string | null;
   currency: string;
+  pricingMode?: PricingMode;
+  licensingModel?: LicenceModelInput | null;
   scope: ScopeItem[];
   discountPct: number;
   validUntil?: string | null;
@@ -145,36 +171,120 @@ async function price(scope: ScopeItem[], discountPct: number) {
   return { items, ...totals };
 }
 
+type PricedSnapshot = {
+  pricingMode: PricingMode;
+  licence: NormalizedLicenceModel | null;
+  scope: ScopeItem[];
+  lineItems: LineItem[];
+  subtotal: number;
+  discountPct: number;
+  total: number;
+};
+
+/** Resolve the priced snapshot for either mode. In licence mode the licence
+ *  build-up drives scope/line_items/rollups (so every scope-driven PDF section
+ *  keeps working); per-project keeps seats x rate-card. Returns an error string
+ *  when a licence proposal has nothing priced. */
+async function buildPricedSnapshot(input: ProposalInput): Promise<PricedSnapshot | { error: string }> {
+  const mode: PricingMode = input.pricingMode === "licence" ? "licence" : "per_project";
+  if (mode === "licence") {
+    const licence = normalizeLicensingModel(input.licensingModel);
+    if (!licence) {
+      return { error: "Add at least one priced service (annual volume x unit price) before saving a licence proposal." };
+    }
+    const computed = computeLicensing(licence);
+    if (!computed) return { error: "Nothing is priced on this licence proposal yet." };
+    const scope: ScopeItem[] = computed.products.map((p) => ({
+      service: p.key,
+      label: p.name,
+      seats: p.volume,
+      scopeNote: null,
+      methodologySlug: proposalService(p.key)?.methodologySlug ?? null,
+    }));
+    const lineItems: LineItem[] = computed.products.map((p) => ({
+      service: p.key,
+      label: p.name,
+      seats: p.volume,
+      unitRate: p.unitPrice,
+      subtotal: p.lineTotal,
+    }));
+    return {
+      pricingMode: mode,
+      licence,
+      scope,
+      lineItems,
+      subtotal: computed.alaCarteTotal,
+      discountPct: computed.bundleDiscountPct,
+      total: computed.year1Subtotal,
+    };
+  }
+  const { items, subtotal, total } = await price(input.scope, input.discountPct);
+  return {
+    pricingMode: mode,
+    licence: null,
+    scope: input.scope,
+    lineItems: items,
+    subtotal,
+    discountPct: input.discountPct || 0,
+    total,
+  };
+}
+
+/** The editable columns common to create + update (excludes status / created_by,
+ *  which must not be reset on edit). */
+function proposalFields(input: ProposalInput, priced: PricedSnapshot): Record<string, unknown> {
+  return {
+    title: input.title,
+    organization_id: input.organizationId ?? null,
+    ara_organization_id: input.araOrganizationId ?? null,
+    bundle_id: input.bundleId ?? null,
+    client_name: input.clientName,
+    client_region: input.clientRegion ?? null,
+    client_sector: input.clientSector ?? null,
+    contact_name: input.contactName ?? null,
+    contact_email: input.contactEmail ?? null,
+    currency: input.currency || "USD",
+    scope: priced.scope,
+    line_items: priced.lineItems,
+    subtotal: priced.subtotal,
+    discount_pct: priced.discountPct,
+    total: priced.total,
+    valid_until: input.validUntil || null,
+    intro_note: input.introNote ?? null,
+    terms: input.terms ?? null,
+    payment_terms: input.paymentTerms ?? null,
+  };
+}
+
 export async function createProposal(input: ProposalInput): Promise<{ ok: true; id: string } | { error: string }> {
   const svc = createServiceClient();
-  const { items, subtotal, total } = await price(input.scope, input.discountPct);
-  const { data, error } = await svc
-    .from("proposals")
-    .insert({
-      title: input.title,
-      organization_id: input.organizationId ?? null,
-      ara_organization_id: input.araOrganizationId ?? null,
-      bundle_id: input.bundleId ?? null,
-      client_name: input.clientName,
-      client_region: input.clientRegion ?? null,
-      client_sector: input.clientSector ?? null,
-      contact_name: input.contactName ?? null,
-      contact_email: input.contactEmail ?? null,
-      currency: input.currency || "USD",
-      status: "draft",
-      scope: input.scope,
-      line_items: items,
-      subtotal,
-      discount_pct: input.discountPct || 0,
-      total,
-      valid_until: input.validUntil || null,
-      intro_note: input.introNote ?? null,
-      terms: input.terms ?? null,
-      payment_terms: input.paymentTerms ?? null,
-      created_by: input.createdBy ?? null,
-    })
-    .select("id")
-    .single();
+  const priced = await buildPricedSnapshot(input);
+  if ("error" in priced) return priced;
+
+  const baseRow = {
+    ...proposalFields(input, priced),
+    status: "draft",
+    created_by: input.createdBy ?? null,
+  };
+  const licRow = { pricing_mode: priced.pricingMode, licensing_model: priced.licence };
+  // Licence rows NEVER peel the licence columns away (that would silently save a
+  // per-project row); per-project rows peel them on an un-applied 00175.
+  const candidates =
+    priced.pricingMode === "licence" ? [{ ...baseRow, ...licRow }] : [{ ...baseRow, ...licRow }, { ...baseRow }];
+
+  let data: { id: string } | null = null;
+  let error: { code?: string; message?: string } | null = null;
+  for (const row of candidates) {
+    const res = await svc.from("proposals").insert(row).select("id").single();
+    data = (res.data as { id: string } | null) ?? null;
+    error = res.error;
+    if (!error) break;
+    if (!isMissingColumn(error)) break;
+  }
+
+  if (error && isMissingColumn(error) && priced.pricingMode === "licence") {
+    return { error: "Licence-mode pricing needs migration 00175. Apply it before saving in licence mode." };
+  }
   if (error || !data) {
     return { error: missing(error) ? "Proposals need migration 00174 applied." : error?.message ?? "Could not save the proposal." };
   }
@@ -186,33 +296,26 @@ export async function updateProposal(
   input: ProposalInput,
 ): Promise<{ ok: true } | { error: string }> {
   const svc = createServiceClient();
-  const { items, subtotal, total } = await price(input.scope, input.discountPct);
-  const { error } = await svc
-    .from("proposals")
-    .update({
-      title: input.title,
-      organization_id: input.organizationId ?? null,
-      ara_organization_id: input.araOrganizationId ?? null,
-      bundle_id: input.bundleId ?? null,
-      client_name: input.clientName,
-      client_region: input.clientRegion ?? null,
-      client_sector: input.clientSector ?? null,
-      contact_name: input.contactName ?? null,
-      contact_email: input.contactEmail ?? null,
-      currency: input.currency || "USD",
-      scope: input.scope,
-      line_items: items,
-      subtotal,
-      discount_pct: input.discountPct || 0,
-      total,
-      valid_until: input.validUntil || null,
-      intro_note: input.introNote ?? null,
-      terms: input.terms ?? null,
-      payment_terms: input.paymentTerms ?? null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", id);
-  if (error) return { error: error.message };
+  const priced = await buildPricedSnapshot(input);
+  if ("error" in priced) return priced;
+
+  const baseRow = { ...proposalFields(input, priced), updated_at: new Date().toISOString() };
+  const licRow = { pricing_mode: priced.pricingMode, licensing_model: priced.licence };
+  const candidates =
+    priced.pricingMode === "licence" ? [{ ...baseRow, ...licRow }] : [{ ...baseRow, ...licRow }, { ...baseRow }];
+
+  let error: { code?: string; message?: string } | null = null;
+  for (const row of candidates) {
+    const res = await svc.from("proposals").update(row).eq("id", id);
+    error = res.error;
+    if (!error) break;
+    if (!isMissingColumn(error)) break;
+  }
+
+  if (error && isMissingColumn(error) && priced.pricingMode === "licence") {
+    return { error: "Licence-mode pricing needs migration 00175. Apply it before saving in licence mode." };
+  }
+  if (error) return { error: error.message ?? "Could not save the proposal." };
   return { ok: true };
 }
 

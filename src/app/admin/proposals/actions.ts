@@ -4,6 +4,7 @@ import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { renderHtmlToPdfBuffer } from "@/lib/reports/html-to-pdf";
 import { sendEmail } from "@/lib/integrations/email";
 import { buildProposalHtml } from "@/lib/proposals/proposal-html";
+import { loadProposalEvidence } from "@/lib/proposals/evidence-summary";
 import {
   createProposal,
   updateProposal,
@@ -81,7 +82,8 @@ export async function sendProposalToClientAction(input: {
 
   let pdfBase64: string;
   try {
-    const pdf = await renderHtmlToPdfBuffer(buildProposalHtml(proposal));
+    const evidence = await loadProposalEvidence();
+    const pdf = await renderHtmlToPdfBuffer(buildProposalHtml(proposal, { evidence }));
     pdfBase64 = Buffer.from(pdf).toString("base64");
   } catch {
     return { error: "Could not generate the proposal PDF." };

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { loadProposal } from "@/lib/proposals/service";
 import { buildProposalHtml, proposalRef } from "@/lib/proposals/proposal-html";
+import { loadProposalEvidence } from "@/lib/proposals/evidence-summary";
 import { getVifmLogoDataUri } from "@/lib/proposals/logo";
 import { renderHtmlToPdfBuffer } from "@/lib/reports/html-to-pdf";
 
@@ -19,9 +20,11 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   const proposal = await loadProposal(params.id);
   if (!proposal) return NextResponse.json({ error: "Proposal not found" }, { status: 404 });
   try {
+    const evidence = await loadProposalEvidence();
     const html = buildProposalHtml(proposal, {
       logoWhite: getVifmLogoDataUri("white"),
       logoColor: getVifmLogoDataUri("color"),
+      evidence,
     });
     const pdf = await renderHtmlToPdfBuffer(html, {
       pageFooter: { left: `VIFM Caliber® · ${proposalRef(proposal)} · Confidential` },

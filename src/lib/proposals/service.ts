@@ -155,6 +155,8 @@ export type ProposalInput = {
   currency: string;
   pricingMode?: PricingMode;
   licensingModel?: LicenceModelInput | null;
+  sectionSelection?: string[] | null;
+  licenceData?: Record<string, unknown> | null;
   scope: ScopeItem[];
   discountPct: number;
   validUntil?: string | null;
@@ -266,7 +268,12 @@ export async function createProposal(input: ProposalInput): Promise<{ ok: true; 
     status: "draft",
     created_by: input.createdBy ?? null,
   };
-  const licRow = { pricing_mode: priced.pricingMode, licensing_model: priced.licence };
+  const licRow = {
+    pricing_mode: priced.pricingMode,
+    licensing_model: priced.licence,
+    section_selection: input.sectionSelection ?? null,
+    licence_data: input.licenceData ?? {},
+  };
   // Licence rows NEVER peel the licence columns away (that would silently save a
   // per-project row); per-project rows peel them on an un-applied 00175.
   const candidates =
@@ -300,7 +307,12 @@ export async function updateProposal(
   if ("error" in priced) return priced;
 
   const baseRow = { ...proposalFields(input, priced), updated_at: new Date().toISOString() };
-  const licRow = { pricing_mode: priced.pricingMode, licensing_model: priced.licence };
+  const licRow = {
+    pricing_mode: priced.pricingMode,
+    licensing_model: priced.licence,
+    section_selection: input.sectionSelection ?? null,
+    licence_data: input.licenceData ?? {},
+  };
   const candidates =
     priced.pricingMode === "licence" ? [{ ...baseRow, ...licRow }] : [{ ...baseRow, ...licRow }, { ...baseRow }];
 

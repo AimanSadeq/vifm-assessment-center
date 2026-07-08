@@ -157,6 +157,7 @@ export type ProposalInput = {
   licensingModel?: LicenceModelInput | null;
   sectionSelection?: string[] | null;
   licenceData?: Record<string, unknown> | null;
+  revisionOfId?: string | null;
   scope: ScopeItem[];
   discountPct: number;
   validUntil?: string | null;
@@ -273,6 +274,7 @@ export async function createProposal(input: ProposalInput): Promise<{ ok: true; 
     licensing_model: priced.licence,
     section_selection: input.sectionSelection ?? null,
     licence_data: input.licenceData ?? {},
+    revision_of_id: input.revisionOfId ?? null,
   };
   // Licence rows NEVER peel the licence columns away (that would silently save a
   // per-project row); per-project rows peel them on an un-applied 00175.
@@ -312,6 +314,7 @@ export async function updateProposal(
     licensing_model: priced.licence,
     section_selection: input.sectionSelection ?? null,
     licence_data: input.licenceData ?? {},
+    revision_of_id: input.revisionOfId ?? null,
   };
   const candidates =
     priced.pricingMode === "licence" ? [{ ...baseRow, ...licRow }] : [{ ...baseRow, ...licRow }, { ...baseRow }];
@@ -329,6 +332,49 @@ export async function updateProposal(
   }
   if (error) return { error: error.message ?? "Could not save the proposal." };
   return { ok: true };
+}
+
+/** Duplicate a proposal into a new DRAFT that is a revision of the original,
+ *  numbered "(rev N)" and linked via revision_of_id. Copies design + commercials;
+ *  the new draft re-prices from the current rate card (per-project) or the stored
+ *  licence model. Best-effort revision numbering if the column isn't applied yet. */
+export async function duplicateAsRevision(id: string): Promise<{ ok: true; id: string } | { error: string }> {
+  const src = await loadProposal(id);
+  if (!src) return { error: "Proposal not found." };
+  const rootId = src.revisionOfId ?? src.id;
+  const svc = createServiceClient();
+  let revNo = 2; // the original counts as rev 1; the first revision is "(rev 2)"
+  try {
+    const { count } = await svc.from("proposals").select("id", { count: "exact", head: true }).eq("revision_of_id", rootId);
+    revNo = (count ?? 0) + 2;
+  } catch {
+    /* revision_of_id column may not be applied yet - keep the default */
+  }
+  const baseTitle = src.title.replace(/\s*\(rev \d+\)\s*$/i, "");
+  const input: ProposalInput = {
+    title: `${baseTitle} (rev ${revNo})`,
+    organizationId: src.organizationId,
+    araOrganizationId: src.araOrganizationId,
+    bundleId: src.bundleId,
+    clientName: src.clientName,
+    clientRegion: src.clientRegion,
+    clientSector: src.clientSector,
+    contactName: src.contactName,
+    contactEmail: src.contactEmail,
+    currency: src.currency,
+    pricingMode: src.pricingMode,
+    licensingModel: src.licensingModel,
+    sectionSelection: src.sectionSelection,
+    licenceData: src.licenceData,
+    revisionOfId: rootId,
+    scope: src.scope,
+    discountPct: src.discountPct,
+    validUntil: src.validUntil,
+    introNote: src.introNote,
+    terms: src.terms,
+    paymentTerms: src.paymentTerms,
+  };
+  return createProposal(input);
 }
 
 export async function setProposalStatus(id: string, status: ProposalStatus): Promise<{ ok: true } | { error: string }> {

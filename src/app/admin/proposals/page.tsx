@@ -5,6 +5,7 @@ import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { BackLink } from "@/components/shared/back-link";
 import { loadProposals } from "@/lib/proposals/service";
 import { formatMoney } from "@/lib/proposals/pricing";
+import { computeLicensing, normalizeLicensingModel } from "@/lib/proposals/licensing";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,15 @@ export default async function ProposalsPage() {
     throw e;
   }
   const proposals = await loadProposals();
+
+  // ARR = annual recurring across issued/won licence proposals (Phase 4 SaaS KPI).
+  const licenceLive = proposals.filter((p) => p.pricingMode === "licence" && (p.status === "issued" || p.status === "won"));
+  const arr = licenceLive.reduce((sum, p) => {
+    const c = computeLicensing(normalizeLicensingModel(p.licensingModel));
+    return sum + (c?.annualRecurring ?? 0);
+  }, 0);
+  const won = proposals.filter((p) => p.status === "won").length;
+  const arrCurrency = licenceLive[0]?.currency ?? "USD";
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-6">
@@ -45,6 +55,23 @@ export default async function ProposalsPage() {
           </Link>
         </div>
       </header>
+
+      {proposals.length > 0 && (
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+            <div className="text-2xl font-semibold text-[#010131] tabular-nums">{formatMoney(arr, arrCurrency)}</div>
+            <div className="text-xs text-muted-foreground">Annual recurring revenue (issued + won licences)</div>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+            <div className="text-2xl font-semibold text-[#010131] tabular-nums">{licenceLive.length}</div>
+            <div className="text-xs text-muted-foreground">Active licence proposals</div>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+            <div className="text-2xl font-semibold text-[#010131] tabular-nums">{won}</div>
+            <div className="text-xs text-muted-foreground">Won proposals</div>
+          </div>
+        </div>
+      )}
 
       {proposals.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">

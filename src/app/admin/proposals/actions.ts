@@ -8,6 +8,7 @@ import { loadProposalEvidence } from "@/lib/proposals/evidence-summary";
 import {
   createProposal,
   updateProposal,
+  duplicateAsRevision,
   setProposalStatus,
   markProposalSent,
   loadProposal,
@@ -56,6 +57,12 @@ export async function updateProposalAction(
   const denied = await gate();
   if (denied) return denied;
   return updateProposal(id, input);
+}
+
+export async function duplicateAsRevisionAction(id: string): Promise<Result<{ id: string }>> {
+  const denied = await gate();
+  if (denied) return denied;
+  return duplicateAsRevision(id);
 }
 
 export async function setStatusAction(

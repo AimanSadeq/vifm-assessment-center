@@ -357,18 +357,22 @@ export async function updateProposal(
   if ("error" in priced) return priced;
 
   const baseRow = { ...proposalFields(input, priced), updated_at: new Date().toISOString() };
+  // 00175 columns only. engagement_model (00176) is attached ONLY for engagement
+  // mode, so a licence / per-project save never gains a dependency on 00176.
   const licRow = {
     pricing_mode: priced.pricingMode,
     licensing_model: priced.licence,
-    engagement_model: priced.engagement,
     section_selection: input.sectionSelection ?? null,
     licence_data: input.licenceData ?? {},
     revision_of_id: input.revisionOfId ?? null,
   };
+  const fullRow =
+    priced.pricingMode === "engagement"
+      ? { ...baseRow, ...licRow, engagement_model: priced.engagement }
+      : { ...baseRow, ...licRow };
   // Licence + engagement rows NEVER peel the new columns away (that would silently
   // save a per-project row); per-project rows peel them on an un-applied migration.
-  const candidates =
-    priced.pricingMode !== "per_project" ? [{ ...baseRow, ...licRow }] : [{ ...baseRow, ...licRow }, { ...baseRow }];
+  const candidates = priced.pricingMode !== "per_project" ? [fullRow] : [fullRow, { ...baseRow }];
 
   let error: { code?: string; message?: string } | null = null;
   for (const row of candidates) {

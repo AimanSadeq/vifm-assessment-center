@@ -39,10 +39,14 @@ export async function POST(req: Request) {
     for (const row of (data ?? []) as Array<Record<string, unknown>>) {
       const base = (row.issued_at as string) || (row.sent_at as string) || (row.created_at as string);
       if (!base) continue;
+      // The first renewal is base + 1 year; roll forward to the NEXT anniversary
+      // at/after (now - 30d) so every yearly cycle (Y1->2, Y2->3, ...) is caught,
+      // and a freshly-issued licence isn't reminded on day one.
       const renewal = new Date(base);
       renewal.setUTCFullYear(renewal.getUTCFullYear() + 1);
+      while (renewal.getTime() < now - 30 * DAY) renewal.setUTCFullYear(renewal.getUTCFullYear() + 1);
       const daysUntil = (renewal.getTime() - now) / DAY;
-      // Window: from 60 days before renewal to 30 days after.
+      // Window: from 60 days before the upcoming anniversary to 30 days after.
       if (daysUntil > 60 || daysUntil < -30) continue;
       due += 1;
 

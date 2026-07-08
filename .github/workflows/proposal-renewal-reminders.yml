@@ -1,0 +1,63 @@
+name: Proposals · licence renewal reminders
+
+# Daily cron that nudges the owner of every issued/won LICENCE proposal whose
+# 12-month renewal is within 60 days. Same posture as the Reflect reminder cron:
+# CRON_SECRET-bearer-gated POST to a server-only endpoint.
+#
+# Behaviour:
+#   - Sweeps proposals where pricing_mode='licence' AND status in (issued, won).
+#   - Emails proposal_renewal_reminder when renewal (issued/sent + 12 months) is
+#     within 60 days, deduped via licence_data.renewalNoticeSentAt (~10-month window).
+#
+# Setup (identical to the Reflect workflow):
+#   1. CRON_SECRET set in Render env + this repo's GitHub Secrets.
+#   2. Workflow can be triggered manually from the Actions tab.
+
+on:
+  schedule:
+    # 07:00 UTC daily = 11:00 GST (UAE) / 10:00 AST (Saudi). One hour before the
+    # Reflect sweep to spread the load.
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: proposal-renewal-reminders
+  cancel-in-progress: false
+
+jobs:
+  remind:
+    name: Hit proposal renewal endpoint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Fire renewal endpoint
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "::error::CRON_SECRET secret is not set on this repo."
+            exit 1
+          fi
+
+          ENDPOINT="https://caliber.viftraining.com/api/proposals/admin/renewals/cron"
+          echo "Calling $ENDPOINT"
+
+          BODY=$(curl -fsS -X POST \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Accept: application/json" \
+            --max-time 300 \
+            "$ENDPOINT")
+
+          echo "Response body:"
+          echo "$BODY"
+
+          echo "$BODY" | grep -q '"ok":true' || {
+            echo "::error::Response did not include ok:true"
+            exit 1
+          }

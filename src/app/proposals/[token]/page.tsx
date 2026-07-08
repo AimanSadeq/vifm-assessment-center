@@ -80,12 +80,20 @@ export default async function ClientProposalPage({ params }: { params: { token: 
               </div>
             </div>
 
-            <PdfDownloadButton
-              url={`/api/proposals/${p.accessToken}/pdf`}
-              filename={`VIFM-Proposal-${p.clientName.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "Client"}.pdf`}
-              label="Download the full proposal (PDF)"
-              className="inline-flex items-center gap-2 rounded-md bg-[#010131] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#121140] disabled:opacity-60"
-            />
+            <div className="flex flex-wrap items-center gap-2">
+              <PdfDownloadButton
+                url={`/api/proposals/${p.accessToken}/pdf`}
+                filename={`VIFM-Proposal-${p.clientName.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "Client"}.pdf`}
+                label="Download the full proposal (PDF)"
+                className="inline-flex items-center gap-2 rounded-md bg-[#010131] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#121140] disabled:opacity-60"
+              />
+              <PdfDownloadButton
+                url={`/api/proposals/${p.accessToken}/pdf?language=ar`}
+                filename={`VIFM-Proposal-${p.clientName.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "Client"}-AR.pdf`}
+                label="النسخة العربية (PDF)"
+                className="inline-flex items-center gap-2 rounded-md border border-[#010131] px-5 py-2.5 text-sm font-semibold text-[#010131] hover:bg-slate-50 disabled:opacity-60"
+              />
+            </div>
 
             {p.paymentTerms && <p className="text-xs leading-relaxed text-slate-500">{p.paymentTerms}</p>}
           </div>

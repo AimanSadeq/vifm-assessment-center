@@ -11,8 +11,9 @@
 // Pure string builder, no I/O.
 
 import { formatMoney } from "./pricing";
-import { proposalService, PROPOSAL_DELIVERABLES } from "./constants";
+import { proposalService, PROPOSAL_DELIVERABLES, resolveIncludedSections } from "./constants";
 import { computeLicensing, normalizeLicensingModel } from "./licensing";
+import type { ProposalEvidence } from "./evidence-summary";
 import type { CaliberService } from "@/lib/clients/portal-services";
 import type { Proposal } from "./service";
 
@@ -46,29 +47,6 @@ export function proposalRef(p: Proposal): string {
   return `VIFM-P-${year}-${p.id.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
 }
 
-/** Document outline - single source for the contents page and numbering. */
-const SECTIONS = [
-  "Executive summary",
-  "About VIFM",
-  "Understanding of your requirements",
-  "Proposed solution & technical approach",
-  "Psychometric foundations",
-  "Methodology & quality standards",
-  "Platform, integration & security",
-  "Implementation plan",
-  "Project governance & team",
-  "Data protection & privacy",
-  "AI governance & standards",
-  "Service level & support",
-  "Relevant experience",
-  "Commercial proposal",
-  "Assumptions & exclusions",
-  "Terms & conditions",
-  "Definitions",
-  "Acceptance & next steps",
-] as const;
-const NO = (title: (typeof SECTIONS)[number]) => SECTIONS.indexOf(title) + 1;
-
 export function buildProposalHtml(
   p: Proposal,
   opts?: {
@@ -76,15 +54,29 @@ export function buildProposalHtml(
     logoWhite?: string | null;
     /** Primary color VIFM logo (data URI) - light pages, per the Brand Kit. */
     logoColor?: string | null;
+    /** Live reliability data for the Psychometric foundations + Evidence sections. */
+    evidence?: ProposalEvidence | null;
   },
 ): string {
   const logoWhite = opts?.logoWhite ?? null;
   const logoColor = opts?.logoColor ?? null;
+  const evidence = opts?.evidence ?? null;
   const cur = p.currency || "USD";
   const money = (n: number) => formatMoney(n, cur);
   const num = (n: number) => (n || 0).toLocaleString("en-US");
   const discount = Math.round((p.subtotal - p.total) * 100) / 100;
   const ref = proposalRef(p);
+
+  // ── Section selection + numbering (Phase 2). Numbers/TOC derive from the
+  // INCLUDED sections only, so removing an optional section renumbers cleanly.
+  // Mandatory sections (the only cross-referenced ones) are always present. ──
+  const included = resolveIncludedSections(p.sectionSelection);
+  const includedSet = new Set(included);
+  const inc = (title: string) => includedSet.has(title);
+  const NO = (title: string) => {
+    const i = included.indexOf(title);
+    return i >= 0 ? i + 1 : 0;
+  };
   const tcNo = NO("Terms & conditions");
 
   // ── Licence (SaaS) pricing mode. `lic` is null in per-project mode OR when the
@@ -234,6 +226,62 @@ export function buildProposalHtml(
 
   const validUntil = p.validUntil ? fmtDate(p.validUntil) : null;
 
+  // ── Indicative-return (ROI) paragraph (Phase 2). Renders only when the
+  // preparer supplied an average salary + hires/year (stored in licence_data.roi). ──
+  const roiRaw = (p.licenceData && typeof p.licenceData === "object"
+    ? (p.licenceData as Record<string, unknown>).roi
+    : null) as { avgSalary?: number; hiresPerYear?: number; accuracyGainPct?: number } | null | undefined;
+  const roiHtml = (() => {
+    const avgSalary = Number(roiRaw?.avgSalary) || 0;
+    const hires = Number(roiRaw?.hiresPerYear) || 0;
+    if (avgSalary <= 0 || hires <= 0) return "";
+    const gainPct = Number(roiRaw?.accuracyGainPct) > 0 ? Number(roiRaw?.accuracyGainPct) : 12;
+    const misHire = 1.5 * avgSalary;
+    const exposure = hires * misHire;
+    const recovered = exposure * (gainPct / 100);
+    const investment = p.total || 0;
+    const timesOver = investment > 0 ? recovered / investment : 0;
+    return `<p><strong>Indicative return.</strong> At an average annual salary of ${money(avgSalary)} and ${num(hires)} hire${hires === 1 ? "" : "s"} per year, the cost of a single mis-hire - conservatively 1.5&times; salary, about ${money(misHire)} - puts roughly ${money(exposure)} of value at risk each year. Improving selection accuracy by even ${gainPct}% recovers on the order of ${money(recovered)} annually${timesOver > 0 ? `, around ${timesOver.toFixed(1)}&times; the ${isLicence ? "Year-1" : "total"} investment in this programme` : ""}. These figures are illustrative, based on the inputs provided, and are not a guarantee of outcome.</p>`;
+  })();
+
+  // ── Live reliability snapshot for the Psychometric foundations + Evidence
+  // sections (Phase 2). Each row renders only when a real, non-zero metric exists. ──
+  const evRows: string[] = [];
+  if (evidence) {
+    if (evidence.logica && (evidence.logica.alpha || evidence.logica.approved)) {
+      const a = evidence.logica.alpha;
+      evRows.push(
+        `<li><b>Cognitive reasoning (Logica&reg;)</b> - ${a != null ? `internal-consistency reliability (Cronbach's &alpha;) currently ${a.toFixed(2)} across ` : "currently "}${num(evidence.logica.approved)} vetted item${evidence.logica.approved === 1 ? "" : "s"} on the active bank${evidence.logica.tier ? ` (tier: ${esc(evidence.logica.tier)})` : ""}.</li>`,
+      );
+    }
+    if (evidence.fluent && (evidence.fluent.calibrated || evidence.fluent.humanRatings)) {
+      evRows.push(
+        `<li><b>English placement (Fluent&reg;)</b> - ${num(evidence.fluent.calibrated)} calibrated item${evidence.fluent.calibrated === 1 ? "" : "s"} with ${num(evidence.fluent.humanRatings)} human rating${evidence.fluent.humanRatings === 1 ? "" : "s"} logged for AI-vs-human agreement monitoring (target QWK &ge; 0.70).</li>`,
+      );
+    }
+    if (evidence.technical && (evidence.technical.approved || evidence.technical.cutScores)) {
+      evRows.push(
+        `<li><b>Technical certification (Techno&reg;)</b> - ${num(evidence.technical.approved)} SME-approved item${evidence.technical.approved === 1 ? "" : "s"} across ${num(evidence.technical.cutScores)} documented cut-score${evidence.technical.cutScores === 1 ? "" : "s"}${evidence.technical.calibrated ? `, ${num(evidence.technical.calibrated)} IRT-calibrated` : ""}.</li>`,
+      );
+    }
+    if (evidence.arc && (evidence.arc.verified || evidence.arc.total)) {
+      evRows.push(
+        `<li><b>AI Readiness (AR COMPASS&reg;)</b> - ${num(evidence.arc.verified)} of ${num(evidence.arc.total)} questions human-reviewed${evidence.arc.responses ? `; ${num(evidence.arc.responses)} responses collected toward norm development` : ""}.</li>`,
+      );
+    }
+    if (evidence.reflect && (evidence.reflect.competencies || evidence.reflect.responses)) {
+      evRows.push(
+        `<li><b>Leadership 360 (Reflect 360&reg;)</b> - ${num(evidence.reflect.competencies)} competenc${evidence.reflect.competencies === 1 ? "y" : "ies"} / ${num(evidence.reflect.behaviors)} behaviour${evidence.reflect.behaviors === 1 ? "" : "s"} in the seeded framework${evidence.reflect.responses ? `; ${num(evidence.reflect.responses)} rater responses to date` : ""}.</li>`,
+      );
+    }
+  }
+  const psyLive = evRows.length
+    ? `<p class="scope-note" style="margin-top:8px;"><strong>Current platform evidence</strong> (live figures at the time of this proposal; they strengthen as response volumes grow):</p>
+  <ul>
+    ${evRows.join("\n    ")}
+  </ul>`
+    : "";
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -344,7 +392,7 @@ export function buildProposalHtml(
     </div>
     <h2 style="border-top:0;padding-top:0;">Contents</h2>
     <ol>
-      ${SECTIONS.map((s) => `<li>${esc(s)}</li>`).join("\n      ")}
+      ${included.map((s) => `<li>${esc(s)}</li>`).join("\n      ")}
     </ol>
   </div>
 
@@ -360,6 +408,7 @@ export function buildProposalHtml(
     <div class="fact"><b>${isLicence && lic ? money(lic.year1Subtotal) : money(p.total)}</b><span>${isLicence && lic ? "Year-1 investment" : "Total investment"}</span></div>
     ${validUntil ? `<div class="fact"><b>${validUntil}</b><span>Offer validity</span></div>` : ""}
   </div>
+  ${roiHtml}
 
   <h2><span class="no">${NO("About VIFM")}.</span>About VIFM</h2>
   <p>The Virginia Institute of Finance and Management (VIFM) is a finance and management institute serving the
@@ -387,7 +436,7 @@ export function buildProposalHtml(
   <h2><span class="no">${NO("Proposed solution & technical approach")}.</span>Proposed solution &amp; technical approach</h2>
   ${committedScope}${technical || "<p>No services selected.</p>"}
 
-  <h2><span class="no">${NO("Psychometric foundations")}.</span>Psychometric foundations</h2>
+  ${inc("Psychometric foundations") ? `<h2><span class="no">${NO("Psychometric foundations")}.</span>Psychometric foundations</h2>
   <p>The proposed instrument${scopeWithSeats.length === 1 ? " is" : "s are"} built on documented measurement
   foundations rather than ad-hoc question sets:</p>
   <ul>
@@ -398,17 +447,18 @@ export function buildProposalHtml(
     <li><b>Reliability monitoring</b> - internal-consistency statistics are tracked as response volumes grow, and norm-referenced reporting is enabled only when the underlying sample is adequate.</li>
     <li><b>Honest reporting tiers</b> - each result is explicitly labelled indicative or certified; certified outcomes exist only where a documented cut-score and review process stand behind them.</li>
   </ul>
+  ${psyLive}` : ""}
 
-  <h2><span class="no">${NO("Methodology & quality standards")}.</span>Methodology &amp; quality standards</h2>
+  ${inc("Methodology & quality standards") ? `<h2><span class="no">${NO("Methodology & quality standards")}.</span>Methodology &amp; quality standards</h2>
   <ul>
     <li><b>Documented methodology per instrument</b> - each assessment ships with a published methodology brief covering construct, scoring model and honest limits; these briefs accompany this proposal on request.</li>
     <li><b>Alignment with recognised guidance</b> - programme design is aligned with ISO 10667 (assessment service delivery) and, for assessment-centre work, the International Taskforce Guidelines (6th edition).</li>
     <li><b>Secure administration</b> - answer keys are held server-side and never reach the participant's browser; grading is server-side; sessions are single-use.</li>
     <li><b>Human oversight of AI scoring</b> - where AI contributes to scoring or content generation, outputs are calibrated and a person retains review authority; no automated decision is final.</li>
     <li><b>Bilingual delivery</b> - participant-facing experiences are available in English and Arabic (full RTL) where scoped.</li>
-  </ul>
+  </ul>` : ""}
 
-  <h2><span class="no">${NO("Platform, integration & security")}.</span>Platform, integration &amp; security</h2>
+  ${inc("Platform, integration & security") ? `<h2><span class="no">${NO("Platform, integration & security")}.</span>Platform, integration &amp; security</h2>
   <ul>
     <li><b>Delivery platform</b> - the programme runs on VIFM Caliber&reg;, a cloud platform requiring no client-side installation; participants join through personal invitation links on any modern browser.</li>
     <li><b>Programme visibility</b> - the sponsoring team receives live completion monitoring during the assessment window, with reminders managed by VIFM.</li>
@@ -416,9 +466,9 @@ export function buildProposalHtml(
     <li><b>Data portability</b> - results export in standard formats (CSV / JSON) for the client's HRIS or ATS; individual reports are delivered as PDF.</li>
     <li><b>Integration</b> - single sign-on or deeper system integration can be scoped in the statement of work where required.</li>
     <li><b>Security posture</b> - encryption in transit and at rest, role-based access with row-level controls, and scoring logic that never reaches the participant's device (see Section ${NO("Data protection & privacy")}).</li>
-  </ul>
+  </ul>` : ""}
 
-  <h2><span class="no">${NO("Implementation plan")}.</span>Implementation plan</h2>
+  ${inc("Implementation plan") ? `<h2><span class="no">${NO("Implementation plan")}.</span>Implementation plan</h2>
   <p class="scope-note">Indicative plan for a cohort of this size; the definitive schedule is agreed at kickoff and confirmed in the statement of work.</p>
   <table>
     <thead><tr><th>Phase</th><th>Indicative timing</th><th>Key activities</th><th>Outputs</th></tr></thead>
@@ -428,7 +478,7 @@ export function buildProposalHtml(
       <tr><td><b>3 &middot; Assessment window</b></td><td>Weeks 3-5</td><td>Invitations issued in waves, completion monitored, reminders managed, participant support</td><td>Completion dashboard; interim status reports</td></tr>
       <tr><td><b>4 &middot; Reporting &amp; debrief</b></td><td>Week 6</td><td>Individual reports released, cohort analytics compiled, sponsor debrief session</td><td>Full deliverable set; debrief and recommendations</td></tr>
     </tbody>
-  </table>
+  </table>` : ""}
 
   <h2><span class="no">${NO("Project governance & team")}.</span>Project governance &amp; team</h2>
   <ul>
@@ -448,14 +498,14 @@ export function buildProposalHtml(
     <li>Individual results are released only to the sponsoring organization's authorised recipients; anonymity thresholds protect multi-rater feedback contributors.</li>
   </ul>
 
-  <h2><span class="no">${NO("AI governance & standards")}.</span>AI governance &amp; standards</h2>
+  ${inc("AI governance & standards") ? `<h2><span class="no">${NO("AI governance & standards")}.</span>AI governance &amp; standards</h2>
   <ul>
     <li><b>Human-in-the-loop by design</b> - AI assists with item drafting, transcription and first-pass scoring; a qualified person retains review authority over any output that affects a participant, and no hiring or promotion decision is automated.</li>
     <li><b>Transparency</b> - each instrument's methodology brief states where AI contributes and where it does not, so the client can evidence its own governance obligations.</li>
     <li><b>Calibration</b> - AI-scored productive tasks (e.g. writing and speaking) are calibrated against human ratings, with agreement monitored over time.</li>
     <li><b>Never an auto-reject</b> - screening composites are advisory signals; the decision remains with the client's own reviewers, and the reports say so explicitly.</li>
     <li><b>Regional alignment</b> - the approach is designed to be defensible under emerging GCC AI-governance expectations${p.clientRegion === "saudi" ? ", including guidance applicable in the Kingdom of Saudi Arabia" : ""}.</li>
-  </ul>
+  </ul>` : ""}
 
   <h2><span class="no">${NO("Service level & support")}.</span>Service level &amp; support</h2>
   <ul>
@@ -477,7 +527,7 @@ export function buildProposalHtml(
       : ""
   }
 
-  <h2><span class="no">${NO("Relevant experience")}.</span>Relevant experience</h2>
+  ${inc("Relevant experience") ? `<h2><span class="no">${NO("Relevant experience")}.</span>Relevant experience</h2>
   <p>VIFM delivers assessment and development programmes for banking, government and corporate organizations
   across the GCC. The Caliber platform carries seven instrument families spanning talent acquisition and
   talent development - behavioural profiling, cognitive aptitude, technical certification, English placement,
@@ -485,7 +535,7 @@ export function buildProposalHtml(
   standard.</p>
   <p>Client references and anonymised case summaries relevant to this engagement are available on request,
   subject to the confidentiality commitments we make to every client - the same commitments this proposal
-  makes to ${esc(p.clientName)}.</p>
+  makes to ${esc(p.clientName)}.</p>` : ""}
 
   <h2><span class="no">${NO("Commercial proposal")}.</span>Commercial proposal</h2>
   ${
@@ -513,14 +563,14 @@ export function buildProposalHtml(
     <li>On-site delivery, travel and accommodation; instrument customisation beyond the stated scope; additional participants beyond the quoted volumes (chargeable at the quoted per-participant rate); and any third-party costs - each quotable separately on request.</li>
   </ul>
 
-  <h2><span class="no">${NO("Assumptions & exclusions")}.</span>Assumptions &amp; exclusions</h2>
+  ${inc("Assumptions & exclusions") ? `<h2><span class="no">${NO("Assumptions & exclusions")}.</span>Assumptions &amp; exclusions</h2>
   <ul>
     <li>${esc(p.clientName)} provides a complete, accurate participant list (names and email addresses) before the assessment window opens, and nominates a single point of contact empowered to make scheduling decisions.</li>
     <li>Participants have access to a suitable device and internet connection; assessments are completed remotely unless otherwise agreed in writing.</li>
     <li>Volumes are as quoted; material changes to volumes, scope or languages are handled by written change request and may revise fees and timeline.</li>
     <li>The indicative timeline assumes client-side communications are issued within the agreed windows; delays in participant mobilisation extend the schedule, not the price.</li>
     <li>This proposal does not constitute a contract; the engagement commences on signature of a statement of work referencing this proposal.</li>
-  </ul>
+  </ul>` : ""}
 
   <h2><span class="no">${tcNo}.</span>Terms &amp; conditions</h2>
   ${p.terms ? `<div class="terms-box">${esc(p.terms)}</div>` : ""}
@@ -546,7 +596,7 @@ export function buildProposalHtml(
     }
   </ol>
 
-  <h2><span class="no">${NO("Definitions")}.</span>Definitions</h2>
+  ${inc("Definitions") ? `<h2><span class="no">${NO("Definitions")}.</span>Definitions</h2>
   <table>
     <thead><tr><th style="width:34%">Term</th><th>Meaning in this proposal</th></tr></thead>
     <tbody>
@@ -567,7 +617,7 @@ export function buildProposalHtml(
           : ""
       }
     </tbody>
-  </table>
+  </table>` : ""}
 
   <div class="accept">
     <h2 style="border-top:0;padding-top:0;"><span class="no">${NO("Acceptance & next steps")}.</span>Acceptance &amp; next steps</h2>
@@ -599,6 +649,33 @@ export function buildProposalHtml(
       p.contactName ? `your VIFM engagement lead, or ` : ""
     }info@viftraining.com &middot; viftraining.com</p>
   </div>
+
+  ${
+    inc("Evidence & sample reports")
+      ? `<div class="accept">
+    <h2 style="border-top:0;padding-top:0;"><span class="no">${NO("Evidence & sample reports")}.</span>Evidence &amp; sample reports</h2>
+    <p>Every instrument in this proposal is backed by a documented methodology brief and an auditable evidence
+    trail. The figures below are a live snapshot of the platform's current measurement evidence; they are
+    included so ${esc(p.clientName)} can evidence its own assurance and governance obligations. Anonymised
+    sample candidate and cohort reports for each scoped service are available on request and can be appended to
+    the signed statement of work.</p>
+    ${
+      evRows.length
+        ? `<table>
+      <thead><tr><th style="width:34%">Instrument</th><th>Current measurement evidence</th></tr></thead>
+      <tbody>
+        ${evRows.map((r) => r.replace(/^<li>/, "<tr><td colspan=\"2\">").replace(/<\/li>$/, "</td></tr>")).join("\n        ")}
+      </tbody>
+    </table>
+    <p class="scope-note">Reliability and calibration statistics strengthen as response volumes grow; norm-referenced
+    reporting is enabled only once a scale's sample is adequate. Where a metric is not yet shown, the instrument
+    reports on its documented indicative basis.</p>`
+        : `<p class="scope-note">Detailed reliability, calibration and validity evidence per instrument is available in the
+    published methodology briefs, provided on request and forming part of this proposal by reference.</p>`
+    }
+  </div>`
+      : ""
+  }
 
 </body>
 </html>`;

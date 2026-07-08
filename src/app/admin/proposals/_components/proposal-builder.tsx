@@ -9,6 +9,8 @@ import {
   DEFAULT_PAYMENT_TERMS,
   DEFAULT_LICENCE_PAYMENT_TERMS,
   defaultTerms,
+  PROPOSAL_SECTION_DEFS,
+  defaultSectionSelection,
 } from "@/lib/proposals/constants";
 import { computeLineItems, computeTotals, formatMoney, type ScopeItem } from "@/lib/proposals/pricing";
 import {
@@ -101,6 +103,28 @@ export function ProposalBuilder({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Section selection (Phase 2). `selectedSections` holds the ticked titles;
+  // mandatory sections are always on and are not shown as toggles.
+  const [selectedSections, setSelectedSections] = useState<Set<string>>(
+    () => new Set(existing?.sectionSelection && existing.sectionSelection.length ? existing.sectionSelection : defaultSectionSelection()),
+  );
+  function toggleSection(title: string) {
+    setSelectedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(title)) next.delete(title);
+      else next.add(title);
+      return next;
+    });
+  }
+
+  // ROI / business-case inputs (Phase 2), persisted in licence_data.roi.
+  const roi0 = (existing?.licenceData as Record<string, unknown> | undefined)?.roi as
+    | { avgSalary?: number; hiresPerYear?: number; accuracyGainPct?: number }
+    | undefined;
+  const [roiSalary, setRoiSalary] = useState<number>(Number(roi0?.avgSalary) || 0);
+  const [roiHires, setRoiHires] = useState<number>(Number(roi0?.hiresPerYear) || 0);
+  const [roiGainPct, setRoiGainPct] = useState<number>(Number(roi0?.accuracyGainPct) || 12);
+
   const selectedClient = clients.find((c) => c.name === clientName) ?? null;
 
   // Switch mode; swap the payment-terms default only if it is still a known default.
@@ -191,6 +215,11 @@ export function ProposalBuilder({
       currency,
       pricingMode,
       licensingModel: pricingMode === "licence" ? assembleLicensingModel() : null,
+      sectionSelection: Array.from(selectedSections),
+      licenceData: {
+        ...(existing?.licenceData ?? {}),
+        roi: roiSalary > 0 && roiHires > 0 ? { avgSalary: roiSalary, hiresPerYear: roiHires, accuracyGainPct: roiGainPct } : null,
+      },
       bundleId: bundleId || null,
       scope,
       discountPct,
@@ -505,6 +534,51 @@ export function ProposalBuilder({
             placeholder="Leave blank to use the standard VIFM confidentiality + data-protection terms."
             className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm" />
         </label>
+      </section>
+
+      {/* Business case (ROI) */}
+      <section className="rounded-lg border border-border bg-card p-4 space-y-3">
+        <div>
+          <h2 className="font-medium text-foreground">Business case (optional)</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">Adds an indicative-return paragraph to the executive summary. Leave the salary or hires at 0 to omit it.</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <label className="block text-sm">
+            <span className="text-muted-foreground">Avg. annual salary</span>
+            <input type="number" min={0} value={roiSalary} onChange={(e) => setRoiSalary(Math.max(0, Number(e.target.value) || 0))} className={numInput} />
+          </label>
+          <label className="block text-sm">
+            <span className="text-muted-foreground">Hires per year</span>
+            <input type="number" min={0} value={roiHires} onChange={(e) => setRoiHires(Math.max(0, Number(e.target.value) || 0))} className={numInput} />
+          </label>
+          <label className="block text-sm">
+            <span className="text-muted-foreground">Selection-accuracy gain %</span>
+            <input type="number" min={0} max={100} value={roiGainPct} onChange={(e) => setRoiGainPct(Math.max(0, Math.min(100, Number(e.target.value) || 0)))} className={numInput} />
+          </label>
+        </div>
+      </section>
+
+      {/* Sections to include */}
+      <section className="rounded-lg border border-border bg-card p-4 space-y-3">
+        <div>
+          <h2 className="font-medium text-foreground">Sections to include</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">Required sections always appear. Untick a recommended section or tick an optional one to tailor the document.</p>
+        </div>
+        <div className="grid gap-1.5 sm:grid-cols-2">
+          {PROPOSAL_SECTION_DEFS.map((s) => {
+            const mandatory = s.tier === "mandatory";
+            const checked = mandatory || selectedSections.has(s.title);
+            return (
+              <label key={s.title} className={`flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm ${checked ? "border-[#5391D5]/40 bg-[#5391D5]/5" : "border-border"}`}>
+                <input type="checkbox" checked={checked} disabled={mandatory} onChange={() => toggleSection(s.title)} />
+                <span className="text-foreground">{s.title}</span>
+                <span className={`ml-auto text-[10px] uppercase tracking-wide ${mandatory ? "text-slate-400" : s.tier === "recommended" ? "text-[#5391D5]" : "text-amber-600"}`}>
+                  {mandatory ? "required" : s.tier}
+                </span>
+              </label>
+            );
+          })}
+        </div>
       </section>
 
       {error && <p className="text-sm text-red-600">{error}</p>}

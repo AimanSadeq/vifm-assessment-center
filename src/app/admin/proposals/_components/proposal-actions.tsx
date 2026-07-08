@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Send, CheckCircle2, Copy } from "lucide-react";
+import { Send, CheckCircle2, Copy, GitBranch } from "lucide-react";
 import { PdfDownloadButton } from "@/components/shared/pdf-download-button";
-import { sendProposalToClientAction, setStatusAction } from "../actions";
+import { sendProposalToClientAction, setStatusAction, duplicateAsRevisionAction } from "../actions";
 import type { Proposal, ProposalStatus } from "@/lib/proposals/service";
 
 export function ProposalActions({ proposal, clientUrl }: { proposal: Proposal; clientUrl: string }) {
@@ -41,6 +41,16 @@ export function ProposalActions({ proposal, clientUrl }: { proposal: Proposal; c
     }
   }
 
+  async function revise() {
+    setBusy(true);
+    setMsg(null);
+    const res = await duplicateAsRevisionAction(proposal.id);
+    setBusy(false);
+    if ("error" in res) return setMsg({ ok: false, text: res.error });
+    router.push(`/admin/proposals/${res.id}`);
+    router.refresh();
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -49,6 +59,12 @@ export function ProposalActions({ proposal, clientUrl }: { proposal: Proposal; c
           filename={`VIFM-Proposal-${proposal.clientName.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "Client"}.pdf`}
           label="Download PDF"
           className="inline-flex items-center gap-1.5 rounded-md bg-[#010131] px-3.5 py-2 text-sm font-medium text-white hover:bg-[#121140] disabled:opacity-60"
+        />
+        <PdfDownloadButton
+          url={`/api/admin/proposals/${proposal.id}/pdf?language=ar`}
+          filename={`VIFM-Proposal-${proposal.clientName.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "Client"}-AR.pdf`}
+          label="تحميل PDF (عربي)"
+          className="inline-flex items-center gap-1.5 rounded-md border border-[#010131] px-3.5 py-2 text-sm font-medium text-[#010131] hover:bg-muted disabled:opacity-60"
         />
         {proposal.status !== "draft" && (
           <>
@@ -62,6 +78,10 @@ export function ProposalActions({ proposal, clientUrl }: { proposal: Proposal; c
             </button>
           </>
         )}
+        <button onClick={revise} disabled={busy}
+          className="inline-flex items-center gap-1.5 rounded-md border border-border px-3.5 py-2 text-sm text-foreground hover:bg-muted disabled:opacity-50">
+          <GitBranch className="h-4 w-4" /> Duplicate as revision
+        </button>
       </div>
 
       <div className="rounded-md border border-border bg-card p-3">

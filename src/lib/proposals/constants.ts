@@ -128,6 +128,54 @@ export const DEFAULT_PAYMENT_TERMS =
 export const DEFAULT_LICENCE_PAYMENT_TERMS =
   "50% upon signing; 50% upon go-live; annually in advance thereafter. The licence is annual and renewable; renewal for Year 2 is capped at no more than a 5% uplift. Fees are exclusive of any applicable taxes.";
 
+// ── Section selection + recommendation tiers (Phase 2) ──
+// The document outline, each section carrying a recommendation tier. MANDATORY
+// sections always render (and are the only ones cross-referenced by other
+// sections, so a reference can never point at an excluded section). RECOMMENDED
+// default on; OPTIONAL default off. Single source for proposal-html + the builder.
+export type SectionTier = "mandatory" | "recommended" | "optional";
+
+export const PROPOSAL_SECTION_DEFS: { title: string; tier: SectionTier }[] = [
+  { title: "Executive summary", tier: "mandatory" },
+  { title: "About VIFM", tier: "mandatory" },
+  { title: "Understanding of your requirements", tier: "mandatory" },
+  { title: "Proposed solution & technical approach", tier: "mandatory" },
+  { title: "Psychometric foundations", tier: "recommended" },
+  { title: "Methodology & quality standards", tier: "recommended" },
+  { title: "Platform, integration & security", tier: "recommended" },
+  { title: "Implementation plan", tier: "recommended" },
+  { title: "Project governance & team", tier: "mandatory" },
+  { title: "Data protection & privacy", tier: "mandatory" },
+  { title: "AI governance & standards", tier: "recommended" },
+  { title: "Service level & support", tier: "mandatory" },
+  { title: "Relevant experience", tier: "optional" },
+  { title: "Commercial proposal", tier: "mandatory" },
+  { title: "Assumptions & exclusions", tier: "recommended" },
+  { title: "Terms & conditions", tier: "mandatory" },
+  { title: "Definitions", tier: "recommended" },
+  { title: "Acceptance & next steps", tier: "mandatory" },
+  { title: "Evidence & sample reports", tier: "optional" },
+];
+
+export const PROPOSAL_SECTION_TITLES = PROPOSAL_SECTION_DEFS.map((s) => s.title);
+
+const MANDATORY_SECTIONS = PROPOSAL_SECTION_DEFS.filter((s) => s.tier === "mandatory").map((s) => s.title);
+
+/** Default ticked set for a NEW proposal: mandatory + recommended (optional off). */
+export function defaultSectionSelection(): string[] {
+  return PROPOSAL_SECTION_DEFS.filter((s) => s.tier !== "optional").map((s) => s.title);
+}
+
+/** Resolve the ordered set of sections to render. `null`/empty selection ⇒ the
+ *  default (mandatory + recommended). Mandatory sections are always included. */
+export function resolveIncludedSections(sel: string[] | null | undefined): string[] {
+  if (!sel || !Array.isArray(sel) || sel.length === 0) return defaultSectionSelection();
+  const chosen = new Set(sel);
+  return PROPOSAL_SECTION_DEFS.filter((s) => s.tier === "mandatory" || chosen.has(s.title)).map((s) => s.title);
+}
+
+export { MANDATORY_SECTIONS };
+
 export function defaultTerms(clientName: string, currency: string): string {
   return (
     `This proposal is confidential and prepared exclusively for ${clientName}. ` +

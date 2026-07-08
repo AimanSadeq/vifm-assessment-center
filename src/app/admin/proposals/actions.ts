@@ -4,9 +4,11 @@ import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { renderHtmlToPdfBuffer } from "@/lib/reports/html-to-pdf";
 import { sendEmail } from "@/lib/integrations/email";
 import { buildProposalHtml } from "@/lib/proposals/proposal-html";
+import { loadProposalEvidence } from "@/lib/proposals/evidence-summary";
 import {
   createProposal,
   updateProposal,
+  duplicateAsRevision,
   setProposalStatus,
   markProposalSent,
   loadProposal,
@@ -57,6 +59,12 @@ export async function updateProposalAction(
   return updateProposal(id, input);
 }
 
+export async function duplicateAsRevisionAction(id: string): Promise<Result<{ id: string }>> {
+  const denied = await gate();
+  if (denied) return denied;
+  return duplicateAsRevision(id);
+}
+
 export async function setStatusAction(
   id: string,
   status: ProposalStatus,
@@ -81,7 +89,8 @@ export async function sendProposalToClientAction(input: {
 
   let pdfBase64: string;
   try {
-    const pdf = await renderHtmlToPdfBuffer(buildProposalHtml(proposal));
+    const evidence = await loadProposalEvidence();
+    const pdf = await renderHtmlToPdfBuffer(buildProposalHtml(proposal, { evidence }));
     pdfBase64 = Buffer.from(pdf).toString("base64");
   } catch {
     return { error: "Could not generate the proposal PDF." };

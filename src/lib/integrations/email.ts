@@ -37,6 +37,7 @@ export type EmailTemplate =
   | "voucher_batch_to_client"
   | "voucher_to_delegate"
   | "proposal_delivery"
+  | "proposal_renewal_reminder"
   | "platform_demo_request";
 
 /** Optional file attachment (e.g. a generated PDF report). */
@@ -262,6 +263,22 @@ You can also view it online here:
 {{viewUrl}}
 
 This proposal is valid until {{validUntil}}. We would be glad to walk you through the technical approach and commercials at your convenience.
+
+Best regards,
+Virginia Institute of Finance and Management`,
+  },
+  proposal_renewal_reminder: {
+    subject: "Licence renewal approaching - {{proposalTitle}}",
+    body: `Dear {{clientName}},
+
+The annual all-access Caliber licence covered by {{proposalTitle}} is approaching its renewal date ({{renewalDate}}).
+
+To keep your programmes running without interruption, we would be glad to confirm the renewal terms - the licence renews for a further 12 months, capped at the agreed uplift, with your committed volumes carried forward.
+
+You can review the current proposal here:
+{{viewUrl}}
+
+Please reply to this email or contact your VIFM engagement lead to proceed.
 
 Best regards,
 Virginia Institute of Finance and Management`,

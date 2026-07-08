@@ -92,8 +92,16 @@ export function buildProposalHtmlAr(
   const tcNoRaw = included.indexOf("Terms & conditions") + 1;
   const at = (title: string) => `<span class="no">${NO(title)}.</span>${esc(TITLE_AR[title] ?? title)}`;
 
+  const isCombined = p.pricingMode === "combined";
+  const combinedServicesMode = ((): "per_project" | "licence" | "none" => {
+    const v = (p.licenceData as Record<string, unknown> | null)?.combinedServicesMode;
+    return v === "licence" ? "licence" : v === "none" ? "none" : "per_project";
+  })();
   const isLicence = p.pricingMode === "licence";
-  const lic = isLicence ? computeLicensing(normalizeLicensingModel(p.licensingModel)) : null;
+  const lic =
+    isLicence || (isCombined && combinedServicesMode === "licence")
+      ? computeLicensing(normalizeLicensingModel(p.licensingModel))
+      : null;
   const isEngagement = p.pricingMode === "engagement";
   const residency = resolveDataResidency((p.licenceData as Record<string, unknown> | null)?.dataResidency);
   const drFee = Math.max(0, Number((p.licenceData as Record<string, unknown> | null)?.dataResidencyFee) || 0);
@@ -102,7 +110,15 @@ export function buildProposalHtmlAr(
   const drRowLabelAr = `سيادة البيانات - ${DR_LABEL_AR[residency]}`;
   const eng = isEngagement
     ? computeEngagement(normalizeEngagementModel(withEngagementResidency(p.engagementModel, drRowLabelAr, drFee)))
-    : null;
+    : isCombined
+      ? computeEngagement(normalizeEngagementModel(p.engagementModel))
+      : null;
+  // Combined services block: the per-seat lines + residency (engagement excluded).
+  const combinedServiceLines =
+    isCombined && combinedServicesMode === "per_project"
+      ? p.lineItems.filter((l) => l.service !== "engagement")
+      : [];
+  const combinedServicesSubtotal = combinedServiceLines.reduce((s, l) => s + l.subtotal, 0);
   const BASIS_LABEL_AR: Record<EngagementBasis, string> = {
     fixed: "ثابت",
     per_participant: "لكل مشارك",
@@ -126,12 +142,24 @@ export function buildProposalHtmlAr(
   const serviceListAr =
     serviceLabelsAr.length <= 1 ? serviceLabelsAr.join("") : `${serviceLabelsAr.slice(0, -1).join("، ")} و${serviceLabelsAr[serviceLabelsAr.length - 1]}`;
 
+  // Combined mode: the per-service Proposed-solution loop skips the synthetic
+  // "engagement" scope row (it has its own solution block).
+  const serviceScopeRows = isCombined ? scopeWithSeats.filter((s) => s.service !== "engagement") : scopeWithSeats;
+  const combinedSvcLabelsAr =
+    combinedServicesMode === "licence" && lic
+      ? lic.products.map((pr) => serviceLabelAr(pr.key, pr.name))
+      : serviceScopeRows.map((s) => serviceLabelAr(s.service, s.label));
+  const combinedSvcListAr =
+    combinedSvcLabelsAr.length <= 1
+      ? combinedSvcLabelsAr.join("")
+      : `${combinedSvcLabelsAr.slice(0, -1).join("، ")} و${combinedSvcLabelsAr[combinedSvcLabelsAr.length - 1]}`;
+
   const jurisdiction = p.clientRegion === "saudi" ? "المملكة العربية السعودية" : "دولة الإمارات العربية المتحدة";
   const sectorPhrase =
     p.clientSector === "government" ? "جهة حكومية" : p.clientSector === "banking" ? "مؤسسة مصرفية ومالية" : "مؤسسة";
 
   // ── Proposed solution: per-service block. ──
-  const technical = scopeWithSeats
+  const technical = serviceScopeRows
     .map((s) => {
       const label = serviceLabelAr(s.service, s.label);
       const note = s.scopeNote ? `<p class="scope-note"><strong>نطاق هذه الخدمة:</strong> ${esc(s.scopeNote)}</p>` : "";
@@ -292,9 +320,45 @@ export function buildProposalHtmlAr(
   </div>`
     : "";
 
+  // ── Combined commercial (Arabic): services block + engagement block + one grand total. ──
+  const combinedServicesDiscountAr = combinedServicesSubtotal * (p.discountPct || 0) / 100;
+  const combinedServicesTableAr =
+    combinedServicesMode === "licence" && lic
+      ? licenceCommercial
+      : combinedServiceLines.length > 0
+        ? `<table>
+    <thead><tr><th>الخدمة</th><th class="num">المشاركون</th><th class="num">السعر / مشارك</th><th class="num">الإجمالي الفرعي</th></tr></thead>
+    <tbody>
+      ${combinedServiceLines
+        .map(
+          (l) =>
+            `<tr><td>${esc(l.service === "data_residency" ? drRowLabelAr : serviceLabelAr(l.service, l.label))}</td><td class="num">${l.service === "data_residency" ? "&mdash;" : nu(l.seats)}</td><td class="num">${l.service === "data_residency" ? "&mdash;" : m(l.unitRate)}</td><td class="num">${m(l.subtotal)}</td></tr>`,
+        )
+        .join("")}
+      <tr><td colspan="3" class="tot-label">الإجمالي الفرعي للخدمات</td><td class="num">${m(combinedServicesSubtotal)}</td></tr>
+      ${combinedServicesDiscountAr > 0 ? `<tr><td colspan="3" class="tot-label">خصم (${pc(p.discountPct)})</td><td class="num">- ${m(combinedServicesDiscountAr)}</td></tr>` : ""}
+      <tr class="total-row"><td colspan="3" class="tot-label">إجمالي الخدمات (${esc(cur)})</td><td class="num">${m(combinedServicesSubtotal - combinedServicesDiscountAr)}</td></tr>
+    </tbody>
+  </table>`
+        : "";
+  const combinedCommercialAr = `${
+    combinedServicesTableAr
+      ? `<h3>${combinedServicesMode === "licence" ? "ترخيص المنصة" : "خدمات التقييم"}</h3>
+  ${combinedServicesTableAr}`
+      : ""
+  }${
+    eng
+      ? `<h3>الارتباط الاستشاري</h3>
+  ${engagementCommercialAr}`
+      : ""
+  }
+  <table><tbody><tr class="total-row"><td class="tot-label">الإجمالي المجمّع (${esc(cur)})</td><td class="num">${m(p.total)}</td></tr></tbody></table>`;
+
   const intro =
     p.introNote?.trim() ||
-    (isEngagement && eng
+    (isCombined
+      ? `يسعدنا أن نقدم هذا العرض المجمّع لصالح ${esc(p.clientName)}، بما يجمع ${combinedSvcListAr || "خدمات الذكاء في المواهب من VIFM"}${eng ? ` وارتباط ${esc(eng.name)} بقيادة استشاري` : ""} في عرض تجاري واحد. ويُحدَّد نطاق كل عنصر ويُسعَّر تحت إجماليه الفرعي أدناه، بإجمالي مجمّع واحد؛ ويرد أدناه المنهج الفني وخطة التنفيذ.`
+      : isEngagement && eng
       ? `يسعدنا أن نقدم هذا العرض لارتباط ${esc(eng.name)} لصالح ${esc(p.clientName)}، لتقييم ${nu(eng.participants)} مشاركاً. وهو برنامج بقيادة الاستشاريين - مقيّمون مدربون، وتمارين منظمة مرتبطة بالدور، وتقييم عام قابل للدفاع عنه، وتغذية راجعة تطويرية فردية - مدعوم بمنصة VIFM Caliber&reg;. ويرد أدناه المنهج وخطة التنفيذ والتفصيل التجاري.`
       : isLicence
         ? `يسعدنا أن نقدم هذا العرض للحصول على ترخيص سنوي شامل لمنصة VIFM Caliber&reg; للذكاء في المواهب لصالح ${esc(p.clientName)}، بما يجمع ${serviceListAr || "خدمات الذكاء في المواهب من VIFM"} ضمن رحلة مرشح واحدة، ووحدة تحكم إدارية واحدة، وتقارير موحدة ثنائية اللغة. والنموذج التجاري هو ترخيص سنوي ملتزم؛ ويرد أدناه المنهج الفني وخطة التنفيذ والتفصيل الكامل لبناء الترخيص.`
@@ -304,12 +368,28 @@ export function buildProposalHtmlAr(
 
   // Cover subtitle (names the commercial shape of the offer) + client location.
   const coverSubtitleAr =
-    isEngagement && eng
+    isCombined
+      ? "برنامج مجمّع &middot; خدمات المنصة + ارتباط استشاري"
+      : isEngagement && eng
       ? `${esc(eng.name)} &middot; ارتباط خدمات مهنية بقيادة استشاري`
       : isLicence
         ? "رخصة سنوية شاملة &middot; منصة VIFM Caliber&reg; للذكاء في المواهب"
         : "برنامج الذكاء في المواهب &middot; منصة VIFM Caliber&reg;";
   const clientLocationAr = [p.clientCity, p.clientCountry].filter((s) => s && s.trim()).join("، ");
+
+  // Executive-summary fact strip (Arabic). Combined mode: service count + engagement
+  // participants + combined investment; other modes keep their existing two facts.
+  const combinedSvcCountAr = combinedServicesMode === "licence" && lic ? lic.products.length + lic.bundles.length : serviceScopeRows.length;
+  const factCardAr = (big: string, label: string, small = false) =>
+    `<div style="flex:1;border:1px solid #e2e8f0;border-top:3px solid #5391D5;border-radius:6px;padding:8px 10px;"><b style="display:block;color:#010131;font-size:${small ? "12pt" : "13pt"};">${big}</b><span style="color:#64748b;font-size:8.5pt;">${label}</span></div>`;
+  const factsInnerAr = isCombined
+    ? `${factCardAr(nu(combinedSvcCountAr), "الخدمات")}
+    ${eng ? factCardAr(nu(eng.participants), "مشاركو الارتباط") : ""}
+    ${factCardAr(m(p.total), "الاستثمار المجمّع")}
+    ${validUntil ? factCardAr(validUntil, "صلاحية العرض", true) : ""}`
+    : `${factCardAr(isLicence && lic ? m(lic.annualRecurring) : nu(totalParticipants), isLicence && lic ? "التكلفة المتكررة السنوية" : "المشاركون")}
+    ${factCardAr(isLicence && lic ? m(lic.year1Subtotal + drFee) : m(p.total), isLicence && lic ? "استثمار السنة الأولى" : "إجمالي الاستثمار")}
+    ${validUntil ? factCardAr(validUntil, "صلاحية العرض", true) : ""}`;
 
   // ── ROI paragraph (Arabic). ──
   const roiRaw = (p.licenceData && typeof p.licenceData === "object" ? (p.licenceData as Record<string, unknown>).roi : null) as
@@ -509,9 +589,7 @@ export function buildProposalHtmlAr(
   <h2 style="border-top:0;padding-top:0;">${at("Executive summary")}</h2>
   ${secBody("Executive summary", `<p>${intro}</p>`)}
   <div style="display:flex;gap:10px;margin:12px 0 4px;">
-    <div style="flex:1;border:1px solid #e2e8f0;border-top:3px solid #5391D5;border-radius:6px;padding:8px 10px;"><b style="display:block;color:#010131;font-size:13pt;">${isLicence && lic ? m(lic.annualRecurring) : nu(totalParticipants)}</b><span style="color:#64748b;font-size:8.5pt;">${isLicence && lic ? "التكلفة المتكررة السنوية" : "المشاركون"}</span></div>
-    <div style="flex:1;border:1px solid #e2e8f0;border-top:3px solid #5391D5;border-radius:6px;padding:8px 10px;"><b style="display:block;color:#010131;font-size:13pt;">${isLicence && lic ? m(lic.year1Subtotal + drFee) : m(p.total)}</b><span style="color:#64748b;font-size:8.5pt;">${isLicence && lic ? "استثمار السنة الأولى" : "إجمالي الاستثمار"}</span></div>
-    ${validUntil ? `<div style="flex:1;border:1px solid #e2e8f0;border-top:3px solid #5391D5;border-radius:6px;padding:8px 10px;"><b style="display:block;color:#010131;font-size:12pt;">${validUntil}</b><span style="color:#64748b;font-size:8.5pt;">صلاحية العرض</span></div>` : ""}
+    ${factsInnerAr}
   </div>
   ${roiHtml}
 
@@ -524,7 +602,16 @@ export function buildProposalHtmlAr(
   <p>يعالج الحل المبيّن أدناه هذه المتطلبات بأدوات ثنائية اللغة حيثما يتطلب الجمهور ذلك، وقابلة للتدقيق من طرف إلى طرف، ومتوائمة مع متطلبات حماية البيانات السارية في ${jurisdiction}. وأي تعديل للنطاق يُتفق عليه عند الانطلاق يُوثَّق في بيان العمل.</p>`)}
 
   <h2>${at("Proposed solution & technical approach")}</h2>
-  ${secBody("Proposed solution & technical approach", `${isEngagement ? engagementSolutionAr : `${committedScope}${technical || "<p>لم يتم اختيار خدمات.</p>"}`}`)}
+  ${secBody(
+    "Proposed solution & technical approach",
+    `${
+      isEngagement
+        ? engagementSolutionAr
+        : isCombined
+          ? `${combinedServicesMode === "licence" ? committedScope : ""}${technical}${engagementSolutionAr}`
+          : `${committedScope}${technical || "<p>لم يتم اختيار خدمات.</p>"}`
+    }`,
+  )}
   <div class="svc"><h3>سيادة البيانات</h3><p>${dataResidencyStatementAr(residency)}</p></div>
 
   ${inc("Psychometric foundations") ? `<h2>${at("Psychometric foundations")}</h2>
@@ -624,7 +711,10 @@ export function buildProposalHtmlAr(
   <h2>${at("Commercial proposal")}</h2>
   ${secIntro("Commercial proposal")}
   ${
-    isEngagement && eng
+    isCombined
+      ? `<p>يجمع النموذج التجاري بين ${combinedServicesMode === "licence" ? "<strong>ترخيص سنوي شامل</strong>" : "<strong>خدمات منصة لكل مشارك</strong>"}${eng ? " و<strong>ارتباط خدمات مهنية مخصص</strong>" : ""}. ويُدرَج كل جزء تحت إجماليه الفرعي أدناه، ويُختَم بإجمالي مجمّع واحد.</p>
+  ${combinedCommercialAr}`
+      : isEngagement && eng
       ? `<p>النموذج التجاري هو <strong>ارتباط خدمات مهنية مخصص</strong>، مُسعَّر بالبنود أدناه - رسوم تصميم وإبلاغ ثابتة، وتقييم لكل مشارك، ووقت مقيّمين بالأيام الاستشارية، وتغذية راجعة تطويرية لكل متدرب.</p>
   ${engagementCommercialAr}`
       : isLicence && lic

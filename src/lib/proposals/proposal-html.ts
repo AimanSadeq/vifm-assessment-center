@@ -129,16 +129,36 @@ export function buildProposalHtml(
   };
   const tcNo = NO("Terms & conditions");
 
+  // ── Combined mode: a services block (per-project OR licence) + engagement(s). ──
+  const isCombined = p.pricingMode === "combined";
+  const combinedServicesMode = ((): "per_project" | "licence" | "none" => {
+    const v = (p.licenceData as Record<string, unknown> | null)?.combinedServicesMode;
+    return v === "licence" ? "licence" : v === "none" ? "none" : "per_project";
+  })();
+
   // ── Licence (SaaS) pricing mode. `lic` is null in per-project mode OR when the
   // licence model is empty, so every licence block gates on `isLicence && lic`. ──
   const isLicence = p.pricingMode === "licence";
-  const lic = isLicence ? computeLicensing(normalizeLicensingModel(p.licensingModel)) : null;
+  const lic =
+    isLicence || (isCombined && combinedServicesMode === "licence")
+      ? computeLicensing(normalizeLicensingModel(p.licensingModel))
+      : null;
 
-  // ── Engagement (professional-services) pricing mode, e.g. Assessment Center. ──
+  // ── Engagement (professional-services) pricing mode, e.g. Assessment Center. In
+  // combined mode residency sits on the services block, so it is NOT injected here. ──
   const isEngagement = p.pricingMode === "engagement";
   const eng = isEngagement
     ? computeEngagement(normalizeEngagementModel(withEngagementResidency(p.engagementModel, drRowLabel, drFee)))
-    : null;
+    : isCombined
+      ? computeEngagement(normalizeEngagementModel(p.engagementModel))
+      : null;
+  // Combined per-project services table: the per-seat lines + the residency line
+  // (engagement lines excluded - they render in the engagement block).
+  const combinedServiceLines =
+    isCombined && combinedServicesMode === "per_project"
+      ? p.lineItems.filter((l) => l.service !== "engagement")
+      : [];
+  const combinedServicesSubtotal = combinedServiceLines.reduce((s, l) => s + l.subtotal, 0);
 
   const scopeWithSeats = p.scope.filter((s) => (s.seats ?? 0) > 0);
   const totalParticipants = scopeWithSeats.reduce((n, s) => n + (s.seats ?? 0), 0);
@@ -148,6 +168,17 @@ export function buildProposalHtml(
       ? serviceLabels.join("")
       : `${serviceLabels.slice(0, -1).join(", ")} and ${serviceLabels[serviceLabels.length - 1]}`;
   const singleService = scopeWithSeats.length === 1 ? scopeWithSeats[0].label : null;
+
+  // In combined mode `p.scope` also carries a synthetic "engagement" row; the
+  // per-service Proposed-solution loop must skip it (the engagement has its own
+  // solution + commercial block), so it renders from serviceScopeRows.
+  const serviceScopeRows = isCombined ? scopeWithSeats.filter((s) => s.service !== "engagement") : scopeWithSeats;
+  const combinedSvcLabels =
+    combinedServicesMode === "licence" && lic ? lic.products.map((pr) => pr.name) : serviceScopeRows.map((s) => s.label);
+  const combinedSvcList =
+    combinedSvcLabels.length <= 1
+      ? combinedSvcLabels.join("")
+      : `${combinedSvcLabels.slice(0, -1).join(", ")} and ${combinedSvcLabels[combinedSvcLabels.length - 1]}`;
 
   const jurisdiction =
     p.clientRegion === "saudi" ? "the Kingdom of Saudi Arabia" : "the United Arab Emirates";
@@ -159,7 +190,7 @@ export function buildProposalHtml(
         : "an organization";
 
   // ── Proposed solution - one block per selected service, with deliverables. ──
-  const technical = scopeWithSeats
+  const technical = serviceScopeRows
     .map((s) => {
       const meta = proposalService(s.service);
       const blurb = meta?.blurb ?? "";
@@ -322,11 +353,51 @@ export function buildProposalHtml(
   </div>`
     : "";
 
+  // ── Combined commercial: the services block (licence build-up OR a per-project
+  // seats table incl. residency) then the engagement block, closed by one combined
+  // grand total. Each block keeps its own discount; the grand total is a plain sum. ──
+  const combinedServicesDiscount = combinedServicesSubtotal * (p.discountPct || 0) / 100;
+  const combinedServicesTable =
+    combinedServicesMode === "licence" && lic
+      ? licenceCommercial
+      : combinedServiceLines.length > 0
+        ? `<table>
+    <thead><tr><th>Service</th><th class="num">Participants</th><th class="num">Rate / participant</th><th class="num">Subtotal</th></tr></thead>
+    <tbody>
+      ${combinedServiceLines
+        .map(
+          (l) =>
+            `<tr><td>${esc(l.label)}</td><td class="num">${l.service === "data_residency" ? "&mdash;" : num(l.seats)}</td><td class="num">${
+              l.service === "data_residency" ? "&mdash;" : money(l.unitRate)
+            }</td><td class="num">${money(l.subtotal)}</td></tr>`,
+        )
+        .join("")}
+      <tr><td colspan="3" class="tot-label">Services subtotal</td><td class="num">${money(combinedServicesSubtotal)}</td></tr>
+      ${combinedServicesDiscount > 0 ? `<tr><td colspan="3" class="tot-label">Discount (${p.discountPct}%)</td><td class="num">- ${money(combinedServicesDiscount)}</td></tr>` : ""}
+      <tr class="total-row"><td colspan="3" class="tot-label">Services total (${esc(cur)})</td><td class="num">${money(combinedServicesSubtotal - combinedServicesDiscount)}</td></tr>
+    </tbody>
+  </table>`
+        : "";
+  const combinedCommercial = `${
+    combinedServicesTable
+      ? `<h3>${combinedServicesMode === "licence" ? "Platform licence" : "Assessment services"}</h3>
+  ${combinedServicesTable}`
+      : ""
+  }${
+    eng
+      ? `<h3>Consultant engagement${eng.titledCount >= 2 ? "s" : ""}</h3>
+  ${engagementCommercial}`
+      : ""
+  }
+  <table><tbody><tr class="total-row"><td class="tot-label">Combined total (${esc(cur)})</td><td class="num">${money(p.total)}</td></tr></tbody></table>`;
+
   // The executive summary NAMES the offered service(s) - a proposal must say
   // what is being sold in its first breath, not just "assessment instruments".
   const intro =
     p.introNote?.trim() ||
-    (isEngagement && eng
+    (isCombined
+      ? `We are pleased to present this combined proposal for ${p.clientName}, bringing together ${combinedSvcList || "VIFM's talent-intelligence services"}${eng ? ` and a consultant-led ${esc(eng.name)} engagement` : ""} in a single commercial. Each element is scoped and priced under its own subtotal below, with one combined total; the technical approach and delivery plan follow.`
+      : isEngagement && eng
       ? `We are pleased to present this proposal for a ${esc(eng.name)} engagement for ${p.clientName}, assessing ${num(eng.participants)} participant${eng.participants === 1 ? "" : "s"}. This is a consultant-led programme - trained assessors, structured role-relevant exercises, a defensible overall assessment rating and 1:1 developmental feedback - supported by the VIFM Caliber® platform. The approach, delivery plan and commercial detail are set out below.`
       : isLicence
         ? `We are pleased to present this proposal for an annual, all-access licence to the VIFM Caliber® Talent Intelligence Platform for ${p.clientName}, combining ${serviceList || "VIFM's talent-intelligence services"} into one candidate journey, one admin console and combined bilingual reporting. The commercial model is a committed annual licence; the technical approach, delivery plan and full licence build-up are set out below.`
@@ -336,7 +407,9 @@ export function buildProposalHtml(
 
   // Cover subtitle names the commercial shape of the offer, per pricing mode.
   const coverSubtitle =
-    isEngagement && eng
+    isCombined
+      ? "Combined programme &middot; Platform services + consultant engagement"
+      : isEngagement && eng
       ? `${esc(eng.name)} &middot; Consultant-led professional-services engagement`
       : isLicence
         ? "Annual all-access licence &middot; VIFM Caliber&reg; Talent Intelligence Platform"
@@ -344,6 +417,23 @@ export function buildProposalHtml(
 
   // City, Country under the client name on the cover (either part optional).
   const clientLocation = [p.clientCity, p.clientCountry].filter((s) => s && s.trim()).join(", ");
+
+  // Executive-summary fact strip. Combined mode reports service count + combined
+  // total + engagement participants; the other modes keep their existing facts.
+  const combinedSvcCount = combinedServicesMode === "licence" && lic ? lic.products.length + lic.bundles.length : serviceScopeRows.length;
+  const factsInner = isCombined
+    ? `<div class="fact"><b>${num(combinedSvcCount)}</b><span>Service${combinedSvcCount === 1 ? "" : "s"}</span></div>
+    ${eng ? `<div class="fact"><b>${num(eng.participants)}</b><span>Engagement participant${eng.participants === 1 ? "" : "s"}</span></div>` : ""}
+    <div class="fact"><b>${money(p.total)}</b><span>Combined investment</span></div>
+    ${validUntil ? `<div class="fact"><b>${validUntil}</b><span>Offer validity</span></div>` : ""}`
+    : `${
+        singleService
+          ? `<div class="fact"><b>${esc(singleService)}</b><span>Service</span></div>`
+          : `<div class="fact"><b>${scopeWithSeats.length}</b><span>Services</span></div>`
+      }
+    <div class="fact"><b>${isLicence && lic ? money(lic.annualRecurring) : num(totalParticipants)}</b><span>${isLicence && lic ? "Annual recurring" : "Participants"}</span></div>
+    <div class="fact"><b>${isLicence && lic ? money(lic.year1Subtotal + drFee) : money(p.total)}</b><span>${isLicence && lic ? "Year-1 investment" : "Total investment"}</span></div>
+    ${validUntil ? `<div class="fact"><b>${validUntil}</b><span>Offer validity</span></div>` : ""}`;
 
   // ── Indicative-return (ROI) paragraph (Phase 2). Renders only when the
   // preparer supplied an average salary + hires/year (stored in licence_data.roi). ──
@@ -559,14 +649,7 @@ export function buildProposalHtml(
   <h2 style="border-top:0;padding-top:0;"><span class="no">${NO("Executive summary")}.</span>Executive summary</h2>
   ${secBody("Executive summary", `<p>${esc(intro)}</p>`)}
   <div class="facts">
-    ${
-      singleService
-        ? `<div class="fact"><b>${esc(singleService)}</b><span>Service</span></div>`
-        : `<div class="fact"><b>${scopeWithSeats.length}</b><span>Services</span></div>`
-    }
-    <div class="fact"><b>${isLicence && lic ? money(lic.annualRecurring) : num(totalParticipants)}</b><span>${isLicence && lic ? "Annual recurring" : "Participants"}</span></div>
-    <div class="fact"><b>${isLicence && lic ? money(lic.year1Subtotal + drFee) : money(p.total)}</b><span>${isLicence && lic ? "Year-1 investment" : "Total investment"}</span></div>
-    ${validUntil ? `<div class="fact"><b>${validUntil}</b><span>Offer validity</span></div>` : ""}
+    ${factsInner}
   </div>
   ${roiHtml}
 
@@ -600,7 +683,16 @@ export function buildProposalHtml(
   )}
 
   <h2><span class="no">${NO("Proposed solution & technical approach")}.</span>Proposed solution &amp; technical approach</h2>
-  ${secBody("Proposed solution & technical approach", `${isEngagement ? engagementSolution : `${committedScope}${technical || "<p>No services selected.</p>"}`}`)}
+  ${secBody(
+    "Proposed solution & technical approach",
+    `${
+      isEngagement
+        ? engagementSolution
+        : isCombined
+          ? `${combinedServicesMode === "licence" ? committedScope : ""}${technical}${engagementSolution}`
+          : `${committedScope}${technical || "<p>No services selected.</p>"}`
+    }`,
+  )}
   <div class="svc"><h3>Data residency</h3><p>${dataResidencyStatement(residency)}</p></div>
 
   ${inc("Psychometric foundations") ? `<h2><span class="no">${NO("Psychometric foundations")}.</span>Psychometric foundations</h2>
@@ -707,7 +799,10 @@ export function buildProposalHtml(
   <h2><span class="no">${NO("Commercial proposal")}.</span>Commercial proposal</h2>
   ${secIntro("Commercial proposal")}
   ${
-    isEngagement && eng
+    isCombined
+      ? `<p>The commercial model combines ${combinedServicesMode === "licence" ? "an <strong>annual all-access licence</strong>" : "<strong>per-participant platform services</strong>"}${eng ? " with a bespoke <strong>professional-services engagement</strong>" : ""}. Each block is itemised under its own subtotal below, closed by a single combined total.</p>
+  ${combinedCommercial}`
+      : isEngagement && eng
       ? `<p>The commercial model is a bespoke <strong>professional-services engagement</strong>, priced by line item below - fixed design and reporting fees, per-participant assessment, consultant-day assessor time, and per-delegate developmental feedback.</p>
   ${engagementCommercial}`
       : isLicence && lic

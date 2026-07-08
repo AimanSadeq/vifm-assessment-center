@@ -78,6 +78,12 @@ export function ProposalBuilder({
 
   // Default NEW proposals to licence mode (per handover); keep the editing proposal's mode.
   const [pricingMode, setPricingMode] = useState<PricingMode>(existing?.pricingMode ?? "licence");
+  // Combined mode: how the services block is priced (the engagement block is always
+  // itemised alongside). Stored in the licenceData bag.
+  const [combinedServicesMode, setCombinedServicesMode] = useState<"per_project" | "licence" | "none">(() => {
+    const v = (existing?.licenceData as Record<string, unknown> | undefined)?.combinedServicesMode;
+    return v === "licence" ? "licence" : v === "none" ? "none" : "per_project";
+  });
 
   const [seats, setSeats] = useState<Record<string, number>>(
     Object.fromEntries(PROPOSAL_SERVICES.map((s) => [s.key, seed(s.key)?.seats ?? 0])),
@@ -292,6 +298,12 @@ export function ProposalBuilder({
     () => computeEngagement(normalizeEngagementModel(withEngagementResidency(assembleEngagementModel(), drLineLabel, feeNum))),
     [assembleEngagementModel, drLineLabel, feeNum],
   );
+  // Combined mode keeps data residency on the SERVICES block, so the engagement is
+  // priced WITHOUT the residency injection (avoids the double-count).
+  const engagementNoResidency = useMemo(
+    () => computeEngagement(normalizeEngagementModel(assembleEngagementModel())),
+    [assembleEngagementModel],
+  );
 
   async function save() {
     setBusy(true);
@@ -309,14 +321,18 @@ export function ProposalBuilder({
       contactEmail: contactEmail.trim() || null,
       currency,
       pricingMode,
-      licensingModel: pricingMode === "licence" ? assembleLicensingModel() : null,
-      engagementModel: pricingMode === "engagement" ? assembleEngagementModel() : null,
+      licensingModel:
+        pricingMode === "licence" || (pricingMode === "combined" && combinedServicesMode === "licence")
+          ? assembleLicensingModel()
+          : null,
+      engagementModel: pricingMode === "engagement" || pricingMode === "combined" ? assembleEngagementModel() : null,
       sectionSelection: Array.from(selectedSections),
       licenceData: {
         ...(existing?.licenceData ?? {}),
         roi: roiSalary > 0 && roiHires > 0 ? { avgSalary: roiSalary, hiresPerYear: roiHires, accuracyGainPct: roiGainPct } : null,
         dataResidency,
         dataResidencyFee,
+        combinedServicesMode: pricingMode === "combined" ? combinedServicesMode : undefined,
         // Only keep sections that actually have an override, so the bag stays lean.
         sectionOverrides: Object.fromEntries(
           Object.entries(sectionOverrides)
@@ -350,7 +366,26 @@ export function ProposalBuilder({
 
   const isLicence = pricingMode === "licence";
   const isEngagement = pricingMode === "engagement";
-  const priced = isLicence ? !!licensing : isEngagement ? !!engagement : scope.length > 0;
+  const isCombined = pricingMode === "combined";
+  // In combined mode the services grid + licence params behave like licence when the
+  // sub-toggle is on "Annual licence"; the engagement editor always shows.
+  const servicesAsLicence = isLicence || (isCombined && combinedServicesMode === "licence");
+  const showServices = !isEngagement && (!isCombined || combinedServicesMode !== "none");
+  const showEngagement = isEngagement || isCombined;
+  const combinedServicesPriced =
+    combinedServicesMode === "licence" ? !!licensing : combinedServicesMode === "per_project" ? scope.length > 0 || feeNum > 0 : false;
+  const combinedServicesTotal = servicesAsLicence ? (licensing ? licensing.year1Subtotal + feeNum : 0) : totals.total;
+  const combinedGrandTotal = combinedServicesTotal + (engagementNoResidency?.total ?? 0);
+  // The engagement figure to show: residency-free in combined mode (residency lives on
+  // the services block there), residency-injected in pure engagement mode.
+  const engView = isCombined ? engagementNoResidency : engagement;
+  const priced = isCombined
+    ? combinedServicesPriced || !!engagementNoResidency
+    : isLicence
+      ? !!licensing
+      : isEngagement
+        ? !!engagement
+        : scope.length > 0;
   const canSave = title.trim() && clientName.trim() && priced && !busy;
 
   const numInput = "mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm";
@@ -430,7 +465,9 @@ export function ProposalBuilder({
                 ? "Annual all-access licence to the Caliber platform (SaaS build-up)."
                 : isEngagement
                   ? "Bespoke professional-services engagement (e.g. Assessment Center): fixed fees + per-participant + consultant-days + feedback."
-                  : "One-off project fee: participants x the per-service rate."}
+                  : isCombined
+                    ? "Combined: per-seat services (or an annual licence) PLUS one or more consultant engagements, itemised together with a single grand total."
+                    : "One-off project fee: participants x the per-service rate."}
             </p>
           </div>
           <div className="inline-flex rounded-md border border-border p-0.5">
@@ -438,22 +475,39 @@ export function ProposalBuilder({
               className={`rounded px-3 py-1.5 text-sm font-medium ${isLicence ? "bg-[#010131] text-white" : "text-muted-foreground hover:bg-muted"}`}>Annual licence</button>
             <button type="button" onClick={() => switchMode("per_project")}
               className={`rounded px-3 py-1.5 text-sm font-medium ${pricingMode === "per_project" ? "bg-[#010131] text-white" : "text-muted-foreground hover:bg-muted"}`}>Per project</button>
+            <button type="button" onClick={() => switchMode("combined")}
+              className={`rounded px-3 py-1.5 text-sm font-medium ${isCombined ? "bg-[#010131] text-white" : "text-muted-foreground hover:bg-muted"}`}>Combined</button>
             <button type="button" onClick={() => switchMode("engagement")}
               className={`rounded px-3 py-1.5 text-sm font-medium ${isEngagement ? "bg-[#010131] text-white" : "text-muted-foreground hover:bg-muted"}`}>Engagement</button>
           </div>
         </div>
 
-        {!isEngagement && (<>
+        {isCombined && (
+          <div className="flex flex-wrap items-center gap-3 border-t border-border pt-3">
+            <span className="text-sm font-medium text-foreground">Price the platform services as</span>
+            <div className="inline-flex rounded-md border border-border p-0.5">
+              <button type="button" onClick={() => setCombinedServicesMode("per_project")}
+                className={`rounded px-3 py-1 text-sm font-medium ${combinedServicesMode === "per_project" ? "bg-[#5391D5] text-white" : "text-muted-foreground hover:bg-muted"}`}>Per project</button>
+              <button type="button" onClick={() => setCombinedServicesMode("licence")}
+                className={`rounded px-3 py-1 text-sm font-medium ${combinedServicesMode === "licence" ? "bg-[#5391D5] text-white" : "text-muted-foreground hover:bg-muted"}`}>Annual licence</button>
+              <button type="button" onClick={() => setCombinedServicesMode("none")}
+                className={`rounded px-3 py-1 text-sm font-medium ${combinedServicesMode === "none" ? "bg-[#5391D5] text-white" : "text-muted-foreground hover:bg-muted"}`}>Engagement only</button>
+            </div>
+            <span className="text-xs text-muted-foreground">then add the consultant engagement(s) below.</span>
+          </div>
+        )}
+
+        {showServices && (<>
         <div className="flex items-center justify-between gap-2 border-t border-border pt-3">
-          <h3 className="text-sm font-medium text-foreground">Services &amp; {isLicence ? "annual volumes" : "participants"}</h3>
+          <h3 className="text-sm font-medium text-foreground">Services &amp; {servicesAsLicence ? "annual volumes" : "participants"}</h3>
           <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            Apply {isLicence ? "volume" : "cohort size"}
+            Apply {servicesAsLicence ? "volume" : "cohort size"}
             <input type="number" min={0} className="w-20 rounded border border-border px-2 py-1 text-sm"
               onChange={(e) => applyCohort(Number(e.target.value) || 0)} />
           </label>
         </div>
         <p className="text-xs text-muted-foreground">
-          {isLicence
+          {servicesAsLicence
             ? "Set the committed annual volume per service (0 excludes it) and its unit price. The a-la-carte total feeds the licence build-up below."
             : "Set participants per service (0 excludes it). Pricing = participants x the per-service rate."}
         </p>
@@ -468,12 +522,12 @@ export function ProposalBuilder({
                 <div className="flex flex-wrap items-center gap-3">
                   <span className="min-w-[7rem] text-sm font-medium text-foreground">{s.label}</span>
                   <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    {isLicence ? "Annual volume" : "Participants"}
+                    {servicesAsLicence ? "Annual volume" : "Participants"}
                     <input type="number" min={0} value={seats[s.key] || 0}
                       onChange={(e) => setSeats((p) => ({ ...p, [s.key]: Math.max(0, Number(e.target.value) || 0) }))}
                       className="w-24 rounded border border-border px-2 py-1 text-sm" />
                   </label>
-                  {isLicence ? (
+                  {servicesAsLicence ? (
                     <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       Unit price
                       <input type="number" min={0} value={unit}
@@ -486,7 +540,7 @@ export function ProposalBuilder({
                   )}
                   {on && (
                     <span className="ml-auto text-sm font-semibold tabular-nums text-[#010131]">
-                      {money((isLicence ? unit : rate) * (seats[s.key] || 0))}
+                      {money((servicesAsLicence ? unit : rate) * (seats[s.key] || 0))}
                     </span>
                   )}
                 </div>
@@ -499,18 +553,19 @@ export function ProposalBuilder({
             );
           })}
         </div>
-        {!isLicence && missingRates.length > 0 && (
+        {!servicesAsLicence && missingRates.length > 0 && (
           <p className="text-xs text-amber-700">
             No rate set for {missingRates.join(", ")} - they price at 0. <a href="/admin/proposals/rates" className="underline">Set rates</a>.
           </p>
         )}
-        {isLicence && !licensing && (
+        {servicesAsLicence && !licensing && (
           <p className="text-xs text-amber-700">Add at least one service with an annual volume and a unit price above 0 to price the licence.</p>
         )}
         </>)}
 
-        {isEngagement && (
+        {showEngagement && (
           <div className="border-t border-border pt-3 space-y-4">
+            {isCombined && <h3 className="text-sm font-medium text-foreground">Consultant engagement(s)</h3>}
             {engGroups.map((g, gi) => (
               <div key={gi} className="rounded-md border border-border p-3 space-y-3">
                 <div className="flex flex-wrap items-end justify-between gap-3">
@@ -570,11 +625,11 @@ export function ProposalBuilder({
             <button type="button" onClick={addEngagement}
               className="rounded-md border border-[#010131] bg-[#010131] px-3 py-2 text-sm font-medium text-white hover:bg-[#010131]/90">+ Add engagement</button>
 
-            {engagement ? (
+            {engView ? (
               <div className="rounded-md border border-border bg-muted/40 p-3 text-sm">
-                <div className="flex justify-between text-muted-foreground"><span>Subtotal (all engagements)</span><span className="tabular-nums">{money(engagement.subtotal)}</span></div>
-                {engagement.hasDiscount && <div className="flex justify-between text-muted-foreground"><span>Discount ({discountPct}%)</span><span className="tabular-nums">- {money(engagement.discountAmount)}</span></div>}
-                <div className="mt-1 flex justify-between border-t border-border pt-1 text-base font-semibold text-[#010131]"><span>Total{engagement.participants ? ` (${engagement.participants} delegates)` : ""}</span><span className="tabular-nums">{money(engagement.total)}</span></div>
+                <div className="flex justify-between text-muted-foreground"><span>Subtotal (all engagements)</span><span className="tabular-nums">{money(engView.subtotal)}</span></div>
+                {engView.hasDiscount && <div className="flex justify-between text-muted-foreground"><span>Discount ({discountPct}%)</span><span className="tabular-nums">- {money(engView.discountAmount)}</span></div>}
+                <div className="mt-1 flex justify-between border-t border-border pt-1 text-base font-semibold text-[#010131]"><span>Total{engView.participants ? ` (${engView.participants} delegates)` : ""}</span><span className="tabular-nums">{money(engView.total)}</span></div>
               </div>
             ) : (
               <p className="text-xs text-amber-700">Add at least one line with an amount above 0 to price the engagement.</p>
@@ -584,7 +639,7 @@ export function ProposalBuilder({
       </section>
 
       {/* Licence parameters */}
-      {isLicence && (
+      {servicesAsLicence && (
         <section className="rounded-lg border border-border bg-card p-4 space-y-3">
           <h2 className="font-medium text-foreground">Licence parameters</h2>
           <div className="grid gap-3 sm:grid-cols-3">
@@ -678,7 +733,24 @@ export function ProposalBuilder({
             <span className="text-muted-foreground">Valid until</span>
             <input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} className={numInput} />
           </label>
-          {isLicence ? (
+          {isCombined ? (
+            <div className="sm:col-span-3 rounded-md border border-border bg-muted/40 p-3 text-sm">
+              <div className="space-y-1">
+                <div className="flex justify-between text-muted-foreground">
+                  <span>{combinedServicesMode === "licence" ? "Platform licence (Year-1)" : combinedServicesMode === "per_project" ? "Platform services" : "Platform services"}</span>
+                  <span className="tabular-nums">{money(combinedServicesTotal)}</span>
+                </div>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Consultant engagement{(engagementNoResidency?.groups.filter((g) => g.name.trim()).length ?? 0) > 1 ? "s" : ""}</span>
+                  <span className="tabular-nums">{money(engagementNoResidency?.total ?? 0)}</span>
+                </div>
+                {feeNum > 0 && combinedServicesMode !== "none" && (
+                  <p className="text-[11px] text-muted-foreground">Data residency ({money(feeNum)}) is included once, inside the platform-services figure.</p>
+                )}
+                <div className="mt-1 flex justify-between border-t border-border pt-1 text-base font-semibold text-[#010131]"><span>Combined total</span><span className="tabular-nums">{money(combinedGrandTotal)}</span></div>
+              </div>
+            </div>
+          ) : isLicence ? (
             <div className="sm:col-span-3 rounded-md border border-border bg-muted/40 p-3 text-sm">
               {licensing ? (
                 <div className="space-y-1">
@@ -850,7 +922,7 @@ export function ProposalBuilder({
           className="rounded-md bg-[#010131] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#121140] disabled:opacity-50">
           {busy ? "Saving…" : existing ? "Save changes" : "Create proposal"}
         </button>
-        {!priced && <span className="text-xs text-muted-foreground">Add at least one {isLicence ? "service with a volume and unit price" : isEngagement ? "priced engagement line" : "service with participants"}.</span>}
+        {!priced && <span className="text-xs text-muted-foreground">Add at least one {isCombined ? "priced service or engagement line" : isLicence ? "service with a volume and unit price" : isEngagement ? "priced engagement line" : "service with participants"}.</span>}
       </div>
     </div>
   );

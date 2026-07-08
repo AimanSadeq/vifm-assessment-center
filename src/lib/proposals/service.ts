@@ -209,7 +209,13 @@ type PricedSnapshot = {
  *  when a licence proposal has nothing priced. */
 async function buildPricedSnapshot(input: ProposalInput): Promise<PricedSnapshot | { error: string }> {
   const mode: PricingMode =
-    input.pricingMode === "licence" ? "licence" : input.pricingMode === "engagement" ? "engagement" : "per_project";
+    input.pricingMode === "licence"
+      ? "licence"
+      : input.pricingMode === "engagement"
+        ? "engagement"
+        : input.pricingMode === "combined"
+          ? "combined"
+          : "per_project";
 
   // Optional data-residency cost (proposal-level, stored in licenceData). It is a
   // real line item in the pricing model: a pre-subtotal line for per-project +
@@ -218,6 +224,70 @@ async function buildPricedSnapshot(input: ProposalInput): Promise<PricedSnapshot
   const dataResidencyFee = Math.max(0, Number((input.licenceData as Record<string, unknown> | null | undefined)?.dataResidencyFee) || 0);
   const drResidency = resolveDataResidency((input.licenceData as Record<string, unknown> | null | undefined)?.dataResidency);
   const drLineLabel = dataResidencyLineLabel(drResidency);
+
+  if (mode === "combined") {
+    // A services block (per-project seats x rate OR an annual licence) PLUS one or
+    // more engagements, itemised together with one combined total. Each block keeps
+    // its own discount; data residency is added exactly once (on the services block).
+    const rawServicesMode = (input.licenceData as Record<string, unknown> | null | undefined)?.combinedServicesMode;
+    const servicesMode = rawServicesMode === "licence" ? "licence" : rawServicesMode === "none" ? "none" : "per_project";
+
+    // Data residency sits on the SERVICES block once: a per-project line item (in the
+    // discountable subtotal) or baked into the licence Year-1 (never both, never on
+    // the engagement).
+    const drLine = { service: "data_residency", label: drLineLabel, seats: 1, unitRate: dataResidencyFee, subtotal: dataResidencyFee };
+    let licence: NormalizedLicenceModel | null = null;
+    let servicesScope: ScopeItem[] = [];
+    let servicesLineItems: LineItem[] = [];
+    let servicesSubtotal = 0;
+    let servicesTotal = 0;
+    if (servicesMode === "licence") {
+      licence = normalizeLicensingModel(input.licensingModel);
+      const c = computeLicensing(licence);
+      if (c) {
+        servicesScope = c.products.map((pr) => ({
+          service: pr.key, label: pr.name, seats: pr.volume, scopeNote: null,
+          methodologySlug: proposalService(pr.key)?.methodologySlug ?? null,
+        }));
+        servicesLineItems = c.products.map((pr) => ({ service: pr.key, label: pr.name, seats: pr.volume, unitRate: pr.unitPrice, subtotal: pr.lineTotal }));
+        servicesSubtotal = c.alaCarteTotal;
+        servicesTotal = c.year1Subtotal + dataResidencyFee; // residency as a one-time licence line (render shows it)
+      } else {
+        licence = null;
+      }
+    } else if (servicesMode === "per_project") {
+      const base = await price(input.scope, input.discountPct);
+      const items = dataResidencyFee > 0 ? [...base.items, drLine] : base.items;
+      const t = computeTotals(items, input.discountPct || 0);
+      servicesScope = input.scope;
+      servicesLineItems = items;
+      servicesSubtotal = t.subtotal;
+      servicesTotal = t.total;
+    }
+
+    // Engagement block - NO residency injection here (it is on the services block).
+    const engagement = normalizeEngagementModel(input.engagementModel);
+    const eng = computeEngagement(engagement);
+    const engagementTotal = eng?.total ?? 0;
+    const engagementSubtotal = eng?.subtotal ?? 0;
+
+    if (servicesTotal === 0 && engagementTotal === 0) {
+      return { error: "Add at least one priced service or a priced engagement before saving a combined proposal." };
+    }
+
+    const engScopeRow: ScopeItem[] = eng ? [{ service: "engagement", label: eng.name, seats: eng.participants, scopeNote: null, methodologySlug: null }] : [];
+    const engLineItems: LineItem[] = eng ? eng.lines.map((l) => ({ service: "engagement", label: l.label, seats: l.quantity, unitRate: l.unitRate, subtotal: l.lineTotal })) : [];
+    return {
+      pricingMode: mode,
+      licence,
+      engagement,
+      scope: [...servicesScope, ...engScopeRow],
+      lineItems: [...servicesLineItems, ...engLineItems],
+      subtotal: servicesSubtotal + engagementSubtotal,
+      discountPct: input.discountPct || 0,
+      total: servicesTotal + engagementTotal, // residency already inside servicesTotal
+    };
+  }
 
   if (mode === "engagement") {
     // Compute from the residency-injected model so the data-residency line flows
@@ -375,6 +445,9 @@ export async function createProposal(input: ProposalInput): Promise<{ ok: true; 
     if (!isMissingColumn(error)) break;
   }
 
+  if (priced.pricingMode === "combined" && (error?.code === "23514" || isMissingColumn(error))) {
+    return { error: "Combined-mode pricing needs migration 00178. Apply it before saving in combined mode." };
+  }
   if (error && isMissingColumn(error) && priced.pricingMode !== "per_project") {
     const mig = priced.pricingMode === "engagement" ? "00176" : "00175";
     const label = priced.pricingMode === "engagement" ? "Engagement" : "Licence";
@@ -406,7 +479,9 @@ export async function updateProposal(
     revision_of_id: input.revisionOfId ?? null,
   };
   const licFull =
-    priced.pricingMode === "engagement" ? { ...licRow, engagement_model: priced.engagement } : { ...licRow };
+    priced.pricingMode === "engagement" || priced.pricingMode === "combined"
+      ? { ...licRow, engagement_model: priced.engagement }
+      : { ...licRow };
   // locRow (00177) and licFull (00175/00176) peel independently; licence + engagement
   // rows never peel licFull (no silent downgrade), only locRow. See createProposal.
   const candidates =
@@ -427,6 +502,9 @@ export async function updateProposal(
     if (!isMissingColumn(error)) break;
   }
 
+  if (priced.pricingMode === "combined" && (error?.code === "23514" || isMissingColumn(error))) {
+    return { error: "Combined-mode pricing needs migration 00178. Apply it before saving in combined mode." };
+  }
   if (error && isMissingColumn(error) && priced.pricingMode !== "per_project") {
     const mig = priced.pricingMode === "engagement" ? "00176" : "00175";
     const label = priced.pricingMode === "engagement" ? "Engagement" : "Licence";

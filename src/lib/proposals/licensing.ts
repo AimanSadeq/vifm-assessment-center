@@ -11,7 +11,7 @@
 
 import type { CaliberService } from "@/lib/clients/portal-services";
 
-export type PricingMode = "per_project" | "licence" | "engagement";
+export type PricingMode = "per_project" | "licence" | "engagement" | "combined";
 export type LicenceTier = "SHARED" | "SOVEREIGN";
 export type ProductMode = "PER_UNIT" | "FIXED";
 

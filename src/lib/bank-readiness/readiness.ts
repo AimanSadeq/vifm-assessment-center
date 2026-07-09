@@ -19,6 +19,8 @@ export type BankReadiness = {
   servesLive: boolean;
   /** Has a draft -> approved SME review lifecycle. */
   hasReviewGate: boolean;
+  /** Instrument is retired - no runtime serves it, so it is not a deal-time risk. */
+  retired?: boolean;
   vetted: number; // approved/live/active items
   total: number;
   /** Per-unit fill (present only for the true item banks). */
@@ -127,11 +129,10 @@ async function psychometrics(counts: Map<string, { total: number; approved: numb
     counts,
     target,
   );
-  const filled = units.length > 0 && units.every((u) => u.approved >= target);
   return {
-    key: "psychometrics", label: "Psychometrics (Big Five)", tier: "indicative", servesLive: !filled, hasReviewGate: true,
+    key: "psychometrics", label: "Big Five / OCEAN personality", tier: "indicative", servesLive: false, hasReviewGate: true, retired: true,
     vetted, total, units, targetPerUnit: target, console: "/admin/psychometrics",
-    note: "Personality served from the public-domain Mini-IPIP/AI; the calibrated bank is empty. IPIP-50 can be seeded as approved items in one click to clear the content gate.",
+    note: "Retired - not served. The behavioural self-report is now Persona (41-competency self-assessment); no candidate takes a Big Five test. The scoring/report code is kept only for the psychometrics Foundations layer (traits that predict competencies).",
   };
 }
 

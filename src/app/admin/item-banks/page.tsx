@@ -41,11 +41,14 @@ export default async function ItemBanksPage() {
   }
   const banks = await loadBankReadiness();
 
-  const scramble = banks.filter((b) => b.servesLive).length;
-  const withGate = banks.filter((b) => b.hasReviewGate).length;
-  const allUnits = banks.flatMap((b) => b.units ?? []);
+  // Metrics count only ACTIVE banks - a retired instrument (nothing serves it) is
+  // not a deal-time risk and should not drag the readiness numbers.
+  const active = banks.filter((b) => !b.retired);
+  const scramble = active.filter((b) => b.servesLive).length;
+  const withGate = active.filter((b) => b.hasReviewGate).length;
+  const allUnits = active.flatMap((b) => b.units ?? []);
   const readyUnits = allUnits.filter((u) => unitState(u) === "ready").length;
-  const totalVetted = banks.reduce((s, b) => s + b.vetted, 0);
+  const totalVetted = active.reduce((s, b) => s + b.vetted, 0);
 
   const metric = (value: string, label: string, tone = "text-[#010131]") => (
     <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
@@ -70,7 +73,7 @@ export default async function ItemBanksPage() {
         {metric(`${scramble}`, "Banks that generate items live at deal time", scramble > 0 ? "text-rose-600" : "text-emerald-700")}
         {metric(`${readyUnits}/${allUnits.length}`, "Domains/subtests at target (vetted)")}
         {metric(`${totalVetted}`, "Vetted items across all banks")}
-        {metric(`${withGate}/${banks.length}`, "Banks with an SME review gate")}
+        {metric(`${withGate}/${active.length}`, "Banks with an SME review gate")}
       </div>
 
       {scramble > 0 && (
@@ -88,31 +91,39 @@ export default async function ItemBanksPage() {
           return (
             <div
               key={b.key}
-              className={`rounded-xl border bg-card p-4 shadow-sm ${st === "risk" ? "border-rose-200" : st === "partial" ? "border-amber-200" : "border-emerald-200"}`}
+              className={`rounded-xl border bg-card p-4 shadow-sm ${b.retired ? "border-slate-200 opacity-70" : st === "risk" ? "border-rose-200" : st === "partial" ? "border-amber-200" : "border-emerald-200"}`}
             >
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-sm font-semibold text-[#010131]">{b.label}</span>
-                <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium capitalize ${TIER_CHIP[b.tier] ?? ""}`}>{b.tier}</span>
-                {b.servesLive ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-600">
-                    <ShieldAlert className="h-3 w-3" /> Live-AI at deal time
+                {b.retired ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
+                    Retired · not served
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
-                    <ShieldCheck className="h-3 w-3" /> Fixed vetted content
-                  </span>
+                  <>
+                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium capitalize ${TIER_CHIP[b.tier] ?? ""}`}>{b.tier}</span>
+                    {b.servesLive ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-600">
+                        <ShieldAlert className="h-3 w-3" /> Live-AI at deal time
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+                        <ShieldCheck className="h-3 w-3" /> Fixed vetted content
+                      </span>
+                    )}
+                    {b.hasReviewGate && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">
+                        <CheckCircle2 className="h-3 w-3" /> SME review gate
+                      </span>
+                    )}
+                    <span className="ml-auto text-xs tabular-nums text-muted-foreground">
+                      {b.vetted} vetted{b.total !== b.vetted ? ` / ${b.total} total` : ""}
+                    </span>
+                  </>
                 )}
-                {b.hasReviewGate && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">
-                    <CheckCircle2 className="h-3 w-3" /> SME review gate
-                  </span>
-                )}
-                <span className="ml-auto text-xs tabular-nums text-muted-foreground">
-                  {b.vetted} vetted{b.total !== b.vetted ? ` / ${b.total} total` : ""}
-                </span>
               </div>
 
-              {b.units && b.units.length > 0 && (
+              {!b.retired && b.units && b.units.length > 0 && (
                 <div className="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-2">
                   {b.units.map((u) => {
                     const s = unitState(u);

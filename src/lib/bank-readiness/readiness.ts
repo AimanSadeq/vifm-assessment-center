@@ -4,7 +4,7 @@
 // Every loader is tolerant of an empty or un-applied table so the page never 500s.
 
 import { createServiceClient } from "@/lib/supabase/server";
-import { COGNITIVE_SUBTESTS, BIG_FIVE } from "@/lib/psychometrics/framework";
+import { COGNITIVE_SUBTESTS } from "@/lib/psychometrics/framework";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
 import { TECH_DOMAINS } from "@/lib/competencies/technical-framework";
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
@@ -122,20 +122,6 @@ async function logica(counts: Map<string, { total: number; approved: number }>):
   };
 }
 
-async function psychometrics(counts: Map<string, { total: number; approved: number }>): Promise<BankReadiness> {
-  const target = 8;
-  const { units, vetted, total } = unitsFrom(
-    BIG_FIVE.map((t) => ({ key: t.key, label: t.name_en })),
-    counts,
-    target,
-  );
-  return {
-    key: "psychometrics", label: "Big Five / OCEAN personality", tier: "indicative", servesLive: false, hasReviewGate: true, retired: true,
-    vetted, total, units, targetPerUnit: target, console: "/admin/psychometrics",
-    note: "Retired - not served. The behavioural self-report is now Persona (41-competency self-assessment); no candidate takes a Big Five test. The scoring/report code is kept only for the psychometrics Foundations layer (traits that predict competencies).",
-  };
-}
-
 // ── Fluent: eng_fluent_items, status='live', receptive skills only ──
 async function fluent(): Promise<BankReadiness> {
   const rows = await selectRows("eng_fluent_items", "skill, status");
@@ -218,18 +204,19 @@ function prehire(): BankReadiness {
   };
 }
 
-/** Load readiness for every bank (DB queries run in parallel; all tolerant). */
+/** Load readiness for every bank (DB queries run in parallel; all tolerant).
+ *  Big Five / OCEAN personality is deliberately absent - it is retired (nothing
+ *  serves it; Persona is the behavioural self-report now), so it is not a bank. */
 export async function loadBankReadiness(): Promise<BankReadiness[]> {
   const counts = await psyCounts();
-  const [t, l, ps, f, a, ac, rf] = await Promise.all([
+  const [t, l, f, a, ac, rf] = await Promise.all([
     techno(),
     logica(counts),
-    psychometrics(counts),
     fluent(),
     arc(),
     acBehavioural(),
     reflect(),
   ]);
   // Order: scramble-risk item banks first, then framework/reviewed banks.
-  return [l, ps, f, prehire(), t, a, ac, persona(), rf];
+  return [l, f, prehire(), t, a, ac, persona(), rf];
 }

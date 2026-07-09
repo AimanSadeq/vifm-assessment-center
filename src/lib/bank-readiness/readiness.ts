@@ -74,20 +74,33 @@ function unitsFrom(
   };
 }
 
-// ── Techno: tech_assessment_items, status='approved', by domain_key ──
+// ── Techno: tech_assessment_items, APPROVED certifies; in_review awaits SME sign-off ──
 async function techno(): Promise<BankReadiness> {
-  const rows = await selectRows("tech_assessment_items", "domain_key, status");
-  const counts = aggregate(rows, "domain_key", (r) => r.status === "approved");
+  const allRows = await selectRows("tech_assessment_items", "domain_key, status");
+  // Only count items in the 10 certification domains (ignore orphan/legacy drafts
+  // with non-taxonomy domain keys so the totals match the per-domain view).
+  const std = new Set(TECH_DOMAINS.map((d) => d.key));
+  const rows = allRows.filter((r) => std.has(String(r.domain_key)));
+  const approvedCounts = aggregate(rows, "domain_key", (r) => r.status === "approved");
   const target = 8; // matches the cut-score min_items default
-  const { units, vetted, total } = unitsFrom(
+  const { units, vetted } = unitsFrom(
     TECH_DOMAINS.map((d) => ({ key: d.key, label: d.name })),
-    counts,
+    approvedCounts,
     target,
   );
+  const inReview = rows.filter((r) => r.status === "in_review").length;
+  const totalPool = rows.length;
+  // A domain certifies (and issues a credential) only from APPROVED items; until
+  // every domain clears the floor the runner serves indicative AI (no credential).
+  const certifiable = units.length > 0 && units.every((u) => u.approved >= target);
   return {
-    key: "techno", label: "Techno (technical)", tier: "certified", servesLive: true, hasReviewGate: true,
-    vetted, total, units, targetPerUnit: target, console: "/admin/tech-assessment/items",
-    note: "Certified path assembles from approved items only; below the min-items floor a domain silently falls back to live-AI (indicative, no credential).",
+    key: "techno", label: "Techno (technical)", tier: "certified", servesLive: !certifiable, hasReviewGate: true,
+    vetted, total: totalPool, units, targetPerUnit: target, console: "/admin/tech-assessment/items",
+    note: certifiable
+      ? "Every domain has enough SME-approved items; the certified path assembles from approved items and issues a technical_proficiency credential."
+      : inReview > 0
+        ? `${inReview} item(s) authored and awaiting SME approval. A domain certifies (issues a credential) only with ${target}+ APPROVED items; until then it serves indicative AI (no credential).`
+        : "Certified path assembles from approved items only; below the min-items floor a domain serves indicative AI (no credential).",
   };
 }
 

@@ -136,6 +136,9 @@ export default async function ItemBanksPage() {
                           <div className={`h-full ${tone.bar}`} style={{ width: `${pct}%` }} />
                         </div>
                         <span className={`w-12 shrink-0 text-right text-[11px] tabular-nums ${tone.text}`}>{u.approved}/{u.target}</span>
+                        {u.total > u.approved && (
+                          <span className="w-20 shrink-0 text-right text-[10px] text-amber-500" title="drafted / in review - not yet SME-approved">+{u.total - u.approved} in review</span>
+                        )}
                       </div>
                     );
                   })}

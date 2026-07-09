@@ -104,8 +104,9 @@ async function techno(): Promise<BankReadiness> {
   };
 }
 
-// ── psy_items powers BOTH Logica (cognitive) and Psychometrics (Big Five). Map scale_id -> scale_key once. ──
-async function psyCounts(): Promise<Map<string, { total: number; approved: number }>> {
+// ── psy_items powers Logica (cognitive). Map scale_id -> scale_key once; also
+//    surface the in_review backlog so the gate reads honestly on the dashboard. ──
+async function psyCounts(): Promise<{ byScale: Map<string, { total: number; approved: number }>; inReview: number }> {
   const scales = await selectRows("psy_scales", "id, key");
   const idToKey = new Map(scales.map((s) => [String(s.id), String(s.key)]));
   const items = await selectRows("psy_items", "scale_id, status");
@@ -113,25 +114,30 @@ async function psyCounts(): Promise<Map<string, { total: number; approved: numbe
     scale_key: idToKey.get(String(i.scale_id)) ?? "?",
     status: i.status,
   }));
-  return aggregate(byKey, "scale_key", (r) => r.status === "approved");
+  const cogKeys = new Set<string>(COGNITIVE_SUBTESTS.map((s) => s.key));
+  const inReview = byKey.filter((r) => r.status === "in_review" && cogKeys.has(String(r.scale_key))).length;
+  return { byScale: aggregate(byKey, "scale_key", (r) => r.status === "approved"), inReview };
 }
 
-async function logica(counts: Map<string, { total: number; approved: number }>): Promise<BankReadiness> {
-  const target = 8; // min approved/subtest before a real sitting serves the bank
+async function logica(psy: { byScale: Map<string, { total: number; approved: number }>; inReview: number }): Promise<BankReadiness> {
+  const target = 8; // min APPROVED/subtest before a real sitting serves the bank
   const { units, vetted, total } = unitsFrom(
     COGNITIVE_SUBTESTS.map((s) => ({ key: s.key, label: s.name_en })),
-    counts,
+    psy.byScale,
     target,
   );
-  // Once every subtest meets the blueprint floor, a candidate/voucher-bound sitting
-  // serves the reviewed fixed-form bank (never live-AI) - so it no longer "scrambles".
+  // The bank only serves once a human SME has APPROVED every subtest to the floor.
+  // Seeded items land in_review by design (an automated seed must not self-approve),
+  // so the review gate is a real human step - until then a sitting mints live-AI.
   const filled = units.length > 0 && units.every((u) => u.approved >= target);
   return {
     key: "logica", label: "Logica (cognitive)", tier: "indicative", servesLive: !filled, hasReviewGate: true,
     vetted, total, units, targetPerUnit: target, console: "/admin/psychometrics",
     note: filled
-      ? "Serving the SME-reviewed fixed-form bank (VIFM Cognitive Item-Bank Standard v1): per-subtest x per-facet blueprint, EN+AR, two-person review. A candidate/voucher-bound sitting fails safe (503) rather than fall back to live-AI. Still Tier-1 indicative until norms accumulate."
-      : "Items are generated live from the LLM every sitting (no vetted form). Seed the cognitive bank in /admin/psychometrics to serve the reviewed fixed form instead.",
+      ? "Every subtest has SME-approved items to the blueprint floor, so a candidate/voucher-bound sitting serves the reviewed fixed form (VIFM Cognitive Item-Bank Standard v1: per-subtest x per-facet, EN+AR, two-person review) instead of live-AI. Still Tier-1 indicative until local norms + IRT calibration accumulate."
+      : psy.inReview > 0
+        ? `${psy.inReview} cognitive item(s) authored and awaiting SME approval. The bank stays gated until a human SME approves every subtest to ${target}+ items; until then a sitting mints items live-AI. Indicative regardless (no local norms/IRT, no credential).`
+        : "Items are generated live from the LLM every sitting (no vetted form). Seed the cognitive bank + SME-approve it in /admin/psychometrics to serve the reviewed fixed form instead.",
   };
 }
 
@@ -249,10 +255,10 @@ async function prehire(): Promise<BankReadiness> {
  *  Big Five / OCEAN personality is deliberately absent - it is retired (nothing
  *  serves it; Persona is the behavioural self-report now), so it is not a bank. */
 export async function loadBankReadiness(): Promise<BankReadiness[]> {
-  const counts = await psyCounts();
+  const psy = await psyCounts();
   const [t, l, f, a, ac, rf, ph] = await Promise.all([
     techno(),
-    logica(counts),
+    logica(psy),
     fluent(),
     arc(),
     acBehavioural(),

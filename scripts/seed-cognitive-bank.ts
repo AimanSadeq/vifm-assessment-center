@@ -1,8 +1,12 @@
 /**
- * Seed the vetted VIFM cognitive item bank (Logica) into psy_items as APPROVED.
+ * Seed the vetted VIFM cognitive item bank (Logica) into psy_items as IN_REVIEW.
  * 120 items = 4 subtests x 3 facets x 10 (3 easy / 4 medium / 3 hard), EN + MSA
  * Arabic, authored to the Cognitive Item-Bank Standard v1 blueprint. Idempotent
  * (keyed on source='seed_v1'). Self-bootstraps the psy_instruments/psy_scales rows.
+ *
+ * NOTE: items land in_review (NOT approved) by design - an automated seed must not
+ * self-approve. A human SME approves each subtest in /admin/psychometrics; only then
+ * does the bank serve the reviewed fixed form (until then a sitting mints live-AI).
  *
  * Requires migration 00179 (psy_items.facet / rationale / ar_reviewed).
  * Run: npx tsx scripts/seed-cognitive-bank.ts
@@ -69,13 +73,13 @@ async function main() {
     difficulty: it.difficulty,
     rationale: it.rationale_en ?? null,
     ar_reviewed: false,
-    status: "approved",
+    status: "in_review",
     source: "seed_v1",
   }));
 
   const { error } = await supabase.from("psy_items").insert(rows);
   if (error) throw error;
-  console.log(`Inserted ${rows.length} approved cognitive items (source='seed_v1', ar_reviewed=false).`);
+  console.log(`Inserted ${rows.length} in_review cognitive items (source='seed_v1', ar_reviewed=false) - awaiting SME approval.`);
 
   // Report per-subtest / per-facet counts.
   const byCell: Record<string, number> = {};

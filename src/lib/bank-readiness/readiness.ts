@@ -180,23 +180,35 @@ async function fluent(): Promise<BankReadiness> {
   };
 }
 
-// ── ARC: ara_questions on the ACTIVE bank version, is_active, by pillar ──
+// ── ARC: ara_questions on the ACTIVE bank version. "Vetted" = SME-approved
+//    (sme_status, migration 00184) so the card reflects approve / send-back-to-
+//    review; total = the served (is_active) questions. ARC always serves the
+//    seeded bank (never live-AI) - review status only drives the provisional flag.
 async function arc(): Promise<BankReadiness> {
   const versions = await selectRows("ara_question_bank_versions", "id, is_active");
   const active = new Set(versions.filter((v) => v.is_active).map((v) => String(v.id)));
-  const rows = await selectRows("ara_questions", "pillar_id, version_id, is_active");
-  const onActive = rows.filter((r) => active.has(String(r.version_id)));
-  const counts = aggregate(onActive, "pillar_id", (r) => r.is_active === true);
+  // Prefer the sme_status-aware select; fall back if migration 00184 is unapplied.
+  let rows = await selectRows("ara_questions", "pillar_id, version_id, is_active, sme_status");
+  let hasSme = true;
+  if (rows.length === 0) {
+    rows = await selectRows("ara_questions", "pillar_id, version_id, is_active");
+    hasSme = false;
+  }
+  const onActive = rows.filter((r) => active.has(String(r.version_id)) && r.is_active === true);
+  const counts = aggregate(onActive, "pillar_id", (r) => (hasSme ? r.sme_status === "approved" : true));
   const target = 10;
   const { units, vetted, total } = unitsFrom(
     ARA_PILLARS.map((p) => ({ key: p.id, label: p.name_en ?? p.id })),
     counts,
     target,
   );
+  const pending = hasSme ? onActive.filter((r) => r.sme_status !== "approved").length : 0;
   return {
     key: "arc", label: "AR Compass (ARC)", tier: "reviewed", servesLive: false, hasReviewGate: true,
     vetted, total, units, targetPerUnit: target, console: "/ara/admin",
-    note: "Seeded vetted production bank v1.1 with version-pinning (one active). Content-validity evidence (anchor instruments) is not yet populated; no reverse-keyed consistency items.",
+    note: pending > 0
+      ? `${pending} of ${total} active-version questions pending SME review. ARC serves the seeded bank (never live-AI), but results are flagged provisional until an SME approves them in /ara/admin.`
+      : "All active-version questions are SME-approved. Seeded, version-pinned production bank (one active). Content-validity anchor evidence still to be populated.",
   };
 }
 

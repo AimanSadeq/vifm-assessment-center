@@ -5,6 +5,8 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { loadRespondentByToken, loadQuestionsForRespondent } from "@/lib/ara/respondent-access";
+import { araRespondentProvisional } from "@/lib/ara/provisional";
+import { ProvisionalBanner } from "@/components/shared/provisional-banner";
 import { isStaffCaller } from "@/lib/ara/auth-guards";
 import { calculateQuestionScore } from "@/lib/ara/scoring";
 import {
@@ -224,9 +226,16 @@ export default async function PersonalResultsPage({ params, searchParams }: Prop
     }
   }
 
+  // Option 2 gate: flag the result provisional if it served questions an SME has
+  // not yet approved (migration 00184). Clears per-pillar as content is approved.
+  const provisional = await araRespondentProvisional(ctx.respondent.id);
+
   return (
     <div className="min-h-screen bg-background" dir={isAr ? "rtl" : "ltr"}>
       <div className="max-w-3xl mx-auto px-6 py-10 space-y-6">
+        {provisional.provisional && (
+          <ProvisionalBanner language={isAr ? "ar" : "en"} pending={provisional.pending} total={provisional.total} />
+        )}
         {/* BD presentation toggle - staff only (the taker never reaches this
             render; they get the thank-you page above). Flips between the two
             report framings of THIS sitting so BD can show a client the

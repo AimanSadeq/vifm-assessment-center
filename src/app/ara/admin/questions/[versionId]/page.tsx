@@ -13,6 +13,7 @@ import {
   importAraQuestionsCsv,
   aiAuthorAraQuestion,
 } from "@/lib/ara/actions";
+import { SmeReviewBar } from "./_components/sme-review-bar";
 import { isAIConfigured } from "@/lib/ai/client";
 import { ConfirmAction } from "@/components/shared/confirm-action";
 import { DraggableQuestionList } from "./_components/draggable-question-list";
@@ -141,6 +142,24 @@ export default async function AraVersionDetailPage({
           })}
         </div>
 
+        {/* SME question review (migration 00184). Until a question is approved,
+            any ARC result that served it is flagged "provisional". */}
+        {(() => {
+          const all = questions ?? [];
+          const smePending = all.filter((q) => (q as AraQuestion & { sme_status?: string }).sme_status !== "approved").length;
+          return (
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3">
+              <div className="text-sm text-amber-900">
+                <span className="font-semibold">SME content review.</span>{" "}
+                {smePending === 0
+                  ? "Every question in this version is SME-approved - results are not flagged provisional."
+                  : `${smePending} of ${all.length} questions are pending SME review. Results that serve them are flagged "provisional" until approved.`}
+              </div>
+              <SmeReviewBar versionId={version.id} pending={smePending} total={all.length} />
+            </div>
+          );
+        })()}
+
         {/* Questions per pillar */}
         <div className="space-y-6 mb-8">
           {ARA_PILLARS.map((pillar) => {
@@ -149,12 +168,14 @@ export default async function AraVersionDetailPage({
               const ev = (q as AraQuestion & { validation_evidence?: { review_status?: string } | null }).validation_evidence;
               return ev?.review_status === "verified" || ev?.review_status === "edited";
             }).length;
+            const smePending = qs.filter((q) => (q as AraQuestion & { sme_status?: string }).sme_status !== "approved").length;
             return (
               <Card key={pillar.id} id={`pillar-${pillar.id}`} className="scroll-mt-24">
                 <CardHeader>
                   <CardTitle className="text-base flex items-center justify-between gap-2">
                     <span>{pillar.name_en}</span>
                     <span className="flex items-center gap-2">
+                      <SmeReviewBar versionId={version.id} pillarId={pillar.id} pending={smePending} total={qs.length} label={pillar.name_en} />
                       {qs.length > 0 && (
                         <span
                           className="text-[10px] font-medium text-muted-foreground"

@@ -12,7 +12,7 @@ import {
 } from "@/lib/validations/ara";
 import {
   requireRole, requireOrgAccess, requireAssessmentOwner,
-  isAuthorizationError,
+  isAuthorizationError, type AraCaller,
 } from "@/lib/ara/auth-guards";
 import { sendAraEmail, type AraEmailLanguage } from "@/lib/ara/email";
 import { isAIConfigured } from "@/lib/ai/client";
@@ -1693,6 +1693,38 @@ export async function saveQuestionValidationEvidence(
 
   revalidatePath(`/ara/admin/questions/${q.version_id}/${questionId}`);
   return { ok: true as const };
+}
+
+/** SME question-level sign-off (migration 00184). Approving clears the
+ *  "provisional - content pending SME review" flag on any ARC result that served
+ *  these questions. Scope by explicit ids, by pillar within a version, or the
+ *  whole version. Distinct from validation-evidence review (citation provenance). */
+export async function setAraQuestionsSmeStatusAction(input: {
+  versionId: string;
+  status: "approved" | "pending" | "rejected";
+  pillarId?: string;
+  questionIds?: string[];
+}) {
+  let caller: AraCaller;
+  try { caller = await requireRole("admin"); } catch (e) { return authErr(e); }
+  if (!["approved", "pending", "rejected"].includes(input.status)) {
+    return { ok: false as const, error: "Invalid status." };
+  }
+  const sb = createServiceClient();
+  let q = sb
+    .from("ara_questions")
+    .update({
+      sme_status: input.status,
+      sme_reviewed_by: caller.isDev ? null : caller.uid,
+      sme_reviewed_at: new Date().toISOString(),
+    })
+    .eq("version_id", input.versionId);
+  if (input.questionIds && input.questionIds.length > 0) q = q.in("id", input.questionIds);
+  else if (input.pillarId) q = q.eq("pillar_id", input.pillarId);
+  const { data, error } = await q.select("id");
+  if (error) return { ok: false as const, error: error.message };
+  revalidatePath(`/ara/admin/questions/${input.versionId}`);
+  return { ok: true as const, count: data?.length ?? 0 };
 }
 
 /**

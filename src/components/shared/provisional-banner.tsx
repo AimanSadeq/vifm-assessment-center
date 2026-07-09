@@ -1,0 +1,42 @@
+import { AlertTriangle } from "lucide-react";
+import { PROVISIONAL_COPY } from "@/lib/ara/provisional";
+
+/**
+ * "Provisional - content pending SME review" banner. Rendered on ARC result
+ * surfaces (and reusable elsewhere) whenever the assessment served questions an
+ * SME has not yet approved. Server component, bilingual, RTL-aware.
+ */
+export function ProvisionalBanner({
+  language = "en",
+  pending,
+  total,
+  className,
+}: {
+  language?: "en" | "ar";
+  pending?: number;
+  total?: number;
+  className?: string;
+}) {
+  const isAr = language === "ar";
+  const c = PROVISIONAL_COPY[isAr ? "ar" : "en"];
+  return (
+    <div
+      dir={isAr ? "rtl" : "ltr"}
+      className={`rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-900 ${className ?? ""}`}
+    >
+      <div className="flex items-start gap-2.5">
+        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+        <div className="min-w-0">
+          <p className="text-sm font-semibold">{c.title}</p>
+          <p className="mt-0.5 text-xs leading-snug">{c.body}</p>
+          {typeof pending === "number" && pending > 0 && typeof total === "number" && total > 0 && (
+            <p className="mt-1 text-[11px] font-medium tabular-nums opacity-80">
+              {pending}/{total}{" "}
+              {isAr ? "من الأسئلة المقدَّمة قيد المراجعة" : "of the questions served are pending review"}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -5,6 +5,7 @@ import { getClientOrgId } from "@/lib/auth/get-org-id";
 import { createServiceClient } from "@/lib/supabase/server";
 import { DareReportPdf } from "@/lib/reports/persona-dare";
 import { buildDarePdfData } from "@/lib/reports/persona-dare-data";
+import { personaBankProvisional } from "@/lib/persona/bank";
 
 export const runtime = "nodejs";
 
@@ -41,7 +42,8 @@ export async function GET(_req: Request, { params }: { params: { sessionId: stri
     const built = await buildDarePdfData(params.sessionId);
     if (!built.ok) return NextResponse.json({ error: built.error }, { status: built.status });
 
-    const pdf = await renderToBuffer(<DareReportPdf data={built.data} />);
+    const isProvisional = (await personaBankProvisional()).provisional;
+    const pdf = await renderToBuffer(<DareReportPdf data={built.data} provisional={isProvisional} />);
     const safe = (built.data.takerName || "Persona").replace(/[^a-zA-Z0-9\s]/g, "").replace(/\s+/g, "_");
     return new NextResponse(new Uint8Array(pdf), {
       headers: {

@@ -254,12 +254,20 @@ function CheckMark() {
   );
 }
 
-export function PersonaProfilePdf({ data }: { data: PersonaPdfData }) {
+export function PersonaProfilePdf({ data, provisional }: { data: PersonaPdfData; provisional?: boolean }) {
   const dev = data.purpose === "development";
   const hiring = data.purpose === "hiring";
   return (
     <Document>
       <Page size="A4" style={s.page}>
+        {provisional && (
+          <View style={{ borderWidth: 1, borderColor: "#f59e0b", backgroundColor: "#fffbeb", borderRadius: 4, padding: 8, marginBottom: 10 }}>
+            <Text style={{ fontSize: 9, fontWeight: 700, color: "#78350f" }}>Provisional results - content pending SME review</Text>
+            <Text style={{ fontSize: 8, color: "#92400e", marginTop: 2 }}>
+              Some assessment items have not yet been reviewed and approved by a subject-matter expert. Treat these results as indicative until the content review is complete.
+            </Text>
+          </View>
+        )}
         <View style={s.banner}>
           <Text style={s.eyebrow}>Persona® - Behavioural Self-Assessment</Text>
           <Text style={s.title}>{data.takerName || "Self-profile"}</Text>

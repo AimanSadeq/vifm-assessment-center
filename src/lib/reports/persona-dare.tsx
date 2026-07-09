@@ -148,12 +148,18 @@ function DevBlock({ title, items, hex }: { title: string; items: DareDevItem[]; 
 const FOOTER =
   "A decision-role lens on a self-report sitting, built on the VIFM DARE Framework v1.0 (after the decision-rights literature: McKinsey DARE; cf. Bain RAPID). It describes behavioural readiness for a role in a decision process - it does not allocate authority. Pair with a Reflect 360° (others' view) before restructuring decision rights. Indicative until a Persona norm sample exists. © VIFM.";
 
-export function DareReportPdf({ data }: { data: DarePdfData }) {
+export function DareReportPdf({ data, provisional }: { data: DarePdfData; provisional?: boolean }) {
   const p = data.profile;
   return (
     <Document>
       {/* ── Page 1: Executive summary + role chart ── */}
       <Page size="A4" style={s.page}>
+        {provisional && (
+          <View style={{ borderWidth: 1, borderColor: "#f59e0b", backgroundColor: "#fffbeb", borderRadius: 4, padding: 8, marginBottom: 10 }}>
+            <Text style={{ fontSize: 9, fontWeight: 700, color: "#78350f" }}>Provisional results - content pending SME review</Text>
+            <Text style={{ fontSize: 8, color: "#92400e", marginTop: 2 }}>Some assessment items have not yet been reviewed and approved by a subject-matter expert. Treat these results as indicative until the content review is complete.</Text>
+          </View>
+        )}
         <View style={s.banner}>
           <Text style={s.eyebrow}>VIFM Persona® · DARE Decision-Role Profile</Text>
           <Text style={s.title}>Where do you sit at the decision table?</Text>

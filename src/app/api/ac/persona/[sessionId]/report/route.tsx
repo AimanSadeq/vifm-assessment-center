@@ -5,6 +5,7 @@ import { getClientOrgId } from "@/lib/auth/get-org-id";
 import { createServiceClient } from "@/lib/supabase/server";
 import { PersonaProfilePdf } from "@/lib/reports/persona-profile";
 import { buildPersonaPdfData, peekPersonaPurpose } from "@/lib/reports/persona-report-data";
+import { personaBankProvisional } from "@/lib/persona/bank";
 import { renderPersonaProfileHtmlAr } from "@/lib/reports/persona-profile-ar-html";
 import { renderHtmlToPdfBuffer } from "@/lib/reports/html-to-pdf";
 
@@ -56,10 +57,12 @@ export async function GET(req: Request, { params }: { params: { sessionId: strin
     const built = await buildPersonaPdfData(params.sessionId, lang);
     if (!built.ok) return NextResponse.json({ error: built.error }, { status: built.status });
 
+    // Option 2 gate: flag provisional until the Persona items are SME-approved.
+    const isProvisional = (await personaBankProvisional()).provisional;
     const pdf =
       lang === "ar"
-        ? await renderHtmlToPdfBuffer(renderPersonaProfileHtmlAr(built.data))
-        : await renderToBuffer(<PersonaProfilePdf data={built.data} />);
+        ? await renderHtmlToPdfBuffer(renderPersonaProfileHtmlAr(built.data, isProvisional))
+        : await renderToBuffer(<PersonaProfilePdf data={built.data} provisional={isProvisional} />);
 
     const safe = (built.data.takerName || "Persona").replace(/[^a-zA-Z0-9\s]/g, "").replace(/\s+/g, "_");
     return new NextResponse(new Uint8Array(pdf), {

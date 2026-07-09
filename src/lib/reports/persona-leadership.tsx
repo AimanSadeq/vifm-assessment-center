@@ -158,7 +158,7 @@ function DetailRow({ r }: { r: LeadershipRow }) {
   );
 }
 
-export function LeadershipReportPdf({ data }: { data: LeadershipPdfData }) {
+export function LeadershipReportPdf({ data, provisional }: { data: LeadershipPdfData; provisional?: boolean }) {
   const p = data.profile;
   const orientationWord =
     p.orientation >= 0.4 ? "leans transformational (leadership)" : p.orientation <= -0.4 ? "leans transactional (management)" : "is balanced across both";
@@ -168,6 +168,12 @@ export function LeadershipReportPdf({ data }: { data: LeadershipPdfData }) {
     <Document>
       {/* ── Page 1: Executive Summary + Matrix + Summary ── */}
       <Page size="A4" style={s.page}>
+        {provisional && (
+          <View style={{ borderWidth: 1, borderColor: "#f59e0b", backgroundColor: "#fffbeb", borderRadius: 4, padding: 8, marginBottom: 10 }}>
+            <Text style={{ fontSize: 9, fontWeight: 700, color: "#78350f" }}>Provisional results - content pending SME review</Text>
+            <Text style={{ fontSize: 8, color: "#92400e", marginTop: 2 }}>Some assessment items have not yet been reviewed and approved by a subject-matter expert. Treat these results as indicative until the content review is complete.</Text>
+          </View>
+        )}
         <View style={s.banner}>
           <Text style={s.eyebrow}>VIFM Persona® · Leadership Report</Text>
           <Text style={s.title}>Leadership Orientation Profile</Text>

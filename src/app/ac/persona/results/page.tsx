@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ClipboardList, FileText, Target, GraduationCap, Compass, GitBranch, HeartHandshake } from "lucide-react";
 import { getCurrentCaller } from "@/lib/ara/auth-guards";
 import { listPersonaResults } from "@/lib/scoring/persona-results";
+import { personaBankProvisional } from "@/lib/persona/bank";
+import { ProvisionalBanner } from "@/components/shared/provisional-banner";
 import { fitBand, FIT_BAND_TW } from "@/lib/scoring/persona-fit";
 import { personaBand, PERSONA_BAND_TW } from "@/lib/scoring/persona-bands";
 
@@ -17,6 +19,7 @@ export default async function PersonaResultsPage({ searchParams }: { searchParam
   const all = await listPersonaResults();
   const orgFilter = searchParams?.org?.trim() || null;
   const rows = all && orgFilter ? all.filter((r) => r.orgName === orgFilter) : all;
+  const provisional = await personaBankProvisional();
 
   return (
     <div className="min-h-screen bg-[#F5F7FA]">
@@ -39,6 +42,9 @@ export default async function PersonaResultsPage({ searchParams }: { searchParam
       </header>
 
       <main className="mx-auto max-w-6xl space-y-6 px-6 py-8">
+        {provisional.provisional && (
+          <ProvisionalBanner language="en" pending={provisional.pending} total={provisional.total} />
+        )}
         {rows === null && (
           <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             <strong>No result store.</strong> Apply migration{" "}

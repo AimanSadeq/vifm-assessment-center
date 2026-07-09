@@ -5,6 +5,7 @@ import { getClientOrgId } from "@/lib/auth/get-org-id";
 import { createServiceClient } from "@/lib/supabase/server";
 import { EqReportPdf } from "@/lib/reports/persona-eq";
 import { buildEqPdfData } from "@/lib/reports/persona-eq-data";
+import { personaBankProvisional } from "@/lib/persona/bank";
 
 export const runtime = "nodejs";
 
@@ -41,7 +42,8 @@ export async function GET(_req: Request, { params }: { params: { sessionId: stri
     const built = await buildEqPdfData(params.sessionId);
     if (!built.ok) return NextResponse.json({ error: built.error }, { status: built.status });
 
-    const pdf = await renderToBuffer(<EqReportPdf data={built.data} />);
+    const isProvisional = (await personaBankProvisional()).provisional;
+    const pdf = await renderToBuffer(<EqReportPdf data={built.data} provisional={isProvisional} />);
     const safe = (built.data.takerName || "Persona").replace(/[^a-zA-Z0-9\s]/g, "").replace(/\s+/g, "_");
     return new NextResponse(new Uint8Array(pdf), {
       headers: {

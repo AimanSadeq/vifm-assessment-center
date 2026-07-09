@@ -5,6 +5,7 @@ import { getClientOrgId } from "@/lib/auth/get-org-id";
 import { createServiceClient } from "@/lib/supabase/server";
 import { LeadershipReportPdf } from "@/lib/reports/persona-leadership";
 import { buildLeadershipPdfData } from "@/lib/reports/persona-leadership-data";
+import { personaBankProvisional } from "@/lib/persona/bank";
 
 export const runtime = "nodejs";
 
@@ -40,7 +41,8 @@ export async function GET(req: Request, { params }: { params: { sessionId: strin
     const built = await buildLeadershipPdfData(params.sessionId);
     if (!built.ok) return NextResponse.json({ error: built.error }, { status: built.status });
 
-    const pdf = await renderToBuffer(<LeadershipReportPdf data={built.data} />);
+    const isProvisional = (await personaBankProvisional()).provisional;
+    const pdf = await renderToBuffer(<LeadershipReportPdf data={built.data} provisional={isProvisional} />);
     const safe = (built.data.takerName || "Persona").replace(/[^a-zA-Z0-9\s]/g, "").replace(/\s+/g, "_");
     return new NextResponse(new Uint8Array(pdf), {
       headers: {

@@ -223,31 +223,67 @@ async function reflect(): Promise<BankReadiness> {
   };
 }
 
-// ── Pre-Hire quiz: competency_quiz_items (approved certifies; in_review awaits SME) ──
+// ── Pre-Hire quiz: competency_quiz_items (approved certifies; in_review awaits SME).
+//    Rolled up to the 4 VIFM domains (competency -> cluster -> domain) so the card
+//    shows the same per-unit "N in review" breakdown the other gated banks have. ──
 async function prehire(): Promise<BankReadiness> {
   const rows = await selectRows("competency_quiz_items", "competency_id, status");
+  // competency -> VIFM domain, via the cluster chain (tolerant of missing tables).
+  const comps = await selectRows("competencies", "id, cluster_id");
+  const clusters = await selectRows("competency_clusters", "id, domain_id");
+  const domains = await selectRows("competency_domains", "id, name, sort_order");
+  const clusterToDomain = new Map(clusters.map((c) => [String(c.id), String(c.domain_id)]));
+  const domainName = new Map(domains.map((d) => [String(d.id), String(d.name)]));
+  const compToDomain = new Map(
+    comps.map((c) => [String(c.id), domainName.get(clusterToDomain.get(String(c.cluster_id)) ?? "") ?? "?"]),
+  );
+  const compsPerDomain = new Map<string, number>();
+  for (const c of comps) {
+    const dn = compToDomain.get(String(c.id)) ?? "?";
+    compsPerDomain.set(dn, (compsPerDomain.get(dn) ?? 0) + 1);
+  }
+
   const approvedByComp = new Map<string, number>();
+  const perDomain = new Map<string, { approved: number; total: number }>();
   let inReview = 0;
   for (const r of rows) {
     const s = String(r.status);
+    const dn = compToDomain.get(String(r.competency_id)) ?? "?";
+    const pd = perDomain.get(dn) ?? { approved: 0, total: 0 };
+    pd.total += 1;
     if (s === "approved") {
-      const k = String(r.competency_id);
-      approvedByComp.set(k, (approvedByComp.get(k) ?? 0) + 1);
+      approvedByComp.set(String(r.competency_id), (approvedByComp.get(String(r.competency_id)) ?? 0) + 1);
+      pd.approved += 1;
     } else if (s === "in_review") inReview += 1;
+    perDomain.set(dn, pd);
   }
+
   const TOTAL_COMPS = 41; // the VIFM behavioural framework
   const perCompTarget = 8; // a rotatable pool for the ~2-item-per-competency draw
   const compsReady = Array.from(approvedByComp.values()).filter((n) => n >= perCompTarget).length;
   const vetted = Array.from(approvedByComp.values()).reduce((a, b) => a + b, 0);
   const hasBank = rows.length > 0;
+
+  // 4 domain rollups (in sort order); each domain's target = 8 x its competencies.
+  const orderedDomains = domains
+    .slice()
+    .sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0));
+  const units: UnitReadiness[] | undefined = hasBank && orderedDomains.length > 0
+    ? orderedDomains.map((d) => {
+        const dn = String(d.name);
+        const pd = perDomain.get(dn) ?? { approved: 0, total: 0 };
+        return { unit: dn, approved: pd.approved, total: pd.total, target: perCompTarget * (compsPerDomain.get(dn) ?? 0) };
+      })
+    : undefined;
+
   return {
     key: "prehire", label: "Pre-Hire quiz", tier: "indicative", servesLive: compsReady < TOTAL_COMPS, hasReviewGate: hasBank,
-    vetted, total: rows.length, console: hasBank ? "/admin/quiz-bank" : undefined,
+    vetted, total: rows.length, units, targetPerUnit: perCompTarget, console: hasBank ? "/admin/quiz-bank" : undefined,
     note: !hasBank
       ? "No item bank: every quiz deck is minted live from the LLM at start, so no SME sees an item before a hiring candidate does; two candidates for one job get non-equated forms."
       : vetted > 0
         ? `${compsReady}/${TOTAL_COMPS} competencies have an approved pool; a sitting draws vetted items where available and falls back to live-AI otherwise. ${inReview} more in review.`
-        : `${inReview} SJT item(s) authored and awaiting SME approval; until a competency's pool is approved the screen still mints live-AI.`,
+        : `${inReview} SJT item(s) authored and awaiting SME approval (rolled up by domain below); until a competency's pool is approved the screen still mints live-AI.`,
   };
 }
 

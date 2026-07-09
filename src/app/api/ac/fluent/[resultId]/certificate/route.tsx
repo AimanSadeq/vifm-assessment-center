@@ -21,6 +21,7 @@ import {
 } from "@/lib/reports/fluent-certificate-ar-html";
 import { renderHtmlToPdfBuffer } from "@/lib/reports/html-to-pdf";
 import { getServerLocale } from "@/lib/i18n/server";
+import { fluentServesLive } from "@/lib/bank-readiness/serves-live";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -114,6 +115,13 @@ export async function GET(req: Request, { params }: { params: { resultId: string
     row = null;
   }
   if (!row) return notFound();
+
+  // Option 2 gate: while the receptive bank still mints items live-AI at sitting
+  // time (not yet SME-promoted), flag the placement content as pending review.
+  const provisional = await fluentServesLive();
+  const provisionalNote = provisional
+    ? " The reading and listening items in this sitting were generated live and have not yet been reviewed by a subject-matter expert."
+    : "";
 
   const name = row.taker_name?.trim() || "Candidate";
   const date = new Date(row.created_at).toLocaleDateString("en-GB", {
@@ -278,7 +286,7 @@ export async function GET(req: Request, { params }: { params: { resultId: string
 
       <p class="disclaimer">
         This certificate reflects an AI-assisted, CEFR-aligned <strong>indicative</strong> placement produced by Fluent.
-        It is intended for placement and development purposes and is <strong>not</strong> a certified high-stakes language qualification.${rangeText ? ` Indicative CEFR range: ${esc(rangeText)}.` : ""}
+        It is intended for placement and development purposes and is <strong>not</strong> a certified high-stakes language qualification.${rangeText ? ` Indicative CEFR range: ${esc(rangeText)}.` : ""}${provisionalNote}
       </p>
       <p class="verify">Result reference: ${esc(row.id)}</p>
     </div>

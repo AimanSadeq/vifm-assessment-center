@@ -16,6 +16,7 @@ import { requireRole, isAuthorizationError, getCurrentCaller } from "@/lib/ara/a
 import { getClientOrgId } from "@/lib/auth/get-org-id";
 import { PsychometricReport } from "@/lib/reports/psychometric-report";
 import { buildPsyReportData } from "@/lib/reports/psy-report-data";
+import { logicaServesLive } from "@/lib/bank-readiness/serves-live";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -55,7 +56,8 @@ export async function GET(_req: Request, { params }: { params: { resultId: strin
 
   const data = built.data;
   const safeName = data.takerName.replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "candidate";
-  const buffer = await renderToBuffer(<PsychometricReport data={data} />);
+  const provisional = await logicaServesLive();
+  const buffer = await renderToBuffer(<PsychometricReport data={data} provisional={provisional} />);
   return new NextResponse(new Uint8Array(buffer), {
     headers: {
       "Content-Type": "application/pdf",

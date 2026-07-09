@@ -49,7 +49,20 @@ export type PrehireReportData = {
   cbi?: PrehireCbiBlock | null;
   certification?: PrehireCertification | null;
   generatedAt: Date;
+  /** Option 2 gate: true while the quiz bank still mints live-AI (pending SME review). */
+  provisional?: boolean;
 };
+
+/** Bilingual provisional strip for the two Pre-Hire report bodies. */
+function provisionalStrip(data: PrehireReportData, lang: Lang): string {
+  if (!data.provisional) return "";
+  const ar = lang === "ar";
+  const title = ar ? "نتائج مبدئية - المحتوى قيد مراجعة خبير الموضوع" : "Provisional results - content pending SME review";
+  const body = ar
+    ? "بعض بنود هذا الفحص وُلِّدت آلياً ولم تُراجع بعد وتُعتمد من قبل خبير في الموضوع. يُرجى اعتبار هذه النتائج استرشادية حتى اكتمال المراجعة."
+    : "Some items in this screen were generated live and have not yet been reviewed and approved by a subject-matter expert. Treat these results as indicative until the content review is complete.";
+  return `<div dir="${ar ? "rtl" : "ltr"}" style="border:1px solid #f59e0b;background:#fffbeb;color:#78350f;border-radius:6px;padding:8px 12px;margin:0 0 14px;font-size:11px;line-height:1.5"><b>${title}</b><div style="margin-top:2px">${body}</div></div>`;
+}
 
 type Lang = "en" | "ar";
 
@@ -267,6 +280,7 @@ export function renderPrehireSummaryHtml(data: PrehireReportData, lang: Lang): s
 </style>
 </head>
 <body>
+  ${provisionalStrip(data, lang)}
   <div class="head">
     <div class="brand">${t.brand}</div>
     <h1>${t.summaryTitle}</h1>
@@ -413,6 +427,7 @@ export function renderPrehireCandidateHtml(data: PrehireReportData, lang: Lang):
 </style>
 </head>
 <body>
+  ${provisionalStrip(data, lang)}
   <div class="head">
     <div class="brand">${t.brand}</div>
     <h1>${t.title}</h1>

@@ -156,11 +156,19 @@ function StenBand({ sten }: { sten: number }) {
   );
 }
 
-export function PsychometricReport({ data }: { data: PsyReportData }) {
+export function PsychometricReport({ data, provisional }: { data: PsyReportData; provisional?: boolean }) {
   const calibrated = data.tier === "calibrated";
   return (
     <Document title={`VIFM Psychometric Report - ${data.takerName}`} author="VIFM Assessment Center" subject={data.instrumentName}>
       <Page size="A4" style={s.page} wrap>
+        {provisional && (
+          <View style={{ borderWidth: 1, borderColor: "#f59e0b", backgroundColor: "#fffbeb", borderRadius: 4, padding: 8, marginBottom: 10 }}>
+            <Text style={{ fontSize: 9, fontWeight: 700, color: "#78350f" }}>Provisional results - content pending SME review</Text>
+            <Text style={{ fontSize: 8, color: "#92400e", marginTop: 2 }}>
+              This sitting was generated live and its items have not been reviewed and approved by a subject-matter expert. Treat these results as indicative until the content review is complete.
+            </Text>
+          </View>
+        )}
         {/* Hero */}
         <View style={s.hero}>
           <Text style={s.heroEyebrow}>VIFM Psychometrics® · Foundations</Text>

@@ -4,6 +4,7 @@ import { launchPdfBrowser } from "@/lib/reports/pdf-browser";
 import { createServiceClient } from "@/lib/supabase/server";
 import { computeComposite } from "@/lib/prehire/scoring";
 import { getPrehireCertification } from "@/lib/prehire/certification";
+import { prehireServesLive } from "@/lib/bank-readiness/serves-live";
 import {
   renderPrehireCandidateHtml,
   renderPrehireSummaryHtml,
@@ -209,6 +210,8 @@ export async function buildPrehireCandidatePdf(params: {
     cbi,
     certification,
     generatedAt: new Date(),
+    // Option 2 gate: flag provisional while the quiz bank still mints live-AI.
+    provisional: await prehireServesLive(),
   };
 
   const html = mode === "summary" ? renderPrehireSummaryHtml(data, lang) : renderPrehireCandidateHtml(data, lang);

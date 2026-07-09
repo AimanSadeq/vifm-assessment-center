@@ -13,6 +13,56 @@ function authErr(e: unknown) {
   throw e;
 }
 
+type EditResult = { ok: true } | { ok: false; error: string };
+
+/** Edit a library-template behaviour's EN/AR wording (the rater "question").
+ *  Templates are the master content cloned per engagement, so an edit just
+ *  updates the wording - the review gate is per-engagement, not per-template. */
+export async function updateReflectBehaviourAction(input: {
+  behaviourId: string;
+  text_en?: string;
+  text_ar?: string;
+}): Promise<EditResult> {
+  try {
+    await requireRole("admin");
+  } catch (e) {
+    return authErr(e);
+  }
+  const patch: Record<string, unknown> = {};
+  if (typeof input.text_en === "string" && input.text_en.trim()) patch.text_en = input.text_en.trim();
+  if (typeof input.text_ar === "string") patch.text_ar = input.text_ar.trim() || null;
+  if (Object.keys(patch).length === 0) return { ok: false, error: "Nothing to update." };
+
+  const sb = createServiceClient();
+  const { error } = await sb.from("reflect_behaviors").update(patch).eq("id", input.behaviourId);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/reflect/admin/templates/[id]", "page");
+  return { ok: true };
+}
+
+/** Edit a library-template competency's EN/AR name. */
+export async function updateReflectCompetencyAction(input: {
+  competencyId: string;
+  name_en?: string;
+  name_ar?: string;
+}): Promise<EditResult> {
+  try {
+    await requireRole("admin");
+  } catch (e) {
+    return authErr(e);
+  }
+  const patch: Record<string, unknown> = {};
+  if (typeof input.name_en === "string" && input.name_en.trim()) patch.name_en = input.name_en.trim();
+  if (typeof input.name_ar === "string") patch.name_ar = input.name_ar.trim() || null;
+  if (Object.keys(patch).length === 0) return { ok: false, error: "Nothing to update." };
+
+  const sb = createServiceClient();
+  const { error } = await sb.from("reflect_competencies").update(patch).eq("id", input.competencyId);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/reflect/admin/templates/[id]", "page");
+  return { ok: true };
+}
+
 // ──────────────────────────────────────────────────────────────
 // Sandbox purge - irreversibly deletes every reflect_engagement with
 // is_sandbox=true. Cascades drop the framework, participants, raters,

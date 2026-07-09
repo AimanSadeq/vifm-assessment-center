@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Aperture, Layers } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getServerT } from "@/lib/i18n/server";
+import { EditableBehaviour, EditableCompetencyName } from "./_components/editable";
 
 export const dynamic = "force-dynamic";
 
@@ -101,12 +102,11 @@ export default async function ReflectTemplateDetailPage({ params }: Params) {
                 <Layers className="h-4 w-4 text-accent mt-1 shrink-0" />
                 <div className="flex-1">
                   <h2 className="text-base font-semibold text-primary">
-                    {c.name_en}
-                    {c.name_ar && (
-                      <span className="ms-2 text-sm text-muted-foreground" dir="rtl">
-                        {c.name_ar}
-                      </span>
-                    )}
+                    <EditableCompetencyName
+                      competencyId={c.id}
+                      nameEn={c.name_en}
+                      nameAr={c.name_ar}
+                    />
                   </h2>
                   {c.description_en && (
                     <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{c.description_en}</p>
@@ -120,14 +120,11 @@ export default async function ReflectTemplateDetailPage({ params }: Params) {
                   .map((b) => (
                     <li key={b.id} className="text-sm flex items-start gap-2">
                       <span className="mt-1.5 h-1 w-1 rounded-full bg-accent shrink-0" />
-                      <div className="flex-1">
-                        <div className="leading-relaxed">{b.text_en}</div>
-                        {b.text_ar && (
-                          <div dir="rtl" className="text-xs text-muted-foreground/80 mt-0.5">
-                            {b.text_ar}
-                          </div>
-                        )}
-                      </div>
+                      <EditableBehaviour
+                        behaviourId={b.id}
+                        textEn={b.text_en}
+                        textAr={b.text_ar}
+                      />
                     </li>
                   ))}
               </ul>

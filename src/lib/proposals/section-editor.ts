@@ -9,20 +9,21 @@ import type { Proposal } from "./service";
 import { resolveIncludedSections } from "./constants";
 import { proposalSectionDefaults } from "./proposal-html";
 import { proposalSectionDefaultsAr } from "./proposal-html-ar";
+import { sanitizeRichHtml } from "./rich-text";
 
 /** Sections whose default body is generated content that must survive a text edit
  *  (pricing tables, glossary, signature grid, clause list, live evidence). Editing
  *  these adds an intro note ABOVE the generated content rather than replacing it. The
  *  keys match the renderers' OVERRIDE_PREPEND set + the secIntro sections. */
-export const PREPEND_SECTIONS: Record<string, string> = {
-  "Commercial proposal": "the pricing tables",
-  "Psychometric foundations": "the psychometric methodology detail",
-  "Evidence & sample reports": "the evidence list",
-};
+// Every section now exposes editable prose; the computed sections (Commercial pricing,
+// Psychometric evidence, Implementation timeline, Evidence samples) keep their table
+// generated below the editable prose, so nothing is a pure intro-note any more. The only
+// remaining prepend is the auto-table-detect below (e.g. the licence-mode Proposed
+// solution's committed-scope table), whose follows-note falls back to "the section's table".
+export const PREPEND_SECTIONS: Record<string, string> = {};
 
 // Sections that carry a table but are fully editable (the table is extracted to text) -
-// they are NOT prepend. Mirrors the renderers' FORCE_REPLACE. Terms & Acceptance have no
-// table so they fall through to "replace" without needing to be listed here.
+// they are NOT prepend. Mirrors the renderers' FORCE_REPLACE.
 const FORCE_REPLACE = new Set(["Definitions"]);
 
 export type SectionEditItem = {
@@ -103,12 +104,13 @@ export function buildSectionEditorData(p: Proposal): SectionEditItem[] {
       number: i + 1,
       kind: isPrepend ? "prepend" : "replace",
       followsNote: isPrepend ? (PREPEND_SECTIONS[title] ?? "the section's table") : null,
-      // Prepend sections have no editable default text (the box is an intro note); the
-      // generated content stays regardless.
-      defaultEn: isPrepend ? "" : htmlToEditText(defEn[title] ?? ""),
-      defaultAr: isPrepend ? "" : htmlToEditText(defAr[title] ?? ""),
-      overrideEn: (overrides[title]?.en ?? "").trim(),
-      overrideAr: (overrides[title]?.ar ?? "").trim(),
+      // Rich-text pre-fill: the section's default body as sanitised HTML (so the editor
+      // shows it formatted). Prepend sections have no editable default (the box is an
+      // optional intro above the generated content, which stays regardless).
+      defaultEn: isPrepend ? "" : sanitizeRichHtml(defEn[title] ?? ""),
+      defaultAr: isPrepend ? "" : sanitizeRichHtml(defAr[title] ?? ""),
+      overrideEn: sanitizeRichHtml(overrides[title]?.en),
+      overrideAr: sanitizeRichHtml(overrides[title]?.ar),
     };
   });
 }

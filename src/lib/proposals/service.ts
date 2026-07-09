@@ -27,6 +27,7 @@ import {
   type NormalizedEngagementModel,
 } from "./engagement";
 import { proposalService, PROPOSAL_SECTION_TITLES } from "./constants";
+import { sanitizeRichHtml } from "./rich-text";
 
 export type ProposalStatus = "draft" | "issued" | "won" | "lost";
 
@@ -541,8 +542,10 @@ export async function updateProposalSectionOverrides(
   const cleaned: Record<string, { en?: string; ar?: string }> = {};
   for (const [title, v] of Object.entries(overrides || {})) {
     if (!known.has(title) || !v || typeof v !== "object") continue;
-    const en = typeof v.en === "string" ? v.en.trim().slice(0, 20000) : "";
-    const ar = typeof v.ar === "string" ? v.ar.trim().slice(0, 20000) : "";
+    // Sanitise the rich-text HTML to the safe inline-formatting allowlist before storing
+    // (defence in depth - the renderer sanitises again). Cap length after sanitising.
+    const en = typeof v.en === "string" ? sanitizeRichHtml(v.en).slice(0, 60000) : "";
+    const ar = typeof v.ar === "string" ? sanitizeRichHtml(v.ar).slice(0, 60000) : "";
     if (en || ar) cleaned[title] = { ...(en ? { en } : {}), ...(ar ? { ar } : {}) };
   }
 

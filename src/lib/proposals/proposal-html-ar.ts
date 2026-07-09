@@ -10,6 +10,7 @@ import { computeLicensing, normalizeLicensingModel } from "./licensing";
 import { computeEngagement, normalizeEngagementModel, resolveDataResidency, withEngagementResidency, type EngagementBasis, type DataResidency } from "./engagement";
 import { resolveIncludedSections } from "./constants";
 import { PORTAL_SERVICES, type CaliberService } from "@/lib/clients/portal-services";
+import { sanitizeRichHtml, isRichHtml } from "./rich-text";
 import type { ProposalEvidence } from "./evidence-summary";
 import type { Proposal } from "./service";
 import { proposalRef } from "./proposal-html";
@@ -260,13 +261,10 @@ function renderProposalDocAr(
     (p.licenceData && typeof p.licenceData === "object"
       ? ((p.licenceData as Record<string, unknown>).sectionOverrides as Record<string, { en?: string; ar?: string }> | undefined)
       : undefined) ?? {};
-  // Terms/Definitions/Acceptance are fully editable (override replaces); only the
-  // computed sections prepend an intro above their generated content. Mirrors EN.
-  const OVERRIDE_PREPEND = new Set([
-    "Commercial proposal",
-    "Psychometric foundations",
-    "Evidence & sample reports",
-  ]);
+  // Every section is prose-editable (mirrors EN): computed sections keep their generated
+  // table outside secBody, so nothing prepends via this set. The only prepend left is the
+  // table auto-detect below.
+  const OVERRIDE_PREPEND = new Set<string>([]);
   const FORCE_REPLACE = new Set(["Definitions"]);
   const ovText = (title: string): string => (overrides[title]?.ar ?? "").trim();
   const renderOverride = (text: string): string =>
@@ -281,12 +279,13 @@ function renderProposalDocAr(
           : `<p>${esc(b).replace(/\n/g, "<br/>")}</p>`;
       })
       .join("");
+  const renderOverrideContent = (text: string): string => (isRichHtml(text) ? sanitizeRichHtml(text) : renderOverride(text));
   const sectionDefaults: Record<string, string> = {};
   const secBody = (title: string, defaultHtml: string): string => {
     sectionDefaults[title] = defaultHtml;
     const o = ovText(title);
     if (!o) return defaultHtml;
-    const rendered = renderOverride(o);
+    const rendered = renderOverrideContent(o);
     // Prepend for the OVERRIDE_PREPEND set AND any table-bearing default (mirrors EN;
     // renderOverride has no table support, so a replace would destroy the table).
     const prepend = !FORCE_REPLACE.has(title) && (OVERRIDE_PREPEND.has(title) || /<table/i.test(defaultHtml));
@@ -294,7 +293,7 @@ function renderProposalDocAr(
   };
   const secIntro = (title: string): string => {
     const o = ovText(title);
-    return o ? renderOverride(o) : "";
+    return o ? renderOverrideContent(o) : "";
   };
 
   // ── Engagement (professional-services) commercial + solution, Arabic. ──
@@ -464,6 +463,41 @@ function renderProposalDocAr(
     ${evRows.join("\n    ")}
   </ul>`
     : "";
+
+  // ── Computed sections: editable intro PROSE (secBody) + a generated table kept LIVE
+  // below (mirrors EN). ──
+  const commercialIntroHtml = isCombined
+    ? `<p>يجمع النموذج التجاري بين ${combinedServicesMode === "licence" ? "<strong>ترخيص سنوي شامل</strong>" : "<strong>خدمات منصة لكل مشارك</strong>"}${eng ? " و<strong>ارتباط خدمات مهنية مخصص</strong>" : ""}. ويُدرَج كل جزء تحت إجماليه الفرعي أدناه، ويُختَم بإجمالي مجمّع واحد.</p>`
+    : isEngagement && eng
+      ? `<p>النموذج التجاري هو <strong>ارتباط خدمات مهنية مخصص</strong>، مُسعَّر بالبنود أدناه - رسوم تصميم وإبلاغ ثابتة، وتقييم لكل مشارك، ووقت مقيّمين بالأيام الاستشارية، وتغذية راجعة تطويرية لكل متدرب.</p>`
+      : isLicence && lic
+        ? `<p>النموذج التجاري هو <strong>ترخيص سنوي شامل ملتزم</strong> لمنصة Caliber: تُسعَّر الخدمات المختارة إفرادياً حسب الحجم، ثم تُجمَّع بخصم الترخيص الملتزم. ويُدرج الدعم واتفاقية مستوى الخدمة كنسبة من الترخيص، ويغطي التنفيذ لمرة واحدة الإعداد والتهيئة والتكامل والتدريب.</p>`
+        : `<p>النموذج التجاري رسم بسيط لكل مشارك: تُسعَّر كل خدمة مختارة لكل مشارك وتُدرَج أدناه.</p>`;
+  const commercialTableHtml = isCombined
+    ? combinedCommercialAr
+    : isEngagement && eng
+      ? engagementCommercialAr
+      : isLicence && lic
+        ? licenceCommercial
+        : `<table>
+    <thead><tr><th>الخدمة</th><th class="num">المشاركون</th><th class="num">السعر / مشارك</th><th class="num">الإجمالي الفرعي</th></tr></thead>
+    <tbody>
+      ${lineRows}
+      <tr><td colspan="3" class="tot-label">الإجمالي الفرعي</td><td class="num">${m(p.subtotal)}</td></tr>
+      ${discountRow}
+      <tr class="total-row"><td colspan="3" class="tot-label">الإجمالي (${esc(cur)})</td><td class="num">${m(p.total)}</td></tr>
+    </tbody>
+  </table>`;
+  const evidenceProseHtml = `<p>كل أداة في هذا العرض مدعومة بموجز منهجية موثق وأثر أدلة قابل للتدقيق. والأرقام أدناه لقطة حية للأدلة القياسية الحالية للمنصة، أُدرجت لتمكين ${esc(p.clientName)} من إثبات التزاماتها في الضمان والحوكمة. وتتوفر نماذج تقارير مجهّلة لكل خدمة عند الطلب.</p>`;
+  const evidenceTableHtml = evRows.length
+    ? `<table>
+      <thead><tr><th style="width:34%">الأداة</th><th>الأدلة القياسية الحالية</th></tr></thead>
+      <tbody>
+        ${evRows.map((r) => r.replace(/^<li>/, '<tr><td colspan="2">').replace(/<\/li>$/, "</td></tr>")).join("\n        ")}
+      </tbody>
+    </table>
+    <p class="scope-note">تزداد إحصاءات الثبات والمعايرة قوةً مع نمو أحجام الاستجابة، ولا يُفعَّل التقرير المرجعي المعياري إلا عند كفاية عينة المقياس.</p>`
+    : `<p class="scope-note">تتوفر تفاصيل الثبات والمعايرة والصدق لكل أداة في موجزات المنهجية المنشورة، وتُقدَّم عند الطلب.</p>`;
 
   const html = `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -642,8 +676,8 @@ function renderProposalDocAr(
     <li><b>ضمانات جودة الاستجابة</b> - حيثما يقتضي المفهوم، تحمل الأدوات فحوص تشويه واتساق تُعرض على الاستشاري المراجع بدلاً من احتسابها تلقائياً بصمت.</li>
     <li><b>مراقبة الثبات</b> - تُتابع إحصاءات الاتساق الداخلي مع نمو أحجام الاستجابة، ولا يُفعّل التقرير المرجعي المعياري إلا عندما تكون العينة كافية.</li>
     <li><b>طبقات إبلاغ صادقة</b> - تُوسم كل نتيجة صراحةً بأنها استرشادية أو معتمدة؛ ولا توجد النتائج المعتمدة إلا حيث تقف خلفها درجة قطع موثقة وعملية مراجعة.</li>
-  </ul>
-  ${psyLive}`)}` : ""}
+  </ul>`)}
+  ${psyLive}` : ""}
 
   ${inc("Methodology & quality standards") ? `<h2>${at("Methodology & quality standards")}</h2>
   ${secBody("Methodology & quality standards", `<ul>
@@ -665,7 +699,7 @@ function renderProposalDocAr(
   </ul>`)}` : ""}
 
   ${inc("Implementation plan") ? `<h2>${at("Implementation plan")}</h2>
-  ${secBody("Implementation plan", `<p class="scope-note">خطة استرشادية لمجموعة بهذا الحجم؛ ويُتفق على الجدول النهائي عند الانطلاق ويُوثَّق في بيان العمل.</p>
+  ${secBody("Implementation plan", `<p class="scope-note">خطة استرشادية لمجموعة بهذا الحجم؛ ويُتفق على الجدول النهائي عند الانطلاق ويُوثَّق في بيان العمل.</p>`)}
   <table>
     <thead><tr><th>المرحلة</th><th>التوقيت الاسترشادي</th><th>الأنشطة الرئيسية</th><th>المخرجات</th></tr></thead>
     <tbody>
@@ -674,7 +708,7 @@ function renderProposalDocAr(
       <tr><td><b>3 &middot; نافذة التقييم</b></td><td>الأسابيع 3-5</td><td>إرسال الدعوات على دفعات، متابعة الإنجاز، إدارة التذكيرات، دعم المشاركين</td><td>لوحة إنجاز؛ تقارير حالة دورية</td></tr>
       <tr><td><b>4 &middot; الإبلاغ والإحاطة</b></td><td>الأسبوع 6</td><td>إصدار التقارير الفردية، تجميع تحليلات المجموعة، جلسة إحاطة للراعي</td><td>حزمة المخرجات الكاملة؛ الإحاطة والتوصيات</td></tr>
     </tbody>
-  </table>`)}` : ""}
+  </table>` : ""}
 
   <h2>${at("Project governance & team")}</h2>
   ${secBody("Project governance & team", `<ul>
@@ -728,27 +762,8 @@ function renderProposalDocAr(
   <p>تتوفر مراجع العملاء وملخصات حالات مجهّلة ذات صلة بهذا الارتباط عند الطلب، بما يخضع لالتزامات السرية التي نقدمها لكل عميل - وهي ذات الالتزامات التي يقدمها هذا العرض لـ ${esc(p.clientName)}.</p>`)}` : ""}
 
   <h2>${at("Commercial proposal")}</h2>
-  ${secIntro("Commercial proposal")}
-  ${
-    isCombined
-      ? `<p>يجمع النموذج التجاري بين ${combinedServicesMode === "licence" ? "<strong>ترخيص سنوي شامل</strong>" : "<strong>خدمات منصة لكل مشارك</strong>"}${eng ? " و<strong>ارتباط خدمات مهنية مخصص</strong>" : ""}. ويُدرَج كل جزء تحت إجماليه الفرعي أدناه، ويُختَم بإجمالي مجمّع واحد.</p>
-  ${combinedCommercialAr}`
-      : isEngagement && eng
-      ? `<p>النموذج التجاري هو <strong>ارتباط خدمات مهنية مخصص</strong>، مُسعَّر بالبنود أدناه - رسوم تصميم وإبلاغ ثابتة، وتقييم لكل مشارك، ووقت مقيّمين بالأيام الاستشارية، وتغذية راجعة تطويرية لكل متدرب.</p>
-  ${engagementCommercialAr}`
-      : isLicence && lic
-        ? `<p>النموذج التجاري هو <strong>ترخيص سنوي شامل ملتزم</strong> لمنصة Caliber: تُسعَّر الخدمات المختارة إفرادياً حسب الحجم، ثم تُجمَّع بخصم الترخيص الملتزم. ويُدرج الدعم واتفاقية مستوى الخدمة كنسبة من الترخيص، ويغطي التنفيذ لمرة واحدة الإعداد والتهيئة والتكامل والتدريب.</p>
-  ${licenceCommercial}`
-        : `<table>
-    <thead><tr><th>الخدمة</th><th class="num">المشاركون</th><th class="num">السعر / مشارك</th><th class="num">الإجمالي الفرعي</th></tr></thead>
-    <tbody>
-      ${lineRows}
-      <tr><td colspan="3" class="tot-label">الإجمالي الفرعي</td><td class="num">${m(p.subtotal)}</td></tr>
-      ${discountRow}
-      <tr class="total-row"><td colspan="3" class="tot-label">الإجمالي (${esc(cur)})</td><td class="num">${m(p.total)}</td></tr>
-    </tbody>
-  </table>`
-  }
+  ${secBody("Commercial proposal", commercialIntroHtml)}
+  ${commercialTableHtml}
   ${validUntil ? `<p class="scope-note">هذا العرض صالح حتى <strong>${validUntil}</strong>. والرسوم مذكورة بعملة ${esc(cur)} ولا تشمل أي ضرائب سارية تُضاف بالسعر المعمول به عند الاقتضاء.</p>` : `<p class="scope-note">الرسوم مذكورة بعملة ${esc(cur)} ولا تشمل أي ضرائب سارية تُضاف بالسعر المعمول به عند الاقتضاء.</p>`}
   ${p.paymentTerms ? `<h3>شروط الدفع</h3><p>${esc(p.paymentTerms)}</p>` : ""}
 
@@ -840,19 +855,8 @@ function renderProposalDocAr(
     inc("Evidence & sample reports")
       ? `<div class="accept">
     <h2 style="border-top:0;padding-top:0;">${at("Evidence & sample reports")}</h2>
-    ${secIntro("Evidence & sample reports")}
-    <p>كل أداة في هذا العرض مدعومة بموجز منهجية موثق وأثر أدلة قابل للتدقيق. والأرقام أدناه لقطة حية للأدلة القياسية الحالية للمنصة، أُدرجت لتمكين ${esc(p.clientName)} من إثبات التزاماتها في الضمان والحوكمة. وتتوفر نماذج تقارير مجهّلة لكل خدمة عند الطلب.</p>
-    ${
-      evRows.length
-        ? `<table>
-      <thead><tr><th style="width:34%">الأداة</th><th>الأدلة القياسية الحالية</th></tr></thead>
-      <tbody>
-        ${evRows.map((r) => r.replace(/^<li>/, '<tr><td colspan="2">').replace(/<\/li>$/, "</td></tr>")).join("\n        ")}
-      </tbody>
-    </table>
-    <p class="scope-note">تزداد إحصاءات الثبات والمعايرة قوةً مع نمو أحجام الاستجابة، ولا يُفعَّل التقرير المرجعي المعياري إلا عند كفاية عينة المقياس.</p>`
-        : `<p class="scope-note">تتوفر تفاصيل الثبات والمعايرة والصدق لكل أداة في موجزات المنهجية المنشورة، وتُقدَّم عند الطلب.</p>`
-    }
+    ${secBody("Evidence & sample reports", evidenceProseHtml)}
+    ${evidenceTableHtml}
   </div>`
       : ""
   }

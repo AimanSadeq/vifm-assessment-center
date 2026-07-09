@@ -5,13 +5,20 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronRight, RotateCcw, Pencil, Save, CheckCircle2 } from "lucide-react";
 import type { SectionEditItem } from "@/lib/proposals/section-editor";
 import { saveProposalSectionsAction } from "../actions";
+import { RichTextEditor } from "./rich-text-editor";
 
-type Vals = Record<string, { en: string; ar: string }>;
+type Field = { value: string; isOverride: boolean };
+type Entry = { en: Field; ar: Field; nonce: number };
 
-/** Per-section wording editor for a saved proposal. Each section shows its current
- *  text; an Edit toggle reveals EN + AR boxes pre-filled with that wording. Only
- *  sections whose text you actually change are stored as overrides - untouched
- *  sections stay dynamic (client name, totals and pricing tables auto-update). */
+const hasContent = (html: string) =>
+  html.replace(/<[^>]*>/g, "").replace(/&nbsp;/gi, " ").replace(/\s+/g, " ").trim().length > 0;
+const stripTags = (html: string) => html.replace(/<[^>]*>/g, " ").replace(/&nbsp;/gi, " ").replace(/\s+/g, " ").trim();
+
+/** Per-section rich-text editor for a saved proposal. Each section shows its wording
+ *  (formatted) with Bold / Italic / Underline / colour / size controls. Editing a section
+ *  makes it fixed text; untouched sections stay dynamic (client name, totals and pricing
+ *  tables auto-update). Computed sections (pricing, evidence) expose their prose only -
+ *  the table stays generated. */
 export function ProposalSectionEditor({
   proposalId,
   sections,
@@ -20,51 +27,58 @@ export function ProposalSectionEditor({
   sections: SectionEditItem[];
 }) {
   const router = useRouter();
-  // Pre-fill for a section: the existing override, else its dynamic default.
-  const preFill = (s: SectionEditItem) => ({ en: s.overrideEn || s.defaultEn, ar: s.overrideAr || s.defaultAr });
-  const [vals, setVals] = useState<Vals>(() => Object.fromEntries(sections.map((s) => [s.title, preFill(s)])));
+  const initEntry = (s: SectionEditItem): Entry => ({
+    en: { value: s.overrideEn || s.defaultEn, isOverride: !!s.overrideEn },
+    ar: { value: s.overrideAr || s.defaultAr, isOverride: !!s.overrideAr },
+    nonce: 0,
+  });
+  const [entries, setEntries] = useState<Record<string, Entry>>(() =>
+    Object.fromEntries(sections.map((s) => [s.title, initEntry(s)])),
+  );
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
-  // Current value for a section, resilient to the included-section set growing after mount
-  // (e.g. an optional section ticked in the pricing builder) - vals may not have it yet.
-  const valOf = (s: SectionEditItem) => vals[s.title] ?? preFill(s);
-  // The value that means "no override" for a section (dynamic default).
-  const baseFor = (s: SectionEditItem) => ({
-    en: s.kind === "replace" ? s.defaultEn.trim() : "",
-    ar: s.kind === "replace" ? s.defaultAr.trim() : "",
-  });
-  // A field is an override iff it is non-empty AND differs from the dynamic default.
-  const fieldOverride = (v: string, base: string) => {
-    const t = v.trim();
-    return t !== "" && t !== base ? t : "";
-  };
-  const isCustomised = (s: SectionEditItem) => {
-    const base = baseFor(s);
-    const v = valOf(s);
-    return !!fieldOverride(v.en, base.en) || !!fieldOverride(v.ar, base.ar);
-  };
+  // Resilient to the included-section set growing after mount (an optional section ticked
+  // in the pricing builder): fall back to the section's own props.
+  const entryOf = (s: SectionEditItem): Entry => entries[s.title] ?? initEntry(s);
 
-  const customisedCount = useMemo(() => sections.filter(isCustomised).length, [vals, sections]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const set = (s: SectionEditItem, lang: "en" | "ar", value: string) =>
-    setVals((prev) => ({ ...prev, [s.title]: { ...(prev[s.title] ?? preFill(s)), [lang]: value } }));
+  const onChange = (s: SectionEditItem, lang: "en" | "ar", html: string) =>
+    setEntries((prev) => {
+      const e = prev[s.title] ?? initEntry(s);
+      return { ...prev, [s.title]: { ...e, [lang]: { value: html, isOverride: true } } };
+    });
 
   const resetSection = (s: SectionEditItem) => {
-    setVals((prev) => ({ ...prev, [s.title]: { en: s.defaultEn, ar: s.defaultAr } }));
+    setEntries((prev) => {
+      const e = prev[s.title] ?? initEntry(s);
+      return {
+        ...prev,
+        [s.title]: {
+          en: { value: s.defaultEn, isOverride: false },
+          ar: { value: s.defaultAr, isOverride: false },
+          nonce: e.nonce + 1, // remount both editors so they reload the default
+        },
+      };
+    });
     setMsg(null);
   };
+
+  const fieldIsCustom = (f: Field) => f.isOverride && hasContent(f.value);
+  const isCustomised = (s: SectionEditItem) => {
+    const e = entryOf(s);
+    return fieldIsCustom(e.en) || fieldIsCustom(e.ar);
+  };
+  const customisedCount = useMemo(() => sections.filter(isCustomised).length, [entries, sections]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function save() {
     setBusy(true);
     setMsg(null);
     const overrides: Record<string, { en?: string; ar?: string }> = {};
     for (const s of sections) {
-      const base = baseFor(s);
-      const v = valOf(s);
-      const en = fieldOverride(v.en, base.en);
-      const ar = fieldOverride(v.ar, base.ar);
+      const e = entryOf(s);
+      const en = fieldIsCustom(e.en) ? e.en.value : "";
+      const ar = fieldIsCustom(e.ar) ? e.ar.value : "";
       if (en || ar) overrides[s.title] = { ...(en ? { en } : {}), ...(ar ? { ar } : {}) };
     }
     const res = await saveProposalSectionsAction(proposalId, overrides, sections.map((s) => s.title));
@@ -75,7 +89,15 @@ export function ProposalSectionEditor({
     router.refresh();
   }
 
-  const rowsFor = (v: string) => Math.min(22, Math.max(5, v.split("\n").length + 1));
+  const SaveBtn = () => (
+    <button
+      onClick={save}
+      disabled={busy}
+      className="inline-flex items-center gap-1.5 rounded-md bg-[#010131] px-3.5 py-2 text-sm font-medium text-white hover:bg-[#121140] disabled:opacity-60"
+    >
+      <Save className="h-4 w-4" /> {busy ? "Saving…" : "Save section text"}
+    </button>
+  );
 
   return (
     <section className="rounded-lg border border-border bg-card p-4 space-y-3">
@@ -83,8 +105,8 @@ export function ProposalSectionEditor({
         <div>
           <h2 className="font-medium text-foreground">Proposal content</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Every section, with its current wording. Edit any before you export - changed sections become fixed text;
-            untouched sections keep updating with the client name, totals and pricing tables.
+            Every section, with its current wording. Format it (bold, italic, underline, colour, size) before you export.
+            Edited sections become fixed text; untouched sections keep updating with the client name, totals and pricing tables.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -93,13 +115,7 @@ export function ProposalSectionEditor({
               {customisedCount} customised
             </span>
           )}
-          <button
-            onClick={save}
-            disabled={busy}
-            className="inline-flex items-center gap-1.5 rounded-md bg-[#010131] px-3.5 py-2 text-sm font-medium text-white hover:bg-[#121140] disabled:opacity-60"
-          >
-            <Save className="h-4 w-4" /> {busy ? "Saving…" : "Save section text"}
-          </button>
+          <SaveBtn />
         </div>
       </div>
       {msg && <p className={`text-xs ${msg.ok ? "text-emerald-700" : "text-red-600"}`}>{msg.text}</p>}
@@ -107,9 +123,9 @@ export function ProposalSectionEditor({
       <div className="space-y-2">
         {sections.map((s) => {
           const isOpen = !!open[s.title];
+          const e = entryOf(s);
           const custom = isCustomised(s);
-          const v = valOf(s);
-          const previewText = v.en.trim();
+          const preview = stripTags(e.en.value);
           return (
             <div key={s.title} className={`rounded-md border ${custom ? "border-[#5391D5]/40 bg-[#5391D5]/[0.03]" : "border-border"}`}>
               <button
@@ -134,8 +150,8 @@ export function ProposalSectionEditor({
 
               {!isOpen && (
                 <div className="px-3 pb-2.5 pl-9">
-                  {previewText ? (
-                    <p className="line-clamp-2 whitespace-pre-wrap text-xs text-muted-foreground">{previewText}</p>
+                  {preview ? (
+                    <p className="line-clamp-2 text-xs text-muted-foreground">{preview}</p>
                   ) : (
                     <p className="text-xs italic text-muted-foreground">
                       Standard wording{s.kind === "prepend" && s.followsNote ? ` - add an optional intro above ${s.followsNote}` : ""}.
@@ -148,34 +164,34 @@ export function ProposalSectionEditor({
                 <div className="space-y-3 border-t border-border px-3 py-3">
                   <p className="text-xs text-muted-foreground">
                     {s.kind === "prepend"
-                      ? `This text appears as an intro above ${s.followsNote ?? "the generated content"}, which stays in the document. Leave blank to omit it.`
-                      : "Edit the wording for this section. Leave it unchanged to keep it dynamic, or clear it to reset to the standard wording."}
+                      ? `This text appears as an intro above ${s.followsNote ?? "the generated content"}, which stays live in the document. Leave blank to omit it.`
+                      : "Edit and format the wording for this section. Leave it unchanged to keep it dynamic, or clear it to reset to the standard wording."}
                   </p>
-                  <label className="block text-sm">
+                  <div>
                     <span className="text-xs font-medium text-muted-foreground">English</span>
-                    <textarea
-                      value={v.en}
-                      onChange={(e) => set(s, "en", e.target.value)}
-                      rows={rowsFor(v.en)}
-                      placeholder={s.kind === "prepend" ? "Optional intro text (English)…" : "Section wording (English)…"}
-                      className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm leading-relaxed"
-                    />
-                  </label>
-                  <label className="block text-sm">
+                    <div className="mt-1">
+                      <RichTextEditor
+                        key={`${s.title}-en-${e.nonce}`}
+                        initialHtml={e.en.value}
+                        onChange={(html) => onChange(s, "en", html)}
+                        placeholder={s.kind === "prepend" ? "Optional intro text (English)…" : "Section wording (English)…"}
+                      />
+                    </div>
+                  </div>
+                  <div>
                     <span className="text-xs font-medium text-muted-foreground">Arabic (العربية)</span>
-                    <textarea
-                      dir="rtl"
-                      value={v.ar}
-                      onChange={(e) => set(s, "ar", e.target.value)}
-                      rows={rowsFor(v.ar)}
-                      placeholder={s.kind === "prepend" ? "نص تمهيدي اختياري (عربي)…" : "نص القسم (عربي)…"}
-                      className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-right text-sm leading-loose"
-                    />
-                  </label>
+                    <div className="mt-1">
+                      <RichTextEditor
+                        key={`${s.title}-ar-${e.nonce}`}
+                        initialHtml={e.ar.value}
+                        onChange={(html) => onChange(s, "ar", html)}
+                        dir="rtl"
+                        placeholder={s.kind === "prepend" ? "نص تمهيدي اختياري (عربي)…" : "نص القسم (عربي)…"}
+                      />
+                    </div>
+                  </div>
                   <div className="flex items-center justify-between">
-                    <p className="text-[11px] text-muted-foreground">
-                      Bullet lines start with &ldquo;- &rdquo;. Blank line = new paragraph. English shows in the EN PDF/Word, Arabic in the AR.
-                    </p>
+                    <p className="text-[11px] text-muted-foreground">English shows in the EN PDF/Word, Arabic in the AR.</p>
                     <button
                       type="button"
                       onClick={() => resetSection(s)}
@@ -193,13 +209,7 @@ export function ProposalSectionEditor({
 
       <div className="flex items-center justify-end gap-2 border-t border-border pt-3">
         {msg?.ok && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
-        <button
-          onClick={save}
-          disabled={busy}
-          className="inline-flex items-center gap-1.5 rounded-md bg-[#010131] px-3.5 py-2 text-sm font-medium text-white hover:bg-[#121140] disabled:opacity-60"
-        >
-          <Save className="h-4 w-4" /> {busy ? "Saving…" : "Save section text"}
-        </button>
+        <SaveBtn />
       </div>
     </section>
   );

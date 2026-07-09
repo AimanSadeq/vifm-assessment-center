@@ -553,3 +553,24 @@
     }
   }
 }
+
+/* Proposal section rich-text editor (RichTextEditor) */
+.prose-editor:empty::before {
+  content: attr(data-placeholder);
+  color: hsl(var(--muted-foreground));
+  pointer-events: none;
+}
+.prose-editor ul,
+.prose-editor ol {
+  margin: 0.25rem 0;
+  padding-inline-start: 1.25rem;
+  list-style: revert;
+}
+.prose-editor p {
+  margin: 0 0 0.5rem;
+}
+.prose-editor h3,
+.prose-editor h4 {
+  font-weight: 600;
+  margin: 0.4rem 0 0.25rem;
+}

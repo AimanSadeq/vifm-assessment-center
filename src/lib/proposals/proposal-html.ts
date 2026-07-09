@@ -14,6 +14,7 @@ import { formatMoney } from "./pricing";
 import { proposalService, PROPOSAL_DELIVERABLES, resolveIncludedSections } from "./constants";
 import { computeLicensing, normalizeLicensingModel } from "./licensing";
 import { computeEngagement, normalizeEngagementModel, ENGAGEMENT_BASIS_LABEL, DATA_RESIDENCY_LABEL, dataResidencyStatement, resolveDataResidency, withEngagementResidency, type EngagementBasis } from "./engagement";
+import { sanitizeRichHtml, isRichHtml } from "./rich-text";
 import type { ProposalEvidence } from "./evidence-summary";
 import type { CaliberService } from "@/lib/clients/portal-services";
 import type { Proposal } from "./service";
@@ -95,14 +96,12 @@ function renderProposalDoc(
     (p.licenceData && typeof p.licenceData === "object"
       ? ((p.licenceData as Record<string, unknown>).sectionOverrides as Record<string, { en?: string; ar?: string }> | undefined)
       : undefined) ?? {};
-  // Sections whose override PREPENDS above generated content that must survive (pricing
-  // tables, live evidence). Terms/Definitions/Acceptance are deliberately NOT here - they
-  // are fully editable (the override replaces the clauses/glossary/steps).
-  const OVERRIDE_PREPEND = new Set([
-    "Commercial proposal",
-    "Psychometric foundations",
-    "Evidence & sample reports",
-  ]);
+  // Every section is now prose-editable: the computed sections (Commercial, Psychometric,
+  // Implementation, Evidence) keep their generated table OUTSIDE secBody, so secBody wraps
+  // only the editable prose and an override replaces that prose (the table stays live).
+  // Nothing prepends via this set anymore; the only prepend path left is the table
+  // auto-detect below (e.g. the licence-mode Proposed solution's committed-scope table).
+  const OVERRIDE_PREPEND = new Set<string>([]);
   // A table-bearing section is normally prepend (never destroy a table), EXCEPT these,
   // which are meant to be rewritten as text (the editor extracts the table to bullets).
   const FORCE_REPLACE = new Set(["Definitions"]);
@@ -121,6 +120,9 @@ function renderProposalDoc(
           : `<p>${esc(b).replace(/\n/g, "<br/>")}</p>`;
       })
       .join("");
+  // An override is rich-text HTML (from the section editor) -> sanitise + inject; a
+  // legacy plain-text override -> markdown-lite. Both flow into secBody/secIntro.
+  const renderOverrideContent = (text: string): string => (isRichHtml(text) ? sanitizeRichHtml(text) : renderOverride(text));
   // Boilerplate default body per section, captured as a side-effect of rendering so
   // the on-page section editor can pre-fill an "edit this section" box with the exact
   // current wording (see proposalSectionDefaults()).
@@ -130,7 +132,7 @@ function renderProposalDoc(
     sectionDefaults[title] = defaultHtml;
     const o = ovText(title);
     if (!o) return defaultHtml;
-    const rendered = renderOverride(o);
+    const rendered = renderOverrideContent(o);
     // Prepend (keep the default body below the override) for the OVERRIDE_PREPEND set AND
     // any section whose default carries a generated table (e.g. Implementation plan, the
     // licence-mode Proposed solution) - renderOverride only emits paragraphs/lists, so a
@@ -142,7 +144,7 @@ function renderProposalDoc(
   /** Override rendered as an intro block above generated content (for big table sections). */
   const secIntro = (title: string): string => {
     const o = ovText(title);
-    return o ? renderOverride(o) : "";
+    return o ? renderOverrideContent(o) : "";
   };
 
   // ── Section selection + numbering (Phase 2). Numbers/TOC derive from the
@@ -519,6 +521,48 @@ function renderProposalDoc(
   </ul>`
     : "";
 
+  // ── Computed sections: editable intro PROSE (secBody) + a generated table kept LIVE
+  // below it, so a text edit never freezes the pricing / evidence. ──
+  const commercialIntroHtml = isCombined
+    ? `<p>The commercial model combines ${combinedServicesMode === "licence" ? "an <strong>annual all-access licence</strong>" : "<strong>per-participant platform services</strong>"}${eng ? " with a bespoke <strong>professional-services engagement</strong>" : ""}. Each block is itemised under its own subtotal below, closed by a single combined total.</p>`
+    : isEngagement && eng
+      ? `<p>The commercial model is a bespoke <strong>professional-services engagement</strong>, priced by line item below - fixed design and reporting fees, per-participant assessment, consultant-day assessor time, and per-delegate developmental feedback.</p>`
+      : isLicence && lic
+        ? `<p>The commercial model is a committed <strong>annual all-access licence</strong> to the Caliber platform: the selected services are volume-priced a la carte, then bundled at a committed-licence discount. Support &amp; SLA is included as a percentage of the licence, and one-time implementation covers onboarding, configuration, integration and training.</p>`
+        : `<p>The commercial model is a straightforward per-participant fee: each selected service is priced per participant and itemised below.</p>`;
+  const commercialTableHtml = isCombined
+    ? combinedCommercial
+    : isEngagement && eng
+      ? engagementCommercial
+      : isLicence && lic
+        ? licenceCommercial
+        : `<table>
+    <thead><tr><th>Service</th><th class="num">Participants</th><th class="num">Rate / participant</th><th class="num">Subtotal</th></tr></thead>
+    <tbody>
+      ${lineRows}
+      <tr><td colspan="3" class="tot-label">Subtotal</td><td class="num">${money(p.subtotal)}</td></tr>
+      ${discountRow}
+      <tr class="total-row"><td colspan="3" class="tot-label">Total (${esc(cur)})</td><td class="num">${money(p.total)}</td></tr>
+    </tbody>
+  </table>`;
+  const evidenceProseHtml = `<p>Every instrument in this proposal is backed by a documented methodology brief and an auditable evidence
+    trail. The figures below are a live snapshot of the platform's current measurement evidence; they are
+    included so ${esc(p.clientName)} can evidence its own assurance and governance obligations. Anonymised
+    sample candidate and cohort reports for each scoped service are available on request and can be appended to
+    the signed statement of work.</p>`;
+  const evidenceTableHtml = evRows.length
+    ? `<table>
+      <thead><tr><th style="width:34%">Instrument</th><th>Current measurement evidence</th></tr></thead>
+      <tbody>
+        ${evRows.map((r) => r.replace(/^<li>/, "<tr><td colspan=\"2\">").replace(/<\/li>$/, "</td></tr>")).join("\n        ")}
+      </tbody>
+    </table>
+    <p class="scope-note">Reliability and calibration statistics strengthen as response volumes grow; norm-referenced
+    reporting is enabled only once a scale's sample is adequate. Where a metric is not yet shown, the instrument
+    reports on its documented indicative basis.</p>`
+    : `<p class="scope-note">Detailed reliability, calibration and validity evidence per instrument is available in the
+    published methodology briefs, provided on request and forming part of this proposal by reference.</p>`;
+
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -733,8 +777,8 @@ function renderProposalDoc(
     <li><b>Response-quality safeguards</b> - where the construct warrants it, instruments carry distortion and consistency checks (e.g. social-desirability signals on self-report measures) that are surfaced to the reviewing consultant rather than silently auto-scored.</li>
     <li><b>Reliability monitoring</b> - internal-consistency statistics are tracked as response volumes grow, and norm-referenced reporting is enabled only when the underlying sample is adequate.</li>
     <li><b>Honest reporting tiers</b> - each result is explicitly labelled indicative or certified; certified outcomes exist only where a documented cut-score and review process stand behind them.</li>
-  </ul>
-  ${psyLive}`)}` : ""}
+  </ul>`)}
+  ${psyLive}` : ""}
 
   ${inc("Methodology & quality standards") ? `<h2><span class="no">${NO("Methodology & quality standards")}.</span>Methodology &amp; quality standards</h2>
   ${secBody("Methodology & quality standards", `<ul>
@@ -756,7 +800,7 @@ function renderProposalDoc(
   </ul>`)}` : ""}
 
   ${inc("Implementation plan") ? `<h2><span class="no">${NO("Implementation plan")}.</span>Implementation plan</h2>
-  ${secBody("Implementation plan", `<p class="scope-note">Indicative plan for a cohort of this size; the definitive schedule is agreed at kickoff and confirmed in the statement of work.</p>
+  ${secBody("Implementation plan", `<p class="scope-note">Indicative plan for a cohort of this size; the definitive schedule is agreed at kickoff and confirmed in the statement of work.</p>`)}
   <table>
     <thead><tr><th>Phase</th><th>Indicative timing</th><th>Key activities</th><th>Outputs</th></tr></thead>
     <tbody>
@@ -765,7 +809,7 @@ function renderProposalDoc(
       <tr><td><b>3 &middot; Assessment window</b></td><td>Weeks 3-5</td><td>Invitations issued in waves, completion monitored, reminders managed, participant support</td><td>Completion dashboard; interim status reports</td></tr>
       <tr><td><b>4 &middot; Reporting &amp; debrief</b></td><td>Week 6</td><td>Individual reports released, cohort analytics compiled, sponsor debrief session</td><td>Full deliverable set; debrief and recommendations</td></tr>
     </tbody>
-  </table>`)}` : ""}
+  </table>` : ""}
 
   <h2><span class="no">${NO("Project governance & team")}.</span>Project governance &amp; team</h2>
   ${secBody("Project governance & team", `<ul>
@@ -825,27 +869,8 @@ function renderProposalDoc(
   makes to ${esc(p.clientName)}.</p>`)}` : ""}
 
   <h2><span class="no">${NO("Commercial proposal")}.</span>Commercial proposal</h2>
-  ${secIntro("Commercial proposal")}
-  ${
-    isCombined
-      ? `<p>The commercial model combines ${combinedServicesMode === "licence" ? "an <strong>annual all-access licence</strong>" : "<strong>per-participant platform services</strong>"}${eng ? " with a bespoke <strong>professional-services engagement</strong>" : ""}. Each block is itemised under its own subtotal below, closed by a single combined total.</p>
-  ${combinedCommercial}`
-      : isEngagement && eng
-      ? `<p>The commercial model is a bespoke <strong>professional-services engagement</strong>, priced by line item below - fixed design and reporting fees, per-participant assessment, consultant-day assessor time, and per-delegate developmental feedback.</p>
-  ${engagementCommercial}`
-      : isLicence && lic
-        ? `<p>The commercial model is a committed <strong>annual all-access licence</strong> to the Caliber platform: the selected services are volume-priced a la carte, then bundled at a committed-licence discount. Support &amp; SLA is included as a percentage of the licence, and one-time implementation covers onboarding, configuration, integration and training.</p>
-  ${licenceCommercial}`
-        : `<table>
-    <thead><tr><th>Service</th><th class="num">Participants</th><th class="num">Rate / participant</th><th class="num">Subtotal</th></tr></thead>
-    <tbody>
-      ${lineRows}
-      <tr><td colspan="3" class="tot-label">Subtotal</td><td class="num">${money(p.subtotal)}</td></tr>
-      ${discountRow}
-      <tr class="total-row"><td colspan="3" class="tot-label">Total (${esc(cur)})</td><td class="num">${money(p.total)}</td></tr>
-    </tbody>
-  </table>`
-  }
+  ${secBody("Commercial proposal", commercialIntroHtml)}
+  ${commercialTableHtml}
   ${validUntil ? `<p class="scope-note">This proposal is valid until <strong>${validUntil}</strong>. Fees are quoted in ${esc(cur)} and are exclusive of any applicable taxes, which will be added at the prevailing rate where required.</p>` : `<p class="scope-note">Fees are quoted in ${esc(cur)} and are exclusive of any applicable taxes, which will be added at the prevailing rate where required.</p>`}
   ${p.paymentTerms ? `<h3>Payment terms</h3><p>${esc(p.paymentTerms)}</p>` : ""}
   <h3>Included in the fees</h3>
@@ -948,26 +973,8 @@ function renderProposalDoc(
     inc("Evidence & sample reports")
       ? `<div class="accept">
     <h2 style="border-top:0;padding-top:0;"><span class="no">${NO("Evidence & sample reports")}.</span>Evidence &amp; sample reports</h2>
-    ${secIntro("Evidence & sample reports")}
-    <p>Every instrument in this proposal is backed by a documented methodology brief and an auditable evidence
-    trail. The figures below are a live snapshot of the platform's current measurement evidence; they are
-    included so ${esc(p.clientName)} can evidence its own assurance and governance obligations. Anonymised
-    sample candidate and cohort reports for each scoped service are available on request and can be appended to
-    the signed statement of work.</p>
-    ${
-      evRows.length
-        ? `<table>
-      <thead><tr><th style="width:34%">Instrument</th><th>Current measurement evidence</th></tr></thead>
-      <tbody>
-        ${evRows.map((r) => r.replace(/^<li>/, "<tr><td colspan=\"2\">").replace(/<\/li>$/, "</td></tr>")).join("\n        ")}
-      </tbody>
-    </table>
-    <p class="scope-note">Reliability and calibration statistics strengthen as response volumes grow; norm-referenced
-    reporting is enabled only once a scale's sample is adequate. Where a metric is not yet shown, the instrument
-    reports on its documented indicative basis.</p>`
-        : `<p class="scope-note">Detailed reliability, calibration and validity evidence per instrument is available in the
-    published methodology briefs, provided on request and forming part of this proposal by reference.</p>`
-    }
+    ${secBody("Evidence & sample reports", evidenceProseHtml)}
+    ${evidenceTableHtml}
   </div>`
       : ""
   }

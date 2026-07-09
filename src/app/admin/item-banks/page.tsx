@@ -4,8 +4,12 @@ import { Boxes, ShieldCheck, ShieldAlert, ExternalLink, AlertTriangle, CheckCirc
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { BackLink } from "@/components/shared/back-link";
 import { loadBankReadiness, type BankReadiness, type UnitReadiness } from "@/lib/bank-readiness/readiness";
+import { ReopenButton } from "./_components/reopen-button";
 
 export const dynamic = "force-dynamic";
+
+/** Banks whose approved/live pool can be sent back to review (have a status gate). */
+const REOPENABLE = new Set(["persona", "logica", "techno", "prehire", "fluent", "arc"]);
 
 const TIER_CHIP: Record<string, string> = {
   certified: "bg-emerald-50 text-emerald-700",
@@ -146,11 +150,14 @@ export default async function ItemBanksPage() {
               )}
 
               <p className="mt-2.5 text-xs text-muted-foreground">{b.note}</p>
-              {b.console && (
-                <Link href={b.console} className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-[#5391D5] hover:underline">
-                  Manage bank <ExternalLink className="h-3 w-3" />
-                </Link>
-              )}
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
+                {b.console && (
+                  <Link href={b.console} className="inline-flex items-center gap-1 text-xs font-medium text-[#5391D5] hover:underline">
+                    Manage bank <ExternalLink className="h-3 w-3" />
+                  </Link>
+                )}
+                {!b.retired && b.vetted > 0 && REOPENABLE.has(b.key) && <ReopenButton bankKey={b.key} />}
+              </div>
             </div>
           );
         })}

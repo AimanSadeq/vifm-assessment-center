@@ -49,6 +49,7 @@ import {
   MonitorPlay,
   History,
   FileText,
+  Boxes,
   type LucideIcon,
 } from "lucide-react";
 
@@ -187,6 +188,7 @@ const NAV: NavEntry[] = [
         link("/admin/vouchers", "adminNav.vouchers", Ticket),
         link("/admin/evidence-map", "adminNav.evidenceMap", FlaskConical),
         link("/admin/psychometrics", "adminNav.psychometricsBank", ListChecks),
+        link("/admin/item-banks", "Item Banks", Boxes),
         link("/admin/proposals", "Proposals", FileText),
         link("/admin/fix-register", "Fix Register", History),
       ],

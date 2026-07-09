@@ -1,0 +1,153 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { Boxes, ShieldCheck, ShieldAlert, ExternalLink, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
+import { BackLink } from "@/components/shared/back-link";
+import { loadBankReadiness, type BankReadiness, type UnitReadiness } from "@/lib/bank-readiness/readiness";
+
+export const dynamic = "force-dynamic";
+
+const TIER_CHIP: Record<string, string> = {
+  certified: "bg-emerald-50 text-emerald-700",
+  reviewed: "bg-[#5391D5]/10 text-[#5391D5]",
+  indicative: "bg-amber-50 text-amber-700",
+};
+
+function unitState(u: UnitReadiness): "ready" | "partial" | "empty" {
+  if (u.approved >= u.target) return "ready";
+  if (u.approved > 0) return "partial";
+  return "empty";
+}
+const UNIT_TONE: Record<string, { bar: string; text: string }> = {
+  ready: { bar: "bg-emerald-500", text: "text-emerald-700" },
+  partial: { bar: "bg-amber-500", text: "text-amber-700" },
+  empty: { bar: "bg-rose-400", text: "text-rose-600" },
+};
+
+/** Bank-level status: red = live-AI + empty (pure scramble), amber = still live / partly filled, green = fixed vetted content. */
+function bankState(b: BankReadiness): "ready" | "partial" | "risk" {
+  if (b.servesLive && b.vetted === 0) return "risk";
+  if (b.servesLive) return "partial";
+  if (b.units) return b.units.every((u) => unitState(u) === "ready") ? "ready" : "partial";
+  return b.vetted > 0 ? "ready" : "risk";
+}
+
+export default async function ItemBanksPage() {
+  try {
+    await requireRole(["admin"]);
+  } catch (e) {
+    if (isAuthorizationError(e)) redirect("/login");
+    throw e;
+  }
+  const banks = await loadBankReadiness();
+
+  const scramble = banks.filter((b) => b.servesLive).length;
+  const withGate = banks.filter((b) => b.hasReviewGate).length;
+  const allUnits = banks.flatMap((b) => b.units ?? []);
+  const readyUnits = allUnits.filter((u) => unitState(u) === "ready").length;
+  const totalVetted = banks.reduce((s, b) => s + b.vetted, 0);
+
+  const metric = (value: string, label: string, tone = "text-[#010131]") => (
+    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+      <div className={`text-2xl font-semibold tabular-nums ${tone}`}>{value}</div>
+      <div className="text-xs text-muted-foreground">{label}</div>
+    </div>
+  );
+
+  return (
+    <div className="mx-auto max-w-5xl space-y-6 p-6">
+      <BackLink href="/admin" label="Admin" history />
+      <header>
+        <h1 className="inline-flex items-center gap-2 text-2xl font-semibold text-[#010131]">
+          <Boxes className="h-6 w-6 text-[#5391D5]" /> Item-bank readiness
+        </h1>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          Which service banks hold vetted, ready questions - and which would generate items live at deal time. Drive every domain from red to green.
+        </p>
+      </header>
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {metric(`${scramble}`, "Banks that generate items live at deal time", scramble > 0 ? "text-rose-600" : "text-emerald-700")}
+        {metric(`${readyUnits}/${allUnits.length}`, "Domains/subtests at target (vetted)")}
+        {metric(`${totalVetted}`, "Vetted items across all banks")}
+        {metric(`${withGate}/${banks.length}`, "Banks with an SME review gate")}
+      </div>
+
+      {scramble > 0 && (
+        <div className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>
+            <strong>{scramble} bank{scramble === 1 ? "" : "s"}</strong> still mint questions live from the LLM at sitting time - no SME sees an item before a candidate, and two candidates can get non-equated forms. These are the &ldquo;problem question&rdquo; risk at deal time; fill them to a vetted bank first.
+          </span>
+        </div>
+      )}
+
+      <div className="space-y-3">
+        {banks.map((b) => {
+          const st = bankState(b);
+          return (
+            <div
+              key={b.key}
+              className={`rounded-xl border bg-card p-4 shadow-sm ${st === "risk" ? "border-rose-200" : st === "partial" ? "border-amber-200" : "border-emerald-200"}`}
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-semibold text-[#010131]">{b.label}</span>
+                <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium capitalize ${TIER_CHIP[b.tier] ?? ""}`}>{b.tier}</span>
+                {b.servesLive ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-600">
+                    <ShieldAlert className="h-3 w-3" /> Live-AI at deal time
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+                    <ShieldCheck className="h-3 w-3" /> Fixed vetted content
+                  </span>
+                )}
+                {b.hasReviewGate && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">
+                    <CheckCircle2 className="h-3 w-3" /> SME review gate
+                  </span>
+                )}
+                <span className="ml-auto text-xs tabular-nums text-muted-foreground">
+                  {b.vetted} vetted{b.total !== b.vetted ? ` / ${b.total} total` : ""}
+                </span>
+              </div>
+
+              {b.units && b.units.length > 0 && (
+                <div className="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-2">
+                  {b.units.map((u) => {
+                    const s = unitState(u);
+                    const tone = UNIT_TONE[s];
+                    const pct = Math.min(100, u.target > 0 ? Math.round((u.approved / u.target) * 100) : 0);
+                    return (
+                      <div key={u.unit} className="flex items-center gap-2">
+                        <span className="w-40 shrink-0 truncate text-xs text-foreground" title={u.unit}>{u.unit}</span>
+                        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                          <div className={`h-full ${tone.bar}`} style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className={`w-12 shrink-0 text-right text-[11px] tabular-nums ${tone.text}`}>{u.approved}/{u.target}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <p className="mt-2.5 text-xs text-muted-foreground">{b.note}</p>
+              {b.console && (
+                <Link href={b.console} className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-[#5391D5] hover:underline">
+                  Manage bank <ExternalLink className="h-3 w-3" />
+                </Link>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-4 border-t border-border pt-3 text-[11px] text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-4 rounded-full bg-emerald-500" /> at target</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-4 rounded-full bg-amber-500" /> partial</span>
+        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-4 rounded-full bg-rose-400" /> empty</span>
+        <span className="ml-auto">Target = vetted items per domain/subtest/pillar before a bank is deal-ready.</span>
+      </div>
+    </div>
+  );
+}

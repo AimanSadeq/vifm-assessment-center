@@ -23,6 +23,7 @@ import { DebriefRowActions } from "./_components/debrief-row-actions";
 import { ReflectReassessButton } from "./_components/reassess-button";
 import { ReflectArchiveButton } from "./_components/archive-button";
 import { LaunchButton } from "./_components/launch-button";
+import { FrameworkApproval } from "./_components/framework-approval";
 import { RaterInvitations, type RaterInvite } from "./_components/rater-invitations";
 
 type Params = { params: Promise<{ id: string }> };
@@ -40,6 +41,7 @@ type EngagementDetail = {
   field_window_end: string | null;
   created_at: string;
   launched_at: string | null;
+  framework_approved_at: string | null;
   ara_organizations: { name: string; region: string; sector: string } | null;
 };
 
@@ -77,7 +79,7 @@ async function fetchEngagement(id: string) {
     sb
       .from("reflect_engagements")
       .select(
-        "id, name, status, is_sandbox, default_language, report_language, anonymity_min_n, participant_target_count, field_window_start, field_window_end, created_at, launched_at, ara_organizations(name, region, sector)"
+        "id, name, status, is_sandbox, default_language, report_language, anonymity_min_n, participant_target_count, field_window_start, field_window_end, created_at, launched_at, framework_approved_at, ara_organizations(name, region, sector)"
       )
       .eq("id", id)
       .maybeSingle(),
@@ -223,7 +225,9 @@ export default async function ReflectEngagementDetailPage({ params }: Params) {
               {(engagement.status === "complete" || engagement.status === "live") && (
                 <ReflectArchiveButton engagementId={engagement.id} />
               )}
-              {engagement.status === "draft" && <LaunchButton engagementId={engagement.id} />}
+              {engagement.status === "draft" && (
+                <LaunchButton engagementId={engagement.id} frameworkApproved={!!engagement.framework_approved_at} />
+              )}
               <div className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs", status.className)}>
                 <StatusIcon className="h-3 w-3" />
                 {t(status.labelKey)}
@@ -322,6 +326,13 @@ export default async function ReflectEngagementDetailPage({ params }: Params) {
                   : t("reflectConsultant.noFrameworkAttached")}
               </p>
             </div>
+            {framework && framework.reflect_competencies.length > 0 && (
+              <FrameworkApproval
+                engagementId={engagement.id}
+                approvedAt={engagement.framework_approved_at}
+                isDraft={engagement.status === "draft"}
+              />
+            )}
           </div>
           {!framework || framework.reflect_competencies.length === 0 ? (
             <p className="text-sm text-muted-foreground">

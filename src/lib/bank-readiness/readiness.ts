@@ -217,9 +217,9 @@ async function reflect(): Promise<BankReadiness> {
   const rows = await selectRows("reflect_frameworks", "id, is_template");
   const templates = rows.filter((r) => r.is_template).length;
   return {
-    key: "reflect", label: "Reflect 360", tier: "reviewed", servesLive: false, hasReviewGate: false,
+    key: "reflect", label: "Reflect 360", tier: "reviewed", servesLive: false, hasReviewGate: true,
     vetted: templates, total: rows.length, console: undefined,
-    note: `Multi-rater behaviour framework (frequency-rated, not scored). ${templates} library template(s); per-engagement frameworks are AI-decomposed with only informal review. No approval gate or admin authoring surface.`,
+    note: `Multi-rater behaviour framework (frequency-rated, not scored). ${templates} library template(s). Per-engagement frameworks are AI-decomposed, but a consultant must now APPROVE the framework before an engagement can launch / raters are invited (gate). Seat/client-portal shells clone a pre-reviewed template, so they are approved by construction.`,
   };
 }
 

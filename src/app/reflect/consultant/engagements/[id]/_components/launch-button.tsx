@@ -12,10 +12,23 @@ import { launchReflectEngagement } from "@/lib/reflect/actions";
  * live (no invitations sent). This surfaces the same launch + invite-all action
  * anywhere. The server action enforces the guard (>= 1 participant + 1 rater).
  */
-export function LaunchButton({ engagementId }: { engagementId: string }) {
+export function LaunchButton({ engagementId, frameworkApproved = true }: { engagementId: string; frameworkApproved?: boolean }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [confirming, setConfirming] = useState(false);
+
+  // The framework must be human-approved before raters are invited (the server
+  // action enforces this too). Show a clear, disabled hint until then.
+  if (!frameworkApproved) {
+    return (
+      <span
+        className="inline-flex items-center gap-1.5 rounded-md border border-dashed px-3 py-1.5 text-xs font-medium text-muted-foreground"
+        title="Approve the framework first - a consultant must review the AI-decomposed behaviours before raters are invited"
+      >
+        <Rocket className="h-3.5 w-3.5" /> Approve framework to launch
+      </span>
+    );
+  }
 
   const launch = () => {
     start(async () => {

@@ -425,6 +425,17 @@ export async function inviteReflect(opts: {
     // Self-rater per participant (reuses the service's derivation rule).
     await ensureSelfRaters(sb, newIds);
 
+    // The shell framework is a cloned, pre-reviewed library template (never
+    // AI-decomposed), so it is approved by construction - stamp
+    // framework_approved_at so it satisfies the reflect framework-approval gate
+    // (migration 00182) without a consultant step. Best-effort + separate from the
+    // flip so a fresh env without 00182 (missing column) still goes live.
+    await sb
+      .from("reflect_engagements")
+      .update({ framework_approved_at: new Date().toISOString() })
+      .eq("id", engagementId)
+      .is("framework_approved_at", null);
+
     // Flip the shell live so raters can respond, then send invitations.
     await sb
       .from("reflect_engagements")

@@ -900,6 +900,93 @@ export async function bulkUpsertReflectRaters(input: {
 
 
 // ──────────────────────────────────────────────────────────────
+// Framework-approval gate (migration 00182). A consultant must approve the
+// AI-decomposed framework before raters are invited.
+// ──────────────────────────────────────────────────────────────
+
+/** True if the engagement's framework is human-approved. Tolerant: a missing
+ *  framework_approved_at column (migration not applied) reads as approved so an
+ *  un-migrated environment never wedges launch. */
+async function isReflectFrameworkApproved(
+  sb: ReturnType<typeof createServiceClient>,
+  engagementId: string,
+): Promise<boolean> {
+  const { data, error } = await sb
+    .from("reflect_engagements")
+    .select("framework_approved_at")
+    .eq("id", engagementId)
+    .maybeSingle<{ framework_approved_at: string | null }>();
+  if (error) return true; // column absent on a fresh env -> don't block
+  return !!data?.framework_approved_at;
+}
+
+/** Consultant sign-off on the AI-decomposed framework. Requires a framework with
+ *  at least one behaviour; stamps approver + time; unblocks launch. */
+export async function approveReflectFrameworkAction(engagementId: string) {
+  let caller;
+  try { caller = await requireEngagementOwner(engagementId); } catch (e) { return authErr(e); }
+  const sb = createServiceClient();
+
+  const { data: fw } = await sb
+    .from("reflect_frameworks")
+    .select("id, reflect_competencies(id, reflect_behaviors(id))")
+    .eq("engagement_id", engagementId)
+    .maybeSingle<{ id: string; reflect_competencies: Array<{ id: string; reflect_behaviors: Array<{ id: string }> }> }>();
+  const behaviourCount = (fw?.reflect_competencies ?? []).reduce((n, c) => n + (c.reflect_behaviors?.length ?? 0), 0);
+  if (!fw || behaviourCount === 0) {
+    return { ok: false, error: "Add competencies and behaviours to the framework before approving it." };
+  }
+
+  const { error } = await sb
+    .from("reflect_engagements")
+    .update({ framework_approved_at: new Date().toISOString(), framework_approved_by: caller.isDev ? null : caller.uid })
+    .eq("id", engagementId);
+  if (error) return { ok: false, error: error.message };
+
+  await sb.from("reflect_audit_log").insert({
+    action: "framework.approved",
+    target_table: "reflect_engagements",
+    target_id: engagementId,
+    performed_by: caller.isDev ? null : caller.uid,
+    metadata: { behaviours: behaviourCount },
+  });
+  revalidatePath(`/reflect/consultant/engagements/${engagementId}`);
+  return { ok: true };
+}
+
+/** Revoke framework approval (only while still draft - a live engagement's
+ *  framework is already in use by raters). Re-blocks launch until re-approved. */
+export async function revokeReflectFrameworkApprovalAction(engagementId: string) {
+  let caller;
+  try { caller = await requireEngagementOwner(engagementId); } catch (e) { return authErr(e); }
+  const sb = createServiceClient();
+
+  const { data: eng } = await sb
+    .from("reflect_engagements")
+    .select("status")
+    .eq("id", engagementId)
+    .maybeSingle<{ status: string }>();
+  if (eng && eng.status !== "draft") {
+    return { ok: false, error: "Can't revoke approval after launch - the framework is already in use." };
+  }
+
+  const { error } = await sb
+    .from("reflect_engagements")
+    .update({ framework_approved_at: null, framework_approved_by: null })
+    .eq("id", engagementId);
+  if (error) return { ok: false, error: error.message };
+
+  await sb.from("reflect_audit_log").insert({
+    action: "framework.approval_revoked",
+    target_table: "reflect_engagements",
+    target_id: engagementId,
+    performed_by: caller.isDev ? null : caller.uid,
+  });
+  revalidatePath(`/reflect/consultant/engagements/${engagementId}`);
+  return { ok: true };
+}
+
+// ──────────────────────────────────────────────────────────────
 // Launch engagement: flip status draft -> live, then send rater
 // invitation emails (best-effort - failures don't roll back the
 // status flip).
@@ -925,6 +1012,17 @@ export async function launchReflectEngagement(engagementId: string) {
   if (!eng) return { ok: false, error: "Engagement not found" };
   if (eng.status !== "draft") {
     return { ok: false, error: `Engagement is already '${eng.status}' - cannot relaunch` };
+  }
+
+  // Gate: the framework (AI-decomposed behaviours) must be human-approved before
+  // raters are invited. Tolerant of migration 00182 not being applied yet (a
+  // missing column reads as approved so launch is never wedged on a fresh env).
+  if (!(await isReflectFrameworkApproved(sb, engagementId))) {
+    return {
+      ok: false,
+      error:
+        "Approve the framework before launching. A consultant must review the AI-decomposed behaviours before raters are invited.",
+    };
   }
 
   // Guard: refuse to launch an engagement that nobody can respond to. The raters

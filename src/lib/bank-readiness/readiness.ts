@@ -79,7 +79,7 @@ async function techno(): Promise<BankReadiness> {
   const allRows = await selectRows("tech_assessment_items", "domain_key, status");
   // Only count items in the 10 certification domains (ignore orphan/legacy drafts
   // with non-taxonomy domain keys so the totals match the per-domain view).
-  const std = new Set(TECH_DOMAINS.map((d) => d.key));
+  const std = new Set<string>(TECH_DOMAINS.map((d) => d.key));
   const rows = allRows.filter((r) => std.has(String(r.domain_key)));
   const approvedCounts = aggregate(rows, "domain_key", (r) => r.status === "approved");
   const target = 8; // matches the cut-score min_items default
@@ -208,12 +208,31 @@ async function reflect(): Promise<BankReadiness> {
   };
 }
 
-// ── Pre-Hire quiz: no persisted bank at all ──
-function prehire(): BankReadiness {
+// ── Pre-Hire quiz: competency_quiz_items (approved certifies; in_review awaits SME) ──
+async function prehire(): Promise<BankReadiness> {
+  const rows = await selectRows("competency_quiz_items", "competency_id, status");
+  const approvedByComp = new Map<string, number>();
+  let inReview = 0;
+  for (const r of rows) {
+    const s = String(r.status);
+    if (s === "approved") {
+      const k = String(r.competency_id);
+      approvedByComp.set(k, (approvedByComp.get(k) ?? 0) + 1);
+    } else if (s === "in_review") inReview += 1;
+  }
+  const TOTAL_COMPS = 41; // the VIFM behavioural framework
+  const perCompTarget = 8; // a rotatable pool for the ~2-item-per-competency draw
+  const compsReady = Array.from(approvedByComp.values()).filter((n) => n >= perCompTarget).length;
+  const vetted = Array.from(approvedByComp.values()).reduce((a, b) => a + b, 0);
+  const hasBank = rows.length > 0;
   return {
-    key: "prehire", label: "Pre-Hire quiz", tier: "indicative", servesLive: true, hasReviewGate: false,
-    vetted: 0, total: 0, console: undefined,
-    note: "No item bank: every quiz deck is minted live from the LLM at start, so no SME sees an item before a hiring candidate does; two candidates for one job get non-equated forms.",
+    key: "prehire", label: "Pre-Hire quiz", tier: "indicative", servesLive: compsReady < TOTAL_COMPS, hasReviewGate: hasBank,
+    vetted, total: rows.length, console: undefined,
+    note: !hasBank
+      ? "No item bank: every quiz deck is minted live from the LLM at start, so no SME sees an item before a hiring candidate does; two candidates for one job get non-equated forms."
+      : vetted > 0
+        ? `${compsReady}/${TOTAL_COMPS} competencies have an approved pool; a sitting draws vetted items where available and falls back to live-AI otherwise. ${inReview} more in review.`
+        : `${inReview} SJT item(s) authored and awaiting SME approval; until a competency's pool is approved the screen still mints live-AI.`,
   };
 }
 
@@ -222,14 +241,15 @@ function prehire(): BankReadiness {
  *  serves it; Persona is the behavioural self-report now), so it is not a bank. */
 export async function loadBankReadiness(): Promise<BankReadiness[]> {
   const counts = await psyCounts();
-  const [t, l, f, a, ac, rf] = await Promise.all([
+  const [t, l, f, a, ac, rf, ph] = await Promise.all([
     techno(),
     logica(counts),
     fluent(),
     arc(),
     acBehavioural(),
     reflect(),
+    prehire(),
   ]);
   // Order: scramble-risk item banks first, then framework/reviewed banks.
-  return [l, f, prehire(), t, a, ac, persona(), rf];
+  return [l, f, ph, t, a, ac, persona(), rf];
 }

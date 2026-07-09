@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { findCandidateByToken } from "@/lib/prehire/candidate-access";
 import { generateQuizQuestions, buildFallbackQuizDeck } from "@/lib/ai/quiz-generator";
+import { drawCompetencyQuizItems } from "@/lib/quiz-bank/assemble";
 import type { BehavioralIndicator, QuizQuestion } from "@/types/database";
 
 type StoredDetail = { questions?: QuizQuestion[] } | null;
@@ -248,7 +249,15 @@ export async function POST(_req: Request, { params }: { params: { token: string 
           .map((r) => r.description.replace(/^\[DEV TIP\]\s*/, ""))
           .slice(0, 3);
 
-        // The generator returns ~7 items per competency; keep only `wanted` of
+        // Prefer SME-APPROVED bank items (vetted, equated across candidates);
+        // fall back to live generation only for the shortfall so a thin bank still
+        // yields a full deck. Until items are approved the bank is empty and this
+        // is exactly the previous live-AI behaviour.
+        const banked = await drawCompetencyQuizItems(comp.id, wanted);
+        if (banked.length >= wanted) return banked.slice(0, wanted);
+        const shortfall = wanted - banked.length;
+
+        // The generator returns ~7 items per competency; keep only `shortfall` of
         // them, grounded in that competency's own indicators.
         const deck = await withTimeout(
           generateQuizQuestions({
@@ -258,13 +267,12 @@ export async function POST(_req: Request, { params }: { params: { token: string 
             currentScore: null,
             targetScore,
             bilingual: true,
-            // Only generate the items we actually keep for this competency
-            // (was generating 7 and discarding ~5) - far faster per call.
-            count: wanted,
+            count: shortfall,
           }),
           GEN_TIMEOUT_MS
         );
-        return deck && deck.length > 0 ? deck.slice(0, wanted) : [];
+        const aiPart = deck && deck.length > 0 ? deck.slice(0, shortfall) : [];
+        return [...banked, ...aiPart];
       })
     );
     const collected: QuizQuestion[] = decks.flat();

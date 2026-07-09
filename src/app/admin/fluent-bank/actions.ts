@@ -56,3 +56,46 @@ export async function bulkPromoteSkillAction(input: { skill: "reading" | "listen
   revalidatePath("/admin/fluent-bank");
   return { ok: true, message: `Promoted ${data?.length ?? 0} ${input.skill} item(s) to live.` };
 }
+
+/** Edit an item's content. Receptive (reading/listening) = passage/script +
+ *  question + 4 options + correct index; productive (writing/speaking) = the
+ *  prompts. Editing returns the item to 'in_review' for re-promotion. */
+export async function updateFluentItemAction(input: {
+  itemId: string;
+  content?: string;
+  question?: string;
+  options?: string[];
+  correct_index?: number;
+  prompt_en?: string;
+  prompt_ar?: string;
+}): Promise<ActionResult> {
+  const gate = await ensureAdmin();
+  if (!gate.ok) return gate;
+  const svc = createServiceClient();
+  const { data: row } = await svc
+    .from("eng_fluent_items")
+    .select("stem, skill")
+    .eq("id", input.itemId)
+    .maybeSingle<{ stem: Record<string, unknown>; skill: string }>();
+  if (!row) return { ok: false, error: "Item not found." };
+
+  const stem: Record<string, unknown> = { ...(row.stem ?? {}) };
+  if (row.skill === "writing" || row.skill === "speaking") {
+    if (typeof input.prompt_en === "string" && input.prompt_en.trim()) stem.prompt_en = input.prompt_en.trim();
+    if (typeof input.prompt_ar === "string") stem.prompt_ar = input.prompt_ar.trim();
+  } else {
+    const contentKey = row.skill === "reading" ? "passage" : "script";
+    if (typeof input.content === "string" && input.content.trim()) stem[contentKey] = input.content.trim();
+    if (typeof input.question === "string" && input.question.trim()) stem.question = input.question.trim();
+    if (Array.isArray(input.options) && input.options.length === 4) stem.options = input.options.map((o) => String(o));
+    if (typeof input.correct_index === "number" && input.correct_index >= 0 && input.correct_index <= 3) stem.correct_index = input.correct_index;
+  }
+
+  const { error } = await svc
+    .from("eng_fluent_items")
+    .update({ stem, status: "in_review", reviewed_by: null, reviewed_at: null })
+    .eq("id", input.itemId);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/admin/fluent-bank");
+  return { ok: true, message: "Saved - returned to review for re-promotion." };
+}

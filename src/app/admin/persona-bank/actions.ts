@@ -49,3 +49,33 @@ export async function setPersonaItemsStatusAction(input: {
   revalidatePath("/admin/persona-bank");
   return { ok: true, message: `Updated ${data?.length ?? 0} item(s).` };
 }
+
+/** Edit an item's wording / reverse flag. Editing returns it to 'pending' (its
+ *  prior approval no longer covers the new wording) so an SME re-signs off. */
+export async function updatePersonaItemAction(input: {
+  itemId: string;
+  text_en?: string;
+  text_ar?: string;
+  reverse?: boolean;
+}): Promise<ActionResult> {
+  const gate = await ensureAdmin();
+  if (!gate.ok) return gate;
+
+  const patch: Record<string, unknown> = {};
+  if (typeof input.text_en === "string" && input.text_en.trim()) patch.text_en = input.text_en.trim();
+  if (typeof input.text_ar === "string") patch.text_ar = input.text_ar.trim() || null;
+  if (typeof input.reverse === "boolean") patch.reverse = input.reverse;
+  if (Object.keys(patch).length === 0) return { ok: false, error: "Nothing to update." };
+
+  // Editing content re-opens review.
+  patch.status = "pending";
+  patch.sme_reviewed_by = null;
+  patch.sme_reviewed_at = null;
+  patch.updated_at = new Date().toISOString();
+
+  const svc = createServiceClient();
+  const { error } = await svc.from("persona_items").update(patch).eq("id", input.itemId);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/admin/persona-bank");
+  return { ok: true, message: "Saved - returned to review for re-approval." };
+}

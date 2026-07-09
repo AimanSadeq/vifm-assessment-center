@@ -3,11 +3,11 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Check, Ban, Archive, ChevronDown, ChevronRight, CheckCheck } from "lucide-react";
+import { Check, Ban, Archive, ChevronDown, ChevronRight, CheckCheck, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { FluentCell, FluentItem, FluentPrompt } from "@/lib/quiz-bank/fluent-constants";
 import { PROMPT_MIN } from "@/lib/quiz-bank/fluent-constants";
-import { setFluentItemStatusAction, bulkPromoteSkillAction } from "../actions";
+import { setFluentItemStatusAction, bulkPromoteSkillAction, updateFluentItemAction } from "../actions";
 
 type Res = { ok: true; message?: string } | { ok: false; error: string };
 
@@ -32,6 +32,38 @@ const TONE: Record<string, string> = {
 
 function ItemRow({ item }: { item: FluentItem }) {
   const { pending, run } = useRunner();
+  const [editing, setEditing] = useState(false);
+  const [content, setContent] = useState(item.content);
+  const [question, setQuestion] = useState(item.question);
+  const [options, setOptions] = useState<string[]>(() => {
+    const o = [...item.options];
+    while (o.length < 4) o.push("");
+    return o.slice(0, 4);
+  });
+  const [correct, setCorrect] = useState(item.correct_index);
+
+  if (editing) {
+    return (
+      <li className="space-y-2 rounded-md border border-sky-300 bg-sky-50/50 p-2.5">
+        <textarea className="w-full rounded border border-input bg-background px-2 py-1 text-xs" rows={2} value={content} onChange={(e) => setContent(e.target.value)} placeholder="Passage / listening script" />
+        <textarea className="w-full rounded border border-input bg-background px-2 py-1 text-sm" rows={2} value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Question" />
+        {options.map((o, i) => (
+          <label key={i} className="flex items-center gap-2">
+            <input type="radio" name={`correct-${item.id}`} checked={correct === i} onChange={() => setCorrect(i)} title="Mark correct" />
+            <input className="w-full rounded border border-input bg-background px-2 py-1 text-xs" value={o} onChange={(e) => setOptions((prev) => prev.map((x, j) => (j === i ? e.target.value : x)))} placeholder={`Option ${i + 1}`} />
+          </label>
+        ))}
+        <div className="flex gap-2">
+          <Button size="sm" disabled={pending}
+            onClick={() => run(() => updateFluentItemAction({ itemId: item.id, content, question, options, correct_index: correct }).then((r) => { if (r.ok) setEditing(false); return r; }))}>
+            Save
+          </Button>
+          <Button size="sm" variant="outline" disabled={pending} onClick={() => setEditing(false)}>Cancel</Button>
+        </div>
+      </li>
+    );
+  }
+
   return (
     <li className="rounded-md border border-slate-200 bg-white p-2.5">
       <div className="flex items-start justify-between gap-3">
@@ -51,6 +83,9 @@ function ItemRow({ item }: { item: FluentItem }) {
           </ul>
         </div>
         <div className="flex shrink-0 items-center gap-1">
+          <Button size="sm" variant="ghost" className="h-7 px-2 text-sky-700" title="Edit" onClick={() => setEditing(true)} disabled={pending}>
+            <Pencil className="h-4 w-4" />
+          </Button>
           {item.status !== "live" && (
             <Button size="sm" variant="ghost" className="h-7 px-2 text-emerald-700" title="Promote to live" onClick={() => run(() => setFluentItemStatusAction({ itemId: item.id, status: "live" }), "Promoted to live.")} disabled={pending}>
               <Check className="h-4 w-4" />
@@ -117,6 +152,26 @@ function SkillCard({ skill, cells }: { skill: "reading" | "listening"; cells: Fl
 
 function PromptRow({ prompt }: { prompt: FluentPrompt }) {
   const { pending, run } = useRunner();
+  const [editing, setEditing] = useState(false);
+  const [en, setEn] = useState(prompt.prompt_en);
+  const [ar, setAr] = useState(prompt.prompt_ar ?? "");
+
+  if (editing) {
+    return (
+      <li className="space-y-2 rounded-md border border-sky-300 bg-sky-50/50 p-2.5">
+        <textarea className="w-full rounded border border-input bg-background px-2 py-1 text-sm" rows={3} value={en} onChange={(e) => setEn(e.target.value)} placeholder="English prompt" />
+        <textarea dir="rtl" className="w-full rounded border border-input bg-background px-2 py-1 text-xs" rows={3} value={ar} onChange={(e) => setAr(e.target.value)} placeholder="Arabic prompt (MSA)" />
+        <div className="flex gap-2">
+          <Button size="sm" disabled={pending}
+            onClick={() => run(() => updateFluentItemAction({ itemId: prompt.id, prompt_en: en, prompt_ar: ar }).then((r) => { if (r.ok) setEditing(false); return r; }))}>
+            Save
+          </Button>
+          <Button size="sm" variant="outline" disabled={pending} onClick={() => setEditing(false)}>Cancel</Button>
+        </div>
+      </li>
+    );
+  }
+
   return (
     <li className="rounded-md border border-slate-200 bg-white p-2.5">
       <div className="flex items-start justify-between gap-3">
@@ -129,6 +184,9 @@ function PromptRow({ prompt }: { prompt: FluentPrompt }) {
           {prompt.prompt_ar && <p dir="rtl" className="text-xs text-slate-500">{prompt.prompt_ar}</p>}
         </div>
         <div className="flex shrink-0 items-center gap-1">
+          <Button size="sm" variant="ghost" className="h-7 px-2 text-sky-700" title="Edit" onClick={() => setEditing(true)} disabled={pending}>
+            <Pencil className="h-4 w-4" />
+          </Button>
           {prompt.status !== "live" && (
             <Button size="sm" variant="ghost" className="h-7 px-2 text-emerald-700" title="Promote to live" onClick={() => run(() => setFluentItemStatusAction({ itemId: prompt.id, status: "live" }), "Promoted to live.")} disabled={pending}>
               <Check className="h-4 w-4" />

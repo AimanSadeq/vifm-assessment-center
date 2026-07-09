@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { FileText, Plus, SlidersHorizontal } from "lucide-react";
+import { FileText, Plus, SlidersHorizontal, LayoutDashboard } from "lucide-react";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { BackLink } from "@/components/shared/back-link";
 import { loadProposals } from "@/lib/proposals/service";
@@ -47,6 +47,9 @@ export default async function ProposalsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Link href="/admin/proposals/dashboard" className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm text-foreground hover:bg-muted">
+            <LayoutDashboard className="h-4 w-4" /> Dashboard
+          </Link>
           <Link href="/admin/proposals/rates" className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm text-foreground hover:bg-muted">
             <SlidersHorizontal className="h-4 w-4" /> Rate card
           </Link>

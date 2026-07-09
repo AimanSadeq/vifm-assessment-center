@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { Layers } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { VifmLogo } from "@/components/shared/vifm-logo";
-import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
+import { loadPersonaCompetencies } from "@/lib/persona/bank";
 import { loadPersonaRoleOptions } from "@/lib/scoring/persona-roles";
 import { loadCompetencyDefinitions } from "@/lib/scoring/competency-definitions";
 import { getVoucherScopeByRedemptionToken } from "@/lib/persona/vouchers";
@@ -83,11 +83,12 @@ export default async function PersonaTakePage({
   const scopedSet = scope.scopedCompetencyIds && scope.scopedCompetencyIds.length > 0
     ? new Set(scope.scopedCompetencyIds)
     : null;
+  const allCompetencies = await loadPersonaCompetencies();
   const competencies = scopedSet
-    ? BEHAVIORAL_COMPETENCIES.filter((c) => scopedSet.has(c.acCompetencyId))
-    : BEHAVIORAL_COMPETENCIES;
+    ? allCompetencies.filter((c) => scopedSet.has(c.acCompetencyId))
+    : allCompetencies;
   // Guard against an over-narrow / stale scope leaving nothing to serve.
-  const servedCompetencies = competencies.length > 0 ? competencies : BEHAVIORAL_COMPETENCIES;
+  const servedCompetencies = competencies.length > 0 ? competencies : allCompetencies;
   const pinned = scope.purpose
     ? {
         purpose: scope.purpose,

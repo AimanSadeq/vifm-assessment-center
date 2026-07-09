@@ -9,6 +9,7 @@ import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
 import { TECH_DOMAINS } from "@/lib/competencies/technical-framework";
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
 import { PROMPT_MIN as FLUENT_PROMPT_MIN } from "@/lib/quiz-bank/fluent-admin";
+import { loadPersonaBankStatus } from "@/lib/persona/bank";
 
 export type Tier = "certified" | "reviewed" | "indicative";
 export type UnitReadiness = { unit: string; approved: number; total: number; target: number };
@@ -199,14 +200,24 @@ async function arc(): Promise<BankReadiness> {
   };
 }
 
-// ── Persona: hand-authored items in code (behavioral-items.ts) ──
-function persona(): BankReadiness {
-  const totalItems = BEHAVIORAL_COMPETENCIES.reduce((s, c) => s + ((c.items as unknown[])?.length ?? 0), 0);
+// ── Persona: managed bank (persona_items, migration 00185); code fallback ──
+async function persona(): Promise<BankReadiness> {
   const comps = BEHAVIORAL_COMPETENCIES.length;
+  const s = await loadPersonaBankStatus();
+  if (!s.tableReady) {
+    const totalItems = BEHAVIORAL_COMPETENCIES.reduce((sum, c) => sum + ((c.items as unknown[])?.length ?? 0), 0);
+    return {
+      key: "persona", label: "Persona (self-report)", tier: "indicative", servesLive: false, hasReviewGate: false,
+      vetted: totalItems, total: totalItems, console: undefined,
+      note: `Code-resident: ${totalItems} items across ${comps} competencies (fixed, no scramble). Apply migration 00185 + seed to manage them in the DB with an SME review gate.`,
+    };
+  }
   return {
-    key: "persona", label: "Persona (self-report)", tier: "indicative", servesLive: false, hasReviewGate: false,
-    vetted: totalItems, total: totalItems, console: undefined,
-    note: `Hand-authored: ${totalItems} items across ${comps} competencies (fixed, so no scramble). Gaps are downstream: GCC norms empty, no bank version pin, Arabic pending human sign-off.`,
+    key: "persona", label: "Persona (self-report)", tier: "indicative", servesLive: false, hasReviewGate: true,
+    vetted: s.approved, total: s.total, console: "/admin/persona-bank",
+    note: s.pending > 0
+      ? `${s.pending} of ${s.total} self-report items pending SME review across ${comps} competencies. Persona serves fixed items (never live-AI), but results are flagged provisional until an SME approves the content.`
+      : `All ${s.total} self-report items are SME-approved across ${comps} competencies. Fixed bank, no scramble.`,
   };
 }
 
@@ -304,7 +315,7 @@ async function prehire(): Promise<BankReadiness> {
  *  serves it; Persona is the behavioural self-report now), so it is not a bank. */
 export async function loadBankReadiness(): Promise<BankReadiness[]> {
   const psy = await psyCounts();
-  const [t, l, f, a, ac, rf, ph] = await Promise.all([
+  const [t, l, f, a, ac, rf, ph, pe] = await Promise.all([
     techno(),
     logica(psy),
     fluent(),
@@ -312,7 +323,8 @@ export async function loadBankReadiness(): Promise<BankReadiness[]> {
     acBehavioural(),
     reflect(),
     prehire(),
+    persona(),
   ]);
   // Order: scramble-risk item banks first, then framework/reviewed banks.
-  return [l, f, ph, t, a, ac, persona(), rf];
+  return [l, f, ph, t, a, ac, pe, rf];
 }

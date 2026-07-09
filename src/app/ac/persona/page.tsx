@@ -3,7 +3,7 @@ import { Ticket, Users, FileClock, ClipboardList } from "lucide-react";
 import { BackLink } from "@/components/shared/back-link";
 import { AllServicesLink } from "@/components/shared/all-services-link";
 import { DesignTargetRolesLink } from "@/components/shared/design-target-roles-link";
-import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
+import { loadPersonaCompetencies } from "@/lib/persona/bank";
 import { loadPersonaRoleOptions } from "@/lib/scoring/persona-roles";
 import { loadCompetencyDefinitions } from "@/lib/scoring/competency-definitions";
 import { PersonaStandaloneClient } from "./_components/persona-standalone-client";
@@ -17,9 +17,10 @@ export const dynamic = "force-dynamic";
  * needs the candidate-bound path at /candidate/behavioral/[id]).
  */
 export default async function PersonaPage({ searchParams }: { searchParams?: { demo?: string; purpose?: string } }) {
-  const [roleProfiles, definitions] = await Promise.all([
+  const [roleProfiles, definitions, competencies] = await Promise.all([
     loadPersonaRoleOptions(),
     loadCompetencyDefinitions(),
+    loadPersonaCompetencies(),
   ]);
   // Demo shortcut button: shown with ?demo=1 (live client demos) or in dev.
   const demo = searchParams?.demo === "1" || process.env.NODE_ENV !== "production";
@@ -59,7 +60,7 @@ export default async function PersonaPage({ searchParams }: { searchParams?: { d
         <DesignTargetRolesLink />
         <AllServicesLink />
       </div>
-      <PersonaStandaloneClient competencies={BEHAVIORAL_COMPETENCIES} roleProfiles={roleProfiles} definitions={definitions} demo={demo} lockedPurpose={lockedPurpose} />
+      <PersonaStandaloneClient competencies={competencies} roleProfiles={roleProfiles} definitions={definitions} demo={demo} lockedPurpose={lockedPurpose} />
     </div>
   );
 }

@@ -7,6 +7,7 @@ import {
   loadQuestionsForRespondent,
 } from "@/lib/ara/respondent-access";
 import { isStaffCaller } from "@/lib/ara/auth-guards";
+import { araRespondentProvisional } from "@/lib/ara/provisional";
 import { calculateQuestionScore } from "@/lib/ara/scoring";
 import { timingSafeStrEqual } from "@/lib/utils/secret";
 import { createServiceClient } from "@/lib/supabase/server";
@@ -210,6 +211,8 @@ export async function GET(
     }));
 
     const language = ctx.respondent.language_preference ?? "en";
+    // Option 2 gate: flag provisional if any answered question is not SME-approved.
+    const isProvisional = (await araRespondentProvisional(ctx.respondent.id)).provisional;
     const safeName = ctx.respondent.name
       .replace(/[^a-zA-Z0-9\s]/g, "")
       .replace(/\s+/g, "_") || "Snapshot";
@@ -233,6 +236,7 @@ export async function GET(
         talentLens,
         analysis,
         devAnalysis,
+        provisional: isProvisional,
       };
       const html = renderPersonalSnapshotHtmlAr(arData);
       const buffer = await renderHtmlToPdfBuffer(html);
@@ -259,6 +263,7 @@ export async function GET(
       talentLens,
       analysis,
       devAnalysis,
+      provisional: isProvisional,
     };
     const buffer = await renderToBuffer(<PersonalSnapshot data={data} />);
     return new NextResponse(new Uint8Array(buffer), {

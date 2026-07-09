@@ -205,6 +205,8 @@ export type PersonalSnapshotArData = {
   analysis?: PersonalAnalysis | null;
   /** Development-lens growth analysis (development / generic); null omits it. */
   devAnalysis?: DevelopmentAnalysis | null;
+  /** Option 2 gate: content pending SME review - renders a provisional strip. */
+  provisional?: boolean;
   recommendedCourses: Array<{
     course_id: string;
     title_en: string;
@@ -664,6 +666,11 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
   </style>
 </head>
 <body>
+${data.provisional ? `
+  <div style="border:1px solid #f59e0b;background:#fffbeb;color:#78350f;border-radius:6pt;padding:8pt 10pt;margin:12pt 12pt 0;font-size:9pt;line-height:1.4">
+    <strong>نتائج مبدئية - المحتوى قيد مراجعة خبير الموضوع</strong>
+    <div style="margin-top:2pt">لم تتم بعد مراجعة بعض أسئلة التقييم واعتمادها من قبل خبير في الموضوع. يُرجى اعتبار هذه النتائج استرشادية حتى اكتمال مراجعة المحتوى.</div>
+  </div>` : ""}
 
   <!-- PAGE 1 - score + per-factor (first two) -->
   <section>

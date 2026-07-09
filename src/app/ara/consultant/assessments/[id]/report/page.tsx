@@ -20,6 +20,8 @@ import { InvestmentMatrix } from "./_components/investment-matrix";
 import { GanttRoadmap } from "./_components/gantt-roadmap";
 import { tr, type ReportLang } from "./_components/report-i18n";
 import { BilingualReport } from "./_components/bilingual-report";
+import { araAssessmentProvisional } from "@/lib/ara/provisional";
+import { ProvisionalReportStrip } from "@/components/shared/provisional-banner";
 import { orgFactSheetRows } from "@/lib/reports/fact-sheet-content";
 import {
   SectionHeader, StatTile, Metric, FindingCard, inferFindingType,
@@ -321,6 +323,14 @@ export default async function AraReportPage({
   const outerDir = rtl ? "rtl" : "ltr";
   const t = (key: Parameters<typeof tr>[1]) => tr(rtl ? "ar" : "en", key);
 
+  // Option 2 gate: flag the report provisional if it served questions an SME has
+  // not yet approved (migration 00184). Appears on-screen AND in the PDF (the PDF
+  // is this page rendered headless). Clears per-pillar as content is approved.
+  const provisional = await araAssessmentProvisional(params.id);
+  const provisionalStrip = provisional.provisional ? (
+    <ProvisionalReportStrip language={langParam === "bilingual" ? "bilingual" : rtl ? "ar" : "en"} />
+  ) : null;
+
   // Bilingual side-by-side landscape is its own layout - render it here
   // instead of the portrait EN/AR flow below.
   if (langParam === "bilingual") {
@@ -336,6 +346,7 @@ export default async function AraReportPage({
           </div>
         )}
         <div className={bare ? "" : "bg-gray-100 py-8"}>
+          {provisionalStrip}
           <BilingualReport
             organizationName={assessment.organization?.name ?? "Client"}
             organizationNameAr={assessment.organization?.name_ar ?? null}
@@ -392,6 +403,7 @@ export default async function AraReportPage({
       )}
 
       <div className={bare ? "" : "bg-gray-100 py-8"} dir={outerDir}>
+        {provisionalStrip}
         {/* ─── PAGE 1 - Cover ─── */}
         <section
           className="report-page flex flex-col justify-between"

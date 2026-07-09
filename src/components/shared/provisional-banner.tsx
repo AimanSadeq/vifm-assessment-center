@@ -2,6 +2,47 @@ import { AlertTriangle } from "lucide-react";
 import { PROVISIONAL_COPY } from "@/lib/ara/provisional";
 
 /**
+ * Print-safe provisional strip for PDF/report surfaces (inline styles, since the
+ * report pages are laid out with inline styles for Puppeteer). Renders EN, AR, or
+ * both stacked (bilingual report).
+ */
+export function ProvisionalReportStrip({ language }: { language: "en" | "ar" | "bilingual" }) {
+  const box = (lang: "en" | "ar") => {
+    const c = PROVISIONAL_COPY[lang];
+    return (
+      <div
+        dir={lang === "ar" ? "rtl" : "ltr"}
+        style={{
+          border: "1px solid #f59e0b",
+          background: "#fffbeb",
+          color: "#78350f",
+          borderRadius: "6pt",
+          padding: "8pt 10pt",
+          marginBottom: "8pt",
+          fontSize: "9pt",
+          lineHeight: 1.4,
+        }}
+      >
+        <strong>{c.title}</strong>
+        <div style={{ marginTop: "2pt" }}>{c.body}</div>
+      </div>
+    );
+  };
+  return (
+    <div style={{ padding: "12pt 12pt 0" }}>
+      {language === "bilingual" ? (
+        <>
+          {box("en")}
+          {box("ar")}
+        </>
+      ) : (
+        box(language)
+      )}
+    </div>
+  );
+}
+
+/**
  * "Provisional - content pending SME review" banner. Rendered on ARC result
  * surfaces (and reusable elsewhere) whenever the assessment served questions an
  * SME has not yet approved. Server component, bilingual, RTL-aware.

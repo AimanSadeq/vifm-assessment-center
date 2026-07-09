@@ -40,6 +40,8 @@ import {
 import { RecommendedCoursesPanel } from "@/components/shared/recommended-courses-panel";
 import { computeWorkforceReadiness } from "@/lib/ara/workforce-readiness";
 import { computeAgenticReadiness } from "@/lib/ara/agentic-readiness";
+import { araAssessmentProvisional } from "@/lib/ara/provisional";
+import { ProvisionalBanner } from "@/components/shared/provisional-banner";
 import { ARA_INDIVIDUAL_FACTORS } from "@/lib/constants/ara-individual-factors";
 import { ARA_AGENTIC_DIMENSIONS } from "@/lib/constants/ara-agentic-dimensions";
 import { ConfirmAction } from "@/components/shared/confirm-action";
@@ -320,9 +322,16 @@ export default async function AraAssessmentDetailPage({
     "use server";
     await bulkImportAraRespondents(fd);
   };
+  const provisional = await araAssessmentProvisional(params.id);
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto px-6 py-10">
+        {provisional.provisional && (
+          <div className="mb-4">
+            <ProvisionalBanner language="en" pending={provisional.pending} total={provisional.total} />
+          </div>
+        )}
         <Breadcrumbs
           items={[
             { label: "ARA", href: "/ara" },

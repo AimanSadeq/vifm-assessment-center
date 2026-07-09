@@ -6,43 +6,18 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { CEFR_ORDER, type CefrLevel } from "@/lib/ai/fluent-english";
 
-export type FluentItemStatus = "draft" | "calibrating" | "live" | "in_review" | "rejected" | "retired";
+import {
+  PROMPT_MIN,
+  type FluentItemStatus,
+  type FluentItem,
+  type FluentPrompt,
+  type FluentCell,
+} from "./fluent-constants";
+export { PROMPT_MIN };
+export type { FluentItemStatus, FluentItem, FluentPrompt, FluentCell };
 
 /** Served ramp per skill: 2 each A1-B2, 1 each C1/C2. */
 export const FLUENT_RAMP: Record<CefrLevel, number> = { A1: 2, A2: 2, B1: 2, B2: 2, C1: 1, C2: 1 };
-
-export type FluentItem = {
-  id: string;
-  skill: "reading" | "listening";
-  cefr: string;
-  content: string; // passage or script
-  question: string;
-  options: string[];
-  correct_index: number;
-  status: FluentItemStatus;
-};
-
-export type FluentCell = {
-  skill: "reading" | "listening";
-  cefr: CefrLevel;
-  need: number;
-  live: number;
-  inReview: number;
-  items: FluentItem[];
-};
-
-/** A productive-skill (writing/speaking) prompt - AI-scored open task, no key. */
-export type FluentPrompt = {
-  id: string;
-  skill: "writing" | "speaking";
-  cefr: string;
-  prompt_en: string;
-  prompt_ar: string;
-  status: FluentItemStatus;
-};
-
-/** Min LIVE prompts per productive skill to serve a rotation from the bank. */
-export const PROMPT_MIN = 3;
 
 export type FluentBankView = {
   tableReady: boolean;

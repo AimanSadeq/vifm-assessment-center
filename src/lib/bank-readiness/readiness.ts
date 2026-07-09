@@ -8,7 +8,7 @@ import { COGNITIVE_SUBTESTS } from "@/lib/psychometrics/framework";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
 import { TECH_DOMAINS } from "@/lib/competencies/technical-framework";
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
-import { PROMPT_MIN as FLUENT_PROMPT_MIN } from "@/lib/quiz-bank/fluent-admin";
+import { PROMPT_MIN as FLUENT_PROMPT_MIN } from "@/lib/quiz-bank/fluent-constants";
 import { loadPersonaBankStatus } from "@/lib/persona/bank";
 
 export type Tier = "certified" | "reviewed" | "indicative";

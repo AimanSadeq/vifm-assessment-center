@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Check, Ban, Archive, ChevronDown, ChevronRight, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { FluentCell, FluentItem, FluentPrompt } from "@/lib/quiz-bank/fluent-admin";
-import { PROMPT_MIN } from "@/lib/quiz-bank/fluent-admin";
+import type { FluentCell, FluentItem, FluentPrompt } from "@/lib/quiz-bank/fluent-constants";
+import { PROMPT_MIN } from "@/lib/quiz-bank/fluent-constants";
 import { setFluentItemStatusAction, bulkPromoteSkillAction } from "../actions";
 
 type Res = { ok: true; message?: string } | { ok: false; error: string };

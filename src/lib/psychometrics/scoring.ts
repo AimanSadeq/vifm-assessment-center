@@ -34,7 +34,7 @@ export type PersonalityItem = {
 };
 
 export type PsyTest =
-  | { kind: "cognitive"; items: CognitiveItem[]; ai_generated: boolean }
+  | { kind: "cognitive"; items: CognitiveItem[]; ai_generated: boolean; served_source?: "bank" | "ai" | "static" }
   | { kind: "personality"; items: PersonalityItem[] };
 
 /** Client-facing test: answer keys (correct / reverse) stripped server-side. */

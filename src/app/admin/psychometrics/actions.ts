@@ -6,26 +6,29 @@
 
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
-import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
+import { requireRole, isAuthorizationError, type AraCaller } from "@/lib/ara/auth-guards";
 import { resolveScaleId, type PsyKind, type PsyItemStatus } from "@/lib/psychometrics/bank";
+import { COGNITIVE_FACET_KEYS, COGNITIVE_SUBTEST_KEYS, subtestForFacet } from "@/lib/psychometrics/framework";
+import { COGNITIVE_SEED_V1 } from "@/lib/psychometrics/cognitive-seed";
 import { draftScaleItems } from "@/lib/psychometrics/item-drafter";
 import { computePilotNorms, clearNorms } from "@/lib/psychometrics/norms";
 import { PSY_TIER } from "@/lib/psychometrics/calibration";
 import { IPIP_50 } from "@/lib/psychometrics/ipip50";
 
 type ActionResult = { ok: true; message?: string } | { ok: false; error: string };
+type AdminGate = { ok: true; caller: AraCaller } | { ok: false; error: string };
 
-async function ensureAdmin(): Promise<ActionResult> {
+async function ensureAdmin(): Promise<AdminGate> {
   try {
-    await requireRole(["admin"]);
-    return { ok: true };
+    const caller = await requireRole(["admin"]);
+    return { ok: true, caller };
   } catch (e) {
     if (isAuthorizationError(e)) return { ok: false, error: "Not authorized." };
     throw e;
   }
 }
 
-const STATUSES: PsyItemStatus[] = ["draft", "in_review", "approved", "retired"];
+const STATUSES: PsyItemStatus[] = ["draft", "in_review", "approved", "retired", "rejected"];
 
 /** AI-draft `count` items for one scale into the bank as status='draft'. */
 export async function draftItemsIntoBankAction(input: {
@@ -61,6 +64,7 @@ export async function draftItemsIntoBankAction(input: {
     difficulty: d.difficulty,
     status: "draft",
     source: "ai_draft",
+    drafted_by: gate.caller.uid,
   }));
   const svc = createServiceClient();
   const { error } = await svc.from("psy_items").insert(rows);
@@ -69,22 +73,62 @@ export async function draftItemsIntoBankAction(input: {
   return { ok: true, message: `Drafted ${rows.length} item(s) for review.` };
 }
 
-/** Move an item through the review lifecycle (draft → approved / retired / …). */
-export async function setItemStatusAction(input: { itemId: string; status: PsyItemStatus }): Promise<ActionResult> {
+/**
+ * Move an item through the review lifecycle. APPROVING enforces the two-person
+ * gate (the approver must differ from the drafter - bypassed only for the dev
+ * synthetic admin) and requires a cognitive item to carry a blueprint facet, and
+ * stamps reviewer identity. REJECTING records an optional reason + reviewer.
+ */
+export async function setItemStatusAction(input: { itemId: string; status: PsyItemStatus; reason?: string }): Promise<ActionResult> {
   const gate = await ensureAdmin();
   if (!gate.ok) return gate;
   if (!STATUSES.includes(input.status)) return { ok: false, error: "Invalid status." };
   const svc = createServiceClient();
+
+  if (input.status === "approved" || input.status === "rejected") {
+    const { data: item } = await svc
+      .from("psy_items")
+      .select("drafted_by, facet, kind")
+      .eq("id", input.itemId)
+      .maybeSingle<{ drafted_by: string | null; facet: string | null; kind: string }>();
+    if (!item) return { ok: false, error: "Item not found." };
+
+    if (input.status === "approved") {
+      // Cognitive (mcq) items must be slotted to a blueprint facet before they can
+      // serve - otherwise the assembler can never draw them.
+      if (item.kind === "mcq" && !item.facet) {
+        return { ok: false, error: "Set a blueprint facet on this item before approving it." };
+      }
+      // Two-person review: the approver must not be the drafter (dev bypass only).
+      if (!gate.caller.isDev && item.drafted_by && item.drafted_by === gate.caller.uid) {
+        return { ok: false, error: "Two-person review: this item must be approved by someone other than its drafter." };
+      }
+    }
+
+    const patch: Record<string, unknown> = {
+      status: input.status,
+      reviewed_by: gate.caller.uid,
+      reviewed_at: new Date().toISOString(),
+    };
+    if (input.status === "rejected") patch.rejected_reason = input.reason?.trim() || null;
+    const { error } = await svc.from("psy_items").update(patch).eq("id", input.itemId);
+    if (error) return { ok: false, error: error.message };
+    revalidatePath("/admin/psychometrics");
+    return { ok: true };
+  }
+
   const { error } = await svc.from("psy_items").update({ status: input.status }).eq("id", input.itemId);
   if (error) return { ok: false, error: error.message };
   revalidatePath("/admin/psychometrics");
   return { ok: true };
 }
 
-/** Manually author an item (SME-reviewed by definition → status='approved'). */
+/** Manually author an item. Lands in 'in_review' (drafted_by = author) so a
+ *  second reviewer approves it - single-admin self-approval is not allowed. */
 export async function addItemAction(input: {
   kind: PsyKind;
   scaleKey: string;
+  facet?: string | null;
   stem_en: string;
   stem_ar: string;
   options_en?: string[];
@@ -99,6 +143,15 @@ export async function addItemAction(input: {
   const stem_en = input.stem_en.trim();
   if (!stem_en) return { ok: false, error: "An English stem is required." };
   const itemKind = input.kind === "cognitive" ? "mcq" : "likert";
+
+  // Cognitive items must be slotted to a valid blueprint facet whose subtest
+  // matches the scale, so the assembler can compose them.
+  let facet: string | null = null;
+  if (input.kind === "cognitive") {
+    facet = (input.facet ?? "").trim() || null;
+    if (!facet || !COGNITIVE_FACET_KEYS.has(facet)) return { ok: false, error: "Choose a valid blueprint facet." };
+    if (subtestForFacet(facet) !== input.scaleKey) return { ok: false, error: "That facet does not belong to this subtest." };
+  }
 
   let options_en: string[] | null = null;
   let options_ar: string[] | null = null;
@@ -119,6 +172,7 @@ export async function addItemAction(input: {
   const { error } = await svc.from("psy_items").insert({
     scale_id: scaleId,
     kind: itemKind,
+    facet,
     stem_en,
     stem_ar: input.stem_ar.trim() || stem_en,
     options_en,
@@ -126,19 +180,22 @@ export async function addItemAction(input: {
     correct_index,
     reverse_keyed: itemKind === "likert" ? !!input.reverse_keyed : false,
     difficulty: itemKind === "mcq" ? (input.difficulty ?? "medium") : null,
-    status: "approved",
+    status: "in_review",
     source: "manual",
+    drafted_by: gate.caller.uid,
   });
   if (error) return { ok: false, error: error.message };
   revalidatePath("/admin/psychometrics");
-  return { ok: true, message: "Item added." };
+  return { ok: true, message: "Item added for review." };
 }
 
-/** Edit a drafted/approved item's wording before approval (stems + key fields). */
+/** Edit an item's wording/key/facet. Editing an APPROVED item sends it back to
+ *  'in_review' (its prior approval no longer covers the new wording). */
 export async function updateItemAction(input: {
   itemId: string;
   stem_en?: string;
   stem_ar?: string;
+  facet?: string | null;
   correct_index?: number | null;
   reverse_keyed?: boolean;
   difficulty?: "easy" | "medium" | "hard" | null;
@@ -148,11 +205,24 @@ export async function updateItemAction(input: {
   const patch: Record<string, unknown> = {};
   if (typeof input.stem_en === "string" && input.stem_en.trim()) patch.stem_en = input.stem_en.trim();
   if (typeof input.stem_ar === "string") patch.stem_ar = input.stem_ar.trim() || null;
+  if (typeof input.facet === "string" && input.facet.trim()) {
+    const f = input.facet.trim();
+    if (!COGNITIVE_FACET_KEYS.has(f)) return { ok: false, error: "Invalid facet." };
+    patch.facet = f;
+  }
   if (typeof input.correct_index === "number") patch.correct_index = input.correct_index;
   if (typeof input.reverse_keyed === "boolean") patch.reverse_keyed = input.reverse_keyed;
   if (input.difficulty === null || ["easy", "medium", "hard"].includes(input.difficulty ?? "")) patch.difficulty = input.difficulty ?? null;
   if (Object.keys(patch).length === 0) return { ok: false, error: "Nothing to update." };
+
   const svc = createServiceClient();
+  const { data: cur } = await svc.from("psy_items").select("status").eq("id", input.itemId).maybeSingle<{ status: string }>();
+  // A wording/key edit invalidates a prior approval - send it back to review.
+  if (cur?.status === "approved") {
+    patch.status = "in_review";
+    patch.reviewed_by = null;
+    patch.reviewed_at = null;
+  }
   const { error } = await svc.from("psy_items").update(patch).eq("id", input.itemId);
   if (error) return { ok: false, error: error.message };
   revalidatePath("/admin/psychometrics");
@@ -215,6 +285,58 @@ export async function seedIpip50IntoBankAction(): Promise<ActionResult> {
   if (error) return { ok: false, error: error.message };
   revalidatePath("/admin/psychometrics");
   return { ok: true, message: `Seeded the IPIP-50 (${rows.length} items) into the personality bank as approved.` };
+}
+
+/** Seed the vetted VIFM cognitive bank (120 items, 4 subtests x 3 facets, EN+AR)
+ *  as APPROVED items - the readiness seed that lets Logica serve the reviewed
+ *  bank immediately instead of live-AI. Idempotent (keyed on source='seed_v1').
+ *  Arabic lands ar_reviewed=false (machine-drafted MSA pending a human pass). */
+export async function seedCognitiveBankAction(): Promise<ActionResult> {
+  const gate = await ensureAdmin();
+  if (!gate.ok) return gate;
+  const svc = createServiceClient();
+
+  const { count } = await svc.from("psy_items").select("id", { count: "exact", head: true }).eq("source", "seed_v1");
+  if ((count ?? 0) > 0) return { ok: true, message: `Cognitive seed already loaded (${count} items).` };
+
+  const scaleIds: Record<string, string> = {};
+  for (const key of COGNITIVE_SUBTEST_KEYS) {
+    const id = await resolveScaleId("cognitive", key);
+    if (!id) return { ok: false, error: "Could not resolve cognitive subtests. Apply migration 00065 (psychometrics)." };
+    scaleIds[key] = id;
+  }
+
+  const rows = COGNITIVE_SEED_V1.map((it) => ({
+    scale_id: scaleIds[it.subtest],
+    kind: "mcq",
+    facet: it.facet,
+    stem_en: it.stem_en,
+    stem_ar: it.stem_ar,
+    options_en: it.options_en,
+    options_ar: it.options_ar,
+    correct_index: it.correct_index,
+    reverse_keyed: false,
+    difficulty: it.difficulty,
+    rationale: it.rationale_en ?? null,
+    ar_reviewed: false,
+    status: "approved",
+    source: "seed_v1",
+  }));
+  const { error } = await svc.from("psy_items").insert(rows);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/admin/psychometrics");
+  return { ok: true, message: `Seeded ${rows.length} vetted cognitive items (approved). Arabic is pending a human MSA review.` };
+}
+
+/** Toggle the Arabic-reviewed quality flag on an item (human MSA sign-off). */
+export async function setItemArReviewedAction(input: { itemId: string; value: boolean }): Promise<ActionResult> {
+  const gate = await ensureAdmin();
+  if (!gate.ok) return gate;
+  const svc = createServiceClient();
+  const { error } = await svc.from("psy_items").update({ ar_reviewed: !!input.value }).eq("id", input.itemId);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/admin/psychometrics");
+  return { ok: true };
 }
 
 /** Remove all norm rows for an instrument (reverts it to Tier-1 indicative). */

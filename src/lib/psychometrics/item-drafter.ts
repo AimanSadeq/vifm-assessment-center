@@ -22,24 +22,25 @@ export type DraftedItem = {
 };
 
 const SYSTEM =
-  "You are a senior psychometric item writer for VIFM, authoring assessment items " +
-  "for GCC banking and government professionals. You write clean, fair, single-construct " +
-  "items in parallel English + Modern Standard Arabic. Output STRICT JSON only - no prose, " +
-  "no markdown fences.";
+  "You are a senior psychometric item writer for VIFM. You write clean, fair, single-construct " +
+  "cognitive-ability items in parallel English + Modern Standard Arabic. Items MUST be culture-fair " +
+  "and domain-neutral: everyday-life or abstract content, with NO finance, banking, accounting, " +
+  "treasury, investment or specialist business framing or jargon - an educated non-specialist must " +
+  "solve each with no domain knowledge. Output STRICT JSON only - no prose, no markdown fences.";
 
 function cognitivePrompt(scaleKey: string, scaleName: string, count: number): string {
   const kind =
-    scaleKey === "numerical" ? "numerical reasoning (data, ratios, percentages, table/chart interpretation)"
-    : scaleKey === "verbal" ? "verbal reasoning (comprehension, analogies, vocabulary-in-context)"
-    : scaleKey === "inductive" ? "inductive reasoning (infer the rule from examples: number/figure series, odd-one-out)"
-    : scaleKey === "deductive" ? "deductive reasoning (apply rules/premises to a valid conclusion: syllogisms, if-then logic, arrangements)"
+    scaleKey === "numerical" ? "numerical reasoning: ratio/proportion, percentage & change, or interpreting a small text-described table/chart - COMPUTATION ONLY (a number/letter series is inductive, not numerical)"
+    : scaleKey === "verbal" ? "verbal reasoning: LANGUAGE only - reading comprehension, verbal analogies, or vocabulary-in-context. NEVER a syllogism, if-then logic, 'what necessarily follows', or an ordering puzzle (those are deductive)"
+    : scaleKey === "inductive" ? "inductive reasoning: infer the rule from examples - number/letter series, odd-one-out, or a text-described figural matrix (the rule is discovered)"
+    : scaleKey === "deductive" ? "deductive reasoning: apply GIVEN rules/premises to a necessarily valid conclusion - syllogisms, if-then (conditional) logic, or arrangements (all formal logic lives here)"
     // Defensive default: the four subtests above are the only valid cognitive
-    // scales (resolveScaleId rejects others upstream). Keep this generic rather
-    // than naming the retired "abstract" construct.
+    // scales (resolveScaleId rejects others upstream).
     : "logical reasoning (a clean single-construct reasoning item)";
   return [
     `Write ${count} multiple-choice ${kind} items for the "${scaleName}" subtest.`,
     `Each item: 3–4 options, exactly one defensible correct answer, solvable in under a minute, no trick wording.`,
+    `Content MUST be domain-neutral (no finance/banking/business framing) and culture-fair.`,
     `Return a JSON array. Each element:`,
     `{ "stem_en": "...", "stem_ar": "...", "options_en": ["..."], "options_ar": ["..."],`,
     `  "correct_index": <0-based int, same index valid for both languages>, "difficulty": "easy"|"medium"|"hard" }`,

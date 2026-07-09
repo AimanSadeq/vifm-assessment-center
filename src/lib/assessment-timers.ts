@@ -14,7 +14,10 @@ import { createServiceClient } from "@/lib/supabase/server";
 export const TIMER_DEFAULTS = {
   quiz: 5,
   fluent: 15,
-  cognitive: 20,
+  // The reviewed bank serves a fixed 9-item form per subtest (up to 36 for the
+  // full 4-subtest battery), so the default is generous enough not to auto-fail a
+  // full sitting; admins can tune per scope in `assessment_timers`. Backstop only.
+  cognitive: 40,
 } as const;
 
 /** Resolved value: a positive minute count, or null for "no time limit". */

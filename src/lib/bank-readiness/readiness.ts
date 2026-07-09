@@ -91,8 +91,8 @@ async function techno(): Promise<BankReadiness> {
 
 // ── psy_items powers BOTH Logica (cognitive) and Psychometrics (Big Five). Map scale_id -> scale_key once. ──
 async function psyCounts(): Promise<Map<string, { total: number; approved: number }>> {
-  const scales = await selectRows("psy_scales", "id, scale_key");
-  const idToKey = new Map(scales.map((s) => [String(s.id), String(s.scale_key)]));
+  const scales = await selectRows("psy_scales", "id, key");
+  const idToKey = new Map(scales.map((s) => [String(s.id), String(s.key)]));
   const items = await selectRows("psy_items", "scale_id, status");
   const byKey: Array<Record<string, unknown>> = items.map((i) => ({
     scale_key: idToKey.get(String(i.scale_id)) ?? "?",
@@ -102,16 +102,21 @@ async function psyCounts(): Promise<Map<string, { total: number; approved: numbe
 }
 
 async function logica(counts: Map<string, { total: number; approved: number }>): Promise<BankReadiness> {
-  const target = 8;
+  const target = 8; // min approved/subtest before a real sitting serves the bank
   const { units, vetted, total } = unitsFrom(
     COGNITIVE_SUBTESTS.map((s) => ({ key: s.key, label: s.name_en })),
     counts,
     target,
   );
+  // Once every subtest meets the blueprint floor, a candidate/voucher-bound sitting
+  // serves the reviewed fixed-form bank (never live-AI) - so it no longer "scrambles".
+  const filled = units.length > 0 && units.every((u) => u.approved >= target);
   return {
-    key: "logica", label: "Logica (cognitive)", tier: "indicative", servesLive: true, hasReviewGate: false,
+    key: "logica", label: "Logica (cognitive)", tier: "indicative", servesLive: !filled, hasReviewGate: true,
     vetted, total, units, targetPerUnit: target, console: "/admin/psychometrics",
-    note: "Items are generated live from the LLM every sitting (no vetted form). Two administrations are not equated; verbal blueprint mixes vocab/comprehension; stems steer to finance context.",
+    note: filled
+      ? "Serving the SME-reviewed fixed-form bank (VIFM Cognitive Item-Bank Standard v1): per-subtest x per-facet blueprint, EN+AR, two-person review. A candidate/voucher-bound sitting fails safe (503) rather than fall back to live-AI. Still Tier-1 indicative until norms accumulate."
+      : "Items are generated live from the LLM every sitting (no vetted form). Seed the cognitive bank in /admin/psychometrics to serve the reviewed fixed form instead.",
   };
 }
 
@@ -122,8 +127,9 @@ async function psychometrics(counts: Map<string, { total: number; approved: numb
     counts,
     target,
   );
+  const filled = units.length > 0 && units.every((u) => u.approved >= target);
   return {
-    key: "psychometrics", label: "Psychometrics (Big Five)", tier: "indicative", servesLive: true, hasReviewGate: false,
+    key: "psychometrics", label: "Psychometrics (Big Five)", tier: "indicative", servesLive: !filled, hasReviewGate: true,
     vetted, total, units, targetPerUnit: target, console: "/admin/psychometrics",
     note: "Personality served from the public-domain Mini-IPIP/AI; the calibrated bank is empty. IPIP-50 can be seeded as approved items in one click to clear the content gate.",
   };

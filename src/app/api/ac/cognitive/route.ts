@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
-import { generatePsyTest, stripAnswerKey } from "@/lib/psychometrics/generate";
+import { generatePsyTest, stripAnswerKey, BankUnavailableError } from "@/lib/psychometrics/generate";
 import { computePsyResult, type PsyTest, type CognitiveItem } from "@/lib/psychometrics/scoring";
 import { applyNorms, type ScaleNorm } from "@/lib/psychometrics/calibration";
 import { COGNITIVE_INSTRUMENT, sanitizeSubtests } from "@/lib/psychometrics/framework";
@@ -64,7 +64,53 @@ export async function POST(req: Request) {
         /* 00170 not applied - keep the requested set */
       }
     }
-    const test = await generatePsyTest(kind, lang, subtests);
+    // A real / candidate- / voucher-bound sitting MUST be served from the reviewed
+    // bank (never live-AI or a short static deck). Anonymous, tokenless self-serve
+    // (marketing/dev) stays best-effort so the free demo never hard-fails.
+    const requireBank =
+      process.env.PSY_REQUIRE_BANK === "1" ||
+      Boolean(
+        body.candidateId ||
+        body.engagementId ||
+        (typeof body.redemptionToken === "string" && body.redemptionToken.trim())
+      );
+
+    // Retake exposure control (best-effort, candidate-bound only): de-prefer items
+    // this candidate has already seen. Anonymous / per-token retakes share no stable
+    // identity, so they are not excluded (documented limit) - depth + rotation carry it.
+    const UUID_RE = /^[0-9a-f-]{36}$/i;
+    let exclusionIds: string[] | undefined;
+    if (typeof body.candidateId === "string" && body.candidateId) {
+      try {
+        const { data: priorResults } = await svc
+          .from("psy_results").select("id").eq("candidate_id", body.candidateId).eq("kind", "cognitive").limit(50);
+        const rids = (priorResults ?? []).map((r) => (r as { id: string }).id);
+        if (rids.length) {
+          const { data: seen } = await svc
+            .from("psy_item_responses").select("item_ref").in("result_id", rids).limit(5000);
+          exclusionIds = Array.from(
+            new Set((seen ?? []).map((s) => (s as { item_ref: string | null }).item_ref).filter((x): x is string => typeof x === "string" && UUID_RE.test(x)))
+          );
+        }
+      } catch {
+        /* response log unavailable - no exclusion */
+      }
+    }
+
+    let test;
+    try {
+      test = await generatePsyTest(kind, lang, subtests, { requireBank, exclusionIds });
+    } catch (e) {
+      if (e instanceof BankUnavailableError) {
+        return NextResponse.json(
+          { error: "This assessment is being finalised in this language and cannot be started right now. Please try again shortly." },
+          { status: 503 }
+        );
+      }
+      throw e;
+    }
+    const servedSource = (test as { served_source?: "bank" | "ai" | "static" }).served_source ?? null;
+
     // Server-side time-limit backstop: resolve the cognitive limit ourselves
     // (never trust the client) and stamp a deadline into the session, so a
     // grossly-late score can be rejected even if the client timer is bypassed.
@@ -78,6 +124,7 @@ export async function POST(req: Request) {
       .insert({
         kind,
         test: storedTest,
+        served_source: servedSource,
         candidate_id: (body.candidateId as string) ?? null,
         engagement_id: (body.engagementId as string) ?? null,
         taker_email: (body.takerEmail as string) ?? null,
@@ -90,6 +137,17 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     }
+
+    // Exposure counter: bump times_administered for the served bank items so the
+    // assembler's least-administered-first rotation actually rotates. Best-effort
+    // (needs migration 00179's psy_increment_administered); no-ops otherwise.
+    if (servedSource === "bank" && test.kind === "cognitive") {
+      const ids = test.items.map((i) => i.id).filter((id) => UUID_RE.test(id));
+      if (ids.length) {
+        try { await svc.rpc("psy_increment_administered", { ids }); } catch { /* 00179 not applied */ }
+      }
+    }
+
     const instrument = COGNITIVE_INSTRUMENT;
     return NextResponse.json({ session_id: data.id, kind, instrument, test: stripAnswerKey(test, lang) });
   }
@@ -154,6 +212,7 @@ export async function POST(req: Request) {
       .insert({
         instrument_id: null,
         kind: test.kind,
+        served_source: (session as { served_source?: string | null }).served_source ?? null,
         candidate_id: session.candidate_id,
         engagement_id: session.engagement_id,
         taker_name: (body.takerName as string) ?? null,

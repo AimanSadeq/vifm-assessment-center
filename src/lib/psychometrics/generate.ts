@@ -17,20 +17,25 @@ type DeckItem = {
   scale: string; stem_en: string; stem_ar: string; options_en: string[]; options_ar: string[];
   correct: number; difficulty: "easy" | "medium" | "hard";
 };
+// Dev/anonymous fallback only (real sittings serve the reviewed bank). Kept
+// construct-clean + domain-neutral: every item sits under its true subtest (the
+// two former "verbal" syllogism/conditional items are DEDUCTIVE and live there now).
 const COGNITIVE_DECK: DeckItem[] = [
-  { scale: "numerical", stem_en: "A product costs 80. After a 25% discount, what is the price?", stem_ar: "يبلغ سعر منتج 80. بعد خصم 25٪، كم يصبح السعر؟", options_en: ["55", "60", "65", "70"], options_ar: ["55", "60", "65", "70"], correct: 1, difficulty: "easy" },
-  { scale: "numerical", stem_en: "Revenue grew from 200 to 250. What is the percentage increase?", stem_ar: "ارتفعت الإيرادات من 200 إلى 250. ما نسبة الزيادة؟", options_en: ["20%", "25%", "30%", "50%"], options_ar: ["20%", "25%", "30%", "50%"], correct: 1, difficulty: "medium" },
-  { scale: "numerical", stem_en: "If 3 workers finish a task in 12 days, how many days do 6 workers need at the same rate?", stem_ar: "إذا أنجز 3 عمّال مهمة في 12 يومًا، فكم يومًا يحتاج 6 عمّال بنفس المعدّل؟", options_en: ["6", "4", "8", "9"], options_ar: ["6", "4", "8", "9"], correct: 0, difficulty: "hard" },
-  { scale: "verbal", stem_en: "All managers attended. Some managers are directors. Therefore: some directors attended.", stem_ar: "حضر جميع المديرين. بعض المديرين هم رؤساء أقسام. إذن: بعض رؤساء الأقسام حضروا.", options_en: ["True", "False", "Cannot say"], options_ar: ["صحيح", "خطأ", "لا يمكن تحديده"], correct: 0, difficulty: "medium" },
-  { scale: "verbal", stem_en: "The policy applies only to full-time staff. Sara is part-time. Therefore the policy applies to Sara.", stem_ar: "تنطبق السياسة على الموظفين المتفرّغين فقط. سارة موظفة بدوام جزئي. إذن تنطبق عليها السياسة.", options_en: ["True", "False", "Cannot say"], options_ar: ["صحيح", "خطأ", "لا يمكن تحديده"], correct: 1, difficulty: "hard" },
+  // Numerical - computation only, everyday-neutral content.
+  { scale: "numerical", stem_en: "An item costs 80. After a 25% discount, what is the price?", stem_ar: "ثمن شيء 80. بعد خصم 25٪، كم يصبح الثمن؟", options_en: ["55", "60", "65", "70"], options_ar: ["55", "60", "65", "70"], correct: 1, difficulty: "easy" },
+  { scale: "numerical", stem_en: "A reading rises from 200 to 250. What is the percentage increase?", stem_ar: "ترتفع قراءة من 200 إلى 250. ما نسبة الزيادة؟", options_en: ["20%", "25%", "30%", "50%"], options_ar: ["20%", "25%", "30%", "50%"], correct: 1, difficulty: "medium" },
+  { scale: "numerical", stem_en: "If 3 people finish a task in 12 days, how many days do 6 people need at the same rate?", stem_ar: "إذا أنجز 3 أشخاص مهمة في 12 يومًا، فكم يومًا يحتاج 6 أشخاص بنفس المعدّل؟", options_en: ["6", "4", "8", "9"], options_ar: ["6", "4", "8", "9"], correct: 0, difficulty: "hard" },
+  // Verbal - LANGUAGE only (analogy, comprehension, vocabulary).
+  { scale: "verbal", stem_en: "Puppy is to dog as kitten is to:", stem_ar: "الجرو للكلب كما أن الهريرة لـ:", options_en: ["horse", "cat", "bird", "fish"], options_ar: ["حصان", "قط", "طائر", "سمكة"], correct: 1, difficulty: "easy" },
+  { scale: "verbal", stem_en: "A garden has roses and tulips but no lilies. Which flower is NOT in the garden?", stem_ar: "حديقة فيها ورد وخزامى ولكن لا زنابق. أي زهرة ليست في الحديقة؟", options_en: ["Roses", "Tulips", "Lilies", "Daisies"], options_ar: ["الورد", "الخزامى", "الزنابق", "الأقحوان"], correct: 2, difficulty: "medium" },
   { scale: "verbal", stem_en: "Choose the word closest in meaning to \"mitigate\":", stem_ar: "اختر الكلمة الأقرب معنى إلى «mitigate» (يخفّف):", options_en: ["worsen", "reduce", "ignore", "delay"], options_ar: ["يزيد سوءًا", "يقلّل", "يتجاهل", "يؤجّل"], correct: 1, difficulty: "easy" },
   // Inductive - infer the underlying rule from a pattern / series.
   { scale: "inductive", stem_en: "What comes next? 2, 4, 8, 16, ?", stem_ar: "ما العدد التالي؟ 2، 4، 8، 16، ؟", options_en: ["24", "32", "20", "18"], options_ar: ["24", "32", "20", "18"], correct: 1, difficulty: "easy" },
   { scale: "inductive", stem_en: "What comes next? 1, 4, 9, 16, ?", stem_ar: "ما العدد التالي؟ 1، 4، 9، 16، ؟", options_en: ["20", "25", "24", "36"], options_ar: ["20", "25", "24", "36"], correct: 1, difficulty: "medium" },
   { scale: "inductive", stem_en: "Which number does NOT fit the pattern? 4, 9, 16, 20, 25", stem_ar: "أي رقم لا يتبع النمط؟ 4، 9، 16، 20، 25", options_en: ["9", "16", "20", "25"], options_ar: ["9", "16", "20", "25"], correct: 2, difficulty: "hard" },
   // Deductive - apply the given rules/premises to a necessarily valid conclusion.
-  { scale: "deductive", stem_en: "All auditors are analysts. No analyst is a trainee. Therefore: no auditor is a trainee.", stem_ar: "كل المدققين محللون. لا أحد من المحللين متدرّب. إذن: لا أحد من المدققين متدرّب.", options_en: ["Valid", "Invalid", "Cannot say"], options_ar: ["صحيح", "غير صحيح", "لا يمكن تحديده"], correct: 0, difficulty: "medium" },
-  { scale: "deductive", stem_en: "If the report is late, the bonus is withheld. The bonus was paid. Therefore: the report was not late.", stem_ar: "إذا تأخّر التقرير، يُحجب المكافأة. دُفعت المكافأة. إذن: لم يتأخّر التقرير.", options_en: ["Valid", "Invalid", "Cannot say"], options_ar: ["صحيح", "غير صحيح", "لا يمكن تحديده"], correct: 0, difficulty: "hard" },
+  { scale: "deductive", stem_en: "All cats are mammals. No mammal is a fish. Therefore: no cat is a fish.", stem_ar: "كل القطط ثدييات. لا ثدييّ سمكة. إذن: لا قطة سمكة.", options_en: ["Valid", "Invalid", "Cannot say"], options_ar: ["صحيح", "غير صحيح", "لا يمكن تحديده"], correct: 0, difficulty: "medium" },
+  { scale: "deductive", stem_en: "If it rains, the ground is wet. The ground is not wet. Therefore: it did not rain.", stem_ar: "إذا أمطرت، فالأرض مبتلّة. الأرض ليست مبتلّة. إذن: لم تمطر.", options_en: ["Valid", "Invalid", "Cannot say"], options_ar: ["صحيح", "غير صحيح", "لا يمكن تحديده"], correct: 0, difficulty: "hard" },
   { scale: "deductive", stem_en: "Three desks in a row: A is left of B; C is right of B. Who is in the middle?", stem_ar: "ثلاثة مكاتب في صف: A على يسار B؛ C على يمين B. من في الوسط؟", options_en: ["A", "B", "C", "Cannot say"], options_ar: ["A", "B", "C", "لا يمكن تحديده"], correct: 1, difficulty: "easy" },
 ];
 
@@ -50,17 +55,30 @@ function staticCognitive(lang: Lang, subtests: string[]): CognitiveItem[] {
 const COG_SYSTEM =
   "You are a psychometric item writer for VIFM. You write clean cognitive-ability " +
   "multiple-choice items (numerical, verbal, inductive, and deductive reasoning) with exactly one " +
-  "defensible correct answer, suitable for GCC banking and government professionals. " +
-  "No trick questions; each is solvable in under a minute.";
+  "defensible correct answer. Items MUST be culture-fair and domain-neutral: use everyday-life or " +
+  "abstract content, with NO finance, banking, accounting, treasury, investment or specialist " +
+  "business framing or jargon - an educated non-specialist must be able to solve each with no " +
+  "domain knowledge. No trick questions; each is solvable in under a minute.";
 
 // Per-subtest item-writing guidance, keyed so we can prompt for only the
-// selected subtests (SD-4).
+// selected subtests (SD-4). Verbal is LANGUAGE-only (no formal logic - that
+// leaks into the deductive construct); deductive holds all formal logic.
 const SUBTEST_GUIDANCE: Record<string, string> = {
-  numerical: `numerical = data / ratio / percentage / table-and-chart interpretation;`,
-  verbal: `verbal = reading comprehension, verbal analogies, or vocabulary-in-context;`,
-  inductive: `inductive = infer the rule from examples: number/figure series, odd-one-out, next-in-sequence (text-described, culture-fair);`,
-  deductive: `deductive = apply given rules/premises to a necessarily valid conclusion: syllogisms, if-then (conditional) logic, or simple arrangements.`,
+  numerical: `numerical = ratio/proportion, percentage & change, or interpreting a small table/chart described in text (computation only - a number/letter series is inductive, not numerical);`,
+  verbal: `verbal = LANGUAGE reasoning only: reading comprehension, verbal analogies, or vocabulary-in-context. NEVER a syllogism, if-then logic, "what necessarily follows", or an ordering puzzle - those are deductive;`,
+  inductive: `inductive = infer the rule from examples: number/letter series, odd-one-out, or a text-described figural matrix (the rule is discovered, culture-fair);`,
+  deductive: `deductive = apply given rules/premises to a necessarily valid conclusion: syllogisms, if-then (conditional) logic, or simple arrangements. All formal logic lives here.`,
 };
+
+/** Thrown when a bank-required sitting cannot be assembled from approved items -
+ *  the runner turns this into a 503 and mints no session (never a live/short deck). */
+export class BankUnavailableError extends Error {
+  readonly kind = "bank_unavailable" as const;
+  constructor(message = "The reviewed item bank cannot serve this request.") {
+    super(message);
+    this.name = "BankUnavailableError";
+  }
+}
 
 function cognitivePrompt(lang: Lang, perSubtest: number, subtests: string[]): string {
   const langName = lang === "ar" ? "Arabic (Modern Standard Arabic)" : "English";
@@ -134,7 +152,8 @@ function personalityItems(lang: Lang): PersonalityItem[] {
 export async function generatePsyTest(
   kind: "cognitive" | "personality",
   lang: Lang = "en",
-  subtests?: string[]
+  subtests?: string[],
+  opts?: { requireBank?: boolean; exclusionIds?: string[] }
 ): Promise<PsyTest> {
   // Normalize: only cognitive honours subtests; default to all four.
   const cogSubtests =
@@ -143,14 +162,22 @@ export async function generatePsyTest(
       : [...COGNITIVE_SUBTEST_KEYS];
   const effectiveCog = cogSubtests.length > 0 ? cogSubtests : [...COGNITIVE_SUBTEST_KEYS];
 
-  // Tier 2: assemble from the SME-approved bank when every scale is sufficiently
-  // populated (item ids are real psy_items uuids → the response log is calibratable).
-  // Otherwise fall back to the Tier-1 source (Mini-IPIP / AI / static deck).
-  const fromBank = await assembleFromBank(kind, lang, kind === "cognitive" ? effectiveCog : undefined);
+  // Serve from the SME-approved bank against the fixed per-facet blueprint (item
+  // ids are real psy_items uuids → the response log is calibratable and exposure
+  // is trackable). Retakers' previously-seen items are de-preferred.
+  const exclusionIds = opts?.exclusionIds?.length ? new Set(opts.exclusionIds) : undefined;
+  const fromBank = await assembleFromBank(kind, lang, kind === "cognitive" ? effectiveCog : undefined, { exclusionIds });
   if (fromBank) {
     return fromBank.kind === "cognitive"
-      ? { ...fromBank, items: shuffleCognitiveOptions(fromBank.items) }
+      ? { ...fromBank, items: shuffleCognitiveOptions(fromBank.items), served_source: "bank" }
       : fromBank;
+  }
+
+  // Fail safe: for a real/candidate/voucher-bound sitting we NEVER serve a live-AI
+  // or short static deck (the "3-item Arabic deck" defect). Mint no session; the
+  // route returns 503 so the taker retries when the bank can serve.
+  if (kind === "cognitive" && opts?.requireBank) {
+    throw new BankUnavailableError();
   }
 
   if (kind === "personality") {
@@ -162,8 +189,8 @@ export async function generatePsyTest(
   const PER_SUBTEST: Record<number, number> = { 1: 10, 2: 6, 3: 5, 4: 4 };
   const perSubtest = PER_SUBTEST[effectiveCog.length] ?? 4;
   const ai = await aiCognitive(lang, perSubtest, effectiveCog);
-  if (ai) return { kind: "cognitive", items: shuffleCognitiveOptions(ai), ai_generated: true };
-  return { kind: "cognitive", items: shuffleCognitiveOptions(staticCognitive(lang, effectiveCog)), ai_generated: false };
+  if (ai) return { kind: "cognitive", items: shuffleCognitiveOptions(ai), ai_generated: true, served_source: "ai" };
+  return { kind: "cognitive", items: shuffleCognitiveOptions(staticCognitive(lang, effectiveCog)), ai_generated: false, served_source: "static" };
 }
 
 /**

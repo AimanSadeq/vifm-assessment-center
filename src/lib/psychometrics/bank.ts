@@ -14,11 +14,13 @@ import { createServiceClient } from "@/lib/supabase/server";
 import {
   COGNITIVE_SUBTESTS, BIG_FIVE,
   COGNITIVE_INSTRUMENT, PERSONALITY_INSTRUMENT,
+  COGNITIVE_BLUEPRINT, facetKeysForSubtest,
+  type CognitiveDifficulty,
 } from "./framework";
 import { cronbachAlpha, instrumentTier, type PsyTier } from "./calibration";
 
 export type PsyKind = "cognitive" | "personality";
-export type PsyItemStatus = "draft" | "in_review" | "approved" | "retired";
+export type PsyItemStatus = "draft" | "in_review" | "approved" | "retired" | "rejected";
 export type PsyItemKind = "mcq" | "likert";
 
 /** Minimum approved items per scale before the bank can drive an administration. */
@@ -48,6 +50,9 @@ export type BankItem = {
   correct_index: number | null;
   reverse_keyed: boolean;
   difficulty: "easy" | "medium" | "hard" | null;
+  facet: string | null;
+  ar_reviewed: boolean;
+  rationale: string | null;
   status: PsyItemStatus;
   source: string;
 };
@@ -82,7 +87,8 @@ export type PsyBankView = {
   instruments: InstrumentReadiness[];
 };
 
-const EMPTY_COUNTS = (): Record<PsyItemStatus, number> => ({ draft: 0, in_review: 0, approved: 0, retired: 0 });
+const EMPTY_COUNTS = (): Record<PsyItemStatus, number> => ({ draft: 0, in_review: 0, approved: 0, retired: 0, rejected: 0 });
+const PSY_STATUSES = ["draft", "in_review", "approved", "retired", "rejected"] as const;
 
 type ItemRow = {
   id: string;
@@ -95,6 +101,9 @@ type ItemRow = {
   correct_index: number | null;
   reverse_keyed: boolean | null;
   difficulty: string | null;
+  facet: string | null;
+  ar_reviewed: boolean | null;
+  rationale: string | null;
   status: string;
   source: string | null;
 };
@@ -172,7 +181,7 @@ export async function loadPsyBank(): Promise<PsyBankView> {
   try {
     const { data: items } = await svc
       .from("psy_items")
-      .select("id, scale_id, kind, stem_en, stem_ar, options_en, options_ar, correct_index, reverse_keyed, difficulty, status, source");
+      .select("id, scale_id, kind, stem_en, stem_ar, options_en, options_ar, correct_index, reverse_keyed, difficulty, facet, ar_reviewed, rationale, status, source");
     for (const it of (items ?? []) as ItemRow[]) {
       const loc = scaleById.get(it.scale_id);
       if (!loc) continue;
@@ -187,7 +196,10 @@ export async function loadPsyBank(): Promise<PsyBankView> {
         correct_index: it.correct_index,
         reverse_keyed: !!it.reverse_keyed,
         difficulty: (["easy", "medium", "hard"] as const).includes(it.difficulty as never) ? (it.difficulty as BankItem["difficulty"]) : null,
-        status: (["draft", "in_review", "approved", "retired"] as const).includes(it.status as never) ? (it.status as PsyItemStatus) : "draft",
+        facet: it.facet ?? null,
+        ar_reviewed: !!it.ar_reviewed,
+        rationale: it.rationale ?? null,
+        status: PSY_STATUSES.includes(it.status as never) ? (it.status as PsyItemStatus) : "draft",
         source: it.source ?? "seed",
       };
       const arr = itemsByScaleId.get(it.scale_id) ?? [];
@@ -307,18 +319,35 @@ export async function resolveScaleId(kind: PsyKind, scaleKey: string): Promise<s
   return (createdScale as { id: string } | null)?.id ?? null;
 }
 
+type ApprovedRow = ItemRow & { times_administered: number };
+type AssembledCognitive = { id: string; scale: string; stem: string; options: string[]; correct: number; difficulty: "easy" | "medium" | "hard" };
+type AssembledPersonality = { id: string; scale: "O" | "C" | "E" | "A" | "S"; text: string; reverse: boolean };
+
 /**
- * Assemble a full keyed test from APPROVED bank items when every scale has
- * ≥ASSEMBLE_MIN - else return null so the caller falls back to Tier-1 (code/AI).
- * Item ids are the real psy_items uuids, so the response log is calibratable.
+ * Assemble a keyed test from APPROVED bank items.
+ *
+ * COGNITIVE is blueprint-aware: for each in-scope subtest it draws
+ * COGNITIVE_BLUEPRINT.servedPerFacetByDifficulty items from EVERY (facet x
+ * difficulty) cell, least-administered-first, preferring items NOT in
+ * `opts.exclusionIds` (a retaker's previously-seen items). If ANY cell cannot be
+ * filled - too few approved items, or in Arabic too few with a complete MSA
+ * translation - the whole assembly FAILS SAFE with null, so the caller 503s
+ * rather than serve a construct-incomplete or silently-English form. This is what
+ * guarantees two sittings measure the same construct mix, and never a 3-item deck.
+ *
+ * PERSONALITY stays count-based (>=ASSEMBLE_MIN approved per trait).
+ *
+ * Item ids are real psy_items uuids, so the response log is calibratable and the
+ * runner bumps times_administered on the served ids (exposure rotation).
  */
 export async function assembleFromBank(
   kind: PsyKind,
   lang: "en" | "ar",
-  subtests?: string[]
+  subtests?: string[],
+  opts?: { exclusionIds?: Set<string> }
 ): Promise<
-  | { kind: "cognitive"; items: { id: string; scale: string; stem: string; options: string[]; correct: number; difficulty: "easy" | "medium" | "hard" }[]; ai_generated: boolean }
-  | { kind: "personality"; items: { id: string; scale: "O" | "C" | "E" | "A" | "S"; text: string; reverse: boolean }[] }
+  | { kind: "cognitive"; items: AssembledCognitive[]; ai_generated: boolean }
+  | { kind: "personality"; items: AssembledPersonality[] }
   | null
 > {
   try {
@@ -334,14 +363,77 @@ export async function assembleFromBank(
 
     const { data: itemRows } = await svc
       .from("psy_items")
-      .select("id, scale_id, stem_en, stem_ar, options_en, options_ar, correct_index, reverse_keyed, difficulty, times_administered")
+      .select("id, scale_id, stem_en, stem_ar, options_en, options_ar, correct_index, reverse_keyed, difficulty, facet, times_administered")
       .eq("status", "approved")
       .in("scale_id", scaleIds)
       .order("times_administered", { ascending: true });
-    const items = (itemRows ?? []) as (ItemRow & { times_administered: number })[];
+    const items = (itemRows ?? []) as ApprovedRow[];
 
-    // Group approved items by framework scale key; require ≥ASSEMBLE_MIN for ALL.
-    const byKey = new Map<string, (ItemRow & { times_administered: number })[]>();
+    if (kind === "cognitive") {
+      const bp = COGNITIVE_BLUEPRINT;
+      const exclude = opts?.exclusionIds ?? new Set<string>();
+      const difficulties: CognitiveDifficulty[] = ["easy", "medium", "hard"];
+
+      // in-scope subtests (SD-4 subset honoured end-to-end)
+      let framework = SCALE_DEFS.cognitive.map((s) => s.key);
+      if (subtests && subtests.length > 0) framework = framework.filter((k) => subtests.includes(k));
+      if (framework.length === 0) return null;
+
+      // servable in the requested language: AR requires a COMPLETE MSA translation
+      // (no silent English fallback - that would re-open the Arabic-parity defect).
+      const servable = (it: ApprovedRow): boolean => {
+        if (it.correct_index == null) return false;
+        if (lang === "ar") {
+          const oa = asStrArr(it.options_ar);
+          return !!(it.stem_ar && it.stem_ar.trim()) && !!oa && oa.length >= 2 && it.correct_index < oa.length;
+        }
+        const oe = asStrArr(it.options_en);
+        return !!oe && oe.length >= 2 && it.correct_index < oe.length;
+      };
+
+      // (facet:difficulty) -> servable items, already least-administered-first.
+      const cells = new Map<string, ApprovedRow[]>();
+      for (const it of items) {
+        if (!it.facet || !it.difficulty || !servable(it)) continue;
+        const ck = `${it.facet}:${it.difficulty}`;
+        const arr = cells.get(ck) ?? [];
+        arr.push(it);
+        cells.set(ck, arr);
+      }
+
+      const out: AssembledCognitive[] = [];
+      for (const subtest of framework) {
+        const facets = facetKeysForSubtest(subtest);
+        if (facets.length === 0) return null;
+        for (const facet of facets) {
+          for (const diff of difficulties) {
+            const need = bp.servedPerFacetByDifficulty[diff];
+            const pool = cells.get(`${facet}:${diff}`) ?? [];
+            // Prefer unseen (exclusion soft): a retaker who has exhausted a cell
+            // still gets served rather than 503'd - exclusion only reduces repeats.
+            const ordered = [...pool.filter((it) => !exclude.has(it.id)), ...pool.filter((it) => exclude.has(it.id))];
+            if (ordered.length < need) return null; // fail safe: cell can't fill
+            for (const it of ordered.slice(0, need)) {
+              const options = (lang === "ar" ? asStrArr(it.options_ar) : asStrArr(it.options_en)) ?? [];
+              out.push({
+                id: it.id,
+                scale: subtest,
+                stem: (lang === "ar" ? it.stem_ar : it.stem_en) || it.stem_en,
+                options,
+                correct: it.correct_index as number,
+                difficulty: diff,
+              });
+            }
+          }
+        }
+      }
+      // Exact-count assertion: every subtest emitted its full fixed form.
+      if (out.length !== framework.length * bp.servedPerSubtest) return null;
+      return { kind: "cognitive", items: out, ai_generated: false };
+    }
+
+    // personality - count-based (unchanged)
+    const byKey = new Map<string, ApprovedRow[]>();
     for (const it of items) {
       const k = keyById.get(it.scale_id);
       if (!k) continue;
@@ -349,35 +441,10 @@ export async function assembleFromBank(
       arr.push(it);
       byKey.set(k, arr);
     }
-    // Restrict to the requested subtests (SD-4 cognitive subset); default to
-    // the full framework. Both the readiness gate and the emission loop key off
-    // `framework`, so narrowing it here honours the subset end-to-end.
-    let framework = SCALE_DEFS[kind].map((s) => s.key);
-    if (kind === "cognitive" && subtests && subtests.length > 0) {
-      framework = framework.filter((k) => subtests.includes(k));
-    }
-    if (framework.length === 0) return null;
+    const framework = SCALE_DEFS.personality.map((s) => s.key);
     if (!framework.every((k) => (byKey.get(k)?.length ?? 0) >= ASSEMBLE_MIN)) return null;
-
-    const cap = kind === "cognitive" ? 5 : 8;
-    if (kind === "cognitive") {
-      const out: { id: string; scale: string; stem: string; options: string[]; correct: number; difficulty: "easy" | "medium" | "hard" }[] = [];
-      for (const k of framework) {
-        for (const it of (byKey.get(k) ?? []).slice(0, cap)) {
-          const options = (lang === "ar" ? asStrArr(it.options_ar) : asStrArr(it.options_en)) ?? asStrArr(it.options_en) ?? [];
-          if (options.length < 2 || it.correct_index == null) continue;
-          out.push({
-            id: it.id, scale: k,
-            stem: (lang === "ar" ? it.stem_ar : it.stem_en) || it.stem_en,
-            options, correct: it.correct_index,
-            difficulty: (["easy", "medium", "hard"] as const).includes(it.difficulty as never) ? (it.difficulty as "easy" | "medium" | "hard") : "medium",
-          });
-        }
-      }
-      return out.length >= framework.length * ASSEMBLE_MIN ? { kind: "cognitive", items: out, ai_generated: false } : null;
-    }
-
-    const out: { id: string; scale: "O" | "C" | "E" | "A" | "S"; text: string; reverse: boolean }[] = [];
+    const cap = 8;
+    const out: AssembledPersonality[] = [];
     for (const k of framework) {
       for (const it of (byKey.get(k) ?? []).slice(0, cap)) {
         out.push({ id: it.id, scale: k as "O" | "C" | "E" | "A" | "S", text: (lang === "ar" ? it.stem_ar : it.stem_en) || it.stem_en, reverse: !!it.reverse_keyed });

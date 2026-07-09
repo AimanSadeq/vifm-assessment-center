@@ -27,21 +27,21 @@ export const COGNITIVE_SUBTESTS: CognitiveSubtest[] = [
     name_ar: "الاستدلال العددي",
     desc_en: "Interpreting data, ratios, percentages and trends.",
     definition_en:
-      "Working with numbers and quantitative information: number series, ratios and percentages, and interpreting data presented in tables and charts to draw correct conclusions.",
+      "Working with numbers and quantitative information: ratios and proportion, percentages and percentage-change, and interpreting data presented in tables and charts to draw correct conclusions. (Number/letter series belong to inductive reasoning, not here.)",
     definition_ar:
-      "التعامل مع الأرقام والمعلومات الكمية: المتسلسلات العددية والنسب والمئويات، وتفسير البيانات في الجداول والرسوم لاستخلاص النتائج الصحيحة.",
-    competencies: ["Financial Literacy & Acumen", "Critical Analysis", "Sound Judgement"],
+      "التعامل مع الأرقام والمعلومات الكمية: النسب والتناسب، والنسب المئوية والتغيّر، وتفسير البيانات في الجداول والرسوم لاستخلاص النتائج الصحيحة. (المتسلسلات العددية والحرفية تندرج ضمن الاستدلال الاستقرائي لا هنا.)",
+    competencies: ["Critical Analysis", "Sound Judgement"],
   },
   {
     key: "verbal",
     name_en: "Verbal reasoning",
     name_ar: "الاستدلال اللفظي",
-    desc_en: "Comprehension and critical reasoning from text.",
+    desc_en: "Comprehension and reasoning with language.",
     definition_en:
-      "Understanding and reasoning with language: comprehension of written passages, verbal analogies, and evaluating arguments to judge what does or does not follow.",
+      "Understanding and reasoning with language: comprehension of written passages, verbal analogies, and vocabulary-in-context. This is language reasoning only - formal logical validity (syllogisms, if-then, what necessarily follows) is measured under deductive reasoning, never here.",
     definition_ar:
-      "الفهم والاستدلال باللغة: استيعاب النصوص المكتوبة، والتناظر اللفظي، وتقييم الحجج لتمييز ما يصح استنتاجه.",
-    competencies: ["Clear & Adaptive Communication", "Critical Analysis"],
+      "الفهم والاستدلال باللغة: استيعاب النصوص المكتوبة، والتناظر اللفظي، والمفردات في السياق. هذا استدلال لغوي فقط - أما الصحّة المنطقية الصورية (القياس، والشرطية، وما يلزم بالضرورة) فتُقاس ضمن الاستدلال الاستنباطي لا هنا.",
+    competencies: ["Clear & Adaptive Communication"],
   },
   {
     key: "inductive",
@@ -69,6 +69,59 @@ export const COGNITIVE_SUBTESTS: CognitiveSubtest[] = [
 
 /** The four cognitive subtest keys, in canonical order. */
 export const COGNITIVE_SUBTEST_KEYS = COGNITIVE_SUBTESTS.map((s) => s.key);
+
+// ── Cognitive item-bank blueprint (VIFM Cognitive Item-Bank Standard v1) ──
+// Each subtest is composed of 3 fixed FACETS, so a served sitting always measures
+// the same construct mix (closing the "one sitting felt like vocabulary, the next
+// like inference" drift). The bank is filled to `authorPerFacet` depth so the
+// least-administered-first draw gives ~3-form exposure rotation; each sitting
+// serves `servedPerFacetByDifficulty` from every facet -> a fixed 9/subtest form.
+export type CognitiveDifficulty = "easy" | "medium" | "hard";
+export type CognitiveFacet = { key: string; subtest: string; name_en: string; name_ar: string };
+
+export const COGNITIVE_FACETS: CognitiveFacet[] = [
+  // numerical - computation only (a number/letter SERIES is inductive, not here)
+  { key: "num_ratio", subtest: "numerical", name_en: "Ratio & proportion", name_ar: "النسبة والتناسب" },
+  { key: "num_percent", subtest: "numerical", name_en: "Percentage & change", name_ar: "النسبة المئوية والتغيّر" },
+  { key: "num_data", subtest: "numerical", name_en: "Data interpretation", name_ar: "تفسير البيانات" },
+  // verbal - LANGUAGE only (no formal logic - that is deductive)
+  { key: "verb_analogy", subtest: "verbal", name_en: "Verbal analogies", name_ar: "التناظر اللفظي" },
+  { key: "verb_comprehension", subtest: "verbal", name_en: "Reading comprehension", name_ar: "الاستيعاب القرائي" },
+  { key: "verb_vocab", subtest: "verbal", name_en: "Vocabulary in context", name_ar: "المفردات في السياق" },
+  // inductive - the rule is DISCOVERED from examples
+  { key: "ind_series", subtest: "inductive", name_en: "Number & letter series", name_ar: "المتسلسلات العددية والحرفية" },
+  { key: "ind_oddoneout", subtest: "inductive", name_en: "Odd one out", name_ar: "الشاذ عن النمط" },
+  { key: "ind_matrix", subtest: "inductive", name_en: "Figural matrices", name_ar: "المصفوفات الشكلية" },
+  // deductive - apply GIVEN premises; the conclusion must follow necessarily
+  { key: "ded_syllogism", subtest: "deductive", name_en: "Syllogisms", name_ar: "القياس المنطقي" },
+  { key: "ded_conditional", subtest: "deductive", name_en: "Conditional logic", name_ar: "المنطق الشرطي" },
+  { key: "ded_arrangement", subtest: "deductive", name_en: "Arrangements", name_ar: "الترتيب المنطقي" },
+];
+
+export const COGNITIVE_FACET_KEYS = new Set(COGNITIVE_FACETS.map((f) => f.key));
+
+/** The 3 facet keys for a subtest, in canonical order. */
+export function facetKeysForSubtest(subtest: string): string[] {
+  return COGNITIVE_FACETS.filter((f) => f.subtest === subtest).map((f) => f.key);
+}
+/** The subtest a facet belongs to (null for an unknown facet). */
+export function subtestForFacet(facet: string): string | null {
+  return COGNITIVE_FACETS.find((f) => f.key === facet)?.subtest ?? null;
+}
+export function cognitiveFacetMeta(facet: string): CognitiveFacet | null {
+  return COGNITIVE_FACETS.find((f) => f.key === facet) ?? null;
+}
+
+export const COGNITIVE_BLUEPRINT = {
+  /** Items drawn per facet per difficulty for one served sitting (fixed form). */
+  servedPerFacetByDifficulty: { easy: 1, medium: 1, hard: 1 } as Record<CognitiveDifficulty, number>,
+  /** 3 facets x 3 difficulties = a fixed 9-item subtest (balanced 3E/3M/3H). */
+  servedPerFacet: 3,
+  servedPerSubtest: 9,
+  /** Bank-depth target per facet (3-form rotation): 3 easy / 4 medium / 3 hard. */
+  authorPerFacet: 10,
+  authorPerFacetByDifficulty: { easy: 3, medium: 4, hard: 3 } as Record<CognitiveDifficulty, number>,
+} as const;
 
 /**
  * Validate a requested subtest selection: keep only known keys, dedupe, and

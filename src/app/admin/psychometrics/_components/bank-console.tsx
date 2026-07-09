@@ -9,16 +9,18 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
-  Sparkles, Plus, Check, Archive, Trash2, Pencil, X, RotateCcw,
+  Sparkles, Plus, Check, Archive, Trash2, Pencil, X, RotateCcw, Ban, Languages, Boxes,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PSY_TIER } from "@/lib/psychometrics/calibration";
+import { COGNITIVE_BLUEPRINT, facetKeysForSubtest, cognitiveFacetMeta } from "@/lib/psychometrics/framework";
 import type { PsyBankView, InstrumentReadiness, ScaleReadiness, BankItem, PsyKind } from "@/lib/psychometrics/bank";
 import {
   draftItemsIntoBankAction, setItemStatusAction, addItemAction, updateItemAction, deleteItemAction,
   computePilotNormsAction, clearNormsAction, seedIpip50IntoBankAction,
+  seedCognitiveBankAction, setItemArReviewedAction,
 } from "../actions";
 
 type Res = { ok: true; message?: string } | { ok: false; error: string };
@@ -53,6 +55,7 @@ function StatusBadge({ status }: { status: BankItem["status"] }) {
     in_review: "bg-amber-50 text-amber-700 ring-amber-200",
     draft: "bg-sky-50 text-sky-700 ring-sky-200",
     retired: "bg-slate-100 text-slate-500 ring-slate-200",
+    rejected: "bg-rose-50 text-rose-700 ring-rose-200",
   };
   return <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1 ${map[status]}`}>{status.replace("_", " ")}</span>;
 }
@@ -85,11 +88,13 @@ function AddItemForm({ kind, scaleKey, onClose }: { kind: PsyKind; scaleKey: str
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
   const [reverse, setReverse] = useState(false);
   const isCog = kind === "cognitive";
+  const facetKeys = isCog ? facetKeysForSubtest(scaleKey) : [];
+  const [facet, setFacet] = useState(facetKeys[0] ?? "");
 
   const submit = () =>
     run(async () => {
       const res = await addItemAction({
-        kind, scaleKey, stem_en: stemEn, stem_ar: stemAr,
+        kind, scaleKey, facet: isCog ? facet : null, stem_en: stemEn, stem_ar: stemAr,
         options_en: isCog ? optEn.split("\n").map((s) => s.trim()).filter(Boolean) : undefined,
         options_ar: isCog ? optAr.split("\n").map((s) => s.trim()).filter(Boolean) : undefined,
         correct_index: isCog ? correct : null,
@@ -98,7 +103,7 @@ function AddItemForm({ kind, scaleKey, onClose }: { kind: PsyKind; scaleKey: str
       });
       if (res.ok) onClose();
       return res;
-    }, "Item added.");
+    }, "Item added for review.");
 
   return (
     <div className="rounded-md border border-slate-200 bg-slate-50/60 p-3 space-y-2">
@@ -113,6 +118,14 @@ function AddItemForm({ kind, scaleKey, onClose }: { kind: PsyKind; scaleKey: str
             <textarea className={inputCls} dir="rtl" rows={3} placeholder="الخيارات (سطر لكل خيار)" value={optAr} onChange={(e) => setOptAr(e.target.value)} />
           </div>
           <div className="flex flex-wrap items-center gap-3 text-sm">
+            <label className="flex items-center gap-1.5">
+              <span className="text-slate-600">Facet</span>
+              <select className="rounded-md border border-slate-300 px-2 py-1" value={facet} onChange={(e) => setFacet(e.target.value)}>
+                {facetKeys.map((f) => (
+                  <option key={f} value={f}>{cognitiveFacetMeta(f)?.name_en ?? f}</option>
+                ))}
+              </select>
+            </label>
             <label className="flex items-center gap-1.5">
               <span className="text-slate-600">Correct line #</span>
               <input type="number" min={1} className="w-16 rounded-md border border-slate-300 px-2 py-1" value={correct + 1} onChange={(e) => setCorrect(Math.max(0, (parseInt(e.target.value, 10) || 1) - 1))} />
@@ -167,9 +180,13 @@ function ItemRow({ item }: { item: BankItem }) {
     <li className="rounded-md border border-slate-200 bg-white p-2.5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={item.status} />
             {item.difficulty && <span className="text-[10px] uppercase text-slate-400">{item.difficulty}</span>}
+            {item.facet && <span className="rounded bg-indigo-50 px-1 text-[10px] text-indigo-600">{cognitiveFacetMeta(item.facet)?.name_en ?? item.facet}</span>}
+            {item.kind === "mcq" && (item.ar_reviewed
+              ? <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-600"><Languages className="h-3 w-3" /> AR reviewed</span>
+              : <span className="inline-flex items-center gap-0.5 text-[10px] text-amber-500"><Languages className="h-3 w-3" /> AR pending</span>)}
             {item.kind === "likert" && item.reverse_keyed && <span className="text-[10px] uppercase text-violet-500">reverse</span>}
             <span className="text-[10px] text-slate-400">{item.source}</span>
           </div>
@@ -217,8 +234,18 @@ function ItemRow({ item }: { item: BankItem }) {
           <div className="flex shrink-0 flex-col items-end gap-1">
             <div className="flex items-center gap-1">
               {item.status !== "approved" && (
-                <Button size="sm" variant="ghost" className="h-7 px-2 text-emerald-700" title="Approve" onClick={() => run(() => setItemStatusAction({ itemId: item.id, status: "approved" }), "Approved.")} disabled={pending}>
+                <Button size="sm" variant="ghost" className="h-7 px-2 text-emerald-700" title="Approve (must differ from drafter)" onClick={() => run(() => setItemStatusAction({ itemId: item.id, status: "approved" }), "Approved.")} disabled={pending}>
                   <Check className="h-4 w-4" />
+                </Button>
+              )}
+              {item.status !== "approved" && item.status !== "rejected" && (
+                <Button size="sm" variant="ghost" className="h-7 px-2 text-rose-600" title="Reject" onClick={() => run(() => setItemStatusAction({ itemId: item.id, status: "rejected" }), "Rejected.")} disabled={pending}>
+                  <Ban className="h-4 w-4" />
+                </Button>
+              )}
+              {item.kind === "mcq" && (
+                <Button size="sm" variant="ghost" className={`h-7 px-2 ${item.ar_reviewed ? "text-emerald-600" : "text-amber-500"}`} title={item.ar_reviewed ? "Arabic reviewed - click to unmark" : "Mark Arabic (MSA) as human-reviewed"} onClick={() => run(() => setItemArReviewedAction({ itemId: item.id, value: !item.ar_reviewed }), "Updated.")} disabled={pending}>
+                  <Languages className="h-4 w-4" />
                 </Button>
               )}
               {item.status !== "retired" ? (
@@ -241,6 +268,61 @@ function ItemRow({ item }: { item: BankItem }) {
         )}
       </div>
     </li>
+  );
+}
+
+// ── Per-facet blueprint fill (cognitive) ──────────────────────────
+function FacetReadiness({ scale }: { scale: ScaleReadiness }) {
+  const target = COGNITIVE_BLUEPRINT.authorPerFacet;
+  const facets = facetKeysForSubtest(scale.scaleKey);
+  const approvedByFacet = new Map<string, number>();
+  for (const it of scale.items) {
+    if (it.status !== "approved" || !it.facet) continue;
+    approvedByFacet.set(it.facet, (approvedByFacet.get(it.facet) ?? 0) + 1);
+  }
+  return (
+    <div className="space-y-1 rounded-md border border-slate-100 bg-slate-50/50 p-2">
+      <p className="text-[11px] font-medium text-slate-500">Blueprint facets (approved / {target} target)</p>
+      {facets.map((f) => {
+        const n = approvedByFacet.get(f) ?? 0;
+        const tone = n >= target ? "text-emerald-700" : n > 0 ? "text-amber-600" : "text-rose-600";
+        const bar = n >= target ? "bg-emerald-500" : n > 0 ? "bg-amber-500" : "bg-rose-400";
+        const pct = Math.min(100, Math.round((n / target) * 100));
+        return (
+          <div key={f} className="flex items-center gap-2">
+            <span className="w-36 shrink-0 truncate text-[11px] text-slate-600">{cognitiveFacetMeta(f)?.name_en ?? f}</span>
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-200">
+              <div className={`h-full ${bar}`} style={{ width: `${pct}%` }} />
+            </div>
+            <span className={`w-10 shrink-0 text-right text-[11px] tabular-nums ${tone}`}>{n}/{target}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Cognitive seed banner (the readiness one-click) ───────────────
+function CognitiveSeedBanner({ seeded, approved }: { seeded: boolean; approved: number }) {
+  const { pending, run } = useRunner();
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-[#5391D5]/30 bg-[#5391D5]/5 p-3">
+      <div className="text-sm">
+        <span className="inline-flex items-center gap-1.5 font-semibold text-dark"><Boxes className="h-4 w-4 text-[#5391D5]" /> VIFM cognitive bank v1</span>{" "}
+        <span className="text-slate-500">
+          {seeded
+            ? `· seeded (${approved} approved items - Logica serves the reviewed bank, not live-AI)`
+            : "· 120 vetted items (4 subtests × 3 facets), authored to blueprint + construct-reviewed. Arabic pending a human MSA pass."}
+        </span>
+      </div>
+      {seeded ? (
+        <span className="inline-flex items-center gap-1 text-xs text-emerald-600"><Check className="h-3.5 w-3.5" /> Seeded</span>
+      ) : (
+        <Button size="sm" variant="outline" onClick={() => run(() => seedCognitiveBankAction(), "Cognitive bank seeded.")} disabled={pending}>
+          {pending ? "Seeding…" : "Seed cognitive bank"}
+        </Button>
+      )}
+    </div>
   );
 }
 
@@ -279,6 +361,8 @@ function ScaleCard({ scale }: { scale: ScaleReadiness }) {
         <GateChip ok={(scale.alpha ?? 0) >= PSY_TIER.minAlpha} label={`α ≥ ${PSY_TIER.minAlpha}`} />
         <GateChip ok={scale.normN >= PSY_TIER.minNormN} label={`norm n ≥ ${PSY_TIER.minNormN}`} />
       </div>
+
+      {scale.instrumentKind === "cognitive" && <FacetReadiness scale={scale} />}
 
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-2.5">
@@ -378,6 +462,8 @@ function Ipip50Banner({ seeded }: { seeded: boolean }) {
 
 function InstrumentSection({ inst }: { inst: InstrumentReadiness }) {
   const ipip50Seeded = inst.kind === "personality" && inst.scales.some((s) => s.items.some((it) => it.source === "ipip50"));
+  const cogSeeded = inst.kind === "cognitive" && inst.scales.some((s) => s.items.some((it) => it.source === "seed_v1"));
+  const cogApproved = inst.kind === "cognitive" ? inst.scales.reduce((n, s) => n + s.approved, 0) : 0;
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
@@ -386,6 +472,7 @@ function InstrumentSection({ inst }: { inst: InstrumentReadiness }) {
       </CardHeader>
       <CardContent className="space-y-3">
         {inst.kind === "personality" && <Ipip50Banner seeded={ipip50Seeded} />}
+        {inst.kind === "cognitive" && <CognitiveSeedBanner seeded={cogSeeded} approved={cogApproved} />}
         <NormPanel kind={inst.kind} scales={inst.scales} />
         <div className="grid gap-3 lg:grid-cols-2">
           {inst.scales.map((s) => <ScaleCard key={s.scaleKey} scale={s} />)}

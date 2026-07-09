@@ -228,7 +228,7 @@
       "reflect": { "label": "Reflect 360", "desc": "تغذية راجعة قيادية متعددة المقيّمين." },
       "fluent": { "label": "Fluent (إنجليزي)", "desc": "اختبار تحديد مستوى CEFR." },
       "technical": { "label": "اعتماد تقني", "desc": "معرفة في مجال المالية." },
-      "psychometric": { "label": "القياس النفسي", "desc": "القدرة الذهنية + شخصية العوامل الخمسة (استرشادي)." },
+      "psychometric": { "label": "لوجيكا (المعرفي)", "desc": "القدرة الذهنية (استرشادي)." },
       "academy": { "label": "أكاديمية VIFM", "desc": "برامج تدريبية ذاتية + شهادة قابلة للتحقّق." }
     },
     "rec": {
@@ -341,10 +341,10 @@
     "svcVouchers": "القسائم",
     "svcRetention": "الاحتفاظ بالبيانات",
     "svcCalibration": "المعايرة",
-    "psychometrics": "القياس النفسي",
+    "psychometrics": "لوجيكا",
     "psyCognitive": "لوجيكا",
     "psyPersona": "بيرسونا",
-    "psychometricsBank": "بنك الأسئلة والمعايرة",
+    "psychometricsBank": "بنك أسئلة لوجيكا",
     "academy": "أكاديمية VIFM",
     "techCertification": "تكنو",
     "techAssessment": "تكنو",

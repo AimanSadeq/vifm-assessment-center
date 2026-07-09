@@ -22,13 +22,13 @@ export default async function PsychometricsBankPage() {
         <div className="flex items-start gap-3">
           <BrainCircuit className="h-8 w-8 text-indigo-200 shrink-0" />
           <div className="min-w-0">
-            <p className="text-xs uppercase tracking-wide text-indigo-100/80">Psychometrics · Tier 2</p>
-            <h1 className="text-2xl font-bold leading-tight">Item bank &amp; calibration</h1>
+            <p className="text-xs uppercase tracking-wide text-indigo-100/80">Logica · Cognitive ability · Tier 2</p>
+            <h1 className="text-2xl font-bold leading-tight">Logica item bank &amp; calibration</h1>
             <p className="text-sm text-indigo-50/90 mt-1 max-w-3xl">
               The SME workflow that promotes the indicative runner to a norm-referenced instrument.
-              Build a reviewed item bank per scale, accumulate responses for reliability, load a norm
-              group, and each scale flips from Tier&nbsp;1 (indicative) to Tier&nbsp;2 (calibrated).
-              Psychometrics yields scores and a defensible report - never a pass/fail credential.
+              Build a reviewed item bank per subtest, accumulate responses for reliability, load a norm
+              group, and each subtest flips from Tier&nbsp;1 (indicative) to Tier&nbsp;2 (calibrated).
+              Logica yields scores and a defensible report - never a pass/fail credential.
             </p>
             <p className="text-xs text-indigo-100/80 mt-2">
               {calibratedScales} of {totalScales} scales calibrated
@@ -70,7 +70,7 @@ export default async function PsychometricsBankPage() {
       {/* Migration hints (tolerant) */}
       {!view.tablesReady && (
         <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-          The psychometrics bank tables aren&apos;t fully present yet. Apply migration <code>00065_psychometrics.sql</code> to enable item authoring.
+          The Logica bank tables aren&apos;t fully present yet. Apply migration <code>00065_psychometrics.sql</code> to enable item authoring.
         </div>
       )}
       {view.tablesReady && !view.normsReady && (

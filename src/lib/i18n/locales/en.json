@@ -228,7 +228,7 @@
       "reflect": { "label": "Reflect 360®", "desc": "Multi-rater leadership feedback." },
       "fluent": { "label": "Fluent (English)", "desc": "CEFR placement test." },
       "technical": { "label": "Technical certification", "desc": "Finance-domain knowledge." },
-      "psychometric": { "label": "Psychometrics", "desc": "Reasoning aptitude + Big-Five personality (indicative)." },
+      "psychometric": { "label": "Logica (cognitive)", "desc": "Reasoning aptitude (indicative)." },
       "academy": { "label": "VIFM Academy", "desc": "Self-paced training courses + verifiable credential." }
     },
     "rec": {
@@ -341,10 +341,10 @@
     "svcVouchers": "Vouchers",
     "svcRetention": "Retention",
     "svcCalibration": "Calibration",
-    "psychometrics": "Psychometrics",
+    "psychometrics": "Logica",
     "psyCognitive": "Logica®",
     "psyPersona": "Persona®",
-    "psychometricsBank": "Item bank & calibration",
+    "psychometricsBank": "Logica item bank",
     "academy": "VIFM Academy",
     "techCertification": "Techno®",
     "techAssessment": "Techno®",

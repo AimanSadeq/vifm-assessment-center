@@ -227,7 +227,7 @@ async function prehire(): Promise<BankReadiness> {
   const hasBank = rows.length > 0;
   return {
     key: "prehire", label: "Pre-Hire quiz", tier: "indicative", servesLive: compsReady < TOTAL_COMPS, hasReviewGate: hasBank,
-    vetted, total: rows.length, console: undefined,
+    vetted, total: rows.length, console: hasBank ? "/admin/quiz-bank" : undefined,
     note: !hasBank
       ? "No item bank: every quiz deck is minted live from the LLM at start, so no SME sees an item before a hiring candidate does; two candidates for one job get non-equated forms."
       : vetted > 0

@@ -189,6 +189,7 @@ const NAV: NavEntry[] = [
         link("/admin/evidence-map", "adminNav.evidenceMap", FlaskConical),
         link("/admin/psychometrics", "adminNav.psychometricsBank", ListChecks),
         link("/admin/item-banks", "Item Banks", Boxes),
+        link("/admin/quiz-bank", "Quiz Bank", ClipboardCheck),
         link("/admin/proposals", "Proposals", FileText),
         link("/admin/fix-register", "Fix Register", History),
       ],

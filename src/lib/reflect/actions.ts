@@ -345,6 +345,15 @@ export async function createReflectEngagement(
       await sb.from("reflect_engagements").delete().eq("id", engagementId);
       return { ok: false, error: cloneResult.error };
     }
+    // Source-based approval: a clone of a vetted library template (e.g. the VIFM
+    // framework) is approved by construction - there is no AI-decomposed content
+    // to review - so it needs no consultant sign-off before launch. AI + manual
+    // frameworks stay un-approved (provisional) until the consultant approves.
+    // Best-effort: tolerant of migration 00182 being unapplied.
+    await sb
+      .from("reflect_engagements")
+      .update({ framework_approved_at: new Date().toISOString(), framework_approved_by: caller.isDev ? null : caller.uid })
+      .eq("id", engagementId);
   } else if (p.framework.kind === "manual") {
     const { error: fwErr } = await sb.from("reflect_frameworks").insert({
       engagement_id: engagementId,

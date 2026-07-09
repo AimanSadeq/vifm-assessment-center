@@ -190,6 +190,7 @@ const NAV: NavEntry[] = [
         link("/admin/psychometrics", "adminNav.psychometricsBank", ListChecks),
         link("/admin/item-banks", "Item Banks", Boxes),
         link("/admin/quiz-bank", "Quiz Bank", ClipboardCheck),
+        link("/admin/fluent-bank", "Fluent Bank", Languages),
         link("/admin/proposals", "Proposals", FileText),
         link("/admin/fix-register", "Fix Register", History),
       ],

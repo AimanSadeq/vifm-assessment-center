@@ -138,17 +138,26 @@ async function logica(counts: Map<string, { total: number; approved: number }>):
 // ── Fluent: eng_fluent_items, status='live', receptive skills only ──
 async function fluent(): Promise<BankReadiness> {
   const rows = await selectRows("eng_fluent_items", "skill, status");
-  const counts = aggregate(rows, "skill", (r) => r.status === "live");
-  const target = 15;
-  const { units, vetted, total } = unitsFrom(
+  // Curated pool = reviewed states only (exclude the raw accumulated draft items
+  // that the runner logs per sitting for calibration, which are not a vetted bank).
+  const curated = rows.filter((r) => ["in_review", "live", "approved"].includes(String(r.status)));
+  const liveCounts = aggregate(curated, "skill", (r) => r.status === "live");
+  const target = 10; // the served CEFR ramp is 10 items per skill
+  const { units, vetted } = unitsFrom(
     [{ key: "reading", label: "Reading" }, { key: "listening", label: "Listening" }],
-    counts,
+    liveCounts,
     target,
   );
+  const inReview = curated.filter((r) => r.status === "in_review").length;
+  const servable = units.length > 0 && units.every((u) => u.approved >= target);
   return {
-    key: "fluent", label: "Fluent (English)", tier: "indicative", servesLive: true, hasReviewGate: false,
-    vetted, total, units, targetPerUnit: target, console: "/ac/fluent/calibration",
-    note: "Receptive items are AI-generated per sitting and served with no human vetting; the IRT/CAT engine is built but dead-wired. Writing + speaking are AI-scored tasks (not a bank).",
+    key: "fluent", label: "Fluent (English)", tier: "indicative", servesLive: !servable, hasReviewGate: curated.length > 0,
+    vetted, total: curated.length, units, targetPerUnit: target, console: curated.length > 0 ? "/admin/fluent-bank" : "/ac/fluent/calibration",
+    note: servable
+      ? "Reading + listening served from the reviewed live bank (CEFR-ramped). Writing + speaking are AI-scored tasks (not a bank)."
+      : inReview > 0
+        ? `${inReview} vetted receptive item(s) awaiting SME promotion to 'live'. Until reading + listening each have a full live CEFR ramp, a sitting mints the receptive items live-AI. Writing + speaking are AI-scored.`
+        : "Receptive items are AI-generated per sitting and served with no human vetting; the IRT/CAT engine is built but dead-wired. Writing + speaking are AI-scored tasks (not a bank).",
   };
 }
 

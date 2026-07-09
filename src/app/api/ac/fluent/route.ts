@@ -37,6 +37,7 @@ import {
   type WritingTask,
   type SpeakingTask,
 } from "@/lib/ai/fluent-english";
+import { assembleFluentTestFromBank } from "@/lib/quiz-bank/fluent-assemble";
 import { AI_MODEL } from "@/lib/ai/client";
 import { overallConfidenceBand, type ConfidenceBand } from "@/lib/scoring/reliability";
 import { isAzureSpeechConfigured, type PronunciationScore } from "@/lib/integrations/speech";
@@ -479,7 +480,11 @@ export async function POST(req: Request) {
   const language: FluentLanguage = body.language === "ar" ? "ar" : "en";
 
   if (body.action === "start") {
-    const test = await generateFluentTest({ language });
+    // Serve the vetted receptive bank when the live pool can fill the CEFR ramp;
+    // otherwise fall back to live-AI generation (non-breaking). Writing/speaking
+    // are AI-scored tasks, so a bank-served test pairs the vetted receptive items
+    // with a vetted prompt - no live generation at all.
+    const test = (await assembleFluentTestFromBank()) ?? (await generateFluentTest({ language }));
     const candidateId = body.candidateId?.trim() ? body.candidateId.trim() : null;
     const engagementId = body.engagementId?.trim() ? body.engagementId.trim() : null;
     const session_id = await createSession(test, { language, candidateId, engagementId, startIp: clientIp(req) });

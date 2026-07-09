@@ -95,13 +95,17 @@ function renderProposalDoc(
     (p.licenceData && typeof p.licenceData === "object"
       ? ((p.licenceData as Record<string, unknown>).sectionOverrides as Record<string, { en?: string; ar?: string }> | undefined)
       : undefined) ?? {};
+  // Sections whose override PREPENDS above generated content that must survive (pricing
+  // tables, live evidence). Terms/Definitions/Acceptance are deliberately NOT here - they
+  // are fully editable (the override replaces the clauses/glossary/steps).
   const OVERRIDE_PREPEND = new Set([
     "Commercial proposal",
-    "Definitions",
-    "Acceptance & next steps",
     "Psychometric foundations",
     "Evidence & sample reports",
   ]);
+  // A table-bearing section is normally prepend (never destroy a table), EXCEPT these,
+  // which are meant to be rewritten as text (the editor extracts the table to bullets).
+  const FORCE_REPLACE = new Set(["Definitions"]);
   const ovText = (title: string): string => (overrides[title]?.en ?? "").trim();
   // markdown-lite: blank-line-separated paragraphs; a block whose lines all start with
   // "- " becomes a bullet list. Everything is escaped.
@@ -130,8 +134,9 @@ function renderProposalDoc(
     // Prepend (keep the default body below the override) for the OVERRIDE_PREPEND set AND
     // any section whose default carries a generated table (e.g. Implementation plan, the
     // licence-mode Proposed solution) - renderOverride only emits paragraphs/lists, so a
-    // replace there would silently destroy the table. The editor mirrors this test.
-    const prepend = OVERRIDE_PREPEND.has(title) || /<table/i.test(defaultHtml);
+    // replace there would silently destroy the table. FORCE_REPLACE opts a table section
+    // back into replace (editable). The editor mirrors this test.
+    const prepend = !FORCE_REPLACE.has(title) && (OVERRIDE_PREPEND.has(title) || /<table/i.test(defaultHtml));
     return prepend ? rendered + defaultHtml : rendered;
   };
   /** Override rendered as an intro block above generated content (for big table sections). */
@@ -862,9 +867,8 @@ function renderProposalDoc(
   </ul>`)}` : ""}
 
   <h2><span class="no">${tcNo}.</span>Terms &amp; conditions</h2>
-  ${secIntro("Terms & conditions")}
   ${p.terms ? `<div class="terms-box">${esc(p.terms)}</div>` : ""}
-  <ol class="clauses">
+  ${secBody("Terms & conditions", `<ol class="clauses">
     <li><b>Confidentiality.</b> Each party will keep the other's confidential information confidential, use it only for this engagement, and disclose it only to personnel who need it and are bound by equivalent obligations. This clause survives the engagement.</li>
     <li><b>Intellectual property.</b> VIFM retains all rights in its instruments, item banks, frameworks, methodologies, software and report formats. ${esc(p.clientName)} receives a non-exclusive, non-transferable right to use the deliverables internally for the purposes of this engagement. Participant-level data remains subject to the data-protection terms herein.</li>
     <li><b>Data protection.</b> The parties will comply with applicable data-protection law as described in Section ${NO("Data protection & privacy")}. VIFM acts as a processor of participant personal data on the client's documented instructions, save where law provides otherwise.</li>
@@ -884,11 +888,10 @@ function renderProposalDoc(
     <li><b>Suspension.</b> VIFM may suspend access for undisputed amounts overdue by more than 30 days, on 10 business days' prior written notice.</li>`
         : ""
     }
-  </ol>
+  </ol>`)}
 
   ${inc("Definitions") ? `<h2><span class="no">${NO("Definitions")}.</span>Definitions</h2>
-  ${secIntro("Definitions")}
-  <table>
+  ${secBody("Definitions", `<table>
     <thead><tr><th style="width:34%">Term</th><th>Meaning in this proposal</th></tr></thead>
     <tbody>
       <tr><td><b>Participant</b></td><td>An individual invited by ${esc(p.clientName)} to complete one or more of the scoped assessments.</td></tr>
@@ -908,19 +911,18 @@ function renderProposalDoc(
           : ""
       }
     </tbody>
-  </table>` : ""}
+  </table>`)}` : ""}
 
   <div class="accept">
     <h2 style="border-top:0;padding-top:0;"><span class="no">${NO("Acceptance & next steps")}.</span>Acceptance &amp; next steps</h2>
-    ${secIntro("Acceptance & next steps")}
-    <ul>
+    ${secBody("Acceptance & next steps", `<ul>
       <li><b>1.</b> Confirm the scope and participant volumes in Section ${NO("Commercial proposal")} (or request adjustments - a revised proposal is issued the same way).</li>
       <li><b>2.</b> Sign the acceptance below${validUntil ? ` before the validity date (${validUntil})` : ""}.</li>
       <li><b>3.</b> VIFM issues the statement of work referencing <b>${ref}</b> for signature.</li>
       <li><b>4.</b> Kickoff is scheduled within five business days of the signed statement of work.</li>
     </ul>
     <p>Signature below confirms acceptance of this proposal (reference <b>${ref}</b>) and authorises VIFM to
-    prepare the statement of work. The engagement commences on signature of the statement of work.</p>
+    prepare the statement of work. The engagement commences on signature of the statement of work.</p>`)}
     <div class="sig-grid">
       <div class="sig">
         <h4>For ${esc(p.clientName)}</h4>

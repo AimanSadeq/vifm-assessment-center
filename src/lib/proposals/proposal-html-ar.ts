@@ -260,13 +260,14 @@ function renderProposalDocAr(
     (p.licenceData && typeof p.licenceData === "object"
       ? ((p.licenceData as Record<string, unknown>).sectionOverrides as Record<string, { en?: string; ar?: string }> | undefined)
       : undefined) ?? {};
+  // Terms/Definitions/Acceptance are fully editable (override replaces); only the
+  // computed sections prepend an intro above their generated content. Mirrors EN.
   const OVERRIDE_PREPEND = new Set([
     "Commercial proposal",
-    "Definitions",
-    "Acceptance & next steps",
     "Psychometric foundations",
     "Evidence & sample reports",
   ]);
+  const FORCE_REPLACE = new Set(["Definitions"]);
   const ovText = (title: string): string => (overrides[title]?.ar ?? "").trim();
   const renderOverride = (text: string): string =>
     text
@@ -288,7 +289,7 @@ function renderProposalDocAr(
     const rendered = renderOverride(o);
     // Prepend for the OVERRIDE_PREPEND set AND any table-bearing default (mirrors EN;
     // renderOverride has no table support, so a replace would destroy the table).
-    const prepend = OVERRIDE_PREPEND.has(title) || /<table/i.test(defaultHtml);
+    const prepend = !FORCE_REPLACE.has(title) && (OVERRIDE_PREPEND.has(title) || /<table/i.test(defaultHtml));
     return prepend ? rendered + defaultHtml : rendered;
   };
   const secIntro = (title: string): string => {
@@ -761,9 +762,8 @@ function renderProposalDocAr(
   </ul>`)}` : ""}
 
   <h2>${at("Terms & conditions")}</h2>
-  ${secIntro("Terms & conditions")}
   ${p.terms ? `<div class="terms-box">${esc(p.terms)}</div>` : ""}
-  <ol class="clauses">
+  ${secBody("Terms & conditions", `<ol class="clauses">
     <li><b>السرية.</b> يحافظ كل طرف على سرية معلومات الطرف الآخر، ويستخدمها فقط لهذا الارتباط، ويفصح عنها فقط لمن يحتاجها من الأفراد الملتزمين بتعهدات مماثلة. ويبقى هذا البند سارياً بعد انتهاء الارتباط.</li>
     <li><b>الملكية الفكرية.</b> تحتفظ VIFM بجميع الحقوق في أدواتها وبنوك بنودها وأطرها ومنهجياتها وبرمجياتها وصيغ تقاريرها. وتحصل ${esc(p.clientName)} على حق غير حصري وغير قابل للتحويل لاستخدام المخرجات داخلياً لأغراض هذا الارتباط.</li>
     <li><b>حماية البيانات.</b> يلتزم الطرفان بقوانين حماية البيانات السارية كما هو موضح في القسم ${NO("Data protection & privacy")}. وتعمل VIFM كمعالج لبيانات المشاركين الشخصية بناءً على تعليمات العميل الموثقة، ما لم يقض القانون بخلاف ذلك.</li>
@@ -783,11 +783,10 @@ function renderProposalDocAr(
     <li><b>الإيقاف.</b> يجوز لـ VIFM إيقاف الوصول عن المبالغ غير المتنازع عليها المتأخرة أكثر من 30 يوماً، بإشعار خطي مسبق مدته 10 أيام عمل.</li>`
         : ""
     }
-  </ol>
+  </ol>`)}
 
   ${inc("Definitions") ? `<h2>${at("Definitions")}</h2>
-  ${secIntro("Definitions")}
-  <table>
+  ${secBody("Definitions", `<table>
     <thead><tr><th style="width:34%">المصطلح</th><th>المعنى في هذا العرض</th></tr></thead>
     <tbody>
       <tr><td><b>المشارك</b></td><td>فرد تدعوه ${esc(p.clientName)} لإكمال واحد أو أكثر من التقييمات المشمولة.</td></tr>
@@ -807,18 +806,17 @@ function renderProposalDocAr(
           : ""
       }
     </tbody>
-  </table>` : ""}
+  </table>`)}` : ""}
 
   <div class="accept">
     <h2 style="border-top:0;padding-top:0;">${at("Acceptance & next steps")}</h2>
-    ${secIntro("Acceptance & next steps")}
-    <ul>
+    ${secBody("Acceptance & next steps", `<ul>
       <li><b><span dir="ltr">1.</span></b> تأكيد النطاق وأحجام المشاركين في القسم ${NO("Commercial proposal")} (أو طلب تعديلات - يُصدَر عرض مُنقَّح بالطريقة نفسها).</li>
       <li><b><span dir="ltr">2.</span></b> توقيع القبول أدناه${validUntil ? ` قبل تاريخ الصلاحية (${validUntil})` : ""}.</li>
       <li><b><span dir="ltr">3.</span></b> تُصدر VIFM بيان العمل مشيراً إلى <span dir="ltr">${ref}</span> للتوقيع.</li>
       <li><b><span dir="ltr">4.</span></b> يُجدوَل الانطلاق خلال خمسة أيام عمل من توقيع بيان العمل.</li>
     </ul>
-    <p>يؤكد التوقيع أدناه قبول هذا العرض (المرجع <span dir="ltr">${ref}</span>) ويخوّل VIFM إعداد بيان العمل. ويبدأ الارتباط عند توقيع بيان العمل.</p>
+    <p>يؤكد التوقيع أدناه قبول هذا العرض (المرجع <span dir="ltr">${ref}</span>) ويخوّل VIFM إعداد بيان العمل. ويبدأ الارتباط عند توقيع بيان العمل.</p>`)}
     <div class="sig-grid">
       <div class="sig">
         <h4>عن ${esc(p.clientName)}</h4>

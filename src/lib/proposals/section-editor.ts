@@ -17,11 +17,13 @@ import { proposalSectionDefaultsAr } from "./proposal-html-ar";
 export const PREPEND_SECTIONS: Record<string, string> = {
   "Commercial proposal": "the pricing tables",
   "Psychometric foundations": "the psychometric methodology detail",
-  "Definitions": "the glossary table",
-  "Terms & conditions": "the numbered clauses",
-  "Acceptance & next steps": "the acceptance & signature block",
   "Evidence & sample reports": "the evidence list",
 };
+
+// Sections that carry a table but are fully editable (the table is extracted to text) -
+// they are NOT prepend. Mirrors the renderers' FORCE_REPLACE. Terms & Acceptance have no
+// table so they fall through to "replace" without needing to be listed here.
+const FORCE_REPLACE = new Set(["Definitions"]);
 
 export type SectionEditItem = {
   title: string;
@@ -51,21 +53,24 @@ export function htmlToEditText(fragment: string): string {
   let s = fragment;
   // Block boundaries -> newlines. Order matters (open tags before generic strip).
   s = s.replace(/<\s*br\s*\/?\s*>/gi, "\n");
-  s = s.replace(/<\s*\/\s*(p|h3|h4|div|tr)\s*>/gi, "\n\n");
+  s = s.replace(/<\s*\/\s*(p|h3|h4|div)\s*>/gi, "\n\n");
   s = s.replace(/<\s*(p|h3|h4|div)\b[^>]*>/gi, "");
   s = s.replace(/<\s*li\b[^>]*>/gi, "- ");
   s = s.replace(/<\s*\/\s*li\s*>/gi, "\n");
   s = s.replace(/<\s*\/?\s*(ul|ol)\b[^>]*>/gi, "\n");
-  // Table cells: separate them (defensive - table sections are prepend, so this rarely runs).
-  s = s.replace(/<\s*\/\s*(td|th)\s*>/gi, " ");
+  // Tables (e.g. the editable Definitions glossary) -> one bullet per row, cells joined
+  // by " - " (SOP: plain hyphen). The trailing separator is trimmed in the tidy below.
+  s = s.replace(/<\s*tr\b[^>]*>/gi, "\n- ");
+  s = s.replace(/<\s*\/\s*(td|th)\s*>/gi, " - ");
   // Drop every remaining tag.
   s = s.replace(/<[^>]+>/g, "");
   // Decode the entities we emit.
   s = s.replace(/&(#?[a-z0-9]+);/gi, (m, name: string) => ENTITIES[name.toLowerCase()] ?? m);
-  // Tidy whitespace: trim each line, collapse 3+ blank lines to one blank line.
+  // Tidy whitespace: trim each line (dropping any trailing table-cell separator),
+  // collapse 3+ blank lines to one blank line.
   s = s
     .split("\n")
-    .map((l) => l.replace(/[ \t]+/g, " ").trim())
+    .map((l) => l.replace(/[ \t]+/g, " ").replace(/\s+-\s*$/, "").trim())
     .join("\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
@@ -90,8 +95,9 @@ export function buildSectionEditorData(p: Proposal): SectionEditItem[] {
   const hasTable = (h: string | undefined) => /<table/i.test(h ?? "");
   return included.map((title, i) => {
     // Table-bearing sections are prepend too (mirrors the renderers' secBody) so an edit
-    // never wipes a generated table; the box is an intro note above it.
-    const isPrepend = title in PREPEND_SECTIONS || hasTable(defEn[title]) || hasTable(defAr[title]);
+    // never wipes a generated table; the box is an intro note above it. FORCE_REPLACE
+    // sections (the editable Definitions glossary) opt back into replace.
+    const isPrepend = !FORCE_REPLACE.has(title) && (title in PREPEND_SECTIONS || hasTable(defEn[title]) || hasTable(defAr[title]));
     return {
       title,
       number: i + 1,

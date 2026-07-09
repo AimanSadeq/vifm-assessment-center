@@ -42,7 +42,7 @@ export async function setFluentItemStatusAction(input: { itemId: string; status:
 
 /** Promote every in_review item for a skill to 'live' - the SME batch sign-off
  *  that activates bank-serving for that skill (once the live ramp is complete). */
-export async function bulkPromoteSkillAction(input: { skill: "reading" | "listening" }): Promise<ActionResult> {
+export async function bulkPromoteSkillAction(input: { skill: "reading" | "listening" | "writing" | "speaking" }): Promise<ActionResult> {
   const gate = await ensureAdmin();
   if (!gate.ok) return gate;
   const svc = createServiceClient();

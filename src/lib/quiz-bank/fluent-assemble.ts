@@ -101,20 +101,57 @@ const SPEAKING_PROMPTS: SpeakingTask[] = [
     prompt_ar: "تحدّث لمدة 45 ثانية تقريبًا: أبدِ رأيك حول ما إذا كانت التقنية الحديثة تجعل العمل أسهل أم أكثر ضغطًا، مع مثال." },
 ];
 
-// Pick without Math.random dependency issues (route runtime); simple time-based.
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)] ?? arr[0];
 }
 
-/** A full Fluent test assembled from the vetted bank, or null to fall back. */
+type PromptStem = { prompt_en?: unknown; prompt_ar?: unknown; cefr_target?: unknown; min_words?: unknown; min_seconds?: unknown };
+
+/** Draw one vetted prompt for a productive skill from the LIVE bank, or null to
+ *  fall back to the in-code rotation. Rotates least-served-first, then random. */
+async function drawLivePrompt(skill: "writing" | "speaking"): Promise<WritingTask | SpeakingTask | null> {
+  try {
+    const svc = createServiceClient();
+    const { data } = await svc
+      .from("eng_fluent_items")
+      .select("id, stem, cefr_label, n_responses")
+      .eq("skill", skill)
+      .eq("status", "live")
+      .order("n_responses", { ascending: true })
+      .limit(50);
+    const rows = (data ?? []) as Array<{ id: string; stem: PromptStem; cefr_label: string | null }>;
+    if (rows.length === 0) return null;
+    // Rotate within the least-served band (all rows share the same min once served).
+    const r = pick(rows);
+    const st = (r.stem ?? {}) as PromptStem;
+    const promptEn = String(st.prompt_en ?? "");
+    if (!promptEn.trim()) return null;
+    const base = {
+      id: r.id,
+      cefr_target: String(st.cefr_target ?? r.cefr_label ?? "B1"),
+      prompt_en: promptEn,
+      prompt_ar: String(st.prompt_ar ?? ""),
+    };
+    return skill === "writing"
+      ? { ...base, min_words: typeof st.min_words === "number" ? st.min_words : 60 } as WritingTask
+      : { ...base, min_seconds: typeof st.min_seconds === "number" ? st.min_seconds : 45 } as SpeakingTask;
+  } catch {
+    return null;
+  }
+}
+
+/** A full Fluent test assembled from the vetted bank, or null to fall back. The
+ *  receptive ramp must fill from the bank; the productive prompts prefer the live
+ *  bank but fall back to the in-code vetted rotation (both are vetted). */
 export async function assembleFluentTestFromBank(): Promise<FluentTest | null> {
   const receptive = await assembleFluentReceptive();
   if (!receptive) return null;
+  const [writing, speaking] = await Promise.all([drawLivePrompt("writing"), drawLivePrompt("speaking")]);
   return {
     reading: receptive.reading,
     listening: receptive.listening,
-    writing: pick(WRITING_PROMPTS),
-    speaking: pick(SPEAKING_PROMPTS),
+    writing: (writing as WritingTask) ?? pick(WRITING_PROMPTS),
+    speaking: (speaking as SpeakingTask) ?? pick(SPEAKING_PROMPTS),
     ai_generated: false,
   };
 }

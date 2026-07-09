@@ -8,6 +8,7 @@ import { COGNITIVE_SUBTESTS } from "@/lib/psychometrics/framework";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
 import { TECH_DOMAINS } from "@/lib/competencies/technical-framework";
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
+import { PROMPT_MIN as FLUENT_PROMPT_MIN } from "@/lib/quiz-bank/fluent-admin";
 
 export type Tier = "certified" | "reviewed" | "indicative";
 export type UnitReadiness = { unit: string; approved: number; total: number; target: number };
@@ -141,29 +142,40 @@ async function logica(psy: { byScale: Map<string, { total: number; approved: num
   };
 }
 
-// ── Fluent: eng_fluent_items, status='live', receptive skills only ──
+// ── Fluent: eng_fluent_items, status='live'. Receptive (reading/listening) are
+//    CEFR-ramped MCQs; productive (writing/speaking) are AI-scored prompts. ──
 async function fluent(): Promise<BankReadiness> {
   const rows = await selectRows("eng_fluent_items", "skill, status");
   // Curated pool = reviewed states only (exclude the raw accumulated draft items
   // that the runner logs per sitting for calibration, which are not a vetted bank).
   const curated = rows.filter((r) => ["in_review", "live", "approved"].includes(String(r.status)));
   const liveCounts = aggregate(curated, "skill", (r) => r.status === "live");
-  const target = 10; // the served CEFR ramp is 10 items per skill
-  const { units, vetted } = unitsFrom(
+  const rampTarget = 10; // the served CEFR ramp is 10 items per receptive skill
+  const promptTarget = FLUENT_PROMPT_MIN; // a servable rotation per productive skill
+  const receptive = unitsFrom(
     [{ key: "reading", label: "Reading" }, { key: "listening", label: "Listening" }],
     liveCounts,
-    target,
+    rampTarget,
   );
+  const productive = unitsFrom(
+    [{ key: "writing", label: "Writing (prompts)" }, { key: "speaking", label: "Speaking (prompts)" }],
+    liveCounts,
+    promptTarget,
+  );
+  const units = [...receptive.units, ...productive.units];
+  const vetted = receptive.vetted + productive.vetted;
   const inReview = curated.filter((r) => r.status === "in_review").length;
-  const servable = units.length > 0 && units.every((u) => u.approved >= target);
+  // Serving is gated by the RECEPTIVE ramp (the real scramble risk); productive
+  // prompts always keep an in-code vetted fallback, so they never "scramble".
+  const receptiveServable = receptive.units.every((u) => u.approved >= rampTarget);
   return {
-    key: "fluent", label: "Fluent (English)", tier: "indicative", servesLive: !servable, hasReviewGate: curated.length > 0,
-    vetted, total: curated.length, units, targetPerUnit: target, console: curated.length > 0 ? "/admin/fluent-bank" : "/ac/fluent/calibration",
-    note: servable
-      ? "Reading + listening served from the reviewed live bank (CEFR-ramped). Writing + speaking are AI-scored tasks (not a bank)."
+    key: "fluent", label: "Fluent (English)", tier: "indicative", servesLive: !receptiveServable, hasReviewGate: curated.length > 0,
+    vetted, total: curated.length, units, targetPerUnit: rampTarget, console: curated.length > 0 ? "/admin/fluent-bank" : "/ac/fluent/calibration",
+    note: receptiveServable
+      ? "Reading + listening served from the reviewed live bank (CEFR-ramped). Writing + speaking prompts serve from the vetted bank once promoted (else an in-code vetted rotation) - all four skills gated."
       : inReview > 0
-        ? `${inReview} vetted receptive item(s) awaiting SME promotion to 'live'. Until reading + listening each have a full live CEFR ramp, a sitting mints the receptive items live-AI. Writing + speaking are AI-scored.`
-        : "Receptive items are AI-generated per sitting and served with no human vetting; the IRT/CAT engine is built but dead-wired. Writing + speaking are AI-scored tasks (not a bank).",
+        ? `${inReview} vetted item(s)/prompt(s) awaiting SME promotion to 'live'. Reading + listening mint live-AI until each has a full CEFR ramp; writing + speaking prompts serve the vetted bank once promoted (else the in-code vetted rotation).`
+        : "Receptive items + productive prompts are AI-generated per sitting with no human vetting until the bank is filled and promoted.",
   };
 }
 

@@ -51,7 +51,7 @@ export default async function FluentBankPage() {
         {metric(totals.listeningServable ? "Yes" : "No", "Listening ramp servable", totals.listeningServable ? "text-emerald-700" : "text-rose-600")}
       </div>
 
-      <FluentBankConsole cells={view.cells} />
+      <FluentBankConsole cells={view.cells} prompts={view.prompts} />
     </div>
   );
 }

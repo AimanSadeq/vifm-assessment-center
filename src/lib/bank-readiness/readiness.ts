@@ -253,8 +253,8 @@ async function reflect(): Promise<BankReadiness> {
   const templates = rows.filter((r) => r.is_template).length;
   return {
     key: "reflect", label: "Reflect 360", tier: "reviewed", servesLive: false, hasReviewGate: true,
-    vetted: templates, total: rows.length, console: undefined,
-    note: `Multi-rater behaviour framework (frequency-rated, not scored). ${templates} library template(s). Per-engagement frameworks are AI-decomposed, but a consultant must now APPROVE the framework before an engagement can launch / raters are invited (gate). Seat/client-portal shells clone a pre-reviewed template, so they are approved by construction.`,
+    vetted: templates, total: rows.length, console: "/reflect/admin/templates",
+    note: `Multi-rater behaviour framework (frequency-rated, not scored). ${templates} library template(s) - edit their competencies + behaviours in the template console (incl. the seeded 41-competency VIFM framework). Per-engagement frameworks are AI-decomposed, but a consultant must APPROVE the framework before an engagement can launch / raters are invited (gate); seat/client-portal shells clone a pre-reviewed template, so they are approved by construction.`,
   };
 }
 

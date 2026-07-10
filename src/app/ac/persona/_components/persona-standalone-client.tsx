@@ -128,12 +128,16 @@ export function PersonaStandaloneClient({
   // otherwise score an empty session (zero).
   const inflightRef = useRef<Promise<void> | null>(null);
 
-  const flush = useCallback(async (): Promise<void> => {
+  // Returns true iff EVERYTHING is persisted (nothing left pending). A failed
+  // save re-queues its batch into pendingRef, so `pendingRef.size === 0` after
+  // the flush is the completeness signal submit() gates on - scoring reads only
+  // persisted rows, so submitting over unsaved answers silently loses them.
+  const flush = useCallback(async (): Promise<boolean> => {
     if (flushTimer.current) { clearTimeout(flushTimer.current); flushTimer.current = null; }
     if (inflightRef.current) { try { await inflightRef.current; } catch { /* ignore */ } }
-    if (!sessionId) return;
+    if (!sessionId) return false;
     const batch = [...pendingRef.current.values()];
-    if (batch.length === 0) return;
+    if (batch.length === 0) return pendingRef.current.size === 0;
     pendingRef.current.clear();
     setSaving(true);
     const p = (async () => {
@@ -154,6 +158,7 @@ export function PersonaStandaloneClient({
     })();
     inflightRef.current = p;
     try { await p; } finally { if (inflightRef.current === p) inflightRef.current = null; }
+    return pendingRef.current.size === 0;
   }, [sessionId, redemptionToken]);
 
   const queue = useCallback((a: BehavioralAnswer) => {
@@ -352,7 +357,18 @@ export function PersonaStandaloneClient({
     if (!sessionId) return;
     setBusy(true); setError("");
     try {
-      await flush(); // persist any buffered answers before scoring
+      const persisted = await flush(); // persist any buffered answers before scoring
+      if (!persisted) {
+        // Refuse to score over unsaved answers: submitPersonaAction reads only the
+        // persisted rows, so a failed final flush would silently drop answers, mark
+        // the session submitted, and burn the voucher seat. Keep it in-progress and
+        // surface the retry banner (the 4s auto-retry keeps trying in the background).
+        setError(tx(
+          "Some of your answers haven't saved yet. Please wait a moment and try again.",
+          "لم يتم حفظ بعض إجاباتك بعد. يرجى الانتظار لحظة ثم المحاولة مرة أخرى.",
+        ));
+        return;
+      }
       const res = await submitPersonaAction(sessionId, lang, redemptionToken);
       if (!res.ok) { setError(res.error || tx("Could not score.", "تعذّر التقييم.")); return; }
       const isStaff = (res as { isStaff?: boolean }).isStaff === true;
@@ -743,7 +759,7 @@ export function PersonaStandaloneClient({
               // Normative-only: the last page submits (no ipsative phase to follow).
               <button
                 onClick={submit}
-                disabled={!allNormAnswered || busy}
+                disabled={!allNormAnswered || busy || saving || saveError}
                 className="inline-flex items-center gap-2 rounded-md bg-[#047857] px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
               >
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
@@ -850,7 +866,7 @@ export function PersonaStandaloneClient({
             </span>
             <button
               onClick={submit}
-              disabled={(itemFormat !== "ipsative" && !allNormAnswered) || !allIpsDone || busy}
+              disabled={(itemFormat !== "ipsative" && !allNormAnswered) || !allIpsDone || busy || saving || saveError}
               className="inline-flex items-center gap-2 rounded-md bg-[#047857] px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
             >
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}

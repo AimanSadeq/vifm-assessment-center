@@ -71,16 +71,31 @@ export async function startPersonaAction(
           //  - submitted  -> refuse; the completed result stands.
           //  - in progress -> resume it, returning the saved answers so a reload
           //                    doesn't discard progress on a 164-item test.
-          const { data: existing } = await sb
+          // Scan ALL sessions for this redemption, newest first. A transient
+          // double-begin (two tabs / a slow-network re-fire on the shareable
+          // take/[token] URL) can seed >1 session row here; using .maybeSingle()
+          // would ERROR on 2+ rows and - the error being dropped - null out
+          // `existing`, permanently re-opening the submitted-refuse gate and
+          // letting the delegate retake + overwrite the recruiter result. So
+          // refuse if ANY row is submitted, else resume the newest in-progress.
+          // NB: the seed column is `randomization_seed` (00110), NOT `seed`. The
+          // prior guard selected a non-existent `seed`, so PostgREST 42703'd the
+          // whole request; the dropped error nulled existingRows and the retake
+          // gate was INERT in production - a delegate could resit + overwrite the
+          // recruiter result. Selecting the real column restores the gate.
+          const { data: existingRows } = await sb
             .from("behavioral_assessment_sessions")
-            .select("id, status, seed, item_format")
+            .select("id, status, randomization_seed, item_format")
             .eq("voucher_redemption_id", r.id)
-            .order("created_at", { ascending: false })
-            .maybeSingle<{ id: string; status: string; seed: number | null; item_format: string | null }>();
-          if (existing?.status === "submitted") {
+            .order("created_at", { ascending: false });
+          const rows = (existingRows ?? []) as Array<{
+            id: string; status: string; randomization_seed: number | null; item_format: string | null;
+          }>;
+          if (rows.some((x) => x.status === "submitted")) {
             return { ok: false as const, completed: true as const, error: "This assessment has already been completed." };
           }
-          if (existing && existing.status !== "submitted") {
+          const existing = rows[0] ?? null;
+          if (existing) {
             // Restore only the NORMATIVE (Likert) answers - ipsative choices live
             // in separate client state and are quick to redo. Keyed by item_key.
             const { data: prior } = await sb
@@ -97,7 +112,7 @@ export async function startPersonaAction(
               sessionId: existing.id,
               resumed: true as const,
               answers,
-              seed: existing.seed ?? null,
+              seed: existing.randomization_seed ?? null,
               itemFormat: (existing.item_format as "normative" | "ipsative" | "both" | null) ?? null,
             };
           }

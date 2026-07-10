@@ -160,7 +160,7 @@ export type ScoreRow = {
   raw_score: number | string;
   is_reverse: boolean;
   item_type?: string | null;
-  answer_data?: { choice?: string } | null;
+  answer_data?: { choice?: string; block?: string } | null;
 };
 /** Public alias for the shape report/list scorers should select + pass. */
 export type PersonaScoreRow = ScoreRow;
@@ -183,6 +183,32 @@ export function rollupSelfScores(responses: ScoreRow[]): BehavioralProfileRow[] 
   const ipsByComp = new Map<string, { most: number; least: number; seen: boolean }>();
   const order: string[] = [];
   const seenComp = new Set<string>();
+
+  // Forced-choice INTEGRITY: a well-formed ipsative block has EXACTLY one 'most'
+  // and one 'least' (the zero-sum constraint that stops an all-high response set).
+  // The take route is auth-bypassed and answer_data is client-supplied, so a
+  // crafted submission can mark every statement 'most' (or drip one 'most' per
+  // request to evade any per-batch check) to inflate every competency. Defend at
+  // the SCORING layer, where the whole stored set is visible: tally most/least per
+  // block and count a block's picks ONLY when it is well-formed. A tampered block
+  // then contributes nothing (its competencies fall to a neutral midpoint via
+  // seen=true), instead of maxing out. Legit blocks are unaffected.
+  const blockTally = new Map<string, { most: number; least: number }>();
+  for (const r of responses) {
+    if (r.item_type !== "ipsative") continue;
+    const block = r.answer_data?.block;
+    const choice = r.answer_data?.choice;
+    if (typeof block !== "string" || (choice !== "most" && choice !== "least")) continue;
+    const t = blockTally.get(block) ?? { most: 0, least: 0 };
+    if (choice === "most") t.most += 1; else t.least += 1;
+    blockTally.set(block, t);
+  }
+  const blockWellFormed = (block: string | undefined): boolean => {
+    if (typeof block !== "string") return false;
+    const t = blockTally.get(block);
+    return !!t && t.most === 1 && t.least === 1;
+  };
+
   for (const r of responses) {
     const cid = r.competency_id;
     if (!seenComp.has(cid)) { seenComp.add(cid); order.push(cid); }
@@ -190,8 +216,10 @@ export function rollupSelfScores(responses: ScoreRow[]): BehavioralProfileRow[] 
       const agg = ipsByComp.get(cid) ?? { most: 0, least: 0, seen: true };
       agg.seen = true;
       const choice = r.answer_data?.choice;
-      if (choice === "most") agg.most += 1;
-      else if (choice === "least") agg.least += 1;
+      if (blockWellFormed(r.answer_data?.block)) {
+        if (choice === "most") agg.most += 1;
+        else if (choice === "least") agg.least += 1;
+      }
       ipsByComp.set(cid, agg);
     } else {
       const raw = Number(r.raw_score);

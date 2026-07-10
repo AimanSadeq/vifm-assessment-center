@@ -646,25 +646,47 @@ export async function POST(req: Request) {
       }
     }
     if (result.certified && passedCut && !credentialCode) {
-      let issuedToName = takerName;
-      if (!issuedToName && candidateId) {
+      // Credential identity: for a BOUND run the name/email MUST come from the
+      // authoritative server record - the candidate row for a candidate-bound run,
+      // the program-participant row for a program run - never from the taker-typed
+      // body, or a taker could POST an arbitrary name and mint a verifiable
+      // credential under it. Taker-supplied identity is honoured ONLY on the truly
+      // anonymous/unbound path (no candidate AND no participant), where there is no
+      // record of record to trust.
+      const isBound = !!candidateId || !!boundParticipantId;
+      let issuedToName: string | null = isBound ? null : takerName;
+      let issuedToEmail: string | null = isBound ? null : takerEmail;
+      if (candidateId) {
         try {
           const sb = createServiceClient();
           const { data: cand } = await sb
             .from("candidates")
             .select("full_name, email")
             .eq("id", candidateId)
-            .maybeSingle();
-          issuedToName = (cand?.full_name as string | undefined) ?? null;
-          if (!takerEmail && cand?.email) body.takerEmail = cand.email as string;
+            .maybeSingle<{ full_name: string | null; email: string | null }>();
+          issuedToName = cand?.full_name ?? null;
+          issuedToEmail = cand?.email ?? null;
         } catch {
-          /* ignore */
+          /* ignore - fall back to the safe defaults below */
+        }
+      } else if (boundParticipantId) {
+        try {
+          const sb = createServiceClient();
+          const { data: part } = await sb
+            .from("technical_program_participants")
+            .select("full_name, email")
+            .eq("id", boundParticipantId)
+            .maybeSingle<{ full_name: string | null; email: string | null }>();
+          issuedToName = part?.full_name ?? null;
+          issuedToEmail = part?.email ?? null;
+        } catch {
+          /* ignore - fall back to the safe defaults below */
         }
       }
       const issued = await issueCredential({
         candidateId,
         issuedToName: issuedToName ?? "VIFM Candidate",
-        issuedToEmail: takerEmail ?? (body.takerEmail ?? null),
+        issuedToEmail,
         type: "technical_proficiency",
         titleEn: `VIFM Technical Proficiency - ${result.domain_name}`,
         subtitleEn: `${result.proficiency.label} (Level ${result.proficiency.level}/5)`,

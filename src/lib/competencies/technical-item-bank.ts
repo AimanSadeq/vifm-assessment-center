@@ -17,6 +17,7 @@
  * applied yet, mirroring the rest of the credentials/academy stack.
  */
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import { getAIClient, AI_MODEL } from "@/lib/ai/client";
 import {
   techDomainByKey,
@@ -192,11 +193,15 @@ export async function approvedCountByDomain(): Promise<Record<string, number>> {
   const out: Record<string, number> = {};
   try {
     const sb = createServiceClient();
-    const { data } = await sb
-      .from("tech_assessment_items")
-      .select("domain_key")
-      .eq("status", "approved");
-    for (const r of (data as { domain_key: string }[] | null) ?? []) {
+    const rows = await fetchAllPages<{ domain_key: string }>((from, to) =>
+      sb
+        .from("tech_assessment_items")
+        .select("domain_key")
+        .eq("status", "approved")
+        .order("id")
+        .range(from, to)
+    );
+    for (const r of rows) {
       out[r.domain_key] = (out[r.domain_key] ?? 0) + 1;
     }
   } catch {
@@ -378,17 +383,21 @@ export async function getTechPipelineStats(): Promise<TechPipelineStats> {
   };
   try {
     const sb = createServiceClient();
-    const [itemsRes, cutRes, resRes] = await Promise.all([
-      sb.from("tech_assessment_items").select("status"),
+    // Items + results both scale unboundedly (bank size incl. drafts; every
+    // sitting cross-domain), so page them; cut_scores is bounded to ~10 domains.
+    const [items, cutRes, results] = await Promise.all([
+      fetchAllPages<{ status: string }>((from, to) =>
+        sb.from("tech_assessment_items").select("status").order("id").range(from, to)
+      ),
       sb.from("tech_assessment_cut_scores").select("domain_key"),
-      sb.from("tech_assessment_results").select("domain_key, credential_code"),
+      fetchAllPages<{ domain_key: string; credential_code: string | null }>((from, to) =>
+        sb.from("tech_assessment_results").select("domain_key, credential_code").order("id").range(from, to)
+      ),
     ]);
-    const items = (itemsRes.data ?? []) as { status: string }[];
     stats.itemsTotal = items.length;
     stats.itemsApproved = items.filter((i) => i.status === "approved").length;
     stats.domainsWithCutScore = (cutRes.data ?? []).length;
 
-    const results = (resRes.data ?? []) as { domain_key: string; credential_code: string | null }[];
     stats.resultsTotal = results.length;
     const assessedBy = new Map<string, number>();
     const credsBy = new Map<string, number>();

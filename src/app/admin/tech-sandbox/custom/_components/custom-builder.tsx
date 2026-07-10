@@ -216,12 +216,10 @@ export function CustomBuilder({
     const byCode = new Map(res.assignments.map((a) => [a.code, a]));
     const list: IssuedVoucher[] = res.codes.map((code) => {
       const a = byCode.get(code);
+      // Only the opaque code goes in the redeem URL; name/email/company are PII and
+      // would leak via logs and the Referer header. The redeem page prefills them
+      // server-side from the voucher row.
       const qs = new URLSearchParams({ code });
-      if (a) {
-        qs.set("email", a.email);
-        if (a.name) qs.set("name", a.name);
-      }
-      if (organizationName) qs.set("company", organizationName);
       return {
         name: a?.name ?? null,
         email: a?.email ?? null,

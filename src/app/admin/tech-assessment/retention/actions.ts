@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages, chunkIds } from "@/lib/ara/paginate";
 import { RETENTION_MONTHS, PURGE_CONFIRMATION } from "./constants";
 
 function cutoffIso(): string {
@@ -52,13 +53,22 @@ export async function countExpiredTechnical(): Promise<{ total: number; expired:
 async function purgeTable(table: string, cutoff: string, tsCol = "created_at"): Promise<number> {
   const sb = createServiceClient();
   try {
-    const { data, error } = await sb.from(table).select("id").lt(tsCol, cutoff);
-    if (error) return 0;
-    const ids = (data ?? []).map((r) => r.id as string);
+    // Page the id gather (an unpaginated select caps at 1000, so a large purge
+    // would silently delete only the first 1000 expired rows and report that as
+    // done - leaving expired PII past the retention window). Chunk the delete
+    // .in() too (a >1000-uuid list truncates + bloats the URL).
+    const rows = await fetchAllPages<{ id: string }>((from, to) =>
+      sb.from(table).select("id").lt(tsCol, cutoff).order("id").range(from, to),
+    );
+    const ids = rows.map((r) => r.id);
     if (ids.length === 0) return 0;
-    const del = await sb.from(table).delete().in("id", ids).select("id");
-    if (del.error) return 0;
-    return del.data?.length ?? ids.length;
+    let purged = 0;
+    for (const batch of chunkIds(ids)) {
+      const del = await sb.from(table).delete().in("id", batch).select("id");
+      if (del.error) continue;
+      purged += del.data?.length ?? batch.length;
+    }
+    return purged;
   } catch {
     return 0;
   }

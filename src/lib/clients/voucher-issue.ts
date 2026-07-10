@@ -159,7 +159,10 @@ export async function issueClientVouchers(opts: {
   for (let i = 0; i < delegates.length; i++) {
     const d = delegates[i];
     const code = codes[i];
-    const url = `${origin}${path}?code=${encodeURIComponent(code)}&email=${encodeURIComponent(d.email)}`;
+    // Only the opaque code goes in the redeem URL; the delegate's email is PII and
+    // would leak via logs and the Referer header. Every redeem page prefills from
+    // the code server-side, so the email param is dead weight.
+    const url = `${origin}${path}?code=${encodeURIComponent(code)}`;
     let sent = false;
     try {
       if (service === "fluent") sent = !!(await emailFluentLink({ to: d.email, name: d.name, code, url, lang })).ok;

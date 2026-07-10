@@ -330,9 +330,10 @@ export async function emailSandboxLinkAction(input: {
 }
 
 /**
- * Email named-delegate voucher codes with a one-click redeem link (code + name +
- * email + company baked into the URL). Only codes that carry an assigned delegate
- * email are sent. Returns per-email results.
+ * Email named-delegate voucher codes with a one-click redeem link (only the opaque
+ * code is placed in the URL; the recipient's name/email/company prefill server-side
+ * from the voucher row). Only codes that carry an assigned delegate email are sent.
+ * Returns per-email results.
  */
 export async function emailVoucherCodesAction(input: {
   codes: string[];
@@ -355,9 +356,10 @@ export async function emailVoucherCodesAction(input: {
   for (const v of withEmail) {
     const email = v.assignedEmail;
     if (!email) continue;
-    const qs = new URLSearchParams({ code: v.code, email });
-    if (v.assignedName) qs.set("name", v.assignedName);
-    if (v.organizationName) qs.set("company", v.organizationName);
+    // Only the opaque code goes in the redeem URL. name/email/company are PII and
+    // leak via server logs, the Referer header and forwarded inboxes; the redeem
+    // page prefills the recipient's details server-side from the voucher row.
+    const qs = new URLSearchParams({ code: v.code });
     const sent = await emailAccessLink({
       to: email,
       name: v.assignedName ?? undefined,

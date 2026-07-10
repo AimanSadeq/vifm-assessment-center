@@ -17,6 +17,7 @@
  * best-effort + tolerant of a portal's tables not being present (returns []).
  */
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages, chunkIds } from "@/lib/ara/paginate";
 import type { RawTechResult } from "./types";
 
 /** Canonical company grouping key: trim, lowercase, collapse whitespace. */
@@ -30,8 +31,6 @@ function firstOf<T>(v: T[] | T | null | undefined): T | null {
   if (v == null) return null;
   return Array.isArray(v) ? (v[0] ?? null) : v;
 }
-
-const SESSION_LIMIT = 20000;
 
 // ── Sandbox adapter ──────────────────────────────────────────────
 type SandboxSessionRow = {
@@ -69,23 +68,26 @@ async function loadSandboxProjectBySession(
 ): Promise<Map<string, { batchId: string | null; label: string | null }>> {
   const map = new Map<string, { batchId: string | null; label: string | null }>();
   try {
-    const { data: reds } = await sb
-      .from("technical_sandbox_voucher_redemptions")
-      .select("session_id, voucher_id")
-      .not("session_id", "is", null)
-      .limit(SESSION_LIMIT);
-    const redemptions = (reds ?? []) as Array<{ session_id: string; voucher_id: string }>;
+    const redemptions = await fetchAllPages<{ session_id: string; voucher_id: string }>((from, to) =>
+      sb
+        .from("technical_sandbox_voucher_redemptions")
+        .select("session_id, voucher_id")
+        .not("session_id", "is", null)
+        .order("id")
+        .range(from, to)
+    );
     if (redemptions.length === 0) return map;
     const voucherIds = Array.from(new Set(redemptions.map((r) => r.voucher_id)));
-    const { data: vouchers } = await sb
-      .from("technical_sandbox_vouchers")
-      .select("id, batch_id, label")
-      .in("id", voucherIds);
-    const voucherById = new Map(
-      ((vouchers ?? []) as Array<{ id: string; batch_id: string | null; label: string | null }>).map(
-        (v) => [v.id, v]
-      )
-    );
+    const voucherById = new Map<string, { id: string; batch_id: string | null; label: string | null }>();
+    for (const batch of chunkIds(voucherIds)) {
+      const { data: vouchers } = await sb
+        .from("technical_sandbox_vouchers")
+        .select("id, batch_id, label")
+        .in("id", batch);
+      for (const v of (vouchers ?? []) as Array<{ id: string; batch_id: string | null; label: string | null }>) {
+        voucherById.set(v.id, v);
+      }
+    }
     for (const r of redemptions) {
       const v = voucherById.get(r.voucher_id);
       map.set(r.session_id, { batchId: v?.batch_id ?? r.voucher_id, label: v?.label ?? null });
@@ -99,14 +101,15 @@ async function loadSandboxProjectBySession(
 async function fromSandbox(): Promise<RawTechResult[]> {
   try {
     const sb = createServiceClient();
-    const { data, error } = await sb
-      .from("technical_sandbox_sessions")
-      .select(
-        "id, function_id, candidate_name, candidate_email, organization_name, status, overall_score_pct, submitted_at, started_at"
-      )
-      .limit(SESSION_LIMIT);
-    if (error || !data) return [];
-    const rows = data as SandboxSessionRow[];
+    const rows = await fetchAllPages<SandboxSessionRow>((from, to) =>
+      sb
+        .from("technical_sandbox_sessions")
+        .select(
+          "id, function_id, candidate_name, candidate_email, organization_name, status, overall_score_pct, submitted_at, started_at"
+        )
+        .order("id")
+        .range(from, to)
+    );
     const [functionNames, projectBySession] = await Promise.all([
       loadFunctionNames(sb),
       loadSandboxProjectBySession(sb),
@@ -175,24 +178,30 @@ async function fromMcq(): Promise<RawTechResult[]> {
   try {
     const sb = createServiceClient();
     // program_id may be absent pre-00057; retry without it on a missing-column error.
-    let rows: McqResultRow[] | null = null;
-    {
-      const full = await sb
-        .from("tech_assessment_results")
-        .select("taker_name, taker_email, domain_key, score_pct, candidate_id, engagement_id, program_id, created_at")
-        .limit(SESSION_LIMIT);
-      if (full.error) {
-        const base = await sb
+    let rows: McqResultRow[];
+    try {
+      rows = await fetchAllPages<McqResultRow>((from, to) =>
+        sb
           .from("tech_assessment_results")
-          .select("taker_name, taker_email, domain_key, score_pct, candidate_id, engagement_id, created_at")
-          .limit(SESSION_LIMIT);
-        if (base.error) return [];
-        rows = (base.data as Array<Omit<McqResultRow, "program_id">>).map((r) => ({ ...r, program_id: null }));
-      } else {
-        rows = full.data as McqResultRow[];
+          .select("taker_name, taker_email, domain_key, score_pct, candidate_id, engagement_id, program_id, created_at")
+          .order("id")
+          .range(from, to)
+      );
+    } catch {
+      try {
+        const base = await fetchAllPages<Omit<McqResultRow, "program_id">>((from, to) =>
+          sb
+            .from("tech_assessment_results")
+            .select("taker_name, taker_email, domain_key, score_pct, candidate_id, engagement_id, created_at")
+            .order("id")
+            .range(from, to)
+        );
+        rows = base.map((r) => ({ ...r, program_id: null }));
+      } catch {
+        return [];
       }
     }
-    if (!rows || rows.length === 0) return [];
+    if (rows.length === 0) return [];
 
     // Resolve company + project for the engagement / program linkages.
     const engIds = Array.from(new Set(rows.map((r) => r.engagement_id).filter(Boolean) as string[]));
@@ -201,16 +210,18 @@ async function fromMcq(): Promise<RawTechResult[]> {
     const engInfo = new Map<string, { company: string; project: string }>();
     if (engIds.length) {
       try {
-        const { data: engs } = await sb
-          .from("engagements")
-          .select("id, name, organization_id, organizations(name)")
-          .in("id", engIds);
-        for (const e of (engs ?? []) as Array<{
-          id: string; name: string | null; organization_id: string | null;
-          organizations: { name: string }[] | { name: string } | null;
-        }>) {
-          const org = firstOf(e.organizations);
-          if (org?.name) engInfo.set(e.id, { company: org.name, project: e.name ?? "Engagement" });
+        for (const batch of chunkIds(engIds)) {
+          const { data: engs } = await sb
+            .from("engagements")
+            .select("id, name, organization_id, organizations(name)")
+            .in("id", batch);
+          for (const e of (engs ?? []) as Array<{
+            id: string; name: string | null; organization_id: string | null;
+            organizations: { name: string }[] | { name: string } | null;
+          }>) {
+            const org = firstOf(e.organizations);
+            if (org?.name) engInfo.set(e.id, { company: org.name, project: e.name ?? "Engagement" });
+          }
         }
       } catch {
         /* engagements/organizations shape differs - skip eng-linked rows */
@@ -219,12 +230,14 @@ async function fromMcq(): Promise<RawTechResult[]> {
     const progInfo = new Map<string, { company: string; project: string }>();
     if (progIds.length) {
       try {
-        const { data: progs } = await sb
-          .from("technical_programs")
-          .select("id, name, organization_name")
-          .in("id", progIds);
-        for (const p of (progs ?? []) as Array<{ id: string; name: string | null; organization_name: string | null }>) {
-          if (p.organization_name) progInfo.set(p.id, { company: p.organization_name, project: p.name ?? "Program" });
+        for (const batch of chunkIds(progIds)) {
+          const { data: progs } = await sb
+            .from("technical_programs")
+            .select("id, name, organization_name")
+            .in("id", batch);
+          for (const p of (progs ?? []) as Array<{ id: string; name: string | null; organization_name: string | null }>) {
+            if (p.organization_name) progInfo.set(p.id, { company: p.organization_name, project: p.name ?? "Program" });
+          }
         }
       } catch {
         /* technical_programs absent - skip program-linked rows */

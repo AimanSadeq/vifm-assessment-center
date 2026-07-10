@@ -149,6 +149,48 @@ export async function updateItemAction(itemId: string, fields: EditItemFields) {
 
   try {
     const sb = createServiceClient();
+    // Integrity: a CONTENT edit invalidates any prior SME approval. If the item was
+    // already approved (or retired from the approved pool) AND a question/answer
+    // field actually changed, send it back to in_review and clear the review stamp
+    // so the new content must be re-approved - otherwise the approver's sign-off
+    // would silently cover content they never saw, and buildCertifiedTest (which
+    // draws status='approved') would ship it. The editor posts the FULL field set
+    // on every Save, so we diff against the stored row: a no-op save (open + Save
+    // with no change) must NOT demote, or it would silently drop the domain from
+    // certifiable to indicative.
+    const COMPARE_COLS = [
+      "skill", "question_type", "question_en", "question_ar", "scenario_en",
+      "scenario_ar", "options_en", "options_ar", "correct_index", "correct_indices",
+      "difficulty", "explanation_en",
+    ] as const;
+    let current: (Record<string, unknown> & { status?: string }) | null = null;
+    {
+      const full = await sb
+        .from("tech_assessment_items")
+        .select(["status", ...COMPARE_COLS].join(", "))
+        .eq("id", itemId)
+        .maybeSingle();
+      if (full.error) {
+        // pre-00082: the new columns don't exist - read status only (we then
+        // can't diff content, so demote to be safe below).
+        const legacy = await sb.from("tech_assessment_items").select("status").eq("id", itemId).maybeSingle();
+        current = (legacy.data as (Record<string, unknown> & { status?: string }) | null) ?? null;
+      } else {
+        current = (full.data as (Record<string, unknown> & { status?: string }) | null) ?? null;
+      }
+    }
+    if (current && (current.status === "approved" || current.status === "retired")) {
+      const cur = current;
+      const eq = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+      // If the comparable columns weren't read (pre-00082), err safe: demote.
+      const contentChanged =
+        !("skill" in cur) || COMPARE_COLS.some((c) => c in patch && !eq(patch[c], cur[c]));
+      if (contentChanged) {
+        patch.status = "in_review";
+        patch.reviewer_name = null;
+        patch.reviewed_at = null;
+      }
+    }
     const { error } = await sb.from("tech_assessment_items").update(patch).eq("id", itemId);
     if (error) {
       // migration 00082 not applied - retry with only the legacy columns so

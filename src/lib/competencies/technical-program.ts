@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import { getLocalizedTechTaxonomy } from "./technical-taxonomy";
 import { bankReadiness, type DomainReadiness } from "./technical-item-bank";
 import { categoryLabel } from "./technical-function";
@@ -223,27 +224,42 @@ export async function getTechnicalProgram(
     })
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  const { data: partRows } = await sb
-    .from("technical_program_participants")
-    .select("id, full_name, email, access_token")
-    .eq("program_id", programId)
-    .order("full_name");
-  const participants: ProgramParticipant[] = (partRows ?? []).map((p) => ({
-    id: p.id as string,
-    name: p.full_name as string,
-    email: (p.email as string | null) ?? null,
-    accessToken: p.access_token as string,
+  let partRows: Array<{ id: string; full_name: string; email: string | null; access_token: string }> = [];
+  try {
+    partRows = await fetchAllPages((from, to) =>
+      sb
+        .from("technical_program_participants")
+        .select("id, full_name, email, access_token")
+        .eq("program_id", programId)
+        .order("full_name")
+        .order("id")
+        .range(from, to)
+    );
+  } catch {
+    partRows = [];
+  }
+  const participants: ProgramParticipant[] = partRows.map((p) => ({
+    id: p.id,
+    name: p.full_name,
+    email: p.email ?? null,
+    accessToken: p.access_token,
   }));
 
-  // Latest result per (participant, domain)
+  // Latest result per (participant, domain). A stable id tiebreaker on the desc
+  // sort keeps "newest-first, first-seen wins" intact across page boundaries
+  // (created_at is not unique).
   const latest = new Map<string, ResultRow>();
   try {
-    const { data: resData } = await sb
-      .from("tech_assessment_results")
-      .select("participant_id, domain_key, level, level_label, score_pct, certified, passed_cut, credential_code, created_at")
-      .eq("program_id", programId)
-      .order("created_at", { ascending: false });
-    for (const r of (resData ?? []) as ResultRow[]) {
+    const resData = await fetchAllPages<ResultRow>((from, to) =>
+      sb
+        .from("tech_assessment_results")
+        .select("participant_id, domain_key, level, level_label, score_pct, certified, passed_cut, credential_code, created_at")
+        .eq("program_id", programId)
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
+        .range(from, to)
+    );
+    for (const r of resData) {
       if (!r.participant_id) continue;
       const key = `${r.participant_id}|${r.domain_key}`;
       if (!latest.has(key)) latest.set(key, r);
@@ -290,16 +306,20 @@ export async function getTechnicalProgram(
     };
     const latestFn = new Map<string, FnResultRow>();
     try {
-      const { data: resData } = await sb
-        .from("tech_assessment_results")
-        .select("participant_id, function_key, level, level_label, score_pct, result, created_at")
-        .eq("program_id", programId)
-        // Only results on THIS program's own function count - a mix run
-        // ("mix:...") or a different function's run bound to the same program
-        // must not surface as this function's cohort score/level.
-        .eq("function_key", functionRef)
-        .order("created_at", { ascending: false });
-      for (const r of (resData ?? []) as FnResultRow[]) {
+      const resData = await fetchAllPages<FnResultRow>((from, to) =>
+        sb
+          .from("tech_assessment_results")
+          .select("participant_id, function_key, level, level_label, score_pct, result, created_at")
+          .eq("program_id", programId)
+          // Only results on THIS program's own function count - a mix run
+          // ("mix:...") or a different function's run bound to the same program
+          // must not surface as this function's cohort score/level.
+          .eq("function_key", functionRef)
+          .order("created_at", { ascending: false })
+          .order("id", { ascending: false })
+          .range(from, to)
+      );
+      for (const r of resData) {
         if (!r.participant_id) continue;
         if (!latestFn.has(r.participant_id)) latestFn.set(r.participant_id, r);
       }

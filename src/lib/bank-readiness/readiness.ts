@@ -93,16 +93,17 @@ async function techno(): Promise<BankReadiness> {
   const inReview = rows.filter((r) => r.status === "in_review").length;
   const totalPool = rows.length;
   // A domain certifies (and issues a credential) only from APPROVED items; until
-  // every domain clears the floor the runner serves indicative AI (no credential).
+  // every domain clears the floor the runner serves the FIXED seeded bank
+  // (provisional, no credential) - never live-AI while any items are authored.
   const certifiable = units.length > 0 && units.every((u) => u.approved >= target);
   return {
-    key: "techno", label: "Techno (technical)", tier: "certified", servesLive: !certifiable, hasReviewGate: true,
+    key: "techno", label: "Techno (technical)", tier: "certified", servesLive: totalPool === 0, hasReviewGate: true,
     vetted, total: totalPool, units, targetPerUnit: target, console: "/admin/tech-assessment/items",
     note: certifiable
       ? "Every domain has enough SME-approved items; the certified path assembles from approved items and issues a technical_proficiency credential."
-      : inReview > 0
-        ? `${inReview} item(s) authored and awaiting SME approval. A domain certifies (issues a credential) only with ${target}+ APPROVED items; until then it serves indicative AI (no credential).`
-        : "Certified path assembles from approved items only; below the min-items floor a domain serves indicative AI (no credential).",
+      : totalPool === 0
+        ? "No items authored yet - a domain with an empty bank falls back to live-AI at sitting time. Author + SME-approve items in the console."
+        : `${inReview} item(s) authored, awaiting SME approval. The runner serves these FIXED seeded items (same questions to every candidate, flagged provisional - no live-AI). A domain issues a credential only once it has ${target}+ APPROVED items.`,
   };
 }
 

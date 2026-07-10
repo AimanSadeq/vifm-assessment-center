@@ -471,6 +471,66 @@ export async function buildCertifiedTest(
 }
 
 /**
+ * Assemble a FIXED but INDICATIVE test from the seeded bank (approved OR in_review
+ * items). This serves the same pre-authored, human-inspectable questions to every
+ * candidate - never live-AI - but is NOT certified (no credential) because the
+ * items are not yet SME-approved. Results are flagged provisional. Returns null
+ * only when the domain has no authored items at all. This is the drop-in
+ * replacement for the old live-AI fallback: fixed content in review, not scramble.
+ */
+export async function buildReviewTest(
+  domainKey: TechDomainKey,
+  size: number = CERTIFIED_TEST_SIZE,
+  language: "en" | "ar" = "en"
+): Promise<CertifiedAssembly | null> {
+  const domain = techDomainByKey(domainKey);
+  if (!domain) return null;
+
+  let rows: AssemblyRow[] = [];
+  try {
+    const sb = createServiceClient();
+    const full = await sb
+      .from("tech_assessment_items")
+      .select(ASSEMBLY_COLS)
+      .eq("domain_key", domainKey)
+      .in("status", ["approved", "in_review"]);
+    if (full.error) {
+      const legacy = await sb
+        .from("tech_assessment_items")
+        .select(ASSEMBLY_COLS_LEGACY)
+        .eq("domain_key", domainKey)
+        .in("status", ["approved", "in_review"]);
+      rows = (legacy.data as AssemblyRow[] | null) ?? [];
+    } else {
+      rows = (full.data as AssemblyRow[] | null) ?? [];
+    }
+  } catch {
+    return null; // table absent → caller decides
+  }
+
+  const usable = rows.filter(bankRowUsable);
+  if (usable.length === 0) return null; // nothing authored → caller falls through
+
+  const picked = shuffle(usable).slice(0, Math.min(size, usable.length));
+  const itemIds: string[] = [];
+  const items: TechItem[] = picked.map((r, i): TechItem => {
+    itemIds.push(r.id);
+    return { ...bankRowToTechItem(r, language), id: r.id || `r${i + 1}` };
+  });
+
+  return {
+    test: {
+      domain_key: domainKey,
+      domain_name: domain.name,
+      items,
+      ai_generated: false,
+      certified: false, // fixed content, but not SME-approved → provisional, no credential
+    },
+    itemIds,
+  };
+}
+
+/**
  * Record administration stats against the bank items a certified test used.
  * Best-effort; keeps the light p-value substrate fresh for future calibration.
  */

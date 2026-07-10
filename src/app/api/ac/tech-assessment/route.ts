@@ -38,6 +38,7 @@ import { techDomainByKey, type TechDomainKey } from "@/lib/competencies/technica
 import { getTechnicalFunctionByRef } from "@/lib/competencies/technical-function";
 import {
   buildCertifiedTest,
+  buildReviewTest,
   getCutScore,
   recordItemAdministration,
 } from "@/lib/competencies/technical-item-bank";
@@ -406,20 +407,30 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "already_completed" }, { status: 409 });
     }
 
-    // Prefer the certified path (SME-approved bank). Fall back to indicative AI.
+    // Serving order (no live-AI at deal time when a bank exists):
+    //   1. Certified - assembled from SME-APPROVED items → issues a credential.
+    //   2. In-review - the fixed, seeded bank (approved OR in_review) served to
+    //      every candidate, flagged provisional (no credential). This replaces the
+    //      old live-AI fallback: same authored questions, not freshly generated.
+    //   3. Live-AI - only if the domain has NO authored items at all (empty bank).
     const certified = await buildCertifiedTest(domainKey, undefined, language);
     let stored: StoredTest;
     if (certified) {
       stored = { ...certified.test, item_ids: certified.itemIds };
     } else {
-      try {
-        stored = await generateTechnicalAssessment({ domainKey, language });
-      } catch (err) {
-        if (err instanceof TechGenerationError) {
-          console.error("[tech-assessment] domain start failed:", err.message);
-          return generationFailedResponse();
+      const reviewBank = await buildReviewTest(domainKey, undefined, language);
+      if (reviewBank) {
+        stored = { ...reviewBank.test, item_ids: reviewBank.itemIds };
+      } else {
+        try {
+          stored = await generateTechnicalAssessment({ domainKey, language });
+        } catch (err) {
+          if (err instanceof TechGenerationError) {
+            console.error("[tech-assessment] domain start failed:", err.message);
+            return generationFailedResponse();
+          }
+          throw err;
         }
-        throw err;
       }
     }
     if (process.env.NODE_ENV === "production" && isPlaceholderTest(stored)) {

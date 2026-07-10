@@ -525,7 +525,13 @@ export async function sendReflectRaterReminder(
     .maybeSingle<{ id: string; name: string; is_sandbox: boolean; field_window_end: string | null }>();
   if (!eng) return { ok: false, error: "Engagement not found" };
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "";
+  // Absolute base URL - fall back through NEXT_PUBLIC_SITE_URL to the prod
+  // domain so a reminder never carries a dead relative link when
+  // NEXT_PUBLIC_APP_URL is unset (mirrors the consultant invitation path).
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
+    "https://caliber.viftraining.com";
 
   const res = await sendReflectEmail({
     to: rater.email,
@@ -575,13 +581,18 @@ export async function sendReflectRemindersForEngagement(
   const sb = createServiceClient();
   const { data: raters } = await sb
     .from("reflect_raters")
-    .select("id, status, last_active_at, last_reminder_at, reflect_participants!inner(engagement_id)")
+    .select("id, status, invited_at, last_active_at, last_reminder_at, reflect_participants!inner(engagement_id)")
     .eq("reflect_participants.engagement_id", engagementId)
     .in("status", ["pending", "started"])
+    // Only nag raters who were actually INVITED - a never-invited rater has
+    // NULL last_reminder_at/last_active_at so both debounce checks pass, and
+    // the cron would send them a reminder for an invitation they never got.
+    .not("invited_at", "is", null)
     .returns<
       Array<{
         id: string;
         status: string;
+        invited_at: string | null;
         last_active_at: string | null;
         last_reminder_at: string | null;
       }>

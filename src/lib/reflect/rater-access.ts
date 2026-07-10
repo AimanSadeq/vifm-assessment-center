@@ -129,12 +129,21 @@ export type RaterContext = {
   criticalCompetencyIds: string[];
   /** P2: rater tenure (how long they've worked with the participant). */
   tenure: ReflectRaterTenure | null;
+  /**
+   * Whether the form should accept writes: engagement is draft/live AND the
+   * field window has not closed. Matches requireRater's write gate, so the form
+   * is never served interactive when every save would be rejected (a
+   * read-only "window closed" state is shown instead).
+   */
+  writable: boolean;
 };
 
 /**
- * Load the full rater context for the respondent form. Returns null if the
- * token is invalid OR the engagement is not 'live' (rater can't submit when
- * the engagement is closed/archived).
+ * Load the full rater context for the respondent form. Returns null only when
+ * the token is invalid or a required row is missing - a closed/expired
+ * engagement still loads (so a completed rater can see their thank-you and a
+ * just-closed one gets a read-only notice) but carries `writable: false` so the
+ * page renders a closed state rather than an interactive form.
  *
  * The rater never has a Supabase session - token alone establishes identity.
  */
@@ -159,11 +168,19 @@ export async function loadRaterByToken(token: string): Promise<RaterContext | nu
   const { data: engagement } = await sb
     .from("reflect_engagements")
     .select(
-      "id, name, status, is_sandbox, gamified_mode, default_language, scale_type, anonymity_min_n, ara_organizations(id, name, name_ar)"
+      "id, name, status, is_sandbox, gamified_mode, default_language, scale_type, anonymity_min_n, field_window_end, ara_organizations(id, name, name_ar)"
     )
     .eq("id", participant.engagement_id)
-    .maybeSingle<EngagementRow>();
+    .maybeSingle<EngagementRow & { field_window_end: string | null }>();
   if (!engagement) return null;
+
+  // Writable mirrors requireRater's gate: draft/live AND the field window is
+  // still open. When false the respond page renders a read-only "closed"
+  // state instead of an interactive form whose every save would be rejected.
+  const windowOpen =
+    !engagement.field_window_end ||
+    new Date(engagement.field_window_end).getTime() >= Date.now();
+  const writable = ["draft", "live"].includes(engagement.status) && windowOpen;
 
   const { data: framework } = await sb
     .from("reflect_frameworks")
@@ -246,6 +263,7 @@ export async function loadRaterByToken(token: string): Promise<RaterContext | nu
     criticalCompetencyIds: rater.critical_competency_ids ?? [],
     // P2 tenure (00038). NULL until the rater answers.
     tenure: rater.tenure ?? null,
+    writable,
   };
 }
 

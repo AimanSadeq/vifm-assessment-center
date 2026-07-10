@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowLeft, Aperture } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getCurrentCaller } from "@/lib/ara/auth-guards";
 import { getServerT } from "@/lib/i18n/server";
 import { resolvePlanOrgId } from "@/lib/start/resolve-plan-org";
 import { ReflectWizard, type WizardOrg, type WizardTemplate } from "./_components/wizard";
@@ -31,6 +33,14 @@ export default async function NewReflectEngagementPage({
 }: {
   searchParams?: { org?: string; orgName?: string };
 }) {
+  // Self-gate: this page uses the service-role client (bypassing RLS) to load
+  // the full ara_organizations registry + all templates. There is no
+  // reflect/consultant layout role-gate, and middleware enforces auth NOT role,
+  // so without this any logged-in user (e.g. a candidate) could read the whole
+  // client list. Consultant or admin only, mirroring every sibling page.
+  const caller = await getCurrentCaller();
+  if (!caller || (caller.role !== "consultant" && caller.role !== "admin")) notFound();
+
   const { orgs, templates } = await fetchWizardData();
   const t = await getServerT();
   const defaultOrgId = resolvePlanOrgId(orgs, searchParams);

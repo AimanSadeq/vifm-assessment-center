@@ -493,10 +493,13 @@ async function cloneTemplateInternal(
     .single<{ id: string }>();
   if (fwErr || !newFw) return { ok: false, error: fwErr?.message ?? "Could not clone framework" };
 
-  // Copy competencies + behaviours
+  // Copy competencies + behaviours. ac_competency_id is carried so the cloned
+  // engagement keeps the framework's link to the AC 41 (migration 00088/00092:
+  // the 38-competency 360 framework is linked by ac_competency_id to REMOVE
+  // name-matching - dropping it silently reverted reports to fuzzy name match).
   const { data: comps } = await sb
     .from("reflect_competencies")
-    .select("id, name_en, name_ar, description_en, description_ar, display_order")
+    .select("id, name_en, name_ar, description_en, description_ar, display_order, ac_competency_id")
     .eq("framework_id", tpl.id)
     .order("display_order");
 
@@ -508,6 +511,7 @@ async function cloneTemplateInternal(
       description_en: string | null;
       description_ar: string | null;
       display_order: number;
+      ac_competency_id: string | null;
     }>) {
       const { data: newComp } = await sb
         .from("reflect_competencies")
@@ -518,6 +522,7 @@ async function cloneTemplateInternal(
           description_en: c.description_en,
           description_ar: c.description_ar,
           display_order: c.display_order,
+          ac_competency_id: c.ac_competency_id ?? null,
         })
         .select("id")
         .single<{ id: string }>();
@@ -1393,8 +1398,9 @@ export async function createReflectReassessmentFromPrior(input: {
   // (or be admin). Previously this had NO auth check at all, letting
   // any authenticated user enumerate + exfiltrate another consultant's
   // engagement design.
+  let caller;
   try {
-    await requireEngagementOwner(input.priorEngagementId);
+    caller = await requireEngagementOwner(input.priorEngagementId);
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Not the prior engagement owner" };
   }
@@ -1439,6 +1445,12 @@ export async function createReflectReassessmentFromPrior(input: {
       anonymity_min_n: prior.anonymity_min_n,
       participant_target_count: prior.participant_target_count,
       is_sandbox: prior.is_sandbox,
+      // Carry gamified_mode (migration 00072): it selects the rater experience
+      // (GamifiedRaterForm vs RaterForm) and has no post-create edit action, so
+      // a dropped flag silently reverted a gamified engagement's rerun to the
+      // standard form with no way to re-enable it. Tolerant of the column being
+      // absent on a fresh env (?? false).
+      gamified_mode: (prior as { gamified_mode?: boolean | null }).gamified_mode ?? false,
       prior_engagement_id: prior.id,
     })
     .select("id")
@@ -1483,7 +1495,7 @@ export async function createReflectReassessmentFromPrior(input: {
 
     const { data: priorComps } = await sb
       .from("reflect_competencies")
-      .select("id, name_en, name_ar, description_en, description_ar, display_order")
+      .select("id, name_en, name_ar, description_en, description_ar, display_order, ac_competency_id")
       .eq("framework_id", priorFw.id)
       .order("display_order");
 
@@ -1498,6 +1510,9 @@ export async function createReflectReassessmentFromPrior(input: {
           description_en: c.description_en,
           description_ar: c.description_ar,
           display_order: c.display_order,
+          // Carry the AC link so year-on-year reports keep matching by id, not
+          // by fuzzy name (migration 00088/00092).
+          ac_competency_id: (c as { ac_competency_id?: string | null }).ac_competency_id ?? null,
         })
         .select("id")
         .single<{ id: string }>();
@@ -1559,11 +1574,14 @@ export async function createReflectReassessmentFromPrior(input: {
     }
   }
 
-  // 5. Audit row so the consultant dashboard shows the lineage.
+  // 5. Audit row so the consultant dashboard shows the lineage. performed_by
+  // stamped (was omitted, leaving the action unattributable) - matches every
+  // sibling audit write in this file.
   await sb.from("reflect_audit_log").insert({
     action: "engagement.reassessment_created",
     target_table: "reflect_engagements",
     target_id: newEng.id,
+    performed_by: caller.isDev ? null : caller.uid,
     metadata: {
       prior_engagement_id: prior.id,
       carry_participants: carry,

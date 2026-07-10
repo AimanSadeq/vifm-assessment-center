@@ -106,6 +106,7 @@ export default async function PreviewRaterPage({ params }: Params) {
     openQuestions: { strengths: "", development: "", example: "", advice: "", other: "" },
     criticalCompetencyIds: [],
     tenure: null,
+    writable: true, // preview is always interactive (nothing is persisted)
   };
 
   return (

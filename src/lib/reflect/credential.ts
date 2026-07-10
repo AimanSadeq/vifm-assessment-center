@@ -19,15 +19,36 @@ export async function issueReflect360Credential(
     const sb = createServiceClient();
     const { data: p } = await sb
       .from("reflect_participants")
-      .select("id, full_name, email, reflect_engagements(name)")
+      .select("id, full_name, email, engagement_id, reflect_engagements(name, status)")
       .eq("id", participantId)
       .maybeSingle<{
         id: string;
         full_name: string;
         email: string | null;
-        reflect_engagements: { name: string } | { name: string }[] | null;
+        engagement_id: string | null;
+        reflect_engagements: { name: string; status: string } | { name: string; status: string }[] | null;
       }>();
     if (!p) return null;
+
+    // COMPLETION GATE: the credential asserts the leader "completed" a 360, so
+    // it must only issue once the engagement itself has finished AND at least
+    // one rater actually submitted feedback. Previously it fired on ANY
+    // participant-report PDF download - which the consultant can trigger while
+    // status is still 'live' and collection is running, minting a verifiable
+    // "Completed" credential for a cycle that had zero responses.
+    const engRel = Array.isArray(p.reflect_engagements) ? p.reflect_engagements[0] : p.reflect_engagements;
+    const engStatus = engRel?.status ?? "";
+    if (!["complete", "archived"].includes(engStatus)) {
+      return null; // engagement not finished - no credential yet
+    }
+    const { count: completedRaters } = await sb
+      .from("reflect_raters")
+      .select("id", { count: "exact", head: true })
+      .eq("participant_id", participantId)
+      .eq("status", "completed");
+    if ((completedRaters ?? 0) === 0) {
+      return null; // no feedback collected - nothing to certify
+    }
 
     // Idempotent: one credential per participant.
     const { data: existing } = await sb
@@ -40,8 +61,7 @@ export async function issueReflect360Credential(
       return { verificationCode: existing.verification_code as string };
     }
 
-    const eng = Array.isArray(p.reflect_engagements) ? p.reflect_engagements[0] : p.reflect_engagements;
-    const engName = eng?.name ?? null;
+    const engName = engRel?.name ?? null;
 
     return await issueCredential({
       candidateId: null,

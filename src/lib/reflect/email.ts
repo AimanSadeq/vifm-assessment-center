@@ -245,7 +245,17 @@ export async function sendReflectEmail(
   let status: "sent" | "mocked" | "failed" = "sent";
   let errorMsg: string | undefined;
 
-  if (!graphClient || !fromAddress) {
+  if (input.isSandbox && !sandboxRedirect) {
+    // FAIL CLOSED: a sandbox (test) engagement with no SANDBOX_EMAIL_REDIRECT
+    // must NEVER deliver to the real rater/participant address - previously it
+    // fell through and delivered whenever Graph was configured (the exact
+    // spam-real-users case the redirect exists to prevent). Mock instead; the
+    // log row below still records it. Mirrors src/lib/ara/email.ts.
+    status = "mocked";
+    console.warn("[reflect-email] Sandbox send with no SANDBOX_EMAIL_REDIRECT set - mocked instead of delivering to the real recipient.");
+    console.log(`[reflect-email MOCK sandbox] type=${input.emailType} lang=${input.language} to=${recipient}`);
+    console.log(`[reflect-email MOCK sandbox] subject=${rendered.subject}`);
+  } else if (!graphClient || !fromAddress) {
     status = "mocked";
     console.warn("[reflect-email] Graph not configured - falling back to console mock.");
     console.log(

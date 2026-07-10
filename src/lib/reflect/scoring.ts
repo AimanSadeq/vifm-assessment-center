@@ -1041,7 +1041,12 @@ export async function computeCohortScoring(
 
   const participantsRollup = participants.map((p) => {
     const s = scorings.find((x) => x.participant_id === p.id);
-    const overall = s?.overall_others ?? s?.overall_mean ?? null;
+    // Others-mean ONLY (P4.1) - matches the per-competency cohort heatmap. The
+    // former `?? overall_mean` fallback surfaced a PURE self-assessment for a
+    // participant with zero non-self responses, leaking rater-turnout signal
+    // (who hasn't gathered a real 360 yet) into the cohort capability view.
+    // A participant with no others-data contributes null (excluded), not self.
+    const overall = s?.overall_others ?? null;
     // Completion %: completed raters over INVITED raters (P3-audit fix - was a
     // tautology that always reported 100%).
     const counts = raterCounts.get(p.id) ?? { invited: 0, completed: 0 };

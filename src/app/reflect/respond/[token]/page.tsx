@@ -44,5 +44,33 @@ export default async function ReflectRespondPage({ params }: Params) {
     );
   }
 
+  // Feedback window closed (engagement not draft/live, or field_window_end
+  // passed): every write would be rejected server-side, so show a read-only
+  // "closed" state instead of a fully interactive form that errors on save.
+  if (!ctx.writable) {
+    const rtl = ctx.rater.language_preference === "ar";
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-6" dir={rtl ? "rtl" : "ltr"}>
+        <div className="max-w-lg text-center">
+          <div className="h-14 w-14 rounded-full bg-muted border flex items-center justify-center mx-auto mb-5">
+            <Aperture className="h-7 w-7 text-muted-foreground" />
+          </div>
+          <h1 className="text-2xl font-semibold text-primary mb-3">
+            {rtl ? "أُغلقت نافذة التقييم" : "This feedback window has closed"}
+          </h1>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {rtl
+              ? `لم يعد بإمكاننا قبول تقييمات جديدة لـ ${ctx.participant.full_name}. إذا كنت تعتقد أن هذا خطأ، يُرجى التواصل مع الجهة التي دعتك.`
+              : `We can no longer accept new feedback for ${ctx.participant.full_name}. If you think this is a mistake, please contact whoever invited you.`}
+          </p>
+          <div className="mt-6 inline-flex items-center gap-2 text-xs text-muted-foreground">
+            <Aperture className="h-3.5 w-3.5" />
+            Reflect 360® · Leadership feedback
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return ctx.engagement.gamified_mode ? <GamifiedRaterForm ctx={ctx} /> : <RaterForm ctx={ctx} />;
 }

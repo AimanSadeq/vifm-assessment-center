@@ -92,6 +92,15 @@ function ReportBody({
     <div className={`reflect-pdf ${bare ? "bare" : ""}`} dir={rtl ? "rtl" : "ltr"}>
       <style>{REPORT_CSS}</style>
 
+      {/* Back affordance (SOP) - this is a real on-screen page linked from the
+          IDP editor. Hidden in bare/PDF mode by the `.reflect-pdf.bare nav`
+          rule in REPORT_CSS. */}
+      <nav className="screen-back">
+        <a href={`/reflect/consultant/engagements/${scoring.engagement_id}`}>
+          {rtl ? "→ العودة إلى التكليف" : "← Back to engagement"}
+        </a>
+      </nav>
+
       {/* Cover */}
       <section className="page cover">
         <div className="brand-stripe" />
@@ -1589,6 +1598,9 @@ body { margin: 0; }
   line-height: 1.5;
 }
 .reflect-pdf.bare nav, .reflect-pdf.bare aside, .reflect-pdf.bare header.app { display: none !important; }
+.reflect-pdf nav.screen-back { padding: 6mm 4mm 0; }
+.reflect-pdf nav.screen-back a { color: var(--vifm-accent); font-size: 10pt; font-weight: 600; text-decoration: none; }
+.reflect-pdf nav.screen-back a:hover { text-decoration: underline; }
 /* Suppress Next.js dev tools / error overlay for clean PDF capture */
 body > nextjs-portal, [data-nextjs-toast], [data-nextjs-dev-tools-button], #__next-build-watcher { display: none !important; }
 .page {

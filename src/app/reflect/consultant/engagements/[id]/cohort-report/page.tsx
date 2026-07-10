@@ -616,7 +616,11 @@ const COHORT_CSS = `
   --tone-strength: #047857;
   --tone-develop: #B45309;
 }
-@page { size: A4; margin: 16mm 14mm 14mm 14mm; }
+/* landscape: the PDF route requests landscape:true, but with preferCSSPageSize
+   Chromium honours the CSS-declared size - a bare 'A4' is portrait and silently
+   overrode it, squashing the two-column executive-summary grid designed for
+   side-by-side landscape columns. */
+@page { size: A4 landscape; margin: 14mm 14mm 14mm 14mm; }
 * { box-sizing: border-box; }
 body { margin: 0; }
 .reflect-pdf {

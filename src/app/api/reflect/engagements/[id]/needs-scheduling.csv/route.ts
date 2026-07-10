@@ -36,7 +36,7 @@ export async function GET(
     return NextResponse.json({ ok: false, error: "Engagement not found" }, { status: 404 });
   }
 
-  const { data: rows } = await sb
+  const { data: rows, error: rowsErr } = await sb
     .from("reflect_participants")
     .select(
       "id, full_name, email, role_title, business_unit, level_tier, language_preference, manager_email, debrief_status"
@@ -44,6 +44,12 @@ export async function GET(
     .eq("engagement_id", id)
     .eq("debrief_status", "not_scheduled")
     .order("full_name");
+  // supabase-js returns {error} rather than throwing: without this check a
+  // failed query yields rows=null and we'd serve a header-only 200 CSV, which
+  // the ops team reads as "nobody needs scheduling" - a silent data loss.
+  if (rowsErr) {
+    return NextResponse.json({ ok: false, error: rowsErr.message }, { status: 500 });
+  }
 
   const header = [
     "full_name",

@@ -192,6 +192,16 @@ export default async function AraRespondPage({
               </p>
             </CardContent>
           </Card>
+        ) : completed ? (
+          /* Submitted (org-stage; individual-stage redirected to results above).
+             The server write paths refuse post-submission edits, so rendering the
+             interactive form here would just surface an error on every click -
+             show the thank-you state instead. */
+          <div className="rounded-lg border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-900">
+            {rtl
+              ? "لقد أكملت تقييمك. شكراً لك - تم تسجيل إجاباتك ولا يمكن تعديلها بعد الإرسال."
+              : "You have submitted your assessment. Thank you - your answers are recorded and can no longer be changed."}
+          </div>
         ) : (
         <QuestionsForm
           token={params.token}

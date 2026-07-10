@@ -150,12 +150,19 @@ export async function updateAraOrganization(formData: FormData) {
       .eq("status", "draft");
     const draftIds = (draftRows ?? []).map((d) => d.id);
     if (draftIds.length > 0) {
-      const { data: answered } = await sb
-        .from("ara_responses")
-        .select("assessment_id")
-        .in("assessment_id", draftIds);
-      const hasAnswers = new Set((answered ?? []).map((r) => r.assessment_id));
-      const safeIds = draftIds.filter((x) => !hasAnswers.has(x));
+      // Per-draft HEAD counts (not one bulk row read): a bulk select of
+      // response rows truncates at the PostgREST 1000-row cap, which could
+      // mark an answered draft as "safe" and re-filter a run mid-flight.
+      // Drafts per org are few, and a count can never truncate. Fail CLOSED:
+      // a count error treats that draft as answered (skipped).
+      const safeIds: string[] = [];
+      for (const draftId of draftIds) {
+        const { count, error: cntErr } = await sb
+          .from("ara_responses")
+          .select("id", { count: "exact", head: true })
+          .eq("assessment_id", draftId);
+        if (!cntErr && (count ?? 0) === 0) safeIds.push(draftId);
+      }
       if (safeIds.length > 0) {
         const { error: stampErr } = await sb
           .from("ara_assessments")

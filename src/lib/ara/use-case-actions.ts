@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
 import { createAraUseCaseSchema } from "@/lib/validations/ara";
 import { requireAssessmentOwner, isAuthorizationError } from "@/lib/ara/auth-guards";
+import { respondentWriteLockError } from "@/lib/ara/respondent-access";
 import type { AraRespondent } from "@/types/ara";
 
 function authErr(e: unknown) {
@@ -37,6 +38,11 @@ export async function addAraUseCaseAsRespondent(input: {
   technical_owner?: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   const respondent = await requireRespondent(input.token);
+
+  // Same write lock as answers: no collateral edits after submission or on a
+  // frozen/archived assessment.
+  const lockError = await respondentWriteLockError(respondent);
+  if (lockError) return { ok: false, error: lockError };
 
   const parsed = createAraUseCaseSchema.safeParse({
     assessment_id: respondent.assessment_id,
@@ -78,19 +84,33 @@ export async function removeAraUseCaseAsRespondent(
   const respondent = await requireRespondent(token);
   const sb = createServiceClient();
 
-  // Respondents can only remove their own use cases
+  const lockError = await respondentWriteLockError(respondent);
+  if (lockError) return { ok: false, error: lockError };
+
+  // Respondents can only remove use cases THEY created on THEIR OWN
+  // assessment. A consultant-added row (respondent_id null) is never
+  // respondent-deletable, and the tenancy check stops a token from one
+  // assessment deleting rows on another - previously any valid token could
+  // delete any consultant-added use case platform-wide.
   const { data: uc } = await sb
     .from("ara_use_cases")
     .select("id, assessment_id, respondent_id")
     .eq("id", useCaseId)
     .maybeSingle<{ id: string; assessment_id: string; respondent_id: string | null }>();
 
-  if (!uc) return { ok: false, error: "Use case not found" };
-  if (uc.respondent_id && uc.respondent_id !== respondent.id) {
+  if (!uc || uc.assessment_id !== respondent.assessment_id) {
+    return { ok: false, error: "Use case not found" };
+  }
+  if (!uc.respondent_id || uc.respondent_id !== respondent.id) {
     return { ok: false, error: "Not permitted" };
   }
 
-  const { error } = await sb.from("ara_use_cases").delete().eq("id", useCaseId);
+  // Delete scoped to the verified owner row (defence in depth against races).
+  const { error } = await sb
+    .from("ara_use_cases")
+    .delete()
+    .eq("id", useCaseId)
+    .eq("respondent_id", respondent.id);
   if (error) return { ok: false, error: error.message };
 
   revalidatePath(`/ara/respond/${token}`);

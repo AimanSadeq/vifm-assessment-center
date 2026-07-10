@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import {
   ARA_AGENTIC_DIMENSION_IDS,
   type AraAgenticDimensionId,
@@ -101,15 +102,22 @@ export async function computeAgenticReadiness(
     ])
   );
 
-  // 3. Responses for these respondents to those questions.
+  // 3. Responses for these respondents to those questions. PAGINATED so a
+  //    large cohort's agentic answers never truncate at the 1000-row cap.
   const respondentIds = respondentRows.map((r) => r.id);
   const questionIds = questionRows.map((q) => q.id);
-  const { data: responses } = await sb
-    .from("ara_responses")
-    .select("respondent_id, question_id, answer_value")
-    .in("respondent_id", respondentIds)
-    .in("question_id", questionIds);
-  const responseRows = (responses ?? []) as Array<{
+  const responseRows = (await fetchAllPages<unknown>((from, to) =>
+    sb
+      .from("ara_responses")
+      .select("respondent_id, question_id, answer_value")
+      .in("respondent_id", respondentIds)
+      .in("question_id", questionIds)
+      .order("id")
+      .range(from, to)
+  ).catch((e): unknown[] => {
+    console.error(`[ara] agentic-readiness response load failed for ${assessmentId}:`, e);
+    return [];
+  })) as Array<{
     respondent_id: string;
     question_id: string;
     answer_value: unknown;

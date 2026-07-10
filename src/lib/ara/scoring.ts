@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import { ARA_MATURITY_LEVELS, ARA_OVERALL_BANDS, ARA_PILLARS } from "@/lib/constants/ara-pillars";
 import { getIndividualMaturityStage } from "@/lib/constants/ara-individual-factors";
 import type {
@@ -81,16 +82,30 @@ export async function recalculateAssessmentScores(assessmentId: string): Promise
 
   // Load all scored responses joined with their question pillar_id.
   // Note: open_text responses have question_score = null and are skipped.
-  const { data: rows } = await sb
-    .from("ara_responses")
-    .select("question_score, question:ara_questions(pillar_id, individual_factor_id, agentic_dimension_id)")
-    .eq("assessment_id", assessmentId);
-
+  // PAGINATED: an enterprise Mode C + agentic cohort easily exceeds the
+  // PostgREST 1000-row cap (e.g. 12 respondents x ~139 items = 1668 rows);
+  // an unpaginated read silently dropped the later respondents from every
+  // persisted pillar mean. On a query error we ABORT (keeping the previous
+  // scores intact) rather than recompute from partial/empty data.
   type RowShape = {
     question_score: number | null;
     question: Pick<AraQuestion, "pillar_id" | "individual_factor_id" | "agentic_dimension_id"> | null;
   };
-  const typed = (rows ?? []) as unknown as RowShape[];
+  let typed: RowShape[];
+  try {
+    const rows = await fetchAllPages<unknown>((from, to) =>
+      sb
+        .from("ara_responses")
+        .select("question_score, question:ara_questions(pillar_id, individual_factor_id, agentic_dimension_id)")
+        .eq("assessment_id", assessmentId)
+        .order("id")
+        .range(from, to)
+    );
+    typed = rows as RowShape[];
+  } catch (e) {
+    console.error(`[ara] recalculateAssessmentScores(${assessmentId}) response load failed - keeping prior scores:`, e);
+    return;
+  }
 
   // Group scored responses by pillar. Pillar scores must reflect ONLY
   // pillar questions - exclude personal-layer (individual_factor_id) and

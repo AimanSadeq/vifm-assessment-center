@@ -25,6 +25,7 @@
  */
 import { createServiceClient } from "@/lib/supabase/server";
 import { calculateQuestionScore } from "@/lib/ara/scoring";
+import { fetchAllPages, chunkIds } from "@/lib/ara/paginate";
 import {
   computePersonalNorms,
   percentileRank,
@@ -136,12 +137,17 @@ const REDEMPTION_SELECT =
 export async function listCompanyCohorts(): Promise<CompanyCohortSummary[]> {
   try {
     const sb = createServiceClient();
-    const { data, error } = await sb
-      .from("ara_voucher_redemptions")
-      .select(REDEMPTION_SELECT)
-      .order("redeemed_at", { ascending: false })
-      .limit(10000);
-    if (error || !data) return [];
+    // PAGINATED: a .limit(10000) above the server max-rows setting is clamped
+    // to 1000, so companies whose redemptions fell outside the newest 1000
+    // rows silently vanished from the cohort picker and funnel.
+    const data = await fetchAllPages<unknown>((from, to) =>
+      sb
+        .from("ara_voucher_redemptions")
+        .select(REDEMPTION_SELECT)
+        .order("redeemed_at", { ascending: false })
+        .order("id")
+        .range(from, to)
+    );
 
     const byKey = new Map<string, CompanyCohortSummary & { _allPractice: boolean }>();
     for (const r of data as unknown as RedemptionJoinRow[]) {
@@ -187,12 +193,6 @@ type QMeta = {
   scoreMap: Record<string, number> | null;
 };
 
-function chunk<T>(arr: T[], size: number): T[][] {
-  const out: T[][] = [];
-  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
-  return out;
-}
-
 const freshAcc = (): Record<AraIndividualFactorId, { sum: number; count: number }> => ({
   thinking_sense_check: { sum: 0, count: 0 },
   results_working_practice: { sum: 0, count: 0 },
@@ -218,13 +218,17 @@ export async function computeCompanyCohortInsight(
     // 1. All redemptions, filtered in code on the normalized company key
     //    (the company_name index is on the raw value and we need ws/case
     //    folding, so a server-side equality filter would miss variants).
-    const { data: allRedemptions } = await sb
-      .from("ara_voucher_redemptions")
-      .select(REDEMPTION_SELECT)
-      .order("redeemed_at", { ascending: false })
-      .limit(10000);
+    //    PAGINATED - see listCompanyCohorts.
+    const allRedemptions = await fetchAllPages<unknown>((from, to) =>
+      sb
+        .from("ara_voucher_redemptions")
+        .select(REDEMPTION_SELECT)
+        .order("redeemed_at", { ascending: false })
+        .order("id")
+        .range(from, to)
+    );
 
-    const rows = ((allRedemptions ?? []) as unknown as RedemptionJoinRow[]).filter(
+    const rows = (allRedemptions as unknown as RedemptionJoinRow[]).filter(
       (r) => normalizeCompanyKey(r.company_name) === wantKey
     );
     if (rows.length === 0) return null;
@@ -290,12 +294,16 @@ export async function computeCompanyCohortInsight(
     }
 
     // 3. Cross-version map of the four-factor questions (no version filter).
-    const { data: qs } = await sb
-      .from("ara_questions")
-      .select("id, individual_factor_id, question_type, score_map")
-      .not("individual_factor_id", "is", null);
+    const qs = await fetchAllPages<unknown>((from, to) =>
+      sb
+        .from("ara_questions")
+        .select("id, individual_factor_id, question_type, score_map")
+        .not("individual_factor_id", "is", null)
+        .order("id")
+        .range(from, to)
+    );
     const qmeta = new Map<string, QMeta>();
-    for (const q of (qs ?? []) as Array<{
+    for (const q of qs as Array<{
       id: string;
       individual_factor_id: string;
       question_type: string;
@@ -318,15 +326,22 @@ export async function computeCompanyCohortInsight(
       });
     }
 
-    // 4. Responses for the cohort's respondents (chunked).
+    // 4. Responses for the cohort's respondents (chunked ids + PAGINATED:
+    //    200 respondents x 24-48 answers each is 4800-9600 rows per chunk,
+    //    far beyond the single-request 1000-row cap).
     type RespRow = { respondent_id: string; question_id: string; answer_value: string | null };
     const responses: RespRow[] = [];
-    for (const ids of chunk(respondentRows.map((r) => r.id), 200)) {
-      const { data } = await sb
-        .from("ara_responses")
-        .select("respondent_id, question_id, answer_value")
-        .in("respondent_id", ids);
-      if (data) responses.push(...(data as RespRow[]));
+    for (const ids of chunkIds(respondentRows.map((r) => r.id))) {
+      responses.push(
+        ...(await fetchAllPages<RespRow>((from, to) =>
+          sb
+            .from("ara_responses")
+            .select("respondent_id, question_id, answer_value")
+            .in("respondent_id", ids)
+            .order("id")
+            .range(from, to)
+        ))
+      );
     }
 
     // 5. Per-respondent factor accumulators (mirrors computeWorkforceReadiness).

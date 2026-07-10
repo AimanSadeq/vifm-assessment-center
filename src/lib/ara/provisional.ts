@@ -8,6 +8,7 @@
 // exactly what the respondent saw, and clears per-pillar as the SME approves.
 
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 
 export type ProvisionalStatus = {
   provisional: boolean;
@@ -35,8 +36,12 @@ async function distinctAnsweredQuestionIds(
   column: "respondent_id" | "assessment_id",
   id: string,
 ): Promise<string[]> {
-  const { data } = await sb.from("ara_responses").select("question_id").eq(column, id);
-  return [...new Set((data ?? []).map((r) => String((r as { question_id: string }).question_id)))];
+  // PAGINATED: assessment-scoped response rows exceed the 1000-row cap on real
+  // cohorts; truncation could hide an unapproved question from the banner.
+  const data = await fetchAllPages<{ question_id: string }>((from, to) =>
+    sb.from("ara_responses").select("question_id").eq(column, id).order("id").range(from, to)
+  ).catch((): { question_id: string }[] => []);
+  return [...new Set(data.map((r) => String(r.question_id)))];
 }
 
 /** Provisional status for one respondent's result (personal results page + PDF). */

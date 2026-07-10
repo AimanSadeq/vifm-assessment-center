@@ -66,13 +66,38 @@ export async function loadRespondentByToken(
 }
 
 /**
+ * Write-lock gate for respondent collateral (use cases, supporting materials).
+ * Mirrors saveAraAnswer's answer lock: refuses once the respondent has
+ * submitted (completed_at) and when the assessment is frozen/archived - a
+ * consultant freeze must lock the WHOLE submission, not just the answers.
+ * Returns the refusal message, or null when writes are allowed.
+ */
+export async function respondentWriteLockError(
+  respondent: Pick<AraRespondent, "assessment_id" | "completed_at">
+): Promise<string | null> {
+  if (respondent.completed_at) return "This assessment has already been submitted.";
+  const sb = createServiceClient();
+  const { data } = await sb
+    .from("ara_assessments")
+    .select("status")
+    .eq("id", respondent.assessment_id)
+    .maybeSingle<{ status: string }>();
+  if (data?.status === "frozen" || data?.status === "archived") {
+    return "This assessment is closed to further changes.";
+  }
+  return null;
+}
+
+/**
  * Cap each factor's individual items to `perFactor`, keeping the objective
  * (scenario / knowledge) items first - so a shorter, per-client ARC still
  * carries the objective items the calibration / risk-flag reads depend on,
  * then fills the rest with self-rating items. Deterministic (by question
  * number). Used by the voucher question-count lever (migration 00143).
+ * Exported so saveAraAnswer can verify a submitted individual item is in the
+ * SERVED (kept) set - the write path must mirror this cap, not just the query.
  */
-function capPerFactor(items: AraQuestion[], perFactor: number): AraQuestion[] {
+export function capPerFactor(items: AraQuestion[], perFactor: number): AraQuestion[] {
   const byFactor = new Map<string, AraQuestion[]>();
   for (const q of items) {
     const f = (q.individual_factor_id ?? "") as string;

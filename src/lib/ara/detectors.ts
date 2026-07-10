@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import type { AraPillarId } from "@/types/ara";
 import { ARA_PILLAR_MAP } from "@/lib/constants/ara-pillars";
 
@@ -46,20 +47,29 @@ export async function detectAraGaps(assessmentId: string): Promise<GapAlert[]> {
     respondent: { id: string; name: string } | null;
   };
 
-  const { data: rows } = await sb
-    .from("ara_responses")
-    .select(`
+  // PAGINATED (1000-row cap): an unpaginated read silently dropped the later
+  // respondents' answers from gap detection on large cohorts.
+  const rows = await fetchAllPages<unknown>((from, to) =>
+    sb
+      .from("ara_responses")
+      .select(`
       question_score,
       question:ara_questions(id, pillar_id, question_number, question_text_en, individual_factor_id, agentic_dimension_id),
       respondent:ara_respondents(id, name)
     `)
-    .eq("assessment_id", assessmentId);
+      .eq("assessment_id", assessmentId)
+      .order("id")
+      .range(from, to)
+  ).catch((e): unknown[] => {
+    console.error(`[ara] gap-detector response load failed for ${assessmentId}:`, e);
+    return [];
+  });
 
   // Gap detection is a PILLAR-level signal - exclude personal-layer and
   // Agentic-AI items (which reuse a storage pillar_id but are separate
   // constructs) so they don't surface as pillar disagreement / consistency
   // splits. Mirrors the exclusion in scoring.ts / compliance.ts.
-  const typed = ((rows ?? []) as unknown as Row[]).filter(
+  const typed = (rows as Row[]).filter(
     (r) => r.question?.individual_factor_id == null && r.question?.agentic_dimension_id == null
   );
 
@@ -201,21 +211,29 @@ export async function detectAraShadowAi(assessmentId: string): Promise<ShadowAiA
     respondent: { name: string } | null;
   };
 
-  const { data } = await sb
-    .from("ara_responses")
-    .select(`
+  // PAGINATED (1000-row cap) - see detectAraGaps.
+  const data = await fetchAllPages<unknown>((from, to) =>
+    sb
+      .from("ara_responses")
+      .select(`
       answer_text,
       question_score,
       question:ara_questions(pillar_id, question_number, question_text_en, individual_factor_id, agentic_dimension_id),
       respondent:ara_respondents(name)
     `)
-    .eq("assessment_id", assessmentId);
+      .eq("assessment_id", assessmentId)
+      .order("id")
+      .range(from, to)
+  ).catch((e): unknown[] => {
+    console.error(`[ara] shadow-AI response load failed for ${assessmentId}:`, e);
+    return [];
+  });
 
   // Exclude personal-layer + Agentic-AI items: a low agentic-governance
   // answer must NOT trip the low-governance Shadow-AI alert (those items
   // reuse pillar_id='governance' but are a separate construct). Mirrors the
   // exclusion in scoring.ts / compliance.ts.
-  const typed = ((data ?? []) as unknown as Row[]).filter(
+  const typed = (data as Row[]).filter(
     (r) => r.question?.individual_factor_id == null && r.question?.agentic_dimension_id == null
   );
 

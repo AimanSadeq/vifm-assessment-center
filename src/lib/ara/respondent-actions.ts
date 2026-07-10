@@ -4,9 +4,10 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/server";
 import { calculateQuestionScore, recalculateAssessmentScores } from "@/lib/ara/scoring";
-import { loadRespondentByToken, loadQuestionsForRespondent } from "@/lib/ara/respondent-access";
+import { loadRespondentByToken, loadQuestionsForRespondent, capPerFactor } from "@/lib/ara/respondent-access";
 import { isStaffCaller } from "@/lib/ara/auth-guards";
-import type { AraLanguage, AraQuestion, AraRespondent } from "@/types/ara";
+import { getPillarsForAssessment } from "@/lib/constants/ara-stages";
+import type { AraLanguage, AraPillarId, AraQuestion, AraRespondent } from "@/types/ara";
 
 // ─────────────────────────────────────────────────────────────
 // Internal: validate token + return respondent. Never trust the
@@ -85,63 +86,193 @@ export async function saveAraAnswer(input: z.infer<typeof saveAnswerSchema>): Pr
   const sb = createServiceClient();
   const respondent = await requireRespondent(parsed.data.token);
 
+  // Submission lock: once completed_at is stamped the token must not accept
+  // further answer writes. Without this a respondent could keep rewriting
+  // graded answers from devtools AFTER submitting - and the results page,
+  // PDF, cohort rollups and the next score recalculation all recompute from
+  // ara_responses, so the tampered rows would be silently consumed. The
+  // submit flush awaits every in-flight autosave BEFORE calling
+  // markAraRespondentComplete, so no legitimate save arrives after this.
+  if (respondent.completed_at) {
+    return { ok: false, error: "This assessment has already been submitted." };
+  }
+
   // Fetch the question with its score_map so we can derive the per-answer score
   const { data: question } = await sb
     .from("ara_questions")
-    .select("id, version_id, pillar_id, individual_factor_id, agentic_dimension_id, question_type, score_map, layer")
+    .select("id, version_id, pillar_id, individual_factor_id, agentic_dimension_id, question_type, score_map, layer, tier, region, sector, is_active")
     .eq("id", parsed.data.questionId)
-    .maybeSingle<Pick<AraQuestion, "id" | "version_id" | "pillar_id" | "individual_factor_id" | "agentic_dimension_id" | "question_type" | "score_map" | "layer">>();
+    .maybeSingle<Pick<AraQuestion, "id" | "version_id" | "pillar_id" | "individual_factor_id" | "agentic_dimension_id" | "question_type" | "score_map" | "layer" | "tier" | "region" | "sector" | "is_active">>();
 
   if (!question) return { ok: false, error: "Question not found" };
-  if (question.layer !== 1) return { ok: false, error: "Layer 2 questions are not respondent-facing" };
+  // Retired questions are never served (the read path filters is_active=true on
+  // every layer) - refusing them here keeps the mirror faithful and stops a
+  // crafted call probing graded retired items for their key.
+  if (!question.is_active) return { ok: false, error: "Question is not part of this assessment" };
+  // Layer 2 is consultant-only. Agentic items are exempt: the read path serves
+  // them layer-agnostically (identified purely by agentic_dimension_id), so a
+  // bank whose agentic items sit on layer 2 must stay saveable.
+  if (question.layer !== 1 && !question.agentic_dimension_id) {
+    return { ok: false, error: "Layer 2 questions are not respondent-facing" };
+  }
 
-  // Authorisation: question must belong to this assessment's active version.
-  // Pillar-assignment is enforced only for org-pillar questions; individual-
-  // factor items (Mode A/B/C) are seeded with pillar_id='talent' but the
-  // respondent never has a pillar assignment row, so a uniform check would
-  // silently reject every Personal Snapshot answer.
   const { data: assessment } = await sb
     .from("ara_assessments")
-    .select("question_bank_version_id, status, time_limit_minutes")
+    .select(
+      "question_bank_version_id, status, time_limit_minutes, engagement_stage, include_individual_layer, include_agentic_layer, assessment_tier, items_per_factor, pillars_in_scope, region, sector"
+    )
     .eq("id", respondent.assessment_id)
-    .maybeSingle<{ question_bank_version_id: string | null; status: string; time_limit_minutes: number | null }>();
+    .maybeSingle<{
+      question_bank_version_id: string | null;
+      status: string;
+      time_limit_minutes: number | null;
+      engagement_stage: string;
+      include_individual_layer: boolean | null;
+      include_agentic_layer: boolean | null;
+      assessment_tier: string | null;
+      items_per_factor: number | null;
+      pillars_in_scope: string[] | null;
+      region: string;
+      sector: string;
+    }>();
+  if (!assessment) return { ok: false, error: "Question is not part of this assessment" };
 
-  if (!assessment || assessment.question_bank_version_id !== question.version_id) {
+  // Version check MIRRORS the read path (loadQuestionsForRespondent): a legacy /
+  // reassessment row with a null question_bank_version_id is served from the
+  // currently-active bank version, so the write path must accept that same
+  // version - a strict equality against null rejected EVERY answer on a form
+  // the respondent could see and fill.
+  let effectiveVersionId = assessment.question_bank_version_id;
+  if (!effectiveVersionId) {
+    const { data: activeVersion } = await sb
+      .from("ara_question_bank_versions")
+      .select("id")
+      .eq("is_active", true)
+      .maybeSingle<{ id: string }>();
+    effectiveVersionId = activeVersion?.id ?? null;
+  }
+  if (!effectiveVersionId || effectiveVersionId !== question.version_id) {
     return { ok: false, error: "Question is not part of this assessment" };
   }
+
   if (assessment.status === "frozen" || assessment.status === "archived") {
     return { ok: false, error: "This assessment is closed to further answers" };
   }
 
   // Server-side time-limit enforcement (TIMER-05): the countdown + auto-submit
   // are client-only, so a manipulated client could keep saving after the
-  // deadline. When a per-instance limit is set and the respondent has started,
-  // reject saves past the deadline. A grace buffer absorbs clock drift + the
-  // in-flight autosave that fires as the timer hits zero, so a legitimate
-  // last-second answer isn't lost.
+  // deadline. The anchor is started_at (stamped by the Start button) FALLING
+  // BACK to first_opened_at (stamped server-side the moment the respond page -
+  // and therefore the full question set - is served). Without the fallback a
+  // crafted client could simply never call markAraRespondentStarted, read every
+  // question from the page payload, and answer with no clock running at all.
+  // FAIL CLOSED when BOTH are null (a client that never rendered the page,
+  // saving with question ids obtained out-of-band): the clock starts at the
+  // first accepted write instead of never starting.
+  // A grace buffer absorbs clock drift + the in-flight autosave that fires as
+  // the timer hits zero, so a legitimate last-second answer isn't lost.
   const GRACE_MS = 60_000;
-  const startedAt = (respondent as { started_at?: string | null }).started_at ?? null;
-  if (assessment.time_limit_minutes && assessment.time_limit_minutes > 0 && startedAt) {
-    const deadline = new Date(startedAt).getTime() + assessment.time_limit_minutes * 60_000 + GRACE_MS;
+  if (assessment.time_limit_minutes && assessment.time_limit_minutes > 0) {
+    let anchor =
+      (respondent as { started_at?: string | null }).started_at ??
+      respondent.first_opened_at ??
+      null;
+    if (!anchor) {
+      const now = new Date().toISOString();
+      try {
+        // Guarded stamp so a concurrent first write can't move the anchor.
+        await sb
+          .from("ara_respondents")
+          .update({ started_at: now })
+          .eq("id", respondent.id)
+          .is("started_at", null);
+      } catch {
+        /* migration 00084 not applied - anchor still applies to this request */
+      }
+      anchor = now;
+    }
+    const deadline = new Date(anchor).getTime() + assessment.time_limit_minutes * 60_000 + GRACE_MS;
     if (Date.now() > deadline) {
       return { ok: false, error: "The time limit for this assessment has passed." };
     }
   }
 
-  // Pillar-assignment is enforced only for org-pillar questions. Individual-
-  // factor items (Modes A/B/C) and Agentic-AI items reuse a storage pillar_id
-  // but are served by their own layer (individual_factor_id / agentic_
-  // dimension_id) without a pillar-assignment row, so a uniform check would
-  // reject every personal-snapshot and agentic answer.
-  if (!question.individual_factor_id && !question.agentic_dimension_id) {
-    const { data: assignment } = await sb
-      .from("ara_respondent_pillar_assignments")
-      .select("id")
-      .eq("respondent_id", respondent.id)
-      .eq("pillar_id", question.pillar_id)
-      .maybeSingle<{ id: string }>();
+  // Layer authorisation MIRRORS the serve rules in loadQuestionsForRespondent,
+  // so the write path accepts exactly what the read path serves - no more
+  // (a crafted call can't inject agentic/deep-dive answers into an assessment
+  // that never serves that layer) and no less (a served question is always
+  // saveable). Region/sector must match the assessment's isolation filter too.
+  const isIndividualStage = assessment.engagement_stage === "individual";
+  const individualOnly = !!(respondent as { individual_only?: boolean | null }).individual_only;
 
-    if (!assignment) return { ok: false, error: "You are not assigned to this section" };
+  if (!(question.region === "both" || question.region === assessment.region)) {
+    return { ok: false, error: "Question is not part of this assessment" };
+  }
+  if (!(question.sector === "all" || question.sector === assessment.sector)) {
+    return { ok: false, error: "Question is not part of this assessment" };
+  }
+
+  if (question.individual_factor_id) {
+    // Individual-factor item: only when the personal layer is served.
+    const wantsIndividual = isIndividualStage || !!assessment.include_individual_layer;
+    if (!wantsIndividual) return { ok: false, error: "You are not assigned to this section" };
+    // Snapshot-tier assessments never serve deep-dive-only items.
+    if (assessment.assessment_tier === "snapshot" && question.tier && question.tier !== "snapshot") {
+      return { ok: false, error: "You are not assigned to this section" };
+    }
+    // Per-client length lever (items_per_factor, migration 00143): the read
+    // path caps each factor to N items via capPerFactor, so the write path
+    // must accept only the KEPT set - otherwise a crafted call could answer
+    // the capped-out items a shortened ARC deliberately never serves and
+    // dilute the factor means the rollups recompute from ara_responses.
+    const cap = assessment.items_per_factor;
+    if (typeof cap === "number" && cap > 0) {
+      let factorQuery = sb
+        .from("ara_questions")
+        .select("id, individual_factor_id, question_type, question_number")
+        .eq("version_id", effectiveVersionId)
+        .eq("layer", 1)
+        .eq("is_active", true)
+        .eq("individual_factor_id", question.individual_factor_id);
+      if (assessment.assessment_tier === "snapshot") {
+        factorQuery = factorQuery.eq("tier", "snapshot");
+      }
+      const { data: factorItems } = await factorQuery;
+      const kept = new Set(
+        capPerFactor((factorItems ?? []) as AraQuestion[], cap).map((q) => q.id)
+      );
+      if (!kept.has(question.id)) {
+        return { ok: false, error: "You are not assigned to this section" };
+      }
+    }
+  } else if (question.agentic_dimension_id) {
+    // Agentic item: org respondents on an opted-in assessment only.
+    const wantsAgentic = !isIndividualStage && !!assessment.include_agentic_layer && !individualOnly;
+    if (!wantsAgentic) return { ok: false, error: "You are not assigned to this section" };
+  } else {
+    // Org-pillar item: never served on individual-stage / individual-only.
+    if (isIndividualStage || individualOnly) {
+      return { ok: false, error: "You are not assigned to this section" };
+    }
+    // Pillar-assignment check MIRRORS the read path: explicit assignment rows
+    // when they exist, else the assessment's resolved in-scope pillars (the
+    // same fallback that serves the form when assignment rows are missing -
+    // a write-side hard requirement rejected every answer on those forms).
+    const { data: assignments } = await sb
+      .from("ara_respondent_pillar_assignments")
+      .select("pillar_id")
+      .eq("respondent_id", respondent.id);
+    const assigned = (assignments ?? []).map((a) => a.pillar_id as AraPillarId);
+    const effectivePillars: AraPillarId[] =
+      assigned.length > 0
+        ? assigned
+        : (getPillarsForAssessment({
+            engagement_stage: assessment.engagement_stage,
+            pillars_in_scope: assessment.pillars_in_scope,
+          } as Parameters<typeof getPillarsForAssessment>[0]) as AraPillarId[]);
+    if (!question.pillar_id || !effectivePillars.includes(question.pillar_id as AraPillarId)) {
+      return { ok: false, error: "You are not assigned to this section" };
+    }
   }
 
   const score = calculateQuestionScore(

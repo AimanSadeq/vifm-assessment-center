@@ -19,6 +19,7 @@
  */
 import { createServiceClient } from "@/lib/supabase/server";
 import { calculateQuestionScore } from "@/lib/ara/scoring";
+import { fetchAllPages, chunkIds } from "@/lib/ara/paginate";
 import type { AraQuestionType } from "@/types/ara";
 import {
   ARA_INDIVIDUAL_FACTOR_IDS,
@@ -57,47 +58,59 @@ type QMeta = {
   scoreMap: Record<string, number> | null;
 };
 
-/** Split an id list into chunks so the PostgREST `in(...)` URL stays sane. */
-function chunk<T>(arr: T[], size: number): T[][] {
-  const out: T[][] = [];
-  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
-  return out;
-}
-
 export async function computePersonalNorms(): Promise<PersonalNorms> {
   try {
     const sb = createServiceClient();
 
+    // Every step is PAGINATED (fetchAllPages): the norm pool is precisely the
+    // dataset that grows past the PostgREST 1000-row cap - unpaginated reads
+    // corrupted the distributions exactly as the pool approached
+    // MIN_NORM_SAMPLE, the point where percentiles start being published.
+
     // 1. Personal-eligible assessments (individual stage OR layer enabled).
-    const { data: assess } = (await sb
-      .from("ara_assessments")
-      .select("id, engagement_stage, include_individual_layer")) as {
-      data: { id: string; engagement_stage: string; include_individual_layer: boolean | null }[] | null;
-    };
-    const eligibleAssessments = (assess ?? [])
+    type AssessRow = { id: string; engagement_stage: string; include_individual_layer: boolean | null };
+    const assess = await fetchAllPages<AssessRow>((from, to) =>
+      sb
+        .from("ara_assessments")
+        .select("id, engagement_stage, include_individual_layer")
+        .order("id")
+        .range(from, to)
+    );
+    const eligibleAssessments = assess
       .filter((a) => a.engagement_stage === "individual" || a.include_individual_layer)
       .map((a) => a.id);
     if (eligibleAssessments.length === 0) return emptyNorms();
 
-    // 2. Completed respondents on those assessments.
-    const { data: resp } = (await sb
-      .from("ara_respondents")
-      .select("id, assessment_id, completed_at")
-      .in("assessment_id", eligibleAssessments)) as {
-      data: { id: string; assessment_id: string; completed_at: string | null }[] | null;
-    };
-    const respondentIds = (resp ?? []).filter((r) => r.completed_at).map((r) => r.id);
+    // 2. Completed respondents on those assessments (chunked ids + paginated).
+    type RespondentRow = { id: string; assessment_id: string; completed_at: string | null };
+    const resp: RespondentRow[] = [];
+    for (const ids of chunkIds(eligibleAssessments)) {
+      resp.push(
+        ...(await fetchAllPages<RespondentRow>((from, to) =>
+          sb
+            .from("ara_respondents")
+            .select("id, assessment_id, completed_at")
+            .in("assessment_id", ids)
+            .order("id")
+            .range(from, to)
+        ))
+      );
+    }
+    const respondentIds = resp.filter((r) => r.completed_at).map((r) => r.id);
     if (respondentIds.length === 0) return emptyNorms();
 
     // 3. Global map of individual-factor questions (all versions).
-    const { data: qs } = (await sb
-      .from("ara_questions")
-      .select("id, individual_factor_id, question_type, score_map")
-      .not("individual_factor_id", "is", null)) as {
-      data: { id: string; individual_factor_id: string; question_type: string; score_map: unknown }[] | null;
-    };
+    type QRow = { id: string; individual_factor_id: string; question_type: string; score_map: unknown };
+    const qs = await fetchAllPages<QRow>((from, to) =>
+      sb
+        .from("ara_questions")
+        .select("id, individual_factor_id, question_type, score_map")
+        .not("individual_factor_id", "is", null)
+        .order("id")
+        .range(from, to)
+    );
     const qmeta = new Map<string, QMeta>();
-    for (const q of qs ?? []) {
+    for (const q of qs) {
       qmeta.set(q.id, {
         factorId: q.individual_factor_id as AraIndividualFactorId,
         questionType: q.question_type as AraQuestionType,
@@ -106,15 +119,22 @@ export async function computePersonalNorms(): Promise<PersonalNorms> {
     }
     if (qmeta.size === 0) return emptyNorms();
 
-    // 4. Responses for the completed respondents (chunked).
+    // 4. Responses for the completed respondents (chunked ids + paginated:
+    //    200 respondents x 24-48 answers each is 4800-9600 rows per chunk,
+    //    far beyond the single-request cap).
     type RespRow = { respondent_id: string; question_id: string; answer_value: string | null };
     const responses: RespRow[] = [];
-    for (const ids of chunk(respondentIds, 200)) {
-      const { data } = (await sb
-        .from("ara_responses")
-        .select("respondent_id, question_id, answer_value")
-        .in("respondent_id", ids)) as { data: RespRow[] | null };
-      if (data) responses.push(...data);
+    for (const ids of chunkIds(respondentIds)) {
+      responses.push(
+        ...(await fetchAllPages<RespRow>((from, to) =>
+          sb
+            .from("ara_responses")
+            .select("respondent_id, question_id, answer_value")
+            .in("respondent_id", ids)
+            .order("id")
+            .range(from, to)
+        ))
+      );
     }
 
     // 5. Per-respondent factor means.

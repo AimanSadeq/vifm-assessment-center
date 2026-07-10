@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import type { AraPillarId } from "@/types/ara";
 
 /**
@@ -77,17 +78,30 @@ interface RespondentRow {
 export async function computeAraDistortion(assessmentId: string): Promise<DistortionResult[]> {
   const sb = createServiceClient();
 
-  const [{ data: respondents }, { data: rows }] = await Promise.all([
+  // PAGINATED response load: unpaginated, the PostgREST 1000-row cap dropped
+  // exactly the most recently answered rows (the query is ordered ascending by
+  // answered_at), so the respondents who submitted LAST vanished from the
+  // faking screen entirely. The id tiebreak keeps pages stable when several
+  // answers share a timestamp (bulk upserts). On error, degrade to an empty
+  // screen (same as the previous null-rows behaviour) rather than a partial one.
+  const [{ data: respondents }, rows] = await Promise.all([
     sb
       .from("ara_respondents")
       .select("id, name")
       .eq("assessment_id", assessmentId)
       .returns<RespondentRow[]>(),
-    sb
-      .from("ara_responses")
-      .select("respondent_id, question_score, answered_at, question:ara_questions(pillar_id, question_type, individual_factor_id, agentic_dimension_id)")
-      .eq("assessment_id", assessmentId)
-      .order("answered_at"),
+    fetchAllPages<unknown>((from, to) =>
+      sb
+        .from("ara_responses")
+        .select("respondent_id, question_score, answered_at, question:ara_questions(pillar_id, question_type, individual_factor_id, agentic_dimension_id)")
+        .eq("assessment_id", assessmentId)
+        .order("answered_at")
+        .order("id")
+        .range(from, to)
+    ).catch((e): unknown[] => {
+      console.error(`[ara] distortion response load failed for ${assessmentId}:`, e);
+      return [];
+    }),
   ]);
 
   // Distortion is a PILLAR-level signal. Exclude graded items (objective
@@ -95,7 +109,7 @@ export async function computeAraDistortion(assessmentId: string): Promise<Distor
   // Agentic-AI items, which reuse a storage pillar_id but are separate
   // constructs - counting them would contaminate the pillar means (mirrors
   // the exclusion in scoring.ts / compliance.ts).
-  const allRows = ((rows ?? []) as unknown as ResponseRow[]).filter(
+  const allRows = (rows as ResponseRow[]).filter(
     (r) =>
       !GRADED_QUESTION_TYPES.has(r.question?.question_type ?? "") &&
       r.question?.individual_factor_id == null &&

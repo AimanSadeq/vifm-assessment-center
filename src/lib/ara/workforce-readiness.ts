@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import {
   ARA_INDIVIDUAL_FACTOR_IDS,
   type AraIndividualFactorId,
@@ -98,15 +99,24 @@ export async function computeWorkforceReadiness(
     ])
   );
 
-  // 3. All responses for these respondents to those questions.
+  // 3. All responses for these respondents to those questions. PAGINATED:
+  //    a Mode C cohort's individual answers (respondents x up to 60 items)
+  //    can exceed the PostgREST 1000-row cap, which silently dropped the
+  //    later respondents from the workforce rollup.
   const respondentIds = respondentRows.map((r) => r.id);
   const questionIds = questionRows.map((q) => q.id);
-  const { data: responses } = await sb
-    .from("ara_responses")
-    .select("respondent_id, question_id, answer_value")
-    .in("respondent_id", respondentIds)
-    .in("question_id", questionIds);
-  const responseRows = (responses ?? []) as Array<{
+  const responseRows = (await fetchAllPages<unknown>((from, to) =>
+    sb
+      .from("ara_responses")
+      .select("respondent_id, question_id, answer_value")
+      .in("respondent_id", respondentIds)
+      .in("question_id", questionIds)
+      .order("id")
+      .range(from, to)
+  ).catch((e): unknown[] => {
+    console.error(`[ara] workforce-readiness response load failed for ${assessmentId}:`, e);
+    return [];
+  })) as Array<{
     respondent_id: string;
     question_id: string;
     answer_value: unknown;

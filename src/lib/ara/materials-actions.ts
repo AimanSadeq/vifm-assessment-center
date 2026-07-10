@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/server";
 import { requireAssessmentOwner } from "@/lib/ara/auth-guards";
+import { respondentWriteLockError } from "@/lib/ara/respondent-access";
 import type { AraMaterialType, AraRespondent } from "@/types/ara";
 
 // ─────────────────────────────────────────────────────────────
@@ -42,6 +43,11 @@ export async function addAraMaterialUrl(
 
   const respondent = await requireRespondent(parsed.data.token);
   const sb = createServiceClient();
+
+  // Same write lock as answers: no collateral edits after submission or on a
+  // frozen/archived assessment.
+  const lockError = await respondentWriteLockError(respondent);
+  if (lockError) return { ok: false, error: lockError };
 
   const { error } = await sb.from("ara_supporting_materials").insert({
     assessment_id: respondent.assessment_id,
@@ -96,6 +102,9 @@ export async function addAraMaterialFile(
   const respondent = await requireRespondent(token);
   const sb = createServiceClient();
 
+  const lockError = await respondentWriteLockError(respondent);
+  if (lockError) return { ok: false, error: lockError };
+
   // Path: <assessment>/<respondent>/<timestamp>-<filename>
   const safeName = file.name.replace(/[^\w.\-]/g, "_");
   const path = `${respondent.assessment_id}/${respondent.id}/${Date.now()}-${safeName}`;
@@ -146,21 +155,30 @@ export async function removeAraMaterial(
   const respondent = await requireRespondent(token);
   const sb = createServiceClient();
 
+  const lockError = await respondentWriteLockError(respondent);
+  if (lockError) return { ok: false, error: lockError };
+
   const { data: material } = await sb
     .from("ara_supporting_materials")
-    .select("id, file_url, material_type, respondent_id")
+    .select("id, assessment_id, file_url, material_type, respondent_id")
     .eq("id", materialId)
     .maybeSingle<{
       id: string;
+      assessment_id: string;
       file_url: string | null;
       material_type: AraMaterialType;
       respondent_id: string | null;
     }>();
 
-  if (!material) return { ok: false, error: "Material not found" };
-
-  // Respondents can only remove their own materials
-  if (material.respondent_id && material.respondent_id !== respondent.id) {
+  // Respondents can only remove materials THEY uploaded on THEIR OWN
+  // assessment. A consultant-added row (respondent_id null) is never
+  // respondent-deletable, and the tenancy check stops a token from one
+  // assessment deleting rows on another - previously any valid token could
+  // delete any consultant-added material platform-wide.
+  if (!material || material.assessment_id !== respondent.assessment_id) {
+    return { ok: false, error: "Material not found" };
+  }
+  if (!material.respondent_id || material.respondent_id !== respondent.id) {
     return { ok: false, error: "Not permitted" };
   }
 
@@ -171,7 +189,8 @@ export async function removeAraMaterial(
   const { error } = await sb
     .from("ara_supporting_materials")
     .delete()
-    .eq("id", materialId);
+    .eq("id", materialId)
+    .eq("respondent_id", respondent.id);
   if (error) return { ok: false, error: error.message };
 
   revalidatePath(`/ara/respond/${token}`);

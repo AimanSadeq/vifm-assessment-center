@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import { getPillarsForAssessment } from "@/lib/constants/ara-stages";
 import type {
   AraAssessment, AraComplianceStatus, AraEngagementStage, AraPillarId,
@@ -165,11 +166,8 @@ export async function recalculateAssessmentCompliance(assessmentId: string): Pro
   // Agentic-AI (agentic_dimension_id) items reuse a storage pillar_id but are
   // separate constructs, so counting them here would contaminate the pillar
   // (and hence compliance) means. Mirrors the exclusion in scoring.ts.
-  const { data: responseRows } = await sb
-    .from("ara_responses")
-    .select("question_score, question:ara_questions(pillar_id, individual_factor_id, agentic_dimension_id)")
-    .eq("assessment_id", assessmentId);
-
+  // PAGINATED (1000-row cap) + abort on error so compliance is never computed
+  // from a partial cohort.
   type RespRow = {
     question_score: number | null;
     question: {
@@ -178,7 +176,21 @@ export async function recalculateAssessmentCompliance(assessmentId: string): Pro
       agentic_dimension_id: string | null;
     } | null;
   };
-  const responses = ((responseRows ?? []) as unknown as RespRow[]).filter(
+  let responseRows: unknown[];
+  try {
+    responseRows = await fetchAllPages<unknown>((from, to) =>
+      sb
+        .from("ara_responses")
+        .select("question_score, question:ara_questions(pillar_id, individual_factor_id, agentic_dimension_id)")
+        .eq("assessment_id", assessmentId)
+        .order("id")
+        .range(from, to)
+    );
+  } catch (e) {
+    console.error(`[ara] compliance response load failed for ${assessmentId} - keeping prior results:`, e);
+    return;
+  }
+  const responses = (responseRows as RespRow[]).filter(
     (r) =>
       r.question_score != null &&
       r.question?.pillar_id &&

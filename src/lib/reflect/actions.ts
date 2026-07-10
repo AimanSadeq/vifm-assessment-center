@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import {
   requireRole,
   isAuthorizationError,
@@ -1097,10 +1098,17 @@ export async function launchReflectEngagement(engagementId: string) {
 // ──────────────────────────────────────────────────────────────
 // Send pending-rater invitations for an engagement. Idempotent
 // in spirit - only raters with invited_at IS NULL get emailed.
-// Also exposed as a standalone resend action.
+// NOT exported: this file is "use server", so an export compiles into a
+// POST-invokable endpoint - and this function deliberately carries no auth
+// (its callers gate: launchReflectEngagement + resendReflectInvitationsAction
+// both requireEngagementOwner first, and launch additionally gates on the
+// framework approval + draft status). Exporting it made it an unguarded
+// endpoint that emailed live rater access tokens for ANY engagement on
+// demand. A status guard below is defence-in-depth: invitations only go
+// out for a live engagement.
 // ──────────────────────────────────────────────────────────────
 
-export async function sendInvitationsForEngagement(
+async function sendInvitationsForEngagement(
   engagementId: string,
   options: { onlyUninvited?: boolean } = { onlyUninvited: true }
 ): Promise<{ count: number; failed: number }> {
@@ -1109,45 +1117,60 @@ export async function sendInvitationsForEngagement(
   const { data: eng } = await sb
     .from("reflect_engagements")
     .select(
-      "id, name, is_sandbox, anonymity_min_n, default_language, ara_organizations(name, name_ar)"
+      "id, name, status, is_sandbox, anonymity_min_n, default_language, ara_organizations(name, name_ar)"
     )
     .eq("id", engagementId)
     .maybeSingle<{
       id: string;
       name: string;
+      status: string;
       is_sandbox: boolean;
       anonymity_min_n: number;
       default_language: "en" | "ar";
       ara_organizations: { name: string; name_ar: string | null } | null;
     }>();
   if (!eng) return { count: 0, failed: 0 };
+  // Invitations only make sense on a LIVE engagement (launch flips the status
+  // before calling this; resend targets live runs). Draft = framework may not
+  // be approved yet; completed/archived = the window is closed.
+  if (eng.status !== "live") {
+    console.warn(`[reflect] invitation sweep refused: engagement ${engagementId} is '${eng.status}', not live`);
+    return { count: 0, failed: 0 };
+  }
 
-  let q = sb
-    .from("reflect_raters")
-    .select(
-      "id, rater_role, full_name, email, language_preference, access_token, invited_at, reflect_participants!inner(engagement_id, full_name, full_name_ar)"
-    )
-    .eq("reflect_participants.engagement_id", engagementId);
-  if (options.onlyUninvited !== false) q = q.is("invited_at", null);
-
-  const { data: raters } = await q.returns<
-    Array<{
-      id: string;
-      rater_role: "self" | "manager" | "peer" | "direct_report" | "skip_level" | "other";
+  // PAGINATED (1000-row cap): rater imports allow 2000 rows per call and
+  // accumulate, so an enterprise engagement legitimately exceeds 1000 raters -
+  // an unpaginated sweep silently emailed only the first 1000 and reported a
+  // clean success.
+  type SweepRater = {
+    id: string;
+    rater_role: "self" | "manager" | "peer" | "direct_report" | "skip_level" | "other";
+    full_name: string;
+    email: string;
+    language_preference: "en" | "ar";
+    access_token: string;
+    invited_at: string | null;
+    reflect_participants: {
+      engagement_id: string;
       full_name: string;
-      email: string;
-      language_preference: "en" | "ar";
-      access_token: string;
-      invited_at: string | null;
-      reflect_participants: {
-        engagement_id: string;
-        full_name: string;
-        full_name_ar: string | null;
-      };
-    }>
-  >();
+      full_name_ar: string | null;
+    };
+  };
+  const raters = await fetchAllPages<SweepRater>((from, to) => {
+    let q = sb
+      .from("reflect_raters")
+      .select(
+        "id, rater_role, full_name, email, language_preference, access_token, invited_at, reflect_participants!inner(engagement_id, full_name, full_name_ar)"
+      )
+      .eq("reflect_participants.engagement_id", engagementId);
+    if (options.onlyUninvited !== false) q = q.is("invited_at", null);
+    return q.order("id").range(from, to) as unknown as PromiseLike<{ data: SweepRater[] | null; error: { message: string } | null }>;
+  }).catch((e): SweepRater[] => {
+    console.error(`[reflect] invitation sweep rater load failed for ${engagementId}:`, e);
+    return [];
+  });
 
-  if (!raters || raters.length === 0) return { count: 0, failed: 0 };
+  if (raters.length === 0) return { count: 0, failed: 0 };
 
   // Absolute base URL for the emailed link. NEXT_PUBLIC_APP_URL can be unset on
   // some environments, which previously left baseUrl="" and produced a relative,
@@ -1214,9 +1237,26 @@ export async function sendInvitationsForEngagement(
 // rater missing invited_at (e.g. added after the original launch).
 export async function resendReflectInvitationsAction(engagementId: string) {
   try { await requireEngagementOwner(engagementId); } catch (e) { return authErr(e); }
+  const sb = createServiceClient();
+  // The sweep only sends for a LIVE engagement. Surface WHY a resend does
+  // nothing on a draft/completed/archived run (the button can be visible on a
+  // draft, where raters are added pre-launch) instead of toasting a false
+  // "Re-sent 0 invitations." success.
+  const { data: eng } = await sb
+    .from("reflect_engagements")
+    .select("status")
+    .eq("id", engagementId)
+    .maybeSingle<{ status: string }>();
+  if (!eng) return { ok: false as const, error: "Engagement not found." };
+  if (eng.status === "draft") {
+    return { ok: false as const, error: "Launch the engagement first - invitations are sent when it goes live." };
+  }
+  if (eng.status !== "live") {
+    return { ok: false as const, error: `Invitations can't be sent while the engagement is '${eng.status}'.` };
+  }
   const result = await sendInvitationsForEngagement(engagementId, { onlyUninvited: true });
   revalidatePath(`/reflect/consultant/engagements/${engagementId}`);
-  return { ok: true, ...result };
+  return { ok: true as const, ...result };
 }
 
 

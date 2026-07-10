@@ -208,8 +208,7 @@ export function RaterForm({ ctx }: Props) {
   const [tenure, setTenureState] = useState<ReflectRaterTenure | null>(ctx.tenure);
   const showTenurePicker = ctx.rater.rater_role !== "self";
 
-  const setTenure = (next: ReflectRaterTenure | null) => {
-    setTenureState(next);
+  const persistTenure = (next: ReflectRaterTenure | null) => {
     setSaveState("saving");
     const myId = ++saveIdRef.current;
     const p = (async () => {
@@ -219,10 +218,13 @@ export function RaterForm({ ctx }: Props) {
           tenure: next,
         });
         if (!res.ok) {
+          failedRef.current.add("tenure");
           setSaveState("failed");
           return;
         }
+        failedRef.current.delete("tenure");
       } catch {
+        failedRef.current.add("tenure");
         setSaveState("failed");
       } finally {
         inflightRef.current.delete(myId);
@@ -232,6 +234,12 @@ export function RaterForm({ ctx }: Props) {
       }
     })();
     inflightRef.current.set(myId, p);
+    return p;
+  };
+
+  const setTenure = (next: ReflectRaterTenure | null) => {
+    setTenureState(next);
+    persistTenure(next);
   };
   const [saveState, setSaveState] = useState<"idle" | "saving" | "failed">("idle");
   const [submitConfirmOpen, setSubmitConfirmOpen] = useState(false);
@@ -254,6 +262,17 @@ export function RaterForm({ ctx }: Props) {
   // until it actually resolves. Same race-fix posture as ARA commit b0e32ee.
   const inflightRef = useRef<Map<number, Promise<void>>>(new Map());
   const saveIdRef = useRef(0);
+  // Saves that FAILED (exhausted their attempt) - keyed so the submit gate can
+  // re-try them with the latest values and refuse completion while any remain.
+  // Without this, submit awaited only IN-FLIGHT saves: an already-failed answer
+  // was silently dropped behind the completion screen. Keys: beh:<id>,
+  // open:<kind>, open5:<kind> (the five-questions block - retried inline, not
+  // here), tenure, critical.
+  const failedRef = useRef<Set<string>>(new Set());
+  const [unsavedCount, setUnsavedCount] = useState(0);
+  // The open-questions block hands us a "retry all its failed answers" fn (it
+  // owns their text; we only hold the open5:* markers), invoked in submit.
+  const openBlockRetryRef = useRef<(() => Promise<void>) | null>(null);
 
   // Register an external in-flight save (the open-questions block) so the submit
   // flush awaits it before markComplete - closes a race where the block's
@@ -295,10 +314,13 @@ export function RaterForm({ ctx }: Props) {
           text,
         });
         if (!res.ok) {
+          failedRef.current.add(`open:${kind}`);
           setSaveState("failed");
           return;
         }
+        failedRef.current.delete(`open:${kind}`);
       } catch {
+        failedRef.current.add(`open:${kind}`);
         setSaveState("failed");
       } finally {
         inflightRef.current.delete(myId);
@@ -315,6 +337,41 @@ export function RaterForm({ ctx }: Props) {
   // discrete user intent, same as a score click. The save goes through the
   // same inflight-tracking Map as everything else so the submit-flush gate
   // covers it without extra work.
+  const persistCritical = (ids: string[]) => {
+    setSaveState("saving");
+    const myId = ++saveIdRef.current;
+    const p = (async () => {
+      try {
+        const res = await saveReflectCriticalPicks({
+          token: ctx.rater.access_token,
+          competency_ids: ids,
+        });
+        if (!res.ok) {
+          failedRef.current.add("critical");
+          setSaveState("failed");
+          return;
+        }
+        failedRef.current.delete("critical");
+      } catch {
+        failedRef.current.add("critical");
+        setSaveState("failed");
+      } finally {
+        inflightRef.current.delete(myId);
+        if (inflightRef.current.size === 0) {
+          setSaveState((cur) => (cur === "failed" ? cur : "idle"));
+        }
+      }
+    })();
+    inflightRef.current.set(myId, p);
+    return p;
+  };
+
+  // Mirror of criticalPicks so the submit retry can re-send the latest set.
+  const criticalPicksRef = useRef(criticalPicks);
+  useEffect(() => {
+    criticalPicksRef.current = criticalPicks;
+  }, [criticalPicks]);
+
   const toggleCritical = (competencyId: string) => {
     setCriticalPicks((prev) => {
       const next = new Set(prev);
@@ -322,28 +379,8 @@ export function RaterForm({ ctx }: Props) {
       else next.add(competencyId);
       // Fire save with the NEXT snapshot. setState is async, so we can't
       // read it back synchronously - but `next` is the value we just built.
-      setSaveState("saving");
-      const myId = ++saveIdRef.current;
-      const p = (async () => {
-        try {
-          const res = await saveReflectCriticalPicks({
-            token: ctx.rater.access_token,
-            competency_ids: Array.from(next),
-          });
-          if (!res.ok) {
-            setSaveState("failed");
-            return;
-          }
-        } catch {
-          setSaveState("failed");
-        } finally {
-          inflightRef.current.delete(myId);
-          if (inflightRef.current.size === 0) {
-            setSaveState((cur) => (cur === "failed" ? cur : "idle"));
-          }
-        }
-      })();
-      inflightRef.current.set(myId, p);
+      criticalPicksRef.current = next;
+      persistCritical(Array.from(next));
       return next;
     });
   };
@@ -400,10 +437,13 @@ export function RaterForm({ ctx }: Props) {
           comment_text: next.comment_text.trim() || null,
         });
         if (!res.ok) {
+          failedRef.current.add(`beh:${behaviorId}`);
           setSaveState("failed");
           return;
         }
+        failedRef.current.delete(`beh:${behaviorId}`);
       } catch {
+        failedRef.current.add(`beh:${behaviorId}`);
         setSaveState("failed");
       } finally {
         inflightRef.current.delete(myId);
@@ -444,13 +484,20 @@ export function RaterForm({ ctx }: Props) {
     setAnswers((prev) => {
       const cur = prev[behaviorId] ?? { score: null, is_na: false, comment_text: "" };
       const next: LocalAnswer = { ...cur, comment_text: value };
+      // Keep the ref in sync immediately so the debounce callback below (and
+      // score/NA clicks racing it) always see this keystroke.
+      answersRef.current = { ...answersRef.current, [behaviorId]: next };
 
-      // Debounce comment save
+      // Debounce comment save. The callback RE-READS the latest answer at fire
+      // time: the closure snapshot captured at typing time carried the OLD
+      // score/is_na, so a score click during the 700ms window was overwritten
+      // by the stale row when the timer fired (upsert on rater+behaviour).
       const existing = commentTimersRef.current.get(behaviorId);
       if (existing) clearTimeout(existing);
       const timer = setTimeout(() => {
-        persistOne(behaviorId, next);
         commentTimersRef.current.delete(behaviorId);
+        const latest = answersRef.current[behaviorId];
+        if (latest) persistOne(behaviorId, latest);
       }, 700);
       commentTimersRef.current.set(behaviorId, timer);
 
@@ -477,12 +524,13 @@ export function RaterForm({ ctx }: Props) {
     setSubmitConfirmOpen(false);
 
     startSubmitting(async () => {
-      // 1. Fire any pending debounced comment saves immediately
+      // 1. Fire any pending debounced comment saves immediately (latest values
+      // via answersRef, not the render-time closure)
       const timers = Array.from(commentTimersRef.current.entries());
       for (const [bid, timer] of Array.from(timers)) {
         clearTimeout(timer);
         commentTimersRef.current.delete(bid);
-        const a = answers[bid];
+        const a = answersRef.current[bid];
         if (a) persistOne(bid, a);
       }
 
@@ -499,7 +547,46 @@ export function RaterForm({ ctx }: Props) {
       const inflight = Array.from(inflightRef.current.values());
       if (inflight.length > 0) await Promise.all(inflight);
 
-      // 3. Now safe to mark complete
+      // 2b. Re-try saves that FAILED earlier (they are in no queue - awaiting
+      // in-flight alone silently dropped them behind the completion screen).
+      const failedKeys = Array.from(failedRef.current);
+      if (failedKeys.length > 0) {
+        let retryOpenBlock = false;
+        for (const key of failedKeys) {
+          if (key.startsWith("beh:")) {
+            const bid = key.slice(4);
+            const a = answersRef.current[bid];
+            if (a) persistOne(bid, a);
+          } else if (key.startsWith("open5:")) {
+            // The five-questions block owns its text; retry via its handle.
+            retryOpenBlock = true;
+          } else if (key.startsWith("open:")) {
+            const kind = key.slice(5) as "start" | "stop" | "continue";
+            const stateKey = kind === "continue" ? "continue_" : kind;
+            persistOpen(kind, openText[stateKey]);
+          } else if (key === "tenure") {
+            persistTenure(tenure);
+          } else if (key === "critical") {
+            persistCritical(Array.from(criticalPicksRef.current));
+          }
+        }
+        if (retryOpenBlock && openBlockRetryRef.current) {
+          await openBlockRetryRef.current();
+        }
+        const retryInflight = Array.from(inflightRef.current.values());
+        if (retryInflight.length > 0) await Promise.all(retryInflight);
+      }
+
+      // 3. REFUSE completion while anything is still unsaved - completing
+      // anyway would silently drop those answers behind a success screen.
+      if (failedRef.current.size > 0) {
+        setUnsavedCount(failedRef.current.size);
+        setSaveState("failed");
+        return;
+      }
+      setUnsavedCount(0);
+
+      // 4. Now safe to mark complete
       const res = await markReflectRaterComplete(ctx.rater.access_token);
       if (!res.ok) {
         setSaveState("failed");
@@ -823,11 +910,23 @@ export function RaterForm({ ctx }: Props) {
             ar={rtl}
             initial={ctx.openQuestions}
             registerInflight={trackInflight}
+            onSaveResult={(kind, ok) => {
+              if (ok) failedRef.current.delete(`open5:${kind}`);
+              else failedRef.current.add(`open5:${kind}`);
+            }}
+            registerRetry={(fn) => { openBlockRetryRef.current = fn; }}
           />
         </section>
 
         {/* Submit rail */}
         <section className="rounded-lg border bg-card p-5 flex flex-col gap-3">
+          {unsavedCount > 0 && (
+            <p className="rounded-md border border-rose-300 bg-rose-50 p-2.5 text-xs text-rose-800">
+              {rtl
+                ? `تعذّر حفظ ${unsavedCount} من الإجابات. تحقق من اتصالك بالإنترنت ثم اضغط "إرسال" مرة أخرى - لم يتم إرسال تقييمك بعد.`
+                : `${unsavedCount} answer${unsavedCount === 1 ? "" : "s"} could not be saved. Check your connection and press Submit again - nothing has been submitted yet.`}
+            </p>
+          )}
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="text-xs text-muted-foreground">
               {allRated ? (

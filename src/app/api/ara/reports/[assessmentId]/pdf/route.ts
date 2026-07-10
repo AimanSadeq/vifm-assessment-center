@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Browser } from "puppeteer-core";
-import { launchPdfBrowser, selfOrigin } from "@/lib/reports/pdf-browser";
+import { launchPdfBrowser, selfOrigin, gotoInternalReportPage } from "@/lib/reports/pdf-browser";
 import { createServiceClient } from "@/lib/supabase/server";
 import { requireAssessmentOwner, isAuthorizationError } from "@/lib/ara/auth-guards";
 
@@ -75,28 +75,18 @@ export async function GET(
     // requireAssessmentOwner - which also admits a portal client_manager for
     // their own org's assessment - but the consultant layout 404s that role,
     // so the delivered "PDF" was a print of the 404 page.
-    const cookieHeader = req.headers.get("cookie");
-    // Attach the session cookie + internal secret to SAME-ORIGIN requests only
-    // (setExtraHTTPHeaders would send them to every subresource, so the first
-    // cross-origin asset added to the report page would ship CRON_SECRET to a
-    // third-party host). Keep the report page free of cross-origin assets.
-    const origin = selfOrigin(req.url);
-    await page.setRequestInterception(true);
-    page.on("request", (r) => {
-      const headers = { ...r.headers() };
-      if (r.url().startsWith(origin)) {
-        if (cookieHeader) headers.cookie = cookieHeader;
-        if (process.env.CRON_SECRET) headers["x-ara-internal"] = process.env.CRON_SECRET;
-      }
-      void r.continue({ headers });
+    // The shared helper forwards the requester's cookie + the server-only
+    // x-ara-internal secret to same-origin requests (so a cross-origin asset
+    // can never receive the secret - exact-origin match, not a prefix), and
+    // verifies the render landed on the report page rather than a middleware
+    // redirect to /portal or /login (a 302 chain resolves to a 200 on the
+    // wrong page, so a plain status check would ship the wrong document).
+    const nav = await gotoInternalReportPage(page, reportUrl, {
+      cookie: req.headers.get("cookie"),
+      internalSecret: process.env.CRON_SECRET,
     });
-    const nav = await page.goto(reportUrl, { waitUntil: "networkidle0", timeout: 60_000 });
-
-    // Never ship a PDF of an error page: if the SSR render 404'd/500'd,
-    // fail loudly instead of delivering a print of the error screen.
-    const navStatus = nav?.status() ?? 0;
-    if (navStatus >= 400) {
-      console.error(`[ara pdf] report page render returned ${navStatus} for ${params.assessmentId}`);
+    if (!nav.ok) {
+      console.error(`[ara pdf] render failed for ${params.assessmentId}: ${nav.reason} (status ${nav.status}, landed ${nav.landedPath})`);
       return NextResponse.json(
         { ok: false, error: "The report page could not be rendered for this assessment. Please contact VIFM if this persists." },
         { status: 502 }

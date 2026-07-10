@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages, chunkIds } from "@/lib/ara/paginate";
 import type { ReflectRaterRole } from "./validations";
 
 // ──────────────────────────────────────────────────────────────
@@ -381,14 +382,29 @@ export async function computeParticipantScoring(
 
   // Responses across all raters. comment_text powers the P4.2 per-behavior
   // verbatim section in the report.
+  // PAGINATED (1000-row PostgREST cap): one participant's responses are
+  // raters x behaviours - the shipped 38-competency framework serves 152
+  // observer behaviours, so a standard panel of 7-8 raters is 1064-1216 rows
+  // and an unpaginated read silently dropped rows, corrupting every mean,
+  // gap, ranking AND the anonymity contributor counts computed from them.
   const raterIds = (raters ?? []).map((r) => r.id);
-  const { data: responses } =
-    raterIds.length === 0
-      ? { data: [] as Array<{ rater_id: string; behavior_id: string; score: number | null; is_na: boolean; comment_text: string | null }> }
-      : await sb
+  type RespRow = { rater_id: string; behavior_id: string; score: number | null; is_na: boolean; comment_text: string | null };
+  const responses: RespRow[] = [];
+  for (const ids of chunkIds(raterIds)) {
+    responses.push(
+      ...(await fetchAllPages<RespRow>((from, to) =>
+        sb
           .from("reflect_responses")
           .select("rater_id, behavior_id, score, is_na, comment_text")
-          .in("rater_id", raterIds);
+          .in("rater_id", ids)
+          .order("id")
+          .range(from, to)
+      ).catch((e): RespRow[] => {
+        console.error(`[reflect] response load failed for participant ${participantId}:`, e);
+        return [];
+      }))
+    );
+  }
 
   // Index raters by id and by role
   const raterById = new Map<string, { role: ReflectRaterRole; status: string }>();
@@ -405,7 +421,7 @@ export async function computeParticipantScoring(
   // Separate comment map - comments are independent of score: a rater can
   // mark N/A and still leave a comment about why.
   const commentsByBehavior = new Map<string, Array<{ raterId: string; text: string }>>();
-  for (const r of responses ?? []) {
+  for (const r of responses) {
     if (r.score !== null && !r.is_na) {
       if (!responsesByRater.has(r.rater_id)) responsesByRater.set(r.rater_id, new Map());
       responsesByRater.get(r.rater_id)!.set(r.behavior_id, r.score);
@@ -544,18 +560,26 @@ export async function computeParticipantScoring(
     const compByGroup: RaterGroupScore[] = allRoles.map((role) => {
       const ids = ratersByRole.get(role) ?? [];
       const respondedIds = ids.filter((id) => responsesByRater.has(id));
+      // Anonymity gates on the raters who contributed to THIS competency, not
+      // on whole-instrument responders: with per-item N/A, a cell's mean can be
+      // carried by a single sensitive rater even when min_n raters answered the
+      // instrument - publishing that mean de-anonymises them.
+      const contributorIds = respondedIds.filter((id) => {
+        const map = responsesByRater.get(id)!;
+        return Array.from(map.keys()).some((bid) => compBehIds.has(bid));
+      });
       const scores: number[] = [];
-      for (const id of respondedIds) {
+      for (const id of contributorIds) {
         const map = responsesByRater.get(id)!;
         for (const [bid, v] of Array.from(map.entries())) {
           if (compBehIds.has(bid)) scores.push(v);
         }
       }
       const sensitive = role !== "self" && role !== "manager";
-      const hidden = sensitive && respondedIds.length < min_n;
+      const hidden = sensitive && contributorIds.length < min_n;
       return {
         rater_role: role,
-        rater_count: respondedIds.length,
+        rater_count: contributorIds.length,
         response_count: scores.length,
         mean: hidden ? null : round2(mean(scores)),
         hidden_by_anonymity: hidden,
@@ -607,16 +631,15 @@ export async function computeParticipantScoring(
     const behByGroup: RaterGroupScore[] = allRoles.map((role) => {
       const ids = ratersByRole.get(role) ?? [];
       const respondedIds = ids.filter((id) => responsesByRater.has(id));
-      const scores: number[] = [];
-      for (const id of respondedIds) {
-        const map = responsesByRater.get(id)!;
-        if (map.has(b.id)) scores.push(map.get(b.id)!);
-      }
+      // Gate on contributors to THIS behaviour (see compByGroup): per-item N/A
+      // means a whole-instrument responder count can mask a single-rater cell.
+      const contributorIds = respondedIds.filter((id) => responsesByRater.get(id)!.has(b.id));
+      const scores: number[] = contributorIds.map((id) => responsesByRater.get(id)!.get(b.id)!);
       const sensitive = role !== "self" && role !== "manager";
-      const hidden = sensitive && respondedIds.length < min_n;
+      const hidden = sensitive && contributorIds.length < min_n;
       return {
         rater_role: role,
-        rater_count: respondedIds.length,
+        rater_count: contributorIds.length,
         response_count: scores.length,
         mean: hidden ? null : round2(mean(scores)),
         hidden_by_anonymity: hidden,
@@ -908,18 +931,28 @@ export async function computeCohortScoring(
   // invited + completed counts per participant once, up front.
   const raterCounts = new Map<string, { invited: number; completed: number }>();
   {
-    const { data: raterRows } = await sb
-      .from("reflect_raters")
-      .select("participant_id, status")
-      .in(
-        "participant_id",
-        participants.map((p) => p.id)
-      );
-    for (const r of (raterRows ?? []) as Array<{ participant_id: string; status: string }>) {
-      const e = raterCounts.get(r.participant_id) ?? { invited: 0, completed: 0 };
-      e.invited += 1;
-      if (r.status === "completed") e.completed += 1;
-      raterCounts.set(r.participant_id, e);
+    // PAGINATED + chunked (1000-row cap): an engagement's rater count scales
+    // as participants x raters-per-participant (112 x 9 already exceeds the
+    // cap), and truncation silently zeroed later participants' completion %.
+    type RaterRow = { participant_id: string; status: string };
+    for (const ids of chunkIds(participants.map((p) => p.id))) {
+      const raterRows = await fetchAllPages<RaterRow>((from, to) =>
+        sb
+          .from("reflect_raters")
+          .select("participant_id, status")
+          .in("participant_id", ids)
+          .order("id")
+          .range(from, to)
+      ).catch((e): RaterRow[] => {
+        console.error("[reflect] cohort rater-count load failed:", e);
+        return [];
+      });
+      for (const r of raterRows) {
+        const e = raterCounts.get(r.participant_id) ?? { invited: 0, completed: 0 };
+        e.invited += 1;
+        if (r.status === "completed") e.completed += 1;
+        raterCounts.set(r.participant_id, e);
+      }
     }
   }
 

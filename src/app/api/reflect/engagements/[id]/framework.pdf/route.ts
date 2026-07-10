@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Browser } from "puppeteer-core";
-import { launchPdfBrowser, selfOrigin } from "@/lib/reports/pdf-browser";
+import { launchPdfBrowser, selfOrigin, gotoInternalReportPage } from "@/lib/reports/pdf-browser";
 import { guardReflectEngagementAccess } from "@/lib/reflect/report-access";
 
 export const runtime = "nodejs";
@@ -39,10 +39,20 @@ export async function GET(
     browser = await launchBrowser();
     const page = await browser.newPage();
     await page.setViewport({ width: 1200, height: 900, deviceScaleFactor: 1 });
-    // Preview page is access-gated; forward the requester's session cookies.
-    const cookieHeader = req.headers.get("cookie");
-    if (cookieHeader) await page.setExtraHTTPHeaders({ cookie: cookieHeader });
-    await page.goto(previewUrl, { waitUntil: "networkidle0", timeout: 60_000 });
+    // Preview page is access-gated; the shared helper forwards cookie + secret
+    // to same-origin requests and verifies the render landed on the preview
+    // page (not a middleware redirect to /portal or /login).
+    const nav = await gotoInternalReportPage(page, previewUrl, {
+      cookie: req.headers.get("cookie"),
+      internalSecret: process.env.CRON_SECRET,
+    });
+    if (!nav.ok) {
+      console.error(`[reflect framework pdf] render failed for ${id}: ${nav.reason} (status ${nav.status}, landed ${nav.landedPath})`);
+      return NextResponse.json(
+        { ok: false, error: "The framework page could not be rendered. Please contact VIFM if this persists." },
+        { status: 502 }
+      );
+    }
 
     const pdf = await page.pdf({
       format: "A4",

@@ -16,6 +16,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import { canAccessReflectEngagement } from "@/lib/reflect/report-access";
 import { getServerT, type ServerT } from "@/lib/i18n/server";
 import { cn } from "@/lib/utils";
@@ -75,7 +76,7 @@ const STATUS_STYLE: Record<string, { labelKey: string; icon: typeof Clock; class
 
 async function fetchEngagement(id: string) {
   const sb = createServiceClient();
-  const [engRes, fwRes, participantsRes, ratersRes] = await Promise.all([
+  const [engRes, fwRes, participantsRes, raterRows] = await Promise.all([
     sb
       .from("reflect_engagements")
       .select(
@@ -98,14 +99,24 @@ async function fetchEngagement(id: string) {
       )
       .eq("engagement_id", id)
       .order("full_name"),
-    sb
-      .from("reflect_raters")
-      .select(
-        "id, rater_role, full_name, email, status, access_token, invited_at, reflect_participants!inner(engagement_id, full_name)",
-        { count: "exact" }
-      )
-      .eq("reflect_participants.engagement_id", id)
-      .order("rater_role"),
+    // PAGINATED (1000-row cap): the invite grid must show EVERY rater - an
+    // unpaginated read silently dropped raters past row 1000 while the stat
+    // card (exact count) still showed the true total, so the missing raters
+    // could never be invited or have their link resent from the UI.
+    fetchAllPages<Record<string, unknown>>((from, to) =>
+      sb
+        .from("reflect_raters")
+        .select(
+          "id, rater_role, full_name, email, status, access_token, invited_at, reflect_participants!inner(engagement_id, full_name)"
+        )
+        .eq("reflect_participants.engagement_id", id)
+        .order("rater_role")
+        .order("id")
+        .range(from, to)
+    ).catch((e): Record<string, unknown>[] => {
+      console.error(`[reflect] engagement rater list load failed for ${id}:`, e);
+      return [];
+    }),
   ]);
 
   if (!engRes.data) return null;
@@ -125,8 +136,8 @@ async function fetchEngagement(id: string) {
       debrief_scheduled_at: string | null;
     }>,
     participantCount: participantsRes.count ?? 0,
-    raterCount: ratersRes.count ?? 0,
-    raters: ((ratersRes.data ?? []) as unknown as Array<{
+    raterCount: raterRows.length,
+    raters: (raterRows as unknown as Array<{
       id: string;
       rater_role: string;
       full_name: string;

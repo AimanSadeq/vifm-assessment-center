@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Browser } from "puppeteer-core";
-import { launchPdfBrowser, selfOrigin } from "@/lib/reports/pdf-browser";
+import { launchPdfBrowser, selfOrigin, gotoInternalReportPage } from "@/lib/reports/pdf-browser";
 import { createServiceClient } from "@/lib/supabase/server";
 import { computeParticipantScoring } from "@/lib/reflect/scoring";
 import { guardReflectEngagementAccess } from "@/lib/reflect/report-access";
@@ -59,11 +59,21 @@ export async function GET(
     browser = await launchBrowser();
     const page = await browser.newPage();
     await page.setViewport({ width: 1200, height: 900, deviceScaleFactor: 1 });
-    // The report page is now access-gated; forward the (already-authorised)
-    // requester's session cookies so the SSR render authorises as the owner.
-    const cookieHeader = req.headers.get("cookie");
-    if (cookieHeader) await page.setExtraHTTPHeaders({ cookie: cookieHeader });
-    await page.goto(reportUrl, { waitUntil: "networkidle0", timeout: 60_000 });
+    // The report page is access-gated; the shared helper forwards the
+    // requester's cookie + the server-only x-ara-internal secret to
+    // same-origin requests, and verifies the render landed on the report page
+    // (not a middleware redirect to /portal or /login).
+    const nav = await gotoInternalReportPage(page, reportUrl, {
+      cookie: req.headers.get("cookie"),
+      internalSecret: process.env.CRON_SECRET,
+    });
+    if (!nav.ok) {
+      console.error(`[reflect pdf] render failed for ${participantId}: ${nav.reason} (status ${nav.status}, landed ${nav.landedPath})`);
+      return NextResponse.json(
+        { ok: false, error: "The report page could not be rendered. Please contact VIFM if this persists." },
+        { status: 502 }
+      );
+    }
 
     const pdf = await page.pdf({
       format: "A4",

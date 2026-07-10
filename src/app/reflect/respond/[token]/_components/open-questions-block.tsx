@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { saveReflectOpenResponse } from "@/lib/reflect/rater-actions";
 
 type Kind = "strengths" | "development" | "example" | "advice" | "other";
@@ -56,6 +56,8 @@ export function OpenQuestionsBlock({
   ar,
   initial,
   registerInflight,
+  onSaveResult,
+  registerRetry,
 }: {
   token: string;
   isSelf: boolean;
@@ -64,31 +66,70 @@ export function OpenQuestionsBlock({
   /** Register a save promise with the parent's submit flush so completion never
    *  fires while a blur-save is still in flight (else the answer is lost). */
   registerInflight?: (p: Promise<unknown>) => void;
+  /** Report each save's outcome so the parent submit gate can refuse completion
+   *  while one of these answers is unsaved (the rater retries via the inline
+   *  "Not saved - retry" control or the parent's Submit). */
+  onSaveResult?: (kind: Kind, ok: boolean) => void;
+  /** Hand the parent a function that re-saves every currently-failed answer, so
+   *  the Submit flow can retry these (the parent has no access to the text). */
+  registerRetry?: (fn: () => Promise<void>) => void;
 }) {
   const [savingKind, setSavingKind] = useState<Kind | null>(null);
   const [savedKind, setSavedKind] = useState<Kind | null>(null);
-  const [failedKind, setFailedKind] = useState<Kind | null>(null);
+  // Set (not a single slot): if two answers fail while offline, each must keep
+  // its own "Not saved - retry" control rather than the last failure clobbering
+  // the others' indicators.
+  const [failedKinds, setFailedKinds] = useState<Set<Kind>>(() => new Set());
+  const failedRef = useRef<Set<Kind>>(new Set());
   const lastText = useRef<Record<string, string>>({});
   const tx = (en: string, arabic: string) => (ar ? arabic : en);
+
+  const markFailed = (kind: Kind, failed: boolean) => {
+    if (failed) failedRef.current.add(kind);
+    else failedRef.current.delete(kind);
+    setFailedKinds(new Set(failedRef.current));
+  };
 
   const save = async (kind: Kind, text: string) => {
     lastText.current[kind] = text;
     setSavingKind(kind);
     setSavedKind(null);
-    setFailedKind((f) => (f === kind ? null : f));
+    markFailed(kind, false);
     const p = saveReflectOpenResponse({ token, kind, text: text.trim() });
     registerInflight?.(p);
     try {
-      await p;
-      setSavedKind(kind);
+      // The server action RESOLVES with { ok:false } for lifecycle rejections
+      // ("already submitted", "engagement closed", ...) - it only throws for
+      // network errors. Checking ok is what stops a rejected save rendering
+      // the emerald "Saved" confirmation.
+      const res = await p;
+      if (res && res.ok === false) {
+        markFailed(kind, true);
+        onSaveResult?.(kind, false);
+      } else {
+        setSavedKind(kind);
+        onSaveResult?.(kind, true);
+      }
     } catch {
       // Surface the failure (previously swallowed silently) so the rater knows
       // their answer did not save and can retry.
-      setFailedKind(kind);
+      markFailed(kind, true);
+      onSaveResult?.(kind, false);
     } finally {
       setSavingKind((k) => (k === kind ? null : k));
     }
   };
+
+  // Expose a "retry every failed answer" handle so the parent's Submit flow can
+  // clear open-question failures (its own retry loop can't - it has no text).
+  useEffect(() => {
+    registerRetry?.(async () => {
+      const kinds = Array.from(failedRef.current);
+      await Promise.all(kinds.map((k) => save(k, lastText.current[k] ?? "")));
+    });
+    // save/registerRetry are stable enough for this one-time registration.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <section className="space-y-4" dir={ar ? "rtl" : "ltr"}>
@@ -117,7 +158,7 @@ export function OpenQuestionsBlock({
             <span className="text-[11px]">
               {savingKind === q.kind ? (
                 <span className="text-muted-foreground">{tx("Saving…", "جارٍ الحفظ…")}</span>
-              ) : failedKind === q.kind ? (
+              ) : failedKinds.has(q.kind) ? (
                 <button
                   type="button"
                   onClick={() => save(q.kind, lastText.current[q.kind] ?? "")}

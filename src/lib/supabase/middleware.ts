@@ -15,18 +15,23 @@ function edgeTimingSafeEqual(a: string | null | undefined, b: string | null | un
 }
 
 /**
- * Server-to-server Puppeteer render of the consultant report page, sent by the
- * org PDF route with the x-ara-internal header (CRON_SECRET). That route has
- * ALREADY authorized its caller via requireAssessmentOwner - including a
- * portal client_manager for their own org's assessment - but the confinement
- * below would 302 the render to /portal before the page's own internal-render
- * bypass could run, so the delivered "PDF" was a print of the portal
- * dashboard. Narrowly scoped: only the report page path, only with the exact
- * secret.
+ * Server-to-server Puppeteer render of a report page, sent by a PDF route with
+ * the x-ara-internal header (CRON_SECRET). Those routes have ALREADY
+ * authorized their caller (requireAssessmentOwner / guardReflectEngagementAccess
+ * - both of which admit a portal client_manager for their own org) - but the
+ * confinement below would 302 the render to /portal before the page's own
+ * gate could run, so the delivered "PDF" was a print of the portal dashboard.
+ * Narrowly scoped: only the known report page paths, only with the exact secret.
  */
+const INTERNAL_RENDER_PATHS = [
+  /^\/ara\/consultant\/assessments\/[^/]+\/report$/,
+  /^\/reflect\/consultant\/participants\/[^/]+\/report$/,
+  /^\/reflect\/consultant\/engagements\/[^/]+\/cohort-report$/,
+  /^\/reflect\/consultant\/engagements\/[^/]+\/framework-preview$/,
+];
 function isInternalReportRender(request: NextRequest): boolean {
   const p = request.nextUrl.pathname;
-  if (!/^\/ara\/consultant\/assessments\/[^/]+\/report$/.test(p)) return false;
+  if (!INTERNAL_RENDER_PATHS.some((re) => re.test(p))) return false;
   return edgeTimingSafeEqual(request.headers.get("x-ara-internal"), process.env.CRON_SECRET);
 }
 

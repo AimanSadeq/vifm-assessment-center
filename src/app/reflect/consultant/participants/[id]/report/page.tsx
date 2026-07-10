@@ -1451,7 +1451,14 @@ function VerbatimPage({
                   <li key={`${s.kind}-${i}`} className="verbatim-item">
                     <span className="verbatim-role">
                       {roleLabelShort(v.rater_role, rtl)}
-                      {v.tenure && (
+                      {/* Tenure chip only for NON-sensitive roles (self/manager,
+                          whose identity is known by design). For peers/direct
+                          reports the tenure bucket is a strong quasi-identifier
+                          the participant usually knows per colleague - printing
+                          it next to every verbatim (and up to 8 answers per
+                          rater share the same chip) de-anonymised raters inside
+                          an above-threshold group. */}
+                      {v.tenure && (v.rater_role === "self" || v.rater_role === "manager") && (
                         <span className="verbatim-tenure">· {tenureLabelShort(v.tenure, rtl)}</span>
                       )}
                       {showLangChip && (

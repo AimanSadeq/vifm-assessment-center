@@ -28,12 +28,34 @@ const UNIT_TONE: Record<string, { bar: string; text: string }> = {
   empty: { bar: "bg-rose-400", text: "text-rose-600" },
 };
 
-/** Bank-level status: red = live-AI + empty (pure scramble), amber = still live / partly filled, green = fixed vetted content. */
+/**
+ * How a bank actually serves at deal time - the three honest states:
+ *  - "live"    → generates items live from the LLM (no vetted form).
+ *  - "review"  → serves a FIXED seeded set, but its items are NOT all SME-approved
+ *                yet (results are provisional). Not the same as "vetted".
+ *  - "vetted"  → serves a fixed set whose items ARE SME-approved (or a bank with no
+ *                per-item gate, i.e. the canonical seeded framework).
+ * The old badge collapsed "review" into "vetted" - claiming approval that had not
+ * happened. This separates them.
+ */
+function serveState(b: BankReadiness): "live" | "review" | "vetted" | "framework" {
+  if (b.servesLive) return "live";
+  // No per-item review gate (e.g. the AC behavioural framework seed): it is the
+  // canonical hand-authored framework, not an SME-approved question bank. Say so
+  // honestly rather than claiming "vetted".
+  if (!b.hasReviewGate) return "framework";
+  // A gated bank is only "vetted" once every item it holds is SME-approved; below
+  // that it is fixed content still in review (results provisional).
+  return b.total > 0 && b.vetted >= b.total ? "vetted" : "review";
+}
+
+/** Bank-level border tone: red = live-AI + empty, amber = live/in-review, green = vetted/framework. */
 function bankState(b: BankReadiness): "ready" | "partial" | "risk" {
-  if (b.servesLive && b.vetted === 0) return "risk";
-  if (b.servesLive) return "partial";
+  const s = serveState(b);
+  if (s === "live") return b.vetted === 0 ? "risk" : "partial";
+  if (s === "review") return "partial";
   if (b.units) return b.units.every((u) => unitState(u) === "ready") ? "ready" : "partial";
-  return b.vetted > 0 ? "ready" : "risk";
+  return "ready";
 }
 
 export default async function ItemBanksPage() {
@@ -49,10 +71,11 @@ export default async function ItemBanksPage() {
   // not a deal-time risk and should not drag the readiness numbers.
   const active = banks.filter((b) => !b.retired);
   const scramble = active.filter((b) => b.servesLive).length;
-  const withGate = active.filter((b) => b.hasReviewGate).length;
-  const allUnits = active.flatMap((b) => b.units ?? []);
-  const readyUnits = allUnits.filter((u) => unitState(u) === "ready").length;
-  const totalVetted = active.reduce((s, b) => s + b.vetted, 0);
+  const inReview = active.filter((b) => serveState(b) === "review").length;
+  const trulyVetted = active.filter((b) => serveState(b) === "vetted").length;
+  // Only count approvals from banks that actually have an SME gate - an un-gated
+  // seed framework (AC) has no per-item approval, so its items are not "SME-approved".
+  const totalApproved = active.filter((b) => b.hasReviewGate).reduce((s, b) => s + b.vetted, 0);
 
   const metric = (value: string, label: string, tone = "text-[#010131]") => (
     <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
@@ -69,15 +92,15 @@ export default async function ItemBanksPage() {
           <Boxes className="h-6 w-6 text-[#5391D5]" /> Item-bank readiness
         </h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          Which service banks hold vetted, ready questions - and which would generate items live at deal time. Drive every domain from red to green.
+          What a candidate would actually get at deal time: live-AI generated, fixed-but-unreviewed, or SME-approved content. &ldquo;Vetted&rdquo; means an SME has approved every item - not merely that the bank never uses live-AI.
         </p>
       </header>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {metric(`${scramble}`, "Banks that generate items live at deal time", scramble > 0 ? "text-rose-600" : "text-emerald-700")}
-        {metric(`${readyUnits}/${allUnits.length}`, "Domains/subtests at target (vetted)")}
-        {metric(`${totalVetted}`, "Vetted items across all banks")}
-        {metric(`${withGate}/${active.length}`, "Banks with an SME review gate")}
+        {metric(`${scramble}`, "Banks generating items live at deal time", scramble > 0 ? "text-rose-600" : "text-emerald-700")}
+        {metric(`${inReview}`, "Banks serving fixed content still in review", inReview > 0 ? "text-amber-600" : "text-emerald-700")}
+        {metric(`${trulyVetted}/${active.length}`, "Banks fully SME-approved (vetted)", trulyVetted === active.length ? "text-emerald-700" : "text-[#010131]")}
+        {metric(`${totalApproved}`, "SME-approved items (gated banks)", totalApproved > 0 ? "text-[#010131]" : "text-amber-600")}
       </div>
 
       {scramble > 0 && (
@@ -106,15 +129,32 @@ export default async function ItemBanksPage() {
                 ) : (
                   <>
                     <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium capitalize ${TIER_CHIP[b.tier] ?? ""}`}>{b.tier}</span>
-                    {b.servesLive ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-600">
-                        <ShieldAlert className="h-3 w-3" /> Live-AI at deal time
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
-                        <ShieldCheck className="h-3 w-3" /> Fixed vetted content
-                      </span>
-                    )}
+                    {(() => {
+                      const s = serveState(b);
+                      if (s === "live")
+                        return (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-600">
+                            <ShieldAlert className="h-3 w-3" /> Live-AI at deal time
+                          </span>
+                        );
+                      if (s === "review")
+                        return (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+                            <ShieldAlert className="h-3 w-3" /> Fixed content · in review
+                          </span>
+                        );
+                      if (s === "framework")
+                        return (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                            <ShieldCheck className="h-3 w-3" /> Seeded framework · no item gate
+                          </span>
+                        );
+                      return (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+                          <ShieldCheck className="h-3 w-3" /> Fixed vetted content
+                        </span>
+                      );
+                    })()}
                     {b.hasReviewGate && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">
                         <CheckCircle2 className="h-3 w-3" /> SME review gate

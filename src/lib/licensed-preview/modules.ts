@@ -48,7 +48,7 @@ export const PREVIEW_MODULES: PreviewModule[] = [
   { id: "arc", label: "AR Compass® AI Readiness", tagline: "Readiness to use & govern AI", icon: Sparkles, tone: "#7c3aed", group: "diagnose", metricLabel: "Avg readiness" },
   { id: "reflect", label: "Reflect 360°", tagline: "Multi-rater leadership feedback", icon: Aperture, tone: "#db2777", group: "diagnose", metricLabel: "Avg leadership" },
 
-  { id: "prehire", label: "Pre-Hire Screening", tagline: "Evidence-based shortlisting", icon: UserPlus, tone: "#e11d48", group: "acquire", metricLabel: "Avg composite" },
+  { id: "prehire", label: "Pre-Hire® Screening", tagline: "Evidence-based shortlisting", icon: UserPlus, tone: "#e11d48", group: "acquire", metricLabel: "Avg composite" },
 
   { id: "academy", label: "VIFM Academy", tagline: "Targeted learning that closes gaps", icon: GraduationCap, tone: "#16a34a", group: "develop", metricLabel: "Avg completion" },
 ];

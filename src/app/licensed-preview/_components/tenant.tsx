@@ -106,20 +106,24 @@ export function Tenant({ brand, shareMode = false }: { brand: Brand; shareMode?:
   const accent = brand.accent;
   const active = moduleById(activeId)!;
 
-  // Featured modules lead the nav (a "Spotlight" group) + the capability grid.
+  // Selected services scope the portal. When the launcher picks specific services,
+  // the tenant shows ONLY those (plus the Command HQ) - it is the client's licence,
+  // not the whole catalogue. With no selection, the full platform is shown.
   const featured = (brand.featured ?? [])
     .map(moduleById)
     .filter((m): m is PreviewModule => !!m && m.id !== "command");
   const featuredIds = new Set(featured.map((m) => m.id));
+  const scoped = featured.length > 0;
   const navGroups: { key: string; label: string; caption: string; mods: PreviewModule[] }[] = [
     { key: "command", label: "Command", caption: "Your HQ", mods: PREVIEW_MODULES.filter((m) => m.group === "command") },
-    ...(featured.length ? [{ key: "spotlight", label: "Spotlight", caption: "Leads this licence", mods: featured }] : []),
-    ...MODULE_GROUPS.filter((g) => g.key !== "command").map((g) => ({
-      key: g.key,
-      label: g.label,
-      caption: g.caption,
-      mods: PREVIEW_MODULES.filter((m) => m.group === g.key && !featuredIds.has(m.id)),
-    })),
+    ...(scoped
+      ? [{ key: "services", label: "Services", caption: "In this licence", mods: featured }]
+      : MODULE_GROUPS.filter((g) => g.key !== "command").map((g) => ({
+          key: g.key,
+          label: g.label,
+          caption: g.caption,
+          mods: PREVIEW_MODULES.filter((m) => m.group === g.key),
+        }))),
   ].filter((g) => g.mods.length > 0);
 
   return (
@@ -193,7 +197,7 @@ export function Tenant({ brand, shareMode = false }: { brand: Brand; shareMode?:
         {/* ── Content ── */}
         <main className="min-w-0 flex-1 overflow-y-auto p-6">
           {activeId === "command" ? (
-            <CommandCenter brand={brand} data={data} accent={accent} onOpen={setActiveId} featuredIds={featuredIds} />
+            <CommandCenter brand={brand} data={data} accent={accent} onOpen={setActiveId} featuredIds={featuredIds} scoped={scoped} />
           ) : (
             <ModuleView module={active} stat={data.modules[active.id]} departments={data.departments} />
           )}
@@ -214,15 +218,19 @@ function CommandCenter({
   accent,
   onOpen,
   featuredIds,
+  scoped,
 }: {
   brand: Brand;
   data: ReturnType<typeof buildSampleTenant>;
   accent: string;
   onOpen: (id: string) => void;
   featuredIds: Set<string>;
+  scoped: boolean;
 }) {
   const profile = SECTOR_PROFILE[brand.sector];
-  const caps = [...PREVIEW_MODULES.filter((m) => m.id !== "command")].sort(
+  // When the licence is scoped to selected services, the capability grid shows
+  // only those; otherwise the whole platform, featured-first.
+  const caps = [...PREVIEW_MODULES.filter((m) => m.id !== "command" && (!scoped || featuredIds.has(m.id)))].sort(
     (a, b) => (featuredIds.has(b.id) ? 1 : 0) - (featuredIds.has(a.id) ? 1 : 0),
   );
   return (
@@ -240,7 +248,7 @@ function CommandCenter({
           <div className="space-y-1">
             <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Workforce readiness</div>
             <div className="text-sm text-slate-600">
-              Composite across {data.departments.length} departments and {PREVIEW_MODULES.length - 1} instruments.
+              Composite across {data.departments.length} departments and {caps.length} instrument{caps.length === 1 ? "" : "s"}.
             </div>
             <div className="pt-1 text-sm font-semibold" style={{ color: scoreTone(data.workforceReadiness) }}>
               {data.workforceReadiness >= 75 ? "Strong" : data.workforceReadiness >= 58 ? "Developing" : "At risk"} ·
@@ -256,21 +264,24 @@ function CommandCenter({
         </div>
       </div>
 
-      {/* Caliber loop */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="mb-3 text-sm font-semibold text-slate-900">The Caliber loop · diagnose → develop → certify</div>
-        <div className="flex flex-wrap items-center gap-2">
-          {LOOP.map((s, i) => (
-            <div key={s.label} className="flex items-center gap-2">
-              <div className="rounded-xl border border-slate-200 px-3 py-2 text-center">
-                <div className="text-sm font-semibold text-slate-800">{s.label}</div>
-                <div className="text-[11px] text-slate-500">{s.caption}</div>
+      {/* Caliber loop - the whole-platform methodology strip; hidden when the
+          licence is scoped to specific services (it names modules not in scope). */}
+      {!scoped && (
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="mb-3 text-sm font-semibold text-slate-900">The Caliber loop · diagnose → develop → certify</div>
+          <div className="flex flex-wrap items-center gap-2">
+            {LOOP.map((s, i) => (
+              <div key={s.label} className="flex items-center gap-2">
+                <div className="rounded-xl border border-slate-200 px-3 py-2 text-center">
+                  <div className="text-sm font-semibold text-slate-800">{s.label}</div>
+                  <div className="text-[11px] text-slate-500">{s.caption}</div>
+                </div>
+                {i < LOOP.length - 1 && <ChevronRight className="h-4 w-4 text-slate-300" />}
               </div>
-              {i < LOOP.length - 1 && <ChevronRight className="h-4 w-4 text-slate-300" />}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Licensed capabilities */}
       <div>

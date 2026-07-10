@@ -1,40 +1,52 @@
 "use server";
 
 import { createServiceClient } from "@/lib/supabase/server";
-import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
+import { isAuthorizationError } from "@/lib/ara/auth-guards";
+import {
+  requireAssessorForEngagement,
+  assertCandidateInEngagement,
+  assertEngagementUnlocked,
+} from "@/lib/ac/assessor-guards";
 import {
   saveIntegrationSchema,
   type SaveIntegrationValues,
 } from "@/lib/validations/assessor";
 
-// Writes go through the service client (integration_worksheets RLS only permits
-// the owning assessor); requireRole still gates the caller - synthetic admin in
-// dev, real assessor/admin check under auth=on.
-async function gateAssessor(): Promise<{ error: string } | null> {
-  try {
-    await requireRole(["lead_assessor", "associate_assessor", "admin"]);
-    return null;
-  } catch (e) {
-    if (isAuthorizationError(e)) return { error: e.message };
-    throw e;
-  }
-}
-
+// Writes go through the service client, which BYPASSES RLS, so ownership is
+// enforced here: the caller must be an admin or an assessor assigned to the
+// engagement, the candidate must belong to it, and it must not be finalised.
+// Authorship (assessor_id) is DERIVED FROM THE SESSION for a real assessor - the
+// client-supplied assessorId is ignored - so an assessor can no longer spoof a
+// colleague's authorship or delete a colleague's worksheet row.
 export async function saveIntegrationAction(values: SaveIntegrationValues) {
-  const gate = await gateAssessor();
-  if (gate) return gate;
-
   const parsed = saveIntegrationSchema.safeParse(values);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
   const supabase = createServiceClient();
 
-  // Delete existing entry if present, then insert fresh (avoids TOCTOU race)
+  let assessorId: string;
+  try {
+    const caller = await requireAssessorForEngagement(parsed.data.engagementId);
+    await assertCandidateInEngagement(parsed.data.candidateId, parsed.data.engagementId, supabase);
+    await assertEngagementUnlocked(parsed.data.engagementId, supabase);
+    // Real assessor -> force their own uid (closes the spoof). Admin keeps the
+    // client value, which the page derives from the session, so admin oversight
+    // still works. (The dev synthetic admin also lands here, but the integration
+    // page requires a live session and 404s under AUTH_ENABLED=false, so the dev
+    // UI never reaches this action.)
+    assessorId = caller.role === "admin" ? parsed.data.assessorId : caller.uid;
+  } catch (e) {
+    if (isAuthorizationError(e)) return { error: e.message };
+    throw e;
+  }
+
+  // Delete existing entry if present, then insert fresh (avoids TOCTOU race).
+  // Scoped to the DERIVED assessorId so it can only ever touch the caller's row.
   await supabase
     .from("integration_worksheets")
     .delete()
     .eq("engagement_id", parsed.data.engagementId)
-    .eq("assessor_id", parsed.data.assessorId)
+    .eq("assessor_id", assessorId)
     .eq("candidate_id", parsed.data.candidateId)
     .eq("competency_id", parsed.data.competencyId);
 
@@ -42,7 +54,7 @@ export async function saveIntegrationAction(values: SaveIntegrationValues) {
     .from("integration_worksheets")
     .insert({
       engagement_id: parsed.data.engagementId,
-      assessor_id: parsed.data.assessorId,
+      assessor_id: assessorId,
       candidate_id: parsed.data.candidateId,
       competency_id: parsed.data.competencyId,
       preliminary_rating: parsed.data.preliminaryRating,

@@ -1,7 +1,13 @@
 "use server";
 
 import { createServiceClient } from "@/lib/supabase/server";
-import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
+import { isAuthorizationError } from "@/lib/ara/auth-guards";
+import {
+  requireAssessorForEngagement,
+  assertCandidateInEngagement,
+  assertCompetencyInEngagement,
+  assertEngagementUnlocked,
+} from "@/lib/ac/assessor-guards";
 import {
   saveConsensusRatingSchema,
   type SaveConsensusRatingValues,
@@ -9,13 +15,27 @@ import {
   type SaveOarValues,
 } from "@/lib/validations/washup";
 
-// Wash-up writes go through the service client (consensus_ratings /
-// overall_assessment_ratings RLS only permit the owning assessor); requireRole
-// still gates the caller - synthetic admin in dev, real assessor/admin check
-// under auth=on.
-async function gateAssessor(): Promise<{ error: string } | null> {
+// Wash-up writes go through the service client, which BYPASSES RLS - so the
+// header comment that once claimed "RLS only permits the owning assessor" was
+// inert on this path. Authorization is enforced here instead: the caller must be
+// an admin or an assessor ASSIGNED to this engagement (requireAssessorForEngagement),
+// the candidate must belong to the engagement (assertCandidateInEngagement), and
+// the engagement must not be finalised (assertEngagementUnlocked). Without these,
+// any authenticated assessor could clobber the consensus + final OAR (which feeds
+// client reports + ac_ready_now credentials) of any candidate in any client's
+// engagement.
+async function gateWashupWrite(
+  engagementId: string,
+  candidateId: string,
+  sv: ReturnType<typeof createServiceClient>,
+  competencyId?: string,
+): Promise<{ error: string } | null> {
   try {
-    await requireRole(["lead_assessor", "associate_assessor", "admin"]);
+    await requireAssessorForEngagement(engagementId);
+    await assertCandidateInEngagement(candidateId, engagementId, sv);
+    await assertEngagementUnlocked(engagementId, sv);
+    // Consensus writes carry a competency; the OAR (no competencyId) skips this.
+    if (competencyId) await assertCompetencyInEngagement(competencyId, engagementId, sv);
     return null;
   } catch (e) {
     if (isAuthorizationError(e)) return { error: e.message };
@@ -24,13 +44,17 @@ async function gateAssessor(): Promise<{ error: string } | null> {
 }
 
 export async function saveConsensusRatingAction(values: SaveConsensusRatingValues) {
-  const gate = await gateAssessor();
-  if (gate) return gate;
-
   const parsed = saveConsensusRatingSchema.safeParse(values);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
   const supabase = createServiceClient();
+  const gate = await gateWashupWrite(
+    parsed.data.engagementId,
+    parsed.data.candidateId,
+    supabase,
+    parsed.data.competencyId,
+  );
+  if (gate) return gate;
 
   // Upsert: one consensus rating per (engagement, candidate, competency)
   const { data, error } = await supabase
@@ -54,13 +78,12 @@ export async function saveConsensusRatingAction(values: SaveConsensusRatingValue
 }
 
 export async function saveOarAction(values: SaveOarValues) {
-  const gate = await gateAssessor();
-  if (gate) return gate;
-
   const parsed = saveOarSchema.safeParse(values);
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
   const supabase = createServiceClient();
+  const gate = await gateWashupWrite(parsed.data.engagementId, parsed.data.candidateId, supabase);
+  if (gate) return gate;
 
   // Guard: the OAR is the synthesis of the per-competency consensus ratings, so
   // it is meaningless with none. Refuse to finalise the overall rating until at

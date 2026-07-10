@@ -2,6 +2,7 @@
 
 import { createServiceClient } from "@/lib/supabase/server";
 import { requireRole, isAuthorizationError, type AraCaller } from "@/lib/ara/auth-guards";
+import { assertEngagementUnlocked } from "@/lib/ac/assessor-guards";
 import { revalidatePath } from "next/cache";
 
 // Role gate: only assessors (or admin) may use the CBI write-paths. Under
@@ -125,6 +126,24 @@ export async function approveCbiToPipelineAction(
   // the gate that stops AI evidence being injected into another assessor's work.
   if (!(await callerOwnsAssignment(sb, gate.caller, input.assessorAssignmentId))) {
     return { error: "You can only approve evidence for your own assignment." };
+  }
+
+  // Immutability: this path writes into the SAME observations/ratings tables as
+  // the manual assessor flow, so it must honour the same finalisation freeze -
+  // AI-approved evidence must not mutate a completed/archived engagement whose
+  // report is released and ac_ready_now credential issued. Resolve the engagement
+  // from the assignment (authoritative - not the client-supplied engagementId).
+  try {
+    const { data: asg } = await sb
+      .from("assessor_assignments")
+      .select("engagement_id")
+      .eq("id", input.assessorAssignmentId)
+      .maybeSingle<{ engagement_id: string }>();
+    if (!asg) return { error: "Assignment not found." };
+    await assertEngagementUnlocked(asg.engagement_id, sb);
+  } catch (e) {
+    if (isAuthorizationError(e)) return { error: e.message };
+    throw e;
   }
 
   // 1. Write each kept evidence item as an observation (mirrors the

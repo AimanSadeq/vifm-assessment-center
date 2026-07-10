@@ -216,15 +216,47 @@ export async function getServiceActivity(service: CaliberService, orgId: string)
         countByName("technical_sandbox_vouchers", orgName),
         countByName("technical_sandbox_sessions", orgName),
       ]);
-      const { data } = await sb
+      const cols = "access_token, candidate_name, submitted_at, overall_band";
+      type TechRow = { access_token: string; candidate_name: string | null; submitted_at: string | null; overall_band: string | null };
+      // Scope the PII-bearing list to sittings this org actually OWNS: the real
+      // organization_id (migration 00187), plus - only for legacy rows with no
+      // org_id - a strict name match. Without this, a free-text org-name collision
+      // would list (and hand out report tokens for) another org's candidates. The
+      // detail page enforces the same rule, so list and report stay consistent.
+      const byId = await sb
         .from("technical_sandbox_sessions")
-        .select("access_token, candidate_name, submitted_at, overall_band")
-        .eq("organization_name", orgName)
+        .select(cols)
+        .eq("organization_id", orgId)
         .not("submitted_at", "is", null)
         .order("submitted_at", { ascending: false })
         .limit(100);
-      const list = (data ?? []) as { access_token: string; candidate_name: string | null; submitted_at: string | null; overall_band: string | null }[];
-      const rows = list.map((r) => ({
+      let listRows: TechRow[];
+      if (byId.error) {
+        // organization_id absent (pre-00187): degrade to the legacy name-only list.
+        const legacy = await sb
+          .from("technical_sandbox_sessions")
+          .select(cols)
+          .eq("organization_name", orgName)
+          .not("submitted_at", "is", null)
+          .order("submitted_at", { ascending: false })
+          .limit(100);
+        listRows = (legacy.data ?? []) as TechRow[];
+      } else {
+        const byName = await sb
+          .from("technical_sandbox_sessions")
+          .select(cols)
+          .is("organization_id", null)
+          .eq("organization_name", orgName)
+          .not("submitted_at", "is", null)
+          .order("submitted_at", { ascending: false })
+          .limit(100);
+        const seen = new Set<string>();
+        listRows = [...((byId.data ?? []) as TechRow[]), ...((byName.data ?? []) as TechRow[])]
+          .filter((r) => (seen.has(r.access_token) ? false : (seen.add(r.access_token), true)))
+          .sort((a, b) => (b.submitted_at ?? "").localeCompare(a.submitted_at ?? ""))
+          .slice(0, 100);
+      }
+      const rows = listRows.map((r) => ({
         id: r.access_token,
         name: r.candidate_name?.trim() || "Candidate",
         date: r.submitted_at || "",

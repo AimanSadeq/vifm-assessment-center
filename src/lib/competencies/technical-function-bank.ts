@@ -187,7 +187,19 @@ export async function functionBankReadiness(skillsEn: string[], functionId: stri
   const counts = await approvedCountBySkill(skillsEn);
   const perSkill = skillsEn.map((skill) => ({ skill, approved: counts[skill] ?? 0 }));
   const approvedTotal = perSkill.reduce((s, p) => s + p.approved, 0);
-  const certifiable = skillsEn.length > 0 && perSkill.every((p) => p.approved >= cut.minItemsPerSkill);
+  // Mirror buildCertifiedFunctionTest exactly: it draws up to
+  // max(minItemsPerSkill, drawPerSkill) per skill and returns null (→ indicative,
+  // NO credential) when the DRAWN total is below MIN_CERTIFIED_TOTAL_ITEMS. So a
+  // single-skill blueprint with 8 approved items clears the per-skill floor but
+  // only draws `drawPerSkill` (4) < 8, and can never issue a credential. The
+  // badge must apply that same overall floor or it advertises "Certifiable" for
+  // a config the assembler will always drop to indicative.
+  const effectiveDraw = Math.max(cut.minItemsPerSkill, cut.drawPerSkill);
+  const projectedDrawTotal = perSkill.reduce((s, p) => s + Math.min(p.approved, effectiveDraw), 0);
+  const certifiable =
+    skillsEn.length > 0 &&
+    perSkill.every((p) => p.approved >= cut.minItemsPerSkill) &&
+    projectedDrawTotal >= MIN_CERTIFIED_TOTAL_ITEMS;
   const calibratedTotal = await calibratedApprovedCount(skillsEn);
   return {
     perSkill,

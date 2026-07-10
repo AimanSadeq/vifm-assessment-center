@@ -3,8 +3,15 @@
 // the validators/scoring. Loads blueprints, manages token-accessed
 // sittings, autosaves work, and scores on submit.
 //
-// SECURITY: the public (candidate) blueprint NEVER includes
-// master_solution or checkpoints - those stay server-side for scoring.
+// SECURITY: the public (candidate) blueprint NEVER includes the answer key.
+// master_solution + checkpoints live in separate columns (never selected for
+// the public blueprint), BUT the spreadsheet engine_config also embeds the
+// model answer INLINE as `rows[].hint` (e.g. "=SUM(B4:B8)", literal expected
+// values). The client engine never renders `hint`, but it was serialized into
+// the RSC/client payload verbatim - a candidate could read every answer from
+// devtools. sanitizePublicEngineConfig() strips it before the config leaves
+// the server (grading re-derives everything from the scoring blueprint, so no
+// scoring path depends on the public hint).
 // ─────────────────────────────────────────────────────────────
 import { createServiceClient } from "@/lib/supabase/server";
 import { scoreBlock, tierFor } from "./validators";
@@ -20,6 +27,68 @@ import {
 } from "@/lib/ai/tech-block-notes";
 import { recommendCoursesForTechnical } from "@/lib/recommender/courses";
 import type { Checkpoint, EngineType, SandboxWork } from "./types";
+
+// Answer-bearing keys that must never reach the candidate's browser. Stripped
+// recursively from engine_config: `hint` is the inline per-cell model formula
+// on spreadsheet rows; the rest are defensive (future engines / hand-authored
+// configs must not leak a key we didn't anticipate).
+const ANSWER_KEYS = new Set([
+  "hint",
+  "master_solution",
+  "masterSolution",
+  "checkpoints",
+  "solution",
+  "answer",
+  "answerKey",
+  "expected",
+  "expectedValue",
+  "correct",
+]);
+
+/** Deep-strip answer-bearing keys from a candidate-facing engine_config. */
+function sanitizePublicEngineConfig(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sanitizePublicEngineConfig);
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (ANSWER_KEYS.has(k)) continue;
+      out[k] = sanitizePublicEngineConfig(v);
+    }
+    return out;
+  }
+  return value;
+}
+
+/**
+ * Resolve a free-text org label to a REAL organizations.id, but ONLY when it
+ * maps to exactly one org (case-insensitive, trimmed). Returns null for an
+ * empty label, no match, OR an ambiguous duplicate-name match - the caller then
+ * stores a null organization_id and the client-portal gate falls back to the
+ * legacy name equality. This is the runtime twin of migration 00187's backfill,
+ * so a sitting created after the migration is stamped the same way a backfilled
+ * one was. Tolerant: any query error yields null (name-gate fallback).
+ */
+async function resolveUniqueOrgIdByName(
+  sb: ReturnType<typeof createServiceClient>,
+  name: string | null | undefined,
+): Promise<string | null> {
+  const trimmed = (name ?? "").trim();
+  if (!trimmed) return null;
+  // Escape LIKE wildcards so an org label containing % or _ can't widen the
+  // match; ilike with no surrounding wildcards is a case-insensitive equality.
+  const pattern = trimmed.replace(/[\\%_]/g, (c) => `\\${c}`);
+  try {
+    const { data, error } = await sb
+      .from("organizations")
+      .select("id")
+      .ilike("name", pattern)
+      .limit(2);
+    if (error || !data || data.length !== 1) return null;
+    return (data[0] as { id: string }).id;
+  } catch {
+    return null;
+  }
+}
 
 export interface PublicSkillBlock {
   id: string;
@@ -181,7 +250,10 @@ export async function getPublicBlueprint(
           promptAr: b.prompt_ar,
           instructionsEn: b.instructions_en,
           instructionsAr: b.instructions_ar,
-          engineConfig: (b.engine_config ?? {}) as Record<string, unknown>,
+          // Answer key stripped (rows[].hint = the model formula) before it
+          // reaches the candidate's browser - grading uses the separate
+          // scoring blueprint, not this.
+          engineConfig: sanitizePublicEngineConfig(b.engine_config ?? {}) as Record<string, unknown>,
           sortOrder: b.sort_order,
         })),
     })),
@@ -443,6 +515,16 @@ export async function createSession(input: CreateSessionInput) {
     invited_by: input.invitedBy ?? null,
     status: "invited" as const,
   };
+  // Resolve the free-text org label to an organizations.id when it maps to
+  // exactly one org (migration 00187). This is what the client-portal report/list
+  // gate on: comparing ids is collision-resistant (a name alone can collide
+  // across two distinct orgs) and stable across an org rename. It is NOT proof of
+  // ownership - the label itself can be redeemer-typed - but it's a strict
+  // improvement over raw-string gating. Ambiguous/unmatched names leave org_id
+  // NULL (name-gate fallback). Peeled first below so a pending 00187 degrades to
+  // name-only.
+  const resolvedOrgId = await resolveUniqueOrgIdByName(sb, input.organizationName);
+  const orgRow = resolvedOrgId ? { organization_id: resolvedOrgId } : {};
   // Only carry the MCQ section when there's a usable test, so a generation
   // miss falls back to sandbox-only rather than an empty knowledge section.
   const mcqRow =
@@ -476,10 +558,12 @@ export async function createSession(input: CreateSessionInput) {
   // we fail loud requiring 00121.
   const candidates: Record<string, unknown>[] = isCustom
     ? [
+        { ...baseRow, ...orgRow, ...mcqRow, ...customRow, ...metaRow },
         { ...baseRow, ...mcqRow, ...customRow, ...metaRow },
         { ...baseRow, ...mcqRow, ...customRow },
       ]
     : [
+        { ...baseRow, ...orgRow, ...mcqRow, ...metaRow },
         { ...baseRow, ...mcqRow, ...metaRow },
         { ...baseRow, ...mcqRow },
         { ...baseRow, ...metaRow },
@@ -964,6 +1048,7 @@ export interface SessionReport {
   candidateName: string | null;
   candidateEmail: string | null;
   organizationName: string | null;
+  organizationId: string | null;
   submittedAt: string | null;
   overallPct: number;
   overallBand: string;
@@ -1332,6 +1417,9 @@ export async function getSessionReport(token: string): Promise<SessionReport | n
     candidateName: session.candidate_name,
     candidateEmail: session.candidate_email,
     organizationName: session.organization_name,
+    // Real ownership id (migration 00187); null on legacy/ambiguous rows, where
+    // the client-portal gate falls back to organizationName equality.
+    organizationId: (session.organization_id as string | null | undefined) ?? null,
     submittedAt: session.submitted_at,
     overallPct,
     overallBand,

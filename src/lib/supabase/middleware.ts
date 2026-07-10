@@ -141,7 +141,13 @@ export async function updateSession(request: NextRequest) {
       p.startsWith("/courses") ||
       p.startsWith("/evidence") ||
       p.startsWith("/verify") ||
-      p.startsWith("/admin/tech-sandbox/results") ||
+      // Path-BOUNDARY match (not a loose prefix): admit the Techno results list
+      // and its [token] detail, but NOT a hypothetical sibling like
+      // /admin/tech-sandbox/results-export that a bare startsWith would leak. The
+      // admin layout admits a client_manager on the strength of this confinement,
+      // so a new sibling must be added here deliberately, with its own org gate.
+      p === "/admin/tech-sandbox/results" ||
+      p.startsWith("/admin/tech-sandbox/results/") ||
       // Puppeteer render of the report page for an already-authorized PDF
       // request (see isInternalReportRender) - a client_manager's own cookies
       // ride along, so the confinement below would otherwise 302 it to /portal

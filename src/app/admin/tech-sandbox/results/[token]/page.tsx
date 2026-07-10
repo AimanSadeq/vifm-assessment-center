@@ -31,21 +31,30 @@ function Badge({ band }: { band: string }) {
 }
 
 export default async function TechResultsPage({ params }: { params: { token: string } }) {
-  // Additive: a client_manager may view a sitting from their own organisation
-  // (name-bridge match on organization_name). Admin keeps full access.
+  // Additive: a client_manager may view a sitting from their OWN organisation.
+  // The tenancy boundary is the sitting's real organization_id (migration 00187)
+  // compared to the manager's resolved org id; only a legacy/ambiguous sitting
+  // that has NO organization_id falls back to organization_name equality. This
+  // org-gate is load-bearing: the /admin layout admits a client_manager to this
+  // page (middleware confines them here), so a bug here would expose another
+  // org's candidate PII. Admin keeps full access.
+  let clientMgrOrgId: string | null = null;
   let clientMgrOrgName: string | null = null;
+  let isClientManager = false;
   try {
     await requireRole(["admin"]);
   } catch (e) {
     if (!isAuthorizationError(e)) throw e;
     const caller = await getCurrentCaller();
     if (caller?.role === "client_manager") {
-      const orgId = await getClientOrgId();
-      const { data: org } = orgId
-        ? await createServiceClient().from("organizations").select("name").eq("id", orgId).maybeSingle<{ name: string }>()
+      isClientManager = true;
+      clientMgrOrgId = await getClientOrgId();
+      const { data: org } = clientMgrOrgId
+        ? await createServiceClient().from("organizations").select("name").eq("id", clientMgrOrgId).maybeSingle<{ name: string }>()
         : { data: null };
       clientMgrOrgName = org?.name ?? null;
-      if (!clientMgrOrgName) redirect("/login");
+      // No resolvable org identity -> cannot scope; refuse rather than open up.
+      if (!clientMgrOrgId && !clientMgrOrgName) redirect("/login");
     } else {
       redirect("/login");
     }
@@ -53,7 +62,17 @@ export default async function TechResultsPage({ params }: { params: { token: str
 
   const r = await getSessionReport(params.token);
   if (!r) notFound();
-  if (clientMgrOrgName && (r.organizationName ?? null) !== clientMgrOrgName) notFound();
+  if (isClientManager) {
+    const sittingOrgId = r.organizationId ?? null;
+    if (sittingOrgId) {
+      // Modern sitting: id must match the manager's org exactly.
+      if (sittingOrgId !== clientMgrOrgId) notFound();
+    } else {
+      // Legacy/ambiguous sitting (no org_id): fall back to strict name equality,
+      // and never match when the manager has no org name to compare against.
+      if (!clientMgrOrgName || (r.organizationName ?? null) !== clientMgrOrgName) notFound();
+    }
+  }
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-6">

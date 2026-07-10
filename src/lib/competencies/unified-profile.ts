@@ -106,6 +106,24 @@ function psyScaleLabel(sourceKey: string): string {
   return COGNITIVE_SUBTESTS.find((s) => s.key === sourceKey)?.name_en ?? sourceKey;
 }
 
+/**
+ * PostgREST `.or()` clause matching THIS candidate's own rows by candidate_id
+ * OR taker_email. The per-candidate result tables (eng_fluent_results,
+ * tech_assessment_results, psy_results) were previously read with a global
+ * `.limit(300)` + client-side filter, so once a table exceeded 300 rows
+ * platform-wide the candidate's own (older) result fell outside the window and
+ * silently vanished from their skills page. A server-side filter fixes that.
+ * Returns null when neither key is safely usable (caller then skips the read
+ * rather than falling back to an unscoped platform-wide query). Values are
+ * shape-validated to keep them out of the .or() filter grammar.
+ */
+function candidateScopeFilter(candidateId: string, email: string | null): string | null {
+  const clauses: string[] = [];
+  if (/^[0-9a-f-]{36}$/i.test(candidateId)) clauses.push(`candidate_id.eq.${candidateId}`);
+  if (email && /^[^,()"'\s]+@[^,()"'\s]+$/.test(email)) clauses.push(`taker_email.eq.${email}`);
+  return clauses.length ? clauses.join(",") : null;
+}
+
 export async function buildUnifiedProfile(input: {
   candidateId: string;
   email: string | null;
@@ -121,13 +139,16 @@ export async function buildUnifiedProfile(input: {
   // ── Fluent: Language Skills framework + "enables" bridge ──
   try {
     const svc = createServiceClient();
+    const scope = candidateScopeFilter(input.candidateId, input.email);
+    if (!scope) throw new Error("no candidate scope");
     const { data } = await svc
       .from("eng_fluent_results")
       .select(
         "candidate_id, taker_email, created_at, speaking_attempted, reading_cefr, listening_cefr, writing_cefr, speaking_cefr"
       )
+      .or(scope)
       .order("created_at", { ascending: false })
-      .limit(300);
+      .limit(50);
     const rows = (data ?? []) as Array<Record<string, unknown>>;
     const mine =
       rows.find((r) => r.candidate_id === input.candidateId) ??
@@ -162,11 +183,14 @@ export async function buildUnifiedProfile(input: {
   const techByDomain = new Map<string, TechnicalSignal>();
   try {
     const svc = createServiceClient();
+    const scope = candidateScopeFilter(input.candidateId, input.email);
+    if (!scope) throw new Error("no candidate scope");
     const { data } = await svc
       .from("tech_assessment_results")
       .select("domain_key, level, level_label, candidate_id, taker_email, created_at")
+      .or(scope)
       .order("created_at", { ascending: false })
-      .limit(300);
+      .limit(50);
     const rows = (data ?? []) as Array<{
       domain_key: string;
       level: number;
@@ -275,11 +299,14 @@ export async function buildUnifiedProfile(input: {
   //    / ARA / Pre-Hire align to the same spine and slot in here as they land.
   try {
     const svc = createServiceClient();
+    const scope = candidateScopeFilter(input.candidateId, input.email);
+    if (!scope) throw new Error("no candidate scope");
     const { data } = await svc
       .from("psy_results")
       .select("kind, scales, overall, candidate_id, taker_email, created_at")
+      .or(scope)
       .order("created_at", { ascending: false })
-      .limit(300);
+      .limit(50);
     const rows = (data ?? []) as Array<{
       kind: string;
       scales: Array<{ key: string; normalized: number; band: string }> | null;

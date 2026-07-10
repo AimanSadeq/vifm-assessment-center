@@ -7,11 +7,8 @@ import {
   Languages,
   Sparkles,
   Aperture,
-  Gauge,
   UserPlus,
   GraduationCap,
-  BadgeCheck,
-  TrendingUp,
   type LucideIcon,
 } from "lucide-react";
 
@@ -48,17 +45,12 @@ export const PREVIEW_MODULES: PreviewModule[] = [
   { id: "logica", label: "Logica® Cognitive", tagline: "Reasoning aptitude under time", icon: Brain, tone: "#0891b2", group: "diagnose", metricLabel: "Avg aptitude" },
   { id: "persona", label: "Persona® Behavioural", tagline: "Self-reported working style", icon: UserCircle, tone: "#8b5cf6", group: "diagnose", metricLabel: "Avg index" },
   { id: "fluent", label: "Fluent® English", tagline: "CEFR-aligned language placement", icon: Languages, tone: "#0ea5e9", group: "diagnose", metricLabel: "Avg CEFR score" },
-  { id: "arc", label: "AI Readiness", tagline: "Readiness to use & govern AI", icon: Sparkles, tone: "#7c3aed", group: "diagnose", metricLabel: "Avg readiness" },
+  { id: "arc", label: "AR Compass® AI Readiness", tagline: "Readiness to use & govern AI", icon: Sparkles, tone: "#7c3aed", group: "diagnose", metricLabel: "Avg readiness" },
   { id: "reflect", label: "Reflect 360°", tagline: "Multi-rater leadership feedback", icon: Aperture, tone: "#db2777", group: "diagnose", metricLabel: "Avg leadership" },
-  { id: "psychometrics", label: "Psychometrics", tagline: "Cognitive & personality foundations", icon: Gauge, tone: "#ea580c", group: "diagnose", metricLabel: "Avg standardised" },
 
   { id: "prehire", label: "Pre-Hire Screening", tagline: "Evidence-based shortlisting", icon: UserPlus, tone: "#e11d48", group: "acquire", metricLabel: "Avg composite" },
 
   { id: "academy", label: "VIFM Academy", tagline: "Targeted learning that closes gaps", icon: GraduationCap, tone: "#16a34a", group: "develop", metricLabel: "Avg completion" },
-
-  { id: "credentials", label: "Credentials", tagline: "Verifiable, renewable certificates", icon: BadgeCheck, tone: "#ca8a04", group: "certify", metricLabel: "Validity rate" },
-
-  { id: "succession", label: "Succession Readiness", tagline: "Bench strength for critical roles", icon: TrendingUp, tone: "#0d9488", group: "succeed", metricLabel: "Pipeline strength" },
 ];
 
 export const DIAGNOSE_MODULES = PREVIEW_MODULES.filter((m) => m.group === "diagnose");

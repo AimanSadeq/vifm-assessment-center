@@ -93,7 +93,7 @@ function TrendPill({ trend }: { trend: number }) {
 }
 
 const LOOP = [
-  { label: "Diagnose", caption: "8 instruments" },
+  { label: "Diagnose", caption: "7 instruments" },
   { label: "Acquire", caption: "Pre-Hire" },
   { label: "Develop", caption: "Academy" },
   { label: "Certify", caption: "Credentials" },

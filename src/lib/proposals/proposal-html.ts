@@ -49,6 +49,15 @@ export function proposalRef(p: Proposal): string {
   return `VIFM-P-${year}-${p.id.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
 }
 
+/** Which document to build:
+ *  - "full": the complete proposal (technical + commercial).
+ *  - "technical": every section EXCEPT pricing (the Commercial section becomes a
+ *    pointer to the separate financial proposal; no totals/ROI on the facts strip).
+ *  - "financial": a lean money-only document - cover, executive summary (names all
+ *    solutions, one combined price), commercial (all solutions, one total),
+ *    assumptions, data protection, terms and acceptance. */
+export type ProposalVariant = "full" | "technical" | "financial";
+
 type ProposalRenderOpts = {
   /** Monochrome white VIFM logo (data URI) - dark cover, per the Brand Kit. */
   logoWhite?: string | null;
@@ -56,6 +65,11 @@ type ProposalRenderOpts = {
   logoColor?: string | null;
   /** Live reliability data for the Psychometric foundations + Evidence sections. */
   evidence?: ProposalEvidence | null;
+  /** Document variant (full / technical / financial). Defaults to "full". */
+  variant?: ProposalVariant;
+  /** Emit Word-friendly HTML (flat tables, no flex/gradient/SVG/web-font) so the
+   *  .doc opens cleanly and editably in Microsoft Word. */
+  wordSafe?: boolean;
 };
 
 /** Full HTML string for the proposal PDF/Word. */
@@ -75,6 +89,9 @@ function renderProposalDoc(
 ): { html: string; sectionDefaults: Record<string, string> } {
   const logoWhite = opts?.logoWhite ?? null;
   const logoColor = opts?.logoColor ?? null;
+  const variant = opts?.variant ?? "full";
+  const wordSafe = !!opts?.wordSafe;
+  const showPrices = variant !== "technical";
   const cur = p.currency || "USD";
   const money = (n: number) => formatMoney(n, cur);
   const num = (n: number) => (n || 0).toLocaleString("en-US");
@@ -149,7 +166,20 @@ function renderProposalDoc(
   // ── Section selection + numbering (Phase 2). Numbers/TOC derive from the
   // INCLUDED sections only, so removing an optional section renumbers cleanly.
   // Mandatory sections (the only cross-referenced ones) are always present. ──
-  const included = resolveIncludedSections(p.sectionSelection);
+  // The financial variant keeps only the money-relevant sections; the technical
+  // variant keeps everything (the Commercial body becomes a pointer - see below).
+  const FINANCIAL_SECTIONS = new Set([
+    "Executive summary",
+    "Commercial proposal",
+    "Assumptions & exclusions",
+    "Data protection & privacy",
+    "Terms & conditions",
+    "Acceptance & next steps",
+  ]);
+  const included =
+    variant === "financial"
+      ? resolveIncludedSections(p.sectionSelection).filter((s) => FINANCIAL_SECTIONS.has(s))
+      : resolveIncludedSections(p.sectionSelection);
   const includedSet = new Set(included);
   const inc = (title: string) => includedSet.has(title);
   const NO = (title: string) => {
@@ -208,6 +238,15 @@ function renderProposalDoc(
     combinedSvcLabels.length <= 1
       ? combinedSvcLabels.join("")
       : `${combinedSvcLabels.slice(0, -1).join(", ")} and ${combinedSvcLabels[combinedSvcLabels.length - 1]}`;
+
+  // Every selected solution by name (the per-seat services + any consultant
+  // engagement) - so the executive summary + financial proposal can NAME all of
+  // them while still quoting ONE combined price ("this is one proposal").
+  const allSolutionNames = [...serviceScopeRows.map((s) => s.label), ...(eng ? [eng.name] : [])];
+  const allSolutionsList =
+    allSolutionNames.length <= 1
+      ? allSolutionNames.join("")
+      : `${allSolutionNames.slice(0, -1).join(", ")} and ${allSolutionNames[allSolutionNames.length - 1]}`;
 
   const jurisdiction =
     p.clientRegion === "saudi" ? "the Kingdom of Saudi Arabia" : "the United Arab Emirates";
@@ -447,22 +486,28 @@ function renderProposalDoc(
   // City, Country under the client name on the cover (either part optional).
   const clientLocation = [p.clientCity, p.clientCountry].filter((s) => s && s.trim()).join(", ");
 
-  // Executive-summary fact strip. Combined mode reports service count + combined
-  // total + engagement participants; the other modes keep their existing facts.
-  const combinedSvcCount = combinedServicesMode === "licence" && lic ? lic.products.length + lic.bundles.length : serviceScopeRows.length;
-  const factsInner = isCombined
-    ? `<div class="fact"><b>${num(combinedSvcCount)}</b><span>Service${combinedSvcCount === 1 ? "" : "s"}</span></div>
-    ${eng ? `<div class="fact"><b>${num(eng.participants)}</b><span>Engagement participant${eng.participants === 1 ? "" : "s"}</span></div>` : ""}
-    <div class="fact"><b>${money(p.total)}</b><span>Combined investment</span></div>
-    ${validUntil ? `<div class="fact"><b>${validUntil}</b><span>Offer validity</span></div>` : ""}`
-    : `${
-        singleService
-          ? `<div class="fact"><b>${esc(singleService)}</b><span>Service</span></div>`
-          : `<div class="fact"><b>${scopeWithSeats.length}</b><span>Services</span></div>`
-      }
-    <div class="fact"><b>${isLicence && lic ? money(lic.annualRecurring) : num(totalParticipants)}</b><span>${isLicence && lic ? "Annual recurring" : "Participants"}</span></div>
-    <div class="fact"><b>${isLicence && lic ? money(lic.year1Subtotal + drFee) : money(p.total)}</b><span>${isLicence && lic ? "Year-1 investment" : "Total investment"}</span></div>
-    ${validUntil ? `<div class="fact"><b>${validUntil}</b><span>Offer validity</span></div>` : ""}`;
+  // Executive-summary fact strip. Names all selected solutions and quotes ONE
+  // combined price (never a price per solution - "this is one proposal"). Price
+  // facts are suppressed in the technical variant (that document carries no money).
+  const solutionsFact =
+    allSolutionNames.length <= 1
+      ? `<div class="fact"><b>${esc(allSolutionNames[0] ?? singleService ?? "Talent intelligence")}</b><span>Solution</span></div>`
+      : `<div class="fact"><b>${num(allSolutionNames.length)}</b><span>Solutions</span></div>`;
+  const peopleFact =
+    isLicence && lic && showPrices
+      ? `<div class="fact"><b>${money(lic.annualRecurring)}</b><span>Annual recurring</span></div>`
+      : `<div class="fact"><b>${num(isCombined && eng ? eng.participants : totalParticipants)}</b><span>Participant${(isCombined && eng ? eng.participants : totalParticipants) === 1 ? "" : "s"}</span></div>`;
+  const priceFact = !showPrices
+    ? ""
+    : isLicence && lic
+      ? `<div class="fact"><b>${money(lic.year1Subtotal + drFee)}</b><span>Year-1 investment</span></div>`
+      : `<div class="fact"><b>${money(p.total)}</b><span>Total investment</span></div>`;
+  const validityFact = validUntil ? `<div class="fact"><b>${validUntil}</b><span>Offer validity</span></div>` : "";
+  const factsInner = `${solutionsFact}${peopleFact}${priceFact}${validityFact}`;
+  // A one-line caption under the facts that NAMES every included solution.
+  const solutionsCaption = allSolutionNames.length
+    ? `<p class="scope-note" style="margin-top:2px;"><strong>Solutions included:</strong> ${esc(allSolutionsList)}.</p>`
+    : "";
 
   // ── Indicative-return (ROI) paragraph (Phase 2). Renders only when the
   // preparer supplied an average salary + hires/year (stored in licence_data.roi). ──
@@ -527,17 +572,96 @@ function renderProposalDoc(
       <tr class="total-row"><td colspan="3" class="tot-label">Total (${esc(cur)})</td><td class="num">${money(p.total)}</td></tr>
     </tbody>
   </table>`;
+  // One-price bundled commercial: names every solution, quotes ONE combined total
+  // (never a price per solution). Drives the financial variant.
+  const bundledCommercial = `<table>
+    <tbody>
+      <tr><td style="width:34%"><b>Solutions included</b></td><td>${esc(allSolutionsList || "As agreed")}</td></tr>
+      ${totalParticipants > 0 ? `<tr><td><b>Participants</b></td><td class="num">${num(totalParticipants)}</td></tr>` : ""}
+      ${discount > 0 ? `<tr><td class="tot-label">Discount (${p.discountPct}%)</td><td class="num">- ${money(discount)}</td></tr>` : ""}
+      <tr class="total-row"><td class="tot-label">Total investment (${esc(cur)})</td><td class="num">${money(p.total)}</td></tr>
+    </tbody>
+  </table>`;
+  // Variant-aware commercial: technical carries NO pricing (points to the financial
+  // proposal); financial shows the one-price bundle; full keeps the itemised table.
+  const commercialIntroForVariant =
+    variant === "technical"
+      ? `<p>The commercial terms for this engagement are provided in a separate <strong>financial proposal</strong>. This technical proposal sets out the solution, methodology and delivery approach only.</p>`
+      : variant === "financial"
+        ? `<p>This financial proposal covers ${esc(allSolutionsList || "the selected solutions")} as a single engagement for ${p.clientName}, quoted at one combined price${totalParticipants > 0 ? ` for ${num(totalParticipants)} participant${totalParticipants === 1 ? "" : "s"}` : ""}.</p>`
+        : commercialIntroHtml;
+  const commercialTableForVariant =
+    variant === "technical" ? "" : variant === "financial" ? bundledCommercial : commercialTableHtml;
   const sampleReportsProseHtml = `<p>The reports and deliverables included in the agreed scope are listed below, per selected
     service. Each is produced as a professionally formatted, bilingual-capable PDF. Anonymised sample candidate and
     cohort reports for every scoped service are available on request and can be appended to the signed statement of
     work.</p>`;
 
+  const variantLabel = variant === "technical" ? "Technical proposal" : variant === "financial" ? "Financial proposal" : "";
+  const coverEyebrow = `VIFM Caliber&reg; &middot; ${variantLabel || "Talent Intelligence Proposal"}`;
+  // Word can't render the gradient/SVG/flex cover (its HTML engine drops the
+  // background, leaving white text invisible = the "scramble"). wordSafe swaps in a
+  // flat navy-on-white cover built from a table, which Word renders + edits cleanly.
+  const coverBlock = wordSafe
+    ? `<div style="border-top:4px solid #010131; padding:20px 0 16px; margin-bottom:10px; border-bottom:1px solid #e5e7eb;">
+    <div style="color:#5391D5; font-size:9pt; font-weight:700; letter-spacing:.1em; text-transform:uppercase;">${coverEyebrow}</div>
+    <h1 style="color:#010131; font-size:24pt; margin:10px 0 4px;">${esc(p.title)}</h1>
+    <div style="color:#1A3A6B; font-size:12pt; font-weight:600;">${coverSubtitle}</div>
+    <table style="margin-top:16px; border-collapse:collapse; font-size:10pt; border:0;"><tbody>
+      <tr><td style="padding:2px 24px 2px 0; color:#64748b; border:0;">Prepared for</td><td style="padding:2px 0; font-weight:700; color:#010131; border:0;">${esc(p.clientName)}${clientLocation ? ` &middot; ${esc(clientLocation)}` : ""}</td></tr>
+      <tr><td style="padding:2px 24px 2px 0; color:#64748b; border:0;">Prepared by</td><td style="padding:2px 0; color:#010131; border:0;">Virginia Institute of Finance and Management</td></tr>
+      <tr><td style="padding:2px 24px 2px 0; color:#64748b; border:0;">Reference</td><td style="padding:2px 0; color:#010131; border:0;">${ref}</td></tr>
+      <tr><td style="padding:2px 24px 2px 0; color:#64748b; border:0;">Date</td><td style="padding:2px 0; color:#010131; border:0;">${fmtDate(p.createdAt)}</td></tr>
+      ${validUntil ? `<tr><td style="padding:2px 24px 2px 0; color:#64748b; border:0;">Valid until</td><td style="padding:2px 0; color:#010131; border:0;">${validUntil}</td></tr>` : ""}
+    </tbody></table>
+    <p style="color:#64748b; font-size:8.5pt; margin-top:14px;">This document contains confidential and proprietary information of VIFM and is prepared exclusively for ${esc(p.clientName)}. It may not be reproduced or disclosed to any third party without VIFM's prior written consent.</p>
+  </div>`
+    : `<div class="cover">
+    <div class="texture"></div>
+    <svg class="motif" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M18 26 L100 178 L182 26" stroke="#5391D5" stroke-width="11" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M62 26 L100 96 L138 26" stroke="#9ec2ec" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>
+    </svg>
+    <div class="layer">
+      <div class="topbar">
+        ${logoWhite ? `<img class="logo" src="${logoWhite}" alt="VIFM" />` : `<div class="eyebrow">VIFM Caliber&reg;</div>`}
+        <div class="meta-top">${ref}<br/>${fmtDate(p.createdAt)}</div>
+      </div>
+      <div class="title-wrap">
+        <div class="eyebrow">${coverEyebrow}</div>
+        <h1>${esc(p.title)}</h1>
+        <div class="subtitle">${coverSubtitle}</div>
+        <div class="accent"></div>
+        <div class="prepared"><b>Prepared for</b><span>${esc(p.clientName)}</span>${clientLocation ? `<i>${esc(clientLocation)}</i>` : ""}</div>
+      </div>
+      <div class="creds">
+        <span>Bilingual EN / AR</span><span>Verifiable credentials</span><span>ISO 10667 aligned</span><span>GCC data residency</span>
+      </div>
+    </div>
+    <div class="layer">
+      <div class="panel">
+        <div class="grid">
+          <div><b>Prepared for</b>${esc(p.clientName)}</div>
+          <div><b>Prepared by</b>Virginia Institute of Finance<br/>and Management</div>
+          <div><b>Reference</b>${ref}</div>
+          <div><b>Date</b>${fmtDate(p.createdAt)}</div>
+          ${validUntil ? `<div><b>Valid until</b>${validUntil}</div>` : ""}
+        </div>
+      </div>
+      <div class="conf">
+        This document contains confidential and proprietary information of the Virginia Institute of Finance and
+        Management (VIFM) and is prepared exclusively for ${esc(p.clientName)}. It may not be reproduced or
+        disclosed to any third party, in whole or in part, without VIFM's prior written consent.
+      </div>
+    </div>
+  </div>`;
+
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" />
+${wordSafe ? "" : `<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" />`}
 <style>
   @page { size: A4; margin: 16mm 15mm 20mm; }
   * { box-sizing: border-box; }
@@ -635,45 +759,7 @@ function renderProposalDoc(
 <body>
 
   <!-- Cover -->
-  <div class="cover">
-    <div class="texture"></div>
-    <svg class="motif" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path d="M18 26 L100 178 L182 26" stroke="#5391D5" stroke-width="11" stroke-linejoin="round" stroke-linecap="round"/>
-      <path d="M62 26 L100 96 L138 26" stroke="#9ec2ec" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>
-    </svg>
-    <div class="layer">
-      <div class="topbar">
-        ${logoWhite ? `<img class="logo" src="${logoWhite}" alt="VIFM" />` : `<div class="eyebrow">VIFM Caliber&reg;</div>`}
-        <div class="meta-top">${ref}<br/>${fmtDate(p.createdAt)}</div>
-      </div>
-      <div class="title-wrap">
-        <div class="eyebrow">VIFM Caliber&reg; &middot; Talent Intelligence Proposal</div>
-        <h1>${esc(p.title)}</h1>
-        <div class="subtitle">${coverSubtitle}</div>
-        <div class="accent"></div>
-        <div class="prepared"><b>Prepared for</b><span>${esc(p.clientName)}</span>${clientLocation ? `<i>${esc(clientLocation)}</i>` : ""}</div>
-      </div>
-      <div class="creds">
-        <span>Bilingual EN / AR</span><span>Verifiable credentials</span><span>ISO 10667 aligned</span><span>GCC data residency</span>
-      </div>
-    </div>
-    <div class="layer">
-      <div class="panel">
-        <div class="grid">
-          <div><b>Prepared for</b>${esc(p.clientName)}</div>
-          <div><b>Prepared by</b>Virginia Institute of Finance<br/>and Management</div>
-          <div><b>Reference</b>${ref}</div>
-          <div><b>Date</b>${fmtDate(p.createdAt)}</div>
-          ${validUntil ? `<div><b>Valid until</b>${validUntil}</div>` : ""}
-        </div>
-      </div>
-      <div class="conf">
-        This document contains confidential and proprietary information of the Virginia Institute of Finance and
-        Management (VIFM) and is prepared exclusively for ${esc(p.clientName)}. It may not be reproduced or
-        disclosed to any third party, in whole or in part, without VIFM's prior written consent.
-      </div>
-    </div>
-  </div>
+  ${coverBlock}
 
   <!-- Contents -->
   <div class="toc">
@@ -692,9 +778,10 @@ function renderProposalDoc(
   <div class="facts">
     ${factsInner}
   </div>
-  ${roiHtml}
+  ${solutionsCaption}
+  ${showPrices ? roiHtml : ""}
 
-  <h2><span class="no">${NO("About VIFM")}.</span>About VIFM</h2>
+  ${inc("About VIFM") ? `<h2><span class="no">${NO("About VIFM")}.</span>About VIFM</h2>
   ${secBody(
     "About VIFM",
     `<p>The Virginia Institute of Finance and Management (VIFM) is a finance and management institute serving the
@@ -707,9 +794,9 @@ function renderProposalDoc(
   scoring, it operates under documented human oversight; where credentials are issued, they are publicly
   verifiable. Published methodology briefs for each instrument are available on request and form part of this
   proposal by reference.</p>`,
-  )}
+  )}` : ""}
 
-  <h2><span class="no">${NO("Understanding of your requirements")}.</span>Understanding of your requirements</h2>
+  ${inc("Understanding of your requirements") ? `<h2><span class="no">${NO("Understanding of your requirements")}.</span>Understanding of your requirements</h2>
   ${secBody(
     "Understanding of your requirements",
     `<p>${esc(p.clientName)} is ${sectorPhrase}${
@@ -721,9 +808,9 @@ function renderProposalDoc(
   <p>The solution set out below addresses these requirements with instruments that are bilingual where the
   audience requires it, auditable end to end, and aligned with the data-protection expectations that apply in
   ${jurisdiction}. Any refinement of scope agreed during kickoff will be captured in the statement of work.</p>`,
-  )}
+  )}` : ""}
 
-  <h2><span class="no">${NO("Proposed solution & technical approach")}.</span>Proposed solution &amp; technical approach</h2>
+  ${inc("Proposed solution & technical approach") ? `<h2><span class="no">${NO("Proposed solution & technical approach")}.</span>Proposed solution &amp; technical approach</h2>
   ${secBody(
     "Proposed solution & technical approach",
     `${
@@ -734,7 +821,7 @@ function renderProposalDoc(
           : `${committedScope}${technical || "<p>No services selected.</p>"}`
     }`,
   )}
-  <div class="svc"><h3>Data residency</h3><p>${dataResidencyStatement(residency)}</p></div>
+  <div class="svc"><h3>Data residency</h3><p>${dataResidencyStatement(residency)}</p></div>` : ""}
 
   ${inc("Psychometric foundations") ? `<h2><span class="no">${NO("Psychometric foundations")}.</span>Psychometric foundations</h2>
   ${secBody("Psychometric foundations", `<p>The proposed instrument${scopeWithSeats.length === 1 ? " is" : "s are"} built on documented measurement
@@ -779,14 +866,14 @@ function renderProposalDoc(
     </tbody>
   </table>` : ""}
 
-  <h2><span class="no">${NO("Project governance & team")}.</span>Project governance &amp; team</h2>
+  ${inc("Project governance & team") ? `<h2><span class="no">${NO("Project governance & team")}.</span>Project governance &amp; team</h2>
   ${secBody("Project governance & team", `<ul>
     <li><b>Engagement lead (VIFM)</b> - single accountable owner for delivery, commercials and escalation.</li>
     <li><b>Delivery coordinator (VIFM)</b> - manages invitations, completion monitoring and participant support throughout the assessment window.</li>
     <li><b>Assessment &amp; psychometrics oversight (VIFM)</b> - owns instrument integrity, scoring quality and the review of any flagged administrations.</li>
     <li><b>Client single point of contact</b> - ${esc(p.clientName)} nominates one coordinator to own the participant list, internal communications and scheduling decisions.</li>
     <li><b>Cadence</b> - weekly written status during the assessment window, with a standing escalation path to the engagement lead and a closing debrief at handover.</li>
-  </ul>`)}
+  </ul>`)}` : ""}
 
   <h2><span class="no">${NO("Data protection & privacy")}.</span>Data protection &amp; privacy</h2>
   ${secBody("Data protection & privacy", `<ul>
@@ -806,7 +893,7 @@ function renderProposalDoc(
     <li><b>Regional alignment</b> - the approach is designed to be defensible under emerging GCC AI-governance expectations${p.clientRegion === "saudi" ? ", including guidance applicable in the Kingdom of Saudi Arabia" : ""}.</li>
   </ul>`)}` : ""}
 
-  <h2 style="page-break-before: always;"><span class="no">${NO("Service level & support")}.</span>Service level &amp; support</h2>
+  ${inc("Service level & support") ? `<h2 style="page-break-before: always;"><span class="no">${NO("Service level & support")}.</span>Service level &amp; support</h2>
   ${secBody("Service level & support", `<ul>
     <li><b>Named team</b> - an engagement lead and a delivery coordinator are assigned for the duration of the programme (see Section ${NO("Project governance & team")}).</li>
     <li><b>Support window</b> - programme and participant support during GCC business hours (Sunday-Thursday), with initial response within one business day.</li>
@@ -824,7 +911,7 @@ function renderProposalDoc(
     <li><b>Service credits</b> - a pro-rated service credit applies for any month below the uptime guarantee, as the exclusive remedy for availability.</li>
   </ul>`
       : ""
-  }`)}
+  }`)}` : ""}
 
   ${inc("Relevant experience") ? `<h2><span class="no">${NO("Relevant experience")}.</span>Relevant experience</h2>
   ${secBody("Relevant experience", `<p>VIFM delivers assessment and development programmes for banking, government and corporate organizations
@@ -837,18 +924,18 @@ function renderProposalDoc(
   makes to ${esc(p.clientName)}.</p>`)}` : ""}
 
   <h2><span class="no">${NO("Commercial proposal")}.</span>Commercial proposal</h2>
-  ${secBody("Commercial proposal", commercialIntroHtml)}
-  ${commercialTableHtml}
-  ${validUntil ? `<p class="scope-note">This proposal is valid until <strong>${validUntil}</strong>. Fees are quoted in ${esc(cur)} and are exclusive of any applicable taxes, which will be added at the prevailing rate where required.</p>` : `<p class="scope-note">Fees are quoted in ${esc(cur)} and are exclusive of any applicable taxes, which will be added at the prevailing rate where required.</p>`}
-  ${p.paymentTerms ? `<h3>Payment terms</h3><p>${esc(p.paymentTerms)}</p>` : ""}
-  <h3>Included in the fees</h3>
+  ${secBody("Commercial proposal", commercialIntroForVariant)}
+  ${commercialTableForVariant}
+  ${!showPrices ? "" : validUntil ? `<p class="scope-note">This proposal is valid until <strong>${validUntil}</strong>. Fees are quoted in ${esc(cur)} and are exclusive of any applicable taxes, which will be added at the prevailing rate where required.</p>` : `<p class="scope-note">Fees are quoted in ${esc(cur)} and are exclusive of any applicable taxes, which will be added at the prevailing rate where required.</p>`}
+  ${showPrices && p.paymentTerms ? `<h3>Payment terms</h3><p>${esc(p.paymentTerms)}</p>` : ""}
+  ${showPrices ? `<h3>Included in the fees</h3>
   <ul>
     <li>Platform delivery for the scoped participants, invitations and completion monitoring, participant support during the assessment window, the standard deliverable set per service, and one sponsor debrief session.</li>
   </ul>
   <h3>Not included</h3>
   <ul>
     <li>On-site delivery, travel and accommodation; instrument customisation beyond the stated scope; additional participants beyond the quoted volumes (chargeable at the quoted per-participant rate); and any third-party costs - each quotable separately on request.</li>
-  </ul>
+  </ul>` : ""}
 
   ${inc("Assumptions & exclusions") ? `<h2><span class="no">${NO("Assumptions & exclusions")}.</span>Assumptions &amp; exclusions</h2>
   ${secBody("Assumptions & exclusions", `<ul>

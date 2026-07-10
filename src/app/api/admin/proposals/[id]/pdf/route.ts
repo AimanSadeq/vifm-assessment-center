@@ -20,21 +20,24 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   }
   const proposal = await loadProposal(params.id);
   if (!proposal) return NextResponse.json({ error: "Proposal not found" }, { status: 404 });
-  const language = new URL(req.url).searchParams.get("language") === "ar" ? "ar" : "en";
+  const url = new URL(req.url);
+  const language = url.searchParams.get("language") === "ar" ? "ar" : "en";
+  const vParam = url.searchParams.get("variant");
+  const variant = vParam === "technical" || vParam === "financial" ? vParam : "full";
   try {
     const evidence = await loadProposalEvidence();
-    const opts = {
+    const base = {
       logoWhite: getVifmLogoDataUri("white"),
       logoColor: getVifmLogoDataUri("color"),
       evidence,
     };
-    const html = language === "ar" ? buildProposalHtmlAr(proposal, opts) : buildProposalHtml(proposal, opts);
+    const html = language === "ar" ? buildProposalHtmlAr(proposal, base) : buildProposalHtml(proposal, { ...base, variant });
     const footLabel = language === "ar" ? "سري" : "Confidential";
     const pdf = await renderHtmlToPdfBuffer(html, {
       pageFooter: { left: `VIFM Caliber® · ${proposalRef(proposal)} · ${footLabel}` },
     });
     const name = proposal.clientName.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "Client";
-    const suffix = language === "ar" ? "-AR" : "";
+    const suffix = `${language === "ar" ? "-AR" : ""}${variant === "technical" ? "-Technical" : variant === "financial" ? "-Financial" : ""}`;
     return new NextResponse(new Uint8Array(pdf), {
       headers: {
         "Content-Type": "application/pdf",

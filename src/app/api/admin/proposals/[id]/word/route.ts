@@ -20,17 +20,24 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   }
   const proposal = await loadProposal(params.id);
   if (!proposal) return NextResponse.json({ error: "Proposal not found" }, { status: 404 });
-  const language = new URL(req.url).searchParams.get("language") === "ar" ? "ar" : "en";
+  const url = new URL(req.url);
+  const language = url.searchParams.get("language") === "ar" ? "ar" : "en";
+  const vParam = url.searchParams.get("variant");
+  const variant = vParam === "technical" || vParam === "financial" ? vParam : "full";
   try {
     const evidence = await loadProposalEvidence();
-    const opts = {
+    const base = {
       logoWhite: getVifmLogoDataUri("white"),
       logoColor: getVifmLogoDataUri("color"),
       evidence,
     };
-    const html = language === "ar" ? buildProposalHtmlAr(proposal, opts) : buildProposalHtml(proposal, opts);
+    // wordSafe: emit flat Word-friendly HTML so the .doc opens cleanly + editably.
+    const html =
+      language === "ar"
+        ? buildProposalHtmlAr(proposal, base)
+        : buildProposalHtml(proposal, { ...base, variant, wordSafe: true });
     const name = proposalFileBase(proposal.clientName);
-    const suffix = language === "ar" ? "-AR" : "";
+    const suffix = `${language === "ar" ? "-AR" : ""}${variant === "technical" ? "-Technical" : variant === "financial" ? "-Financial" : ""}`;
     return new NextResponse(proposalHtmlToWord(html), {
       headers: {
         "Content-Type": "application/msword; charset=utf-8",

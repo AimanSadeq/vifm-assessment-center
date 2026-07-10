@@ -75,7 +75,6 @@ function renderProposalDoc(
 ): { html: string; sectionDefaults: Record<string, string> } {
   const logoWhite = opts?.logoWhite ?? null;
   const logoColor = opts?.logoColor ?? null;
-  const evidence = opts?.evidence ?? null;
   const cur = p.currency || "USD";
   const money = (n: number) => formatMoney(n, cur);
   const num = (n: number) => (n || 0).toLocaleString("en-US");
@@ -443,7 +442,7 @@ function renderProposalDoc(
       ? `${esc(eng.name)} &middot; Consultant-led professional-services engagement`
       : isLicence
         ? "Annual all-access licence &middot; VIFM Caliber&reg; Talent Intelligence Platform"
-        : "Talent-intelligence programme &middot; VIFM Caliber&reg;";
+        : "Talent-intelligence solution &middot; VIFM Caliber&reg;";
 
   // City, Country under the client name on the cover (either part optional).
   const clientLocation = [p.clientCity, p.clientCountry].filter((s) => s && s.trim()).join(", ");
@@ -483,43 +482,26 @@ function renderProposalDoc(
     return `<p><strong>Indicative return.</strong> At an average annual salary of ${money(avgSalary)} and ${num(hires)} hire${hires === 1 ? "" : "s"} per year, the cost of a single mis-hire - conservatively 1.5&times; salary, about ${money(misHire)} - puts roughly ${money(exposure)} of value at risk each year. Improving selection accuracy by even ${gainPct}% recovers on the order of ${money(recovered)} annually${timesOver > 0 ? `, around ${timesOver.toFixed(1)}&times; the ${isLicence ? "Year-1" : "total"} investment in this programme` : ""}. These figures are illustrative, based on the inputs provided, and are not a guarantee of outcome.</p>`;
   })();
 
-  // ── Live reliability snapshot for the Psychometric foundations + Evidence
-  // sections (Phase 2). Each row renders only when a real, non-zero metric exists. ──
-  const evRows: string[] = [];
-  if (evidence) {
-    if (evidence.logica && (evidence.logica.alpha || evidence.logica.approved)) {
-      const a = evidence.logica.alpha;
-      evRows.push(
-        `<li><b>Cognitive reasoning (Logica&reg;)</b> - ${a != null ? `internal-consistency reliability (Cronbach's &alpha;) currently ${a.toFixed(2)} across ` : "currently "}${num(evidence.logica.approved)} vetted item${evidence.logica.approved === 1 ? "" : "s"} on the active bank${evidence.logica.tier ? ` (tier: ${esc(evidence.logica.tier)})` : ""}.</li>`,
-      );
-    }
-    if (evidence.fluent && (evidence.fluent.calibrated || evidence.fluent.humanRatings)) {
-      evRows.push(
-        `<li><b>English placement (Fluent&reg;)</b> - ${num(evidence.fluent.calibrated)} calibrated item${evidence.fluent.calibrated === 1 ? "" : "s"} with ${num(evidence.fluent.humanRatings)} human rating${evidence.fluent.humanRatings === 1 ? "" : "s"} logged for AI-vs-human agreement monitoring (target QWK &ge; 0.70).</li>`,
-      );
-    }
-    if (evidence.technical && (evidence.technical.approved || evidence.technical.cutScores)) {
-      evRows.push(
-        `<li><b>Technical certification (Techno&reg;)</b> - ${num(evidence.technical.approved)} SME-approved item${evidence.technical.approved === 1 ? "" : "s"} across ${num(evidence.technical.cutScores)} documented cut-score${evidence.technical.cutScores === 1 ? "" : "s"}${evidence.technical.calibrated ? `, ${num(evidence.technical.calibrated)} IRT-calibrated` : ""}.</li>`,
-      );
-    }
-    if (evidence.arc && (evidence.arc.verified || evidence.arc.total)) {
-      evRows.push(
-        `<li><b>AI Readiness (AR COMPASS&reg;)</b> - ${num(evidence.arc.verified)} of ${num(evidence.arc.total)} questions human-reviewed${evidence.arc.responses ? `; ${num(evidence.arc.responses)} responses collected toward norm development` : ""}.</li>`,
-      );
-    }
-    if (evidence.reflect && (evidence.reflect.competencies || evidence.reflect.responses)) {
-      evRows.push(
-        `<li><b>Leadership 360 (Reflect 360&reg;)</b> - ${num(evidence.reflect.competencies)} competenc${evidence.reflect.competencies === 1 ? "y" : "ies"} / ${num(evidence.reflect.behaviors)} behaviour${evidence.reflect.behaviors === 1 ? "" : "s"} in the seeded framework${evidence.reflect.responses ? `; ${num(evidence.reflect.responses)} rater responses to date` : ""}.</li>`,
-      );
-    }
-  }
-  const psyLive = evRows.length
-    ? `<p class="scope-note" style="margin-top:8px;"><strong>Current platform evidence</strong> (live figures at the time of this proposal; they strengthen as response volumes grow):</p>
-  <ul>
-    ${evRows.join("\n    ")}
-  </ul>`
+  // ── Sample reports (Section 19). Lists the reports/deliverables INCLUDED in the
+  // agreed scope, per selected service, instead of raw platform-evidence figures. ──
+  const sampleServiceRows = isCombined ? serviceScopeRows : scopeWithSeats;
+  const sampleServiceBlocks = sampleServiceRows
+    .map((s) => {
+      const delivs = (PROPOSAL_DELIVERABLES[s.service as CaliberService] ?? [])
+        .map((d) => `<li>${esc(d)}</li>`)
+        .join("");
+      return delivs ? `<h3>${esc(s.label)}</h3><ul class="deliv">${delivs}</ul>` : "";
+    })
+    .filter(Boolean)
+    .join("\n    ");
+  const engReportsBlock = eng
+    ? `<h3>${esc(eng.name)}</h3><ul class="deliv">
+      <li>Individual assessment-centre report per delegate (competency profile, Overall Assessment Rating and development focus)</li>
+      <li>Cohort integration read-out for the sponsoring team</li>
+      <li>1:1 developmental feedback session per delegate</li>
+    </ul>`
     : "";
+  const sampleReportsBody = `${sampleServiceBlocks}${engReportsBlock}` || "<p>The reports included in the agreed scope are confirmed at kickoff and captured in the statement of work.</p>";
 
   // ── Computed sections: editable intro PROSE (secBody) + a generated table kept LIVE
   // below it, so a text edit never freezes the pricing / evidence. ──
@@ -545,23 +527,10 @@ function renderProposalDoc(
       <tr class="total-row"><td colspan="3" class="tot-label">Total (${esc(cur)})</td><td class="num">${money(p.total)}</td></tr>
     </tbody>
   </table>`;
-  const evidenceProseHtml = `<p>Every instrument in this proposal is backed by a documented methodology brief and an auditable evidence
-    trail. The figures below are a live snapshot of the platform's current measurement evidence; they are
-    included so ${esc(p.clientName)} can evidence its own assurance and governance obligations. Anonymised
-    sample candidate and cohort reports for each scoped service are available on request and can be appended to
-    the signed statement of work.</p>`;
-  const evidenceTableHtml = evRows.length
-    ? `<table>
-      <thead><tr><th style="width:34%">Instrument</th><th>Current measurement evidence</th></tr></thead>
-      <tbody>
-        ${evRows.map((r) => r.replace(/^<li>/, "<tr><td colspan=\"2\">").replace(/<\/li>$/, "</td></tr>")).join("\n        ")}
-      </tbody>
-    </table>
-    <p class="scope-note">Reliability and calibration statistics strengthen as response volumes grow; norm-referenced
-    reporting is enabled only once a scale's sample is adequate. Where a metric is not yet shown, the instrument
-    reports on its documented indicative basis.</p>`
-    : `<p class="scope-note">Detailed reliability, calibration and validity evidence per instrument is available in the
-    published methodology briefs, provided on request and forming part of this proposal by reference.</p>`;
+  const sampleReportsProseHtml = `<p>The reports and deliverables included in the agreed scope are listed below, per selected
+    service. Each is produced as a professionally formatted, bilingual-capable PDF. Anonymised sample candidate and
+    cohort reports for every scoped service are available on request and can be appended to the signed statement of
+    work.</p>`;
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -691,7 +660,7 @@ function renderProposalDoc(
     <div class="layer">
       <div class="panel">
         <div class="grid">
-          <div><b>Prepared for</b>${esc(p.clientName)}${p.contactEmail ? `<br/>${esc(p.contactEmail)}` : ""}</div>
+          <div><b>Prepared for</b>${esc(p.clientName)}</div>
           <div><b>Prepared by</b>Virginia Institute of Finance<br/>and Management</div>
           <div><b>Reference</b>${ref}</div>
           <div><b>Date</b>${fmtDate(p.createdAt)}</div>
@@ -777,8 +746,7 @@ function renderProposalDoc(
     <li><b>Response-quality safeguards</b> - where the construct warrants it, instruments carry distortion and consistency checks (e.g. social-desirability signals on self-report measures) that are surfaced to the reviewing consultant rather than silently auto-scored.</li>
     <li><b>Reliability monitoring</b> - internal-consistency statistics are tracked as response volumes grow, and norm-referenced reporting is enabled only when the underlying sample is adequate.</li>
     <li><b>Honest reporting tiers</b> - each result is explicitly labelled indicative or certified; certified outcomes exist only where a documented cut-score and review process stand behind them.</li>
-  </ul>`)}
-  ${psyLive}` : ""}
+  </ul>`)}` : ""}
 
   ${inc("Methodology & quality standards") ? `<h2><span class="no">${NO("Methodology & quality standards")}.</span>Methodology &amp; quality standards</h2>
   ${secBody("Methodology & quality standards", `<ul>
@@ -805,9 +773,9 @@ function renderProposalDoc(
     <thead><tr><th>Phase</th><th>Indicative timing</th><th>Key activities</th><th>Outputs</th></tr></thead>
     <tbody>
       <tr><td><b>1 &middot; Mobilisation</b></td><td>Week 1</td><td>Kickoff, single point of contact confirmed, participant list received, scope and languages confirmed</td><td>Agreed schedule; communications pack</td></tr>
-      <tr><td><b>2 &middot; Configuration</b></td><td>Week 2</td><td>Programme configured on Caliber, invitations prepared, pilot run with a small group</td><td>Validated setup; pilot sign-off</td></tr>
-      <tr><td><b>3 &middot; Assessment window</b></td><td>Weeks 3-5</td><td>Invitations issued in waves, completion monitored, reminders managed, participant support</td><td>Completion dashboard; interim status reports</td></tr>
-      <tr><td><b>4 &middot; Reporting &amp; debrief</b></td><td>Week 6</td><td>Individual reports released, cohort analytics compiled, sponsor debrief session</td><td>Full deliverable set; debrief and recommendations</td></tr>
+      <tr><td><b>2 &middot; Configuration</b></td><td>Week 2</td><td>Solution configured on Caliber, invitations prepared, pilot run with a small group</td><td>Validated setup; pilot sign-off</td></tr>
+      <tr><td><b>3 &middot; Assessment window</b></td><td>Week 3</td><td>Invitations issued in waves, completion monitored, reminders managed, participant support</td><td>Completion dashboard; interim status reports</td></tr>
+      <tr><td><b>4 &middot; Reporting &amp; debrief</b></td><td>Week 4</td><td>Individual reports released, cohort analytics compiled, sponsor debrief session</td><td>Full deliverable set; debrief and recommendations</td></tr>
     </tbody>
   </table>` : ""}
 
@@ -838,7 +806,7 @@ function renderProposalDoc(
     <li><b>Regional alignment</b> - the approach is designed to be defensible under emerging GCC AI-governance expectations${p.clientRegion === "saudi" ? ", including guidance applicable in the Kingdom of Saudi Arabia" : ""}.</li>
   </ul>`)}` : ""}
 
-  <h2><span class="no">${NO("Service level & support")}.</span>Service level &amp; support</h2>
+  <h2 style="page-break-before: always;"><span class="no">${NO("Service level & support")}.</span>Service level &amp; support</h2>
   ${secBody("Service level & support", `<ul>
     <li><b>Named team</b> - an engagement lead and a delivery coordinator are assigned for the duration of the programme (see Section ${NO("Project governance & team")}).</li>
     <li><b>Support window</b> - programme and participant support during GCC business hours (Sunday-Thursday), with initial response within one business day.</li>
@@ -970,11 +938,11 @@ function renderProposalDoc(
   </div>
 
   ${
-    inc("Evidence & sample reports")
+    inc("Sample reports")
       ? `<div class="accept">
-    <h2 style="border-top:0;padding-top:0;"><span class="no">${NO("Evidence & sample reports")}.</span>Evidence &amp; sample reports</h2>
-    ${secBody("Evidence & sample reports", evidenceProseHtml)}
-    ${evidenceTableHtml}
+    <h2 style="border-top:0;padding-top:0;"><span class="no">${NO("Sample reports")}.</span>Sample reports</h2>
+    ${secBody("Sample reports", sampleReportsProseHtml)}
+    ${sampleReportsBody}
   </div>`
       : ""
   }

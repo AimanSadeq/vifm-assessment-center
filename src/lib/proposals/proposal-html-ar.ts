@@ -54,7 +54,7 @@ const TITLE_AR: Record<string, string> = {
   "Terms & conditions": "الشروط والأحكام",
   "Definitions": "التعريفات",
   "Acceptance & next steps": "القبول والخطوات التالية",
-  "Evidence & sample reports": "الأدلة ونماذج التقارير",
+  "Sample reports": "نماذج التقارير",
 };
 
 const BASIS_AR: Record<string, string> = {
@@ -88,7 +88,6 @@ function renderProposalDocAr(
 ): { html: string; sectionDefaults: Record<string, string> } {
   const logoWhite = opts?.logoWhite ?? null;
   const logoColor = opts?.logoColor ?? null;
-  const evidence = opts?.evidence ?? null;
   const cur = p.currency || "USD";
   // Money + integers wrapped LTR so digits/currency read correctly inside RTL.
   const m = (n: number) => `<span dir="ltr">${esc(formatMoney(n, cur))}</span>`;
@@ -392,7 +391,7 @@ function renderProposalDocAr(
       ? `${esc(eng.name)} &middot; ارتباط خدمات مهنية بقيادة استشاري`
       : isLicence
         ? "رخصة سنوية شاملة &middot; منصة VIFM Caliber&reg; للذكاء في المواهب"
-        : "برنامج الذكاء في المواهب &middot; منصة VIFM Caliber&reg;";
+        : "حل الذكاء في المواهب &middot; منصة VIFM Caliber&reg;";
   const clientLocationAr = [p.clientCity, p.clientCountry].filter((s) => s && s.trim()).join("، ");
 
   // Executive-summary fact strip (Arabic). Combined mode: service count + engagement
@@ -427,42 +426,20 @@ function renderProposalDocAr(
     return `<p><strong>العائد الاسترشادي.</strong> عند متوسط راتب سنوي قدره ${m(avgSalary)} و${nu(hires)} تعييناً سنوياً، فإن كلفة التعيين الخاطئ الواحد - وهي بتحفظ ١٫٥ ضعف الراتب، أي نحو ${m(misHire)} - تضع نحو ${m(exposure)} من القيمة في دائرة الخطر سنوياً. وتحسين دقة الاختيار بنسبة ${pc(gainPct)} فقط يستعيد ما يقارب ${m(recovered)} سنوياً${timesOver > 0 ? `، أي نحو <span dir="ltr">${timesOver.toFixed(1)}&times;</span> ${isLicence ? "استثمار السنة الأولى" : "الاستثمار الإجمالي"} في هذا البرنامج` : ""}. وهذه الأرقام استرشادية استناداً إلى المدخلات المقدمة وليست ضماناً للنتائج.</p>`;
   })();
 
-  // ── Live evidence rows (Arabic). ──
-  const evRows: string[] = [];
-  if (evidence) {
-    if (evidence.logica && (evidence.logica.alpha || evidence.logica.approved)) {
-      const a = evidence.logica.alpha;
-      evRows.push(
-        `<li><b>الاستدلال المعرفي (Logica&reg;)</b> - ${a != null ? `ثبات الاتساق الداخلي (ألفا كرونباخ) حالياً <span dir="ltr">${a.toFixed(2)}</span> عبر ` : "حالياً "}${nu(evidence.logica.approved)} بنداً معتمداً على البنك الفعّال.</li>`,
-      );
-    }
-    if (evidence.fluent && (evidence.fluent.calibrated || evidence.fluent.humanRatings)) {
-      evRows.push(
-        `<li><b>تحديد مستوى الإنجليزية (Fluent&reg;)</b> - ${nu(evidence.fluent.calibrated)} بنداً معايَراً مع ${nu(evidence.fluent.humanRatings)} تقييماً بشرياً لمراقبة توافق الذكاء الاصطناعي مع البشر.</li>`,
-      );
-    }
-    if (evidence.technical && (evidence.technical.approved || evidence.technical.cutScores)) {
-      evRows.push(
-        `<li><b>الشهادة الفنية (Techno&reg;)</b> - ${nu(evidence.technical.approved)} بنداً معتمداً من الخبراء عبر ${nu(evidence.technical.cutScores)} درجة قطع موثقة.</li>`,
-      );
-    }
-    if (evidence.arc && (evidence.arc.verified || evidence.arc.total)) {
-      evRows.push(
-        `<li><b>الجاهزية للذكاء الاصطناعي (AR COMPASS&reg;)</b> - ${nu(evidence.arc.verified)} من ${nu(evidence.arc.total)} سؤالاً خضعت للمراجعة البشرية.</li>`,
-      );
-    }
-    if (evidence.reflect && (evidence.reflect.competencies || evidence.reflect.responses)) {
-      evRows.push(
-        `<li><b>التقييم القيادي 360 (Reflect 360&reg;)</b> - ${nu(evidence.reflect.competencies)} كفاءة و${nu(evidence.reflect.behaviors)} سلوكاً في الإطار المعتمد.</li>`,
-      );
-    }
-  }
-  const psyLive = evRows.length
-    ? `<p class="scope-note" style="margin-top:8px;"><strong>الأدلة الحالية للمنصة</strong> (أرقام فعلية وقت إعداد هذا العرض، وتزداد قوة مع نمو أحجام الاستجابة):</p>
-  <ul>
-    ${evRows.join("\n    ")}
-  </ul>`
+  // ── Sample reports (Section 19, Arabic): the reports included in the agreed
+  // scope per selected service, instead of raw platform-evidence figures. ──
+  const sampleServiceRows = isCombined ? serviceScopeRows : scopeWithSeats;
+  const sampleServiceItems = sampleServiceRows
+    .map((s) => `<li>${esc(s.label)} - تقرير فردي لكل مشارك وتحليلات تجميعية للجهة الراعية</li>`)
+    .join("\n      ");
+  const engReportsItem = eng
+    ? `<li>${esc(eng.name)} - تقرير فردي لكل متدرب (ملف الكفاءات، التقييم العام، وبؤرة التطوير) وتقرير تجميعي للفريق الراعي</li>`
     : "";
+  const sampleReportsBody = sampleServiceItems || engReportsItem
+    ? `<ul class="deliv">
+      ${sampleServiceItems}${engReportsItem}
+    </ul>`
+    : "<p>تُؤكَّد التقارير المدرجة في النطاق عند الانطلاق وتُوثَّق في بيان العمل.</p>";
 
   // ── Computed sections: editable intro PROSE (secBody) + a generated table kept LIVE
   // below (mirrors EN). ──
@@ -488,16 +465,7 @@ function renderProposalDocAr(
       <tr class="total-row"><td colspan="3" class="tot-label">الإجمالي (${esc(cur)})</td><td class="num">${m(p.total)}</td></tr>
     </tbody>
   </table>`;
-  const evidenceProseHtml = `<p>كل أداة في هذا العرض مدعومة بموجز منهجية موثق وأثر أدلة قابل للتدقيق. والأرقام أدناه لقطة حية للأدلة القياسية الحالية للمنصة، أُدرجت لتمكين ${esc(p.clientName)} من إثبات التزاماتها في الضمان والحوكمة. وتتوفر نماذج تقارير مجهّلة لكل خدمة عند الطلب.</p>`;
-  const evidenceTableHtml = evRows.length
-    ? `<table>
-      <thead><tr><th style="width:34%">الأداة</th><th>الأدلة القياسية الحالية</th></tr></thead>
-      <tbody>
-        ${evRows.map((r) => r.replace(/^<li>/, '<tr><td colspan="2">').replace(/<\/li>$/, "</td></tr>")).join("\n        ")}
-      </tbody>
-    </table>
-    <p class="scope-note">تزداد إحصاءات الثبات والمعايرة قوةً مع نمو أحجام الاستجابة، ولا يُفعَّل التقرير المرجعي المعياري إلا عند كفاية عينة المقياس.</p>`
-    : `<p class="scope-note">تتوفر تفاصيل الثبات والمعايرة والصدق لكل أداة في موجزات المنهجية المنشورة، وتُقدَّم عند الطلب.</p>`;
+  const sampleReportsProseHtml = `<p>تُدرَج أدناه التقارير والمُخرَجات المشمولة في النطاق المتفق عليه، لكل خدمة مختارة. ويُقدَّم كل تقرير بصيغة PDF احترافية وثنائية اللغة عند الطلب. وتتوفر نماذج تقارير مجهّلة (فردية وتجميعية) لكل خدمة مشمولة عند الطلب، ويمكن إرفاقها ببيان العمل الموقّع.</p>`;
 
   const html = `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -615,7 +583,7 @@ function renderProposalDocAr(
     <div class="layer">
       <div class="panel">
         <div class="grid">
-          <div><b>مُعدّ لصالح</b>${esc(p.clientName)}${p.contactEmail ? `<br/><span dir="ltr">${esc(p.contactEmail)}</span>` : ""}</div>
+          <div><b>مُعدّ لصالح</b>${esc(p.clientName)}</div>
           <div><b>مُعدّ بواسطة</b>معهد فرجينيا للتمويل والإدارة</div>
           <div><b>المرجع</b><span dir="ltr">${ref}</span></div>
           <div><b>التاريخ</b>${fmtDateAr(p.createdAt)}</div>
@@ -676,8 +644,7 @@ function renderProposalDocAr(
     <li><b>ضمانات جودة الاستجابة</b> - حيثما يقتضي المفهوم، تحمل الأدوات فحوص تشويه واتساق تُعرض على الاستشاري المراجع بدلاً من احتسابها تلقائياً بصمت.</li>
     <li><b>مراقبة الثبات</b> - تُتابع إحصاءات الاتساق الداخلي مع نمو أحجام الاستجابة، ولا يُفعّل التقرير المرجعي المعياري إلا عندما تكون العينة كافية.</li>
     <li><b>طبقات إبلاغ صادقة</b> - تُوسم كل نتيجة صراحةً بأنها استرشادية أو معتمدة؛ ولا توجد النتائج المعتمدة إلا حيث تقف خلفها درجة قطع موثقة وعملية مراجعة.</li>
-  </ul>`)}
-  ${psyLive}` : ""}
+  </ul>`)}` : ""}
 
   ${inc("Methodology & quality standards") ? `<h2>${at("Methodology & quality standards")}</h2>
   ${secBody("Methodology & quality standards", `<ul>
@@ -704,9 +671,9 @@ function renderProposalDocAr(
     <thead><tr><th>المرحلة</th><th>التوقيت الاسترشادي</th><th>الأنشطة الرئيسية</th><th>المخرجات</th></tr></thead>
     <tbody>
       <tr><td><b>1 &middot; التعبئة</b></td><td>الأسبوع 1</td><td>الانطلاق، تأكيد نقطة اتصال واحدة، استلام قائمة المشاركين، تأكيد النطاق واللغات</td><td>جدول متفق عليه؛ حزمة تواصل</td></tr>
-      <tr><td><b>2 &middot; الإعداد</b></td><td>الأسبوع 2</td><td>تهيئة البرنامج على المنصة، تجهيز الدعوات، تشغيل تجريبي لمجموعة صغيرة</td><td>إعداد مُتحقَّق؛ اعتماد التجربة</td></tr>
-      <tr><td><b>3 &middot; نافذة التقييم</b></td><td>الأسابيع 3-5</td><td>إرسال الدعوات على دفعات، متابعة الإنجاز، إدارة التذكيرات، دعم المشاركين</td><td>لوحة إنجاز؛ تقارير حالة دورية</td></tr>
-      <tr><td><b>4 &middot; الإبلاغ والإحاطة</b></td><td>الأسبوع 6</td><td>إصدار التقارير الفردية، تجميع تحليلات المجموعة، جلسة إحاطة للراعي</td><td>حزمة المخرجات الكاملة؛ الإحاطة والتوصيات</td></tr>
+      <tr><td><b>2 &middot; الإعداد</b></td><td>الأسبوع 2</td><td>تهيئة الحل على المنصة، تجهيز الدعوات، تشغيل تجريبي لمجموعة صغيرة</td><td>إعداد مُتحقَّق؛ اعتماد التجربة</td></tr>
+      <tr><td><b>3 &middot; نافذة التقييم</b></td><td>الأسبوع 3</td><td>إرسال الدعوات على دفعات، متابعة الإنجاز، إدارة التذكيرات، دعم المشاركين</td><td>لوحة إنجاز؛ تقارير حالة دورية</td></tr>
+      <tr><td><b>4 &middot; الإبلاغ والإحاطة</b></td><td>الأسبوع 4</td><td>إصدار التقارير الفردية، تجميع تحليلات المجموعة، جلسة إحاطة للراعي</td><td>حزمة المخرجات الكاملة؛ الإحاطة والتوصيات</td></tr>
     </tbody>
   </table>` : ""}
 
@@ -737,7 +704,7 @@ function renderProposalDocAr(
     <li><b>التوافق الإقليمي</b> - صُمم النهج ليكون قابلاً للدفاع عنه في ظل التوقعات الناشئة لحوكمة الذكاء الاصطناعي في الخليج${p.clientRegion === "saudi" ? "، بما في ذلك الإرشادات السارية في المملكة العربية السعودية" : ""}.</li>
   </ul>`)}` : ""}
 
-  <h2>${at("Service level & support")}</h2>
+  <h2 style="page-break-before: always;">${at("Service level & support")}</h2>
   ${secBody("Service level & support", `<ul>
     <li><b>فريق مُسمّى</b> - يُخصَّص قائد ارتباط ومنسق تقديم طوال مدة البرنامج (انظر القسم ${NO("Project governance & team")}).</li>
     <li><b>نافذة الدعم</b> - دعم للبرنامج وللمشاركين خلال ساعات العمل في الخليج (الأحد-الخميس)، مع استجابة أولية خلال يوم عمل واحد.</li>
@@ -852,11 +819,11 @@ function renderProposalDocAr(
   </div>
 
   ${
-    inc("Evidence & sample reports")
+    inc("Sample reports")
       ? `<div class="accept">
-    <h2 style="border-top:0;padding-top:0;">${at("Evidence & sample reports")}</h2>
-    ${secBody("Evidence & sample reports", evidenceProseHtml)}
-    ${evidenceTableHtml}
+    <h2 style="border-top:0;padding-top:0;">${at("Sample reports")}</h2>
+    ${secBody("Sample reports", sampleReportsProseHtml)}
+    ${sampleReportsBody}
   </div>`
       : ""
   }

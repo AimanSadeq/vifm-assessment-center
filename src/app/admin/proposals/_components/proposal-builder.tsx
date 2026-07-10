@@ -11,6 +11,7 @@ import {
   defaultTerms,
   PROPOSAL_SECTION_DEFS,
   defaultSectionSelection,
+  SECTION_TITLE_ALIASES,
 } from "@/lib/proposals/constants";
 import { computeLineItems, computeTotals, formatMoney, type ScopeItem } from "@/lib/proposals/pricing";
 import {
@@ -74,7 +75,7 @@ export function ProposalBuilder({
   const [contactEmail, setContactEmail] = useState(existing?.contactEmail ?? "");
   const [clientCity, setClientCity] = useState(existing?.clientCity ?? "");
   const [clientCountry, setClientCountry] = useState(existing?.clientCountry ?? "");
-  const [currency] = useState(existing?.currency ?? "USD");
+  const [currency, setCurrency] = useState(existing?.currency ?? "USD");
 
   // Default NEW proposals to licence mode (per handover); keep the editing proposal's mode.
   const [pricingMode, setPricingMode] = useState<PricingMode>(existing?.pricingMode ?? "licence");
@@ -127,7 +128,13 @@ export function ProposalBuilder({
   // Section selection (Phase 2). `selectedSections` holds the ticked titles;
   // mandatory sections are always on and are not shown as toggles.
   const [selectedSections, setSelectedSections] = useState<Set<string>>(
-    () => new Set(existing?.sectionSelection && existing.sectionSelection.length ? existing.sectionSelection : defaultSectionSelection()),
+    () =>
+      new Set(
+        (existing?.sectionSelection && existing.sectionSelection.length
+          ? existing.sectionSelection
+          : defaultSectionSelection()
+        ).map((t) => SECTION_TITLE_ALIASES[t] ?? t),
+      ),
   );
   function toggleSection(title: string) {
     setSelectedSections((prev) => {
@@ -419,6 +426,15 @@ export function ProposalBuilder({
             <span className="text-muted-foreground">Client country (optional)</span>
             <input value={clientCountry} onChange={(e) => setClientCountry(e.target.value)} placeholder="e.g. Saudi Arabia"
               className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm" />
+          </label>
+          <label className="block text-sm">
+            <span className="text-muted-foreground">Currency</span>
+            <select value={currency} onChange={(e) => setCurrency(e.target.value)}
+              className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm">
+              {["USD", "SAR", "AED", "EUR", "GBP", "QAR", "KWD", "BHD", "OMR"].map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
           </label>
           <label className="block text-sm">
             <span className="text-muted-foreground">Data residency</span>

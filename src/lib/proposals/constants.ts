@@ -154,7 +154,7 @@ export const PROPOSAL_SECTION_DEFS: { title: string; tier: SectionTier }[] = [
   { title: "Terms & conditions", tier: "mandatory" },
   { title: "Definitions", tier: "recommended" },
   { title: "Acceptance & next steps", tier: "mandatory" },
-  { title: "Evidence & sample reports", tier: "optional" },
+  { title: "Sample reports", tier: "optional" },
 ];
 
 export const PROPOSAL_SECTION_TITLES = PROPOSAL_SECTION_DEFS.map((s) => s.title);
@@ -166,11 +166,18 @@ export function defaultSectionSelection(): string[] {
   return PROPOSAL_SECTION_DEFS.filter((s) => s.tier !== "optional").map((s) => s.title);
 }
 
+/** Renamed section titles: a saved selection referencing an old title still
+ *  resolves to the current one (so an existing proposal doesn't silently lose
+ *  the section after a rename). */
+export const SECTION_TITLE_ALIASES: Record<string, string> = {
+  "Evidence & sample reports": "Sample reports",
+};
+
 /** Resolve the ordered set of sections to render. `null`/empty selection ⇒ the
  *  default (mandatory + recommended). Mandatory sections are always included. */
 export function resolveIncludedSections(sel: string[] | null | undefined): string[] {
   if (!sel || !Array.isArray(sel) || sel.length === 0) return defaultSectionSelection();
-  const chosen = new Set(sel);
+  const chosen = new Set(sel.map((t) => SECTION_TITLE_ALIASES[t] ?? t));
   return PROPOSAL_SECTION_DEFS.filter((s) => s.tier === "mandatory" || chosen.has(s.title)).map((s) => s.title);
 }
 

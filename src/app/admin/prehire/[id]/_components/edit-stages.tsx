@@ -115,7 +115,16 @@ export function EditStages({
       toast.error(res.error);
       return;
     }
-    toast.success("Stages updated - candidates re-scored.");
+    if (res.rescoreFailed > 0) {
+      // The stage plan saved, but some candidates could not be re-scored (they
+      // keep their old-plan band). Surface it instead of a plain success so the
+      // recruiter knows to re-save rather than trust stale composites.
+      toast.warning(
+        `Stages updated. ${res.rescoreFailed} of ${res.rescored + res.rescoreFailed} candidates could not be re-scored - re-save to retry.`,
+      );
+    } else {
+      toast.success("Stages updated - candidates re-scored.");
+    }
     setOpen(false);
     router.refresh();
   };

@@ -19,6 +19,19 @@ export async function POST(_req: Request, { params }: { params: { token: string 
     return NextResponse.json({ error: "Consent is required before submitting an assessment." }, { status: 403 });
   }
 
+  // Fail closed in production without a model key. Without ANTHROPIC_API_KEY,
+  // scoreCbiInterview takes the no-key placeholder path (a fabricated BARS 3, no
+  // scoring_failed flag) - which on this commercial hiring surface would silently
+  // feed the composite + shortlist + adverse-impact math with a non-score. The
+  // standalone /ac/ai-interview prototype keeps the dev-friendly placeholder; the
+  // hiring route does not.
+  if (process.env.NODE_ENV === "production" && !process.env.ANTHROPIC_API_KEY) {
+    return NextResponse.json(
+      { error: "Scoring is temporarily unavailable. Please submit again in a moment.", retry: true },
+      { status: 503 },
+    );
+  }
+
   const svc = createServiceClient();
   const { data: stage } = await svc
     .from("prehire_stage_results")
@@ -46,6 +59,20 @@ export async function POST(_req: Request, { params }: { params: { token: string 
     history,
     language: "en",
   });
+
+  // Automated scoring genuinely FAILED (API/parse error with a key present) -
+  // scoreCbiInterview returns a fabricated placeholder BARS 3. Do NOT complete
+  // the stage with it: that would silently feed a real hiring composite + shortlist
+  // + adverse-impact math with a non-score. The transcript is already persisted, so
+  // leave the stage retryable (uncompleted, no normalized_score => excluded from the
+  // composite) and ask the candidate to resubmit. (A missing ANTHROPIC_API_KEY takes
+  // the placeholder path WITHOUT scoring_failed, so a dev/demo run still completes.)
+  if (score.scoring_failed) {
+    return NextResponse.json(
+      { error: "Scoring is temporarily unavailable. Please submit again in a moment.", retry: true },
+      { status: 503 },
+    );
+  }
 
   // BARS 1–5 → 0–100 for the composite. Clamp defensively before persisting:
   // scoreCbiInterview is AI-derived and could return an out-of-range value on

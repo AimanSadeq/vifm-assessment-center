@@ -157,6 +157,10 @@ export type WritingScore = {
   /** Short stylometric markers behind the estimate (advisory framing). */
   ai_markers?: string[];
   ai_generated: boolean;
+  /** True ONLY on a genuine scoring error (API/parse failure with a key present):
+   *  a fabricated B1/all-3s placeholder, NOT an assessment. A hiring caller must
+   *  not complete/score a stage on it. Absent on the no-key placeholder + success. */
+  scoring_failed?: boolean;
 };
 
 export type SpeakingScore = {
@@ -172,6 +176,8 @@ export type SpeakingScore = {
   ai_generated: boolean;
   pronunciation?: number; // 1–5, mapped from Azure pronunciation assessment
   azure?: PronunciationScore | null; // raw 0–100 acoustic scores (accuracy/fluency/prosody)
+  /** True ONLY on a genuine scoring error (see WritingScore.scoring_failed). */
+  scoring_failed?: boolean;
 };
 
 export type FluentResult = {
@@ -890,6 +896,7 @@ export async function scoreFluentWriting(input: {
       feedback_en: "Scoring could not be completed automatically. Please try again.",
       feedback_ar: null,
       ai_generated: false,
+      scoring_failed: true,
     };
   }
 }
@@ -993,6 +1000,7 @@ export async function scoreFluentSpeaking(input: {
       feedback_en: "Scoring could not be completed automatically. Please try again.",
       feedback_ar: null,
       ai_generated: false,
+      scoring_failed: true,
     };
   }
 }
@@ -1009,11 +1017,17 @@ export async function scoreFluentWritingEnsemble(input: {
 }): Promise<WritingScore> {
   const n = Math.max(1, Math.min(5, Math.round(input.samples ?? 1)));
   if (n === 1) return scoreFluentWriting(input);
-  const runs = await Promise.all(
+  const allRuns = await Promise.all(
     Array.from({ length: n }, () =>
       scoreFluentWriting({ task: input.task, response: input.response, language: input.language })
     )
   );
+  // Aggregate only the runs that actually scored: a failed run returns a
+  // fabricated 3 that would corrupt the median (defeating the whole point of
+  // sampling). Propagate the failure ONLY when EVERY run failed, so a transient
+  // 1-of-N blip no longer forces the candidate to resubmit two valid scores.
+  const runs = allRuns.filter((r) => !r.scoring_failed);
+  if (runs.length === 0) return allRuns[0];
   const cefr = modalCefr(runs.map((r) => r.cefr));
   const pick = runs.find((r) => r.cefr === cefr) ?? runs[0];
   return {
@@ -1063,20 +1077,28 @@ export async function scoreFluentSpeakingEnsemble(input: {
     )
   );
   const attempted = runs.filter((r) => r.attempted);
+  // A blank transcript is legitimately "not attempted" (not a scoring failure) -
+  // return it as-is so computeFluentResult treats speaking as not assessed.
   if (attempted.length === 0) return runs[0];
-  const cefr = modalCefr(attempted.map((r) => r.cefr));
-  const pick = attempted.find((r) => r.cefr === cefr) ?? attempted[0];
+  // Aggregate only the attempted runs that actually scored; a failed run returns
+  // fabricated 3s that would corrupt the median. Propagate the failure ONLY when
+  // EVERY attempted run failed, so a transient 1-of-N blip no longer forces the
+  // candidate to resubmit a set that already has valid scores.
+  const survivors = attempted.filter((r) => !r.scoring_failed);
+  if (survivors.length === 0) return attempted[0];
+  const cefr = modalCefr(survivors.map((r) => r.cefr));
+  const pick = survivors.find((r) => r.cefr === cefr) ?? survivors[0];
   return {
     attempted: true,
     cefr,
-    fluency: medianInt(attempted.map((r) => r.fluency)),
-    coherence: medianInt(attempted.map((r) => r.coherence)),
-    lexical_range: medianInt(attempted.map((r) => r.lexical_range)),
-    grammar: medianInt(attempted.map((r) => r.grammar)),
+    fluency: medianInt(survivors.map((r) => r.fluency)),
+    coherence: medianInt(survivors.map((r) => r.coherence)),
+    lexical_range: medianInt(survivors.map((r) => r.lexical_range)),
+    grammar: medianInt(survivors.map((r) => r.grammar)),
     transcript: pick.transcript,
     feedback_en: pick.feedback_en,
     feedback_ar: pick.feedback_ar,
-    ai_generated: attempted.some((r) => r.ai_generated),
+    ai_generated: survivors.some((r) => r.ai_generated),
   };
 }
 

@@ -75,6 +75,22 @@ export async function certifyPrehireCandidateAction(input: {
   const { reviewerName, notes } = parsed.data;
 
   const sb = createServiceClient();
+  // Human-review gate: only certify a candidate who has actually been screened +
+  // scored. Certifying a never-screened candidate stamps an "SME-reviewed" green
+  // banner on an empty result in the client PDF - there must be something to
+  // review. composite_score is null until every required + weighted stage is
+  // scored, so it is the exact "screening complete" signal.
+  const { data: candRow } = await sb
+    .from("prehire_candidates")
+    .select("composite_score")
+    .eq("id", candidateId)
+    .eq("requisition_id", requisitionId)
+    .maybeSingle<{ composite_score: number | null }>();
+  if (!candRow) return { ok: false, error: "Candidate not found for this requisition." };
+  if (candRow.composite_score == null) {
+    return { ok: false, error: "Certify only after the candidate has completed and been scored on the screening." };
+  }
+
   const { error } = await sb
     .from("prehire_candidates")
     .update({
@@ -247,24 +263,36 @@ export async function updateRequisitionStagesAction(input: unknown) {
     .eq("id", parsed.data.requisition_id);
   if (error) return { error: error.message };
 
-  // Re-score every candidate from the new plan (best-effort, per candidate).
-  const { data: cands } = await svc
-    .from("prehire_candidates")
-    .select("id")
-    .eq("requisition_id", parsed.data.requisition_id);
-  for (const c of (cands ?? []) as { id: string }[]) {
-    await rescoreCandidate(c.id);
+  // Re-score every candidate from the new plan. FAULT-ISOLATED per candidate: a
+  // single transient rescore failure must not abort the batch (which would leave
+  // stage_config on the new plan while later candidates keep old-plan bands) or
+  // surface an unhandled server-action error. Paginate the read (1000-cap).
+  let candIds: { id: string }[] = [];
+  try {
+    candIds = await fetchAllPages<{ id: string }>((from, to) =>
+      svc.from("prehire_candidates").select("id").eq("requisition_id", parsed.data.requisition_id).order("id").range(from, to),
+    );
+  } catch {
+    candIds = [];
+  }
+  let rescoreFailed = 0;
+  for (const c of candIds) {
+    try {
+      await rescoreCandidate(c.id);
+    } catch {
+      rescoreFailed += 1;
+    }
   }
 
   await logPrehireEvent({
     action: "requisition_updated",
     requisitionId: parsed.data.requisition_id,
     actorLabel: "admin",
-    detail: { stages: parsed.data.stage_config.map((s) => s.kind) },
+    detail: { stages: parsed.data.stage_config.map((s) => s.kind), rescored: candIds.length - rescoreFailed, rescoreFailed },
   });
 
   revalidatePath(`/admin/prehire/${parsed.data.requisition_id}`);
-  return { ok: true as const };
+  return { ok: true as const, rescored: candIds.length - rescoreFailed, rescoreFailed };
 }
 
 /**

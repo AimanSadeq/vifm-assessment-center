@@ -88,6 +88,20 @@ export async function POST(req: Request, { params }: { params: { token: string }
     return NextResponse.json({ error: "Consent is required before submitting an assessment." }, { status: 403 });
   }
 
+  // Fail closed in production without a model key. Without ANTHROPIC_API_KEY, the
+  // writing/speaking scorers take the no-key placeholder path (fabricated B1/all-3s,
+  // no scoring_failed flag) - which on this commercial hiring surface would silently
+  // feed the composite + shortlist + adverse-impact math with a non-score. The
+  // standalone /ac/fluent prototype keeps the dev-friendly placeholder; the hiring
+  // route does not. (Receptive-only tests are auto-scored, but a productive skill is
+  // almost always in scope, so gate the whole stage for a consistent guarantee.)
+  if (process.env.NODE_ENV === "production" && !process.env.ANTHROPIC_API_KEY) {
+    return NextResponse.json(
+      { error: "Scoring is temporarily unavailable. Please submit again in a moment.", retry: true },
+      { status: 503 },
+    );
+  }
+
   const body = (await req.json().catch(() => null)) as Body | null;
 
   const svc = createServiceClient();
@@ -144,6 +158,20 @@ export async function POST(req: Request, { params }: { params: { token: string }
   const speaking = speakingBase
     ? blendPronunciation(speakingBase, sanitizePronunciation(body?.pronunciation))
     : undefined;
+
+  // Automated scoring genuinely FAILED for an administered productive skill (API/
+  // parse error with a key present -> a fabricated B1/all-3s placeholder). Do NOT
+  // complete the stage with it: that would silently feed a real hiring composite +
+  // shortlist + adverse-impact math with a non-score. Leave the stage retryable
+  // (uncompleted, no normalized_score => excluded from the composite) and ask the
+  // candidate to resubmit. (A missing ANTHROPIC_API_KEY takes the placeholder path
+  // WITHOUT scoring_failed, so a dev/demo run still completes.)
+  if (writing?.scoring_failed || speaking?.scoring_failed) {
+    return NextResponse.json(
+      { error: "Scoring is temporarily unavailable. Please submit again in a moment.", retry: true },
+      { status: 503 },
+    );
+  }
 
   const result = computeFluentResult({
     // The stored test is already filtered to the selected receptive skills, so

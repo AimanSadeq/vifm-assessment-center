@@ -9,9 +9,15 @@ import type { AraPillarId } from "@/types/ara";
  */
 export function GapHeatmap({
   scoresByPillarByBucket,
+  pillars = ARA_PILLARS,
 }: {
   // pillar_id → bucket_index (0..BUCKET_COUNT-1) → avg score
   scoresByPillarByBucket: Map<AraPillarId, Map<number, number>>;
+  /** The assessment's IN-SCOPE pillars. Defaults to all 8 for back-compat,
+   *  but subset-stage callers must pass their scoped list - an 8-row heatmap
+   *  made a Department (4-pillar) engagement read as a half-assessed
+   *  enterprise. */
+  pillars?: typeof ARA_PILLARS;
 }) {
   const BUCKET_COUNT = 5;
   const BUCKET_LABELS = ["Q1–2", "Q3–4", "Q5–6", "Q7–8", "Q9+"];
@@ -32,7 +38,7 @@ export function GapHeatmap({
           {b}
         </div>
       ))}
-      {ARA_PILLARS.map((p) => {
+      {pillars.map((p) => {
         const byBucket = scoresByPillarByBucket.get(p.id) ?? new Map();
         return (
           <>

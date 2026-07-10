@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages, chunkIds } from "@/lib/ara/paginate";
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
 import type { AraPillarId } from "@/types/ara";
 
@@ -37,17 +38,49 @@ export async function computePeerBenchmarks(
   const sb = createServiceClient();
 
   // Find peer assessments - same region + sector, completed data, not sandbox.
+  // Individual-stage runs (Mode A snapshots / Mode B deep-dives) are excluded:
+  // they persist region + sector like org runs but carry ZERO pillar data, so
+  // counting them as "peer organizations" inflated the eligibility gate.
   const { data: peerAssessments } = await sb
     .from("ara_assessments")
     .select("id")
     .eq("region", region)
     .eq("sector", sector)
     .eq("is_sandbox", false)
+    .neq("engagement_stage", "individual")
     .in("status", ["completed", "frozen", "archived"])
     .neq("id", currentAssessmentId);
 
   const peerIds = (peerAssessments ?? []).map((a) => a.id);
-  const sampleSize = peerIds.length;
+
+  // Load all pillar scores from peers FIRST: the eligibility gate must count
+  // peers with actual scored pillar data, not terminal-status rows (an empty
+  // draft can be archived and would otherwise satisfy MIN_PEERS while
+  // contributing nothing - "N peer organizations" then overstated the basis).
+  // Chunked ids + PAGINATED so a large peer pool never truncates at the
+  // 1000-row cap (which would undercount sample_size AND skew the medians).
+  type ScoreRow = { assessment_id: string; pillar_id: string; raw_score: number | null };
+  const rows: ScoreRow[] = [];
+  for (const ids of chunkIds(peerIds)) {
+    rows.push(
+      ...(await fetchAllPages<ScoreRow>((from, to) =>
+        sb
+          .from("ara_pillar_scores")
+          .select("assessment_id, pillar_id, raw_score")
+          .in("assessment_id", ids)
+          .order("id")
+          .range(from, to)
+      ).catch((e): ScoreRow[] => {
+        console.error("[ara] peer-benchmark pillar-score load failed:", e);
+        return [];
+      }))
+    );
+  }
+
+  const scoredPeerIds = new Set(
+    rows.filter((r) => r.raw_score != null).map((r) => r.assessment_id)
+  );
+  const sampleSize = scoredPeerIds.size;
 
   if (sampleSize < MIN_PEERS) {
     return {
@@ -64,15 +97,9 @@ export async function computePeerBenchmarks(
     };
   }
 
-  // Load all pillar scores from peers
-  const { data: rows } = await sb
-    .from("ara_pillar_scores")
-    .select("pillar_id, raw_score")
-    .in("assessment_id", peerIds);
-
   // Group scores by pillar, then take the median.
   const byPillar = new Map<string, number[]>();
-  for (const r of rows ?? []) {
+  for (const r of rows) {
     if (r.raw_score == null) continue;
     const arr = byPillar.get(r.pillar_id) ?? [];
     arr.push(Number(r.raw_score));

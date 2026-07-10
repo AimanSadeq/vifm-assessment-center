@@ -199,6 +199,10 @@ ${d.pdfUrl}
     }),
   },
   ara_personal_results_to_client: {
+    // The attachment sentence is CONDITIONAL on d.pdfAttached ("yes"/"no",
+    // set by the caller from whether the PDF fetch actually succeeded) - the
+    // hard-coded "attached as a PDF" claim previously went out even when the
+    // attach failed, leaving the client hunting for a missing attachment.
     en: (d) => ({
       contentType: "Text",
       subject: `AI Readiness results - ${d.respondentName} (${d.assessmentName})`,
@@ -206,7 +210,9 @@ ${d.pdfUrl}
 
 ${d.respondentName}${d.respondentEmail ? ` (${d.respondentEmail})` : ""} has completed the VIFM AI Readiness Snapshot for ${d.assessmentName}.
 
-Their results report is attached as a PDF. It covers the four AI-readiness factors and the VIFM training programmes most likely to close any gaps.
+${d.pdfAttached === "no"
+  ? "Their results report could not be attached to this email - your VIFM consultant will follow up with the PDF."
+  : "Their results report is attached as a PDF. It covers the four AI-readiness factors and the VIFM training programmes most likely to close any gaps."}
 
 If you have questions about interpreting the results, please contact your VIFM consultant.
 
@@ -220,7 +226,9 @@ Virginia Institute of Finance and Management`,
 
 أكمل ${d.respondentName}${d.respondentEmail ? ` (${d.respondentEmail})` : ""} لقطة الجاهزية للذكاء الاصطناعي من VIFM لـ ${d.assessmentName}.
 
-تقرير النتائج مرفق بصيغة PDF. يغطي عوامل الجاهزية الأربعة وبرامج تدريب VIFM الأكثر ملاءمة لمعالجة أي فجوات.
+${d.pdfAttached === "no"
+  ? "تعذّر إرفاق تقرير النتائج بهذه الرسالة - سيتابع معك مستشار VIFM لإرسال ملف PDF."
+  : "تقرير النتائج مرفق بصيغة PDF. يغطي عوامل الجاهزية الأربعة وبرامج تدريب VIFM الأكثر ملاءمة لمعالجة أي فجوات."}
 
 إذا كانت لديك أسئلة حول تفسير النتائج، يرجى التواصل مع مستشار VIFM الخاص بك.
 
@@ -232,11 +240,11 @@ Virginia Institute of Finance and Management`,
       subject: `AI Readiness results - ${d.respondentName} / نتائج الجاهزية`,
       body: `<div style="font-family:'Open Sans',Arial,sans-serif;line-height:1.55;color:#121232;">
 <p>Hello ${d.clientName},</p>
-<p>${d.respondentName}${d.respondentEmail ? ` (${d.respondentEmail})` : ""} has completed the VIFM AI Readiness Snapshot for <strong>${d.assessmentName}</strong>. Their results report is attached as a PDF.</p>
+<p>${d.respondentName}${d.respondentEmail ? ` (${d.respondentEmail})` : ""} has completed the VIFM AI Readiness Snapshot for <strong>${d.assessmentName}</strong>. ${d.pdfAttached === "no" ? "Their results report could not be attached - your VIFM consultant will follow up with the PDF." : "Their results report is attached as a PDF."}</p>
 <hr style="border:0;border-top:1px solid #e5e7eb;margin:18px 0;"/>
 <div dir="rtl" style="font-family:'Open Sans',Arial,sans-serif;">
 <p>مرحبًا ${d.clientName}،</p>
-<p>أكمل ${d.respondentName} لقطة الجاهزية للذكاء الاصطناعي لـ <strong>${d.assessmentName}</strong>. تقرير النتائج مرفق بصيغة PDF.</p>
+<p>أكمل ${d.respondentName} لقطة الجاهزية للذكاء الاصطناعي لـ <strong>${d.assessmentName}</strong>. ${d.pdfAttached === "no" ? "تعذّر إرفاق تقرير النتائج - سيتابع معك مستشار VIFM لإرسال ملف PDF." : "تقرير النتائج مرفق بصيغة PDF."}</p>
 </div>
 </div>`,
     }),
@@ -294,7 +302,16 @@ export async function sendAraEmail(
 
   const isHtml = rendered.contentType === "HTML";
 
-  if (resendConfigured()) {
+  if (input.isSandbox && !sandboxRedirect) {
+    // FAIL CLOSED: sandbox mail with no redirect configured must never reach
+    // the real recipient (previously it fell through and DELIVERED whenever a
+    // transport was configured - the exact spam-real-users case the redirect
+    // exists to prevent). Mock instead; the log below still records it.
+    status = "mocked";
+    console.warn("[ara-email] Sandbox send with no SANDBOX_EMAIL_REDIRECT set - mocked instead of delivering to the real recipient.");
+    console.log(`[ara-email MOCK sandbox] type=${input.emailType} lang=${input.language} to=${recipient}`);
+    console.log(`[ara-email MOCK sandbox] subject=${rendered.subject}`);
+  } else if (resendConfigured()) {
     // Preferred transport: Resend (also supports attachments).
     const r = await sendViaResend({
       to: recipient,

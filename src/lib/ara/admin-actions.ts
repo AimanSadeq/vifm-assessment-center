@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
-import { ARA_RETENTION_YEARS } from "@/lib/constants/ara-retention";
+import { runRetentionPurge, deleteAssessmentCollateral } from "@/lib/ara/retention";
 
 function authErr(e: unknown) {
   if (isAuthorizationError(e)) return { ok: false as const, error: e.message };
@@ -181,28 +181,42 @@ export async function clearAraSandboxData(formData: FormData) {
     .eq("is_sandbox", true);
   if (findErr) return { ok: false, error: findErr.message };
 
-  const count = ids?.length ?? 0;
+  const sandboxIds = (ids ?? []).map((r) => r.id);
+  const count = sandboxIds.length;
   if (count === 0) {
     return { ok: true, deleted: 0 };
   }
 
+  // Storage files + email-log rows BEFORE the cascade erases the pointers
+  // (mirrors the retention purge - the DB cascade never touched the
+  // ara-materials bucket, orphaning uploaded files).
+  await deleteAssessmentCollateral(sb, sandboxIds);
+
+  // Delete exactly the SELECTED id set (not .eq(is_sandbox) again): a sandbox
+  // assessment created between the select and the delete would otherwise be
+  // hard-deleted without collateral cleanup and without an audit row.
   const { error: delErr } = await sb
     .from("ara_assessments")
     .delete()
-    .eq("is_sandbox", true);
+    .in("id", sandboxIds);
   if (delErr) return { ok: false, error: delErr.message };
 
-  // Audit the destructive purge (ORG-DELETE-02 sibling) - best-effort.
-  try {
-    await sb.from("ara_data_management_log").insert({
+  // Audit the destructive purge (ORG-DELETE-02 sibling): one row per purged
+  // assessment - target_id is NOT NULL in ara_data_management_log, so the
+  // previous single target_id:null row ALWAYS failed 23502 and was silently
+  // swallowed, leaving the purge with zero audit trail. Best-effort, but
+  // failures are now logged instead of discarded.
+  const { error: auditErr } = await sb.from("ara_data_management_log").insert(
+    sandboxIds.map((id) => ({
       action: "sandbox_purge",
       target_table: "ara_assessments",
-      target_id: null,
-      reason: `Hard-deleted ${count} sandbox assessment(s) and cascaded children.`,
+      target_id: id,
+      reason: `Hard-deleted sandbox assessment (batch of ${count}) and cascaded children.`,
       client_request: false,
       performed_at: new Date().toISOString(),
-    });
-  } catch { /* audit is best-effort; never block the purge */ }
+    }))
+  );
+  if (auditErr) console.error("[ara sandbox purge] audit-log write failed:", auditErr.message);
 
   revalidatePath("/ara/admin");
   revalidatePath("/ara/admin/sandbox");
@@ -212,65 +226,12 @@ export async function clearAraSandboxData(formData: FormData) {
 
 // ─────────────────────────────────────────────────────────────
 // Retention engine - admin-triggered purge (handover §15.2)
-// Hard-deletes archived assessments whose archived_at is older than
-// RETENTION_YEARS. Generated reports are NOT deleted (§15.3).
+// Core logic lives in src/lib/ara/retention.ts (a plain module, NOT
+// "use server") so the deliberately-unguarded runRetentionPurge is
+// never compiled into a callable server-action endpoint. This file
+// exposes only the admin-gated + typed-confirmation wrapper; the cron
+// route imports the core directly behind its CRON_SECRET bearer gate.
 // ─────────────────────────────────────────────────────────────
-// GOV-05: 2-year max per CLAUDE.md / PDPL (was 3). Single source of truth.
-const RETENTION_YEARS = ARA_RETENTION_YEARS;
-
-/**
- * Core retention-purge logic - no auth check inside, so it can be
- * called from BOTH the admin form action (which gates on
- * requireRole + confirmation string) AND a system-triggered cron
- * route (which gates on a CRON_SECRET bearer header). Always uses
- * service-role + audit-logs every deletion regardless of trigger.
- *
- * The `trigger` param distinguishes admin vs cron in the audit log
- * so we can later trace which run touched what.
- */
-export async function runRetentionPurge(
-  trigger: "admin" | "cron"
-): Promise<{ ok: true; deleted: number } | { ok: false; error: string }> {
-  const sb = createServiceClient();
-  const cutoff = new Date();
-  cutoff.setFullYear(cutoff.getFullYear() - RETENTION_YEARS);
-  const cutoffIso = cutoff.toISOString();
-
-  const { data: expired, error: findErr } = await sb
-    .from("ara_assessments")
-    .select("id, organization_id, archived_at")
-    .eq("status", "archived")
-    .lt("archived_at", cutoffIso);
-  if (findErr) return { ok: false, error: findErr.message };
-
-  const ids = (expired ?? []).map((e) => e.id);
-  if (ids.length === 0) return { ok: true, deleted: 0 };
-
-  // Detach reports so they survive the cascade delete - they are VIFM
-  // business records per §15.3.
-  await sb.from("ara_reports").update({ assessment_id: null }).in("assessment_id", ids);
-
-  const { error: delErr } = await sb
-    .from("ara_assessments")
-    .delete()
-    .in("id", ids);
-  if (delErr) return { ok: false, error: delErr.message };
-
-  // Audit log - record trigger so admin-triggered vs cron-triggered
-  // runs are distinguishable downstream.
-  await sb.from("ara_data_management_log").insert(
-    ids.map((id) => ({
-      action: "retention_purge",
-      target_table: "ara_assessments",
-      target_id: id,
-      reason: `Archived > ${RETENTION_YEARS} years (trigger: ${trigger})`,
-      client_request: false,
-    }))
-  );
-
-  return { ok: true, deleted: ids.length };
-}
-
 export async function purgeAraExpiredAssessments(formData: FormData) {
   try { await requireRole("admin"); } catch (e) { return authErr(e); }
   const confirmation = String(formData.get("confirmation") ?? "").trim();

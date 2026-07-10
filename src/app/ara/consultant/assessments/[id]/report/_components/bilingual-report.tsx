@@ -120,6 +120,10 @@ export function BilingualReport(p: BilingualReportProps) {
   const scopedPillars = ARA_PILLARS.filter((pl) =>
     (p.pillarsInScope ?? stageDef.applicable_pillars).includes(pl.id),
   );
+  // KPI-tile denominators reflect the SCOPED count, not a hardcoded 8 - a
+  // Department (4) / Division (6) run previously read "2 / 8" in the client PDF.
+  const scopedCount = scopedPillars.length;
+  const arDigits = (n: number) => String(n).replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[Number(d)]);
   const stageBadgeBg =
     stageDef.tone === "teal" ? "rgba(45, 212, 191, 0.15)" :
     stageDef.tone === "violet" ? "rgba(167, 139, 250, 0.18)" :
@@ -233,14 +237,14 @@ export function BilingualReport(p: BilingualReportProps) {
               <StatTile
                 label={tr("en", "headline_strengths")}
                 value={String(p.strengths.length)}
-                suffix="/ 8"
+                suffix={`/ ${scopedCount}`}
                 accent={tr("en", "pillars_at_above_benchmark")}
                 accentColor={TOKENS.emerald}
               />
               <StatTile
                 label={tr("en", "critical_gaps")}
                 value={String(p.gaps.length)}
-                suffix="/ 8"
+                suffix={`/ ${scopedCount}`}
                 accent={tr("en", "pillars_requiring_focus")}
                 accentColor={TOKENS.rose}
               />
@@ -265,14 +269,14 @@ export function BilingualReport(p: BilingualReportProps) {
               <StatTile
                 label={tr("ar", "headline_strengths")}
                 value={String(p.strengths.length)}
-                suffix="/ ٨"
+                suffix={`/ ${arDigits(scopedCount)}`}
                 accent={tr("ar", "pillars_at_above_benchmark")}
                 accentColor={TOKENS.emerald}
               />
               <StatTile
                 label={tr("ar", "critical_gaps")}
                 value={String(p.gaps.length)}
-                suffix="/ ٨"
+                suffix={`/ ${arDigits(scopedCount)}`}
                 accent={tr("ar", "pillars_requiring_focus")}
                 accentColor={TOKENS.rose}
               />
@@ -718,7 +722,7 @@ export function BilingualReport(p: BilingualReportProps) {
             {tr("ar", "gap_heatmap")}
           </h2>
         </div>
-        <div><GapHeatmap scoresByPillarByBucket={p.heatmapData} /></div>
+        <div><GapHeatmap scoresByPillarByBucket={p.heatmapData} pillars={scopedPillars} /></div>
         <div className="bilingual-text">
           <div className="col-en"><p className="report-body">{tr("en", "heatmap_intro")}</p></div>
           <div className="col-ar" dir="rtl"><p className="report-body">{tr("ar", "heatmap_intro")}</p></div>

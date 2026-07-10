@@ -74,9 +74,9 @@ export async function recalculateAssessmentScores(assessmentId: string): Promise
 
   const { data: assessment } = await sb
     .from("ara_assessments")
-    .select("id, pillar_weights")
+    .select("id, pillar_weights, engagement_stage")
     .eq("id", assessmentId)
-    .maybeSingle<Pick<AraAssessment, "id" | "pillar_weights">>();
+    .maybeSingle<Pick<AraAssessment, "id" | "pillar_weights" | "engagement_stage">>();
 
   if (!assessment) return;
 
@@ -218,7 +218,7 @@ export async function recalculateAssessmentScores(assessmentId: string): Promise
     const band = overallBandFromScore(overall);
     overallLabelEn = band.label_en;
     overallLabelAr = band.label_ar;
-  } else {
+  } else if (assessment.engagement_stage === "individual") {
     // Individual-stage assessments serve ONLY individual-factor items, so no
     // pillar ever scores - which left overall_score null and the consultant
     // dashboard / org views blank, even though the taker's results page
@@ -226,8 +226,12 @@ export async function recalculateAssessmentScores(assessmentId: string): Promise
     // scores but the assessment has scored individual-factor responses, derive
     // the overall as the mean of the four factor means (the exact logic the
     // personal results page uses) and label it with the individual maturity
-    // stage. Mode C (pillar + individual layer) is unaffected: its pillars
-    // score, so anyPillarScored is true and this branch never runs.
+    // stage. STAGE-GATED to individual: on a Mode C ORG assessment whose first
+    // submitters are individual_only respondents (no pillar answers yet), the
+    // data-shape check alone published a personal-factor overall with a
+    // personal maturity label onto the org record until the first pillar
+    // answer arrived - an org run must stay "pending", never borrow the
+    // personal construct.
     const byFactor = new Map<string, number[]>();
     for (const r of typed) {
       const fid = r.question?.individual_factor_id;

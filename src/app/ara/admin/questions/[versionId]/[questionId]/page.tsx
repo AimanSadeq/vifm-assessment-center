@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { ArrowLeft, GitBranch } from "lucide-react";
+import { notFound, redirect } from "next/navigation";
+import { ArrowLeft, GitBranch, AlertTriangle } from "lucide-react";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { createServiceClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
@@ -21,8 +21,10 @@ export const dynamic = "force-dynamic";
 
 export default async function EditAraQuestionPage({
   params,
+  searchParams,
 }: {
   params: { versionId: string; questionId: string };
+  searchParams?: { error?: string };
 }) {
   const sb = createServiceClient();
   const t = await getServerT();
@@ -42,10 +44,20 @@ export default async function EditAraQuestionPage({
 
   if (!version || !question) return notFound();
 
+  // Surface action failures (e.g. malformed options/score_map JSON): the
+  // action returns { ok:false, error } instead of redirecting, and silently
+  // dropping that made a refused save look like a clean one. Re-render the
+  // edit page with the error in the query string -> banner below.
   const updateAction = async (fd: FormData) => {
     "use server";
-    await updateAraQuestion(fd);
+    const result = await updateAraQuestion(fd);
+    if (result && result.ok === false) {
+      redirect(
+        `/ara/admin/questions/${params.versionId}/${params.questionId}?error=${encodeURIComponent(result.error ?? "Save failed")}`
+      );
+    }
   };
+  const actionError = searchParams?.error ?? null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -72,6 +84,13 @@ export default async function EditAraQuestionPage({
         <p className="text-muted-foreground mb-8">
           {t("araAdminData.eq_subtitle")}
         </p>
+
+        {actionError && (
+          <div className="mb-6 flex items-start gap-2 rounded-md border border-rose-300 bg-rose-50 p-3 text-sm text-rose-800">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{actionError}</span>
+          </div>
+        )}
 
         {/* ─── Lineage card ─────────────────────────────────────
             Surfaces the full chain item → construct → AC competencies →

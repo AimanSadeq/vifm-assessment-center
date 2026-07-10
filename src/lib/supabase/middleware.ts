@@ -2,6 +2,35 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
+ * Edge-safe constant-time string compare (node:crypto's timingSafeEqual is
+ * unavailable in the middleware runtime). False when either side is empty,
+ * so an unset CRON_SECRET can never be matched by an empty header.
+ */
+function edgeTimingSafeEqual(a: string | null | undefined, b: string | null | undefined): boolean {
+  if (!a || !b) return false;
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+/**
+ * Server-to-server Puppeteer render of the consultant report page, sent by the
+ * org PDF route with the x-ara-internal header (CRON_SECRET). That route has
+ * ALREADY authorized its caller via requireAssessmentOwner - including a
+ * portal client_manager for their own org's assessment - but the confinement
+ * below would 302 the render to /portal before the page's own internal-render
+ * bypass could run, so the delivered "PDF" was a print of the portal
+ * dashboard. Narrowly scoped: only the report page path, only with the exact
+ * secret.
+ */
+function isInternalReportRender(request: NextRequest): boolean {
+  const p = request.nextUrl.pathname;
+  if (!/^\/ara\/consultant\/assessments\/[^/]+\/report$/.test(p)) return false;
+  return edgeTimingSafeEqual(request.headers.get("x-ara-internal"), process.env.CRON_SECRET);
+}
+
+/**
  * For otherwise-public PAGE routes (the marketing landings) that are bypassed
  * before updateSession: anonymous prospects and VIFM staff see them unchanged,
  * but a signed-in client_manager is bounced to their own /portal. Returns a
@@ -107,7 +136,12 @@ export async function updateSession(request: NextRequest) {
       p.startsWith("/courses") ||
       p.startsWith("/evidence") ||
       p.startsWith("/verify") ||
-      p.startsWith("/admin/tech-sandbox/results");
+      p.startsWith("/admin/tech-sandbox/results") ||
+      // Puppeteer render of the report page for an already-authorized PDF
+      // request (see isInternalReportRender) - a client_manager's own cookies
+      // ride along, so the confinement below would otherwise 302 it to /portal
+      // and the PDF became a print of the portal dashboard.
+      isInternalReportRender(request);
     if (!sharedOk) {
       const { data: profile } = await supabase
         .from("profiles")

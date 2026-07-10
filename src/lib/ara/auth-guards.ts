@@ -180,3 +180,24 @@ export function isAuthorizationError(e: unknown): e is AuthorizationError {
     (typeof e === "object" && e !== null && "kind" in e && (e as any).kind === "authorization")
   );
 }
+
+/**
+ * True when the current request is a server-to-server render carrying the
+ * x-ara-internal header with the CRON_SECRET (the same pattern the personal
+ * PDF route uses). Lets an ALREADY-AUTHORIZED PDF route render the consultant
+ * report page through Puppeteer for callers the page's own role gate would
+ * refuse (e.g. a client_manager downloading their org's report from the
+ * portal - requireAssessmentOwner admits them, but the consultant layout
+ * 404s, so the PDF came back as a print of the 404 page). Timing-safe;
+ * false whenever CRON_SECRET is unset/empty, so it can never fail open.
+ */
+export async function isInternalAraRender(): Promise<boolean> {
+  try {
+    const { headers } = await import("next/headers");
+    const { timingSafeStrEqual } = await import("@/lib/utils/secret");
+    const value = headers().get("x-ara-internal");
+    return timingSafeStrEqual(value, process.env.CRON_SECRET);
+  } catch {
+    return false; // outside a request scope (e.g. build-time render)
+  }
+}

@@ -501,6 +501,10 @@ export async function markAraRespondentComplete(token: string): Promise<void> {
                   respondentName: respondent.name,
                   respondentEmail: respondent.email,
                   assessmentName: assessmentLabel,
+                  // Template flips its "attached as a PDF" sentence when the
+                  // fetch failed, so the client is never told to look for an
+                  // attachment that is not there.
+                  pdfAttached: attachments && attachments.length > 0 ? "yes" : "no",
                 },
                 attachments,
                 isSandbox: !!a?.is_sandbox,

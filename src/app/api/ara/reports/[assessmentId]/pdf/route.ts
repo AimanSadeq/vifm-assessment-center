@@ -70,10 +70,38 @@ export async function GET(
     await page.setViewport({ width: 1200, height: 900, deviceScaleFactor: 1 });
     // The report page sits under the access-gated /ara/consultant layout; forward
     // the (already-authorised) requester's session cookies so the SSR render
-    // authorises as the owner instead of 404ing on the cookieless Puppeteer hit.
+    // authorises as the owner. Additionally send the server-only x-ara-internal
+    // header: this route has ALREADY authorized the caller via
+    // requireAssessmentOwner - which also admits a portal client_manager for
+    // their own org's assessment - but the consultant layout 404s that role,
+    // so the delivered "PDF" was a print of the 404 page.
     const cookieHeader = req.headers.get("cookie");
-    if (cookieHeader) await page.setExtraHTTPHeaders({ cookie: cookieHeader });
-    await page.goto(reportUrl, { waitUntil: "networkidle0", timeout: 60_000 });
+    // Attach the session cookie + internal secret to SAME-ORIGIN requests only
+    // (setExtraHTTPHeaders would send them to every subresource, so the first
+    // cross-origin asset added to the report page would ship CRON_SECRET to a
+    // third-party host). Keep the report page free of cross-origin assets.
+    const origin = selfOrigin(req.url);
+    await page.setRequestInterception(true);
+    page.on("request", (r) => {
+      const headers = { ...r.headers() };
+      if (r.url().startsWith(origin)) {
+        if (cookieHeader) headers.cookie = cookieHeader;
+        if (process.env.CRON_SECRET) headers["x-ara-internal"] = process.env.CRON_SECRET;
+      }
+      void r.continue({ headers });
+    });
+    const nav = await page.goto(reportUrl, { waitUntil: "networkidle0", timeout: 60_000 });
+
+    // Never ship a PDF of an error page: if the SSR render 404'd/500'd,
+    // fail loudly instead of delivering a print of the error screen.
+    const navStatus = nav?.status() ?? 0;
+    if (navStatus >= 400) {
+      console.error(`[ara pdf] report page render returned ${navStatus} for ${params.assessmentId}`);
+      return NextResponse.json(
+        { ok: false, error: "The report page could not be rendered for this assessment. Please contact VIFM if this persists." },
+        { status: 502 }
+      );
+    }
 
     const pdf = await page.pdf({
       format: "A4",

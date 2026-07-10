@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { runRetentionPurge } from "@/lib/ara/admin-actions";
+import { runRetentionPurge } from "@/lib/ara/retention";
 import { timingSafeStrEqual } from "@/lib/utils/secret";
 
 /**

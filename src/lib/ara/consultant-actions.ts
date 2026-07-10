@@ -385,13 +385,16 @@ export async function createReassessmentFromPrior(
   try { await requireAssessmentOwner(priorAssessmentId); } catch (e) { return authErr(e); }
   const sb = createServiceClient();
 
-  const { data: prior, error: priorErr } = await sb
+  // The delivery-condition columns (00084/00134/00143) are selected tolerantly:
+  // a DB without them errors the whole select, so retry with the core columns
+  // (the conditions then simply are not carried - same as before they existed).
+  const PRIOR_CORE_COLS =
+    "id, organization_id, consultant_id, region, sector, default_language, is_sandbox, " +
+    "engagement_stage, scope_label, scope_label_ar, status, pillar_weights, assessment_year, " +
+    "pillars_in_scope, include_agentic_layer, include_individual_layer, assessment_tier";
+  let { data: prior, error: priorErr } = await sb
     .from("ara_assessments")
-    .select(
-      "id, organization_id, consultant_id, region, sector, default_language, is_sandbox, " +
-      "engagement_stage, scope_label, scope_label_ar, status, pillar_weights, assessment_year, " +
-      "pillars_in_scope, include_agentic_layer, include_individual_layer, assessment_tier"
-    )
+    .select(`${PRIOR_CORE_COLS}, time_limit_minutes, talent_lens, items_per_factor`)
     .eq("id", priorAssessmentId)
     .maybeSingle<{
       id: string;
@@ -411,7 +414,23 @@ export async function createReassessmentFromPrior(
       include_agentic_layer: boolean | null;
       include_individual_layer: boolean | null;
       assessment_tier: string | null;
+      time_limit_minutes: number | null;
+      talent_lens: string | null;
+      items_per_factor: number | null;
     }>();
+  if (priorErr) {
+    const code = (priorErr as { code?: string }).code;
+    if (code === "42703" || code === "PGRST204") {
+      ({ data: prior, error: priorErr } = await sb
+        .from("ara_assessments")
+        .select(PRIOR_CORE_COLS)
+        .eq("id", priorAssessmentId)
+        .maybeSingle<NonNullable<typeof prior>>());
+      if (prior) {
+        prior = { ...prior, time_limit_minutes: null, talent_lens: null, items_per_factor: null };
+      }
+    }
+  }
   if (priorErr || !prior) return { ok: false, error: priorErr?.message ?? "Prior assessment not found" };
 
   // Reassessment only makes sense once the prior has reached an end state.
@@ -451,34 +470,57 @@ export async function createReassessmentFromPrior(
     if (org?.sector) effectiveSector = org.sector;
   }
 
-  const { data: created, error: insertErr } = await sb
+  const insertPayload: Record<string, unknown> = {
+    organization_id: prior.organization_id,
+    consultant_id: prior.consultant_id,
+    region: effectiveRegion,
+    sector: effectiveSector,
+    default_language: prior.default_language,
+    is_sandbox: prior.is_sandbox,
+    engagement_stage: prior.engagement_stage,
+    scope_label: prior.scope_label,
+    scope_label_ar: prior.scope_label_ar,
+    pillar_weights: prior.pillar_weights ?? null,
+    assessment_year: nextYear,
+    question_bank_version_id: activeBank.id,
+    status: "draft",
+    phase: "phase1",
+    prior_assessment_id: prior.id,
+    // Carry the year-1 SCOPE so the year-2 run measures the same thing (a
+    // dropped pillars_in_scope / agentic / individual / tier silently
+    // re-scoped the reassessment, breaking the year-on-year comparison).
+    pillars_in_scope: prior.pillars_in_scope ?? null,
+    include_agentic_layer: prior.include_agentic_layer ?? false,
+    include_individual_layer: prior.include_individual_layer ?? false,
+    assessment_tier: prior.assessment_tier ?? null,
+  };
+  // Carry the delivery CONDITIONS too (00084/00134/00143): a dropped time
+  // limit silently un-timed the year-2 run, a dropped talent_lens changed the
+  // framing, and a dropped items_per_factor lengthened a deliberately-
+  // shortened per-client ARC. Only referenced when set (and strip+retried
+  // below) so a DB without those migrations can still reassess - mirrors the
+  // createAraAssessment tolerance pattern.
+  if (prior.time_limit_minutes != null) insertPayload.time_limit_minutes = prior.time_limit_minutes;
+  if (prior.talent_lens) insertPayload.talent_lens = prior.talent_lens;
+  if (prior.items_per_factor != null) insertPayload.items_per_factor = prior.items_per_factor;
+
+  let { data: created, error: insertErr } = await sb
     .from("ara_assessments")
-    .insert({
-      organization_id: prior.organization_id,
-      consultant_id: prior.consultant_id,
-      region: effectiveRegion,
-      sector: effectiveSector,
-      default_language: prior.default_language,
-      is_sandbox: prior.is_sandbox,
-      engagement_stage: prior.engagement_stage,
-      scope_label: prior.scope_label,
-      scope_label_ar: prior.scope_label_ar,
-      pillar_weights: prior.pillar_weights ?? null,
-      assessment_year: nextYear,
-      question_bank_version_id: activeBank.id,
-      status: "draft",
-      phase: "phase1",
-      prior_assessment_id: prior.id,
-      // Carry the year-1 SCOPE so the year-2 run measures the same thing (a
-      // dropped pillars_in_scope / agentic / individual / tier silently
-      // re-scoped the reassessment, breaking the year-on-year comparison).
-      pillars_in_scope: prior.pillars_in_scope ?? null,
-      include_agentic_layer: prior.include_agentic_layer ?? false,
-      include_individual_layer: prior.include_individual_layer ?? false,
-      assessment_tier: prior.assessment_tier ?? null,
-    })
+    .insert(insertPayload)
     .select("id")
     .single<{ id: string }>();
+  if (insertErr) {
+    const code = (insertErr as { code?: string }).code;
+    if (code === "42703" || code === "PGRST204") {
+      const { time_limit_minutes: _limit, talent_lens: _lens, items_per_factor: _cap, ...core } = insertPayload;
+      void _limit; void _lens; void _cap;
+      ({ data: created, error: insertErr } = await sb
+        .from("ara_assessments")
+        .insert(core)
+        .select("id")
+        .single<{ id: string }>());
+    }
+  }
   if (insertErr || !created) {
     return { ok: false, error: insertErr?.message ?? "Failed to create reassessment" };
   }
@@ -486,7 +528,7 @@ export async function createReassessmentFromPrior(
   if (options.carryRespondents) {
     const { data: priorRespondents } = await sb
       .from("ara_respondents")
-      .select("id, name, name_ar, email, role_label_en, role_label_ar, language_preference")
+      .select("id, name, name_ar, email, role_label_en, role_label_ar, language_preference, role_key, individual_only")
       .eq("assessment_id", prior.id);
 
     if (priorRespondents && priorRespondents.length > 0) {
@@ -498,6 +540,12 @@ export async function createReassessmentFromPrior(
         role_label_en: r.role_label_en,
         role_label_ar: r.role_label_ar,
         language_preference: r.language_preference,
+        // Carry role_key + individual_only (00007/00027): dropping
+        // individual_only turned a Mode C individual-only delegate into a
+        // pillar respondent with NO pillar assignments - a served-nothing/
+        // unanswerable year-2 row.
+        role_key: (r as { role_key?: string | null }).role_key ?? null,
+        individual_only: !!(r as { individual_only?: boolean | null }).individual_only,
       }));
       const { data: insertedRespondents, error: respErr } = await sb
         .from("ara_respondents")

@@ -32,7 +32,14 @@ import type {
  */
 type FormSaveGate = {
   hasPendingSaves: () => boolean;
-  flushPendingSaves: () => Promise<void>;
+  /**
+   * Fires every debounced save, awaits everything in flight, re-tries any
+   * answer whose earlier save exhausted its retries, and returns the number
+   * of answers that STILL failed to persist. Submit must refuse when this is
+   * non-zero - completing anyway silently dropped the failed answers while
+   * showing the respondent a success screen.
+   */
+  flushPendingSaves: () => Promise<number>;
 };
 const FORM_GATES = new Map<string, FormSaveGate>();
 
@@ -117,7 +124,19 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
     if (exiting) return;
     setExiting(true);
     try {
-      await FORM_GATES.get(token)?.flushPendingSaves();
+      const stillFailing = (await FORM_GATES.get(token)?.flushPendingSaves()) ?? 0;
+      if (stillFailing > 0) {
+        // Don't leave silently with unsaved answers - let the respondent choose.
+        const leaveAnyway = window.confirm(
+          rtl
+            ? `تعذّر حفظ ${stillFailing} من الإجابات. المغادرة الآن قد تفقد هذه الإجابات - هل تريد المغادرة على أي حال؟`
+            : `${stillFailing} answer${stillFailing === 1 ? "" : "s"} could not be saved. Leaving now may lose them - leave anyway?`
+        );
+        if (!leaveAnyway) {
+          setExiting(false);
+          return;
+        }
+      }
     } catch {
       /* answers already auto-save; navigate regardless so the user isn't stuck */
     }
@@ -253,13 +272,16 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
   // Tracks each in-flight save promise so the gate can await all of
   // them when Submit needs to wait for stragglers to land.
   const inFlightRef = useRef<Set<Promise<void>>>(new Set());
+  // Question ids whose save exhausted its retries. Synchronously maintained
+  // (unlike React state, which only reaches stateRef on the next render) so
+  // the submit flush can re-try and then COUNT what is still unsaved.
+  const failedIdsRef = useRef<Set<string>>(new Set());
 
   // Runs the actual save (no debounce; called by both the timer
   // callback and the flush path). Returns a promise that resolves
   // when the save has either succeeded or exhausted retries.
   const runSave = (questionId: string): Promise<void> => {
-    const current = stateRef.current[questionId];
-    if (!current) return Promise.resolve();
+    if (!stateRef.current[questionId]) return Promise.resolve();
     setState((prev) => ({ ...prev, [questionId]: { ...prev[questionId], state: "saving" } }));
     const promise = (async () => {
       // Auto-retry up to 3 times. Handles both action-level errors
@@ -268,6 +290,12 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
       let lastError: string | undefined;
       let saved = false;
       for (let attempt = 1; attempt <= MAX_ATTEMPTS && !saved; attempt++) {
+        // Re-read the LATEST values on every attempt: a respondent who
+        // changes the same answer during the retry backoff previously had
+        // the stale captured value re-sent afterwards, overwriting the newer
+        // saved answer while the UI showed the new one.
+        const current = stateRef.current[questionId];
+        if (!current) break;
         try {
           const result = await saveAraAnswer({
             token,
@@ -286,6 +314,8 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
           await new Promise((r) => setTimeout(r, 500 * attempt));
         }
       }
+      if (saved) failedIdsRef.current.delete(questionId);
+      else failedIdsRef.current.add(questionId);
       setState((prev) => ({
         ...prev,
         [questionId]: {
@@ -365,6 +395,16 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
           if (inFlightRef.current.size === 0 && timers.size === 0) break;
           await Promise.allSettled(Array.from(inFlightRef.current));
         }
+
+        // Answers whose earlier save exhausted its retries are NOT in either
+        // queue - they settled in 'error' state and were previously dropped
+        // silently by Submit. Give them one more full retry cycle now, then
+        // report what is still unsaved so the caller can refuse to complete.
+        const errored = Array.from(failedIdsRef.current);
+        if (errored.length > 0) {
+          await Promise.allSettled(errored.map((id) => runSave(id)));
+        }
+        return failedIdsRef.current.size;
       },
     };
     FORM_GATES.set(token, gate);
@@ -384,7 +424,13 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
     if (finishing) return;
     setFinishing(true);
     try {
-      await FORM_GATES.get(token)?.flushPendingSaves();
+      // Time is up: completion proceeds even if some saves still fail (the
+      // server refuses late saves anyway, so a retry loop can't rescue them),
+      // but the loss is logged rather than silent.
+      const stillFailing = (await FORM_GATES.get(token)?.flushPendingSaves()) ?? 0;
+      if (stillFailing > 0) {
+        console.error(`[ara] time-limit expiry: ${stillFailing} answer(s) could not be persisted before auto-submit`);
+      }
       await markAraRespondentComplete(token);
       router.refresh();
     } catch {
@@ -1027,6 +1073,10 @@ export function CompleteButton({
   // outran the debounce, click→submit was instant and left answers
   // unsaved).
   const [flushing, setFlushing] = useState(false);
+  // Count of answers that could not be persisted even after the flush's
+  // extra retry cycle. Submit REFUSES while this is non-zero - completing
+  // anyway silently dropped those answers behind a success screen.
+  const [unsavedCount, setUnsavedCount] = useState(0);
 
   if (alreadyComplete) {
     return (
@@ -1041,15 +1091,24 @@ export function CompleteButton({
 
   const handleClick = () => {
     start(async () => {
+      // ALWAYS flush (not only when saves are pending): answers whose earlier
+      // save exhausted its retries sit in 'error' state with nothing queued,
+      // so a pending-only check skipped exactly the answers that needed help.
       const gate = FORM_GATES.get(token);
-      if (gate && gate.hasPendingSaves()) {
+      let stillFailing = 0;
+      if (gate) {
         setFlushing(true);
         try {
-          await gate.flushPendingSaves();
+          stillFailing = await gate.flushPendingSaves();
         } finally {
           setFlushing(false);
         }
       }
+      if (stillFailing > 0) {
+        setUnsavedCount(stillFailing);
+        return; // do NOT complete - the failed answers would be lost
+      }
+      setUnsavedCount(0);
       await onComplete();
     });
   };
@@ -1069,6 +1128,13 @@ export function CompleteButton({
       >
         {label}
       </Button>
+      {unsavedCount > 0 && (
+        <p className="rounded-md border border-rose-300 bg-rose-50 p-2 text-center text-xs text-rose-800">
+          {rtl
+            ? `تعذّر حفظ ${unsavedCount} من الإجابات. تحقق من اتصالك بالإنترنت ثم اضغط "إرسال التقييم" مرة أخرى.`
+            : `${unsavedCount} answer${unsavedCount === 1 ? "" : "s"} could not be saved. Check your connection and press Submit again - nothing has been submitted yet.`}
+        </p>
+      )}
       {!allAnswered && (
         <p className="text-center text-xs text-muted-foreground">
           {rtl ? "أجب عن جميع الأسئلة لتفعيل الإرسال." : "Answer all questions to enable submit."}

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
-import { getCurrentCaller } from "@/lib/ara/auth-guards";
+import { getCurrentCaller, isInternalAraRender } from "@/lib/ara/auth-guards";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { ARA_PILLARS, ARA_MATURITY_LEVELS, ARA_OVERALL_BANDS } from "@/lib/constants/ara-pillars";
 import { ARA_STAGE_MAP, getPillarsForAssessment } from "@/lib/constants/ara-stages";
@@ -21,6 +21,7 @@ import { GanttRoadmap } from "./_components/gantt-roadmap";
 import { tr, type ReportLang } from "./_components/report-i18n";
 import { BilingualReport } from "./_components/bilingual-report";
 import { araAssessmentProvisional } from "@/lib/ara/provisional";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import { ProvisionalReportStrip } from "@/components/shared/provisional-banner";
 import { orgFactSheetRows } from "@/lib/reports/fact-sheet-content";
 import {
@@ -78,10 +79,17 @@ export default async function AraReportPage({
   if (!assessment) return notFound();
 
   // Ownership: layout gates role; a consultant may only view assessments they
-  // own (admins all). The PDF route forwards the owner's cookies to Puppeteer.
-  const caller = await getCurrentCaller();
-  if (caller && caller.role !== "admin" && assessment.consultant_id !== caller.uid) {
-    return notFound();
+  // own (admins all). The PDF route forwards the owner's cookies to Puppeteer,
+  // and additionally sends the server-only x-ara-internal header - that route
+  // has ALREADY authorized its caller via requireAssessmentOwner (which also
+  // admits a portal client_manager for their own org's assessment), so the
+  // internal render skips this consultant-shaped ownership check.
+  const internalRender = await isInternalAraRender();
+  if (!internalRender) {
+    const caller = await getCurrentCaller();
+    if (caller && caller.role !== "admin" && assessment.consultant_id !== caller.uid) {
+      return notFound();
+    }
   }
 
   const [
@@ -136,10 +144,21 @@ export default async function AraReportPage({
   ]);
 
   // Response rows for the gap heatmap - pillar × question-number bucket.
-  const { data: responseRows } = await sb
-    .from("ara_responses")
-    .select("question_score, question:ara_questions(pillar_id, question_number)")
-    .eq("assessment_id", assessment.id);
+  // PAGINATED (1000-row cap) + the same layer exclusion scoring.ts applies:
+  // individual-factor and Agentic-AI items reuse a storage pillar_id but are
+  // separate constructs - counting them polluted the governance /
+  // model_management heatmap cells in the client PDF.
+  const responseRows = await fetchAllPages<unknown>((from, to) =>
+    sb
+      .from("ara_responses")
+      .select("question_score, question:ara_questions(pillar_id, question_number, individual_factor_id, agentic_dimension_id)")
+      .eq("assessment_id", assessment.id)
+      .order("id")
+      .range(from, to)
+  ).catch((e): unknown[] => {
+    console.error(`[ara report] heatmap response load failed for ${assessment.id}:`, e);
+    return [];
+  });
 
   // Verified validation-evidence for the appendix - surfaces every
   // distinct anchor-instrument citation used by any question in the
@@ -220,11 +239,21 @@ export default async function AraReportPage({
     .order("created_at");
 
   const heatmapData = bucketResponses(
-    ((responseRows ?? []) as unknown as Array<{
+    (responseRows as Array<{
       question_score: number | null;
-      question: { pillar_id: string; question_number: number } | null;
+      question: {
+        pillar_id: string;
+        question_number: number;
+        individual_factor_id: string | null;
+        agentic_dimension_id: string | null;
+      } | null;
     }>)
-      .filter((r) => r.question)
+      .filter(
+        (r) =>
+          r.question &&
+          r.question.individual_factor_id == null &&
+          r.question.agentic_dimension_id == null
+      )
       .map((r) => ({
         pillar_id: r.question!.pillar_id,
         question_number: r.question!.question_number,
@@ -466,10 +495,13 @@ export default async function AraReportPage({
           <SectionHeader
             eyebrow="Executive summary"
             title={t("exec_summary")}
-            kicker={`Weighted aggregate of eight AI Readiness pillars, calibrated against ${region} frameworks`}
+            kicker={`Weighted aggregate of the ${scopedPillars.length} in-scope AI Readiness pillars, calibrated against ${region} frameworks`}
           />
 
-          {/* KPI strip - four tiles */}
+          {/* KPI strip - four tiles. Denominators reflect the assessment's
+              SCOPED pillar count, not a hardcoded 8 - a Department (4) or
+              Division (6) engagement previously read "2 / 8" as if half the
+              assessment were missing. */}
           <div className="stat-strip">
             <StatTile
               label="Overall readiness"
@@ -481,20 +513,20 @@ export default async function AraReportPage({
             <StatTile
               label="Maturity band"
               value={overallLabel ?? "-"}
-              accent="Weighted aggregate, 8 pillars"
+              accent={`Weighted aggregate, ${scopedPillars.length} pillars`}
               accentColor="#6b7280"
             />
             <StatTile
               label="At / above benchmark"
               value={String(strengths.length)}
-              suffix="/ 8"
+              suffix={`/ ${scopedPillars.length}`}
               accent="Pillars scoring ≥ 4.00"
               accentColor="#34D399"
             />
             <StatTile
               label="Below benchmark"
               value={String(gaps.length)}
-              suffix="/ 8"
+              suffix={`/ ${scopedPillars.length}`}
               accent="Pillars requiring focus"
               accentColor="#FB7185"
             />
@@ -554,9 +586,9 @@ export default async function AraReportPage({
         <section className="report-page">
           <h2 className="report-h2">{t("how_to_read")}</h2>
           <p className="report-body">
-            This report summarises findings across eight pillars of AI Readiness.
-            Each pillar is scored 1–5 against a behavioural rubric, and the
-            overall score is a weighted aggregate.
+            This report summarises findings across the {scopedPillars.length} in-scope
+            pillars of AI Readiness. Each pillar is scored 1–5 against a
+            behavioural rubric, and the overall score is a weighted aggregate.
           </p>
 
           <h3 className="report-h3">Maturity Scale</h3>
@@ -905,7 +937,7 @@ export default async function AraReportPage({
             maturity at or above the AI Ready benchmark.
           </p>
           <div style={{ marginTop: "16pt" }}>
-            <GapHeatmap scoresByPillarByBucket={heatmapData} />
+            <GapHeatmap scoresByPillarByBucket={heatmapData} pillars={scopedPillars} />
           </div>
           <div style={{ display: "flex", gap: "16pt", marginTop: "12pt", fontSize: "9pt" }}>
             <span><span style={{ display: "inline-block", width: "10pt", height: "10pt", background: "#FB7185", borderRadius: "2pt", marginRight: "4pt", verticalAlign: "middle" }} />Critical (1–2)</span>
@@ -1088,7 +1120,7 @@ export default async function AraReportPage({
           <section className="report-page">
             <h2 className="report-h2">Workforce AI Readiness</h2>
             <p className="report-body">
-              In addition to the eight pillar maturity scores, this assessment
+              In addition to the pillar maturity scores, this assessment
               measured the personal AI readiness of {workforceRollup.cohort_size}{" "}
               respondent{workforceRollup.cohort_size === 1 ? "" : "s"}{" "}
               ({workforceRollup.completed_count} completed) across four VIFM
@@ -1267,7 +1299,7 @@ export default async function AraReportPage({
           <p className="report-body">
             Each pillar raw score is the average of answered questions on a 1–5 scale.
             Weighted pillar scores are raw × (pillar weight ÷ 100). The overall
-            organizational score is the sum of all eight weighted pillar scores.
+            organizational score is the sum of the in-scope weighted pillar scores.
           </p>
 
           <h3 className="report-h3">Item development &amp; validation</h3>

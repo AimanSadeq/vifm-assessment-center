@@ -271,6 +271,21 @@ export async function anonymizeAraOrganization(orgId: string, reason: string) {
     .eq("id", orgId);
   if (orgErr) return { ok: false, error: orgErr.message };
 
+  // 1b. Client contact PII (migrations 00108/00131) - best-effort so an
+  // environment without those columns can't fail the core anonymize above,
+  // but the error is CHECKED and logged (supabase-js returns PostgREST
+  // errors rather than throwing, so a try/catch alone is dead code and a
+  // failed erasure would silently report success).
+  {
+    const { error: contactErr } = await sb
+      .from("ara_organizations")
+      .update({ client_contact_email: null, client_contact_name: null })
+      .eq("id", orgId);
+    if (contactErr) {
+      console.error(`[ara anonymize] client-contact clear failed for org ${orgId}:`, contactErr.message);
+    }
+  }
+
   // 2. Find all assessments for this org, then anonymize their respondents
   const { data: assessments } = await sb
     .from("ara_assessments")
@@ -279,14 +294,32 @@ export async function anonymizeAraOrganization(orgId: string, reason: string) {
 
   const assessmentIds = (assessments ?? []).map((a) => a.id);
   if (assessmentIds.length > 0) {
-    await sb
-      .from("ara_respondents")
-      .update({
-        name: "[ANONYMIZED]",
-        name_ar: "[ANONYMIZED]",
-        email: "anonymized@example.invalid",
-      })
-      .in("assessment_id", assessmentIds);
+    const { chunkIds } = await import("@/lib/ara/paginate");
+    for (const ids of chunkIds(assessmentIds)) {
+      const { error: respErr } = await sb
+        .from("ara_respondents")
+        .update({
+          name: "[ANONYMIZED]",
+          name_ar: "[ANONYMIZED]",
+          email: "anonymized@example.invalid",
+        })
+        .in("assessment_id", ids);
+      if (respErr) {
+        console.error(`[ara anonymize] respondent scrub failed for org ${orgId}:`, respErr.message);
+      }
+
+      // 2b. Email log: every send recorded the REAL recipient address
+      // (respondents + client contact), keyed to this org's assessments.
+      // Erasure must scrub those too - recipient_email is NOT NULL, so
+      // rewrite rather than null. Errors logged, never swallowed.
+      const { error: logErr } = await sb
+        .from("ara_email_log")
+        .update({ recipient_email: "anonymized@example.invalid" })
+        .in("assessment_id", ids);
+      if (logErr) {
+        console.error(`[ara anonymize] email-log scrub failed for org ${orgId}:`, logErr.message);
+      }
+    }
   }
 
   // 3. Audit log
@@ -931,10 +964,31 @@ export async function importAraQuestionsCsv(formData: FormData) {
   return { ok: true, imported: inserts.length };
 }
 
-// Delete question (admin)
+// Delete question (admin). Refuses once the question has collected ANY
+// respondent answers: ara_responses.question_id is ON DELETE CASCADE, so a
+// hard delete would silently destroy historical answers across every
+// assessment pinned to the version - including completed/frozen ones - and
+// a later recalculation would no longer match the reported numbers.
+// Deactivate (setAraQuestionActive) is the archival path for used questions.
 export async function deleteAraQuestion(questionId: string, versionId: string) {
   try { await requireRole("admin"); } catch (e) { return authErr(e); }
   const sb = createServiceClient();
+  const { count, error: countErr } = await sb
+    .from("ara_responses")
+    .select("id", { count: "exact", head: true })
+    .eq("question_id", questionId);
+  // FAIL CLOSED: if the answers-exist check itself errors, refuse the delete -
+  // proceeding on a null count would cascade away exactly the history this
+  // guard exists to protect.
+  if (countErr) {
+    return { ok: false, error: `Could not verify this question has no answers (${countErr.message}) - delete refused.` };
+  }
+  if ((count ?? 0) > 0) {
+    return {
+      ok: false,
+      error: `This question has ${count} recorded answer(s). Deleting it would destroy that history - deactivate it instead.`,
+    };
+  }
   const { error } = await sb.from("ara_questions").delete().eq("id", questionId);
   if (error) return { ok: false, error: error.message };
   revalidatePath(`/ara/admin/questions/${versionId}`);
@@ -1059,10 +1113,22 @@ export async function updateAraQuestion(formData: FormData) {
   const optionsEnRaw = formData.get("options_en") as string | null;
   const optionsArRaw = formData.get("options_ar") as string | null;
   const scoreMapRaw = formData.get("score_map") as string | null;
+  // Malformed JSON must ERROR, not silently become null: this update path
+  // OVERWRITES the stored options/score_map, so a typo in the admin's JSON
+  // would nuke a graded question's answer key while reporting a clean save
+  // (every future answer then scores null). Empty input still means "clear".
   const parseJson = <T,>(raw: string | null): T | null => {
-    if (!raw) return null;
-    try { return JSON.parse(raw) as T; } catch { return null; }
+    if (!raw || !raw.trim()) return null;
+    return JSON.parse(raw) as T; // throws on malformed - caught below
   };
+  let optionsEnParsed: unknown, optionsArParsed: unknown, scoreMapParsed: unknown;
+  try {
+    optionsEnParsed = parseJson(optionsEnRaw);
+    optionsArParsed = parseJson(optionsArRaw);
+    scoreMapParsed = parseJson(scoreMapRaw);
+  } catch {
+    return { ok: false, error: "Options / score map contain invalid JSON - fix the syntax and save again. Nothing was changed." };
+  }
 
   const parsed = createAraQuestionSchema.safeParse({
     version_id: formData.get("version_id"),
@@ -1071,9 +1137,9 @@ export async function updateAraQuestion(formData: FormData) {
     question_text_en: formData.get("question_text_en"),
     question_text_ar: formData.get("question_text_ar"),
     question_type: formData.get("question_type"),
-    options_en: parseJson(optionsEnRaw),
-    options_ar: parseJson(optionsArRaw),
-    score_map: parseJson(scoreMapRaw),
+    options_en: optionsEnParsed,
+    options_ar: optionsArParsed,
+    score_map: scoreMapParsed,
     help_text_en: formData.get("help_text_en") || "",
     help_text_ar: formData.get("help_text_ar") || "",
     region: formData.get("region") || "both",

@@ -1,11 +1,11 @@
 // VIFM Psychometrics - AI item drafter (Tier 2 bank). Drafts bilingual items for
-// ONE scale at a time; the SME reviews → approves into the bank. Returns [] when
-// no ANTHROPIC_API_KEY is set (the console then offers manual authoring instead).
+// ONE cognitive subtest at a time; the SME reviews → approves into the bank.
+// Returns [] when no ANTHROPIC_API_KEY is set (the console then offers manual
+// authoring instead).
 //
-// Cognitive → MCQs for a subtest (numerical/verbal/inductive/deductive) with one defensible
-// key + difficulty. Personality → first-person Likert statements for one Big-Five
-// trait, each flagged reverse/forward. Everything is drafted EN+AR together so
-// locale parity holds from the start.
+// Cognitive → MCQs for a subtest (numerical/verbal/inductive/deductive) with one
+// defensible key + difficulty, drafted EN+AR together so locale parity holds from
+// the start. (Big-Five personality drafting was retired with the OCEAN bank.)
 
 import { getAIClient, AI_MODEL } from "@/lib/ai/client";
 import type { PsyKind, PsyItemKind } from "./bank";
@@ -48,16 +48,6 @@ function cognitivePrompt(scaleKey: string, scaleName: string, count: number): st
   ].join("\n");
 }
 
-function personalityPrompt(scaleKey: string, scaleName: string, count: number): string {
-  return [
-    `Write ${count} first-person self-report statements measuring the Big-Five trait "${scaleName}" (key ${scaleKey}).`,
-    `Mix forward-keyed (high agreement = more of the trait) and reverse-keyed statements.`,
-    `Plain everyday language, one idea each, suitable for a 1–5 agree/disagree Likert. Avoid double-barrelled items.`,
-    `Return a JSON array. Each element:`,
-    `{ "stem_en": "...", "stem_ar": "...", "reverse_keyed": <true|false> }`,
-  ].join("\n");
-}
-
 function stripFences(text: string): string {
   return text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
 }
@@ -72,7 +62,6 @@ export async function draftScaleItems(input: {
   const ai = getAIClient();
   if (!ai) return [];
   const count = Math.max(1, Math.min(12, Math.floor(input.count) || 4));
-  const isCog = input.instrumentKind === "cognitive";
   try {
     const res = await ai.messages.create({
       model: AI_MODEL,
@@ -80,9 +69,7 @@ export async function draftScaleItems(input: {
       system: SYSTEM,
       messages: [{
         role: "user",
-        content: isCog
-          ? cognitivePrompt(input.scaleKey, input.scaleNameEn, count)
-          : personalityPrompt(input.scaleKey, input.scaleNameEn, count),
+        content: cognitivePrompt(input.scaleKey, input.scaleNameEn, count),
       }],
     });
     const block = res.content[0];
@@ -97,26 +84,18 @@ export async function draftScaleItems(input: {
       const stem_ar = typeof q.stem_ar === "string" ? q.stem_ar.trim() : "";
       if (!stem_en) continue;
 
-      if (isCog) {
-        const en = Array.isArray(q.options_en) ? q.options_en.map(String) : [];
-        const ar = Array.isArray(q.options_ar) ? q.options_ar.map(String) : [];
-        if (en.length < 2) continue;
-        const ci = typeof q.correct_index === "number" ? q.correct_index : -1;
-        if (ci < 0 || ci >= en.length) continue;
-        const difficulty = (["easy", "medium", "hard"] as const).includes(q.difficulty as never)
-          ? (q.difficulty as DraftedItem["difficulty"]) : "medium";
-        out.push({
-          kind: "mcq", stem_en, stem_ar: stem_ar || stem_en,
-          options_en: en, options_ar: ar.length === en.length ? ar : en,
-          correct_index: ci, reverse_keyed: false, difficulty,
-        });
-      } else {
-        out.push({
-          kind: "likert", stem_en, stem_ar: stem_ar || stem_en,
-          options_en: null, options_ar: null, correct_index: null,
-          reverse_keyed: q.reverse_keyed === true, difficulty: null,
-        });
-      }
+      const en = Array.isArray(q.options_en) ? q.options_en.map(String) : [];
+      const ar = Array.isArray(q.options_ar) ? q.options_ar.map(String) : [];
+      if (en.length < 2) continue;
+      const ci = typeof q.correct_index === "number" ? q.correct_index : -1;
+      if (ci < 0 || ci >= en.length) continue;
+      const difficulty = (["easy", "medium", "hard"] as const).includes(q.difficulty as never)
+        ? (q.difficulty as DraftedItem["difficulty"]) : "medium";
+      out.push({
+        kind: "mcq", stem_en, stem_ar: stem_ar || stem_en,
+        options_en: en, options_ar: ar.length === en.length ? ar : en,
+        correct_index: ci, reverse_keyed: false, difficulty,
+      });
     }
     return out;
   } catch {

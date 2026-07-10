@@ -28,7 +28,6 @@ async function loadCounts(): Promise<Record<string, number | null>> {
     ara_questions: null,
     persona_competencies: BEHAVIORAL_COMPETENCIES.length,
     cognitive_items: null,
-    personality_items: null,
     fluent_items: null,
     technical_tasks: null,
     reflect_behaviors: null,

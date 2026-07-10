@@ -73,7 +73,7 @@ export function buildMatrix(metrics: EvidenceMetrics): MatrixRow[] {
         fluent: d("CEFR descriptors"),
         technical: d("Domain taxonomy"),
         reflect: d("Framework + behaviours"),
-        psy: d("OCEAN + cognitive subtests"),
+        psy: d("cognitive subtests"),
       },
     },
     {
@@ -112,7 +112,7 @@ export function buildMatrix(metrics: EvidenceMetrics): MatrixRow[] {
         fluent: d("CEFR can-do statements"),
         technical: p("SME review"),
         reflect: p("behaviour anchors"),
-        psy: p("IPIP wording"),
+        psy: p("subtest item wording"),
       },
     },
     {

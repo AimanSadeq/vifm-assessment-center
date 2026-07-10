@@ -19,9 +19,9 @@ export type ComputeNormsResult =
   | { ok: false; error: string };
 
 /**
- * Compute pilot norms for one instrument from `psy_results`. Per-scale mean is the
- * average raw score (personality: 1–5 trait mean; cognitive: % correct), SD is the
- * sample SD (n−1). Cognitive also norms the `g` composite from overall.normalized.
+ * Compute pilot norms for the cognitive instrument from `psy_results`. Per-scale
+ * mean is the average raw score (% correct), SD is the sample SD (n−1). Cognitive
+ * also norms the `g` composite from overall.normalized.
  * A scale is skipped when n < 2 or SD = 0 (no spread). Upserts on (kind, scale_key).
  */
 export async function computePilotNorms(kind: PsyKind): Promise<ComputeNormsResult> {

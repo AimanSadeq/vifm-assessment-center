@@ -5,14 +5,14 @@ import {
 } from "./evidence-suggester-core";
 
 /**
- * Validation-evidence suggester for psychometric scales. Anchors a scale
- * (cognitive or personality) to the construct-validity, reliability and
- * scale-development literature from a closed menu.
+ * Validation-evidence suggester for psychometric scales. Anchors a cognitive
+ * (Logica) scale to the construct-validity, reliability and scale-development
+ * literature from a closed menu.
  */
 
 export type PsyEvidenceInput = {
   scale_name: string;
-  /** "cognitive" | "personality" */
+  /** "cognitive" */
   instrument_kind: string;
   instrument_name?: string;
 };
@@ -34,14 +34,6 @@ const MENU: AnchorMenuEntry[] = [
   { tags: ["*"], name: "Standards for Educational and Psychological Testing",
     citation: "American Educational Research Association, American Psychological Association, & National Council on Measurement in Education (2014). Standards for educational and psychological testing. AERA." },
 
-  // ── Personality ──
-  { tags: ["PERSONALITY"], name: "Big-Five factor markers (Goldberg)",
-    citation: "Goldberg, L. R. (1992). The development of markers for the Big-Five factor structure. Psychological Assessment, 4(1), 26–42." },
-  { tags: ["PERSONALITY"], name: "International Personality Item Pool (Goldberg et al.)",
-    citation: "Goldberg, L. R., Johnson, J. A., Eber, H. W., Hogan, R., Ashton, M. C., Cloninger, C. R., & Gough, H. G. (2006). The International Personality Item Pool and the future of public-domain personality measures. Journal of Research in Personality, 40(1), 84–96." },
-  { tags: ["PERSONALITY"], name: "Validation of the five-factor model (McCrae & Costa)",
-    citation: "McCrae, R. R., & Costa, P. T. (1987). Validation of the five-factor model of personality across instruments and observers. Journal of Personality and Social Psychology, 52(1), 81–90." },
-
   // ── Cognitive ──
   { tags: ["COGNITIVE"], name: "Human Cognitive Abilities (Carroll)",
     citation: "Carroll, J. B. (1993). Human cognitive abilities: A survey of factor-analytic studies. Cambridge University Press." },
@@ -60,7 +52,7 @@ export async function suggestPsyValidationEvidence(
       { k: "Scale", v: input.scale_name || "(unspecified)" },
     ],
     menu,
-    constructHint: "Conscientiousness facet of the Big Five",
+    constructHint: "Inductive reasoning subtest of general mental ability",
   });
   return runEvidenceSuggester({
     system: buildSystemPrompt(

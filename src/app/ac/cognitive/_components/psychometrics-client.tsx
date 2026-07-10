@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { BrainCircuit, Sparkles, Loader2, CheckCircle2, RotateCcw, AlertTriangle, Download, Clock, Ticket } from "lucide-react";
+import { BrainCircuit, Sparkles, Loader2, CheckCircle2, RotateCcw, Download, Clock, Ticket } from "lucide-react";
 import type { PsyTestPublic, PsyResult, ScaleScore } from "@/lib/psychometrics/scoring";
 import { COGNITIVE_SUBTESTS, COGNITIVE_SUBTEST_KEYS, cognitiveNarrative } from "@/lib/psychometrics/framework";
 
@@ -440,13 +440,6 @@ export function PsychometricsClient({
               </div>
             ))}
           </div>
-
-          {result.validity?.flag && (
-            <div className="inline-flex items-start gap-2 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
-              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              Response-style check: the profile shows {result.validity.socialDesirability >= 4.5 ? "uniformly high self-ratings" : "high inconsistency"} - interpret with care.
-            </div>
-          )}
 
           {result.tier === "calibrated" ? (
             <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900">

@@ -13,7 +13,6 @@ import { COGNITIVE_SEED_V1 } from "@/lib/psychometrics/cognitive-seed";
 import { draftScaleItems } from "@/lib/psychometrics/item-drafter";
 import { computePilotNorms, clearNorms } from "@/lib/psychometrics/norms";
 import { PSY_TIER } from "@/lib/psychometrics/calibration";
-import { IPIP_50 } from "@/lib/psychometrics/ipip50";
 
 type ActionResult = { ok: true; message?: string } | { ok: false; error: string };
 type AdminGate = { ok: true; caller: AraCaller } | { ok: false; error: string };
@@ -249,42 +248,6 @@ export async function computePilotNormsAction(input: { kind: PsyKind }): Promise
   revalidatePath("/admin/psychometrics");
   const maxN = res.norms.reduce((m, n) => Math.max(m, n.n), 0);
   return { ok: true, message: `Pilot norms computed for ${res.norms.length} scale(s) (n up to ${maxN}). Norm-referencing activates per scale at n ≥ ${PSY_TIER.minNormN}.` };
-}
-
-/** Seed the public-domain IPIP-50 (10 items × 5 traits) into the personality bank
- *  as APPROVED items - the longer validated form. Idempotent (skips if present). */
-export async function seedIpip50IntoBankAction(): Promise<ActionResult> {
-  const gate = await ensureAdmin();
-  if (!gate.ok) return gate;
-  const svc = createServiceClient();
-
-  const { count } = await svc.from("psy_items").select("id", { count: "exact", head: true }).eq("source", "ipip50");
-  if ((count ?? 0) > 0) return { ok: true, message: `IPIP-50 already seeded (${count} items).` };
-
-  const scaleIds: Record<string, string> = {};
-  for (const key of ["O", "C", "E", "A", "S"]) {
-    const id = await resolveScaleId("personality", key);
-    if (!id) return { ok: false, error: "Could not resolve personality scales. Apply migration 00065 (psychometrics)." };
-    scaleIds[key] = id;
-  }
-
-  const rows = IPIP_50.map((it) => ({
-    scale_id: scaleIds[it.scale],
-    kind: "likert",
-    stem_en: it.text_en,
-    stem_ar: it.text_ar,
-    options_en: null,
-    options_ar: null,
-    correct_index: null,
-    reverse_keyed: it.reverse,
-    difficulty: null,
-    status: "approved",
-    source: "ipip50",
-  }));
-  const { error } = await svc.from("psy_items").insert(rows);
-  if (error) return { ok: false, error: error.message };
-  revalidatePath("/admin/psychometrics");
-  return { ok: true, message: `Seeded the IPIP-50 (${rows.length} items) into the personality bank as approved.` };
 }
 
 /** Seed the vetted VIFM cognitive bank (120 items, 4 subtests x 3 facets, EN+AR)

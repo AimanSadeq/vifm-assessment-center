@@ -124,26 +124,6 @@ export const EVIDENCE_INSTRUMENTS: EvidenceInstrument[] = [
     countLabel: "calibrated items",
   },
   {
-    key: "personality",
-    name: "Big Five personality (Psychometrics)",
-    href: "/admin/psychometrics",
-    itemTypes:
-      "Public-domain IPIP Big-Five Likert items (Mini-IPIP 20-item / IPIP-50 50-item), reverse-keyed, with social-desirability and inconsistency validity flags.",
-    construct: "The Five-Factor Model (Openness, Conscientiousness, Extraversion, Agreeableness, Emotional Stability).",
-    validity:
-      "Construct validity from the published IPIP instruments. Scores are indicative until a local norm sample is collected (Tier 2); the platform issues no personality credential.",
-    reliability: "Reliabilities reported in the source instruments; local alpha + norms are the documented Tier-2 path.",
-    tier: "grounded",
-    literature: [
-      "Donnellan, Oswald, Baird & Lucas (2006) - the Mini-IPIP",
-      "Goldberg (1992); Goldberg et al. (2006) - IPIP Big-Five markers",
-      "Costa & McCrae (1992) - the Five-Factor Model",
-    ],
-    docs: [{ label: "Item bank & calibration", href: "/admin/psychometrics" }],
-    countKey: "personality_items",
-    countLabel: "items",
-  },
-  {
     key: "fluent",
     name: "Fluent® (English placement)",
     href: "/ac/fluent",

@@ -149,7 +149,7 @@ export async function POST(req: Request) {
     }
 
     const instrument = COGNITIVE_INSTRUMENT;
-    return NextResponse.json({ session_id: data.id, kind, instrument, test: stripAnswerKey(test, lang) });
+    return NextResponse.json({ session_id: data.id, kind, instrument, test: stripAnswerKey(test) });
   }
 
   if (action === "score") {
@@ -219,7 +219,7 @@ export async function POST(req: Request) {
         taker_email: (body.takerEmail as string) ?? session.taker_email ?? null,
         scales: finalResult.scales,
         overall: finalResult.overall ?? null,
-        validity: finalResult.validity ?? null,
+        validity: null,
         result: finalResult,
       })
       .select("id")

@@ -19,7 +19,7 @@ import { COGNITIVE_BLUEPRINT, facetKeysForSubtest, cognitiveFacetMeta } from "@/
 import type { PsyBankView, InstrumentReadiness, ScaleReadiness, BankItem, PsyKind } from "@/lib/psychometrics/bank";
 import {
   draftItemsIntoBankAction, setItemStatusAction, addItemAction, updateItemAction, deleteItemAction,
-  computePilotNormsAction, clearNormsAction, seedIpip50IntoBankAction,
+  computePilotNormsAction, clearNormsAction,
   seedCognitiveBankAction, setItemArReviewedAction,
 } from "../actions";
 
@@ -436,34 +436,9 @@ function NormPanel({ kind, scales }: { kind: PsyKind; scales: ScaleReadiness[] }
   );
 }
 
-// ── IPIP-50 seed banner (personality only) ────────────────────────
-function Ipip50Banner({ seeded }: { seeded: boolean }) {
-  const { pending, run } = useRunner();
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-violet-100 bg-violet-50/50 p-3">
-      <div className="text-sm">
-        <span className="font-semibold text-dark">IPIP-50 · longer validated form</span>{" "}
-        <span className="text-slate-500">
-          {seeded
-            ? "· seeded into the bank (10 items × 5 traits, approved)"
-            : "· public-domain Big-Five markers, 10 items/trait - higher reliability than the 20-item short form"}
-        </span>
-      </div>
-      {seeded ? (
-        <span className="inline-flex items-center gap-1 text-xs text-violet-600"><Check className="h-3.5 w-3.5" /> Seeded</span>
-      ) : (
-        <Button size="sm" variant="outline" onClick={() => run(() => seedIpip50IntoBankAction(), "IPIP-50 seeded.")} disabled={pending}>
-          {pending ? "Seeding…" : "Seed IPIP-50 into bank"}
-        </Button>
-      )}
-    </div>
-  );
-}
-
 function InstrumentSection({ inst }: { inst: InstrumentReadiness }) {
-  const ipip50Seeded = inst.kind === "personality" && inst.scales.some((s) => s.items.some((it) => it.source === "ipip50"));
-  const cogSeeded = inst.kind === "cognitive" && inst.scales.some((s) => s.items.some((it) => it.source === "seed_v1"));
-  const cogApproved = inst.kind === "cognitive" ? inst.scales.reduce((n, s) => n + s.approved, 0) : 0;
+  const cogSeeded = inst.scales.some((s) => s.items.some((it) => it.source === "seed_v1"));
+  const cogApproved = inst.scales.reduce((n, s) => n + s.approved, 0);
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
@@ -471,8 +446,7 @@ function InstrumentSection({ inst }: { inst: InstrumentReadiness }) {
         <TierBadge tier={inst.tier} />
       </CardHeader>
       <CardContent className="space-y-3">
-        {inst.kind === "personality" && <Ipip50Banner seeded={ipip50Seeded} />}
-        {inst.kind === "cognitive" && <CognitiveSeedBanner seeded={cogSeeded} approved={cogApproved} />}
+        <CognitiveSeedBanner seeded={cogSeeded} approved={cogApproved} />
         <NormPanel kind={inst.kind} scales={inst.scales} />
         <div className="grid gap-3 lg:grid-cols-2">
           {inst.scales.map((s) => <ScaleCard key={s.scaleKey} scale={s} />)}

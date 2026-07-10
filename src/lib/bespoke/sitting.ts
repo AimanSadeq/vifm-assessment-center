@@ -108,7 +108,7 @@ export async function startBundleCognitive(
     .select("id")
     .single();
   if (error || !data) return { ok: false, error: "Could not start the reasoning section." };
-  return { ok: true, sessionId: data.id as string, test: stripAnswerKey(test, lang) };
+  return { ok: true, sessionId: data.id as string, test: stripAnswerKey(test) };
 }
 
 export async function scoreBundleCognitive(
@@ -161,7 +161,7 @@ export async function scoreBundleCognitive(
       organization_id: ctx.candidate.organization_id,
       scales: finalResult.scales,
       overall: finalResult.overall ?? null,
-      validity: finalResult.validity ?? null,
+      validity: null,
       result: finalResult,
     })
     .select("id")

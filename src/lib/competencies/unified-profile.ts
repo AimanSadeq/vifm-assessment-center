@@ -18,7 +18,7 @@
 
 import { createServiceClient } from "@/lib/supabase/server";
 import { techDomainByKey, normalizedFromLevel } from "@/lib/competencies/technical-framework";
-import { COGNITIVE_SUBTESTS, BIG_FIVE, BAND_LABEL_EN, type PsyBand } from "@/lib/psychometrics/framework";
+import { COGNITIVE_SUBTESTS, BAND_LABEL_EN, type PsyBand } from "@/lib/psychometrics/framework";
 
 export type CompetencySource = "ac" | "fluent" | "reflect" | "ara" | "prehire" | "technical" | "psychometric";
 export type CompetencySignalKind =
@@ -28,8 +28,7 @@ export type CompetencySignalKind =
   | "self"
   | "screening"
   | "technical"
-  | "cognitive"
-  | "personality";
+  | "cognitive";
 
 /**
  * How a signal relates to the competency - the spine of the layered model, in
@@ -101,13 +100,10 @@ export type UnifiedProfile = {
   competencySignals: Map<string, CompetencySignal[]>;
 };
 
-/** Readable label for a psychometrics scale (single source of truth = framework). */
-function psyScaleLabel(sourceKind: string, sourceKey: string): string {
-  if (sourceKind === "cognitive") {
-    if (sourceKey === "g") return "General ability";
-    return COGNITIVE_SUBTESTS.find((s) => s.key === sourceKey)?.name_en ?? sourceKey;
-  }
-  return BIG_FIVE.find((t) => t.key === sourceKey)?.name_en ?? sourceKey;
+/** Readable label for a cognitive subtest (single source of truth = framework). */
+function psyScaleLabel(sourceKey: string): string {
+  if (sourceKey === "g") return "General ability";
+  return COGNITIVE_SUBTESTS.find((s) => s.key === sourceKey)?.name_en ?? sourceKey;
 }
 
 export async function buildUnifiedProfile(input: {
@@ -270,14 +266,13 @@ export async function buildUnifiedProfile(input: {
     /* bridge tables not migrated - tolerant */
   }
 
-  // ── Foundations: cognitive ability + personality PREDICT competencies. Reads
-  //    the candidate's latest psy_results (one per kind), maps each scale (+ the
-  //    cognitive g composite) to its normalized value, then folds
-  //    construct_competency_links (source_kind cognitive|personality) into
-  //    per-competency `predicts`/`foundations` signals - the same principled path
-  //    as the technical bridge, but the weakest evidence tier (a propensity, not a
-  //    measurement; rendered with the "predicts" caveat). Reflect / ARA / Pre-Hire
-  //    align to the same spine and slot in here the same way as they land.
+  // ── Foundations: cognitive ability PREDICTS competencies. Reads the candidate's
+  //    latest cognitive psy_results, maps each subtest (+ the g composite) to its
+  //    normalized value, then folds construct_competency_links (source_kind
+  //    cognitive) into per-competency `predicts`/`foundations` signals - the same
+  //    principled path as the technical bridge, but the weakest evidence tier (a
+  //    propensity, not a measurement; rendered with the "predicts" caveat). Reflect
+  //    / ARA / Pre-Hire align to the same spine and slot in here as they land.
   try {
     const svc = createServiceClient();
     const { data } = await svc
@@ -294,18 +289,18 @@ export async function buildUnifiedProfile(input: {
     }>;
     // "<source_kind>:<source_key>" → { value 0–100, band }
     const psyValue = new Map<string, { value: number; band: string }>();
-    const seenKind = new Set<string>();
+    let seenCognitive = false;
     for (const r of rows) {
+      if (r.kind !== "cognitive") continue;
       const mineRow = r.candidate_id === input.candidateId || (!!input.email && r.taker_email === input.email);
       if (!mineRow) continue;
-      const sourceKind = r.kind === "cognitive" ? "cognitive" : "personality";
-      if (seenKind.has(sourceKind)) continue; // latest per kind (desc order)
-      seenKind.add(sourceKind);
+      if (seenCognitive) continue; // latest cognitive result (desc order)
+      seenCognitive = true;
       for (const s of r.scales ?? []) {
         if (!s?.key || typeof s.normalized !== "number") continue;
-        psyValue.set(`${sourceKind}:${s.key}`, { value: s.normalized, band: String(s.band ?? "") });
+        psyValue.set(`cognitive:${s.key}`, { value: s.normalized, band: String(s.band ?? "") });
       }
-      if (sourceKind === "cognitive" && r.overall && typeof r.overall.normalized === "number") {
+      if (r.overall && typeof r.overall.normalized === "number") {
         psyValue.set("cognitive:g", { value: r.overall.normalized, band: String(r.overall.band ?? "") });
       }
     }
@@ -316,7 +311,7 @@ export async function buildUnifiedProfile(input: {
       const { data: links } = await svc
         .from("construct_competency_links")
         .select("source_kind, source_key, competencies(name)")
-        .in("source_kind", ["cognitive", "personality"]);
+        .eq("source_kind", "cognitive");
       for (const l of (links ?? []) as unknown as Array<{
         source_kind: string;
         source_key: string;
@@ -328,8 +323,8 @@ export async function buildUnifiedProfile(input: {
         if (!v) continue;
         add(name, {
           source: "psychometric",
-          sourceLabel: psyScaleLabel(l.source_kind, l.source_key),
-          kind: l.source_kind === "cognitive" ? "cognitive" : "personality",
+          sourceLabel: psyScaleLabel(l.source_key),
+          kind: "cognitive",
           relation: "predicts",
           layer: "foundations",
           value: v.value,
@@ -352,7 +347,6 @@ const KIND_TONE: Record<CompetencySignalKind, string> = {
   screening: "border-rose-300 bg-rose-50 text-rose-800",
   technical: "border-indigo-300 bg-indigo-50 text-indigo-800",
   cognitive: "border-fuchsia-300 bg-fuchsia-50 text-fuchsia-800",
-  personality: "border-cyan-300 bg-cyan-50 text-cyan-800",
 };
 
 /** Tailwind classes for a source chip, by signal kind. */

@@ -1,25 +1,27 @@
 // VIFM Psychometrics - Tier 2 item bank (SME-reviewed) loader + readiness.
 //
-// Tier 1 runs from code (Mini-IPIP + AI), so the bank starts EMPTY. This module
-// is the SME workflow that fills it: each scale accumulates reviewed items, the
-// response log yields a Cronbach's α, and a norm group (psy_norms) supplies the
-// percentile sample. instrumentTier() then gates whether a scale is still
-// INDICATIVE (Tier 1) or fully CALIBRATED (Tier 2). The dashboard always lists
-// every framework scale (even with zero bank rows) so the SME sees the target.
+// Tier 1 runs from code (AI + a static fallback deck), so the bank starts EMPTY.
+// This module is the SME workflow that fills it: each scale accumulates reviewed
+// items, the response log yields a Cronbach's α, and a norm group (psy_norms)
+// supplies the percentile sample. instrumentTier() then gates whether a scale is
+// still INDICATIVE (Tier 1) or fully CALIBRATED (Tier 2). The dashboard always
+// lists every framework scale (even with zero bank rows) so the SME sees the
+// target. Cognitive (Logica) is the only psychometric instrument - the Big-Five
+// personality bank was retired (the behavioural instrument is now Persona).
 //
 // Everything is tolerant of migrations 00065/00067 not being applied - a missing
 // table simply reads as "0 items / no norms / indicative".
 
 import { createServiceClient } from "@/lib/supabase/server";
 import {
-  COGNITIVE_SUBTESTS, BIG_FIVE,
-  COGNITIVE_INSTRUMENT, PERSONALITY_INSTRUMENT,
+  COGNITIVE_SUBTESTS,
+  COGNITIVE_INSTRUMENT,
   COGNITIVE_BLUEPRINT, facetKeysForSubtest,
   type CognitiveDifficulty,
 } from "./framework";
 import { cronbachAlpha, instrumentTier, type PsyTier } from "./calibration";
 
-export type PsyKind = "cognitive" | "personality";
+export type PsyKind = "cognitive";
 export type PsyItemStatus = "draft" | "in_review" | "approved" | "retired" | "rejected";
 export type PsyItemKind = "mcq" | "likert";
 
@@ -30,11 +32,8 @@ export const ASSEMBLE_MIN = 4;
 type ScaleDef = { key: string; nameEn: string; nameAr: string };
 const SCALE_DEFS: Record<PsyKind, ScaleDef[]> = {
   cognitive: COGNITIVE_SUBTESTS.map((s) => ({ key: s.key, nameEn: s.name_en, nameAr: s.name_ar })),
-  personality: BIG_FIVE.map((t) => ({ key: t.key, nameEn: t.name_en, nameAr: t.name_ar })),
 };
-const ITEM_KIND: Record<PsyKind, PsyItemKind> = { cognitive: "mcq", personality: "likert" };
-// Personality/OCEAN retired - the behavioural instrument is now Persona (the
-// 41-competency self-assessment), so the bank console manages cognitive only.
+const ITEM_KIND: Record<PsyKind, PsyItemKind> = { cognitive: "mcq" };
 const INSTRUMENTS: { kind: PsyKind; code: string; nameEn: string; nameAr: string }[] = [
   { kind: "cognitive", code: COGNITIVE_INSTRUMENT.code, nameEn: COGNITIVE_INSTRUMENT.name_en, nameAr: COGNITIVE_INSTRUMENT.name_ar },
 ];
@@ -163,7 +162,7 @@ export async function loadPsyBank(): Promise<PsyBankView> {
     const { data: scales } = await svc.from("psy_scales").select("id, instrument_id, key");
     const kindByInstrumentId = new Map<string, PsyKind>();
     for (const i of (instruments ?? []) as { id: string; kind: string; code: string }[]) {
-      if (i.kind === "cognitive" || i.kind === "personality") kindByInstrumentId.set(i.id, i.kind);
+      if (i.kind === "cognitive") kindByInstrumentId.set(i.id, i.kind);
     }
     for (const s of (scales ?? []) as { id: string; instrument_id: string; key: string }[]) {
       const kind = kindByInstrumentId.get(s.instrument_id);
@@ -287,7 +286,7 @@ export async function loadPsyBank(): Promise<PsyBankView> {
  */
 export async function resolveScaleId(kind: PsyKind, scaleKey: string): Promise<string | null> {
   const svc = createServiceClient();
-  const inst = kind === "cognitive" ? COGNITIVE_INSTRUMENT : PERSONALITY_INSTRUMENT;
+  const inst = COGNITIVE_INSTRUMENT;
 
   let instrumentId: string | null = null;
   const { data: foundInst } = await svc.from("psy_instruments").select("id").eq("code", inst.code).maybeSingle();
@@ -321,12 +320,11 @@ export async function resolveScaleId(kind: PsyKind, scaleKey: string): Promise<s
 
 type ApprovedRow = ItemRow & { times_administered: number };
 type AssembledCognitive = { id: string; scale: string; stem: string; options: string[]; correct: number; difficulty: "easy" | "medium" | "hard" };
-type AssembledPersonality = { id: string; scale: "O" | "C" | "E" | "A" | "S"; text: string; reverse: boolean };
 
 /**
- * Assemble a keyed test from APPROVED bank items.
+ * Assemble a keyed cognitive test from APPROVED bank items.
  *
- * COGNITIVE is blueprint-aware: for each in-scope subtest it draws
+ * Blueprint-aware: for each in-scope subtest it draws
  * COGNITIVE_BLUEPRINT.servedPerFacetByDifficulty items from EVERY (facet x
  * difficulty) cell, least-administered-first, preferring items NOT in
  * `opts.exclusionIds` (a retaker's previously-seen items). If ANY cell cannot be
@@ -334,8 +332,6 @@ type AssembledPersonality = { id: string; scale: "O" | "C" | "E" | "A" | "S"; te
  * translation - the whole assembly FAILS SAFE with null, so the caller 503s
  * rather than serve a construct-incomplete or silently-English form. This is what
  * guarantees two sittings measure the same construct mix, and never a 3-item deck.
- *
- * PERSONALITY stays count-based (>=ASSEMBLE_MIN approved per trait).
  *
  * Item ids are real psy_items uuids, so the response log is calibratable and the
  * runner bumps times_administered on the served ids (exposure rotation).
@@ -345,21 +341,16 @@ export async function assembleFromBank(
   lang: "en" | "ar",
   subtests?: string[],
   opts?: { exclusionIds?: Set<string> }
-): Promise<
-  | { kind: "cognitive"; items: AssembledCognitive[]; ai_generated: boolean }
-  | { kind: "personality"; items: AssembledPersonality[] }
-  | null
-> {
+): Promise<{ kind: "cognitive"; items: AssembledCognitive[]; ai_generated: boolean } | null> {
   try {
     const svc = createServiceClient();
-    const inst = kind === "cognitive" ? COGNITIVE_INSTRUMENT : PERSONALITY_INSTRUMENT;
+    const inst = COGNITIVE_INSTRUMENT;
     const { data: instRow } = await svc.from("psy_instruments").select("id").eq("code", inst.code).maybeSingle();
     if (!instRow) return null;
     const { data: scaleRows } = await svc.from("psy_scales").select("id, key").eq("instrument_id", (instRow as { id: string }).id);
     const scales = (scaleRows ?? []) as { id: string; key: string }[];
     if (!scales.length) return null;
     const scaleIds = scales.map((s) => s.id);
-    const keyById = new Map(scales.map((s) => [s.id, s.key] as const));
 
     const { data: itemRows } = await svc
       .from("psy_items")
@@ -372,7 +363,7 @@ export async function assembleFromBank(
       .order("times_administered", { ascending: true });
     const items = (itemRows ?? []) as ApprovedRow[];
 
-    if (kind === "cognitive") {
+    {
       const bp = COGNITIVE_BLUEPRINT;
       const exclude = opts?.exclusionIds ?? new Set<string>();
       const difficulties: CognitiveDifficulty[] = ["easy", "medium", "hard"];
@@ -434,26 +425,6 @@ export async function assembleFromBank(
       if (out.length !== framework.length * bp.servedPerSubtest) return null;
       return { kind: "cognitive", items: out, ai_generated: false };
     }
-
-    // personality - count-based (unchanged)
-    const byKey = new Map<string, ApprovedRow[]>();
-    for (const it of items) {
-      const k = keyById.get(it.scale_id);
-      if (!k) continue;
-      const arr = byKey.get(k) ?? [];
-      arr.push(it);
-      byKey.set(k, arr);
-    }
-    const framework = SCALE_DEFS.personality.map((s) => s.key);
-    if (!framework.every((k) => (byKey.get(k)?.length ?? 0) >= ASSEMBLE_MIN)) return null;
-    const cap = 8;
-    const out: AssembledPersonality[] = [];
-    for (const k of framework) {
-      for (const it of (byKey.get(k) ?? []).slice(0, cap)) {
-        out.push({ id: it.id, scale: k as "O" | "C" | "E" | "A" | "S", text: (lang === "ar" ? it.stem_ar : it.stem_en) || it.stem_en, reverse: !!it.reverse_keyed });
-      }
-    }
-    return out.length >= framework.length * ASSEMBLE_MIN ? { kind: "personality", items: out } : null;
   } catch {
     return null;
   }

@@ -1,14 +1,13 @@
 // VIFM Psychometrics - test generation (Tier 1 indicative).
-//   personality → public-domain Mini-IPIP (always available, no AI/seed needed).
-//   cognitive   → Claude-generated MCQs when ANTHROPIC_API_KEY is set, else a
-//                 deterministic bilingual fallback deck. Items are server-held;
-//                 stripAnswerKey() removes the keys before anything reaches the client.
+//   cognitive → Claude-generated MCQs when ANTHROPIC_API_KEY is set, else a
+//               deterministic bilingual fallback deck. Items are server-held;
+//               stripAnswerKey() removes the keys before anything reaches the client.
 
 import { getAIClient, AI_MODEL } from "@/lib/ai/client";
-import { MINI_IPIP, COGNITIVE_SUBTESTS, COGNITIVE_SUBTEST_KEYS, LIKERT_ANCHORS_EN, LIKERT_ANCHORS_AR } from "./framework";
+import { COGNITIVE_SUBTESTS, COGNITIVE_SUBTEST_KEYS } from "./framework";
 import { assembleFromBank } from "./bank";
 import { reorderOptions } from "@/lib/scoring/option-shuffle";
-import type { PsyTest, PsyTestPublic, CognitiveItem, PersonalityItem } from "./scoring";
+import type { PsyTest, PsyTestPublic, CognitiveItem } from "./scoring";
 
 type Lang = "en" | "ar";
 
@@ -135,22 +134,13 @@ async function aiCognitive(lang: Lang, perSubtest: number, subtests: string[]): 
   }
 }
 
-function personalityItems(lang: Lang): PersonalityItem[] {
-  return MINI_IPIP.map((it, i) => ({
-    id: `per-${i + 1}`,
-    scale: it.scale,
-    text: lang === "ar" ? it.text_ar : it.text_en,
-    reverse: it.reverse,
-  }));
-}
-
 /**
- * Build a full keyed test (held server-side). For cognitive, `subtests`
- * restricts which of numerical/verbal/inductive/deductive are generated (SD-4);
- * omitted/empty defaults to all four (back-compat for every existing caller).
+ * Build a full keyed test (held server-side). `subtests` restricts which of
+ * numerical/verbal/inductive/deductive are generated (SD-4); omitted/empty
+ * defaults to all four (back-compat for every existing caller).
  */
 export async function generatePsyTest(
-  kind: "cognitive" | "personality",
+  kind: "cognitive",
   lang: Lang = "en",
   subtests?: string[],
   opts?: { requireBank?: boolean; exclusionIds?: string[] }
@@ -166,23 +156,18 @@ export async function generatePsyTest(
   // ids are real psy_items uuids → the response log is calibratable and exposure
   // is trackable). Retakers' previously-seen items are de-preferred.
   const exclusionIds = opts?.exclusionIds?.length ? new Set(opts.exclusionIds) : undefined;
-  const fromBank = await assembleFromBank(kind, lang, kind === "cognitive" ? effectiveCog : undefined, { exclusionIds });
+  const fromBank = await assembleFromBank(kind, lang, effectiveCog, { exclusionIds });
   if (fromBank) {
-    return fromBank.kind === "cognitive"
-      ? { ...fromBank, items: shuffleCognitiveOptions(fromBank.items), served_source: "bank" }
-      : fromBank;
+    return { ...fromBank, items: shuffleCognitiveOptions(fromBank.items), served_source: "bank" };
   }
 
   // Fail safe: for a real/candidate/voucher-bound sitting we NEVER serve a live-AI
   // or short static deck (the "3-item Arabic deck" defect). Mint no session; the
   // route returns 503 so the taker retries when the bank can serve.
-  if (kind === "cognitive" && opts?.requireBank) {
+  if (opts?.requireBank) {
     throw new BankUnavailableError();
   }
 
-  if (kind === "personality") {
-    return { kind: "personality", items: personalityItems(lang) };
-  }
   // Scale items-per-subtest to the selection so a scoped test is still a real
   // test: 1 subtest -> 10 items, 2 -> 6 each (12), 3 -> 5 each (15), 4 -> 4 (16).
   // (A flat 4/subtest made a single-subtest sitting just 4 questions.)
@@ -211,16 +196,9 @@ function shuffleCognitiveOptions(items: CognitiveItem[]): CognitiveItem[] {
 }
 
 /** Remove the answer key before the test reaches the browser. */
-export function stripAnswerKey(test: PsyTest, lang: Lang = "en"): PsyTestPublic {
-  if (test.kind === "cognitive") {
-    return {
-      kind: "cognitive",
-      items: test.items.map((i) => ({ id: i.id, scale: i.scale, stem: i.stem, options: i.options, difficulty: i.difficulty })),
-    };
-  }
+export function stripAnswerKey(test: PsyTest): PsyTestPublic {
   return {
-    kind: "personality",
-    items: test.items.map((i) => ({ id: i.id, scale: i.scale, text: i.text })),
-    anchors: lang === "ar" ? LIKERT_ANCHORS_AR : LIKERT_ANCHORS_EN,
+    kind: "cognitive",
+    items: test.items.map((i) => ({ id: i.id, scale: i.scale, stem: i.stem, options: i.options, difficulty: i.difficulty })),
   };
 }

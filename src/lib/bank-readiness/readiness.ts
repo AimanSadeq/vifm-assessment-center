@@ -129,18 +129,20 @@ async function logica(psy: { byScale: Map<string, { total: number; approved: num
     psy.byScale,
     target,
   );
-  // The bank only serves once a human SME has APPROVED every subtest to the floor.
-  // Seeded items land in_review by design (an automated seed must not self-approve),
-  // so the review gate is a real human step - until then a sitting mints live-AI.
+  // "filled" = every subtest has enough APPROVED items → the served form is vetted.
+  // "hasFixedBank" = every subtest has enough AUTHORED items (approved OR in_review)
+  // → the runner serves those FIXED items (provisional) instead of live-AI. Live-AI
+  // only fires for a subtest with too few authored items.
   const filled = units.length > 0 && units.every((u) => u.approved >= target);
+  const hasFixedBank = units.length > 0 && units.every((u) => u.total >= target);
   return {
-    key: "logica", label: "Logica (cognitive)", tier: "indicative", servesLive: !filled, hasReviewGate: true,
+    key: "logica", label: "Logica (cognitive)", tier: "indicative", servesLive: !hasFixedBank, hasReviewGate: true,
     vetted, total, units, targetPerUnit: target, console: "/admin/psychometrics",
     note: filled
-      ? "Every subtest has SME-approved items to the blueprint floor, so a candidate/voucher-bound sitting serves the reviewed fixed form (VIFM Cognitive Item-Bank Standard v1: per-subtest x per-facet, EN+AR, two-person review) instead of live-AI. Still Tier-1 indicative until local norms + IRT calibration accumulate."
-      : psy.inReview > 0
-        ? `${psy.inReview} cognitive item(s) authored and awaiting SME approval. The bank stays gated until a human SME approves every subtest to ${target}+ items; until then a sitting mints items live-AI. Indicative regardless (no local norms/IRT, no credential).`
-        : "Items are generated live from the LLM every sitting (no vetted form). Seed the cognitive bank + SME-approve it in /admin/psychometrics to serve the reviewed fixed form instead.",
+      ? "Every subtest has SME-approved items to the blueprint floor, so a sitting serves the reviewed fixed form (VIFM Cognitive Item-Bank Standard v1: per-subtest x per-facet, EN+AR, two-person review). Still Tier-1 indicative until local norms + IRT calibration accumulate."
+      : hasFixedBank
+        ? `${psy.inReview} cognitive item(s) authored, awaiting SME approval. The runner serves these FIXED authored items (same questions per subtest, flagged provisional - no live-AI). A subtest becomes vetted once ${target}+ items are APPROVED. Indicative regardless (no norms/IRT, no credential).`
+        : "Some subtests have too few authored items, so those mint live-AI at sitting time. Author + SME-approve the cognitive bank in /admin/psychometrics to serve a fixed form.",
   };
 }
 
@@ -167,17 +169,20 @@ async function fluent(): Promise<BankReadiness> {
   const units = [...receptive.units, ...productive.units];
   const vetted = receptive.vetted + productive.vetted;
   const inReview = curated.filter((r) => r.status === "in_review").length;
-  // Serving is gated by the RECEPTIVE ramp (the real scramble risk); productive
-  // prompts always keep an in-code vetted fallback, so they never "scramble".
-  const receptiveServable = receptive.units.every((u) => u.approved >= rampTarget);
+  // "receptivePromoted" = reading + listening each have a full ramp PROMOTED to
+  // 'live' → the served form is vetted. "receptiveHasBank" = each has enough
+  // AUTHORED items (live + in_review) to fill the ramp → the runner serves those
+  // FIXED items (provisional) instead of live-AI. Live-AI only if a ramp can't fill.
+  const receptivePromoted = receptive.units.every((u) => u.approved >= rampTarget);
+  const receptiveHasBank = receptive.units.every((u) => u.total >= rampTarget);
   return {
-    key: "fluent", label: "Fluent (English)", tier: "indicative", servesLive: !receptiveServable, hasReviewGate: curated.length > 0,
+    key: "fluent", label: "Fluent (English)", tier: "indicative", servesLive: !receptiveHasBank, hasReviewGate: curated.length > 0,
     vetted, total: curated.length, units, targetPerUnit: rampTarget, console: curated.length > 0 ? "/admin/fluent-bank" : "/ac/fluent/calibration",
-    note: receptiveServable
-      ? "Reading + listening served from the reviewed live bank (CEFR-ramped). Writing + speaking prompts serve from the vetted bank once promoted (else an in-code vetted rotation) - all four skills gated."
-      : inReview > 0
-        ? `${inReview} vetted item(s)/prompt(s) awaiting SME promotion to 'live'. Reading + listening mint live-AI until each has a full CEFR ramp; writing + speaking prompts serve the vetted bank once promoted (else the in-code vetted rotation).`
-        : "Receptive items + productive prompts are AI-generated per sitting with no human vetting until the bank is filled and promoted.",
+    note: receptivePromoted
+      ? "Reading + listening served from the reviewed 'live' bank (CEFR-ramped). Writing + speaking prompts serve from the vetted bank (else an in-code vetted rotation) - all four skills gated."
+      : receptiveHasBank
+        ? `${inReview} item(s)/prompt(s) authored, awaiting SME promotion to 'live'. The runner serves these FIXED authored reading + listening items (provisional - no live-AI); promote them to make the placement vetted. Indicative CEFR placement regardless.`
+        : "A receptive skill has too few authored items to fill the CEFR ramp, so it mints live-AI. Author + promote items in /admin/fluent-bank to serve a fixed form.",
   };
 }
 
@@ -312,14 +317,16 @@ async function prehire(): Promise<BankReadiness> {
       })
     : undefined;
 
+  // The screen draws from the FIXED authored bank (approved OR in_review) before
+  // ever live-generating, so it only mints live-AI when there is no bank at all.
   return {
-    key: "prehire", label: "Pre-Hire quiz", tier: "indicative", servesLive: compsReady < TOTAL_COMPS, hasReviewGate: hasBank,
+    key: "prehire", label: "Pre-Hire quiz", tier: "indicative", servesLive: !hasBank, hasReviewGate: hasBank,
     vetted, total: rows.length, units, targetPerUnit: perCompTarget, console: hasBank ? "/admin/quiz-bank" : undefined,
     note: !hasBank
       ? "No item bank: every quiz deck is minted live from the LLM at start, so no SME sees an item before a hiring candidate does; two candidates for one job get non-equated forms."
-      : vetted > 0
-        ? `${compsReady}/${TOTAL_COMPS} competencies have an approved pool; a sitting draws vetted items where available and falls back to live-AI otherwise. ${inReview} more in review.`
-        : `${inReview} SJT item(s) authored and awaiting SME approval (rolled up by domain below); until a competency's pool is approved the screen still mints live-AI.`,
+      : compsReady >= TOTAL_COMPS
+        ? `Every competency has an SME-approved pool; a sitting draws vetted items. Advisory screening signal (never an auto-reject).`
+        : `The screen serves the FIXED authored SJT bank (approved OR in_review) - same items, not live-AI. ${compsReady}/${TOTAL_COMPS} competencies are fully SME-approved; ${inReview} item(s) still in review (results provisional until approved). Advisory signal, never an auto-reject.`,
   };
 }
 

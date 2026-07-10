@@ -364,7 +364,10 @@ export async function assembleFromBank(
     const { data: itemRows } = await svc
       .from("psy_items")
       .select("id, scale_id, stem_en, stem_ar, options_en, options_ar, correct_index, reverse_keyed, difficulty, facet, times_administered")
-      .eq("status", "approved")
+      // Serve the FIXED authored bank (approved vetted + in_review provisional)
+      // before falling back to the live-AI/static Tier-1 source - we already have
+      // the questions. Logica is indicative regardless, so mixing is safe.
+      .in("status", ["approved", "in_review"])
       .in("scale_id", scaleIds)
       .order("times_administered", { ascending: true });
     const items = (itemRows ?? []) as ApprovedRow[];

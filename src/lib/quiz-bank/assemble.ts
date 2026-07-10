@@ -87,7 +87,11 @@ export async function drawCompetencyQuizItems(
         "id, type, prompt_en, prompt_ar, options_en, options_ar, correct_index, points, difficulty, explanation_en, explanation_ar, sequence, times_administered"
       )
       .eq("competency_id", competencyId)
-      .eq("status", "approved")
+      // Serve the FIXED authored bank (approved OR in_review) before ever
+      // live-generating: we already have the questions. approved items are vetted;
+      // in_review items are fixed-but-provisional. Only a competency with NO
+      // authored items at all lets the caller fall back to live-AI.
+      .in("status", ["approved", "in_review"])
       .order("times_administered", { ascending: true })
       .limit(60);
     const rows = ((data ?? []) as Row[]).filter(usable);

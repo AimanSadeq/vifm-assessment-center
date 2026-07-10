@@ -36,7 +36,9 @@ export async function assembleFluentReceptive(): Promise<{ reading: ReadingItem[
     const { data } = await svc
       .from("eng_fluent_items")
       .select("id, skill, stem, cefr_label, n_responses")
-      .eq("status", "live")
+      // Serve the FIXED authored bank (live/approved vetted + in_review provisional)
+      // before ever live-generating - we already have the questions.
+      .in("status", ["live", "approved", "in_review"])
       .order("n_responses", { ascending: true })
       .limit(3000);
     const rows = (data ?? []) as Row[];
@@ -116,7 +118,7 @@ async function drawLivePrompt(skill: "writing" | "speaking"): Promise<WritingTas
       .from("eng_fluent_items")
       .select("id, stem, cefr_label, n_responses")
       .eq("skill", skill)
-      .eq("status", "live")
+      .in("status", ["live", "approved", "in_review"])
       .order("n_responses", { ascending: true })
       .limit(50);
     const rows = (data ?? []) as Array<{ id: string; stem: PromptStem; cefr_label: string | null }>;

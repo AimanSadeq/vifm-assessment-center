@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { createClientOrganization } from "@/lib/clients/registry";
 import { sendEmail, isEmailConfigured } from "@/lib/integrations/email";
@@ -56,8 +57,16 @@ export async function certifyPrehireCandidateAction(input: {
   reviewerName: string;
   notes?: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
-  const gate = await gateAdmin();
-  if (gate) return { ok: false, error: gate.error };
+  // Capture the authenticated caller (gateAdmin discards it) so the immutable
+  // audit record binds the certification to the REAL admin account, not just the
+  // self-asserted free-text reviewer name that renders on the client report.
+  let caller;
+  try {
+    caller = await requireRole(["admin"]);
+  } catch (e) {
+    if (isAuthorizationError(e)) return { ok: false, error: e.message };
+    throw e;
+  }
   const parsed = certifySchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: zodMessage(parsed.error, "Invalid certification") };
   // ids from the typed input (uuidish validates but its output widens to unknown);
@@ -88,6 +97,7 @@ export async function certifyPrehireCandidateAction(input: {
     action: "candidate_certified",
     requisitionId,
     candidateId,
+    actorId: caller.isDev ? null : caller.uid,
     actorLabel: "admin",
     detail: { reviewer: reviewerName },
   });
@@ -667,24 +677,25 @@ export async function sendAllReportsToClientAction(requisitionId: string, lang?:
 
   const svc = createServiceClient();
   // Only candidates who have at least one completed stage are worth sending.
-  const { data: rows } = await svc
-    .from("prehire_candidates")
-    .select("id, prehire_stage_results(status)")
-    .eq("requisition_id", requisitionId);
-  const sendable = ((rows ?? []) as { id: string; prehire_stage_results: { status: string }[] }[]).filter((r) =>
-    (r.prehire_stage_results ?? []).some((s) => s.status === "completed")
+  // PAGINATE: an unpaginated read caps at 1000, so a large requisition would
+  // silently skip completed candidates past the cap (under-delivery to the client).
+  const rows = await fetchAllPages<{ id: string; prehire_stage_results: { status: string }[] }>((from, to) =>
+    svc.from("prehire_candidates").select("id, prehire_stage_results(status)").eq("requisition_id", requisitionId).order("id").range(from, to),
   );
+  const sendable = rows.filter((r) => (r.prehire_stage_results ?? []).some((s) => s.status === "completed"));
 
   // UA-8: skip candidates whose report was already delivered, so a repeated
   // "Send all" click can't spam the client with duplicate emails. Read
-  // report_sent_at separately (tolerant of a pre-00063 DB, like the detail page).
+  // report_sent_at separately (tolerant of a pre-00063 DB, like the detail page),
+  // paginated so the already-sent set covers the whole cohort too.
   const alreadySent = new Set<string>();
-  const { data: sentRows } = await svc
-    .from("prehire_candidates")
-    .select("id, report_sent_at")
-    .eq("requisition_id", requisitionId);
-  for (const r of (sentRows ?? []) as { id: string; report_sent_at: string | null }[]) {
-    if (r.report_sent_at) alreadySent.add(r.id);
+  try {
+    const sentRows = await fetchAllPages<{ id: string; report_sent_at: string | null }>((from, to) =>
+      svc.from("prehire_candidates").select("id, report_sent_at").eq("requisition_id", requisitionId).order("id").range(from, to),
+    );
+    for (const r of sentRows) if (r.report_sent_at) alreadySent.add(r.id);
+  } catch {
+    /* report_sent_at column absent (pre-00063) - treat none as already-sent */
   }
   const toSend = sendable.filter((r) => !alreadySent.has(r.id));
   const skipped = sendable.length - toSend.length;

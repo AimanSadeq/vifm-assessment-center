@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { computeComposite, rankByComposite } from "@/lib/prehire/scoring";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import { getServerT, getServerLocale } from "@/lib/i18n/server";
 import type { PrehireStagePlanEntry, PrehireStageKind } from "@/types/prehire";
 import { AddCandidateForm } from "./_components/add-candidate-form";
@@ -82,42 +83,41 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
   const plan = (req.stage_config ?? []) as PrehireStagePlanEntry[];
   const orgName = (req.organizations as unknown as { name: string } | null)?.name ?? null;
 
-  const { data: candData } = await supabase
-    .from("prehire_candidates")
-    .select("id, full_name, email, status, access_token, invited_at, prehire_stage_results(kind, status, normalized_score, passed)")
-    .eq("requisition_id", params.id);
+  // PAGINATE every per-requisition read (each caps at 1000, and with no .order()
+  // the slices are arbitrary AND desync - the shortlist could omit the true top
+  // scorer and the side-reads could attach a badge to the wrong candidate). A
+  // small helper keeps the pre-migration tolerance (a missing optional column
+  // throws -> caught -> empty) while paging the whole cohort deterministically.
+  const pageCandidates = async <T,>(cols: string): Promise<T[]> => {
+    try {
+      return await fetchAllPages<T>(
+        (from, to) =>
+          // The typed client can't infer a row type from a runtime-string select,
+          // so cast to the page-result shape fetchAllPages consumes.
+          supabase.from("prehire_candidates").select(cols).eq("requisition_id", params.id).order("id").range(from, to) as unknown as PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
+      );
+    } catch {
+      return [];
+    }
+  };
 
-  const candidates = (candData ?? []) as unknown as CandidateRow[];
+  const candidates = (await pageCandidates<CandidateRow>(
+    "id, full_name, email, status, access_token, invited_at, prehire_stage_results(kind, status, normalized_score, passed)",
+  )) as unknown as CandidateRow[];
 
-  // Custom fields (00061) - separate best-effort read so a pre-migration DB
-  // (no custom_fields column) can't error the select and empty the shortlist.
+  // Custom fields (00061), report delivery (00063), certification (00145) -
+  // separate best-effort reads so a pre-migration DB (missing column) can't
+  // error the shortlist select.
   const customById = new Map<string, Record<string, string>>();
-  const { data: customData } = await supabase
-    .from("prehire_candidates")
-    .select("id, custom_fields")
-    .eq("requisition_id", params.id);
-  for (const r of (customData ?? []) as { id: string; custom_fields: Record<string, string> | null }[]) {
+  for (const r of await pageCandidates<{ id: string; custom_fields: Record<string, string> | null }>("id, custom_fields")) {
     if (r.custom_fields && typeof r.custom_fields === "object") customById.set(r.id, r.custom_fields);
   }
-
-  // Report delivery (00063) - separate best-effort reads (tolerant pre-migration,
-  // like custom_fields) so a missing column can't break the page or shortlist.
   const reportSentById = new Map<string, string>();
-  const { data: sentData } = await supabase
-    .from("prehire_candidates")
-    .select("id, report_sent_at")
-    .eq("requisition_id", params.id);
-  for (const r of (sentData ?? []) as { id: string; report_sent_at: string | null }[]) {
+  for (const r of await pageCandidates<{ id: string; report_sent_at: string | null }>("id, report_sent_at")) {
     if (r.report_sent_at) reportSentById.set(r.id, r.report_sent_at);
   }
-
-  // Certification (00145) - separate best-effort read (tolerant pre-migration).
   const certifiedById = new Set<string>();
-  const { data: certData } = await supabase
-    .from("prehire_candidates")
-    .select("id, certified_at")
-    .eq("requisition_id", params.id);
-  for (const r of (certData ?? []) as { id: string; certified_at: string | null }[]) {
+  for (const r of await pageCandidates<{ id: string; certified_at: string | null }>("id, certified_at")) {
     if (r.certified_at) certifiedById.add(r.id);
   }
   let clientEmail: string | null = null;

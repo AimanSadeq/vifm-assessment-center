@@ -65,3 +65,19 @@ export async function getPrehireAudit(requisitionId: string, limit = 100): Promi
     return [];
   }
 }
+
+/** True total audit entries for a requisition (uncapped head count) - so a view
+ *  that shows the latest N can label the cap honestly ("latest 100 of N") rather
+ *  than presenting the cap as the total. Best-effort: 0 on any error. */
+export async function getPrehireAuditCount(requisitionId: string): Promise<number> {
+  try {
+    const svc = createServiceClient();
+    const { count } = await svc
+      .from("prehire_audit_log")
+      .select("id", { count: "exact", head: true })
+      .eq("requisition_id", requisitionId);
+    return count ?? 0;
+  } catch {
+    return 0;
+  }
+}

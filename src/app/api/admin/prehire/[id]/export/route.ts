@@ -14,6 +14,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import { computeComposite, rankByComposite, RECOMMENDATION_LABELS } from "@/lib/prehire/scoring";
 import { logPrehireEvent } from "@/lib/prehire/audit";
 import { PREHIRE_STAGE_LABELS } from "@/types/prehire";
@@ -71,25 +72,34 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   const plan = (requisition.stage_config ?? []) as PrehireStagePlanEntry[];
   const orgName = (requisition.organizations as unknown as { name: string } | null)?.name ?? null;
 
-  const { data: candData } = await svc
-    .from("prehire_candidates")
-    .select(
-      "id, full_name, email, phone, status, consent_at, invited_at, completed_at, prehire_stage_results(kind, status, normalized_score, passed)"
-    )
-    .eq("requisition_id", params.id);
-
-  const candidates = (candData ?? []) as unknown as CandidateRow[];
+  // PAGINATE: an unpaginated read caps at 1000, so a large requisition would
+  // export an arbitrary (no .order()) 1000-row slice - an incomplete authoritative
+  // ATS record + a falsified audited candidate_count. Page all candidates.
+  const candidates = await fetchAllPages<CandidateRow>((from, to) =>
+    svc
+      .from("prehire_candidates")
+      .select(
+        "id, full_name, email, phone, status, consent_at, invited_at, completed_at, prehire_stage_results(kind, status, normalized_score, passed)"
+      )
+      .eq("requisition_id", params.id)
+      .order("id")
+      .range(from, to),
+  );
 
   // Custom fields (00061) - separate best-effort read so a pre-migration DB
-  // (no custom_fields column) can't error the export's candidate select.
+  // (no custom_fields column) can't error the export's candidate select. Paged
+  // too, so the employee-id enrichment can't fall outside a different 1000-slice.
   const empIdById = new Map<string, string>();
-  const { data: customData } = await svc
-    .from("prehire_candidates")
-    .select("id, custom_fields")
-    .eq("requisition_id", params.id);
-  for (const r of (customData ?? []) as { id: string; custom_fields: Record<string, string> | null }[]) {
-    const eid = r.custom_fields?.employee_id;
-    if (typeof eid === "string" && eid.trim()) empIdById.set(r.id, eid.trim());
+  try {
+    const customData = await fetchAllPages<{ id: string; custom_fields: Record<string, string> | null }>((from, to) =>
+      svc.from("prehire_candidates").select("id, custom_fields").eq("requisition_id", params.id).order("id").range(from, to),
+    );
+    for (const r of customData) {
+      const eid = r.custom_fields?.employee_id;
+      if (typeof eid === "string" && eid.trim()) empIdById.set(r.id, eid.trim());
+    }
+  } catch {
+    /* custom_fields column absent (pre-00061) - export without employee-id enrichment */
   }
 
   const scored = candidates.map((c) => {

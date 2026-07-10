@@ -12,7 +12,10 @@ import {
 import {
   computeAdverseImpact, FOUR_FIFTHS, type AdverseImpactCandidate, type DimensionResult,
 } from "@/lib/prehire/adverse-impact";
-import { getPrehireAudit } from "@/lib/prehire/audit";
+import { getPrehireAudit, getPrehireAuditCount } from "@/lib/prehire/audit";
+import { fetchAllPages } from "@/lib/ara/paginate";
+import { computeComposite } from "@/lib/prehire/scoring";
+import type { PrehireStagePlanEntry, PrehireStageKind } from "@/types/prehire";
 
 export const dynamic = "force-dynamic";
 
@@ -123,20 +126,53 @@ export default async function FairnessPage({ params }: { params: { id: string } 
   const svc = createServiceClient();
   const { data: req } = await svc
     .from("prehire_requisitions")
-    .select("id, title, organizations(name)")
+    .select("id, title, stage_config, organizations(name)")
     .eq("id", params.id)
     .maybeSingle();
   if (!req) notFound();
   const orgName = (req.organizations as unknown as { name: string } | null)?.name ?? null;
+  const plan = (req.stage_config ?? []) as PrehireStagePlanEntry[];
 
   // Tolerant read: the demographic + decision columns exist only after 00051.
-  const { data: candData, error: candErr } = await svc
-    .from("prehire_candidates")
-    .select("gender, age_band, nationality_group, decision, recommendation")
-    .eq("requisition_id", params.id);
-  const needsMigration = !!candErr;
-  const report = computeAdverseImpact((candData ?? []) as AdverseImpactCandidate[]);
+  // PAGINATE the cohort - an unpaginated read caps at 1000, and this is the
+  // 4/5ths adverse-impact cohort: a truncated (and, without .order(), arbitrary)
+  // slice would silently MASK disparate impact on a large requisition. RECOMPUTE
+  // each candidate's recommendation from stage results (the same single source of
+  // truth the shortlist + export use) instead of the persisted `recommendation`
+  // column, which every other surface treats as stale.
+  type CohortRow = {
+    gender: AdverseImpactCandidate["gender"];
+    age_band: AdverseImpactCandidate["age_band"];
+    nationality_group: AdverseImpactCandidate["nationality_group"];
+    decision: AdverseImpactCandidate["decision"];
+    prehire_stage_results: { kind: PrehireStageKind; normalized_score: number | null }[] | null;
+  };
+  let needsMigration = false;
+  let cohort: CohortRow[] = [];
+  try {
+    cohort = await fetchAllPages<CohortRow>((from, to) =>
+      svc
+        .from("prehire_candidates")
+        .select("gender, age_band, nationality_group, decision, prehire_stage_results(kind, normalized_score)")
+        .eq("requisition_id", params.id)
+        .order("id")
+        .range(from, to),
+    );
+  } catch {
+    needsMigration = true;
+  }
+  const cohortForImpact: AdverseImpactCandidate[] = cohort.map((c) => ({
+    gender: c.gender,
+    age_band: c.age_band,
+    nationality_group: c.nationality_group,
+    decision: c.decision,
+    recommendation: computeComposite(plan, c.prehire_stage_results ?? []).recommendation,
+  }));
+  const report = computeAdverseImpact(cohortForImpact);
   const audit = await getPrehireAudit(params.id, 100);
+  // Never undercount below what we actually loaded (a transient count error must
+  // not make the title read 0 while rows render below).
+  const auditTotal = Math.max(await getPrehireAuditCount(params.id), audit.length);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-6 py-8">
@@ -199,7 +235,12 @@ export default async function FairnessPage({ params }: { params: { id: string } 
 
       {/* Audit trail */}
       <Card>
-        <CardHeader><CardTitle className="text-base">{t("prehire.auditTrail", { n: audit.length })}</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-base">{t("prehire.auditTrail", { n: auditTotal })}</CardTitle>
+          {auditTotal > audit.length && (
+            <p className="text-xs text-muted-foreground">Showing the latest {audit.length} of {auditTotal} entries.</p>
+          )}
+        </CardHeader>
         <CardContent>
           {audit.length === 0 ? (
             <p className="py-4 text-sm text-muted-foreground text-center">{t("prehire.noAudit")}</p>

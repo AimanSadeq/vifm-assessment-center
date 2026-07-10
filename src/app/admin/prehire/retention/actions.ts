@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages, chunkIds } from "@/lib/ara/paginate";
 import { RETENTION_MONTHS, PURGE_CONFIRMATION } from "./constants";
 
 function cutoffIso(): string {
@@ -47,30 +48,44 @@ export async function purgePrehireCandidates(
   }
 
   const sb = createServiceClient();
-  const { data: rows, error } = await sb
-    .from("prehire_candidates")
-    .select("id")
-    .lt("created_at", cutoffIso());
-  if (error) return { error: error.message };
-  const ids = (rows ?? []).map((r) => r.id as string);
+  const cutoff = cutoffIso();
+  // Page the id-gather: an unpaginated select caps at 1000, so a >1000 backlog
+  // would leave expired applicant + redeemer PII past the retention window while
+  // countExpiredPrehireCandidates (an uncapped head count) still shows the true
+  // total - the exact retention-control failure this action must not have.
+  let rows: { id: string }[];
+  try {
+    rows = await fetchAllPages<{ id: string }>((from, to) =>
+      sb.from("prehire_candidates").select("id").lt("created_at", cutoff).order("id").range(from, to),
+    );
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Could not read expired candidates." };
+  }
+  const ids = rows.map((r) => r.id);
   if (ids.length === 0) return { ok: true, purged: 0, redemptionsPurged: 0 };
 
   // Delete voucher-redemption PII first. The redemption FK is ON DELETE SET NULL,
   // so deleting the candidate would orphan the redemption row (redeemer name /
   // email / IP) with its candidate link nulled - leaving PII past the window.
-  // Remove them while the candidate_id still matches. Best-effort (un-migrated
-  // table just no-ops).
+  // Remove them while the candidate_id still matches. Chunk the .in() (a >1000
+  // uuid list also bloats the URL). Best-effort (un-migrated table just no-ops).
   let redemptionsPurged = 0;
   try {
-    const rdel = await sb.from("prehire_voucher_redemptions").delete().in("candidate_id", ids).select("id");
-    redemptionsPurged = rdel.data?.length ?? 0;
+    for (const batch of chunkIds(ids)) {
+      const rdel = await sb.from("prehire_voucher_redemptions").delete().in("candidate_id", batch).select("id");
+      redemptionsPurged += rdel.data?.length ?? 0;
+    }
   } catch {
     /* redemptions table absent */
   }
 
-  const del = await sb.from("prehire_candidates").delete().in("id", ids).select("id");
-  if (del.error) return { error: del.error.message };
+  let purged = 0;
+  for (const batch of chunkIds(ids)) {
+    const del = await sb.from("prehire_candidates").delete().in("id", batch).select("id");
+    if (del.error) return { error: del.error.message };
+    purged += del.data?.length ?? 0;
+  }
 
   revalidatePath("/admin/prehire/retention");
-  return { ok: true, purged: del.data?.length ?? ids.length, redemptionsPurged };
+  return { ok: true, purged, redemptionsPurged };
 }

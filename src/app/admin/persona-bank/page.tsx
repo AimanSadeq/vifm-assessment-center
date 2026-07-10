@@ -32,7 +32,8 @@ export default async function PersonaBankPage() {
           <UserSquare2 className="h-6 w-6 text-[#5391D5]" /> Persona item bank
         </h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          The behavioural self-report items (41 competencies x 4). Persona serves fixed items (never live-AI), but a
+          The behavioural self-report items, organised by the VIFM framework: <strong>4 domains, 9 clusters, 41
+          competencies</strong> (4 items each = 164). Persona serves fixed items (never live-AI), but a
           result is flagged <strong>provisional</strong> until its items are SME-approved here.
         </p>
       </header>
@@ -50,7 +51,7 @@ export default async function PersonaBankPage() {
         {metric(`${totals.total}`, "Total items")}
       </div>
 
-      <PersonaBankConsole competencies={view.competencies} totalPending={totals.pending} />
+      <PersonaBankConsole domains={view.domains} totalPending={totals.pending} />
     </div>
   );
 }

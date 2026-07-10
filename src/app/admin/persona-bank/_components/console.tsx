@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Check, Ban, ChevronDown, ChevronRight, ShieldCheck, CheckCheck, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { PersonaBankCompetency, PersonaBankItem } from "@/lib/persona/bank-admin";
+import type { PersonaBankCompetency, PersonaBankItem, PersonaBankCluster, PersonaBankDomain } from "@/lib/persona/bank-admin";
+import { DOMAIN_DEFINITIONS, CLUSTER_DEFINITIONS, DOMAIN_VISUALS } from "@/lib/competencies/framework-definitions";
 import { setPersonaItemsStatusAction, updatePersonaItemAction } from "../actions";
 
 type Res = { ok: true; message?: string } | { ok: false; error: string };
@@ -28,6 +29,11 @@ const TONE: Record<string, string> = {
   rejected: "bg-rose-50 text-rose-700 ring-rose-200",
   retired: "bg-slate-100 text-slate-500 ring-slate-200",
 };
+
+/** Collect all pending item ids under a cluster (for bulk approve). */
+function pendingIds(competencies: PersonaBankCompetency[]): string[] {
+  return competencies.flatMap((c) => c.items.filter((i) => i.status === "pending").map((i) => i.id));
+}
 
 function ItemRow({ item }: { item: PersonaBankItem }) {
   const { pending, run } = useRunner();
@@ -95,12 +101,12 @@ function CompetencyCard({ c }: { c: PersonaBankCompetency }) {
   const allApproved = c.pending === 0 && c.items.some((i) => i.status === "approved");
 
   return (
-    <div className={`rounded-xl border bg-card p-3 shadow-sm ${allApproved ? "border-emerald-200" : c.pending > 0 ? "border-amber-200" : "border-border"}`}>
+    <div className={`rounded-lg border bg-card p-3 shadow-sm ${allApproved ? "border-emerald-200" : c.pending > 0 ? "border-amber-200" : "border-border"}`}>
       <div className="flex flex-wrap items-center gap-2">
         <button className="flex items-center gap-1.5 text-left" onClick={() => setOpen(!open)}>
           {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           <span className="text-sm font-semibold text-[#010131]">{c.nameEn}</span>
-          <span className="text-[11px] text-muted-foreground">· {c.clusterNameEn}</span>
+          {c.nameAr && <span className="text-[11px] text-muted-foreground" dir="rtl">{c.nameAr}</span>}
         </button>
         <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${allApproved ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
           {allApproved ? <><ShieldCheck className="inline h-3 w-3" /> approved</> : `${c.pending}/${c.items.length} pending`}
@@ -121,13 +127,84 @@ function CompetencyCard({ c }: { c: PersonaBankCompetency }) {
   );
 }
 
-export function PersonaBankConsole({ competencies, totalPending }: { competencies: PersonaBankCompetency[]; totalPending: number }) {
+function ClusterBlock({ cluster }: { cluster: PersonaBankCluster }) {
   const { pending, run } = useRunner();
-  if (competencies.length === 0) {
+  const def = CLUSTER_DEFINITIONS[cluster.clusterNameEn];
+  const ids = pendingIds(cluster.competencies);
+  return (
+    <section className="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <h4 className="text-sm font-semibold text-[#1A3A6B]">{cluster.clusterNameEn}</h4>
+        {cluster.clusterNameAr && <span className="text-[11px] text-muted-foreground" dir="rtl">{cluster.clusterNameAr}</span>}
+        <span className="rounded-full bg-white px-2 py-0.5 text-[11px] tabular-nums text-slate-600 ring-1 ring-slate-200">
+          {cluster.competencies.length} competencies · {cluster.approved}/{cluster.total} approved
+        </span>
+        {cluster.pending > 0 && (
+          <Button size="sm" variant="outline" className="ml-auto h-7" disabled={pending}
+            onClick={() => run(() => setPersonaItemsStatusAction({ status: "approved", itemIds: ids }), "Approved cluster.")}>
+            <ShieldCheck className="mr-1 h-3.5 w-3.5" /> Approve cluster ({cluster.pending})
+          </Button>
+        )}
+      </div>
+      {def && <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">{def}</p>}
+      <div className="mt-2.5 space-y-2">
+        {cluster.competencies.map((c) => <CompetencyCard key={c.acCompetencyId} c={c} />)}
+      </div>
+    </section>
+  );
+}
+
+function DomainBlock({ domain }: { domain: PersonaBankDomain }) {
+  const { pending, run } = useRunner();
+  const [open, setOpen] = useState(true);
+  const visual = DOMAIN_VISUALS[domain.domain];
+  const def = DOMAIN_DEFINITIONS[domain.domain];
+  const ids = domain.clusters.flatMap((cl) => pendingIds(cl.competencies));
+  const clusterCount = domain.clusters.length;
+  const compCount = domain.clusters.reduce((s, cl) => s + cl.competencies.length, 0);
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-border shadow-sm">
+      <button
+        className="flex w-full flex-wrap items-center gap-2 px-4 py-3 text-left text-white"
+        style={{ background: visual?.color ?? "#010131" }}
+        onClick={() => setOpen(!open)}
+      >
+        {open ? <ChevronDown className="h-4 w-4 opacity-90" /> : <ChevronRight className="h-4 w-4 opacity-90" />}
+        <span className="text-base font-semibold tracking-wide">{domain.domain}</span>
+        {visual?.captionEn && <span className="text-[11px] font-normal opacity-80">{visual.captionEn}</span>}
+        <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] tabular-nums">
+          {clusterCount} clusters · {compCount} competencies · {domain.approved}/{domain.total} approved
+        </span>
+        {domain.pending > 0 && (
+          <span
+            role="button"
+            tabIndex={0}
+            aria-disabled={pending}
+            onClick={(e) => { e.stopPropagation(); if (!pending) run(() => setPersonaItemsStatusAction({ status: "approved", itemIds: ids }), "Approved domain."); }}
+            className="ml-auto inline-flex items-center gap-1 rounded-md bg-white/90 px-2 py-1 text-[11px] font-medium text-[#010131] hover:bg-white disabled:opacity-50"
+          >
+            <ShieldCheck className="h-3.5 w-3.5" /> Approve domain ({domain.pending})
+          </span>
+        )}
+      </button>
+      {open && (
+        <div className="space-y-3 bg-card p-3">
+          {def && <p className="text-[11px] leading-relaxed text-muted-foreground">{def}</p>}
+          {domain.clusters.map((cl) => <ClusterBlock key={cl.clusterOrder} cluster={cl} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function PersonaBankConsole({ domains, totalPending }: { domains: PersonaBankDomain[]; totalPending: number }) {
+  const { pending, run } = useRunner();
+  if (domains.length === 0) {
     return <p className="text-sm text-muted-foreground">No items yet. Seed the Persona bank (scripts/seed-persona-bank.ts), then review + approve here.</p>;
   }
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {totalPending > 0 && (
         <div className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-2.5">
           <span className="text-sm text-amber-900">{totalPending} item(s) pending SME review. Results stay provisional until approved.</span>
@@ -137,7 +214,7 @@ export function PersonaBankConsole({ competencies, totalPending }: { competencie
           </Button>
         </div>
       )}
-      {competencies.map((c) => <CompetencyCard key={c.acCompetencyId} c={c} />)}
+      {domains.map((d) => <DomainBlock key={d.domain} domain={d} />)}
     </div>
   );
 }

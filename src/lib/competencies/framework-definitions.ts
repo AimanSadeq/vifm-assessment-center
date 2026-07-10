@@ -16,6 +16,27 @@ export const DOMAIN_DEFINITIONS: Record<string, string> = {
   SELF: "How the person manages their own integrity, growth and personal effectiveness.",
 };
 
+/** The 4 behavioural domains, in canonical framework order. */
+export const DOMAIN_ORDER = ["THINKING", "RESULTS", "PEOPLE", "SELF"] as const;
+export type DomainName = (typeof DOMAIN_ORDER)[number];
+
+/**
+ * Each of the 9 clusters → its parent domain. Keyed by the exact
+ * competency_clusters.name (same strings as CLUSTER_DEFINITIONS below).
+ * THINKING(2) · RESULTS(3) · PEOPLE(2) · SELF(2) = 9.
+ */
+export const CLUSTER_TO_DOMAIN: Record<string, DomainName> = {
+  "Strategic & Commercial Reasoning": "THINKING",
+  "Innovation & Complexity": "THINKING",
+  "Delivery & Execution": "RESULTS",
+  "Adaptability & Change": "RESULTS",
+  "Customer & Stakeholder Focus": "RESULTS",
+  "Influence & Communication": "PEOPLE",
+  "Leading & Developing Others": "PEOPLE",
+  "Integrity & Character": "SELF",
+  "Growth & Personal Effectiveness": "SELF",
+};
+
 export const CLUSTER_DEFINITIONS: Record<string, string> = {
   // THINKING
   "Strategic & Commercial Reasoning":

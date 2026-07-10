@@ -514,15 +514,26 @@ export async function buildPersonaPdfData(sessionId: string, lang: PersonaLang =
     overallPercentile,
     normGroupLabel: normGroup ? (ar ? normGroup.labelAr ?? normGroup.labelEn : normGroup.labelEn) : null,
     normProvisional: normGroup?.isProvisional ?? false,
-    normN: pctValues.length > 0 ? minNormN(normMap) : null,
+    normN: pctValues.length > 0 ? minNormN(normMap, pctById.keys()) : null,
   };
 
   return { ok: true, purpose, data };
 }
 
-function minNormN(normMap: Map<string, { mean: number; sd: number; n: number }>): number | null {
+// Smallest norm sample among the competencies that ACTUALLY contributed a
+// percentile to this sitting - not the whole norm group. A scoped sitting
+// measures a subset, so iterating the full normMap could disclose an `n` drawn
+// from an out-of-scope competency while every shown percentile is backed by a
+// different (higher) n.
+function minNormN(
+  normMap: Map<string, { mean: number; sd: number; n: number }>,
+  contributingIds: Iterable<string>,
+): number | null {
   let min = Infinity;
-  for (const v of normMap.values()) min = Math.min(min, v.n);
+  for (const cid of contributingIds) {
+    const v = normMap.get(cid);
+    if (v) min = Math.min(min, v.n);
+  }
   return min === Infinity ? null : min;
 }
 

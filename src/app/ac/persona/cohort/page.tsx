@@ -39,18 +39,31 @@ const DIST_ORDER: PersonaBandKey[] = ["exceptional", "proficient", "developing",
 
 type LoadResp = { data: Session[] | null; error: unknown };
 
-async function loadRows(): Promise<Row[] | null> {
+async function loadRows(orgFilter: string | null): Promise<Row[] | null> {
   try {
     const sb = createServiceClient();
+    // When a client is selected, scope by organization_id at the QUERY level so
+    // the 500-row cap applies to THIS client's sittings - not a global most-recent
+    // 500 slice that (when other clients are busier) truncates or empties the
+    // selected client's cohort and skews its count/average/distribution.
+    let orgIds: string[] | null = null;
+    if (orgFilter) {
+      const { data: orgs } = await sb.from("organizations").select("id").eq("name", orgFilter);
+      orgIds = (orgs ?? []).map((o) => o.id as string);
+      if (orgIds.length === 0) return [];
+    }
     const base = "id, created_at, submitted_at, taker_name, status";
-    const query = (cols: string) =>
-      sb
+    const query = (cols: string) => {
+      let q = sb
         .from("behavioral_assessment_sessions")
         .select(cols)
         .eq("status", "submitted")
         .is("candidate_id", null) // standalone (voucher/self-served) runs only
         .order("created_at", { ascending: false })
         .limit(500);
+      if (orgIds) q = q.in("organization_id", orgIds);
+      return q;
+    };
     // Graceful degradation: try with the client-org join (00106), then the base.
     let res = (await query(base + ", organization:organizations(name)")) as unknown as LoadResp;
     if (res.error) res = (await query(base)) as unknown as LoadResp;
@@ -100,9 +113,12 @@ export default async function PersonaCohortPage({ searchParams }: { searchParams
   const caller = await getCurrentCaller();
   if (!caller || caller.role !== "admin") return notFound();
 
-  const allRows = await loadRows();
   const orgFilter = searchParams?.org?.trim() || null;
-  const rows = allRows && orgFilter ? allRows.filter((r) => orgName(r) === orgFilter) : allRows;
+  // Chips come from the UNfiltered set so every client stays selectable; the table
+  // rows come from an org-scoped re-query when a client is picked, so the 500-row
+  // cap applies to THAT client, not a global most-recent-500 slice.
+  const allRows = await loadRows(null);
+  const rows = orgFilter ? await loadRows(orgFilter) : allRows;
 
   return (
     <div className="min-h-screen bg-[#F5F7FA]">

@@ -9,6 +9,7 @@
 // Tolerant of migrations 00110 / 00106 not being applied.
 // ─────────────────────────────────────────────────────────────
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import { selfScoreByCompetency, overallSelfScore, type PersonaScoreRow } from "./behavioral";
 import { computeFit, type FitBandKey } from "./persona-fit";
 import { loadPersonaRoleOptions } from "./persona-roles";
@@ -53,15 +54,19 @@ export type PersonaClientCount = { client: string; completed: number; inProgress
 export async function personaResultCountsByClient(): Promise<PersonaClientCount[]> {
   try {
     const sb = createServiceClient();
-    const { data, error } = await sb
-      .from("behavioral_assessment_sessions")
-      .select("status, organization_id")
-      .is("candidate_id", null)
-      .in("status", ["submitted", "in_progress"])
-      .not("organization_id", "is", null)
-      .limit(3000);
-    if (error || !data) return [];
-    const rows = data as { status: string; organization_id: string | null }[];
+    // Page the fetch: a .limit(3000) is CLAMPED to 1000 by PostgREST (a false
+    // safeguard), so once standalone sittings pass 1000 the per-client tallies
+    // silently undercount / drop whole clients from the panel.
+    const rows = await fetchAllPages<{ status: string; organization_id: string | null }>((from, to) =>
+      sb
+        .from("behavioral_assessment_sessions")
+        .select("status, organization_id")
+        .is("candidate_id", null)
+        .in("status", ["submitted", "in_progress"])
+        .not("organization_id", "is", null)
+        .order("id")
+        .range(from, to),
+    );
     const orgIds = Array.from(new Set(rows.map((r) => r.organization_id).filter((x): x is string => !!x)));
     if (orgIds.length === 0) return [];
     const { data: orgs } = await sb.from("organizations").select("id, name").in("id", orgIds);
@@ -186,19 +191,34 @@ export async function personaVoucherActivity(limit = 100): Promise<PersonaVouche
   }
 }
 
-export async function listPersonaResults(limit = 500): Promise<PersonaResultRow[] | null> {
+export async function listPersonaResults(
+  limit = 500,
+  orgFilter: string | null = null,
+): Promise<PersonaResultRow[] | null> {
   try {
     const sb = createServiceClient();
+    // When a client is selected, scope by organization_id BEFORE the limit so the
+    // cap applies to THIS client's sittings, not a global most-recent-500 slice
+    // that (when other clients are busier) truncates or empties the client's view.
+    let orgIds: string[] | null = null;
+    if (orgFilter) {
+      const { data: orgs } = await sb.from("organizations").select("id").eq("name", orgFilter);
+      orgIds = (orgs ?? []).map((o) => o.id as string);
+      if (orgIds.length === 0) return [];
+    }
     const wide = "id, created_at, submitted_at, taker_name, purpose, target_role_profile_id";
     const basic = "id, created_at, submitted_at, taker_name";
-    const run = (cols: string) =>
-      sb
+    const run = (cols: string) => {
+      let q = sb
         .from("behavioral_assessment_sessions")
         .select(cols)
         .eq("status", "submitted")
         .is("candidate_id", null)
         .order("created_at", { ascending: false })
         .limit(limit);
+      if (orgIds) q = q.in("organization_id", orgIds);
+      return q;
+    };
 
     // Prefer the wide select + org join; degrade gracefully (00110 / 00106 absent).
     let res = (await run(`${wide}, organization:organizations(name)`)) as { data: SessionRow[] | null; error: unknown };

@@ -1,10 +1,13 @@
 // Persona managed item bank (migration 00185). Promotes the code-resident items
 // (behavioral-items.ts) into a DB bank with an SME review gate, while keeping the
 // code constant's competency/cluster metadata (names, ordering) stable. The
-// runner serves the curated bank (pending + approved), falling back to the code
-// items per-competency when the DB has none - so Persona never serves empty.
+// runner serves the curated bank (pending + approved). A competency falls back
+// to the code items ONLY when it was never seeded (no DB rows at all); a
+// competency whose rows were all SME-rejected/retired serves NONE - honouring
+// the reviewer's decision rather than silently resurrecting the pulled items.
 
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import {
   BEHAVIORAL_COMPETENCIES,
   type BehavioralCompetency,
@@ -26,39 +29,53 @@ type Row = {
  *  pending + approved). Per-competency fallback to the code items when the DB
  *  has none (or the table is unapplied). Same shape as BEHAVIORAL_COMPETENCIES. */
 export async function loadPersonaCompetencies(): Promise<BehavioralCompetency[]> {
-  let rows: Row[] = [];
+  // Fetch EVERY row (any status), paginated - so we can tell "never seeded"
+  // (no rows -> legit code fallback) apart from "SME rejected/retired all items"
+  // (rows exist but none live -> must NOT resurrect the pulled code items). The
+  // curated set is the pending/approved subset.
+  let allRows: Row[] = [];
   try {
     const svc = createServiceClient();
-    const { data, error } = await svc
-      .from("persona_items")
-      .select("id, ac_competency_id, item_key, ord, reverse, text_en, text_ar, status")
-      .in("status", ["pending", "approved"])
-      .order("ac_competency_id", { ascending: true })
-      .order("ord", { ascending: true });
-    if (!error && data) rows = data as Row[];
+    allRows = await fetchAllPages<Row>((from, to) =>
+      svc
+        .from("persona_items")
+        .select("id, ac_competency_id, item_key, ord, reverse, text_en, text_ar, status")
+        .order("id", { ascending: true })
+        .range(from, to),
+    );
   } catch {
-    rows = [];
+    allRows = [];
   }
 
+  const hasAnyItems = new Set<string>();
   const byComp = new Map<string, Row[]>();
-  for (const r of rows) {
-    const arr = byComp.get(r.ac_competency_id) ?? [];
-    arr.push(r);
-    byComp.set(r.ac_competency_id, arr);
+  for (const r of allRows) {
+    hasAnyItems.add(r.ac_competency_id);
+    if (r.status === "pending" || r.status === "approved") {
+      const arr = byComp.get(r.ac_competency_id) ?? [];
+      arr.push(r);
+      byComp.set(r.ac_competency_id, arr);
+    }
   }
 
   return BEHAVIORAL_COMPETENCIES.map((c) => {
     const dbItems = (byComp.get(c.acCompetencyId) ?? []).slice().sort((a, b) => a.ord - b.ord);
-    if (dbItems.length === 0) return c; // fallback to the code items
-    const items: BehavioralItem[] = dbItems.map((r) => ({
-      itemKey: r.item_key,
-      acCompetencyId: c.acCompetencyId,
-      ord: r.ord,
-      reverse: r.reverse,
-      textEn: r.text_en,
-      textAr: r.text_ar ?? "",
-    }));
-    return { ...c, items };
+    if (dbItems.length > 0) {
+      const items: BehavioralItem[] = dbItems.map((r) => ({
+        itemKey: r.item_key,
+        acCompetencyId: c.acCompetencyId,
+        ord: r.ord,
+        reverse: r.reverse,
+        textEn: r.text_en,
+        textAr: r.text_ar ?? "",
+      }));
+      return { ...c, items };
+    }
+    // No live (pending/approved) items. Fall back to the code items ONLY when the
+    // competency was never seeded; if rows exist but the SME rejected/retired them
+    // all, serve NONE so the pulled items don't silently reappear in live sittings.
+    if (hasAnyItems.has(c.acCompetencyId)) return { ...c, items: [] };
+    return c;
   });
 }
 

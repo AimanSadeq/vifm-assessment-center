@@ -208,7 +208,10 @@ export async function emailVoucherDelegatesAction(input: {
     }
     const code = batch.codes[0];
     await stampAssignedEmail(code, d.email);
-    const url = `${appOrigin()}/ac/persona/redeem?code=${encodeURIComponent(code)}&email=${encodeURIComponent(d.email)}`;
+    // Only the opaque code goes in the redeem URL. The delegate's email is PII and
+    // would leak via server logs, the Referer header, and forwarded inboxes; the
+    // redeem page deliberately never reads it (assigned_email is stamped above).
+    const url = `${appOrigin()}/ac/persona/redeem?code=${encodeURIComponent(code)}`;
     const sent = await emailVoucherLink({ to: d.email, name: d.name, code, url, lang: language });
     results.push({ email: d.email, ok: sent.ok, code, error: sent.error });
   }
@@ -237,7 +240,9 @@ export async function emailExistingVoucherCodeAction(input: {
 
   const language: "en" | "ar" = input.language === "ar" ? "ar" : "en";
   await stampAssignedEmail(code, email);
-  const url = `${appOrigin()}/ac/persona/redeem?code=${encodeURIComponent(code)}&email=${encodeURIComponent(email)}`;
+  // Only the opaque code goes in the redeem URL (email is PII; the redeem page
+  // never reads it - assigned_email is stamped above).
+  const url = `${appOrigin()}/ac/persona/redeem?code=${encodeURIComponent(code)}`;
   const sent = await emailVoucherLink({ to: email, name: input.name?.trim() || undefined, code, url, lang: language });
   if (!sent.ok) return { error: sent.error || "Could not send the email." };
 

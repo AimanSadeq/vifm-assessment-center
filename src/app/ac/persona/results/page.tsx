@@ -18,7 +18,9 @@ export default async function PersonaResultsPage({ searchParams }: { searchParam
 
   const all = await listPersonaResults();
   const orgFilter = searchParams?.org?.trim() || null;
-  const rows = all && orgFilter ? all.filter((r) => r.orgName === orgFilter) : all;
+  // Chips come from the unfiltered `all`; the filtered view re-queries with an
+  // org scope so a busy-other-client 500-cap can't truncate/empty this client.
+  const rows = orgFilter ? await listPersonaResults(500, orgFilter) : all;
   const provisional = await personaBankProvisional();
 
   return (

@@ -5,6 +5,7 @@
 // must already have gated role + resolved orgId from the profile.
 
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages, chunkIds } from "@/lib/ara/paginate";
 import type { CaliberService } from "./portal-services";
 
 export type ActivityRow = { id: string; name: string; date: string; summary: string; reportPath: string };
@@ -66,54 +67,71 @@ export async function getVoucherLedger(service: CaliberService, orgId: string): 
   if (!t) return [];
   const sb = createServiceClient();
   try {
+    // Page every issued code (a fixed .limit(200) silently dropped the oldest
+    // codes for a large org while the funnel's exact count showed the true total).
     let vouchers: VRow[] = [];
     if (service === "techno") {
       // Techno keys on organization_name (no org id FK yet).
       const { data: org } = await sb.from("organizations").select("name").eq("id", orgId).maybeSingle<{ name: string }>();
       if (!org?.name) return [];
-      const { data } = await sb
-        .from(t.vouchers)
-        .select("id, code, label, status, max_uses, used_count, created_at")
-        .eq("organization_name", org.name)
-        .order("created_at", { ascending: false })
-        .limit(200);
-      vouchers = (data ?? []) as unknown as VRow[];
-    } else {
-      // assigned_email first (00130); peel it off if the column isn't there.
-      const wide = await sb
-        .from(t.vouchers)
-        .select("id, code, label, status, max_uses, used_count, created_at, assigned_email")
-        .eq("organization_id", orgId)
-        .order("created_at", { ascending: false })
-        .limit(200);
-      if (!wide.error) {
-        vouchers = (wide.data ?? []) as unknown as VRow[];
-      } else {
-        const basic = await sb
+      vouchers = await fetchAllPages<VRow>((from, to) =>
+        sb
           .from(t.vouchers)
           .select("id, code, label, status, max_uses, used_count, created_at")
-          .eq("organization_id", orgId)
+          .eq("organization_name", org.name)
           .order("created_at", { ascending: false })
-          .limit(200);
-        if (basic.error) return [];
-        vouchers = (basic.data ?? []) as unknown as VRow[];
+          .order("id")
+          .range(from, to),
+      );
+    } else {
+      // assigned_email first (00130); peel it off if the column isn't there.
+      try {
+        vouchers = await fetchAllPages<VRow>((from, to) =>
+          sb
+            .from(t.vouchers)
+            .select("id, code, label, status, max_uses, used_count, created_at, assigned_email")
+            .eq("organization_id", orgId)
+            .order("created_at", { ascending: false })
+            .order("id")
+            .range(from, to),
+        );
+      } catch {
+        vouchers = await fetchAllPages<VRow>((from, to) =>
+          sb
+            .from(t.vouchers)
+            .select("id, code, label, status, max_uses, used_count, created_at")
+            .eq("organization_id", orgId)
+            .order("created_at", { ascending: false })
+            .order("id")
+            .range(from, to),
+        );
       }
     }
     if (vouchers.length === 0) return [];
 
-    // Redeemer identities per voucher (best-effort).
+    // Redeemer identities per voucher (best-effort). Page + chunk the voucher-id
+    // .in() so a large org keeps ALL redeemer identities (the fixed .limit(500)
+    // oldest-first dropped the NEWEST redeemers once redemptions passed 500).
     const byVoucher = new Map<string, LedgerRedeemer[]>();
     try {
-      const ids = vouchers.map((v) => v.id);
-      const { data: reds } = await sb
-        .from(t.redemptions)
-        .select("voucher_id, redeemer_name, redeemer_email, created_at")
-        .in("voucher_id", ids)
-        .order("created_at", { ascending: true })
-        .limit(500);
-      for (const r of (reds ?? []) as unknown as Array<{ voucher_id: string; redeemer_name: string | null; redeemer_email: string | null; created_at: string | null }>) {
-        if (!byVoucher.has(r.voucher_id)) byVoucher.set(r.voucher_id, []);
-        byVoucher.get(r.voucher_id)!.push({ name: r.redeemer_name, email: r.redeemer_email, when: r.created_at });
+      // The redemption tables timestamp with `redeemed_at` (NOT created_at); the
+      // prior select/order used created_at, which 42703'd and left EVERY ledger's
+      // redeemer list silently empty. Use the real column so the identities show.
+      type RedRow = { voucher_id: string; redeemer_name: string | null; redeemer_email: string | null; redeemed_at: string | null };
+      for (const chunk of chunkIds(vouchers.map((v) => v.id))) {
+        const reds = await fetchAllPages<RedRow>((from, to) =>
+          sb
+            .from(t.redemptions)
+            .select("voucher_id, redeemer_name, redeemer_email, redeemed_at")
+            .in("voucher_id", chunk)
+            .order("redeemed_at", { ascending: true })
+            .order("id")
+            .range(from, to),
+        );
+        for (const r of reds) {
+          if (!byVoucher.has(r.voucher_id)) byVoucher.set(r.voucher_id, []);
+          byVoucher.get(r.voucher_id)!.push({ name: r.redeemer_name, email: r.redeemer_email, when: r.redeemed_at });
+        }
       }
     } catch { /* redemptions table variant - ledger still lists the codes */ }
 

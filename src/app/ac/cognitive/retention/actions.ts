@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages, chunkIds } from "@/lib/ara/paginate";
 import { RETENTION_MONTHS, PURGE_CONFIRMATION } from "./constants";
 
 function cutoffIso(): string {
@@ -51,19 +52,23 @@ export async function purgeCognitiveResults(
   const sb = createServiceClient();
   const cutoff = cutoffIso();
 
-  // 1. Delete expired results (per-item responses cascade).
-  const { data: rows, error } = await sb
-    .from("psy_results")
-    .select("id")
-    .eq("kind", "cognitive")
-    .lt("created_at", cutoff);
-  if (error) return { error: error.message };
-  const ids = (rows ?? []).map((r) => r.id as string);
+  // 1. Delete expired results (per-item responses cascade). Gather ids paginated
+  //    + chunk the delete: an unpaginated id-gather caps at 1000, so a backlog
+  //    > 1000 would purge only 1000/run and silently leave PII past the window.
+  let ids: string[];
+  try {
+    const rows = await fetchAllPages<{ id: string }>((from, to) =>
+      sb.from("psy_results").select("id").eq("kind", "cognitive").lt("created_at", cutoff).order("id").range(from, to),
+    );
+    ids = rows.map((r) => r.id);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to gather expired results." };
+  }
   let purged = 0;
-  if (ids.length > 0) {
-    const del = await sb.from("psy_results").delete().in("id", ids).select("id");
+  for (const chunk of chunkIds(ids)) {
+    const del = await sb.from("psy_results").delete().in("id", chunk).select("id");
     if (del.error) return { error: del.error.message };
-    purged = del.data?.length ?? ids.length;
+    purged += del.data?.length ?? chunk.length;
   }
 
   // 2. Anonymise voucher-redemption PII past the window (NOT NULL columns get a

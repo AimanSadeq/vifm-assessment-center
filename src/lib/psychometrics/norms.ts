@@ -9,6 +9,7 @@
 // psychometrician's sign-off (the non-code science). Service-role; server-only.
 
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import { COGNITIVE_SUBTEST_KEYS } from "./framework";
 import type { PsyKind } from "./bank";
 
@@ -27,11 +28,21 @@ export type ComputeNormsResult =
  */
 export async function computePilotNorms(kind: PsyKind): Promise<ComputeNormsResult> {
   const svc = createServiceClient();
-  const { data, error } = await svc.from("psy_results").select("scales, overall").eq("kind", kind);
-  if (error) return { ok: false, error: error.message };
+  // Paginate the whole results distribution: an unpaginated read caps at 1000 rows,
+  // so once >1000 sittings exist the norm mean/SD would be computed from an
+  // arbitrary truncated slice - a biased norm group is worse than none. Norms are a
+  // calibration path, so a read error ABORTS (never persists partial norms).
+  let data: { scales: unknown; overall: unknown }[];
+  try {
+    data = await fetchAllPages<{ scales: unknown; overall: unknown }>((from, to) =>
+      svc.from("psy_results").select("id, scales, overall").eq("kind", kind).order("id").range(from, to),
+    );
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed to read results." };
+  }
 
   const byKey = new Map<string, number[]>();
-  for (const row of (data ?? []) as { scales: unknown; overall: unknown }[]) {
+  for (const row of data) {
     const scales = Array.isArray(row.scales) ? row.scales : [];
     const subtestKeys = new Set<string>();
     for (const s of scales as { key?: unknown; raw?: unknown }[]) {

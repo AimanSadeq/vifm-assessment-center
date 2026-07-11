@@ -13,6 +13,7 @@
 // table simply reads as "0 items / no norms / indicative".
 
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import {
   COGNITIVE_SUBTESTS,
   COGNITIVE_INSTRUMENT,
@@ -215,11 +216,16 @@ export async function loadPsyBank(): Promise<PsyBankView> {
   for (const { kind, scaleKey } of Array.from(scaleById.values())) kindByScaleKey.set(scaleKey, kind);
   const respByScaleKind = new Map<string, RespRow[]>(); // `${kind}:${scaleKey}` → rows
   try {
-    const { data: resp } = await svc
-      .from("psy_item_responses")
-      .select("result_id, item_ref, scale_key, response, correct")
-      .limit(20000);
-    for (const r of (resp ?? []) as RespRow[]) {
+    // Paginate the whole response log: a bare .limit(20000) is CLAMPED to the
+    // 1000-row PostgREST cap, so the Cronbach's alpha (the Tier-2 reliability gate)
+    // would be computed from an arbitrary ~1000-row slice once responses accumulate.
+    const resp = await fetchAllPages<RespRow>((from, to) =>
+      svc.from("psy_item_responses")
+        .select("id, result_id, item_ref, scale_key, response, correct")
+        .order("id")
+        .range(from, to),
+    );
+    for (const r of resp) {
       if (!r.item_ref || !bankItemIds.has(r.item_ref) || !r.scale_key) continue;
       const kind = kindByScaleKey.get(r.scale_key);
       if (!kind) continue;

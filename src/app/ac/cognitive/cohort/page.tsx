@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Users, Sparkles, FileText, BrainCircuit } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import { requireRole, isAuthorizationError, getCurrentCaller } from "@/lib/ara/auth-guards";
 import { getClientOrgId } from "@/lib/auth/get-org-id";
 import { COGNITIVE_SUBTESTS, BAND_LABEL_EN, cognitiveBand, type PsyBand } from "@/lib/psychometrics/framework";
@@ -44,30 +45,34 @@ const subtestName = (key: string): string =>
 // view never diverges from the individual result / report.
 const bandFromPct = cognitiveBand;
 
-type LoadResp = { data: Row[] | null; error: unknown };
-
 async function loadRows(orgId: string | null): Promise<Row[] | null> {
+  const sb = createServiceClient();
+  const base = "id, created_at, taker_name, taker_email, scales, overall";
+  // Paginate the whole cohort (newest-first, id-tiebroken for a deterministic
+  // page order): an unpaginated read capped the aggregates - "Tests taken",
+  // "Average g", the band distribution and the subtest averages - at 500 rows,
+  // silently misrepresenting any cohort past that.
+  const pageWith = (cols: string) => (from: number, to: number) => {
+    let q = sb
+      .from("psy_results")
+      .select(cols)
+      .eq("kind", "cognitive")
+      .order("created_at", { ascending: false })
+      .order("id")
+      .range(from, to);
+    // A client_manager only ever sees their own organisation's results.
+    if (orgId) q = q.eq("organization_id", orgId);
+    return q as unknown as PromiseLike<{ data: Row[] | null; error: { message: string } | null }>;
+  };
+  // Graceful degradation: try with the client-org join (00105), then the base.
   try {
-    const sb = createServiceClient();
-    const base = "id, created_at, taker_name, taker_email, scales, overall";
-    const query = (cols: string) => {
-      let q = sb
-        .from("psy_results")
-        .select(cols)
-        .eq("kind", "cognitive")
-        .order("created_at", { ascending: false })
-        .limit(500);
-      // A client_manager only ever sees their own organisation's results.
-      if (orgId) q = q.eq("organization_id", orgId);
-      return q;
-    };
-    // Graceful degradation: try with the client-org join (00105), then the base.
-    let res = (await query(base + ", organization:organizations(name)")) as unknown as LoadResp;
-    if (res.error) res = (await query(base)) as unknown as LoadResp;
-    if (res.error) return null;
-    return res.data ?? [];
+    return await fetchAllPages<Row>(pageWith(base + ", organization:organizations(name)"));
   } catch {
-    return null;
+    try {
+      return await fetchAllPages<Row>(pageWith(base));
+    } catch {
+      return null;
+    }
   }
 }
 
@@ -181,6 +186,10 @@ function gPct(r: Row): number | null {
   return null;
 }
 
+// The aggregates are computed over the FULL cohort; the per-row table is capped
+// so a multi-thousand-result cohort doesn't emit a huge HTML payload.
+const ROW_CAP = 300;
+
 function CohortBody({ rows }: { rows: Row[] }) {
   const total = rows.length;
   const gValues = rows.map(gPct).filter((v): v is number => v != null);
@@ -277,7 +286,7 @@ function CohortBody({ rows }: { rows: Row[] }) {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => {
+              {rows.slice(0, ROW_CAP).map((r) => {
                 const g = gPct(r);
                 return (
                   <tr key={r.id} className="border-b last:border-0 hover:bg-slate-50">
@@ -318,6 +327,11 @@ function CohortBody({ rows }: { rows: Row[] }) {
             </tbody>
           </table>
         </div>
+        {rows.length > ROW_CAP && (
+          <p className="border-t px-6 py-3 text-xs text-slate-500">
+            Showing the first {ROW_CAP} of {rows.length} results. The summary statistics above reflect the full cohort.
+          </p>
+        )}
       </section>
     </>
   );

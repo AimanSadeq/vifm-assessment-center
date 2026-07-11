@@ -340,7 +340,10 @@ async function logItemResponses(
  * voucher's client org + the redemption id, and back-link the redemption's
  * result_id. Best-effort; no-ops cleanly until migration 00104 is applied.
  */
-async function linkRedemption(resultId: string, redemptionToken: string): Promise<void> {
+async function linkRedemption(
+  resultId: string,
+  redemptionToken: string,
+): Promise<"claimed" | "lost" | "unlinked"> {
   try {
     const sb = createServiceClient();
     const { data: redemption } = await sb
@@ -348,14 +351,27 @@ async function linkRedemption(resultId: string, redemptionToken: string): Promis
       .select("id, organization_id")
       .eq("redemption_token", redemptionToken)
       .maybeSingle<{ id: string; organization_id: string | null }>();
-    if (!redemption) return;
+    if (!redemption) return "unlinked";
+    // Atomic single-completion claim: only the FIRST result stamps the redemption
+    // (WHERE result_id IS NULL). A concurrent second sitting on the same seat loses
+    // and its caller discards the duplicate result - so one seat = one placement +
+    // one credential, closing the TOCTOU the read-only pre-check couldn't.
+    const { data: claimed } = await sb
+      .from("eng_fluent_voucher_redemptions")
+      .update({ result_id: resultId })
+      .eq("id", redemption.id)
+      .is("result_id", null)
+      .select("id")
+      .maybeSingle();
+    if (!claimed) return "lost";
     await sb
       .from("eng_fluent_results")
       .update({ organization_id: redemption.organization_id, voucher_redemption_id: redemption.id })
       .eq("id", resultId);
-    await sb.from("eng_fluent_voucher_redemptions").update({ result_id: resultId }).eq("id", redemption.id);
+    return "claimed";
   } catch {
-    /* tables/columns not migrated - ignore */
+    /* tables/columns not migrated - treat as unlinked (anonymous result) */
+    return "unlinked";
   }
 }
 
@@ -521,6 +537,19 @@ export async function POST(req: Request) {
     if (!body.sessionId) {
       return NextResponse.json({ error: "a valid session is required" }, { status: 400 });
     }
+    // Fail closed in production without a model key BEFORE consuming the session:
+    // without ANTHROPIC_API_KEY the writing/speaking scorers return a FABRICATED
+    // placeholder CEFR (no examiner produced it) that would be persisted as a real
+    // result AND minted as a publicly-verifiable credential. Refuse - and do it
+    // before loadSession's single-use consume so the sitting survives for a retry
+    // once the key is restored. (Dev keeps the placeholder so the free demo runs;
+    // every Fluent sitting has a writing task, so scoring always needs the key.)
+    if (process.env.NODE_ENV === "production" && !process.env.ANTHROPIC_API_KEY) {
+      return NextResponse.json(
+        { error: "Automated scoring is temporarily unavailable. Please try again shortly.", retry: true },
+        { status: 503 },
+      );
+    }
     const loaded = await loadSession(body.sessionId);
     if (!loaded) {
       return NextResponse.json({ error: "invalid or expired session" }, { status: 400 });
@@ -583,6 +612,25 @@ export async function POST(req: Request) {
       speakingTask && speakingTranscript
         ? await scoreFluentSpeakingEnsemble({ task: speakingTask, transcript: speakingTranscript, language, samples })
         : undefined;
+
+    // A genuine AI scoring failure (API/parse error with a key present) returns a
+    // fabricated placeholder with scoring_failed=true. Do NOT persist it or mint a
+    // credential off it - refuse so the taker/admin can retry (mirrors the Pre-Hire
+    // fluent route). The no-key placeholder never sets scoring_failed and was
+    // already handled above, so a dev sitting still completes. Since loadSession
+    // already consumed this session, RELEASE it (consumed_at back to null) so the
+    // retry can re-score the same sitting - nothing was persisted, so re-scoring
+    // can't duplicate a result.
+    if (writing.scoring_failed || speakingBase?.scoring_failed) {
+      await createServiceClient()
+        .from("eng_fluent_sessions")
+        .update({ consumed_at: null })
+        .eq("id", body.sessionId);
+      return NextResponse.json(
+        { error: "Scoring is temporarily unavailable. Please try again in a moment.", retry: true },
+        { status: 503 },
+      );
+    }
     // Blend Azure pronunciation (acoustic) into the Claude content score.
     // Security: trust a client-posted acoustic score ONLY when Azure Speech is
     // actually configured (the score is produced server-side from the audio). On
@@ -677,9 +725,25 @@ export async function POST(req: Request) {
       reliability,
     });
 
-    // Voucher delegate flow: stamp the result with the client org (best-effort).
+    // Voucher delegate flow: atomically claim the seat + stamp the result's org.
+    // If a concurrent sitting already claimed this seat, discard THIS duplicate
+    // result and refuse - before persisting score-runs or minting a credential -
+    // so one seat can never yield two results/credentials.
     if (result_id && body.redemptionToken?.trim()) {
-      await linkRedemption(result_id, body.redemptionToken.trim());
+      const outcome = await linkRedemption(result_id, body.redemptionToken.trim());
+      if (outcome === "lost") {
+        const { error: delErr } = await createServiceClient()
+          .from("eng_fluent_results")
+          .delete()
+          .eq("id", result_id);
+        if (delErr) {
+          console.error("[fluent] orphan-result cleanup failed after a lost seat claim:", delErr.message, result_id);
+        }
+        return NextResponse.json(
+          { error: "This assessment has already been completed for this link." },
+          { status: 409 },
+        );
+      }
     }
 
     // Audit the AI scoring run for calibration (best-effort).
@@ -695,8 +759,11 @@ export async function POST(req: Request) {
     // the taker their certificate. Admin views/sends from /ac/fluent/cohort.
     void emailFluentResult;
 
-    // Issue a verifiable CEFR credential (best-effort; VIFM Verify).
-    if (result_id) {
+    // Issue a verifiable CEFR credential (best-effort; VIFM Verify) - only when a
+    // model key is present. Production without a key already 503'd above; this also
+    // stops a non-prod deploy (NODE_ENV unset) that happens to share the verify DB
+    // from minting a credential off a keyless placeholder score.
+    if (result_id && process.env.ANTHROPIC_API_KEY) {
       await issueCredential({
         candidateId: sessionCandidateId,
         issuedToName: takerName || "Candidate",

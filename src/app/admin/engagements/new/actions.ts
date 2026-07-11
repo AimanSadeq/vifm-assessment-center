@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import {
   createEngagementSchema,
   type CreateEngagementPayload,
@@ -216,93 +216,42 @@ export async function createExerciseAction(values: NewExerciseValues) {
   return { data };
 }
 
-async function rollbackEngagement(supabase: Awaited<ReturnType<typeof createClient>>, engagementId: string) {
-  // Delete in reverse dependency order - cascade should handle most of this
-  // but be explicit to ensure clean rollback
-  await supabase.from("exercise_competency_matrix").delete().eq("engagement_id", engagementId);
-  await supabase.from("engagement_exercises").delete().eq("engagement_id", engagementId);
-  await supabase.from("engagement_competencies").delete().eq("engagement_id", engagementId);
-  await supabase.from("engagements").delete().eq("id", engagementId);
-}
-
 export async function createEngagementAction(payload: CreateEngagementPayload) {
   const parsed = createEngagementSchema.safeParse(payload);
   if (!parsed.success) {
     return { error: parsed.error.flatten().fieldErrors };
   }
 
-  const supabase = await createClient();
+  // Previously a non-atomic 4-step multi-insert with an error-swallowing manual
+  // rollback: a failed step past the first left a half-built engagement, and a
+  // failing rollback (its own errors were discarded) left an inconsistent draft.
+  // Delegate to the create_engagement_atomic RPC instead - a single transaction
+  // (all inserts or none). The RPC is SECURITY DEFINER, locked to service_role
+  // (migration 00188), so it runs via the service client, which bypasses RLS -
+  // hence the explicit admin gate here (the old path relied on RLS).
+  let caller;
+  try {
+    caller = await requireRole(["admin"]);
+  } catch (e) {
+    if (isAuthorizationError(e)) return { error: "Not authorized." };
+    throw e;
+  }
+
   const data = parsed.data;
+  const svc = createServiceClient();
+  const { data: newId, error } = await svc.rpc("create_engagement_atomic", {
+    p_organization_id: data.organizationId,
+    p_name: data.name,
+    p_target_role: data.targetRole || null,
+    p_status: "draft",
+    p_start_date: data.startDate || null,
+    p_end_date: data.endDate || null,
+    p_created_by: caller.isDev ? null : caller.uid,
+    p_competencies: data.competencies, // [{competencyId, weight}] -> jsonb
+    p_exercises: data.exercises, // uuid[]
+    p_matrix: data.matrix, // [{exerciseId, competencyId}] -> jsonb
+  });
 
-  // 1. Insert engagement
-  const { data: engagement, error: engError } = await supabase
-    .from("engagements")
-    .insert({
-      organization_id: data.organizationId,
-      name: data.name,
-      target_role: data.targetRole || null,
-      status: "draft",
-      start_date: data.startDate || null,
-      end_date: data.endDate || null,
-      created_by: await supabase.auth.getUser().then(r => r.data.user?.id ?? null),
-    })
-    .select("id")
-    .single();
-
-  if (engError || !engagement) {
-    return { error: engError?.message ?? "Failed to create engagement" };
-  }
-
-  const engagementId = engagement.id;
-
-  // 2. Insert engagement_competencies
-  const compRows = data.competencies.map((c) => ({
-    engagement_id: engagementId,
-    competency_id: c.competencyId,
-    weight: c.weight,
-  }));
-
-  const { error: compError } = await supabase
-    .from("engagement_competencies")
-    .insert(compRows);
-
-  if (compError) {
-    await rollbackEngagement(supabase, engagementId);
-    return { error: `Competencies: ${compError.message}` };
-  }
-
-  // 3. Insert engagement_exercises
-  const exRows = data.exercises.map((exerciseId) => ({
-    engagement_id: engagementId,
-    exercise_id: exerciseId,
-  }));
-
-  const { error: exError } = await supabase
-    .from("engagement_exercises")
-    .insert(exRows);
-
-  if (exError) {
-    await rollbackEngagement(supabase, engagementId);
-    return { error: `Exercises: ${exError.message}` };
-  }
-
-  // 4. Insert exercise_competency_matrix
-  if (data.matrix.length > 0) {
-    const matrixRows = data.matrix.map((m) => ({
-      engagement_id: engagementId,
-      exercise_id: m.exerciseId,
-      competency_id: m.competencyId,
-    }));
-
-    const { error: matrixError } = await supabase
-      .from("exercise_competency_matrix")
-      .insert(matrixRows);
-
-    if (matrixError) {
-      await rollbackEngagement(supabase, engagementId);
-      return { error: `Matrix: ${matrixError.message}` };
-    }
-  }
-
-  return { data: { id: engagementId } };
+  if (error) return { error: error.message };
+  return { data: { id: newId as string } };
 }

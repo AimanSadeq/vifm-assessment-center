@@ -103,7 +103,14 @@ export function WashupForm({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [realtimeActive, setRealtimeActive] = useState(false);
   const [lastExternalUpdate, setLastExternalUpdate] = useState<string | null>(null);
-  const lastSavedByMe = React.useRef<string | null>(null);
+  // Competencies whose OWN save is expected to echo back over Realtime. Tracked
+  // per-competency and added only on save SUCCESS (a failed save never echoes),
+  // and consumed when its echo arrives - so a stale token can never misclassify a
+  // colleague's change as our own.
+  const pendingOwnEcho = React.useRef<Set<string>>(new Set());
+  // Competencies with unsaved local edits: a colleague's Realtime update must NOT
+  // silently overwrite a rating the current assessor is mid-edit on (data loss).
+  const dirtyComps = React.useRef<Set<string>>(new Set());
 
   // Supabase Realtime - subscribe to consensus_ratings changes for this candidate
   useEffect(() => {
@@ -127,17 +134,28 @@ export function WashupForm({
           const score = record.final_score as number;
           const notes = (record.discussion_notes as string) ?? "";
 
-          // Update local state with the incoming change
+          // Consume this competency's own-echo token (if any) so it can't linger.
+          const isOwnEcho = pendingOwnEcho.current.delete(compId);
+
+          // NEVER overwrite a competency the current assessor has UNSAVED edits on
+          // - their in-progress work wins over any incoming value, so a colleague's
+          // save can't silently wipe what they were typing. (A successful own save
+          // clears the dirty flag first, so a genuine own-echo never lands here.)
+          if (dirtyComps.current.has(compId)) {
+            setLastExternalUpdate(new Date().toLocaleTimeString());
+            if (!isOwnEcho) toast.warning(t("assessorWashup.form.toastColleagueUpdatedKept"));
+            return;
+          }
+
+          // Not mid-edit: apply the incoming change to stay in sync.
           setConsensus((prev) => ({
             ...prev,
             [compId]: { score, notes },
           }));
           setLastExternalUpdate(new Date().toLocaleTimeString());
-          // Only show notification if this wasn't our own save
-          if (lastSavedByMe.current !== compId) {
+          if (!isOwnEcho) {
             toast.info(t("assessorWashup.form.toastColleagueUpdated"));
           }
-          lastSavedByMe.current = null;
         }
       )
       .on(
@@ -177,7 +195,6 @@ export function WashupForm({
     if (!c || !c.score) return;
     setSavingId(competencyId);
     setSaveError(null);
-    lastSavedByMe.current = competencyId;
     const result = await saveConsensusRatingAction({
       engagementId,
       candidateId,
@@ -191,6 +208,11 @@ export function WashupForm({
       setSaveError(msg);
       toast.error(msg);
     } else {
+      // Persisted: this competency is no longer a pending local edit (so a later
+      // colleague update may sync it in), and its own write will echo back over
+      // Realtime - expect that echo so it isn't mistaken for a colleague change.
+      dirtyComps.current.delete(competencyId);
+      pendingOwnEcho.current.add(competencyId);
       toast.success(t("assessorWashup.form.toastConsensusSaved"));
     }
   };
@@ -486,12 +508,13 @@ export function WashupForm({
                         c.score === score && score === 3 && "bg-accent hover:bg-accent/90",
                         c.score === score && score <= 2 && "bg-red-500 hover:bg-red-600",
                       )}
-                      onClick={() =>
+                      onClick={() => {
+                        dirtyComps.current.add(comp.id);
                         setConsensus((prev) => ({
                           ...prev,
                           [comp.id]: { ...prev[comp.id], score, notes: prev[comp.id]?.notes ?? "" },
-                        }))
-                      }
+                        }));
+                      }}
                     >
                       {score}
                     </Button>
@@ -507,12 +530,13 @@ export function WashupForm({
                 placeholder={t("assessorWashup.form.discussionNotesPlaceholder")}
                 rows={2}
                 value={c.notes}
-                onChange={(e) =>
+                onChange={(e) => {
+                  dirtyComps.current.add(comp.id);
                   setConsensus((prev) => ({
                     ...prev,
                     [comp.id]: { ...prev[comp.id], score: prev[comp.id]?.score ?? 0, notes: e.target.value },
-                  }))
-                }
+                  }));
+                }}
               />
 
               <Button

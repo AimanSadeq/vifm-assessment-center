@@ -3892,6 +3892,7 @@
       "saving": "جارٍ الحفظ...",
       "saveConsensusRating": "حفظ التقييم التوافقي",
       "toastColleagueUpdated": "قام زميل بتحديث تقييم توافقي",
+      "toastColleagueUpdatedKept": "قام زميل بتحديث هذا التقييم - تم الاحتفاظ بتغييراتك غير المحفوظة. راجعها ثم احفظ لتطبيق تغييراتك.",
       "toastOarUpdatedByColleague": "تم تحديث التقييم الإجمالي بواسطة زميل",
       "toastFailedToSave": "تعذّر الحفظ",
       "toastConsensusSaved": "تم حفظ التقييم التوافقي",

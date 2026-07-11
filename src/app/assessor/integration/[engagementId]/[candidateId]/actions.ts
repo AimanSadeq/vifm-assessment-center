@@ -40,26 +40,23 @@ export async function saveIntegrationAction(values: SaveIntegrationValues) {
     throw e;
   }
 
-  // Delete existing entry if present, then insert fresh (avoids TOCTOU race).
-  // Scoped to the DERIVED assessorId so it can only ever touch the caller's row.
-  await supabase
-    .from("integration_worksheets")
-    .delete()
-    .eq("engagement_id", parsed.data.engagementId)
-    .eq("assessor_id", assessorId)
-    .eq("candidate_id", parsed.data.candidateId)
-    .eq("competency_id", parsed.data.competencyId);
-
+  // Atomic upsert on the natural key (migration 00189 unique index). Replaces the
+  // old delete-then-insert, whose failed-insert-after-successful-delete window
+  // could destroy the assessor's saved rating. assessor_id is the DERIVED id, so
+  // the upsert can only ever touch the caller's own row.
   const { data, error } = await supabase
     .from("integration_worksheets")
-    .insert({
-      engagement_id: parsed.data.engagementId,
-      assessor_id: assessorId,
-      candidate_id: parsed.data.candidateId,
-      competency_id: parsed.data.competencyId,
-      preliminary_rating: parsed.data.preliminaryRating,
-      notes: parsed.data.notes || null,
-    })
+    .upsert(
+      {
+        engagement_id: parsed.data.engagementId,
+        assessor_id: assessorId,
+        candidate_id: parsed.data.candidateId,
+        competency_id: parsed.data.competencyId,
+        preliminary_rating: parsed.data.preliminaryRating,
+        notes: parsed.data.notes || null,
+      },
+      { onConflict: "engagement_id,assessor_id,candidate_id,competency_id" }
+    )
     .select()
     .single();
 

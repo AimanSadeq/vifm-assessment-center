@@ -8,10 +8,12 @@
 -- and, because SECURITY DEFINER runs as the owner and bypasses RLS, create an
 -- engagement + competencies + exercises + matrix against ANY organization id.
 --
--- The application does NOT call this RPC (createEngagementAction does its inserts
--- directly), so revoking public EXECUTE has ZERO blast radius on the app while
--- closing the privilege-escalation surface. Also pin search_path (SECURITY DEFINER
--- hardening) so the function cannot be hijacked via a mutable search_path.
+-- At the time of this migration the application did NOT call this RPC, so revoking
+-- public EXECUTE had ZERO blast radius while closing the privilege-escalation
+-- surface. (Follow-up: the AC-core review Batch 3 then switched createEngagementAction
+-- to call it via the service-role client - re-granted EXECUTE to service_role below -
+-- for atomic engagement creation.) Also pin search_path (SECURITY DEFINER hardening)
+-- so the function cannot be hijacked via a mutable search_path.
 -- ============================================================
 
 -- Recreate identically but with a fixed search_path (body unchanged from 00005).

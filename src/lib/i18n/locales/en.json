@@ -3884,6 +3884,7 @@
       "saving": "Saving...",
       "saveConsensusRating": "Save Consensus Rating",
       "toastColleagueUpdated": "A colleague updated a consensus rating",
+      "toastColleagueUpdatedKept": "A colleague updated this rating - your unsaved changes were kept. Review, then save to apply yours.",
       "toastOarUpdatedByColleague": "Overall Assessment Rating updated by a colleague",
       "toastFailedToSave": "Failed to save",
       "toastConsensusSaved": "Consensus rating saved",

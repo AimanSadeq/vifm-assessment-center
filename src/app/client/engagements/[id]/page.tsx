@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import { getClientOrgId } from "@/lib/auth/get-org-id";
 import { getServerT, getServerLocale, getServerDir } from "@/lib/i18n/server";
 import { localizedName } from "@/lib/i18n/localized";
@@ -36,7 +37,7 @@ export default async function ClientEngagementDetailPage({ params }: Props) {
     .eq("id", params.id);
   if (orgId) engQuery = engQuery.eq("organization_id", orgId);
 
-  const [engResult, candsResult, oarResult, reportsResult, consensusResult] = await Promise.all([
+  const [engResult, candsResult, oarResult, reportsResult] = await Promise.all([
     engQuery.single(),
     supabase
       .from("candidates")
@@ -51,10 +52,6 @@ export default async function ClientEngagementDetailPage({ params }: Props) {
       .from("candidate_reports")
       .select("candidate_id, status, released_at")
       .eq("engagement_id", params.id),
-    supabase
-      .from("consensus_ratings")
-      .select("candidate_id, competency_id, final_score, competencies(name, name_ar)")
-      .eq("engagement_id", params.id),
   ]);
 
   if (engResult.error || !engResult.data) return notFound();
@@ -66,7 +63,24 @@ export default async function ClientEngagementDetailPage({ params }: Props) {
 
   const oarMap = new Map(oarRatings.map((o) => [o.candidate_id, o]));
   const reportMap = new Map(reports.map((r) => [r.candidate_id, r]));
-  const consensusRatings = consensusResult.data ?? [];
+
+  // The competency matrix scales as candidates x competencies (e.g. 30 x 41 =
+  // 1230), so it is paginated - an unpaginated read caps at 1000 and would blank
+  // out ~6 candidates' whole competency row.
+  type ConsRow = {
+    candidate_id: string;
+    competency_id: string;
+    final_score: number;
+    competencies: { name: string; name_ar: string | null } | null;
+  };
+  const consensusRatings = await fetchAllPages<ConsRow>((from, to) =>
+    supabase
+      .from("consensus_ratings")
+      .select("candidate_id, competency_id, final_score, competencies(name, name_ar)")
+      .eq("engagement_id", params.id)
+      .order("id")
+      .range(from, to) as unknown as PromiseLike<{ data: ConsRow[] | null; error: { message: string } | null }>
+  ).catch(() => [] as ConsRow[]);
 
   // Build competency score matrix
   const competencyNames = new Map<string, string>();

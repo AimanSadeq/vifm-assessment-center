@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { fetchAllPages, fetchAllByIdChunks } from "@/lib/ara/paginate";
 import { getClientOrgId } from "@/lib/auth/get-org-id";
 import { getServerT } from "@/lib/i18n/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,28 +23,50 @@ export default async function ClientReportsPage() {
 
   const orgId = await getClientOrgId();
 
-  // Get org-scoped engagement IDs first
-  let engIdQuery = supabase.from("engagements").select("id");
-  if (orgId) engIdQuery = engIdQuery.eq("organization_id", orgId);
-  const { data: engRows } = await engIdQuery;
-  const engIds = (engRows ?? []).map((e) => e.id);
+  // Org-scoped engagement ids (paginated). The OAR + candidate reads that hang
+  // off them scale with cohort size across the whole org, so they page + chunk -
+  // an unpaginated read caps at 1000 and would hide released reports the client
+  // is entitled to reach.
+  const engIds = (
+    await fetchAllPages<{ id: string }>((from, to) => {
+      let q = supabase.from("engagements").select("id").order("id").range(from, to);
+      if (orgId) q = q.eq("organization_id", orgId);
+      return q as unknown as PromiseLike<{ data: { id: string }[] | null; error: { message: string } | null }>;
+    }).catch(() => [] as { id: string }[])
+  ).map((e) => e.id);
 
-  // Scope OAR query to org's engagements
-  let oarQuery = supabase
-    .from("overall_assessment_ratings")
-    .select("*, candidates(full_name, email), engagements(name)")
-    .order("created_at", { ascending: false });
-  if (engIds.length > 0) oarQuery = oarQuery.in("engagement_id", engIds);
-  const { data: oarData } = await oarQuery;
+  type OarRow = { candidate_id: string; overall_score: number; recommendation: string };
+  const oarData =
+    engIds.length > 0
+      ? await fetchAllByIdChunks<OarRow>(engIds, (chunk, from, to) =>
+          supabase
+            .from("overall_assessment_ratings")
+            .select("candidate_id, overall_score, recommendation")
+            .in("engagement_id", chunk)
+            .order("id")
+            .range(from, to) as unknown as PromiseLike<{ data: OarRow[] | null; error: { message: string } | null }>
+        ).catch(() => [] as OarRow[])
+      : [];
 
-  // Get candidates scoped to this client's organization
-  let candQuery = supabase
-    .from("candidates")
-    .select("id, full_name, email, status, engagement_id, engagements!inner(id, name, organization_id)")
-    .in("status", ["in_progress", "completed"])
-    .order("full_name");
-  if (orgId) candQuery = candQuery.eq("engagements.organization_id", orgId);
-  const { data: allCandidates } = await candQuery;
+  type CandRow = {
+    id: string;
+    full_name: string;
+    email: string;
+    status: string;
+    engagement_id: string;
+    engagements: { id: string; name: string; organization_id: string } | null;
+  };
+  const allCandidates = await fetchAllPages<CandRow>((from, to) => {
+    let q = supabase
+      .from("candidates")
+      .select("id, full_name, email, status, engagement_id, engagements!inner(id, name, organization_id)")
+      .in("status", ["in_progress", "completed"])
+      .order("full_name")
+      .order("id")
+      .range(from, to);
+    if (orgId) q = q.eq("engagements.organization_id", orgId);
+    return q as unknown as PromiseLike<{ data: CandRow[] | null; error: { message: string } | null }>;
+  }).catch(() => [] as CandRow[]);
 
   return (
     <div>
@@ -59,7 +82,7 @@ export default async function ClientReportsPage() {
             <CardTitle>{t("clientPortal.reports.cardTitle")}</CardTitle>
           </CardHeader>
           <CardContent>
-            {(!allCandidates || allCandidates.length === 0) ? (
+            {allCandidates.length === 0 ? (
               <p className="text-sm text-muted-foreground py-8 text-center">
                 {t("clientPortal.reports.empty")}
               </p>

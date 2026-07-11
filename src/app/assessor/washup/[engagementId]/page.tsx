@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getServerT } from "@/lib/i18n/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import { BackLink } from "@/components/shared/back-link";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,17 +25,17 @@ export default async function WashupEngagementPage({ params }: Props) {
   const t = await getServerT();
   const { engagementId } = params;
 
-  const [engResult, candsResult, compsResult, consensusResult, oarResult] =
+  // consensus_ratings scales as candidates x competencies (e.g. 40 x 41 = 1640),
+  // so it is paginated - an unpaginated read caps at 1000 and would undercount
+  // the per-candidate progress bar (and mis-mark candidates as incomplete).
+  type ConsensusRow = { candidate_id: string; competency_id: string; final_score: number };
+  const [engResult, candsResult, compsResult, oarResult] =
     await Promise.all([
       supabase.from("engagements").select("id, name, organizations(name)").eq("id", engagementId).single(),
       supabase.from("candidates").select("id, full_name, status").eq("engagement_id", engagementId).order("full_name"),
       supabase
         .from("engagement_competencies")
         .select("competency_id")
-        .eq("engagement_id", engagementId),
-      supabase
-        .from("consensus_ratings")
-        .select("candidate_id, competency_id, final_score")
         .eq("engagement_id", engagementId),
       supabase
         .from("overall_assessment_ratings")
@@ -44,10 +45,18 @@ export default async function WashupEngagementPage({ params }: Props) {
 
   if (engResult.error || !engResult.data) return notFound();
 
+  const consensusRatings = await fetchAllPages<ConsensusRow>((from, to) =>
+    supabase
+      .from("consensus_ratings")
+      .select("candidate_id, competency_id, final_score")
+      .eq("engagement_id", engagementId)
+      .order("id")
+      .range(from, to) as unknown as PromiseLike<{ data: ConsensusRow[] | null; error: { message: string } | null }>
+  ).catch(() => [] as ConsensusRow[]);
+
   const engagement = engResult.data;
   const candidates = candsResult.data ?? [];
   const totalComps = compsResult.data?.length ?? 0;
-  const consensusRatings = consensusResult.data ?? [];
   const oarRatings = oarResult.data ?? [];
 
   // Count consensus per candidate

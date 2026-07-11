@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import { getServerT, getServerLocale } from "@/lib/i18n/server";
 import { notFound } from "next/navigation";
 import { BackLink } from "@/components/shared/back-link";
@@ -27,7 +28,7 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
   const { id } = params;
   const focusedCandidateId = searchParams.candidate ?? null;
 
-  const [engResult, candsResult, exercisesResult, assignmentsResult, assessorsResult, matrixResult, wsResult, profilesResult] =
+  const [engResult, candsResult, exercisesResult, assessorsResult, matrixResult, profilesResult] =
     await Promise.all([
       supabase
         .from("engagements")
@@ -44,20 +45,12 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
         .select("exercise_id, exercises(id, name, exercise_type, duration_minutes)")
         .eq("engagement_id", id),
       supabase
-        .from("assessor_assignments")
-        .select("*, profiles(id, full_name, email), candidates(id, full_name), exercises(id, name)")
-        .eq("engagement_id", id),
-      supabase
         .from("profiles")
         .select("id, full_name, email, role")
         .in("role", ["lead_assessor", "associate_assessor"]),
       supabase
         .from("exercise_competency_matrix")
         .select("exercise_id, competency_id, competencies(name, name_ar)")
-        .eq("engagement_id", id),
-      supabase
-        .from("integration_worksheets")
-        .select("*, competencies(name, name_ar), profiles:assessor_id(full_name)")
         .eq("engagement_id", id),
       supabase
         .from("role_profiles")
@@ -67,13 +60,34 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
 
   if (engResult.error || !engResult.data) return notFound();
 
+  // Assignments (candidates x exercises x assessors) and integration_worksheets
+  // (candidates x competencies x assessors) both scale past 1000 on a large
+  // engagement, so they are paginated - an unpaginated read caps at 1000 and
+  // would truncate the assignment grid + undercount integration progress.
+  const [assignments, integrationWorksheets] = await Promise.all([
+    fetchAllPages<Record<string, unknown>>((from, to) =>
+      supabase
+        .from("assessor_assignments")
+        .select("*, profiles(id, full_name, email), candidates(id, full_name), exercises(id, name)")
+        .eq("engagement_id", id)
+        .order("id")
+        .range(from, to) as unknown as PromiseLike<{ data: Record<string, unknown>[] | null; error: { message: string } | null }>
+    ).catch(() => [] as Record<string, unknown>[]),
+    fetchAllPages<Record<string, unknown>>((from, to) =>
+      supabase
+        .from("integration_worksheets")
+        .select("*, competencies(name, name_ar), profiles:assessor_id(full_name)")
+        .eq("engagement_id", id)
+        .order("id")
+        .range(from, to) as unknown as PromiseLike<{ data: Record<string, unknown>[] | null; error: { message: string } | null }>
+    ).catch(() => [] as Record<string, unknown>[]),
+  ]);
+
   const engagement = engResult.data;
   const candidates = candsResult.data ?? [];
   const engExercises = exercisesResult.data ?? [];
-  const assignments = assignmentsResult.data ?? [];
   const assessors = assessorsResult.data ?? [];
   const matrix = matrixResult.data ?? [];
-  const integrationWorksheets = wsResult.data ?? [];
   const roleProfiles = profilesResult.data ?? [];
 
   // G7 - re-engagement deltas: when this engagement was seeded from a

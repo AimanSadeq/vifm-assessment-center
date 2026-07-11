@@ -41,3 +41,27 @@ export function chunkIds<T>(arr: T[], size = 200): T[][] {
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
   return out;
 }
+
+/**
+ * Fetch every row whose id (or foreign key) is in `ids`, chunking the id list so
+ * the PostgREST in(...) URL stays sane AND paginating within each chunk so a
+ * chunk that itself exceeds 1000 matching rows is not truncated. `page` receives
+ * the id chunk plus the row range and must apply a deterministic .order().
+ *
+ *   const rows = await fetchAllByIdChunks<Row>(engIds, (chunk, from, to) =>
+ *     sb.from("consensus_ratings").select("...").in("engagement_id", chunk)
+ *       .order("id").range(from, to));
+ */
+export async function fetchAllByIdChunks<T>(
+  ids: string[],
+  page: (chunk: string[], from: number, to: number) => PromiseLike<PageResult<T>>,
+  chunkSize = 200,
+): Promise<T[]> {
+  const out: T[] = [];
+  for (const chunk of chunkIds(ids, chunkSize)) {
+    if (chunk.length === 0) continue;
+    const rows = await fetchAllPages<T>((from, to) => page(chunk, from, to));
+    out.push(...rows);
+  }
+  return out;
+}

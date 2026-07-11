@@ -19,6 +19,15 @@ export function calculateBiasMetrics(
     assessorId: string;
     assessorName: string;
     ratings: number[];
+    /**
+     * Optional per-candidate rating vectors: each inner array is ONE candidate's
+     * scores across the competencies this assessor rated. Required for a true
+     * halo-effect measure (low within-candidate spread across competencies). When
+     * absent, haloEffect is reported as 0 rather than the old modal-concentration
+     * proxy, which merely duplicated centralTendencyBias and flagged the wrong
+     * assessors.
+     */
+    ratingsByCandidate?: number[][];
   }[]
 ): BiasMetric[] {
   // Overall mean across all assessors
@@ -69,13 +78,28 @@ export function calculateBiasMetrics(
     const centralTendencyBias =
       overallSD > 0 ? Math.max(0, 1 - sd / overallSD) : 0;
 
-    // Halo effect: proportion of ratings that are the same
-    const modeCount = Math.max(
-      ...Array.from({ length: 5 }, (_, i) =>
-        ratings.filter((r) => r === i + 1).length
-      )
-    );
-    const haloEffect = n > 0 ? modeCount / n : 0;
+    // Halo effect: an assessor giving ONE candidate near-identical scores across
+    // DIFFERENT competencies (the halo). Measured per candidate as within-candidate
+    // agreement across competencies = 1 - (SD / max-SD-on-a-1..5-scale), averaged
+    // over the assessor's candidates that have >= 2 competency scores. Requires the
+    // per-candidate structure; without it (legacy callers) halo is 0, not the old
+    // modal-concentration proxy that merely re-measured central tendency.
+    const perCandidate = (assessor.ratingsByCandidate ?? []).filter((v) => v.length >= 2);
+    let haloEffect = 0;
+    if (perCandidate.length > 0) {
+      // POPULATION SD (divide by v.length) so the spread is bounded in [0, 2] on
+      // the 1-5 BARS scale - the population SD of the max-spread set {1,5} is
+      // exactly 2. (The sample SD, /(n-1), would exceed 2 and clamp the whole
+      // disagreement end of the scale to 0.) 1 - sd/2 is then a clean [0,1]
+      // within-candidate agreement across competencies.
+      const MAX_SD = 2;
+      const agreements = perCandidate.map((v) => {
+        const m = v.reduce((a, b) => a + b, 0) / v.length;
+        const sd = Math.sqrt(v.reduce((s, x) => s + (x - m) ** 2, 0) / v.length);
+        return Math.max(0, 1 - sd / MAX_SD);
+      });
+      haloEffect = agreements.reduce((a, b) => a + b, 0) / agreements.length;
+    }
 
     return {
       assessorName: assessor.assessorName,

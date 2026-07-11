@@ -1,4 +1,5 @@
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import { recommendCoursesForAcCandidate } from "@/lib/recommender/courses";
 import { VIFM_VERTICAL_LABELS } from "@/types/database";
 import type {
@@ -15,14 +16,33 @@ export async function fetchReportData(
 ): Promise<ReportData> {
   const supabase = await createClient();
 
-  const [engResult, candResult, compResult, consensusResult, oarResult, obsResult, ratingsResult, devRecResult, assessorResult, exercisesResult, indicatorsResult] =
+  // Kick off the paginated observations read concurrently with the parallel
+  // batch below (it depends on none of them). A heavily-observed candidate (many
+  // exercises x assessors x behaviours) can exceed the 1000-row cap, which would
+  // silently drop recorded evidence from the report.
+  type ObsRow = {
+    competency_id: string;
+    behavior_observed: string;
+    is_positive: boolean | null;
+    assessor_assignments: { exercises: { name: string } | null } | null;
+  };
+  const observationsPromise = fetchAllPages<ObsRow>((from, to) =>
+    supabase
+      .from("observations")
+      .select("id, competency_id, behavior_observed, is_positive, assessor_assignments!inner(engagement_id, candidate_id, exercises(name))")
+      .eq("assessor_assignments.engagement_id", engagementId)
+      .eq("assessor_assignments.candidate_id", candidateId)
+      .order("id")
+      .range(from, to) as unknown as PromiseLike<{ data: ObsRow[] | null; error: { message: string } | null }>
+  ).catch(() => [] as ObsRow[]);
+
+  const [engResult, candResult, compResult, consensusResult, oarResult, ratingsResult, devRecResult, assessorResult, exercisesResult, indicatorsResult] =
     await Promise.all([
       supabase.from("engagements").select("name, target_role, start_date, end_date, organizations(name)").eq("id", engagementId).single(),
       supabase.from("candidates").select("full_name, email").eq("id", candidateId).single(),
       supabase.from("engagement_competencies").select("competency_id, weight, competencies(id, name, competency_clusters(name, competency_domains(name)))").eq("engagement_id", engagementId),
       supabase.from("consensus_ratings").select("competency_id, final_score, discussion_notes").eq("engagement_id", engagementId).eq("candidate_id", candidateId),
       supabase.from("overall_assessment_ratings").select("overall_score, recommendation, summary").eq("engagement_id", engagementId).eq("candidate_id", candidateId).maybeSingle(),
-      supabase.from("observations").select("competency_id, behavior_observed, is_positive, assessor_assignments!inner(engagement_id, candidate_id, exercises(name))").eq("assessor_assignments.engagement_id", engagementId).eq("assessor_assignments.candidate_id", candidateId),
       supabase.from("ratings").select("competency_id, score, assessor_assignments!inner(engagement_id, candidate_id, exercises(name))").eq("assessor_assignments.engagement_id", engagementId).eq("assessor_assignments.candidate_id", candidateId),
       supabase.from("development_recommendations").select("competency_id, recommendation, priority, competencies(name)").eq("engagement_id", engagementId).eq("candidate_id", candidateId),
       supabase.from("assessor_assignments").select("profiles(full_name)").eq("engagement_id", engagementId).eq("candidate_id", candidateId),
@@ -36,6 +56,8 @@ export async function fetchReportData(
   if (candResult.error || !candResult.data) {
     throw new Error(`Candidate not found: ${candidateId}`);
   }
+
+  const observations = await observationsPromise;
   const eng = engResult.data;
   const cand = candResult.data;
   const orgName = eng.organizations && typeof eng.organizations === "object" && "name" in eng.organizations
@@ -81,7 +103,7 @@ export async function fetchReportData(
     const consensus = (consensusResult.data ?? []).find((c) => c.competency_id === compId);
 
     // Split observations into strengths and development areas
-    const allObs = (obsResult.data ?? []).filter((o) => o.competency_id === compId);
+    const allObs = observations.filter((o) => o.competency_id === compId);
     const strengths = allObs
       .filter((o) => o.is_positive === true)
       .map((o) => {
@@ -270,7 +292,7 @@ export async function fetchReportData(
     // Data-quality signals (drive the report caveat banner). hasAssessorData is
     // false when no observations/ratings back the scores; raterCount is the
     // number of distinct assessors on this candidate (1 = single-rater).
-    hasAssessorData: (obsResult.data ?? []).length > 0 || (ratingsResult.data ?? []).length > 0,
+    hasAssessorData: observations.length > 0 || (ratingsResult.data ?? []).length > 0,
     raterCount: assessorNameSet.size,
     recommendedCourses,
     technicalCertifications,

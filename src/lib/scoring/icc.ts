@@ -74,6 +74,62 @@ export function calculateICC(matrix: RatingMatrix): number {
   return Math.max(0, Math.min(1, numerator / denominator));
 }
 
+/**
+ * Build a COMPLETE-CASE inter-rater matrix from a map of subject -> (rater -> score),
+ * choosing the rater PAIR that co-rated the most subjects. Returns rows of
+ * [scoreA, scoreB] for the subjects both rated - NO missing-cell imputation - or
+ * null if no pair co-rated at least 2 subjects.
+ *
+ * This replaces the old "impute every missing cell with the subject mean" hack,
+ * which manufactured agreement (an imputed cell == the subject mean contributes
+ * near-perfect agreement) and inflated the ICC. ICC(2,1) assumes a fully-crossed
+ * design; in an assessment centre only a subset of assessors co-rate any given
+ * candidate/competency, so the honest input is the largest genuinely-crossed
+ * (complete-case) block, which for AC data is almost always a rater pair.
+ */
+export function bestPairMatrix(
+  subjectRaters: Map<string, Map<string, number>>,
+): number[][] | null {
+  const raters = new Set<string>();
+  for (const m of Array.from(subjectRaters.values())) {
+    for (const r of Array.from(m.keys())) raters.add(r);
+  }
+  const raterList = Array.from(raters);
+  let best: number[][] | null = null;
+  for (let i = 0; i < raterList.length; i++) {
+    for (let j = i + 1; j < raterList.length; j++) {
+      const a = raterList[i];
+      const b = raterList[j];
+      const rows: number[][] = [];
+      for (const m of Array.from(subjectRaters.values())) {
+        const va = m.get(a);
+        const vb = m.get(b);
+        if (va !== undefined && vb !== undefined) rows.push([va, vb]);
+      }
+      if (rows.length >= 2 && (!best || rows.length > best.length)) best = rows;
+    }
+  }
+  return best;
+}
+
+/**
+ * Combine several per-engagement complete-case matrices into one headline ICC,
+ * weighting each engagement's ICC by its subject count. Returns null when no
+ * matrix is valid (>= 2 subjects and >= 2 raters) - the dashboard then honestly
+ * shows "insufficient data" rather than a fabricated number.
+ */
+export function pooledICC(matrices: number[][][]): number | null {
+  const valid = matrices.filter((m) => m.length >= 2 && (m[0]?.length ?? 0) >= 2);
+  if (valid.length === 0) return null;
+  let weightedSum = 0;
+  let weight = 0;
+  for (const m of valid) {
+    weightedSum += calculateICC(m) * m.length;
+    weight += m.length;
+  }
+  return weight > 0 ? weightedSum / weight : null;
+}
+
 export function getICCInterpretation(icc: number): {
   label: string;
   color: string;

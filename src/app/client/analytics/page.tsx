@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { fetchAllPages, fetchAllByIdChunks } from "@/lib/ara/paginate";
 import { getClientOrgId } from "@/lib/auth/get-org-id";
 import { getServerT, getServerLocale, getServerDir } from "@/lib/i18n/server";
 import { localizedName } from "@/lib/i18n/localized";
@@ -19,24 +20,56 @@ export default async function ClientAnalyticsPage() {
 
   const orgId = await getClientOrgId();
 
-  // Get org-scoped engagement IDs first
-  let engQuery = supabase.from("engagements").select("id");
-  if (orgId) engQuery = engQuery.eq("organization_id", orgId);
-  const { data: engRows } = await engQuery;
-  const engIds = (engRows ?? []).map((e) => e.id);
+  // Org-scoped engagement ids (paginated for safety). The OAR / consensus /
+  // candidate reads that hang off them scale with cohort size across the whole
+  // org, so they MUST page within each id chunk - an unpaginated read caps at
+  // 1000 and would drop candidates from the 9-box grid and cohort aggregates.
+  const engIds = (
+    await fetchAllPages<{ id: string }>((from, to) => {
+      let q = supabase.from("engagements").select("id").order("id").range(from, to);
+      if (orgId) q = q.eq("organization_id", orgId);
+      return q as unknown as PromiseLike<{ data: { id: string }[] | null; error: { message: string } | null }>;
+    }).catch(() => [] as { id: string }[])
+  ).map((e) => e.id);
 
-  // Scope OAR and consensus queries to org's engagements
-  const [oarResult, consensusResult, candidatesResult] = engIds.length > 0
-    ? await Promise.all([
-        supabase.from("overall_assessment_ratings").select("candidate_id, overall_score, recommendation").in("engagement_id", engIds),
-        supabase.from("consensus_ratings").select("candidate_id, final_score, competency_id, competencies(name, name_ar)").in("engagement_id", engIds),
-        supabase.from("candidates").select("id, full_name, department, seniority_level").in("engagement_id", engIds),
-      ])
-    : [{ data: [] }, { data: [] }, { data: [] }];
+  type OarRow = { candidate_id: string; overall_score: number; recommendation: string };
+  type ConsRow = {
+    candidate_id: string;
+    final_score: number;
+    competency_id: string;
+    competencies: { name: string; name_ar: string | null } | null;
+  };
+  type CandRow = { id: string; full_name: string; department: string | null; seniority_level: string | null };
 
-  const oarData = oarResult.data ?? [];
-  const consensusData = consensusResult.data ?? [];
-  const candidatesData = candidatesResult.data ?? [];
+  const [oarData, consensusData, candidatesData] =
+    engIds.length > 0
+      ? await Promise.all([
+          fetchAllByIdChunks<OarRow>(engIds, (chunk, from, to) =>
+            supabase
+              .from("overall_assessment_ratings")
+              .select("candidate_id, overall_score, recommendation")
+              .in("engagement_id", chunk)
+              .order("id")
+              .range(from, to) as unknown as PromiseLike<{ data: OarRow[] | null; error: { message: string } | null }>
+          ).catch(() => [] as OarRow[]),
+          fetchAllByIdChunks<ConsRow>(engIds, (chunk, from, to) =>
+            supabase
+              .from("consensus_ratings")
+              .select("candidate_id, final_score, competency_id, competencies(name, name_ar)")
+              .in("engagement_id", chunk)
+              .order("id")
+              .range(from, to) as unknown as PromiseLike<{ data: ConsRow[] | null; error: { message: string } | null }>
+          ).catch(() => [] as ConsRow[]),
+          fetchAllByIdChunks<CandRow>(engIds, (chunk, from, to) =>
+            supabase
+              .from("candidates")
+              .select("id, full_name, department, seniority_level")
+              .in("engagement_id", chunk)
+              .order("id")
+              .range(from, to) as unknown as PromiseLike<{ data: CandRow[] | null; error: { message: string } | null }>
+          ).catch(() => [] as CandRow[]),
+        ])
+      : [[] as OarRow[], [] as ConsRow[], [] as CandRow[]];
 
   // Build 9-box grid data: Performance (OAR) vs Potential (avg competency score)
   const nineBoxData = candidatesData.map((c) => {

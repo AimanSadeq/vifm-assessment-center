@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { getServerT, getServerLocale, getServerDir } from "@/lib/i18n/server";
 import { localizedName } from "@/lib/i18n/localized";
-import { calculateICC, getICCInterpretation } from "@/lib/scoring/icc";
+import { getICCInterpretation, bestPairMatrix, pooledICC } from "@/lib/scoring/icc";
 import { calculateBiasMetrics } from "@/lib/scoring/bias-detection";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import { AnalyticsDashboard } from "./_components/analytics-dashboard";
 
 import { BackLink } from "@/components/shared/back-link";
@@ -12,101 +13,131 @@ export default async function AnalyticsPage() {
   const t = await getServerT();
   const rtl = getServerDir(await getServerLocale()) === "rtl";
 
-  // Fetch all ratings with assessor and competency info
-  const { data: ratings } = await supabase
-    .from("ratings")
-    .select(
-      "score, competency_id, assessor_assignment_id, competencies(name, name_ar), assessor_assignments(assessor_id, candidate_id, profiles(full_name))"
-    );
+  // Every cohort-scaled read is paginated: a single PostgREST select silently
+  // caps at 1000 rows, which on any real multi-engagement install would truncate
+  // ratings/candidates/OARs/consensus and corrupt the ICC, bias, and comparison
+  // tables. Dashboards degrade (catch -> []) rather than abort.
+  type RatingRow = {
+    score: number;
+    competency_id: string;
+    competencies: { name: string; name_ar: string | null } | null;
+    assessor_assignments: {
+      assessor_id: string;
+      candidate_id: string;
+      engagement_id: string;
+      profiles: { full_name: string } | null;
+    } | null;
+  };
+  const ratings = await fetchAllPages<RatingRow>((from, to) =>
+    supabase
+      .from("ratings")
+      .select(
+        "id, score, competency_id, competencies(name, name_ar), assessor_assignments(assessor_id, candidate_id, engagement_id, profiles(full_name))"
+      )
+      .order("id")
+      .range(from, to) as unknown as PromiseLike<{ data: RatingRow[] | null; error: { message: string } | null }>
+  ).catch(() => [] as RatingRow[]);
 
   const { data: engagements } = await supabase
     .from("engagements")
     .select("id, name, status")
     .order("created_at", { ascending: false });
 
-  const { data: candidates } = await supabase
-    .from("candidates")
-    .select("id, full_name, status, engagement_id, department, seniority_level");
+  type CandRow = {
+    id: string;
+    full_name: string;
+    status: string;
+    engagement_id: string;
+    department: string | null;
+    seniority_level: string | null;
+  };
+  const candidates = await fetchAllPages<CandRow>((from, to) =>
+    supabase
+      .from("candidates")
+      .select("id, full_name, status, engagement_id, department, seniority_level")
+      .order("id")
+      .range(from, to) as unknown as PromiseLike<{ data: CandRow[] | null; error: { message: string } | null }>
+  ).catch(() => [] as CandRow[]);
 
-  // Get OAR data for candidate comparisons
-  const { data: oars } = await supabase
-    .from("overall_assessment_ratings")
-    .select("candidate_id, overall_score, recommendation");
+  type OarRow = { candidate_id: string; overall_score: number; recommendation: string };
+  const oars = await fetchAllPages<OarRow>((from, to) =>
+    supabase
+      .from("overall_assessment_ratings")
+      .select("id, candidate_id, overall_score, recommendation")
+      .order("id")
+      .range(from, to) as unknown as PromiseLike<{ data: OarRow[] | null; error: { message: string } | null }>
+  ).catch(() => [] as OarRow[]);
 
-  // Get consensus ratings for per-candidate competency breakdown
-  const { data: consensusRatings } = await supabase
-    .from("consensus_ratings")
-    .select("candidate_id, competency_id, final_score, competencies(name, name_ar)");
+  // Only candidate_id + final_score are consumed here (the per-competency
+  // breakdown is built from `ratings`), so skip the competencies embed.
+  type ConsRow = { candidate_id: string; competency_id: string; final_score: number };
+  const consensusRatings = await fetchAllPages<ConsRow>((from, to) =>
+    supabase
+      .from("consensus_ratings")
+      .select("id, candidate_id, competency_id, final_score")
+      .order("id")
+      .range(from, to) as unknown as PromiseLike<{ data: ConsRow[] | null; error: { message: string } | null }>
+  ).catch(() => [] as ConsRow[]);
 
-  // Build ICC matrix: each unique (candidate, competency) is a subject, each assessor is a rater
   const subjectKey = (candidateId: string, competencyId: string) =>
     `${candidateId}:${competencyId}`;
 
-  const subjectRaterMap = new Map<string, Map<string, number>>();
-  const assessorSet = new Set<string>();
-
-  for (const r of ratings ?? []) {
-    const assignment = r.assessor_assignments as unknown as {
-      assessor_id: string;
-      candidate_id: string;
-    };
-    if (!assignment) continue;
-
-    const key = subjectKey(assignment.candidate_id, r.competency_id);
-    if (!subjectRaterMap.has(key)) {
-      subjectRaterMap.set(key, new Map());
-    }
-    subjectRaterMap.get(key)!.set(assignment.assessor_id, r.score);
-    assessorSet.add(assignment.assessor_id);
+  // ICC per engagement, complete-case. Ratings are grouped by engagement (no
+  // cross-engagement pooling - assessors on different engagements never co-rate,
+  // so comparing them is meaningless), and each engagement contributes its
+  // largest genuinely-crossed rater-pair block with NO missing-cell imputation
+  // (the old mean-imputation manufactured agreement and inflated the ICC).
+  const ratingsByEngagement = new Map<string, RatingRow[]>();
+  for (const r of ratings) {
+    const eid = r.assessor_assignments?.engagement_id;
+    if (!eid) continue;
+    const list = ratingsByEngagement.get(eid);
+    if (list) list.push(r);
+    else ratingsByEngagement.set(eid, [r]);
   }
-
-  // Build matrix for ICC (only subjects with multiple raters)
-  // Build ICC matrix using only raters who actually rated each subject
-  // (avoids zero-filter excluding most real-world data)
-  const iccMatrix: number[][] = [];
-  const activeRaterIds: string[] = [];
-  // First pass: find raters who rated at least 2 subjects
-  const raterSubjectCount = new Map<string, number>();
-  for (const raters of Array.from(subjectRaterMap.values())) {
-    for (const [aid] of Array.from(raters.entries())) {
-      raterSubjectCount.set(aid, (raterSubjectCount.get(aid) ?? 0) + 1);
-    }
-  }
-  for (const [aid, count] of Array.from(raterSubjectCount.entries())) {
-    if (count >= 2) activeRaterIds.push(aid);
-  }
-  // Second pass: build matrix with only active raters
-  if (activeRaterIds.length >= 2) {
-    for (const raters of Array.from(subjectRaterMap.values())) {
-      const row = activeRaterIds.map((aid) => raters.get(aid) ?? 0);
-      const nonZero = row.filter((v) => v > 0);
-      if (nonZero.length >= 2) {
-        // Replace zeros with the mean of non-zero values for ICC calculation
-        const mean = nonZero.reduce((a, b) => a + b, 0) / nonZero.length;
-        iccMatrix.push(row.map((v) => v === 0 ? mean : v));
+  const iccMatrices: number[][][] = [];
+  for (const engRatings of Array.from(ratingsByEngagement.values())) {
+    const subjectRaters = new Map<string, Map<string, number>>();
+    for (const r of engRatings) {
+      const a = r.assessor_assignments;
+      if (!a) continue;
+      const key = subjectKey(a.candidate_id, r.competency_id);
+      let raters = subjectRaters.get(key);
+      if (!raters) {
+        raters = new Map();
+        subjectRaters.set(key, raters);
       }
+      raters.set(a.assessor_id, r.score);
     }
+    const matrix = bestPairMatrix(subjectRaters);
+    if (matrix) iccMatrices.push(matrix);
   }
-
-  const iccScore = iccMatrix.length >= 2 ? calculateICC(iccMatrix) : null;
+  const iccScore = pooledICC(iccMatrices);
   const iccInterpretation = iccScore !== null ? getICCInterpretation(iccScore) : null;
 
-  // Build bias metrics per assessor
-  const assessorRatingsMap = new Map<string, { name: string; ratings: number[] }>();
-  for (const r of ratings ?? []) {
-    const assignment = r.assessor_assignments as unknown as {
-      assessor_id: string;
-      profiles: { full_name: string };
-    };
-    if (!assignment) continue;
-
-    if (!assessorRatingsMap.has(assignment.assessor_id)) {
-      assessorRatingsMap.set(assignment.assessor_id, {
-        name: assignment.profiles?.full_name ?? t("adminAnalytics.unknown"),
+  // Build bias metrics per assessor: flat ratings (mean/leniency/central-tendency)
+  // plus per-candidate vectors (so haloEffect measures real within-candidate,
+  // cross-competency agreement rather than pooled modal concentration).
+  const assessorRatingsMap = new Map<
+    string,
+    { name: string; ratings: number[]; byCandidate: Map<string, number[]> }
+  >();
+  for (const r of ratings) {
+    const a = r.assessor_assignments;
+    if (!a) continue;
+    let entry = assessorRatingsMap.get(a.assessor_id);
+    if (!entry) {
+      entry = {
+        name: a.profiles?.full_name ?? t("adminAnalytics.unknown"),
         ratings: [],
-      });
+        byCandidate: new Map(),
+      };
+      assessorRatingsMap.set(a.assessor_id, entry);
     }
-    assessorRatingsMap.get(assignment.assessor_id)!.ratings.push(r.score);
+    entry.ratings.push(r.score);
+    const cand = entry.byCandidate.get(a.candidate_id);
+    if (cand) cand.push(r.score);
+    else entry.byCandidate.set(a.candidate_id, [r.score]);
   }
 
   const biasMetrics = calculateBiasMetrics(
@@ -114,6 +145,7 @@ export default async function AnalyticsPage() {
       assessorId: id,
       assessorName: data.name,
       ratings: data.ratings,
+      ratingsByCandidate: Array.from(data.byCandidate.values()),
     }))
   );
 

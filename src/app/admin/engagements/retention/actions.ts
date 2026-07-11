@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages, chunkIds } from "@/lib/ara/paginate";
 import { RETENTION_MONTHS, PURGE_CONFIRMATION } from "./constants";
 
 // Only closed projects are eligible for purge - never an active/draft engagement.
@@ -54,18 +55,36 @@ export async function purgeAcEngagements(
   }
 
   const sb = createServiceClient();
-  const { data: rows, error } = await sb
-    .from("engagements")
-    .select("id")
-    .in("status", TERMINAL_STATUSES as unknown as string[])
-    .lt("created_at", cutoffIso());
-  if (error) return { error: error.message };
-  const ids = (rows ?? []).map((r) => r.id as string);
+  // Gather the expired ids paginated: an unpaginated select caps at 1000, so a
+  // backlog > 1000 would purge only the first 1000 per run and silently leave the
+  // rest over-retained past the compliance window.
+  let ids: string[];
+  try {
+    const rows = await fetchAllPages<{ id: string }>((from, to) =>
+      sb
+        .from("engagements")
+        .select("id")
+        .in("status", TERMINAL_STATUSES as unknown as string[])
+        .lt("created_at", cutoffIso())
+        .order("id")
+        .range(from, to),
+    );
+    ids = rows.map((r) => r.id);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to gather expired engagements." };
+  }
   if (ids.length === 0) return { ok: true, purged: 0 };
 
-  const del = await sb.from("engagements").delete().in("id", ids).select("id");
-  if (del.error) return { error: del.error.message };
+  // Delete in chunks so the in(...) URL stays sane for a large backlog. The
+  // engagement delete cascades to its children (candidates, assignments,
+  // observations, ratings, consensus, OAR, reports) via ON DELETE CASCADE.
+  let purged = 0;
+  for (const chunk of chunkIds(ids)) {
+    const del = await sb.from("engagements").delete().in("id", chunk).select("id");
+    if (del.error) return { error: del.error.message };
+    purged += del.data?.length ?? chunk.length;
+  }
 
   revalidatePath("/admin/engagements/retention");
-  return { ok: true, purged: del.data?.length ?? ids.length };
+  return { ok: true, purged };
 }

@@ -32,8 +32,25 @@ export async function reopenBankForReviewAction(key: string): Promise<Result> {
   switch (key) {
     case "persona":
       return run(svc.from("persona_items").update({ status: "pending" }).eq("status", "approved").select("id"));
-    case "logica":
-      return run(svc.from("psy_items").update({ status: "in_review" }).eq("source", "seed_v1").eq("status", "approved").select("id"));
+    case "logica": {
+      // Reopen the whole approved COGNITIVE pool (not just source='seed_v1') so
+      // manual + AI-drafted approved items are frozen for re-vetting too. But
+      // psy_items is SHARED with the personality bank, so scope to the cognitive
+      // instrument's scale ids - a bare status='approved' would also un-approve
+      // personality items.
+      const { data: cogInstruments } = await svc
+        .from("psy_instruments").select("id").eq("kind", "cognitive");
+      const cogInstrumentIds = (cogInstruments ?? []).map((i) => (i as { id: string }).id);
+      if (cogInstrumentIds.length === 0) return { ok: true, count: 0 };
+      const { data: cogScales } = await svc
+        .from("psy_scales").select("id").in("instrument_id", cogInstrumentIds);
+      const cogScaleIds = (cogScales ?? []).map((s) => (s as { id: string }).id);
+      if (cogScaleIds.length === 0) return { ok: true, count: 0 };
+      return run(
+        svc.from("psy_items").update({ status: "in_review" })
+          .eq("status", "approved").in("scale_id", cogScaleIds).select("id"),
+      );
+    }
     case "techno":
       return run(svc.from("tech_assessment_items").update({ status: "in_review" }).eq("status", "approved").select("id"));
     case "prehire":

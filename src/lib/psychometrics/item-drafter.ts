@@ -89,6 +89,12 @@ export async function draftScaleItems(input: {
       if (en.length < 2) continue;
       const ci = typeof q.correct_index === "number" ? q.correct_index : -1;
       if (ci < 0 || ci >= en.length) continue;
+      // Reject an MCQ with duplicate options (e.g. ["12","12","15","18"]): a
+      // repeated distractor is unanswerable / has an ambiguous key and must not
+      // enter the bank. Checked case-insensitively per language.
+      const distinct = (arr: string[]) => new Set(arr.map((o) => o.trim().toLowerCase())).size === arr.length;
+      if (!distinct(en)) continue;
+      if (ar.length === en.length && !distinct(ar)) continue;
       const difficulty = (["easy", "medium", "hard"] as const).includes(q.difficulty as never)
         ? (q.difficulty as DraftedItem["difficulty"]) : "medium";
       out.push({

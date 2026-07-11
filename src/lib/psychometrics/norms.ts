@@ -9,6 +9,7 @@
 // psychometrician's sign-off (the non-code science). Service-role; server-only.
 
 import { createServiceClient } from "@/lib/supabase/server";
+import { COGNITIVE_SUBTEST_KEYS } from "./framework";
 import type { PsyKind } from "./bank";
 
 const round3 = (x: number) => Math.round(x * 1000) / 1000;
@@ -32,15 +33,21 @@ export async function computePilotNorms(kind: PsyKind): Promise<ComputeNormsResu
   const byKey = new Map<string, number[]>();
   for (const row of (data ?? []) as { scales: unknown; overall: unknown }[]) {
     const scales = Array.isArray(row.scales) ? row.scales : [];
+    const subtestKeys = new Set<string>();
     for (const s of scales as { key?: unknown; raw?: unknown }[]) {
       if (typeof s?.key === "string" && typeof s?.raw === "number") {
         const arr = byKey.get(s.key) ?? [];
         arr.push(s.raw);
         byKey.set(s.key, arr);
+        subtestKeys.add(s.key);
       }
     }
+    // g composite: pool ONLY full-battery sittings. A partial sitting (e.g. a
+    // numerical-only voucher) has overall.normalized = that single subtest's %,
+    // which is NOT a g across the four subtests; pooling it would bias the g norm.
+    const isFullBattery = COGNITIVE_SUBTEST_KEYS.every((k) => subtestKeys.has(k));
     const overall = row.overall as { normalized?: unknown } | null;
-    if (kind === "cognitive" && overall && typeof overall.normalized === "number") {
+    if (kind === "cognitive" && isFullBattery && overall && typeof overall.normalized === "number") {
       const arr = byKey.get("g") ?? [];
       arr.push(overall.normalized);
       byKey.set("g", arr);

@@ -46,22 +46,38 @@ export async function POST(req: Request) {
     // a tampered client can never widen the scope. Tolerant of the migration
     // not being applied (falls back to the requested set).
     if (typeof body.redemptionToken === "string" && body.redemptionToken.trim()) {
+      const token = body.redemptionToken.trim();
+      let redemption: { voucher_id: string | null; result_id: string | null } | null = null;
       try {
-        const { data: redemption } = await svc
+        const { data } = await svc
           .from("cognitive_voucher_redemptions")
-          .select("voucher_id")
-          .eq("redemption_token", body.redemptionToken.trim())
-          .maybeSingle<{ voucher_id: string | null }>();
-        if (redemption?.voucher_id) {
+          .select("voucher_id, result_id")
+          .eq("redemption_token", token)
+          .maybeSingle<{ voucher_id: string | null; result_id: string | null }>();
+        redemption = data;
+      } catch {
+        /* 00105/00170 not applied - keep the requested set, no completion gate */
+      }
+      // Single-completion gate: a redemption yields at most ONE result. Once it has
+      // been completed, refuse to mint a new session - this closes the unlimited-
+      // retake exploit where a delegate practiced and overwrote the org result.
+      if (redemption?.result_id) {
+        return NextResponse.json(
+          { error: "This assessment has already been completed for this invitation." },
+          { status: 409 }
+        );
+      }
+      if (redemption?.voucher_id) {
+        try {
           const { data: v } = await svc
             .from("cognitive_vouchers")
             .select("subtests")
             .eq("id", redemption.voucher_id)
             .maybeSingle<{ subtests: string[] | null }>();
           if (v?.subtests && v.subtests.length > 0) subtests = sanitizeSubtests(v.subtests);
+        } catch {
+          /* 00170 not applied - keep the requested set */
         }
-      } catch {
-        /* 00170 not applied - keep the requested set */
       }
     }
     // A real / candidate- / voucher-bound sitting MUST be served from the reviewed
@@ -191,6 +207,31 @@ export async function POST(req: Request) {
     const answers = (body.answers ?? {}) as Record<string, number>;
     const result = computePsyResult(test, answers, lang);
 
+    // Voucher single-completion gate: refuse a second sitting for a redemption that
+    // already produced a result (the retake exploit) - checked BEFORE persisting so
+    // no orphan result is written. Tolerant of 00105 not applied (result_id absent).
+    const redemptionToken = typeof body.redemptionToken === "string" ? body.redemptionToken.trim() : "";
+    if (redemptionToken) {
+      try {
+        const { data: red } = await svc
+          .from("cognitive_voucher_redemptions")
+          .select("result_id")
+          .eq("redemption_token", redemptionToken)
+          .maybeSingle<{ result_id: string | null }>();
+        if (red?.result_id) {
+          // Release the session we just consumed - this sitting is being rejected,
+          // not scored, so it should not burn the session either.
+          await svc.from("psy_sessions").update({ consumed: false }).eq("id", sessionId);
+          return NextResponse.json(
+            { error: "This assessment has already been completed for this invitation." },
+            { status: 409 }
+          );
+        }
+      } catch {
+        /* 00105 not applied - no redemption completion gate */
+      }
+    }
+
     // Tier 2: norm-reference the scores when a norm group exists for this kind
     // (tolerant - no psy_norms table / no rows ⇒ result stays Tier-1 indicative).
     let finalResult = result;
@@ -207,7 +248,7 @@ export async function POST(req: Request) {
       /* psy_norms not migrated yet - stays Tier-1 indicative */
     }
 
-    const { data: resRow } = await svc
+    const { data: resRow, error: resErr } = await svc
       .from("psy_results")
       .insert({
         instrument_id: null,
@@ -224,6 +265,20 @@ export async function POST(req: Request) {
       })
       .select("id")
       .single();
+
+    // The persist failed AFTER the atomic consume. Release the session for a retry
+    // and surface an honest retryable error, instead of returning 200 and telling
+    // the taker their results were shared when they weren't. (A true insert failure
+    // wrote nothing; in the rare insert-ok-but-select-failed case a retry could
+    // leave one unlinked orphan result, which stays out of the org cohort - an
+    // acceptable trade vs. losing the whole sitting.)
+    if (resErr || !resRow) {
+      await svc.from("psy_sessions").update({ consumed: false }).eq("id", sessionId);
+      return NextResponse.json(
+        { error: "We couldn't save your results. Please submit again in a moment.", retry: true },
+        { status: 503 }
+      );
+    }
 
     // Per-item response log (best-effort). Shuffled cognitive items carry an
     // `orig` permutation map; the chosen index is remapped into the AUTHORED
@@ -260,7 +315,28 @@ export async function POST(req: Request) {
           .eq("redemption_token", token)
           .maybeSingle<{ id: string; organization_id: string | null }>();
         if (redemption) {
-          // Org linkage on its own, so a pending 00137 can never drop it.
+          // Atomic single-completion claim FIRST: only the first result claims the
+          // redemption (WHERE result_id IS NULL). If we LOSE the race (a concurrent
+          // sitting already claimed it), our result is a duplicate - delete it (+
+          // its responses) so the org cohort (read by organization_id) shows exactly
+          // one result per redemption. The early gate already rejects the common
+          // sequential retake; this closes the rare concurrent double-submit.
+          const { data: claimed } = await svc
+            .from("cognitive_voucher_redemptions")
+            .update({ result_id: resRow.id })
+            .eq("id", redemption.id)
+            .is("result_id", null)
+            .select("id")
+            .maybeSingle();
+          if (!claimed) {
+            await svc.from("psy_item_responses").delete().eq("result_id", resRow.id);
+            await svc.from("psy_results").delete().eq("id", resRow.id);
+            return NextResponse.json(
+              { error: "This assessment has already been completed for this invitation." },
+              { status: 409 }
+            );
+          }
+          // We won the claim: link this single result to the client org.
           await svc
             .from("psy_results")
             .update({ organization_id: redemption.organization_id, voucher_redemption_id: redemption.id })
@@ -278,7 +354,6 @@ export async function POST(req: Request) {
               .update({ project_label: pl.project_label })
               .eq("id", resRow.id);
           }
-          await svc.from("cognitive_voucher_redemptions").update({ result_id: resRow.id }).eq("id", redemption.id);
         }
       } catch {
         /* voucher tables not migrated - ignore */

@@ -59,6 +59,8 @@ function sanitizePublicEngineConfig(value: unknown): unknown {
   return value;
 }
 
+const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
 /**
  * Resolve a free-text org label to a REAL organizations.id, but ONLY when it
  * maps to exactly one org (case-insensitive, trimmed). Returns null for an
@@ -449,6 +451,10 @@ export interface CreateSessionInput {
   candidateName?: string;
   candidateEmail?: string;
   organizationName?: string;
+  /** Authoritative org id (proof of issuance) - set by the client-portal path
+   *  from the caller's profile. When present it binds the session's tenancy
+   *  DIRECTLY, overriding the redeemer-typed organizationName resolution. */
+  organizationId?: string | null;
   invitedBy?: string;
   validityDays?: number;
   /** MCQ section weight (0-100). >0 provisions a keyed MCQ knowledge section
@@ -523,7 +529,15 @@ export async function createSession(input: CreateSessionInput) {
   // improvement over raw-string gating. Ambiguous/unmatched names leave org_id
   // NULL (name-gate fallback). Peeled first below so a pending 00187 degrades to
   // name-only.
-  const resolvedOrgId = await resolveUniqueOrgIdByName(sb, input.organizationName);
+  // Prefer an authoritative org id (client-portal issuance, proof-of-issuance).
+  // Only fall back to unique-name resolution when none was supplied (the admin
+  // free-text path, where no org id exists). A UUID-shape guard keeps a stray
+  // value from poisoning the FK insert (peeled to name-fallback below if so).
+  const authoritativeOrgId =
+    typeof input.organizationId === "string" && UUID_RE.test(input.organizationId.trim())
+      ? input.organizationId.trim()
+      : null;
+  const resolvedOrgId = authoritativeOrgId ?? (await resolveUniqueOrgIdByName(sb, input.organizationName));
   const orgRow = resolvedOrgId ? { organization_id: resolvedOrgId } : {};
   // Only carry the MCQ section when there's a usable test, so a generation
   // miss falls back to sandbox-only rather than an empty knowledge section.

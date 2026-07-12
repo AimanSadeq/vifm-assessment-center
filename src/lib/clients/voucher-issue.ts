@@ -132,7 +132,6 @@ export async function issueClientVouchers(opts: {
       if (!r.ok) throw new Error(r.error);
       codes = r.codes;
     } else if (service === "techno") {
-      // Name-bridge MVP: Techno keys on organization_name (no org id FK yet).
       const fn = await resolveTechnoFunction(alloc);
       if (!fn) throw new Error("VIFM has not configured a technical function for this allocation.");
       technoFunctionName = fn.name;
@@ -140,6 +139,10 @@ export async function issueClientVouchers(opts: {
         functionId: fn.id,
         count,
         organizationName: clientName,
+        // Bind the authoritative issuing-org id (00190) so the redeemed session's
+        // tenancy is proof-of-issuance, not a redeemer-typed name. orgId is resolved
+        // from the caller's profile by the portal action, never client input.
+        organizationId: orgId,
         expiresAt: alloc.expires_at,
         delegates: delegates.map((d) => ({ name: d.name?.trim() || d.email, email: d.email })),
       });
@@ -258,6 +261,8 @@ export async function issueClientPoolVoucher(opts: {
         functionId: fn.id,
         count: 1,
         organizationName: clientName,
+        // Authoritative issuing-org id (00190) - see the individual path above.
+        organizationId: orgId,
         expiresAt: alloc.expires_at,
         maxUsesPerCode: seats,
       });

@@ -10,6 +10,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { createSession, isMissingSchemaError } from "./service";
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I
+const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
 function randomBlock(len: number): string {
   const bytes = new Uint8Array(len);
@@ -33,6 +34,11 @@ export interface GenerateBatchInput {
   functionId: string;
   count: number;
   organizationName?: string | null;
+  /** Authoritative org id (00190) - set by the client-portal issuance path from
+   *  the caller's profile. Bound to each session at redeem as proof of issuance,
+   *  so tenancy no longer relies on a redeemer-typed org label. NULL on the admin
+   *  free-text path (name-resolution fallback). */
+  organizationId?: string | null;
   label?: string | null;
   maxUsesPerCode?: number; // 1 = single-use codes (default), >1 = seat-pool code
   expiresAt?: string | null;
@@ -91,6 +97,11 @@ export async function generateVoucherBatch(input: GenerateBatchInput) {
     contact_title: input.contactTitle ?? null,
     contact_email: input.contactEmail ?? null,
   };
+  // 00190 authoritative org id (newest column - peeled FIRST below). UUID-shape
+  // guarded so a malformed value can't 22P02 the FK insert and break the peel loop
+  // (that error is not a missing-schema error, so it would throw rather than degrade).
+  const orgIdCol: Record<string, unknown> =
+    input.organizationId && UUID_RE.test(input.organizationId) ? { organization_id: input.organizationId } : {};
 
   let rows: Record<string, unknown>[];
   if (delegates.length > 0) {
@@ -110,6 +121,7 @@ export async function generateVoucherBatch(input: GenerateBatchInput) {
       ...lensCol,
       ...customCol,
       ...contactCol,
+      ...orgIdCol,
     }));
   } else {
     const count = Math.max(1, Math.min(500, Math.floor(input.count)));
@@ -127,33 +139,47 @@ export async function generateVoucherBatch(input: GenerateBatchInput) {
       ...lensCol,
       ...customCol,
       ...contactCol,
+      ...orgIdCol,
     }));
   }
 
-  // Newest-first peel: drop custom_config (00141), then talent_lens (00136),
-  // then mcq_pct (00085) on a missing-column error so a pending migration
-  // degrades gracefully.
-  const stripContact = (r: Record<string, unknown>) => {
-    const { contact_name, contact_title, contact_email, ...rest } = r;
-    void contact_name; void contact_title; void contact_email;
+  // Newest-first peel: drop organization_id (00190), then contact_* (00168), then
+  // custom_config (00141), then talent_lens (00136), then mcq_pct (00085) on a
+  // missing-column error so a pending migration degrades gracefully. Each deeper
+  // level also omits every newer column (a missing column stays missing).
+  const stripOrg = (r: Record<string, unknown>) => {
+    const { organization_id, ...rest } = r;
+    void organization_id;
     return rest;
   };
-  const stripCustom = (r: Record<string, unknown>) => {
-    const { contact_name, contact_title, contact_email, custom_config, ...rest } = r;
-    void contact_name; void contact_title; void contact_email; void custom_config;
+  const stripOrgContact = (r: Record<string, unknown>) => {
+    const { organization_id, contact_name, contact_title, contact_email, ...rest } = r;
+    void organization_id; void contact_name; void contact_title; void contact_email;
     return rest;
   };
-  const stripCustomLens = (r: Record<string, unknown>) => {
-    const { contact_name, contact_title, contact_email, custom_config, talent_lens, ...rest } = r;
-    void contact_name; void contact_title; void contact_email; void custom_config; void talent_lens;
+  const stripOrgContactCustom = (r: Record<string, unknown>) => {
+    const { organization_id, contact_name, contact_title, contact_email, custom_config, ...rest } = r;
+    void organization_id; void contact_name; void contact_title; void contact_email; void custom_config;
     return rest;
   };
-  const stripCustomLensMcq = (r: Record<string, unknown>) => {
-    const { contact_name, contact_title, contact_email, custom_config, talent_lens, mcq_pct, ...rest } = r;
-    void contact_name; void contact_title; void contact_email; void custom_config; void talent_lens; void mcq_pct;
+  const stripOrgContactCustomLens = (r: Record<string, unknown>) => {
+    const { organization_id, contact_name, contact_title, contact_email, custom_config, talent_lens, ...rest } = r;
+    void organization_id; void contact_name; void contact_title; void contact_email; void custom_config; void talent_lens;
     return rest;
   };
-  const attempts = [rows, rows.map(stripContact), rows.map(stripCustom), rows.map(stripCustomLens), rows.map(stripCustomLensMcq)];
+  const stripOrgContactCustomLensMcq = (r: Record<string, unknown>) => {
+    const { organization_id, contact_name, contact_title, contact_email, custom_config, talent_lens, mcq_pct, ...rest } = r;
+    void organization_id; void contact_name; void contact_title; void contact_email; void custom_config; void talent_lens; void mcq_pct;
+    return rest;
+  };
+  const attempts = [
+    rows,
+    rows.map(stripOrg),
+    rows.map(stripOrgContact),
+    rows.map(stripOrgContactCustom),
+    rows.map(stripOrgContactCustomLens),
+    rows.map(stripOrgContactCustomLensMcq),
+  ];
   type VoucherInsertRow = { code: string; assigned_name: string | null; assigned_email: string | null };
   let data: VoucherInsertRow[] | null = null;
   let error: { code?: string } | null = null;
@@ -232,12 +258,33 @@ export async function redeemVoucher(input: RedeemInput): Promise<RedeemResult> {
     break;
   }
 
+  // organization_id (00190) read STANDALONE - the security-critical tenancy column
+  // must not be gated behind an older optional column's presence in the set above
+  // (on a partially-migrated DB that has 00190 but lacks e.g. custom_config, a
+  // coupled read would silently drop it and reopen the name-collision leak).
+  let voucherOrgId: string | null = null;
+  {
+    const { data: oRow } = await sb
+      .from("technical_sandbox_vouchers")
+      .select("organization_id")
+      .eq("id", voucher.id as string)
+      .maybeSingle<{ organization_id: string | null }>();
+    voucherOrgId = oRow?.organization_id ?? null;
+  }
+
   try {
     const { id: sessionId, accessToken } = await createSession({
       functionId: voucher.function_id as string,
       candidateName: input.name.trim(),
       candidateEmail: input.email.trim(),
-      organizationName: (input.company || voucher.organization_name || "").trim() || undefined,
+      // Display name: for a client-issued voucher (authoritative org id) prefer the
+      // voucher's own org label so display matches tenancy; otherwise the redeemer's
+      // typed company. Tenancy itself binds to organizationId when present, so a
+      // redeemer can no longer type another org's name to cross the boundary.
+      organizationName:
+        ((voucherOrgId ? (voucher.organization_name as string) : input.company) || voucher.organization_name || "").trim() ||
+        undefined,
+      organizationId: voucherOrgId ?? undefined,
       mcqPct,
       talentLens,
       // A custom-builder voucher provisions the SAME custom sitting (00141).

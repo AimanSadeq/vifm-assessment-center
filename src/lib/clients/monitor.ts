@@ -23,7 +23,6 @@ async function countOrg(table: string, orgId: string, col = "id"): Promise<numbe
   }
 }
 
-// Techno keys on organization_name (no org id FK yet - name bridge).
 async function countByName(table: string, orgName: string): Promise<number> {
   try {
     const sb = createServiceClient();
@@ -31,6 +30,31 @@ async function countByName(table: string, orgName: string): Promise<number> {
     return count ?? 0;
   } catch {
     return 0;
+  }
+}
+
+// Techno tables carry organization_id (vouchers 00190, sessions 00187) plus a
+// legacy free-text organization_name. Count rows this org OWNS: organization_id
+// primary, plus only the legacy rows with a NULL org_id matched by exact name -
+// so a free-text org-name collision can't inflate another org's counts. Tolerant:
+// on a DB where the org_id column is absent, degrade to name-only.
+async function countOrgWithLegacyName(table: string, orgId: string, orgName: string | null): Promise<number> {
+  const sb = createServiceClient();
+  try {
+    const byId = await sb.from(table).select("id", { count: "exact", head: true }).eq("organization_id", orgId);
+    if (byId.error) throw byId.error; // org_id column absent -> name-only fallback
+    let total = byId.count ?? 0;
+    if (orgName) {
+      const legacy = await sb
+        .from(table)
+        .select("id", { count: "exact", head: true })
+        .is("organization_id", null)
+        .eq("organization_name", orgName);
+      total += legacy.count ?? 0;
+    }
+    return total;
+  } catch {
+    return orgName ? countByName(table, orgName) : 0;
   }
 }
 
@@ -71,18 +95,51 @@ export async function getVoucherLedger(service: CaliberService, orgId: string): 
     // codes for a large org while the funnel's exact count showed the true total).
     let vouchers: VRow[] = [];
     if (service === "techno") {
-      // Techno keys on organization_name (no org id FK yet).
+      // Techno vouchers carry organization_id (00190) + a legacy organization_name.
+      // Scope to org-id (proof of issuance) PLUS only legacy rows with a NULL org_id
+      // matched by exact name - otherwise an org-name collision would list another
+      // org's codes + redeemer identities. Mirrors the session-list split below.
       const { data: org } = await sb.from("organizations").select("name").eq("id", orgId).maybeSingle<{ name: string }>();
-      if (!org?.name) return [];
-      vouchers = await fetchAllPages<VRow>((from, to) =>
-        sb
-          .from(t.vouchers)
-          .select("id, code, label, status, max_uses, used_count, created_at")
-          .eq("organization_name", org.name)
-          .order("created_at", { ascending: false })
-          .order("id")
-          .range(from, to),
-      );
+      const orgName = org?.name ?? null;
+      const techCols = "id, code, label, status, max_uses, used_count, created_at";
+      try {
+        const byId = await fetchAllPages<VRow>((from, to) =>
+          sb
+            .from(t.vouchers)
+            .select(techCols)
+            .eq("organization_id", orgId)
+            .order("created_at", { ascending: false })
+            .order("id")
+            .range(from, to),
+        );
+        let byName: VRow[] = [];
+        if (orgName) {
+          byName = await fetchAllPages<VRow>((from, to) =>
+            sb
+              .from(t.vouchers)
+              .select(techCols)
+              .is("organization_id", null)
+              .eq("organization_name", orgName)
+              .order("created_at", { ascending: false })
+              .order("id")
+              .range(from, to),
+          );
+        }
+        const seen = new Set<string>();
+        vouchers = [...byId, ...byName].filter((v) => (seen.has(v.id) ? false : (seen.add(v.id), true)));
+      } catch {
+        // Pre-00190 (no organization_id column): degrade to legacy name-only.
+        if (!orgName) return [];
+        vouchers = await fetchAllPages<VRow>((from, to) =>
+          sb
+            .from(t.vouchers)
+            .select(techCols)
+            .eq("organization_name", orgName)
+            .order("created_at", { ascending: false })
+            .order("id")
+            .range(from, to),
+        );
+      }
     } else {
       // assigned_email first (00130); peel it off if the column isn't there.
       try {
@@ -230,9 +287,11 @@ export async function getServiceActivity(service: CaliberService, orgId: string)
       const { data: org } = await sb.from("organizations").select("name").eq("id", orgId).maybeSingle<{ name: string }>();
       const orgName = org?.name ?? null;
       if (!orgName) return EMPTY;
+      // org-id primary (+ legacy NULL-org_id name match) so a name collision can't
+      // inflate the funnel with another org's vouchers/sittings.
       const [issued, redeemed] = await Promise.all([
-        countByName("technical_sandbox_vouchers", orgName),
-        countByName("technical_sandbox_sessions", orgName),
+        countOrgWithLegacyName("technical_sandbox_vouchers", orgId, orgName),
+        countOrgWithLegacyName("technical_sandbox_sessions", orgId, orgName),
       ]);
       const cols = "access_token, candidate_name, submitted_at, overall_band";
       type TechRow = { access_token: string; candidate_name: string | null; submitted_at: string | null; overall_band: string | null };

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import { getCurrentCaller } from "@/lib/ara/auth-guards";
 import { loadPlatformClients } from "@/lib/clients/registry";
 import { BackLink } from "@/components/shared/back-link";
@@ -15,11 +16,17 @@ export default async function FluentVouchersPage() {
   if (!caller || caller.role !== "admin") return notFound();
 
   const sb = createServiceClient();
-  const { data: vouchers } = await sb
-    .from("eng_fluent_vouchers")
-    .select("id, code, label, client_name, default_language, max_uses, used_count, status, expires_at, created_at, proctor_enabled")
-    .order("created_at", { ascending: false })
-    .returns<FluentVoucherRow[]>();
+  // Paginate the voucher list (newest-first, id-tiebroken): an unpaginated read
+  // caps at 1000, so a client issued > 1000 codes across batches would have older
+  // vouchers become invisible + unmanageable (can't be found to disable).
+  const vouchers = await fetchAllPages<FluentVoucherRow>((from, to) =>
+    sb
+      .from("eng_fluent_vouchers")
+      .select("id, code, label, client_name, default_language, max_uses, used_count, status, expires_at, created_at, proctor_enabled")
+      .order("created_at", { ascending: false })
+      .order("id")
+      .range(from, to) as unknown as PromiseLike<{ data: FluentVoucherRow[] | null; error: { message: string } | null }>,
+  ).catch(() => [] as FluentVoucherRow[]);
   const clients = await loadPlatformClients();
 
   return (
@@ -28,7 +35,7 @@ export default async function FluentVouchersPage() {
       <div className="mt-4 mb-6">
         <VoucherNav active="fluent" />
       </div>
-      <VouchersClient vouchers={vouchers ?? []} clients={clients.map((c) => c.name)} />
+      <VouchersClient vouchers={vouchers} clients={clients.map((c) => c.name)} />
     </div>
   );
 }

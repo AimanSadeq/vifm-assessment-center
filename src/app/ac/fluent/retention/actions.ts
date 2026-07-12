@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages, chunkIds } from "@/lib/ara/paginate";
 import { RETENTION_MONTHS, PURGE_CONFIRMATION } from "./constants";
 
 function cutoffIso(): string {
@@ -47,23 +48,28 @@ export async function purgeFluentResults(
   const sb = createServiceClient();
   const cutoff = cutoffIso();
 
-  // 1. Delete expired results (+ dependent calibration runs).
-  const { data: rows, error } = await sb
-    .from("eng_fluent_results")
-    .select("id")
-    .lt("created_at", cutoff);
-  if (error) return { error: error.message };
-  const ids = (rows ?? []).map((r) => r.id as string);
+  // 1. Delete expired results (+ dependent calibration runs). Gather ids paginated
+  //    + chunk the deletes: an unpaginated id-gather caps at 1000, so a backlog
+  //    > 1000 would leave expired results' PII past the retention window.
+  let ids: string[];
+  try {
+    const rows = await fetchAllPages<{ id: string }>((from, to) =>
+      sb.from("eng_fluent_results").select("id").lt("created_at", cutoff).order("id").range(from, to),
+    );
+    ids = rows.map((r) => r.id);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to gather expired results." };
+  }
   let purged = 0;
-  if (ids.length > 0) {
+  for (const chunk of chunkIds(ids)) {
     try {
-      await sb.from("eng_fluent_score_runs").delete().in("result_id", ids);
+      await sb.from("eng_fluent_score_runs").delete().in("result_id", chunk);
     } catch {
       /* table absent - ignore */
     }
-    const del = await sb.from("eng_fluent_results").delete().in("id", ids).select("id");
+    const del = await sb.from("eng_fluent_results").delete().in("id", chunk).select("id");
     if (del.error) return { error: del.error.message };
-    purged = del.data?.length ?? ids.length;
+    purged += del.data?.length ?? chunk.length;
   }
 
   // 2. Anonymise voucher-redemption PII past the window (best-effort).

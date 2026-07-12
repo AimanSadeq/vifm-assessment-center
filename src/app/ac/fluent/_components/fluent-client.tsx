@@ -351,6 +351,8 @@ export function FluentClient({
     try {
       const fd = new FormData();
       fd.append("audio", blob, "speaking.webm");
+      // The transcribe route requires a live session (denial-of-wallet guard).
+      if (sessionId) fd.append("sessionId", sessionId);
       const res = await fetch("/api/ac/fluent/transcribe", { method: "POST", body: fd });
       const data = (await res.json().catch(() => ({}))) as {
         transcript?: string; pronunciation?: PronunciationLike | null;

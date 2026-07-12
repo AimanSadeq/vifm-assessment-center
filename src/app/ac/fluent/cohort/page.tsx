@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Users, BookOpen, Headphones, PenLine, Mic, Award, Sparkles, Flag, MailCheck, Camera } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import { requireRole, isAuthorizationError, getCurrentCaller } from "@/lib/ara/auth-guards";
 import { getClientOrgId } from "@/lib/auth/get-org-id";
 import { getServerT, type ServerT } from "@/lib/i18n/server";
@@ -58,29 +59,38 @@ function avgBand(values: Array<string | null | undefined>): { band: CefrLevel; n
   return { band: numToCefr(nums.reduce((a, b) => a + b, 0) / nums.length), n: nums.length };
 }
 
-type LoadResp = { data: Row[] | null; error: unknown };
-
 async function loadRows(orgId: string | null): Promise<Row[] | null> {
+  const sb = createServiceClient();
+  const base =
+    "id, created_at, taker_name, taker_email, overall_cefr, reading_cefr, listening_cefr, listening_total, writing_cefr, speaking_attempted, speaking_cefr, ai_scored";
+  // Paginate the whole cohort (newest-first, id-tiebroken): an unpaginated read
+  // capped the aggregates - tests-taken, average CEFR, the band distribution - at
+  // 500 rows, silently misrepresenting any larger cohort.
+  const pageWith = (cols: string) => (from: number, to: number) => {
+    let q = sb
+      .from("eng_fluent_results")
+      .select(cols)
+      .order("created_at", { ascending: false })
+      .order("id")
+      .range(from, to);
+    // A client_manager only ever sees their own organisation's results.
+    if (orgId) q = q.eq("organization_id", orgId);
+    return q as unknown as PromiseLike<{ data: Row[] | null; error: { message: string } | null }>;
+  };
+  // Graceful degradation across migrations: try with the client-org join (00104),
+  // then the depth columns (00043), then the base (00042-only).
   try {
-    const sb = createServiceClient();
-    const base =
-      "id, created_at, taker_name, taker_email, overall_cefr, reading_cefr, listening_cefr, listening_total, writing_cefr, speaking_attempted, speaking_cefr, ai_scored";
-    const query = (cols: string) => {
-      let q = sb.from("eng_fluent_results").select(cols).order("created_at", { ascending: false }).limit(500);
-      // A client_manager only ever sees their own organisation's results.
-      if (orgId) q = q.eq("organization_id", orgId);
-      return q;
-    };
-
-    // Graceful degradation across migrations: try with the client-org join
-    // (00104), then the depth columns (00043), then the base (00042-only).
-    let res = (await query(base + ", integrity_flags, email_sent_at, organization:organizations(name)")) as unknown as LoadResp;
-    if (res.error) res = (await query(base + ", integrity_flags, email_sent_at")) as unknown as LoadResp;
-    if (res.error) res = (await query(base)) as unknown as LoadResp;
-    if (res.error) return null;
-    return res.data ?? [];
+    return await fetchAllPages<Row>(pageWith(base + ", integrity_flags, email_sent_at, organization:organizations(name)"));
   } catch {
-    return null;
+    try {
+      return await fetchAllPages<Row>(pageWith(base + ", integrity_flags, email_sent_at"));
+    } catch {
+      try {
+        return await fetchAllPages<Row>(pageWith(base));
+      } catch {
+        return null;
+      }
+    }
   }
 }
 
@@ -180,6 +190,10 @@ export default async function FluentCohortPage({ searchParams }: { searchParams?
   );
 }
 
+// Aggregates run over the FULL cohort; the per-row table is capped so a
+// multi-thousand-result cohort doesn't emit a huge HTML payload.
+const ROW_CAP = 300;
+
 function CohortBody({ rows, t }: { rows: Row[]; t: ServerT }) {
   const total = rows.length;
   const aiScored = rows.filter((r) => r.ai_scored).length;
@@ -267,7 +281,7 @@ function CohortBody({ rows, t }: { rows: Row[]; t: ServerT }) {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
+              {rows.slice(0, ROW_CAP).map((r) => (
                 <tr key={r.id} className="border-b last:border-0 hover:bg-slate-50">
                   <td className="whitespace-nowrap px-4 py-2.5 text-slate-500">
                     {new Date(r.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" })}
@@ -343,6 +357,11 @@ function CohortBody({ rows, t }: { rows: Row[]; t: ServerT }) {
             </tbody>
           </table>
         </div>
+        {rows.length > ROW_CAP && (
+          <p className="border-t px-6 py-3 text-xs text-slate-500">
+            Showing the first {ROW_CAP} of {rows.length} results. The summary statistics above reflect the full cohort.
+          </p>
+        )}
       </section>
     </>
   );

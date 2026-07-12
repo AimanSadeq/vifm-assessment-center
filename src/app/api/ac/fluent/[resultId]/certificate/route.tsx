@@ -12,7 +12,8 @@
 
 import { NextResponse } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
-import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
+import { requireRole, isAuthorizationError, getCurrentCaller } from "@/lib/ara/auth-guards";
+import { getClientOrgId } from "@/lib/auth/get-org-id";
 import { createServiceClient } from "@/lib/supabase/server";
 import { FluentCertificate, type FluentCertificateData } from "@/lib/reports/fluent-certificate";
 import {
@@ -87,34 +88,60 @@ type Row = {
   writing_cefr: string | null;
   speaking_attempted: boolean;
   speaking_cefr: string | null;
+  organization_id: string | null;
   result: { reliability?: { low?: string; high?: string } } | null;
 };
 
 export async function GET(req: Request, { params }: { params: { resultId: string } }) {
   // XP-13: the certificate is staff-only. Takers never see their results; an
   // admin/consultant/assessor downloads or sends the report from the cohort view.
+  // Additive (mirrors the report route): a client_manager may download a
+  // certificate for THEIR OWN org's result - so the org-scoped cohort's certificate
+  // link works instead of 403ing.
+  let clientMgrOrgId: string | null = null;
   try {
     await requireRole(["admin", "consultant", "lead_assessor", "associate_assessor"]);
   } catch (e) {
-    if (isAuthorizationError(e)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    throw e;
+    if (!isAuthorizationError(e)) throw e;
+    const caller = await getCurrentCaller();
+    if (caller?.role === "client_manager") {
+      clientMgrOrgId = await getClientOrgId();
+      if (!clientMgrOrgId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    } else {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
   }
 
   let row: Row | null = null;
   try {
     const sb = createServiceClient();
-    const { data } = await sb
+    const BASE =
+      "id, created_at, taker_name, overall_cefr, reading_cefr, listening_cefr, listening_total, writing_cefr, speaking_attempted, speaking_cefr, result";
+    // Prefer the org-scoped select, but degrade if organization_id isn't migrated
+    // yet (else the whole certificate 404s on a partial env). A client_manager
+    // still can't reach an un-orged result: with organization_id absent the check
+    // below sees `undefined !== orgId` and 403s - fail-closed, never fail-open.
+    let data: unknown = null;
+    const withOrg = await sb
       .from("eng_fluent_results")
-      .select(
-        "id, created_at, taker_name, overall_cefr, reading_cefr, listening_cefr, listening_total, writing_cefr, speaking_attempted, speaking_cefr, result"
-      )
+      .select(`${BASE}, organization_id`)
       .eq("id", params.resultId)
       .single();
+    if (withOrg.error) {
+      const fallback = await sb.from("eng_fluent_results").select(BASE).eq("id", params.resultId).single();
+      data = fallback.data;
+    } else {
+      data = withOrg.data;
+    }
     row = (data as Row) ?? null;
   } catch {
     row = null;
   }
   if (!row) return notFound();
+  // A client_manager may only download their own org's certificate.
+  if (clientMgrOrgId && row.organization_id !== clientMgrOrgId) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   // Option 2 gate: while the receptive bank still mints items live-AI at sitting
   // time (not yet SME-promoted), flag the placement content as pending review.

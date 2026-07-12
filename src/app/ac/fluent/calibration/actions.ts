@@ -16,9 +16,11 @@ export async function submitHumanRating(
   formData: FormData
 ): Promise<{ ok: boolean; error?: string }> {
   // Server action = independently invocable POST; gate it the same way the page
-  // is (staff only) so a non-staff caller can't corrupt the calibration data.
+  // is (admin/consultant only - the calibration console is a psychometric-QA tool,
+  // not a per-engagement assessor task) so a non-authorised caller can't corrupt
+  // the calibration data or reach cross-org verbatim via it.
   try {
-    await requireRole(["admin", "consultant", "lead_assessor", "associate_assessor"]);
+    await requireRole(["admin", "consultant"]);
   } catch (e) {
     if (isAuthorizationError(e)) return { ok: false, error: "Not authorised." };
     throw e;

@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { ArrowLeft, ClipboardCheck, PenLine, Mic } from "lucide-react";
 import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages, chunkIds } from "@/lib/ara/paginate";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { getServerT, type ServerT } from "@/lib/i18n/server";
 import { CEFR_ORDER, type CefrLevel } from "@/lib/ai/fluent-english";
@@ -34,6 +35,7 @@ const CEFR_TONE: Record<string, string> = {
 async function load() {
   try {
     const sb = createServiceClient();
+    // Re-rate list: the newest 50 results (what a rater picks from).
     const r = (await sb
       .from("eng_fluent_results")
       .select("id, taker_name, created_at, result")
@@ -41,27 +43,60 @@ async function load() {
       .limit(50)) as unknown as { data: ResultRow[] | null; error: unknown };
     if (r.error || !r.data) return null;
     const results = r.data;
+
+    // QWK anchor: ALL human ratings (paginated) - the scarce, deliberate data. The
+    // old code anchored the QWK on the newest-50 results, so a human rating on any
+    // older result was silently excluded from the agreement statistic.
+    let humans: Human[];
+    try {
+      humans = await fetchAllPages<Human>((from, to) =>
+        // Order on the PK (unique): (result_id) alone is NOT unique - the table is
+        // UNIQUE (result_id, skill, rater_id) - so a non-unique sort key would let
+        // tied rows re-arrange across the 1000-row page boundary and drop/duplicate
+        // human ratings, silently corrupting the QWK statistic.
+        sb.from("eng_fluent_human_ratings").select("result_id, skill, human_cefr").order("id").range(from, to),
+      );
+    } catch {
+      humans = [];
+    }
+
+    // AI CEFR for EVERY human-rated result (from its stored result JSON, chunked),
+    // so the QWK covers the full human-rated set rather than just the newest 50.
+    const humanRatedIds = Array.from(new Set(humans.map((h) => h.result_id)));
+    const aiCefrByKey: Record<string, string> = {};
+    for (const chunk of chunkIds(humanRatedIds)) {
+      if (chunk.length === 0) continue;
+      const { data } = await sb.from("eng_fluent_results").select("id, result").in("id", chunk);
+      for (const row of (data ?? []) as { id: string; result: ResultRow["result"] }[]) {
+        const w = row.result?.writing?.cefr;
+        const s = row.result?.speaking?.cefr;
+        if (w) aiCefrByKey[`${row.id}:writing`] = w;
+        if (s) aiCefrByKey[`${row.id}:speaking`] = s;
+      }
+    }
+
+    // Score runs power the re-rate list's writing-response display, so newest-50 is
+    // enough for them.
     const ids = results.map((x) => x.id);
-    if (ids.length === 0) return { results, runs: [] as Run[], humans: [] as Human[] };
-    const runRes = (await sb
-      .from("eng_fluent_score_runs")
-      .select("result_id, skill, raw")
-      .in("result_id", ids)) as unknown as { data: Run[] | null };
-    const humRes = (await sb
-      .from("eng_fluent_human_ratings")
-      .select("result_id, skill, human_cefr")
-      .in("result_id", ids)) as unknown as { data: Human[] | null };
-    return { results, runs: runRes.data ?? [], humans: humRes.data ?? [] };
+    const runRes = ids.length
+      ? ((await sb
+          .from("eng_fluent_score_runs")
+          .select("result_id, skill, raw")
+          .in("result_id", ids)) as unknown as { data: Run[] | null })
+      : { data: [] as Run[] };
+    return { results, runs: runRes.data ?? [], humans, aiCefrByKey };
   } catch {
     return null;
   }
 }
 
 export default async function FluentCalibrationPage() {
-  // Internal QA console: it exposes cross-org taker names + verbatim writing /
-  // speaking responses via the service-role client, so it must be staff-only.
+  // Internal psychometric-QA console: it exposes CROSS-ORG taker names + verbatim
+  // writing/speaking responses (unscoped, via the service-role client), so it is
+  // restricted to admin/consultant. A per-engagement assessor (lead/associate) has
+  // no calibration role and must not read every client's verbatim responses.
   try {
-    await requireRole(["admin", "consultant", "lead_assessor", "associate_assessor"]);
+    await requireRole(["admin", "consultant"]);
   } catch (e) {
     if (!isAuthorizationError(e)) throw e;
     notFound();
@@ -101,7 +136,7 @@ export default async function FluentCalibrationPage() {
   );
 }
 
-function CalibrationBody({ results, runs, humans, t }: { results: ResultRow[]; runs: Run[]; humans: Human[]; t: ServerT }) {
+function CalibrationBody({ results, runs, humans, aiCefrByKey, t }: { results: ResultRow[]; runs: Run[]; humans: Human[]; aiCefrByKey: Record<string, string>; t: ServerT }) {
   const responseByResult = new Map<string, string>();
   for (const run of runs) {
     if (run.skill === "writing" && run.raw?.response) responseByResult.set(run.result_id, run.raw.response);
@@ -113,7 +148,8 @@ function CalibrationBody({ results, runs, humans, t }: { results: ResultRow[]; r
     const ai: number[] = [];
     const hum: number[] = [];
     for (const h of humans.filter((x) => x.skill === skill)) {
-      const aiCefr = results.find((r) => r.id === h.result_id)?.result?.[skill]?.cefr;
+      // Look up the AI CEFR from the full human-rated set (not just the newest 50).
+      const aiCefr = aiCefrByKey[`${h.result_id}:${skill}`];
       if (aiCefr) {
         ai.push(rank(aiCefr));
         hum.push(rank(h.human_cefr));

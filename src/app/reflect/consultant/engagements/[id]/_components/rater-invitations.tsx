@@ -32,13 +32,21 @@ const ROLE_LABEL: Record<string, string> = {
 export function RaterInvitations({
   engagementId,
   raters,
+  status,
 }: {
   engagementId: string;
   raters: RaterInvite[];
+  status: string;
 }) {
   const [origin, setOrigin] = useState("");
   const [pending, start] = useTransition();
   useEffect(() => setOrigin(window.location.origin), []);
+
+  // Links only work once the engagement is 'live' (reached via launch, which
+  // enforces framework approval - migration 00182). Before then a rating link
+  // renders read-only and a save is rejected, so we don't hand out dead links:
+  // copy + resend are disabled until launch, with a note explaining why.
+  const live = status === "live";
 
   const linkFor = (token: string) => `${origin}/reflect/respond/${token}`;
 
@@ -68,16 +76,17 @@ export function RaterInvitations({
         <div>
           <h2 className="text-sm font-semibold text-primary uppercase tracking-wide">Rater invitations</h2>
           <p className="text-xs text-muted-foreground mt-1">
-            Each rater answers via their own private link. If an invitation email did not arrive (check spam first),
-            copy the link and send it to the rater directly.
+            {live
+              ? "Each rater answers via their own private link. If an invitation email did not arrive (check spam first), copy the link and send it to the rater directly."
+              : "Invitations activate once the framework is approved and the engagement is launched. Until then a rating link is read-only, so copying links now would only hand out dead links."}
           </p>
         </div>
         <button
           type="button"
           onClick={resend}
-          disabled={pending}
+          disabled={pending || !live}
           className="inline-flex items-center gap-1.5 rounded-md border bg-card px-2.5 py-1.5 text-xs text-foreground hover:bg-muted disabled:opacity-50"
-          title="Re-email everyone who has not been invited yet"
+          title={live ? "Re-email everyone who has not been invited yet" : "Available after the engagement is launched"}
         >
           {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
           Resend pending{pendingCount ? ` (${pendingCount})` : ""}
@@ -121,9 +130,9 @@ export function RaterInvitations({
                     <button
                       type="button"
                       onClick={() => copy(r.access_token)}
-                      disabled={!origin}
+                      disabled={!origin || !live}
                       className="inline-flex items-center gap-1 rounded border px-2 py-1 text-[11px] text-accent hover:bg-muted disabled:opacity-50"
-                      title="Copy this rater's private rating link"
+                      title={live ? "Copy this rater's private rating link" : "Available after the engagement is launched"}
                     >
                       <Copy className="h-3 w-3" /> Copy link
                     </button>

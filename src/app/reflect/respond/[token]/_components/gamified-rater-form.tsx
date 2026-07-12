@@ -94,6 +94,8 @@ const G = {
     submit: "Submit my feedback",
     submitting: "Submitting…",
     needAll: "Rate every card to submit",
+    couldNotSave: (n: number) =>
+      `${n} answer${n === 1 ? "" : "s"} could not be saved - nothing has been submitted yet. Check your connection and tap Submit again.`,
     doneBadge: "All cards done",
     remaining: (n: number) => `${n} card${n === 1 ? "" : "s"} still need a rating`,
     goToRemaining: "Rate the remaining cards",
@@ -130,6 +132,8 @@ const G = {
     submit: "إرسال رأيي",
     submitting: "جارٍ الإرسال…",
     needAll: "قيّم كل البطاقات قبل الإرسال",
+    couldNotSave: (n: number) =>
+      `تعذّر حفظ ${n} إجابة - لم يتم إرسال أي شيء بعد. تحقّق من اتصالك واضغط إرسال مرة أخرى.`,
     doneBadge: "اكتملت كل البطاقات",
     remaining: (n: number) => `${n} بطاقة بحاجة إلى تقييم`,
     goToRemaining: "قيّم البطاقات المتبقّية",
@@ -187,12 +191,21 @@ export function GamifiedRaterForm({ ctx, preview = false }: { ctx: RaterContext;
   const [saveState, setSaveState] = useState<"idle" | "saving" | "failed">("idle");
   const [previewDone, setPreviewDone] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
+  const [unsavedCount, setUnsavedCount] = useState(0);
   const [submitting, startSubmitting] = useTransition();
 
   const inflightRef = useRef<Map<number, Promise<void>>>(new Map());
   const saveIdRef = useRef(0);
   const commentTimerRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const openTimerRef = useRef<Map<"start" | "stop" | "continue", ReturnType<typeof setTimeout>>>(new Map());
+  // Track every save that FAILED so submit can retry them and REFUSE to mark the
+  // rater complete while any remain unsaved - matching the standard RaterForm's
+  // hardened gate (rater-form.tsx). Without this, a transient save failure on a
+  // gamified engagement silently drops the answer from the consultant's report:
+  // the taker cannot re-enter it once status flips to completed. Keys mirror the
+  // standard form: `beh:<id>`, `open:<kind>`, `open5:<kind>`, `tenure`, `critical`.
+  const failedRef = useRef<Set<string>>(new Set());
+  const openBlockRetryRef = useRef<(() => Promise<void>) | null>(null);
   // Mirror of `answers` so handlers can read the latest value WITHOUT putting the
   // save side-effect inside the setAnswers updater (which delayed the visual
   // highlight - the selection now paints immediately and the save runs after).
@@ -235,8 +248,14 @@ export function GamifiedRaterForm({ ctx, preview = false }: { ctx: RaterContext;
             is_na: next.is_na,
             comment_text: next.comment_text.trim() || null,
           });
-          if (!res.ok) setSaveState("failed");
+          if (!res.ok) {
+            failedRef.current.add(`beh:${behaviorId}`);
+            setSaveState("failed");
+            return;
+          }
+          failedRef.current.delete(`beh:${behaviorId}`);
         } catch {
+          failedRef.current.add(`beh:${behaviorId}`);
           setSaveState("failed");
         }
       })()
@@ -250,8 +269,14 @@ export function GamifiedRaterForm({ ctx, preview = false }: { ctx: RaterContext;
       (async () => {
         try {
           const res = await saveReflectOpenResponse({ token: ctx.rater.access_token, kind, text });
-          if (!res.ok) setSaveState("failed");
+          if (!res.ok) {
+            failedRef.current.add(`open:${kind}`);
+            setSaveState("failed");
+            return;
+          }
+          failedRef.current.delete(`open:${kind}`);
         } catch {
+          failedRef.current.add(`open:${kind}`);
           setSaveState("failed");
         }
       })()
@@ -319,42 +344,61 @@ export function GamifiedRaterForm({ ctx, preview = false }: { ctx: RaterContext;
     openTimerRef.current.set(kind, timer);
   };
 
+  const persistCritical = (ids: string[]) => {
+    if (preview) return Promise.resolve();
+    setSaveState("saving");
+    return track(
+      (async () => {
+        try {
+          const res = await saveReflectCriticalPicks({ token: ctx.rater.access_token, competency_ids: ids });
+          if (!res.ok) {
+            failedRef.current.add("critical");
+            setSaveState("failed");
+            return;
+          }
+          failedRef.current.delete("critical");
+        } catch {
+          failedRef.current.add("critical");
+          setSaveState("failed");
+        }
+      })()
+    );
+  };
+
   const toggleCritical = (competencyId: string) => {
     setCriticalPicks((prev) => {
       const next = new Set(prev);
       if (next.has(competencyId)) next.delete(competencyId);
       else next.add(competencyId);
-      if (!preview) {
-        setSaveState("saving");
-        track(
-          (async () => {
-            try {
-              const res = await saveReflectCriticalPicks({ token: ctx.rater.access_token, competency_ids: Array.from(next) });
-              if (!res.ok) setSaveState("failed");
-            } catch {
-              setSaveState("failed");
-            }
-          })()
-        );
-      }
+      persistCritical(Array.from(next));
       return next;
     });
   };
 
-  const setTenure = (next: ReflectRaterTenure) => {
-    setTenureState(next);
-    if (preview) return;
+  const persistTenure = (next: ReflectRaterTenure) => {
+    if (preview) return Promise.resolve();
     setSaveState("saving");
-    track(
+    return track(
       (async () => {
         try {
           const res = await saveReflectRaterTenure({ token: ctx.rater.access_token, tenure: next });
-          if (!res.ok) setSaveState("failed");
+          if (!res.ok) {
+            failedRef.current.add("tenure");
+            setSaveState("failed");
+            return;
+          }
+          failedRef.current.delete("tenure");
         } catch {
+          failedRef.current.add("tenure");
           setSaveState("failed");
         }
       })()
     );
+  };
+
+  const setTenure = (next: ReflectRaterTenure) => {
+    setTenureState(next);
+    persistTenure(next);
   };
 
   const submit = () => {
@@ -363,10 +407,11 @@ export function GamifiedRaterForm({ ctx, preview = false }: { ctx: RaterContext;
       return;
     }
     startSubmitting(async () => {
+      // 1. Flush debounced comment + Start/Stop/Continue timers.
       for (const [bid, timer] of Array.from(commentTimerRef.current.entries())) {
         clearTimeout(timer);
         commentTimerRef.current.delete(bid);
-        const a = answers[bid];
+        const a = answersRef.current[bid];
         if (a) persistOne(bid, a);
       }
       for (const [kind, timer] of Array.from(openTimerRef.current.entries())) {
@@ -375,8 +420,50 @@ export function GamifiedRaterForm({ ctx, preview = false }: { ctx: RaterContext;
         const key = kind === "continue" ? "continue_" : kind;
         persistOpen(kind, openText[key]);
       }
+
+      // 2. Await every in-flight save (the freshly fired ones included).
       const inflight = Array.from(inflightRef.current.values());
       if (inflight.length > 0) await Promise.all(inflight);
+
+      // 2b. Re-try saves that FAILED earlier - awaiting in-flight alone would
+      //     silently drop them behind the completion screen (they are in no queue).
+      const failedKeys = Array.from(failedRef.current);
+      if (failedKeys.length > 0) {
+        let retryOpenBlock = false;
+        for (const key of failedKeys) {
+          if (key.startsWith("beh:")) {
+            const bid = key.slice(4);
+            const a = answersRef.current[bid];
+            if (a) persistOne(bid, a);
+          } else if (key.startsWith("open5:")) {
+            retryOpenBlock = true; // the 5-questions block owns its text; retry via its handle
+          } else if (key.startsWith("open:")) {
+            const kind = key.slice(5) as "start" | "stop" | "continue";
+            const sk = kind === "continue" ? "continue_" : kind;
+            persistOpen(kind, openText[sk]);
+          } else if (key === "tenure") {
+            if (tenure) persistTenure(tenure);
+          } else if (key === "critical") {
+            persistCritical(Array.from(criticalPicks));
+          }
+        }
+        if (retryOpenBlock && openBlockRetryRef.current) {
+          await openBlockRetryRef.current();
+        }
+        const retryInflight = Array.from(inflightRef.current.values());
+        if (retryInflight.length > 0) await Promise.all(retryInflight);
+      }
+
+      // 3. REFUSE completion while anything is still unsaved - completing anyway
+      //    would silently drop those answers behind a success screen.
+      if (failedRef.current.size > 0) {
+        setUnsavedCount(failedRef.current.size);
+        setSaveState("failed");
+        return;
+      }
+      setUnsavedCount(0);
+
+      // 4. Now safe to mark complete.
       const res = await markReflectRaterComplete(ctx.rater.access_token);
       if (!res.ok) {
         setSaveState("failed");
@@ -697,6 +784,13 @@ export function GamifiedRaterForm({ ctx, preview = false }: { ctx: RaterContext;
                 ar={rtl}
                 initial={ctx.openQuestions}
                 registerInflight={(p) => track(Promise.resolve(p).then(() => {}, () => {}))}
+                onSaveResult={(kind, ok) => {
+                  if (ok) failedRef.current.delete(`open5:${kind}`);
+                  else failedRef.current.add(`open5:${kind}`);
+                }}
+                registerRetry={(fn) => {
+                  openBlockRetryRef.current = fn;
+                }}
               />
             </div>
 
@@ -714,6 +808,9 @@ export function GamifiedRaterForm({ ctx, preview = false }: { ctx: RaterContext;
               )}
             </button>
             {!allRated && <p className="text-center text-xs text-amber-600">{t.needAll}</p>}
+            {unsavedCount > 0 && (
+              <p className="text-center text-xs font-medium text-rose-600">{t.couldNotSave(unsavedCount)}</p>
+            )}
           </div>
         )}
       </div>

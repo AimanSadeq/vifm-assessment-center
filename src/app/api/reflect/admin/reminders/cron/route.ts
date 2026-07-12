@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
     .eq("status", "live");
 
   const summary: Array<{ engagement_id: string; name: string; sent: number; skipped: number }> = [];
+  const failed: Array<{ engagement_id: string; name: string; error: string }> = [];
   let totalSent = 0;
   let totalSkipped = 0;
 
@@ -45,6 +46,10 @@ export async function POST(req: NextRequest) {
       summary.push({ engagement_id: e.id, name: e.name, sent: res.sent, skipped: res.skipped });
       totalSent += res.sent;
       totalSkipped += res.skipped;
+    } else {
+      // A read/paginate failure for one engagement must be visible - otherwise
+      // its raters silently never get reminded and the cron looks healthy.
+      failed.push({ engagement_id: e.id, name: e.name, error: res.error });
     }
   }
 
@@ -58,6 +63,8 @@ export async function POST(req: NextRequest) {
       engagements_processed: (engagements ?? []).length,
       total_sent: totalSent,
       total_skipped: totalSkipped,
+      engagements_failed: failed.length,
+      failed,
     },
   });
 
@@ -66,6 +73,8 @@ export async function POST(req: NextRequest) {
     engagements_processed: (engagements ?? []).length,
     total_sent: totalSent,
     total_skipped: totalSkipped,
+    engagements_failed: failed.length,
     by_engagement: summary,
+    failed,
   });
 }

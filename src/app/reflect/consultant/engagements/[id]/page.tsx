@@ -468,7 +468,7 @@ export default async function ReflectEngagementDetailPage({ params }: Params) {
         </section>
 
         {/* Rater invitations - per-rater links + resend (email-independent fallback) */}
-        {raterCount > 0 && <RaterInvitations engagementId={engagement.id} raters={raters} />}
+        {raterCount > 0 && <RaterInvitations engagementId={engagement.id} raters={raters} status={engagement.status} />}
       </main>
     </div>
   );

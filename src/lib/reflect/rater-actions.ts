@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import { findRaterByToken } from "./rater-access";
 import { sendReflectEmail, roleLabel } from "./email";
 
@@ -32,8 +33,16 @@ async function requireRater(token: string) {
     .eq("id", participant.engagement_id)
     .maybeSingle<{ id: string; status: string; field_window_end: string | null }>();
   if (!engagement) throw new Error("Engagement missing");
-  if (!["draft", "live"].includes(engagement.status)) {
-    throw new Error(`Engagement is ${engagement.status} - cannot accept new responses`);
+  // Require 'live' - NOT 'draft'. A draft engagement's framework may still be
+  // unapproved (migration 00182) and its behaviours are still editable, and the
+  // engagement detail page hands out per-rater "Copy link" URLs while the status
+  // is still draft. Accepting draft writes let a consultant collect real scored
+  // responses against an un-reviewed AI framework, bypassing the approval gate
+  // that only launchReflectEngagement enforces. 'live' is reachable ONLY through
+  // launch, which requires framework approval. (A genuine pre-launch preview uses
+  // the synthetic no-save /preview-rater path, not a real token.)
+  if (engagement.status !== "live") {
+    throw new Error(`Engagement is ${engagement.status} - not open for responses`);
   }
   // Enforce the field window: even while still 'live', reject writes once the
   // configured close date has passed, so a rater cannot re-open a stale link
@@ -579,25 +588,35 @@ export async function sendReflectRemindersForEngagement(
   const cutoff = new Date(Date.now() - staleHours * 60 * 60 * 1000).toISOString();
 
   const sb = createServiceClient();
-  const { data: raters } = await sb
-    .from("reflect_raters")
-    .select("id, status, invited_at, last_active_at, last_reminder_at, reflect_participants!inner(engagement_id)")
-    .eq("reflect_participants.engagement_id", engagementId)
-    .in("status", ["pending", "started"])
-    // Only nag raters who were actually INVITED - a never-invited rater has
-    // NULL last_reminder_at/last_active_at so both debounce checks pass, and
-    // the cron would send them a reminder for an invitation they never got.
-    .not("invited_at", "is", null)
-    .returns<
-      Array<{
-        id: string;
-        status: string;
-        invited_at: string | null;
-        last_active_at: string | null;
-        last_reminder_at: string | null;
-      }>
-    >();
-  if (!raters || raters.length === 0) return { ok: true, sent: 0, skipped: 0 };
+  type ReminderRater = {
+    id: string;
+    status: string;
+    invited_at: string | null;
+    last_active_at: string | null;
+    last_reminder_at: string | null;
+  };
+  // Paginate (deterministic .order('id')): a large engagement can have >1000
+  // invited raters, and an unpaginated read caps at 1000 in arbitrary order, so
+  // the same tail of raters would be silently never reminded on every run.
+  let raters: ReminderRater[];
+  try {
+    raters = await fetchAllPages<ReminderRater>((from, to) =>
+      sb
+        .from("reflect_raters")
+        .select("id, status, invited_at, last_active_at, last_reminder_at, reflect_participants!inner(engagement_id)")
+        .eq("reflect_participants.engagement_id", engagementId)
+        .in("status", ["pending", "started"])
+        // Only nag raters who were actually INVITED - a never-invited rater has
+        // NULL last_reminder_at/last_active_at so both debounce checks pass, and
+        // the cron would send them a reminder for an invitation they never got.
+        .not("invited_at", "is", null)
+        .order("id")
+        .range(from, to) as unknown as PromiseLike<{ data: ReminderRater[] | null; error: { message: string } | null }>,
+    );
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed to load raters." };
+  }
+  if (raters.length === 0) return { ok: true, sent: 0, skipped: 0 };
 
   let sent = 0;
   let skipped = 0;

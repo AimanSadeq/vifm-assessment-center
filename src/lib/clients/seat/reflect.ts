@@ -16,6 +16,7 @@
 
 import { drawAllocation, releaseAllocation, type Allocation } from "../allocations";
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import { sendReflectEmail, roleLabel } from "@/lib/reflect/email";
 
 export type SeatDelegate = { email: string; name?: string };
@@ -293,26 +294,38 @@ async function sendShellInvitations(
     }>();
   if (!eng) return 0;
 
-  const { data: raters } = await sb
-    .from("reflect_raters")
-    .select(
-      "id, rater_role, full_name, email, language_preference, access_token, invited_at, reflect_participants!inner(engagement_id, full_name, full_name_ar)"
-    )
-    .eq("reflect_participants.engagement_id", engagementId)
-    .is("invited_at", null)
-    .returns<
-      Array<{
-        id: string;
-        rater_role: RaterRole;
-        full_name: string;
-        email: string;
-        language_preference: Lang;
-        access_token: string;
-        invited_at: string | null;
-        reflect_participants: { engagement_id: string; full_name: string; full_name_ar: string | null };
-      }>
-    >();
-  if (!raters || raters.length === 0) return 0;
+  type ShellRater = {
+    id: string;
+    rater_role: RaterRole;
+    full_name: string;
+    email: string;
+    language_preference: Lang;
+    access_token: string;
+    invited_at: string | null;
+    reflect_participants: { engagement_id: string; full_name: string; full_name_ar: string | null };
+  };
+  // Paginate (deterministic .order('id')): a large shell can have >1000 uninvited
+  // raters, and an unpaginated read caps at 1000 in arbitrary order, so a single
+  // self-serve "invite all" would silently email only the first ~1000 and leave
+  // the rest uninvited with no error. The read runs BEFORE any emailing (which
+  // stamps invited_at), so the page window is stable.
+  let raters: ShellRater[];
+  try {
+    raters = await fetchAllPages<ShellRater>((from, to) =>
+      sb
+        .from("reflect_raters")
+        .select(
+          "id, rater_role, full_name, email, language_preference, access_token, invited_at, reflect_participants!inner(engagement_id, full_name, full_name_ar)"
+        )
+        .eq("reflect_participants.engagement_id", engagementId)
+        .is("invited_at", null)
+        .order("id")
+        .range(from, to) as unknown as PromiseLike<{ data: ShellRater[] | null; error: { message: string } | null }>,
+    );
+  } catch {
+    return 0;
+  }
+  if (raters.length === 0) return 0;
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "";
   const now = new Date().toISOString();

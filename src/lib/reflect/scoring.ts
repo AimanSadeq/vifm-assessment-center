@@ -773,8 +773,24 @@ export async function computeParticipantScoring(
     answered: 0,
     unanswered: 0,
   };
+  // Anonymity gate (mirrors verbatims + group means): a rater's tenure bucket is a
+  // strong quasi-identifier the participant usually knows per colleague, so a
+  // SENSITIVE group (peer/direct_report/skip_level/other) below min_n contributors
+  // must not be published - otherwise a lone peer's "1 · 2-5 yr" re-exposes exactly
+  // the who-responded signal the group-mean/verbatim floor hides. Self excluded;
+  // manager is identified anyway, so exempt.
+  const tenureContribByRole = new Map<ReflectRaterRole, number>();
+  for (const r of raters) {
+    if (r.rater_role === "self" || r.tenure === null) continue;
+    tenureContribByRole.set(r.rater_role, (tenureContribByRole.get(r.rater_role) ?? 0) + 1);
+  }
   for (const r of raters) {
     if (r.rater_role === "self") continue;
+    // Suppress a below-floor SENSITIVE group entirely (both its answered and
+    // unanswered tenure), so the card can't reveal a sub-threshold group exists.
+    if (SENSITIVE.has(r.rater_role) && (tenureContribByRole.get(r.rater_role) ?? 0) < min_n) {
+      continue;
+    }
     if (r.tenure === null) {
       tenure_breakdown.unanswered += 1;
     } else {
@@ -900,13 +916,21 @@ export async function computeCohortScoring(
     }>();
   if (!engagement) return null;
 
-  const { data: participants } = await sb
-    .from("reflect_participants")
-    .select("id, full_name")
-    .eq("engagement_id", engagementId)
-    .order("full_name");
+  // Paginate (full_name then the unique id as a deterministic tiebreak): an
+  // unpaginated read caps at 1000, silently dropping participants 1001+ from
+  // every cohort statistic + the PDF heatmap. The adjacent rater-count read is
+  // already paginated the same way.
+  const participants = await fetchAllPages<{ id: string; full_name: string }>((from, to) =>
+    sb
+      .from("reflect_participants")
+      .select("id, full_name")
+      .eq("engagement_id", engagementId)
+      .order("full_name")
+      .order("id")
+      .range(from, to) as unknown as PromiseLike<{ data: { id: string; full_name: string }[] | null; error: { message: string } | null }>,
+  ).catch(() => [] as { id: string; full_name: string }[]);
 
-  if (!participants || participants.length === 0) {
+  if (participants.length === 0) {
     return {
       engagement_id: engagement.id,
       engagement_name: engagement.name,

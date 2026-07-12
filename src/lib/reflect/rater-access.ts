@@ -174,13 +174,16 @@ export async function loadRaterByToken(token: string): Promise<RaterContext | nu
     .maybeSingle<EngagementRow & { field_window_end: string | null }>();
   if (!engagement) return null;
 
-  // Writable mirrors requireRater's gate: draft/live AND the field window is
-  // still open. When false the respond page renders a read-only "closed"
-  // state instead of an interactive form whose every save would be rejected.
+  // Writable mirrors requireRater's gate: 'live' (NOT draft) AND the field window
+  // is still open. A draft engagement may have an unapproved framework (00182), so
+  // serving an interactive form there would let responses land before approval;
+  // 'live' is only reachable via launch, which enforces approval. When false the
+  // respond page renders a read-only "closed" state instead of an interactive form
+  // whose every save would be rejected by requireRater.
   const windowOpen =
     !engagement.field_window_end ||
     new Date(engagement.field_window_end).getTime() >= Date.now();
-  const writable = ["draft", "live"].includes(engagement.status) && windowOpen;
+  const writable = engagement.status === "live" && windowOpen;
 
   const { data: framework } = await sb
     .from("reflect_frameworks")

@@ -44,11 +44,13 @@ export default async function ReflectRespondPage({ params }: Params) {
     );
   }
 
-  // Feedback window closed (engagement not draft/live, or field_window_end
-  // passed): every write would be rejected server-side, so show a read-only
-  // "closed" state instead of a fully interactive form that errors on save.
+  // Not writable: either the engagement hasn't launched yet (draft - the window
+  // has NOT opened), or it is past collection (field window closed / scoring /
+  // complete). Every write would be rejected server-side, so show a read-only
+  // state instead of a form that errors on save - with copy matched to WHICH case.
   if (!ctx.writable) {
     const rtl = ctx.rater.language_preference === "ar";
+    const notYetOpen = ctx.engagement.status === "draft";
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-6" dir={rtl ? "rtl" : "ltr"}>
         <div className="max-w-lg text-center">
@@ -56,12 +58,22 @@ export default async function ReflectRespondPage({ params }: Params) {
             <Aperture className="h-7 w-7 text-muted-foreground" />
           </div>
           <h1 className="text-2xl font-semibold text-primary mb-3">
-            {rtl ? "أُغلقت نافذة التقييم" : "This feedback window has closed"}
+            {notYetOpen
+              ? rtl
+                ? "لم تُفتح نافذة التقييم بعد"
+                : "This feedback window hasn't opened yet"
+              : rtl
+                ? "أُغلقت نافذة التقييم"
+                : "This feedback window has closed"}
           </h1>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            {rtl
-              ? `لم يعد بإمكاننا قبول تقييمات جديدة لـ ${ctx.participant.full_name}. إذا كنت تعتقد أن هذا خطأ، يُرجى التواصل مع الجهة التي دعتك.`
-              : `We can no longer accept new feedback for ${ctx.participant.full_name}. If you think this is a mistake, please contact whoever invited you.`}
+            {notYetOpen
+              ? rtl
+                ? `لم يبدأ جمع التقييمات لـ ${ctx.participant.full_name} بعد. ستصلك رسالة عند فتح النافذة - يُرجى التواصل مع الجهة التي دعتك إذا كان لديك استفسار.`
+                : `Feedback collection for ${ctx.participant.full_name} hasn't started yet. You'll be notified when it opens - please contact whoever invited you if you have any questions.`
+              : rtl
+                ? `لم يعد بإمكاننا قبول تقييمات جديدة لـ ${ctx.participant.full_name}. إذا كنت تعتقد أن هذا خطأ، يُرجى التواصل مع الجهة التي دعتك.`
+                : `We can no longer accept new feedback for ${ctx.participant.full_name}. If you think this is a mistake, please contact whoever invited you.`}
           </p>
           <div className="mt-6 inline-flex items-center gap-2 text-xs text-muted-foreground">
             <Aperture className="h-3.5 w-3.5" />

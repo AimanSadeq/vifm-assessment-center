@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import { timingSafeStrEqual } from "@/lib/utils/secret";
 import { sendEmail } from "@/lib/integrations/email";
 
@@ -29,14 +30,19 @@ export async function POST(req: Request) {
   let due = 0;
   let notified = 0;
   try {
-    const { data, error } = await svc
-      .from("proposals")
-      .select("id, client_name, contact_email, sent_to, title, access_token, status, pricing_mode, issued_at, sent_at, created_at, licence_data")
-      .eq("pricing_mode", "licence")
-      .in("status", ["issued", "won"]);
-    if (error) throw error;
+    // Page (deterministic .order('id')): an unpaginated read caps at 1000, so a
+    // large book of licences past 1000 would silently never get renewal reminders.
+    const data = await fetchAllPages<Record<string, unknown>>((from, to) =>
+      svc
+        .from("proposals")
+        .select("id, client_name, contact_email, sent_to, title, access_token, status, pricing_mode, issued_at, sent_at, created_at, licence_data")
+        .eq("pricing_mode", "licence")
+        .in("status", ["issued", "won"])
+        .order("id")
+        .range(from, to),
+    );
 
-    for (const row of (data ?? []) as Array<Record<string, unknown>>) {
+    for (const row of data) {
       const base = (row.issued_at as string) || (row.sent_at as string) || (row.created_at as string);
       if (!base) continue;
       // The first renewal is base + 1 year; roll forward to the NEXT anniversary

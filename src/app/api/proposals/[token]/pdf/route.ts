@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { findProposalByToken } from "@/lib/proposals/service";
+import { findProposalByToken, isProposalClientVisible, isProposalOfferExpired } from "@/lib/proposals/service";
 import { buildProposalHtml, proposalRef } from "@/lib/proposals/proposal-html";
 import { buildProposalHtmlAr } from "@/lib/proposals/proposal-html-ar";
 import { loadProposalEvidence } from "@/lib/proposals/evidence-summary";
@@ -11,13 +11,14 @@ export const dynamic = "force-dynamic";
 
 /**
  * GET /api/proposals/[token]/pdf - public, token-gated client download.
- * Only ISSUED proposals are downloadable by token (a draft isn't client-facing).
- * The unguessable access_token + this status gate protect it; no account needed.
- * Auth is bypassed for this path in middleware.
+ * Serves only a client-facing status (issued/won) that hasn't expired: a draft
+ * isn't client-facing, a `lost` proposal has been withdrawn/superseded, and a
+ * past-validity offer must not be downloadable. The unguessable access_token +
+ * these gates protect it; no account needed. Auth is bypassed for this path.
  */
 export async function GET(req: Request, { params }: { params: { token: string } }) {
   const proposal = await findProposalByToken(params.token);
-  if (!proposal || proposal.status === "draft") {
+  if (!proposal || !isProposalClientVisible(proposal) || isProposalOfferExpired(proposal)) {
     return NextResponse.json({ error: "Proposal not found" }, { status: 404 });
   }
   const language = new URL(req.url).searchParams.get("language") === "ar" ? "ar" : "en";

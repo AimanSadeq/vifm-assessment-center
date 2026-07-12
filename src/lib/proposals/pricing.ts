@@ -20,7 +20,9 @@ export type LineItem = {
 };
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
-const clampPct = (p: number) => Math.max(0, Math.min(100, Number.isFinite(p) ? p : 0));
+/** Clamp a discount percentage to [0, 100] (and coerce NaN/Infinity to 0), so a
+ *  stored discount_pct can never disagree with the clamped discount AMOUNT. */
+export const clampPct = (p: number) => Math.max(0, Math.min(100, Number.isFinite(p) ? p : 0));
 
 /** Build line items from the scope + a service->unitRate map. Zero-seat rows are
  *  dropped (they aren't part of the commercials). */

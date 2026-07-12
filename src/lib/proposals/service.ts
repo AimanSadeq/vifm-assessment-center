@@ -4,7 +4,9 @@
 // proposal. Tolerant: returns [] / null if migration 00174 isn't applied yet.
 
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import {
+  clampPct,
   computeLineItems,
   computeTotals,
   type LineItem,
@@ -69,6 +71,32 @@ export type Proposal = {
 };
 
 export type ProposalRate = { serviceKey: string; unitRate: number; currency: string; label: string | null };
+
+/**
+ * Which statuses a CLIENT token link may serve. Allowlist (not a `!== "draft"`
+ * blocklist): only a live/accepted offer is client-facing. `draft` (WIP) and
+ * `lost` (dead / withdrawn / superseded-by-a-revision) never serve - so marking a
+ * proposal `lost` REVOKES its client link, the only revoke lever the module has.
+ */
+export function isProposalClientVisible(p: { status: ProposalStatus }): boolean {
+  return p.status === "issued" || p.status === "won";
+}
+
+/** True once a proposal's validity date has passed (date-only, pinned to noon UTC
+ *  like the render, so it never drifts a day with the server timezone). */
+export function isProposalExpired(p: { validUntil: string | null }): boolean {
+  if (!p.validUntil) return false;
+  const until = new Date(`${p.validUntil.slice(0, 10)}T12:00:00Z`).getTime();
+  return Number.isFinite(until) && until < Date.now();
+}
+
+/** Whether a client should be shown an EXPIRED notice. Only an OUTSTANDING `issued`
+ *  offer expires - a `won` deal is closed, so its original offer-validity date is
+ *  moot AND the renewal flow deliberately re-points a won client at this page long
+ *  after that date (a 12-month anniversary vs a 30-day offer window). */
+export function isProposalOfferExpired(p: { status: ProposalStatus; validUntil: string | null }): boolean {
+  return p.status === "issued" && isProposalExpired(p);
+}
 
 function missing(err: { code?: string } | null): boolean {
   return err?.code === "42P01" || err?.code === "PGRST205" || err?.code === "PGRST204";
@@ -285,7 +313,7 @@ async function buildPricedSnapshot(input: ProposalInput): Promise<PricedSnapshot
       scope: [...servicesScope, ...engScopeRow],
       lineItems: [...servicesLineItems, ...engLineItems],
       subtotal: servicesSubtotal + engagementSubtotal,
-      discountPct: input.discountPct || 0,
+      discountPct: clampPct(input.discountPct || 0),
       total: servicesTotal + engagementTotal, // residency already inside servicesTotal
     };
   }
@@ -370,7 +398,7 @@ async function buildPricedSnapshot(input: ProposalInput): Promise<PricedSnapshot
     scope: input.scope,
     lineItems: items,
     subtotal,
-    discountPct: input.discountPct || 0,
+    discountPct: clampPct(input.discountPct || 0),
     total,
   };
 }
@@ -638,9 +666,22 @@ export async function markProposalSent(id: string, to: string): Promise<void> {
 
 export async function loadProposals(): Promise<Proposal[]> {
   const svc = createServiceClient();
-  const { data, error } = await svc.from("proposals").select("*").order("created_at", { ascending: false }).limit(500);
-  if (error || !data) return [];
-  return (data as Array<Record<string, unknown>>).map(rowToProposal);
+  // Page the full set (created_at desc, id as a unique tiebreak): the dashboard
+  // computes ARR / win-rate / pipeline over EVERY proposal, so a fixed .limit(500)
+  // silently dropped the oldest rows and distorted the headline commercial KPIs.
+  try {
+    const rows = await fetchAllPages<Record<string, unknown>>((from, to) =>
+      svc
+        .from("proposals")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .order("id")
+        .range(from, to),
+    );
+    return rows.map(rowToProposal);
+  } catch {
+    return [];
+  }
 }
 
 export async function loadProposal(id: string): Promise<Proposal | null> {

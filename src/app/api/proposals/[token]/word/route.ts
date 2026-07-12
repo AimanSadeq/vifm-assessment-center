@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { findProposalByToken } from "@/lib/proposals/service";
+import { findProposalByToken, isProposalClientVisible, isProposalOfferExpired } from "@/lib/proposals/service";
 import { buildProposalHtml } from "@/lib/proposals/proposal-html";
 import { buildProposalHtmlAr } from "@/lib/proposals/proposal-html-ar";
 import { loadProposalEvidence } from "@/lib/proposals/evidence-summary";
@@ -11,11 +11,12 @@ export const dynamic = "force-dynamic";
 
 /**
  * GET /api/proposals/[token]/word - public, token-gated Word (.doc) download.
- * Mirrors the PDF route: only ISSUED proposals are downloadable by token.
+ * Mirrors the PDF route: serves only a client-facing (issued/won), non-expired
+ * proposal; drafts, withdrawn/superseded (lost), and past-validity offers 404.
  */
 export async function GET(req: Request, { params }: { params: { token: string } }) {
   const proposal = await findProposalByToken(params.token);
-  if (!proposal || proposal.status === "draft") {
+  if (!proposal || !isProposalClientVisible(proposal) || isProposalOfferExpired(proposal)) {
     return NextResponse.json({ error: "Proposal not found" }, { status: 404 });
   }
   const language = new URL(req.url).searchParams.get("language") === "ar" ? "ar" : "en";

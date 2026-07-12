@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BarChart3, ArrowRight, Boxes, Layers3, Ticket, CheckCircle2, Users, FileText } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import { resolvePortalAccess } from "@/lib/clients/portal-access";
 import { getAllocationsForOrg, type Allocation } from "@/lib/clients/allocations";
 import { portalService } from "@/lib/clients/portal-services";
@@ -163,14 +164,16 @@ export default async function PortalInsightsPage({ searchParams }: { searchParam
   );
   let bundleCands: BundleCand[] = [];
   if (bundles.length > 0) {
-    try {
-      const { data } = await sb
+    // Page (deterministic .order('id')): the headline totalCompleted below counts
+    // over this set, so an unpaginated read would undercount a large org past 1000.
+    bundleCands = await fetchAllPages<BundleCand>((from, to) =>
+      sb
         .from("bundle_candidates")
         .select("id, full_name, status, completed_at, bespoke_service_id")
         .in("bespoke_service_id", bundles.map((b) => b.id))
-        .order("created_at", { ascending: false });
-      bundleCands = (data ?? []) as BundleCand[];
-    } catch { /* pre-migration */ }
+        .order("id")
+        .range(from, to),
+    ).catch(() => [] as BundleCand[]);
   }
 
   // Headline numbers.

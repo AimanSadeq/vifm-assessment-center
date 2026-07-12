@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Boxes, Languages, BrainCircuit, Layers, BadgeCheck, UserSearch, Compass, Aperture, ArrowRight } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import { resolvePortalAccess } from "@/lib/clients/portal-access";
 import { loadBespokeServices } from "@/lib/bespoke/services";
 import { getAllocationsForOrg } from "@/lib/clients/allocations";
@@ -67,16 +68,19 @@ export default async function PortalBundlePage({
   const personaScope = (bundleCfg.persona?.competencyIds ?? []).filter((id) => personaNameById.has(id));
   const personaScoped = personaScope.length > 0 && personaScope.length < BEHAVIORAL_COMPETENCIES.length;
 
-  // One-sitting candidates for this bundle (tolerant of 00172 not applied).
-  let candidates: BundleCand[] = [];
-  try {
-    const { data } = await createServiceClient()
-      .from("bundle_candidates")
-      .select("id, full_name, email, status, completed_at")
-      .eq("bespoke_service_id", bundle.id)
-      .order("created_at", { ascending: false });
-    candidates = (data ?? []) as BundleCand[];
-  } catch { /* pre-migration */ }
+  // One-sitting candidates for this bundle (tolerant of 00172 not applied). Paged
+  // (deterministic .order('id')) so a large bundle's roster + counts stay exact;
+  // re-sort newest-first for DISPLAY (id is a random uuid paging key).
+  const candidates = (
+    await fetchAllPages<BundleCand & { created_at: string }>((from, to) =>
+      createServiceClient()
+        .from("bundle_candidates")
+        .select("id, full_name, email, status, completed_at, created_at")
+        .eq("bespoke_service_id", bundle.id)
+        .order("id")
+        .range(from, to),
+    ).catch(() => [] as (BundleCand & { created_at: string })[])
+  ).sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
 
   const services = bundle.service_keys
     .map((key) => PORTAL_SERVICES.find((s) => s.id === key))

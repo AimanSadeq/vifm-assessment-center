@@ -16,7 +16,7 @@
 
 import { drawAllocation, releaseAllocation, type Allocation } from "../allocations";
 import { createServiceClient } from "@/lib/supabase/server";
-import { fetchAllPages } from "@/lib/ara/paginate";
+import { fetchAllPages, chunkIds } from "@/lib/ara/paginate";
 import { sendReflectEmail, roleLabel } from "@/lib/reflect/email";
 
 export type SeatDelegate = { email: string; name?: string };
@@ -506,56 +506,57 @@ export async function reflectSeatActivity(
     const engIds = engRows.map((e) => e.id);
     const shellId = engRows[0]?.id ?? null;
 
-    // Participants in scope (the assessed leaders = the seats consumed).
-    const { data: parts } = await sb
-      .from("reflect_participants")
-      .select("id, full_name, status, created_at, updated_at")
-      .in("engagement_id", engIds);
-    const partRows = (parts ?? []) as Array<{
-      id: string;
-      full_name: string;
-      status: string;
-      created_at: string;
-      updated_at: string;
-    }>;
+    // Participants in scope (the assessed leaders = the seats consumed). Page the
+    // set (deterministic .order('id')): an unpaginated read caps at 1000, so a
+    // large cohort would truncate partIds and undercount the whole seat funnel.
+    type PartRow = { id: string; full_name: string; status: string; created_at: string; updated_at: string };
+    const partRows = await fetchAllPages<PartRow>((from, to) =>
+      sb
+        .from("reflect_participants")
+        .select("id, full_name, status, created_at, updated_at")
+        .in("engagement_id", engIds)
+        .order("id")
+        .range(from, to),
+    ).catch(() => [] as PartRow[]);
     const partIds = partRows.map((p) => p.id);
 
-    // Rater funnel: invited (invited_at set) / started (first_opened_at set =
-    // the rater opened the form, distinct from completed).
+    // Rater funnel: invited (invited_at set) / started (first_opened_at set = the
+    // rater opened the form). CHUNK the participant-id .in(): a >1000-id IN list is
+    // itself a problem, and each rater maps to exactly one participant so summing
+    // per-chunk head counts is exact (no double-count).
     let invited = 0;
     let started = 0;
-    if (partIds.length > 0) {
+    for (const chunk of chunkIds(partIds)) {
       const { count: invCount } = await sb
         .from("reflect_raters")
         .select("id", { count: "exact", head: true })
-        .in("participant_id", partIds)
+        .in("participant_id", chunk)
         .not("invited_at", "is", null);
-      invited = invCount ?? 0;
+      invited += invCount ?? 0;
 
       const { count: openCount } = await sb
         .from("reflect_raters")
         .select("id", { count: "exact", head: true })
-        .in("participant_id", partIds)
+        .in("participant_id", chunk)
         .not("first_opened_at", "is", null);
-      started = openCount ?? 0;
+      started += openCount ?? 0;
     }
 
-    // Completed rows: a participant whose report has been released / closed.
-    const completedRows: SeatActivityRow[] = partRows
+    // Completed participants: a report released / closed. Count over the FULL
+    // paged set (invited/started are already exact, so completed must be too - a
+    // 100-sliced count would show a wrong, internally inconsistent funnel); slice
+    // only the display rows.
+    const completedParts = partRows
       .filter((p) => p.status === "report_released" || p.status === "closed")
-      .sort((a, b) => (b.updated_at || b.created_at).localeCompare(a.updated_at || a.created_at))
-      .slice(0, 100)
-      .map((p) => ({
-        id: p.id,
-        name: p.full_name?.trim() || "Participant",
-        date: p.updated_at || p.created_at,
-        summary: p.status === "report_released" ? "Report released" : "Feedback closed",
-        reportPath: `/api/reflect/reports/${p.id}/pdf`,
-      }));
-
-    // Count completed participants BEFORE prepending the cohort row, so the
-    // cohort link never inflates the completed metric.
-    const completedParticipants = completedRows.length;
+      .sort((a, b) => (b.updated_at || b.created_at).localeCompare(a.updated_at || a.created_at));
+    const completedParticipants = completedParts.length;
+    const completedRows: SeatActivityRow[] = completedParts.slice(0, 100).map((p) => ({
+      id: p.id,
+      name: p.full_name?.trim() || "Participant",
+      date: p.updated_at || p.created_at,
+      summary: p.status === "report_released" ? "Report released" : "Feedback closed",
+      reportPath: `/api/reflect/reports/${p.id}/pdf`,
+    }));
 
     // A cohort report row for the primary shell, so the portal can link the
     // engagement-level view alongside the per-participant reports.

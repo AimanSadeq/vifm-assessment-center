@@ -31,8 +31,12 @@ export function ArcIndividualVoucher({
   const [result, setResult] = useState<{ mode: Mode; codes: IssuedCode[]; seats: number } | null>(null);
   useEffect(() => setOrigin(window.location.origin), []);
 
-  const redeemUrl = (c: IssuedCode) =>
-    `${origin}/ara/redeem?code=${encodeURIComponent(c.code)}${c.email ? `&email=${encodeURIComponent(c.email)}` : ""}`;
+  // Only the opaque CODE travels in the URL. The redeem page (/ara/redeem) prefills
+  // from the code server-side and never reads an email param, so appending the
+  // delegate's email was dead weight that leaked PII via logs / browser history /
+  // the Referer header - matching the strip already applied in voucher-issue.ts and
+  // role-readiness redeemUrlFor(). The email is still shown in the on-screen roster.
+  const redeemUrl = (c: IssuedCode) => `${origin}/ara/redeem?code=${encodeURIComponent(c.code)}`;
 
   const issue = () =>
     start(async () => {

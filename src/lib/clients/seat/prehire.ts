@@ -20,6 +20,7 @@ import "server-only";
 // advisory recommendation, plus a reportPath the portal links to.
 
 import { drawAllocation, releaseAllocation, type Allocation } from "../allocations";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import { createServiceClient } from "@/lib/supabase/server";
 import { sendEmail, isEmailConfigured } from "@/lib/integrations/email";
 import { logPrehireEvent } from "@/lib/prehire/audit";
@@ -315,9 +316,13 @@ export async function invitePrehire(opts: {
     };
   }
 
-  // 3. Provision + invite. Any provisioning failure releases ALL drawn seats so
-  //    none are lost (the partial successes are left as added candidates; the
-  //    released count keeps the ledger honest with what was actually consumed).
+  // 3. Provision + invite. A provisioning failure releases only the seats whose
+  //    candidate never landed - the partial successes keep their seat so the ledger
+  //    matches actual consumption. createdIds is hoisted above the try so the outer
+  //    catch (a THROWN insert error mid-loop) also releases only the uncommitted
+  //    seats, not the whole draw (which would decrement seats_used below true
+  //    consumption and let the org re-draw already-consumed seats).
+  const createdIds: string[] = [];
   try {
     const svc = createServiceClient();
 
@@ -332,7 +337,6 @@ export async function invitePrehire(opts: {
       return { error: "Screening shell does not belong to this organization." };
     }
 
-    const createdIds: string[] = [];
     for (const d of clean) {
       const c = await provisionCandidate(svc, shell.shellId, d);
       if ("error" in c) {
@@ -365,7 +369,10 @@ export async function invitePrehire(opts: {
 
     return { ok: true, invited: createdIds.length, emailed };
   } catch (e) {
-    await releaseAllocation(orgId, "prehire", count);
+    // Release only the uncommitted seats - candidates already inserted keep theirs.
+    if (count - createdIds.length > 0) {
+      await releaseAllocation(orgId, "prehire", count - createdIds.length);
+    }
     return { error: e instanceof Error ? e.message : "Could not invite candidates." };
   }
 }
@@ -429,16 +436,20 @@ export async function prehireSeatActivity(
     if (!shellRow?.id || shellRow.organization_id !== orgId) return empty;
     const shellId = shellRow.id;
 
-    const { data, error } = await svc
-      .from("prehire_candidates")
-      .select(
-        "id, full_name, invited_at, completed_at, composite_score, recommendation, prehire_stage_results(status, completed_at)",
-      )
-      .eq("requisition_id", shellId)
-      .order("created_at", { ascending: false });
-    if (error || !data) return { ...empty, shellId };
-
-    const candidates = data as unknown as CandidateLite[];
+    // Page the candidate set (deterministic .order('id')): an unpaginated read
+    // caps at 1000, so a large shell's invited/started/completed counts + rows
+    // would all undercount past 1000 candidates.
+    const candidates = await fetchAllPages<CandidateLite>((from, to) =>
+      svc
+        .from("prehire_candidates")
+        .select(
+          "id, full_name, invited_at, completed_at, composite_score, recommendation, prehire_stage_results(status, completed_at)",
+        )
+        .eq("requisition_id", shellId)
+        .order("id")
+        .range(from, to),
+    ).catch(() => null);
+    if (!candidates) return { ...empty, shellId };
     let invited = 0;
     let started = 0;
     let completed = 0;
@@ -476,7 +487,10 @@ export async function prehireSeatActivity(
       }
     }
 
-    return { shellId, invited, started, completed, rows };
+    // Counts are exact (computed over the full paged set); cap the PII display list
+    // at 100 newest-first so a very large shell doesn't ship an unbounded payload.
+    const displayRows = rows.sort((a, b) => (b.date ?? "").localeCompare(a.date ?? "")).slice(0, 100);
+    return { shellId, invited, started, completed, rows: displayRows };
   } catch {
     return empty;
   }

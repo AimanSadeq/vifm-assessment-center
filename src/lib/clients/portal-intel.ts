@@ -4,6 +4,7 @@
 // Tolerant throughout - missing tables/columns yield empty intel, never errors.
 
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages, chunkIds } from "@/lib/ara/paginate";
 import { overallSelfScore, type PersonaScoreRow } from "@/lib/scoring/behavioral";
 import { personaBand } from "@/lib/scoring/persona-bands";
 
@@ -17,30 +18,36 @@ export async function personaOrgIntel(orgId: string): Promise<PersonaOrgIntel> {
   const empty: PersonaOrgIntel = { completed: 0, cohortMean: null, bandMix: [] };
   try {
     const sb = createServiceClient();
-    const { data: sessions } = await sb
-      .from("behavioral_assessment_sessions")
-      .select("id")
-      .eq("organization_id", orgId)
-      .eq("status", "submitted")
-      .order("created_at", { ascending: false })
-      .limit(200);
-    const ids = (sessions ?? []).map((s) => s.id as string);
+    // Page the FULL submitted-session set (deterministic .order('id')). A fixed
+    // .limit(200) seeded the cohort mean + band mix from only the 200 newest
+    // sittings, biasing the mean toward the most-recent cohort AND contradicting
+    // the funnel's true head count on the same insights panel for any org past 200.
+    const sessions = await fetchAllPages<{ id: string }>((from, to) =>
+      sb
+        .from("behavioral_assessment_sessions")
+        .select("id")
+        .eq("organization_id", orgId)
+        .eq("status", "submitted")
+        .order("id")
+        .range(from, to),
+    ).catch(() => [] as { id: string }[]);
+    const ids = sessions.map((s) => s.id);
     if (ids.length === 0) return empty;
 
-    // Range-paginate: the responses set can exceed PostgREST's 1000-row cap.
+    // Responses: chunk the id list (a huge .in() is itself a problem) and page each
+    // chunk over the 1000-row cap.
     type Resp = PersonaScoreRow & { session_id: string };
     const responses: Resp[] = [];
-    const PAGE = 1000;
-    for (let from = 0; ; from += PAGE) {
-      const { data, error } = await sb
-        .from("behavioral_assessment_responses")
-        .select("session_id, competency_id, raw_score, is_reverse, item_type, answer_data")
-        .in("session_id", ids)
-        .order("id", { ascending: true })
-        .range(from, from + PAGE - 1);
-      if (error || !data || data.length === 0) break;
-      responses.push(...(data as unknown as Resp[]));
-      if (data.length < PAGE) break;
+    for (const chunk of chunkIds(ids)) {
+      const part = await fetchAllPages<Resp>((from, to) =>
+        sb
+          .from("behavioral_assessment_responses")
+          .select("session_id, competency_id, raw_score, is_reverse, item_type, answer_data")
+          .in("session_id", chunk)
+          .order("id")
+          .range(from, to),
+      ).catch(() => [] as Resp[]);
+      responses.push(...part);
     }
 
     // Ipsative-aware per-session mean (forced-choice rows collapsed, not averaged

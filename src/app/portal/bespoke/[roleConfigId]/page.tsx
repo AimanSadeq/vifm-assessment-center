@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { resolvePortalAccess } from "@/lib/clients/portal-access";
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import { BackLink } from "@/components/shared/back-link";
 import { InviteClient } from "./_components/invite-client";
 import { CandidatesCollapsible, type Cand } from "./_components/candidates-collapsible";
@@ -33,16 +34,25 @@ export default async function PortalBespokeProductPage({
 
   // The client's own org name - shown read-only as the voucher client (no registry
   // dropdown on the client-facing portal, to avoid leaking other clients' names).
-  const { data: orgRow } = await sb.from("ara_organizations").select("name").eq("id", orgId).maybeSingle();
+  // orgId is the AC organizations.id (getClientOrgId), so read the name from
+  // `organizations` - reading ara_organizations by an AC id yielded a blank name.
+  const { data: orgRow } = await sb.from("organizations").select("name").eq("id", orgId).maybeSingle();
   const orgName = (orgRow?.name as string | undefined) ?? "";
 
-  const { data: rows } = await sb
-    .from("rr_candidates")
-    .select("id, full_name, email, status, verdict, access_token, completed_at")
-    .eq("role_config_id", params.roleConfigId)
-    .eq("organization_id", orgId)
-    .order("created_at", { ascending: false });
-  const candidates = (rows ?? []) as Cand[];
+  // Page the roster (deterministic .order('id')) so invited/completed counts + the
+  // table are exact past the 1000-row cap; re-sort newest-first for DISPLAY (id is
+  // a random uuid, so it's only a paging key, not a display order).
+  const candidates = (
+    await fetchAllPages<Cand & { created_at: string }>((from, to) =>
+      sb
+        .from("rr_candidates")
+        .select("id, full_name, email, status, verdict, access_token, completed_at, created_at")
+        .eq("role_config_id", params.roleConfigId)
+        .eq("organization_id", orgId)
+        .order("id")
+        .range(from, to),
+    ).catch(() => [] as (Cand & { created_at: string })[])
+  ).sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
 
   const completed = candidates.filter((c) => c.completed_at).length;
 

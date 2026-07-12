@@ -15,6 +15,7 @@
 
 import { drawAllocation, releaseAllocation, type Allocation } from "../allocations";
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages } from "@/lib/ara/paginate";
 import { sendAraEmail, type AraEmailLanguage } from "@/lib/ara/email";
 import { getPillarsForAssessment } from "@/lib/constants/ara-stages";
 import { createVoucherBatch as createArcVoucherBatch, type VoucherTier } from "@/lib/ara/vouchers";
@@ -370,12 +371,6 @@ export async function arcSeatActivity(orgId: string, araOrgId: string | null): P
 
     const reportPath = `/api/ara/reports/${shell.id}/pdf`;
 
-    const { data: respondents } = await sb
-      .from("ara_respondents")
-      .select("id, name, email, first_opened_at, completed_at")
-      .eq("assessment_id", shell.id)
-      .order("created_at", { ascending: true });
-
     type Resp = {
       id: string;
       name: string | null;
@@ -383,7 +378,17 @@ export async function arcSeatActivity(orgId: string, araOrgId: string | null): P
       first_opened_at: string | null;
       completed_at: string | null;
     };
-    const list = (respondents ?? []) as Resp[];
+    // Page the respondent set (deterministic .order('id')): an unpaginated read
+    // caps at 1000, so a large cohort's invited/started/completed counts would all
+    // undercount past 1000 respondents.
+    const list = await fetchAllPages<Resp>((from, to) =>
+      sb
+        .from("ara_respondents")
+        .select("id, name, email, first_opened_at, completed_at")
+        .eq("assessment_id", shell.id)
+        .order("id")
+        .range(from, to),
+    ).catch(() => [] as Resp[]);
 
     let invited = 0;
     let started = 0;

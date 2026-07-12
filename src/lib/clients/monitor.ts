@@ -210,9 +210,12 @@ export async function getServiceActivity(service: CaliberService, orgId: string)
   const sb = createServiceClient();
   try {
     if (service === "fluent") {
-      const [issued, redeemed] = await Promise.all([
+      const [issued, redeemed, completedCount] = await Promise.all([
         countOrg("eng_fluent_vouchers", orgId),
         countOrg("eng_fluent_voucher_redemptions", orgId),
+        // TRUE completed count (head query) - independent of the 100-row display
+        // cap below, so the funnel + insights donut can't undercount a large org.
+        countOrg("eng_fluent_results", orgId),
       ]);
       const { data } = await sb
         .from("eng_fluent_results")
@@ -228,13 +231,19 @@ export async function getServiceActivity(service: CaliberService, orgId: string)
         summary: r.overall_cefr ? `CEFR ${r.overall_cefr}` : "Completed",
         reportPath: `/api/ac/fluent/${r.id}/report`,
       }));
-      return { issued, redeemed, completed: rows.length, rows };
+      return { issued, redeemed, completed: completedCount, rows };
     }
 
     if (service === "logica") {
-      const [issued, redeemed] = await Promise.all([
+      const [issued, redeemed, completedRes] = await Promise.all([
         countOrg("cognitive_vouchers", orgId),
         countOrg("cognitive_voucher_redemptions", orgId),
+        // TRUE completed count (head query), independent of the 100-row display cap.
+        sb
+          .from("psy_results")
+          .select("id", { count: "exact", head: true })
+          .eq("kind", "cognitive")
+          .eq("organization_id", orgId),
       ]);
       const { data } = await sb
         .from("psy_results")
@@ -251,7 +260,7 @@ export async function getServiceActivity(service: CaliberService, orgId: string)
         summary: r.result?.overall?.band ? String(r.result.overall.band) : "Completed",
         reportPath: `/api/ac/cognitive/${r.id}/report`,
       }));
-      return { issued, redeemed, completed: rows.length, rows };
+      return { issued, redeemed, completed: completedRes.count ?? rows.length, rows };
     }
 
     if (service === "persona") {
@@ -340,7 +349,21 @@ export async function getServiceActivity(service: CaliberService, orgId: string)
         summary: r.overall_band || "Completed",
         reportPath: `/admin/tech-sandbox/results/${r.access_token}`,
       }));
-      return { issued, redeemed, completed: rows.length, rows };
+      // TRUE completed count (submitted sittings this org owns) independent of the
+      // 100-row display cap: org_id primary + legacy NULL-org_id name match, so a
+      // large org's funnel/donut can't undercount and a name collision can't inflate.
+      let completed = rows.length;
+      const cBase = () =>
+        sb.from("technical_sandbox_sessions").select("id", { count: "exact", head: true }).not("submitted_at", "is", null);
+      const cById = await cBase().eq("organization_id", orgId);
+      if (cById.error) {
+        const cName = await cBase().eq("organization_name", orgName); // pre-00187: name-only
+        completed = cName.count ?? rows.length;
+      } else {
+        const cName = await cBase().is("organization_id", null).eq("organization_name", orgName);
+        completed = (cById.count ?? 0) + (cName.count ?? 0);
+      }
+      return { issued, redeemed, completed, rows };
     }
   } catch {
     // tolerant: a missing org column / unmigrated table just yields the empty funnel

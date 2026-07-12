@@ -1,11 +1,25 @@
-import { redirect } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { getServerT } from "@/lib/i18n/server";
 
-// Caliber is a provision-only B2B platform: every account is created by an admin
-// (scripts/create-admin.ts, provision-candidate / provision-client-manager, or the
-// in-app "Invite to portal" button). There is NO self-service sign-up anywhere -
-// no public auth.signUp path exists - so /register must not present a registration
-// affordance. Redirect to /login rather than render a dead placeholder that invites
-// prospects to "create an account" that they cannot.
-export default function RegisterPage() {
-  redirect("/login");
+export default async function RegisterPage() {
+  const t = await getServerT();
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("authPublic.register.title")}</CardTitle>
+        <CardDescription>{t("authPublic.register.description")}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-muted-foreground">
+          {t("authPublic.register.placeholder")}
+        </p>
+      </CardContent>
+    </Card>
+  );
 }

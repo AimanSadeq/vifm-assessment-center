@@ -294,6 +294,36 @@ function renderProposalDoc(
         )}</td></tr>`
       : "";
 
+  // ── Per-service blocks (per-project with 2+ services): each service in its own
+  // bordered block, then a "Total - all services" line, the data-residency line(s),
+  // the discount, and a grand total. Single-service proposals keep the flat table.
+  // Math stays honest: servicesSubtotal + data residency - discount = p.total. ──
+  const serviceLines = p.lineItems.filter((l) => l.service !== "data_residency");
+  const drLines = p.lineItems.filter((l) => l.service === "data_residency");
+  const servicesSubtotal = serviceLines.reduce((s, l) => s + l.subtotal, 0);
+  const multiServicePerProject = serviceLines.length > 1;
+  const serviceBlocksCommercial = `
+    <div class="svc-cards">
+      ${serviceLines
+        .map(
+          (l) =>
+            `<div class="svc-card"><div class="svc-card-head">${esc(l.label)}</div><table><tbody><tr><td>${num(
+              l.seats,
+            )} participant${l.seats === 1 ? "" : "s"} &times; ${money(l.unitRate)} / participant</td><td class="num">${money(
+              l.subtotal,
+            )}</td></tr></tbody></table></div>`,
+        )
+        .join("")}
+    </div>
+    <table class="svc-summary"><tbody>
+      <tr><td class="tot-label">Total - all services</td><td class="num">${money(servicesSubtotal)}</td></tr>
+      ${drLines
+        .map((d) => `<tr><td class="tot-label">${esc(d.label)}</td><td class="num">${money(d.subtotal)}</td></tr>`)
+        .join("")}
+      ${discount > 0 ? `<tr><td class="tot-label">Discount (${p.discountPct}%)</td><td class="num">- ${money(discount)}</td></tr>` : ""}
+      <tr class="total-row"><td class="tot-label">Grand total (${esc(cur)})</td><td class="num">${money(p.total)}</td></tr>
+    </tbody></table>`;
+
   // ── Licence commercial build-up (licence mode only). ──
   const licenceCommercial = lic
     ? `<table>
@@ -563,7 +593,9 @@ function renderProposalDoc(
       ? engagementCommercial
       : isLicence && lic
         ? licenceCommercial
-        : `<table>
+        : multiServicePerProject
+          ? serviceBlocksCommercial
+          : `<table>
     <thead><tr><th>Service</th><th class="num">Participants</th><th class="num">Rate / participant</th><th class="num">Subtotal</th></tr></thead>
     <tbody>
       ${lineRows}
@@ -736,6 +768,13 @@ ${wordSafe ? "" : `<link rel="preconnect" href="https://fonts.googleapis.com" />
   .tot-label { text-align: right; color: #475569; }
   .total-row td { border-top: 2px solid #010131; font-weight: 800; color: #010131; font-size: 11pt; }
   .grp-row td { background: #eef4fb; color: #010131; font-weight: 700; font-size: 10pt; border-top: 1px solid #cbd5e1; }
+  /* Per-service commercial blocks (multi-service per-project) */
+  .svc-cards { margin: 8px 0 2px; }
+  .svc-card { border: 1px solid #e2e8f0; border-top: 3px solid #5391D5; border-radius: 6px; padding: 7px 12px; margin: 8px 0; page-break-inside: avoid; }
+  .svc-card-head { color: #010131; font-weight: 700; font-size: 10.5pt; }
+  .svc-card table { margin: 3px 0 0; }
+  .svc-card td { border-bottom: none; padding: 3px 0; color: #334155; }
+  .svc-summary { margin-top: 4px; page-break-inside: avoid; }
   .terms-box { background: #f8fafc; border-left: 3px solid #5391D5; border-radius: 0 6px 6px 0; padding: 10px 14px; margin-top: 8px; font-size: 9.5pt; color: #334155; }
 
   /* Numbered legal clauses (prefix follows the T&C section number) */

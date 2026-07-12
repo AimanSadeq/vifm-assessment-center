@@ -253,6 +253,30 @@ function renderProposalDocAr(
   const discount = Math.round((p.subtotal - p.total) * 100) / 100;
   const discountRow = discount > 0 ? `<tr><td colspan="3" class="tot-label">خصم (${pc(p.discountPct)})</td><td class="num">- ${m(discount)}</td></tr>` : "";
 
+  // ── Per-service blocks (per-project, 2+ services): each service in its own block,
+  // then total-of-all-services + data residency + discount + grand total (Arabic). ──
+  const serviceLinesAr = p.lineItems.filter((l) => l.service !== "data_residency");
+  const drLinesAr = p.lineItems.filter((l) => l.service === "data_residency");
+  const servicesSubtotalAr = serviceLinesAr.reduce((s, l) => s + l.subtotal, 0);
+  const multiServicePerProjectAr = serviceLinesAr.length > 1;
+  const serviceBlocksCommercialAr = `
+    <div class="svc-cards">
+      ${serviceLinesAr
+        .map(
+          (l) =>
+            `<div class="svc-card"><div class="svc-card-head">${esc(serviceLabelAr(l.service, l.label))}</div><table><tbody><tr><td>${nu(
+              l.seats,
+            )} مشارك &times; ${m(l.unitRate)} لكل مشارك</td><td class="num">${m(l.subtotal)}</td></tr></tbody></table></div>`,
+        )
+        .join("")}
+    </div>
+    <table class="svc-summary"><tbody>
+      <tr><td class="tot-label">إجمالي جميع الخدمات</td><td class="num">${m(servicesSubtotalAr)}</td></tr>
+      ${drLinesAr.map((d) => `<tr><td class="tot-label">${esc(drRowLabelAr)}</td><td class="num">${m(d.subtotal)}</td></tr>`).join("")}
+      ${discount > 0 ? `<tr><td class="tot-label">خصم (${pc(p.discountPct)})</td><td class="num">- ${m(discount)}</td></tr>` : ""}
+      <tr class="total-row"><td class="tot-label">الإجمالي الكلي (${esc(cur)})</td><td class="num">${m(p.total)}</td></tr>
+    </tbody></table>`;
+
   // ── Per-section text overrides (Feature 1). This renderer reads the AR text from
   // licence_data.sectionOverrides["<title>"].ar. Keyed by the ENGLISH section title
   // (the same key the builder + EN renderer use). Blank = keep the standard wording. ──
@@ -456,7 +480,9 @@ function renderProposalDocAr(
       ? engagementCommercialAr
       : isLicence && lic
         ? licenceCommercial
-        : `<table>
+        : multiServicePerProjectAr
+          ? serviceBlocksCommercialAr
+          : `<table>
     <thead><tr><th>الخدمة</th><th class="num">المشاركون</th><th class="num">السعر / مشارك</th><th class="num">الإجمالي الفرعي</th></tr></thead>
     <tbody>
       ${lineRows}
@@ -537,6 +563,13 @@ function renderProposalDocAr(
   .tot-label { text-align: end; color: #475569; }
   .total-row td { border-top: 2px solid #010131; font-weight: 800; color: #010131; font-size: 11pt; }
   .grp-row td { background: #eef4fb; color: #010131; font-weight: 700; font-size: 10pt; border-top: 1px solid #cbd5e1; }
+  /* Per-service commercial blocks (multi-service per-project) */
+  .svc-cards { margin: 8px 0 2px; }
+  .svc-card { border: 1px solid #e2e8f0; border-top: 3px solid #5391D5; border-radius: 6px; padding: 7px 12px; margin: 8px 0; page-break-inside: avoid; }
+  .svc-card-head { color: #010131; font-weight: 700; font-size: 10.5pt; }
+  .svc-card table { margin: 3px 0 0; }
+  .svc-card td { border-bottom: none; padding: 3px 0; color: #334155; }
+  .svc-summary { margin-top: 4px; page-break-inside: avoid; }
   .terms-box { background: #f8fafc; border-right: 3px solid #5391D5; border-radius: 6px 0 0 6px; padding: 10px 14px; margin-top: 8px; font-size: 9.5pt; color: #334155; }
 
   ol.clauses { margin: 8px 0 0; padding-right: 0; list-style: none; counter-reset: cl; }

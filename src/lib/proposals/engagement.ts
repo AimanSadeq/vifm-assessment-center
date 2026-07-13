@@ -70,6 +70,24 @@ export function dataResidencyLineLabel(r: DataResidency): string {
   return `Data residency - ${DATA_RESIDENCY_LABEL[r]}`;
 }
 
+/**
+ * The raw group array from ANY engagement-model shape:
+ *  - a re-loaded NORMALIZED model (persisted under `groups` - see
+ *    PricedSnapshot.engagement, which is persisted verbatim into
+ *    proposals.engagement_model),
+ *  - the multi-engagement INPUT shape (`engagements`),
+ *  - or the legacy single shape (`name` / `lines` / `participants`).
+ * Making both normalize + residency read `groups` keeps them idempotent over a
+ * SAVED model - otherwise a stored combined/engagement proposal re-reads as empty
+ * (the engagement breakdown vanishes from the report, though the frozen total,
+ * computed from the raw input at save time, still includes it).
+ */
+function rawGroupsFrom(v: EngagementModelInput & { groups?: EngagementGroupInput[] }): EngagementGroupInput[] {
+  if (Array.isArray(v.groups) && v.groups.length > 0) return v.groups;
+  if (Array.isArray(v.engagements) && v.engagements.length > 0) return v.engagements;
+  return [{ name: v.name, lines: v.lines, participants: v.participants }];
+}
+
 /** Append the data-residency cost as a real engagement line (basis fixed) at compute
  *  time, so it flows through the model's subtotal / discount / total like any other
  *  line. Never mutates or persists - returns a new model. Cost <= 0 is a no-op. */
@@ -79,15 +97,19 @@ export function withEngagementResidency(
   cost: number,
 ): EngagementModelInput | null {
   if (!(cost > 0)) return model ?? null;
-  const base = (model ?? {}) as EngagementModelInput;
+  const base = (model ?? {}) as EngagementModelInput & { groups?: EngagementGroupInput[] };
   // An untitled group renders as a plain line (no engagement header), sitting in the
   // subtotal alongside the engagements.
   const residencyGroup: EngagementGroupInput = { name: "", participants: 0, lines: [{ label, basis: "fixed", quantity: 1, unitRate: cost }] };
-  const groups =
-    Array.isArray(base.engagements) && base.engagements.length > 0
-      ? base.engagements
-      : [{ name: base.name, participants: base.participants, lines: base.lines }];
-  return { discountPct: base.discountPct, engagements: [...groups, residencyGroup] };
+  // Strip any PREVIOUSLY-injected residency line (a saved fee-only engagement bakes
+  // one into its stored groups) before re-adding, so a duplicate / re-price of that
+  // stored model never counts the residency fee twice. An untitled group left empty
+  // by the strip is dropped.
+  const key = label.trim().toLowerCase();
+  const cleaned = rawGroupsFrom(base)
+    .map((g) => ({ ...g, lines: (g.lines ?? []).filter((l) => (l?.label ?? "").trim().toLowerCase() !== key) }))
+    .filter((g) => (g.lines ?? []).length > 0 || (g.name ?? "").trim() !== "");
+  return { discountPct: base.discountPct, engagements: [...cleaned, residencyGroup] };
 }
 
 /** Full data-residency commitment sentence for the proposal body (EN). */
@@ -138,12 +160,8 @@ function normalizeGroup(g: EngagementGroupInput | undefined): NormalizedEngageme
  *  Accepts the new multi-engagement shape (`engagements[]`) or the legacy single shape. */
 export function normalizeEngagementModel(value: unknown): NormalizedEngagementModel | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  const v = value as EngagementModelInput;
-  const rawGroups: EngagementGroupInput[] =
-    Array.isArray(v.engagements) && v.engagements.length > 0
-      ? v.engagements
-      : [{ name: v.name, lines: v.lines, participants: v.participants }];
-  const groups = rawGroups.map(normalizeGroup).filter((g): g is NormalizedEngagementGroup => g !== null);
+  const v = value as EngagementModelInput & { groups?: EngagementGroupInput[] };
+  const groups = rawGroupsFrom(v).map(normalizeGroup).filter((g): g is NormalizedEngagementGroup => g !== null);
   if (groups.length === 0) return null;
   return { groups, discountPct: clampPct(v.discountPct) };
 }

@@ -162,14 +162,21 @@ export function ProposalBuilder({
   type EngLine = { label: string; basis: EngagementBasis; quantity: number; unitRate: number };
   type EngGroup = { name: string; participants: number; lines: EngLine[] };
   const em = existing?.engagementModel;
+  // A SAVED engagement is persisted in the NORMALIZED shape (groups[]), so read
+  // `groups` FIRST - else opening an existing engagement/combined proposal falls
+  // through to the starter template and re-saving silently overwrites the real
+  // engagement with template numbers. Mirrors rawGroupsFrom's priority server-side.
+  const emGroups = (em as { groups?: { name?: string; participants?: number; lines?: EngLine[] }[] } | null | undefined)?.groups;
   const toEngLine = (l: { label?: string; basis?: string; quantity?: number; unitRate?: number }): EngLine => ({
     label: l.label ?? "", basis: (l.basis as EngagementBasis) ?? "fixed", quantity: Number(l.quantity) || 0, unitRate: Number(l.unitRate) || 0,
   });
-  const seedGroups: EngGroup[] = em?.engagements && em.engagements.length
-    ? em.engagements.map((g) => ({ name: g.name ?? "", participants: Number(g.participants) || 0, lines: (g.lines ?? []).map(toEngLine) }))
-    : em?.lines && em.lines.length
-      ? [{ name: em.name ?? "Assessment Center", participants: Number(em.participants) || 8, lines: em.lines.map(toEngLine) }]
-      : [{ name: "Assessment Center", participants: 8, lines: (acEngagementTemplate(8).lines ?? []).map(toEngLine) }];
+  const seedGroups: EngGroup[] = emGroups && emGroups.length
+    ? emGroups.map((g) => ({ name: g.name ?? "", participants: Number(g.participants) || 0, lines: (g.lines ?? []).map(toEngLine) }))
+    : em?.engagements && em.engagements.length
+      ? em.engagements.map((g) => ({ name: g.name ?? "", participants: Number(g.participants) || 0, lines: (g.lines ?? []).map(toEngLine) }))
+      : em?.lines && em.lines.length
+        ? [{ name: em.name ?? "Assessment Center", participants: Number(em.participants) || 8, lines: em.lines.map(toEngLine) }]
+        : [{ name: "Assessment Center", participants: 8, lines: (acEngagementTemplate(8).lines ?? []).map(toEngLine) }];
   const [engGroups, setEngGroups] = useState<EngGroup[]>(seedGroups);
   // Data residency is proposal-level (all pricing modes), stored in licenceData.
   const [dataResidency, setDataResidency] = useState<DataResidency>(

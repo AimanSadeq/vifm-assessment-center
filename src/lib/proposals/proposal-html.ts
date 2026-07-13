@@ -1067,8 +1067,7 @@ ${wordSafe ? "" : `<link rel="preconnect" href="https://fonts.googleapis.com" />
     inc("Sample reports")
       ? `<div class="accept">
     <h2 style="border-top:0;padding-top:0;"><span class="no">${NO("Sample reports")}.</span>Sample reports</h2>
-    ${secBody("Sample reports", sampleReportsProseHtml)}
-    ${sampleReportsBody}
+    ${secBody("Sample reports", `${sampleReportsProseHtml}${sampleReportsBody}`)}
   </div>`
       : ""
   }

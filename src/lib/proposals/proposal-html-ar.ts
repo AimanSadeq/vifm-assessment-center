@@ -855,8 +855,7 @@ function renderProposalDocAr(
     inc("Sample reports")
       ? `<div class="accept">
     <h2 style="border-top:0;padding-top:0;">${at("Sample reports")}</h2>
-    ${secBody("Sample reports", sampleReportsProseHtml)}
-    ${sampleReportsBody}
+    ${secBody("Sample reports", `${sampleReportsProseHtml}${sampleReportsBody}`)}
   </div>`
       : ""
   }

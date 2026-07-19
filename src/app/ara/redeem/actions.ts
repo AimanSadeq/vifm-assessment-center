@@ -1,8 +1,13 @@
 "use server";
 
 import { z } from "zod";
-import { headers } from "next/headers";
-import { redeemVoucher } from "@/lib/ara/vouchers";
+import { headers, cookies } from "next/headers";
+import { redeemVoucher, normalizeCode } from "@/lib/ara/vouchers";
+
+/** First-party cookie name binding this browser to its sitting for a given code. */
+function resumeCookieName(code: string): string {
+  return `arc_s_${normalizeCode(code).replace(/[^A-Z0-9]/g, "")}`;
+}
 
 const schema = z.object({
   code: z.string().min(4).max(40),
@@ -34,6 +39,14 @@ export async function redeemVoucherAction(
   const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
   const userAgent = h.get("user-agent");
 
+  // Browser-bound resume: pass the sitting id this browser was given when it
+  // last redeemed THIS code (set as a first-party cookie below). This is what
+  // lets re-opening the redeem link resume the in-progress sitting instead of
+  // starting over - without trusting the typed email (which anyone could guess).
+  const jar = cookies();
+  const cookieName = resumeCookieName(parsed.data.code);
+  const resumeRespondentId = jar.get(cookieName)?.value ?? null;
+
   const res = await redeemVoucher({
     code: parsed.data.code,
     redeemerName: parsed.data.name,
@@ -41,8 +54,22 @@ export async function redeemVoucherAction(
     companyName: parsed.data.company,
     ip,
     userAgent,
+    resumeRespondentId,
   });
 
   if (!res.ok) return res;
+
+  // Bind (or refresh) this browser to its sitting so a later re-open resumes it.
+  try {
+    jar.set(cookieName, res.respondentId, {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+    });
+  } catch {
+    /* cookie write is best-effort - resume still works via the /ara/respond link */
+  }
+
   return { ok: true, redirectTo: res.respondentUrl };
 }

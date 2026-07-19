@@ -85,7 +85,10 @@ export const ARA_INDIVIDUAL_FACTORS: AraIndividualFactor[] = [
     id: "people_collaboration",
     domain: "PEOPLE",
     name_en: "AI Collaboration",
-    name_ar: "التعاون مع الذكاء الاصطناعي",
+    // "in the field of AI" rather than "with AI" - this factor is about
+    // collaborating with PEOPLE about AI adoption, not with the tool itself
+    // (SME translation correction from the trial review).
+    name_ar: "التعاون في مجال الذكاء الاصطناعي",
     description_en:
       "Helps the team move with AI rather than around it. Explains what " +
       "the tools can and can't do without overselling, shares prompts " +

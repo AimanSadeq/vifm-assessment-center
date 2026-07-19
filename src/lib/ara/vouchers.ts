@@ -97,6 +97,15 @@ export type RedeemInput = {
   companyName: string;
   ip?: string | null;
   userAgent?: string | null;
+  /**
+   * Respondent id from this browser's first-party redeem cookie (set by the
+   * action on first redeem of THIS code). Used to resume an in-progress sitting
+   * without minting a new one or burning a seat. It is a browser-bound
+   * credential - NOT derived from the typed email - so re-opening the redeem
+   * link on the same browser resumes, but nobody can reach another person's
+   * sitting by guessing their email.
+   */
+  resumeRespondentId?: string | null;
 };
 
 const PRACTICE_ORG_NAME_EN = "AI Readiness Compass - Practice";
@@ -120,7 +129,7 @@ type ClaimedVoucher = {
  */
 export async function redeemVoucher(
   input: RedeemInput
-): Promise<{ ok: true; respondentUrl: string } | { ok: false; error: string }> {
+): Promise<{ ok: true; respondentUrl: string; respondentId: string } | { ok: false; error: string }> {
   const code = normalizeCode(input.code);
   if (!code) return { ok: false, error: "Enter a voucher code." };
   if (!input.redeemerName.trim() || !input.redeemerEmail.trim() || !input.companyName.trim()) {
@@ -128,6 +137,48 @@ export async function redeemVoucher(
   }
 
   const sb = createServiceClient();
+
+  // 0. Resume an IN-PROGRESS sitting bound to THIS browser. The action passes
+  // resumeRespondentId from a first-party cookie it set when this browser first
+  // redeemed this code - so re-opening the redeem link resumes instead of
+  // minting a new sitting and burning another seat (the trial finding). Resume
+  // is gated on the cookie, NOT the typed email, so nobody can reach another
+  // person's sitting/results by guessing their email. Only in-progress sittings
+  // resume (a completed one falls through to a fresh sitting, never exposing
+  // results). Ownership is re-verified against this voucher's redemptions so a
+  // forged id can't cross to another voucher.
+  if (input.resumeRespondentId) {
+    try {
+      const { data: vlookup } = await sb
+        .from("ara_vouchers")
+        .select("id")
+        .eq("code", code)
+        .maybeSingle<{ id: string }>();
+      if (vlookup?.id) {
+        const { data: red } = await sb
+          .from("ara_voucher_redemptions")
+          .select("ara_respondent_id")
+          .eq("voucher_id", vlookup.id)
+          .eq("ara_respondent_id", input.resumeRespondentId)
+          .maybeSingle<{ ara_respondent_id: string }>();
+        if (red?.ara_respondent_id) {
+          const { data: resp } = await sb
+            .from("ara_respondents")
+            .select("access_token, completed_at")
+            .eq("id", input.resumeRespondentId)
+            .maybeSingle<{ access_token: string; completed_at: string | null }>();
+          if (resp?.access_token && !resp.completed_at) {
+            return { ok: true, respondentUrl: `/ara/respond/${resp.access_token}`, respondentId: input.resumeRespondentId };
+          }
+        }
+      }
+    } catch (err) {
+      // Best-effort - fall through to a fresh claim on any error. Logged so a
+      // silent seat-burn from a transient lookup failure is observable rather
+      // than invisible.
+      console.error("[redeemVoucher] resume lookup failed, starting fresh sitting:", err);
+    }
+  }
 
   // 1. Atomic claim - consumes a seat only if the voucher is valid.
   const { data: claimed, error: claimErr } = await sb.rpc("ara_voucher_claim", { p_code: code });
@@ -241,5 +292,5 @@ export async function redeemVoucher(
     user_agent: input.userAgent ?? null,
   });
 
-  return { ok: true, respondentUrl: `/ara/respond/${respondent.access_token}` };
+  return { ok: true, respondentUrl: `/ara/respond/${respondent.access_token}`, respondentId: respondent.id };
 }

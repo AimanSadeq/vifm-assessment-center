@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Compass, ChevronLeft, ChevronRight, ExternalLink, X, Play } from "lucide-react";
-import { getTrackById, resolveTrackForPath } from "./tracks";
+import { getTrackById, resolveTrackForPath, isGuidedDemoRailSuppressed } from "./tracks";
 import {
   ACTIVE_LS,
   STEP_LS,
@@ -110,6 +110,15 @@ export function GuidedDemo() {
 
   // Never overlay a report (on screen or in its printed PDF).
   if (isReportRoute(pathname)) return null;
+
+  // Never overlay a real respondent's screen with the consultant-facing rail.
+  // It persists in localStorage across navigation, which is how it leaked into
+  // the trial respondents' signup (/ara/redeem) + assessment (/ara/respond)
+  // screens. Suppressed on the answering + real-signup surfaces only - the free
+  // /ara/personal snapshot is intentionally NOT suppressed so the guided demo
+  // can still showcase it. (The idle launcher pill has its own, broader
+  // exclusion via resolveTrackForPath below.)
+  if (isGuidedDemoRailSuppressed(pathname)) return null;
 
   // ── Running demo: the full rail ──
   if (activeTrack) {

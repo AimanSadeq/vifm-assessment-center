@@ -111,13 +111,22 @@ export default async function AraRespondPage({
         </div>
 
         <div className="max-w-3xl mx-auto px-6 pt-8 pb-14 relative z-10">
-          <Link
-            href={backHref}
-            className="inline-flex items-center gap-1 text-xs text-white/70 hover:text-white mb-6"
-          >
-            <ArrowLeft className={`h-3 w-3 ${rtl ? "rotate-180" : ""}`} />
-            {rtl ? "العودة إلى بوصلة الجاهزية للذكاء الاصطناعي" : "Back to the AI Readiness Compass"}
-          </Link>
+          {/* Back link is STAFF-ONLY. For a real token respondent it would only
+              strand them: clicking it leaves for /ara, dropping their token URL,
+              so they re-enter via the signup/redeem link, get a fresh
+              respondent + token, and restart (a trial finding). They arrive from
+              an email link and have no safe screen to go "back" to - the page
+              header comment above documents this deliberate omission. Staff
+              (setup / demo) keep the affordance to return to the ARC landing. */}
+          {canSimulate && (
+            <Link
+              href={backHref}
+              className="inline-flex items-center gap-1 text-xs text-white/70 hover:text-white mb-6"
+            >
+              <ArrowLeft className={`h-3 w-3 ${rtl ? "rotate-180" : ""}`} />
+              {rtl ? "العودة إلى بوصلة الجاهزية للذكاء الاصطناعي" : "Back to the AI Readiness Compass"}
+            </Link>
+          )}
           <div className="flex items-start justify-between gap-4 mb-10">
             <VifmLogo variant="white" size="md" />
             <LanguageToggle token={params.token} current={language} />
@@ -216,7 +225,6 @@ export default async function AraRespondPage({
           timeLimitMinutes={ctx.assessment.time_limit_minutes ?? null}
           startedAt={ctx.respondent.started_at ?? null}
           canSimulate={canSimulate}
-          backHref={backHref}
         >
           <div className="space-y-6">
             {/* AI Use Case Portfolio (optional) - org-side only. Personal /

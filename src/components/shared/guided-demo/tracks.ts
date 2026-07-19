@@ -391,12 +391,19 @@ export const GUIDED_DEMO_TRACKS: GuidedDemoTrack[] = [
   },
 ];
 
-// Routes that must NEVER surface the idle launcher: anonymous/token end-user
-// flows, auth pages. (The active rail still renders here so a demo step may
-// deep-link into one - this only governs where the launcher pill appears.)
+// Routes that must NEVER surface the guided-demo UI - neither the idle launcher
+// pill NOR the running rail. These are anonymous / token end-user flows (someone
+// actually signing up for or sitting an assessment) and auth pages. A trial
+// respondent reported the consultant-facing rail (with BD "what to do next"
+// steps) overlaying the signup page AND the live assessment, because the rail
+// persists in localStorage across navigation. An end user must never see it, so
+// the rail is suppressed on these surfaces (a presenter demoing simply won't see
+// the coaching overlay on the end-user screens - an acceptable trade for not
+// leaking BD copy to real respondents).
 const EXCLUDED_PREFIXES = [
   "/ara/respond",
   "/ara/personal",
+  "/ara/redeem",
   "/reflect/respond",
   "/prehire/apply",
   "/ac/persona/take",
@@ -411,6 +418,47 @@ const EXCLUDED_PREFIXES = [
 
 function matchesPrefix(path: string, prefix: string): boolean {
   return path === prefix || path.startsWith(prefix + "/");
+}
+
+/**
+ * True when the path must not surface the idle LAUNCHER pill (the full end-user
+ * exclusion, incl. the free /ara/personal snapshot - a public user should never
+ * be offered a "Guided demo" pill).
+ */
+export function isGuidedDemoExcluded(path: string | null | undefined): boolean {
+  if (!path) return false;
+  return EXCLUDED_PREFIXES.some((p) => matchesPrefix(path, p));
+}
+
+// Surfaces where even a RUNNING rail must never appear: a real end-user is
+// actively answering, or signing up for a real (invited) assessment. This is
+// NARROWER than the launcher exclusion - it deliberately omits /ara/personal so
+// the guided demo can still walk a presenter through the free Personal Snapshot
+// (its own step deep-links there), while a real respondent on /ara/respond or a
+// real signup on /ara/redeem never sees the consultant-facing rail.
+const RAIL_SUPPRESSED_PREFIXES = [
+  "/ara/respond",
+  "/ara/redeem",
+  "/reflect/respond",
+  "/prehire/apply",
+  "/ac/persona/take",
+  "/ac/cognitive/take",
+  "/candidate",
+  "/verify",
+  "/login",
+  "/register",
+  "/update-password",
+  "/reset-password",
+];
+
+/**
+ * True when the RUNNING guided-demo rail must be suppressed (an end-user is
+ * answering or in a real signup flow). Used by GuidedDemo before it renders the
+ * rail so consultant/BD step copy never overlays a real respondent's screen.
+ */
+export function isGuidedDemoRailSuppressed(path: string | null | undefined): boolean {
+  if (!path) return false;
+  return RAIL_SUPPRESSED_PREFIXES.some((p) => matchesPrefix(path, p));
 }
 
 export function getTrackById(id: string | null | undefined): GuidedDemoTrack | undefined {

@@ -129,6 +129,21 @@ export const ARA_INDIVIDUAL_FACTORS: AraIndividualFactor[] = [
   },
 ];
 
+/**
+ * Bilingual label for each AC domain a factor maps to. The factor sections
+ * showed the bare English constant ("THINKING" etc.) even in Arabic mode - a
+ * trial finding - so the respondent form reads the Arabic label from here.
+ */
+export const ARA_INDIVIDUAL_DOMAIN_LABELS: Record<
+  AraIndividualFactor["domain"],
+  { en: string; ar: string }
+> = {
+  THINKING: { en: "THINKING", ar: "التفكير" },
+  RESULTS: { en: "RESULTS", ar: "النتائج" },
+  PEOPLE: { en: "PEOPLE", ar: "الأشخاص" },
+  SELF: { en: "SELF", ar: "الذات" },
+};
+
 export const ARA_INDIVIDUAL_FACTOR_MAP: Record<AraIndividualFactorId, AraIndividualFactor> =
   Object.fromEntries(
     ARA_INDIVIDUAL_FACTORS.map((f) => [f.id, f])

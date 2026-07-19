@@ -59,6 +59,25 @@ export function RedeemForm({ initialCode = "", initialCompany = "", initialLang 
         </div>
       </CardHeader>
       <CardContent>
+        {/* Pre-start description - a trial respondent noted the redeem page told
+            them nothing about the assessment before asking them to sign up. */}
+        <div className="mb-5 rounded-lg border bg-muted/40 p-4 text-sm">
+          <p className="font-medium text-foreground">
+            {tx("What to expect", "ما الذي تتوقعه")}
+          </p>
+          <p className="mt-1 text-muted-foreground">
+            {tx(
+              "A short, self-paced assessment of how ready you and your work are for AI. Most people finish in about 10-15 minutes. You'll answer a mix of self-ratings (1-5), multiple-choice and short scenarios - there are no trick questions and no pass or fail.",
+              "تقييم قصير ذاتي الإيقاع لمدى جاهزيتك وجاهزية عملك للذكاء الاصطناعي. ينهيه معظم الناس في نحو 10-15 دقيقة. ستجيب عن مزيج من التقييمات الذاتية (1-5)، والاختيار من متعدد، وسيناريوهات قصيرة - دون أسئلة خادعة ودون نجاح أو رسوب.",
+            )}
+          </p>
+          <p className="mt-2 text-muted-foreground">
+            {tx(
+              "Your answers save automatically as you go. You can close the page and return via the same link to pick up where you left off.",
+              "تُحفظ إجاباتك تلقائياً أثناء التقدم. يمكنك إغلاق الصفحة والعودة عبر الرابط نفسه لمتابعة ما توقفت عنده.",
+            )}
+          </p>
+        </div>
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="code">{tx("Voucher code", "رمز القسيمة")}</Label>

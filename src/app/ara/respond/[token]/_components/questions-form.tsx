@@ -3,12 +3,13 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { Check, Loader2, AlertCircle, HelpCircle, Zap, Save } from "lucide-react";
+import { Check, Loader2, AlertCircle, HelpCircle, Zap, Save, ArrowDownCircle, Flag } from "lucide-react";
 import { AssessmentIntro, type IntroPoint } from "@/components/shared/assessment-intro";
 import { saveAraAnswer, markAraRespondentStarted, markAraRespondentComplete, simulateAraAnswers } from "@/lib/ara/respondent-actions";
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
 import {
   ARA_INDIVIDUAL_FACTORS,
+  ARA_INDIVIDUAL_DOMAIN_LABELS,
   type AraIndividualFactorId,
 } from "@/lib/constants/ara-individual-factors";
 import {
@@ -77,12 +78,6 @@ type QuestionsFormProps = {
    */
   canSimulate?: boolean;
   /**
-   * Lens-aware route back to the ARC landing (Selection / Development). Used by
-   * the "Save & finish later" control so leaving the assessment returns the
-   * issuer to a known home rather than a dead end. Defaults to /ara.
-   */
-  backHref?: string;
-  /**
    * Trailing content (optional sections + the Submit button) rendered ONLY
    * after the respondent has started. Kept out of the pre-start intro screen
    * so the "Submit assessment" button never appears under the Start button on
@@ -104,7 +99,7 @@ type LocalAnswer = {
 
 const DEBOUNCE_MS = 600;
 
-export function QuestionsForm({ token, questions, answers, language, timeLimitMinutes = null, startedAt = null, canSimulate = false, backHref = "/ara", children }: QuestionsFormProps) {
+export function QuestionsForm({ token, questions, answers, language, timeLimitMinutes = null, startedAt = null, canSimulate = false, children }: QuestionsFormProps) {
   const rtl = language === "ar";
   const router = useRouter();
   // Resume: a respondent returning to their link with answers already saved
@@ -118,29 +113,27 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
   // Demo-only: auto-fill every answer and go straight to the report.
   const [simulating, setSimulating] = useState(false);
   const [simError, setSimError] = useState<string | null>(null);
-  // "Save & finish later" - flush pending saves, then return to the ARC landing.
+  // "Save & finish later" - flush pending saves, then show an inline "you can
+  // close this tab now" panel. The trial found that navigating away to the ARC
+  // landing STRANDED the respondent: they lost the token URL, re-entered through
+  // the signup/redeem link (which mints a NEW respondent + token), and had to
+  // start over. Keeping them on this page (their token URL) means the same link
+  // resumes their saved answers, and the panel tells them exactly that.
   const [exiting, setExiting] = useState(false);
+  const [savedForLater, setSavedForLater] = useState(false);
+  const [saveExitFailed, setSaveExitFailed] = useState(0);
   const handleSaveAndExit = async () => {
     if (exiting) return;
     setExiting(true);
     try {
       const stillFailing = (await FORM_GATES.get(token)?.flushPendingSaves()) ?? 0;
-      if (stillFailing > 0) {
-        // Don't leave silently with unsaved answers - let the respondent choose.
-        const leaveAnyway = window.confirm(
-          rtl
-            ? `تعذّر حفظ ${stillFailing} من الإجابات. المغادرة الآن قد تفقد هذه الإجابات - هل تريد المغادرة على أي حال؟`
-            : `${stillFailing} answer${stillFailing === 1 ? "" : "s"} could not be saved. Leaving now may lose them - leave anyway?`
-        );
-        if (!leaveAnyway) {
-          setExiting(false);
-          return;
-        }
-      }
+      setSaveExitFailed(stillFailing);
     } catch {
-      /* answers already auto-save; navigate regardless so the user isn't stuck */
+      /* answers already auto-save; still show the panel so the user isn't stuck */
+      setSaveExitFailed(0);
     }
-    router.push(backHref);
+    setExiting(false);
+    setSavedForLater(true);
   };
 
   const handleSimulate = async () => {
@@ -280,8 +273,17 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
   // Runs the actual save (no debounce; called by both the timer
   // callback and the flush path). Returns a promise that resolves
   // when the save has either succeeded or exhausted retries.
-  const runSave = (questionId: string): Promise<void> => {
-    if (!stateRef.current[questionId]) return Promise.resolve();
+  //
+  // `override` carries the freshly-merged answer captured synchronously at click
+  // time. The immediate-save path fires runSave in the SAME tick as the answer's
+  // setState, and React may defer that setState (transition lane) so stateRef
+  // still holds the pre-click value - reading it would POST a stale null and
+  // silently lose the answer (the exact failure the submit gate exists to catch,
+  // but a "successful" stale save is neither pending nor failed, so the gate
+  // never sees it). So attempt 1 uses the explicit override; retries re-read the
+  // ref to pick up a newer value the respondent may set during backoff.
+  const runSave = (questionId: string, override?: LocalAnswer): Promise<void> => {
+    if (!stateRef.current[questionId] && !override) return Promise.resolve();
     setState((prev) => ({ ...prev, [questionId]: { ...prev[questionId], state: "saving" } }));
     const promise = (async () => {
       // Auto-retry up to 3 times. Handles both action-level errors
@@ -290,11 +292,11 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
       let lastError: string | undefined;
       let saved = false;
       for (let attempt = 1; attempt <= MAX_ATTEMPTS && !saved; attempt++) {
-        // Re-read the LATEST values on every attempt: a respondent who
-        // changes the same answer during the retry backoff previously had
-        // the stale captured value re-sent afterwards, overwriting the newer
-        // saved answer while the UI showed the new one.
-        const current = stateRef.current[questionId];
+        // Attempt 1 uses the explicit click-time snapshot (never a stale ref);
+        // later attempts re-read the LATEST values so a respondent who changes
+        // the same answer during the retry backoff has the newer value sent
+        // rather than the stale captured one re-sent afterwards.
+        const current = attempt === 1 && override ? override : stateRef.current[questionId];
         if (!current) break;
         try {
           const result = await saveAraAnswer({
@@ -338,9 +340,22 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
     return promise;
   };
 
-  const scheduleSave = (questionId: string) => {
+  const scheduleSave = (questionId: string, immediate = false, override?: LocalAnswer) => {
     const existing = timers.get(questionId);
     if (existing) clearTimeout(existing);
+    if (immediate) {
+      // Discrete answers (a rating / choice click, a flag toggle) are a single
+      // final action - persist them at once rather than waiting out the debounce
+      // window. This collapses the "answer then close/refresh within ~600ms"
+      // loss the trial flagged: the save is already in flight the instant the
+      // respondent clicks, so only a same-second tab close can outrun it (and
+      // the pagehide flush below covers even that). The override carries the
+      // click-time value so the save never depends on the setState having
+      // committed yet.
+      timers.delete(questionId);
+      startTransition(() => { void runSave(questionId, override); });
+      return;
+    }
     const handle = setTimeout(() => {
       timers.delete(questionId);
       startTransition(() => { void runSave(questionId); });
@@ -349,13 +364,52 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
   };
 
   const updateAnswer = (questionId: string, patch: Partial<Omit<LocalAnswer, "state">>) => {
+    // Only free-text typing is debounced (so we don't POST on every keystroke);
+    // every discrete choice/flag saves immediately.
+    const isTyping = Object.prototype.hasOwnProperty.call(patch, "text");
+    // Merge synchronously so the immediate-save path can hand runSave the fresh
+    // value without waiting for React to commit the setState below.
+    const prevAnswer: LocalAnswer =
+      stateRef.current[questionId] ?? { value: null, text: null, needsVerification: false, state: "idle" };
+    const mergedAnswer: LocalAnswer = { ...prevAnswer, ...patch };
     setState((prev) => {
-      const next = { ...prev, [questionId]: { ...prev[questionId], ...patch } };
-      stateRef.current = next; // keep ref in sync for immediate debounce reads
+      const next = {
+        ...prev,
+        // A pending debounced (typing) save is marked "saving" so the global
+        // status chip reflects unsent text rather than reading as fully saved.
+        [questionId]: { ...prev[questionId], ...patch, ...(isTyping ? { state: "saving" as SaveState } : {}) },
+      };
+      stateRef.current = next; // keep ref in sync for the debounce + flush reads
       return next;
     });
-    scheduleSave(questionId);
+    scheduleSave(questionId, !isTyping, isTyping ? undefined : mergedAnswer);
   };
+
+  // Flush any pending debounced saves when the tab is hidden or closed. Fires the
+  // scheduled timers immediately so a free-text answer mid-debounce still reaches
+  // the server on the way out (discrete answers already save on click). Best
+  // effort - the browser may not finish an in-flight request on a hard close, but
+  // firing it here gives it the chance it otherwise never had.
+  useEffect(() => {
+    const flushNow = () => {
+      for (const [id, t] of Array.from(timers.entries())) {
+        clearTimeout(t);
+        timers.delete(id);
+        void runSave(id);
+      }
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") flushNow();
+    };
+    window.addEventListener("pagehide", flushNow);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("pagehide", flushNow);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+    // timers is a stable Map; runSave is a stable closure.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timers]);
 
   // Register / unregister this form's save gate so the sibling
   // CompleteButton can flush before firing the completion server
@@ -469,6 +523,48 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
   }).length;
   const allRequiredAnswered = questions.length > 0 && requiredUnanswered === 0;
 
+  // Global save status - the trial noted there was no reassurance that answers
+  // were being stored. Derived from per-answer state: any in-flight save shows
+  // "Saving", any failure shows a retry note, otherwise (once something is
+  // answered) "All answers saved".
+  const answerStates = Object.values(state);
+  const anySaving = answerStates.some((a) => a.state === "saving");
+  const anyErrored = answerStates.some((a) => a.state === "error");
+  const saveStatus: "saving" | "error" | "saved" | "idle" =
+    anyErrored ? "error" : anySaving ? "saving" : answeredCount > 0 ? "saved" : "idle";
+
+  // Ordered questions (render order: pillars -> personal factors -> agentic) so
+  // "jump to next unanswered" walks the form the way the respondent reads it.
+  const orderedQuestions = useMemo(() => {
+    const ordered: AraQuestion[] = [];
+    ARA_PILLARS.forEach((p) => ordered.push(...(byPillar.get(p.id) ?? [])));
+    ARA_INDIVIDUAL_FACTORS.forEach((f) => ordered.push(...(byFactor.get(f.id) ?? [])));
+    ARA_AGENTIC_DIMENSIONS.forEach((d) => ordered.push(...(byAgentic.get(d.id) ?? [])));
+    return ordered;
+  }, [byPillar, byFactor, byAgentic]);
+
+  // First required (scored) question with no answer, in reading order - the
+  // target of the "jump to next unanswered" control so a respondent doesn't have
+  // to scroll the whole form hunting for the gap.
+  const firstUnansweredId = orderedQuestions.find((q) => {
+    if (q.question_type === "open_text") return false;
+    const a = state[q.id];
+    return !(a && a.value !== null);
+  })?.id;
+
+  // Questions the respondent flagged for follow-up, in reading order, so the
+  // "review flagged" control can walk them and Submit can remind about them.
+  const flaggedIds = orderedQuestions.filter((q) => state[q.id]?.needsVerification).map((q) => q.id);
+
+  const scrollToQuestion = (id: string) => {
+    const el = document.getElementById(`q-${id}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("ring-2", "ring-accent", "ring-offset-2", "rounded-md");
+      window.setTimeout(() => el.classList.remove("ring-2", "ring-accent", "ring-offset-2", "rounded-md"), 1800);
+    }
+  };
+
   if (!started) {
     const present = new Set<AraQuestionType>(questions.map((q) => q.question_type));
     const order: Array<[AraQuestionType, string]> = [
@@ -514,6 +610,36 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
     );
   }
 
+  if (savedForLater) {
+    return (
+      <div className="rounded-lg border bg-card p-8 text-center space-y-4" dir={rtl ? "rtl" : "ltr"}>
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
+          <Check className="h-6 w-6 text-emerald-600" />
+        </div>
+        <h2 className="text-xl font-semibold text-primary">
+          {rtl ? "تم حفظ تقدّمك" : "Your progress is saved"}
+        </h2>
+        <p className="mx-auto max-w-md text-sm text-muted-foreground">
+          {rtl
+            ? "لقد أكملت " + answeredCount + " من " + questions.length + ". يمكنك إغلاق هذه الصفحة بأمان الآن. للعودة لاحقاً، افتح رابط الدعوة نفسه الذي وصلك - سيتابع من حيث توقفت."
+            : `You've answered ${answeredCount} of ${questions.length}. You can safely close this page now. To continue later, open the same invitation link you were sent - it will pick up exactly where you left off.`}
+        </p>
+        {saveExitFailed > 0 && (
+          <p className="mx-auto max-w-md rounded-md border border-amber-300 bg-amber-50 p-2 text-xs text-amber-800">
+            {rtl
+              ? `تعذّر حفظ ${saveExitFailed} من الإجابات. ابقَ متصلاً بالإنترنت واضغط "متابعة الإجابة" للمحاولة مرة أخرى قبل المغادرة.`
+              : `${saveExitFailed} answer${saveExitFailed === 1 ? "" : "s"} could not be saved. Stay online and press "Keep answering" to retry before you leave.`}
+          </p>
+        )}
+        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+          <Button type="button" onClick={() => setSavedForLater(false)}>
+            {rtl ? "متابعة الإجابة" : "Keep answering"}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       {/* Progress summary */}
@@ -524,6 +650,25 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
             {answeredCount} / {questions.length} {rtl ? "إجابة" : "answered"}
           </span>
           <span className="flex items-center gap-3">
+            {/* Save reassurance - no feedback here was a trial finding. */}
+            {saveStatus === "saving" && (
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                {rtl ? "جارٍ الحفظ..." : "Saving…"}
+              </span>
+            )}
+            {saveStatus === "saved" && (
+              <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
+                <Check className="h-3 w-3" />
+                {rtl ? "تم حفظ الإجابات" : "Answers saved"}
+              </span>
+            )}
+            {saveStatus === "error" && (
+              <span className="inline-flex items-center gap-1 text-xs text-amber-600">
+                <AlertCircle className="h-3 w-3" />
+                {rtl ? "لم تُحفظ بعض الإجابات - اضغط إرسال لإعادة المحاولة" : "Some answers unsaved - press Submit to retry"}
+              </span>
+            )}
             {remaining != null && (
               <span
                 className={`font-mono font-semibold tabular-nums ${remaining <= 60 ? "text-rose-600" : "text-muted-foreground"}`}
@@ -540,6 +685,39 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
             style={{ width: `${progress}%` }}
           />
         </div>
+
+        {/* Navigation helpers - jump straight to the next unanswered question
+            (trial: "finding your missed question is harder than it should be")
+            and review flagged items before submitting (trial: "no way to return
+            to flagged questions"). */}
+        {(firstUnansweredId || flaggedIds.length > 0) && (
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t pt-3 text-xs">
+            {firstUnansweredId && (
+              <button
+                type="button"
+                onClick={() => scrollToQuestion(firstUnansweredId)}
+                className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-2.5 py-1 font-medium text-foreground hover:bg-muted"
+              >
+                <ArrowDownCircle className="h-3.5 w-3.5" />
+                {rtl
+                  ? `${requiredUnanswered} بلا إجابة - انتقل إلى التالي`
+                  : `${requiredUnanswered} unanswered - jump to next`}
+              </button>
+            )}
+            {flaggedIds.length > 0 && (
+              <button
+                type="button"
+                onClick={() => scrollToQuestion(flaggedIds[0])}
+                className="inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-2.5 py-1 font-medium text-amber-800 hover:bg-amber-100"
+              >
+                <Flag className="h-3.5 w-3.5" />
+                {rtl
+                  ? `${flaggedIds.length} محددة للمراجعة`
+                  : `${flaggedIds.length} flagged for follow-up`}
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Save & finish later - answers already auto-save; this flushes any
             in-flight save, then returns to the ARC landing so leaving is a
@@ -677,7 +855,7 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
                 />
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
-                    {factor.domain}
+                    {rtl ? ARA_INDIVIDUAL_DOMAIN_LABELS[factor.domain].ar : ARA_INDIVIDUAL_DOMAIN_LABELS[factor.domain].en}
                   </span>
                   <h2 className="text-lg font-semibold text-primary">
                     {rtl ? factor.name_ar : factor.name_en}
@@ -818,7 +996,7 @@ function QuestionRow({
           : null;
 
   return (
-    <div className="px-6 py-5" dir={rtl ? "rtl" : "ltr"}>
+    <div id={`q-${question.id}`} className="px-6 py-5 scroll-mt-24" dir={rtl ? "rtl" : "ltr"}>
       <div className="flex items-start justify-between gap-4 mb-3">
         <div className="flex-1">
           {gradedLabel && (
@@ -917,7 +1095,7 @@ function QuestionInput({
               role="radio"
               aria-checked={selected}
               onClick={() => onAnswer(question.id, { value: String(n) })}
-              className={`h-10 w-10 rounded-md border text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+              className={`h-11 w-11 sm:h-11 sm:w-11 rounded-md border text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                 selected
                   ? "bg-primary text-primary-foreground border-primary"
                   : "border-input hover:bg-muted"

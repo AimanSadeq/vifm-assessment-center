@@ -804,12 +804,6 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
                 <h2 className="text-lg font-semibold text-primary">
                   {rtl ? pillar.name_ar : pillar.name_en}
                 </h2>
-                {/* Opposite-language pillar name as a secondary label so a
-                    respondent reading in one language sees the other on every
-                    pillar header. Intentional dir flip. */}
-                <p className="text-sm text-muted-foreground" dir={rtl ? "ltr" : "rtl"}>
-                  {rtl ? pillar.name_en : pillar.name_ar}
-                </p>
               </div>
               <Badge variant="outline" className="shrink-0">
                 {pillarAnswered} / {qs.length}
@@ -860,9 +854,6 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
                   <h2 className="text-lg font-semibold text-primary">
                     {rtl ? factor.name_ar : factor.name_en}
                   </h2>
-                  <p className="text-sm text-muted-foreground" dir={rtl ? "ltr" : "rtl"}>
-                    {rtl ? factor.name_en : factor.name_ar}
-                  </p>
                 </div>
               </div>
               <Badge variant="outline" className="shrink-0">
@@ -914,9 +905,6 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
                   <h2 className="text-lg font-semibold text-primary">
                     {rtl ? dim.name_ar : dim.name_en}
                   </h2>
-                  <p className="text-sm text-muted-foreground" dir={rtl ? "ltr" : "rtl"}>
-                    {rtl ? dim.name_en : dim.name_ar}
-                  </p>
                 </div>
               </div>
               <Badge variant="outline" className="shrink-0">

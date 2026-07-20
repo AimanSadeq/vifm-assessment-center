@@ -62,7 +62,15 @@ export async function GET(req: Request) {
   const audio = await synthesizeSpeech(script);
   if (!audio) return NextResponse.json({ error: "synthesis failed" }, { status: 502 });
 
-  return new NextResponse(new Uint8Array(audio), {
-    headers: { "Content-Type": "audio/mpeg", "Cache-Control": "private, max-age=3600" },
+  const bytes = new Uint8Array(audio);
+  // Explicit Content-Length so the browser can compute the clip duration for the
+  // constant-bitrate MP3 (the player uses preload="metadata"); without it some
+  // browsers reported an infinite length and showed a dead 0:00 read-out.
+  return new NextResponse(bytes, {
+    headers: {
+      "Content-Type": "audio/mpeg",
+      "Content-Length": String(bytes.byteLength),
+      "Cache-Control": "private, max-age=3600",
+    },
   });
 }

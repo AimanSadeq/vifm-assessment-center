@@ -58,10 +58,17 @@ export function VoucherRedeemForm(cfg: VoucherRedeemConfig) {
   const tx = (en: string, arabic: string) => (ar ? arabic : en);
   const companyMode = cfg.companyField ?? "required";
 
+  // Require a valid email shape before enabling submit - a trial found an invalid
+  // address ("not-an-email") was accepted and burned a voucher seat. The server
+  // re-validates; this is the front-line gate + an inline hint.
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailValid = EMAIL_RE.test(email.trim());
+  const emailInvalidShown = email.trim().length > 0 && !emailValid;
+
   const ready =
     code.trim().length > 0 &&
     name.trim().length > 1 &&
-    email.trim().length > 0 &&
+    emailValid &&
     (companyMode !== "required" || company.trim().length > 0);
 
   const submit = async () => {
@@ -124,7 +131,19 @@ export function VoucherRedeemForm(cfg: VoucherRedeemConfig) {
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="vr-email">{tx("Email", "البريد الإلكتروني")}</Label>
-          <Input id="vr-email" type="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Input
+            id="vr-email"
+            type="email"
+            dir="ltr"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            aria-invalid={emailInvalidShown}
+          />
+          {emailInvalidShown && (
+            <p className="text-[11px] text-destructive">
+              {tx("Enter a valid email address.", "أدخل بريدًا إلكترونيًا صحيحًا.")}
+            </p>
+          )}
         </div>
       </div>
 

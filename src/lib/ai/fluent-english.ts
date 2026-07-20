@@ -529,11 +529,11 @@ const FALLBACK_TEST: FluentTest = {
   writing: {
     id: "w1",
     prompt_en:
-      "Write a short email (about 80 words) to a colleague explaining why a project deadline needs to move, and propose a new date.",
+      "Write a short email (about 70-90 words) to a colleague explaining why a project deadline needs to move, and propose a new date.",
     prompt_ar:
-      "اكتب بريدًا إلكترونيًا قصيرًا (نحو 80 كلمة) إلى زميل تشرح فيه سبب الحاجة إلى تأجيل موعد تسليم مشروع، واقترح موعدًا جديدًا.",
+      "اكتب بريدًا إلكترونيًا قصيرًا (نحو 70-90 كلمة) إلى زميل تشرح فيه سبب الحاجة إلى تأجيل موعد تسليم مشروع، واقترح موعدًا جديدًا.",
     cefr_target: "B1",
-    min_words: 60,
+    min_words: 70,
   },
   speaking: {
     id: "s1",
@@ -542,7 +542,7 @@ const FALLBACK_TEST: FluentTest = {
     prompt_ar:
       "تحدّث لمدة 45 ثانية تقريبًا: صِف تحديًا واجهته مؤخرًا في العمل أو الدراسة وكيف تعاملت معه.",
     cefr_target: "B1",
-    min_seconds: 40,
+    min_seconds: 45,
   },
 };
 
@@ -636,7 +636,7 @@ export async function generateFluentTest(input: {
     `{`,
     `  "reading": [ { "id":"r1","passage":"...","question":"...","options":["a","b","c","d"],"correct_index":0,"cefr":"A2" } ],`,
     `  "listening": [ { "id":"l1","script":"...","question":"...","options":["a","b","c","d"],"correct_index":0,"cefr":"A2" } ],`,
-    `  "writing": { "id":"w1","prompt_en":"...","prompt_ar":${wantsAr ? '"..."' : "null"},"cefr_target":"B1","min_words":60 },`,
+    `  "writing": { "id":"w1","prompt_en":"...","prompt_ar":${wantsAr ? '"..."' : "null"},"cefr_target":"B1","min_words":70 },`,
     `  "speaking": { "id":"s1","prompt_en":"...","prompt_ar":${wantsAr ? '"..."' : "null"},"cefr_target":"B1","min_seconds":45 }`,
     `}`,
   ].join("\n");
@@ -700,7 +700,9 @@ export async function generateFluentTest(input: {
       prompt_en: String(w.prompt_en),
       prompt_ar: typeof w.prompt_ar === "string" && w.prompt_ar.trim() ? w.prompt_ar.trim() : null,
       cefr_target: (CEFR_ORDER.includes(w.cefr_target as CefrLevel) ? w.cefr_target : "B1") as CefrLevel,
-      min_words: typeof w.min_words === "number" && w.min_words > 0 ? w.min_words : 60,
+      // Fixed target so the counter ("min 70"), the UI guidance ("70-90") and the
+      // prompt (instructed "70-90 words") always agree, regardless of the model.
+      min_words: 70,
     };
     const speaking: SpeakingTask =
       s && typeof s.prompt_en === "string"
@@ -709,7 +711,9 @@ export async function generateFluentTest(input: {
             prompt_en: String(s.prompt_en),
             prompt_ar: typeof s.prompt_ar === "string" && s.prompt_ar.trim() ? s.prompt_ar.trim() : null,
             cefr_target: (CEFR_ORDER.includes(s.cefr_target as CefrLevel) ? s.cefr_target : "B1") as CefrLevel,
-            min_seconds: typeof s.min_seconds === "number" && s.min_seconds > 0 ? s.min_seconds : 45,
+            // Fixed 45s so the prompt ("about 45 seconds") and the live counter
+            // ("N s / 45 s") always agree and never vary per attempt.
+            min_seconds: 45,
           }
         : FALLBACK_TEST.speaking;
 

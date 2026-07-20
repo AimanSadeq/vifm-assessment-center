@@ -81,12 +81,16 @@ const T = {
     transcribeRetry: "We couldn't hear you that time. Tap Record and speak again - or type your answer.",
     noSpeech: "We didn't catch any speech. Tap Record and try again.",
     listening_live: "Listening…",
+    awayWarn: "Please stay on this page during the test. Switching tabs or apps is recorded.",
+    transcriptEdit: "Check the text below and correct anything we misheard before you submit.",
+    copyBlocked: "Copying the questions is disabled during the test.",
     optional: "optional", required: "required", certificate: "Download report", resultFor: "Result for",
     transcriptHeading: "Your transcript",
     beginTitle: "Begin your placement",
     beginSub: "About {min} minutes · four skills · an indicative CEFR level the moment you finish.",
+    beginSubOrg: "About {min} minutes · four skills. Your results are shared with the organisation that invited you, not shown here.",
     oneTimer: "One countdown covers all four skills - there are no per-section timers.",
-    targetLen: "Target length: about 70-90 words. The countdown covers the whole test, not this task.",
+    targetLen: "Target length: about {min}-{max} words. The countdown covers the whole test, not this task.",
     howToTitle: "How to answer",
     howReading: "Reading & Listening: choose the best answer; listening items have audio you can replay.",
     howWriting: "Writing: type your response; write naturally and stay on the topic.",
@@ -110,6 +114,7 @@ const T = {
     integrityBands: { clean: "Clean · 0-14", minor: "Minor · 15-44", elevated: "Elevated · 45-100" },
     integrityYoursIn: "Your result sits in the",
     integrityBandSuffix: "band.",
+    integrityReviewRec: "Review recommended: the on-screen activity on this attempt is worth a human glance before relying on the level.",
   },
   ar: {
     start: "ابدأ اختبار تحديد المستوى", starting: "جارٍ إعداد اختبارك…",
@@ -136,12 +141,16 @@ const T = {
     transcribeRetry: "لم نتمكّن من سماعك هذه المرة. اضغط «تسجيل» وتحدّث مرة أخرى - أو اكتب إجابتك.",
     noSpeech: "لم نلتقط أي كلام. اضغط «تسجيل» وحاول مرة أخرى.",
     listening_live: "جارٍ الاستماع…",
+    awayWarn: "يرجى البقاء في هذه الصفحة أثناء الاختبار. يُسجَّل تبديل التبويبات أو التطبيقات.",
+    transcriptEdit: "راجع النص أدناه وصحّح ما أخطأنا في سماعه قبل الإرسال.",
+    copyBlocked: "نسخ الأسئلة مُعطَّل أثناء الاختبار.",
     optional: "اختياري", required: "إلزامي", certificate: "تنزيل التقرير", resultFor: "نتيجة",
     transcriptHeading: "نص كلامك",
     beginTitle: "ابدأ تحديد مستواك",
     beginSub: "نحو {min} دقيقة · أربع مهارات · مستوى CEFR تقريبي فور انتهائك.",
+    beginSubOrg: "نحو {min} دقيقة · أربع مهارات. تتم مشاركة نتائجك مع الجهة التي دعتك ولا تُعرض هنا.",
     oneTimer: "عدّ تنازلي واحد يغطي المهارات الأربع كلها - لا توجد مؤقّتات لكل قسم.",
-    targetLen: "الطول المستهدف: نحو 70-90 كلمة. العدّ التنازلي يغطي الاختبار كاملاً، لا هذه المهمة فقط.",
+    targetLen: "الطول المستهدف: نحو {min}-{max} كلمة. العدّ التنازلي يغطي الاختبار كاملاً، لا هذه المهمة فقط.",
     howToTitle: "كيفية الإجابة",
     howReading: "القراءة والاستماع: اختر الإجابة الأنسب؛ بنود الاستماع تتضمّن صوتًا يمكنك إعادة تشغيله.",
     howWriting: "الكتابة: اكتب إجابتك بأسلوب طبيعي والتزم بالموضوع.",
@@ -165,6 +174,7 @@ const T = {
     integrityBands: { clean: "سليم · 0-14", minor: "طفيف · 15-44", elevated: "مرتفع · 45-100" },
     integrityYoursIn: "نتيجتك ضمن نطاق",
     integrityBandSuffix: "",
+    integrityReviewRec: "يُنصح بالمراجعة: يستحق النشاط على الشاشة في هذه المحاولة نظرة بشرية قبل الاعتماد على المستوى.",
   },
 } as const;
 
@@ -187,6 +197,7 @@ export function FluentClient({
   prefillName,
   prefillEmail,
   timerMinutes,
+  resultsShownToTaker = true,
 }: {
   candidateId?: string | null;
   engagementId?: string | null;
@@ -194,14 +205,20 @@ export function FluentClient({
   redemptionToken?: string | null;
   prefillName?: string;
   prefillEmail?: string;
-  /** Admin-configurable time limit (minutes); defaults to 15. */
+  /** Admin-configurable time limit (minutes); defaults to 25. */
   timerMinutes?: number;
+  /**
+   * Whether THIS taker will see their CEFR level on finishing. False for a
+   * voucher delegate (results go to the sponsoring org). Drives the pre-test
+   * copy so we don't promise a level the flow never shows (trial High #2).
+   */
+  resultsShownToTaker?: boolean;
 } = {}) {
-  // CAL-FLU-605: undefined = default 15 min; an explicit 0 (or negative) = NO
-  // limit (no countdown, no auto-submit) - the old `|| 15` silently forced a
-  // deliberate no-limit back to 15.
+  // CAL-FLU-605: undefined = default 25 min; an explicit 0 (or negative) = NO
+  // limit (no countdown, no auto-submit) - the old `|| N` silently forced a
+  // deliberate no-limit back to the default.
   const hasTimeLimit = timerMinutes === undefined || timerMinutes > 0;
-  const limitMinutes = timerMinutes && timerMinutes > 0 ? timerMinutes : 15;
+  const limitMinutes = timerMinutes && timerMinutes > 0 ? timerMinutes : 25;
   const [language, setLanguage] = useState<Language>("en");
   const [phase, setPhase] = useState<"intro" | "test" | "result">("intro");
   // CAL-FLU-604: reveal which questions block submission (set on a blocked click).
@@ -233,6 +250,10 @@ export function FluentClient({
   const [pasteChars, setPasteChars] = useState(0);
   const [events, setEvents] = useState<IntegrityEvent[]>([]);
   const testStartRef = useRef<number>(0);
+  // Candidate-facing warning shown when they return from another tab/app, or try
+  // to copy the questions. The trial found the integrity signal was invisible to
+  // the taker, so they get an explicit "please stay on this page" cue now.
+  const [proctorWarn, setProctorWarn] = useState<string | null>(null);
 
   // Listening playback state.
   const [plays, setPlays] = useState<Record<string, number>>({});
@@ -275,6 +296,13 @@ export function FluentClient({
     };
   }, []);
 
+  // Auto-dismiss the candidate proctor warning after a few seconds.
+  useEffect(() => {
+    if (!proctorWarn) return;
+    const id = setTimeout(() => setProctorWarn(null), 5000);
+    return () => clearTimeout(id);
+  }, [proctorWarn]);
+
   // Proctoring (CAL-FLU-601): capture tab-hide / window-blur AWAY DURATION while
   // the test runs. Covers tab switch + minimise (visibilitychange) AND same-window
   // focus loss like a second monitor or devtools (window blur/focus, which
@@ -296,6 +324,8 @@ export function FluentClient({
       setBlurCount((c) => c + 1);
       setAwayMs((m) => m + dur);
       setEvents((ev) => [...ev, { kind: "blur", at, awayMs: dur }]);
+      // Candidate-facing cue (Omar's feedback: tab-switching was silent). Advisory.
+      setProctorWarn(T[language].awayWarn);
     };
     const onVis = () => { if (document.hidden) goneAway(); else cameBack(); };
     document.addEventListener("visibilitychange", onVis);
@@ -306,17 +336,33 @@ export function FluentClient({
       window.removeEventListener("blur", goneAway);
       window.removeEventListener("focus", cameBack);
     };
-  }, [phase]);
+  }, [phase, language]);
 
-  // PDPL-safe paste capture: record that a paste happened + the LENGTH of the
-  // pasted text (never the text). Used on the writing + speaking-fallback boxes.
+  // Paste is BLOCKED into the answer boxes (full copy-paste clamp - the trial
+  // showed reviewers pasting ChatGPT answers into writing/speaking). We still
+  // record the ATTEMPT + the length (never the text, PDPL-safe) so the integrity
+  // signal reflects it, then preventDefault so the paste does not land.
   const onPasteCapture = useCallback((e: React.ClipboardEvent) => {
     const len = e.clipboardData?.getData("text")?.length ?? 0;
+    e.preventDefault();
     const at = Date.now() - (testStartRef.current || Date.now());
     setPasteCount((c) => c + 1);
     if (len > 0) setPasteChars((n) => n + len);
     setEvents((ev) => [...ev, { kind: "paste", at, pasteChars: len }]);
-  }, []);
+    setProctorWarn(T[language].copyBlocked);
+  }, [language]);
+
+  // Block copy / cut / right-click of the question + passage text so candidates
+  // can't lift the items into an external tool. Applied to the whole test area;
+  // the answer textareas opt out via allowAnswerClipboard so a candidate can still
+  // copy/cut their OWN writing while composing (only paste is blocked there).
+  const blockCopy = useCallback((e: React.ClipboardEvent | React.MouseEvent) => {
+    e.preventDefault();
+    setProctorWarn(T[language].copyBlocked);
+  }, [language]);
+  // Stop the container clamp from catching copy/cut inside the candidate's own
+  // answer boxes - normal editing (rearranging their essay) must keep working.
+  const allowAnswerClipboard = useCallback((e: React.ClipboardEvent) => { e.stopPropagation(); }, []);
 
   const playClip = useCallback((item: ListeningItem) => {
     if (!ttsAvailable() || !item.script) return;
@@ -599,7 +645,14 @@ export function FluentClient({
   // tell the candidate exactly what is incomplete + let them jump to it. The
   // timer auto-submit path calls submit() directly and bypasses this gate.
   const unansweredIds = receptive.filter((r) => answers[r.id] == null).map((r) => r.id);
-  const writingShort = wordCount < 5;
+  // A modest "real attempt" floor - NOT the full target. The trial flagged that a
+  // 5-word answer passed; but gating on the full min_words (e.g. 120 for C1) would
+  // hard-block a near-complete answer and, in the no-timer admin config, leave no
+  // way to submit at all. So the hard gate is a low floor that only stops trivially
+  // empty submissions; the counter still shows the "min N" target as guidance, and
+  // the timer auto-submit path still bypasses this entirely.
+  const WRITING_SUBMIT_FLOOR = 20;
+  const writingShort = wordCount < WRITING_SUBMIT_FLOOR;
   const speakingShort = speakWordCount < 3;
   const hasGaps = unansweredIds.length > 0 || writingShort || speakingShort;
   function scrollToGap(id: string) {
@@ -631,7 +684,9 @@ export function FluentClient({
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <h2 className="text-lg font-semibold text-primary">{t.beginTitle}</h2>
-              <p className="mt-1 text-sm text-slate-500">{t.beginSub.replace("{min}", String(limitMinutes))}</p>
+              <p className="mt-1 text-sm text-slate-500">
+                {(resultsShownToTaker ? t.beginSub : t.beginSubOrg).replace("{min}", String(limitMinutes))}
+              </p>
               {hasTimeLimit && <p className="mt-1 text-xs text-slate-500">{t.oneTimer}</p>}
             </div>
             <div className="flex items-center gap-2">
@@ -691,7 +746,23 @@ export function FluentClient({
 
       {/* ── Test ── */}
       {phase === "test" && test && (
-        <>
+        <div
+          className="space-y-5"
+          onCopy={blockCopy}
+          onCut={blockCopy}
+          onContextMenu={blockCopy}
+        >
+          {/* Candidate-facing proctor warning (tab switch / paste attempt). A
+              floating toast (fixed) so it never overlaps the sticky countdown. */}
+          {proctorWarn && (
+            <div
+              role="status"
+              aria-live="assertive"
+              className="fixed left-1/2 top-3 z-50 flex max-w-md -translate-x-1/2 items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-900 shadow-lg"
+            >
+              <AlertCircle className="h-4 w-4 shrink-0" /> {proctorWarn}
+            </div>
+          )}
           {remaining != null && (
             <div className="sticky top-0 z-10 space-y-1.5">
               <div
@@ -731,8 +802,8 @@ export function FluentClient({
                     id={`fluent-q-${item.id}`}
                     className={`rounded-lg border p-4 ${unanswered ? "border-rose-400 ring-1 ring-rose-300" : "border-slate-200"}`}
                   >
-                    <p dir="ltr" className="text-sm text-[#111232]">{item.passage}</p>
-                    <p dir="ltr" className="mt-2 text-sm font-semibold text-primary">{i + 1}. {item.question}</p>
+                    <p dir="ltr" className="select-none text-sm text-[#111232]">{item.passage}</p>
+                    <p dir="ltr" className="mt-2 select-none text-sm font-semibold text-primary">{i + 1}. {item.question}</p>
                     <Options item={item} answers={answers} setAnswers={setAnswers} />
                     {unanswered && (
                       <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-rose-600">
@@ -769,11 +840,12 @@ export function FluentClient({
                   >
                     <div className="flex items-center gap-3">
                       {test.tts && sessionId ? (
-                        <audio
-                          controls
-                          preload="none"
-                          className="h-9 w-full max-w-xs"
+                        <CappedAudio
                           src={`/api/ac/fluent/tts?session=${sessionId}&item=${encodeURIComponent(item.id)}${redemptionToken ? `&token=${encodeURIComponent(redemptionToken)}` : ""}`}
+                          maxPlays={MAX_PLAYS}
+                          playLabel={t.play}
+                          playingLabel={t.playing}
+                          replaysLeft={t.replaysLeft}
                         />
                       ) : ttsAvailable() ? (
                         <>
@@ -788,7 +860,7 @@ export function FluentClient({
                         <p dir="ltr" className="text-sm italic text-slate-600">“{item.script}”</p>
                       )}
                     </div>
-                    <p dir="ltr" className="mt-3 text-sm font-semibold text-primary">{i + 1}. {item.question}</p>
+                    <p dir="ltr" className="mt-3 select-none text-sm font-semibold text-primary">{i + 1}. {item.question}</p>
                     <Options item={item} answers={answers} setAnswers={setAnswers} />
                     {unanswered && (
                       <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-rose-600">
@@ -809,16 +881,18 @@ export function FluentClient({
             <h2 className="mb-3 inline-flex items-center gap-2 text-lg font-semibold text-primary">
               <PenLine className="h-5 w-5 text-accent" /> {t.writing}
             </h2>
-            <p dir="ltr" className="text-sm text-[#111232]">{test.writing.prompt_en}</p>
+            <p dir="ltr" className="select-none text-sm text-[#111232]">{test.writing.prompt_en}</p>
             {rtl && test.writing.prompt_ar && (
-              <p dir="rtl" className="mt-1 text-sm text-slate-600">{test.writing.prompt_ar}</p>
+              <p dir="rtl" className="mt-1 select-none text-sm text-slate-600">{test.writing.prompt_ar}</p>
             )}
             {/* Explicit, labelled word target - a reviewer read the prompt's
                 "70-90 words" as "70 min", so the target is stated as a length
                 and explicitly decoupled from the global countdown. */}
-            <p className="mt-2 text-[11px] font-medium text-slate-500">{t.targetLen}</p>
+            <p className="mt-2 text-[11px] font-medium text-slate-500">
+              {t.targetLen.replace("{min}", String(test.writing.min_words)).replace("{max}", String(test.writing.min_words + 20))}
+            </p>
             <textarea value={writing} onChange={(e) => setWriting(e.target.value)} rows={7}
-              onPaste={onPasteCapture}
+              onPaste={onPasteCapture} onCopy={allowAnswerClipboard} onCut={allowAnswerClipboard}
               placeholder={t.writeHere} dir="ltr"
               className="mt-3 w-full resize-y rounded-md border border-slate-300 px-3 py-2 text-sm text-[#111232] focus:border-accent focus:outline-none" />
             <div className={`mt-1 text-[11px] ${wordCount >= test.writing.min_words ? "font-semibold text-emerald-600" : "text-slate-500"}`}>
@@ -838,9 +912,9 @@ export function FluentClient({
               </span>
             </h2>
             <p className="mb-3 text-xs text-slate-500">{t.speakHint}</p>
-            <p dir="ltr" className="text-sm text-[#111232]">{test.speaking.prompt_en}</p>
+            <p dir="ltr" className="select-none text-sm text-[#111232]">{test.speaking.prompt_en}</p>
             {rtl && test.speaking.prompt_ar && (
-              <p dir="rtl" className="mt-1 text-sm text-slate-600">{test.speaking.prompt_ar}</p>
+              <p dir="rtl" className="mt-1 select-none text-sm text-slate-600">{test.speaking.prompt_ar}</p>
             )}
 
             {speakMode === "record" ? (
@@ -872,7 +946,25 @@ export function FluentClient({
                 {transcript && (
                   <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
                     <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{recording ? t.listening_live : t.yourTranscript}</p>
-                    <p dir="ltr" className="text-sm text-[#111232]">{transcript}</p>
+                    {recording ? (
+                      <p dir="ltr" className="text-sm text-[#111232]">{transcript}</p>
+                    ) : (
+                      <>
+                        {/* Recognition can mishear; let the candidate correct the text
+                            before it is scored (paste stays blocked). */}
+                        <textarea
+                          value={transcript}
+                          onChange={(e) => setTranscript(e.target.value)}
+                          onPaste={onPasteCapture}
+                          onCopy={allowAnswerClipboard}
+                          onCut={allowAnswerClipboard}
+                          rows={4}
+                          dir="ltr"
+                          className="w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-[#111232] focus:border-accent focus:outline-none"
+                        />
+                        <p className="mt-1 text-[11px] text-slate-500">{t.transcriptEdit}</p>
+                      </>
+                    )}
                   </div>
                 )}
                 {/* Optional manual escape hatch - the candidate can choose to type,
@@ -890,7 +982,7 @@ export function FluentClient({
             ) : (
               <div className="mt-3 space-y-2">
                 <textarea value={transcript} onChange={(e) => setTranscript(e.target.value)} rows={4}
-                  onPaste={onPasteCapture}
+                  onPaste={onPasteCapture} onCopy={allowAnswerClipboard} onCut={allowAnswerClipboard}
                   placeholder={t.speakTypeHere} dir="ltr"
                   className="w-full resize-y rounded-md border border-slate-300 px-3 py-2 text-sm text-[#111232] focus:border-accent focus:outline-none" />
                 <button onClick={() => { setSpeakMode("record"); setSpeakNote(""); }}
@@ -935,7 +1027,7 @@ export function FluentClient({
             {busy ? t.scoring : t.submit}
           </button>
           <p className="mt-2 text-[11px] text-slate-400">{t.proctorNote}</p>
-        </>
+        </div>
       )}
 
       {/* ── Taker thank-you (XP-13: results are not shown to the taker) ── */}
@@ -950,9 +1042,13 @@ export function FluentClient({
               ? "تمت مشاركة نتائجك مع الجهة الطالبة ولا تُعرض هنا. شكرًا لك."
               : "Your results have been shared with the requesting organisation and are not shown here. Thank you."}
           </p>
-          <button onClick={reset} className="mt-5 inline-flex items-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
-            <RotateCcw className="h-4 w-4" /> {t.startOver}
-          </button>
+          {/* No "Start over" on the one-shot voucher flow - the link is single-use
+              and the server refuses a resubmit, so offering it only misleads. */}
+          {!redemptionToken && (
+            <button onClick={reset} className="mt-5 inline-flex items-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
+              <RotateCcw className="h-4 w-4" /> {t.startOver}
+            </button>
+          )}
         </div>
       )}
 
@@ -1052,6 +1148,14 @@ export function FluentClient({
                   </span>
                   <span className="text-xs opacity-70 tabular-nums">{integrity.score}/100</span>
                 </div>
+                {/* Advisory review flag when activity is elevated - never
+                    withholds the level or the certificate (decision: advisory +
+                    review flag), just tells the reviewer to take a look. */}
+                {integrity.tier === "elevated" && (
+                  <p className="mt-1.5 rounded-md border border-current/30 bg-white/60 px-2.5 py-1.5 text-xs font-semibold">
+                    {t.integrityReviewRec}
+                  </p>
+                )}
                 <ul className="mt-1.5 list-disc ps-5 text-xs">
                   {integrity.reasons.map((r, i) => (
                     <li key={i}>{r}</li>
@@ -1111,6 +1215,72 @@ export function FluentClient({
 }
 
 // ── small presentational helpers ────────────────────────────────
+
+/**
+ * Listening player with a hard replay cap and NO download/scrub. The old native
+ * `<audio controls>` on the Azure path let candidates replay unlimited times and
+ * download the voice file (trial findings). This custom player:
+ *  - counts each deliberate play; disables after `maxPlays` (the "up to twice"
+ *    promise is now actually enforced on both audio paths),
+ *  - shows a duration + progress read-out (fixing the dead 0:00 seek bar) via
+ *    preload="metadata",
+ *  - exposes no download control (controlsList nodownload + right-click blocked)
+ *    and no scrubbable seek bar (the progress bar is display-only).
+ */
+function CappedAudio({
+  src, maxPlays, playLabel, playingLabel, replaysLeft,
+}: {
+  src: string; maxPlays: number; playLabel: string; playingLabel: string; replaysLeft: string;
+}) {
+  const ref = useRef<HTMLAudioElement | null>(null);
+  const [plays, setPlays] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [dur, setDur] = useState(0);
+  const [cur, setCur] = useState(0);
+  const exhausted = plays >= maxPlays;
+  const fmt = (s: number) =>
+    Number.isFinite(s) && s > 0 ? `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}` : "0:00";
+  const play = () => {
+    const a = ref.current;
+    if (!a || exhausted || playing) return;
+    a.currentTime = 0;
+    // Count on the actual `play` event (onPlay), not on click - a rejected/errored
+    // start must not cost the candidate one of their two replays on a scored item.
+    void a.play().catch(() => setPlaying(false));
+  };
+  return (
+    <div className="flex flex-1 items-center gap-3">
+      <audio
+        ref={ref}
+        src={src}
+        preload="metadata"
+        controlsList="nodownload noplaybackrate noremoteplayback"
+        onContextMenu={(e) => e.preventDefault()}
+        onPlay={() => { setPlaying(true); setPlays((p) => p + 1); }}
+        onPause={() => setPlaying(false)}
+        onEnded={() => setPlaying(false)}
+        onError={() => setPlaying(false)}
+        onLoadedMetadata={(e) => setDur(e.currentTarget.duration)}
+        onTimeUpdate={(e) => setCur(e.currentTarget.currentTime)}
+      />
+      <button
+        type="button"
+        onClick={play}
+        disabled={exhausted || playing}
+        className="inline-flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-[#4380c4] disabled:opacity-50"
+      >
+        {playing ? <Volume2 className="h-3.5 w-3.5 animate-pulse" /> : <Play className="h-3.5 w-3.5" />}
+        {playing ? playingLabel : playLabel}
+      </button>
+      <div className="h-1.5 w-full max-w-[160px] overflow-hidden rounded-full bg-slate-200">
+        <div className="h-full bg-accent transition-[width]" style={{ width: dur > 0 ? `${Math.min(100, (cur / dur) * 100)}%` : "0%" }} />
+      </div>
+      <span className="shrink-0 text-[11px] tabular-nums text-slate-400">{fmt(cur)} / {fmt(dur)}</span>
+      <span className="shrink-0 text-[11px] text-slate-400">{Math.max(0, maxPlays - plays)} {replaysLeft}</span>
+    </div>
+  );
+}
+
 function Options({
   item, answers, setAnswers,
 }: {
@@ -1119,7 +1289,7 @@ function Options({
   setAnswers: Dispatch<SetStateAction<Record<string, number>>>;
 }) {
   return (
-    <div className="mt-2 grid gap-2 sm:grid-cols-2" dir="ltr">
+    <div className="mt-2 grid select-none gap-2 sm:grid-cols-2" dir="ltr">
       {item.options.map((opt, oi) => (
         <label key={oi} className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm ${
           answers[item.id] === oi ? "border-accent bg-accent/5" : "border-slate-200 hover:bg-slate-50"

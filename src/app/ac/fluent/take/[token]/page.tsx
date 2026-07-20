@@ -85,13 +85,12 @@ export default async function FluentTakePage({
             <h1 className="ara-numeral mt-4 text-3xl font-semibold leading-tight text-white sm:text-4xl">
               Welcome{redemption.redeemer_name ? `, ${redemption.redeemer_name}` : ""}
             </h1>
+            {/* English-only header (this is the English placement test). The old
+                always-on Arabic paragraph made the header read half-EN half-AR;
+                the in-card language toggle still switches the test instructions. */}
             <p className="mt-3 text-base leading-relaxed text-white/75">
               A four-skill, CEFR-aligned English placement. Reading and listening are
               auto-scored; writing and speaking are scored against the CEFR rubric.
-            </p>
-            <p dir="rtl" className="mt-2 text-base leading-relaxed text-white/60">
-              تقييم إنجليزي رباعي المهارات ومتوافق مع الإطار الأوروبي المرجعي (CEFR). تُقيَّم القراءة
-              والاستماع تلقائيًا، وتُقيَّم الكتابة والتحدّث وفق معيار CEFR.
             </p>
           </div>
         </div>
@@ -110,6 +109,7 @@ export default async function FluentTakePage({
           prefillName={redemption.redeemer_name ?? undefined}
           prefillEmail={redemption.redeemer_email ?? undefined}
           timerMinutes={fluentMinutes}
+          resultsShownToTaker={false}
         />
       </main>
     </div>

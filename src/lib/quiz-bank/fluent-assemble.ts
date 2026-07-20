@@ -80,22 +80,29 @@ export async function assembleFluentReceptive(): Promise<{ reading: ReadingItem[
 // Writing/speaking are AI-scored open tasks, so a small fixed rotation is fine
 // (the candidate's response varies) and keeps a bank-served sitting free of any
 // live generation. Bilingual so an Arabic-first taker reads the prompt in Arabic.
+// Word count is stated ONCE per prompt as the band "min_words to min_words+20",
+// so the prompt text, the counter ("min N") and the UI guidance line (derived
+// from min_words) all agree - the trial saw three different numbers on one
+// screen (prompt 80 / guidance 70-90 / counter 60).
 const WRITING_PROMPTS: WritingTask[] = [
-  { id: "w1", cefr_target: "B1", min_words: 60,
-    prompt_en: "Write a short email (about 80 words) to a colleague explaining why a project deadline needs to move, and propose a new date.",
-    prompt_ar: "اكتب بريدًا إلكترونيًا قصيرًا (نحو 80 كلمة) إلى زميل تشرح فيه سبب الحاجة إلى تأجيل موعد تسليم مشروع، واقترح موعدًا جديدًا." },
-  { id: "w2", cefr_target: "B1", min_words: 60,
-    prompt_en: "Write a short message (about 80 words) to a client apologising for a delay and explaining the next steps you will take.",
-    prompt_ar: "اكتب رسالة قصيرة (نحو 80 كلمة) إلى عميل تعتذر فيها عن تأخير وتوضّح الخطوات التالية التي ستتخذها." },
-  { id: "w3", cefr_target: "B2", min_words: 70,
-    prompt_en: "Write a short paragraph (about 90 words) giving your opinion on whether teams should work from the office or remotely, with one reason for your view.",
-    prompt_ar: "اكتب فقرة قصيرة (نحو 90 كلمة) تبدي فيها رأيك حول ما إذا كان ينبغي للفرق العمل من المكتب أم عن بُعد، مع ذكر سبب واحد لرأيك." },
+  { id: "w1", cefr_target: "B1", min_words: 70,
+    prompt_en: "Write a short email (about 70-90 words) to a colleague explaining why a project deadline needs to move, and propose a new date.",
+    prompt_ar: "اكتب بريدًا إلكترونيًا قصيرًا (نحو 70-90 كلمة) إلى زميل تشرح فيه سبب الحاجة إلى تأجيل موعد تسليم مشروع، واقترح موعدًا جديدًا." },
+  { id: "w2", cefr_target: "B1", min_words: 70,
+    prompt_en: "Write a short message (about 70-90 words) to a client apologising for a delay and explaining the next steps you will take.",
+    prompt_ar: "اكتب رسالة قصيرة (نحو 70-90 كلمة) إلى عميل تعتذر فيها عن تأخير وتوضّح الخطوات التالية التي ستتخذها." },
+  { id: "w3", cefr_target: "B2", min_words: 80,
+    prompt_en: "Write a short paragraph (about 80-100 words) giving your opinion on whether teams should work from the office or remotely, with one reason for your view.",
+    prompt_ar: "اكتب فقرة قصيرة (نحو 80-100 كلمة) تبدي فيها رأيك حول ما إذا كان ينبغي للفرق العمل من المكتب أم عن بُعد، مع ذكر سبب واحد لرأيك." },
 ];
+// A single spoken-duration target (45s) across every prompt, so the prompt text
+// and the live "N s / 45 s" counter always agree and don't vary per attempt
+// (the trial saw the prompt say 45s while the counter said 40s).
 const SPEAKING_PROMPTS: SpeakingTask[] = [
-  { id: "s1", cefr_target: "B1", min_seconds: 40,
+  { id: "s1", cefr_target: "B1", min_seconds: 45,
     prompt_en: "Speak for about 45 seconds: describe a work or study challenge you faced recently and how you dealt with it.",
     prompt_ar: "تحدّث لمدة 45 ثانية تقريبًا: صِف تحديًا واجهته مؤخرًا في العمل أو الدراسة وكيف تعاملت معه." },
-  { id: "s2", cefr_target: "B1", min_seconds: 40,
+  { id: "s2", cefr_target: "B1", min_seconds: 45,
     prompt_en: "Speak for about 45 seconds: describe a skill you would like to improve and explain why it matters for your work.",
     prompt_ar: "تحدّث لمدة 45 ثانية تقريبًا: صِف مهارة تودّ تحسينها ووضّح سبب أهميتها لعملك." },
   { id: "s3", cefr_target: "B2", min_seconds: 45,
@@ -135,7 +142,7 @@ async function drawLivePrompt(skill: "writing" | "speaking"): Promise<WritingTas
       prompt_ar: String(st.prompt_ar ?? ""),
     };
     return skill === "writing"
-      ? { ...base, min_words: typeof st.min_words === "number" ? st.min_words : 60 } as WritingTask
+      ? { ...base, min_words: typeof st.min_words === "number" ? st.min_words : 70 } as WritingTask
       : { ...base, min_seconds: typeof st.min_seconds === "number" ? st.min_seconds : 45 } as SpeakingTask;
   } catch {
     return null;

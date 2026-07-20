@@ -41,6 +41,11 @@ export default async function FluentPage({ searchParams }: Props) {
   const aiConfigured = isAIConfigured();
   // Admin-configurable Fluent time limit (minutes).
   const fluentMinutes = (await getTimerMinutes("fluent", TIMER_DEFAULTS.fluent)) ?? TIMER_DEFAULTS.fluent;
+  // Only staff see their CEFR level on-screen (same signal as the score route's
+  // canView). A non-staff / anonymous taker on this standalone runner must NOT be
+  // promised a level pre-test that the thank-you screen then withholds (High #2).
+  const { isStaffCaller } = await import("@/lib/ara/auth-guards");
+  const viewerIsStaff = await isStaffCaller();
 
   const SKILLS = SKILL_ICONS.map((s) => ({
     icon: s.icon,
@@ -192,6 +197,7 @@ export default async function FluentPage({ searchParams }: Props) {
           prefillName={candidateName ?? undefined}
           prefillEmail={candidateEmail ?? undefined}
           timerMinutes={fluentMinutes}
+          resultsShownToTaker={viewerIsStaff}
         />
       </main>
     </div>

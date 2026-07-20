@@ -13,7 +13,10 @@ import { createServiceClient } from "@/lib/supabase/server";
 /** Code defaults used when a scope row is absent or the table is not migrated. */
 export const TIMER_DEFAULTS = {
   quiz: 5,
-  fluent: 15,
+  // 25 min for the full 4-skill placement (reading + 10 listening clips + writing
+  // + speaking). Raised from 15 after the trial: 15 was too tight and slow takers
+  // were auto-submitted before finishing speaking. Admins can tune per scope.
+  fluent: 25,
   // The reviewed bank serves a fixed 9-item form per subtest (up to 36 for the
   // full 4-subtest battery), so the default is generous enough not to auto-fail a
   // full sitting; admins can tune per scope in `assessment_timers`. Backstop only.

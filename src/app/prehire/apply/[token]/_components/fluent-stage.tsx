@@ -550,6 +550,8 @@ export function FluentStage({ token, onDone, lang = "en" }: { token: string; onD
               )}
             </p>
             <textarea
+              id="prehire-writing"
+              name="prehire-writing"
               value={writing}
               onChange={(e) => setWriting(e.target.value)}
               onPaste={onPasteCapture}
@@ -623,6 +625,8 @@ export function FluentStage({ token, onDone, lang = "en" }: { token: string; onD
             ) : (
               <div className="mt-3 space-y-2">
                 <textarea
+                  id="prehire-speaking-typed"
+                  name="prehire-speaking-typed"
                   value={transcript}
                   onChange={(e) => setTranscript(e.target.value)}
                   onPaste={onPasteCapture}

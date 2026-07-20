@@ -32,11 +32,13 @@ const NATIONALITY: Opt[] = [
   { value: "prefer_not_to_say", label: "Prefer not to say", label_ar: "أفضّل عدم الإجابة" },
 ];
 
-function Field({ label, value, onChange, options, ar }: { label: string; value: string; onChange: (v: string) => void; options: Opt[]; ar: boolean }) {
+function Field({ id, label, value, onChange, options, ar }: { id: string; label: string; value: string; onChange: (v: string) => void; options: Opt[]; ar: boolean }) {
   return (
-    <label className="block">
+    <label className="block" htmlFor={id}>
       <span className="text-xs font-medium text-muted-foreground">{label}</span>
       <select
+        id={id}
+        name={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="mt-1 w-full rounded-md border border-input bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5391D5]"
@@ -91,9 +93,9 @@ export function DemographicsCard({ token, onDone, lang = "en" }: { token: string
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
-          <Field label={tr("Gender", "الجنس")} value={gender} onChange={setGender} options={GENDERS} ar={ar} />
-          <Field label={tr("Age", "العمر")} value={ageBand} onChange={setAgeBand} options={AGE_BANDS} ar={ar} />
-          <Field label={tr("Nationality", "الجنسية")} value={nationality} onChange={setNationality} options={NATIONALITY} ar={ar} />
+          <Field id="prehire-eeo-gender" label={tr("Gender", "الجنس")} value={gender} onChange={setGender} options={GENDERS} ar={ar} />
+          <Field id="prehire-eeo-age" label={tr("Age", "العمر")} value={ageBand} onChange={setAgeBand} options={AGE_BANDS} ar={ar} />
+          <Field id="prehire-eeo-nationality" label={tr("Nationality", "الجنسية")} value={nationality} onChange={setNationality} options={NATIONALITY} ar={ar} />
         </div>
         <div className="flex items-center gap-2">
           <Button

@@ -181,6 +181,8 @@ export function CbiStage({ token, onDone, lang = "en" }: { token: string; onDone
           ) : (
             <div className="space-y-2">
               <textarea
+                id="prehire-cbi-answer"
+                name="prehire-cbi-answer"
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 onPaste={(e) => {

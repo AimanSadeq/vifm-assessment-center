@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
-import { Languages } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getTimerMinutes, TIMER_DEFAULTS } from "@/lib/assessment-timers";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { FluentClient } from "../../_components/fluent-client";
+import { FluentLanguageProvider, FluentTakeHeader } from "../../_components/fluent-language";
 import { ProctorCapture } from "@/components/proctor/proctor-capture";
 
 export const dynamic = "force-dynamic";
@@ -75,43 +75,34 @@ export default async function FluentTakePage({
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="fluent-hero">
-        <div className="mx-auto max-w-5xl px-6 pt-7 pb-20">
-          <VifmLogo variant="white" size="sm" />
-          <div className="mt-8 max-w-2xl">
-            <span className="ara-eyebrow text-[#9CC4EC]">
-              <Languages className="h-3 w-3" /> VIFM Fluent® · English placement
-            </span>
-            <h1 className="ara-numeral mt-4 text-3xl font-semibold leading-tight text-white sm:text-4xl">
-              Welcome{redemption.redeemer_name ? `, ${redemption.redeemer_name}` : ""}
-            </h1>
-            {/* English-only header (this is the English placement test). The old
-                always-on Arabic paragraph made the header read half-EN half-AR;
-                the in-card language toggle still switches the test instructions. */}
-            <p className="mt-3 text-base leading-relaxed text-white/75">
-              A four-skill, CEFR-aligned English placement. Reading and listening are
-              auto-scored; writing and speaking are scored against the CEFR rubric.
-            </p>
+      {/* The header and the runner share one language state, so the welcome
+          follows the test-language selector inside the card below it (and
+          flips to RTL for Arabic). */}
+      <FluentLanguageProvider>
+        <header className="fluent-hero">
+          <div className="mx-auto max-w-5xl px-6 pt-7 pb-20">
+            <VifmLogo variant="white" size="sm" />
+            <FluentTakeHeader name={redemption.redeemer_name} />
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="relative z-10 mx-auto -mt-10 max-w-5xl px-6 pb-16">
-        <ProctorCapture
-          enabled={proctorRequired || searchParams?.proctor === "1"}
-          context="fluent"
-          refId={redemption.redemption_token}
-          subjectName={redemption.redeemer_name ?? null}
-          subjectEmail={redemption.redeemer_email ?? null}
-        />
-        <FluentClient
-          redemptionToken={redemption.redemption_token}
-          prefillName={redemption.redeemer_name ?? undefined}
-          prefillEmail={redemption.redeemer_email ?? undefined}
-          timerMinutes={fluentMinutes}
-          resultsShownToTaker={false}
-        />
-      </main>
+        <main className="relative z-10 mx-auto -mt-10 max-w-5xl px-6 pb-16">
+          <ProctorCapture
+            enabled={proctorRequired || searchParams?.proctor === "1"}
+            context="fluent"
+            refId={redemption.redemption_token}
+            subjectName={redemption.redeemer_name ?? null}
+            subjectEmail={redemption.redeemer_email ?? null}
+          />
+          <FluentClient
+            redemptionToken={redemption.redemption_token}
+            prefillName={redemption.redeemer_name ?? undefined}
+            prefillEmail={redemption.redeemer_email ?? undefined}
+            timerMinutes={fluentMinutes}
+            resultsShownToTaker={false}
+          />
+        </main>
+      </FluentLanguageProvider>
     </div>
   );
 }

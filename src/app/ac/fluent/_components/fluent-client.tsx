@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { startBrowserStt, type BrowserSttSession } from "@/lib/speech/browser-stt";
 import { FluentDefinitions } from "./fluent-definitions";
+import { useFluentLanguage } from "./fluent-language";
 import {
   computeIntegritySignal,
   type IntegrityEvent,
@@ -219,7 +220,14 @@ export function FluentClient({
   // deliberate no-limit back to the default.
   const hasTimeLimit = timerMinutes === undefined || timerMinutes > 0;
   const limitMinutes = timerMinutes && timerMinutes > 0 ? timerMinutes : 25;
-  const [language, setLanguage] = useState<Language>("en");
+  // Language is shared with the page header when a FluentLanguageProvider wraps
+  // us (the take page), so the welcome above the card follows the taker's
+  // choice. Standalone surfaces have no provider and keep local state.
+  const sharedLanguage = useFluentLanguage();
+  const localLanguage = useState<Language>("en");
+  const [language, setLanguage] = sharedLanguage
+    ? ([sharedLanguage.language, sharedLanguage.setLanguage] as const)
+    : localLanguage;
   const [phase, setPhase] = useState<"intro" | "test" | "result">("intro");
   // CAL-FLU-604: reveal which questions block submission (set on a blocked click).
   const [showGaps, setShowGaps] = useState(false);

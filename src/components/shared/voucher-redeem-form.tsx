@@ -113,6 +113,7 @@ export function VoucherRedeemForm(cfg: VoucherRedeemConfig) {
         <Label htmlFor="vr-code">{tx("Voucher code", "رمز القسيمة")}</Label>
         <Input
           id="vr-code"
+          name="voucher-code"
           value={code}
           onChange={(e) => setCode(e.target.value)}
           dir="ltr"
@@ -127,20 +128,23 @@ export function VoucherRedeemForm(cfg: VoucherRedeemConfig) {
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="vr-name">{tx("Full name", "الاسم الكامل")}</Label>
-          <Input id="vr-name" value={name} onChange={(e) => setName(e.target.value)} />
+          <Input id="vr-name" name="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="vr-email">{tx("Email", "البريد الإلكتروني")}</Label>
           <Input
             id="vr-email"
+            name="email"
+            autoComplete="email"
             type="email"
             dir="ltr"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             aria-invalid={emailInvalidShown}
+            aria-describedby={emailInvalidShown ? "vr-email-error" : undefined}
           />
           {emailInvalidShown && (
-            <p className="text-[11px] text-destructive">
+            <p id="vr-email-error" className="text-[11px] text-destructive">
               {tx("Enter a valid email address.", "أدخل بريدًا إلكترونيًا صحيحًا.")}
             </p>
           )}
@@ -155,6 +159,8 @@ export function VoucherRedeemForm(cfg: VoucherRedeemConfig) {
           </Label>
           <Input
             id="vr-company"
+            name="organization"
+            autoComplete="organization"
             value={company}
             onChange={(e) => setCompany(e.target.value)}
             placeholder={tx("Your organisation", "مؤسستك")}

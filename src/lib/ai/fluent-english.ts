@@ -668,8 +668,13 @@ export async function generateFluentTest(input: {
 
     const reading: ReadingItem[] = (parsed.reading ?? [])
       .filter((r) => typeof r.passage === "string" && typeof r.question === "string" && validMcq(r))
+      // Always derive the id rather than trusting the model's: item.id is the
+      // radio-group name (and now the option element id), so a model that
+      // returned the same id for a reading and a listening item would merge
+      // two questions into one radio group - answering one would clear the
+      // other. The id is internal, so nothing is lost by assigning it here.
       .map((r, i) => ({
-        id: r.id || `r${i + 1}`,
+        id: `r${i + 1}`,
         passage: String(r.passage),
         question: String(r.question),
         options: (r.options as string[]).map((o) => String(o)),
@@ -680,7 +685,7 @@ export async function generateFluentTest(input: {
     const listening: ListeningItem[] = (parsed.listening ?? [])
       .filter((r) => typeof r.script === "string" && typeof r.question === "string" && validMcq(r))
       .map((r, i) => ({
-        id: r.id || `l${i + 1}`,
+        id: `l${i + 1}`,
         script: String(r.script),
         question: String(r.question),
         options: (r.options as string[]).map((o) => String(o)),

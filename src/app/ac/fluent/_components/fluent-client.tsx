@@ -711,15 +711,17 @@ export function FluentClient({
           </div>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            <label className="block">
+            <label className="block" htmlFor="fluent-taker-name">
               <span className="text-xs font-medium text-slate-500">{t.nameLabel}</span>
-              <input value={takerName} onChange={(e) => setTakerName(e.target.value)} dir="ltr"
+              <input id="fluent-taker-name" name="name" autoComplete="name"
+                value={takerName} onChange={(e) => setTakerName(e.target.value)} dir="ltr"
                 placeholder={t.namePlaceholder}
                 className="mt-1.5 w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20" />
             </label>
-            <label className="block">
+            <label className="block" htmlFor="fluent-taker-email">
               <span className="text-xs font-medium text-slate-500">{t.emailLabel}</span>
-              <input value={takerEmail} onChange={(e) => setTakerEmail(e.target.value)} type="email" dir="ltr"
+              <input id="fluent-taker-email" name="email" autoComplete="email"
+                value={takerEmail} onChange={(e) => setTakerEmail(e.target.value)} type="email" dir="ltr"
                 placeholder={t.emailPlaceholder}
                 className="mt-1.5 w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20" />
             </label>
@@ -811,7 +813,7 @@ export function FluentClient({
                     className={`rounded-lg border p-4 ${unanswered ? "border-rose-400 ring-1 ring-rose-300" : "border-slate-200"}`}
                   >
                     <p dir="ltr" className="select-none text-sm text-[#111232]">{item.passage}</p>
-                    <p dir="ltr" className="mt-2 select-none text-sm font-semibold text-primary">{i + 1}. {item.question}</p>
+                    <p id={`fluent-qtext-${item.id}`} dir="ltr" className="mt-2 select-none text-sm font-semibold text-primary">{i + 1}. {item.question}</p>
                     <Options item={item} answers={answers} setAnswers={setAnswers} />
                     {unanswered && (
                       <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-rose-600">
@@ -868,7 +870,7 @@ export function FluentClient({
                         <p dir="ltr" className="text-sm italic text-slate-600">“{item.script}”</p>
                       )}
                     </div>
-                    <p dir="ltr" className="mt-3 select-none text-sm font-semibold text-primary">{i + 1}. {item.question}</p>
+                    <p id={`fluent-qtext-${item.id}`} dir="ltr" className="mt-3 select-none text-sm font-semibold text-primary">{i + 1}. {item.question}</p>
                     <Options item={item} answers={answers} setAnswers={setAnswers} />
                     {unanswered && (
                       <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-rose-600">
@@ -899,7 +901,8 @@ export function FluentClient({
             <p className="mt-2 text-[11px] font-medium text-slate-500">
               {t.targetLen.replace("{min}", String(test.writing.min_words)).replace("{max}", String(test.writing.min_words + 20))}
             </p>
-            <textarea value={writing} onChange={(e) => setWriting(e.target.value)} rows={7}
+            <textarea id="fluent-writing-answer" name="writing" aria-label={t.writeHere}
+              value={writing} onChange={(e) => setWriting(e.target.value)} rows={7}
               onPaste={onPasteCapture} onCopy={allowAnswerClipboard} onCut={allowAnswerClipboard}
               placeholder={t.writeHere} dir="ltr"
               className="mt-3 w-full resize-y rounded-md border border-slate-300 px-3 py-2 text-sm text-[#111232] focus:border-accent focus:outline-none" />
@@ -961,6 +964,9 @@ export function FluentClient({
                         {/* Recognition can mishear; let the candidate correct the text
                             before it is scored (paste stays blocked). */}
                         <textarea
+                          id="fluent-transcript"
+                          name="transcript"
+                          aria-label={t.yourTranscript}
                           value={transcript}
                           onChange={(e) => setTranscript(e.target.value)}
                           onPaste={onPasteCapture}
@@ -989,7 +995,8 @@ export function FluentClient({
               </div>
             ) : (
               <div className="mt-3 space-y-2">
-                <textarea value={transcript} onChange={(e) => setTranscript(e.target.value)} rows={4}
+                <textarea id="fluent-speaking-typed" name="speaking" aria-label={t.speakTypeHere}
+                  value={transcript} onChange={(e) => setTranscript(e.target.value)} rows={4}
                   onPaste={onPasteCapture} onCopy={allowAnswerClipboard} onCut={allowAnswerClipboard}
                   placeholder={t.speakTypeHere} dir="ltr"
                   className="w-full resize-y rounded-md border border-slate-300 px-3 py-2 text-sm text-[#111232] focus:border-accent focus:outline-none" />
@@ -1297,12 +1304,17 @@ function Options({
   setAnswers: Dispatch<SetStateAction<Record<string, number>>>;
 }) {
   return (
-    <div className="mt-2 grid select-none gap-2 sm:grid-cols-2" dir="ltr">
+    // role=radiogroup so a screen reader announces the options as one set of N
+    // rather than four unrelated radios - named by the question text above it,
+    // since an unnamed group is announced anonymously and just adds noise.
+    <div className="mt-2 grid select-none gap-2 sm:grid-cols-2" dir="ltr"
+      role="radiogroup" aria-labelledby={`fluent-qtext-${item.id}`}>
       {item.options.map((opt, oi) => (
-        <label key={oi} className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm ${
-          answers[item.id] === oi ? "border-accent bg-accent/5" : "border-slate-200 hover:bg-slate-50"
-        }`}>
-          <input type="radio" name={item.id} checked={answers[item.id] === oi}
+        <label key={oi} htmlFor={`${item.id}-${oi}`}
+          className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm ${
+            answers[item.id] === oi ? "border-accent bg-accent/5" : "border-slate-200 hover:bg-slate-50"
+          }`}>
+          <input type="radio" id={`${item.id}-${oi}`} name={item.id} checked={answers[item.id] === oi}
             onChange={() => setAnswers((a) => ({ ...a, [item.id]: oi }))}
             className="accent-accent" />
           <span>{opt}</span>

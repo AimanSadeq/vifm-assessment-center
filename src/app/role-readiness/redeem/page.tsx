@@ -40,10 +40,8 @@ export default async function RoleReadinessRedeemPage({
     }
   }
 
-  // Surface an exhausted code before the delegate fills the form in. NOTE:
-  // rr_claim_voucher_seat checks seats ONLY - it ignores rr_vouchers.expires_at
-  // even though that column exists and is settable - so "no places left" is the
-  // only condition that may block here. loadVoucherBlock encodes that exception.
+  // Surface a spent or expired code before the delegate fills the form in.
+  // (rr_vouchers has no status column, so there is no "deactivated" state here.)
   const blocked = await loadVoucherBlock("roleReadiness", code);
   if (blocked) {
     return (

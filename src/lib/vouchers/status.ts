@@ -28,15 +28,10 @@ export type VoucherBlock = {
  *
  *   ara / persona / cognitive / fluent / technical / prehire
  *     status = 'active' AND used_count < max_uses AND (expires_at IS NULL OR expires_at > now())
- *   roleReadiness (rr_claim_voucher_seat)
- *     uses < max_uses     <- seats ONLY
- *
- * Role Readiness is the exception and must stay one. `rr_vouchers` HAS an
- * `expires_at` column (added in 00168) and the admin UI lets you set it, but
- * `rr_claim_voucher_seat` has never been updated to enforce it - so an expired
- * RR voucher is still claimable. Blocking on expiry here would turn away a
- * delegate the RPC would have admitted. (That the column is settable but
- * unenforced is a real inconsistency, but it belongs in the RPC, not here.)
+ *   roleReadiness (rr_claim_voucher_seat, since 00193)
+ *     uses < max_uses AND (expires_at IS NULL OR expires_at > now())
+ *     - rr_vouchers has no `status` column, so there is no deactivate lever
+ *       here; that condition is simply absent rather than exempted.
  *
  * Returns null when the code is claimable, unknown, or the lookup fails - in
  * every one of those cases the caller shows the normal form and the atomic RPC
@@ -70,8 +65,7 @@ export async function loadVoucherBlock(
     const status = data.status as string | undefined;
     if (status !== undefined && status !== "active") return { reason: "disabled", maxUses };
 
-    // Skipped for role-readiness: its claim RPC ignores expiry (see above).
-    const expiresAt = service === "roleReadiness" ? null : (data.expires_at as string | null | undefined);
+    const expiresAt = data.expires_at as string | null | undefined;
     if (expiresAt && new Date(expiresAt).getTime() <= Date.now()) {
       return { reason: "expired", maxUses };
     }

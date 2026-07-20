@@ -19,6 +19,7 @@ import {
 import type { RecommendedCourse } from "@/lib/recommender/courses";
 import { VIFM_VERTICAL_LABELS } from "@/types/database";
 import { PersonaReportView } from "./persona-report-view";
+import { usePersonaLanguage } from "./persona-language";
 import type { PersonaPdfData } from "@/lib/reports/persona-profile";
 
 // Inlined from the recommender (a value import from that module would pull its
@@ -39,6 +40,8 @@ export function PersonaStandaloneClient({
   competencies,
   redemptionToken = null,
   prefillName,
+  prefillEmail,
+  onDark = false,
   roleProfiles = [],
   pinned = null,
   lockedPurpose = null,
@@ -49,6 +52,9 @@ export function PersonaStandaloneClient({
   /** Voucher redemption token (delegate flow); stamps the result with the client org. */
   redemptionToken?: string | null;
   prefillName?: string;
+  prefillEmail?: string | null;
+  /** The take page overlaps this header onto its dark hero - render it light. */
+  onDark?: boolean;
   /** Role profiles offered for a hiring fit read (empty = hiring picker hidden). */
   roleProfiles?: RoleProfileOption[];
   /** Competency id -> framework definition, for the result's per-competency detail. */
@@ -67,10 +73,20 @@ export function PersonaStandaloneClient({
   lockedPurpose?: Purpose | null;
 }) {
   const [phase, setPhase] = useState<Phase>("intro");
-  const [lang, setLang] = useState<Lang>("en");
+  // Language is shared with the take-page header when a PersonaLanguageProvider
+  // wraps us (trial: Asaad/Omar - the welcome stayed English when the taker
+  // switched to Arabic). Standalone surfaces keep local state.
+  const sharedLang = usePersonaLanguage();
+  const localLang = useState<Lang>("en");
+  const [lang, setLang] = sharedLang
+    ? ([sharedLang.language, sharedLang.setLanguage] as const)
+    : localLang;
   const [name, setName] = useState(prefillName ?? "");
   // CAL-PER-403: taker email (required for hiring, optional for development).
-  const [email, setEmail] = useState("");
+  // Prefilled from the voucher redemption (trial: Asaad's P0 - the address a
+  // delegate typed at redemption never reached the assessment, so completed
+  // sittings had no email against them).
+  const [email, setEmail] = useState(prefillEmail ?? "");
   const [purpose, setPurpose] = useState<Purpose>(pinned?.purpose ?? lockedPurpose ?? "development");
   const [targetRoleId, setTargetRoleId] = useState(pinned?.roleProfileId ?? "");
   // Standalone coverage override: assess only the role's competencies (default,
@@ -209,17 +225,29 @@ export function PersonaStandaloneClient({
   const allNormAnswered = answeredNorm >= totalNorm && totalNorm > 0;
   // PER-9: find the first unanswered normative item (+ which page it's on) so a
   // blocked taker can jump straight to it instead of hunting page by page.
-  const firstUnansweredNorm = useMemo(() => {
+  const unansweredList = useMemo(() => {
+    const out: { page: number; itemKey: string }[] = [];
     for (let pi = 0; pi < normPages.length; pi++) {
       for (const it of normPages[pi]) {
-        if (answers[it.itemKey] === undefined) return { page: pi, itemKey: it.itemKey };
+        if (answers[it.itemKey] === undefined) out.push({ page: pi, itemKey: it.itemKey });
       }
     }
-    return null;
+    return out;
   }, [normPages, answers]);
+  const firstUnansweredNorm = unansweredList[0] ?? null;
+  // Any gap on a page BEFORE the current one - drives the persistent helper
+  // (trial: Omar - the jump link "disappeared until I reached the final page",
+  // and only ever went to the first gap).
+  const skippedBehind = unansweredList.some((u) => u.page < page);
   function jumpToUnanswered() {
-    const target = firstUnansweredNorm;
-    if (!target || typeof window === "undefined") return;
+    if (unansweredList.length === 0 || typeof window === "undefined") return;
+    // Cycle: the next gap AFTER the one we just visited (or after the current
+    // page), wrapping - repeated clicks walk through every missed item.
+    const fromIdx = flashKey ? unansweredList.findIndex((u) => u.itemKey === flashKey) : -1;
+    const target =
+      fromIdx >= 0
+        ? unansweredList[(fromIdx + 1) % unansweredList.length]
+        : unansweredList.find((u) => u.page >= page) ?? unansweredList[0];
     setPage(target.page);
     setFlashKey(target.itemKey);
     setTimeout(() => {
@@ -229,6 +257,25 @@ export function PersonaStandaloneClient({
   }
   const blocksDone = ipsBlocks.filter((b) => ipsChoices[b.blockId]?.most && ipsChoices[b.blockId]?.least).length;
   const allIpsDone = ipsBlocks.length > 0 ? blocksDone >= ipsBlocks.length : true;
+
+  // Honest time estimate, scaled to what is actually served (trial: Yassin -
+  // "no way 15-20 minutes" for the full battery; the old copy was written for
+  // a scoped run). ~6 statements/minute + ~25s per forced-choice block,
+  // presented as a rounded band.
+  const estStatements = itemFormat === "ipsative" ? 0 : normItems.length || totalNormPreview(effectiveCompetencies);
+  // Pre-begin, seed=0 so ipsBlocks is always [] - compute the REAL block count
+  // with a dummy seed (the count depends only on the competency set, not the
+  // seed). A min(20, N) guess overstated scoped runs by up to 2.5x, which is
+  // the exact dishonesty this estimate exists to remove (review catch).
+  const estBlocks =
+    itemFormat === "normative"
+      ? 0
+      : ipsBlocks.length || buildIpsativeBlocks(effectiveCompetencies, 1).length;
+  const estMinutes = Math.max(5, Math.ceil(estStatements / 6) + Math.ceil(estBlocks * 0.4));
+  const lo = Math.max(5, Math.floor(estMinutes / 5) * 5);
+  const hi = lo + 10;
+  const timeEstimate = `${lo}-${hi} minutes`;
+  const timeEstimateAr = `${lo}-${hi} دقيقة`;
 
   const begin = async () => {
     if (emailRequired && !emailValid) {
@@ -260,11 +307,24 @@ export function PersonaStandaloneClient({
       // Resume (voucher path): restore the saved seed + normative answers so a
       // reload/return doesn't discard progress on a 164-item test.
       if ("resumed" in res && res.resumed) {
-        setSeed(res.seed ?? s);
+        const effSeed = res.seed ?? s;
+        const restored = res.answers ?? {};
+        setSeed(effSeed);
         setSessionId(res.sessionId);
-        setAnswers(res.answers ?? {});
+        setAnswers(restored);
         setPhase(itemFormat === "ipsative" ? "ipsative" : "normative");
-        setPage(0);
+        // Land on the first page that still has an unanswered statement, not
+        // page 1 (trial: Asaad - "you are dropped on page 1 of 14 and have to
+        // click through to find where you left off").
+        const pages = paginate(flattenNormativeItems(effectiveCompetencies, effSeed), ITEMS_PER_PAGE);
+        let resumePage = 0;
+        outer: for (let pi = 0; pi < pages.length; pi++) {
+          for (const it of pages[pi]) {
+            if (restored[it.itemKey] === undefined) { resumePage = pi; break outer; }
+          }
+          resumePage = pi; // every page full so far - fall through to the last
+        }
+        setPage(resumePage);
         return;
       }
       // SD-9: open on the first format actually being served (skip the section
@@ -416,10 +476,13 @@ export function PersonaStandaloneClient({
         </div>
       )}
       <div>
-        <h1 className="inline-flex items-center gap-2 text-2xl font-bold text-[#010131]">
+        {/* onDark: the take page overlaps this block onto its navy hero, where
+            the navy-on-navy title was "effectively invisible" (trial: Asaad,
+            Omar, Ali - three of six flagged it). */}
+        <h1 className={`inline-flex items-center gap-2 text-2xl font-bold ${onDark ? "text-white" : "text-[#010131]"}`}>
           <Layers className="h-6 w-6 text-[#5391D5]" /> {tx("Persona®", "بيرسونا®")}
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className={`mt-1 text-sm ${onDark ? "text-white/80" : "text-muted-foreground"}`}>
           {tx(
             "Behavioural Competency Self-Assessment - self-ratings across the VIFM competency framework (the same framework as the 360).",
             "التقييم الذاتي للجدارات السلوكية - تقييم ذاتي عبر إطار جدارات VIFM (الإطار نفسه المستخدم في تقييم 360).",
@@ -590,25 +653,28 @@ export function PersonaStandaloneClient({
             <p className="mt-1 text-xs text-muted-foreground">
               {redemptionToken
                 ? tx(
-                    "About 15-20 minutes. Your answers save automatically, so you can pause and resume from this link. A single format is shorter.",
-                    "نحو 15-20 دقيقة. تُحفظ إجاباتك تلقائيًا، فيمكنك الإيقاف والمتابعة لاحقًا من هذا الرابط. اختيار صيغة واحدة أقصر.",
+                    `About ${timeEstimate}. Your answers save automatically - to pause, keep this page's address (or simply re-open your invitation link on this device) and you will continue where you left off.`,
+                    `نحو ${timeEstimateAr}. تُحفظ إجاباتك تلقائيًا - للإيقاف المؤقت، احتفظ بعنوان هذه الصفحة (أو أعد فتح رابط الدعوة على هذا الجهاز) وستكمل من حيث توقفت.`,
                   )
                 : tx(
-                    "About 15-20 minutes. Your answers save automatically as you go - complete it in one sitting. A single format is shorter.",
-                    "نحو 15-20 دقيقة. تُحفظ إجاباتك تلقائيًا أثناء التقدّم - أكمِله في جلسة واحدة. اختيار صيغة واحدة أقصر.",
+                    `About ${timeEstimate}. Your answers save automatically as you go - complete it in one sitting.`,
+                    `نحو ${timeEstimateAr}. تُحفظ إجاباتك تلقائيًا أثناء التقدّم - أكمِله في جلسة واحدة.`,
                   )}
             </p>
           </div>
 
           <div className="flex flex-wrap items-end gap-4">
-            <label className="min-w-[12rem] flex-1">
+            <label className="min-w-[12rem] flex-1" htmlFor="persona-taker-name">
               <span className="text-xs font-medium text-slate-500">{tx("Your name (optional)", "اسمك (اختياري)")}</span>
               <input
+                id="persona-taker-name"
+                name="name"
+                autoComplete="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                dir="ltr"
+                dir="auto"
                 className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-                placeholder="e.g. Sara Al Mansoori"
+                placeholder={tx("e.g. Sara Al Mansoori", "مثال: سارة المنصوري")}
               />
             </label>
             <label className="min-w-[12rem] flex-1">
@@ -617,6 +683,9 @@ export function PersonaStandaloneClient({
                 {emailRequired && <span className="text-rose-500"> *</span>}
               </span>
               <input
+                id="persona-taker-email"
+                name="email"
+                autoComplete="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -687,9 +756,9 @@ export function PersonaStandaloneClient({
       {phase === "normative" && (
         <div className="space-y-4">
           <ProgressBar value={answeredNorm} total={totalNorm} ar={ar} />
-          <p className="text-sm font-semibold text-[#010131]">
-            {tx("Rate each statement", "قيّم كل عبارة")} · {tx("Page", "صفحة")} {page + 1}/{normPages.length}
-          </p>
+          {/* No "Page X of 14" (trial: Ali - "it makes users scared to see 14
+              pages"). The progress bar above carries completion honestly. */}
+          <p className="text-sm font-semibold text-[#010131]">{tx("Rate each statement", "قيّم كل عبارة")}</p>
           <p className="text-xs text-muted-foreground">
             {tx("Scale: 1 = Strongly disagree · 2 = Disagree · 3 = Neither · 4 = Agree · 5 = Strongly agree", "المقياس: 1 = لا أوافق بشدة · 2 = لا أوافق · 3 = محايد · 4 = أوافق · 5 = أوافق بشدة")}
           </p>
@@ -704,8 +773,11 @@ export function PersonaStandaloneClient({
                 }`}
               >
                 <p className="text-sm" id={`norm-stmt-${it.itemKey}`}>{ar ? it.textAr : it.textEn}</p>
+                {/* Larger targets spread across the row (trial: Omar - "the 1-5
+                    boxes were too small... tucked to the left, but there was a
+                    lot of space in the center"). */}
                 <div
-                  className="flex flex-wrap gap-1.5"
+                  className="grid max-w-xl grid-cols-5 gap-2"
                   role="radiogroup"
                   aria-labelledby={`norm-stmt-${it.itemKey}`}
                 >
@@ -720,7 +792,7 @@ export function PersonaStandaloneClient({
                         title={likertLabel(v)}
                         aria-label={`${v} - ${likertLabel(v)}`}
                         onClick={() => answerNorm(it, v)}
-                        className={`min-w-[2.25rem] rounded-md border px-2.5 py-1.5 text-sm transition ${
+                        className={`rounded-md border px-2 py-2.5 text-base font-medium transition ${
                           selected ? "border-[#5391D5] bg-[#5391D5] text-white" : "border-border hover:bg-muted"
                         }`}
                       >
@@ -775,6 +847,20 @@ export function PersonaStandaloneClient({
               </button>
             )}
           </div>
+          {skippedBehind && page < normPages.length - 1 && (
+            <div className="flex flex-wrap items-center justify-end gap-2 text-end text-[11px] text-amber-600">
+              <span className="inline-flex items-center gap-1">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                {tx(
+                  `${unansweredList.filter((u) => u.page < page).length} unanswered on earlier pages.`,
+                  `${unansweredList.filter((u) => u.page < page).length} بدون إجابة في الصفحات السابقة.`,
+                )}
+              </span>
+              <button type="button" onClick={jumpToUnanswered} className="font-semibold text-[#5391D5] underline">
+                {tx("Jump to the next unanswered", "انتقل إلى التالي غير المُجاب")}
+              </button>
+            </div>
+          )}
           {!allNormAnswered && page === normPages.length - 1 && (
             <div className="flex flex-wrap items-center justify-end gap-2 text-end text-[11px] text-amber-600">
               <span className="inline-flex items-center gap-1">
@@ -786,7 +872,7 @@ export function PersonaStandaloneClient({
               </span>
               {firstUnansweredNorm && (
                 <button type="button" onClick={jumpToUnanswered} className="font-semibold text-[#5391D5] underline">
-                  {tx("Jump to the unanswered question", "انتقل إلى السؤال غير المُجاب")}
+                  {tx("Jump to the next unanswered", "انتقل إلى التالي غير المُجاب")}
                 </button>
               )}
             </div>

@@ -8,6 +8,7 @@ import { loadPersonaRoleOptions } from "@/lib/scoring/persona-roles";
 import { loadCompetencyDefinitions } from "@/lib/scoring/competency-definitions";
 import { getVoucherScopeByRedemptionToken } from "@/lib/persona/vouchers";
 import { PersonaStandaloneClient } from "../../_components/persona-standalone-client";
+import { PersonaLanguageProvider, PersonaTakeHeader } from "../../_components/persona-language";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Persona® assessment · VIFM" };
@@ -25,14 +26,60 @@ export default async function PersonaTakePage({
   const sb = createServiceClient();
   const { data: redemption } = await sb
     .from("persona_voucher_redemptions")
-    .select("id, redemption_token, redeemer_name, voucher_id")
+    .select("id, redemption_token, redeemer_name, redeemer_email, voucher_id")
     .eq("redemption_token", params.token)
-    .maybeSingle<{ id: string; redemption_token: string; redeemer_name: string; voucher_id: string }>();
+    .maybeSingle<{ id: string; redemption_token: string; redeemer_name: string; redeemer_email: string | null; voucher_id: string }>();
   if (!redemption) return notFound();
 
   // "[purged]" is the retention sentinel - never show it back to the delegate
-  // or prefill it as their name.
+  // or prefill it as their identity.
   const displayName = usableIdentity(redemption.redeemer_name);
+  const displayEmail = usableIdentity(redemption.redeemer_email);
+
+  // Completed-on-load (trial: Asaad - after submitting, a reload showed the
+  // full intro with a live Begin button; the "already completed" notice only
+  // appeared after clicking it). Check FIRST, render the completed state
+  // immediately, bilingually (this branch has no language toggle).
+  const { data: doneSession } = await sb
+    .from("behavioral_assessment_sessions")
+    .select("id")
+    .eq("voucher_redemption_id", redemption.id)
+    .eq("status", "submitted")
+    .maybeSingle<{ id: string }>();
+  if (doneSession) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="ara-hero relative overflow-hidden">
+          <div className="mx-auto max-w-3xl px-6 pt-7 pb-16">
+            <VifmLogo variant="white" size="sm" />
+            <div className="mt-8 max-w-2xl">
+              <span className="ara-eyebrow text-accent">
+                <Layers className="h-3 w-3" /> VIFM Persona®
+              </span>
+              <h1 className="ara-numeral mt-3 text-2xl font-semibold leading-tight text-white sm:text-3xl">
+                Assessment already completed
+              </h1>
+            </div>
+          </div>
+        </header>
+        <main className="relative z-10 mx-auto -mt-8 max-w-3xl px-6 pb-16">
+          <div className="space-y-4 rounded-xl border bg-card p-6 text-sm text-muted-foreground">
+            <p>
+              {displayName ? `${displayName}, this` : "This"} assessment has already been completed and your
+              results have been shared with the organisation that invited you. It can only be taken once, so it
+              cannot be started again. If you believe this is a mistake, please contact the organisation that
+              invited you.
+            </p>
+            <p dir="rtl" className="border-t border-border pt-4">
+              {displayName ? `${displayName}، هذا ` : "هذا "}
+              التقييم قد اكتمل بالفعل وتمت مشاركة نتائجك مع الجهة التي دعتك. يمكن أداؤه مرة واحدة فقط، لذا لا
+              يمكن بدؤه من جديد. إذا كنت ترى أن هناك خطأ، يرجى التواصل مع الجهة التي دعتك.
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   // Re-check the voucher at take time (not just at redeem): a code disabled or
   // expired AFTER redemption must not keep serving the assessment. Also drives
@@ -108,17 +155,14 @@ export default async function PersonaTakePage({
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="ara-hero relative overflow-hidden" dir={headerAr ? "rtl" : "ltr"}>
+      {/* Header + runner share one language state so the welcome follows the
+          in-card toggle (trial: Asaad/Omar - same fix as Fluent + Logica). The
+          voucher's default language seeds it. */}
+      <PersonaLanguageProvider initial={headerAr ? "ar" : "en"}>
+      <header className="ara-hero relative overflow-hidden">
         <div className="mx-auto max-w-3xl px-6 pt-7 pb-16">
           <VifmLogo variant="white" size="sm" />
-          <div className="mt-8 max-w-2xl">
-            <span className="ara-eyebrow text-accent">
-              <Layers className="h-3 w-3" /> VIFM Persona®
-            </span>
-            <h1 className="ara-numeral mt-3 text-2xl font-semibold leading-tight text-white sm:text-3xl">
-              {headerAr ? "مرحبًا" : "Welcome"}{displayName ? `${headerAr ? "، " : ", "}${displayName}` : ""}
-            </h1>
-          </div>
+          <PersonaTakeHeader name={displayName} />
         </div>
       </header>
 
@@ -127,6 +171,8 @@ export default async function PersonaTakePage({
           competencies={servedCompetencies}
           redemptionToken={redemption.redemption_token}
           prefillName={displayName}
+          prefillEmail={displayEmail}
+          onDark
           roleProfiles={roleProfiles}
           pinned={pinned}
           definitions={definitions}
@@ -136,6 +182,7 @@ export default async function PersonaTakePage({
           demo={process.env.NODE_ENV !== "production"}
         />
       </main>
+      </PersonaLanguageProvider>
     </div>
   );
 }

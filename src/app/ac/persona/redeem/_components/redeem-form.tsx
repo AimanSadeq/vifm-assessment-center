@@ -9,18 +9,29 @@ import { Label } from "@/components/ui/label";
 import { Loader2, KeyRound } from "lucide-react";
 import { redeemPersonaVoucherAction } from "../actions";
 
+// Same shape check the server action enforces - surfaced here so an invalid
+// address can never be submitted at all (trial: Moayad's "Moayad@" got through;
+// the same gap Asaad flagged on Fluent).
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export function RedeemForm({
   initialCode = "",
   initialEmail = "",
   initialName = "",
   initialCompany = "",
   initialLang = "en",
+  lang: langProp,
+  onLangChange,
 }: {
   initialCode?: string;
   initialEmail?: string;
   initialName?: string;
   initialCompany?: string;
   initialLang?: "en" | "ar";
+  /** When the page shell owns the language (so the hero can follow the toggle),
+   *  it passes the state down; otherwise the form keeps its own. */
+  lang?: "en" | "ar";
+  onLangChange?: (l: "en" | "ar") => void;
 }) {
   const router = useRouter();
   const [code, setCode] = useState(initialCode);
@@ -28,11 +39,15 @@ export function RedeemForm({
   const [email, setEmail] = useState(initialEmail);
   const [company, setCompany] = useState(initialCompany);
   const [busy, setBusy] = useState(false);
-  const [lang, setLang] = useState<"en" | "ar">(initialLang === "ar" ? "ar" : "en");
+  const [localLang, setLocalLang] = useState<"en" | "ar">(initialLang === "ar" ? "ar" : "en");
+  const lang = langProp ?? localLang;
+  const setLang = onLangChange ?? setLocalLang;
   const ar = lang === "ar";
   const tx = (en: string, arabic: string) => (ar ? arabic : en);
 
-  const ready = code.trim() && name.trim() && email.trim() && company.trim();
+  const emailValid = EMAIL_RE.test(email.trim());
+  const emailInvalidShown = email.trim().length > 0 && !emailValid;
+  const ready = code.trim() && name.trim() && emailValid && company.trim();
 
   // The redeem server action returns English error strings; localise the known
   // ones for an Arabic delegate (fall back to the raw message for anything new).
@@ -74,22 +89,40 @@ export function RedeemForm({
         <Label htmlFor="code">{tx("Voucher code", "رمز القسيمة")}</Label>
         <Input
           id="code"
+          name="voucher-code"
+          autoComplete="off"
           value={code}
           onChange={(e) => setCode(e.target.value)}
           placeholder="VIFM-PER-XXXX-XXXX"
           autoCapitalize="characters"
           dir="ltr"
+          readOnly={!!initialCode}
           className="font-mono tracking-wide"
         />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="name">{tx("Full name", "الاسم الكامل")}</Label>
-          <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
+          <Input id="name" name="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="email">{tx("Email", "البريد الإلكتروني")}</Label>
-          <Input id="email" type="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Input
+            id="email"
+            name="email"
+            autoComplete="email"
+            type="email"
+            dir="ltr"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            aria-invalid={emailInvalidShown}
+            aria-describedby={emailInvalidShown ? "persona-email-error" : undefined}
+          />
+          {emailInvalidShown && (
+            <p id="persona-email-error" className="text-[11px] text-destructive">
+              {tx("Enter a valid email address.", "أدخل بريدًا إلكترونيًا صحيحًا.")}
+            </p>
+          )}
         </div>
       </div>
       <div className="space-y-1.5">

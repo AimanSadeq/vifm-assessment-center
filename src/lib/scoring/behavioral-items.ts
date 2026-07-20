@@ -1060,7 +1060,7 @@ export const BEHAVIORAL_COMPETENCIES: BehavioralCompetency[] = [
         "ord": 3,
         "reverse": true,
         "textEn": "I leave team dynamics to sort themselves out.",
-        "textAr": "أترك ديناميات الفريق تحلّ نفسها بنفسها."
+        "textAr": "أترك ديناميكيات الفريق تحلّ نفسها بنفسها."
       },
       {
         "itemKey": "25-4",

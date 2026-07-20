@@ -6,6 +6,7 @@ import { applyNorms, type ScaleNorm } from "@/lib/psychometrics/calibration";
 import { COGNITIVE_INSTRUMENT, sanitizeSubtests } from "@/lib/psychometrics/framework";
 import { isStaffCaller } from "@/lib/ara/auth-guards";
 import { getTimerMinutes, TIMER_DEFAULTS } from "@/lib/assessment-timers";
+import { isPurgedOrBlank, usableIdentity } from "@/lib/privacy/purged";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -256,8 +257,10 @@ export async function POST(req: Request) {
         served_source: (session as { served_source?: string | null }).served_source ?? null,
         candidate_id: session.candidate_id,
         engagement_id: session.engagement_id,
-        taker_name: (body.takerName as string) ?? null,
-        taker_email: (body.takerEmail as string) ?? session.taker_email ?? null,
+        // Never store the retention sentinel as if it were a real identity: a
+        // prefill from an anonymised redemption can carry "[purged]" back here.
+        taker_name: usableIdentity(body.takerName as string) ?? null,
+        taker_email: usableIdentity((body.takerEmail as string) ?? session.taker_email) ?? null,
         scales: finalResult.scales,
         overall: finalResult.overall ?? null,
         validity: null,
@@ -341,6 +344,32 @@ export async function POST(req: Request) {
             .from("psy_results")
             .update({ organization_id: redemption.organization_id, voucher_redemption_id: redemption.id })
             .eq("id", resRow.id);
+          // Identity backstop: the redemption is the authoritative record of WHO
+          // this is (the delegate typed it at redeem time and it is not editable
+          // in the runner), so fill any identity the submitted payload left
+          // blank. Without this, a taker who clears the optional name/email
+          // fields lands an unattributable result - and attribution currently
+          // survives only as a join onto this row, which the retention purge
+          // later overwrites with "[purged]". Read + write separately, so a
+          // missing column no-ops rather than breaking the org linkage above.
+          const { data: who } = await svc
+            .from("cognitive_voucher_redemptions")
+            .select("redeemer_name, redeemer_email")
+            .eq("id", redemption.id)
+            .maybeSingle<{ redeemer_name: string | null; redeemer_email: string | null }>();
+          // isPurgedOrBlank on BOTH sides: an anonymised redemption holds the
+          // literal "[purged]", which must never be copied onto a result (and a
+          // taker whose field was prefilled with it must not have it stored).
+          const identity: Record<string, string> = {};
+          if (isPurgedOrBlank(body.takerName as string) && !isPurgedOrBlank(who?.redeemer_name)) {
+            identity.taker_name = who!.redeemer_name as string;
+          }
+          if (isPurgedOrBlank(body.takerEmail as string) && !isPurgedOrBlank(who?.redeemer_email)) {
+            identity.taker_email = who!.redeemer_email as string;
+          }
+          if (Object.keys(identity).length > 0) {
+            await svc.from("psy_results").update(identity).eq("id", resRow.id);
+          }
           // Project label (00137) ride-along - read + write separately, both
           // best-effort. A missing column on either side just no-ops.
           const { data: pl } = await svc

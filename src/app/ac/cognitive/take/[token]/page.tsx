@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { BrainCircuit } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { usableIdentity } from "@/lib/privacy/purged";
 import { getTimerMinutes, TIMER_DEFAULTS } from "@/lib/assessment-timers";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { PsychometricsClient } from "../../_components/psychometrics-client";
@@ -17,10 +18,14 @@ export default async function CognitiveTakePage({ params }: { params: { token: s
   const sb = createServiceClient();
   const { data: redemption } = await sb
     .from("cognitive_voucher_redemptions")
-    .select("redemption_token, redeemer_name, voucher_id, result_id")
+    .select("redemption_token, redeemer_name, redeemer_email, voucher_id, result_id")
     .eq("redemption_token", params.token)
-    .maybeSingle<{ redemption_token: string; redeemer_name: string; voucher_id: string | null; result_id: string | null }>();
+    .maybeSingle<{ redemption_token: string; redeemer_name: string; redeemer_email: string | null; voucher_id: string | null; result_id: string | null }>();
   if (!redemption) return notFound();
+
+  // Resolve ONCE: an anonymised redemption holds "[purged]", which must never
+  // be shown back to the delegate as though it were their name.
+  const displayName = usableIdentity(redemption.redeemer_name);
 
   // Single-completion: once this invitation has produced a result, it can't be
   // retaken (a cognitive-ability screening is one sitting). Show a completed state
@@ -43,7 +48,7 @@ export default async function CognitiveTakePage({ params }: { params: { token: s
         </header>
         <main className="relative z-10 mx-auto -mt-8 max-w-3xl px-6 pb-16">
           <div className="rounded-xl border bg-card p-6 text-sm text-muted-foreground">
-            {redemption.redeemer_name ? `${redemption.redeemer_name}, this` : "This"} assessment has already
+            {displayName ? `${displayName}, this` : "This"} assessment has already
             been completed and your results have been shared with the requesting organisation. It can only be
             taken once, so it cannot be started again. If you believe this is a mistake, please contact the
             organisation that invited you.
@@ -83,7 +88,7 @@ export default async function CognitiveTakePage({ params }: { params: { token: s
               <BrainCircuit className="h-3 w-3" /> VIFM Logica®
             </span>
             <h1 className="ara-numeral mt-3 text-2xl font-semibold leading-tight text-white sm:text-3xl">
-              Welcome{redemption.redeemer_name ? `, ${redemption.redeemer_name}` : ""}
+              Welcome{displayName ? `, ${displayName}` : ""}
             </h1>
           </div>
         </div>
@@ -94,7 +99,10 @@ export default async function CognitiveTakePage({ params }: { params: { token: s
           candidateId={null}
           engagementId={null}
           redemptionToken={redemption.redemption_token}
-          prefillName={redemption.redeemer_name ?? undefined}
+          /* usableIdentity: an anonymised redemption holds "[purged]" - prefilling
+             that would show it to the delegate and store it as their identity. */
+          prefillName={displayName}
+          prefillEmail={usableIdentity(redemption.redeemer_email)}
           timerMinutes={timerMinutes}
           lockedSubtests={lockedSubtests}
           onDark

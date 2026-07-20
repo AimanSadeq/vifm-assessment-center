@@ -29,7 +29,7 @@ const scaleDefinition = (key: string): string =>
   COGNITIVE_SUBTESTS.find((s) => s.key === key)?.definition_en ?? "";
 
 export function PsychometricsClient({
-  candidateId, engagementId, engagements = [], redemptionToken = null, prefillName, timerMinutes, lockedSubtests = null, onDark = false,
+  candidateId, engagementId, engagements = [], redemptionToken = null, prefillName, prefillEmail, timerMinutes, lockedSubtests = null, onDark = false,
 }: {
   candidateId: string | null;
   engagementId: string | null;
@@ -37,6 +37,7 @@ export function PsychometricsClient({
   /** Voucher redemption token (delegate flow); stamps the result with the client org. */
   redemptionToken?: string | null;
   prefillName?: string;
+  prefillEmail?: string;
   /** Admin-configurable time limit (minutes); null/0 = no limit. */
   timerMinutes?: number | null;
   /** When set (e.g. an admin-pinned voucher), the subtest set is fixed and the
@@ -80,6 +81,7 @@ export function PsychometricsClient({
   const [cogEng, setCogEng] = useState("");
   const [cogCand, setCogCand] = useState("");
   const [takerName, setTakerName] = useState(prefillName ?? "");
+  const [takerEmail, setTakerEmail] = useState(prefillEmail ?? "");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [test, setTest] = useState<PsyTestPublic | null>(null);
   const [answers, setAnswers] = useState<Record<string, number>>({});
@@ -98,7 +100,7 @@ export function PsychometricsClient({
       const boundEngagementId = engagementId ?? (cogEng || null);
       const res = await fetch("/api/ac/cognitive", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "start", language: lang, candidateId: boundCandidateId, engagementId: boundEngagementId, takerEmail: null, subtests: selectedSubtests, redemptionToken }),
+        body: JSON.stringify({ action: "start", language: lang, candidateId: boundCandidateId, engagementId: boundEngagementId, takerEmail: takerEmail.trim() || null, subtests: selectedSubtests, redemptionToken }),
       });
       const d = await res.json();
       if (!res.ok || !d.test) { setError(d.error || "Could not start."); return; }
@@ -114,7 +116,7 @@ export function PsychometricsClient({
     try {
       const res = await fetch("/api/ac/cognitive", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "score", session_id: sessionId, answers, takerName: takerName.trim() || null, language: lang, redemptionToken }),
+        body: JSON.stringify({ action: "score", session_id: sessionId, answers, takerName: takerName.trim() || null, takerEmail: takerEmail.trim() || null, language: lang, redemptionToken }),
       });
       const d = await res.json();
       // XP-13: a NON-STAFF taker's successful response deliberately carries
@@ -310,10 +312,21 @@ export function PsychometricsClient({
             </div>
           )}
           <div className="flex flex-wrap items-end gap-4">
-            <label className="flex-1 min-w-[12rem]">
+            <label className="flex-1 min-w-[12rem]" htmlFor="cog-taker-name">
               <span className="text-xs font-medium text-slate-500">Your name (optional)</span>
-              <input value={takerName} onChange={(e) => setTakerName(e.target.value)} dir="ltr"
+              <input id="cog-taker-name" name="name" autoComplete="name"
+                value={takerName} onChange={(e) => setTakerName(e.target.value)} dir="ltr"
                 className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="e.g. Sara Al Mansoori" />
+            </label>
+            {/* Without this the result cannot be tied back to a person: the runner
+                never captured an email, so 35 of 39 stored results had none and
+                identity survived only as a join onto the voucher redemption -
+                which the retention purge later scrubs. */}
+            <label className="flex-1 min-w-[12rem]" htmlFor="cog-taker-email">
+              <span className="text-xs font-medium text-slate-500">Email (optional)</span>
+              <input id="cog-taker-email" name="email" type="email" autoComplete="email"
+                value={takerEmail} onChange={(e) => setTakerEmail(e.target.value)} dir="ltr"
+                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="you@example.com" />
             </label>
             <div className="flex items-center gap-2">
               <span className="text-[11px] uppercase tracking-wide text-slate-400">Language</span>

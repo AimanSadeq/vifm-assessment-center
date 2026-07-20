@@ -5,6 +5,7 @@ import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { createServiceClient } from "@/lib/supabase/server";
 import { fetchAllPages, chunkIds } from "@/lib/ara/paginate";
 import { RETENTION_MONTHS, PURGE_CONFIRMATION } from "./constants";
+import { PURGED } from "@/lib/privacy/purged";
 
 function cutoffIso(): string {
   const d = new Date();
@@ -77,9 +78,9 @@ export async function purgeFluentResults(
   try {
     const anon = await sb
       .from("eng_fluent_voucher_redemptions")
-      .update({ redeemer_name: "[purged]", redeemer_email: "[purged]", company_name: "[purged]", ip: null, user_agent: null })
+      .update({ redeemer_name: PURGED, redeemer_email: PURGED, company_name: PURGED, ip: null, user_agent: null })
       .lt("redeemed_at", cutoff)
-      .neq("redeemer_email", "[purged]")
+      .neq("redeemer_email", PURGED)
       .select("id");
     anonymised = anon.data?.length ?? 0;
   } catch {

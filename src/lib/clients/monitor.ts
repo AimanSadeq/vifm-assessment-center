@@ -7,6 +7,7 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { fetchAllPages, chunkIds } from "@/lib/ara/paginate";
 import type { CaliberService } from "./portal-services";
+import { usableIdentity } from "@/lib/privacy/purged";
 
 export type ActivityRow = { id: string; name: string; date: string; summary: string; reportPath: string };
 export type ServiceActivity = { issued: number; redeemed: number; completed: number; rows: ActivityRow[] };
@@ -187,7 +188,13 @@ export async function getVoucherLedger(service: CaliberService, orgId: string): 
         );
         for (const r of reds) {
           if (!byVoucher.has(r.voucher_id)) byVoucher.set(r.voucher_id, []);
-          byVoucher.get(r.voucher_id)!.push({ name: r.redeemer_name, email: r.redeemer_email, when: r.redeemed_at });
+          // "[purged]" is the retention sentinel, not a person - show it as absent
+          // rather than rendering it as a name in the client-facing ledger.
+          byVoucher.get(r.voucher_id)!.push({
+            name: usableIdentity(r.redeemer_name) ?? null,
+            email: usableIdentity(r.redeemer_email) ?? null,
+            when: r.redeemed_at,
+          });
         }
       }
     } catch { /* redemptions table variant - ledger still lists the codes */ }

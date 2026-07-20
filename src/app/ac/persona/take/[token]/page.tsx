@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Layers } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
+import { usableIdentity } from "@/lib/privacy/purged";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { loadPersonaCompetencies } from "@/lib/persona/bank";
 import { loadPersonaRoleOptions } from "@/lib/scoring/persona-roles";
@@ -28,6 +29,10 @@ export default async function PersonaTakePage({
     .eq("redemption_token", params.token)
     .maybeSingle<{ id: string; redemption_token: string; redeemer_name: string; voucher_id: string }>();
   if (!redemption) return notFound();
+
+  // "[purged]" is the retention sentinel - never show it back to the delegate
+  // or prefill it as their name.
+  const displayName = usableIdentity(redemption.redeemer_name);
 
   // Re-check the voucher at take time (not just at redeem): a code disabled or
   // expired AFTER redemption must not keep serving the assessment. Also drives
@@ -111,7 +116,7 @@ export default async function PersonaTakePage({
               <Layers className="h-3 w-3" /> VIFM Persona®
             </span>
             <h1 className="ara-numeral mt-3 text-2xl font-semibold leading-tight text-white sm:text-3xl">
-              {headerAr ? "مرحبًا" : "Welcome"}{redemption.redeemer_name ? `${headerAr ? "، " : ", "}${redemption.redeemer_name}` : ""}
+              {headerAr ? "مرحبًا" : "Welcome"}{displayName ? `${headerAr ? "، " : ", "}${displayName}` : ""}
             </h1>
           </div>
         </div>
@@ -121,7 +126,7 @@ export default async function PersonaTakePage({
         <PersonaStandaloneClient
           competencies={servedCompetencies}
           redemptionToken={redemption.redemption_token}
-          prefillName={redemption.redeemer_name ?? undefined}
+          prefillName={displayName}
           roleProfiles={roleProfiles}
           pinned={pinned}
           definitions={definitions}

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
+import { usableIdentity } from "@/lib/privacy/purged";
 import { getTimerMinutes, TIMER_DEFAULTS } from "@/lib/assessment-timers";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { FluentClient } from "../../_components/fluent-client";
@@ -29,6 +30,13 @@ export default async function FluentTakePage({
     .maybeSingle<{ redemption_token: string; redeemer_name: string; redeemer_email: string; voucher_id: string; result_id: string | null }>();
   if (!redemption) return notFound();
 
+  // An anonymised redemption holds "[purged]" in these columns (the retention
+  // purge filters on redeemed_at, not on whether the sitting was completed, so
+  // an old unused token stays live). Resolve once: never greet a delegate with
+  // it, never prefill it, never stamp it onto a proctoring record.
+  const displayName = usableIdentity(redemption.redeemer_name);
+  const displayEmail = usableIdentity(redemption.redeemer_email);
+
   // One seat = one placement. Once this token has a completed sitting, refuse a
   // retake (the score route enforces the same on its side) so a delegate cannot
   // re-sit and self-select their best CEFR from a single voucher.
@@ -39,7 +47,7 @@ export default async function FluentTakePage({
           <VifmLogo variant="dark" size="sm" className="mx-auto" />
           <h1 className="mt-6 text-xl font-semibold text-primary">Assessment already completed</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            This placement has already been submitted{redemption.redeemer_name ? `, ${redemption.redeemer_name}` : ""}.
+            This placement has already been submitted{displayName ? `, ${displayName}` : ""}.
             Your result has been recorded and sent to the organisation that invited you. This link can be used once.
           </p>
         </div>
@@ -82,7 +90,7 @@ export default async function FluentTakePage({
         <header className="fluent-hero">
           <div className="mx-auto max-w-5xl px-6 pt-7 pb-20">
             <VifmLogo variant="white" size="sm" />
-            <FluentTakeHeader name={redemption.redeemer_name} />
+            <FluentTakeHeader name={displayName} />
           </div>
         </header>
 
@@ -91,13 +99,13 @@ export default async function FluentTakePage({
             enabled={proctorRequired || searchParams?.proctor === "1"}
             context="fluent"
             refId={redemption.redemption_token}
-            subjectName={redemption.redeemer_name ?? null}
-            subjectEmail={redemption.redeemer_email ?? null}
+            subjectName={displayName ?? null}
+            subjectEmail={displayEmail ?? null}
           />
           <FluentClient
             redemptionToken={redemption.redemption_token}
-            prefillName={redemption.redeemer_name ?? undefined}
-            prefillEmail={redemption.redeemer_email ?? undefined}
+            prefillName={displayName}
+            prefillEmail={displayEmail}
             timerMinutes={fluentMinutes}
             resultsShownToTaker={false}
           />

@@ -13,6 +13,7 @@ import { fetchAllPages } from "@/lib/ara/paginate";
 import { selfScoreByCompetency, overallSelfScore, type PersonaScoreRow } from "./behavioral";
 import { computeFit, type FitBandKey } from "./persona-fit";
 import { loadPersonaRoleOptions } from "./persona-roles";
+import { usableIdentity } from "@/lib/privacy/purged";
 
 export type PersonaResultRow = {
   id: string;
@@ -168,8 +169,9 @@ export async function personaVoucherActivity(limit = 100): Promise<PersonaVouche
           ? "completed"
           : "in_progress";
       byVoucher.get(vid)!.push({
-        name: (r.redeemer_name as string | null) ?? null,
-        email: (r.redeemer_email as string | null) ?? null,
+        // "[purged]" is the retention sentinel - surface as absent, not as a name.
+        name: usableIdentity(r.redeemer_name as string | null) ?? null,
+        email: usableIdentity(r.redeemer_email as string | null) ?? null,
         redeemedAt: r.redeemed_at as string,
         status,
         resultId: rid,

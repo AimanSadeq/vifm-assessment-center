@@ -45,6 +45,7 @@ import { issueCredential } from "@/lib/credentials/issue";
 import { computeIntegritySignal, type IntegrityFlags, type IntegritySignal } from "@/lib/scoring/integrity";
 import { isStaffCaller } from "@/lib/ara/auth-guards";
 import { createHash } from "node:crypto";
+import { usableIdentity } from "@/lib/privacy/purged";
 
 export const dynamic = "force-dynamic";
 
@@ -106,8 +107,10 @@ async function persistResult(
     const { data, error } = await sb
       .from("eng_fluent_results")
       .insert({
-        taker_name: meta.takerName,
-        taker_email: meta.takerEmail,
+        // Never persist the retention sentinel as an identity: a prefill from an
+        // anonymised redemption could otherwise be submitted back as a real value.
+        taker_name: usableIdentity(meta.takerName) ?? null,
+        taker_email: usableIdentity(meta.takerEmail) ?? null,
         ui_language: meta.language,
         overall_cefr: result.overall_cefr,
         reading_correct: result.reading_correct,

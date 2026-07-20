@@ -10,8 +10,16 @@ export type VoucherDescriptor = {
   codePrefix: string;
   /** the *_vouchers table */
   table: string;
-  /** the *_voucher_redemptions audit table */
-  redemptionsTable: string;
+  /**
+   * The *_voucher_redemptions audit table, or null where redeeming provisions
+   * a domain row directly instead of a generic redemption record. Metadata for
+   * humans and future tooling - the shared core does not read it (each
+   * service's provision() callback writes its own redemption), so keep it
+   * ACCURATE: this registry is documented as the single place that enumerates
+   * the voucher engines, and a wrong table name here sat unnoticed for weeks
+   * precisely because nothing consumed it.
+   */
+  redemptionsTable: string | null;
   /** atomic seat-claim RPC (takes { p_code }) */
   claimRpc: string;
   /** atomic seat-release RPC (takes { p_code }); every service now has one */
@@ -46,7 +54,11 @@ export const VOUCHER_DESCRIPTORS = {
     claimRpc: "prehire_voucher_claim", releaseRpc: "prehire_voucher_release", redeemPath: "/prehire/redeem",
   },
   roleReadiness: {
-    key: "roleReadiness", codePrefix: "RR", table: "rr_vouchers", redemptionsTable: "rr_voucher_redemptions",
+    // No redemptions table: redeeming an RR voucher provisions an rr_candidates
+    // row directly (src/lib/role-readiness/vouchers.ts), which carries the
+    // redeemer's identity + access token. The previous value here named
+    // "rr_voucher_redemptions" - a table that has never existed.
+    key: "roleReadiness", codePrefix: "RR", table: "rr_vouchers", redemptionsTable: null,
     claimRpc: "rr_claim_voucher_seat", releaseRpc: "rr_release_voucher_seat", redeemPath: "/role-readiness/redeem",
   },
 } as const satisfies Record<string, VoucherDescriptor>;

@@ -1,5 +1,6 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/server";
+import { normalizeVoucherExpiry } from "@/lib/vouchers/expiry";
 
 // Pre-Hire vouchers: a client-distributable code (or seat-pool batch) tied to a
 // requisition. A no-account applicant self-redeems at /prehire/redeem; the
@@ -64,7 +65,7 @@ export async function generatePrehireVoucherBatch(
 ): Promise<PrehireVoucherRow[]> {
   const sb = createServiceClient();
   const batchId = globalThis.crypto.randomUUID();
-  const expiresAt = input.expiresAt || null;
+  const expiresAt = normalizeVoucherExpiry(input.expiresAt);
   const org = input.organizationName?.trim() || null;
   const label = input.label?.trim() || null;
 

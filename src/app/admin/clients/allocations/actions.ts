@@ -7,6 +7,7 @@ import { createClientOrganization } from "@/lib/clients/registry";
 import { provisionClientManagerLogin } from "@/lib/auth/provision-client-manager";
 import { generateCandidateSetupLink } from "@/lib/auth/provision-candidate";
 import type { CaliberService } from "@/lib/clients/portal-services";
+import { normalizeVoucherExpiry } from "@/lib/vouchers/expiry";
 
 type Caller = Awaited<ReturnType<typeof requireRole>>;
 async function gateAdmin(): Promise<{ caller: Caller } | { error: string }> {
@@ -53,7 +54,10 @@ export async function grantAllocationAction(input: {
     ara_organization_id: araOrgId,
     service: input.service,
     seats_total: seats,
-    expires_at: input.expiresAt || null,
+    // Same end-of-day semantics as the voucher issuers: this quota is set from
+    // a bare date picker, and a start-of-day cutoff cost the client the final
+    // day of self-serve issuance they were granted.
+    expires_at: normalizeVoucherExpiry(input.expiresAt),
     notes: input.notes?.trim() || null,
     status: "active",
     granted_by: g.caller.isDev ? null : g.caller.uid,

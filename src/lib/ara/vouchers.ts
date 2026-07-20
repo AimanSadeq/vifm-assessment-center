@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/server";
+import { normalizeVoucherExpiry } from "@/lib/vouchers/expiry";
 
 // ─────────────────────────────────────────────────────────────
 // ARA voucher service - generate + redeem PRACTICE AI Readiness
@@ -77,7 +78,7 @@ export async function createVoucherBatch(
     default_language: input.language ?? "en",
     max_uses: Math.max(1, input.maxUses ?? 1),
     is_practice: input.isPractice ?? true,
-    expires_at: input.expiresAt ?? null,
+    expires_at: normalizeVoucherExpiry(input.expiresAt),
     created_by: input.createdBy ?? null,
     contact_name: input.contactName ?? null,
     contact_title: input.contactTitle ?? null,

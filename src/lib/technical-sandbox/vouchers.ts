@@ -8,6 +8,7 @@
 // ─────────────────────────────────────────────────────────────
 import { createServiceClient } from "@/lib/supabase/server";
 import { createSession, isMissingSchemaError } from "./service";
+import { normalizeVoucherExpiry } from "@/lib/vouchers/expiry";
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I
 const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
@@ -115,7 +116,7 @@ export async function generateVoucherBatch(input: GenerateBatchInput) {
       max_uses: 1,
       assigned_name: d.name.trim(),
       assigned_email: d.email.trim(),
-      expires_at: input.expiresAt ?? null,
+      expires_at: normalizeVoucherExpiry(input.expiresAt),
       created_by: input.createdBy ?? null,
       mcq_pct: mcqPct,
       ...lensCol,
@@ -133,7 +134,7 @@ export async function generateVoucherBatch(input: GenerateBatchInput) {
       function_id: input.functionId,
       organization_name: input.organizationName ?? null,
       max_uses: maxUses,
-      expires_at: input.expiresAt ?? null,
+      expires_at: normalizeVoucherExpiry(input.expiresAt),
       created_by: input.createdBy ?? null,
       mcq_pct: mcqPct,
       ...lensCol,

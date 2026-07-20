@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/server";
+import { normalizeVoucherExpiry } from "@/lib/vouchers/expiry";
 
 // ─────────────────────────────────────────────────────────────
 // Persona voucher service - generate + redeem access codes for the standalone
@@ -69,7 +70,7 @@ export async function createVoucherBatch(
     client_name: input.clientName ?? null,
     default_language: input.language ?? "en",
     max_uses: Math.max(1, input.maxUses ?? 1),
-    expires_at: input.expiresAt ?? null,
+    expires_at: normalizeVoucherExpiry(input.expiresAt),
     created_by: input.createdBy ?? null,
   });
   const scoped = (input.scopedCompetencyIds ?? []).filter(Boolean);

@@ -9,6 +9,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { sendEmail, isEmailConfigured } from "@/lib/integrations/email";
 import { redeemViaDescriptor } from "@/lib/vouchers/core";
 import { VOUCHER_DESCRIPTORS } from "@/lib/vouchers/descriptor";
+import { normalizeVoucherExpiry } from "@/lib/vouchers/expiry";
 
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // no ambiguous 0/O/1/I/L
 function genCode(): string {
@@ -71,7 +72,7 @@ export async function createRoleReadinessVouchers(input: {
     created_by: input.createdBy ?? null,
     client_name: input.clientName ?? null,
     project_label: input.projectLabel ?? null,
-    expires_at: input.expiresAt ?? null,
+    expires_at: normalizeVoucherExpiry(input.expiresAt),
     contact_name: input.contactName ?? null,
     contact_title: input.contactTitle ?? null,
     contact_email: input.contactEmail ?? null,

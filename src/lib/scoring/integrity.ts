@@ -32,6 +32,10 @@ export type IntegrityEvent =
  * optional so old rows stay valid.
  */
 export type IntegrityFlags = {
+  /** CBI only: seconds the candidate spent composing each answer (advisory). */
+  turnSeconds?: number[];
+  /** Fluent only: the speaking answer was typed via the no-mic fallback. */
+  speakingTyped?: boolean;
   /** Number of times the page was hidden or the window lost focus. */
   blurCount?: number;
   /** Number of paste events into a monitored field. */

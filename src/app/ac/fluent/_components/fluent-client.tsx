@@ -5,6 +5,7 @@ import {
   Loader2, Sparkles, RotateCcw, BookOpen, PenLine, CheckCircle2,
   Headphones, Mic, Square, Play, Volume2, AlertCircle,
 } from "lucide-react";
+import { CappedAudio } from "@/components/shared/capped-audio";
 import { startBrowserStt, type BrowserSttSession } from "@/lib/speech/browser-stt";
 import { FluentDefinitions } from "./fluent-definitions";
 import { useFluentLanguage } from "./fluent-language";
@@ -852,6 +853,7 @@ export function FluentClient({
                       {test.tts && sessionId ? (
                         <CappedAudio
                           src={`/api/ac/fluent/tts?session=${sessionId}&item=${encodeURIComponent(item.id)}${redemptionToken ? `&token=${encodeURIComponent(redemptionToken)}` : ""}`}
+                          persistKey={`flu-${sessionId ?? "anon"}:${item.id}`}
                           maxPlays={MAX_PLAYS}
                           playLabel={t.play}
                           playingLabel={t.playing}
@@ -1230,71 +1232,6 @@ export function FluentClient({
 }
 
 // ── small presentational helpers ────────────────────────────────
-
-/**
- * Listening player with a hard replay cap and NO download/scrub. The old native
- * `<audio controls>` on the Azure path let candidates replay unlimited times and
- * download the voice file (trial findings). This custom player:
- *  - counts each deliberate play; disables after `maxPlays` (the "up to twice"
- *    promise is now actually enforced on both audio paths),
- *  - shows a duration + progress read-out (fixing the dead 0:00 seek bar) via
- *    preload="metadata",
- *  - exposes no download control (controlsList nodownload + right-click blocked)
- *    and no scrubbable seek bar (the progress bar is display-only).
- */
-function CappedAudio({
-  src, maxPlays, playLabel, playingLabel, replaysLeft,
-}: {
-  src: string; maxPlays: number; playLabel: string; playingLabel: string; replaysLeft: string;
-}) {
-  const ref = useRef<HTMLAudioElement | null>(null);
-  const [plays, setPlays] = useState(0);
-  const [playing, setPlaying] = useState(false);
-  const [dur, setDur] = useState(0);
-  const [cur, setCur] = useState(0);
-  const exhausted = plays >= maxPlays;
-  const fmt = (s: number) =>
-    Number.isFinite(s) && s > 0 ? `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}` : "0:00";
-  const play = () => {
-    const a = ref.current;
-    if (!a || exhausted || playing) return;
-    a.currentTime = 0;
-    // Count on the actual `play` event (onPlay), not on click - a rejected/errored
-    // start must not cost the candidate one of their two replays on a scored item.
-    void a.play().catch(() => setPlaying(false));
-  };
-  return (
-    <div className="flex flex-1 items-center gap-3">
-      <audio
-        ref={ref}
-        src={src}
-        preload="metadata"
-        controlsList="nodownload noplaybackrate noremoteplayback"
-        onContextMenu={(e) => e.preventDefault()}
-        onPlay={() => { setPlaying(true); setPlays((p) => p + 1); }}
-        onPause={() => setPlaying(false)}
-        onEnded={() => setPlaying(false)}
-        onError={() => setPlaying(false)}
-        onLoadedMetadata={(e) => setDur(e.currentTarget.duration)}
-        onTimeUpdate={(e) => setCur(e.currentTarget.currentTime)}
-      />
-      <button
-        type="button"
-        onClick={play}
-        disabled={exhausted || playing}
-        className="inline-flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-[#4380c4] disabled:opacity-50"
-      >
-        {playing ? <Volume2 className="h-3.5 w-3.5 animate-pulse" /> : <Play className="h-3.5 w-3.5" />}
-        {playing ? playingLabel : playLabel}
-      </button>
-      <div className="h-1.5 w-full max-w-[160px] overflow-hidden rounded-full bg-slate-200">
-        <div className="h-full bg-accent transition-[width]" style={{ width: dur > 0 ? `${Math.min(100, (cur / dur) * 100)}%` : "0%" }} />
-      </div>
-      <span className="shrink-0 text-[11px] tabular-nums text-slate-400">{fmt(cur)} / {fmt(dur)}</span>
-      <span className="shrink-0 text-[11px] text-slate-400">{Math.max(0, maxPlays - plays)} {replaysLeft}</span>
-    </div>
-  );
-}
 
 function Options({
   item, answers, setAnswers,

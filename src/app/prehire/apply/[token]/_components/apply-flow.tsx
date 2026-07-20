@@ -32,6 +32,7 @@ const REC_TONE: Record<string, string> = {
   incomplete: "bg-slate-100 text-slate-700",
 };
 const STAGE_LABEL: Record<string, string> = { quiz: "Competency quiz", fluent: "English placement", cbi: "Behavioural interview" };
+const STAGE_LABEL_AR: Record<string, string> = { quiz: "تقييم الكفاءات", fluent: "تحديد مستوى الإنجليزية", cbi: "المقابلة السلوكية" };
 
 // UX-1: a visual progress stepper so the candidate can see how many stages
 // remain and where they are, rather than a bare "Step N of M" line.
@@ -39,10 +40,12 @@ function Stepper({
   stageKinds,
   doneSet,
   current,
+  ar = false,
 }: {
   stageKinds: PrehireStageKind[];
   doneSet: Set<PrehireStageKind>;
   current: PrehireStageKind | null;
+  ar?: boolean;
 }) {
   return (
     <ol className="flex flex-wrap items-center gap-x-2 gap-y-1" aria-label="Assessment progress">
@@ -64,7 +67,7 @@ function Stepper({
               {isDone ? <Check className="h-3.5 w-3.5" /> : i + 1}
             </span>
             <span className={`text-xs font-medium ${isCurrent ? "text-[#010131]" : "text-slate-500"}`}>
-              {STAGE_LABEL[k] ?? k}
+              {(ar ? STAGE_LABEL_AR[k] : STAGE_LABEL[k]) ?? k}
             </span>
             {i < stageKinds.length - 1 && (
               <span className="mx-1 hidden h-px w-6 bg-slate-200 sm:block" aria-hidden="true" />
@@ -115,6 +118,16 @@ export function ApplyFlow({ token, ctx, demo = false }: { token: string; ctx: Pr
   const current = stageKinds.find((k) => !done.has(k)) ?? null;
   const allDone = agreed && current === null;
 
+  // Leaving mid-stage loses the in-flight answers (autosave softens it, but the
+  // browser back button still exits the flow) - warn before unload while a
+  // stage is underway (trial: "I tried to go back, it took me out").
+  useEffect(() => {
+    if (!agreed || current === null) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [agreed, current]);
+
   // Demo only: once every stage is done, pull the composite + per-stage scores
   // so the completion screen shows results on-screen (mirrors the Techno demo).
   useEffect(() => {
@@ -163,7 +176,7 @@ export function ApplyFlow({ token, ctx, demo = false }: { token: string; ctx: Pr
           </p>
           {agreed && demoComplete && stageKinds.length > 0 && (
             <div className="mt-3">
-              <Stepper stageKinds={stageKinds} doneSet={done} current={current} />
+              <Stepper stageKinds={stageKinds} doneSet={done} current={current} ar={ar} />
             </div>
           )}
         </div>
@@ -199,8 +212,8 @@ export function ApplyFlow({ token, ctx, demo = false }: { token: string; ctx: Pr
               <ul className="list-disc space-y-1 ps-5 text-xs text-muted-foreground">
                 <li>
                   {T(
-                    "Processing follows applicable data-protection law - UAE Federal Decree-Law No. 45 of 2021, the Saudi Personal Data Protection Law (PDPL), and the GDPR where it applies.",
-                    "تتم المعالجة وفقًا لقوانين حماية البيانات المعمول بها - المرسوم بقانون اتحادي إماراتي رقم 45 لسنة 2021، ونظام حماية البيانات الشخصية السعودي (PDPL)، واللائحة الأوروبية (GDPR) حيثما تنطبق."
+                    "Processing follows the data-protection law that applies where the role is based - the Saudi Personal Data Protection Law (PDPL) for Saudi Arabia, UAE Federal Decree-Law No. 45 of 2021 for the UAE, and the GDPR where it applies.",
+                    "تتم المعالجة وفقًا لقانون حماية البيانات المعمول به في بلد الوظيفة - نظام حماية البيانات الشخصية السعودي (PDPL) في السعودية، والمرسوم بقانون اتحادي رقم 45 لسنة 2021 في الإمارات، واللائحة الأوروبية (GDPR) حيثما تنطبق."
                   )}
                 </li>
                 <li>
@@ -240,7 +253,7 @@ export function ApplyFlow({ token, ctx, demo = false }: { token: string; ctx: Pr
 
         {/* Voluntary equal-opportunity monitoring - BEFORE the assessment */}
         {agreed && !demoComplete && (
-          <DemographicsCard token={token} onDone={() => setDemoDone(true)} />
+          <DemographicsCard token={token} onDone={() => setDemoDone(true)} lang={lang} />
         )}
 
         {/* Active interactive stage (after consent + the demographics step) */}

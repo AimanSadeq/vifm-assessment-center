@@ -134,6 +134,11 @@ export async function redeemPrehireVoucher(input: PrehireRedeemInput): Promise<P
   const email = input.email.trim();
   if (!code) return { ok: false, error: "Enter your access code." };
   if (!name || !email) return { ok: false, error: "Your name and email are required." };
+  // Server-side gate too - the client validates, but the action is a public
+  // endpoint (trial: "Moayad@" reached the DB on other services).
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { ok: false, error: "Enter a valid email address." };
+  }
 
   // Atomic seat claim: consumes a seat iff active, not expired, seats remain.
   const { data: claimed, error: claimErr } = await sb.rpc("prehire_voucher_claim", { p_code: code });

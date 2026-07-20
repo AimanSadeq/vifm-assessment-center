@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -20,6 +20,40 @@ export function CbiStage({ token, onDone, lang = "en" }: { token: string; onDone
   const [messages, setMessages] = useState<Msg[]>([]);
   const [draft, setDraft] = useState("");
   const [concluded, setConcluded] = useState(false);
+  // Advisory integrity capture (trial: "this should include a timer, to restrict
+  // using an AI agent"): tab-away count/duration, paste count + pasted length,
+  // and per-answer thinking time all ride into the stage flags for the
+  // recruiter's integrity signal. Advisory only - it never fails the stage.
+  const blurCountRef = useRef(0);
+  const awayMsRef = useRef(0);
+  const pasteCountRef = useRef(0);
+  const pasteCharsRef = useRef(0);
+  const turnSecondsRef = useRef<number[]>([]);
+  const turnStartRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (phase !== "chat") return;
+    turnStartRef.current = Date.now();
+    let awayStart: number | null = null;
+    const goneAway = () => { if (awayStart == null) awayStart = Date.now(); };
+    const cameBack = () => {
+      if (awayStart == null) return;
+      const dur = Date.now() - awayStart;
+      awayStart = null;
+      if (dur < 1500) return;
+      blurCountRef.current += 1;
+      awayMsRef.current += dur;
+    };
+    const onVis = () => { if (document.hidden) goneAway(); else cameBack(); };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("blur", goneAway);
+    window.addEventListener("focus", cameBack);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("blur", goneAway);
+      window.removeEventListener("focus", cameBack);
+    };
+  }, [phase]);
 
   const start = async () => {
     setBusy(true);
@@ -41,6 +75,7 @@ export function CbiStage({ token, onDone, lang = "en" }: { token: string; onDone
   const send = async () => {
     const answer = draft.trim();
     if (!answer) return;
+    turnSecondsRef.current.push(Math.round((Date.now() - turnStartRef.current) / 1000));
     setBusy(true);
     setError(null);
     setMessages((m) => [...m, { role: "candidate", text: answer }]);
@@ -55,13 +90,29 @@ export function CbiStage({ token, onDone, lang = "en" }: { token: string; onDone
     if (!r.ok || !d.message) return setError(d.error || "Couldn't send your answer.");
     setMessages((m) => [...m, { role: "interviewer", text: d.message }]);
     setConcluded(!!d.shouldConclude);
+    turnStartRef.current = Date.now();
   };
 
   const finish = async () => {
     setBusy(true);
     setError(null);
-    const r = await fetch(`/api/prehire/${token}/cbi/submit`, { method: "POST" });
+    const r = await fetch(`/api/prehire/${token}/cbi/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        integrityFlags: {
+          blurCount: blurCountRef.current,
+          awayMs: awayMsRef.current,
+          pasteCount: pasteCountRef.current,
+          pasteChars: pasteCharsRef.current,
+          turnSeconds: turnSecondsRef.current,
+        },
+      }),
+    });
     setBusy(false);
+    // Idempotent completion: a lost response may already have completed the
+    // stage server-side - a second click must advance, not loop on an error.
+    if (r.status === 409) return onDone();
     if (!r.ok) {
       const d = await r.json().catch(() => ({}));
       return setError(d.error || tr("Couldn't submit the interview.", "تعذّر إرسال المقابلة."));
@@ -88,6 +139,9 @@ export function CbiStage({ token, onDone, lang = "en" }: { token: string; onDone
             <Button onClick={start} disabled={busy} className="w-full">
               {busy ? tr("Starting…", "جارٍ البدء…") : tr("Start interview", "ابدأ المقابلة")}
             </Button>
+            <p className="text-center text-[11px] text-slate-400">
+              {tr("Integrity monitoring is on - answer in your own words.", "المراقبة النزاهية مفعّلة - أجب بكلماتك الخاصة.")}
+            </p>
           </CardContent>
         </Card>
       )}
@@ -120,7 +174,7 @@ export function CbiStage({ token, onDone, lang = "en" }: { token: string; onDone
                   {tr("That's the end of the interview. Submit to finish this step.", "انتهت المقابلة. أرسِل لإنهاء هذه الخطوة.")}
                 </p>
                 <Button onClick={finish} disabled={busy} className="w-full" size="lg">
-                  {busy ? tr("Submitting…", "جارٍ الإرسال…") : tr("Finish & submit", "إنهاء وإرسال")}
+                  {busy ? tr("Scoring your interview - this can take a minute…", "جارٍ تقييم مقابلتك - قد يستغرق دقيقة…") : tr("Finish & submit", "إنهاء وإرسال")}
                 </Button>
               </CardContent>
             </Card>
@@ -129,6 +183,11 @@ export function CbiStage({ token, onDone, lang = "en" }: { token: string; onDone
               <textarea
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
+                onPaste={(e) => {
+                  const len = e.clipboardData?.getData("text")?.length ?? 0;
+                  pasteCountRef.current += 1;
+                  pasteCharsRef.current += len;
+                }}
                 rows={4}
                 placeholder={tr("Type your answer…", "اكتب إجابتك…")}
                 disabled={busy}

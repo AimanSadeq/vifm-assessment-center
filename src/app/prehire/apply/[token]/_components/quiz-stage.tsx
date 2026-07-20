@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -28,6 +28,17 @@ export function QuizStage({ token, onDone, lang = "en" }: { token: string; onDon
   const [error, setError] = useState<string | null>(null);
   const [questions, setQuestions] = useState<Q[]>([]);
   const [answers, setAnswers] = useState<Record<string, number>>({});
+  // Two-step submit: each stage is final, so a stray click must not end it
+  // (trial: "the quiz submits on the first click, with no confirmation step").
+  const [confirming, setConfirming] = useState(false);
+  const saveKey = `ph-quiz-${token}`;
+
+  // In-progress answers survive an accidental back/refresh - the server
+  // re-serves the same stored deck, so restored ids still match.
+  useEffect(() => {
+    if (phase !== "quiz") return;
+    try { sessionStorage.setItem(saveKey, JSON.stringify(answers)); } catch { /* best-effort */ }
+  }, [phase, answers, saveKey]);
 
   const ar = lang === "ar";
   const tr = (en: string, arText: string) => (ar ? arText : en);
@@ -43,6 +54,13 @@ export function QuizStage({ token, onDone, lang = "en" }: { token: string; onDon
     if (d.done) return onDone();
     if (!r.ok || !d.questions) return setError(d.error || tr("Couldn't start the assessment.", "تعذّر بدء التقييم."));
     setQuestions(d.questions as Q[]);
+    try {
+      const raw = sessionStorage.getItem(saveKey);
+      if (raw) {
+        const saved = JSON.parse(raw) as Record<string, number>;
+        if (saved && typeof saved === "object") setAnswers(saved);
+      }
+    } catch { /* corrupt blob - start clean */ }
     setPhase("quiz");
   };
 
@@ -55,10 +73,17 @@ export function QuizStage({ token, onDone, lang = "en" }: { token: string; onDon
       body: JSON.stringify({ answers }),
     });
     setBusy(false);
+    // Idempotent completion: a lost response may already have completed the
+    // stage server-side - a second click must advance, not error.
+    if (r.status === 409) {
+      try { sessionStorage.removeItem(saveKey); } catch { /* best-effort */ }
+      return onDone();
+    }
     if (!r.ok) {
       const d = await r.json().catch(() => ({}));
       return setError(d.error || tr("Couldn't submit your answers.", "تعذّر إرسال إجاباتك."));
     }
+    try { sessionStorage.removeItem(saveKey); } catch { /* best-effort */ }
     onDone();
   };
 
@@ -133,9 +158,25 @@ export function QuizStage({ token, onDone, lang = "en" }: { token: string; onDon
               </Card>
             );
           })}
-          <Button onClick={submit} disabled={!allAnswered || busy} className="w-full" size="lg">
-            {busy ? tr("Submitting…", "جارٍ الإرسال…") : tr("Submit answers", "إرسال الإجابات")}
-          </Button>
+          {!confirming ? (
+            <Button onClick={() => setConfirming(true)} disabled={!allAnswered || busy} className="w-full" size="lg">
+              {tr("Submit answers", "إرسال الإجابات")}
+            </Button>
+          ) : (
+            <div className="space-y-2 rounded-md border border-amber-200 bg-amber-50 p-3">
+              <p className="text-center text-sm text-amber-800">
+                {tr("Submit your answers? You can't change them afterwards.", "هل تريد إرسال إجاباتك؟ لا يمكن تغييرها بعد الإرسال.")}
+              </p>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setConfirming(false)} disabled={busy} className="flex-1">
+                  {tr("Keep reviewing", "متابعة المراجعة")}
+                </Button>
+                <Button onClick={submit} disabled={busy} className="flex-1">
+                  {busy ? tr("Submitting…", "جارٍ الإرسال…") : tr("Yes, submit", "نعم، أرسل")}
+                </Button>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

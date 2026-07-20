@@ -7,7 +7,7 @@ import { computeIntegritySignal, type IntegrityFlags } from "@/lib/scoring/integ
 
 type CbiDetail = { history?: CbiMessage[] } | null;
 
-export async function POST(_req: Request, { params }: { params: { token: string } }) {
+export async function POST(req: Request, { params }: { params: { token: string } }) {
   const ctx = await findCandidateByToken(params.token);
   if (!ctx) return NextResponse.json({ error: "Invalid link" }, { status: 404 });
   // Parity with the start route: a closed/archived requisition must not score a
@@ -87,8 +87,15 @@ export async function POST(_req: Request, { params }: { params: { token: string 
   // candidate's typed answers rides into the stage flags (same pattern as the
   // fluent stage) so the recruiter view can show it. Advisory only - it never
   // caps or fails the stage.
-  const integrityFlags: IntegrityFlags | null =
-    typeof score.ai_likelihood === "number" ? { aiLikelihood: score.ai_likelihood } : null;
+  // Client-side capture (tab-away, paste, per-answer thinking time) merges with
+  // the AI examiner's advisory AI-likeness estimate. All advisory - never gates.
+  const body = await req.json().catch(() => null) as { integrityFlags?: IntegrityFlags } | null;
+  const clientFlags: IntegrityFlags = body?.integrityFlags && typeof body.integrityFlags === "object" ? body.integrityFlags : {};
+  const merged: IntegrityFlags = {
+    ...clientFlags,
+    ...(typeof score.ai_likelihood === "number" ? { aiLikelihood: score.ai_likelihood } : {}),
+  };
+  const integrityFlags: IntegrityFlags | null = Object.keys(merged).length > 0 ? merged : null;
 
   const { error } = await svc
     .from("prehire_stage_results")

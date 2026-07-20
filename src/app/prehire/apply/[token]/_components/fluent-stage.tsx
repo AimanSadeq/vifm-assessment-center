@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { CappedAudio } from "@/components/shared/capped-audio";
 import { startBrowserStt, type BrowserSttSession } from "@/lib/speech/browser-stt";
 import { type IntegrityEvent } from "@/lib/scoring/integrity";
 
@@ -38,6 +39,14 @@ type FluentTest = {
 
 const MAX_PLAYS = 2;
 const MIN_WORDS = 5;
+// A modest "real attempt" floor for writing - NOT the full 70-90 target (which
+// would hard-block a genuinely low-level candidate whose short answer IS the
+// evidence), but enough that a trivially empty response can't slip through.
+// Mirrors the Fluent runner (trial: 67 words passed a promised "min 70").
+const WRITING_SUBMIT_FLOOR = 20;
+// In-progress answers survive an accidental back/refresh (trial: "I tried to go
+// back, it took me out and started over"). SessionStorage, per candidate token.
+const saveKey = (token: string) => `ph-flu-${token}`;
 
 const ttsAvailable = () =>
   typeof window !== "undefined" && "speechSynthesis" in window && typeof SpeechSynthesisUtterance !== "undefined";
@@ -48,6 +57,7 @@ export function FluentStage({ token, onDone, lang = "en" }: { token: string; onD
   // The test CONTENT is always English; only the RTL layout + the writing /
   // speaking task INSTRUCTIONS (prompt_ar, already shipped) localise.
   const ar = lang === "ar";
+  const tr = (en: string, arText: string) => (ar ? arText : en);
   const [phase, setPhase] = useState<"intro" | "test">("intro");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +65,7 @@ export function FluentStage({ token, onDone, lang = "en" }: { token: string; onD
 
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [writing, setWriting] = useState("");
+
 
   // Lightweight, advisory proctoring (CAL-FLU-601; surfaced to recruiters, never
   // auto-fails). PDPL-safe: counts, away-DURATION, and pasted-text LENGTH only.
@@ -77,6 +88,19 @@ export function FluentStage({ token, onDone, lang = "en" }: { token: string; onD
   const [transcript, setTranscript] = useState("");
   const [pronunciation, setPronunciation] = useState<PronunciationLike | null>(null);
   const [speakNote, setSpeakNote] = useState("");
+
+  // Persist in-progress answers so back/refresh resumes instead of wiping
+  // (the server already re-serves the same stored test on re-start).
+  useEffect(() => {
+    if (phase !== "test") return;
+    try {
+      sessionStorage.setItem(
+        saveKey(token),
+        JSON.stringify({ answers, writing, typedTranscript: speakMode === "type" ? transcript : "" })
+      );
+    } catch { /* storage full/blocked - resume is best-effort */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, answers, writing, transcript, speakMode, token]);
   const mediaRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
@@ -331,11 +355,22 @@ export function FluentStage({ token, onDone, lang = "en" }: { token: string; onD
       const res = await fetch(`/api/prehire/${token}/fluent/start`, { method: "POST" });
       const d = (await res.json().catch(() => ({}))) as { test?: FluentTest; tts?: boolean; done?: boolean; error?: string };
       if (d.done) return onDone();
-      if (!res.ok || !d.test) return setError(d.error || "Couldn't start the English test.");
+      if (!res.ok || !d.test) return setError(d.error || tr("Couldn't start the English test.", "تعذّر بدء اختبار اللغة الإنجليزية."));
       setTest({ ...d.test, tts: d.tts });
+      // Restore any in-progress answers from an interrupted sitting (same test:
+      // the server re-serves the stored deck, so the ids still match).
+      try {
+        const raw = sessionStorage.getItem(saveKey(token));
+        if (raw) {
+          const saved = JSON.parse(raw) as { answers?: Record<string, number>; writing?: string; typedTranscript?: string };
+          if (saved.answers && Object.keys(saved.answers).length > 0) setAnswers(saved.answers);
+          if (saved.writing) setWriting(saved.writing);
+          if (saved.typedTranscript) { setTranscript(saved.typedTranscript); setSpeakMode("type"); }
+        }
+      } catch { /* corrupt blob - start clean */ }
       setPhase("test");
     } catch {
-      setError("Couldn't start the English test.");
+      setError(tr("Couldn't start the English test.", "تعذّر بدء اختبار اللغة الإنجليزية."));
     } finally {
       setBusy(false);
     }
@@ -355,33 +390,45 @@ export function FluentStage({ token, onDone, lang = "en" }: { token: string; onD
           writingResponse: writing,
           speakingTranscript: transcript,
           pronunciation,
-          integrityFlags: { blurCount, pasteCount, awayMs, pasteChars, events },
+          integrityFlags: { blurCount, pasteCount, awayMs, pasteChars, events, speakingTyped: speakMode === "type" },
         }),
       });
+      // Idempotent completion: if a lost response already completed the stage
+      // server-side, a second click must advance, not dead-end on an error
+      // (trial: "I had to submit the page twice / it did not allow me to submit").
+      if (res.status === 409) {
+        try { sessionStorage.removeItem(saveKey(token)); } catch { /* best-effort */ }
+        return onDone();
+      }
       if (!res.ok) {
         const d = (await res.json().catch(() => ({}))) as { error?: string };
-        return setError(d.error || "Couldn't submit the English test.");
+        return setError(d.error || tr("Couldn't submit the English test.", "تعذّر إرسال اختبار اللغة الإنجليزية."));
       }
+      try { sessionStorage.removeItem(saveKey(token)); } catch { /* best-effort */ }
       onDone();
     } catch {
-      setError("Couldn't submit the English test.");
+      setError(tr("Couldn't submit the English test.", "تعذّر إرسال اختبار اللغة الإنجليزية."));
     } finally {
       setBusy(false);
     }
   };
 
   const receptive = test ? [...test.reading, ...test.listening] : [];
-  const allAnswered = receptive.length > 0 && receptive.every((r) => answers[r.id] != null);
+  const unanswered = receptive.filter((r) => answers[r.id] == null).length;
   // Only require a productive response when that skill was actually served
-  // (CAL-PRE-503 partial placement).
-  const writingOk = !test?.writing || wordCount(writing) >= MIN_WORDS;
+  // (CAL-PRE-503 partial placement). The writing gate is the honest floor the
+  // label states, not the silent 5-word one the trial caught.
+  const writingOk = !test?.writing || wordCount(writing) >= WRITING_SUBMIT_FLOOR;
   const speakingOk = !test?.speaking || wordCount(transcript) >= MIN_WORDS;
-  const canSubmit =
-    allAnswered &&
-    writingOk &&
-    speakingOk &&
-    !transcribing &&
-    !recording;
+  const canSubmit = unanswered === 0 && receptive.length > 0 && writingOk && speakingOk && !transcribing && !recording;
+  // Rather than a silently-disabled button, tell the candidate exactly what is
+  // missing (trial: "when I finished, it did not allow me to submit").
+  const gapHints: string[] = [];
+  if (unanswered > 0) gapHints.push(tr(`${unanswered} question${unanswered === 1 ? "" : "s"} unanswered`, `${unanswered} سؤال بلا إجابة`));
+  if (test?.writing && !writingOk) gapHints.push(tr(`writing needs at least ${WRITING_SUBMIT_FLOOR} words`, `الكتابة تحتاج ${WRITING_SUBMIT_FLOOR} كلمة على الأقل`));
+  if (test?.speaking && !speakingOk) gapHints.push(tr("record or type your speaking answer", "سجّل إجابة التحدّث أو اكتبها"));
+  if (recording) gapHints.push(tr("stop the recording first", "أوقف التسجيل أولاً"));
+  if (transcribing) gapHints.push(tr("transcription is still finishing", "النسخ الصوتي لم ينتهِ بعد"));
 
   return (
     <div className="space-y-4" dir={ar ? "rtl" : "ltr"}>
@@ -392,16 +439,21 @@ export function FluentStage({ token, onDone, lang = "en" }: { token: string; onD
       {phase === "intro" && (
         <Card>
           <CardContent className="space-y-4 pt-6">
-            <h2 className="font-semibold text-[#010131]">English placement</h2>
+            <h2 className="font-semibold text-[#010131]">{tr("English placement", "تحديد مستوى اللغة الإنجليزية")}</h2>
             <p className="text-sm text-muted-foreground">
-              A short English test across four skills - reading, listening, writing and speaking.
-              About 15 minutes. You&apos;ll read short passages, listen to clips and answer, write a
-              brief response, and speak for about 45 seconds. Integrity monitoring is on (tab
-              switches and pasting are recorded).
+              {tr(
+                "A short English test across four skills - reading, listening, writing and speaking. About 15 minutes. You'll read short passages, listen to clips and answer, write a brief response, and speak for about 45 seconds. The test content itself is in English. Integrity monitoring is on (tab switches and pasting are recorded).",
+                "اختبار قصير للغة الإنجليزية عبر أربع مهارات - القراءة والاستماع والكتابة والتحدّث. نحو 15 دقيقة. محتوى الاختبار نفسه بالإنجليزية. المراقبة النزاهية مفعّلة (يُسجَّل تبديل التبويبات واللصق)."
+              )}
             </p>
             <Button onClick={start} disabled={busy} className="w-full">
-              {busy ? "Starting…" : "Start English test"}
+              {busy ? tr("Preparing your test - this can take up to a minute…", "جارٍ تجهيز اختبارك - قد يستغرق حتى دقيقة…") : tr("Start English test", "ابدأ اختبار الإنجليزية")}
             </Button>
+            {busy && (
+              <p className="text-center text-[11px] text-slate-400">
+                {tr("Please keep this page open.", "يرجى إبقاء هذه الصفحة مفتوحة.")}
+              </p>
+            )}
           </CardContent>
         </Card>
       )}
@@ -412,7 +464,7 @@ export function FluentStage({ token, onDone, lang = "en" }: { token: string; onD
           {test.reading.length > 0 && (
           <section className="rounded-xl border bg-white p-6 shadow-sm">
             <h2 className="mb-4 inline-flex items-center gap-2 text-lg font-semibold text-[#010131]">
-              <BookOpen className="h-5 w-5 text-[#5391D5]" /> Reading
+              <BookOpen className="h-5 w-5 text-[#5391D5]" /> {tr("Reading", "القراءة")}
             </h2>
             <div className="space-y-5">
               {test.reading.map((item, i) => (
@@ -430,10 +482,10 @@ export function FluentStage({ token, onDone, lang = "en" }: { token: string; onD
           {test.listening.length > 0 && (
           <section className="rounded-xl border bg-white p-6 shadow-sm">
             <h2 className="mb-1 inline-flex items-center gap-2 text-lg font-semibold text-[#010131]">
-              <Headphones className="h-5 w-5 text-[#5391D5]" /> Listening
+              <Headphones className="h-5 w-5 text-[#5391D5]" /> {tr("Listening", "الاستماع")}
             </h2>
             <p className="mb-4 text-xs text-slate-500">
-              Listen, then answer. You can replay each clip up to twice.
+              {tr("Listen, then answer. You can replay each clip up to twice.", "استمع ثم أجب. يمكنك إعادة تشغيل كل مقطع مرتين كحد أقصى.")}
             </p>
             {!test.tts && !ttsAvailable() && (
               <div className="mb-3 inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-3 py-1.5 text-xs text-amber-800">
@@ -449,11 +501,13 @@ export function FluentStage({ token, onDone, lang = "en" }: { token: string; onD
                   <div key={item.id} className="rounded-lg border border-slate-200 p-4">
                     <div className="flex items-center gap-3">
                       {test.tts ? (
-                        <audio
-                          controls
-                          preload="none"
-                          className="h-9 w-full max-w-xs"
+                        <CappedAudio
                           src={`/api/prehire/${token}/fluent/tts?item=${encodeURIComponent(item.id)}`}
+                          persistKey={`ph-${token}:${item.id}`}
+                          maxPlays={MAX_PLAYS}
+                          playLabel={tr("Play", "تشغيل")}
+                          playingLabel={tr("Playing…", "قيد التشغيل…")}
+                          replaysLeft={tr("replays left", "إعادة متبقية")}
                         />
                       ) : ttsAvailable() ? (
                         <>
@@ -484,13 +538,16 @@ export function FluentStage({ token, onDone, lang = "en" }: { token: string; onD
           {test.writing && (
           <section className="rounded-xl border bg-white p-6 shadow-sm">
             <h2 className="mb-3 inline-flex items-center gap-2 text-lg font-semibold text-[#010131]">
-              <PenLine className="h-5 w-5 text-[#5391D5]" /> Writing
+              <PenLine className="h-5 w-5 text-[#5391D5]" /> {tr("Writing", "الكتابة")}
             </h2>
             <p className="text-sm text-[#111232]">{ar && test.writing.prompt_ar ? test.writing.prompt_ar : test.writing.prompt_en}</p>
             {/* Explicit, labelled word target so "70-90 words" in the prompt
                 can never be misread as a per-section time limit. */}
             <p className="mt-2 text-[11px] font-medium text-slate-500">
-              Target length: about 70-90 words. This is a word count, not a time limit.
+              {tr(
+                `Target length: about 70-90 words (minimum ${WRITING_SUBMIT_FLOOR} to submit). This is a word count, not a time limit.`,
+                `الطول المستهدف: نحو 70-90 كلمة (الحد الأدنى للإرسال ${WRITING_SUBMIT_FLOOR}). هذا عدد كلمات وليس حدًا زمنيًا.`
+              )}
             </p>
             <textarea
               value={writing}
@@ -500,8 +557,8 @@ export function FluentStage({ token, onDone, lang = "en" }: { token: string; onD
               placeholder="Write your response here…"
               className="mt-3 w-full resize-y rounded-md border border-slate-300 px-3 py-2 text-sm text-[#111232] focus:border-[#5391D5] focus:outline-none focus:ring-2 focus:ring-[#5391D5]/20"
             />
-            <div className={`mt-1 text-[11px] ${wordCount(writing) >= test.writing.min_words ? "font-semibold text-emerald-600" : "text-slate-500"}`}>
-              {wordCount(writing)} words · min {test.writing.min_words}
+            <div className={`mt-1 text-[11px] ${wordCount(writing) >= WRITING_SUBMIT_FLOOR ? "font-semibold text-emerald-600" : "text-slate-500"}`}>
+              {wordCount(writing)} {tr("words", "كلمة")} · {tr("min", "الحد الأدنى")} {WRITING_SUBMIT_FLOOR} · {tr("target", "المستهدف")} {test.writing.min_words}+
             </div>
           </section>
           )}
@@ -510,10 +567,10 @@ export function FluentStage({ token, onDone, lang = "en" }: { token: string; onD
           {test.speaking && (
           <section className="rounded-xl border bg-white p-6 shadow-sm">
             <h2 className="mb-1 inline-flex items-center gap-2 text-lg font-semibold text-[#010131]">
-              <Mic className="h-5 w-5 text-[#5391D5]" /> Speaking
+              <Mic className="h-5 w-5 text-[#5391D5]" /> {tr("Speaking", "التحدّث")}
             </h2>
             <p className="mb-3 text-xs text-slate-500">
-              Record about {test.speaking.min_seconds} seconds. We transcribe your speech and assess it.
+              {tr(`Record about ${test.speaking.min_seconds} seconds. We transcribe your speech and assess it.`, `سجّل نحو ${test.speaking.min_seconds} ثانية. سننسخ حديثك ونقيّمه.`)}
             </p>
             <p className="text-sm text-[#111232]">{ar && test.speaking.prompt_ar ? test.speaking.prompt_ar : test.speaking.prompt_en}</p>
 
@@ -594,10 +651,22 @@ export function FluentStage({ token, onDone, lang = "en" }: { token: string; onD
 
           <Button onClick={submit} disabled={busy || !canSubmit} className="w-full" size="lg">
             {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-            {busy ? "Submitting…" : "Submit & continue"}
+            {busy
+              ? tr("Scoring your test - this can take up to a minute…", "جارٍ تقييم اختبارك - قد يستغرق حتى دقيقة…")
+              : tr("Submit & continue", "إرسال ومتابعة")}
           </Button>
+          {busy && (
+            <p className="text-center text-[11px] text-slate-400">
+              {tr("Please keep this page open while we score your answers.", "يرجى إبقاء الصفحة مفتوحة أثناء تقييم إجاباتك.")}
+            </p>
+          )}
+          {!busy && !canSubmit && gapHints.length > 0 && (
+            <p className="text-center text-[11px] text-amber-700">
+              {tr("To submit: ", "للإرسال: ")}{gapHints.join(tr(" · ", " · "))}
+            </p>
+          )}
           <p className="text-center text-[11px] text-slate-400">
-            Integrity monitoring is on - tab switches and pasting are recorded.
+            {tr("Integrity monitoring is on - tab switches and pasting are recorded.", "المراقبة النزاهية مفعّلة - يُسجَّل تبديل التبويبات واللصق.")}
           </p>
         </>
       )}

@@ -1,4 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
+import { loadVoucherBlock } from "@/lib/vouchers/status";
+import { VoucherBlockedCard } from "@/components/shared/voucher-blocked-card";
 import { RedeemForm } from "./_components/redeem-form";
 
 export const dynamic = "force-dynamic";
@@ -34,10 +36,18 @@ export default async function RedeemVoucherPage({ searchParams }: Props) {
     }
   }
 
+  // Tell the delegate the code is spent/expired/deactivated BEFORE they fill the
+  // form in, instead of after submitting it (trial feedback - Amal).
+  const block = await loadVoucherBlock("ara", code);
+
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-md px-6 py-16">
-        <RedeemForm initialCode={code} initialCompany={company} isPractice={isPractice} />
+        {block ? (
+          <VoucherBlockedCard block={block} code={code} redeemPath="/ara/redeem" />
+        ) : (
+          <RedeemForm initialCode={code} initialCompany={company} isPractice={isPractice} />
+        )}
       </div>
     </div>
   );

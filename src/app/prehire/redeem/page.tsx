@@ -1,6 +1,8 @@
 import { UserSearch } from "lucide-react";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { VoucherBlockedCard } from "@/components/shared/voucher-blocked-card";
+import { loadVoucherBlock } from "@/lib/vouchers/status";
 import { RedeemForm } from "./_components/redeem-form";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +21,11 @@ type Props = {
  * on the voucher's requisition and forwards them to /prehire/apply/[token].
  * Auth-bypassed in middleware (isPreHireRedeemRoute).
  */
-export default function PrehireRedeemPage({ searchParams }: Props) {
+export default async function PrehireRedeemPage({ searchParams }: Props) {
+  const initialCode = searchParams?.code?.trim() ?? "";
+  // Surface a spent/expired/deactivated code before the applicant fills the
+  // form in, rather than after they submit it (shared with every service).
+  const blocked = await loadVoucherBlock("prehire", initialCode);
   return (
     <div className="min-h-screen bg-background">
       <header className="ara-hero relative overflow-hidden">
@@ -41,17 +47,21 @@ export default function PrehireRedeemPage({ searchParams }: Props) {
       </header>
 
       <main className="relative z-10 mx-auto -mt-10 max-w-2xl px-6 pb-16">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Your details</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <RedeemForm
-              initialCode={searchParams?.code?.trim() ?? ""}
-              initialCompany={searchParams?.company?.trim() ?? ""}
-            />
-          </CardContent>
-        </Card>
+        {blocked ? (
+          <VoucherBlockedCard block={blocked} code={initialCode} redeemPath="/prehire/redeem" />
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Your details</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RedeemForm
+                initialCode={initialCode}
+                initialCompany={searchParams?.company?.trim() ?? ""}
+              />
+            </CardContent>
+          </Card>
+        )}
       </main>
     </div>
   );

@@ -1,4 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
+import { VoucherBlockedCard } from "@/components/shared/voucher-blocked-card";
+import { loadVoucherBlock } from "@/lib/vouchers/status";
 import { RedeemForm } from "./_components/redeem-form";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +38,17 @@ export default async function RedeemPage({
     } catch {
       /* tolerant - leave prefills blank if the lookup fails */
     }
+  }
+
+  // Surface a spent/expired/deactivated code before the delegate fills the
+  // form in, rather than after they submit it (shared with every service).
+  const blocked = await loadVoucherBlock("technical", code);
+  if (blocked) {
+    return (
+      <div className="mx-auto max-w-md p-6">
+        <VoucherBlockedCard block={blocked} code={code} redeemPath="/tech-sandbox/redeem" />
+      </div>
+    );
   }
 
   return (

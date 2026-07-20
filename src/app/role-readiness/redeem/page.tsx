@@ -1,4 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
+import { VoucherBlockedCard } from "@/components/shared/voucher-blocked-card";
+import { loadVoucherBlock } from "@/lib/vouchers/status";
 import { RedeemClient } from "./redeem-client";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +38,19 @@ export default async function RoleReadinessRedeemPage({
     } catch {
       /* tolerant - the form still validates the code on submit */
     }
+  }
+
+  // Surface an exhausted code before the delegate fills the form in. NOTE:
+  // rr_claim_voucher_seat checks seats ONLY - it ignores rr_vouchers.expires_at
+  // even though that column exists and is settable - so "no places left" is the
+  // only condition that may block here. loadVoucherBlock encodes that exception.
+  const blocked = await loadVoucherBlock("roleReadiness", code);
+  if (blocked) {
+    return (
+      <div className="mx-auto max-w-md px-6 py-16">
+        <VoucherBlockedCard block={blocked} code={code} redeemPath="/role-readiness/redeem" />
+      </div>
+    );
   }
 
   return <RedeemClient code={code} emailPrefill={emailPrefill} namePrefill={namePrefill} />;

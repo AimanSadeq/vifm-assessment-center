@@ -1,0 +1,89 @@
+name: Platform · retention purge (all services)
+
+# Daily unattended cron that applies the ONE retention policy
+# (src/lib/retention/policy.ts) across every service: Logica, Fluent, Persona,
+# Techno, Pre-Hire, Role Readiness, and ARC's voucher redemptions.
+#
+# Why this exists:
+#   Retention was previously manual for six of the seven services - it ran only
+#   when an admin remembered to open an admin page and type a confirmation. We
+#   contract for "personal data held for a maximum of 2 years" (UAE PDPL, Saudi
+#   PDPL, GDPR), and a promise that depends on someone clicking is not a
+#   promise. ARC already had this pattern; this generalises it.
+#
+# Relationship to ara-retention-purge.yml:
+#   That workflow still runs ARC's ASSESSMENT purge, which has bespoke
+#   collateral (Storage files, email log, audit-log entry). This one covers
+#   everything else, including the ARC voucher redemptions that nothing
+#   previously touched. Both are needed; they do not overlap.
+#
+# Setup: identical to ara-retention-purge.yml - the same CRON_SECRET must be
+# set both as a Render env var and as a GitHub Actions repo secret. It already
+# is, for the ARC cron, so no new setup is required.
+#
+# Behaviour:
+#   - Fires daily at 03:30 UTC, half an hour after the ARC purge so the two
+#     never contend for the same rows.
+#   - Fails the job on any non-2xx, or if the endpoint reports a per-service
+#     step error - a service whose purge quietly failed is exactly what this
+#     is meant to catch.
+
+on:
+  schedule:
+    # 03:30 UTC daily = 07:30 GST (UAE) / 06:30 AST (Saudi)
+    - cron: "30 3 * * *"
+  workflow_dispatch:
+    inputs:
+      dryRun:
+        description: "Report what would be removed, without removing it"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: platform-retention-purge
+  cancel-in-progress: false
+
+jobs:
+  purge:
+    name: Apply retention policy across all services
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Fire platform retention endpoint
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          DRY_RUN: ${{ inputs.dryRun }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "::error::CRON_SECRET secret is not set on this repo. See workflow file header."
+            exit 1
+          fi
+
+          ENDPOINT="https://caliber.viftraining.com/api/admin/retention/cron"
+          if [ "${DRY_RUN:-false}" = "true" ]; then
+            ENDPOINT="${ENDPOINT}?dryRun=1"
+            echo "DRY RUN - nothing will be removed."
+          fi
+          echo "Calling $ENDPOINT"
+
+          BODY=$(curl -fsS \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Accept: application/json" \
+            --max-time 300 \
+            "$ENDPOINT")
+
+          echo "Response body:"
+          echo "$BODY"
+
+          # ok:false means at least one service's step failed - surface it
+          # rather than letting a partial purge look like a clean run.
+          echo "$BODY" | grep -q '"ok":true' || {
+            echo "::error::Retention run reported errors - see the errors[] array above."
+            exit 1
+          }

@@ -5,6 +5,8 @@ import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { createServiceClient } from "@/lib/supabase/server";
 import { fetchAllPages, chunkIds } from "@/lib/ara/paginate";
 import { RETENTION_MONTHS, PURGE_CONFIRMATION } from "./constants";
+import { runRetentionForService } from "@/lib/retention/engine";
+import { findRetentionSpec } from "@/lib/retention/specs";
 
 function cutoffIso(): string {
   const d = new Date();
@@ -52,39 +54,20 @@ export async function purgePrehireCandidates(
   // Page the id-gather: an unpaginated select caps at 1000, so a >1000 backlog
   // would leave expired applicant + redeemer PII past the retention window while
   // countExpiredPrehireCandidates (an uncapped head count) still shows the true
-  // total - the exact retention-control failure this action must not have.
-  let rows: { id: string }[];
-  try {
-    rows = await fetchAllPages<{ id: string }>((from, to) =>
-      sb.from("prehire_candidates").select("id").lt("created_at", cutoff).order("id").range(from, to),
-    );
-  } catch (e) {
-    return { error: e instanceof Error ? e.message : "Could not read expired candidates." };
-  }
-  const ids = rows.map((r) => r.id);
-  if (ids.length === 0) return { ok: true, purged: 0, redemptionsPurged: 0 };
-
-  // Delete voucher-redemption PII first. The redemption FK is ON DELETE SET NULL,
-  // so deleting the candidate would orphan the redemption row (redeemer name /
-  // email / IP) with its candidate link nulled - leaving PII past the window.
-  // Remove them while the candidate_id still matches. Chunk the .in() (a >1000
-  // uuid list also bloats the URL). Best-effort (un-migrated table just no-ops).
-  let redemptionsPurged = 0;
-  try {
-    for (const batch of chunkIds(ids)) {
-      const rdel = await sb.from("prehire_voucher_redemptions").delete().in("candidate_id", batch).select("id");
-      redemptionsPurged += rdel.data?.length ?? 0;
-    }
-  } catch {
-    /* redemptions table absent */
-  }
-
-  let purged = 0;
-  for (const batch of chunkIds(ids)) {
-    const del = await sb.from("prehire_candidates").delete().in("id", batch).select("id");
-    if (del.error) return { error: del.error.message };
-    purged += del.data?.length ?? 0;
-  }
+  // Delegates to the one platform policy (src/lib/retention/policy.ts).
+  //
+  // Behavioural change: voucher redemptions are ANONYMISED rather than deleted,
+  // so the seat ledger behind a voucher's used_count still reconciles. That
+  // also removes the old ordering hazard here - the redemption FK is ON DELETE
+  // SET NULL, so deleting a candidate first would orphan the redemption with
+  // its PII intact and its link nulled. Anonymising keys on redeemed_at, which
+  // is independent of whether the candidate link survived.
+  const spec = findRetentionSpec("prehire");
+  if (!spec) return { error: "No retention spec registered for Pre-Hire." };
+  const out = await runRetentionForService(spec);
+  if (out.errors.length) return { error: out.errors.join("; ") };
+  const purged = out.deleted;
+  const redemptionsPurged = out.anonymised;
 
   revalidatePath("/admin/prehire/retention");
   return { ok: true, purged, redemptionsPurged };

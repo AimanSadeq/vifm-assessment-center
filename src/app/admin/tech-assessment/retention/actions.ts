@@ -5,6 +5,8 @@ import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { createServiceClient } from "@/lib/supabase/server";
 import { fetchAllPages, chunkIds } from "@/lib/ara/paginate";
 import { RETENTION_MONTHS, PURGE_CONFIRMATION } from "./constants";
+import { runRetentionForService } from "@/lib/retention/engine";
+import { findRetentionSpec } from "@/lib/retention/specs";
 
 function cutoffIso(): string {
   const d = new Date();
@@ -94,14 +96,15 @@ export async function purgeTechnical(
     return { error: `Type ${PURGE_CONFIRMATION} to confirm.` };
   }
 
-  const cutoff = cutoffIso();
-  const purged =
-    (await purgeTable("tech_assessment_results", cutoff)) +
-    (await purgeTable("tech_assessment_sessions", cutoff)) +
-    (await purgeTable("technical_sandbox_sessions", cutoff)) +
-    // Redeemer PII (name/email/company/ip/user_agent); keyed on redeemed_at.
-    (await purgeTable("technical_sandbox_voucher_redemptions", cutoff, "redeemed_at"));
+  // Delegates to the one platform policy (src/lib/retention/policy.ts). The
+  // behavioural change from the old local implementation: voucher redemptions
+  // are now ANONYMISED rather than deleted, so the seat ledger behind a
+  // voucher's used_count still reconciles while the person is removed.
+  const spec = findRetentionSpec("technical");
+  if (!spec) return { error: "No retention spec registered for Techno." };
+  const out = await runRetentionForService(spec);
+  if (out.errors.length) return { error: out.errors.join("; ") };
 
   revalidatePath("/admin/tech-assessment/retention");
-  return { ok: true, purged };
+  return { ok: true, purged: out.deleted + out.anonymised + out.swept };
 }

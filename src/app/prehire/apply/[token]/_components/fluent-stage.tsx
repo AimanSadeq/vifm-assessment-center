@@ -504,6 +504,7 @@ export function FluentStage({ token, onDone, lang = "en" }: { token: string; onD
                         <CappedAudio
                           src={`/api/prehire/${token}/fluent/tts?item=${encodeURIComponent(item.id)}`}
                           persistKey={`ph-${token}:${item.id}`}
+                          preload="none"
                           maxPlays={MAX_PLAYS}
                           playLabel={tr("Play", "تشغيل")}
                           playingLabel={tr("Playing…", "قيد التشغيل…")}

@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
-import { BadgeCheck, Bot, FileText } from "lucide-react";
+import { BadgeCheck, Bot, FileText, ShieldAlert } from "lucide-react";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getPrehireCertification } from "@/lib/prehire/certification";
+import { computeIntegritySignal, type IntegrityFlags } from "@/lib/scoring/integrity";
 import { BackLink } from "@/components/shared/back-link";
 import { CertifyForm } from "./_components/certify-form";
 
@@ -24,6 +25,7 @@ type StageRow = {
   normalized_score: number | null;
   raw_score: number | null;
   detail: Record<string, unknown> | null;
+  flags: (IntegrityFlags & { turnSeconds?: number[]; speakingTyped?: boolean }) | null;
 };
 
 const STAGE_LABEL: Record<string, string> = {
@@ -49,7 +51,7 @@ export default async function PrehireReviewPage({
   const { data: cand } = await sb
     .from("prehire_candidates")
     .select(
-      "id, full_name, email, requisition_id, prehire_stage_results(kind, normalized_score, raw_score, detail), prehire_requisitions(title)"
+      "id, full_name, email, requisition_id, prehire_stage_results(kind, normalized_score, raw_score, detail, flags), prehire_requisitions(title)"
     )
     .eq("id", params.candidateId)
     .eq("requisition_id", params.id)
@@ -78,6 +80,39 @@ export default async function PrehireReviewPage({
     | undefined;
   const cbiHistory = Array.isArray(cbiDetail?.history) ? cbiDetail!.history! : [];
   const cbiScore = cbiDetail?.score ?? null;
+
+  // Advisory integrity signals per stage (tab-away, paste, thinking time,
+  // typed-speaking fallback). Prompts for a human glance - never auto-fail.
+  const TIER_TONE: Record<string, string> = {
+    clean: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    minor: "border-amber-200 bg-amber-50 text-amber-800",
+    elevated: "border-rose-200 bg-rose-50 text-rose-800",
+  };
+  const fmtAway = (ms: number) => (ms >= 60_000 ? `${Math.round(ms / 60_000)}m` : `${Math.round(ms / 1000)}s`);
+  const median = (xs: number[]) => {
+    const s = [...xs].sort((a, b) => a - b);
+    return s.length ? s[Math.floor(s.length / 2)] : 0;
+  };
+  const integrityRows = stages
+    .filter((s) => s.flags && Object.keys(s.flags).length > 0)
+    .map((s) => {
+      const f = s.flags!;
+      const sig = computeIntegritySignal(f);
+      const facts: string[] = [];
+      const blur = f.blurCount ?? 0;
+      if (blur > 0) facts.push(`left the page ${blur}x${f.awayMs ? ` (${fmtAway(f.awayMs)} away)` : ""}`);
+      const pastes = f.pasteCount ?? 0;
+      if (pastes > 0) facts.push(`pasted ${pastes}x${f.pasteChars ? ` (~${f.pasteChars} chars)` : ""}`);
+      if (Array.isArray(f.turnSeconds) && f.turnSeconds.length > 0) {
+        const med = median(f.turnSeconds);
+        facts.push(`answer time ${f.turnSeconds.join("s / ")}s (median ${med}s)`);
+        if (med < 20) facts.push("unusually fast for composed interview answers - worth a read");
+      }
+      if (f.speakingTyped) facts.push("speaking answer was typed (no-mic fallback; no pronunciation score)");
+      if (typeof f.aiLikelihood === "number") facts.push(`AI-likeness estimate ${f.aiLikelihood}/100 (stylometric, advisory)`);
+      if (facts.length === 0) facts.push("nothing notable captured");
+      return { kind: s.kind, sig, facts };
+    });
 
   // Fluent productive responses (tolerant - shape varies; show what's present).
   const fluentDetail = stages.find((s) => s.kind === "fluent")?.detail as
@@ -139,6 +174,32 @@ export default async function PrehireReviewPage({
           </span>
         ))}
       </div>
+
+      {/* Integrity signals (advisory) */}
+      {integrityRows.length > 0 && (
+        <section className="mt-7">
+          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            <ShieldAlert className="h-4 w-4" /> Integrity signals (advisory)
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Prompts for a human glance - never an automatic action. Legitimate behaviour (a phone
+            call, a slow connection, no microphone) produces the same traces.
+          </p>
+          <div className="mt-2 space-y-2">
+            {integrityRows.map((r) => (
+              <div key={r.kind} className="flex flex-wrap items-start gap-2 rounded-lg border bg-card p-3 text-sm">
+                <span className="w-44 shrink-0 font-medium text-[#010131]">{STAGE_LABEL[r.kind] ?? r.kind}</span>
+                <span
+                  className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${TIER_TONE[r.sig.tier] ?? TIER_TONE.clean}`}
+                >
+                  {r.sig.tier} · {r.sig.score}/100
+                </span>
+                <span className="min-w-0 flex-1 text-xs text-muted-foreground">{r.facts.join(" · ")}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* CBI transcript + AI assessment */}
       {cbiHistory.length > 0 && (

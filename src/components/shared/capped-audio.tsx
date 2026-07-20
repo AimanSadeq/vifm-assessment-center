@@ -15,7 +15,7 @@ import { Play, Volume2 } from "lucide-react";
  *    blocked) and no scrubbable seek bar (the progress bar is display-only).
  */
 export function CappedAudio({
-  src, maxPlays, playLabel, playingLabel, replaysLeft, persistKey,
+  src, maxPlays, playLabel, playingLabel, replaysLeft, persistKey, preload = "metadata",
 }: {
   src: string;
   maxPlays: number;
@@ -26,6 +26,10 @@ export function CappedAudio({
    *  Without it, a refresh resets the counter - which became a free bypass
    *  once in-progress answers started persisting across reloads. */
   persistKey?: string;
+  /** "metadata" (default) shows the duration up-front but fetches on every
+   *  mount. Pass "none" when the server counts audio deliveries (Pre-Hire) -
+   *  otherwise each page refresh would burn a serve without a single play. */
+  preload?: "metadata" | "none";
 }) {
   const ref = useRef<HTMLAudioElement | null>(null);
   const storageKey = persistKey ? `capped-audio:${persistKey}` : null;
@@ -55,7 +59,7 @@ export function CappedAudio({
       <audio
         ref={ref}
         src={src}
-        preload="metadata"
+        preload={preload}
         controlsList="nodownload noplaybackrate noremoteplayback"
         onContextMenu={(e) => e.preventDefault()}
         onPlay={() => {

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { BrainCircuit, Sparkles, Loader2, CheckCircle2, RotateCcw, Download, Clock, Ticket } from "lucide-react";
 import type { PsyTestPublic, PsyResult, ScaleScore } from "@/lib/psychometrics/scoring";
 import { COGNITIVE_SUBTESTS, COGNITIVE_SUBTEST_KEYS, cognitiveNarrative } from "@/lib/psychometrics/framework";
+import { useCognitiveLanguage } from "./cognitive-language";
 
 type Lang = "en" | "ar";
 
@@ -49,7 +50,14 @@ export function PsychometricsClient({
 }) {
   const limitMinutes = timerMinutes && timerMinutes > 0 ? timerMinutes : null;
   const [phase, setPhase] = useState<"intro" | "test" | "result">("intro");
-  const [lang, setLang] = useState<Lang>("en");
+  // Language is shared with the take-page header when a CognitiveLanguageProvider
+  // wraps us, so the welcome above the card follows the toggle (trial: Omar).
+  // Standalone surfaces have no provider and keep local state.
+  const sharedLang = useCognitiveLanguage();
+  const localLang = useState<Lang>("en");
+  const [lang, setLang] = sharedLang
+    ? ([sharedLang.language, sharedLang.setLanguage] as const)
+    : localLang;
   // SD-4: which cognitive subtests to run. Defaults to all four; the taker can
   // narrow on the intro screen unless an admin has locked the set.
   const lockedSet =
@@ -74,6 +82,12 @@ export function PsychometricsClient({
       : activeSubtests
           .map((k) => (lang === "ar" ? COGNITIVE_SUBTESTS.find((x) => x.key === k)?.name_ar ?? k : scaleName(k)))
           .join(" · ");
+  // The advertised time scales with scope: a one-subtest sitting is not a
+  // 40-minute test (trial: Omar). The server computes the authoritative limit
+  // with the same formula and returns it on start; this is the intro estimate.
+  const introMinutes = limitMinutes
+    ? Math.max(10, Math.ceil((limitMinutes * activeSubtests.length) / COGNITIVE_SUBTEST_KEYS.length))
+    : null;
   // Countdown: deadline stamped when the test starts; on expiry, auto-submit.
   const [deadline, setDeadline] = useState<number | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
@@ -91,6 +105,24 @@ export function PsychometricsClient({
   const [canView, setCanView] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // Submit fires once and is final - require an explicit second click (trial:
+  // Asaad - "one stray click ends the test"). Timeout auto-submit bypasses it.
+  const [armSubmit, setArmSubmit] = useState(false);
+  // Autosave-blob key. Per voucher token for delegates (two delegates on a
+  // shared machine can never resume each other's sitting), and per CANDIDATE
+  // for admin-bound runs - without that, Candidate A's abandoned sitting on a
+  // proctor's machine would resume for Candidate B and the result would be
+  // written against A (review catch). Anonymous self-serve shares "self" but
+  // never restores silently - see the resume banner below.
+  const resumeKey = `logica-resume-${redemptionToken ?? (candidateId ? `cand-${candidateId}` : "self")}`;
+  const RESUME_TTL_MS = 3 * 60 * 60 * 1000; // mirrors the psy_sessions TTL
+  // A pending blob found on mount for a NON-token sitting: offered, not
+  // auto-applied, so a shared-machine walk-up always sees what they are
+  // resuming and a proctor can discard the previous candidate's run.
+  const [pendingResume, setPendingResume] = useState<{
+    sessionId: string; test: PsyTestPublic; answers: Record<string, number>;
+    deadline: number | null; lang: Lang; savedAt: number;
+  } | null>(null);
 
   const start = async () => {
     setBusy(true); setError("");
@@ -105,7 +137,11 @@ export function PsychometricsClient({
       const d = await res.json();
       if (!res.ok || !d.test) { setError(d.error || "Could not start."); return; }
       setSessionId(d.session_id); setTest(d.test as PsyTestPublic); setAnswers({}); setResult(null); setResultId(null);
-      setDeadline(limitMinutes ? Date.now() + limitMinutes * 60_000 : null);
+      // The server's limit is authoritative (it stamps the same deadline into
+      // the session); fall back to the unscaled prop for older responses.
+      const eff = typeof d.limit_minutes === "number" && d.limit_minutes > 0 ? d.limit_minutes : limitMinutes;
+      setDeadline(eff ? Date.now() + eff * 60_000 : null);
+      setArmSubmit(false);
       setPhase("test");
     } catch { setError("Could not start."); } finally { setBusy(false); }
   };
@@ -123,7 +159,20 @@ export function PsychometricsClient({
       // result=null (no score data over the wire), so success is res.ok alone -
       // requiring d.result here mislabelled every voucher taker's successful
       // submit as "Could not score." (and their retry hit the single-use guard).
-      if (!res.ok) { setError(d.error || "Could not score."); return; }
+      if (!res.ok) {
+        // Terminal states (already completed / session expired): the autosaved
+        // blob would restore this same doomed session on every reload, parking
+        // the taker in a test view with no way out (review catch). Clear it and
+        // land back on the intro with the reason shown.
+        if (res.status === 409 || res.status === 410) {
+          try { localStorage.removeItem(resumeKey); } catch { /* ignore */ }
+          setPhase("intro"); setTest(null); setSessionId(null); setAnswers({});
+          setDeadline(null); setRemaining(null); setArmSubmit(false);
+        }
+        setError(d.error || "Could not score.");
+        return;
+      }
+      try { localStorage.removeItem(resumeKey); } catch { /* ignore */ }
       setResult((d.result as PsyResult | null) ?? null);
       setResultId(d.result_id ?? null);
       setCanView(d.isStaff === true && !!d.result);
@@ -132,8 +181,10 @@ export function PsychometricsClient({
   };
 
   const reset = () => {
+    try { localStorage.removeItem(resumeKey); } catch { /* ignore */ }
     setPhase("intro"); setTest(null); setSessionId(null); setAnswers({});
     setResult(null); setResultId(null); setError(""); setDeadline(null); setRemaining(null);
+    setArmSubmit(false);
   };
 
   // Countdown + auto-submit on expiry. firedRef guards against a double submit
@@ -157,8 +208,61 @@ export function PsychometricsClient({
     return () => clearInterval(id);
   }, [phase, deadline]);
 
-  // Guard against losing answers: while the test is open, answers live only in
-  // component state (no autosave), so warn before a refresh / close / navigation.
+  // ── Autosave + resume (trial: Asaad - "one accidental refresh wipes all 36
+  // answers"). The key-stripped test, the answers and the deadline are snapshotted
+  // to THIS DEVICE on every change; a reload within the session's ~3h TTL (and
+  // before the deadline) restores the sitting mid-flight. Integrity is unchanged:
+  // the blob holds no answer key, and grading remains server-side against the
+  // stored session, which stays single-use.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(resumeKey);
+      if (!raw) return;
+      const b = JSON.parse(raw) as {
+        sessionId?: string; test?: PsyTestPublic; answers?: Record<string, number>;
+        deadline?: number | null; lang?: Lang; savedAt?: number;
+      };
+      if (!b?.sessionId || !b?.test || typeof b.savedAt !== "number") { localStorage.removeItem(resumeKey); return; }
+      const expired = Date.now() - b.savedAt > RESUME_TTL_MS || (b.deadline != null && b.deadline <= Date.now());
+      if (expired) { localStorage.removeItem(resumeKey); return; }
+      const blob = {
+        sessionId: b.sessionId, test: b.test, answers: b.answers ?? {},
+        deadline: b.deadline ?? null, lang: (b.lang === "ar" ? "ar" : "en") as Lang, savedAt: b.savedAt,
+      };
+      if (redemptionToken) {
+        // Token sittings restore silently: the per-token key guarantees this is
+        // the same delegate's own run.
+        setSessionId(blob.sessionId); setTest(blob.test); setAnswers(blob.answers);
+        setDeadline(blob.deadline); setLang(blob.lang); setPhase("test");
+      } else {
+        // Staff/anonymous surface: OFFER the resume instead of hijacking the
+        // intro - a shared machine may now hold a different person.
+        setPendingResume(blob);
+      }
+    } catch { /* corrupted blob - fall through to a fresh start */ }
+    // Mount-only by design: restore once, before any user interaction.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const applyResume = () => {
+    if (!pendingResume) return;
+    setSessionId(pendingResume.sessionId); setTest(pendingResume.test); setAnswers(pendingResume.answers);
+    setDeadline(pendingResume.deadline); setLang(pendingResume.lang); setPendingResume(null); setPhase("test");
+  };
+  const discardResume = () => {
+    try { localStorage.removeItem(resumeKey); } catch { /* ignore */ }
+    setPendingResume(null);
+  };
+
+  useEffect(() => {
+    if (phase !== "test" || !test || !sessionId) return;
+    try {
+      localStorage.setItem(resumeKey, JSON.stringify({ sessionId, test, answers, deadline, lang, savedAt: Date.now() }));
+    } catch { /* storage blocked/full - the beforeunload warning still applies */ }
+  }, [phase, test, sessionId, answers, deadline, lang, resumeKey]);
+
+  // Still warn on close/navigation: autosave covers a reload on this device,
+  // not a taker walking away with the timer running.
   useEffect(() => {
     if (phase !== "test") return;
     const onBeforeUnload = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
@@ -189,6 +293,28 @@ export function PsychometricsClient({
 
       {phase === "intro" && (
         <div className="space-y-5 rounded-xl border bg-card p-6">
+          {pendingResume && (
+            <div className="rounded-lg border border-sky-300 bg-sky-50 p-4">
+              <p className="text-sm font-semibold text-sky-900">
+                {lang === "ar" ? "توجد جلسة قيد التقدم على هذا الجهاز" : "A sitting is in progress on this device"}
+              </p>
+              <p className="mt-1 text-xs text-sky-800">
+                {lang === "ar"
+                  ? `${Object.keys(pendingResume.answers).length} إجابة محفوظة. تابعها إذا كانت جلستك أنت - وإذا كانت لشخص آخر، تجاهلها وابدأ من جديد.`
+                  : `${Object.keys(pendingResume.answers).length} answer(s) saved. Resume if this is your own sitting - if it belongs to someone else, discard it and start fresh.`}
+              </p>
+              <div className="mt-2 flex gap-2">
+                <button onClick={applyResume}
+                  className="rounded-md bg-[#5391D5] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#3f7dc0]">
+                  {lang === "ar" ? "متابعة الجلسة" : "Resume sitting"}
+                </button>
+                <button onClick={discardResume}
+                  className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">
+                  {lang === "ar" ? "تجاهل وابدأ من جديد" : "Discard and start fresh"}
+                </button>
+              </div>
+            </div>
+          )}
           <div className="rounded-lg border border-[#5391D5] bg-[#5391D5]/5 p-4">
             <p className="font-semibold text-[#010131]">Logica®</p>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -205,11 +331,11 @@ export function PsychometricsClient({
                   ? `أسئلة اختيار من متعدد عبر ${activeSubtests.length} ${activeSubtests.length === 1 ? "اختبار فرعي" : "اختبارات فرعية"}.`
                   : `Multiple-choice questions across ${activeSubtests.length} subtest${activeSubtests.length === 1 ? "" : "s"}.`}
               </li>
-              {limitMinutes && (
+              {introMinutes && (
                 <li>
                   {lang === "ar"
-                    ? `الوقت المحدد ${limitMinutes} دقيقة، ويُرسَل الاختبار تلقائيًا عند انتهاء الوقت.`
-                    : `You have ${limitMinutes} minutes; it submits automatically when time runs out.`}
+                    ? `الوقت المحدد ${introMinutes} دقيقة، ويُرسَل الاختبار تلقائيًا عند انتهاء الوقت.`
+                    : `You have ${introMinutes} minutes; it submits automatically when time runs out.`}
                 </li>
               )}
               <li>
@@ -219,14 +345,19 @@ export function PsychometricsClient({
               </li>
               <li>
                 {lang === "ar"
-                  ? "تحديث الصفحة أو إغلاقها أثناء الاختبار يفقد إجاباتك."
-                  : "Refreshing or closing the page mid-test loses your answers."}
+                  ? "تُحفَظ إجاباتك على هذا الجهاز أولاً بأول - إذا أُعيد تحميل الصفحة يمكنك المتابعة من حيث توقفت."
+                  : "Your answers save on this device as you go - if the page reloads, you can pick up where you left off."}
               </li>
             </ul>
           </div>
 
-          {/* SD-4: subtest selection. Hidden when an admin has locked the set. */}
-          {!lockedSet && (
+          {/* SD-4: subtest selection. Hidden when an admin has locked the set, and
+              ALWAYS hidden for voucher delegates: one seat = one sitting, so a
+              delegate who picked "numerical only" quietly spent their whole
+              voucher on a quarter of the battery and was then locked out of the
+              rest (trial: Omar). A token sitting runs the voucher's issued
+              scope, or the full battery when the voucher carries none. */}
+          {!lockedSet && !redemptionToken && (
             <div className="rounded-lg border border-slate-200 p-3">
               <p className="text-xs font-medium text-[#010131]">
                 {lang === "ar" ? "اختر الاختبارات الفرعية" : "Choose subtests"}
@@ -283,7 +414,7 @@ export function PsychometricsClient({
               <div className="mt-2 grid gap-3 sm:grid-cols-2">
                 <label className="text-sm">
                   <span className="text-xs font-medium text-slate-500">Engagement</span>
-                  <select
+                  <select id="cog-eng" name="engagement"
                     value={cogEng}
                     onChange={(e) => { setCogEng(e.target.value); setCogCand(""); }}
                     className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
@@ -296,7 +427,7 @@ export function PsychometricsClient({
                 </label>
                 <label className="text-sm">
                   <span className="text-xs font-medium text-slate-500">Candidate</span>
-                  <select
+                  <select id="cog-cand" name="candidate"
                     value={cogCand}
                     onChange={(e) => setCogCand(e.target.value)}
                     disabled={!cogEng}
@@ -313,17 +444,18 @@ export function PsychometricsClient({
           )}
           <div className="flex flex-wrap items-end gap-4">
             <label className="flex-1 min-w-[12rem]" htmlFor="cog-taker-name">
-              <span className="text-xs font-medium text-slate-500">Your name (optional)</span>
+              <span className="text-xs font-medium text-slate-500">{lang === "ar" ? "اسمك (اختياري)" : "Your name (optional)"}</span>
               <input id="cog-taker-name" name="name" autoComplete="name"
-                value={takerName} onChange={(e) => setTakerName(e.target.value)} dir="ltr"
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="e.g. Sara Al Mansoori" />
+                value={takerName} onChange={(e) => setTakerName(e.target.value)} dir="auto"
+                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                placeholder={lang === "ar" ? "مثال: سارة المنصوري" : "e.g. Sara Al Mansoori"} />
             </label>
             {/* Without this the result cannot be tied back to a person: the runner
                 never captured an email, so 35 of 39 stored results had none and
                 identity survived only as a join onto the voucher redemption -
                 which the retention purge later scrubs. */}
             <label className="flex-1 min-w-[12rem]" htmlFor="cog-taker-email">
-              <span className="text-xs font-medium text-slate-500">Email (optional)</span>
+              <span className="text-xs font-medium text-slate-500">{lang === "ar" ? "البريد الإلكتروني (اختياري)" : "Email (optional)"}</span>
               <input id="cog-taker-email" name="email" type="email" autoComplete="email"
                 value={takerEmail} onChange={(e) => setTakerEmail(e.target.value)} dir="ltr"
                 className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm" placeholder="you@example.com" />
@@ -352,21 +484,63 @@ export function PsychometricsClient({
 
       {phase === "test" && test && (
         <div className="space-y-4">
+          {/* Sticky progress + countdown: on a timed test the taker must see
+              time remaining WITHOUT scrolling to the bottom (trial: Asaad,
+              Yassin, Ahmad Ghosheh - three of seven flagged it). */}
+          <div className="sticky top-0 z-30 flex items-center justify-between rounded-lg border bg-white/95 px-4 py-2.5 shadow-sm backdrop-blur">
+            <span className="text-xs font-medium text-slate-600">
+              {answered}/{total} {lang === "ar" ? "تمت الإجابة" : "answered"}
+            </span>
+            {remaining != null && (
+              <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold tabular-nums ${remaining <= 60 ? "bg-rose-100 text-rose-700" : "bg-slate-100 text-slate-700"}`}>
+                <Clock className="h-4 w-4" />
+                {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, "0")}
+              </span>
+            )}
+          </div>
+
+          {/* Questions grouped under their subtest, with a header per section
+              (trial: Ali - one undifferentiated 36-question list read poorly).
+              Numbering stays continuous across sections. */}
           {test.kind === "cognitive"
-            ? test.items.map((item, i) => (
-                <section key={item.id} className="rounded-lg border bg-white p-4">
-                  <p className="text-sm font-semibold text-[#010131]">{i + 1}. {item.stem}</p>
-                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                    {item.options.map((opt, oi) => (
-                      <label key={oi} className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm ${answers[item.id] === oi ? "border-[#5391D5] bg-[#5391D5]/5" : "border-slate-200 hover:bg-slate-50"}`}>
-                        <input type="radio" name={item.id} checked={answers[item.id] === oi}
-                          onChange={() => setAnswers((a) => ({ ...a, [item.id]: oi }))} className="accent-[#5391D5]" />
-                        <span>{opt}</span>
-                      </label>
-                    ))}
-                  </div>
-                </section>
-              ))
+            ? (() => {
+                const scaleOrder = [...new Set(test.items.map((i) => i.scale))];
+                let n = 0;
+                return scaleOrder.map((sc) => {
+                  const st = COGNITIVE_SUBTESTS.find((x) => x.key === sc);
+                  const group = test.items.filter((i) => i.scale === sc);
+                  return (
+                    <div key={sc} className="space-y-3">
+                      <div className="flex items-baseline justify-between border-b border-slate-200 pb-1.5 pt-2">
+                        <h2 className="text-sm font-bold uppercase tracking-wide text-[#010131]">
+                          {lang === "ar" ? st?.name_ar ?? sc : st?.name_en ?? sc}
+                        </h2>
+                        <span className="text-xs text-muted-foreground">
+                          {group.filter((i) => answers[i.id] != null).length}/{group.length}
+                        </span>
+                      </div>
+                      {group.map((item) => {
+                        n += 1;
+                        const num = n;
+                        return (
+                          <section key={item.id} className="rounded-lg border bg-white p-4">
+                            <p id={`cog-q-${item.id}`} className="text-sm font-semibold text-[#010131]">{num}. {item.stem}</p>
+                            <div className="mt-2 grid gap-2 sm:grid-cols-2" role="radiogroup" aria-labelledby={`cog-q-${item.id}`}>
+                              {item.options.map((opt, oi) => (
+                                <label key={oi} htmlFor={`${item.id}-${oi}`} className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm ${answers[item.id] === oi ? "border-[#5391D5] bg-[#5391D5]/5" : "border-slate-200 hover:bg-slate-50"}`}>
+                                  <input type="radio" id={`${item.id}-${oi}`} name={item.id} checked={answers[item.id] === oi}
+                                    onChange={() => setAnswers((a) => ({ ...a, [item.id]: oi }))} className="accent-[#5391D5]" />
+                                  <span>{opt}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </section>
+                        );
+                      })}
+                    </div>
+                  );
+                });
+              })()
             : null}
 
           <div className="flex items-center justify-between">
@@ -379,11 +553,31 @@ export function PsychometricsClient({
                 </span>
               )}
             </div>
-            <button onClick={submit} disabled={!canSubmit}
-              className="inline-flex items-center gap-2 rounded-md bg-[#047857] px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50">
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-              {busy ? (lang === "ar" ? "جارٍ التقييم…" : "Scoring…") : (lang === "ar" ? "إرسال" : "Submit")}
-            </button>
+            {/* Two-step submit: the sitting is single-use and answers are final,
+                so one stray click must not end it (trial: Asaad). The timeout
+                auto-submit deliberately bypasses this. */}
+            {!armSubmit ? (
+              <button onClick={() => setArmSubmit(true)} disabled={!canSubmit}
+                className="inline-flex items-center gap-2 rounded-md bg-[#047857] px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50">
+                <CheckCircle2 className="h-4 w-4" />
+                {lang === "ar" ? "إرسال" : "Submit"}
+              </button>
+            ) : (
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <span className="text-xs font-medium text-slate-600">
+                  {lang === "ar" ? "إرسال وإنهاء؟ لا يمكن التراجع." : "Submit and finish? This cannot be undone."}
+                </span>
+                <button onClick={() => setArmSubmit(false)} disabled={busy}
+                  className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
+                  {lang === "ar" ? "متابعة الإجابة" : "Keep answering"}
+                </button>
+                <button onClick={submit} disabled={busy}
+                  className="inline-flex items-center gap-2 rounded-md bg-[#047857] px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50">
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                  {busy ? (lang === "ar" ? "جارٍ التقييم…" : "Scoring…") : (lang === "ar" ? "تأكيد الإرسال" : "Confirm submit")}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

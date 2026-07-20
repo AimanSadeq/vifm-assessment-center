@@ -3,7 +3,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { generatePsyTest, stripAnswerKey, BankUnavailableError } from "@/lib/psychometrics/generate";
 import { computePsyResult, type PsyTest, type CognitiveItem } from "@/lib/psychometrics/scoring";
 import { applyNorms, type ScaleNorm } from "@/lib/psychometrics/calibration";
-import { COGNITIVE_INSTRUMENT, sanitizeSubtests } from "@/lib/psychometrics/framework";
+import { COGNITIVE_INSTRUMENT, COGNITIVE_SUBTEST_KEYS, sanitizeSubtests } from "@/lib/psychometrics/framework";
 import { isStaffCaller } from "@/lib/ara/auth-guards";
 import { getTimerMinutes, TIMER_DEFAULTS } from "@/lib/assessment-timers";
 import { isPurgedOrBlank, usableIdentity } from "@/lib/privacy/purged";
@@ -131,7 +131,16 @@ export async function POST(req: Request) {
     // Server-side time-limit backstop: resolve the cognitive limit ourselves
     // (never trust the client) and stamp a deadline into the session, so a
     // grossly-late score can be rejected even if the client timer is bypassed.
-    const limitMinutes = await getTimerMinutes("cognitive", TIMER_DEFAULTS.cognitive);
+    const baseLimit = await getTimerMinutes("cognitive", TIMER_DEFAULTS.cognitive);
+    // The limit scales with scope: a one-subtest sitting is not a 40-minute
+    // test (trial: Omar - "the 40 minutes do not change when the test would be
+    // shorter"). Proportional to the subtest count with a 10-minute floor; the
+    // client shows the same formula on the intro and uses the returned value
+    // for its countdown, so the two can never disagree.
+    const limitMinutes =
+      baseLimit && baseLimit > 0
+        ? Math.max(10, Math.ceil((baseLimit * subtests.length) / COGNITIVE_SUBTEST_KEYS.length))
+        : baseLimit;
     const storedTest =
       limitMinutes && limitMinutes > 0
         ? { ...test, deadline_at: new Date(Date.now() + limitMinutes * 60_000 + TIMER_GRACE_MS).toISOString() }
@@ -166,7 +175,15 @@ export async function POST(req: Request) {
     }
 
     const instrument = COGNITIVE_INSTRUMENT;
-    return NextResponse.json({ session_id: data.id, kind, instrument, test: stripAnswerKey(test) });
+    return NextResponse.json({
+      session_id: data.id,
+      kind,
+      instrument,
+      test: stripAnswerKey(test),
+      // Authoritative for the client countdown - the same value stamped (plus
+      // grace) into the session's deadline_at above.
+      limit_minutes: limitMinutes ?? null,
+    });
   }
 
   if (action === "score") {

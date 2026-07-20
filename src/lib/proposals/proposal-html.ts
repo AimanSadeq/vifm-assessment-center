@@ -879,6 +879,7 @@ ${wordSafe ? "" : `<link rel="preconnect" href="https://fonts.googleapis.com" />
     <li><b>Documented methodology per instrument</b> - each assessment ships with a published methodology brief covering construct, scoring model and honest limits; these briefs accompany this proposal on request.</li>
     <li><b>Alignment with recognised guidance</b> - programme design is aligned with ISO 10667 (assessment service delivery) and, for assessment-centre work, the International Taskforce Guidelines (6th edition).</li>
     <li><b>Secure administration</b> - answer keys are held server-side and never reach the participant's browser; grading is server-side; sessions are single-use.</li>
+    <li><b>Integrity monitoring, honestly framed</b> - assessments capture advisory integrity signals (tab activity, paste events, response timing, and optional camera proctoring where enabled) that prompt human review of a flagged administration. This is monitoring, not invigilation - no signal ever auto-fails a participant.</li>
     <li><b>Human oversight of AI scoring</b> - where AI contributes to scoring or content generation, outputs are calibrated and a person retains review authority; no automated decision is final.</li>
     <li><b>Bilingual delivery</b> - participant-facing experiences are available in English and Arabic (full RTL) where scoped.</li>
   </ul>`)}` : ""}

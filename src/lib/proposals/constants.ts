@@ -28,7 +28,7 @@ export const PROPOSAL_BLURB: Record<CaliberService, string> = {
   techno:
     "Function-specific technical proficiency drawn from an SME-reviewed item bank. Delivers an indicative 1-5 band per domain, or a certified, publicly verifiable credential when the score clears the documented cut-score. Secure delivery with a server-held answer key.",
   prehire:
-    "Commercial pre-employment screening that orchestrates a competency check, an English placement and a short behavioural interview into a single advisory composite. It is a screening signal, never an auto-reject - a person always makes the hiring decision.",
+    "Commercial pre-employment screening that orchestrates a competency check, an English placement and a short behavioural interview into a single advisory composite. It is a screening signal for selection - not a development diagnostic, and never an auto-reject: a person always makes the hiring decision.",
   arc:
     "Organisational and individual AI readiness across eight pillars, benchmarked against peers with year-on-year tracking. Deliverables include a bilingual (EN/AR) consultant report, a capability-building plan and a regulatory-alignment view for UAE and Saudi frameworks.",
   reflect:

@@ -94,7 +94,7 @@ const L: Record<Lang, Record<string, string>> = {
     partialPlacement: "Partial placement",
     skillsAssessed: "Skills assessed",
     disclaimer:
-      "This is an advisory screening SIGNAL, not a hiring decision. A qualified VIFM reviewer interprets it alongside other evidence; no decision is ever made automatically.",
+      "This is an advisory screening SIGNAL, not a hiring decision and not a development diagnostic. A qualified VIFM reviewer interprets it alongside other evidence; no decision is ever made automatically.",
     confidential: "Confidential - for VIFM and the engaged client only.",
     certifiedTitle: "Certified - SME-reviewed",
     certifiedBy: "Reviewed & certified by",
@@ -156,7 +156,7 @@ const L: Record<Lang, Record<string, string>> = {
     partialPlacement: "تقييم جزئي",
     skillsAssessed: "المهارات المُقيّمة",
     disclaimer:
-      "هذه إشارة فرز استرشادية، وليست قرار توظيف. يفسّرها مراجع مؤهّل في VIFM مع أدلة أخرى؛ ولا يُتّخذ أي قرار تلقائيًا.",
+      "هذه إشارة فرز استرشادية، وليست قرار توظيف ولا تشخيصًا تطويريًا. يفسّرها مراجع مؤهّل في VIFM مع أدلة أخرى؛ ولا يُتّخذ أي قرار تلقائيًا.",
     confidential: "سري - لمعهد VIFM والعميل المتعاقد فقط.",
     certifiedTitle: "معتمد - تمت مراجعته من قبل مقيّم",
     certifiedBy: "روجِع واعتُمد بواسطة",

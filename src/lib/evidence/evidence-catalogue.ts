@@ -189,7 +189,7 @@ export const EVIDENCE_INSTRUMENTS: EvidenceInstrument[] = [
     href: "/admin/prehire",
     itemTypes:
       "An orchestration layer - a weighted composite of a competency quiz, the Fluent placement and an AI behavioural interview (CBI). It adds no items of its own.",
-    construct: "A defensible screening signal - never an auto-reject; a human always decides.",
+    construct: "A defensible screening signal for selection - not a development diagnostic, never an auto-reject; a human always decides.",
     validity:
       "Process / defensibility validity - per-stage cut-scores, adverse-impact (4/5ths) monitoring, and an immutable audit trail. The composite is a signal, not a decision.",
     reliability: "Weighted composite over the instruments above; advisory band only (advance / review / hold, never reject).",

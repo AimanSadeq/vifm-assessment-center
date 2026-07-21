@@ -407,7 +407,7 @@ export async function listAssessableFunctions(): Promise<FunctionRow[]> {
   const sb = createServiceClient();
   const { data, error } = await sb
     .from("technical_functions")
-    .select("id, key, node_id, name_en, name_ar, domain_key, node_status")
+    .select("id, key, node_id, name_en, name_ar, domain_key, node_status, skills_en")
     .or("status.eq.active,node_status.eq.active")
     .order("node_id", { nullsFirst: false })
     .order("name_en");
@@ -415,7 +415,20 @@ export async function listAssessableFunctions(): Promise<FunctionRow[]> {
     if (isMissingSchemaError(error)) return [];
     throw error;
   }
-  return (data ?? []).map((f) => ({
+  // status='active' alone is NOT proof of content: an unauthored taxonomy node
+  // (e.g. Talent Management & OD) can be status-active with an EMPTY skills
+  // blueprint and no hands-on blocks. Offering it mints sittings with nothing
+  // to assess - which then auto-submit at 0 the moment they start (live
+  // incident, 21 Jul 2026). Only offer functions that can actually be built
+  // into a test: node-active (has hands-on tasks) or a non-empty skills
+  // blueprint (an MCQ section can be assembled).
+  return (data ?? [])
+    .filter(
+      (f) =>
+        f.node_status === "active" ||
+        (Array.isArray(f.skills_en) && f.skills_en.filter(Boolean).length > 0)
+    )
+    .map((f) => ({
     id: f.id,
     key: f.key,
     nodeId: f.node_id,
@@ -510,6 +523,25 @@ export async function createSession(input: CreateSessionInput) {
       );
     } catch {
       mcqTest = null;
+    }
+  }
+
+  // A sitting must assess SOMETHING. If the function has no hands-on blocks AND
+  // the knowledge section could not be built (e.g. an empty skills blueprint),
+  // refuse loudly here - a silently-created empty session gets a zero-second
+  // time budget at start and auto-submits at 0 before the taker sees a single
+  // question (live incident, 21 Jul 2026).
+  if (!isCustom && (!mcqTest || !Array.isArray(mcqTest.items) || mcqTest.items.length === 0)) {
+    let blockCount = 0;
+    try {
+      blockCount = (await loadBlocks(input.functionId)).blocks.length;
+    } catch {
+      blockCount = 0;
+    }
+    if (blockCount === 0) {
+      throw new Error(
+        "This function has no assessable content yet - no hands-on tasks and no knowledge blueprint. Author its skills or task blocks before inviting candidates."
+      );
     }
   }
 
@@ -635,7 +667,18 @@ export async function startSession(token: string) {
     Number(session.mcq_pct ?? 0) > 0 && mcqTest && Array.isArray(mcqTest.items)
       ? mcqTest.items.length
       : 0;
-  const totalSeconds = sandboxSeconds + mcqItemCount * 60;
+  let totalSeconds = sandboxSeconds + mcqItemCount * 60;
+  // Zero content = nothing to assess. Refuse with a clear message instead of
+  // stamping expires_at = started_at, which auto-submits an untouched sitting
+  // at 0 within seconds (live incident, 21 Jul 2026: an unauthored function
+  // slipped into the picker and every taker was "submitted before attempting").
+  if (sandboxSeconds === 0 && mcqItemCount === 0) {
+    throw new Error(
+      "This assessment has no content yet. Please contact the administrator who invited you."
+    );
+  }
+  // Belt-and-braces floor: a sitting always gets at least 10 minutes.
+  totalSeconds = Math.max(totalSeconds, 600);
   const expiresAt = new Date(Date.now() + totalSeconds * 1000).toISOString();
   const { data, error } = await sb
     .from("technical_sandbox_sessions")

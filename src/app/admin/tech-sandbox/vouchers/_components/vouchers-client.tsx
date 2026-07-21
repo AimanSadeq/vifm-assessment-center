@@ -25,6 +25,7 @@ import { VoucherClientEmailCard } from "@/components/shared/voucher-client-email
 import { VoucherDetailsFields, type VoucherDetails } from "@/components/shared/voucher-details-fields";
 import { emailVoucherLinksToDelegatesAction } from "@/lib/vouchers/email-actions";
 import type { CustomBuilderData, FunctionRow } from "@/lib/technical-sandbox/service";
+import type { FunctionReadinessSummary } from "@/lib/competencies/technical-function-bank";
 import type { VoucherRow } from "@/lib/technical-sandbox/vouchers";
 import type { SavedCustomAssessment } from "@/lib/technical-sandbox/custom-assessments";
 import {
@@ -53,11 +54,14 @@ export function VouchersClient({
   vouchers,
   talentLens = null,
   clients = [],
+  readiness = {},
 }: {
   functions: FunctionRow[];
   vouchers: VoucherRow[];
   talentLens?: "acquisition" | "development" | null;
   clients?: string[];
+  /** Per-function "live questions" state (vetted SME bank vs AI fallback). */
+  readiness?: Record<string, FunctionReadinessSummary>;
 }) {
   const fnName = new Map(functions.map((f) => [f.id, `${f.nodeId ?? ""} ${f.nameEn}`.trim()]));
   const [functionId, setFunctionId] = useState(functions[0]?.id ?? "");
@@ -425,11 +429,45 @@ export function VouchersClient({
           <label className="flex flex-col gap-1 text-sm sm:col-span-2">
             <span className="text-muted-foreground">Function</span>
             <select value={functionId} onChange={(e) => setFunctionId(e.target.value)} className="rounded-md border border-border bg-card px-3 py-2 text-foreground">
-              {functions.map((f) => (
-                <option key={f.id} value={f.id}>{f.nodeId ? `${f.nodeId} · ` : ""}{f.nameEn}</option>
-              ))}
+              {functions.map((f) => {
+                const r = readiness[f.id];
+                const tag = r ? (r.certifiable ? " — vetted bank" : " — AI questions") : "";
+                return (
+                  <option key={f.id} value={f.id}>{f.nodeId ? `${f.nodeId} · ` : ""}{f.nameEn}{tag}</option>
+                );
+              })}
             </select>
           </label>
+
+          {/* Live-question check: will this function's knowledge section draw
+              from the SME-approved bank, or be AI-generated at sitting time? */}
+          {(() => {
+            const r = readiness[functionId];
+            if (!r) return null;
+            if (r.certifiable) {
+              return (
+                <p className="sm:col-span-2 rounded-md border border-emerald-200 bg-emerald-50 p-2.5 text-[12px] leading-relaxed text-emerald-800">
+                  <span className="font-semibold">Vetted question bank.</span> Sittings on this function
+                  are assembled from {r.approvedTotal} SME-approved items and can issue a credential.
+                </p>
+              );
+            }
+            const below = r.skillsBelowFloor.slice(0, 4);
+            return (
+              <p className="sm:col-span-2 rounded-md border border-amber-200 bg-amber-50 p-2.5 text-[12px] leading-relaxed text-amber-800">
+                <span className="font-semibold">No live question bank yet - knowledge questions will be
+                AI-generated at sitting time</span> (indicative, no credential).{" "}
+                {r.approvedTotal > 0
+                  ? `${r.approvedTotal} approved item${r.approvedTotal === 1 ? "" : "s"} so far; below the floor of ${r.minItemsPerSkill}/skill on: ${below.map((s) => `${s.skill} (${s.approved}/${s.need})`).join(", ")}${r.skillsBelowFloor.length > below.length ? ` +${r.skillsBelowFloor.length - below.length} more` : ""}.`
+                  : "No approved items for this function's skills yet."}{" "}
+                Approve items in the{" "}
+                <a href="/admin/item-banks" target="_blank" rel="noopener noreferrer" className="font-medium underline">
+                  item-bank console
+                </a>{" "}
+                to serve vetted questions.
+              </p>
+            );
+          })()}
 
           {/* Test scope - full blueprint vs a shorter custom (trial) sitting. */}
           <div className="flex flex-col gap-1 text-sm sm:col-span-2">

@@ -211,6 +211,66 @@ export async function functionBankReadiness(skillsEn: string[], functionId: stri
   };
 }
 
+/** Per-function "live questions" summary for the voucher/invite pickers.
+ *  Batched (2 queries total for any number of functions) so the issuance page
+ *  can badge every function without a per-function round-trip. `certifiable`
+ *  mirrors buildCertifiedFunctionTest exactly - when false, a sitting's
+ *  knowledge section is AI-generated at start time (indicative, no credential). */
+export type FunctionReadinessSummary = {
+  certifiable: boolean;
+  approvedTotal: number;
+  /** Skills below the per-skill approved floor (why it isn't certifiable). */
+  skillsBelowFloor: { skill: string; approved: number; need: number }[];
+  minItemsPerSkill: number;
+};
+
+export async function functionsReadinessSummary(
+  fns: { id: string; skillsEn: string[] }[]
+): Promise<Record<string, FunctionReadinessSummary>> {
+  const out: Record<string, FunctionReadinessSummary> = {};
+  if (fns.length === 0) return out;
+
+  // One query: approved counts over the union of every function's skills.
+  const allSkills = Array.from(new Set(fns.flatMap((f) => f.skillsEn).filter(Boolean)));
+  const counts = await approvedCountBySkill(allSkills);
+
+  // One query: every per-function cut-score override (defaults otherwise).
+  const cuts = new Map<string, { minItemsPerSkill: number; drawPerSkill: number }>();
+  try {
+    const sb = createServiceClient();
+    const { data } = await sb
+      .from("technical_function_cut_scores")
+      .select("function_id, min_items_per_skill, draw_per_skill")
+      .in("function_id", fns.map((f) => f.id));
+    for (const r of (data as { function_id: string; min_items_per_skill: number | null; draw_per_skill: number | null }[] | null) ?? []) {
+      cuts.set(r.function_id, {
+        minItemsPerSkill: Number(r.min_items_per_skill ?? DEFAULT_MIN_PER_SKILL),
+        drawPerSkill: Number(r.draw_per_skill ?? DEFAULT_DRAW_PER_SKILL),
+      });
+    }
+  } catch {
+    /* cut-score table absent (or 00122 draw column missing) - defaults apply */
+  }
+
+  for (const f of fns) {
+    const cut = cuts.get(f.id) ?? { minItemsPerSkill: DEFAULT_MIN_PER_SKILL, drawPerSkill: DEFAULT_DRAW_PER_SKILL };
+    const perSkill = f.skillsEn.map((skill) => ({ skill, approved: counts[skill] ?? 0 }));
+    const effectiveDraw = Math.max(cut.minItemsPerSkill, cut.drawPerSkill);
+    const projectedDrawTotal = perSkill.reduce((s, x) => s + Math.min(x.approved, effectiveDraw), 0);
+    const skillsBelowFloor = perSkill
+      .filter((x) => x.approved < cut.minItemsPerSkill)
+      .map((x) => ({ skill: x.skill, approved: x.approved, need: cut.minItemsPerSkill }));
+    out[f.id] = {
+      certifiable:
+        f.skillsEn.length > 0 && skillsBelowFloor.length === 0 && projectedDrawTotal >= MIN_CERTIFIED_TOTAL_ITEMS,
+      approvedTotal: perSkill.reduce((s, x) => s + x.approved, 0),
+      skillsBelowFloor,
+      minItemsPerSkill: cut.minItemsPerSkill,
+    };
+  }
+  return out;
+}
+
 /**
  * The calibrated, key-bearing pool for an adaptive (CAT) sitting: APPROVED items
  * across the function's skills that carry a Rasch difficulty (irt_b). Returns

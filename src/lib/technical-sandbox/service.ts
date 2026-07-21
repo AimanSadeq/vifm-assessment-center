@@ -294,6 +294,9 @@ export interface FunctionRow {
   nameAr: string | null;
   domainKey: string | null;
   nodeStatus: "active" | "inactive";
+  /** English skills blueprint - populated by listAssessableFunctions (the
+   *  issuance surfaces use it to compute bank readiness). */
+  skillsEn?: string[];
 }
 
 // ── Custom-builder picker data: a function's knowledge skills + hands-on tasks ──
@@ -436,6 +439,7 @@ export async function listAssessableFunctions(): Promise<FunctionRow[]> {
     nameAr: f.name_ar,
     domainKey: f.domain_key,
     nodeStatus: f.node_status,
+    skillsEn: (Array.isArray(f.skills_en) ? f.skills_en : []).filter(Boolean),
   }));
 }
 

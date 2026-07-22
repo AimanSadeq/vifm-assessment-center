@@ -2,7 +2,7 @@
 
 > Living checklist of open/deferred work. Claude: surface this whenever the user
 > asks "any pending actions?" (or similar), and keep it updated as items close.
-> Last updated: 2026-06-19.
+> Last updated: 2026-07-21.
 
 ## ⭐ Priority 1 - SDAIA (Saudi Data & AI Authority)
 
@@ -152,6 +152,37 @@ matrix, PVM logic-input, read-only SQL).
 - [x] **ENV on Render**: `EMAIL_FROM` set to the verified `noreply@viftraining.com` domain - confirmed by the Technical-portal external-delivery test on 2026-06-14 (invitation + results emails reached an external inbox from `noreply@viftraining.com`, which requires the verified from-domain). `RESEND_API_KEY` / `NEXT_PUBLIC_SITE_URL` / `NEXT_PUBLIC_APP_URL` set.
 - [ ] Verify end-to-end on deployed app: email a delegate, redeem one-click, complete, receive results PDF
 - [ ] Phase 4 polish (optional): full funnel analytics, deep-dive tier option (currently snapshot-only)
+
+## I. Email deliverability - voucher/results mail (raised + RESOLVED 2026-07-21)
+
+**Outcome: DNS/auth is fully healthy - nothing to fix.** Original worry was that
+voucher/results mail from `noreply@viftraining.com` lands in spam for lack of
+SPF/DKIM/DMARC. Verified live 2026-07-21 that all records exist, are aligned, and pass.
+
+**Verification done (2026-07-21):**
+- [x] **DNS records confirmed present + correct** (via `dig`): SPF `v=spf1 include:amazonses.com ~all`
+      on `send.viftraining.com`; DKIM TXT at `resend._domainkey.viftraining.com` (signs for
+      `viftraining.com`); DMARC `v=DMARC1; p=quarantine; pct=100; rua/ruf=info@viftraining.com; fo=1`
+      at `_dmarc.viftraining.com`; envelope MX `feedback-smtp.us-east-1.amazonses.com`.
+      Note: DMARC is **`p=quarantine` (enforced)**, not `p=none`.
+- [x] **Live send test through the real app transport** (Resend, from `noreply@viftraining.com`,
+      HTTP 200): landed in **Gmail Inbox**; "Show original" showed **SPF PASS / DKIM PASS
+      (domain viftraining.com, aligned) / DMARC PASS**. All app mail sends via **Resend**
+      (`src/lib/integrations/resend.ts`), NOT Microsoft Graph.
+- [x] **Second live test to Outlook/M365** (the stricter filter): landed in **Inbox**.
+      Confirms inbox placement on both Gmail and Microsoft.
+
+**Conclusion:** earlier spam-foldering was reputation warmup (newly-sending domain; self-heals
+as volume builds) or per-email content - NOT authentication. The "redeem links only" workaround
+can be relaxed for Gmail-class recipients.
+
+**Residual / optional (not blocking):**
+- [ ] **Corporate Outlook/M365 filtering** is independent + stricter. If a specific client
+      tenant reports spam, it's reputation with that tenant (still not our DNS) - ask their IT
+      to allowlist `noreply@viftraining.com`.
+- [ ] **Optional content hardening** (deliverability polish, not a fix): app emails are
+      plain-text with a single bare link - sending multipart HTML + a `List-Unsubscribe` header
+      would further improve placement. Low priority now that auth passes and mail inboxes.
 
 ## D. Minor / cleanup
 - [ ] Remove dead i18n keys `tech.take.chooseTitle` / `chooseIntro` (deprecated broad-domain screener, no live references)

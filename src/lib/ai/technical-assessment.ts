@@ -339,12 +339,15 @@ export async function generateTechnicalAssessment(input: {
       const parsed = JSON.parse(match[0]) as { items?: RawRichItem[] };
 
       const skillSet = new Set(domain.skills);
-      const items: TechItem[] = (parsed.items ?? [])
+      let items: TechItem[] = (parsed.items ?? [])
         .map((r, i) => normalizeRichItem(r, i, domain.skills, skillSet))
         .filter((it): it is TechItem => it !== null)
         .map((it, i) => ({ ...it, id: `t${i + 1}` })); // stable, collision-free ids
 
       if (items.length < 4) throw new Error(`only ${items.length} usable items (need 4+)`);
+      // Same adversarial key verification as the function path - AI-authored
+      // numeric items carry the same wrong-key risk on the domain path.
+      items = await verifyNumericKeys(client, items);
       return { domain_key: input.domainKey, domain_name: domain.name, items, ai_generated: true };
     } catch (err) {
       console.error(`[technical-assessment] domain generate attempt ${attempt} failed:`, err);
@@ -480,6 +483,74 @@ async function generateSkillItems(
   return [];
 }
 
+/** Re-derive numeric items' answers with an independent model pass and drop
+ *  items whose stored key the solver cannot confirm. Numeric = the stem or
+ *  scenario carries enough digits and most options are quantities. */
+async function verifyNumericKeys(
+  client: NonNullable<ReturnType<typeof getAIClient>>,
+  items: TechItem[],
+): Promise<TechItem[]> {
+  const looksNumeric = (it: TechItem): boolean => {
+    if (it.type === "multi" || it.type === "true_false") return false;
+    const text = `${it.scenario ?? ""} ${it.question}`;
+    const digitsInText = (text.match(/\d/g) ?? []).length;
+    const numericOptions = (it.options ?? []).filter((o) => /\d/.test(o)).length;
+    return digitsInText >= 4 && numericOptions >= 3;
+  };
+  const numeric = items.filter(looksNumeric);
+  if (numeric.length === 0) return items;
+
+  try {
+    const payload = numeric.map((it) => ({
+      id: it.id,
+      scenario: it.scenario ?? null,
+      question: it.question,
+      options: it.options,
+    }));
+    const res = await client.messages.create({
+      model: AI_MODEL,
+      max_tokens: 3000,
+      system:
+        "You are a meticulous quantitative examiner verifying assessment answer keys. " +
+        "For each item, solve the problem yourself step by step from the scenario data, " +
+        "then decide which option index (0-based) matches your computed answer. " +
+        "If NO option matches your computed answer, or the problem is ambiguous or unsolvable " +
+        "from the given data, report null. Be strict: a near-miss is not a match. " +
+        'Return ONLY a JSON array: [{"id": string, "answer_index": number | null}].',
+      messages: [{ role: "user", content: JSON.stringify(payload) }],
+    });
+    const text = res.content
+      .filter((b) => b.type === "text")
+      .map((b) => ("text" in b ? b.text : ""))
+      .join("");
+    const jsonStart = text.indexOf("[");
+    const jsonEnd = text.lastIndexOf("]");
+    if (jsonStart < 0 || jsonEnd <= jsonStart) return items;
+    const verdicts = JSON.parse(text.slice(jsonStart, jsonEnd + 1)) as {
+      id: string;
+      answer_index: number | null;
+    }[];
+    const byId = new Map(verdicts.map((v) => [v.id, v.answer_index]));
+    const bad = new Set<string>();
+    for (const it of numeric) {
+      const solved = byId.get(it.id);
+      // Drop when the solver disagrees with the key OR found no valid option.
+      if (solved === undefined) continue; // solver skipped it - keep (fail-open)
+      if (solved === null || solved !== it.correct_index) bad.add(it.id);
+    }
+    if (bad.size > 0) {
+      console.warn(
+        `[tech-assessment] key verification dropped ${bad.size}/${numeric.length} numeric item(s): ` +
+          Array.from(bad).join(", "),
+      );
+    }
+    return items.filter((it) => !bad.has(it.id));
+  } catch (err) {
+    console.warn("[tech-assessment] key verification unavailable, serving unverified:", err);
+    return items;
+  }
+}
+
 export async function generateFunctionAssessment(input: {
   functionKey: string;
   functionName: string;
@@ -507,10 +578,18 @@ export async function generateFunctionAssessment(input: {
     )
   );
 
-  const items = perSkillItems
+  let items = perSkillItems
     .flat()
     .map((it, i) => ({ ...it, id: `t${i + 1}` })); // stable, collision-free ids
   const target = skills.length * perSkill;
+
+  // Adversarial key verification for numeric items. Generation optimises for
+  // plausible-looking questions, not verified arithmetic - a trial produced
+  // three confirmed wrong keys on "hard" numeric scenarios. A second pass
+  // solves each numeric item independently; items whose key the solver cannot
+  // confirm are dropped (an under-full deck is honest, a wrong key is not).
+  // Fail-open: if verification itself errors, the deck ships unverified.
+  items = await verifyNumericKeys(client, items);
 
   // Need enough coverage to be meaningful; the key IS configured here, so an
   // under-delivery is surfaced - never swapped for the placeholder deck.

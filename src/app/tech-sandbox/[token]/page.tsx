@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getSessionByToken, getPublicBlueprint } from "@/lib/technical-sandbox/service";
+import { getSessionByToken, getPublicBlueprint, getSavedWork } from "@/lib/technical-sandbox/service";
 import { stripAnswerKey, type PublicTechTest, type TechTest } from "@/lib/ai/technical-assessment";
 import { Runner } from "./_components/runner";
 
@@ -22,6 +22,8 @@ export default async function TechSandboxPage({ params }: { params: { token: str
   }
   const selectedBlockIds = (session.selected_block_ids ?? null) as string[] | null;
   const blueprint = await getPublicBlueprint(session.function_id, selectedBlockIds);
+  // Rehydrate autosaved hands-on work so a reload resumes instead of wiping.
+  const savedWork = session.status === "in_progress" ? await getSavedWork(session.id as string) : {};
 
   // The combined assessment carries an MCQ knowledge section. Strip the answer
   // key server-side so the browser never receives the correct options.
@@ -65,6 +67,7 @@ export default async function TechSandboxPage({ params }: { params: { token: str
       mcqTest={mcqTest}
       initialResult={null}
       initialExpiresAt={(session.expires_at as string) ?? null}
+      savedWork={savedWork as never}
     />
   );
 }

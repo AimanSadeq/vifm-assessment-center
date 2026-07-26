@@ -41,6 +41,15 @@ export type VoucherRedeemConfig = {
   /** Set false to force English-only (no EN/AR toggle) - e.g. Fluent, the
    *  English placement test. Defaults to bilingual. */
   bilingual?: boolean;
+  /** Notifies the page shell when the taker flips language, so a hero rendered
+   *  OUTSIDE this form can follow the toggle (trial finding on every service:
+   *  "the header does not change"). */
+  onLangChange?: (lang: "en" | "ar") => void;
+  /** Replaces the generic "Starting..." while redeeming - e.g. honest patience
+   *  copy when redemption provisions an AI-generated test (~20-40s). */
+  busyLabel?: { en: string; ar: string };
+  /** Small print under the button while redeeming (e.g. "keep this page open"). */
+  busyHint?: { en: string; ar: string };
   onRedeem: (values: VoucherRedeemValues) => Promise<VoucherRedeemResult>;
 };
 
@@ -98,7 +107,7 @@ export function VoucherRedeemForm(cfg: VoucherRedeemConfig) {
             <button
               key={l}
               type="button"
-              onClick={() => setLang(l)}
+              onClick={() => { setLang(l); cfg.onLangChange?.(l); }}
               className={`rounded-md px-2 py-1 text-xs font-medium ${
                 lang === l ? "bg-[#010131] text-white" : "text-muted-foreground hover:bg-muted"
               }`}
@@ -173,11 +182,33 @@ export function VoucherRedeemForm(cfg: VoucherRedeemConfig) {
       <Button onClick={submit} disabled={busy || !ready} className="w-full gap-2">
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
         {busy
-          ? tx("Starting...", "جارٍ البدء...")
+          ? cfg.busyLabel
+            ? tx(cfg.busyLabel.en, cfg.busyLabel.ar)
+            : tx("Starting...", "جارٍ البدء...")
           : cfg.submitLabel
             ? tx(cfg.submitLabel.en, cfg.submitLabel.ar)
             : tx("Start", "ابدأ")}
       </Button>
+
+      {busy && cfg.busyHint && (
+        <p className="text-center text-[11px] text-muted-foreground">{tx(cfg.busyHint.en, cfg.busyHint.ar)}</p>
+      )}
+
+      {/* A silently-disabled button reads as broken (trial: "the Start button
+          appears disabled without an explanation") - say what is missing. */}
+      {!busy && !ready && (() => {
+        const missing: string[] = [];
+        if (code.trim().length === 0) missing.push(tx("voucher code", "رمز القسيمة"));
+        if (name.trim().length <= 1) missing.push(tx("full name", "الاسم الكامل"));
+        if (!emailValid) missing.push(tx("a valid email", "بريد إلكتروني صحيح"));
+        if (companyMode === "required" && company.trim().length === 0) missing.push(tx("company", "جهة العمل"));
+        if (missing.length === 0) return null;
+        return (
+          <p className="text-center text-[11px] text-muted-foreground">
+            {tx("To start, add: ", "للبدء، أكمل: ")}{missing.join(tx(", ", "، "))}
+          </p>
+        );
+      })()}
 
       {cfg.footerNote && (
         <p className="text-center text-[11px] text-muted-foreground">{tx(cfg.footerNote.en, cfg.footerNote.ar)}</p>

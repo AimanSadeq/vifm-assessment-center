@@ -694,6 +694,26 @@ export async function startSession(token: string) {
   return data;
 }
 
+/** Server-saved autosave work per block for a session, used to re-seed the
+ *  engines on reload / section navigation so entered work never silently
+ *  vanishes (trial finding). Best-effort: {} on any error. */
+export async function getSavedWork(sessionId: string): Promise<Record<string, SandboxWork>> {
+  try {
+    const sb = createServiceClient();
+    const { data } = await sb
+      .from("technical_sandbox_responses")
+      .select("skill_block_id, work")
+      .eq("session_id", sessionId);
+    const out: Record<string, SandboxWork> = {};
+    for (const r of (data as { skill_block_id: string; work: SandboxWork | null }[] | null) ?? []) {
+      if (r.work && typeof r.work === "object") out[r.skill_block_id] = r.work;
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
 export async function saveResponse(token: string, skillBlockId: string, work: SandboxWork) {
   const sb = createServiceClient();
   const session = await getSessionByToken(token);

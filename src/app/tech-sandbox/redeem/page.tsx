@@ -1,7 +1,7 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { VoucherBlockedCard } from "@/components/shared/voucher-blocked-card";
 import { loadVoucherBlock } from "@/lib/vouchers/status";
-import { RedeemForm } from "./_components/redeem-form";
+import { TechnoRedeemPageClient } from "./_components/redeem-page-client";
 
 export const dynamic = "force-dynamic";
 
@@ -53,22 +53,12 @@ export default async function RedeemPage({
 
   return (
     <div className="mx-auto max-w-md p-6">
-      <div className="rounded-lg border border-border bg-card p-6">
-        <div className="mb-1 text-xs uppercase tracking-wide text-accent">VIFM · Techno</div>
-        <h1 className="text-lg font-semibold text-foreground">Redeem your access code</h1>
-        <p className="mb-3 mt-1 text-sm text-muted-foreground">
-          Enter your voucher code and details to begin the assessment. It is timed once you start.
-        </p>
-        <p className="mb-4 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          Your voucher code can be used only once. Start only when you are ready to complete the assessment in one sitting.
-        </p>
-        <RedeemForm
-          initialCode={code}
-          initialName={initialName}
-          initialEmail={initialEmail}
-          initialCompany={initialCompany}
-        />
-      </div>
+      <TechnoRedeemPageClient
+        initialCode={code}
+        initialName={initialName}
+        initialEmail={initialEmail}
+        initialCompany={initialCompany}
+      />
     </div>
   );
 }

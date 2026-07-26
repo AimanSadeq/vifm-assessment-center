@@ -219,8 +219,11 @@ export async function redeemVoucher(input: RedeemInput): Promise<RedeemResult> {
   const sb = createServiceClient();
   const code = normalizeCode(input.code);
   if (!code) return { ok: false, error: "Enter a voucher code." };
-  if (!input.name?.trim() || !input.email?.trim() || !input.company?.trim()) {
-    return { ok: false, error: "Name, email and company are required." };
+  // Company is advisory only (the voucher's organization_id from 00190 is the
+  // authoritative tenancy key), so it is optional here - matching the redeem
+  // form. Requiring it while the UI says "(optional)" dead-ends the candidate.
+  if (!input.name?.trim() || !input.email?.trim()) {
+    return { ok: false, error: "Name and email are required." };
   }
 
   const { data: claimed, error: claimErr } = await sb.rpc(

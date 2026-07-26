@@ -17,6 +17,7 @@ export type ProficiencyTier = "basic" | "intermediate" | "advanced";
 export type CheckpointKind =
   | "cell_value"
   | "is_array_formula"
+  | "cells_formula_driven"
   | "logic_value"
   | "sql_result_match";
 
@@ -37,6 +38,10 @@ export interface ArrayFormulaCheckpoint extends CheckpointBase {
   kind: "is_array_formula";
   target: string; // a cell "C9" or a range "C9:E11"
 }
+export interface CellsFormulaDrivenCheckpoint extends CheckpointBase {
+  kind: "cells_formula_driven";
+  target: string; // a cell "C9" or a range "C9:E11"
+}
 export interface LogicValueCheckpoint extends CheckpointBase {
   kind: "logic_value";
   field: string;
@@ -50,6 +55,7 @@ export interface SqlResultMatchCheckpoint extends CheckpointBase {
 export type Checkpoint =
   | CellValueCheckpoint
   | ArrayFormulaCheckpoint
+  | CellsFormulaDrivenCheckpoint
   | LogicValueCheckpoint
   | SqlResultMatchCheckpoint;
 

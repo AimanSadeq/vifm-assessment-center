@@ -11,11 +11,13 @@ export function RedeemForm({
   initialName,
   initialEmail,
   initialCompany,
+  onLangChange,
 }: {
   initialCode?: string;
   initialName?: string;
   initialEmail?: string;
   initialCompany?: string;
+  onLangChange?: (lang: "en" | "ar") => void;
 }) {
   return (
     <VoucherRedeemForm
@@ -23,9 +25,18 @@ export function RedeemForm({
       initialName={initialName}
       initialEmail={initialEmail}
       initialCompany={initialCompany}
-      companyField="required"
+      companyField="optional"
       codePlaceholder="VIFM-TECH-XXXX-XXXX"
       submitLabel={{ en: "Start assessment", ar: "ابدأ التقييم" }}
+      onLangChange={onLangChange}
+      busyLabel={{
+        en: "Preparing your assessment - this can take up to a minute…",
+        ar: "جارٍ تجهيز تقييمك - قد يستغرق حتى دقيقة…",
+      }}
+      busyHint={{
+        en: "Your questions are being assembled. Please keep this page open while your assessment is prepared.",
+        ar: "يجري تجهيز أسئلتك. يرجى إبقاء هذه الصفحة مفتوحة أثناء تجهيز تقييمك.",
+      }}
       onRedeem={async (v) => {
         const res = await redeemVoucherAction({ code: v.code, name: v.name, email: v.email, company: v.company });
         if (!res.ok) return { ok: false, error: res.error };

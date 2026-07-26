@@ -68,6 +68,7 @@ export function Runner({
   mcqTest = null,
   initialResult = null,
   initialExpiresAt = null,
+  savedWork,
 }: {
   token: string;
   blueprint: PublicBlueprint;
@@ -76,6 +77,9 @@ export function Runner({
   mcqTest?: PublicTechTest | null;
   initialResult?: SubmitResult["result"] | null;
   initialExpiresAt?: string | null;
+  /** Server-saved autosave work per block id - re-seeds the engines after a
+   *  reload so nothing the taker entered silently vanishes. */
+  savedWork?: Record<string, Work>;
 }) {
   const blocks = useMemo<PublicSkillBlock[]>(
     () => blueprint.pillars.flatMap((p) => p.blocks),
@@ -91,7 +95,22 @@ export function Runner({
   // scored report goes to the client / VIFM admin, never the taker.
   const [, setResult] = useState<SubmitResult["result"] | null>(initialResult);
   // Two-phase combined flow: knowledge (MCQ) section first, then hands-on blocks.
-  const [phase, setPhase] = useState<"mcq" | "sandbox">(hasMcq ? "mcq" : "sandbox");
+  // Position persists per token so a reload resumes WHERE the taker was, not at
+  // the start (trial: "coming back, it starts the test over" - restoring the
+  // work alone still looked like a restart when the runner reopened on page 1).
+  const [phase, setPhaseRaw] = useState<"mcq" | "sandbox">(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = window.sessionStorage.getItem(`pos:${token}`);
+        if (saved) {
+          const p = JSON.parse(saved) as { phase?: string };
+          if (p.phase === "sandbox") return "sandbox";
+          if (p.phase === "mcq" && hasMcq) return "mcq";
+        }
+      } catch { /* corrupt - default */ }
+    }
+    return hasMcq ? "mcq" : "sandbox";
+  });
   // MCQ answers are client-side until submit; mirror to sessionStorage so a
   // mid-section reload doesn't wipe them.
   const [mcqAnswers, setMcqAnswers] = useState<McqAnswers>(() => {
@@ -103,7 +122,26 @@ export function Runner({
       return {};
     }
   });
-  const [idx, setIdx] = useState(0);
+  const [idx, setIdxRaw] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = window.sessionStorage.getItem(`pos:${token}`);
+        if (saved) {
+          const p = JSON.parse(saved) as { idx?: number };
+          if (typeof p.idx === "number" && p.idx >= 0 && p.idx < blocks.length) return p.idx;
+        }
+      } catch { /* corrupt - default */ }
+    }
+    return 0;
+  });
+  const persistPos = (nextPhase: "mcq" | "sandbox", nextIdx: number) => {
+    try {
+      if (typeof window !== "undefined")
+        window.sessionStorage.setItem(`pos:${token}`, JSON.stringify({ phase: nextPhase, idx: nextIdx }));
+    } catch { /* best-effort */ }
+  };
+  const setPhase = (p2: "mcq" | "sandbox") => { setPhaseRaw(p2); persistPos(p2, p2 === "mcq" ? 0 : idx); };
+  const setIdx = (i: number) => { setIdxRaw(i); persistPos("sandbox", i); };
   // Rehydrate the countdown across reloads from the persisted expiry (the
   // timer is otherwise only stamped in begin(), which a reload skips).
   const [expiresAt, setExpiresAt] = useState<number | null>(() =>
@@ -115,7 +153,7 @@ export function Runner({
   const { i18n } = useTranslation();
   const at = useMemo(() => i18n.getFixedT(locale), [i18n, locale]);
 
-  const workRef = useRef<Record<string, Work>>({});
+  const workRef = useRef<Record<string, Work>>(savedWork ?? {});
   // Keep the latest MCQ answers available to the (memoized) submit callback
   // without forcing it to re-create on every keystroke.
   const mcqAnswersRef = useRef<McqAnswers>({});
@@ -309,7 +347,12 @@ export function Runner({
           intro={at("aintro.sandbox.intro", { function: ar ? blueprint.nameAr ?? blueprint.nameEn : blueprint.nameEn })}
           howToTitle={at("aintro.howTo")}
           howTo={howTo}
-          guidance={[at("aintro.sandbox.g1")]}
+          guidance={[
+            at("aintro.sandbox.g1"),
+            ar
+              ? `صُمم هذا التقييم للممارسين ذوي الخبرة العملية في ${blueprint.nameAr ?? blueprint.nameEn}. يستخدم المصطلحات المهنية المتداولة في العمل - راجع المجال قبل البدء إن لزم.`
+              : `This assessment is designed for practitioners with hands-on experience in ${blueprint.nameEn}. It uses the professional terminology of the field - if the terms are unfamiliar, review the domain before starting.`,
+          ]}
           note={{ tone: "amber", text: at("aintro.sandbox.g2") }}
           startLabel={at("aintro.sandbox.start")}
           onStart={begin}
@@ -330,7 +373,7 @@ export function Runner({
     }).length;
     return (
       <div className="mx-auto max-w-3xl space-y-4 p-4" dir={ar ? "rtl" : "ltr"}>
-        <div className="flex items-center justify-between">
+        <div className="sticky top-0 z-10 -mx-1 flex items-center justify-between rounded-b-lg border-b border-border bg-background/95 px-1 py-2 backdrop-blur">
           <Link href="/" className="text-sm text-accent hover:underline">{ar ? "الرئيسية" : "Home"}</Link>
           <div className="flex items-center gap-3">
             <button
@@ -411,7 +454,7 @@ export function Runner({
         </button>
       </div>
 
-      <header className="rounded-lg border border-border bg-card p-4">
+      <header className="sticky top-0 z-10 rounded-lg border border-border bg-card/95 p-4 backdrop-blur">
         <div className="flex items-center justify-between">
           <div>
             <div className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -487,6 +530,7 @@ export function Runner({
                 key={current.id}
                 config={current.engineConfig as never}
                 locale={locale}
+                initialWork={workRef.current[current.id] as never}
                 onRegister={(reader) => (sheetReaderRef.current = reader)}
               />
             )}

@@ -34,6 +34,10 @@ export interface SpreadsheetProps {
   locale: "en" | "ar";
   /** Parent registers the work reader here (refs aren't forwarded through next/dynamic). */
   onRegister?: (reader: SpreadsheetReader) => void;
+  /** Previously-captured work (section navigation / autosaved reload). Without
+   *  this the engine remounts from the blank template and the taker's entries
+   *  vanish (trial: "coming back, it starts the test over"). */
+  initialWork?: { cells?: Record<string, CellWork> } | null;
 }
 
 const COLS = ["A", "B", "C", "D", "E", "F", "G"];
@@ -45,7 +49,7 @@ function refToRowCol(ref: string): { row: number; col: number } | null {
   return { row: Number(m[2]) - 1, col };
 }
 
-export function SpreadsheetEngine({ config, onRegister }: SpreadsheetProps) {
+export function SpreadsheetEngine({ config, onRegister, initialWork }: SpreadsheetProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     // Univer facade workbook API instance (typed loosely; lib is dynamic).
     const apiRef = useRef<{ getActiveWorkbook: () => unknown } | null>(null);
@@ -118,6 +122,23 @@ export function SpreadsheetEngine({ config, onRegister }: SpreadsheetProps) {
               const c = COLS.indexOf(colLetter);
               cellData[r] = cellData[r] ?? {};
               cellData[r][c] = { v: val as number | string };
+            }
+          }
+
+          // Restore previously-entered work over the template: saved formulas
+          // and values re-seed the editable cells so section navigation and a
+          // reload never silently wipe the taker's entries.
+          const saved = initialWork?.cells ?? {};
+          for (const [ref, cell] of Object.entries(saved)) {
+            if (!editableRefs.includes(ref)) continue;
+            const rc = refToRowCol(ref);
+            if (!rc) continue;
+            cellData[rc.row] = cellData[rc.row] ?? {};
+            const f = (cell?.formula ?? "").toString().trim();
+            if (f) {
+              cellData[rc.row][rc.col] = { ...(cellData[rc.row][rc.col] ?? {}), f: f.startsWith("=") ? f : `=${f}` };
+            } else if (cell?.value !== undefined && cell?.value !== null && cell?.value !== "") {
+              cellData[rc.row][rc.col] = { ...(cellData[rc.row][rc.col] ?? {}), v: cell.value as number | string };
             }
           }
 

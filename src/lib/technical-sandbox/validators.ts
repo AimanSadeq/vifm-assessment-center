@@ -99,6 +99,21 @@ function checkOne(
       const passed = got !== null && Math.abs(got - cp.expected) <= tol;
       return { ...base, passed, detail: `${cp.field}=${got ?? "∅"} (want ${cp.expected})` };
     }
+    case "cells_formula_driven": {
+      // Every cell in the range must be formula-driven (any formula, not
+      // hardcoded values). Replaces is_array_formula for tasks the engine can
+      // express with plain mixed-reference formulas - the Univer sheet has no
+      // native what-if Data Table, so demanding {=TABLE()} made half the
+      // block's weight unearnable (trial finding, FP&A sensitivity task).
+      const cells = (work as SpreadsheetWork)?.cells ?? {};
+      const refs = expandRange(cp.target);
+      const withFormula = refs.filter((r) => {
+        const f = (cells[r]?.formula ?? "").toString().trim();
+        return f.length > 1;
+      });
+      const passed = refs.length > 0 && withFormula.length === refs.length;
+      return { ...base, passed, detail: `formulas ${withFormula.length}/${refs.length}` };
+    }
     case "is_array_formula": {
       const cells = (work as SpreadsheetWork)?.cells ?? {};
       const refs = expandRange(cp.target);

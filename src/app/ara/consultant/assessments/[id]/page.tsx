@@ -329,7 +329,7 @@ export default async function AraAssessmentDetailPage({
       <div className="max-w-6xl mx-auto px-6 py-10">
         {provisional.provisional && (
           <div className="mb-4">
-            <ProvisionalBanner language="en" pending={provisional.pending} total={provisional.total} />
+            <ProvisionalBanner language="en" variant="internal" pending={provisional.pending} total={provisional.total} />
           </div>
         )}
         <Breadcrumbs

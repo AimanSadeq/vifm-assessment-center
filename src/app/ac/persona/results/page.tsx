@@ -45,7 +45,7 @@ export default async function PersonaResultsPage({ searchParams }: { searchParam
 
       <main className="mx-auto max-w-6xl space-y-6 px-6 py-8">
         {provisional.provisional && (
-          <ProvisionalBanner language="en" pending={provisional.pending} total={provisional.total} />
+          <ProvisionalBanner language="en" variant="internal" pending={provisional.pending} total={provisional.total} />
         )}
         {rows === null && (
           <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">

@@ -56,11 +56,26 @@ export async function araAssessmentProvisional(assessmentId: string): Promise<Pr
   return statusFromQuestionIds(sb, await distinctAnsweredQuestionIds(sb, "assessment_id", assessmentId));
 }
 
-/** Bilingual banner copy - one source of truth for pages + PDFs. */
+/** Bilingual banner copy - one source of truth for pages + PDFs.
+ *  CLIENT-facing surfaces (respondent results, delivered reports) get the
+ *  softened "preliminary" framing - the internal QA pipeline is not the
+ *  client's concern. INTERNAL surfaces (consultant/admin views) keep the
+ *  honest detail so the team knows exactly why the flag is up. */
 export const PROVISIONAL_COPY = {
   en: {
+    title: "Preliminary results",
+    body: "These are preliminary results and may be refined as the assessment is finalised. Treat them as indicative for now.",
+  },
+  ar: {
+    title: "نتائج أولية",
+    body: "هذه نتائج أولية وقد تُحدَّث مع استكمال التقييم في صيغته النهائية. يُرجى اعتبارها استرشادية في الوقت الحالي.",
+  },
+} as const;
+
+export const PROVISIONAL_COPY_INTERNAL = {
+  en: {
     title: "Provisional results - content pending SME review",
-    body: "Some assessment questions have not yet been reviewed and approved by a subject-matter expert. Treat these results as indicative until the content review is complete.",
+    body: "Some assessment questions have not yet been reviewed and approved by a subject-matter expert. Treat these results as indicative until the content review is complete. (Internal note - client surfaces show a plain 'Preliminary results' line.)",
   },
   ar: {
     title: "نتائج مبدئية - المحتوى قيد مراجعة خبير الموضوع",

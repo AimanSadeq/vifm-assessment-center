@@ -1,5 +1,5 @@
 import { AlertTriangle } from "lucide-react";
-import { PROVISIONAL_COPY } from "@/lib/ara/provisional";
+import { PROVISIONAL_COPY, PROVISIONAL_COPY_INTERNAL } from "@/lib/ara/provisional";
 
 /**
  * Print-safe provisional strip for PDF/report surfaces (inline styles, since the
@@ -52,14 +52,19 @@ export function ProvisionalBanner({
   pending,
   total,
   className,
+  variant = "client",
 }: {
   language?: "en" | "ar";
   pending?: number;
   total?: number;
   className?: string;
+  /** "client" (default): plain "Preliminary results" - no internal QA detail.
+   *  "internal": full SME-review wording + the pending-question counts, for
+   *  consultant/admin surfaces only. */
+  variant?: "client" | "internal";
 }) {
   const isAr = language === "ar";
-  const c = PROVISIONAL_COPY[isAr ? "ar" : "en"];
+  const c = (variant === "internal" ? PROVISIONAL_COPY_INTERNAL : PROVISIONAL_COPY)[isAr ? "ar" : "en"];
   return (
     <div
       dir={isAr ? "rtl" : "ltr"}
@@ -70,7 +75,7 @@ export function ProvisionalBanner({
         <div className="min-w-0">
           <p className="text-sm font-semibold">{c.title}</p>
           <p className="mt-0.5 text-xs leading-snug">{c.body}</p>
-          {typeof pending === "number" && pending > 0 && typeof total === "number" && total > 0 && (
+          {variant === "internal" && typeof pending === "number" && pending > 0 && typeof total === "number" && total > 0 && (
             <p className="mt-1 text-[11px] font-medium tabular-nums opacity-80">
               {pending}/{total}{" "}
               {isAr ? "من الأسئلة المقدَّمة قيد المراجعة" : "of the questions served are pending review"}

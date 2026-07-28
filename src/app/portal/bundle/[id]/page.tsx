@@ -14,7 +14,14 @@ import { allocationUsable } from "@/lib/clients/allocations";
 import { BackLink } from "@/components/shared/back-link";
 import { BundleInviteClient } from "./_components/bundle-invite-client";
 
-type BundleCand = { id: string; full_name: string; email: string; status: string; completed_at: string | null };
+type BundleCand = {
+  id: string;
+  full_name: string;
+  email: string;
+  status: string;
+  completed_at: string | null;
+  persona_session_id: string | null;
+};
 
 const statusPill = (s: string) => {
   if (s === "completed") return <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">Completed</span>;
@@ -75,7 +82,7 @@ export default async function PortalBundlePage({
     await fetchAllPages<BundleCand & { created_at: string }>((from, to) =>
       createServiceClient()
         .from("bundle_candidates")
-        .select("id, full_name, email, status, completed_at, created_at")
+        .select("id, full_name, email, status, completed_at, created_at, persona_session_id")
         .eq("bespoke_service_id", bundle.id)
         .order("id")
         .range(from, to),
@@ -250,14 +257,26 @@ export default async function PortalBundlePage({
                   </td>
                   <td className="py-2 pr-3">
                     {c.status === "completed" ? (
-                      <a
-                        href={`/api/admin/bundle/${c.id}/report`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs font-semibold text-[#5391D5] hover:underline"
-                      >
-                        Combined report (PDF)
-                      </a>
+                      <div className="flex flex-col gap-0.5">
+                        <a
+                          href={`/api/admin/bundle/${c.id}/report`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-semibold text-[#5391D5] hover:underline"
+                        >
+                          Combined report (PDF)
+                        </a>
+                        {c.persona_session_id && (
+                          <a
+                            href={`/api/admin/bundle/${c.id}/hipo-report`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-semibold text-[#5391D5] hover:underline"
+                          >
+                            High-Potential Profile (PDF)
+                          </a>
+                        )}
+                      </div>
                     ) : (
                       <span className="text-xs text-slate-300">-</span>
                     )}

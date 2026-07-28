@@ -148,7 +148,13 @@ export async function GET(
 
     // Talent lens (migration 00134). Drives R4-R7 in both renderers. NULL =
     // generic framing (legacy / anonymous / deep-linked), no regression.
-    const talentLens = validateTalentLens(ctx.assessment.talent_lens);
+    // ?present= mirrors the results page's BD presentation toggle - without it
+    // the toggle changed the SCREEN but every download rendered the stored
+    // sitting lens, i.e. "switching between TD and TA still generates the same
+    // report" (client feedback). View-only: never changes the stored lens.
+    const url = new URL(request.url);
+    const presentOverride = validateTalentLens(url.searchParams.get("present"));
+    const talentLens = presentOverride ?? validateTalentLens(ctx.assessment.talent_lens);
 
     // Selection-lens analysis - the same deterministic, evidence-grounded read
     // shown on the results page, so the downloaded PDF matches the screen.
@@ -210,7 +216,11 @@ export async function GET(
       })),
     }));
 
-    const language = ctx.respondent.language_preference ?? "en";
+    const langParam = url.searchParams.get("language");
+    const language =
+      langParam === "en" || langParam === "ar"
+        ? langParam
+        : ctx.respondent.language_preference ?? "en";
     // Option 2 gate: flag provisional if any answered question is not SME-approved.
     const isProvisional = (await araRespondentProvisional(ctx.respondent.id)).provisional;
     const safeName = ctx.respondent.name

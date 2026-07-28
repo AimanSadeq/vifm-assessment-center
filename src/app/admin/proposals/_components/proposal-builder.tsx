@@ -103,6 +103,7 @@ export function ProposalBuilder({
   const [bundleDiscountPct, setBundleDiscountPct] = useState(lm?.bundleDiscountPct ?? LICENSING_DEFAULTS.bundleDiscountPct);
   const [supportPct, setSupportPct] = useState(lm?.supportPct ?? LICENSING_DEFAULTS.supportPct);
   const [implementationFee, setImplementationFee] = useState(lm?.implementationFee ?? LICENSING_DEFAULTS.implementationFee);
+  const [customReportsFee, setCustomReportsFee] = useState(lm?.customReportsFee ?? LICENSING_DEFAULTS.customReportsFee);
   const [tier, setTier] = useState<LicenceTier>(lm?.tier === "SOVEREIGN" ? "SOVEREIGN" : "SHARED");
   const [sovereignSetup, setSovereignSetup] = useState(lm?.sovereignSetup ?? LICENSING_DEFAULTS.sovereignSetup);
   const [sovereignAnnual, setSovereignAnnual] = useState(lm?.sovereignAnnual ?? LICENSING_DEFAULTS.sovereignAnnual);
@@ -273,6 +274,7 @@ export function ProposalBuilder({
       bundleDiscountPct,
       supportPct,
       implementationFee,
+      customReportsFee,
       tier,
       sovereignSetup,
       sovereignAnnual,
@@ -280,7 +282,7 @@ export function ProposalBuilder({
       upliftPct,
       pilot: pilotOn ? { cohort: pilotCohort, durationWeeks: pilotWeeks, price: pilotPrice, creditPct: pilotCreditPct } : null,
     }),
-    [seats, unitPrices, bundleDiscountPct, supportPct, implementationFee, tier, sovereignSetup, sovereignAnnual, bufferPct, upliftPct, pilotOn, pilotCohort, pilotWeeks, pilotPrice, pilotCreditPct],
+    [seats, unitPrices, bundleDiscountPct, supportPct, implementationFee, customReportsFee, tier, sovereignSetup, sovereignAnnual, bufferPct, upliftPct, pilotOn, pilotCohort, pilotWeeks, pilotPrice, pilotCreditPct],
   );
 
   const licensing = useMemo(() => computeLicensing(normalizeLicensingModel(assembleLicensingModel())), [assembleLicensingModel]);
@@ -663,6 +665,11 @@ export function ProposalBuilder({
               <span className="text-muted-foreground">Implementation (one-time)</span>
               <input type="number" min={0} value={implementationFee}
                 onChange={(e) => setImplementationFee(Math.max(0, Number(e.target.value) || 0))} className={numInput} />
+            </label>
+            <label className="block text-sm">
+              <span className="text-muted-foreground">Custom reports / assessments (one-time)</span>
+              <input type="number" min={0} value={customReportsFee}
+                onChange={(e) => setCustomReportsFee(Math.max(0, Number(e.target.value) || 0))} className={numInput} />
             </label>
             <label className="block text-sm">
               <span className="text-muted-foreground">Usage buffer %</span>

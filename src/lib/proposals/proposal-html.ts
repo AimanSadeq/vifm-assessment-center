@@ -358,6 +358,7 @@ function renderProposalDoc(
       ${lic.isSovereign && lic.sovereignAnnual > 0 ? `<tr><td class="tot-label">Sovereign annual (dedicated in-country)</td><td class="num">${money(lic.sovereignAnnual)}</td></tr>` : ""}
       <tr><td class="tot-label">Annual recurring</td><td class="num">${money(lic.annualRecurring)}</td></tr>
       ${lic.hasImplementationFee ? `<tr><td class="tot-label">Implementation &amp; onboarding (one-time)</td><td class="num">${money(lic.implementationFee)}</td></tr>` : ""}
+      ${lic.hasCustomReportsFee ? `<tr><td class="tot-label">Custom reports &amp; assessments (one-time)</td><td class="num">${money(lic.customReportsFee)}</td></tr>` : ""}
       ${lic.isSovereign && lic.sovereignSetup > 0 ? `<tr><td class="tot-label">Sovereign setup (one-time)</td><td class="num">${money(lic.sovereignSetup)}</td></tr>` : ""}
       ${hasDrFee ? `<tr><td class="tot-label">${drRowLabel} (one-time)</td><td class="num">${money(drFee)}</td></tr>` : ""}
       <tr class="total-row"><td class="tot-label">Year-1 investment (${esc(cur)})</td><td class="num">${money(lic.year1Subtotal + drFee)}</td></tr>

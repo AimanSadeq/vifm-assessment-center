@@ -206,6 +206,7 @@ function renderProposalDocAr(
       ${lic.isSovereign && lic.sovereignAnnual > 0 ? `<tr><td class="tot-label">الاستضافة السيادية السنوية (داخل الدولة)</td><td class="num">${m(lic.sovereignAnnual)}</td></tr>` : ""}
       <tr><td class="tot-label">التكلفة المتكررة السنوية</td><td class="num">${m(lic.annualRecurring)}</td></tr>
       ${lic.hasImplementationFee ? `<tr><td class="tot-label">التنفيذ والإعداد (لمرة واحدة)</td><td class="num">${m(lic.implementationFee)}</td></tr>` : ""}
+      ${lic.hasCustomReportsFee ? `<tr><td class="tot-label">التقارير والتقييمات المخصصة (لمرة واحدة)</td><td class="num">${m(lic.customReportsFee)}</td></tr>` : ""}
       ${lic.isSovereign && lic.sovereignSetup > 0 ? `<tr><td class="tot-label">إعداد الاستضافة السيادية (لمرة واحدة)</td><td class="num">${m(lic.sovereignSetup)}</td></tr>` : ""}
       ${hasDrFee ? `<tr><td class="tot-label">${drRowLabelAr} (لمرة واحدة)</td><td class="num">${m(drFee)}</td></tr>` : ""}
       <tr class="total-row"><td class="tot-label">استثمار السنة الأولى (${esc(cur)})</td><td class="num">${m(lic.year1Subtotal + drFee)}</td></tr>

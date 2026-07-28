@@ -5,9 +5,10 @@
 // 7 sellable services.
 
 import { PORTAL_SERVICES, type CaliberService } from "@/lib/clients/portal-services";
+import type { ProposalServiceKey } from "@/lib/proposals/licensing";
 
 /** Caliber service key -> the /api/methodology/[slug]/pdf brief slug. */
-export const PROPOSAL_METHODOLOGY_SLUG: Record<CaliberService, string> = {
+export const PROPOSAL_METHODOLOGY_SLUG: Record<ProposalServiceKey, string> = {
   fluent: "fluent",
   logica: "logica",
   persona: "persona",
@@ -15,10 +16,12 @@ export const PROPOSAL_METHODOLOGY_SLUG: Record<CaliberService, string> = {
   prehire: "prehire",
   arc: "ai-readiness",
   reflect: "reflect",
+  bespoke: "bespoke-services",
+  succession: "succession-planning",
 };
 
 /** One-paragraph "what it measures + how" for the proposal's technical section. */
-export const PROPOSAL_BLURB: Record<CaliberService, string> = {
+export const PROPOSAL_BLURB: Record<ProposalServiceKey, string> = {
   fluent:
     "Indicative CEFR English placement across reading, listening, writing and speaking. Receptive skills are auto-scored; productive skills are AI-scored against a CEFR rubric with human-review calibration. Positioned as indicative placement, not a certified high-stakes qualification.",
   logica:
@@ -33,10 +36,14 @@ export const PROPOSAL_BLURB: Record<CaliberService, string> = {
     "Organisational and individual AI readiness across eight pillars, benchmarked against peers with year-on-year tracking. Deliverables include a bilingual (EN/AR) consultant report, a capability-building plan and a regulatory-alignment view for UAE and Saudi frameworks.",
   reflect:
     "Multi-rater 360 leadership feedback against the client's own competency framework. Self, manager, peer and direct-report ratings roll up into anonymity-protected participant and cohort reports with an individual development plan.",
+  bespoke:
+    "Configurable assessment solutions assembled from the Caliber instrument suite - custom bundles, role-readiness batteries and client-specific assessment designs - scoped, configured and reported to the client's own framework by VIFM consultants.",
+  succession:
+    "Succession and role-readiness evaluation combining behavioural (Persona) and technical (Techno) evidence against a defined target role, producing a ready / not-ready verdict with a personal development plan for each succession candidate."
 };
 
 /** Concrete deliverables per service, listed under each technical-approach block. */
-export const PROPOSAL_DELIVERABLES: Record<CaliberService, string[]> = {
+export const PROPOSAL_DELIVERABLES: Record<ProposalServiceKey, string[]> = {
   fluent: [
     "Individual CEFR placement report with per-skill breakdown (reading, listening, writing, speaking)",
     "Downloadable placement certificate per participant",
@@ -75,23 +82,53 @@ export const PROPOSAL_DELIVERABLES: Record<CaliberService, string[]> = {
     "Individual development plan (IDP) per participant",
     "Organization-wide cohort report with strengths and blind-spots",
   ],
+  bespoke: [
+    "Scoped assessment design agreed with the client (instruments, competency scope, pass criteria)",
+    "Configured battery on the Caliber platform with client-branded delivery",
+    "Custom report format mapped to the client's own framework",
+    "Consultant walkthrough of results and recommendations",
+  ],
+  succession: [
+    "Target-role readiness profile (behavioural + technical evidence)",
+    "Per-candidate ready / not-ready verdict with rationale",
+    "Individual development plan per succession candidate",
+    "Cohort succession-bench summary for HR leadership",
+  ]
 };
 
 export type ProposalServiceMeta = {
-  key: CaliberService;
+  key: ProposalServiceKey;
   label: string;
   accent: string;
   methodologySlug: string;
   blurb: string;
 };
 
-export const PROPOSAL_SERVICES: ProposalServiceMeta[] = PORTAL_SERVICES.map((s) => ({
-  key: s.id,
-  label: s.label,
-  accent: s.accent,
-  methodologySlug: PROPOSAL_METHODOLOGY_SLUG[s.id],
-  blurb: PROPOSAL_BLURB[s.id],
-}));
+export const PROPOSAL_SERVICES: ProposalServiceMeta[] = [
+  ...PORTAL_SERVICES.map((s) => ({
+    key: s.id as ProposalServiceKey,
+    label: s.label,
+    accent: s.accent,
+    methodologySlug: PROPOSAL_METHODOLOGY_SLUG[s.id],
+    blurb: PROPOSAL_BLURB[s.id],
+  })),
+  // Proposal-only offerings: consultant-delivered solutions with no portal
+  // tile - sellable lines like any other service.
+  {
+    key: "bespoke",
+    label: "Bespoke Services",
+    accent: "#7c3aed",
+    methodologySlug: PROPOSAL_METHODOLOGY_SLUG.bespoke,
+    blurb: PROPOSAL_BLURB.bespoke,
+  },
+  {
+    key: "succession",
+    label: "Succession Planning",
+    accent: "#0f766e",
+    methodologySlug: PROPOSAL_METHODOLOGY_SLUG.succession,
+    blurb: PROPOSAL_BLURB.succession,
+  },
+];
 
 export function proposalService(key: string): ProposalServiceMeta | undefined {
   return PROPOSAL_SERVICES.find((s) => s.key === key);
@@ -99,7 +136,7 @@ export function proposalService(key: string): ProposalServiceMeta | undefined {
 
 /** Per-service pricing basis, shown on licence rows and denormalised onto the
  *  licence model (e.g. "Persona - per employee"). */
-export const PROPOSAL_SERVICE_BASIS: Record<CaliberService, string> = {
+export const PROPOSAL_SERVICE_BASIS: Record<ProposalServiceKey, string> = {
   prehire: "per candidate",
   logica: "per individual",
   persona: "per employee",
@@ -107,10 +144,12 @@ export const PROPOSAL_SERVICE_BASIS: Record<CaliberService, string> = {
   fluent: "per individual",
   arc: "per business unit",
   reflect: "per leader",
+  bespoke: "per assessment",
+  succession: "per candidate",
 };
 
 /** Short category label carried onto the licence model (denormalised snapshot). */
-export const PROPOSAL_SERVICE_CATEGORY: Record<CaliberService, string> = {
+export const PROPOSAL_SERVICE_CATEGORY: Record<ProposalServiceKey, string> = {
   prehire: "Pre-employment screening",
   logica: "Reasoning aptitude",
   persona: "Behavioural self-assessment",
@@ -118,6 +157,8 @@ export const PROPOSAL_SERVICE_CATEGORY: Record<CaliberService, string> = {
   fluent: "English placement",
   arc: "AI readiness diagnostic",
   reflect: "Leadership 360 feedback",
+  bespoke: "Configurable assessment solutions",
+  succession: "Succession & role-readiness",
 };
 
 /** Default, editable boilerplate seeded into a new proposal. */

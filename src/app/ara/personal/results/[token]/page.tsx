@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Compass, Sparkles, ArrowLeft, FileDown, BookOpen, GraduationCap, ClipboardCheck } from "lucide-react";
+import { Compass, Sparkles, ArrowLeft, FileDown, BookOpen, GraduationCap, ClipboardCheck, Download } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -311,11 +311,18 @@ export default async function PersonalResultsPage({ params, searchParams }: Prop
               </p>
             </div>
             <a
-              href={`/api/ara/personal/${params.token}/pdf`}
-              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md border border-input bg-card hover:bg-muted/50 shrink-0"
+              href={`/api/ara/personal/${params.token}/pdf?language=ar${presentOverride ? `&present=${presentOverride}` : ""}`}
+              className="inline-flex items-center gap-2 rounded-md bg-[#010131] px-4 py-2 text-sm font-semibold text-white hover:bg-[#121140]"
             >
-              <FileDown className="h-3.5 w-3.5" />
-              {isAr ? "تنزيل PDF" : "Download PDF"}
+              <Download className="h-4 w-4" />
+              {isAr ? "تنزيل PDF (عربي)" : "Download PDF (Arabic)"}
+            </a>
+            <a
+              href={`/api/ara/personal/${params.token}/pdf?language=en${presentOverride ? `&present=${presentOverride}` : ""}`}
+              className="inline-flex items-center gap-2 rounded-md border border-[#010131]/20 bg-white px-4 py-2 text-sm font-semibold text-[#010131] hover:bg-slate-50"
+            >
+              <Download className="h-4 w-4" />
+              {isAr ? "تنزيل PDF (إنجليزي)" : "Download PDF (English)"}
             </a>
           </div>
         </div>

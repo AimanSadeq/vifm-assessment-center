@@ -737,7 +737,7 @@ export async function recommendCoursesForIndividualSnapshot(args: {
 
   // 1. Build a flat list of (factor, competency_name, gap) tuples.
   type FactorGap = { factorId: AraIndividualFactorId; factorLabel: string; factorLabelAr: string | null; competencyNames: string[]; gap: number };
-  const factorGaps: FactorGap[] = ARA_INDIVIDUAL_FACTORS
+  const allGaps: FactorGap[] = ARA_INDIVIDUAL_FACTORS
     .map((f) => ({
       factorId: f.id,
       factorLabel: f.name_en,
@@ -745,7 +745,15 @@ export async function recommendCoursesForIndividualSnapshot(args: {
       competencyNames: f.ac_competency_names,
       gap: target - (args.factorScores[f.id] ?? target),
     }))
-    .filter((fg) => fg.gap >= MIN_MEANINGFUL_GAP && fg.competencyNames.length > 0);
+    .filter((fg) => fg.competencyNames.length > 0);
+
+  // Prefer factors with a MEANINGFUL gap; when none clears the bar but some
+  // factors still sit below target (e.g. 3.6 and 3.9 vs a target of 4), fall
+  // back to ANY below-target factor. A near-target profile still has a weakest
+  // area worth training - an empty panel reads as "nothing to offer", which is
+  // wrong for a training company and puzzled a real client review.
+  let factorGaps = allGaps.filter((fg) => fg.gap >= MIN_MEANINGFUL_GAP);
+  if (factorGaps.length === 0) factorGaps = allGaps.filter((fg) => fg.gap > 0);
 
   if (factorGaps.length === 0) return [];
 

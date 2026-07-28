@@ -11,6 +11,11 @@
 
 import type { CaliberService } from "@/lib/clients/portal-services";
 
+/** Services sellable on a proposal: the 7 portal services plus two
+ *  proposal-only offerings (they have no portal tile / voucher machinery -
+ *  they are consultant-delivered solutions priced like any other line). */
+export type ProposalServiceKey = CaliberService | "bespoke" | "succession";
+
 export type PricingMode = "per_project" | "licence" | "engagement" | "combined";
 export type LicenceTier = "SHARED" | "SOVEREIGN";
 export type ProductMode = "PER_UNIT" | "FIXED";
@@ -24,7 +29,7 @@ export interface LicencePilotInput { cohort?: number; durationWeeks?: number; pr
 export interface LicenceModelInput {
   products?: LicenceProductInput[]; bundles?: LicenceBundleInput[];
   bufferPct?: number; upliftPct?: number; pilot?: LicencePilotInput | null;
-  bundleDiscountPct?: number; supportPct?: number; implementationFee?: number;
+  bundleDiscountPct?: number; supportPct?: number; implementationFee?: number; customReportsFee?: number;
   tier?: LicenceTier; sovereignSetup?: number; sovereignAnnual?: number;
 }
 
@@ -39,7 +44,7 @@ export interface NormalizedPilot { cohort: number; durationWeeks: number; price:
 export interface NormalizedLicenceModel {
   products: NormalizedProduct[]; bundles: NormalizedBundle[];
   bufferPct: number; upliftPct: number; pilot: NormalizedPilot | null;
-  bundleDiscountPct: number; supportPct: number; implementationFee: number;
+  bundleDiscountPct: number; supportPct: number; implementationFee: number; customReportsFee: number;
   tier: LicenceTier; sovereignSetup: number; sovereignAnnual: number;
 }
 
@@ -74,7 +79,8 @@ export function normalizeLicensingModel(value: unknown): NormalizedLicenceModel 
   return {
     products, bundles, bufferPct: clampPct(v.bufferPct), upliftPct: clampPct(v.upliftPct), pilot,
     bundleDiscountPct: clampPct(v.bundleDiscountPct), supportPct: clampPct(v.supportPct),
-    implementationFee: Math.max(0, num(v.implementationFee)), tier,
+    implementationFee: Math.max(0, num(v.implementationFee)),
+    customReportsFee: Math.max(0, num(v.customReportsFee)), tier,
     sovereignSetup: tier === "SOVEREIGN" ? Math.max(0, num(v.sovereignSetup)) : 0,
     sovereignAnnual: tier === "SOVEREIGN" ? Math.max(0, num(v.sovereignAnnual)) : 0,
   };
@@ -99,8 +105,9 @@ export function computeLicensing(model: NormalizedLicenceModel | null) {
   const sovereignAnnual = isSovereign ? Math.max(0, num(model.sovereignAnnual)) : 0;
   const annualRecurring = annualLicence + supportAmount + sovereignAnnual;
   const implementationFee = Math.max(0, num(model.implementationFee));
+  const customReportsFee = Math.max(0, num(model.customReportsFee));
   const sovereignSetup = isSovereign ? Math.max(0, num(model.sovereignSetup)) : 0;
-  const oneTimeTotal = implementationFee + sovereignSetup;
+  const oneTimeTotal = implementationFee + customReportsFee + sovereignSetup;
   const year1Subtotal = annualRecurring + oneTimeTotal;
   const uplift = clampPct(model.upliftPct);
   const year2Recurring = annualRecurring * (1 + uplift / 100);
@@ -112,6 +119,7 @@ export function computeLicensing(model: NormalizedLicenceModel | null) {
     annualLicence, supportPct, hasSupport: supportAmount > 0, supportAmount,
     tier: isSovereign ? "SOVEREIGN" : "SHARED", isSovereign, sovereignAnnual,
     annualRecurring, implementationFee, hasImplementationFee: implementationFee > 0,
+    customReportsFee, hasCustomReportsFee: customReportsFee > 0,
     sovereignSetup, oneTimeTotal, hasOneTime: oneTimeTotal > 0, year1Subtotal,
     upliftPct: uplift, year2Recurring, year3Recurring,
     tco3: year1Subtotal + year2Recurring + year3Recurring,
@@ -124,6 +132,7 @@ export function computeLicensing(model: NormalizedLicenceModel | null) {
 
 /** Editable licence-builder defaults (all overridable per deal). */
 export const LICENSING_DEFAULTS = {
+  customReportsFee: 0,
   bundleDiscountPct: 63,
   supportPct: 12,
   implementationFee: 110000,
@@ -135,7 +144,7 @@ export const LICENSING_DEFAULTS = {
 
 /** Benchmark unit prices for the 7 sellable services (planning anchors, editable
  *  per deal). Used as the builder's unit-price fallback when the rate card is 0. */
-export const LICENCE_BENCHMARKS: Record<CaliberService, number> = {
+export const LICENCE_BENCHMARKS: Record<ProposalServiceKey, number> = {
   prehire: 60,
   logica: 30,
   persona: 30,
@@ -143,4 +152,6 @@ export const LICENCE_BENCHMARKS: Record<CaliberService, number> = {
   fluent: 40,
   arc: 6000,
   reflect: 180,
+  bespoke: 150,
+  succession: 200,
 };

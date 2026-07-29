@@ -99,8 +99,9 @@ function NineGrid({ d }: { d: HipoPdfData }) {
           <Text style={[s.axisLabel, { textAlign: "right", marginTop: 4, color: C.primary }]}>ASPIRATION</Text>
         </View>
 
-        {/* The 3x3 zones */}
-        <View style={{ flex: 1 }}>
+        {/* The 3x3 zones - drawn axis lines (left = Aspiration, bottom = Ability)
+            make the chart read as a real X/Y plot, not a table. */}
+        <View style={{ flex: 1, borderLeftWidth: 1.4, borderBottomWidth: 1.4, borderColor: C.primary, paddingBottom: 2 }}>
           <View style={{ height: 11 }} />
           {[2, 1, 0].map((rowIdx) => (
             <View key={rowIdx} style={{ flexDirection: "row" }}>
@@ -135,7 +136,13 @@ function NineGrid({ d }: { d: HipoPdfData }) {
               })}
             </View>
           ))}
-          {/* X axis: Ability, Low at left, High at right */}
+        </View>
+      </View>
+
+      {/* X axis labels sit OUTSIDE the axis line so the line reads as the axis */}
+      <View style={{ flexDirection: "row" }}>
+        <View style={{ width: 66 }} />
+        <View style={{ flex: 1 }}>
           <View style={{ flexDirection: "row", marginTop: 3 }}>
             {["Developing", "Solid", "Strong"].map((l) => (
               <Text key={l} style={[s.axisLabel, { flex: 1, textAlign: "center" }]}>{l}</Text>

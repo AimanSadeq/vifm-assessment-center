@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/table";
 import { loadPlatformClients } from "@/lib/clients/registry";
 import { CreateClientDialog } from "./_components/create-client-dialog";
+import { EditClientDialog } from "./_components/edit-client-dialog";
 import { BackLink } from "@/components/shared/back-link";
 
 const SECTOR_LABEL: Record<string, string> = { government: "Government", banking: "Banking", general: "General" };
@@ -54,6 +55,7 @@ export default async function ClientsPage() {
                 <TableHead>{t("adminClients.colCountry")}</TableHead>
                 <TableHead>Connected services</TableHead>
                 <TableHead>{t("adminClients.colEngagements")}</TableHead>
+                <TableHead className="w-20"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -87,6 +89,9 @@ export default async function ClientsPage() {
                   </TableCell>
                   <TableCell>
                     <Badge variant="secondary">{c.engagementCount}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <EditClientDialog acId={c.acId} araId={c.araId} name={c.name} industry={c.industry} country={c.country} />
                   </TableCell>
                 </TableRow>
               ))}

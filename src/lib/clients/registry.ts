@@ -107,6 +107,71 @@ export async function createClientOrganization(input: CreateClientInput): Promis
   return { ok: true, organizationId, araOrganizationId, createdAc, createdAra };
 }
 
+export type UpdateClientInput = {
+  /** organizations.id (AC + Pre-Hire) - null when the client only exists in the ARC store. */
+  acId: string | null;
+  /** ara_organizations.id (ARC + Reflect) - null when the client only exists in the AC store. */
+  araId: string | null;
+  name: string;
+  industry?: string | null;
+  country?: string | null;
+};
+
+export type UpdateClientResult = { ok: true } | { ok: false; error: string };
+
+/**
+ * Rename/amend a client across BOTH org stores. The Platform Clients page joins
+ * the two stores by case-insensitive name, so the rename must land on both rows
+ * in one call or the client would split into two rows. Refuses a new name that
+ * already belongs to a DIFFERENT client (that would silently merge two clients
+ * in the union view).
+ */
+export async function updateClientOrganization(input: UpdateClientInput): Promise<UpdateClientResult> {
+  const name = input.name.trim();
+  if (!name) return { ok: false, error: "A client name is required." };
+  if (!input.acId && !input.araId) return { ok: false, error: "Nothing to update - the client is not linked to any store." };
+  const sb = createServiceClient();
+
+  // Collision guard: the new name must not belong to another client in either store.
+  {
+    const [acRes, araRes] = await Promise.all([
+      sb.from("organizations").select("id, name"),
+      sb.from("ara_organizations").select("id, name"),
+    ]);
+    if (acRes.error) return { ok: false, error: acRes.error.message };
+    if (araRes.error) return { ok: false, error: araRes.error.message };
+    const acClash = (acRes.data ?? []).find((o: { id: string; name: string }) => norm(o.name) === norm(name) && o.id !== input.acId);
+    const araClash = (araRes.data ?? []).find((o: { id: string; name: string }) => norm(o.name) === norm(name) && o.id !== input.araId);
+    if (acClash || araClash) {
+      return { ok: false, error: "Another client already uses this name. Renaming to it would merge the two clients - pick a different name." };
+    }
+  }
+
+  if (input.acId) {
+    const upd = await sb
+      .from("organizations")
+      .update({
+        name,
+        ...(input.industry !== undefined ? { industry: input.industry || null } : {}),
+        ...(input.country !== undefined ? { country: input.country || null } : {}),
+      })
+      .eq("id", input.acId);
+    if (upd.error) return { ok: false, error: upd.error.message };
+  }
+  if (input.araId) {
+    const upd = await sb.from("ara_organizations").update({ name }).eq("id", input.araId);
+    if (upd.error) {
+      // Best-effort rollback of the AC rename so the two stores stay joined.
+      if (input.acId) {
+        const { data: prior } = await sb.from("ara_organizations").select("name").eq("id", input.araId).maybeSingle();
+        if (prior?.name) await sb.from("organizations").update({ name: prior.name }).eq("id", input.acId);
+      }
+      return { ok: false, error: upd.error.message };
+    }
+  }
+  return { ok: true };
+}
+
 export type PlatformClient = {
   key: string;
   name: string;

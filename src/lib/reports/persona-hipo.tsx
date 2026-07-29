@@ -50,7 +50,7 @@ const s = StyleSheet.create({
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 4, borderBottomWidth: 0.5, borderBottomColor: C.border },
   rowName: { fontSize: 9.5, color: C.text, flex: 1, paddingRight: 8 },
   rowVal: { fontSize: 9.5, fontFamily: "Helvetica-Bold", color: C.primary, width: 44, textAlign: "right" },
-  gridCell: { flex: 1, borderWidth: 0.8, borderColor: C.border, margin: 1.5, borderRadius: 4, padding: 7, minHeight: 74 },
+  gridCell: { flex: 1, borderWidth: 0.8, borderColor: C.border, margin: 1.5, borderRadius: 4, padding: 7, height: 78 },
   gridCellActive: { backgroundColor: C.highlight, borderColor: C.accent, borderWidth: 1.6 },
   gridArch: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.primary, lineHeight: 1.3 },
   gridArchActive: { color: C.accent },
@@ -76,37 +76,90 @@ function Gauge({ label, value, bandLabel, sub }: { label: string; value: number;
   );
 }
 
+// Blue tonal scale by combined strength (row + col, 0..4): light bottom-left,
+// deepening toward the strongest top-right cell - the visual "potential zones".
+const ZONE_FILL = ["#f2f6fb", "#dde9f6", "#bcd5ed", "#8db6e1", "#5391D5"];
+const zoneStrength = (row: number, col: number) => row + col;
+
 function NineGrid({ d }: { d: HipoPdfData }) {
+  const ROW_BANDS = ["Strong", "Solid", "Developing"]; // rendered top-down (rows 2,1,0)
   // Rows rendered top-down: aspiration strong (2) at the top.
   return (
     <View>
-      <Text style={[s.axisLabel, { marginBottom: 3 }]}>Aspiration (rows, top to bottom): Strong / Solid / Developing</Text>
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
+      <View style={{ flexDirection: "row" }}>
+        {/* Y axis: Aspiration, High at top, Low at bottom */}
+        <View style={{ width: 62, marginRight: 4 }}>
+          <Text style={[s.axisLabel, { textAlign: "right", color: C.primary }]}>High</Text>
+          {[2, 1, 0].map((rowIdx) => (
+            <View key={rowIdx} style={{ height: 81, justifyContent: "center" }}>
+              <Text style={[s.axisLabel, { textAlign: "right" }]}>{ROW_BANDS[2 - rowIdx]}</Text>
+            </View>
+          ))}
+          <Text style={[s.axisLabel, { textAlign: "right", color: C.primary }]}>Low</Text>
+          <Text style={[s.axisLabel, { textAlign: "right", marginTop: 4, color: C.primary }]}>ASPIRATION</Text>
+        </View>
+
+        {/* The 3x3 zones */}
         <View style={{ flex: 1 }}>
+          <View style={{ height: 11 }} />
           {[2, 1, 0].map((rowIdx) => (
             <View key={rowIdx} style={{ flexDirection: "row" }}>
               {[0, 1, 2].map((colIdx) => {
                 const cell = HIPO_GRID.find((c) => c.row === rowIdx && c.col === colIdx)!;
                 const active = d.cell.row === rowIdx && d.cell.col === colIdx;
+                const strength = zoneStrength(rowIdx, colIdx);
+                const dark = strength >= 3;
+                const titleColor = active ? (dark ? "#ffffff" : C.accent) : dark ? "#ffffff" : C.primary;
+                const shortColor = dark ? "#e3edf9" : C.textLight;
                 return (
-                  <View key={colIdx} style={[s.gridCell, ...(active ? [s.gridCellActive] : [])]}>
-                    <Text style={[s.gridArch, ...(active ? [s.gridArchActive] : [])]}>{cell.archetype}</Text>
+                  <View
+                    key={colIdx}
+                    style={[
+                      s.gridCell,
+                      { backgroundColor: ZONE_FILL[strength], borderColor: dark ? ZONE_FILL[strength] : C.border },
+                      ...(active ? [{ borderColor: C.primary, borderWidth: 1.8 }] : []),
+                    ]}
+                  >
+                    <Text style={[s.gridArch, { color: titleColor }]}>{cell.archetype}</Text>
+                    <Text style={{ fontSize: 6.5, color: shortColor, marginTop: 2, lineHeight: 1.3 }}>{cell.short}</Text>
                     {active && (
-                      <Text style={{ fontSize: 7, color: C.accent, marginTop: 3, fontFamily: "Helvetica-Bold" }}>
-                        » {d.takerName ?? "This candidate"}
-                      </Text>
+                      <View style={{ flexDirection: "row", alignItems: "center", marginTop: 4 }}>
+                        <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: dark ? "#ffffff" : C.primary, marginRight: 3 }} />
+                        <Text style={{ fontSize: 7, fontFamily: "Helvetica-Bold", color: dark ? "#ffffff" : C.primary }}>
+                          {d.takerName ?? "This candidate"}
+                        </Text>
+                      </View>
                     )}
                   </View>
                 );
               })}
             </View>
           ))}
+          {/* X axis: Ability, Low at left, High at right */}
           <View style={{ flexDirection: "row", marginTop: 3 }}>
             {["Developing", "Solid", "Strong"].map((l) => (
               <Text key={l} style={[s.axisLabel, { flex: 1, textAlign: "center" }]}>{l}</Text>
             ))}
           </View>
-          <Text style={[s.axisLabel, { textAlign: "center", marginTop: 2 }]}>Ability</Text>
+          <View style={{ flexDirection: "row", marginTop: 2, alignItems: "center" }}>
+            <Text style={[s.axisLabel, { color: C.primary }]}>Low</Text>
+            <Text style={[s.axisLabel, { flex: 1, textAlign: "center", color: C.primary }]}>ABILITY</Text>
+            <Text style={[s.axisLabel, { color: C.primary }]}>High</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Legend */}
+      <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8, flexWrap: "wrap" }}>
+        {[0, 2, 4].map((i) => (
+          <View key={i} style={{ flexDirection: "row", alignItems: "center", marginRight: 8 }}>
+            <View style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: ZONE_FILL[i], borderWidth: 0.5, borderColor: C.border, marginRight: 3 }} />
+            <Text style={{ fontSize: 7, color: C.textLight }}>{i === 0 ? "Developing zone" : i === 2 ? "Core-talent zone" : "High-potential zone"}</Text>
+          </View>
+        ))}
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: C.primary, marginRight: 3 }} />
+          <Text style={{ fontSize: 7, color: C.textLight }}>Individual placement</Text>
         </View>
       </View>
     </View>

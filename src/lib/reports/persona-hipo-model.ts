@@ -89,6 +89,8 @@ export type HipoCell = {
   col: number;
   row: number;
   archetype: string;
+  /** One-line in-cell definition (fits the grid box at small type). */
+  short: string;
   narrative: string;
   developmentFocus: string;
 };
@@ -97,40 +99,50 @@ const CELL = (
   col: number,
   row: number,
   archetype: string,
+  short: string,
   narrative: string,
   developmentFocus: string,
-): HipoCell => ({ col, row, archetype, narrative, developmentFocus });
+): HipoCell => ({ col, row, archetype, short, narrative, developmentFocus });
 
 /** The VIFM nine-grid. Row = Aspiration band, Col = Ability band. */
 export const HIPO_GRID: HipoCell[] = [
   // Aspiration STRONG (row 2)
   CELL(2, 2, "High Potential - Accelerate",
+    "Strong drive matched by next-level capability",
     "Strong drive to rise, matched by the behavioural and cognitive capability to succeed at the next level. The profile most worth deliberate, visible investment.",
     "Stretch assignments with real accountability, senior sponsorship, and early exposure to enterprise-level decisions. Guard against under-challenge."),
   CELL(1, 2, "Emerging Potential - Stretch with Support",
+    "Clear ambition; capability still building",
     "The ambition is clearly there and capability is solid but not yet senior-ready across the board. With targeted development the trajectory points upward.",
     "Pair one capability-building priority per quarter with a visible stretch task; review progress with a mentor who names the gap honestly."),
   CELL(0, 2, "Eager Developer - Build Foundations",
+    "Drive ahead of current capability",
     "Appetite to rise runs ahead of current capability. Untempered, this profile takes on roles it cannot yet carry; well-coached, it grows fast.",
     "Channel the drive into structured skill-building before role expansion. Small, complete ownership loops beat premature scope."),
   // Aspiration SOLID (row 1)
   CELL(2, 1, "Quiet Strength - Ignite Ambition",
+    "Next-level capability, measured ambition",
     "Capability at or near next-level standard, with measured rather than hungry aspiration. Often the most under-recognised profile in a pipeline.",
     "Explore what would make a bigger role attractive - scope, mission, autonomy. A targeted conversation can unlock more here than training."),
   CELL(1, 1, "Solid Contributor - Grow Steadily",
+    "Balanced drive and capability",
     "Balanced aspiration and capability around the standard expected today. A dependable core-talent profile with genuine headroom.",
     "Maintain a steady development rhythm: one behavioural and one technical growth objective at a time, revisited each cycle."),
   CELL(0, 1, "Steady Performer - Focus Development",
+    "Moderate drive; focused gaps to close",
     "Moderate drive with capability gaps against next-level demands. Progress is available but needs focus rather than breadth.",
     "Pick the two lowest markers in this report and work only those for six months; breadth can follow depth."),
   // Aspiration DEVELOPING (row 0)
   CELL(2, 0, "Untapped Expert - Re-engage",
+    "Real capability, low current appetite to climb",
     "Real capability without the current appetite to climb. The risk is quiet disengagement; the opportunity is a role redesign that re-energises.",
     "Diagnose the aspiration gap before prescribing anything - fit, recognition, workload or life-stage often explain it. Expert-track paths may fit better than management."),
   CELL(1, 0, "Developing Contributor",
+    "Mid-range on both pillars; unfocused potential",
     "Both pillars sit mid-range or below, without a single dominant gap. Potential is not absent - it is unfocused.",
     "Agree one meaningful, visible goal with the line manager and use it as the engine for both capability and confidence."),
   CELL(0, 0, "Early Journey - Foundational Development",
+    "Early on both pillars; build foundations first",
     "Early in the development curve on both pillars. The honest read: not a current high-potential nomination - and that is a timing statement, not a ceiling.",
     "Foundational skills first, delivered through day-to-day work with close feedback loops. Revisit the profile after a full development cycle."),
 ];

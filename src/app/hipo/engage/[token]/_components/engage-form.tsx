@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { CheckCircle2, Languages } from "lucide-react";
-import { HIPO_ENGAGEMENT_ITEMS, ENGAGEMENT_MIN_ANSWERED } from "@/lib/hipo/engagement";
+import { HIPO_ENGAGEMENT_ITEMS, ENGAGEMENT_MIN_ANSWERED } from "@/lib/hipo/engagement-items";
 import { submitEngagementAction } from "../actions";
 
 const SCALE_EN = ["Strongly disagree", "Disagree", "Neutral", "Agree", "Strongly agree"];

@@ -11,6 +11,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { AR_FONT_HREF, escapeHtml } from "@/lib/reports/html-to-pdf";
+import { PROVISIONAL_COPY } from "@/lib/ara/provisional";
 import { personaBand, gapToneHex, PERSONA_BAND_GUIDE, PERSONA_BAND_HEX } from "@/lib/scoring/persona-bands";
 import type { PersonaPdfData } from "@/lib/reports/persona-profile";
 
@@ -360,7 +361,7 @@ export function renderPersonaProfileHtmlAr(data: PersonaPdfData, provisional = f
 </style>
 </head>
 <body>
-  ${provisional ? `<div style="border:1px solid #f59e0b;background:#fffbeb;color:#78350f;border-radius:6px;padding:8px 10px;margin:0 0 10px;font-size:9px;line-height:1.5"><b>نتائج مبدئية - المحتوى قيد مراجعة خبير الموضوع</b><div style="margin-top:2px">لم تتم بعد مراجعة بعض بنود التقييم واعتمادها من قبل خبير في الموضوع. يُرجى اعتبار هذه النتائج استرشادية حتى اكتمال مراجعة المحتوى.</div></div>` : ""}
+  ${provisional ? `<div style="border:1px solid #f59e0b;background:#fffbeb;color:#78350f;border-radius:6px;padding:8px 10px;margin:0 0 10px;font-size:9px;line-height:1.5"><b>${PROVISIONAL_COPY.ar.title}</b><div style="margin-top:2px">${PROVISIONAL_COPY.ar.body}</div></div>` : ""}
   <div class="page-footer">
     <span>معهد فرجينيا للتمويل والإدارة - سري</span>
     <span>أُنشئ بتاريخ ${num(data.generatedAt)}</span>

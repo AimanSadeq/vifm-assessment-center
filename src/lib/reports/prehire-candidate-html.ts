@@ -1,3 +1,4 @@
+import { PROVISIONAL_COPY } from "@/lib/ara/provisional";
 import type { PrehireRecommendation } from "@/lib/prehire/scoring";
 import type { PrehireCertification } from "@/lib/prehire/certification";
 
@@ -57,10 +58,8 @@ export type PrehireReportData = {
 function provisionalStrip(data: PrehireReportData, lang: Lang): string {
   if (!data.provisional) return "";
   const ar = lang === "ar";
-  const title = ar ? "نتائج مبدئية - المحتوى قيد مراجعة خبير الموضوع" : "Provisional results - content pending SME review";
-  const body = ar
-    ? "بعض بنود هذا الفحص وُلِّدت آلياً ولم تُراجع بعد وتُعتمد من قبل خبير في الموضوع. يُرجى اعتبار هذه النتائج استرشادية حتى اكتمال المراجعة."
-    : "Some items in this screen were generated live and have not yet been reviewed and approved by a subject-matter expert. Treat these results as indicative until the content review is complete.";
+  const title = PROVISIONAL_COPY[ar ? "ar" : "en"].title;
+  const body = PROVISIONAL_COPY[ar ? "ar" : "en"].body;
   return `<div dir="${ar ? "rtl" : "ltr"}" style="border:1px solid #f59e0b;background:#fffbeb;color:#78350f;border-radius:6px;padding:8px 12px;margin:0 0 14px;font-size:11px;line-height:1.5"><b>${title}</b><div style="margin-top:2px">${body}</div></div>`;
 }
 

@@ -6,6 +6,7 @@
 // the canonical 2x2 grid, quadrant breakdown, and targeted development focus.
 // ─────────────────────────────────────────────────────────────
 
+import { PROVISIONAL_COPY } from "@/lib/ara/provisional";
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import {
   EQ_QUADRANTS,
@@ -130,8 +131,8 @@ export function EqReportPdf({ data, provisional }: { data: EqPdfData; provisiona
       <Page size="A4" style={s.page}>
         {provisional && (
           <View style={{ borderWidth: 1, borderColor: "#f59e0b", backgroundColor: "#fffbeb", borderRadius: 4, padding: 8, marginBottom: 10 }}>
-            <Text style={{ fontSize: 9, fontWeight: 700, color: "#78350f" }}>Provisional results - content pending SME review</Text>
-            <Text style={{ fontSize: 8, color: "#92400e", marginTop: 2 }}>Some assessment items have not yet been reviewed and approved by a subject-matter expert. Treat these results as indicative until the content review is complete.</Text>
+            <Text style={{ fontSize: 9, fontWeight: 700, color: "#78350f" }}>{PROVISIONAL_COPY.en.title}</Text>
+            <Text style={{ fontSize: 8, color: "#92400e", marginTop: 2 }}>{PROVISIONAL_COPY.en.body}</Text>
           </View>
         )}
         <View style={s.banner}>

@@ -26,6 +26,7 @@
  * Arabic copy in one place without touching the React-PDF EN code.
  */
 
+import { PROVISIONAL_COPY } from "@/lib/ara/provisional";
 import {
   ARA_INDIVIDUAL_FACTORS,
   ARA_INDIVIDUAL_FACTOR_MAP,
@@ -668,8 +669,8 @@ export function renderPersonalSnapshotHtmlAr(data: PersonalSnapshotArData): stri
 <body>
 ${data.provisional ? `
   <div style="border:1px solid #f59e0b;background:#fffbeb;color:#78350f;border-radius:6pt;padding:8pt 10pt;margin:12pt 12pt 0;font-size:9pt;line-height:1.4">
-    <strong>نتائج مبدئية - المحتوى قيد مراجعة خبير الموضوع</strong>
-    <div style="margin-top:2pt">لم تتم بعد مراجعة بعض أسئلة التقييم واعتمادها من قبل خبير في الموضوع. يُرجى اعتبار هذه النتائج استرشادية حتى اكتمال مراجعة المحتوى.</div>
+    <strong>${PROVISIONAL_COPY.ar.title}</strong>
+    <div style="margin-top:2pt">${PROVISIONAL_COPY.ar.body}</div>
   </div>` : ""}
 
   <!-- PAGE 1 - score + per-factor (first two) -->

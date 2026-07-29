@@ -13,6 +13,7 @@ import { RUNNABLE_BUNDLE_STAGES, type BundleStage } from "@/lib/bespoke/candidat
 import { allocationUsable } from "@/lib/clients/allocations";
 import { BackLink } from "@/components/shared/back-link";
 import { BundleInviteClient } from "./_components/bundle-invite-client";
+import { InviteManagerDialog } from "./_components/invite-manager-dialog";
 
 type BundleCand = {
   id: string;
@@ -267,14 +268,17 @@ export default async function PortalBundlePage({
                           Combined report (PDF)
                         </a>
                         {c.persona_session_id && (
-                          <a
-                            href={`/api/admin/bundle/${c.id}/hipo-report`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs font-semibold text-[#5391D5] hover:underline"
-                          >
-                            High-Potential Profile (PDF)
-                          </a>
+                          <>
+                            <a
+                              href={`/api/admin/bundle/${c.id}/hipo-report`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs font-semibold text-[#5391D5] hover:underline"
+                            >
+                              High-Potential Profile (PDF)
+                            </a>
+                            <InviteManagerDialog candidateId={c.id} candidateName={c.full_name} orgParam={access.viewingAsAdmin ? orgId : undefined} />
+                          </>
                         )}
                       </div>
                     ) : (

@@ -22,9 +22,11 @@ import {
   cognitiveTo5,
   COGNITIVE_DEV_ACTIVITIES,
   HIPO_BAND_LABEL,
+  engagementOverlay,
   type HipoCell,
   type HipoBand,
 } from "@/lib/reports/persona-hipo-model";
+import { latestEngagementForCandidate, type EngagementResult } from "@/lib/hipo/engagement";
 
 export type HipoMarker = { name: string; score: number };
 export type HipoSubtest = { key: string; name: string; pct: number; on5: number; band: string };
@@ -51,6 +53,8 @@ export type HipoPdfData = {
   // Development plan
   behaviouralDev: HipoDevItem[];
   cognitiveDev: { name: string; activities: string[] }[];
+  // Third pillar (manager-rated) - null when no completed survey exists.
+  engagement: (EngagementResult & { overlay: string | null }) | null;
 };
 
 export type HipoBuildResult =
@@ -65,6 +69,8 @@ export async function buildHipoPdfData(input: {
   cognitiveResultId: string | null;
   orgName?: string | null;
   organizationId?: string | null;
+  /** When set, the latest completed manager engagement survey is loaded. */
+  bundleCandidateId?: string | null;
 }): Promise<HipoBuildResult> {
   const sb = createServiceClient();
 
@@ -179,6 +185,16 @@ export async function buildHipoPdfData(input: {
     .map((s) => ({ name: s.name, activities: COGNITIVE_DEV_ACTIVITIES[s.key] ?? [] }))
     .filter((s) => s.activities.length > 0);
 
+  // ── Third pillar: manager-rated engagement (tolerant - absent survey or an
+  //    un-applied migration 00196 simply renders the two-pillar report). ──
+  let engagement: HipoPdfData["engagement"] = null;
+  if (input.bundleCandidateId) {
+    try {
+      const eng = await latestEngagementForCandidate(input.bundleCandidateId);
+      if (eng) engagement = { ...eng, overlay: engagementOverlay(cell, eng.band) };
+    } catch { /* tolerant */ }
+  }
+
   return {
     ok: true,
     organizationId: input.organizationId ?? null,
@@ -201,6 +217,7 @@ export async function buildHipoPdfData(input: {
       weights: HIPO_ABILITY_WEIGHTS,
       behaviouralDev,
       cognitiveDev,
+      engagement,
     },
   };
 }

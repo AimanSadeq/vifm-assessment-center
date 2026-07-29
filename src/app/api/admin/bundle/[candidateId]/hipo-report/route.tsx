@@ -67,8 +67,16 @@ export async function GET(_req: Request, { params }: { params: { candidateId: st
     cognitiveResultId: cand.cognitive_result_id,
     orgName,
     organizationId: cand.organization_id,
+    bundleCandidateId: cand.id,
   });
   if (!built.ok) return NextResponse.json({ error: built.error }, { status: built.status });
+
+  // Spec guardrail (docs/hipo-engagement-pillar-spec.md section 6): the client
+  // download says "manager-rated" without naming the individual manager. Staff
+  // (admin/consultant/assessor) keep the rater identity.
+  if (clientMgrOrgId && built.data.engagement) {
+    built.data.engagement = { ...built.data.engagement, managerName: "" };
+  }
 
   const buffer = await renderToBuffer(<HipoReportPdf d={built.data} />);
   const safe = (cand.full_name || "Candidate").replace(/[^a-zA-Z0-9\s]/g, "").replace(/\s+/g, "_") || "Candidate";

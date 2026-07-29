@@ -155,6 +155,26 @@ export function hipoCell(aspiration: number, ability: number): HipoCell {
   return HIPO_GRID.find((c) => c.col === col && c.row === row)!;
 }
 
+/**
+ * Engagement overlay on the nine-grid placement (spec section 4): the
+ * Engagement pillar never moves the cell - it annotates the conversation.
+ * Returns null when the combination needs no special caution.
+ */
+export function engagementOverlay(cell: HipoCell, engagementBand: HipoBand): string | null {
+  // Strong-aspiration column of profiles + weak engagement: invest carefully.
+  if (cell.row === 2 && engagementBand === "developing") {
+    return "Retention caution - the manager reading suggests engagement is not yet secured. Address engagement before heavy development investment, or the investment may walk out of the door.";
+  }
+  // The classic Untapped Expert surprise: capable, low drive to climb, but engaged.
+  if (cell.archetype.startsWith("Untapped Expert") && engagementBand === "strong") {
+    return "Stay-and-grow profile - engagement is strong despite low climb appetite. An expert-track path likely fits better than the exit risk this profile usually suggests.";
+  }
+  if (engagementBand === "developing") {
+    return "Engagement reads Developing - explore what would re-anchor this person before acting on the placement.";
+  }
+  return null;
+}
+
 /** Cognitive development activities per subtest (used when a subtest is the
  *  weakest element - the behavioural tips come from the competency tip bank). */
 export const COGNITIVE_DEV_ACTIVITIES: Record<string, string[]> = {

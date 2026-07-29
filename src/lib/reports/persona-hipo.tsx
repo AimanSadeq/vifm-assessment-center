@@ -184,9 +184,10 @@ export function HipoReportPdf({ d }: { d: HipoPdfData }) {
           High potential is read here through two measurable pillars. ASPIRATION - the drive, initiative and growth
           appetite to rise into bigger roles - is measured from eight behavioural markers in the VIFM Persona®
           sitting. ABILITY - the capability to succeed once there - blends the remaining behavioural competencies
-          with cognitive reasoning evidence from VIFM Logica®. A third element every credible high-potential decision
-          needs, ENGAGEMENT (the commitment to stay and grow with the organisation), cannot be read from an
-          assessment sitting: this report deliberately leaves it to the manager and HR conversation and says where.
+          with cognitive reasoning evidence from VIFM Logica®.{" "}
+          {d.engagement
+            ? "The third element, ENGAGEMENT (the commitment to stay and grow with the organisation), is read from a short survey completed by the line manager - a management judgement that informs the development conversation, shown as its own reading and never blended into the grid."
+            : "A third element every credible high-potential decision needs, ENGAGEMENT (the commitment to stay and grow with the organisation), cannot be read from an assessment sitting: this report deliberately leaves it to the manager and HR conversation and says where."}
         </Text>
 
         <View style={{ flexDirection: "row", gap: 10, marginTop: 4 }}>
@@ -197,6 +198,14 @@ export function HipoReportPdf({ d }: { d: HipoPdfData }) {
             bandLabel={d.bandLabel(d.abilityBand)}
             sub={d.cognitive != null ? `behavioural ${d.behavioural.toFixed(2)} · cognitive ${d.cognitive.toFixed(2)}` : "behavioural evidence only"}
           />
+          {d.engagement && (
+            <Gauge
+              label="Engagement · will they stay?"
+              value={d.engagement.score}
+              bandLabel={d.engagement.bandLabel}
+              sub="manager-rated"
+            />
+          )}
         </View>
 
         <View style={[s.panel, { backgroundColor: C.highlight, borderColor: C.accent }]}>
@@ -204,6 +213,12 @@ export function HipoReportPdf({ d }: { d: HipoPdfData }) {
           <Text style={[s.bigValue, { fontSize: 14 }]}>{d.cell.archetype}</Text>
           <Text style={[s.p, { marginTop: 4, marginBottom: 0 }]}>{d.cell.narrative}</Text>
         </View>
+        {d.engagement?.overlay && (
+          <View style={[s.panel, { backgroundColor: "#fffbeb", borderColor: "#f59e0b" }]}>
+            <Text style={[s.panelTitle, { color: "#92400e" }]}>Engagement overlay</Text>
+            <Text style={[s.p, { marginTop: 3, marginBottom: 0, color: "#78350f" }]}>{d.engagement.overlay}</Text>
+          </View>
+        )}
         <Footer name={d.takerName} />
       </Page>
 
@@ -290,6 +305,50 @@ export function HipoReportPdf({ d }: { d: HipoPdfData }) {
         <Footer name={d.takerName} />
       </Page>
 
+      {/* ── Engagement page (only when a manager survey is completed) ── */}
+      {d.engagement && (
+        <Page size="A4" style={s.page}>
+          <Text style={s.h2}>Engagement - will they stay?</Text>
+          <Text style={s.pSoft}>
+            Rated by {d.engagement.managerName ? `${d.engagement.managerName} (line manager)` : "the candidate's line manager"} on{" "}
+            {new Date(d.engagement.completedAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}.
+            Six observable statements on the same 1-5 scale as the other pillars. This is a single-rater management
+            judgement - prone to recency and halo effects - so treat it as a conversation opener, never a verdict.
+          </Text>
+
+          <View style={[s.panel, { backgroundColor: C.highlight, borderColor: C.accent }]}>
+            <Text style={s.panelTitle}>Overall engagement</Text>
+            <Text style={s.bigValue}>{d.engagement.score.toFixed(2)} / 5 · {d.engagement.bandLabel}</Text>
+          </View>
+
+          {d.engagement.items.map((it) => (
+            <View key={it.label} style={s.row}>
+              <Text style={s.rowName}>
+                {it.label}
+                {it.reverse ? " (reverse-scored)" : ""}
+              </Text>
+              <View style={{ width: 150 }}>
+                <View style={s.barTrack}><View style={[s.barFill, { width: `${(it.scored / 5) * 100}%` }]} /></View>
+              </View>
+              <Text style={s.rowVal}>{it.scored.toFixed(1)}</Text>
+            </View>
+          ))}
+
+          {d.engagement.overlay && (
+            <View style={[s.panel, { backgroundColor: "#fffbeb", borderColor: "#f59e0b", marginTop: 12 }]}>
+              <Text style={[s.panelTitle, { color: "#92400e" }]}>What this means for the placement</Text>
+              <Text style={[s.p, { marginTop: 3, marginBottom: 0, color: "#78350f" }]}>{d.engagement.overlay}</Text>
+            </View>
+          )}
+
+          <Text style={[s.pSoft, { marginTop: 10 }]}>
+            Engagement never moves the nine-grid placement - the grid stays a pure Aspiration x Ability read. This
+            page shapes what to DO with the placement: development investment lands best where engagement is secured.
+          </Text>
+          <Footer name={d.takerName} />
+        </Page>
+      )}
+
       {/* ── Page 5: development plan ── */}
       <Page size="A4" style={s.page}>
         <Text style={s.h2}>Development tips & activities</Text>
@@ -328,9 +387,11 @@ export function HipoReportPdf({ d }: { d: HipoPdfData }) {
             ? `Ability = ${Math.round(d.weights.behavioural * 100)}% behavioural + ${Math.round(d.weights.cognitive * 100)}% cognitive.`
             : "No Logica result was attached to this sitting, so Ability here rests on behavioural evidence alone - adding the recommended reasoning tests strengthens the pillar."}{" "}
           Band cuts are indicative (scale-midpoint based)
-          until a VIFM norm sample is established. Engagement - the commitment to remain and grow with the organisation -
-          is not measurable from this sitting and must come from the manager/HR conversation; treat this profile as one
-          input to a high-potential nomination, never the decision itself.
+          until a VIFM norm sample is established.{" "}
+          {d.engagement
+            ? "Engagement is a six-item survey rated by the line manager on the same 1-5 scale - a single-rater management judgement that annotates the placement and never moves it."
+            : "Engagement - the commitment to remain and grow with the organisation - is not measurable from this sitting and must come from the manager/HR conversation."}{" "}
+          Treat this profile as one input to a high-potential nomination, never the decision itself.
         </Text>
         <Footer name={d.takerName} />
       </Page>

@@ -161,6 +161,12 @@ const isRoleReadinessRoute = (pathname: string) =>
 const isBundleApplyRoute = (pathname: string) =>
   pathname.startsWith("/bundle/apply/") || pathname.startsWith("/api/bundle/");
 
+// HiPo Engagement manager survey - a line manager (no account) rates six
+// statements via hipo_engagement_surveys.access_token. Identity is derived
+// server-side from the token; single-use enforced in the submit action.
+const isHipoEngageRoute = (pathname: string) =>
+  pathname.startsWith("/hipo/engage/");
+
 // Public, read-only "Licensed Portal Preview" share link - a no-account
 // leave-behind for a prospect. The page renders only representative sample data
 // from the URL params (no DB, no real records), so it is safe to expose without
@@ -200,6 +206,7 @@ export async function middleware(request: NextRequest) {
     isPersonaPublicRoute(request.nextUrl.pathname) ||
     isRoleReadinessRoute(request.nextUrl.pathname) ||
     isBundleApplyRoute(request.nextUrl.pathname) ||
+    isHipoEngageRoute(request.nextUrl.pathname) ||
     isPublicPreviewRoute(request.nextUrl.pathname) ||
     isDemoRequestRoute(request.nextUrl.pathname) ||
     isProposalClientRoute(request.nextUrl.pathname)

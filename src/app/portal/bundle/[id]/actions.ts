@@ -5,6 +5,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { drawAllocation, releaseAllocation } from "@/lib/clients/allocations";
 import { RUNNABLE_BUNDLE_STAGES, type BundleStage } from "@/lib/bespoke/candidates";
 import { portalService, type CaliberService } from "@/lib/clients/portal-services";
+import { emailEngagementInvitation, appOrigin } from "@/lib/hipo/email";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const UUID_RE = /^[0-9a-fA-F-]{36}$/;
@@ -74,4 +75,56 @@ export async function clientInviteBundleCandidateAction(input: {
     return { error: error?.message?.includes("bundle_candidates") ? "The one-sitting flow is not enabled yet - contact VIFM." : error?.message ?? "Could not create the invite." };
   }
   return { ok: true, url: `/bundle/apply/${data.access_token}` };
+}
+
+/**
+ * Invite a candidate's LINE MANAGER to the HiPo engagement mini-survey
+ * (docs/hipo-engagement-pillar-spec.md). Org-gated the same way as the
+ * candidate invite: the caller must be an admin or the client_manager of the
+ * org the bundle candidate belongs to. Creates one survey row (fresh token)
+ * per invite and best-effort emails the manager; the absolute link is always
+ * returned for the copy-link fallback.
+ */
+export async function inviteEngagementManagerAction(input: {
+  candidateId: string;
+  managerName: string;
+  managerEmail: string;
+  orgParam?: string;
+}): Promise<{ ok: true; url: string; emailed: boolean } | { error: string }> {
+  const access = await resolvePortalAccess(input.orgParam);
+  if (!access.ok || !access.orgId) return { error: "Not authorized." };
+  if (!UUID_RE.test(input.candidateId)) return { error: "Invalid candidate." };
+
+  const name = (input.managerName || "").trim();
+  const email = (input.managerEmail || "").trim().toLowerCase();
+  if (name.length < 2 || !EMAIL_RE.test(email)) return { error: "Enter the manager's name and a valid email." };
+
+  const sb = createServiceClient();
+  const { data: cand } = await sb
+    .from("bundle_candidates")
+    .select("id, full_name, organization_id")
+    .eq("id", input.candidateId)
+    .eq("organization_id", access.orgId)
+    .maybeSingle<{ id: string; full_name: string; organization_id: string | null }>();
+  if (!cand) return { error: "Candidate not found in your organisation." };
+
+  const { data: survey, error } = await sb
+    .from("hipo_engagement_surveys")
+    .insert({ bundle_candidate_id: cand.id, manager_name: name, manager_email: email })
+    .select("access_token")
+    .single<{ access_token: string }>();
+  if (error || !survey) {
+    return {
+      error: error?.message?.includes("hipo_engagement_surveys")
+        ? "The engagement survey is not enabled yet - contact VIFM."
+        : error?.message ?? "Could not create the survey invite.",
+    };
+  }
+
+  const url = `${appOrigin()}/hipo/engage/${survey.access_token}`;
+  const sent = await emailEngagementInvitation({ to: email, managerName: name, candidateName: cand.full_name, url });
+  if (sent.ok) {
+    await sb.from("hipo_engagement_surveys").update({ invited_at: new Date().toISOString() }).eq("access_token", survey.access_token);
+  }
+  return { ok: true, url, emailed: sent.ok };
 }

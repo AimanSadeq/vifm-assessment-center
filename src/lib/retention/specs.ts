@@ -69,6 +69,15 @@ export const RETENTION_SPECS: RetentionSpec[] = [
     deletes: [{ table: "rr_candidates" }],
   },
   {
+    key: "bespoke",
+    label: "Bespoke bundles (one-sitting + engagement surveys)",
+    // bundle_candidates IS the personal record (name, email, access token);
+    // hipo_engagement_surveys (manager name/email + free-text context about the
+    // candidate) cascades from it (00196). The underlying Persona/Logica
+    // records are governed by their own service specs above.
+    deletes: [{ table: "bundle_candidates" }],
+  },
+  {
     key: "ara",
     label: "AR Compass (vouchers)",
     // Assessment purge stays in src/lib/ara/retention.ts (bespoke collateral).

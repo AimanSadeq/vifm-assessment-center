@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Boxes, FileText, Search, Award } from "lucide-react";
+import { InviteManagerDialog } from "@/app/portal/bundle/[id]/_components/invite-manager-dialog";
 
 // Completed bespoke BUNDLE candidates (the one-sitting Persona + Logica flow)
 // with their two reports: the Combined report and the High-Potential Profile.
@@ -16,6 +17,8 @@ export type BundleReportRow = {
   bundleName: string;
   clientName: string;
   hasPersona: boolean;
+  /** organizations.id - lets the admin invite the manager scoped to the org. */
+  orgId: string | null;
 };
 
 function fmtDate(s: string | null): string {
@@ -98,14 +101,21 @@ export function BundleReportsPanel({ reports }: { reports: BundleReportRow[] }) 
                           <FileText className="h-3.5 w-3.5" /> Combined
                         </a>
                         {r.hasPersona && (
-                          <a
-                            href={`/api/admin/bundle/${r.id}/hipo-report`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-[#5391D5] hover:underline"
-                          >
-                            <Award className="h-3.5 w-3.5" /> High-Potential
-                          </a>
+                          <>
+                            <a
+                              href={`/api/admin/bundle/${r.id}/hipo-report`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 text-xs font-semibold text-[#5391D5] hover:underline"
+                            >
+                              <Award className="h-3.5 w-3.5" /> High-Potential
+                            </a>
+                            <InviteManagerDialog
+                              candidateId={r.id}
+                              candidateName={r.fullName || "this candidate"}
+                              orgParam={r.orgId ?? undefined}
+                            />
+                          </>
                         )}
                       </div>
                     </td>

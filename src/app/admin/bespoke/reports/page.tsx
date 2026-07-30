@@ -102,6 +102,7 @@ export default async function BespokeReportsPage() {
     bundleName: bundleNameById.get(r.bespoke_service_id) ?? "Bespoke bundle",
     clientName: r.organization_id ? clientNameByAcId.get(r.organization_id) ?? "-" : "Direct / sample",
     hasPersona: !!r.persona_session_id,
+    orgId: r.organization_id,
   }));
 
   const reports: BespokeReport[] = rrRows.map((r) => ({

@@ -156,10 +156,13 @@ const isRoleReadinessRoute = (pathname: string) =>
   pathname.startsWith("/api/role-readiness/");
 
 // Bespoke bundle candidate flow - a no-account candidate takes the composed
-// bundle's chained sitting (Persona + Logica) via bundle_candidates.access_token.
-// Identity is derived server-side from the token. Bypass auth like Role Readiness.
+// bundle's chained sitting (Persona + Logica) via bundle_candidates.access_token,
+// or redeems a multi-seat voucher at /bundle/redeem (the redeem action provisions
+// a candidate + forwards to /bundle/apply/[token]). Bypass auth like Role Readiness.
 const isBundleApplyRoute = (pathname: string) =>
-  pathname.startsWith("/bundle/apply/") || pathname.startsWith("/api/bundle/");
+  pathname.startsWith("/bundle/apply/") ||
+  pathname.startsWith("/bundle/redeem") ||
+  pathname.startsWith("/api/bundle/");
 
 // HiPo Engagement manager survey - a line manager (no account) rates six
 // statements via hipo_engagement_surveys.access_token. Identity is derived

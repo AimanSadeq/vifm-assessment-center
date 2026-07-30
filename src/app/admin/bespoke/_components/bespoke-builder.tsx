@@ -3,7 +3,7 @@
 import { useState } from "react";
 import {
   Boxes, Languages, BrainCircuit, Layers, BadgeCheck, UserSearch, Compass, Aperture,
-  Check, Plus, Building2, Trash2, Sparkles, Package, UserCheck,
+  Check, Plus, Building2, Trash2, Sparkles, Package, UserCheck, Ticket,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,8 +16,10 @@ import { toast } from "sonner";
 import { PORTAL_SERVICES, type CaliberService } from "@/lib/clients/portal-services";
 import { COGNITIVE_SUBTESTS, COGNITIVE_SUBTEST_KEYS } from "@/lib/psychometrics/framework";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
-import { composeBundleAction, archiveBundleAction, inviteBundleCandidateAction } from "../actions";
+import { composeBundleAction, archiveBundleAction, inviteBundleCandidateAction, createBundleVoucherAction, listBundleVouchersAction } from "../actions";
 import { ReportCoverageBadges } from "./report-coverage-badges";
+
+type ExistingVoucher = { code: string; used: number; max: number; label: string | null; expiresAt: string | null };
 
 // Competency picker source: the 41, grouped by cluster (stable order).
 const COMPETENCY_CLUSTERS: { cluster: string; items: { id: string; name: string }[] }[] = (() => {
@@ -112,6 +114,113 @@ function InviteCandidate({ bundleId }: { bundleId: string }) {
           </div>
           {url && (
             <p className="break-all rounded bg-white px-2 py-1 font-mono text-[10px] text-[#010131]">{url}</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Create a multi-seat shared voucher link for a saved bundle - one code that N
+ *  delegates redeem at /bundle/redeem, each self-serving their own sitting. */
+function CreateVoucher({ bundleId }: { bundleId: string }) {
+  const [open, setOpen] = useState(false);
+  const [seats, setSeats] = useState("10");
+  const [label, setLabel] = useState("");
+  const [expiresAt, setExpiresAt] = useState("");
+  const [link, setLink] = useState<string | null>(null);
+  const [code, setCode] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [existing, setExisting] = useState<ExistingVoucher[] | null>(null);
+
+  const refreshList = async () => {
+    const res = await listBundleVouchersAction(bundleId);
+    if ("ok" in res) setExisting(res.vouchers);
+  };
+  const expand = () => { setOpen(true); void refreshList(); };
+  const copyRow = async (c: string) => {
+    const full = `${window.location.origin}/bundle/redeem?code=${c}`;
+    try { await navigator.clipboard.writeText(full); toast.success("Link copied"); } catch { toast.error("Copy failed"); }
+  };
+
+  const create = async () => {
+    const n = Math.floor(Number(seats));
+    if (!Number.isFinite(n) || n < 1) { toast.error("Enter at least 1 seat."); return; }
+    setBusy(true);
+    try {
+      const res = await createBundleVoucherAction({
+        bundleId,
+        seats: n,
+        label: label.trim() || undefined,
+        expiresAt: expiresAt || null,
+      });
+      if ("error" in res) { toast.error(res.error); return; }
+      const full = `${window.location.origin}/bundle/redeem?code=${res.code}`;
+      setCode(res.code);
+      setLink(full);
+      try { await navigator.clipboard.writeText(full); toast.success("Voucher link copied to clipboard"); }
+      catch { toast.success("Voucher created"); }
+      void refreshList();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mt-2">
+      {!open ? (
+        <Button size="sm" variant="outline" className="h-7 gap-1.5 border-[#c026d3]/50 text-[11px] font-semibold text-[#c026d3] hover:bg-[#c026d3]/5" onClick={expand}>
+          <Ticket className="h-3 w-3" /> Create voucher - multi-seat link
+        </Button>
+      ) : (
+        <div className="mt-1 space-y-1.5 rounded-md border bg-muted/30 p-2">
+          <div className="grid gap-1.5 sm:grid-cols-3">
+            <div>
+              <label className="text-[10px] font-medium text-muted-foreground">Seats</label>
+              <Input type="number" min={1} value={seats} onChange={(e) => setSeats(e.target.value)} className="h-8 text-xs" />
+            </div>
+            <div>
+              <label className="text-[10px] font-medium text-muted-foreground">Label (optional)</label>
+              <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Cohort A" className="h-8 text-xs" />
+            </div>
+            <div>
+              <label className="text-[10px] font-medium text-muted-foreground">Expires (optional)</label>
+              <Input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} className="h-8 text-xs" />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button size="sm" className="h-7 gap-1 text-[11px]" disabled={busy} onClick={create}>
+              {busy ? "Creating…" : "Create voucher link"}
+            </Button>
+            <button type="button" onClick={() => { setOpen(false); setLink(null); setCode(null); }} className="text-[11px] text-muted-foreground hover:underline">
+              Close
+            </button>
+          </div>
+          {link && (
+            <div className="space-y-1">
+              <p className="text-[10px] text-muted-foreground">Share this one link - each person enters their own details and gets their own sitting. Code: <span className="font-mono font-semibold text-[#010131]">{code}</span></p>
+              <p className="break-all rounded bg-white px-2 py-1 font-mono text-[10px] text-[#010131]">{link}</p>
+            </div>
+          )}
+          {existing && existing.length > 0 && (
+            <div className="mt-1 border-t pt-1.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Issued vouchers</p>
+              <ul className="mt-1 space-y-1">
+                {existing.map((v) => (
+                  <li key={v.code} className="flex items-center justify-between gap-2 text-[11px]">
+                    <span className="min-w-0 truncate">
+                      <span className="font-mono font-semibold text-[#010131]">{v.code}</span>
+                      {v.label ? <span className="text-muted-foreground"> · {v.label}</span> : null}
+                      <span className="text-muted-foreground"> · {v.max - v.used}/{v.max} seats left</span>
+                      {v.expiresAt ? <span className="text-muted-foreground"> · exp {new Date(v.expiresAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</span> : null}
+                    </span>
+                    <button type="button" onClick={() => copyRow(v.code)} className="shrink-0 font-semibold text-[#c026d3] hover:underline">
+                      Copy link
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </div>
       )}
@@ -539,6 +648,7 @@ export function BespokeBuilder({ clients, initialBundles = [] }: { clients: Clie
                       Logica voucher runs ONLY Logica and confused testing. The
                       bundle is delivered through the one-sitting invite below. */}
                   <InviteCandidate bundleId={b.id} />
+                  <CreateVoucher bundleId={b.id} />
                 </li>
               ))}
             </ul>

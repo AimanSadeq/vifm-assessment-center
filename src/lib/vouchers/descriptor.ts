@@ -61,6 +61,12 @@ export const VOUCHER_DESCRIPTORS = {
     key: "roleReadiness", codePrefix: "RR", table: "rr_vouchers", redemptionsTable: null,
     claimRpc: "rr_claim_voucher_seat", releaseRpc: "rr_release_voucher_seat", redeemPath: "/role-readiness/redeem",
   },
+  bundle: {
+    // No redemptions table: redeeming provisions a bundle_candidates row directly
+    // (src/lib/bespoke/bundle-vouchers.ts) - same shape as roleReadiness.
+    key: "bundle", codePrefix: "BND", table: "bundle_vouchers", redemptionsTable: null,
+    claimRpc: "bundle_voucher_claim", releaseRpc: "bundle_voucher_release_seat", redeemPath: "/bundle/redeem",
+  },
 } as const satisfies Record<string, VoucherDescriptor>;
 
 export type VoucherServiceKey = keyof typeof VOUCHER_DESCRIPTORS;

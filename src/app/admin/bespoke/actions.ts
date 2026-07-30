@@ -137,3 +137,46 @@ export async function inviteBundleCandidateAction(input: {
   }
   return { ok: true, url: `/bundle/apply/${data.access_token}` };
 }
+
+/**
+ * Create a multi-seat voucher (shared redeemable link) for a bundle, mirroring
+ * the other services' voucher model. Returns the code so the admin can copy the
+ * redeem link. Admin-gated; org is inherited from the bundle.
+ */
+export async function createBundleVoucherAction(input: {
+  bundleId: string;
+  seats: number;
+  label?: string;
+  expiresAt?: string | null;
+}): Promise<{ ok: true; code: string } | { error: string }> {
+  const g = await guard();
+  if (!g.ok) return { error: g.error };
+
+  const { createBundleVoucher } = await import("@/lib/bespoke/bundle-vouchers");
+  const res = await createBundleVoucher({
+    bundleId: input.bundleId,
+    mode: "pool",
+    seats: input.seats,
+    label: input.label ?? null,
+    expiresAt: input.expiresAt ?? null,
+    createdBy: g.caller.isDev ? null : g.caller.uid,
+  });
+  if ("error" in res) return { error: res.error };
+  return { ok: true, code: res.codes[0] };
+}
+
+/** List a bundle's issued vouchers (admin) so codes + remaining seats are
+ *  retrievable after the create panel closes. */
+export async function listBundleVouchersAction(bundleId: string): Promise<{
+  ok: true;
+  vouchers: { code: string; used: number; max: number; label: string | null; expiresAt: string | null }[];
+} | { error: string }> {
+  const g = await guard();
+  if (!g.ok) return { error: g.error };
+  const { loadBundleVouchers } = await import("@/lib/bespoke/bundle-vouchers");
+  const rows = await loadBundleVouchers(bundleId);
+  return {
+    ok: true,
+    vouchers: rows.map((v) => ({ code: v.code, used: v.uses, max: v.max_uses, label: v.label, expiresAt: v.expires_at })),
+  };
+}

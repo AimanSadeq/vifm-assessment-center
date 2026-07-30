@@ -3,7 +3,7 @@
 import { useState } from "react";
 import {
   Boxes, Languages, BrainCircuit, Layers, BadgeCheck, UserSearch, Compass, Aperture,
-  Check, Plus, Building2, Trash2, Sparkles, Package,
+  Check, Plus, Building2, Trash2, Sparkles, Package, UserCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -285,6 +285,25 @@ export function BespokeBuilder({ clients, initialBundles = [] }: { clients: Clie
               );
             })}
           </div>
+
+          {/* HiPo engagement note - a Persona + Logica bundle is High-Potential
+              capable; the third pillar (Engagement) is manager-rated and added
+              AFTER the sitting, so it is not a service to pick here. */}
+          {personaOn && logicaOn && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+              <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-800">
+                <UserCheck className="h-3.5 w-3.5" /> High-Potential Profile - adding the Engagement pillar
+              </p>
+              <p className="mt-1 text-[11px] leading-relaxed text-amber-800">
+                This Persona + Logica bundle generates the High-Potential Profile (Aspiration x Ability). The third
+                pillar, <span className="font-semibold">Engagement (&ldquo;will they stay?&rdquo;)</span>, is rated by the
+                candidate&apos;s <span className="font-semibold">line manager</span>, not the candidate - so it is not
+                selected here. After a candidate completes their sitting, use{" "}
+                <span className="font-semibold">&ldquo;Invite manager&rdquo;</span> on their row (client portal or admin
+                view) to send the 3-minute survey; the Engagement gauge then appears on their report automatically.
+              </p>
+            </div>
+          )}
 
           {/* Logica element scope - pick which reasoning subtests the package includes. */}
           {logicaOn && (

@@ -17,6 +17,7 @@ import { PORTAL_SERVICES, type CaliberService } from "@/lib/clients/portal-servi
 import { COGNITIVE_SUBTESTS, COGNITIVE_SUBTEST_KEYS } from "@/lib/psychometrics/framework";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
 import { composeBundleAction, archiveBundleAction, inviteBundleCandidateAction } from "../actions";
+import { ReportCoverageBadges } from "./report-coverage-badges";
 
 // Competency picker source: the 41, grouped by cluster (stable order).
 const COMPETENCY_CLUSTERS: { cluster: string; items: { id: string; name: string }[] }[] = (() => {
@@ -379,6 +380,11 @@ export function BespokeBuilder({ clients, initialBundles = [] }: { clients: Clie
               {personaIds.length === 0 && (
                 <p className="mt-2 text-[11px] text-rose-600">Pick at least one competency.</p>
               )}
+              {/* Live "what does this selection buy?" - which model reports
+                  (Leadership / DARE / EQ / HiPo) come out full vs partial. */}
+              <div className="mt-2">
+                <ReportCoverageBadges selectedIds={personaIds} />
+              </div>
             </div>
           )}
         </div>

@@ -4,6 +4,7 @@ import { loadPlatformClients } from "@/lib/clients/registry";
 import { createServiceClient } from "@/lib/supabase/server";
 import { BackLink } from "@/components/shared/back-link";
 import { AllReportsPanel, type BespokeReport } from "../_components/all-reports-panel";
+import { BundleReportsPanel, type BundleReportRow } from "../_components/bundle-reports-panel";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Bespoke Reports · VIFM" };
@@ -60,6 +61,49 @@ export default async function BespokeReportsPage() {
     }
   }
 
+  // Completed BUNDLE candidates (one-sitting Persona + Logica) - the Combined
+  // report and the High-Potential Profile live on these rows.
+  type BundleCandRow = {
+    id: string;
+    full_name: string | null;
+    email: string | null;
+    completed_at: string | null;
+    persona_session_id: string | null;
+    bespoke_service_id: string;
+    organization_id: string | null;
+  };
+  let bundleRows: BundleCandRow[] = [];
+  try {
+    const { data } = await sb
+      .from("bundle_candidates")
+      .select("id, full_name, email, completed_at, persona_session_id, bespoke_service_id, organization_id")
+      .eq("status", "completed")
+      .order("completed_at", { ascending: false })
+      .limit(200);
+    bundleRows = (data ?? []) as BundleCandRow[];
+  } catch {
+    bundleRows = [];
+  }
+  const bundleNameById = new Map<string, string>();
+  const bundleIds = Array.from(new Set(bundleRows.map((r) => r.bespoke_service_id)));
+  if (bundleIds.length > 0) {
+    try {
+      const { data: svcs } = await sb.from("bespoke_services").select("id, name_en").in("id", bundleIds);
+      for (const s of (svcs ?? []) as { id: string; name_en: string }[]) bundleNameById.set(s.id, s.name_en);
+    } catch {
+      /* tolerant */
+    }
+  }
+  const bundleReports: BundleReportRow[] = bundleRows.map((r) => ({
+    id: r.id,
+    fullName: r.full_name,
+    email: r.email,
+    completedAt: r.completed_at,
+    bundleName: bundleNameById.get(r.bespoke_service_id) ?? "Bespoke bundle",
+    clientName: r.organization_id ? clientNameByAcId.get(r.organization_id) ?? "-" : "Direct / sample",
+    hasPersona: !!r.persona_session_id,
+  }));
+
   const reports: BespokeReport[] = rrRows.map((r) => ({
     id: r.id,
     fullName: r.full_name,
@@ -80,6 +124,7 @@ export default async function BespokeReportsPage() {
           Every completed Bespoke assessment, in one place. Open any candidate&apos;s report or search to find one.
         </p>
       </div>
+      <BundleReportsPanel reports={bundleReports} />
       <AllReportsPanel reports={reports} />
     </div>
   );

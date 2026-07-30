@@ -39,6 +39,7 @@ import {
   ListChecks,
   ShieldCheck,
   FlaskConical,
+  Microscope,
   TrendingUp,
   Ticket,
   FileClock,
@@ -180,6 +181,7 @@ const NAV: NavEntry[] = [
       items: [
         link("/admin/licensed-preview", "Licensed Preview", MonitorPlay),
         link("/compare", "adminNav.comparePortals", Table2),
+        link("/admin/models", "Scientific Models", Microscope),
         link("/evidence", "adminNav.researchValidity", BookOpen),
         link("/admin/clients", "adminNav.clients", Building2),
         link("/admin/demo", "Demo data", Database),

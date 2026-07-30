@@ -120,7 +120,7 @@ export function dataResidencyStatement(r: DataResidency): string {
     case "uae":
       return "All candidate and assessment data is stored and processed within the United Arab Emirates, meeting in-country (sovereign) data-residency requirements.";
     default:
-      return "All candidate and assessment data is hosted on VIFM's managed cloud platform, with in-country (KSA or UAE) data residency available on request.";
+      return "All candidate and assessment data is hosted on VIFM's managed cloud platform, with in-country (KSA or UAE) data residency available on request for an additional cost to be agreed with the client.";
   }
 }
 const num = (v: unknown, f = 0) => { const n = Number(v); return Number.isFinite(n) ? n : f; };

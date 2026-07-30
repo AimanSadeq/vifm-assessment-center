@@ -104,6 +104,15 @@ export const METHODOLOGY_BRIEFS: readonly MethodologyBrief[] = [
     pillar: "manage",
   },
   {
+    slug: "persona-hipo",
+    service: "High-Potential Profile",
+    tagline: "Aspiration x Ability nine-grid with manager-rated engagement",
+    eyebrow: "VIFM High-Potential Profile",
+    file: "VIFM-HiPo-Model.md",
+    filename: "VIFM-HiPo-Model.pdf",
+    pillar: "manage",
+  },
+  {
     slug: "fluent",
     service: "Fluent",
     tagline: "Indicative CEFR English placement",

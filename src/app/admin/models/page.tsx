@@ -13,6 +13,16 @@ export const metadata = { title: "Scientific Models · VIFM" };
 // methodology briefs, which live on /evidence).
 const MODEL_SLUGS = ["persona-leadership", "persona-dare", "persona-eq", "persona-hipo"] as const;
 
+// Which models have a downloadable sample report, and its route. HiPo has a
+// bespoke route (it renders its own demo data + engagement); the other three
+// share the generic [slug]/sample route.
+const SAMPLE_REPORT_HREF: Record<string, string> = {
+  "persona-hipo": "/api/admin/models/hipo-sample/pdf",
+  "persona-leadership": "/api/admin/models/persona-leadership/sample/pdf",
+  "persona-dare": "/api/admin/models/persona-dare/sample/pdf",
+  "persona-eq": "/api/admin/models/persona-eq/sample/pdf",
+};
+
 const MODEL_DETAIL: Record<string, { measures: string }> = {
   "persona-leadership": {
     measures: "16 management + 25 leadership competencies from the VIFM 41, contrasted as two orientations with a balance read.",
@@ -79,9 +89,9 @@ export default async function ScientificModelsPage() {
               >
                 <Download className="h-3.5 w-3.5" /> Download model PDF
               </a>
-              {m.slug === "persona-hipo" && (
+              {SAMPLE_REPORT_HREF[m.slug] && (
                 <a
-                  href="/api/admin/models/hipo-sample/pdf"
+                  href={SAMPLE_REPORT_HREF[m.slug]}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-1.5 rounded-md border border-[#5391D5] px-3.5 py-2 text-xs font-semibold text-[#5391D5] transition hover:bg-[#5391D5]/10"

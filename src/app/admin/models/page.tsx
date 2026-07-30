@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { Microscope, Download, BookOpen } from "lucide-react";
+import { Microscope, Download, BookOpen, FileText } from "lucide-react";
 import Link from "next/link";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { METHODOLOGY_BRIEFS } from "@/lib/reports/methodology-briefs-registry";
@@ -70,7 +70,7 @@ export default async function ScientificModelsPage() {
             <p className="mt-2 flex-1 text-xs text-muted-foreground">
               <span className="font-semibold text-foreground">Measures:</span> {MODEL_DETAIL[m.slug]?.measures}
             </p>
-            <div className="mt-4">
+            <div className="mt-4 flex flex-wrap gap-2">
               <a
                 href={`/api/methodology/${m.slug}/pdf`}
                 target="_blank"
@@ -79,6 +79,16 @@ export default async function ScientificModelsPage() {
               >
                 <Download className="h-3.5 w-3.5" /> Download model PDF
               </a>
+              {m.slug === "persona-hipo" && (
+                <a
+                  href="/api/admin/models/hipo-sample/pdf"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-[#5391D5] px-3.5 py-2 text-xs font-semibold text-[#5391D5] transition hover:bg-[#5391D5]/10"
+                >
+                  <FileText className="h-3.5 w-3.5" /> View sample report
+                </a>
+              )}
             </div>
           </div>
         ))}

@@ -78,6 +78,25 @@ export const HIPO_BAND_LABEL: Record<HipoBand, string> = {
   strong: "Strong",
 };
 
+/** What each band MEANS on the shared 1-5 scale, with its numeric range - shown
+ *  as a legend so a reader knows how to read "3.6 / Solid" without guessing. */
+export const HIPO_BAND_DEFINITION: Record<HipoBand, { range: string; meaning: string }> = {
+  developing: {
+    range: `below ${HIPO_CUTS.solidAt.toFixed(1)}`,
+    meaning: "Below the level typically expected for the next role - a clear development priority.",
+  },
+  solid: {
+    range: `${HIPO_CUTS.solidAt.toFixed(1)} to ${HIPO_CUTS.strongAt.toFixed(1)}`,
+    meaning: "At or around the standard expected today - a dependable base with genuine headroom.",
+  },
+  strong: {
+    range: `${HIPO_CUTS.strongAt.toFixed(1)} and above`,
+    meaning: "Clearly above the expected standard - a genuine strength to build on and deploy.",
+  },
+};
+
+export const HIPO_BANDS_ORDERED: HipoBand[] = ["developing", "solid", "strong"];
+
 /** Map a Logica % correct onto the shared 1-5 scale. */
 export function cognitiveTo5(pctCorrect: number): number {
   const p = Math.max(0, Math.min(100, pctCorrect));

@@ -17,7 +17,7 @@
 import React from "react";
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import type { HipoPdfData } from "@/lib/reports/persona-hipo-data";
-import { HIPO_GRID, HIPO_LOGICA_RECOMMENDATION } from "@/lib/reports/persona-hipo-model";
+import { HIPO_GRID, HIPO_LOGICA_RECOMMENDATION, HIPO_BAND_DEFINITION, HIPO_BAND_LABEL, HIPO_BANDS_ORDERED } from "@/lib/reports/persona-hipo-model";
 
 const C = {
   primary: "#010131",
@@ -72,6 +72,30 @@ function Gauge({ label, value, bandLabel, sub }: { label: string; value: number;
       <Text style={s.bigValue}>{value.toFixed(2)} / 5</Text>
       <View style={s.barTrack}><View style={[s.barFill, { width: `${Math.min(100, (value / 5) * 100)}%` }]} /></View>
       <Text style={[s.pSoft, { marginTop: 4, marginBottom: 0 }]}>{bandLabel}{sub ? ` · ${sub}` : ""}</Text>
+    </View>
+  );
+}
+
+const BAND_DOT: Record<string, string> = { developing: "#be123c", solid: "#b45309", strong: "#059669" };
+
+/** Reading-the-bands legend - every pillar (Aspiration / Ability / Engagement)
+ *  is scored on the shared 1-5 scale, so one legend explains all of them. */
+function BandLegend() {
+  return (
+    <View style={[s.panel, { marginBottom: 10 }]}>
+      <Text style={s.panelTitle}>Reading the bands (shared 1-5 scale)</Text>
+      {HIPO_BANDS_ORDERED.map((b) => (
+        <View key={b} style={{ flexDirection: "row", alignItems: "flex-start", marginTop: 4 }}>
+          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: BAND_DOT[b], marginTop: 3, marginRight: 5 }} />
+          <Text style={{ fontSize: 8.5, color: C.text, flex: 1, lineHeight: 1.4 }}>
+            <Text style={{ fontFamily: "Helvetica-Bold" }}>{HIPO_BAND_LABEL[b]} ({HIPO_BAND_DEFINITION[b].range})</Text>
+            {" - "}{HIPO_BAND_DEFINITION[b].meaning}
+          </Text>
+        </View>
+      ))}
+      <Text style={{ fontSize: 7.5, color: C.textLight, marginTop: 5 }}>
+        Band cuts are indicative (scale-midpoint based) until a VIFM norm sample is established.
+      </Text>
     </View>
   );
 }
@@ -226,6 +250,7 @@ export function HipoReportPdf({ d }: { d: HipoPdfData }) {
             <Text style={[s.p, { marginTop: 3, marginBottom: 0, color: "#78350f" }]}>{d.engagement.overlay}</Text>
           </View>
         )}
+        <BandLegend />
         <Footer name={d.takerName} />
       </Page>
 
@@ -327,6 +352,7 @@ export function HipoReportPdf({ d }: { d: HipoPdfData }) {
             <Text style={s.panelTitle}>Overall engagement</Text>
             <Text style={s.bigValue}>{d.engagement.score.toFixed(2)} / 5 · {d.engagement.bandLabel}</Text>
           </View>
+          <BandLegend />
 
           {d.engagement.items.map((it) => (
             <View key={it.label} style={s.row}>

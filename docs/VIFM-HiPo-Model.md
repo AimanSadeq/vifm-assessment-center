@@ -81,10 +81,13 @@ individual plotted in their cell.
 
 ## 5. Engagement (manager-rated)
 
-Six observable statements answered by the line manager on a 1-5 scale, taking
-about three minutes: future-here orientation, discretionary effort, acting on
-development, retention-risk signals (reverse-keyed), purpose alignment, and
-internal appetite for bigger responsibility. The score renders as a third
+Around twenty observable statements answered by the line manager on a 1-5
+scale, taking about five minutes: stay-intent and retention-risk signals
+(reverse-keyed), discretionary effort, acting on development, purpose and
+values alignment, appetite for bigger responsibility, advocacy, pride, energy,
+ownership, resilience, relationships, long-term orientation, learning,
+initiative, reliability, and whether they would recommend the organisation. The
+score renders as a third
 gauge, and specific combinations produce an overlay note - for example, a
 High Potential placement with Developing engagement is flagged "secure
 engagement before heavy development investment."

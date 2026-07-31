@@ -343,9 +343,10 @@ export function HipoReportPdf({ d }: { d: HipoPdfData }) {
           <Text style={s.h2}>Engagement - will they stay?</Text>
           <Text style={s.pSoft}>
             Rated by {d.engagement.managerName ? `${d.engagement.managerName} (line manager)` : "the candidate's line manager"} on{" "}
-            {new Date(d.engagement.completedAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}.
-            Six observable statements on the same 1-5 scale as the other pillars. This is a single-rater management
-            judgement - prone to recency and halo effects - so treat it as a conversation opener, never a verdict.
+            {new Date(d.engagement.completedAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}.{" "}
+            {d.engagement.items.length} observable statements on the same 1-5 scale as the other pillars. This is a
+            single-rater management judgement - prone to recency and halo effects - so treat it as a conversation
+            opener, never a verdict.
           </Text>
 
           <View style={[s.panel, { backgroundColor: C.highlight, borderColor: C.accent }]}>
@@ -422,7 +423,7 @@ export function HipoReportPdf({ d }: { d: HipoPdfData }) {
           Band cuts are indicative (scale-midpoint based)
           until a VIFM norm sample is established.{" "}
           {d.engagement
-            ? "Engagement is a six-item survey rated by the line manager on the same 1-5 scale - a single-rater management judgement that annotates the placement and never moves it."
+            ? "Engagement is a manager-rated survey on the same 1-5 scale - a single-rater management judgement that annotates the placement and never moves it."
             : "Engagement - the commitment to remain and grow with the organisation - is not measurable from this sitting and must come from the manager/HR conversation."}{" "}
           Treat this profile as one input to a high-potential nomination, never the decision itself.
         </Text>

@@ -61,7 +61,7 @@ export function InviteManagerDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2"><UserCheck className="h-5 w-5 text-[#5391D5]" /> Manager engagement survey</DialogTitle>
           <DialogDescription>
-            Six statements, about three minutes, answered by {candidateName}&apos;s line manager. Feeds the
+            A short survey, about five minutes, answered by {candidateName}&apos;s line manager. Feeds the
             &quot;Engagement - will they stay?&quot; reading on the High-Potential Profile. A management judgement for the
             development conversation - never a pass/fail signal.
           </DialogDescription>

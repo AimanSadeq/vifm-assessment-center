@@ -44,14 +44,18 @@ export function sampleHipoPdfData(generatedAt: string, completedAtIso: string): 
   const ability = r2(HIPO_ABILITY_WEIGHTS.behavioural * behavioural + HIPO_ABILITY_WEIGHTS.cognitive * cognitive);
   const cell = hipoCell(aspiration, ability);
 
-  const engAnswers: Record<string, number> = {
-    future_here: 4,
-    discretionary_effort: 4,
+  // A realistic "Strong" manager reading across all items. Reverse-keyed items
+  // (retention_risk, disengagement_signal, external_looking) score 6 - answer,
+  // so a low raw = high engagement.
+  const engOverrides: Record<string, number> = {
     acts_on_development: 5,
-    retention_risk: 2, // reverse-keyed -> scored 4
-    purpose_alignment: 4,
     internal_appetite: 3,
+    retention_risk: 2, // reverse -> 4
+    disengagement_signal: 2, // reverse -> 4
+    external_looking: 1, // reverse -> 5
   };
+  const engAnswers: Record<string, number> = {};
+  for (const item of HIPO_ENGAGEMENT_ITEMS) engAnswers[item.key] = engOverrides[item.key] ?? 4;
   const engScore = scoreEngagement(engAnswers)!;
   const engBand = hipoBand(engScore);
 

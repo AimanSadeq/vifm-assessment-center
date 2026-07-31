@@ -12,7 +12,13 @@ export type EngagementItem = {
   reverse?: boolean;
 };
 
-/** The six manager-rated items. Observable judgements only - no mind-reading. */
+/** The twenty manager-rated items. Observable judgements only - no mind-reading -
+ *  spanning stay-intent, discretionary effort, development response, purpose,
+ *  advancement appetite, advocacy, pride, energy, ownership, resilience, values,
+ *  relationships, long-term orientation, learning, initiative, reliability, and
+ *  recommendation, with three reverse-keyed disengagement signals. Older surveys
+ *  answered only the first six keys; the report filters to answered items, so
+ *  the expansion is backward compatible. */
 export const HIPO_ENGAGEMENT_ITEMS: EngagementItem[] = [
   {
     key: "future_here",
@@ -45,9 +51,82 @@ export const HIPO_ENGAGEMENT_ITEMS: EngagementItem[] = [
     en: "They actively seek bigger responsibility inside this organisation.",
     ar: "يسعى بنشاط إلى تحمل مسؤوليات أكبر داخل هذه المؤسسة.",
   },
+  {
+    key: "advocacy",
+    en: "They speak positively about this organisation to others.",
+    ar: "يتحدث بإيجابية عن هذه المؤسسة أمام الآخرين.",
+  },
+  {
+    key: "pride",
+    en: "They show pride in being part of this organisation.",
+    ar: "يُظهر اعتزازه بانتمائه إلى هذه المؤسسة.",
+  },
+  {
+    key: "energy",
+    en: "They bring visible energy and enthusiasm to their work.",
+    ar: "يُضفي طاقة وحماسا ظاهرين على عمله.",
+  },
+  {
+    key: "ownership",
+    en: "They take personal ownership of outcomes rather than waiting to be told.",
+    ar: "يتحمّل مسؤولية النتائج شخصيا بدلا من انتظار التوجيه.",
+  },
+  {
+    key: "resilience_commitment",
+    en: "They stay committed and constructive when things get difficult.",
+    ar: "يبقى ملتزما وإيجابيا عندما تصعب الأمور.",
+  },
+  {
+    key: "values_alignment",
+    en: "Their day-to-day behaviour reflects the organisation's values.",
+    ar: "يعكس سلوكه اليومي قيم المؤسسة.",
+  },
+  {
+    key: "team_connection",
+    en: "They build genuine, supportive relationships with colleagues.",
+    ar: "يبني علاقات داعمة وصادقة مع زملائه.",
+  },
+  {
+    key: "long_term",
+    en: "They make decisions with the organisation's long-term interests in mind.",
+    ar: "يتخذ قراراته بما يخدم مصلحة المؤسسة على المدى الطويل.",
+  },
+  {
+    key: "learning_curiosity",
+    en: "They show curiosity and a drive to keep learning in their field.",
+    ar: "يُظهر فضولا ورغبة في مواصلة التعلّم في مجاله.",
+  },
+  {
+    key: "initiative_improve",
+    en: "They proactively suggest ways to improve how the team works.",
+    ar: "يقترح بشكل استباقي طرقا لتحسين طريقة عمل الفريق.",
+  },
+  {
+    key: "reliability_commitment",
+    en: "They can be relied on to follow through on commitments they make.",
+    ar: "يمكن الاعتماد عليه في الوفاء بالالتزامات التي يقطعها.",
+  },
+  {
+    key: "disengagement_signal",
+    en: "They often seem to be going through the motions rather than genuinely invested.",
+    ar: "كثيرا ما يبدو أنه يؤدي عمله بشكل روتيني دون انخراط حقيقي.",
+    reverse: true,
+  },
+  {
+    key: "external_looking",
+    en: "They have mentioned or hinted at exploring opportunities elsewhere.",
+    ar: "ألمح أو ذكر أنه يستكشف فرصا خارج المؤسسة.",
+    reverse: true,
+  },
+  {
+    key: "recommend_org",
+    en: "I believe they would recommend this organisation as a place to work.",
+    ar: "أعتقد أنه سيوصي بهذه المؤسسة كمكان جيد للعمل.",
+  },
 ];
 
-export const ENGAGEMENT_MIN_ANSWERED = 5;
+// Require most items answered so the mean is stable (about 75% of 20).
+export const ENGAGEMENT_MIN_ANSWERED = 15;
 
 /** Pure scoring: mean of answered items on 1-5 (reverse-keyed applied).
  *  Returns null below the minimum-coverage floor. */

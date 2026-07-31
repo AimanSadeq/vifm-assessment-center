@@ -409,7 +409,7 @@ export function BespokeBuilder({ clients, initialBundles = [] }: { clients: Clie
                 candidate&apos;s <span className="font-semibold">line manager</span>, not the candidate - so it is not
                 selected here. After a candidate completes their sitting, use{" "}
                 <span className="font-semibold">&ldquo;Invite manager&rdquo;</span> on their row (client portal or admin
-                view) to send the 3-minute survey; the Engagement gauge then appears on their report automatically.
+                view) to send the short (~5-minute) survey; the Engagement gauge then appears on their report automatically.
               </p>
             </div>
           )}

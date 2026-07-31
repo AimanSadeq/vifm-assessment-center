@@ -237,7 +237,7 @@ export default async function PortalBundlePage({
           {candidates.some((c) => c.status === "completed" && c.persona_session_id) && (
             <p className="mt-1 text-xs text-muted-foreground">
               For the High-Potential Profile&apos;s Engagement pillar, use <span className="font-medium text-foreground">Invite
-              manager</span> on a completed candidate&apos;s row to send their line manager a 3-minute survey.
+              manager</span> on a completed candidate&apos;s row to send their line manager a short (~5-minute) survey.
             </p>
           )}
           <table className="mt-3 w-full text-sm">

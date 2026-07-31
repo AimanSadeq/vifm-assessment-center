@@ -59,8 +59,8 @@ export function EngageForm({
           </h1>
           <p className="mt-1 text-sm text-slate-600">
             {t(
-              `Dear ${managerName} - please rate the six statements below based on what you observe as ${candidateName}'s line manager. This takes about three minutes. Your answers are a management judgement that informs a development conversation - not a test of ${candidateName}, and never a pass/fail signal.`,
-              `عزيزي/عزيزتي ${managerName} - يرجى تقييم العبارات الست أدناه بناء على ما تلاحظه بصفتك المدير المباشر لـ${candidateName}. يستغرق ذلك نحو ثلاث دقائق. إجاباتك تقدير إداري يدعم حوار التطوير - وليست اختبارا لـ${candidateName} ولا إشارة نجاح أو رسوب.`,
+              `Dear ${managerName} - please rate the statements below based on what you observe as ${candidateName}'s line manager. It takes about five minutes. Your answers are a management judgement that informs a development conversation - not a test of ${candidateName}, and never a pass/fail signal.`,
+              `عزيزي/عزيزتي ${managerName} - يرجى تقييم العبارات أدناه بناء على ما تلاحظه بصفتك المدير المباشر لـ${candidateName}. يستغرق ذلك نحو خمس دقائق. إجاباتك تقدير إداري يدعم حوار التطوير - وليست اختبارا لـ${candidateName} ولا إشارة نجاح أو رسوب.`,
             )}
           </p>
         </div>

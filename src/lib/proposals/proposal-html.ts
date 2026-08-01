@@ -13,6 +13,7 @@
 import { formatMoney } from "./pricing";
 import { proposalService, PROPOSAL_DELIVERABLES, resolveIncludedSections } from "./constants";
 import { computeLicensing, normalizeLicensingModel } from "./licensing";
+import { bundleContentsHtml, BUNDLE_CONTENTS_CSS } from "./bundle-contents";
 import { computeEngagement, normalizeEngagementModel, ENGAGEMENT_BASIS_LABEL, DATA_RESIDENCY_LABEL, dataResidencyStatement, resolveDataResidency, withEngagementResidency, type EngagementBasis } from "./engagement";
 import { sanitizeRichHtml, isRichHtml } from "./rich-text";
 import type { ProposalEvidence } from "./evidence-summary";
@@ -342,9 +343,9 @@ function renderProposalDoc(
       ${lic.bundles
         .map(
           (b) =>
-            `<tr><td>${esc(b.name)}</td><td colspan="3">${esc(b.services)}</td><td class="num">${money(
-              b.price,
-            )}</td></tr>`,
+            `<tr><td>${esc(b.name)}</td><td colspan="3">${esc(b.services)}${
+              b.licenses > 0 ? ` &middot; ${num(b.licenses)} licence${b.licenses === 1 ? "" : "s"}` : ""
+            }</td><td class="num">${money(b.price)}</td></tr>`,
         )
         .join("\n      ")}
       <tr><td colspan="4" class="tot-label">A-la-carte subtotal</td><td class="num">${money(lic.alaCarteTotal)}</td></tr>
@@ -381,7 +382,8 @@ function renderProposalDoc(
       ? `<h3>Pilot option</h3>
   <div class="terms-box">A fixed-price pilot of ${num(lic.pilot.cohort)} participant${lic.pilot.cohort === 1 ? "" : "s"} over ${num(lic.pilot.durationWeeks)} week${lic.pilot.durationWeeks === 1 ? "" : "s"} at ${money(lic.pilot.price)}. On conversion to the annual licence within 90 days, ${num(lic.pilot.creditPct)}% of the pilot fee (${money(lic.pilot.creditAmount)}) is credited against Year 1. The pilot is an alternative entry path and is not included in the Year-1 total above.</div>`
       : ""
-  }`
+  }
+  ${bundleContentsHtml(lic.bundles, "en")}`
     : "";
 
   // ── Committed annual scope table (licence mode only), for Proposed solution. ──
@@ -794,6 +796,7 @@ ${wordSafe ? "" : `<link rel="preconnect" href="https://fonts.googleapis.com" />
 
   h2, h3 { page-break-after: avoid; }
   table, .svc, .terms-box, .facts, .sig-grid { page-break-inside: avoid; }
+  ${BUNDLE_CONTENTS_CSS}
 </style>
 </head>
 <body>

@@ -7,6 +7,7 @@
 
 import { formatMoney } from "./pricing";
 import { computeLicensing, normalizeLicensingModel } from "./licensing";
+import { bundleContentsHtml, BUNDLE_CONTENTS_CSS } from "./bundle-contents";
 import { computeEngagement, normalizeEngagementModel, resolveDataResidency, withEngagementResidency, type EngagementBasis, type DataResidency } from "./engagement";
 import { resolveIncludedSections } from "./constants";
 import { PORTAL_SERVICES, type CaliberService } from "@/lib/clients/portal-services";
@@ -195,6 +196,12 @@ function renderProposalDocAr(
             `<tr><td>${esc(serviceLabelAr(pr.key, pr.name))}</td><td>${esc(BASIS_AR[pr.basis] ?? pr.basis)}</td><td class="num">${pr.isFixed ? "&mdash;" : nu(pr.volume)}</td><td class="num">${pr.isFixed ? "&mdash;" : m(pr.unitPrice)}</td><td class="num">${m(pr.lineTotal)}</td></tr>`,
         )
         .join("\n      ")}
+      ${lic.bundles
+        .map(
+          (b) =>
+            `<tr><td>${esc(b.name)}</td><td colspan="3">${esc(b.services)}${b.licenses > 0 ? ` &middot; ${nu(b.licenses)} رخصة` : ""}</td><td class="num">${m(b.price)}</td></tr>`,
+        )
+        .join("\n      ")}
       <tr><td colspan="4" class="tot-label">الإجمالي الإفرادي</td><td class="num">${m(lic.alaCarteTotal)}</td></tr>
     </tbody>
   </table>
@@ -229,7 +236,8 @@ function renderProposalDocAr(
       ? `<h3>خيار التجربة الاسترشادية</h3>
   <div class="terms-box">تجربة بسعر ثابت تشمل ${nu(lic.pilot.cohort)} مشاركاً على مدى ${nu(lic.pilot.durationWeeks)} أسبوعاً بمبلغ ${m(lic.pilot.price)}. وعند التحول إلى الترخيص السنوي خلال 90 يوماً، يُخصم ${pc(lic.pilot.creditPct)} من رسوم التجربة (${m(lic.pilot.creditAmount)}) من السنة الأولى. وهذه التجربة مسار دخول بديل ولا تُدرج ضمن إجمالي السنة الأولى أعلاه.</div>`
       : ""
-  }`
+  }
+  ${bundleContentsHtml(lic.bundles, "ar")}`
     : "";
 
   const committedScope = lic
@@ -587,6 +595,7 @@ function renderProposalDocAr(
 
   h2, h3 { page-break-after: avoid; }
   table, .svc, .terms-box, .sig-grid { page-break-inside: avoid; }
+  ${BUNDLE_CONTENTS_CSS}
 </style>
 </head>
 <body>

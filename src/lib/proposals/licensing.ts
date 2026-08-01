@@ -24,7 +24,7 @@ export interface LicenceProductInput {
   key?: string; name?: string; category?: string; desc?: string; descAr?: string;
   basis?: string; mode?: ProductMode; volume?: number; unitPrice?: number; fixedPrice?: number;
 }
-export interface LicenceBundleInput { name?: string; services?: string; keys?: string[]; price?: number; }
+export interface LicenceBundleInput { name?: string; services?: string; keys?: string[]; price?: number; licenses?: number; }
 export interface LicencePilotInput { cohort?: number; durationWeeks?: number; price?: number; creditPct?: number; }
 export interface LicenceModelInput {
   products?: LicenceProductInput[]; bundles?: LicenceBundleInput[];
@@ -39,7 +39,7 @@ export interface NormalizedProduct {
   key: string; name: string; category: string; desc: string; descAr: string;
   basis: string; mode: ProductMode; volume: number; unitPrice: number; fixedPrice: number;
 }
-export interface NormalizedBundle { name: string; services: string; keys: string[]; price: number; }
+export interface NormalizedBundle { name: string; services: string; keys: string[]; price: number; licenses: number; }
 export interface NormalizedPilot { cohort: number; durationWeeks: number; price: number; creditPct: number; }
 export interface NormalizedLicenceModel {
   products: NormalizedProduct[]; bundles: NormalizedBundle[];
@@ -69,6 +69,7 @@ export function normalizeLicensingModel(value: unknown): NormalizedLicenceModel 
     name: str(b?.name, 160), services: str(b?.services, 400),
     keys: (Array.isArray(b?.keys) ? b.keys : []).map((k) => str(k, 60)).filter(Boolean).slice(0, 20),
     price: Math.max(0, num(b?.price)),
+    licenses: Math.max(0, Math.floor(num(b?.licenses))),
   })).filter((b) => b.name && b.price > 0);
   if (products.length === 0 && bundles.length === 0) return null;
   const tier: LicenceTier = v.tier === "SOVEREIGN" ? "SOVEREIGN" : "SHARED";

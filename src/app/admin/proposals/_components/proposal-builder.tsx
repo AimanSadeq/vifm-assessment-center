@@ -6,6 +6,7 @@ import {
   PROPOSAL_SERVICES,
   PROPOSAL_SERVICE_BASIS,
   PROPOSAL_SERVICE_CATEGORY,
+  proposalService,
   DEFAULT_PAYMENT_TERMS,
   DEFAULT_LICENCE_PAYMENT_TERMS,
   defaultTerms,
@@ -109,6 +110,16 @@ export function ProposalBuilder({
   const [sovereignAnnual, setSovereignAnnual] = useState(lm?.sovereignAnnual ?? LICENSING_DEFAULTS.sovereignAnnual);
   const [bufferPct, setBufferPct] = useState(lm?.bufferPct ?? LICENSING_DEFAULTS.bufferPct);
   const [upliftPct, setUpliftPct] = useState(lm?.upliftPct ?? LICENSING_DEFAULTS.upliftPct);
+  // Bespoke service bundles: one price for a licence pool covering all listed
+  // services (one seat = all services). Seeded from the editing proposal's model.
+  const [licenceBundles, setLicenceBundles] = useState<{ name: string; keys: string[]; licenses: number; price: number }[]>(
+    (lm?.bundles ?? []).map((b) => ({
+      name: b.name ?? "",
+      keys: Array.isArray(b.keys) ? b.keys.filter(Boolean) : [],
+      licenses: Math.max(0, Math.floor(Number(b.licenses) || 0)),
+      price: Math.max(0, Number(b.price) || 0),
+    })),
+  );
   const [pilotOn, setPilotOn] = useState(!!lm?.pilot);
   const [pilotCohort, setPilotCohort] = useState(lm?.pilot?.cohort ?? 0);
   const [pilotWeeks, setPilotWeeks] = useState(lm?.pilot?.durationWeeks ?? 0);
@@ -271,6 +282,15 @@ export function ProposalBuilder({
         volume: seats[s.key],
         unitPrice: unitPrices[s.key] ?? 0,
       })),
+      bundles: licenceBundles
+        .filter((b) => b.name.trim() && b.price > 0)
+        .map((b) => ({
+          name: b.name.trim(),
+          keys: b.keys,
+          services: b.keys.map((k) => proposalService(k)?.label ?? k).join(" + "),
+          licenses: Math.max(0, Math.floor(b.licenses)),
+          price: Math.max(0, b.price),
+        })),
       bundleDiscountPct,
       supportPct,
       implementationFee,
@@ -282,7 +302,7 @@ export function ProposalBuilder({
       upliftPct,
       pilot: pilotOn ? { cohort: pilotCohort, durationWeeks: pilotWeeks, price: pilotPrice, creditPct: pilotCreditPct } : null,
     }),
-    [seats, unitPrices, bundleDiscountPct, supportPct, implementationFee, customReportsFee, tier, sovereignSetup, sovereignAnnual, bufferPct, upliftPct, pilotOn, pilotCohort, pilotWeeks, pilotPrice, pilotCreditPct],
+    [seats, unitPrices, licenceBundles, bundleDiscountPct, supportPct, implementationFee, customReportsFee, tier, sovereignSetup, sovereignAnnual, bufferPct, upliftPct, pilotOn, pilotCohort, pilotWeeks, pilotPrice, pilotCreditPct],
   );
 
   const licensing = useMemo(() => computeLicensing(normalizeLicensingModel(assembleLicensingModel())), [assembleLicensingModel]);
@@ -728,6 +748,74 @@ export function ProposalBuilder({
               </label>
             </div>
           )}
+        </section>
+      )}
+
+      {/* Bespoke service bundles - one licence price covering several services */}
+      {servicesAsLicence && (
+        <section className="rounded-lg border border-border bg-card p-4 space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="font-medium text-foreground">Bespoke service bundles</h2>
+              <p className="text-xs text-muted-foreground">
+                One price for a shared licence pool - one seat lets a participant complete every service in the bundle in a single sitting.
+                The proposal lists each bundle&apos;s assessments, what they measure, and the reports they produce.
+              </p>
+            </div>
+            <button type="button" onClick={() => setLicenceBundles((prev) => [...prev, { name: "", keys: [], licenses: 0, price: 0 }])}
+              className="shrink-0 rounded-md border border-[#010131] bg-[#010131] px-3 py-2 text-sm font-medium text-white hover:bg-[#010131]/90">+ Add bundle</button>
+          </div>
+
+          {licenceBundles.length === 0 && (
+            <p className="text-xs text-muted-foreground">No bespoke bundles yet. Add one to package several services under a single licence price.</p>
+          )}
+
+          {licenceBundles.map((b, bi) => {
+            const setB = (patch: Partial<typeof b>) =>
+              setLicenceBundles((prev) => prev.map((x, i) => (i === bi ? { ...x, ...patch } : x)));
+            const toggleKey = (key: string) =>
+              setB({ keys: b.keys.includes(key) ? b.keys.filter((k) => k !== key) : [...b.keys, key] });
+            return (
+              <div key={bi} className="rounded-md border border-border bg-muted/30 p-3 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Bundle {bi + 1}</span>
+                  <button type="button" onClick={() => setLicenceBundles((prev) => prev.filter((_, i) => i !== bi))}
+                    className="text-xs text-red-600 hover:underline">Remove</button>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <label className="block text-sm sm:col-span-1">
+                    <span className="text-muted-foreground">Bundle name</span>
+                    <input type="text" value={b.name} placeholder="e.g. Leadership Readiness Suite"
+                      onChange={(e) => setB({ name: e.target.value })} className={numInput} />
+                  </label>
+                  <label className="block text-sm">
+                    <span className="text-muted-foreground">Licences (seats)</span>
+                    <input type="number" min={0} value={b.licenses}
+                      onChange={(e) => setB({ licenses: Math.max(0, Math.floor(Number(e.target.value) || 0)) })} className={numInput} />
+                  </label>
+                  <label className="block text-sm">
+                    <span className="text-muted-foreground">Bundle price ({currency})</span>
+                    <input type="number" min={0} value={b.price}
+                      onChange={(e) => setB({ price: Math.max(0, Number(e.target.value) || 0) })} className={numInput} />
+                  </label>
+                </div>
+                <div>
+                  <span className="text-xs text-muted-foreground">Services in this bundle</span>
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    {PROPOSAL_SERVICES.map((s) => {
+                      const on = b.keys.includes(s.key);
+                      return (
+                        <button key={s.key} type="button" onClick={() => toggleKey(s.key)}
+                          className={`rounded-full border px-2.5 py-1 text-xs ${on ? "border-[#010131] bg-[#010131] text-white" : "border-border bg-card text-foreground hover:bg-muted"}`}>
+                          {s.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </section>
       )}
 

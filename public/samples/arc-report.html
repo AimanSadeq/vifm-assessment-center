@@ -1,5 +1,4 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"/>
+<!doctype html><html lang="en"><head><meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>ARC - Detailed Individual Report (Sample)</title>
 <style>
@@ -11,52 +10,61 @@
   .toolbar button{border:1px solid var(--line);background:#fff;border-radius:100px;padding:8px 18px;font-family:inherit;font-weight:700;font-size:13px;color:var(--muted);cursor:pointer}
   .toolbar button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
   .toolbar .print{background:var(--accent);color:#fff;border-color:var(--accent)}
-  .sheet{max-width:820px;margin:18px auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:34px 40px 40px;box-shadow:0 2px 10px rgba(1,1,49,.06)}
+  .sheet{max-width:840px;margin:18px auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:34px 42px 42px;box-shadow:0 2px 10px rgba(1,1,49,.06)}
   body.lang-en .report.ar{display:none} body.lang-ar .report.en{display:none}
   .eyebrow{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-deep);font-weight:800;margin-bottom:6px}
-  .rhead{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;border-bottom:2px solid var(--navy);padding-bottom:16px;margin-bottom:16px}
+  .rhead{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;border-bottom:2px solid var(--navy);padding-bottom:16px;margin-bottom:6px}
   h1{font-size:26px;font-weight:800;color:var(--navy);letter-spacing:-.01em}
   .ident{font-size:13px;color:var(--ink);font-weight:600;margin-top:3px} .ident2{font-size:11.5px;color:var(--muted);margin-top:2px}
   .rhead-r{text-align:center;flex:0 0 auto;background:linear-gradient(155deg,var(--navy),var(--navy2));color:#fff;border-radius:12px;padding:14px 18px;min-width:130px}
   .ovlbl{font-size:10px;text-transform:uppercase;letter-spacing:.08em;opacity:.75;font-weight:700}
   .ovnum{font-size:38px;font-weight:800;line-height:1.1} .ovnum small{font-size:14px;opacity:.6;font-weight:600}
   .ovband{display:inline-block;font-size:11px;font-weight:800;padding:3px 12px;border-radius:100px;margin-top:4px}
-  .lead{font-size:13.5px;color:#334155;background:#f6f9fd;border-inline-start:3px solid var(--accent);border-radius:4px;padding:12px 14px;margin-bottom:20px}
-  h2{font-size:15px;font-weight:800;color:var(--navy);margin:20px 0 12px}
-  h2.good{color:#166534} h2.warn{color:#92400e}
+  h2{font-size:15px;font-weight:800;color:var(--navy);margin:22px 0 10px} h2.good{color:#166534} h2.warn{color:#92400e}
+  p{color:#26303f}
+  .lead{font-size:13px;background:#f6f9fd;border-inline-start:3px solid var(--accent);border-radius:4px;padding:12px 14px;margin-bottom:10px}
+  .levelbox{font-size:12px;color:#334155;border:1px solid var(--line);border-radius:8px;padding:11px 13px;background:#fbfcfe}
   .cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
   .ccard{border:1px solid var(--line);border-radius:10px;padding:13px}
   .cctop{display:flex;justify-content:space-between;align-items:center;gap:6px}
   .ccname{font-size:12.5px;font-weight:800;color:var(--navy)}
   .ccpill{font-size:9.5px;font-weight:800;padding:2px 8px;border-radius:100px;white-space:nowrap}
   .ccscore{font-size:26px;font-weight:800;margin-top:6px} .ccscore small{font-size:11px;color:var(--muted);font-weight:600}
-  .bar{height:9px;border-radius:5px;background:#eef2f7;overflow:hidden;margin:7px 0}
-  .bar.sm{flex:1;margin:0} .bar>span{display:block;height:100%;border-radius:5px}
-  .ccdesc{font-size:11px;color:var(--muted);line-height:1.5;margin-top:4px}
+  .bar{border-radius:5px;background:#eef2f7;overflow:hidden;margin:6px 0} .bar>span{display:block;height:100%;border-radius:5px}
+  .ccdesc{font-size:10.5px;color:var(--muted);line-height:1.5;margin-top:4px}
+  .sublbl{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:8px 0 4px;border-top:1px solid var(--line);padding-top:7px}
+  .subrow{display:flex;align-items:center;gap:6px;margin-bottom:3px;font-size:10px}
+  .subrow .sn{width:96px;flex:0 0 auto;color:var(--muted)} .subrow .bar{flex:1;margin:0} .subrow .sv{width:24px;text-align:end;font-weight:700;font-variant-numeric:tabular-nums}
   .two{display:grid;grid-template-columns:1fr 1fr;gap:22px}
-  .col p{font-size:12.5px;color:#334155}
-  .actions{margin:10px 0 0;padding-inline-start:18px} .actions li{font-size:12px;color:#334155;margin-bottom:6px;line-height:1.5}
-  .bench{display:flex;flex-direction:column;gap:9px;border:1px solid var(--line);border-radius:10px;padding:14px}
-  .cmprow{display:flex;align-items:center;gap:10px} .cmplbl{width:220px;flex:0 0 auto;font-size:12px;font-weight:600}
-  .cmpval{width:36px;text-align:end;font-weight:800;font-variant-numeric:tabular-nums}
+  .col p{font-size:12px}
+  .prio{border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:9px;background:#fbfcfe}
+  .ptitle{font-size:12.5px;font-weight:800;color:var(--navy)} .pmeta{font-size:10.5px;color:var(--muted);font-weight:600}
+  .prio p{font-size:11.5px;margin-top:3px}
+  .actions{margin:6px 0 0;padding-inline-start:16px} .actions li{font-size:11px;color:#334155;margin-bottom:4px;line-height:1.5}
+  .miles{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  .mile{display:flex;gap:10px;border:1px solid var(--line);border-radius:8px;padding:11px 12px;background:#fbfcfe}
+  .mday{font-size:22px;font-weight:800;color:var(--accent);line-height:1;flex:0 0 auto}
+  .mt{font-size:11.5px;font-weight:800;color:var(--navy)} .mb{font-size:10.5px;color:#334155;line-height:1.45;margin-top:2px}
+  .bench{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:10px;padding:14px}
+  .cmprow{display:flex;align-items:center;gap:10px} .cmplbl{width:230px;flex:0 0 auto;font-size:11.5px;font-weight:600} .cmprow .bar{flex:1;margin:0} .cmpval{width:34px;text-align:end;font-weight:800}
+  .benchnote{font-size:11px;color:var(--muted);margin-top:7px;line-height:1.5}
   .courses{display:flex;flex-direction:column;gap:8px}
   .course{border:1px solid var(--line);border-radius:10px;padding:11px 13px;background:#fbfcfe}
-  .ctop{display:flex;justify-content:space-between;align-items:center;gap:8px}
-  .cname{font-size:12.5px;font-weight:800;color:var(--navy)}
-  .cfit{font-size:9.5px;font-weight:800;padding:2px 9px;border-radius:100px;white-space:nowrap}
-  .cmeta{font-size:10.5px;color:var(--muted);font-weight:600}
+  .ctop{display:flex;justify-content:space-between;align-items:center;gap:8px} .cname{font-size:12.5px;font-weight:800;color:var(--navy)}
+  .cfit{font-size:9.5px;font-weight:800;padding:2px 9px;border-radius:100px;white-space:nowrap} .cmeta{font-size:10.5px;color:var(--muted);font-weight:600}
+  .cwhy{font-size:11px;color:#334155;margin-top:4px;line-height:1.5}
+  .guide{margin:0;padding-inline-start:16px} .guide li{font-size:11.5px;color:#334155;margin-bottom:6px;line-height:1.5}
   .method{margin-top:22px;border-top:1px solid var(--line);padding-top:12px;font-size:10.5px;color:var(--muted);line-height:1.6}
-  @media print{ .toolbar{display:none} body{background:#fff} .sheet{border:0;box-shadow:none;margin:0;max-width:none;border-radius:0} @page{margin:14mm} }
-  @media(max-width:700px){ .cards,.two{grid-template-columns:1fr} }
+  @media print{ .toolbar{display:none} body{background:#fff} .sheet{border:0;box-shadow:none;margin:0;max-width:none;border-radius:0} @page{margin:13mm} h2{break-after:avoid} .ccard,.prio,.mile,.course{break-inside:avoid} }
+  @media(max-width:760px){ .cards,.two,.miles{grid-template-columns:1fr} }
 </style></head>
 <body class="lang-en">
   <div class="toolbar">
     <button id="enB" class="on" onclick="setL('en')">English</button>
     <button id="arB" onclick="setL('ar')">العربية</button>
-    <button class="print" onclick="window.print()">⎙ Print / Save PDF</button>
+    <button class="print" onclick="window.print()">&#9113; Print / Save PDF</button>
   </div>
   <div class="sheet">
-    
     <section class="report en" dir="ltr">
       <div class="rhead">
         <div class="rhead-l">
@@ -71,35 +79,37 @@
           <div class="ovband" style="background:#fef3c7;color:#92400e">Practising</div>
         </div>
       </div>
-      <p class="lead">At the Practising level, AI habits exist but are not yet consistent. The next gain is making AI use reliable and routine rather than occasional - especially in day-to-day tasks.</p>
 
-      <h2>Where you stand on each construct</h2>
-      <div class="cards"><div class="ccard"><div class="cctop"><span class="ccname">AI Awareness</span><span class="ccpill" style="background:#dcfce7;color:#166534">Strong</span></div><div class="ccscore" style="color:#059669">4.1<small> / 5</small></div><div class="bar"><span style="width:83%;background:#059669"></span></div><p class="ccdesc">Understands what AI can and cannot do and where it applies to HR work.</p></div><div class="ccard"><div class="cctop"><span class="ccname">AI Adoption</span><span class="ccpill" style="background:#ffe4e6;color:#9f1239">Opportunity</span></div><div class="ccscore" style="color:#E11D48">1.6<small> / 5</small></div><div class="bar"><span style="width:31%;background:#E11D48"></span></div><p class="ccdesc">How much AI is actually used in day-to-day tasks and workflows.</p></div><div class="ccard"><div class="cctop"><span class="ccname">AI Readiness</span><span class="ccpill" style="background:#fef3c7;color:#92400e">Developing</span></div><div class="ccscore" style="color:#D97706">3.3<small> / 5</small></div><div class="bar"><span style="width:66%;background:#D97706"></span></div><p class="ccdesc">Overall preparedness to apply AI effectively and responsibly at work.</p></div></div>
+      <h2>Executive summary</h2>
+      <p class="lead">Abdullah sits at the <b>Practising</b> level overall (3.0/5). The profile is distinctive: <b>AI Awareness is a real strength (4.1/5)</b> - particularly spotting opportunities (4.7) - while <b>AI Adoption is the clear priority (1.6/5)</b>, held back most by range of tasks (1.1). In short: the understanding is there, but it has not yet turned into daily hands-on use. The single highest-return move is to convert that awareness into a routine habit across more tasks.</p>
+      <div class="levelbox"><b>What "Practising" means.</b> AI habits exist but are not yet consistent or wide-ranging. People at this level use AI on some tasks, occasionally, and often restart from scratch each time. <b>What good looks like next:</b> AI becomes a reliable, default part of how several recurring tasks get done - supported by saved prompts and a clear sense of when to verify.</div>
+
+      <h2>Where you stand - by construct &amp; sub-dimension</h2>
+      <div class="cards"><div class="ccard"><div class="cctop"><span class="ccname">AI Awareness</span><span class="ccpill" style="background:#dcfce7;color:#166534">Strong</span></div><div class="ccscore" style="color:#059669">4.1<small> / 5</small></div><div class="bar" style="height:10px"><span style="width:83%;background:#059669"></span></div><p class="ccdesc">Understands what AI can and cannot do and where it applies to HR work.</p><div class="sublbl">Sub-dimensions</div><div class="subrow"><span class="sn">Understanding AI</span><div class="bar" style="height:7px"><span style="width:66%;background:#D97706"></span></div><span class="sv">3.3</span></div><div class="subrow"><span class="sn">Knowing limits &amp; risks</span><div class="bar" style="height:7px"><span style="width:76%;background:#D97706"></span></div><span class="sv">3.8</span></div><div class="subrow"><span class="sn">Spotting opportunities</span><div class="bar" style="height:7px"><span style="width:95%;background:#059669"></span></div><span class="sv">4.7</span></div></div><div class="ccard"><div class="cctop"><span class="ccname">AI Adoption</span><span class="ccpill" style="background:#ffe4e6;color:#9f1239">Opportunity</span></div><div class="ccscore" style="color:#E11D48">1.6<small> / 5</small></div><div class="bar" style="height:10px"><span style="width:31%;background:#E11D48"></span></div><p class="ccdesc">How much AI is actually used in day-to-day tasks and workflows.</p><div class="sublbl">Sub-dimensions</div><div class="subrow"><span class="sn">Frequency of use</span><div class="bar" style="height:7px"><span style="width:45%;background:#E11D48"></span></div><span class="sv">2.3</span></div><div class="subrow"><span class="sn">Range of tasks</span><div class="bar" style="height:7px"><span style="width:22%;background:#E11D48"></span></div><span class="sv">1.1</span></div><div class="subrow"><span class="sn">Workflow integration</span><div class="bar" style="height:7px"><span style="width:40%;background:#E11D48"></span></div><span class="sv">2.0</span></div></div><div class="ccard"><div class="cctop"><span class="ccname">AI Readiness</span><span class="ccpill" style="background:#fef3c7;color:#92400e">Developing</span></div><div class="ccscore" style="color:#D97706">3.3<small> / 5</small></div><div class="bar" style="height:10px"><span style="width:66%;background:#D97706"></span></div><p class="ccdesc">Overall preparedness to apply AI effectively and responsibly at work.</p><div class="sublbl">Sub-dimensions</div><div class="subrow"><span class="sn">Confidence</span><div class="bar" style="height:7px"><span style="width:84%;background:#059669"></span></div><span class="sv">4.2</span></div><div class="subrow"><span class="sn">Responsible use</span><div class="bar" style="height:7px"><span style="width:69%;background:#D97706"></span></div><span class="sv">3.5</span></div><div class="subrow"><span class="sn">Willingness to learn</span><div class="bar" style="height:7px"><span style="width:67%;background:#D97706"></span></div><span class="sv">3.3</span></div></div></div>
 
       <div class="two">
-        <div class="col">
-          <h2 class="good">Strengths</h2>
-          <p><b>AI Awareness (4.1/5).</b> A genuine strength - a clear, well-calibrated understanding of where AI adds value and where human judgment must stay in control. This is the ideal launch-pad: awareness this strong converts quickly into practice once hands-on habits are built.</p>
-        </div>
-        <div class="col">
-          <h2 class="warn">Development area & actions</h2>
-          <p><b>AI Adoption (1.6/5) - the priority.</b> Understanding is well ahead of hands-on use. The fastest, highest-return move is to convert awareness into a daily habit.</p>
-          <ul class="actions"><li>Pick one recurring HR task (e.g. drafting job descriptions or interview summaries) and complete it with an approved AI tool every week for a month.</li><li>Use ready-made prompt templates so quality is consistent and you are not starting from a blank page each time.</li><li>Pair with a department AI champion for a 15-minute weekly check-in to share what worked.</li></ul>
-        </div>
+        <div class="col"><h2 class="good">Your strengths</h2><p><b>AI Awareness (4.1/5) - a genuine strength.</b> A clear, well-calibrated understanding of where AI adds value. It shows most in <b>spotting opportunities (4.7/5)</b>, meaning Abdullah readily sees where AI could help - the ideal launch-pad, because awareness this strong converts quickly into practice once hands-on habits are built.</p><p style='margin-top:8px'><b>Confidence &amp; judgement.</b> A high self-confidence score (4.2/5) paired with solid responsible-use judgement means the raw ingredients for fast progress are already in place.</p></div>
+        <div class="col"><h2 class="warn">Development priorities</h2><div class='prio'><div class='ptitle'>1. AI Adoption <span class='pmeta'>1.6/5 · gap 2.4</span></div><p><b>Why now:</b> Understanding is far ahead of hands-on use - the fastest, highest-return improvement available.</p><ul class='actions'><li>Pick one recurring HR task (range of tasks is your lowest area) - e.g. drafting job descriptions or interview summaries - and complete it with an approved AI tool every week for a month.</li><li>Widen gradually: once one task is habitual, add a second, then a third. Breadth is your biggest lever.</li><li>Save every prompt that works into a personal library so you stop starting from a blank page.</li></ul></div><div class='prio'><div class='ptitle'>2. AI Readiness <span class='pmeta'>3.3/5</span></div><p><b>Why now:</b> Solid but not yet reliable - worth hardening so good judgement is consistent, not situational.</p><ul class='actions'><li>Set explicit &#x27;always verify&#x27; triggers for high-stakes outputs (numbers, names, policy claims) so verification becomes automatic rather than occasional.</li><li>Share one AI-assisted win with a colleague each month - teaching cements your own practice and builds the team&#x27;s.</li></ul></div></div>
       </div>
 
-      <h2>Benchmark</h2>
-      <div class="bench"><div class="cmprow"><span class="cmplbl">This employee</span><div class="bar sm"><span style="width:60%;background:#D97706"></span></div><span class="cmpval">3.0</span></div><div class="cmprow"><span class="cmplbl">Human Resources (dept avg)</span><div class="bar sm"><span style="width:64%;background:#D97706"></span></div><span class="cmpval">3.2</span></div><div class="cmprow"><span class="cmplbl">Ufuq Digital Authority (org avg)</span><div class="bar sm"><span style="width:67%;background:#D97706"></span></div><span class="cmpval">3.4</span></div></div>
+      <h2>Your 30 / 60 / 90-day plan</h2>
+      <div class="miles"><div class='mile'><div class='mday'>30</div><div><div class='mt'>First 30 days</div><div class='mb'>Choose one weekly HR task and do it with AI every week. Save the prompts that work.</div></div></div><div class='mile'><div class='mday'>60</div><div><div class='mt'>By day 60</div><div class='mb'>Add a second and third task. Introduce a simple verify-before-send checklist for anything high-stakes.</div></div></div><div class='mile'><div class='mday'>90</div><div><div class='mt'>By day 90</div><div class='mb'>AI is a default part of 3-4 recurring tasks. Share one win with the team and mentor a colleague who is just starting.</div></div></div></div>
 
-      <h2>Targeted training plan</h2>
-      <div class="courses"><div class="course"><div class="ctop"><span class="cname">Applied AI for HR Professionals</span><span class="cfit" style="background:#dcfce7;color:#166534">HIGH FIT</span></div><span class="cmeta">3 days · Foundational</span></div><div class="course"><div class="ctop"><span class="cname">From Awareness to Adoption: AI in Daily Work</span><span class="cfit" style="background:#dcfce7;color:#166534">HIGH FIT</span></div><span class="cmeta">2 days · Practical</span></div><div class="course"><div class="ctop"><span class="cname">Prompt-Craft &amp; Responsible AI Use</span><span class="cfit" style="background:#fef3c7;color:#92400e">MEDIUM FIT</span></div><span class="cmeta">2 days · Foundational</span></div></div>
+      <h2>How you compare</h2>
+      <div class="bench"><div class="cmprow"><span class="cmplbl">This employee</span><div class="bar" style="height:11px"><span style="width:60%;background:#D97706"></span></div><span class="cmpval">3.0</span></div><div class="cmprow"><span class="cmplbl">Human Resources (dept avg)</span><div class="bar" style="height:11px"><span style="width:64%;background:#D97706"></span></div><span class="cmpval">3.2</span></div><div class="cmprow"><span class="cmplbl">Ufuq Digital Authority (org avg)</span><div class="bar" style="height:11px"><span style="width:67%;background:#D97706"></span></div><span class="cmpval">3.4</span></div></div>
+      <p class="benchnote">Overall readiness (3.0) sits just below the department average (3.2) and the organisation average (3.4) - driven almost entirely by the adoption gap, not by understanding.</p>
 
-      <div class="method">
-        <b>How to read this report.</b>
-        Each construct is scored 1-5 from a self-report questionnaire. Bands: Opportunity (below 3), Developing (3-3.9), Strong (4+). This sample uses illustrative data. Scores are indicative and intended for development conversations, not as a standalone hiring decision.
+      <h2>Recommended VIFM training</h2>
+      <div class="courses"><div class="course"><div class="ctop"><span class="cname">Applied AI for HR Professionals</span><span class="cfit" style="background:#dcfce7;color:#166534">HIGH FIT</span></div><div class="cmeta">3 days · Foundational</div><p class="cwhy">Turns your strong awareness into concrete HR use-cases - screening summaries, JD drafting, policy Q&amp;A.</p></div><div class="course"><div class="ctop"><span class="cname">From Awareness to Adoption: AI in Daily Work</span><span class="cfit" style="background:#dcfce7;color:#166534">HIGH FIT</span></div><div class="cmeta">2 days · Practical</div><p class="cwhy">Directly targets your biggest gap - building a daily AI habit across more of your tasks.</p></div><div class="course"><div class="ctop"><span class="cname">Prompt-Craft &amp; Responsible AI Use</span><span class="cfit" style="background:#fef3c7;color:#92400e">MEDIUM FIT</span></div><div class="cmeta">2 days · Foundational</div><p class="cwhy">Reusable prompt templates so quality stays consistent as you widen your use.</p></div></div>
+
+      <div class="two">
+        <div class="col"><h2>Manager conversation guide</h2><ul class='guide'><li>Which one HR task will you commit to doing with AI every week this month?</li><li>What is getting in the way of using AI more widely - time, tools, confidence, or permission?</li><li>Where would a mistake matter most, and what is your verify-before-send rule there?</li></ul></div>
+        <div class="col"><h2>Reflect &amp; commit</h2><ul class='guide'><li>What is one task you already do that AI could take 30 minutes off this week?</li><li>Who on your team is one step ahead on AI, and what one prompt could you borrow from them?</li></ul></div>
       </div>
+
+      <div class="method"><b>How to read this report.</b>
+        Each construct is scored 1-5 from a self-report questionnaire; sub-dimensions break each construct into its parts. Bands: Opportunity (below 3), Developing (3-3.9), Strong (4+). This sample uses illustrative data. Scores are indicative and intended for development conversations, not a standalone hiring decision.</div>
     </section>
-    
     <section class="report ar" dir="rtl">
       <div class="rhead">
         <div class="rhead-l">
@@ -114,42 +124,38 @@
           <div class="ovband" style="background:#fef3c7;color:#92400e">ممارِس</div>
         </div>
       </div>
-      <p class="lead">عند مستوى “ممارِس”، توجد عادات لاستخدام الذكاء الاصطناعي لكنها غير ثابتة بعد. والمكسب التالي هو جعل الاستخدام موثوقاً وروتينياً بدلاً من كونه عرضياً - خصوصاً في المهام اليومية.</p>
 
-      <h2>نتيجتك في كل محور</h2>
-      <div class="cards"><div class="ccard"><div class="cctop"><span class="ccname">الوعي بالذكاء الاصطناعي</span><span class="ccpill" style="background:#dcfce7;color:#166534">قوي</span></div><div class="ccscore" style="color:#059669">4.1<small> / ٥</small></div><div class="bar"><span style="width:83%;background:#059669"></span></div><p class="ccdesc">يدرك ما يمكن وما لا يمكن للذكاء الاصطناعي فعله وأين ينطبق على عمل الموارد البشرية.</p></div><div class="ccard"><div class="cctop"><span class="ccname">تبنّي الذكاء الاصطناعي</span><span class="ccpill" style="background:#ffe4e6;color:#9f1239">مجال للتطوير</span></div><div class="ccscore" style="color:#E11D48">1.6<small> / ٥</small></div><div class="bar"><span style="width:31%;background:#E11D48"></span></div><p class="ccdesc">مدى الاستخدام الفعلي للذكاء الاصطناعي في المهام وسير العمل اليومي.</p></div><div class="ccard"><div class="cctop"><span class="ccname">الجاهزية للذكاء الاصطناعي</span><span class="ccpill" style="background:#fef3c7;color:#92400e">في تطور</span></div><div class="ccscore" style="color:#D97706">3.3<small> / ٥</small></div><div class="bar"><span style="width:66%;background:#D97706"></span></div><p class="ccdesc">الجاهزية العامة لتطبيق الذكاء الاصطناعي بفعالية ومسؤولية في العمل.</p></div></div>
+      <h2>الملخّص التنفيذي</h2>
+      <p class="lead">يقع عبدالله عند مستوى <b>ممارِس</b> إجمالاً (3.0/٥). والملمح مميّز: <b>الوعي بالذكاء الاصطناعي نقطة قوة حقيقية (4.1/٥)</b> - وبخاصة اكتشاف الفرص (4.7) - في حين أن <b>التبنّي هو الأولوية الواضحة (1.6/٥)</b>، وأكثر ما يحدّه تنوّع المهام (1.1). باختصار: الفهم موجود لكنه لم يتحوّل بعد إلى استخدام عملي يومي. وأعلى خطوة عائداً هي تحويل هذا الوعي إلى عادة روتينية عبر المزيد من المهام.</p>
+      <div class="levelbox"><b>ماذا يعني مستوى "ممارِس".</b> توجد عادات لاستخدام الذكاء الاصطناعي لكنها غير ثابتة ولا واسعة بعد. فالأشخاص عند هذا المستوى يستخدمونه في بعض المهام أحياناً، وغالباً يبدؤون من جديد في كل مرة. <b>وما الذي يبدو عليه التقدّم:</b> أن يصبح الذكاء الاصطناعي جزءاً موثوقاً وافتراضياً من إنجاز عدة مهام متكررة - مدعوماً بأوامر محفوظة وإدراك واضح لمتى يجب التحقق.</div>
+
+      <h2>نتيجتك - حسب المحور والمحاور الفرعية</h2>
+      <div class="cards"><div class="ccard"><div class="cctop"><span class="ccname">الوعي بالذكاء الاصطناعي</span><span class="ccpill" style="background:#dcfce7;color:#166534">قوي</span></div><div class="ccscore" style="color:#059669">4.1<small> / ٥</small></div><div class="bar" style="height:10px"><span style="width:83%;background:#059669"></span></div><p class="ccdesc">يدرك ما يمكن وما لا يمكن للذكاء الاصطناعي فعله وأين ينطبق على عمل الموارد البشرية.</p><div class="sublbl">المحاور الفرعية</div><div class="subrow"><span class="sn">فهم الذكاء الاصطناعي</span><div class="bar" style="height:7px"><span style="width:66%;background:#D97706"></span></div><span class="sv">3.3</span></div><div class="subrow"><span class="sn">إدراك الحدود والمخاطر</span><div class="bar" style="height:7px"><span style="width:76%;background:#D97706"></span></div><span class="sv">3.8</span></div><div class="subrow"><span class="sn">اكتشاف الفرص</span><div class="bar" style="height:7px"><span style="width:95%;background:#059669"></span></div><span class="sv">4.7</span></div></div><div class="ccard"><div class="cctop"><span class="ccname">تبنّي الذكاء الاصطناعي</span><span class="ccpill" style="background:#ffe4e6;color:#9f1239">مجال للتطوير</span></div><div class="ccscore" style="color:#E11D48">1.6<small> / ٥</small></div><div class="bar" style="height:10px"><span style="width:31%;background:#E11D48"></span></div><p class="ccdesc">مدى الاستخدام الفعلي للذكاء الاصطناعي في المهام وسير العمل اليومي.</p><div class="sublbl">المحاور الفرعية</div><div class="subrow"><span class="sn">تكرار الاستخدام</span><div class="bar" style="height:7px"><span style="width:45%;background:#E11D48"></span></div><span class="sv">2.3</span></div><div class="subrow"><span class="sn">تنوّع المهام</span><div class="bar" style="height:7px"><span style="width:22%;background:#E11D48"></span></div><span class="sv">1.1</span></div><div class="subrow"><span class="sn">التكامل في سير العمل</span><div class="bar" style="height:7px"><span style="width:40%;background:#E11D48"></span></div><span class="sv">2.0</span></div></div><div class="ccard"><div class="cctop"><span class="ccname">الجاهزية للذكاء الاصطناعي</span><span class="ccpill" style="background:#fef3c7;color:#92400e">في تطور</span></div><div class="ccscore" style="color:#D97706">3.3<small> / ٥</small></div><div class="bar" style="height:10px"><span style="width:66%;background:#D97706"></span></div><p class="ccdesc">الجاهزية العامة لتطبيق الذكاء الاصطناعي بفعالية ومسؤولية في العمل.</p><div class="sublbl">المحاور الفرعية</div><div class="subrow"><span class="sn">الثقة</span><div class="bar" style="height:7px"><span style="width:84%;background:#059669"></span></div><span class="sv">4.2</span></div><div class="subrow"><span class="sn">الاستخدام المسؤول</span><div class="bar" style="height:7px"><span style="width:69%;background:#D97706"></span></div><span class="sv">3.5</span></div><div class="subrow"><span class="sn">الاستعداد للتعلّم</span><div class="bar" style="height:7px"><span style="width:67%;background:#D97706"></span></div><span class="sv">3.3</span></div></div></div>
 
       <div class="two">
-        <div class="col">
-          <h2 class="good">نقاط القوة</h2>
-          <p><b>الوعي بالذكاء الاصطناعي (4.1/٥).</b> نقطة قوة حقيقية - فهم واضح ومتوازن لمواضع إضافة الذكاء الاصطناعي للقيمة ومواضع بقاء الحكم البشري في موضع التحكّم. وهذا أساس مثالي للانطلاق: فالوعي بهذا المستوى يتحوّل سريعاً إلى ممارسة بمجرد بناء عادات الاستخدام العملي.</p>
-        </div>
-        <div class="col">
-          <h2 class="warn">مجال التطوير والإجراءات</h2>
-          <p><b>تبنّي الذكاء الاصطناعي (1.6/٥) - الأولوية.</b> الفهم متقدّم كثيراً على الاستخدام العملي. وأسرع خطوة وأعلاها عائداً هي تحويل الوعي إلى عادة يومية.</p>
-          <ul class="actions"><li>اختر مهمة متكررة في الموارد البشرية (مثل صياغة الوصف الوظيفي أو ملخصات المقابلات) وأنجزها بأداة ذكاء اصطناعي معتمدة أسبوعياً لمدة شهر.</li><li>استخدم قوالب أوامر جاهزة لضمان اتساق الجودة وعدم البدء من صفحة فارغة في كل مرة.</li><li>اعمل بالتعاون مع أحد رواد الذكاء الاصطناعي في الإدارة عبر لقاء أسبوعي مدته ١٥ دقيقة لتبادل ما نجح.</li></ul>
-        </div>
+        <div class="col"><h2 class="good">نقاط قوتك</h2><p><b>الوعي بالذكاء الاصطناعي (4.1/٥) - نقطة قوة حقيقية.</b> فهم واضح ومتوازن لمواضع إضافة الذكاء الاصطناعي للقيمة، ويظهر أكثر في <b>اكتشاف الفرص (4.7/٥)</b>، أي أن عبدالله يرى بسهولة أين يمكن للذكاء الاصطناعي أن يساعد - وهو أساس مثالي للانطلاق، لأن الوعي بهذا المستوى يتحوّل سريعاً إلى ممارسة بمجرد بناء عادات الاستخدام العملي.</p><p style='margin-top:8px'><b>الثقة والحُكم.</b> درجة ثقة عالية بالنفس (4.2/٥) مقترنة بحُكم سليم في الاستخدام المسؤول تعني أن المكوّنات الأساسية للتقدّم السريع متوافرة بالفعل.</p></div>
+        <div class="col"><h2 class="warn">أولويات التطوير</h2><div class='prio'><div class='ptitle'>1. تبنّي الذكاء الاصطناعي <span class='pmeta'>1.6/٥ · الفجوة 2.4</span></div><p><b>لماذا الآن:</b> الفهم متقدّم كثيراً على الاستخدام العملي - وهو أسرع تحسّن متاح وأعلاه عائداً.</p><ul class='actions'><li>اختر مهمة متكررة في الموارد البشرية (تنوّع المهام هو أدنى محور لديك) - مثل صياغة الأوصاف الوظيفية أو ملخصات المقابلات - وأنجزها بأداة ذكاء اصطناعي معتمدة أسبوعياً لمدة شهر.</li><li>وسّع تدريجياً: بمجرد أن تصبح مهمة واحدة عادةً، أضف ثانية ثم ثالثة. فالاتساع هو أقوى رافعة لديك.</li><li>احفظ كل أمر ناجح في مكتبة شخصية حتى تتوقف عن البدء من صفحة فارغة.</li></ul></div><div class='prio'><div class='ptitle'>2. الجاهزية للذكاء الاصطناعي <span class='pmeta'>3.3/٥</span></div><p><b>لماذا الآن:</b> جيد لكنه غير موثوق بعد - يستحق الترسيخ ليكون الحُكم السليم ثابتاً لا ظرفياً.</p><ul class='actions'><li>حدّد محفّزات صريحة لـ&quot;التحقق دائماً&quot; للمخرجات عالية الأثر (الأرقام، الأسماء، ما يتعلق بالسياسات) حتى يصبح التحقق تلقائياً لا عرضياً.</li><li>شارك إنجازاً واحداً بمساعدة الذكاء الاصطناعي مع زميل كل شهر - فالتعليم يرسّخ ممارستك ويطوّر ممارسة الفريق.</li></ul></div></div>
       </div>
+
+      <h2>خطتك لـ ٣٠ / ٦٠ / ٩٠ يوماً</h2>
+      <div class="miles"><div class='mile'><div class='mday'>30</div><div><div class='mt'>أول ٣٠ يوماً</div><div class='mb'>اختر مهمة أسبوعية واحدة في الموارد البشرية وأنجزها بالذكاء الاصطناعي أسبوعياً. واحفظ الأوامر الناجحة.</div></div></div><div class='mile'><div class='mday'>60</div><div><div class='mt'>بحلول اليوم ٦٠</div><div class='mb'>أضف مهمة ثانية وثالثة. وأدخل قائمة تحقق بسيطة &quot;تأكّد قبل الإرسال&quot; لكل ما هو عالي الأثر.</div></div></div><div class='mile'><div class='mday'>90</div><div><div class='mt'>بحلول اليوم ٩٠</div><div class='mb'>يصبح الذكاء الاصطناعي جزءاً افتراضياً من ٣-٤ مهام متكررة. شارك إنجازاً مع الفريق ووجّه زميلاً في بدايته.</div></div></div></div>
 
       <h2>المقارنة المرجعية</h2>
-      <div class="bench"><div class="cmprow"><span class="cmplbl">هذا الموظف</span><div class="bar sm"><span style="width:60%;background:#D97706"></span></div><span class="cmpval">3.0</span></div><div class="cmprow"><span class="cmplbl">الموارد البشرية (متوسط الإدارة)</span><div class="bar sm"><span style="width:64%;background:#D97706"></span></div><span class="cmpval">3.2</span></div><div class="cmprow"><span class="cmplbl">هيئة أفق الرقمية (متوسط المؤسسة)</span><div class="bar sm"><span style="width:67%;background:#D97706"></span></div><span class="cmpval">3.4</span></div></div>
+      <div class="bench"><div class="cmprow"><span class="cmplbl">هذا الموظف</span><div class="bar" style="height:11px"><span style="width:60%;background:#D97706"></span></div><span class="cmpval">3.0</span></div><div class="cmprow"><span class="cmplbl">الموارد البشرية (متوسط الإدارة)</span><div class="bar" style="height:11px"><span style="width:64%;background:#D97706"></span></div><span class="cmpval">3.2</span></div><div class="cmprow"><span class="cmplbl">هيئة أفق الرقمية (متوسط المؤسسة)</span><div class="bar" style="height:11px"><span style="width:67%;background:#D97706"></span></div><span class="cmpval">3.4</span></div></div>
+      <p class="benchnote">الجاهزية العامة (3.0) أقل قليلاً من متوسط الإدارة (3.2) ومتوسط المؤسسة (3.4) - ويعود ذلك بالكامل تقريباً إلى فجوة التبنّي لا إلى الفهم.</p>
 
-      <h2>خطة التدريب الموجهة</h2>
-      <div class="courses"><div class="course"><div class="ctop"><span class="cname">الذكاء الاصطناعي التطبيقي لمختصي الموارد البشرية</span><span class="cfit" style="background:#dcfce7;color:#166534">ملاءمة عالية</span></div><span class="cmeta">3 days · Foundational</span></div><div class="course"><div class="ctop"><span class="cname">من الوعي إلى التبنّي: الذكاء الاصطناعي في العمل اليومي</span><span class="cfit" style="background:#dcfce7;color:#166534">ملاءمة عالية</span></div><span class="cmeta">2 days · Practical</span></div><div class="course"><div class="ctop"><span class="cname">إتقان الأوامر والاستخدام المسؤول للذكاء الاصطناعي</span><span class="cfit" style="background:#fef3c7;color:#92400e">ملاءمة متوسطة</span></div><span class="cmeta">2 days · Foundational</span></div></div>
+      <h2>برامج VIFM التدريبية الموصى بها</h2>
+      <div class="courses"><div class="course"><div class="ctop"><span class="cname">الذكاء الاصطناعي التطبيقي لمختصي الموارد البشرية</span><span class="cfit" style="background:#dcfce7;color:#166534">ملاءمة عالية</span></div><div class="cmeta">3 days · Foundational</div><p class="cwhy">يحوّل وعيك القوي إلى حالات استخدام عملية في الموارد البشرية - ملخصات الفرز، صياغة الأوصاف الوظيفية، الإجابة عن الأسئلة المتعلقة بالسياسات.</p></div><div class="course"><div class="ctop"><span class="cname">من الوعي إلى التبنّي: الذكاء الاصطناعي في العمل اليومي</span><span class="cfit" style="background:#dcfce7;color:#166534">ملاءمة عالية</span></div><div class="cmeta">2 days · Practical</div><p class="cwhy">يعالج مباشرةً أكبر فجوة لديك - بناء عادة يومية لاستخدام الذكاء الاصطناعي عبر المزيد من مهامك.</p></div><div class="course"><div class="ctop"><span class="cname">إتقان الأوامر والاستخدام المسؤول</span><span class="cfit" style="background:#fef3c7;color:#92400e">ملاءمة متوسطة</span></div><div class="cmeta">2 days · Foundational</div><p class="cwhy">قوالب أوامر قابلة لإعادة الاستخدام للحفاظ على اتساق الجودة مع توسّع استخدامك.</p></div></div>
 
-      <div class="method">
-        <b>كيف تقرأ هذا التقرير.</b>
-        تُقيَّم كل محور من ١ إلى ٥ عبر استبيان ذاتي. المستويات: مجال للتطوير (أقل من ٣)، في تطور (٣-٣٫٩)، قوي (٤ فأعلى). يستخدم هذا النموذج بيانات توضيحية. والنتائج استرشادية وموجهة لحوارات التطوير، وليست قراراً توظيفياً قائماً بذاته.
+      <div class="two">
+        <div class="col"><h2>دليل حوار المدير</h2><ul class='guide'><li>ما المهمة الواحدة في الموارد البشرية التي ستلتزم بإنجازها بالذكاء الاصطناعي أسبوعياً هذا الشهر؟</li><li>ما الذي يعيق التوسّع في استخدام الذكاء الاصطناعي - الوقت أم الأدوات أم الثقة أم الصلاحية؟</li><li>أين يكون الخطأ أكثر أهمية، وما قاعدتك في &quot;التأكّد قبل الإرسال&quot; هناك؟</li></ul></div>
+        <div class="col"><h2>تأمّل والتزم</h2><ul class='guide'><li>ما مهمة تؤديها بالفعل ويمكن للذكاء الاصطناعي أن يوفّر فيها ٣٠ دقيقة هذا الأسبوع؟</li><li>من في فريقك متقدّم خطوة في الذكاء الاصطناعي، وما الأمر الواحد الذي يمكنك استعارته منه؟</li></ul></div>
       </div>
-    </section>
-  </div>
+
+      <div class="method"><b>كيف تقرأ هذا التقرير.</b>
+        تُقيَّم كل محور من ١ إلى ٥ عبر استبيان ذاتي؛ وتفصّل المحاور الفرعية كل محور إلى مكوّناته. المستويات: مجال للتطوير (أقل من ٣)، في تطور (٣-٣٫٩)، قوي (٤ فأعلى). يستخدم هذا النموذج بيانات توضيحية. والنتائج استرشادية وموجهة لحوارات التطوير، وليست قراراً توظيفياً قائماً بذاته.</div>
+    </section></div>
 <script>
-  function setL(l){
-    document.body.className='lang-'+l;
-    document.documentElement.lang=l;
-    document.documentElement.dir = l==='ar'?'rtl':'ltr';
-    document.getElementById('enB').classList.toggle('on',l==='en');
-    document.getElementById('arB').classList.toggle('on',l==='ar');
-  }
-</script>
-</body></html>
+  function setL(l){document.body.className='lang-'+l;document.documentElement.lang=l;document.documentElement.dir=l==='ar'?'rtl':'ltr';
+    document.getElementById('enB').classList.toggle('on',l==='en');document.getElementById('arB').classList.toggle('on',l==='ar');}
+</script></body></html>

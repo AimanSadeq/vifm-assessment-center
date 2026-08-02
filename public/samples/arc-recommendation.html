@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>ARC - Assessment Optimization Recommendation</title>
+<style>
+  :root{--navy:#010131;--navy2:#121232;--accent:#5391D5;--accent-deep:#2f6fb8;--ink:#121232;--muted:#5b6472;--line:#e5e9f0;--bg:#eef1f6;--green:#059669;--greenbg:#dcfce7;--amberbg:#fef3c7;}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);font-family:"Open Sans","Segoe UI",system-ui,sans-serif;font-size:13.5px;line-height:1.62}
+  body.lang-ar .doc{direction:rtl;font-family:"Segoe UI","Tahoma",sans-serif}
+  .toolbar{position:sticky;top:0;z-index:10;display:flex;gap:10px;justify-content:center;padding:12px;background:#fff;border-bottom:1px solid var(--line)}
+  .toolbar button{border:1px solid var(--line);background:#fff;border-radius:100px;padding:8px 18px;font-family:inherit;font-weight:700;font-size:13px;color:var(--muted);cursor:pointer}
+  .toolbar button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .toolbar .print{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .sheet{max-width:820px;margin:18px auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:38px 46px 44px;box-shadow:0 2px 10px rgba(1,1,49,.06)}
+  body.lang-en .doc.ar{display:none} body.lang-ar .doc.en{display:none}
+  .eyebrow{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-deep);font-weight:800;margin-bottom:6px}
+  h1{font-size:24px;font-weight:800;color:var(--navy);letter-spacing:-.01em;line-height:1.2;border-bottom:2px solid var(--navy);padding-bottom:14px;margin-bottom:16px}
+  h2{font-size:15.5px;font-weight:800;color:var(--navy);margin:22px 0 9px}
+  p{margin-bottom:11px;color:#26303f}
+  .rec{background:linear-gradient(155deg,var(--navy),var(--navy2));color:#fff;border-radius:12px;padding:18px 20px;margin:6px 0 8px}
+  .rec .l{font-size:10px;text-transform:uppercase;letter-spacing:.1em;opacity:.7;font-weight:800;margin-bottom:5px}
+  .rec b{color:#fff}
+  .rec .big{font-size:19px;font-weight:800;line-height:1.35}
+  ul{margin:0 0 12px;padding-inline-start:20px} li{margin-bottom:7px;color:#26303f}
+  table{width:100%;border-collapse:collapse;margin:8px 0 14px;font-size:12.5px}
+  th,td{border:1px solid var(--line);padding:9px 11px;text-align:start;vertical-align:top}
+  th{background:var(--navy2);color:#fff;font-weight:700;font-size:11.5px}
+  tr.reco td{background:var(--greenbg)}
+  .tag{display:inline-block;font-size:10px;font-weight:800;padding:2px 8px;border-radius:100px;background:var(--greenbg);color:#166534}
+  .callout{border-inline-start:3px solid var(--accent);background:#f6f9fd;border-radius:4px;padding:12px 14px;margin:6px 0 14px;font-size:12.5px;color:#334155}
+  .foot{margin-top:24px;border-top:1px solid var(--line);padding-top:12px;font-size:10.5px;color:var(--muted);line-height:1.6}
+  @media print{ .toolbar{display:none} body{background:#fff} .sheet{border:0;box-shadow:none;margin:0;max-width:none;border-radius:0} @page{margin:16mm} }
+</style></head>
+<body class="lang-en">
+<div class="toolbar">
+  <button id="enB" class="on" onclick="setL('en')">English</button>
+  <button id="arB" onclick="setL('ar')">العربية</button>
+  <button class="print" onclick="window.print()">⎙ Print / Save PDF</button>
+</div>
+<div class="sheet">
+
+  <!-- ENGLISH -->
+  <div class="doc en" dir="ltr">
+    <div class="eyebrow">VIFM AI Readiness Compass · Recommendation</div>
+    <h1>Optimizing the AI Readiness Assessment: a shorter form that protects quality</h1>
+
+    <p>You asked whether the assessment can be <b>simplified and shortened while maintaining its quality,
+    accuracy, and ability to measure employees' AI readiness</b> - with the specific objective of assessing
+    employees' <b>AI awareness, adoption, and readiness to use AI in their daily work</b>. This note sets out
+    our recommendation.</p>
+
+    <div class="rec">
+      <div class="l">Our recommendation</div>
+      <div class="big">Adopt the streamlined <b>36-item</b> form as your standard organization-wide assessment -
+      structured as three constructs (Awareness · Adoption · Readiness), <b>12 items each</b>. Keep the 48-item
+      form for leadership and priority cohorts, and reserve the full 60-item form for periodic deep-dive baselines.</div>
+    </div>
+
+    <h2>Why a shorter assessment can keep the same quality</h2>
+    <p>Assessment quality comes from <b>how well each construct is covered by good items</b>, not from the raw
+    number of questions. A focused form measures the same three things reliably when it is built to a blueprint:</p>
+    <ul>
+      <li><b>Balanced construct coverage.</b> Each construct keeps a fixed floor of ~12 items, enough to stay
+      internally consistent (our reliability target is a Cronbach's alpha of 0.70 or higher per construct).</li>
+      <li><b>Best items, not more items.</b> We retain the questions that discriminate most strongly between
+      higher- and lower-readiness employees, and drop items that overlap or add little signal.</li>
+      <li><b>Real day-to-day behaviour.</b> We keep scenario and practice items so the form measures actual
+      <i>adoption</i> in daily work - not just attitude or awareness in the abstract.</li>
+      <li><b>Less fatigue, better data.</b> A ~9-minute form lifts completion rates across a large workforce,
+      which improves data quality at scale more than extra questions ever would.</li>
+    </ul>
+
+    <h2>The three form lengths at a glance</h2>
+    <table>
+      <thead><tr><th>Form</th><th>Items / construct</th><th>Time</th><th>Best used for</th></tr></thead>
+      <tbody>
+        <tr class="reco"><td><b>36 items</b> <span class="tag">Recommended</span></td><td>~12 (×3)</td><td>~8-10 min</td>
+          <td>Organization-wide rollout: reliable overall + per-construct bands, individual reports, and department/division dashboards.</td></tr>
+        <tr><td>48 items</td><td>~16 (×3)</td><td>~12-14 min</td>
+          <td>Leadership and priority cohorts where finer sub-dimension detail is wanted.</td></tr>
+        <tr><td>60 items (full)</td><td>~20 (×3)</td><td>~15-18 min</td>
+          <td>Periodic deep-dive baseline or research-grade measurement.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>What we keep to protect reliability</h2>
+    <ul>
+      <li>A minimum of 12 items per construct, selected for the strongest measurement quality.</li>
+      <li>A short consistency check so we can flag careless or inflated responding.</li>
+      <li>Full English/Arabic parity, so both language versions measure identically.</li>
+      <li>The same outputs you have today: overall readiness, the three construct scores, an individual
+      report, and the organizational dashboard rolled up by division, department, and individual.</li>
+    </ul>
+
+    <div class="callout"><b>What changes for the client, and what doesn't.</b> Employees spend roughly a third
+    less time; completion goes up. The report and dashboard stay the same shape. Final item selection is
+    confirmed by VIFM's psychometric review before launch, so the shorter form is validated, not just trimmed.</div>
+
+    <p><b>In short:</b> the 36-item form is the right default for measuring AI awareness, adoption, and readiness
+    across your workforce - shorter, easier to complete, and built to hold the same accuracy where it matters.</p>
+
+    <div class="foot">VIFM AI Readiness Compass · Prepared for client discussion · Sample recommendation.
+    Reliability targets and item counts are indicative and confirmed by VIFM's psychometric review before deployment.</div>
+  </div>
+
+  <!-- ARABIC -->
+  <div class="doc ar" dir="rtl">
+    <div class="eyebrow">بوصلة الجاهزية للذكاء الاصطناعي · توصية</div>
+    <h1>تحسين تقييم الجاهزية للذكاء الاصطناعي: نسخة أقصر تحافظ على الجودة</h1>
+
+    <p>سألتم عمّا إذا كان بالإمكان <b>تبسيط التقييم وتقصيره مع الحفاظ على جودته ودقته وقدرته على قياس جاهزية
+    الموظفين للذكاء الاصطناعي</b> - وتحديداً بهدف قياس <b>وعي الموظفين بالذكاء الاصطناعي وتبنّيهم له وجاهزيتهم
+    لاستخدامه في عملهم اليومي</b>. وفيما يلي توصيتنا.</p>
+
+    <div class="rec">
+      <div class="l">توصيتنا</div>
+      <div class="big">اعتماد النسخة المختصرة المكوّنة من <b>٣٦ عبارة</b> كتقييم قياسي على مستوى المؤسسة -
+      منظّمة في ثلاثة محاور (الوعي · التبنّي · الجاهزية) بواقع <b>١٢ عبارة لكل محور</b>. مع الإبقاء على نسخة
+      الـ٤٨ عبارة للقيادات والفئات ذات الأولوية، وتخصيص النسخة الكاملة (٦٠ عبارة) لقياسات التقييم المعمّق الدورية.</div>
+    </div>
+
+    <h2>لماذا يمكن لتقييم أقصر أن يحافظ على الجودة نفسها</h2>
+    <p>تأتي جودة التقييم من <b>مدى تغطية كل محور بعبارات جيدة</b>، لا من العدد الخام للأسئلة. فالنسخة المركّزة
+    تقيس المحاور الثلاثة نفسها بموثوقية عندما تُبنى وفق مخطط محدد:</p>
+    <ul>
+      <li><b>تغطية متوازنة للمحاور.</b> يحتفظ كل محور بحدٍّ أدنى ثابت يقارب ١٢ عبارة، وهو كافٍ للحفاظ على
+      الاتساق الداخلي (هدفنا معامل ثبات ألفا كرونباخ ٠٫٧٠ أو أعلى لكل محور).</li>
+      <li><b>أفضل العبارات لا أكثرها.</b> نُبقي على الأسئلة الأقوى في التمييز بين الموظفين الأعلى والأدنى
+      جاهزية، ونستبعد العبارات المتداخلة أو قليلة الإفادة.</li>
+      <li><b>سلوك يومي حقيقي.</b> نُبقي على عبارات المواقف والممارسة حتى تقيس النسخة <i>التبنّي</i> الفعلي في
+      العمل اليومي - لا مجرد الوعي أو الاتجاه النظري.</li>
+      <li><b>إرهاق أقل وبيانات أفضل.</b> نسخة مدتها ٩ دقائق تقريباً ترفع معدلات الإكمال لدى القوى العاملة
+      الكبيرة، وهو ما يحسّن جودة البيانات على نطاق واسع أكثر من أي أسئلة إضافية.</li>
+    </ul>
+
+    <h2>النسخ الثلاث في لمحة</h2>
+    <table>
+      <thead><tr><th>النسخة</th><th>عبارات لكل محور</th><th>الزمن</th><th>الاستخدام الأنسب</th></tr></thead>
+      <tbody>
+        <tr class="reco"><td><b>٣٦ عبارة</b> <span class="tag">موصى بها</span></td><td>~١٢ (×٣)</td><td>~٨-١٠ د</td>
+          <td>التطبيق على مستوى المؤسسة: مستويات موثوقة إجمالاً ولكل محور، وتقارير فردية، ولوحات مؤشرات حسب القطاع والإدارة.</td></tr>
+        <tr><td>٤٨ عبارة</td><td>~١٦ (×٣)</td><td>~١٢-١٤ د</td>
+          <td>القيادات والفئات ذات الأولوية عند الحاجة لتفصيل أدق للمحاور الفرعية.</td></tr>
+        <tr><td>٦٠ عبارة (كاملة)</td><td>~٢٠ (×٣)</td><td>~١٥-١٨ د</td>
+          <td>قياس مرجعي معمّق دوري أو قياس بمستوى بحثي.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>ما نُبقي عليه لحماية الموثوقية</h2>
+    <ul>
+      <li>حدٌّ أدنى من ١٢ عبارة لكل محور، مختارة لأعلى جودة قياس.</li>
+      <li>فحص اتساق مختصر لرصد الإجابات غير المتأنّية أو المبالغ فيها.</li>
+      <li>تكافؤ كامل بين النسختين الإنجليزية والعربية بحيث تقيسان بالطريقة نفسها.</li>
+      <li>المخرجات نفسها المتوفرة حالياً: الجاهزية العامة، ونتائج المحاور الثلاثة، وتقرير فردي، ولوحة المؤشرات
+      المؤسسية مجمّعة حسب القطاع والإدارة والفرد.</li>
+    </ul>
+
+    <div class="callout"><b>ما الذي يتغير للعميل وما الذي يبقى.</b> يقضي الموظفون وقتاً أقل بنحو الثلث، وترتفع
+    نسبة الإكمال. ويبقى شكل التقرير ولوحة المؤشرات كما هو. ويُعتمد الاختيار النهائي للعبارات عبر المراجعة
+    القياسية (السيكومترية) لدى VIFM قبل الإطلاق، فالنسخة الأقصر مُقنّنة وليست مجرد مختصرة.</div>
+
+    <p><b>باختصار:</b> نسخة الـ٣٦ عبارة هي الخيار الافتراضي الأنسب لقياس الوعي والتبنّي والجاهزية للذكاء
+    الاصطناعي عبر القوى العاملة - أقصر وأسهل إكمالاً ومبنية للحفاظ على الدقة نفسها حيث يهم الأمر.</p>
+
+    <div class="foot">بوصلة الجاهزية للذكاء الاصطناعي · أُعدّت لغرض النقاش مع العميل · توصية نموذجية.
+    أهداف الموثوقية وأعداد العبارات استرشادية وتُعتمد عبر المراجعة القياسية لدى VIFM قبل التطبيق.</div>
+  </div>
+
+</div>
+<script>
+  function setL(l){
+    document.body.className='lang-'+l;
+    document.documentElement.lang=l;
+    document.documentElement.dir=l==='ar'?'rtl':'ltr';
+    document.getElementById('enB').classList.toggle('on',l==='en');
+    document.getElementById('arB').classList.toggle('on',l==='ar');
+  }
+</script>
+</body></html>
